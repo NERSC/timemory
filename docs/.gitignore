@@ -1,3 +1,7 @@
 /build*
+/_static/doxygen-docs
 /doxygen-docs
+/doxygen-xml
 /_build
+/Doxyfile.timemory
+/installation.md

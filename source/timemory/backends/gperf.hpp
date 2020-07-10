@@ -34,17 +34,17 @@
 #include <sstream>
 #include <string>
 
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
 #    include <gperftools/heap-profiler.h>
-#    if !defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
-#        define TIMEMORY_USE_GPERF_HEAP_PROFILER
+#    if !defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
+#        define TIMEMORY_USE_GPERFTOOLS_TCMALLOC
 #    endif
 #endif
 
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
 #    include <gperftools/profiler.h>
-#    if !defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-#        define TIMEMORY_USE_GPERF_CPU_PROFILER
+#    if !defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
+#        define TIMEMORY_USE_GPERFTOOLS_PROFILER
 #    endif
 #endif
 
@@ -60,9 +60,9 @@ namespace gperf
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 void
-consume_parameters(_Types&&...)
+consume_parameters(Types&&...)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -71,7 +71,7 @@ namespace cpu
 {
 //--------------------------------------------------------------------------------------//
 
-#if !defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if !defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
 
 struct _ProfilerState
 {
@@ -120,7 +120,7 @@ using options_t = ProfilerOptions;
 inline int
 profiler_start(const std::string& name, options_t* options = nullptr)
 {
-#if defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
     return ProfilerStartWithOptions(name.c_str(), options);
 #else
     consume_parameters(name, options);
@@ -133,7 +133,7 @@ profiler_start(const std::string& name, options_t* options = nullptr)
 inline void
 profiler_stop()
 {
-#if defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
     ProfilerStop();
 #endif
 }
@@ -143,7 +143,7 @@ profiler_stop()
 inline void
 profiler_flush()
 {
-#if defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
     ProfilerFlush();
 #endif
 }
@@ -153,7 +153,7 @@ profiler_flush()
 inline void
 register_thread()
 {
-#if defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
     ProfilerRegisterThread();
 #endif
 }
@@ -164,7 +164,7 @@ inline state_t
 get_state()
 {
     state_t _state;
-#if defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
     ProfilerGetCurrentState(&_state);
 #endif
     return _state;
@@ -191,7 +191,7 @@ namespace heap
 inline int
 profiler_start(const std::string& name)
 {
-#if defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
     HeapProfilerStart(name.c_str());
 #else
     consume_parameters(name);
@@ -204,7 +204,7 @@ profiler_start(const std::string& name)
 inline void
 profiler_stop()
 {
-#if defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
     HeapProfilerStop();
 #endif
 }
@@ -214,7 +214,7 @@ profiler_stop()
 inline bool
 is_running()
 {
-#if defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
     return (IsHeapProfilerRunning() == 0) ? false : true;
 #else
     return false;
@@ -226,7 +226,7 @@ is_running()
 inline void
 profiler_flush(const std::string& reason)
 {
-#if defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
     HeapProfilerDump(reason.c_str());
 #else
     consume_parameters(reason);
@@ -238,7 +238,7 @@ profiler_flush(const std::string& reason)
 inline std::string
 get_profile()
 {
-#if defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
     char*             prof = GetHeapProfile();
     std::stringstream ss;
     ss << prof;

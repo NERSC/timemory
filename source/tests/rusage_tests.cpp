@@ -24,7 +24,7 @@
 
 #include "gtest/gtest.h"
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -45,10 +45,11 @@ static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
 static peak_rss      peak;
 static page_rss      curr;
-static read_bytes    rb;
-static written_bytes wb;
-static auto          tot_size = nelements * sizeof(int64_t) / memory_unit.first;
-static auto          tot_rw   = nelements * sizeof(floating_t) / memory_unit.first;
+static current_peak_rss current_peak;
+static read_bytes       rb;
+static written_bytes    wb;
+static auto             tot_size = nelements * sizeof(int64_t) / memory_unit.first;
+static auto             tot_rw   = nelements * sizeof(floating_t) / memory_unit.first;
 
 static const double peak_tolerance = 5 * tim::units::MiB;
 static const double curr_tolerance = 5 * tim::units::MiB;
@@ -57,6 +58,9 @@ static const double byte_tolerance = tot_rw;  // macOS is not dependable
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \
         return;
+
+static int    _argc = 0;
+static char** _argv = nullptr;
 
 //--------------------------------------------------------------------------------------//
 namespace details
@@ -69,9 +73,9 @@ fibonacci(long n)
 }
 
 // this function ensures an allocation cannot be optimized
-template <typename _Tp>
+template <typename Tp>
 size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());
@@ -84,9 +88,11 @@ allocate()
 {
     peak.reset();
     curr.reset();
+    current_peak.reset();
 
     curr.start();
     peak.start();
+    current_peak.start();
 
     std::vector<int64_t> v(nelements, 15);
     auto                 ret  = fibonacci(0);
@@ -100,6 +106,7 @@ allocate()
     if(ret < 0)
         printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
 
+    current_peak.stop();
     curr.stop();
     peak.stop();
 }
@@ -139,14 +146,14 @@ read_write()
     }
 }
 
-template <typename _Tp>
+template <typename Tp>
 string_t
-get_info(const _Tp& obj)
+get_info(const Tp& obj)
 {
     stringstream_t ss;
-    auto           _unit = static_cast<double>(_Tp::get_unit());
-    ss << "value = " << obj.get_value() / _unit << " " << _Tp::get_display_unit()
-       << ", accum = " << obj.get_accum() / _unit << " " << _Tp::get_display_unit()
+    auto           _unit = static_cast<double>(Tp::get_unit());
+    ss << "value = " << obj.get_value() / _unit << " " << Tp::get_display_unit()
+       << ", accum = " << obj.get_accum() / _unit << " " << Tp::get_display_unit()
        << std::endl;
     return ss.str();
 }
@@ -155,11 +162,11 @@ string_t
 get_info(const read_bytes& obj)
 {
     stringstream_t ss;
-    auto           _unit = static_cast<double>(read_bytes::get_unit());
+    auto           _unit = std::get<0>(read_bytes::get_unit());
     ss << "value = " << std::get<0>(obj.get_value()) / _unit << " "
-       << read_bytes::get_display_unit()
+       << std::get<0>(read_bytes::get_display_unit())
        << ", accum = " << std::get<0>(obj.get_accum()) / _unit << " "
-       << read_bytes::get_display_unit() << std::endl;
+       << std::get<0>(read_bytes::get_display_unit()) << std::endl;
     return ss.str();
 }
 
@@ -167,11 +174,23 @@ string_t
 get_info(const written_bytes& obj)
 {
     stringstream_t ss;
-    auto           _unit = static_cast<double>(written_bytes::get_unit());
+    auto           _unit = std::get<0>(written_bytes::get_unit());
     ss << "value = " << std::get<0>(obj.get_value()) / _unit << " "
-       << written_bytes::get_display_unit()
+       << std::get<0>(written_bytes::get_display_unit())
        << ", accum = " << std::get<0>(obj.get_accum()) / _unit << " "
-       << written_bytes::get_display_unit() << std::endl;
+       << std::get<0>(written_bytes::get_display_unit()) << std::endl;
+    return ss.str();
+}
+
+string_t
+get_info(const current_peak_rss& obj)
+{
+    stringstream_t ss;
+    auto           _unit = std::get<0>(written_bytes::get_unit());
+    ss << "value = " << std::get<0>(obj.get_value()) / _unit << " "
+       << std::get<0>(written_bytes::get_display_unit())
+       << ", accum = " << std::get<0>(obj.get_accum()) / _unit << " "
+       << std::get<0>(written_bytes::get_display_unit()) << std::endl;
     return ss.str();
 }
 
@@ -181,9 +200,9 @@ get_test_name()
     return ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
-template <typename _Tp>
+template <typename Tp>
 void
-print_info(const _Tp& obj, int64_t expected)
+print_info(const Tp& obj, int64_t expected)
 {
     std::cout << std::endl;
     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;
@@ -199,7 +218,31 @@ print_info(const _Tp& obj, int64_t expected)
 class rusage_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override { tim::settings::file_output() = true; }
+    void SetUp() override
+    {
+        static bool configured = false;
+        if(!configured)
+        {
+            configured                    = true;
+            tim::settings::verbose()      = 0;
+            tim::settings::debug()        = false;
+            tim::settings::json_output()  = true;
+            tim::settings::mpi_thread()   = false;
+            tim::settings::precision()    = 9;
+            tim::settings::memory_units() = memory_unit.second;
+            tim::mpi::initialize(_argc, _argv);
+            tim::timemory_init(_argc, _argv);
+            tim::settings::file_output() = false;
+
+            // preform allocation only once here
+            details::allocate();
+
+            tim::settings::dart_output() = true;
+            tim::settings::dart_count()  = 1;
+            tim::settings::banner()      = false;
+            tim::settings::dart_type()   = "peak_rss";
+        }
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -240,27 +283,26 @@ TEST_F(rusage_tests, written_bytes)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(rusage_tests, current_peak_rss)
+{
+    CHECK_AVAILABLE(current_peak_rss);
+    details::print_info(current_peak, tot_size);
+    ASSERT_NEAR(tot_size, current_peak.get().second - current_peak.get().first,
+                peak_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
 int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
+    _argc = argc;
+    _argv = argv;
 
-    // preform allocation only once here
-    tim::settings::precision()    = 9;
-    tim::settings::memory_units() = memory_unit.second;
-    tim::timemory_init(argc, argv);
-    tim::settings::file_output() = false;
-
-    details::allocate();
-
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }

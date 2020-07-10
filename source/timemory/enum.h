@@ -30,133 +30,135 @@
 
 #pragma once
 
-//--------------------------------------------------------------------------------------//
-// base operating system
-
-#if defined(_WIN32) || defined(_WIN64)
-#    if !defined(_WINDOWS)
-#        define _WINDOWS
-#    endif
-//--------------------------------------------------------------------------------------//
-
-#elif defined(__APPLE__) || defined(__MACH__)
-#    if !defined(_MACOS)
-#        define _MACOS
-#    endif
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
-//--------------------------------------------------------------------------------------//
-
-#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
-#    if !defined(_LINUX)
-#        define _LINUX
-#    endif
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
-//--------------------------------------------------------------------------------------//
-
-#elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
-#endif
-
-//======================================================================================//
-//
-//      Windows DLL settings
-//
-//======================================================================================//
-
-// Define macros for WIN32 for importing/exporting external symbols to DLLs
-#if !defined(tim_api)
-#    if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
-#        if defined(_TIMEMORY_DLL)
-#            define tim_api __declspec(dllexport)
-#        else
-#            define tim_api __declspec(dllimport)
-#        endif
-#    else
-#        define tim_api
-#    endif
-#endif
-
-//======================================================================================//
-//
-//      Symbol override
-//
-//======================================================================================//
-
-#if !defined(_WINDOWS)
-#    if defined(__clang__) && defined(__APPLE__)
-#        define TIMEMORY_WEAK_PREFIX
-#        define TIMEMORY_WEAK_POSTFIX __attribute__((weak_import))
-#    else
-#        define TIMEMORY_WEAK_PREFIX __attribute__((weak))
-#        define TIMEMORY_WEAK_POSTFIX
-#    endif
-#endif
+#include "timemory/compat/macros.h"
 
 //======================================================================================//
 //
 //      Enumeration
 //
 //======================================================================================//
+//
+/// \macro TIMEMORY_USER_COMPONENT_ENUM
+/// \brief Extra enumerated components provided by a downstream application. If this
+/// macro is used, be sure to end the list with a comma
+///
+/// \code
+/// #define TIMEMORY_USER_COMPONENT_ENUM MY_COMPONENT =
+/// TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE + 1,
+//
+#if !defined(TIMEMORY_USER_COMPONENT_ENUM)
+#    define TIMEMORY_USER_COMPONENT_ENUM
+#endif
 
-enum TIMEMORY_COMPONENT
+/// \enum TIMEMORY_USER_COMPONENT_ENUM_SIZE
+/// \brief Macro specifying how many user component enumerations are provided
+#if !defined(TIMEMORY_USER_COMPONENT_ENUM_SIZE)
+#    define TIMEMORY_USER_COMPONENT_ENUM_SIZE 16
+#endif
+//
+/// \macro TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE
+/// \brief The number of enumerated components defined by timemory
+//
+#if !defined(TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE)
+#    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE 64
+#endif
+//
+/// \enum TIMEMORY_NATIVE_COMPONENT
+/// \brief Enumerated identifiers for timemory-provided components. If the user wishes
+/// to add to the enumerated components, use \ref TIMEMORY_USER_COMPONENT_ENUM
+//
+enum TIMEMORY_NATIVE_COMPONENT
 {
-    CALIPER                  = 0,
-    CPU_CLOCK                = 1,
-    CPU_ROOFLINE_DP_FLOPS    = 2,
-    CPU_ROOFLINE_FLOPS       = 3,
-    CPU_ROOFLINE_SP_FLOPS    = 4,
-    CPU_UTIL                 = 5,
-    CUDA_EVENT               = 6,
-    CUDA_PROFILER            = 7,
-    CUPTI_ACTIVITY           = 8,
-    CUPTI_COUNTERS           = 9,
-    DATA_RSS                 = 10,
-    GPERF_CPU_PROFILER       = 11,
-    GPERF_HEAP_PROFILER      = 12,
-    GPU_ROOFLINE_DP_FLOPS    = 13,
-    GPU_ROOFLINE_FLOPS       = 14,
-    GPU_ROOFLINE_HP_FLOPS    = 15,
-    GPU_ROOFLINE_SP_FLOPS    = 16,
-    LIKWID_NVMON             = 17,
-    LIKWID_PERFMON           = 18,
-    MONOTONIC_CLOCK          = 19,
-    MONOTONIC_RAW_CLOCK      = 20,
-    NUM_IO_IN                = 21,
-    NUM_IO_OUT               = 22,
-    NUM_MAJOR_PAGE_FAULTS    = 23,
-    NUM_MINOR_PAGE_FAULTS    = 24,
-    NUM_MSG_RECV             = 25,
-    NUM_MSG_SENT             = 26,
-    NUM_SIGNALS              = 27,
-    NUM_SWAP                 = 28,
-    NVTX_MARKER              = 29,
-    PAGE_RSS                 = 30,
-    PAPI_ARRAY               = 31,
-    PEAK_RSS                 = 32,
-    PRIORITY_CONTEXT_SWITCH  = 33,
-    PROCESS_CPU_CLOCK        = 34,
-    PROCESS_CPU_UTIL         = 35,
-    READ_BYTES               = 36,
-    STACK_RSS                = 37,
-    SYS_CLOCK                = 38,
-    TAU_MARKER               = 39,
-    THREAD_CPU_CLOCK         = 40,
-    THREAD_CPU_UTIL          = 41,
-    TRIP_COUNT               = 42,
-    USER_CLOCK               = 43,
-    USER_LIST_BUNDLE         = 44,
-    USER_TUPLE_BUNDLE        = 45,
-    VIRTUAL_MEMORY           = 46,
-    VOLUNTARY_CONTEXT_SWITCH = 47,
-    VTUNE_EVENT              = 48,
-    VTUNE_FRAME              = 49,
-    WALL_CLOCK               = 50,
-    WRITTEN_BYTES            = 51,
-    TIMEMORY_COMPONENTS_END  = 52
+    ALLINEA_MAP = 0,
+    CALIPER_MARKER,
+    CALIPER_CONFIG,
+    CALIPER_LOOP_MARKER,
+    CPU_CLOCK,
+    CPU_ROOFLINE_DP_FLOPS,
+    CPU_ROOFLINE_FLOPS,
+    CPU_ROOFLINE_SP_FLOPS,
+    CPU_UTIL,
+    CRAYPAT_COUNTERS,
+    CRAYPAT_FLUSH_BUFFER,
+    CRAYPAT_HEAP_STATS,
+    CRAYPAT_RECORD,
+    CRAYPAT_REGION,
+    CUDA_EVENT,
+    CUDA_PROFILER,
+    CUPTI_ACTIVITY,
+    CUPTI_COUNTERS,
+    CURRENT_PEAK_RSS,
+    GPERFTOOLS_CPU_PROFILER,
+    GPERFTOOLS_HEAP_PROFILER,
+    GPU_ROOFLINE_DP_FLOPS,
+    GPU_ROOFLINE_FLOPS,
+    GPU_ROOFLINE_HP_FLOPS,
+    GPU_ROOFLINE_SP_FLOPS,
+    KERNEL_MODE_TIME,
+    LIKWID_MARKER,
+    LIKWID_NVMARKER,
+    MALLOC_GOTCHA,
+    MONOTONIC_CLOCK,
+    MONOTONIC_RAW_CLOCK,
+    NUM_IO_IN,
+    NUM_IO_OUT,
+    NUM_MAJOR_PAGE_FAULTS,
+    NUM_MINOR_PAGE_FAULTS,
+    NVTX_MARKER,
+    OMPT_HANDLE,
+    PAGE_RSS,
+    PAPI_ARRAY,
+    PAPI_VECTOR,
+    PEAK_RSS,
+    PRIORITY_CONTEXT_SWITCH,
+    PROCESS_CPU_CLOCK,
+    PROCESS_CPU_UTIL,
+    READ_BYTES,
+    SYS_CLOCK,
+    TAU_MARKER,
+    THREAD_CPU_CLOCK,
+    THREAD_CPU_UTIL,
+    TRIP_COUNT,
+    USER_CLOCK,
+    USER_GLOBAL_BUNDLE,
+    USER_LIST_BUNDLE,
+    USER_MODE_TIME,
+    USER_MPIP_BUNDLE,
+    USER_OMPT_BUNDLE,
+    USER_TUPLE_BUNDLE,
+    VIRTUAL_MEMORY,
+    VOLUNTARY_CONTEXT_SWITCH,
+    VTUNE_EVENT,
+    VTUNE_FRAME,
+    VTUNE_PROFILER,
+    WALL_CLOCK,
+    WRITTEN_BYTES,
+    TIMEMORY_USER_COMPONENT_ENUM TIMEMORY_COMPONENTS_END =
+        (TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE + TIMEMORY_USER_COMPONENT_ENUM_SIZE)
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+typedef int TIMEMORY_COMPONENT;
+//
+#if !defined(CALIPER)
+#    define CALIPER CALIPER_MARKER
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+enum TIMEMORY_OPERATION
+{
+    TIMEMORY_CONSTRUCT = 0,
+    TIMEMORY_START,
+    TIMEMORY_STOP,
+    TIMEMORY_STORE,
+    TIMEMORY_RECORD,
+    TIMEMORY_MEASURE,
+    TIMEMORY_MARK_BEGIN,
+    TIMEMORY_MARK_END,
+    TIMEMORY_OPERATION_END
+};
+//
+//--------------------------------------------------------------------------------------//
+//

@@ -33,10 +33,12 @@
 #include <vector>
 #include <x86intrin.h>
 
-#include <timemory/ert/aligned_allocator.hpp>
+#include "timemory/environment/definition.hpp"
+#include "timemory/ert/aligned_allocator.hpp"
+#include "timemory/settings/definition.hpp"
 
-template <typename _Tp>
-using aligned_vector_t = std::vector<_Tp, tim::ert::aligned_allocator<_Tp>>;
+template <typename Tp>
+using aligned_vector_t = std::vector<Tp, tim::ert::aligned_allocator<Tp>>;
 
 static const std::size_t niter    = 5;
 static const float       fepsilon = std::numeric_limits<float>::epsilon();
@@ -45,7 +47,7 @@ static const double      depsilon = std::numeric_limits<double>::epsilon();
 //--------------------------------------------------------------------------------------//
 //  all types, unless overloaded, are treated as non-intrinsic
 //
-template <typename _Tp>
+template <typename Tp>
 struct is_intrinsic : std::false_type
 {};
 
@@ -84,19 +86,19 @@ namespace details
 //--------------------------------------------------------------------------------------//
 // shorthand for check if type is an intrinsic type
 //
-template <typename _Tp, bool _Val = true>
+template <typename Tp, bool _Val = true>
 using enable_intrinsic_t =
-    typename std::enable_if<(is_intrinsic<_Tp>::value == _Val), int>::type;
+    typename std::enable_if<(is_intrinsic<Tp>::value == _Val), int>::type;
 
 //--------------------------------------------------------------------------------------//
 // print function for containers with non-intrinsic types
 //
-template <typename _Tp, typename... _ImplicitArgs,
-          template <typename, typename...> class _Vec, enable_intrinsic_t<_Tp, false> = 0>
+template <typename Tp, typename... _ImplicitArgs,
+          template <typename, typename...> class _Vec, enable_intrinsic_t<Tp, false> = 0>
 void
-print(std::ostream& os, const std::string& label, const _Vec<_Tp, _ImplicitArgs...>& vec)
+print(std::ostream& os, const std::string& label, const _Vec<Tp, _ImplicitArgs...>& vec)
 {
-    using vec_t = _Vec<_Tp, _ImplicitArgs...>;
+    using vec_t = _Vec<Tp, _ImplicitArgs...>;
     std::stringstream ss;
     ss.precision(1);
     ss << std::setw(16) << std::left << label
@@ -116,23 +118,23 @@ print(std::ostream& os, const std::string& label, const _Vec<_Tp, _ImplicitArgs.
 //--------------------------------------------------------------------------------------//
 // print function for containers with intrinsic types
 //
-template <typename _Tp, typename... _ImplicitArgs,
-          template <typename, typename...> class _Vec, enable_intrinsic_t<_Tp> = 0>
+template <typename Tp, typename... _ImplicitArgs,
+          template <typename, typename...> class _Vec, enable_intrinsic_t<Tp> = 0>
 void
-print(std::ostream& os, const std::string& label, const _Vec<_Tp, _ImplicitArgs...>& vec)
+print(std::ostream& os, const std::string& label, const _Vec<Tp, _ImplicitArgs...>& vec)
 {
-    using vec_t = _Vec<_Tp, _ImplicitArgs...>;
+    using vec_t = _Vec<Tp, _ImplicitArgs...>;
     std::stringstream ss;
     ss.precision(1);
     ss << std::setw(16) << std::left << label
        << " (alignment: " << (8 * std::alignment_of<vec_t>::value) << ") : " << std::fixed
        << std::right;
-    auto entries = is_intrinsic<_Tp>::entries;
+    auto entries = is_intrinsic<Tp>::entries;
     auto nsize   = std::distance(vec.begin(), vec.end()) * entries;
     for(auto itr = vec.begin(); itr != vec.end(); ++itr)
     {
         auto n = std::distance(vec.begin(), itr) * entries;
-        for(std::size_t i = 0; i < is_intrinsic<_Tp>::entries; ++i)
+        for(std::size_t i = 0; i < is_intrinsic<Tp>::entries; ++i)
         {
             ss << "[" << n << "] = " << std::setw(4) << (*itr)[i];
             if(n + 1 < nsize)

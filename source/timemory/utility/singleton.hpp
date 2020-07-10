@@ -57,6 +57,8 @@ public:
     using pointer       = Type*;
     using list_t        = std::set<pointer>;
     using smart_pointer = Pointer;
+    using deleter_t     = std::function<void(Pointer&)>;
+
     template <bool B, typename T = int>
     using enable_if_t = typename std::enable_if<B, T>::type;
 
@@ -106,8 +108,17 @@ public:
     // a nullptr after deletion
     void operator delete(void* ptr)
     {
-        this_type* _instance = (this_type*) (ptr);
-        ::delete _instance;
+        if(f_master_instance() && ptr && f_master_instance() == ptr)
+        {
+            this_type* _instance = (this_type*) (ptr);
+            ::delete _instance;
+            f_master_instance() = nullptr;
+        }
+        else if(f_master_instance() && f_master_instance() != ptr)
+        {
+            this_type* _instance = (this_type*) (ptr);
+            ::delete _instance;
+        }
         if(std::this_thread::get_id() == f_master_thread())
             f_master_instance() = nullptr;
     }
@@ -144,9 +155,6 @@ public:
     {
         if(is_master(ptr))
         {
-            // should be called at __cxa_finalize so don't bother deleting
-            // auto& del = get_deleter();
-            // del(_master_instance());
             if(_master_instance().get())
                 _master_instance().reset();
             else if(f_master_instance())
@@ -155,14 +163,20 @@ public:
                 del(_master_instance());
                 f_master_instance() = nullptr;
             }
+            f_persistent_data().reset();
         }
         else
         {
-            // should be called at __cxa_finalize so don't bother deleting
-            // auto& del = get_deleter();
-            // del(_local_instance());
             _local_instance().reset();
         }
+    }
+
+    void reset()
+    {
+        if(is_master_thread())
+            _master_instance().reset();
+        _local_instance().reset();
+        f_persistent_data().reset();
     }
 
 private:
@@ -182,18 +196,16 @@ private:
     void* operator new[](std::size_t) noexcept { return nullptr; }
     void  operator delete[](void*) noexcept {}
 
-    using deleter_t = std::function<void(Pointer&)>;
-
-    template <typename _Tp = Type, typename _Ptr = Pointer,
-              enable_if_t<(std::is_same<_Ptr, std::shared_ptr<_Tp>>::value)> = 0>
+    template <typename Tp = Type, typename PtrT = Pointer,
+              enable_if_t<(std::is_same<PtrT, std::shared_ptr<Tp>>::value)> = 0>
     deleter_t& get_deleter()
     {
         static deleter_t _instance = [](Pointer&) {};
         return _instance;
     }
 
-    template <typename _Tp = Type, typename _Ptr = Pointer,
-              enable_if_t<!(std::is_same<_Ptr, std::shared_ptr<_Tp>>::value)> = 0>
+    template <typename Tp = Type, typename PtrT = Pointer,
+              enable_if_t<!(std::is_same<PtrT, std::shared_ptr<Tp>>::value)> = 0>
     deleter_t& get_deleter()
     {
         static deleter_t _instance = [](Pointer& _master) {
@@ -206,10 +218,43 @@ private:
 
 private:
     // Private variables
+    struct persistent_data
+    {
+        thread_id_t m_master_thread = std::this_thread::get_id();
+        mutex_t     m_mutex;
+        pointer     m_master_instance = nullptr;
+        list_t      m_children        = {};
+
+        persistent_data()                       = default;
+        ~persistent_data()                      = default;
+        persistent_data(const persistent_data&) = delete;
+        persistent_data(persistent_data&&)      = delete;
+        persistent_data& operator=(const persistent_data&) = delete;
+        persistent_data& operator=(persistent_data&&) = delete;
+
+        persistent_data(pointer _master, std::thread::id _tid)
+        : m_master_thread(_tid)
+        , m_master_instance(_master)
+        {}
+
+        void reset()
+        {
+            m_master_instance = nullptr;
+            m_children.clear();
+        }
+    };
+
+    bool                m_is_master = false;
     static thread_id_t& f_master_thread();
     static mutex_t&     f_mutex();
     static pointer&     f_master_instance();
     static list_t&      f_children();
+
+    static persistent_data& f_persistent_data()
+    {
+        static persistent_data _instance;
+        return _instance;
+    }
 };
 
 //======================================================================================//
@@ -218,8 +263,7 @@ template <typename Type, typename Pointer>
 typename singleton<Type, Pointer>::thread_id_t&
 singleton<Type, Pointer>::f_master_thread()
 {
-    static thread_id_t _instance = std::this_thread::get_id();
-    return _instance;
+    return f_persistent_data().m_master_thread;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -228,8 +272,7 @@ template <typename Type, typename Pointer>
 typename singleton<Type, Pointer>::pointer&
 singleton<Type, Pointer>::f_master_instance()
 {
-    static pointer _instance = singleton<Type, Pointer>::_master_instance().get();
-    return _instance;
+    return f_persistent_data().m_master_instance;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -238,8 +281,7 @@ template <typename Type, typename Pointer>
 typename singleton<Type, Pointer>::mutex_t&
 singleton<Type, Pointer>::f_mutex()
 {
-    static mutex_t _instance;
-    return _instance;
+    return f_persistent_data().m_mutex;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -248,8 +290,7 @@ template <typename Type, typename Pointer>
 typename singleton<Type, Pointer>::list_t&
 singleton<Type, Pointer>::f_children()
 {
-    static list_t _instance;
-    return _instance;
+    return f_persistent_data().m_children;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -273,10 +314,8 @@ singleton<Type, Pointer>::singleton(pointer ptr)
 template <typename Type, typename Pointer>
 singleton<Type, Pointer>::~singleton()
 {
-    // should be called at __cxa_finalize so don't bother deleting
     auto& del = get_deleter();
     del(_master_instance());
-    //_master_instance().reset();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -311,7 +350,6 @@ template <typename Type, typename Pointer>
 void
 singleton<Type, Pointer>::destroy()
 {
-    //_local_instance().reset();
     if(std::this_thread::get_id() == f_master_thread() && f_master_instance())
     {
         delete f_master_instance();

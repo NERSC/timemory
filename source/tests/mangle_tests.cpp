@@ -24,11 +24,11 @@
 
 #include "gtest/gtest.h"
 
+#include "timemory/timemory.hpp"
 #include <chrono>
 #include <iostream>
 #include <random>
 #include <thread>
-#include <timemory/timemory.hpp>
 #include <vector>
 
 //--------------------------------------------------------------------------------------//
@@ -53,13 +53,13 @@ demangle(const std::string& _inst)
               << std::endl;
 }
 
-template <typename _Tp>
+template <typename Tp>
 inline void
 demangle()
 {
     std::cout << "\n"
-              << "original:\n\t " << typeid(_Tp).name() << "\n"
-              << "demangle:\n\t " << tim::demangle<_Tp>() << "\n"
+              << "original:\n\t " << typeid(Tp).name() << "\n"
+              << "demangle:\n\t " << tim::demangle<Tp>() << "\n"
               << std::endl;
 }
 
@@ -81,7 +81,7 @@ TEST_F(mangle_tests, sample)
 
     using namespace tim::component;
     std::cout << "\n" << tim::demangle(function_name) << "\n";
-    std::cout << "\n" << tim::demangle<tim::auto_tuple<real_clock, cuda_event>>() << "\n";
+    std::cout << "\n" << tim::demangle<tim::auto_tuple<wall_clock, cuda_event>>() << "\n";
     std::cout << std::endl;
 }
 
@@ -97,7 +97,7 @@ TEST_F(mangle_tests, cuda_kernel)
     details::demangle(function_name);
     using namespace tim::component;
     std::cout << tim::demangle(function_name) << "\n";
-    std::cout << tim::demangle<tim::auto_tuple<real_clock, cuda_event>>() << "\n";
+    std::cout << tim::demangle<tim::auto_tuple<wall_clock, cuda_event>>() << "\n";
 }
 
 //--------------------------------------------------------------------------------------//
@@ -109,7 +109,7 @@ TEST_F(mangle_tests, data_type) { details::demangle<double>(); }
 TEST_F(mangle_tests, struct_type)
 {
     using namespace tim::component;
-    details::demangle<real_clock>();
+    details::demangle<wall_clock>();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -143,6 +143,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }

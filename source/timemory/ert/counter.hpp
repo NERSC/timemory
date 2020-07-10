@@ -30,17 +30,17 @@
 
 #pragma once
 
-#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
-#include "timemory/components/timing.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/timing/components.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/types.hpp"
 #include "timemory/mpl/apply.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -63,16 +63,16 @@ namespace ert
 //--------------------------------------------------------------------------------------//
 //  measure floating-point or integer operations
 //
-template <typename _Device, typename _Tp, typename _Counter>
+template <typename DeviceT, typename Tp, typename Counter>
 class counter
 {
 public:
     using string_t      = std::string;
     using mutex_t       = std::recursive_mutex;
     using lock_t        = std::unique_lock<mutex_t>;
-    using counter_type  = _Counter;
-    using ert_data_t    = exec_data<_Counter>;
-    using this_type     = counter<_Device, _Tp, _Counter>;
+    using counter_type  = Counter;
+    using ert_data_t    = exec_data<Counter>;
+    using this_type     = counter<DeviceT, Tp, Counter>;
     using callback_type = std::function<void(uint64_t, this_type&)>;
     using data_type     = typename ert_data_t::value_type;
     using data_ptr_t    = std::shared_ptr<ert_data_t>;
@@ -94,7 +94,7 @@ public:
     // standard creation
     //
     explicit counter(const exec_params& _params, data_ptr_t _exec_data,
-                     uint64_t _align = 8 * sizeof(_Tp))
+                     uint64_t _align = 8 * sizeof(Tp))
     : params(_params)
     , align(_align)
     , data(_exec_data)
@@ -106,7 +106,7 @@ public:
     // overload how to create the counter with a callback function
     //
     counter(const exec_params& _params, const callback_type& _func, data_ptr_t _exec_data,
-            uint64_t _align = 8 * sizeof(_Tp))
+            uint64_t _align = 8 * sizeof(Tp))
     : params(_params)
     , align(_align)
     , data(_exec_data)
@@ -120,25 +120,25 @@ public:
     ///  allocate a buffer for the ERT calculation
     ///     uses this function if device is CPU or device is GPU and type is not half2
     ///
-    template <typename _Up = _Tp, typename Dev = _Device,
+    template <typename Up = Tp, typename Dev = DeviceT,
               typename std::enable_if<(std::is_same<Dev, device::cpu>::value ||
                                        (std::is_same<Dev, device::gpu>::value &&
-                                        !std::is_same<_Up, cuda::fp16_t>::value)),
+                                        !std::is_same<Up, cuda::fp16_t>::value)),
                                       int>::type = 0>
-    _Up* get_buffer()
+    Up* get_buffer()
     {
         // check alignment and
-        align = std::max<uint64_t>(align, 8 * sizeof(_Up));
+        align = std::max<uint64_t>(align, 8 * sizeof(Up));
         compute_internal();
 
         if(settings::debug())
             printf("[%s]> nsize = %llu\n", __FUNCTION__, (ull) nsize);
-        _Up* buffer = allocate_aligned<_Up, _Device>(nsize, align);
+        Up* buffer = allocate_aligned<Up, DeviceT>(nsize, align);
         if(settings::debug())
-            printf("[%s]> buffer = %p\n", __FUNCTION__, buffer);
-        device::params<_Device> _params(0, 512, 0, 0);
-        device::launch(nsize, _params, initialize_buffer<_Device, _Up, uint64_t>, buffer,
-                       _Up(1), nsize);
+            printf("[%s]> buffer = %p\n", __FUNCTION__, (void*) buffer);
+        device::params<DeviceT> _params(0, 512, 0, 0);
+        device::launch(nsize, _params, initialize_buffer<DeviceT, Up, uint64_t>, buffer,
+                       Up{ 1 }, nsize);
         return buffer;
     }
 
@@ -146,31 +146,31 @@ public:
     ///  allocate a buffer for the ERT calculation
     ///     uses this function if device is GPU and type is half2
     ///
-    template <typename _Up = _Tp, typename Dev = _Device,
-              typename std::enable_if<(std::is_same<_Up, cuda::fp16_t>::value &&
+    template <typename Up = Tp, typename Dev = DeviceT,
+              typename std::enable_if<(std::is_same<Up, cuda::fp16_t>::value &&
                                        std::is_same<Dev, device::gpu>::value),
                                       int>::type = 0>
-    _Up* get_buffer()
+    Up* get_buffer()
     {
         // check alignment and
-        align = std::max<uint64_t>(align, 8 * sizeof(_Up));
+        align = std::max<uint64_t>(align, 8 * sizeof(Up));
         compute_internal();
 
         if(settings::debug())
             printf("[%s]> nsize = %llu\n", __FUNCTION__, (ull) nsize);
-        _Up* buffer = allocate_aligned<_Up, _Device>(nsize, align);
+        Up* buffer = allocate_aligned<Up, DeviceT>(nsize, align);
         if(settings::debug())
-            printf("[%s]> buffer = %p\n", __FUNCTION__, buffer);
-        device::params<_Device> _params(0, 512, 0, 0);
-        device::launch(nsize, _params, initialize_buffer<_Device, _Up, uint32_t>, buffer,
-                       _Up{ 1, 1 }, nsize);
+            printf("[%s]> buffer = %p\n", __FUNCTION__, (void*) buffer);
+        device::params<DeviceT> _params(0, 512, 0, 0);
+        device::launch(nsize, _params, initialize_buffer<DeviceT, Up, uint32_t>, buffer,
+                       Up{ 1, 1 }, nsize);
         return buffer;
     }
 
     //----------------------------------------------------------------------------------//
     //  destroy associated buffer
     //
-    void destroy_buffer(_Tp* buffer) { free_aligned<_Tp, _Device>(buffer); }
+    void destroy_buffer(Tp* buffer) { free_aligned<Tp, DeviceT>(buffer); }
 
     //----------------------------------------------------------------------------------//
     // execute the callback that may customize the thread before returning the object
@@ -206,11 +206,12 @@ public:
                 ss << "scalar_op";
         }
 
-        auto      _label = tim::demangle<_Tp>();
+        auto      _label = tim::demangle<Tp>();
         data_type _data(ss.str(), working_set, trials, total_bytes, total_ops, nops,
-                        _counter, _Device::name(), _label, _itrp);
+                        _counter, DeviceT::name(), _label, _itrp);
 
 #if !defined(_WINDOWS)
+        using namespace tim::stl::ostream;
         if(settings::verbose() > 1 || settings::debug())
             std::cout << "[RECORD]> " << _data << std::endl;
 #endif
@@ -224,10 +225,10 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Func>
-    void set_callback(_Func&& _f)
+    template <typename FuncT>
+    void set_callback(FuncT&& _f)
     {
-        configure_callback = std::forward<_Func>(_f);
+        configure_callback = std::forward<FuncT>(_f);
     }
 
     //----------------------------------------------------------------------------------//
@@ -284,7 +285,7 @@ public:
     exec_params params                      = exec_params();
     int         bytes_per_element           = 0;
     int         memory_accesses_per_element = 0;
-    uint64_t    align                       = sizeof(_Tp);
+    uint64_t    align                       = sizeof(Tp);
     uint64_t    nsize                       = 0;
     data_ptr_t  data                        = std::make_shared<ert_data_t>();
     std::string label                       = "";
@@ -299,36 +300,38 @@ private:
     //
     void compute_internal()
     {
-        if(device::is_cpu<_Device>::value)
+        if(device::is_cpu<DeviceT>::value)
             params.nstreams = 1;
         nsize = params.memory_max / params.nproc / params.nthreads;
         nsize = nsize & (~(align - 1));
-        nsize = nsize / sizeof(_Tp);
+        nsize = nsize / sizeof(Tp);
         nsize = std::max<uint64_t>(nsize, 1);
     }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Counter>
+template <typename Counter>
 inline void
-serialize(std::string fname, exec_data<_Counter>& obj)
+serialize(std::string fname, exec_data<Counter>& obj)
 {
-    using exec_data_vec_t = std::vector<exec_data<_Counter>>;
+    using exec_data_vec_t = std::vector<exec_data<Counter>>;
 
-    int  dmp_rank = dmp::rank();
-    int  dmp_size = dmp::size();
-    auto space    = cereal::JSONOutputArchive::Options::IndentChar::space;
+    int dmp_rank = dmp::rank();
+    int dmp_size = dmp::size();
 
     exec_data_vec_t results(dmp_size);
     if(dmp::is_initialized())
     {
         dmp::barrier();
 
+#if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_UPCXX)
+        auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
+
         //------------------------------------------------------------------------------//
         //  Used to convert a result to a serialization
         //
-        auto send_serialize = [&](const exec_data<_Counter>& src) {
+        auto send_serialize = [&](const exec_data<Counter>& src) {
             std::stringstream ss;
             {
                 cereal::JSONOutputArchive::Options opt(16, space, 0);
@@ -342,8 +345,8 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         //  Used to convert the serialization to a result
         //
         auto recv_serialize = [&](const std::string& src) {
-            exec_data<_Counter> ret;
-            std::stringstream   ss;
+            exec_data<Counter> ret;
+            std::stringstream  ss;
             ss << src;
             {
                 cereal::JSONInputArchive ia(ss);
@@ -351,8 +354,10 @@ serialize(std::string fname, exec_data<_Counter>& obj)
             }
             return ret;
         };
+#endif
 
 #if defined(TIMEMORY_USE_MPI)
+
         auto str_ret = send_serialize(obj);
 
         if(dmp_rank == 0)
@@ -409,25 +414,23 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         std::ofstream ofs(fname.c_str());
         if(ofs)
         {
-            // ensure json write final block during destruction
-            // before the file is closed
-            //  Option args: precision, spacing, indent size
-            cereal::JSONOutputArchive::Options opts(12, space, 2);
-            cereal::JSONOutputArchive          oa(ofs, opts);
-            oa.setNextName("timemory");
-            oa.startNode();
-            oa.setNextName("ranks");
-            oa.startNode();
-            oa.makeArray();
+            // ensure json write final block during destruction before the file is closed
+            using policy_type = policy::output_archive_t<Counter>;
+            auto oa           = policy_type::get(ofs);
+            oa->setNextName("timemory");
+            oa->startNode();
+            oa->setNextName("ranks");
+            oa->startNode();
+            oa->makeArray();
             for(uint64_t i = 0; i < results.size(); ++i)
             {
-                oa.startNode();
-                oa(cereal::make_nvp("rank", i),
-                   cereal::make_nvp("roofline", results.at(i)));
-                oa.finishNode();
+                oa->startNode();
+                (*oa)(cereal::make_nvp("rank", i),
+                      cereal::make_nvp("roofline", results.at(i)));
+                oa->finishNode();
             }
-            oa.finishNode();
-            oa.finishNode();
+            oa->finishNode();
+            oa->finishNode();
         }
         if(ofs)
             ofs << std::endl;

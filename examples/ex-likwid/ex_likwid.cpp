@@ -23,14 +23,14 @@
 // SOFTWARE.
 //
 
+#include "timemory/timemory.hpp"
 #include <chrono>
 #include <thread>
-#include <timemory/timemory.hpp>
 
 using namespace tim::component;
 
-using auto_tuple_t = tim::auto_tuple<real_clock, likwid_perfmon, likwid_nvmon, user_clock,
-                                     system_clock, cpu_util>;
+using auto_tuple_t = tim::auto_tuple_t<wall_clock, likwid_marker, likwid_nvmarker,
+                                       user_clock, system_clock, cpu_util>;
 
 intmax_t time_fibonacci(intmax_t);
 intmax_t
@@ -77,6 +77,8 @@ main(int argc, char** argv)
     };
 
     execute_test("perfmon-nvmon");
+
+    tim::timemory_finalize();
 }
 
 //======================================================================================//

@@ -13,3 +13,9 @@
 [submodule "external/gotcha"]
 	path = external/gotcha
 	url = https://github.com/jrmadsen/GOTCHA.git
+[submodule "external/llvm-ompt"]
+	path = external/llvm-ompt
+	url = https://github.com/NERSC/LLVM-openmp.git
+[submodule "external/line-profiler"]
+	path = external/line-profiler
+	url = https://github.com/jrmadsen/line_profiler.git

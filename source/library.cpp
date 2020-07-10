@@ -22,26 +22,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/compat/library.h"
+#include "timemory/library.h"
+#include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
+#include "timemory/trace.hpp"
+//
+#include "timemory/config.hpp"
 
 #include <cstdarg>
 #include <deque>
 #include <iostream>
+#include <stack>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 using namespace tim::component;
-
-#if !defined(TIMEMORY_LIBRARY_TYPE)
-#    define TIMEMORY_LIBRARY_TYPE tim::complete_list_t;
-#endif
-
-#if defined(__GNUC__)
-#    define API tim_api __attribute__((weak))
-#else
-#    define API tim_api
-#endif
 
 //======================================================================================//
 
@@ -50,19 +47,27 @@ extern "C"
     typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
     typedef void (*timemory_delete_func_t)(uint64_t);
 
-    API timemory_create_func_t timemory_create_function = nullptr;
-    API timemory_delete_func_t timemory_delete_function = nullptr;
+    timemory_create_func_t timemory_create_function = nullptr;
+    timemory_delete_func_t timemory_delete_function = nullptr;
 }
 
 //======================================================================================//
 
-using toolset_t          = TIMEMORY_LIBRARY_TYPE;
+using string_t           = std::string;
+using library_toolset_t  = TIMEMORY_LIBRARY_TYPE;
+using toolset_t          = typename library_toolset_t::component_type;
+using region_map_t       = std::unordered_map<std::string, std::stack<uint64_t>>;
 using record_map_t       = std::unordered_map<uint64_t, toolset_t>;
 using component_enum_t   = std::vector<TIMEMORY_COMPONENT>;
 using components_stack_t = std::deque<component_enum_t>;
 
+namespace
+{
+static auto library_manager_handle  = tim::manager::instance();
+static auto library_settings_handle = tim::settings::shared_instance<TIMEMORY_API>();
 static std::string spacer =
     "#-------------------------------------------------------------------------#";
+}  // namespace
 
 //--------------------------------------------------------------------------------------//
 
@@ -75,11 +80,23 @@ get_record_map()
 
 //--------------------------------------------------------------------------------------//
 
+static region_map_t&
+get_region_map()
+{
+    static thread_local region_map_t _instance;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
 static components_stack_t&
 get_components_stack()
 {
-    static thread_local components_stack_t _instance;
-    return _instance;
+    static auto                            _leader_tid = std::this_thread::get_id();
+    static components_stack_t              _leader_instance;
+    static thread_local components_stack_t _worker_instance = _leader_instance;
+    return (std::this_thread::get_id() == _leader_tid) ? _leader_instance
+                                                       : _worker_instance;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -88,14 +105,15 @@ get_components_stack()
 inline std::string&
 get_default_components()
 {
-    static thread_local std::string _instance = "real_clock,cpu_clock,cpu_util,peak_rss";
+    static std::string _instance =
+        tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "wall_clock");
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 // default components to record -- maybe should be empty?
 //
-inline const component_enum_t&
+inline component_enum_t&
 get_current_components()
 {
     auto& _stack = get_components_stack();
@@ -108,8 +126,17 @@ get_current_components()
 }
 
 //--------------------------------------------------------------------------------------//
+
+std::array<bool, 2>&
+get_library_state()
+{
+    static auto _instance = std::array<bool, 2>({ { false, false } });
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
 //
-//      TiMemory symbols
+//      timemory symbols
 //
 //--------------------------------------------------------------------------------------//
 
@@ -118,7 +145,7 @@ extern "C"
     //----------------------------------------------------------------------------------//
     //  get a unique id
     //
-    API uint64_t timemory_get_unique_id(void)
+    uint64_t timemory_get_unique_id(void)
     {
         // the maps are thread-local so no concerns for data-race here since
         // two threads updating at once and subsequently losing once of the updates
@@ -130,7 +157,7 @@ extern "C"
     //----------------------------------------------------------------------------------//
     //  create a toolset of measurements
     //
-    API void timemory_create_record(const char* name, uint64_t* id, int n, int* ctypes)
+    void timemory_create_record(const char* name, uint64_t* id, int n, int* ctypes)
     {
         if(timemory_create_function)
         {
@@ -141,7 +168,7 @@ extern "C"
 
         static thread_local auto& _record_map = get_record_map();
         *id                                   = timemory_get_unique_id();
-        _record_map.insert({ *id, toolset_t(name, true, tim::settings::flat_profile()) });
+        _record_map.insert({ *id, toolset_t(name, true) });
         tim::initialize(_record_map[*id], n, ctypes);
         _record_map[*id].start();
         if(_record_map.bucket_count() > _record_map.size())
@@ -151,7 +178,7 @@ extern "C"
     //----------------------------------------------------------------------------------//
     //  destroy a toolset of measurements
     //
-    API void timemory_delete_record(uint64_t id)
+    void timemory_delete_record(uint64_t id)
     {
         if(timemory_delete_function)
         {
@@ -167,10 +194,20 @@ extern "C"
     }
 
     //----------------------------------------------------------------------------------//
+    //
+    //
+    bool timemory_library_is_initialized(void) { return get_library_state()[0]; }
+
+    //----------------------------------------------------------------------------------//
     //  initialize the library
     //
-    API void timemory_init_library(int argc, char** argv)
+    void timemory_init_library(int argc, char** argv)
     {
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(get_library_state()[0])
+            return;
+        get_library_state()[0] = true;
+
         if(tim::settings::verbose() > 0)
         {
             printf("%s\n", spacer.c_str());
@@ -178,17 +215,18 @@ extern "C"
             printf("%s\n\n", spacer.c_str());
         }
 
-        tim::settings::auto_output() = true;   // print when destructing
-        tim::settings::cout_output() = true;   // print to stdout
-        tim::settings::text_output() = true;   // print text files
-        tim::settings::json_output() = false;  // print to json
         tim::timemory_init(argc, argv);
+        library_manager_handle->update_metadata_prefix();
+        // tim::settings::parse();
     }
 
     //----------------------------------------------------------------------------------//
     //  finalize the library
-    API void timemory_finalize_library(void)
+    void timemory_finalize_library(void)
     {
+        auto lk                = tim::trace::lock<tim::trace::library>();
+        get_library_state()[1] = true;
+
         if(tim::settings::enabled() == false && get_record_map().empty())
             return;
 
@@ -214,8 +252,20 @@ extern "C"
         // clear the map
         _record_map.clear();
 
+        // have the manager finalize
+        tim::manager::instance()->finalize();
+
         // do the finalization
         tim::timemory_finalize();
+
+        // just in case
+        tim::settings::enabled() = false;
+
+        // set the finalization state to true
+        tim::dmp::is_finalized() = true;
+
+        // reset manager
+        tim::manager::instance().reset();
 
         // PGI and Intel compilers don't respect destruction order
 #if defined(__PGI) || defined(__INTEL_COMPILER)
@@ -224,34 +274,69 @@ extern "C"
     }
 
     //----------------------------------------------------------------------------------//
+    //  pause the collection
+    //
+    void timemory_pause(void) { tim::settings::enabled() = false; }
 
-    API void timemory_set_default(const char* _component_string)
+    //----------------------------------------------------------------------------------//
+    //  resume the collection
+    //
+    void timemory_resume(void) { tim::settings::enabled() = true; }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_set_default(const char* _component_string)
     {
-        get_default_components()         = std::string(_component_string);
+        auto lk                  = tim::trace::lock<tim::trace::library>();
+        get_default_components() = std::string(_component_string);
+        tim::set_env("TIMEMORY_GLOBAL_COMPONENTS", _component_string, 0);
+        tim::set_env("TIMEMORY_COMPONENTS", _component_string, 0);
         static thread_local auto& _stack = get_components_stack();
         _stack.push_back(tim::enumerate_components(_component_string));
     }
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_push_components(const char* _component_string)
+    void timemory_add_components(const char* _component_string)
     {
+        auto  lk     = tim::trace::lock<tim::trace::library>();
+        auto& _stack = get_current_components();
+        for(auto itr : tim::enumerate_components(_component_string))
+            _stack.push_back(itr);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_remove_components(const char* _component_string)
+    {
+        auto  lk     = tim::trace::lock<tim::trace::library>();
+        auto& _stack = get_current_components();
+        for(auto itr : tim::enumerate_components(_component_string))
+            tim::consume_parameters(std::remove(_stack.begin(), _stack.end(), itr));
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_push_components(const char* _component_string)
+    {
+        auto                      lk     = tim::trace::lock<tim::trace::library>();
         static thread_local auto& _stack = get_components_stack();
         _stack.push_back(tim::enumerate_components(_component_string));
     }
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_push_components_enum(int types, ...)
+    void timemory_push_components_enum(int types, ...)
     {
+        auto                      lk     = tim::trace::lock<tim::trace::library>();
         static thread_local auto& _stack = get_components_stack();
 
-        component_enum_t comp({ static_cast<TIMEMORY_COMPONENT>(types) });
+        component_enum_t comp({ types });
         va_list          args;
         va_start(args, types);
         for(int i = 0; i < TIMEMORY_COMPONENTS_END; ++i)
         {
-            auto enum_arg = static_cast<TIMEMORY_COMPONENT>(va_arg(args, int));
+            auto enum_arg = va_arg(args, int);
             if(enum_arg >= TIMEMORY_COMPONENTS_END)
                 break;
             comp.push_back(enum_arg);
@@ -263,8 +348,9 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_pop_components(void)
+    void timemory_pop_components(void)
     {
+        auto                      lk     = tim::trace::lock<tim::trace::library>();
         static thread_local auto& _stack = get_components_stack();
         if(_stack.size() > 1)
             _stack.pop_back();
@@ -272,9 +358,10 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_begin_record(const char* name, uint64_t* id)
+    void timemory_begin_record(const char* name, uint64_t* id)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
         {
             *id = std::numeric_limits<uint64_t>::max();
             return;
@@ -291,10 +378,10 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_begin_record_types(const char* name, uint64_t* id,
-                                         const char* ctypes)
+    void timemory_begin_record_types(const char* name, uint64_t* id, const char* ctypes)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
         {
             *id = std::numeric_limits<uint64_t>::max();
             return;
@@ -312,9 +399,10 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_begin_record_enum(const char* name, uint64_t* id, ...)
+    void timemory_begin_record_enum(const char* name, uint64_t* id, ...)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
         {
             *id = std::numeric_limits<uint64_t>::max();
             return;
@@ -325,7 +413,7 @@ extern "C"
         va_start(args, id);
         for(int i = 0; i < TIMEMORY_COMPONENTS_END; ++i)
         {
-            auto enum_arg = static_cast<TIMEMORY_COMPONENT>(va_arg(args, int));
+            auto enum_arg = va_arg(args, int);
             if(enum_arg >= TIMEMORY_COMPONENTS_END)
                 break;
             comp.push_back(enum_arg);
@@ -343,9 +431,10 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API uint64_t timemory_get_begin_record(const char* name)
+    uint64_t timemory_get_begin_record(const char* name)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
 
         uint64_t id   = 0;
@@ -363,9 +452,10 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes)
+    uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
 
         uint64_t id   = 0;
@@ -383,9 +473,10 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API uint64_t timemory_get_begin_record_enum(const char* name, ...)
+    uint64_t timemory_get_begin_record_enum(const char* name, ...)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
 
         uint64_t id = 0;
@@ -395,7 +486,7 @@ extern "C"
         va_start(args, name);
         for(int i = 0; i < TIMEMORY_COMPONENTS_END; ++i)
         {
-            auto enum_arg = static_cast<TIMEMORY_COMPONENT>(va_arg(args, int));
+            auto enum_arg = va_arg(args, int);
             if(enum_arg >= TIMEMORY_COMPONENTS_END)
                 break;
             comp.push_back(enum_arg);
@@ -415,9 +506,10 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_end_record(uint64_t id)
+    void timemory_end_record(uint64_t id)
     {
-        if(id == std::numeric_limits<uint64_t>::max())
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || id == std::numeric_limits<uint64_t>::max())
             return;
 
         timemory_delete_record(id);
@@ -428,59 +520,98 @@ extern "C"
 #endif
     }
 
+    //----------------------------------------------------------------------------------//
+
+    void timemory_push_region(const char* name)
+    {
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk)
+            return;
+        auto& region_map = get_region_map();
+        lk.release();
+        auto idx = timemory_get_begin_record(name);
+        lk       = tim::trace::lock<tim::trace::library>();
+        region_map[name].push(idx);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_pop_region(const char* name)
+    {
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk)
+            return;
+        auto& region_map = get_region_map();
+        auto  itr        = region_map.find(name);
+        if(itr == region_map.end() || (itr != region_map.end() && itr->second.empty()))
+            fprintf(stderr, "Warning! region '%s' does not exist!\n", name);
+        else
+        {
+            uint64_t idx = itr->second.top();
+            lk.release();
+            timemory_end_record(idx);
+            lk = tim::trace::lock<tim::trace::library>();
+            itr->second.pop();
+        }
+    }
+
     //==================================================================================//
     //
     //      Symbols for Fortran
     //
     //==================================================================================//
 
-    void _timemory_create_record(const char* name, uint64_t* id, int n, int* ct)
+    void timemory_create_record_(const char* name, uint64_t* id, int n, int* ct)
     {
         timemory_create_record(name, id, n, ct);
     }
 
-    void _timemory_delete_record(uint64_t id) { timemory_delete_record(id); }
+    void timemory_delete_record_(uint64_t id) { timemory_delete_record(id); }
 
-    void _timemory_init_library(int argc, char** argv)
+    void timemory_init_library_(int argc, char** argv)
     {
         timemory_init_library(argc, argv);
     }
 
-    void _timemory_finalize_library(void) { timemory_finalize_library(); }
+    void timemory_finalize_library_(void) { timemory_finalize_library(); }
 
-    void _timemory_set_default(const char* components)
+    void timemory_set_default_(const char* components)
     {
         timemory_set_default(components);
     }
 
-    void _timemory_push_components(const char* components)
+    void timemory_push_components_(const char* components)
     {
         timemory_push_components(components);
     }
 
-    void _timemory_pop_components(void) { timemory_pop_components(); }
+    void timemory_pop_components_(void) { timemory_pop_components(); }
 
-    void _timemory_begin_record(const char* name, uint64_t* id)
+    void timemory_begin_record_(const char* name, uint64_t* id)
     {
         timemory_begin_record(name, id);
     }
 
-    void _timemory_begin_record_types(const char* name, uint64_t* id, const char* ctypes)
+    void timemory_begin_record_types_(const char* name, uint64_t* id, const char* ctypes)
     {
         timemory_begin_record_types(name, id, ctypes);
     }
 
-    uint64_t _timemory_get_begin_record(const char* name)
+    uint64_t timemory_get_begin_record_(const char* name)
     {
         return timemory_get_begin_record(name);
     }
 
-    uint64_t _timemory_get_begin_record_types(const char* name, const char* ctypes)
+    uint64_t timemory_get_begin_record_types_(const char* name, const char* ctypes)
     {
         return timemory_get_begin_record_types(name, ctypes);
     }
 
-    void _timemory_end_record(uint64_t id) { return timemory_end_record(id); }
+    void timemory_end_record_(uint64_t id) { return timemory_end_record(id); }
+
+    void timemory_push_region_(const char* name) { return timemory_push_region(name); }
+
+    void timemory_pop_region_(const char* name) { return timemory_pop_region(name); }
 
     //======================================================================================//
 

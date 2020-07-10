@@ -43,7 +43,7 @@ target_link_libraries(gpu-fp-single INTERFACE gpu-roofline-compile-options)
 target_link_libraries(gpu-fp-double INTERFACE gpu-roofline-compile-options)
 
 # using half-precision
-if(NOT DEFINED TIMEMORY_DISABLE_CUDA_HALF2 OR NOT TIMEMORY_DISABLE_CUDA_HALF2)
+if(NOT DEFINED TIMEMORY_DISABLE_CUDA_HALF OR NOT TIMEMORY_DISABLE_CUDA_HALF)
     add_executable(ex-gpu-roofline-half            ${EXE_NAME}.cpp)
     target_link_libraries(ex-gpu-roofline-half     timemory-gpu-roofline-example gpu-fp-half)
     set_target_properties(ex-gpu-roofline-half     PROPERTIES OUTPUT_NAME ${EXE_NAME}.hp)
@@ -71,12 +71,14 @@ install(
         ex-gpu-roofline-single
         ex-gpu-roofline-double
     DESTINATION
-        bin)
+        bin
+    COMPONENT examples
+    OPTIONAL)
 
 if(TARGET ex-gpu-roofline)
-    install(TARGETS ex-gpu-roofline DESTINATION bin)
+    install(TARGETS ex-gpu-roofline DESTINATION bin COMPONENT examples OPTIONAL)
 endif()
 
 if(TARGET ex-gpu-roofline-half)
-    install(TARGETS ex-gpu-roofline-half DESTINATION bin)
+    install(TARGETS ex-gpu-roofline-half DESTINATION bin COMPONENT examples OPTIONAL)
 endif()

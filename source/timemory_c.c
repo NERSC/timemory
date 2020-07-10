@@ -22,63 +22,65 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-#if !defined(TIMEMORY_EXTERN_TEMPLATES)
-#    define TIMEMORY_EXTERN_TEMPLATES
-#endif
+#include "timemory/enum.h"
+#include "timemory/library.h"
+#include "timemory/timemory.h"
 
 #include <assert.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
-
-#include "timemory/enum.h"
-#include "timemory/timemory.h"
-
-#if !defined(TIMEMORY_EXTERN_C)
-#    if defined(__cplusplus)
-#        define TIMEMORY_EXTERN_C "C"
-#    else
-#        define TIMEMORY_EXTERN_C
-#    endif
-#endif
+#include <string.h>
 
 #if defined(__cplusplus)
 extern "C"
 {
 #endif
 
+#if !defined(_WINDOWS)
+    char* strdup(const char* s)
+    {
+        size_t slen   = strlen(s);
+        char*  result = malloc(slen + 1);
+        if(result == NULL)
+        {
+            return NULL;
+        }
+
+        memcpy(result, s, slen + 1);
+        return result;
+    }
+#endif
+
     //==================================================================================//
-    // declaration of C++ defined functions (timemory/auto_timer.hpp)
 
-    extern void        cxx_timemory_init(int, char**, timemory_settings);
-    extern int         cxx_timemory_enabled(void);
-    extern void*       cxx_timemory_create_auto_timer(const char*);
-    extern void*       cxx_timemory_create_auto_tuple(const char*, int, const int*);
-    extern void*       cxx_timemory_delete_auto_timer(void*);
-    extern void*       cxx_timemory_delete_auto_tuple(void*);
-    extern const char* cxx_timemory_label(int, int, const char*, const char*,
-                                          const char*);
-
-    //==================================================================================//
-
-    tim_api void c_timemory_init(int argc, char** argv, timemory_settings _settings)
+    void c_timemory_init(int argc, char** argv, timemory_settings _settings)
     {
         cxx_timemory_init(argc, argv, _settings);
+        timemory_init_library(argc, argv);
     }
 
     //==================================================================================//
 
-    tim_api int c_timemory_enabled(void) { return cxx_timemory_enabled(); }
+    void c_timemory_finalize(void) { timemory_finalize_library(); }
 
     //==================================================================================//
 
-    tim_api void* c_timemory_create_auto_timer(const char* tag)
+    int c_timemory_enabled(void) { return cxx_timemory_enabled(); }
+
+    //==================================================================================//
+
+    void* c_timemory_create_auto_timer(const char* tag)
     {
-        return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag) : NULL;
+        void* _ret = NULL;
+        if(cxx_timemory_enabled())
+            _ret = cxx_timemory_create_auto_timer(tag);
+        return _ret;
     }
 
     //==================================================================================//
 
-    tim_api void* c_timemory_create_auto_tuple(const char* tag, ...)
+    void* c_timemory_create_auto_tuple(const char* tag, ...)
     {
         if(!cxx_timemory_enabled())
             return NULL;
@@ -110,7 +112,7 @@ extern "C"
 
     //==================================================================================//
 
-    tim_api void c_timemory_delete_auto_timer(void* ctimer)
+    void c_timemory_delete_auto_timer(void* ctimer)
     {
         ctimer = cxx_timemory_delete_auto_timer(ctimer);
         assert(ctimer == NULL);
@@ -118,7 +120,7 @@ extern "C"
 
     //==================================================================================//
 
-    tim_api void c_timemory_delete_auto_tuple(void* ctuple)
+    void c_timemory_delete_auto_tuple(void* ctuple)
     {
         ctuple = cxx_timemory_delete_auto_tuple(ctuple);
         assert(ctuple == NULL);
@@ -126,22 +128,22 @@ extern "C"
 
     //==================================================================================//
 
-    tim_api const char* c_timemory_blank_label(const char* _extra)
+    const char* c_timemory_blank_label(const char* _extra)
     {
         return cxx_timemory_label(0, 0, "", "", _extra);
     }
 
     //==================================================================================//
 
-    tim_api const char* c_timemory_basic_label(const char* _func, const char* _extra)
+    const char* c_timemory_basic_label(const char* _func, const char* _extra)
     {
         return cxx_timemory_label(1, 0, _func, "", _extra);
     }
 
     //==================================================================================//
 
-    tim_api const char* c_timemory_label(const char* _func, const char* _file, int _line,
-                                         const char* _extra)
+    const char* c_timemory_label(const char* _func, const char* _file, int _line,
+                                 const char* _extra)
     {
         return cxx_timemory_label(2, _line, _func, _file, _extra);
     }

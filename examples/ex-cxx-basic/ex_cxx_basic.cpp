@@ -23,18 +23,18 @@
 // SOFTWARE.
 //
 
+#include "timemory/timemory.hpp"
 #include <chrono>
 #include <thread>
-#include <timemory/timemory.hpp>
 
 using namespace tim::component;
 
-using real_tuple_t = tim::auto_tuple<real_clock, papi_array_t, caliper, tau_marker>;
-using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss,
-                                     papi_array_t, caliper, tau_marker>;
+using real_tuple_t = tim::auto_tuple_t<wall_clock, papi_vector, caliper, tau_marker>;
+using auto_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, peak_rss,
+                                       papi_vector, caliper, tau_marker>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using auto_list_t =
-    tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss, caliper, tau_marker>;
+    tim::auto_list_t<wall_clock, cpu_clock, cpu_util, peak_rss, caliper, tau_marker>;
 using auto_timer_t = tim::auto_timer;
 
 void
@@ -49,16 +49,16 @@ fibonacci(intmax_t n);
 int
 main(int argc, char** argv)
 {
-#if defined(TIMEMORY_USE_PAPI)
-    papi_array_t::get_initializer() = []() {
-        return std::vector<int>({ PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS });
-    };
-#endif
+    if(tim::settings::papi_events().empty())
+        tim::settings::papi_events() = "PAPI_TOT_CYC,PAPI_TOT_INS,PAPI_LST_INS";
+
+    const std::string default_env = "wall_clock,cpu_clock,cpu_util,caliper";
+    auto              env         = tim::get_env("TIMEMORY_COMPONENTS", default_env);
+    auto              env_enum    = tim::enumerate_components(tim::delimit(env));
 
     // runtime customization of auto_list_t initialization
-    auto_list_t::get_initializer() = [](auto_list_t& al) {
-        const std::string default_env = "real_clock,cpu_clock,cpu_util,caliper";
-        tim::env::initialize(al, "TIMEMORY_COMPONENTS", default_env);
+    auto_list_t::get_initializer() = [env_enum](auto& al) {
+        tim::initialize(al, env_enum);
         al.report_at_exit(true);
     };
 
@@ -100,6 +100,8 @@ main(int argc, char** argv)
 
     some_func();
     another_func();
+
+    tim::timemory_finalize();
 }
 
 //======================================================================================//
@@ -107,7 +109,7 @@ main(int argc, char** argv)
 intmax_t
 fibonacci(intmax_t n)
 {
-    TIMEMORY_BASIC_MARKER(real_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
 }
 

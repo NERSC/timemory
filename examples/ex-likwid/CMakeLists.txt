@@ -9,11 +9,11 @@ project(timemory-LIKWID-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-likwid-example)
 set(COMPONENTS compile-options analysis-tools likwid)
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS cxx)
 
 add_executable(ex_likwid ex_likwid.cpp)
 target_link_libraries(ex_likwid timemory-likwid-example)
-install(TARGETS ex_likwid DESTINATION bin)
+install(TARGETS ex_likwid DESTINATION bin COMPONENT examples OPTIONAL)
 
 if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")
@@ -28,4 +28,6 @@ install(
     PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE
         GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ)
+        WORLD_EXECUTE WORLD_READ
+    COMPONENT examples
+    OPTIONAL)

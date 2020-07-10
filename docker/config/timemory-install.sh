@@ -12,13 +12,12 @@ export PATH=/opt/conda/bin:/usr/local/cuda/bin:${PATH}
 export CC=$(which cc)
 export CXX=$(which c++)
 export CUDACXX=$(which nvcc)
-export CPATH=${CPATH}:/usr/include/mpich
 export CUDA_HOME=$(realpath /usr/local/cuda)
 export LIBRARY_PATH=/usr/local/lib:${LIBRARY_PATH}
 export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
 ROOT_DIR=${PWD}
-: ${TIMEMORY_BRANCH:="master"}
+: ${TIMEMORY_BRANCH:="develop"}
 
 #--------------------------------------------------------------------------------------------#
 #                           LIKWID
@@ -56,41 +55,41 @@ unset CPPFLAGS
 #                           UPC++
 #--------------------------------------------------------------------------------------------#
 
-run-verbose git clone https://jrmadsen@bitbucket.org/berkeleylab/upcxx.git
-run-verbose cd upcxx
-export CFLAGS="-fPIC"
-export CPPFLAGS="-fPIC"
-run-verbose ./install /usr/local
+# run-verbose git clone https://jrmadsen@bitbucket.org/berkeleylab/upcxx.git
+# run-verbose cd upcxx
+# export CFLAGS="-fPIC"
+# export CPPFLAGS="-fPIC"
+# run-verbose ./install /usr/local
 
 #--------------------------------------------------------------------------------------------#
 #                           timemory
 #--------------------------------------------------------------------------------------------#
 
-run-verbose cd ${ROOT_DIR}
-run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/NERSC/timemory.git timemory-source
-run-verbose cd timemory-source
+# run-verbose cd ${ROOT_DIR}
+# run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/NERSC/timemory.git timemory-source
+# run-verbose cd timemory-source
 
-SOURCE_DIR=$(pwd)
-run-verbose mkdir timemory-build
-run-verbose cd timemory-build
+# SOURCE_DIR=$(pwd)
+# run-verbose mkdir timemory-build
+# run-verbose cd timemory-build
 
-run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_C=ON -DTIMEMORY_BUILD_PYTHON=ON ${SOURCE_DIR} -G Ninja
-run-verbose ninja -j6
-run-verbose ninja install
+# run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_C=ON -DTIMEMORY_BUILD_PYTHON=ON ${SOURCE_DIR} -G Ninja
+# run-verbose ninja -j6
+# run-verbose ninja install
 
 #--------------------------------------------------------------------------------------------#
 #                           tomopy
 #--------------------------------------------------------------------------------------------#
 
-run-verbose cd ${ROOT_DIR}
-run-verbose git clone https://github.com/jrmadsen/tomopy.git tomopy
-run-verbose cd tomopy
-run-verbose git checkout accelerated-redesign
-run-verbose conda env create -n tomopy -f envs/linux-36.yml
-source activate
-run-verbose conda activate tomopy
-run-verbose python -m pip install -vvv .
-run-verbose conda clean -a -y
+# run-verbose cd ${ROOT_DIR}
+# run-verbose git clone https://github.com/jrmadsen/tomopy.git tomopy
+# run-verbose cd tomopy
+# run-verbose git checkout accelerated-redesign
+# run-verbose conda env create -n tomopy -f envs/linux-36.yml
+# source activate
+# run-verbose conda activate tomopy
+# run-verbose python -m pip install -vvv .
+# run-verbose conda clean -a -y
 
 #--------------------------------------------------------------------------------------------#
 #                           Cleanup

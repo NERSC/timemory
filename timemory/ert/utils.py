@@ -28,16 +28,15 @@ import operator
 import subprocess
 import sys
 import os.path
+from functools import reduce
+
 
 # Make a list into a space seperated string
-
-
 def list_2_string(text_list):
     return reduce(operator.add, [t+" " for t in text_list])
 
+
 # Execute a command without generating a new shell
-
-
 def execute_noshell(command, echo=True):
     if echo:
         print("   ", list_2_string(command))
@@ -48,9 +47,8 @@ def execute_noshell(command, echo=True):
         return 1
     return 0
 
+
 # Execute a command within a new shell
-
-
 def execute_shell(command, echo=True):
     if echo:
         if isinstance(command, list):
@@ -64,10 +62,9 @@ def execute_shell(command, echo=True):
         return 1
     return 0
 
+
 # Execute a command without generating a new shell
 # and return any output from "stdout"
-
-
 def stdout_noshell(command, echo=True):
     if echo:
         print("   ", list_2_string(command))
@@ -81,10 +78,9 @@ def stdout_noshell(command, echo=True):
         return (1, "Failure")
     return (0, output)
 
+
 # Execute a command within a new shell
 # and return any output from "stdout"
-
-
 def stdout_shell(command, echo=True):
     if echo:
         if isinstance(command, list):
@@ -101,6 +97,7 @@ def stdout_shell(command, echo=True):
         return (1, "Failure")
     return (0, output)
 
+
 # Return a list of integers after parsing a string of integers, commas, and
 # dashes:  # specifies an integer and #-# specifies an integer range.  An
 # number of these integers and integer ranges can be specified as part of a
@@ -110,8 +107,6 @@ def stdout_shell(command, echo=True):
 #     1,2,4,8    -> [1,2,4,8]
 #     1-2,4,8-16 -> [1,2,4,8,9,10,11,12,13,14,15,16]
 #
-
-
 def parse_int_list(input):
     retlist = []
 
@@ -121,14 +116,13 @@ def parse_int_list(input):
         if len(minmax) == 1:
             retlist.append(int(minmax[0]))
         else:
-            for i in xrange(int(minmax[0]), int(minmax[1])+1):
+            for i in range(int(minmax[0]), int(minmax[1])+1):
                 retlist.append(i)
 
     return sorted(list(set(retlist)))
 
+
 # Make a new directory if it doesn't already exist
-
-
 def make_dir_if_needed(dir, name, echo=True):
     if not os.path.exists(dir):
         command = ["mkdir", dir]

@@ -16,6 +16,28 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_DOCS)
+    get_property(TIMEMORY_DOXYGEN_DEFINE GLOBAL PROPERTY
+        ${PROJECT_NAME}_CMAKE_DEFINES)
+    get_property(TIMEMORY_CMAKE_OPTIONS GLOBAL PROPERTY
+        ${PROJECT_NAME}_CMAKE_OPTIONS_DOC)
+    get_property(TIMEMORY_CMAKE_INTERFACES GLOBAL PROPERTY
+        ${PROJECT_NAME}_CMAKE_INTERFACE_DOC)
+
+    list(SORT TIMEMORY_CMAKE_OPTIONS)
+    list(SORT TIMEMORY_CMAKE_INTERFACES)
+    string(REPLACE ";" "\n| `" TIMEMORY_CMAKE_OPTIONS "${TIMEMORY_CMAKE_OPTIONS}")
+    string(REPLACE ";" "\n| `" TIMEMORY_CMAKE_INTERFACES "${TIMEMORY_CMAKE_INTERFACES}")
+    set(TIMEMORY_CMAKE_OPTIONS "| `${TIMEMORY_CMAKE_OPTIONS}")
+    set(TIMEMORY_CMAKE_INTERFACES "| `${TIMEMORY_CMAKE_INTERFACES}")
+
+    configure_file(${PROJECT_SOURCE_DIR}/docs/installation.md.in
+        ${PROJECT_SOURCE_DIR}/docs/installation.md @ONLY)
+    configure_file(${PROJECT_SOURCE_DIR}/docs/getting_started/integrating.md.in
+        ${PROJECT_SOURCE_DIR}/docs/getting_started/integrating.md @ONLY)
+
+    list(SORT TIMEMORY_DOXYGEN_DEFINE)
+    string(REPLACE ";" " " TIMEMORY_DOXYGEN_DEFINE "${TIMEMORY_DOXYGEN_DEFINE}")
+
     # if BUILD_DOXYGEN_DOCS = ON, we want to build docs quietly
     # else, don't build quietly
     CMAKE_DEPENDENT_OPTION(TIMEMORY_BUILD_DOCS_QUIET
@@ -59,7 +81,7 @@ if(TIMEMORY_BUILD_DOCS)
             set(_default "ON")
         endif()
         # add option
-        option(ENABLE_DOXYGEN_${_doc_format}_DOCS
+        add_option(ENABLE_DOXYGEN_${_doc_format}_DOCS
             "Build documentation with ${_doc_format} format" ${_default})
         mark_as_advanced(ENABLE_DOXYGEN_${_doc_format}_DOCS)
     endforeach()
@@ -77,7 +99,7 @@ if(TIMEMORY_BUILD_DOCS)
 
     if(DOXYGEN_DOT_FOUND)
         set(CLASS_GRAPH_DEFAULT     OFF)
-        set(CALL_GRAPH_DEFAULT      ON)
+        set(CALL_GRAPH_DEFAULT      OFF)
         set(CALLER_GRAPH_DEFAULT    OFF)
         set(DOXYGEN_DOT_GRAPH_TYPES CLASS CALL CALLER)
         # options to turn generation of class, call, and caller graphs
@@ -85,7 +107,8 @@ if(TIMEMORY_BUILD_DOCS)
             # create CMake doc string
             string(TOLOWER _graph_type_desc ${_graph_type})
             # add option
-            option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}" ${${_graph_type}_GRAPH_DEFAULT})
+            add_option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}"
+                ${${_graph_type}_GRAPH_DEFAULT})
             mark_as_advanced(ENABLE_DOXYGEN_${_graph_type}_GRAPH)
             # set GENERATE_DOXYGEN_${_graph_type}_GRAPH to YES/NO
             # GENERATE_DOXYGEN_${_graph_type}_GRAPH is used in configure_file

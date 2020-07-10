@@ -30,9 +30,14 @@
 
 #pragma once
 
+#include "timemory/components/types.hpp"
+#include "timemory/data/statistics.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/runtime/types.hpp"
+#include "timemory/utility/serializer.hpp"
 
 namespace tim
 {
@@ -40,11 +45,185 @@ namespace policy
 {
 //======================================================================================//
 
-template <typename _Tp>
-struct instance_tracker
+template <typename CompT, typename Tp>
+struct record_statistics
 {
-    using type     = _Tp;
-    using int_type = int64_t;
+    using type            = Tp;
+    using this_type       = record_statistics<CompT, type>;
+    using policy_type     = this_type;
+    using statistics_type = statistics<type>;
+
+    static void apply(statistics<type>&, const CompT&);
+    static void apply(type&, const CompT&) {}
+};
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename CompT>
+struct record_statistics<CompT, void>
+{
+    using type            = void;
+    using this_type       = record_statistics<CompT, type>;
+    using policy_type     = this_type;
+    using statistics_type = statistics<type>;
+
+    template <typename... ArgsT>
+    static void apply(ArgsT&&...)
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename CompT>
+struct record_statistics<CompT, std::tuple<>>
+{
+    using type            = std::tuple<>;
+    using this_type       = record_statistics<CompT, type>;
+    using policy_type     = this_type;
+    using statistics_type = statistics<type>;
+
+    template <typename... ArgsT>
+    static void apply(ArgsT&&...)
+    {}
+};
+
+//======================================================================================//
+
+template <typename Archive, typename Api>
+struct input_archive
+{
+    using type    = Archive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct input_archive<cereal::JSONInputArchive, Api>
+{
+    using type    = cereal::JSONInputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct input_archive<cereal::PrettyJSONOutputArchive, Api>
+{
+    using type    = cereal::JSONInputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct input_archive<cereal::MinimalJSONOutputArchive, Api>
+{
+    using type    = cereal::JSONInputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//======================================================================================//
+
+template <typename Archive, typename Api>
+struct output_archive
+{
+    using type    = Archive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::ostream& os) { return std::make_shared<type>(os); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct output_archive<cereal::PrettyJSONOutputArchive, Api>
+{
+    using type        = cereal::PrettyJSONOutputArchive;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = typename option_type::IndentChar;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+
+    static unsigned int& indent_length()
+    {
+        static unsigned int value = 2;
+        return value;
+    }
+
+    static indent_type& indent_char()
+    {
+        static indent_type value = indent_type::space;
+        return value;
+    }
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        option_type opts(precision(), indent_char(), indent_length());
+        return std::make_shared<type>(os, opts);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+///
+/// partial specialization for MinimalJSONOutputArchive
+///
+template <typename Api>
+struct output_archive<cereal::MinimalJSONOutputArchive, Api>
+{
+    using type        = cereal::MinimalJSONOutputArchive;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = typename option_type::IndentChar;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+    static unsigned int& indent_length()
+    {
+        static unsigned int value = 0;
+        return value;
+    }
+    static indent_type& indent_char()
+    {
+        static indent_type value = indent_type::space;
+        return value;
+    }
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        //  The last two options are meaningless for the minimal writer
+        option_type opts(precision(), indent_char(), indent_length());
+        return std::make_shared<type>(os, opts);
+    }
+};
+
+//======================================================================================//
+
+template <typename Tp>
+struct instance_tracker<Tp, true>
+{
+public:
+    using type                           = Tp;
+    using int_type                       = int64_t;
+    static constexpr bool thread_support = true;
 
     instance_tracker()                        = default;
     ~instance_tracker()                       = default;
@@ -95,10 +274,67 @@ protected:
         m_thr = --get_thread_started();
     }
 
+    auto get_global_count() { return m_tot; }
+    auto get_thread_count() { return m_tot; }
+
+    auto global_tracker_start() { return (start(), m_tot); }
+    auto global_tracker_stop() { return (stop(), m_tot); }
+    auto thread_tracker_start() { return (start(), m_thr); }
+    auto thread_tracker_stop() { return (stop(), m_thr); }
+
 protected:
-    int_type m_tot = 0;
-    int_type m_thr = 0;
+    int_type m_tot = get_started_count();
+    int_type m_thr = get_thread_started_count();
 };
+
+//======================================================================================//
+
+template <typename Tp>
+struct instance_tracker<Tp, false>
+{
+public:
+    using type                           = Tp;
+    using int_type                       = int64_t;
+    static constexpr bool thread_support = false;
+
+    instance_tracker()                        = default;
+    ~instance_tracker()                       = default;
+    instance_tracker(const instance_tracker&) = default;
+    instance_tracker(instance_tracker&&)      = default;
+    instance_tracker& operator=(const instance_tracker&) = default;
+    instance_tracker& operator=(instance_tracker&&) = default;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    static int_type get_started_count() { return get_started().load(); }
+
+protected:
+    //----------------------------------------------------------------------------------//
+    //
+    static std::atomic<int_type>& get_started()
+    {
+        static std::atomic<int_type> _instance(0);
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    void start() { m_tot = get_started()++; }
+
+    //----------------------------------------------------------------------------------//
+    //
+    void stop() { m_tot = --get_started(); }
+
+    auto get_global_count() { return m_tot; }
+    auto global_tracker_start() { return (start(), m_tot); }
+    auto global_tracker_stop() { return (stop(), m_tot); }
+
+protected:
+    int_type m_tot = get_started_count();
+};
+
+//======================================================================================//
 
 }  // namespace policy
 }  // namespace tim

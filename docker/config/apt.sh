@@ -22,9 +22,7 @@ run-verbose apt-get install -y software-properties-common wget curl
 # test
 run-verbose add-apt-repository -u -y ppa:ubuntu-toolchain-r/test
 # cmake
-wget -O kitware-archive-latest.asc https://apt.kitware.com/keys/kitware-archive-latest.asc
-apt-key add kitware-archive-latest.asc
-rm -f kitware-archive-latest.asc
+wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | apt-key add -
 apt-add-repository "deb https://apt.kitware.com/ubuntu/ ${DISTRIB_CODENAME} main"
 # llvm
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
@@ -35,6 +33,11 @@ deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENA
 # 9
 deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
 deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
+# 10
+deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-10 main
+deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-10 main
+# dev
+deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME} main
 EOF
 # upgrade
 run-verbose apt-get update
@@ -55,8 +58,8 @@ run-verbose apt-get install -y build-essential cmake git-core ssed bash-completi
 #-----------------------------------------------------------------------------#
 
 # install compilers
-run-verbose apt-get -y install gcc-${GCC_VERSION} g++-${GCC_VERSION} gcc-${GCC_VERSION}-multilib
-run-verbose apt-get -y install clang-${CLANG_VERSION} libc++-dev libc++abi-dev
+run-verbose apt-get -y install {gcc,g++,gfortran}-{7,8,${GCC_VERSION}} gcc-{7,8,${GCC_VERSION}}-multilib
+run-verbose apt-get -y install clang-{8,9,10,11,${CLANG_VERSION}} clang-{tidy,tools,format}-{8,9,10,11,${CLANG_VERSION}} libc++-dev libc++abi-dev
 
 DISPLAY_PACKAGES="xserver-xorg freeglut3-dev libx11-dev libx11-xcb-dev libxpm-dev libxft-dev libxmu-dev libxv-dev libxrandr-dev \
     libglew-dev libftgl-dev libxkbcommon-x11-dev libxrender-dev libxxf86vm-dev libxinerama-dev qt5-default \
@@ -81,9 +84,8 @@ fi
 
 run-verbose apt-get install -y \
     libxerces-c-dev libexpat1-dev libhdf5-dev libhdf5-mpich-dev libmpich-dev mpich \
-    python python-dev ninja-build clang-tidy clang-format \
-    manpages manpages-dev cppman manpages-posix manpages-posix-dev man-db \
-    libgoogle-perftools-dev google-perftools libtbb-dev valgrind papi-tools libpapi-dev
+    python python-dev ninja-build clang-tidy clang-format environment-modules tcl \
+    manpages manpages-dev cppman manpages-posix manpages-posix-dev man-db
 
 if [ "${ENABLE_DISPLAY}" -gt 0 ]; then
     run-verbose apt-get install -y ${DISPLAY_PACKAGES}
@@ -106,13 +108,28 @@ done
 #   UPDATE ALTERNATIVES -- CLANG
 #-----------------------------------------------------------------------------#
 priority=10
-for i in 5.0 6.0 7.0 7 8 9 10 ${CLANG_VERSION}
+for i in 5.0 6.0 7.0 7 8 9 10 11 ${CLANG_VERSION}
 do
     if [ -n "$(which clang-${i})" ]; then
         run-verbose update-alternatives --install /usr/bin/clang clang $(which clang-${i}) ${priority} \
             --slave /usr/bin/clang++ clang++ $(which clang++-${i})
         priority=$(( ${priority}+10 ))
     fi
+done
+
+#-----------------------------------------------------------------------------#
+#   UPDATE ALTERNATIVES -- CLANG TOOLS
+#-----------------------------------------------------------------------------#
+priority=10
+for i in 7.0 7 8 9 10 11 ${CLANG_VERSION} 6.0
+do
+    for j in tools tidy format
+    do
+        if [ -n "$(which clang-${j}-${i})" ]; then
+            run-verbose update-alternatives --install /usr/bin/clang-${j} clang-${j} $(which clang-${j}-${i}) ${priority}
+        fi
+    done
+    priority=$(( ${priority}+10 ))
 done
 
 #-----------------------------------------------------------------------------#

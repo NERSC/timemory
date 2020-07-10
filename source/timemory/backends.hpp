@@ -30,14 +30,19 @@
 
 #pragma once
 
-#include "timemory/backends/clocks.hpp"
+#include "timemory/backends/types.hpp"
+//
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
-#include "timemory/backends/rusage.hpp"
+#include "timemory/backends/process.hpp"
 #include "timemory/backends/signals.hpp"
+#include "timemory/backends/threading.hpp"
+//
+#include "timemory/components/rusage/backends.hpp"
+#include "timemory/components/timing/backends.hpp"
 
 #if defined(TIMEMORY_USE_CALIPER)
-#    include "timemory/backends/caliper.hpp"
+#    include "timemory/components/caliper/backends.hpp"
 #endif
 
 #if defined(TIMEMORY_USE_GOTCHA)
@@ -56,8 +61,8 @@
 #    include "timemory/backends/papi.hpp"
 #endif
 
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER) ||          \
-    defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC) ||     \
+    defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
 #    include "timemory/backends/gperf.hpp"
 #endif
 
@@ -69,6 +74,7 @@
 
 #if defined(TIMEMORY_USE_CUDA)
 #    include "timemory/backends/cuda.hpp"
+#    include "timemory/components/cuda/backends.hpp"
 #endif
 
 #if defined(TIMEMORY_USE_CUPTI)

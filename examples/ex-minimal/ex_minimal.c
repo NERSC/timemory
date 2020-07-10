@@ -22,25 +22,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/timemory.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <timemory/timemory.h>
 
-long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
-
-int main(int argc, char** argv)
+long
+fib(long n)
 {
+    return (n < 2) ? n : (fib(n - 1) + fib(n - 2));
+}
+
+int
+main(int argc, char** argv)
+{
+    timemory_init_library(argc, argv);
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
     void* t0  = TIMEMORY_AUTO_TIMER("total");
     long  ans = fib(nfib);
 
-    void* t1 = TIMEMORY_BLANK_AUTO_TIMER("nested");
+    void* t1 = TIMEMORY_BASIC_AUTO_TIMER("nested");
     ans += fib(nfib + 1);
 
     FREE_TIMEMORY_AUTO_TIMER(t1);
     FREE_TIMEMORY_AUTO_TIMER(t0);
 
     printf("Answer = %li\n", ans);
+    timemory_finalize_library();
     return EXIT_SUCCESS;
 }

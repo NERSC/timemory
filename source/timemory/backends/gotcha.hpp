@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -119,10 +119,10 @@ get_error(const error_t& err)
 {
     switch(err)
     {
-        case GOTCHA_SUCCESS: return "success"; break;
-        case GOTCHA_FUNCTION_NOT_FOUND: return "function not found"; break;
-        case GOTCHA_INTERNAL: return "internal error"; break;
-        case GOTCHA_INVALID_TOOL: return "invalid tool"; break;
+        case GOTCHA_SUCCESS: return "success";
+        case GOTCHA_FUNCTION_NOT_FOUND: return "function not found";
+        case GOTCHA_INTERNAL: return "internal error";
+        case GOTCHA_INVALID_TOOL: return "invalid tool";
     }
     return "unknown";
 }
@@ -136,7 +136,7 @@ set_priority(const std::string& _tool, int _priority = 0)
         printf("[gotcha::%s]> Setting priority for tool: %s to %i...\n", __FUNCTION__,
                _tool.c_str(), _priority);
 #if defined(TIMEMORY_USE_GOTCHA)
-    return GOTCHA_SUCCESS;
+    // return GOTCHA_SUCCESS;
     error_t _ret = gotcha_set_priority(_tool.c_str(), _priority);
     if(_ret != GOTCHA_SUCCESS)
         printf("[gotcha::%s]> Warning! set_priority == %i failed for '%s'. err %i: %s\n",
@@ -159,7 +159,7 @@ get_priority(const std::string& _tool, int& _priority)
         printf("[gotcha::%s]> Getting priority for tool: %s to %i...\n", __FUNCTION__,
                _tool.c_str(), _priority);
 #if defined(TIMEMORY_USE_GOTCHA)
-    return GOTCHA_SUCCESS;
+    // return GOTCHA_SUCCESS;
     error_t _ret = gotcha_get_priority(_tool.c_str(), &_priority);
     if(_ret != GOTCHA_SUCCESS)
         printf("[gotcha::%s]> Warning! get_priority == %i failed for '%s'. err %i: %s\n",
@@ -197,13 +197,13 @@ wrap(binding_t& _bind, std::string& _label)
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _N>
-std::array<error_t, _N>
-wrap(std::array<binding_t, _N>& _arr, const std::array<bool, _N>& _filled,
-     std::array<std::string, _N>& _labels)
+template <size_t N>
+std::array<error_t, N>
+wrap(std::array<binding_t, N>& _arr, const std::array<bool, N>& _filled,
+     std::array<std::string, N>& _labels)
 {
-    std::array<error_t, _N> _ret;
-    for(size_t i = 0; i < _N; ++i)
+    std::array<error_t, N> _ret;
+    for(size_t i = 0; i < N; ++i)
     {
         if(_filled[i])
             _ret[i] = wrap(_arr[i], _labels[i]);

@@ -30,7 +30,14 @@
 
 #pragma once
 
-#include "timemory/settings.hpp"
+// define TIMEMORY_EXTERNAL_PAPI_DEFINITIONS if these enumerations/defs in bits/papi.hpp
+// cause problems
+
+#include "timemory/backends/hardware_counters.hpp"
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
+#include "timemory/backends/types/papi.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -44,18 +51,12 @@
 #endif
 
 #if defined(TIMEMORY_USE_PAPI)
-#    include <papi.h>
 #    include <papiStdEventDefs.h>
+//
+#    include <papi.h>
 #    if defined(_UNIX)
 #        include <pthread.h>
 #    endif
-#else
-
-// define TIMEMORY_EXTERNAL_PAPI_DEFINITIONS if these enumerations/defs cause problems
-#    if !defined(TIMEMORY_EXTERNAL_PAPI_DEFINITIONS)
-#        include "timemory/backends/bits/papi.hpp"
-#    endif  // !defined(TIMEMORY_EXTERNAL_PAPI_DEFINITIONS)
-
 #endif
 
 // int EventSet = PAPI_NULL;
@@ -85,19 +86,17 @@ namespace papi
 {
 //--------------------------------------------------------------------------------------//
 
-using tid_t        = std::thread::id;
-using string_t     = std::string;
-using event_info_t = PAPI_event_info_t;
-using ulong_t      = unsigned long int;
+using string_t         = std::string;
+using event_info_t     = PAPI_event_info_t;
+using ulong_t          = unsigned long int;
+using hwcounter_info_t = std::vector<hardware_counters::info>;
 
 //--------------------------------------------------------------------------------------//
 
 inline ulong_t
 get_thread_index()
 {
-    static std::atomic<ulong_t> thr_counter(0);
-    static thread_local ulong_t thr_count = thr_counter++;
-    return thr_count;
+    return static_cast<ulong_t>(threading::get_id());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -108,9 +107,7 @@ get_papi_thread_num()
 #if defined(TIMEMORY_USE_PAPI)
     return PAPI_thread_id();
 #else
-    static std::atomic<uint64_t> thr_counter(0);
-    static thread_local uint64_t thr_count = thr_counter++;
-    return thr_count;
+    return static_cast<ulong_t>(threading::get_id());
 #endif
 }
 
@@ -129,27 +126,26 @@ check_papi_thread()
 
 //--------------------------------------------------------------------------------------//
 
-inline tid_t
+inline auto
 get_tid()
 {
-    return std::this_thread::get_id();
+    return threading::get_tid();
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline tid_t
+inline auto
 get_master_tid()
 {
-    static tid_t _instance = get_tid();
-    return _instance;
+    return threading::get_master_tid();
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline bool
+inline auto
 is_master_thread()
 {
-    return (get_tid() == get_master_tid());
+    return threading::is_master_thread();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -309,9 +305,9 @@ get_event_info(int evt_type)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-attach(int event_set, _Tp pid_or_tid)
+attach(int event_set, Tp pid_or_tid)
 {
     // inform PAPI that a previously registered thread is disappearing
 #if defined(TIMEMORY_USE_PAPI)
@@ -413,6 +409,8 @@ init()
         if(!working())
             fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");
     }
+#else
+    working() = false;
 #endif
 }
 
@@ -776,6 +774,121 @@ detach(int event_set)
 #else
     consume_parameters(event_set);
 #endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+query_event(int event)
+{
+#if defined(TIMEMORY_USE_PAPI)
+    return (PAPI_query_event(event) == PAPI_OK);
+#else
+    consume_parameters(event);
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Func>
+inline bool
+overflow(int evt_set, int evt_code, int threshold, int flags, Func&& handler)
+{
+#if defined(TIMEMORY_USE_PAPI)
+    return (PAPI_overflow(evt_set, evt_code, threshold, flags,
+                          std::forward<Func>(handler)) == PAPI_OK);
+#else
+    consume_parameters(evt_set, evt_code, threshold, flags, handler);
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline hwcounter_info_t
+available_events_info()
+{
+    hwcounter_info_t evts{};
+
+#if defined(TIMEMORY_USE_PAPI)
+    details::init_library();
+    if(working())
+    {
+        for(int i = 0; i < PAPI_END_idx; ++i)
+        {
+            PAPI_event_info_t info;
+            auto              ret = PAPI_get_event_info((i | PAPI_PRESET_MASK), &info);
+            if(ret != PAPI_OK)
+                continue;
+
+            bool     _avail = query_event((i | PAPI_PRESET_MASK));
+            string_t _sym   = get_timemory_papi_presets()[i].symbol;
+            string_t _pysym = _sym;
+            for(auto& itr : _pysym)
+                itr = tolower(itr);
+            string_t _rm = "papi_";
+            auto     idx = _pysym.find(_rm);
+            if(idx != string_t::npos)
+                _pysym.substr(idx + _rm.length());
+            evts.push_back(hardware_counters::info(
+                _avail, hardware_counters::api::papi, i, PAPI_PRESET_MASK, _sym, _pysym,
+                get_timemory_papi_presets()[i].short_descr,
+                get_timemory_papi_presets()[i].long_descr));
+        }
+    }
+#endif
+    if(!working() || evts.empty())
+    {
+        for(int i = 0; i < TIMEMORY_PAPI_PRESET_EVENTS; ++i)
+        {
+            if(get_timemory_papi_presets()[i].symbol == NULL)
+                continue;
+
+            string_t _sym   = get_timemory_papi_presets()[i].symbol;
+            string_t _pysym = _sym;
+            for(auto& itr : _pysym)
+                itr = tolower(itr);
+            evts.push_back(hardware_counters::info(
+                false, hardware_counters::api::papi, i, PAPI_PRESET_MASK, _sym, _pysym,
+                get_timemory_papi_presets()[i].short_descr,
+                get_timemory_papi_presets()[i].long_descr));
+        }
+    }
+
+    return evts;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline tim::hardware_counters::info
+get_hwcounter_info(const std::string& event_code_str)
+{
+#if defined(TIMEMORY_USE_PAPI)
+    details::init_library();
+#endif
+
+    if(working())
+    {
+        auto         idx         = get_event_code(event_code_str);
+        event_info_t _info       = get_event_info(idx);
+        bool         _avail      = query_event(idx);
+        string_t     _sym        = _info.symbol;
+        string_t     _short_desc = _info.short_descr;
+        string_t     _long_desc  = _info.long_descr;
+        string_t     _pysym      = _sym;
+        for(auto& itr : _pysym)
+            itr = tolower(itr);
+        // int32_t _off = _info.event_code;
+        int32_t _off = 0;
+        return hardware_counters::info(_avail, hardware_counters::api::papi, idx, _off,
+                                       _sym, _pysym, _short_desc, _long_desc);
+    }
+    else
+    {
+        return hardware_counters::info(false, hardware_counters::api::papi, -1, 0,
+                                       event_code_str, "", "", "");
+    }
 }
 
 //--------------------------------------------------------------------------------------//

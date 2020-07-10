@@ -24,11 +24,10 @@
 //
 
 #include "gotcha_tests_lib.hpp"
-#include "timemory/components/derived/malloc_gotcha.hpp"
 
 #include "gtest/gtest.h"
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 #include <chrono>
 #include <condition_variable>
@@ -38,26 +37,34 @@
 #include <vector>
 
 using namespace tim::component;
-using tim::component_tuple;
+using tim::component_tuple_t;
 
 // create a hybrid for inside the gotcha
-using gotcha_tuple_t = component_tuple<real_clock, cpu_clock, peak_rss>;
+using gotcha_tuple_t = component_tuple_t<wall_clock, cpu_clock, peak_rss>;
 using gotcha_list_t =
-    tim::component_list<papi_array_t, cpu_roofline_sp_flops, cpu_roofline_dp_flops>;
-using gotcha_hybrid_t = tim::auto_hybrid<gotcha_tuple_t, gotcha_list_t>;
+    tim::component_list_t<papi_array_t, cpu_roofline_sp_flops, cpu_roofline_dp_flops>;
+using gotcha_hybrid_t = tim::auto_hybrid_t<gotcha_tuple_t, gotcha_list_t>;
 
 // create gotcha types for various bundles of functions
 using mpi_gotcha_t    = tim::component::gotcha<1, gotcha_hybrid_t>;
 using work_gotcha_t   = tim::component::gotcha<1, gotcha_hybrid_t, int>;
 using memfun_gotcha_t = tim::component::gotcha<5, gotcha_tuple_t>;
 
-using comp_t  = component_tuple<real_clock, cpu_clock, peak_rss>;
-using tuple_t = component_tuple<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t>;
-using list_t  = gotcha_list_t;
-using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
+using malloc_gotcha_t = malloc_gotcha::gotcha_type<gotcha_tuple_t>;
 
-template <typename _Tp>
-using vector_t = std::vector<_Tp>;
+TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, mpi_gotcha_t, priority_constant<256>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, malloc_gotcha_t, priority_constant<512>)
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, mpi_gotcha_t, priority_constant<-256>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, malloc_gotcha_t, priority_constant<-512>)
+
+using comp_t  = component_tuple_t<wall_clock, cpu_clock, peak_rss>;
+using tuple_t = component_tuple_t<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t>;
+using list_t  = gotcha_list_t;
+using auto_hybrid_t = tim::auto_hybrid_t<tuple_t, list_t>;
+
+template <typename Tp>
+using vector_t = std::vector<Tp>;
 
 static constexpr int64_t nitr      = 100000;
 static const double      tolerance = 1.0e-2;
@@ -77,42 +84,42 @@ get_test_name()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-inline vector_t<_Tp>
+template <typename Tp>
+inline vector_t<Tp>
 generate(const int64_t& nsize)
 {
-    std::vector<_Tp> sendbuf(nsize, 0.0);
-    std::mt19937     rng;
+    std::vector<Tp> sendbuf(nsize, 0.0);
+    std::mt19937    rng;
     rng.seed(54561434UL);
-    auto dist = [&]() { return std::generate_canonical<_Tp, 10>(rng); };
+    auto dist = [&]() { return std::generate_canonical<Tp, 10>(rng); };
     std::generate(sendbuf.begin(), sendbuf.end(), [&]() { return dist(); });
     return sendbuf;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-generate(const int64_t& nsize, std::vector<_Tp>& sendbuf)
+generate(const int64_t& nsize, std::vector<Tp>& sendbuf)
 {
     sendbuf.resize(nsize, 0.0);
     for(auto& itr : sendbuf)
         itr = 0.0;
     std::mt19937 rng;
     rng.seed(54561434UL);
-    auto dist = [&]() { return std::generate_canonical<_Tp, 10>(rng); };
+    auto dist = [&]() { return std::generate_canonical<Tp, 10>(rng); };
     std::generate(sendbuf.begin(), sendbuf.end(), [&]() { return dist(); });
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-inline vector_t<_Tp>
-allreduce(const vector_t<_Tp>& sendbuf)
+template <typename Tp>
+inline vector_t<Tp>
+allreduce(const vector_t<Tp>& sendbuf)
 {
-    vector_t<_Tp> recvbuf(sendbuf.size(), 0.0);
+    vector_t<Tp> recvbuf(sendbuf.size(), 0.0);
 #if defined(TIMEMORY_USE_MPI)
-    auto dtype = (std::is_same<_Tp, float>::value) ? MPI_FLOAT : MPI_DOUBLE;
+    auto dtype = (std::is_same<Tp, float>::value) ? MPI_FLOAT : MPI_DOUBLE;
     MPI_Allreduce(sendbuf.data(), recvbuf.data(), sendbuf.size(), dtype, MPI_SUM,
                   MPI_COMM_WORLD);
 #else
@@ -123,15 +130,15 @@ allreduce(const vector_t<_Tp>& sendbuf)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-allreduce(const vector_t<_Tp>& sendbuf, vector_t<_Tp>& recvbuf)
+allreduce(const vector_t<Tp>& sendbuf, vector_t<Tp>& recvbuf)
 {
     recvbuf.resize(sendbuf.size(), 0.0);
     for(auto& itr : recvbuf)
         itr = 0.0;
 #if defined(TIMEMORY_USE_MPI)
-    auto dtype = (std::is_same<_Tp, float>::value) ? MPI_FLOAT : MPI_DOUBLE;
+    auto dtype = (std::is_same<Tp, float>::value) ? MPI_FLOAT : MPI_DOUBLE;
     MPI_Allreduce(sendbuf.data(), recvbuf.data(), sendbuf.size(), dtype, MPI_SUM,
                   MPI_COMM_WORLD);
 #else
@@ -383,23 +390,9 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
-    using malloc_gotcha_spec_t = malloc_gotcha::gotcha_spec<gotcha_tuple_t>;
-    using malloc_gotcha_t      = typename malloc_gotcha_spec_t::gotcha_type;
-    using toolset_t = tim::auto_tuple<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
+    using toolset_t = tim::auto_tuple_t<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
 
-    malloc_gotcha_t::get_initializer() = []() {
-#if defined(TIMEMORY_USE_CUDA)
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 0, malloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 1, calloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 2, cudaMalloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 3, free);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 4, cudaFree);
-#else
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 0, malloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 1, calloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 2, free);
-#endif
-    };
+    malloc_gotcha::configure<gotcha_tuple_t>();
 
     mpi_gotcha_t::get_initializer() = [=]() {
 #if defined(TIMEMORY_USE_MPI)
@@ -407,15 +400,17 @@ TEST_F(gotcha_tests, malloc_gotcha)
 #endif
     };
 
+    PRINT_HERE("%s", "starting");
     toolset_t tool(details::get_test_name());
 
     float  fsum = 0.0;
     double dsum = 0.0;
     {
-        std::vector<float>  fsendbuf, frecvbuf;
-        std::vector<double> dsendbuf, drecvbuf;
         for(int i = 0; i < nitr / 10; ++i)
         {
+            std::vector<float>  fsendbuf, frecvbuf;
+            std::vector<double> dsendbuf, drecvbuf;
+
             details::generate<float>(1000, fsendbuf);
             details::allreduce(fsendbuf, frecvbuf);
             fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
@@ -427,8 +422,9 @@ TEST_F(gotcha_tests, malloc_gotcha)
     }
 
     tool.stop();
+    PRINT_HERE("%s", "stopped");
 
-    malloc_gotcha_t& mc = tool.get<malloc_gotcha_t>();
+    malloc_gotcha_t& mc = *tool.get<malloc_gotcha_t>();
     std::cout << mc << std::endl;
 
     auto rank = tim::mpi::rank();
@@ -457,7 +453,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
 TEST_F(gotcha_tests, member_functions)
 {
     using pair_type     = std::pair<float, double>;
-    auto real_storage   = tim::storage<real_clock>::instance();
+    auto real_storage   = tim::storage<wall_clock>::instance();
     auto real_init_size = real_storage->size();
     printf("[initial]> wall-clock storage size: %li\n", (long int) real_init_size);
 
@@ -475,7 +471,7 @@ TEST_F(gotcha_tests, member_functions)
             using func_t = decltype(&DoWork::execute_fp4);
             print_func_info<func_t>(TIMEMORY_STRINGIZE(DoWork::execute_fp4));
 
-            TIMEMORY_CXX_MEMFUN_GOTCHA(memfun_gotcha_t, 1, DoWork::execute_fp4);
+            TIMEMORY_CXX_GOTCHA_MEMFUN(memfun_gotcha_t, 1, DoWork::execute_fp4);
         }
         {
             using func_t = decltype(&DoWork::execute_fp8);
@@ -605,11 +601,11 @@ TEST_F(gotcha_tests, member_functions)
 TEST_F(gotcha_tests, mpip)
 {
     using namespace tim::component;
-    using mpi_toolset_t = tim::auto_tuple<real_clock, cpu_clock>;
+    using mpi_toolset_t = tim::auto_tuple_t<wall_clock, cpu_clock>;
     using mpip_gotcha_t = tim::component::gotcha<337, mpi_toolset_t>;
-    using mpip_tuple_t  = tim::auto_tuple<real_clock, mpip_gotcha_t>;
+    using mpip_tuple_t  = tim::auto_tuple_t<wall_clock, mpip_gotcha_t>;
 
-    auto init_mpip_tools = []() {
+    auto init_mpip = []() {
         mpip_gotcha_t::get_initializer() = []() {
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 0, MPI_Send);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 1, MPI_Recv);
@@ -952,7 +948,7 @@ TEST_F(gotcha_tests, mpip)
     };
 
     if(tim::get_env<bool>("INIT_MPIP_TOOLS", true))
-        init_mpip_tools();
+        init_mpip();
 
     TIMEMORY_BLANK_POINTER(mpip_tuple_t, details::get_test_name());
 
@@ -1015,7 +1011,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
-    tim::dmp::finalize();
+    tim::timemory_finalize();
     return ret;
 }
 

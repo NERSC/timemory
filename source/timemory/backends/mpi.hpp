@@ -31,11 +31,13 @@
 
 #pragma once
 
-#include "timemory/settings.hpp"
-#include "timemory/utility/macros.hpp"   // macro definitions w/ no internal deps
-#include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
+#include "timemory/utility/utility.hpp"
 
-#include <algorithm>
 #include <cstdint>
 #include <unordered_map>
 
@@ -48,14 +50,50 @@ namespace tim
 namespace mpi
 {
 //--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_USE_MPI)
+struct dummy_data_type
+{
+    enum type
+    {
+        int_t,
+        float_t,
+        double_t
+    };
+};
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_USE_MPI) && !defined(MPI_INT)
+#    define MPI_INT ::tim::mpi::dummy_data_type::int_t
+#endif
+
+#if !defined(TIMEMORY_USE_MPI) && !defined(MPI_FLOAT)
+#    define MPI_FLOAT ::tim::mpi::dummy_data_type::float_t
+#endif
+
+#if !defined(TIMEMORY_USE_MPI) && !defined(MPI_DOUBLE)
+#    define MPI_DOUBLE ::tim::mpi::dummy_data_type::double_t
+#endif
+
+//--------------------------------------------------------------------------------------//
 #if defined(TIMEMORY_USE_MPI)
 using comm_t                            = MPI_Comm;
 using info_t                            = MPI_Info;
+using data_type_t                       = MPI_Datatype;
+using status_t                          = MPI_Status;
 static const comm_t  comm_world_v       = MPI_COMM_WORLD;
 static const info_t  info_null_v        = MPI_INFO_NULL;
 static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
 namespace threading
 {
+inline auto
+get_id()
+{
+    return ::tim::threading::get_id();
+}
+
 enum : int
 {
     /// Only one thread will execute.
@@ -76,11 +114,19 @@ enum : int
 // dummy MPI types
 using comm_t                            = int32_t;
 using info_t                            = int32_t;
+using data_type_t                       = int32_t;
+using status_t                          = int32_t;
 static const comm_t  comm_world_v       = 0;
 static const info_t  info_null_v        = 0;
 static const int32_t comm_type_shared_v = 0;
 namespace threading
 {
+inline auto
+get_id()
+{
+    return ::tim::threading::get_id();
+}
+
 enum : int
 {
     /// Only one thread will execute.
@@ -99,19 +145,49 @@ enum : int
 }  // namespace threading
 #endif
 
-template <typename _Tp>
-using communicator_map_t = std::unordered_map<comm_t, _Tp>;
+template <typename Tp>
+using communicator_map_t = std::unordered_map<comm_t, Tp>;
 
 inline int32_t
 rank(comm_t comm = comm_world_v);
 
 //--------------------------------------------------------------------------------------//
 
+inline bool&
+fail_on_error()
+{
+    static bool _instance = false;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool&
+quiet()
+{
+    static bool _instance = false;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_MPI_ERROR_FUNCTION)
+#    define TIMEMORY_MPI_ERROR_FUNCTION(FUNC, ...) #    FUNC
+#endif
+
+#if !defined(TIMEMORY_MPI_ERROR_CHECK)
+#    define TIMEMORY_MPI_ERROR_CHECK(...)                                                \
+        ::tim::mpi::check_error(TIMEMORY_MPI_ERROR_FUNCTION(__VA_ARGS__, ""), __VA_ARGS__)
+#endif
+
+//--------------------------------------------------------------------------------------//
+
 inline bool
-check_error(int err_code)
+check_error(const char* _func, int err_code, comm_t _comm = mpi::comm_world_v)
 {
 #if defined(TIMEMORY_USE_MPI)
-    if(err_code != MPI_SUCCESS)
+    bool _success = (err_code == MPI_SUCCESS);
+    if(!_success && !mpi::quiet())
     {
         int  len = 0;
         char msg[1024];
@@ -119,14 +195,18 @@ check_error(int err_code)
         int idx   = (len < 1023) ? len + 1 : 1023;
         msg[idx]  = '\0';
         int _rank = rank();
-        printf("[%i]> Error code (%i): %s\n", _rank, err_code, msg);
+        fprintf(stderr, "[rank=%i][pid=%i][tid=%i][%s]> Error code (%i): %s\n", _rank,
+                (int) process::get_id(), (int) threading::get_id(), _func, err_code, msg);
     }
+    if(!_success && fail_on_error())
+        MPI_Abort(_comm, err_code);
     return (err_code == MPI_SUCCESS);
 #else
-    consume_parameters(err_code);
+    consume_parameters(_func, err_code, _comm);
     return false;
 #endif
 }
+
 //--------------------------------------------------------------------------------------//
 
 inline void
@@ -190,10 +270,10 @@ initialize(int& argc, char**& argv)
                     std::cerr << ss.str() << std::flush;
                     throw std::runtime_error(ss.str().c_str());
                 }
-                return check_error(ret);
+                return TIMEMORY_MPI_ERROR_CHECK(ret);
             };
 
-            // check_error(MPI_Init(&argc, &argv));
+            // TIMEMORY_MPI_ERROR_CHECK(MPI_Init(&argc, &argv));
             // int _provided = 0;
             // MPI_Query_thread(&_provided);
 
@@ -211,7 +291,7 @@ initialize(int& argc, char**& argv)
         }
 
         if(!success_v)
-            check_error(MPI_Init(&argc, &argv));
+            TIMEMORY_MPI_ERROR_CHECK(MPI_Init(&argc, &argv));
     }
 #else
     consume_parameters(argc, argv);
@@ -322,7 +402,7 @@ comm_split(comm_t comm, int split_size, int rank, comm_t* local_comm)
 {
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
-        MPI_Comm_split(comm, split_size, rank, local_comm);
+        TIMEMORY_MPI_ERROR_CHECK(MPI_Comm_split(comm, split_size, rank, local_comm));
 #else
     consume_parameters(comm, split_size, rank, local_comm);
 #endif
@@ -335,7 +415,8 @@ comm_split_type(comm_t comm, int split_size, int key, info_t info, comm_t* local
 {
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
-        MPI_Comm_split_type(comm, split_size, key, info, local_comm);
+        TIMEMORY_MPI_ERROR_CHECK(
+            MPI_Comm_split_type(comm, split_size, key, info, local_comm));
 #else
     consume_parameters(comm, split_size, key, info, local_comm);
 #endif
@@ -393,13 +474,14 @@ get_node_index()
 //--------------------------------------------------------------------------------------//
 
 inline void
-send(const std::string& str, int dest, int tag, comm_t comm)
+send(const std::string& str, int dest, int tag, comm_t comm = mpi::comm_world_v)
 {
 #if defined(TIMEMORY_USE_MPI)
     unsigned long long len = str.size();
-    MPI_Send(&len, 1, MPI_UNSIGNED_LONG_LONG, dest, tag, comm);
+    TIMEMORY_MPI_ERROR_CHECK(MPI_Send(&len, 1, MPI_UNSIGNED_LONG_LONG, dest, tag, comm));
     if(len != 0)
-        MPI_Send(const_cast<char*>(str.data()), len, MPI_CHAR, dest, tag, comm);
+        TIMEMORY_MPI_ERROR_CHECK(
+            MPI_Send(const_cast<char*>(str.data()), len, MPI_CHAR, dest, tag, comm));
 #else
     consume_parameters(str, dest, tag, comm);
 #endif
@@ -408,16 +490,17 @@ send(const std::string& str, int dest, int tag, comm_t comm)
 //--------------------------------------------------------------------------------------//
 
 inline void
-recv(std::string& str, int src, int tag, comm_t comm)
+recv(std::string& str, int src, int tag, comm_t comm = mpi::comm_world_v)
 {
 #if defined(TIMEMORY_USE_MPI)
     unsigned long long len;
     MPI_Status         s;
-    MPI_Recv(&len, 1, MPI_UNSIGNED_LONG_LONG, src, tag, comm, &s);
+    TIMEMORY_MPI_ERROR_CHECK(
+        MPI_Recv(&len, 1, MPI_UNSIGNED_LONG_LONG, src, tag, comm, &s));
     if(len != 0)
     {
         std::vector<char> tmp(len);
-        MPI_Recv(tmp.data(), len, MPI_CHAR, src, tag, comm, &s);
+        TIMEMORY_MPI_ERROR_CHECK(MPI_Recv(tmp.data(), len, MPI_CHAR, src, tag, comm, &s));
         str.assign(tmp.begin(), tmp.end());
     }
     else
@@ -426,6 +509,39 @@ recv(std::string& str, int src, int tag, comm_t comm)
     }
 #else
     consume_parameters(str, src, tag, comm);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+gather(const void* sendbuf, int sendcount, data_type_t sendtype, void* recvbuf,
+       int recvcount, data_type_t recvtype, int root, comm_t comm = mpi::comm_world_v)
+{
+#if defined(TIMEMORY_USE_MPI)
+    if(is_initialized())
+        TIMEMORY_MPI_ERROR_CHECK(MPI_Gather(sendbuf, sendcount, sendtype, recvbuf,
+                                            recvcount, recvtype, root, comm));
+#else
+    consume_parameters(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root,
+                       comm);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+comm_spawn_multiple(int count, char** commands, char*** argv, const int* maxprocs,
+                    const info_t* info, int root, comm_t comm, comm_t* intercomm,
+                    int* errcodes)
+{
+#if defined(TIMEMORY_USE_MPI)
+    if(is_initialized())
+        TIMEMORY_MPI_ERROR_CHECK(MPI_Comm_spawn_multiple(
+            count, commands, argv, maxprocs, info, root, comm, intercomm, errcodes));
+#else
+    consume_parameters(count, commands, argv, maxprocs, info, root, comm, intercomm,
+                       errcodes);
 #endif
 }
 

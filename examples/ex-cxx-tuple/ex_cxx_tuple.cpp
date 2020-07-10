@@ -34,23 +34,23 @@
 #include <unordered_map>
 #include <vector>
 
-#include <timemory/timemory.hpp>
-#include <timemory/utility/signals.hpp>
-#include <timemory/utility/testing.hpp>
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/utility/testing.hpp"
 
-using namespace tim::stl_overload;
+using namespace tim::stl;
 using namespace tim::component;
 
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t =
-    tim::auto_tuple<wall_clock, system_clock, thread_cpu_clock, thread_cpu_util,
-                    process_cpu_clock, process_cpu_util, papi_tuple_t, tau_marker>;
+    tim::auto_tuple_t<wall_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                      process_cpu_clock, process_cpu_util, papi_tuple_t, tau_marker>;
 
 using measurement_t =
-    tim::component_tuple<peak_rss, page_rss, virtual_memory, num_major_page_faults,
-                         num_minor_page_faults, priority_context_switch,
-                         voluntary_context_switch, tau_marker>;
+    tim::component_tuple_t<peak_rss, page_rss, virtual_memory, num_major_page_faults,
+                           num_minor_page_faults, priority_context_switch,
+                           voluntary_context_switch, tau_marker>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -59,6 +59,7 @@ fibonacci(int32_t n)
 {
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
 }
+
 //--------------------------------------------------------------------------------------//
 // time fibonacci with return type and arguments
 // e.g. std::function < int32_t ( int32_t ) >
@@ -68,6 +69,7 @@ time_fibonacci(int32_t n)
     TIMEMORY_MARKER(auto_tuple_t, "");
     return fibonacci(n);
 }
+
 //--------------------------------------------------------------------------------------//
 
 void
@@ -88,14 +90,12 @@ print_mpi_storage();
 int
 main(int argc, char** argv)
 {
-    tim::settings::banner() = true;
-    tim::enable_signal_detection({ tim::sys_signal::SegFault, tim::sys_signal::Abort,
-                                   tim::sys_signal::User1, tim::sys_signal::User2 });
-    tim::dmp::initialize(argc, argv);
-    tim::timemory_init(argc, argv);
+    tim::settings::banner()      = true;
     tim::settings::json_output() = true;
+    tim::enable_signal_detection();
+    tim::dmp::initialize(argc, argv);
 
-    tim::auto_tuple<papi_tuple_t>::component_type m("PAPI measurements");
+    tim::component_tuple_t<papi_tuple_t> m("PAPI measurements");
     m.start();
 
     CONFIGURE_TEST_SELECTOR(3);
@@ -122,6 +122,7 @@ main(int argc, char** argv)
 
     print_mpi_storage();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
 
     exit(num_fail);
@@ -153,9 +154,9 @@ print_string(const std::string& str)
 
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());
@@ -165,9 +166,9 @@ random_entry(const std::vector<_Tp>& v)
 
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 void
-serialize(const std::string& fname, const std::string& title, const _Tp& obj)
+serialize(const std::string& fname, const std::string& title, const Tp& obj)
 {
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
     std::stringstream     ss;
@@ -290,7 +291,7 @@ test_3_measure()
 void
 print_mpi_storage()
 {
-    auto ret = tim::storage<wall_clock>::instance()->mpi_get();
+    auto ret = tim::storage<tim::component::wall_clock>::instance()->mpi_get();
     if(tim::dmp::rank() != 0)
         return;
 

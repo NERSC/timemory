@@ -10,18 +10,24 @@ include(CheckLanguage)
 set(_USE_CUDA ON)
 # this is for internal use
 if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
+    if(DEFINED BUILD_ERT AND NOT BUILD_ERT)
+        return()
+    endif()
     get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
     if(NOT "CUDA" IN_LIST LANGUAGES OR NOT CMAKE_CUDA_COMPILER OR NOT TIMEMORY_USE_CUDA)
         set(_USE_CUDA OFF)
+        set(USE_CUDA OFF)
     endif()
 endif()
 
 project(timemory-ERT-Example LANGUAGES CXX)
 
 option(USE_CUDA "Enable CUDA" ${_USE_CUDA})
+option(USE_KOKKOS "Enable Kokkos" OFF)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-ert-example)
-set(COMPONENTS cxx compile-options vector analysis-tools OPTIONAL_COMPONENTS arch mpi)
+set(COMPONENTS headers compile-options vector analysis-tools
+    OPTIONAL_COMPONENTS mpi cuda cuda-compiler)
 
 if(USE_CUDA)
     check_language(CUDA)
@@ -36,15 +42,29 @@ if(USE_CUDA)
     list(APPEND COMPONENTS cuda)
 endif()
 
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS cupti)
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_executable(ex_ert ex_ert.cpp)
 target_link_libraries(ex_ert timemory-ert-example)
-install(TARGETS ex_ert DESTINATION bin)
+install(TARGETS ex_ert DESTINATION bin COMPONENT examples OPTIONAL)
 
-if(USE_CUDA)
+if(USE_CUDA OR TIMEMORY_USE_CUDA)
     set_source_files_properties(ex_ert.cpp PROPERTIES
         LANGUAGE CUDA
         LINKER_LANGUAGE CUDA)
     target_compile_definitions(ex_ert PRIVATE USE_CUDA)
+endif()
+
+find_package(Kokkos 3.0 QUIET)
+if(Kokkos_FOUND AND USE_KOKKOS)
+    add_executable(ex_ert_kokkos ex_ert_kokkos.cpp)
+    target_link_libraries(ex_ert_kokkos timemory-ert-example Kokkos::kokkos)
+    install(TARGETS ex_ert_kokkos DESTINATION bin COMPONENT examples OPTIONAL)
+
+    if(USE_CUDA OR TIMEMORY_USE_CUDA)
+        set_source_files_properties(ex_ert_kokkos.cpp PROPERTIES
+            LANGUAGE CUDA
+            LINKER_LANGUAGE CUDA)
+	target_compile_definitions(ex_ert_kokkos PRIVATE USE_CUDA)
+    endif()
 endif()

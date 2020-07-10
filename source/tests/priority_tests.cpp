@@ -31,7 +31,7 @@
 #include <thread>
 #include <vector>
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
@@ -206,9 +206,9 @@ TEST_F(priority_tests, simple_check)
     // details::consume(500);
     // t.stop();
 
-    auto& native_wc = t.get<wall_clock>();
-    auto& pstart_wc = t.get<priority_start_wc>();
-    auto& pstop_wc  = t.get<priority_stop_wc>();
+    auto& native_wc = *t.get<wall_clock>();
+    auto& pstart_wc = *t.get<priority_start_wc>();
+    auto& pstop_wc  = *t.get<priority_stop_wc>();
 
     printf("\n");
     std::cout << native_wc << std::endl;
@@ -219,9 +219,9 @@ TEST_F(priority_tests, simple_check)
     printf("\n");
 
     // each start()/stop() on tuple_t resets internal lap count to zero
-    ASSERT_EQ(native_wc.nlaps(), 1);
-    ASSERT_EQ(pstart_wc.nlaps(), 1);
-    ASSERT_EQ(pstop_wc.nlaps(), 1);
+    ASSERT_EQ(native_wc.get_laps(), 1);
+    ASSERT_EQ(pstart_wc.get_laps(), 1);
+    ASSERT_EQ(pstop_wc.get_laps(), 1);
     // tuple_t will have total number of start()/stop()
     ASSERT_EQ(t.laps(), 2);
 }
@@ -242,9 +242,9 @@ TEST_F(priority_tests, start_stop)
 
     t.stop();
 
-    auto& native_wc = t.get<wall_clock>();
-    auto& pstart_wc = t.get<priority_start_wc>();
-    auto& pstop_wc  = t.get<priority_stop_wc>();
+    auto& native_wc = *t.get<wall_clock>();
+    auto& pstart_wc = *t.get<priority_start_wc>();
+    auto& pstop_wc  = *t.get<priority_stop_wc>();
 
     printf("\n");
     std::cout << native_wc << std::endl;
@@ -281,9 +281,9 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
-    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

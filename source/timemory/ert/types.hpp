@@ -24,7 +24,7 @@
 
 /** \file timemory/ert/types.hpp
  * \headerfile timemory/ert/types.hpp "timemory/ert/types.hpp"
- * Provides pre-declaration of types for ERT
+ * Provides declaration of types for ERT
  *
  */
 
@@ -41,19 +41,19 @@ namespace ert
 class thread_barrier;
 struct exec_params;
 
-template <typename _Tp = component::wall_clock>
+template <typename Tp = component::wall_clock>
 class exec_data;
 
-template <typename _Device, typename _Tp, typename _Counter = component::wall_clock>
+template <typename DeviceT, typename Tp, typename CounterT = component::wall_clock>
 class counter;
 
-template <typename _Device, typename _Tp, typename _Counter>
+template <typename DeviceT, typename Tp, typename CounterT>
 struct configuration;
 
-template <typename _Device, typename _Tp, typename _Counter>
+template <typename DeviceT, typename Tp, typename CounterT>
 struct executor;
 
-template <typename _Executor>
+template <typename ExecutorT>
 struct callback;
 
 }  // namespace ert

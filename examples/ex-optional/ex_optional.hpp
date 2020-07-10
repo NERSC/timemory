@@ -25,9 +25,13 @@
 
 #pragma once
 
+#if defined(TIMEMORY_USE_MPI)
+#    include <mpi.h>
+#endif
+
 #if defined(USE_TIMEMORY)
 
-#    include <timemory/timemory.hpp>
+#    include "timemory/timemory.hpp"
 
 using tim::component::cpu_clock;
 using tim::component::cpu_util;
@@ -36,10 +40,8 @@ using tim::component::peak_rss;
 using tim::component::wall_clock;
 
 // some using statements
-using tuple_t = tim::component_tuple<wall_clock, cpu_clock, cpu_util, page_rss, peak_rss>;
-using list_t  = tim::auto_timer_list_t;
-
-using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
+using auto_hybrid_t =
+    tim::auto_bundle<TIMEMORY_API, wall_clock, cpu_clock, cpu_util, page_rss, peak_rss>;
 
 #else
 
@@ -49,14 +51,25 @@ using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
 namespace tim
 {
 void                              print_env() {}
-template <typename... _Args> void timemory_init(_Args...) {}
+template <typename... ArgsT> void timemory_init(ArgsT...) {}
 void                              timemory_finalize() {}
+
+namespace mpi
+{
+#    if defined(TIMEMORY_USE_MPI)
+static inline void initialize(int& argc, char**& argv) { MPI_Init(&argc, &argv); }
+static inline void finalize() { MPI_Finalize(); }
+#    else
+template <typename... Args> static inline void initialize(Args&&...) {}
+static inline void                             finalize() {}
+#    endif
+}
 
 /// this provides "functionality" for *_HANDLE macros
 /// and can be omitted if these macros are not utilized
 struct dummy
 {
-    template <typename... _Args> dummy(_Args&&...) {}
+    template <typename... ArgsT> dummy(ArgsT&&...) {}
     ~dummy()            = default;
     dummy(const dummy&) = default;
     dummy(dummy&&)      = default;
@@ -66,8 +79,8 @@ struct dummy
     void                              start() {}
     void                              stop() {}
     void                              report_at_exit(bool) {}
-    template <typename... _Args> void mark_begin(_Args&&...) {}
-    template <typename... _Args> void mark_end(_Args&&...) {}
+    template <typename... ArgsT> void mark_begin(ArgsT&&...) {}
+    template <typename... ArgsT> void mark_end(ArgsT&&...) {}
     friend std::ostream& operator<<(std::ostream& os, const dummy&) { return os; }
 };
 }  // namespace tim

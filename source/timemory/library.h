@@ -30,13 +30,18 @@
 
 #pragma once
 
+#if !defined(TIMEMORY_SOURCE)
+#    if !defined(TIMEMORY_USE_EXTERN) && !defined(_WIN32) && !defined(_WIN64)
+#        define TIMEMORY_USE_EXTERN
+#    endif
+#endif
+
 #include "timemory/compat/library.h"
 
 //--------------------------------------------------------------------------------------//
 //
 #if defined(__cplusplus)
 
-#    include "timemory/utility/bits/storage.hpp"
 #    include "timemory/variadic/macros.hpp"
 
 //--------------------------------------------------------------------------------------//
@@ -51,10 +56,9 @@ struct timemory_scoped_record
     : m_nid(timemory_get_begin_record_types(name, components))
     {}
 
-    template <typename... _Ids,
-              typename std::enable_if<(sizeof...(_Ids) > 0), int>::type = 0>
-    timemory_scoped_record(const char* name, _Ids... _ids)
-    : m_nid(timemory_get_begin_record_enum(name, _ids..., TIMEMORY_COMPONENTS_END))
+    template <typename... Idx>
+    timemory_scoped_record(const char* name, int _id, Idx... _ids)
+    : m_nid(timemory_get_begin_record_enum(name, _id, _ids..., TIMEMORY_COMPONENTS_END))
     {}
 
     ~timemory_scoped_record() { timemory_end_record(m_nid); }
@@ -65,11 +69,11 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-inline _Tp&
-timemory_tl_static(const _Tp& _initial = {})
+template <typename Tp>
+inline Tp&
+timemory_tl_static(const Tp& _initial = {})
 {
-    static thread_local _Tp _instance = _initial;
+    static thread_local Tp _instance = _initial;
     return _instance;
 }
 

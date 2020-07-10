@@ -36,17 +36,17 @@
 #include <unordered_map>
 #include <vector>
 
-#include <timemory/timemory.hpp>
-#include <timemory/utility/signals.hpp>
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
 
-using namespace tim::stl_overload;
+using namespace tim::stl;
 using namespace tim::component;
 
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                    process_cpu_util, peak_rss, page_rss>;
+    tim::auto_tuple_t<wall_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+                      process_cpu_util, peak_rss, page_rss>;
 
 static int    _argc = 0;
 static char** _argv = nullptr;
@@ -65,9 +65,9 @@ get_test_name()
 }
 //--------------------------------------------------------------------------------------//
 // get a random entry from vector
-template <typename _Tp>
+template <typename Tp>
 size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());

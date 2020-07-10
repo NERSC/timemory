@@ -25,24 +25,26 @@
 
 #include <cstdint>
 
-#include <timemory/timemory.hpp>
-#include <timemory/utility/signals.hpp>
-#include <timemory/utility/testing.hpp>
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/invoker.hpp"
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/utility/testing.hpp"
 
 using namespace tim::component;
 
-using auto_tuple_t  = tim::auto_tuple<real_clock, cpu_clock, peak_rss, trip_count>;
-using timer_tuple_t = typename auto_tuple_t::component_type;
+using auto_tuple_t  = tim::auto_tuple_t<wall_clock, user_global_bundle>;
+using timer_tuple_t = tim::component_tuple_t<wall_clock, cpu_clock, peak_rss>;
 
 using papi_tuple_t = papi_array<8>;
 using global_tuple_t =
-    tim::auto_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
-                    page_rss, priority_context_switch, voluntary_context_switch, caliper,
-                    tau_marker, papi_tuple_t, trip_count>;
+    tim::auto_tuple_t<wall_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
+                      page_rss, priority_context_switch, voluntary_context_switch,
+                      caliper, tau_marker, papi_tuple_t, trip_count>;
 
-static int64_t       nmeasure        = 0;
-static const int64_t auto_tuple_size = auto_tuple_t::size();
-using result_type                    = std::tuple<timer_tuple_t, int64_t, int64_t>;
+static int64_t nmeasure     = 0;
+static int64_t toolkit_size = 2;
+using result_type           = std::tuple<timer_tuple_t, int64_t, int64_t>;
 
 namespace mode
 {
@@ -90,7 +92,7 @@ fibonacci(int64_t n)
 
 //======================================================================================//
 
-template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::none>::value, int> = 0>
+template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::none>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t)
 {
@@ -99,23 +101,22 @@ fibonacci(int64_t n, int64_t)
 
 //======================================================================================//
 
-template <typename _Tp,
-          tim::enable_if_t<std::is_same<_Tp, mode::measure>::value, int> = 0>
+template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::measure>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
-        nmeasure += auto_tuple_size;
+        nmeasure += toolkit_size;
         return (n < 2) ? n
-                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::blank>::value, int> = 0>
+template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::blank>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
@@ -123,30 +124,35 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         TIMEMORY_BLANK_MARKER(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n
-                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::basic>::value, int> = 0>
+template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::basic>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
-        TIMEMORY_BASIC_MARKER(auto_tuple_t, "[", n, "]");
-        return (n < 2) ? n
-                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+        // TIMEMORY_BASIC_MARKER(auto_tuple_t, "[", n, "]");
+        auto labeler = [](int _n) { return TIMEMORY_JOIN("", "fibonacci[", _n, "]"); };
+        auto fib     = [](int _n, int _cutoff) {
+            return (_n < 2) ? _n
+                            : (fibonacci<Tp>(_n - 1, _cutoff) +
+                               fibonacci<Tp>(_n - 2, _cutoff));
+        };
+        return tim::runtime::invoke<auto_tuple_t>(labeler(n), fib, n, cutoff);
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename _Tp,
-          tim::enable_if_t<std::is_same<_Tp, mode::blank_pointer>::value, int> = 0>
+template <typename Tp,
+          tim::enable_if_t<std::is_same<Tp, mode::blank_pointer>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
@@ -154,15 +160,15 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         TIMEMORY_BLANK_POINTER(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n
-                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename _Tp,
-          tim::enable_if_t<std::is_same<_Tp, mode::basic_pointer>::value, int> = 0>
+template <typename Tp,
+          tim::enable_if_t<std::is_same<Tp, mode::basic_pointer>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
@@ -170,38 +176,38 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         TIMEMORY_BASIC_POINTER(auto_tuple_t, "[", n, "]");
         return (n < 2) ? n
-                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 result_type
 run(int64_t n, int64_t cutoff, bool store = true)
 {
-    // bool is_none  = std::is_same<_Tp, mode::none>::value;
-    bool is_blank = std::is_same<_Tp, mode::blank>::value ||
-                    std::is_same<_Tp, mode::blank_pointer>::value;
-    bool is_basic = std::is_same<_Tp, mode::basic>::value ||
-                    std::is_same<_Tp, mode::basic_pointer>::value;
+    // bool is_none  = std::is_same<Tp, mode::none>::value;
+    bool is_blank = std::is_same<Tp, mode::blank>::value ||
+                    std::is_same<Tp, mode::blank_pointer>::value;
+    bool is_basic = std::is_same<Tp, mode::basic>::value ||
+                    std::is_same<Tp, mode::basic_pointer>::value;
 
     // bool        with_timing = !(is_none);
     // std::string space       = (with_timing) ? " " : "";
     auto signature =
-        TIMEMORY_LABEL(" [with timing = ", tim::demangle(typeid(_Tp).name()), "]");
+        TIMEMORY_LABEL(" [with timing = ", tim::demangle(typeid(Tp).name()), "]");
 
     nmeasure = 0;
     fibonacci<mode::measure>(n, cutoff);
 
     timer_tuple_t timer(signature, store);
     timer.start();
-    int64_t result = fibonacci<_Tp>(n, cutoff);
+    int64_t result = fibonacci<Tp>(n, cutoff);
     timer.stop();
 
     int64_t nuniq =
-        (is_blank) ? ((n - cutoff) * auto_tuple_size) : (is_basic) ? nmeasure : 0;
+        (is_blank) ? ((n - cutoff) * toolkit_size) : (is_basic) ? nmeasure : 0;
 
     auto _alt = timer;
     if(do_print_result())
@@ -211,7 +217,7 @@ run(int64_t n, int64_t cutoff, bool store = true)
 
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 void
 launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measure,
        int64_t& ex_unique, std::vector<timer_tuple_t>& timer_list)
@@ -222,7 +228,7 @@ launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measure,
     do_print_result() = true;
     for(int i = 0; i < nitr; ++i)
     {
-        auto&& ret = run<_Tp>(nfib, cutoff);
+        auto&& ret = run<Tp>(nfib, cutoff);
         if(i == 0)
         {
             timer_list.push_back(std::get<0>(ret));
@@ -240,7 +246,7 @@ launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measure,
 
     std::string prefix = std::to_string(nuniq) + " unique measurements and " +
                          std::to_string(nmeas) + " total measurements (" +
-                         tim::demangle(typeid(_Tp).name()) + ")";
+                         tim::demangle(typeid(Tp).name()) + ")";
     timer_list.push_back((timer_list.back() / nitr) - (timer_list.at(0) / nitr));
     timer_list.push_back(timer_list.back() / nmeas);
     timer_list.at(timer_list.size() - 2).rekey("difference vs. " + prefix);
@@ -257,9 +263,9 @@ main(int argc, char** argv)
     tim::settings::text_output()       = true;
     tim::settings::memory_units()      = "kB";
     tim::settings::memory_precision()  = 3;
-    tim::settings::width()             = 10;
+    tim::settings::width()             = 12;
     tim::settings::timing_precision()  = 6;
-    tim::dmp::initialize(&argc, &argv);
+    tim::timemory_init(&argc, &argv);
     tim::settings::cout_output() = false;
     tim::print_env();
 
@@ -269,13 +275,21 @@ main(int argc, char** argv)
         nfib = atoi(argv[1]);
 
     // only record auto_timers when n > cutoff
-    int cutoff = nfib - 20;
+    int cutoff = nfib - 15;
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
     int nitr = 1;
     if(argc > 3)
         nitr = atoi(argv[3]);
+
+    auto env_tool = tim::get_env<std::string>("EX_CXX_OVERHEAD_COMPONENTS", "");
+    auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
+    env_enum.erase(std::remove_if(env_enum.begin(), env_enum.end(),
+                                  [](int c) { return c == WALL_CLOCK; }),
+                   env_enum.end());
+    toolkit_size = env_enum.size() + 1;
+    tim::configure<user_global_bundle>(env_enum);
 
     std::vector<timer_tuple_t> timer_list;
 
@@ -349,30 +363,32 @@ main(int argc, char** argv)
               << " KB, max cache size: " << (max_size / tim::units::kilobyte) << " KB\n"
               << std::endl;
 
+    // int ret = 0;
+
     if(!tim::settings::enabled())
     {
         printf("timemory was disabled.\n");
-        return EXIT_SUCCESS;
+        // ret = EXIT_SUCCESS;
     }
     else if(tim::settings::flat_profile())
     {
-        ex_unique = ((nfib - cutoff) + 1) * auto_tuple_size;
+        ex_unique = ((nfib - cutoff) + 1) * toolkit_size;
         int64_t rc_unique =
-            (tim::storage<real_clock>::instance()->size() - 6) * auto_tuple_size;
+            (tim::storage<wall_clock>::instance()->size() - 6) * toolkit_size;
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
-        return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
+        // ret = (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else
     {
         int64_t rc_unique =
-            (tim::storage<real_clock>::instance()->size() - 5) * auto_tuple_size - 4;
+            (tim::storage<wall_clock>::instance()->size() - 5) * toolkit_size - 4;
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
-        return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
+        // ret = (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
-    tim::dmp::finalize();
+    tim::timemory_finalize();
 
     return 0;
 }

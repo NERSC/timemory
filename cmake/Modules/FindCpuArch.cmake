@@ -1,61 +1,199 @@
 
+#------------------------------------------------------------------------------#
+#
+#   Finds CPU architecture information for configuring architecture
+#   specific compiler flags, e.g. enabling AVX-512 instructions
+#
+#   Example:
+#
+#    find_package(CpuArch
+#        REQUIRED
+#        COMPONENTS          avx
+#        OPTIONAL_COMPONENTS fma avx2 avx512f avx512pf avx512er avx512cd)
+#
+#    add_library(${PROJECT_NAME}-arch INTERFACE)
+#    foreach(_ARCH ${CpuArch_FEATURES})
+#        target_compile_options(${PROJECT_NAME}-arch INTERFACE -m${_ARCH})
+#    endforeach()
+#
+#------------------------------------------------------------------------------#
+
+include(CMakeParseArguments)
+
+# always display find package message
+unset(FIND_PACKAGE_MESSAGE_DETAILS_${CMAKE_FIND_PACKAGE_NAME} CACHE)
+
+option(CpuArch_DEBUG "Enable verbose messages and failure if something not found" OFF)
+mark_as_advanced(CpuArch_DEBUG)
+
+#----------------------------------------------------------------------------------------#
+#
+#   For reference -- common cpu architecture flags
+#
+set(CpuArch_AVAILABLE_COMPONENTS
+    3dnowprefetch abm acpi adx aes altivec aperfmperf apic arat arch_perfmon
+    avx avx1.0 avx2 avx512f avx512pf avx512er avx512cd bmi1 bmi2 bts cat_l3 cdp_l3
+    clflush clfsh clfsopt cmov constant_tsc cpuid cpuid_fault cqm cqm_llc cqm_mbm_local
+    cqm_mbm_total cqm_occup_llc cx16 cx8 dca de ds ds_cpl dscpl dtes64 dtherm dts
+    epb ept erms est f16c flexpriority flush_l1d fma fpu fpu_csds
+    fsgsbase fxsr hle ht htt ibpb ibrs ida intel_ppin intel_pt
+    invpcid invpcid_single ipt l1df lahf_lm lm mca mce md_clear mdclear
+    mmx mon monitor movbe mpx msr mtrr nonstop_tsc nopl nx
+    osxsave pae pat pbe pcid pclmulqdq pdcm pdpe1gb pebs pge
+    pln pni popcnt pse pse36 pti pts rdrand rdseed rdt_a
+    rdtscp rdwrfsgs rep_good rtm sdbg seglim64 sep sgx sgxlc smap
+    smep smx ss ssbd sse sse2 sse3 sse4_1 sse4_2 ssse3
+    stibp syscall tm tm2 tpr tpr_shadow tsc tsc_adjust
+    tsc_deadline_timer tsc_thread_offset tsctmr tsxfa vme vmx vnmi vpid
+    x2apic xsave xsaveopt xtopology xtp
+    CACHE STRING "Possible CPU flags (for reference, may be incomplete)")
+
+mark_as_advanced(CpuArch_AVAILABLE_COMPONENTS)
+
+#----------------------------------------------------------------------------------------#
+#   If no components specified, configure a default set
+#
+set(CpuArch_FIND_DEFAULT OFF)
+
+# if target changed
+if(DEFINED CpuArch_TARGET_LAST AND NOT "${CpuArch_TARGET_LAST}" STREQUAL "${CpuArch_TARGET}")
+    # if features did not change when target changed
+    if(DEFINED CpuArch_FEATURES_LAST AND "${CpuArch_FEATURES_LAST}" STREQUAL "${CpuArch_FEATURES}")
+        unset(CpuArch_FEATURES CACHE)
+    endif()
+endif()
+
+# if features are defined, set those as components
+if(DEFINED CpuArch_FEATURES)
+    set(CpuArch_FIND_COMPONENTS ${CpuArch_FEATURES})
+    # if features were set explicitly, require them unless already set
+    foreach(_COMP ${CpuArch_FIND_COMPONENTS})
+        if(NOT DEFINED CpuArch_FIND_REQUIRED_${_COMP})
+            set(CpuArch_FIND_REQUIRED_${_COMP} ON)
+            set(CpuArch_FIND_REQUIRED ON)
+        endif()
+    endforeach()
+endif()
+
+# if no components are specified, configure default set
+if(NOT CpuArch_FIND_COMPONENTS)
+    set(CpuArch_FIND_DEFAULT ON)
+    set(CpuArch_FIND_COMPONENTS sse sse2 sse3 ssse3 sse4 sse4_1 sse4_2 fma avx avx2
+        avx512f avx512pf avx512er avx512cd altivec)
+    foreach(_COMP ${CpuArch_FIND_COMPONENTS})
+        set(CpuArch_FIND_REQUIRED_${_COMP} ${CpuArch_FIND_REQUIRED})
+    endforeach()
+endif()
+
+#----------------------------------------------------------------------------------------#
+#
+#       CpuArch_INPUT       Input /proc/cpuinfo file for Linux
+#
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(CpuArch_INPUT "/proc/cpuinfo" CACHE FILEPATH "File used to get CpuArch features")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#       Detects host architecture flags such as AVX instruction support, etc.
+#
 function(DETECT_HOST_FEATURES _CPU_FLAGS_VAR)
 
-    set(_vendor_id)
-    set(_cpu_family)
-    set(_cpu_model)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        file(READ "/proc/cpuinfo" _cpuinfo)
-        string(REGEX REPLACE ".*vendor_id[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _vendor_id "${_cpuinfo}")
-        string(REGEX REPLACE ".*cpu family[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _cpu_family "${_cpuinfo}")
-        string(REGEX REPLACE ".*model[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _cpu_model "${_cpuinfo}")
+        file(READ "${CpuArch_INPUT}" _cpuinfo)
         string(REGEX REPLACE ".*flags[ \t]*:[ \t]+([^\n]+).*" "\\1" _cpu_flags "${_cpuinfo}")
+        if("${_cpu_flags}" STREQUAL "${_cpuinfo}")
+            string(REPLACE "," " " _cpuinfo "${_cpuinfo}")
+            string(REGEX REPLACE ".*cpu[ \t]*:[ \t]+[a-zA-Z0-9_-]+[ \t]+([a-zA-Z0-9_-]+)[ \t]+supported.*" "\\1" _cpu_flags "${_cpuinfo}")
+        endif()
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        exec_program("/usr/sbin/sysctl -n machdep.cpu.vendor" OUTPUT_VARIABLE _vendor_id)
-        exec_program("/usr/sbin/sysctl -n machdep.cpu.model"  OUTPUT_VARIABLE _cpu_model)
-        exec_program("/usr/sbin/sysctl -n machdep.cpu.family" OUTPUT_VARIABLE _cpu_family)
-        exec_program("/usr/sbin/sysctl -n machdep.cpu.features" OUTPUT_VARIABLE _cpu_flags)
-        exec_program("/usr/sbin/sysctl -n machdep.cpu.leaf7_features" OUTPUT_VARIABLE _cpu_flags2)
-        list(APPEND _cpu_flags "${_cpu_flags2}")
+        execute_process(
+            COMMAND /usr/sbin/sysctl -n machdep.cpu.features
+            OUTPUT_VARIABLE _cpu_flags
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        execute_process(
+            COMMAND /usr/sbin/sysctl -n machdep.cpu.leaf7_features
+            OUTPUT_VARIABLE _cpu_leaf7_flags
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set(_cpu_flags "${_cpu_flags} ${_cpu_leaf7_flags}")
         string(TOLOWER "${_cpu_flags}" _cpu_flags)
         string(REPLACE "." "_" _cpu_flags "${_cpu_flags}")
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        get_filename_component(_vendor_id "[HKEY_LOCAL_MACHINE\\Hardware\\Description\\System\\CentralProcessor\\0;VendorIdentifier]" NAME CACHE)
-        get_filename_component(_cpu_id "[HKEY_LOCAL_MACHINE\\Hardware\\Description\\System\\CentralProcessor\\0;Identifier]" NAME CACHE)
-        mark_as_advanced(_vendor_id _cpu_id)
-        string(REGEX REPLACE ".* Family ([0-9]+) .*" "\\1" _cpu_family "${_cpu_id}")
-        string(REGEX REPLACE ".* Model ([0-9]+) .*" "\\1" _cpu_model "${_cpu_id}")
-    endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    endif()
+
+    if(CpuArch_DEBUG)
+        if("${_cpu_flags}" STREQUAL "${_cpuinfo}")
+            message(FATAL_ERROR "CPU flags could not be found in:\n${_cpu_info}")
+        else()
+            message(STATUS "")
+            message(STATUS "CPU FLAGS : ${_cpu_flags}")
+            message(STATUS "")
+        endif()
+    endif()
 
     string(REPLACE " " ";" _cpu_flags "${_cpu_flags}")
-    set(${_CPU_FLAGS_VAR} "${_cpu_flags}" PARENT_SCOPE)
+    set(_TMP ${_cpu_flags})
+    set(${_CPU_FLAGS_VAR} "${_TMP}" PARENT_SCOPE)
 endfunction()
 
+
+#----------------------------------------------------------------------------------------#
+#
+#       Detects host architecture values:
+#           - architecture name
+#           - cpu vendor
+#           - cpu family
+#           - cpu model
+#
 function(DETECT_HOST_ARCHITECTURE _CPU_ARCH_VAR)
+
+    cmake_parse_arguments(DETECT "VENDOR;FAMILY;MODEL" "" "" ${ARGN})
 
     set(_vendor_id)
     set(_cpu_family)
     set(_cpu_model)
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        file(READ "/proc/cpuinfo" _cpuinfo)
-        string(REGEX REPLACE ".*vendor_id[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _vendor_id "${_cpuinfo}")
-        string(REGEX REPLACE ".*cpu family[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _cpu_family "${_cpuinfo}")
-        string(REGEX REPLACE ".*model[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _cpu_model "${_cpuinfo}")
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        exec_program("/usr/sbin/sysctl -n machdep.cpu.vendor" OUTPUT_VARIABLE _vendor_id)
-        exec_program("/usr/sbin/sysctl -n machdep.cpu.model"  OUTPUT_VARIABLE _cpu_model)
-        exec_program("/usr/sbin/sysctl -n machdep.cpu.family" OUTPUT_VARIABLE _cpu_family)
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        get_filename_component(_vendor_id "[HKEY_LOCAL_MACHINE\\Hardware\\Description\\System\\CentralProcessor\\0;VendorIdentifier]" NAME CACHE)
-        get_filename_component(_cpu_id "[HKEY_LOCAL_MACHINE\\Hardware\\Description\\System\\CentralProcessor\\0;Identifier]" NAME CACHE)
-        mark_as_advanced(_vendor_id _cpu_id)
-        string(REGEX REPLACE ".* Family ([0-9]+) .*" "\\1" _cpu_family "${_cpu_id}")
-        string(REGEX REPLACE ".* Model ([0-9]+) .*" "\\1" _cpu_model "${_cpu_id}")
-    endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
     set(TARGET_ARCHITECTURE "generic")
 
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        file(READ "${CpuArch_INPUT}" _cpuinfo)
+        string(REGEX REPLACE ".*vendor_id[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _vendor_id "${_cpuinfo}")
+        string(REGEX REPLACE ".*cpu family[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _cpu_family "${_cpuinfo}")
+        string(REGEX REPLACE ".*model[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _cpu_model "${_cpuinfo}")
+
+        # if no matches anywhere, expect an IBM PowerPC based on experiences with Summit
+        if("${_vendor_id}" STREQUAL "${_cpu_family}")
+            string(REGEX REPLACE ".*cpu[ \t]*:[ \t]+([a-zA-Z0-9_-]+).*" "\\1" _cpu "${_cpuinfo}")
+            string(REGEX REPLACE "([a-zA-Z]+).*" "\\1" _cpu_family "${_cpu}")
+            string(REGEX REPLACE "[a-zA-Z]+([0-9]+).*" "\\1" _cpu_model "${_cpu}")
+            if("${_cpu_family}" STREQUAL "POWER")
+                set(_vendor_id "IBM")
+            endif()
+            string(TOLOWER "${_cpu}" TARGET_ARCHITECTURE)
+        endif()
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        execute_process(
+            COMMAND /usr/sbin/sysctl -n machdep.cpu.vendor
+            OUTPUT_VARIABLE _vendor_id
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        execute_process(
+            COMMAND /usr/sbin/sysctl -n machdep.cpu.model
+            OUTPUT_VARIABLE _cpu_model
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        execute_process(
+            COMMAND /usr/sbin/sysctl -n machdep.cpu.family
+            OUTPUT_VARIABLE _cpu_family
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        get_filename_component(_vendor_id "[HKEY_LOCAL_MACHINE\\Hardware\\Description\\System\\CentralProcessor\\0;VendorIdentifier]" NAME CACHE)
+        get_filename_component(_cpu_id "[HKEY_LOCAL_MACHINE\\Hardware\\Description\\System\\CentralProcessor\\0;Identifier]" NAME CACHE)
+        mark_as_advanced(_vendor_id _cpu_id)
+        string(REGEX REPLACE ".* Family ([0-9]+) .*" "\\1" _cpu_family "${_cpu_id}")
+        string(REGEX REPLACE ".* Model ([0-9]+) .*" "\\1" _cpu_model "${_cpu_id}")
+    endif()
+
     if(_vendor_id STREQUAL "GenuineIntel")
+        #
         if(_cpu_family EQUAL 6)
             # taken from the Intel ORM
             # http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
@@ -162,8 +300,10 @@ function(DETECT_HOST_ARCHITECTURE _CPU_ARCH_VAR)
             if(_cpu_model GREATER 2) # Not sure whether this must be 3 or even 4 instead
                 list(APPEND _available_vector_units_list "sse" "sse2" "sse3")
             endif(_cpu_model GREATER 2)
-        endif(_cpu_family EQUAL 6)
+        endif()
+        #
     elseif(_vendor_id STREQUAL "AuthenticAMD")
+        #
         if(_cpu_family EQUAL 23)
             set(TARGET_ARCHITECTURE "zen")
         elseif(_cpu_family EQUAL 22) # 16h
@@ -185,19 +325,48 @@ function(DETECT_HOST_ARCHITECTURE _CPU_ARCH_VAR)
                 set(TARGET_ARCHITECTURE "k8-sse3")
             endif(_cpu_model GREATER 64)
         endif()
+        #
     endif()
-    set(${_CPU_ARCH_VAR} "${TARGET_ARCHITECTURE}" PARENT_SCOPE)
+
+    if(CpuArch_DEBUG)
+        function(CpuArch_DEBUG_OUTPUT LABEL VARIABLE INFO)
+            if("${${VARIABLE}}" STREQUAL "${INFO}" AND NOT "${INFO}" STREQUAL "")
+                message(FATAL_ERROR "${VARIABLE} (${LABEL}) could not be found in:\n${INFO}")
+            else()
+                message(STATUS "${LABEL} : ${${VARIABLE}}")
+            endif()
+        endfunction()
+
+        message(STATUS "")
+        CpuArch_DEBUG_OUTPUT("VENDOR ID   " _vendor_id "${_cpuinfo}")
+        CpuArch_DEBUG_OUTPUT("CPU FAMILY  " _cpu_family "${_cpuinfo}")
+        CpuArch_DEBUG_OUTPUT("CPU MODEL   " _cpu_model "${_cpuinfo}")
+        CpuArch_DEBUG_OUTPUT("ARCHITECTURE" TARGET_ARCHITECTURE "${_cpuinfo}")
+        message(STATUS "")
+    endif()
+
+    if(DETECT_VENDOR)
+        set(${_CPU_ARCH_VAR} "${_vendor_id}" PARENT_SCOPE)
+    elseif(DETECT_FAMILY)
+        set(${_CPU_ARCH_VAR} "${_cpu_family}" PARENT_SCOPE)
+    elseif(DETECT_MODEL)
+        set(${_CPU_ARCH_VAR} "${_cpu_model}" PARENT_SCOPE)
+    else()
+        set(${_CPU_ARCH_VAR} "${TARGET_ARCHITECTURE}" PARENT_SCOPE)
+    endif()
+
+    # temporary variables
+    set(CpuArch_VENDOR_ID "${_vendor_id}" PARENT_SCOPE)
+    set(CpuArch_CPU_FAMILY "${_cpu_family}" PARENT_SCOPE)
+    set(CpuArch_CPU_MODEL "${_cpu_model}" PARENT_SCOPE)
+
 ENDFUNCTION()
 
-# =============================================================================#
-
-if(NOT DEFINED CpuArch_TARGET OR "${CpuArch_TARGET}" STREQUAL "")
-    detect_host_architecture(TARGET_ARCH)
-    set(CpuArch_TARGET "${TARGET_ARCH}" CACHE STRING "CPU architecture target")
-endif()
-
-detect_host_features(TARGET_FEATURES)
-
+#----------------------------------------------------------------------------------------#
+#
+#       Find the request cpu features from the available flags and/or
+#       append the highest known flag if possible
+#
 function(GET_CPU_FEATURES _OUTVAR)
 
     # parse args
@@ -209,7 +378,7 @@ function(GET_CPU_FEATURES _OUTVAR)
         ${ARGN})
 
     if("${_CPU_CANDIDATES}" STREQUAL "")
-        message(STATUS "No candidates")
+        message(STATUS "No CpuArch_COMPONENTS found")
         return()
     endif()
 
@@ -222,11 +391,14 @@ function(GET_CPU_FEATURES _OUTVAR)
         return()
     endif()
 
+    string(REPLACE "_" "." _CPU_VALID "${_CPU_VALID}")
     foreach(_CANDIDATE ${_CPU_CANDIDATES})
         if("${_CANDIDATE}" IN_LIST _CPU_VALID)
             list(APPEND _FEATURES ${_CANDIDATE})
             list(REMOVE_DUPLICATES _FEATURES)
         endif()
+        list(APPEND _MISSING ${_CANDIDATE})
+        set(CpuArch_${_CANDIDATE}_FOUND OFF PARENT_SCOPE)
     endforeach()
 
     set(OFA_map_knl "MIC-AVX512")
@@ -243,6 +415,7 @@ function(GET_CPU_FEATURES _OUTVAR)
     set(OFA_map_merom "SSSE3")
     set(OFA_map_core2 "SSE3")
     set(OFA_map_kaby-lake "AVX2")
+    set(OFA_map_power9 "ALTIVEC")
 
     list(APPEND _FEATURES "${OFA_map_${_CPU_TARGET}}")
     if("${_FEATURES}" STREQUAL "")
@@ -255,33 +428,50 @@ function(GET_CPU_FEATURES _OUTVAR)
     endif()
     string(REPLACE "_" "." _FEATURES "${_FEATURES}")
 
-    set(${_OUTVAR} "${_FEATURES}" PARENT_SCOPE)
+    set(_TMP ${_FEATURES})
+    foreach(_VAR ${_TMP})
+        list(APPEND _FOUND ${_VAR})
+        list(REMOVE_ITEM _MISSING ${_VAR})
+        set(CpuArch_${_VAR}_FOUND ON PARENT_SCOPE)
+    endforeach()
+    set(CpuArch_FOUND_COMPONENTS ${_FOUND} PARENT_SCOPE)
+    set(CpuArch_MISSING_COMPONENTS ${_MISSING} PARENT_SCOPE)
+    set(${_OUTVAR} "${_TMP}" PARENT_SCOPE)
 endfunction()
 
-if(NOT CpuArch_FIND_COMPONENTS)
-    set(CpuArch_FIND_COMPONENTS sse sse2 sse3 ssse3 sse4 sse4_1 sse4_2 fma avx avx2
-        avx512f avx512pf avx512er avx512cd)
-endif()
 
+#----------------------------------------------------------------------------------------#
+#
+#
+detect_host_architecture(TARGET_ARCH)
+set(CpuArch_TARGET "${TARGET_ARCH}" CACHE STRING "CPU architecture target")
+set(CpuArch_TARGET_LAST "${CpuArch_TARGET}" CACHE INTERNAL "CPU architecture target" FORCE)
+
+# get the target features
+detect_host_features(TARGET_FEATURES)
+
+# check the components against the available features
 get_cpu_features(_FEATURES
     TARGET      ${CpuArch_TARGET}
     VALID       ${TARGET_FEATURES}
     CANDIDATES  ${CpuArch_FIND_COMPONENTS})
+
 set(CpuArch_FEATURES "${_FEATURES}" CACHE STRING "CPU architecture features")
+set(CpuArch_FEATURES_LAST "${CpuArch_FEATURES}" CACHE INTERNAL "CPU architecture features" FORCE)
 
-message(STATUS "Found CpuArch: '${CpuArch_TARGET}' with features: '${CpuArch_FEATURES}'")
+# if we populated w/ default set, don't report as missing and don't require them
+if(CpuArch_FIND_DEFAULT)
+    foreach(_MISSING ${CpuArch_MISSING_COMPONENTS})
+        list(REMOVE_ITEM CpuArch_FIND_COMPONENTS ${_MISSING})
+        set(CpuArch_FIND_REQUIRED_${_MISSING} OFF)
+    endforeach()
+endif()
 
-# =============================================================================#
-
+#----------------------------------------------------------------------------------------#
+#
+#
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(CpuArch DEFAULT_MSG
-    CpuArch_TARGET)
-
-# =============================================================================#
-
-# if(APPLE)
-#    add(_TARGET_FEATURES "-Wa,-W")
-#    add(_TARGET_FEATURES "-Wa,-q")
-# endif(APPLE)
-
-# =============================================================================#
+find_package_handle_standard_args(CpuArch
+    FOUND_VAR CpuArch_FOUND
+    REQUIRED_VARS CpuArch_TARGET
+    HANDLE_COMPONENTS)

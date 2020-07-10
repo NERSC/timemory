@@ -24,8 +24,8 @@
 
 #pragma once
 
-#if !defined(TIMEMORY_EXTERN_TEMPLATES)
-#    define TIMEMORY_EXTERN_TEMPLATES
+#if !defined(TIMEMORY_PYBIND11_SOURCE)
+#    define TIMEMORY_PYBIND11_SOURCE
 #endif
 
 //======================================================================================//
@@ -35,9 +35,30 @@
 
 //======================================================================================//
 
+#include "timemory/timemory.hpp"
+//
+#include "timemory/enum.h"
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/enumerate.hpp"
+#include "timemory/runtime/initialize.hpp"
+#include "timemory/runtime/insert.hpp"
+#include "timemory/runtime/invoker.hpp"
+#include "timemory/runtime/properties.hpp"
+
+#include "pybind11/cast.h"
+#include "pybind11/embed.h"
+#include "pybind11/eval.h"
+#include "pybind11/functional.h"
+#include "pybind11/iostream.h"
+#include "pybind11/numpy.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/pytypes.h"
+#include "pybind11/stl.h"
+
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <functional>
 #include <future>
 #include <iostream>
@@ -49,29 +70,6 @@
 #include <thread>
 #include <vector>
 
-#include "pybind11/cast.h"
-#include "pybind11/chrono.h"
-#include "pybind11/embed.h"
-#include "pybind11/eval.h"
-#include "pybind11/functional.h"
-#include "pybind11/iostream.h"
-#include "pybind11/numpy.h"
-#include "pybind11/pybind11.h"
-#include "pybind11/pytypes.h"
-#include "pybind11/stl.h"
-
-#include "timemory/backends/dmp.hpp"
-#include "timemory/enum.h"
-#include "timemory/manager.hpp"
-#include "timemory/settings.hpp"
-#include "timemory/timemory.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_timer.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
-
 //======================================================================================//
 
 namespace py = pybind11;
@@ -79,23 +77,11 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
+using auto_list_t  = tim::available_auto_list_t;
 using auto_timer_t = tim::auto_timer;
-
-using auto_usage_t =
-    tim::auto_tuple<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
-                    voluntary_context_switch, priority_context_switch>;
-using auto_list_t = tim::complete_auto_list_t;
-
-using tim_timer_t       = typename auto_timer_t::component_type;
-using rss_usage_t       = typename auto_usage_t::component_type;
-using component_list_t  = typename auto_list_t::component_type;
-using manager_t         = tim::manager;
-using sys_signal_t      = tim::sys_signal;
-using signal_settings_t = tim::signal_settings;
-using signal_set_t      = signal_settings_t::signal_set_t;
-using farray_t          = py::array_t<double, py::array::c_style | py::array::forcecast>;
-
-using component_enum_vec = std::vector<TIMEMORY_COMPONENT>;
+using tim_timer_t  = typename auto_timer_t::component_type;
+using manager_t    = tim::manager;
+using farray_t     = py::array_t<double, py::array::c_style | py::array::forcecast>;
 
 //======================================================================================//
 
@@ -112,69 +98,6 @@ protected:
 
 //======================================================================================//
 
-class auto_timer_decorator
-{
-public:
-    auto_timer_decorator(auto_timer_t* _ptr = nullptr)
-    : m_ptr(_ptr)
-    {}
-
-    ~auto_timer_decorator() { delete m_ptr; }
-
-    auto_timer_decorator& operator=(auto_timer_t* _ptr)
-    {
-        if(m_ptr)
-            delete m_ptr;
-        m_ptr = _ptr;
-        return *this;
-    }
-
-private:
-    auto_timer_t* m_ptr;
-};
-
-//======================================================================================//
-
-class component_list_decorator
-{
-public:
-    component_list_decorator(component_list_t* _ptr = nullptr)
-    : m_ptr(_ptr)
-    {
-        if(m_ptr)
-        {
-            m_ptr->push();
-            m_ptr->start();
-        }
-    }
-
-    ~component_list_decorator()
-    {
-        if(m_ptr)
-            m_ptr->stop();
-        delete m_ptr;
-    }
-
-    component_list_decorator& operator=(component_list_t* _ptr)
-    {
-        if(m_ptr)
-            m_ptr->stop();
-        delete m_ptr;
-        m_ptr = _ptr;
-        if(m_ptr)
-        {
-            m_ptr->push();
-            m_ptr->start();
-        }
-        return *this;
-    }
-
-private:
-    component_list_t* m_ptr;
-};
-
-//======================================================================================//
-
 #if _PYTHON_MAJOR_VERSION > 2
 #    define PYOBJECT_SELF
 #    define PYOBJECT_SELF_PARAM
@@ -187,84 +110,7 @@ private:
 
 namespace pytim
 {
-//======================================================================================//
-
 using string_t = std::string;
-
-//======================================================================================//
-//
-//                          TiMemory (general)
-//
-//======================================================================================//
-
-component_enum_vec
-components_list_to_vec(py::list pystr_list)
-{
-    std::vector<std::string> str_list;
-    for(auto itr : pystr_list)
-        str_list.push_back(itr.cast<std::string>());
-    return tim::enumerate_components(str_list);
-}
-
-//--------------------------------------------------------------------------------------//
-
-component_enum_vec
-components_enum_to_vec(py::list enum_list)
-{
-    component_enum_vec vec;
-    for(auto itr : enum_list)
-        vec.push_back(itr.cast<TIMEMORY_COMPONENT>());
-    return vec;
-}
-
-//--------------------------------------------------------------------------------------//
-
-component_list_t*
-create_component_list(std::string obj_tag, const component_enum_vec& components)
-{
-    auto obj = new component_list_t(obj_tag, true, tim::settings::flat_profile());
-    tim::initialize(*obj, components);
-    return obj;
-}
-
-//--------------------------------------------------------------------------------------//
-
-signal_set_t
-signal_list_to_set(py::list signal_list)
-{
-    signal_set_t signal_set;
-    for(auto itr : signal_list)
-        signal_set.insert(itr.cast<sys_signal_t>());
-    return signal_set;
-}
-
-//--------------------------------------------------------------------------------------//
-
-signal_set_t
-get_default_signal_set()
-{
-    return tim::signal_settings::enabled();
-}
-
-//--------------------------------------------------------------------------------------//
-
-void
-enable_signal_detection(py::list signal_list = py::list())
-{
-    auto _sig_set = (signal_list.size() == 0) ? get_default_signal_set()
-                                              : signal_list_to_set(signal_list);
-    tim::enable_signal_detection(_sig_set);
-}
-
-//--------------------------------------------------------------------------------------//
-
-void
-disable_signal_detection()
-{
-    tim::disable_signal_detection();
-}
-
-//--------------------------------------------------------------------------------------//
 
 //======================================================================================//
 //
@@ -274,75 +120,13 @@ disable_signal_detection()
 
 namespace init
 {
-//--------------------------------------------------------------------------------------//
-
+//
 manager_wrapper*
 manager()
 {
     return new manager_wrapper();
 }
-
-//--------------------------------------------------------------------------------------//
-
-tim_timer_t*
-timer(std::string key)
-{
-    return new tim_timer_t(key, true, tim::settings::flat_profile());
-}
-
-//--------------------------------------------------------------------------------------//
-
-auto_timer_t*
-auto_timer(std::string key, bool report_at_exit)
-{
-    return new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit);
-}
-
-//--------------------------------------------------------------------------------------//
-
-rss_usage_t*
-rss_usage(std::string key, bool record)
-{
-    rss_usage_t* _rss = new rss_usage_t(key, true, tim::settings::flat_profile());
-    if(record)
-        _rss->measure();
-    return _rss;
-}
-
-//--------------------------------------------------------------------------------------//
-
-component_list_t*
-component_list(py::list components, std::string key)
-{
-    return create_component_list(key, components_enum_to_vec(components));
-}
-
-//----------------------------------------------------------------------------//
-
-auto_timer_decorator*
-timer_decorator(const std::string& key, bool report_at_exit)
-{
-    auto_timer_decorator* _ptr = new auto_timer_decorator();
-    if(!tim::settings::enabled())
-        return _ptr;
-    return &(*_ptr =
-                 new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit));
-}
-
-//----------------------------------------------------------------------------//
-
-component_list_decorator*
-component_decorator(py::list components, const std::string& key)
-{
-    component_list_decorator* _ptr = new component_list_decorator();
-    if(!manager_t::is_enabled())
-        return _ptr;
-
-    return &(*_ptr = create_component_list(key, components_enum_to_vec(components)));
-}
-
-//--------------------------------------------------------------------------------------//
-
+//
 }  // namespace init
 
 //======================================================================================//
@@ -371,7 +155,7 @@ write_ctest_notes(py::object man, std::string directory, bool append)
     for(const auto& itr : filenames)
     {
         std::string fname = itr.cast<std::string>();
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(_WIN64)
         while(fname.find("\\") != std::string::npos)
             fname = fname.replace(fname.find("\\"), 1, "/");
 #endif
@@ -507,7 +291,7 @@ add_arguments(py::object parser = py::none(), std::string fpath = ".")
                                  required=False, action='store_true')
 
              parser.add_argument('--write-ctest-notes',
-                                 help="Write a CTestNotes.cmake file for TiMemory ASCII output",
+                                 help="Write a CTestNotes.cmake file for timemory ASCII output",
                                  required=False, action='store_true')
 
              parser.set_defaults(enabled=True)
@@ -584,63 +368,6 @@ add_args_and_parse_known(py::object parser = py::none(), std::string fpath = "")
 //--------------------------------------------------------------------------------------//
 
 }  // namespace opt
-
-//======================================================================================//
-
-template <typename _Tuple>
-struct construct_dict
-{
-    using Type = _Tuple;
-
-    construct_dict(_Tuple& _tup, py::dict& _dict)
-    {
-        auto _label = std::get<0>(_tup);
-        if(_label.size() > 0)
-            _dict[_label.c_str()] = std::get<1>(_tup);
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <>
-struct construct_dict<std::tuple<std::string, void*>>
-{
-    using Type = std::tuple<std::string, void*>;
-
-    template <typename... _Args>
-    construct_dict(_Args&&...)
-    {}
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-struct dict
-{
-    static py::dict construct(std::tuple<_Types...>& _tup)
-    {
-        using apply_types = std::tuple<construct_dict<_Types>...>;
-        py::dict _dict;
-        ::tim::apply<void>::access<apply_types>(_tup, std::ref(_dict));
-        return _dict;
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-struct dict<std::tuple<_Types...>>
-{
-    static py::dict construct(std::tuple<_Types...>& _tup)
-    {
-        return dict<_Types...>::construct(_tup);
-    }
-};
-
-//======================================================================================//
-
-struct settings
-{};
 
 //======================================================================================//
 

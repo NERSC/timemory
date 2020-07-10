@@ -42,7 +42,9 @@ __all__ = ['util',
            'base_decorator',
            'auto_timer',
            'timer',
-           'rss_usage']
+           'rss_usage',
+           'marker',
+           'auto_tuple']
 
 from . import util
 from .util import *

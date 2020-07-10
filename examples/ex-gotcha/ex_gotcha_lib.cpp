@@ -24,7 +24,8 @@
 
 #include "ex_gotcha_lib.hpp"
 
-#include <timemory/timemory.hpp>
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -35,23 +36,23 @@ namespace ext
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Func, typename _Incr>
-_Tp
-work(const std::string& fname, int nitr, _Func&& func, _Incr&& incr)
+template <typename Tp, typename FuncT, typename IncrT>
+Tp
+work(const std::string& fname, int nitr, FuncT&& func, IncrT&& incr)
 {
 #if !defined(VERBOSE)
     tim::consume_parameters(fname);
 #endif
 
-    _Tp val = 2.0;
-    _Tp sum = 0.0;
+    Tp val = 2.0;
+    Tp sum = 0.0;
 
     for(int i = 0; i < nitr; ++i)
     {
         sum += func(val);
 #if defined(VERBOSE)
         printf("\t[itr: %2i]> %-6s %-4s(%7.3f) = %20.3f\n", i,
-               tim::demangle(typeid(_Tp).name()).c_str(), fname.c_str(), val, sum);
+               tim::demangle<Tp>().c_str(), fname.c_str(), val, sum);
 #endif
         val = incr(val, i + 1);
     }
@@ -86,3 +87,25 @@ do_exp_work(int nitr)
 //--------------------------------------------------------------------------------------//
 
 }  // namespace ext
+
+//--------------------------------------------------------------------------------------//
+//
+double
+sum_exp(const std::vector<double>& data)
+{
+    auto ret = double{};
+    for(const auto& itr : data) ret += exp(itr);
+    return ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+float
+sum_exp(const std::vector<float>& data)
+{
+    auto ret = float{};
+    for(const auto& itr : data) ret += expf(itr);
+    return ret;
+}
+//
+//--------------------------------------------------------------------------------------//

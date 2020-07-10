@@ -1,3 +1,4 @@
+
 ##########################################################################################
 #       CMake settings
 ##########################################################################################
@@ -12,10 +13,26 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(WARNING "In-source build")
 endif()
 
+option(TIMEMORY_CCACHE_BUILD "Enable ccache build" OFF)
+mark_as_advanced(TIMEMORY_CCACHE_BUILD)
+if(TIMEMORY_CCACHE_BUILD)
+    find_program(TIMEMORY_CCACHE_EXE ccache PATH_SUFFIXES bin)
+    if(TIMEMORY_CCACHE_EXE)
+        if(NOT EXISTS "${TIMEMORY_CCACHE_EXE}")
+            message(WARNING
+                "TIMEMORY_CCACHE_BUILD is ON but TIMEMORY_CCACHE_EXE (${TIMEMORY_CCACHE_EXE}) does not exist!")
+        else()
+            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${TIMEMORY_CCACHE_EXE}")
+        endif()
+    endif()
+endif()
+
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
     cmake_policy(SET CMP0079 NEW)
+endif()
+if(NOT CMAKE_VERSION VERSION_LESS 3.14)
     cmake_policy(SET CMP0082 NEW)
 endif()
 # set these as the defaults
@@ -23,13 +40,13 @@ set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
 # this gets annoying
-if(TIMEMORY_BUILD_GTEST OR TIMEMORY_BUILD_TESTING)
+if(TIMEMORY_BUILD_GOOGLE_TEST OR TIMEMORY_BUILD_TESTING)
     set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
         "Suppress Warnings that are meant for the author of the CMakeLists.txt files")
 endif()
 # override any cache settings
 if(TIMEMORY_BUILD_TESTING)
-    set(TIMEMORY_BUILD_GTEST ON)
+    set(TIMEMORY_BUILD_GOOGLE_TEST ON)
     set(TIMEMORY_BUILD_EXAMPLES ON)
 endif()
 #
@@ -74,6 +91,12 @@ include(GNUInstallDirs)
 # cmake installation folder -- change CMAKE_INSTALL_DATAROOTDIR to tweak this
 set(CMAKE_INSTALL_CONFIGDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME})
 
+if(UNIX AND NOT APPLE)
+    set(CMAKE_INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\$ORIGIN/timemory:\$ORIGIN:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/timemory")
+elseif(APPLE)
+    set(CMAKE_INSTALL_RPATH "@rpath/timemory:@loader_path/timemory:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+
 # create the full path version and generic path versions
 foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
     # generic "PROJECT_INSTALL_" variables (used by documentation)"
@@ -106,7 +129,9 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 
 foreach(_TYPE MAJOR MINOR PATCH)
     set(TIMEMORY_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}})
-endforeach(_TYPE MAJOR MINOR PATCH)
+    set(${PROJECT_NAME}_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}})
+endforeach()
+set(timemory_VERSION ${PROJECT_VERSION})
 set(LIBNAME timemory)
 
 #----------------------------------------------------------------------------------------#
@@ -186,16 +211,21 @@ unset(_TLS_OPTIONS)
 #   rest of configuration
 #----------------------------------------------------------------------------------------#
 
-include(ClangFormat)
-include(Compilers)
-include(BuildSettings)
-include(Packages)
 include(CMakeParseArguments)
+message(STATUS "Adding clang-format...")
+include(ClangFormat)
+message(STATUS "Configuring compilers...")
+include(Compilers)
+message(STATUS "Configuring build settings...")
+include(BuildSettings)
+message(STATUS "Configuring external packages and interface libraries...")
+include(Packages)
 
 #----------------------------------------------------------------------------------------#
 #   timemory exports
 #----------------------------------------------------------------------------------------#
 
+message(STATUS "Exporting interface libraries...")
 install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}-library-depends)
@@ -204,11 +234,24 @@ if(TIMEMORY_BUILD_CALIPER)
     set(_CALIPER_TARGETS)
     foreach(CALIPER_TARGET caliper caliper-serial caliper-tools-util caliper-mpi)
         if(TARGET ${CALIPER_TARGET})
-            list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${CALIPER_TARGET})
+            list(APPEND _CALIPER_TARGETS ${CALIPER_TARGET})
         endif()
     endforeach()
-    list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${_CALIPER_TARGETS})
+    list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_CALIPER_TARGETS})
     install(TARGETS ${_CALIPER_TARGETS}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        EXPORT ${PROJECT_NAME}-library-depends)
+endif()
+
+if(TIMEMORY_BUILD_OMPT)
+    set(_OMPT_TARGETS)
+    foreach(OMPT_TARGET omp omptarget)
+        if(TARGET ${OMPT_TARGET})
+            list(APPEND _OMPT_TARGETS ${OMPT_TARGET})
+        endif()
+    endforeach()
+    list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_OMPT_TARGETS})
+    install(TARGETS ${_OMPT_TARGETS}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
         EXPORT ${PROJECT_NAME}-library-depends)
 endif()
@@ -221,9 +264,17 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     _timemory_activate_clang_tidy()
 endif()
 
+message(STATUS "Adding timemory (python)...")
+add_subdirectory(timemory)
+
+message(STATUS "Adding source...")
 add_subdirectory(source)
 
+message(STATUS "Adding external")
+add_subdirectory(external)
+
 # Install the export set for use with the install-tree
+message(STATUS "Exporting library dependencies...")
 install(EXPORT ${PROJECT_NAME}-library-depends
     DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
     NAMESPACE ${PROJECT_NAME}::)
@@ -233,7 +284,9 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory build examples directory")
+    message(STATUS "Adding examples...")
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING
+        "timemory build examples directory" FORCE)
     add_subdirectory(examples)
 endif()
 
@@ -246,10 +299,15 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     include(Documentation)
 
     if(TIMEMORY_BUILD_DOCS)
+        message(STATUS "Adding documentation...")
         # SET(CMAKE_INSTALL_MESSAGE NEVER)
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
         # SET(CMAKE_INSTALL_MESSAGE LAZY)
     endif()
 
     print_features()
+
 endif()
+
+message(STATUS "Generating Makefile...")
+include(GenerateMakefile)

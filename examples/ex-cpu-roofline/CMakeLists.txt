@@ -28,4 +28,5 @@ target_link_libraries(ex-cpu-roofline-fib-double   timemory cpu-fp-double)
 set_target_properties(ex-cpu-roofline-fib-double   PROPERTIES OUTPUT_NAME ${EXE_NAME})
 
 # install the targets
-install(TARGETS ex-cpu-roofline-fib-single ex-cpu-roofline-fib-double DESTINATION bin)
+install(TARGETS ex-cpu-roofline-fib-single ex-cpu-roofline-fib-double DESTINATION bin
+    COMPONENT examples OPTIONAL)

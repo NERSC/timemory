@@ -1,4 +1,4 @@
-# TiMEmory Travis CI file
+# timemory Travis CI file
 
 language: python
 
@@ -22,15 +22,13 @@ matrix:
             - gcc-6
             - g++-6
             - build-essential
-            - libmpich-dev
-            - mpich
             - libpapi-dev
             - papi-tools
+            - graphviz
             - libgoogle-perftools-dev
             - google-perftools
-            - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--papi --mpi --build-libs static'"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--papi --build-libs static --ompt --kokkos --stats --tools --cxx-standard=14'"
     # GCC 7
     - os: linux
       dist: bionic
@@ -41,16 +39,18 @@ matrix:
             - gcc
             - g++
             - build-essential
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
+            - openmpi-common
+            - libfabric-dev
             - libpapi-dev
             - papi-tools
-            - libgoogle-perftools-dev
-            - google-perftools
             - lcov
             - graphviz
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc) && CXX=$(which g++) && COVERAGE=1 && BUILD_TYPE=Debug && BUILD_ARGS='--build-libs static --papi'"
+        - MATRIX_EVAL="CC=$(which gcc) && CXX=$(which g++) && BUILD_TYPE=Debug && BUILD_ARGS='--build-libs static --papi --mpi --ompt --kokkos --tools --cxx-standard=14'"
     #
     # GCC 8
     - os: linux
@@ -64,15 +64,17 @@ matrix:
             - gcc-8
             - g++-8
             - build-essential
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
+            - openmpi-common
+            - libfabric-dev
             - libpapi-dev
             - papi-tools
+            - graphviz
             - libgoogle-perftools-dev
             - google-perftools
-            - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --papi'"
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --papi --stats --tools --cxx-standard=17'"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -86,15 +88,13 @@ matrix:
             - clang-5.0
             - clang++-5.0
             - build-essential
-            - libmpich-dev
-            - mpich
             - libpapi-dev
             - papi-tools
+            - graphviz
             - libgoogle-perftools-dev
             - google-perftools
-            - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs static --mpi --papi'"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs static --ompt --kokkos --stats --tools --cxx-standard=14'"
     # Clang 7
     - os: linux
       dist: bionic
@@ -105,15 +105,17 @@ matrix:
             - clang-7
             - clang++-7
             - build-essential
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
+            - openmpi-common
+            - libfabric-dev
             - libpapi-dev
             - papi-tools
+            - graphviz
             - libgoogle-perftools-dev
             - google-perftools
-            - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs static --caliper --mpi --papi'"
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs static --caliper --mpi --papi --ompt --stats --tools --cxx-standard=14'"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7
@@ -135,11 +137,11 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - graphviz
             - libgoogle-perftools-dev
             - google-perftools
-            - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared --mpi --papi --gotcha'"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared --papi --gotcha --python --kokkos --stats --cxx-standard=14'"
     # GCC 7
     - os: linux
       dist: bionic
@@ -156,11 +158,12 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - graphviz
             - libgoogle-perftools-dev
             - google-perftools
-            - graphviz
+            - lcov
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs static --mpi --papi --caliper'"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && COVERAGE=1 && BUILD_ARGS='--build-libs shared --mpi --papi --caliper --mpip --python --ompt --stats --cxx-standard=17'"
     #
     # GCC 8
     - os: linux
@@ -176,13 +179,9 @@ matrix:
             - build-essential
             - libmpich-dev
             - mpich
-            - libpapi-dev
-            - papi-tools
-            - libgoogle-perftools-dev
-            - google-perftools
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs shared --mpi --papi'"
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_TYPE=Release && BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17'"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -200,11 +199,11 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - graphviz
             - libgoogle-perftools-dev
             - google-perftools
-            - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi'"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14' && CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'"
     # Clang 7
     - os: linux
       dist: bionic
@@ -219,11 +218,11 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - graphviz
             - libgoogle-perftools-dev
             - google-perftools
-            - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs shared --gotcha --caliper --mpi --papi'"
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs shared --gotcha --caliper --mpi --papi --python --stats --tools --cxx-standard=14'"
 
     # ------------------------------------------------------------------------ #
 
@@ -239,25 +238,27 @@ before_install:
 install:
   - eval "${MATRIX_EVAL}"
   - env
-  - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow gperftools
+  - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip cython
   - source activate pyctest
-  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --python ${BUILD_ARGS}"
+  - if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
+  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
-  - travis_wait 75 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
+  - travis_wait 85 python ./pyctest-runner.py -cc ${CC} -cxx ${CXX} ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure -- ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
+  - cd build-timemory/Linux
+  - make install -j
 
 script:
   - eval "${MATRIX_EVAL}"
-  # - python -c "import timemory; print(timemory.__file__)"
+  - export TIMEMORY_PYTHON_INSTALL=${HOME}/timemory-install/lib/python${TRAVIS_PYTHON_VERSION}/site-packages
+  - export PYTHONPATH=${TIMEMORY_PYTHON_INSTALL}:${PYTHONPATH}
+  - if [ -d "${TIMEMORY_PYTHON_INSTALL}" ]; then python -c "import timemory; print(timemory.__file__)"; fi
   - echo "Testing is Done"
 
 after_success:
   - eval "${MATRIX_EVAL}"
-  - SUBMIT_COVERAGE=0
-  - if [ -n "${COVERAGE}" ]; then SUBMIT_COVERAGE=1; fi
-  - if [ -z "$(which lcov)" ]; then SUBMIT_COVERAGE=0; fi
   # Create lcov report: capture coverage info, filter, debugging, and upload
-  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --directory . --capture --output-file coverage.info ; fi
-  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/external/*' --output-file coverage.info; fi
-  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --list coverage.info; fi
-  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Capturing coverage..."; lcov --directory . --capture --output-file coverage.info ; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Removing some coverage..."; lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/external/*' --output-file coverage.info; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Listing coverage..."; lcov --list coverage.info; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Submitting coverage..."; bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"; fi

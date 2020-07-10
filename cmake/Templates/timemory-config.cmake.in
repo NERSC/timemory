@@ -1,5 +1,5 @@
 # Don't allow cmake older than 3.11 to use this configuration
-cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 foreach(_VAR ROOT_DIR INCLUDE_DIR LIB_DIR PYTHON_DIR INCLUDE_DIRS MISSING_COMPONENTS
     FOUND_COMPONENTS LIBRARIES LIBRARY_FOUND SHARED_LIBRARY_FOUND STATIC_LIBRARY_FOUND
@@ -110,7 +110,7 @@ if(NOT WIN32)
     set(CMAKE_THREAD_PREFER_PTHREAD @CMAKE_THREAD_PREFER_PTHREAD@)
     set(THREADS_PREFER_PTHREAD_FLAG @THREADS_PREFER_PTHREAD_FLAG@)
 endif()
-find_package(Threads QUIET)
+find_package(Threads QUIET @TIMEMORY_FIND_REQUIREMENT@)
 
 #----------------------------------------------------------------------------------------#
 #   Determine install tree or build tree
@@ -129,7 +129,7 @@ if(TIMEMORY_INSTALL_TREE)
     if(@TIMEMORY_BUILD_PYTHON@)
         set(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
         if(NOT EXISTS ${@PROJECT_NAME@_PYTHON_DIR})
-            find_package(PythonInterp QUIET)
+            find_package(PythonInterp QUIET @TIMEMORY_FIND_REQUIREMENT@)
             if(PYTHONINTERP_FOUND)
                 execute_process(COMMAND
                     ${PYTHON_EXECUTABLE} -c "import site; print(site.getsitepackages()[0])"
@@ -144,15 +144,39 @@ if(TIMEMORY_INSTALL_TREE)
         set(@PROJECT_NAME@_${_TYPE}_DIRS ${@PROJECT_NAME@_${_TYPE}_DIR})
     endforeach()
 
-    set(caliper_DIR "@caliper_DIR@")
-    if(NOT "${caliper_DIR}" STREQUAL "")
-        find_package(caliper QUIET)
-    endif()
+    macro(TIMEMORY_DEPENDENT_PACKAGE _NAME _OPT)
+        if(${_OPT})
+            find_package(${_NAME} REQUIRED ${ARGN})
+        endif()
+    endmacro()
 
+    set(MPI_C_COMPILER "@MPI_C_COMPILER@")
+    set(MPI_CXX_COMPILER "@MPI_CXX_COMPILER@")
+    set(MPIEXEC_EXECUTABLE "@MPIEXEC_EXECUTABLE@")
+    set(caliper_DIR "@caliper_DIR@")
     set(gotcha_DIR "@gotcha_DIR@")
-    if(NOT "${gotcha_DIR}" STREQUAL "")
-        find_package(gotcha QUIET)
-    endif()
+    set(OpenMP_DIR "@OpenMP_DIR@")
+    set(Dyninst_DIR "@Dyninst_DIR@")
+    set(Boost_DIR "@Boost_DIR@")
+    # set(Kokkos_DIR "@Kokkos_DIR@")
+
+    # temporarily override module path for quiet version of FindBoost.cmake
+    set(_MODULE_PATH ${CMAKE_MODULE_PATH})
+    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/Modules ${CMAKE_MODULE_PATH})
+
+    set(Boost_NO_BOOST_CMAKE ON CACHE BOOL "Disable use of BoostConfig.cmake")
+    timemory_dependent_package(MPI      @TIMEMORY_USE_MPI@)
+    timemory_dependent_package(caliper  @TIMEMORY_USE_CALIPER@)
+    timemory_dependent_package(gotcha   @TIMEMORY_USE_GOTCHA@)
+    timemory_dependent_package(OpenMP   @TIMEMORY_USE_OMPT@)
+    timemory_dependent_package(Dyninst  @TIMEMORY_USE_DYNINST@)
+    timemory_dependent_package(Boost    @TIMEMORY_USE_DYNINST@ QUIET COMPONENTS
+        "@TIMEMORY_BOOST_COMPONENTS@")
+    # timemory_dependent_package(Kokkos @TIMEMORY_USE_KOKKOS@)
+
+    # revert cmake module path
+    set(CMAKE_MODULE_PATH ${_MODULE_PATH})
+    unset(_MODULE_PATH)
 
     include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-library-depends.cmake)
     check_required_components(@PROJECT_NAME@)
@@ -254,8 +278,9 @@ if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
         set(_INTERFACE_LIB ${@PROJECT_NAME@_INTERFACE_LIBRARY})
     endif()
 
-    add_library(${_INTERFACE_LIB} INTERFACE IMPORTED)
-    target_include_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_INCLUDE_DIRS})
+    if(NOT TARGET ${_INTERFACE_LIB})
+        add_library(${_INTERFACE_LIB} INTERFACE IMPORTED)
+    endif()
 endif()
 
 # if build interface library is enabled and COMPONENTS were specified
@@ -263,7 +288,20 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
 
     # create the interface library
     include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-config-components.cmake)
+    if(TARGET @PROJECT_NAME@-headers)
+        target_link_libraries(${_INTERFACE_LIB} INTERFACE @PROJECT_NAME@-headers)
+    elseif(TARGET @PROJECT_NAME@::@PROJECT_NAME@-headers)
+        target_link_libraries(${_INTERFACE_LIB} INTERFACE @PROJECT_NAME@::@PROJECT_NAME@-headers)
+    endif()
+    
+    if(TIMEMORY_EXTRACT_INTERFACE)
+        set(@PROJECT_NAME@_INTERFACE_COMPONENTS ${_PREFIX}@LIBNAME@-headers ${_INTERFACE_LIB})
+        include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-target-extract.cmake)
+    endif()
 
+    # message(STATUS "library: '${_INTERFACE_LIB}' including '${@PROJECT_NAME@_INCLUDE_DIR}'")
+    # target_include_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_INCLUDE_DIRS})
+    # target_link_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_LIB_DIR})
 endif()
 
 
@@ -276,8 +314,7 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_ROOT_DIR
     @PROJECT_NAME@_INCLUDE_DIRS
-    ${_@PROJECT_NAME@_MISSING_COMPONENTS}
-    @PROJECT_NAME@_LIBRARIES)
+    ${_@PROJECT_NAME@_MISSING_COMPONENTS})
 
 unset(TIMEMORY_INSTALL_TREE)
 

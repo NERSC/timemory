@@ -30,15 +30,15 @@
 
 #pragma once
 
-#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
-#include "timemory/components/timing.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/timing/components.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
 #include "timemory/ert/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -124,12 +124,12 @@ struct exec_params
 //--------------------------------------------------------------------------------------//
 //  execution data -- reuse this for multiple types
 //
-template <typename _Tp>
+template <typename Tp>
 class exec_data
 {
 public:
     using value_type     = std::tuple<std::string, uint64_t, uint64_t, uint64_t, uint64_t,
-                                  uint64_t, _Tp, std::string, std::string, exec_params>;
+                                  uint64_t, Tp, std::string, std::string, exec_params>;
     using labels_type    = std::array<string_t, std::tuple_size<value_type>::value>;
     using value_array    = std::vector<value_type>;
     using size_type      = typename value_array::size_type;
@@ -252,28 +252,28 @@ protected:
 private:
     //----------------------------------------------------------------------------------//
     //
-    template <size_t _N>
+    template <size_t N>
     void write(std::ostream& os, const value_type& ret, const string_t& _trailing,
                const int32_t& _width) const
     {
-        os << std::setw(10) << std::get<_N>(m_labels) << " = " << std::setw(_width)
-           << std::get<_N>(ret) << _trailing;
+        os << std::setw(10) << std::get<N>(m_labels) << " = " << std::setw(_width)
+           << std::get<N>(ret) << _trailing;
     }
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Archive, size_t... _Idx>
-    void _save(_Archive& ar, const value_type& _tuple, index_sequence<_Idx...>) const
+    template <typename Archive, size_t... Idx>
+    void _save(Archive& ar, const value_type& _tuple, index_sequence<Idx...>) const
     {
-        ar(cereal::make_nvp(std::get<_Idx>(m_labels), std::get<_Idx>(_tuple))...);
+        ar(cereal::make_nvp(std::get<Idx>(m_labels), std::get<Idx>(_tuple))...);
     }
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Archive, size_t... _Idx>
-    void _load(_Archive& ar, value_type& _tuple, index_sequence<_Idx...>)
+    template <typename Archive, size_t... Idx>
+    void _load(Archive& ar, value_type& _tuple, index_sequence<Idx...>)
     {
-        ar(cereal::make_nvp(std::get<_Idx>(m_labels), std::get<_Idx>(_tuple))...);
+        ar(cereal::make_nvp(std::get<Idx>(m_labels), std::get<Idx>(_tuple))...);
     }
 };
 
@@ -283,12 +283,12 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Device, typename _Tp, typename _Intp = int32_t,
-          device::enable_if_cpu_t<_Device> = 0>
+template <typename DeviceT, typename Tp, typename Intp = int32_t,
+          device::enable_if_cpu_t<DeviceT> = 0>
 void
-initialize_buffer(_Tp* A, const _Tp& value, const _Intp& nsize)
+initialize_buffer(Tp* A, const Tp& value, const Intp& nsize)
 {
-    auto range = device::grid_strided_range<_Device, 0, _Intp>(nsize);
+    auto range = device::grid_strided_range<DeviceT, 0, Intp>(nsize);
     for(auto i = range.begin(); i < range.end(); i += range.stride())
         A[i] = value;
 }
@@ -299,12 +299,12 @@ initialize_buffer(_Tp* A, const _Tp& value, const _Intp& nsize)
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Device, typename _Tp, typename _Intp = int32_t,
-          device::enable_if_gpu_t<_Device> = 0>
+template <typename DeviceT, typename Tp, typename Intp = int32_t,
+          device::enable_if_gpu_t<DeviceT> = 0>
 GLOBAL_CALLABLE void
-initialize_buffer(_Tp* A, _Tp value, _Intp nsize)
+initialize_buffer(Tp* A, Tp value, Intp nsize)
 {
-    auto range = device::grid_strided_range<_Device, 0, _Intp>(nsize);
+    auto range = device::grid_strided_range<DeviceT, 0, Intp>(nsize);
     for(auto i = range.begin(); i < range.end(); i += range.stride())
         A[i] = value;
 }

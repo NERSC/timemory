@@ -38,8 +38,9 @@
 
 #define TIMEMORY_STRICT_VARIADIC_CONCAT
 
-#include <timemory/timemory.hpp>
-#include <timemory/utility/signals.hpp>
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/variadic/functional.hpp"
 
 using namespace tim::component;
 
@@ -155,12 +156,12 @@ TEST_F(variadic_tests, variadic)
     using hybrid_t  = tim::concat<tim::auto_hybrid<tup_t, lst_t>, tup_add_t, lst_add_t>;
 
     auto hsize = hybrid_t::size();
-    auto tsize = hybrid_t::tuple_type::size();
-    auto lsize = hybrid_t::list_type::size();
+    auto tsize = hybrid_t::tuple_t::size();
+    auto lsize = hybrid_t::list_t::size();
 
     std::cout << "\nhybrid        : " << tim::demangle<hybrid_t>() << "\n";
-    std::cout << "\nhybrid tuple  : " << tim::demangle<typename hybrid_t::tuple_type>();
-    std::cout << "\nhybrid list   : " << tim::demangle<typename hybrid_t::list_type>();
+    std::cout << "\nhybrid tuple  : " << tim::demangle<typename hybrid_t::tuple_t>();
+    std::cout << "\nhybrid list   : " << tim::demangle<typename hybrid_t::list_t>();
     std::cout << "\n";
     {
         hybrid_t hybrid(details::get_test_name());
@@ -177,32 +178,59 @@ TEST_F(variadic_tests, variadic)
 
 TEST_F(variadic_tests, concat)
 {
-    using lhs_t = tim::component_tuple<real_clock, system_clock>;
-    using rhs_t = tim::component_tuple<real_clock, cpu_clock>;
+    using lhs_t = tim::component_tuple<wall_clock, system_clock>;
+    using rhs_t = tim::component_tuple<wall_clock, cpu_clock>;
 
-    using comp_t0 = tim::remove_duplicates<
-        typename tim::component_tuple<lhs_t, rhs_t>::component_type>;
-    using comp_t1 = tim::remove_duplicates<
-        typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::component_type>;
-    using comp_t2 = tim::remove_duplicates<typename tim::auto_tuple<
-        lhs_t, tim::component_list<rhs_t, user_clock>>::component_type>;
+    using join_t0 = typename tim::component_tuple<lhs_t, rhs_t>::type;
+    using join_t1 = typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::type;
+    using join_t2 =
+        typename tim::auto_tuple<lhs_t, tim::component_list<rhs_t, user_clock>>::type;
 
-    using data_t0 =
-        tim::remove_duplicates<typename tim::component_list<lhs_t, rhs_t>::data_type>;
-    using data_t1 = tim::remove_duplicates<
-        typename tim::auto_list<lhs_t, rhs_t, user_clock>::data_type>;
-    using data_t2 = tim::remove_duplicates<
-        typename tim::auto_list<lhs_t, tim::auto_tuple<rhs_t, user_clock>>::data_type>;
+    using comp_t0 = tim::remove_duplicates_t<join_t0>;
+    using comp_t1 = tim::remove_duplicates_t<join_t1>;
+    using comp_t2 = tim::remove_duplicates_t<join_t2>;
+
+    using lhs_l = tim::convert_t<lhs_t, tim::component_list<>>;
+    using rhs_l = tim::convert_t<rhs_t, tim::component_list<>>;
+
+    using dbeg_t0 = typename tim::component_list<lhs_l, rhs_l>::data_type;
+    using dbeg_t1 = typename tim::auto_list<lhs_l, rhs_l, user_clock>::data_type;
+    using dbeg_t2 = tim::auto_list<rhs_l, user_clock>;
+    using dbeg_t3 = typename tim::auto_list<lhs_l, dbeg_t2>::data_type;
+
+    using data_t0 = tim::remove_duplicates_t<dbeg_t0>;
+    using data_t1 = tim::remove_duplicates_t<dbeg_t1>;
+    using data_t2 = tim::remove_duplicates_t<dbeg_t2>;
+    using data_t3 = tim::remove_duplicates_t<dbeg_t3>;
 
     std::cout << "\n" << std::flush;
+
+    std::cout << "lhs_t = " << tim::demangle<lhs_t>() << "\n";
+    std::cout << "rhs_t = " << tim::demangle<rhs_t>() << "\n";
+    std::cout << "lhs_l = " << tim::demangle<lhs_l>() << "\n";
+    std::cout << "rhs_l = " << tim::demangle<rhs_l>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    std::cout << "join_t0 = " << tim::demangle<join_t0>() << "\n";
+    std::cout << "join_t1 = " << tim::demangle<join_t1>() << "\n";
+    std::cout << "join_t2 = " << tim::demangle<join_t2>() << "\n";
+    std::cout << "\n" << std::flush;
+
     std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
     std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
     std::cout << "comp_t2 = " << tim::demangle<comp_t2>() << "\n";
     std::cout << "\n" << std::flush;
 
+    std::cout << "dbeg_t0 = " << tim::demangle<dbeg_t0>() << "\n";
+    std::cout << "dbeg_t1 = " << tim::demangle<dbeg_t1>() << "\n";
+    std::cout << "dbeg_t2 = " << tim::demangle<dbeg_t2>() << "\n";
+    std::cout << "dbeg_t3 = " << tim::demangle<dbeg_t3>() << "\n";
+    std::cout << "\n" << std::flush;
+
     std::cout << "data_t0 = " << tim::demangle<data_t0>() << "\n";
     std::cout << "data_t1 = " << tim::demangle<data_t1>() << "\n";
     std::cout << "data_t2 = " << tim::demangle<data_t2>() << "\n";
+    std::cout << "data_t3 = " << tim::demangle<data_t3>() << "\n";
     std::cout << "\n" << std::flush;
 
     EXPECT_EQ(comp_t0::size(), 3);
@@ -211,7 +239,110 @@ TEST_F(variadic_tests, concat)
 
     EXPECT_EQ(std::tuple_size<data_t0>::value, 3);
     EXPECT_EQ(std::tuple_size<data_t1>::value, 4);
-    EXPECT_EQ(std::tuple_size<data_t2>::value, 4);
+    EXPECT_EQ(std::tuple_size<data_t3>::value, 4);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(variadic_tests, get)
+{
+    tim::trait::runtime_enabled<cpu_roofline<float>>::set(false);
+    tim::trait::runtime_enabled<cpu_roofline<double>>::set(false);
+
+    using lhs_t = tim::component_tuple<wall_clock, system_clock, cpu_roofline<double>>;
+    using rhs_t = tim::component_tuple<wall_clock, cpu_clock, cpu_roofline<float>>;
+    using lhs_l = tim::convert_t<lhs_t, tim::component_list<>>;
+    using rhs_l = tim::convert_t<rhs_t, tim::component_list<>>;
+
+    using join_t0 = typename tim::component_tuple<lhs_t, rhs_t>::type;
+    using join_t1 = typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::type;
+    using join_t2 =
+        typename tim::auto_tuple<lhs_t, tim::component_list<rhs_t, user_clock>>::type;
+
+    using comp_t0 = tim::remove_duplicates_t<join_t0>;
+    using comp_t1 = tim::remove_duplicates_t<join_t1>;
+    using comp_t2 = tim::remove_duplicates_t<join_t2>;
+
+    using list_t0 = tim::component_list<lhs_l, rhs_l>;
+    using list_t1 = tim::auto_list<lhs_l, rhs_l, user_clock>;
+    using list_t2 = tim::auto_list<rhs_l, user_clock>;
+    using list_t3 = tim::auto_list<lhs_l, list_t2>;
+
+    list_t0::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
+    list_t1::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
+    list_t2::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
+    list_t3::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
+
+    auto ct0 = comp_t0("ct0");
+    auto ct1 = comp_t1("ct1");
+    auto ct2 = comp_t2("ct2");
+    auto cl0 = list_t0("cl0");
+    auto cl1 = list_t1("cl1");
+    auto cl2 = list_t2("cl2");
+    auto cl3 = list_t3("cl3");
+
+    tim::invoke::start(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    tim::invoke::mark_begin(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    tim::invoke::mark_end(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    tim::invoke::stop(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+
+    auto dt0 = ct0.get();
+    auto dt1 = ct1.get();
+    auto dt2 = ct2.get();
+
+    auto dl0 = cl0.get();
+    auto dl1 = cl1.get();
+    auto dl2 = cl2.get();
+    auto dl3 = cl3.get();
+
+    std::cout << "\n" << std::flush;
+
+    std::cout << "lhs_t = " << tim::demangle<lhs_t>() << "\n";
+    std::cout << "rhs_t = " << tim::demangle<rhs_t>() << "\n";
+    std::cout << "lhs_l = " << tim::demangle<lhs_l>() << "\n";
+    std::cout << "rhs_l = " << tim::demangle<rhs_l>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    std::cout << "join_t0 = " << tim::demangle<join_t0>() << "\n";
+    std::cout << "join_t1 = " << tim::demangle<join_t1>() << "\n";
+    std::cout << "join_t2 = " << tim::demangle<join_t2>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
+    std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
+    std::cout << "comp_t2 = " << tim::demangle<comp_t2>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    std::cout << "list_t0 = " << tim::demangle<list_t0>() << "\n";
+    std::cout << "list_t1 = " << tim::demangle<list_t1>() << "\n";
+    std::cout << "list_t2 = " << tim::demangle<list_t2>() << "\n";
+    std::cout << "list_t3 = " << tim::demangle<list_t3>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    std::cout << "dt0 = " << tim::demangle<decltype(dt0)>() << "\n";
+    std::cout << "dt1 = " << tim::demangle<decltype(dt1)>() << "\n";
+    std::cout << "dt2 = " << tim::demangle<decltype(dt2)>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    std::cout << "dl0 = " << tim::demangle<decltype(dl0)>() << "\n";
+    std::cout << "dl1 = " << tim::demangle<decltype(dl1)>() << "\n";
+    std::cout << "dl2 = " << tim::demangle<decltype(dl2)>() << "\n";
+    std::cout << "dl3 = " << tim::demangle<decltype(dl3)>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    tim::invoke::print(std::cout, ct0, ct1, ct2, cl0, cl1, cl2, cl3);
+
+    EXPECT_NEAR(std::get<0>(dt0), 1.0, 0.1);
+    EXPECT_NEAR(std::get<0>(dt1), 1.0, 0.1);
+    EXPECT_NEAR(std::get<0>(dt2), 1.0, 0.1);
+
+    EXPECT_NEAR(std::get<0>(dl0), 1.0, 0.1);
+    EXPECT_NEAR(std::get<0>(dl1), 1.0, 0.1);
+    EXPECT_NEAR(std::get<0>(dl2), 1.0, 0.1);
+    EXPECT_NEAR(std::get<0>(dl3), 1.0, 0.1);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -233,6 +364,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }

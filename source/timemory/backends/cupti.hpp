@@ -30,11 +30,12 @@
 
 #pragma once
 
-#include "timemory/backends/bits/cupti.hpp"
-#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/settings.hpp"
-#include "timemory/utility/macros.hpp"
+#include "timemory/backends/hardware_counters.hpp"
+#include "timemory/backends/types/cupti.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/macros.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/utility.hpp"
 
 #include <cassert>
@@ -52,23 +53,6 @@
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(CUPTI_BUFFER_SIZE)
-#    define CUPTI_BUFFER_SIZE (32 * 1024)
-#endif
-
-#if !defined(CUPTI_ALIGN_SIZE)
-#    define CUPTI_ALIGN_SIZE (8)
-#endif
-
-#if !defined(CUPTI_ALIGN_BUFFER)
-#    define CUPTI_ALIGN_BUFFER(buffer, align)                                            \
-        (((uintptr_t)(buffer) & ((align) -1))                                            \
-             ? ((buffer) + (align) - ((uintptr_t)(buffer) & ((align) -1)))               \
-             : (buffer))
-#endif
-
-//--------------------------------------------------------------------------------------//
-
 namespace tim
 {
 namespace cupti
@@ -76,9 +60,10 @@ namespace cupti
 //--------------------------------------------------------------------------------------//
 
 using string_t = std::string;
-template <typename _Key, typename _Mapped>
-using map_t    = std::map<_Key, _Mapped>;
-using strvec_t = std::vector<string_t>;
+template <typename KeyT, typename MappedT>
+using map_t            = std::map<KeyT, MappedT>;
+using strvec_t         = std::vector<string_t>;
+using hwcounter_info_t = std::vector<hardware_counters::info>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -90,7 +75,7 @@ static uint64_t dummy_kernel_id = 0;
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 GLOBAL_CALLABLE void
 warmup()
 {}
@@ -102,8 +87,8 @@ get_metric(CUpti_MetricID& id, CUpti_MetricValue& value)
 {
     CUpti_MetricValueKind value_kind;
     size_t                value_kind_sz = sizeof(value_kind);
-    CUPTI_CALL(cuptiMetricGetAttribute(id, CUPTI_METRIC_ATTR_VALUE_KIND, &value_kind_sz,
-                                       &value_kind));
+    TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(id, CUPTI_METRIC_ATTR_VALUE_KIND,
+                                                &value_kind_sz, &value_kind));
     data_metric_t ret;
     switch(value_kind)
     {
@@ -129,8 +114,8 @@ print_metric(std::ostream& os, CUpti_MetricID& id, CUpti_MetricValue& value)
 {
     CUpti_MetricValueKind value_kind;
     size_t                value_kind_sz = sizeof(value_kind);
-    CUPTI_CALL(cuptiMetricGetAttribute(id, CUPTI_METRIC_ATTR_VALUE_KIND, &value_kind_sz,
-                                       &value_kind));
+    TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(id, CUPTI_METRIC_ATTR_VALUE_KIND,
+                                                &value_kind_sz, &value_kind));
     switch(value_kind)
     {
         case CUPTI_METRIC_VALUE_KIND_DOUBLE: os << value.metricValueDouble; break;
@@ -316,11 +301,11 @@ static void CUPTIAPI
             {
                 _LOG("  Enabling group %d", i);
                 uint32_t all = 1;
-                CUPTI_CALL(cuptiEventGroupSetAttribute(
+                TIMEMORY_CUPTI_CALL(cuptiEventGroupSetAttribute(
                     pass_data[j].event_groups->eventGroups[i],
                     CUPTI_EVENT_GROUP_ATTR_PROFILE_ALL_DOMAIN_INSTANCES, sizeof(all),
                     &all));
-                CUPTI_CALL(
+                TIMEMORY_CUPTI_CALL(
                     cuptiEventGroupEnable(pass_data[j].event_groups->eventGroups[i]));
             }
         }
@@ -344,22 +329,22 @@ static void CUPTIAPI
                 size_t              numInstancesSize      = sizeof(numInstances);
                 size_t              numTotalInstancesSize = sizeof(numTotalInstances);
 
-                CUPTI_CALL(cuptiEventGroupGetAttribute(
+                TIMEMORY_CUPTI_CALL(cuptiEventGroupGetAttribute(
                     group, CUPTI_EVENT_GROUP_ATTR_EVENT_DOMAIN_ID, &groupDomainSize,
                     &group_domain));
-                CUPTI_CALL(cuptiDeviceGetEventDomainAttribute(
+                TIMEMORY_CUPTI_CALL(cuptiDeviceGetEventDomainAttribute(
                     current_kernel.m_device, group_domain,
                     CUPTI_EVENT_DOMAIN_ATTR_TOTAL_INSTANCE_COUNT, &numTotalInstancesSize,
                     &numTotalInstances));
-                CUPTI_CALL(cuptiEventGroupGetAttribute(
+                TIMEMORY_CUPTI_CALL(cuptiEventGroupGetAttribute(
                     group, CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT, &numInstancesSize,
                     &numInstances));
-                CUPTI_CALL(cuptiEventGroupGetAttribute(group,
-                                                       CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS,
-                                                       &numEventsSize, &numEvents));
+                TIMEMORY_CUPTI_CALL(
+                    cuptiEventGroupGetAttribute(group, CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS,
+                                                &numEventsSize, &numEvents));
                 size_t         eventIdsSize = numEvents * sizeof(CUpti_EventID);
                 CUpti_EventID* eventIds     = (CUpti_EventID*) malloc(eventIdsSize);
-                CUPTI_CALL(cuptiEventGroupGetAttribute(
+                TIMEMORY_CUPTI_CALL(cuptiEventGroupGetAttribute(
                     group, CUPTI_EVENT_GROUP_ATTR_EVENTS, &eventIdsSize, eventIds));
 
                 size_t    valuesSize = sizeof(uint64_t) * numInstances;
@@ -367,9 +352,9 @@ static void CUPTIAPI
 
                 for(uint32_t j = 0; j < numEvents; j++)
                 {
-                    CUPTI_CALL(cuptiEventGroupReadEvent(group, CUPTI_EVENT_READ_FLAG_NONE,
-                                                        eventIds[j], &valuesSize,
-                                                        values));
+                    TIMEMORY_CUPTI_CALL(
+                        cuptiEventGroupReadEvent(group, CUPTI_EVENT_READ_FLAG_NONE,
+                                                 eventIds[j], &valuesSize, values));
                     // sum collect event values from all instances
                     uint64_t sum = 0;
                     for(uint32_t k = 0; k < numInstances; k++)
@@ -385,9 +370,9 @@ static void CUPTIAPI
                     {
                         char   eventName[128];
                         size_t eventNameSize = sizeof(eventName) - 1;
-                        CUPTI_CALL(cuptiEventGetAttribute(eventIds[j],
-                                                          CUPTI_EVENT_ATTR_NAME,
-                                                          &eventNameSize, eventName));
+                        TIMEMORY_CUPTI_CALL(
+                            cuptiEventGetAttribute(eventIds[j], CUPTI_EVENT_ATTR_NAME,
+                                                   &eventNameSize, eventName));
                         eventName[eventNameSize] = '\0';
                         _DBG("\t%s = %llu (", eventName, (unsigned long long) sum);
                         for(uint32_t k = 0; k < numInstances && numInstances > 1; k++)
@@ -444,8 +429,8 @@ struct profiler
         // sync before starting
         cuda::device_sync();
 
-        CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_KERNEL));
-        CUDA_DRIVER_API_CALL(cuDeviceGetCount(&device_count));
+        TIMEMORY_CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_KERNEL));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGetCount(&device_count));
 
         if(device_count == 0)
         {
@@ -463,16 +448,16 @@ struct profiler
         m_event_ids.resize(events.size());
 
         // Init device, context and setup callback
-        CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, m_device_num));
-        // CUDA_DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
-        CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRetain(&m_context, m_device));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, m_device_num));
+        // TIMEMORY_CUDA_DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRetain(&m_context, m_device));
 
         if(m_metric_names.size() > 0)
         {
             for(size_t i = 0; i < m_metric_names.size(); ++i)
-                CUPTI_CALL(cuptiMetricGetIdFromName(m_device, m_metric_names[i].c_str(),
-                                                    &m_metric_ids[i]));
-            CUPTI_CALL(cuptiMetricCreateEventGroupSets(
+                TIMEMORY_CUPTI_CALL(cuptiMetricGetIdFromName(
+                    m_device, m_metric_names[i].c_str(), &m_metric_ids[i]));
+            TIMEMORY_CUPTI_CALL(cuptiMetricCreateEventGroupSets(
                 m_context, sizeof(CUpti_MetricID) * m_metric_names.size(),
                 m_metric_ids.data(), &m_metric_pass_data));
             m_metric_passes = m_metric_pass_data->numSets;
@@ -481,9 +466,9 @@ struct profiler
         if(m_event_names.size() > 0)
         {
             for(size_t i = 0; i < m_event_names.size(); ++i)
-                CUPTI_CALL(cuptiEventGetIdFromName(m_device, m_event_names[i].c_str(),
-                                                   &m_event_ids[i]));
-            CUPTI_CALL(cuptiEventGroupSetsCreate(
+                TIMEMORY_CUPTI_CALL(cuptiEventGetIdFromName(
+                    m_device, m_event_names[i].c_str(), &m_event_ids[i]));
+            TIMEMORY_CUPTI_CALL(cuptiEventGroupSetsCreate(
                 m_context, sizeof(CUpti_EventID) * m_event_ids.size(), m_event_ids.data(),
                 &m_event_pass_data));
             m_event_passes = m_event_pass_data->numSets;
@@ -511,7 +496,7 @@ struct profiler
             size_t   num_events_size = sizeof(num_events);
             for(uint32_t j = 0; j < m_metric_pass_data->sets[i].numEventGroups; ++j)
             {
-                CUPTI_CALL(cuptiEventGroupGetAttribute(
+                TIMEMORY_CUPTI_CALL(cuptiEventGroupGetAttribute(
                     m_metric_pass_data->sets[i].eventGroups[j],
                     CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS, &num_events_size, &num_events));
                 _LOG("  Event Group %d, #Events = %d", j, num_events);
@@ -529,7 +514,7 @@ struct profiler
             size_t   num_events_size = sizeof(num_events);
             for(uint32_t j = 0; j < m_event_pass_data->sets[i].numEventGroups; ++j)
             {
-                CUPTI_CALL(cuptiEventGroupGetAttribute(
+                TIMEMORY_CUPTI_CALL(cuptiEventGroupGetAttribute(
                     m_event_pass_data->sets[i].eventGroups[j],
                     CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS, &num_events_size, &num_events));
                 _LOG("  Event Group %d, #Events = %d", j, num_events);
@@ -567,7 +552,7 @@ struct profiler
             {
             for(int i = 0; i < pass_data[j].event_groups->numEventGroups; i++)
             {
-                CUPTI_CALL(cuptiEventGroupSetsDestroy(pass_data[j].event_groups->eventGroups[i]));
+                TIMEMORY_CUPTI_CALL(cuptiEventGroupSetsDestroy(pass_data[j].event_groups->eventGroups[i]));
             }
             }
         }*/
@@ -576,8 +561,8 @@ struct profiler
             stop();
 
         cuptiDisableKernelReplayMode(m_context);
-        CUPTI_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_KERNEL));
-        // CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRelease(m_device));
+        TIMEMORY_CUPTI_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_KERNEL));
+        // TIMEMORY_CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRelease(m_device));
     }
 
     profiler(const profiler&) = delete;
@@ -621,20 +606,21 @@ public:
         if(!is_subscribed())
         {
             is_subscribed() = true;
-            CUPTI_CALL(cuptiSubscribe(&m_subscriber,
-                                      (CUpti_CallbackFunc) impl::get_value_callback,
-                                      &m_kernel_data));
+            TIMEMORY_CUPTI_CALL(cuptiSubscribe(
+                &m_subscriber, (CUpti_CallbackFunc) impl::get_value_callback,
+                &m_kernel_data));
 
-            CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                           CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
-            CUPTI_CALL(
+            TIMEMORY_CUPTI_CALL(
+                cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                    CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+            TIMEMORY_CUPTI_CALL(
                 cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
                                     CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
 
-            CUPTI_CALL(
+            TIMEMORY_CUPTI_CALL(
                 cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
                                     CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
-            CUPTI_CALL(cuptiEnableCallback(
+            TIMEMORY_CUPTI_CALL(cuptiEnableCallback(
                 1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
                 CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
         }
@@ -656,18 +642,19 @@ public:
         {
             is_subscribed() = false;
             // Disable callback and unsubscribe
-            CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                           CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
-            CUPTI_CALL(
+            TIMEMORY_CUPTI_CALL(
+                cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                    CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+            TIMEMORY_CUPTI_CALL(
                 cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
                                     CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
-            CUPTI_CALL(
+            TIMEMORY_CUPTI_CALL(
                 cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
                                     CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
-            CUPTI_CALL(cuptiEnableCallback(
+            TIMEMORY_CUPTI_CALL(cuptiEnableCallback(
                 0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
                 CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
-            CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
+            TIMEMORY_CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
         }
 
         for(auto& k : m_kernel_data)
@@ -1386,17 +1373,18 @@ print(CUpti_Activity* record)
 static void CUPTIAPI
             request_buffer(uint8_t** buffer, size_t* size, size_t* maxNumRecords)
 {
-    uint8_t* bfr = (uint8_t*) malloc(CUPTI_BUFFER_SIZE + CUPTI_ALIGN_SIZE);
+    uint8_t* bfr =
+        (uint8_t*) malloc(TIMEMORY_CUPTI_BUFFER_SIZE + TIMEMORY_CUPTI_ALIGN_SIZE);
     if(bfr == nullptr)
     {
-        unsigned long long sz = CUPTI_BUFFER_SIZE + CUPTI_ALIGN_SIZE;
+        unsigned long long sz = TIMEMORY_CUPTI_BUFFER_SIZE + TIMEMORY_CUPTI_ALIGN_SIZE;
         fprintf(stderr, "[%s:%s:%i]> malloc unable to allocate %llu bytes\n",
                 __FUNCTION__, __FILE__, __LINE__, sz);
         throw std::bad_alloc();
     }
 
-    *size          = CUPTI_BUFFER_SIZE;
-    *buffer        = CUPTI_ALIGN_BUFFER(bfr, CUPTI_ALIGN_SIZE);
+    *size          = TIMEMORY_CUPTI_BUFFER_SIZE;
+    *buffer        = TIMEMORY_CUPTI_ALIGN_BUFFER(bfr, TIMEMORY_CUPTI_ALIGN_SIZE);
     *maxNumRecords = 0;
 }
 
@@ -1482,13 +1470,13 @@ static void CUPTIAPI
                 break;
             else
             {
-                CUPTI_CALL(status);
+                TIMEMORY_CUPTI_CALL(status);
             }
         } while(1);
 
         // report any records dropped from the queue
         size_t dropped = 0;
-        CUPTI_CALL(cuptiActivityGetNumDroppedRecords(ctx, streamId, &dropped));
+        TIMEMORY_CUPTI_CALL(cuptiActivityGetNumDroppedRecords(ctx, streamId, &dropped));
         if(dropped != 0)
         {
             printf("[tim::cupti::activity::%s]> Dropped %u activity records\n",
@@ -1515,17 +1503,17 @@ set_device_buffers(size_t _buffer_size, size_t _pool_limit)
     // documentation).
 
     // get the buffer size and increase
-    CUPTI_CALL(cuptiActivityGetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE,
-                                         &attrValueSize, &deviceValue));
+    TIMEMORY_CUPTI_CALL(cuptiActivityGetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE,
+                                                  &attrValueSize, &deviceValue));
 
     // get the buffer pool limit and increase
-    CUPTI_CALL(cuptiActivityGetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT,
-                                         &attrValueSize, &poolValue));
+    TIMEMORY_CUPTI_CALL(cuptiActivityGetAttribute(
+        CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT, &attrValueSize, &poolValue));
 
     if(_buffer_size != deviceValue)
     {
-        CUPTI_CALL(cuptiActivitySetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE,
-                                             &attrValueSize, &_buffer_size));
+        TIMEMORY_CUPTI_CALL(cuptiActivitySetAttribute(
+            CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE, &attrValueSize, &_buffer_size));
         if(settings::verbose() > 1 || settings::debug())
             printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
                    "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE",
@@ -1535,8 +1523,8 @@ set_device_buffers(size_t _buffer_size, size_t _pool_limit)
 
     if(_pool_limit != poolValue)
     {
-        CUPTI_CALL(cuptiActivitySetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT,
-                                             &attrValueSize, &_pool_limit));
+        TIMEMORY_CUPTI_CALL(cuptiActivitySetAttribute(
+            CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT, &attrValueSize, &_pool_limit));
         if(settings::verbose() > 1 || settings::debug())
             printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
                    "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT",
@@ -1572,26 +1560,26 @@ finalize_trace(const std::vector<activity_kind_t>& _kind_types)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-start_trace(_Tp* obj, bool flush)
+start_trace(Tp* obj, bool flush)
 {
     auto& _receiver = get_receiver();
     // clang-format off
-    if(flush) { CUPTI_CALL(cuptiActivityFlushAll(0)); }
+    if(flush) { TIMEMORY_CUPTI_CALL(cuptiActivityFlushAll(0)); }
     // clang-format on
     _receiver.insert(obj);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-stop_trace(_Tp* obj)
+stop_trace(Tp* obj)
 {
     auto& _receiver = get_receiver();
     cuda::device_sync();
-    CUPTI_CALL(cuptiActivityFlushAll(0));
+    TIMEMORY_CUPTI_CALL(cuptiActivityFlushAll(0));
     _receiver.remove(obj);
 }
 
@@ -1609,23 +1597,17 @@ stop_trace(_Tp* obj)
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(__CUPTI_PROFILER_NAME_SHORT)
-#    define __CUPTI_PROFILER_NAME_SHORT 128
-#endif
-
-//--------------------------------------------------------------------------------------//
-
 inline tim::cupti::strvec_t
 tim::cupti::available_metrics(CUdevice device)
 {
     strvec_t              metric_names;
     uint32_t              numMetric;
     size_t                size;
-    char                  metricName[__CUPTI_PROFILER_NAME_SHORT];
+    char                  metricName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
     CUpti_MetricValueKind metricKind;
     CUpti_MetricID*       metricIdArray;
 
-    CUPTI_CALL(cuptiDeviceGetNumMetrics(device, &numMetric));
+    TIMEMORY_CUPTI_CALL(cuptiDeviceGetNumMetrics(device, &numMetric));
     size          = sizeof(CUpti_MetricID) * numMetric;
     metricIdArray = (CUpti_MetricID*) malloc(size);
     if(metricIdArray == nullptr)
@@ -1634,20 +1616,20 @@ tim::cupti::available_metrics(CUdevice device)
         return metric_names;
     }
 
-    CUPTI_CALL(cuptiDeviceEnumMetrics(device, &size, metricIdArray));
+    TIMEMORY_CUPTI_CALL(cuptiDeviceEnumMetrics(device, &size, metricIdArray));
 
     for(uint32_t i = 0; i < numMetric; i++)
     {
-        size = __CUPTI_PROFILER_NAME_SHORT;
-        CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i], CUPTI_METRIC_ATTR_NAME,
-                                           &size, (void*) &metricName));
+        size = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
+            metricIdArray[i], CUPTI_METRIC_ATTR_NAME, &size, (void*) &metricName));
         size = sizeof(CUpti_MetricValueKind);
-        CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i], CUPTI_METRIC_ATTR_VALUE_KIND,
-                                           &size, (void*) &metricKind));
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
+            metricIdArray[i], CUPTI_METRIC_ATTR_VALUE_KIND, &size, (void*) &metricKind));
         if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||
            (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
         {
-            if(settings::verbose() > 0 || settings::debug())
+            if(settings::verbose() > 2 && settings::debug())
                 printf("Metric %s cannot be profiled as metric requires GPU"
                        "time duration for kernel run.\n",
                        metricName);
@@ -1674,9 +1656,9 @@ tim::cupti::available_events(CUdevice device)
     CUpti_EventDomainID* domainIdArray;
     CUpti_EventID*       eventIdArray;
     size_t               eventIdArraySize;
-    char                 eventName[__CUPTI_PROFILER_NAME_SHORT];
+    char                 eventName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
 
-    CUPTI_CALL(cuptiDeviceGetNumEventDomains(device, &numDomains));
+    TIMEMORY_CUPTI_CALL(cuptiDeviceGetNumEventDomains(device, &numDomains));
     size          = sizeof(CUpti_EventDomainID) * numDomains;
     domainIdArray = (CUpti_EventDomainID*) malloc(size);
     if(domainIdArray == nullptr)
@@ -1684,11 +1666,11 @@ tim::cupti::available_events(CUdevice device)
         printf("Memory could not be allocated for domain array");
         return event_names;
     }
-    CUPTI_CALL(cuptiDeviceEnumEventDomains(device, &size, domainIdArray));
+    TIMEMORY_CUPTI_CALL(cuptiDeviceEnumEventDomains(device, &size, domainIdArray));
 
     for(uint32_t i = 0; i < numDomains; i++)
     {
-        CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
+        TIMEMORY_CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
         totalEvents += num_events;
     }
 
@@ -1699,18 +1681,18 @@ tim::cupti::available_events(CUdevice device)
     for(uint32_t i = 0; i < numDomains; i++)
     {
         // Query num of events available in the domain
-        CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
+        TIMEMORY_CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
         size = num_events * sizeof(CUpti_EventID);
-        CUPTI_CALL(cuptiEventDomainEnumEvents(domainIdArray[i], &size,
-                                              eventIdArray + totalEvents));
+        TIMEMORY_CUPTI_CALL(cuptiEventDomainEnumEvents(domainIdArray[i], &size,
+                                                       eventIdArray + totalEvents));
         totalEvents += num_events;
     }
 
     for(uint32_t i = 0; i < totalEvents; i++)
     {
-        size = __CUPTI_PROFILER_NAME_SHORT;
-        CUPTI_CALL(cuptiEventGetAttribute(eventIdArray[i], CUPTI_EVENT_ATTR_NAME, &size,
-                                          eventName));
+        size = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
+        TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(eventIdArray[i], CUPTI_EVENT_ATTR_NAME,
+                                                   &size, eventName));
         event_names.push_back(eventName);
     }
     free(domainIdArray);
@@ -1718,7 +1700,168 @@ tim::cupti::available_events(CUdevice device)
     return event_names;
 }
 
-#undef __CUPTI_PROFILER_NAME_SHORT
-#undef CUPTI_BUFFER_SIZE
-#undef CUPTI_ALIGN_SIZE
-#undef CUPTI_ALIGN_BUFFER
+//--------------------------------------------------------------------------------------//
+
+inline tim::cupti::hwcounter_info_t
+tim::cupti::available_events_info(CUdevice device)
+{
+    hwcounter_info_t     event_info{};
+    uint32_t             numDomains  = 0;
+    uint32_t             num_events  = 0;
+    uint32_t             totalEvents = 0;
+    size_t               size;
+    CUpti_EventDomainID* domainIdArray;
+    CUpti_EventID*       eventIdArray;
+    size_t               eventIdArraySize;
+
+    TIMEMORY_CUPTI_CALL(cuptiDeviceGetNumEventDomains(device, &numDomains));
+    size          = sizeof(CUpti_EventDomainID) * numDomains;
+    domainIdArray = (CUpti_EventDomainID*) malloc(size);
+    if(domainIdArray == nullptr)
+    {
+        printf("Memory could not be allocated for domain array");
+        return event_info;
+    }
+    TIMEMORY_CUPTI_CALL(cuptiDeviceEnumEventDomains(device, &size, domainIdArray));
+
+    for(uint32_t i = 0; i < numDomains; i++)
+    {
+        TIMEMORY_CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
+        totalEvents += num_events;
+    }
+
+    eventIdArraySize = sizeof(CUpti_EventID) * totalEvents;
+    eventIdArray     = (CUpti_EventID*) malloc(eventIdArraySize);
+
+    totalEvents = 0;
+    for(uint32_t i = 0; i < numDomains; i++)
+    {
+        // Query num of events available in the domain
+        TIMEMORY_CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
+        size = num_events * sizeof(CUpti_EventID);
+        TIMEMORY_CUPTI_CALL(cuptiEventDomainEnumEvents(domainIdArray[i], &size,
+                                                       eventIdArray + totalEvents));
+        totalEvents += num_events;
+    }
+
+    for(uint32_t i = 0; i < totalEvents; i++)
+    {
+        size_t ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
+        size_t lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
+
+        char eventName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
+        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+
+        TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(eventIdArray[i], CUPTI_EVENT_ATTR_NAME,
+                                                   &ssize, eventName));
+        if(ssize < TIMEMORY_CUPTI_PROFILER_NAME_SHORT)
+            eventName[ssize] = '\0';
+
+        TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(
+            eventIdArray[i], CUPTI_EVENT_ATTR_SHORT_DESCRIPTION, &lsize, short_desc));
+        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
+            short_desc[lsize] = '\0';
+
+        lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
+        TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(
+            eventIdArray[i], CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &lsize, long_desc));
+        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
+            long_desc[lsize] = '\0';
+
+        string_t _sym   = eventName;
+        string_t _pysym = "cuda_" + _sym;
+        for(auto& itr : _pysym)
+            itr = tolower(itr);
+        event_info.push_back(hardware_counters::info(true, hardware_counters::api::cupti,
+                                                     i, 0, _sym, _pysym, short_desc,
+                                                     long_desc));
+    }
+
+    free(domainIdArray);
+    free(eventIdArray);
+    return event_info;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline tim::cupti::hwcounter_info_t
+tim::cupti::available_metrics_info(CUdevice device)
+{
+    hwcounter_info_t      metric_info{};
+    uint32_t              numMetric;
+    size_t                size;
+    CUpti_MetricValueKind metricKind;
+    CUpti_MetricID*       metricIdArray;
+
+    TIMEMORY_CUPTI_CALL(cuptiDeviceGetNumMetrics(device, &numMetric));
+    size          = sizeof(CUpti_MetricID) * numMetric;
+    metricIdArray = (CUpti_MetricID*) malloc(size);
+    if(metricIdArray == nullptr)
+    {
+        printf("Memory could not be allocated for metric array");
+        return metric_info;
+    }
+
+    TIMEMORY_CUPTI_CALL(cuptiDeviceEnumMetrics(device, &size, metricIdArray));
+
+    for(uint32_t i = 0; i < numMetric; i++)
+    {
+        char metricName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
+        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+
+        size_t ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
+        size_t lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
+
+        ssize = sizeof(CUpti_MetricValueKind);
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
+            metricIdArray[i], CUPTI_METRIC_ATTR_VALUE_KIND, &ssize, (void*) &metricKind));
+
+        ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
+            metricIdArray[i], CUPTI_METRIC_ATTR_NAME, &ssize, (void*) &metricName));
+        if(ssize < TIMEMORY_CUPTI_PROFILER_NAME_SHORT)
+            metricName[ssize] = '\0';
+
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
+                                                    CUPTI_METRIC_ATTR_SHORT_DESCRIPTION,
+                                                    &lsize, (void*) &short_desc));
+        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
+            short_desc[lsize] = '\0';
+
+        lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
+                                                    CUPTI_METRIC_ATTR_LONG_DESCRIPTION,
+                                                    &lsize, (void*) &long_desc));
+        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
+            long_desc[lsize] = '\0';
+
+        bool _avail = true;
+        if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||
+           (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
+        {
+            _avail = false;
+            if(settings::verbose() > 2 && settings::debug())
+                printf("Metric %s cannot be profiled as metric requires GPU"
+                       "time duration for kernel run.\n",
+                       metricName);
+        }
+
+        string_t _sym   = metricName;
+        string_t _pysym = "cuda_" + _sym;
+        for(auto& itr : _pysym)
+            itr = tolower(itr);
+        metric_info.push_back(
+            hardware_counters::info(_avail, hardware_counters::api::cupti, i, 0, _sym,
+                                    _pysym, short_desc, long_desc));
+    }
+    free(metricIdArray);
+    return metric_info;
+}
+
+#undef TIMEMORY_CUPTI_PROFILER_NAME_SHORT
+#undef TIMEMORY_CUPTI_PROFILER_NAME_LONG
+#undef TIMEMORY_CUPTI_BUFFER_SIZE
+#undef TIMEMORY_CUPTI_ALIGN_SIZE
+#undef TIMEMORY_CUPTI_ALIGN_BUFFER

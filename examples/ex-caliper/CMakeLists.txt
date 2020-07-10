@@ -9,11 +9,12 @@ project(timemory-Caliper-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-caliper-example)
 set(COMPONENTS compile-options analysis-tools caliper)
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS cxx)
 
 add_executable(ex_caliper ex_caliper.cpp)
 target_link_libraries(ex_caliper timemory-caliper-example)
-install(TARGETS ex_caliper DESTINATION bin)
+install(TARGETS ex_caliper DESTINATION bin
+    COMPONENT examples OPTIONAL)
 
 if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")
@@ -28,4 +29,6 @@ install(
     PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE
         GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ)
+        WORLD_EXECUTE WORLD_READ
+    COMPONENT examples
+    OPTIONAL)

@@ -22,23 +22,60 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/timemory.hpp"
+
 #include <cstdio>
 #include <cstdlib>
 
-#include <timemory/timemory.hpp>
+//
+// shorthand
+//
+using namespace tim::component;
 
-long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
+//
+// bundle of tools
+//
+using tuple_t = tim::auto_tuple<wall_clock, cpu_clock>;
 
-int main(int argc, char** argv)
+//--------------------------------------------------------------------------------------//
+
+long
+fib(long n)
 {
-    long nfib = (argc > 1) ? atol(argv[1]) : 43;
+    return (n < 2) ? n : (fib(n - 1) + fib(n - 2));
+}
 
-    TIMEMORY_AUTO_TIMER("total");
-    long ans = fib(nfib);
+//--------------------------------------------------------------------------------------//
 
-    TIMEMORY_BLANK_AUTO_TIMER("nested");
-    ans += fib(nfib + 1);
+int
+main(int argc, char** argv)
+{
+    tim::settings::destructor_report() = true;
+    tim::settings::file_output()       = false;
+    tim::settings::text_output()       = false;
+    tim::timemory_init(argc, argv);
 
-    printf("Answer = %li\n", ans);
+    long nfib = (argc > 1) ? atol(argv[1]) : 40;
+    int  nitr = (argc > 2) ? atoi(argv[2]) : 10;
+
+    for(int i = 0; i < nitr; ++i)
+    {
+        TIMEMORY_MARKER(tuple_t, "total");
+        long ans = fib(nfib);
+
+        TIMEMORY_BLANK_MARKER(tuple_t, "nested/", i % 5);
+        ans += fib(nfib + (i % 3));
+
+        TIMEMORY_CONDITIONAL_BASIC_MARKER(i % 3 == 2, tuple_t, "occasional/", i);
+        ans += fib(nfib - 1);
+
+        printf("Answer = %li\n", ans);
+        if(i > 0)
+            tim::settings::destructor_report() = false;
+    }
+
+    tim::timemory_finalize();
     return EXIT_SUCCESS;
 }
+
+//--------------------------------------------------------------------------------------//

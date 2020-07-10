@@ -30,14 +30,16 @@
 
 #pragma once
 
+#include "timemory/version.h"
+
 #if defined(__cplusplus)
 #    include "timemory/timemory.hpp"
 #else
 #    include "timemory/compat/timemory_c.h"
-#    include "timemory/version.h"
 
 #    define TIMEMORY_SETTINGS_INIT TIMEMORY_C_SETTINGS_INIT
 #    define TIMEMORY_INIT(...) TIMEMORY_C_INIT(__VA_ARGS__)
+#    define TIMEMORY_FINALIZE(...) TIMEMORY_C_FINALIZE()
 
 #    define TIMEMORY_AUTO_LABEL(...) TIMEMORY_C_AUTO_LABEL(__VA_ARGS__)
 

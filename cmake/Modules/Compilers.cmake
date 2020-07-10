@@ -39,7 +39,8 @@ if("${LIBNAME}" STREQUAL "")
     string(TOLOWER "${PROJECT_NAME}" LIBNAME)
 endif()
 
-add_interface_library(${LIBNAME}-compile-options)
+add_interface_library(${LIBNAME}-compile-options
+    "Adds the standard set of compiler flags used by timemory")
 
 #----------------------------------------------------------------------------------------#
 # macro converting string to list
@@ -100,7 +101,11 @@ endmacro(set_no_duplicates _VAR)
 # add C flag to target
 #----------------------------------------------------------------------------------------#
 macro(ADD_TARGET_C_FLAG _TARG)
+    string(REPLACE "-" "_" _MAKE_TARG "${_TARG}")
+    list(APPEND TIMEMORY_MAKE_TARGETS ${_MAKE_TARG})
+
     target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:C>:${ARGN}>)
+    list(APPEND ${_MAKE_TARG}_C_FLAGS ${ARGN})
 endmacro()
 
 
@@ -178,10 +183,15 @@ endmacro()
 # add CXX flag to target
 #----------------------------------------------------------------------------------------#
 macro(ADD_TARGET_CXX_FLAG _TARG)
+    string(REPLACE "-" "_" _MAKE_TARG "${_TARG}")
+    list(APPEND TIMEMORY_MAKE_TARGETS ${_MAKE_TARG})
+
     target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${ARGN}>)
+    list(APPEND ${_MAKE_TARG}_CXX_FLAGS ${ARGN})
     get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
     if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST LANGUAGES)
         target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${ARGN}>)
+        list(APPEND ${_MAKE_TARG}_CUDA_FLAGS -Xcompiler=${ARGN})
     endif()
 endmacro()
 

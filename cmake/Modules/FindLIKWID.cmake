@@ -50,6 +50,23 @@
 #----------------------------------------------------------------------------------------#
 include(CMakeParseArguments)
 
+function(FIND_STATIC_LIBRARY _VAR)
+    set(_options    )
+    set(_onevalue   DOC)
+    set(_multival   NAMES HINTS PATHS PASS_SUFFIXES)
+
+    cmake_parse_arguments(
+        LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
+
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+    find_library(${_VAR}
+                NAMES ${LIBRARY_NAMES}
+                HINTS ${LIBRARY_HINTS}
+                PATHS ${LIBRARY_PATHS}
+                PATH_SUFFIXES ${LIBRARY_PATH_SUFFIXES}
+                DOC "${LIBRARY_DOC}")
+endfunction()
+
 #----------------------------------------------------------------------------------------#
 # search for likwid marker because if this file does not exist, we cannot forward to
 # Likwid
@@ -137,15 +154,15 @@ find_package_handle_standard_args(LIKWID DEFAULT_MSG
 #----------------------------------------------------------------------------------------#
 
 if(LIKWID_FOUND)
-    add_library(likwid INTERFACE)
-    add_library(likwid-hwloc INTERFACE)
-    target_link_libraries(likwid INTERFACE ${LIKWID_LIBRARY})
-    target_include_directories(likwid INTERFACE ${LIKWID_INCLUDE_DIR})
+    add_library(LIKWID::likwid INTERFACE IMPORTED)
+    add_library(LIKWID::likwid-hwloc INTERFACE IMPORTED)
+    target_link_libraries(LIKWID::likwid INTERFACE ${LIKWID_LIBRARY})
+    target_include_directories(LIKWID::likwid INTERFACE ${LIKWID_INCLUDE_DIR})
     get_filename_component(LIKWID_INCLUDE_DIRS ${LIKWID_INCLUDE_DIR} REALPATH)
     get_filename_component(LIKWID_LIBRARIES ${LIKWID_LIBRARY} REALPATH)
     if(LIKWID_hwloc_LIBRARY)
-        target_link_libraries(likwid-hwloc INTERFACE ${LIKWID_hwloc_LIBRARY})
-        target_link_libraries(likwid INTERFACE ${LIKWID_hwloc_LIBRARY})
+        target_link_libraries(LIKWID::likwid-hwloc INTERFACE ${LIKWID_hwloc_LIBRARY})
+        target_link_libraries(LIKWID::likwid INTERFACE ${LIKWID_hwloc_LIBRARY})
         list(APPEND LIKWID_LIBRARIES ${LIKWID_hwloc_LIBRARY})
     endif()
 endif()

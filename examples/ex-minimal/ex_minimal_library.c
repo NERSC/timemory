@@ -22,26 +22,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/library.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <timemory/library.h>
 
-long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
+long
+fib(long n)
+{
+    return (n < 2) ? n : (fib(n - 1) + fib(n - 2));
+}
 
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
+    int  nitr = (argc > 2) ? atoi(argv[2]) : 2;
 
     timemory_init_library(argc, argv);
 
     uint64_t id0 = timemory_get_begin_record("main/total");
     long     ans = fib(nfib);
 
-    uint64_t id1 = timemory_get_begin_record("nested");
-    ans += fib(nfib + 1);
+    for(int i = 0; i < nitr; ++i)
+    {
+        char label[20];
+        sprintf(label, "nested/%i", i);
+        uint64_t id1 = timemory_get_begin_record(label);
+        ans += fib(nfib + 1);
+        timemory_end_record(id1);
+    }
 
-    timemory_end_record(id1);
     timemory_end_record(id0);
 
     printf("Answer = %li\n", ans);

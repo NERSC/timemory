@@ -43,23 +43,18 @@
 
 namespace tim
 {
-template <typename... _Types>
-class component_list;
-template <typename... _Types>
-class component_tuple;
-
 namespace component
 {
 //--------------------------------------------------------------------------------------//
 // provides nothing, useful to inherit from if a component is not available
 //
-template <typename... _Types>
+template <typename... Types>
 struct placeholder
-: public base<placeholder<_Types...>, void>
-, public _Types...
+: public base<placeholder<Types...>, void>
+, public Types...
 {
     using value_type = void;
-    using this_type  = placeholder<_Types...>;
+    using this_type  = placeholder<Types...>;
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "placeholder"; }
@@ -68,22 +63,22 @@ struct placeholder
     void               start() {}
     void               stop() {}
 
-    template <typename _Tp, typename _Func>
-    static void set_executor_callback(_Func&&)
+    template <typename Tp, typename Func>
+    static void set_executor_callback(Func&&)
     {}
 
     //----------------------------------------------------------------------------------//
     // generic configuration
     //
-    template <typename... _Args>
-    static void configure(_Args&&...)
+    template <typename... Args>
+    static void configure(Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
     // specific to gotcha
     //
-    template <size_t _N, typename... _Ret, typename... _Args>
-    static void configure(_Args&&...)
+    template <size_t N, typename... Ret, typename... Args>
+    static void configure(Args&&...)
     {}
 };
 
@@ -92,8 +87,8 @@ struct placeholder
 namespace trait
 {
 // always filter placeholder
-template <typename... _Types>
-struct is_available<component::placeholder<_Types...>> : std::false_type
+template <typename... Types>
+struct is_available<component::placeholder<Types...>> : std::false_type
 {};
 }  // namespace trait
 

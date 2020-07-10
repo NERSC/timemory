@@ -1,7 +1,7 @@
 #!@PYTHON_EXECUTABLE@
 
 import timemory
-from timemory.util import auto_tuple
+from timemory.bundle import auto_tuple
 import sys
 import json
 
