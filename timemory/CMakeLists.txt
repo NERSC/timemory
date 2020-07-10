@@ -5,6 +5,10 @@
 #
 ##########################################################################################
 
+if(SKBUILD)
+    set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX})
+endif()
+
 #----------------------------------------------------------------------------
 #
 #   Always install these files since timemory has python scripts which
