@@ -17,10 +17,11 @@ recursive-include cmake *
 recursive-include examples *
 recursive-include external *
 recursive-include source *
-recursive-include timemory *.py*
+recursive-include timemory *
 recursive-include .licenses *
 recursive-include tests *
 recursive-include scripts *
+recursive-include .requirements *
 
 # global exclude
 
