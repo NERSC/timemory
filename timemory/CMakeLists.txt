@@ -9,6 +9,13 @@ if(SKBUILD)
     set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX})
 endif()
 
+set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+if(NOT IS_ABSOLUTE "${_PYLIB}")
+    set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
+endif()
+file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
+    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+
 #----------------------------------------------------------------------------
 #
 #   Always install these files since timemory has python scripts which
