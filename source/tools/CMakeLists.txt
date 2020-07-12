@@ -56,6 +56,12 @@ message(STATUS "Adding source/tools/timemory-ompt...")
 add_subdirectory(timemory-ompt)
 
 #----------------------------------------------------------------------------------------#
+# Build and install timemory-ncclp library
+#
+message(STATUS "Adding source/tools/timemory-ncclp...")
+add_subdirectory(timemory-ncclp)
+
+#----------------------------------------------------------------------------------------#
 # Build and install timemory-connector libraries for kokkos
 #
 message(STATUS "Adding source/tools/kokkos-connector...")

@@ -319,6 +319,13 @@ struct TIMEMORY_SETTINGS_DLL settings
         "")
 
     TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        string_t, ncclp_components, "TIMEMORY_NCCLP_COMPONENTS",
+        "A specification of components which will be added "
+        "to structures containing the 'user_ncclp_bundle'. Priority: MPIP_COMPONENTS -> "
+        "TRACE_COMPONENTS -> PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
+        "")
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
         string_t, trace_components, "TIMEMORY_TRACE_COMPONENTS",
         "A specification of components which will be used by the interfaces which are "
         "designed for full profiling. These components will be subjected to throttling. "

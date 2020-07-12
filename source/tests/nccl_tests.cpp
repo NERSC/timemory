@@ -34,13 +34,26 @@
 
 #include "timemory/timemory.hpp"
 
-using namespace tim::component;
+#include "nccl_test/all_gather.h"
+#include "nccl_test/all_reduce.h"
+#include "nccl_test/alltoall.h"
+#include "nccl_test/broadcast.h"
+#include "nccl_test/reduce.h"
+#include "nccl_test/reduce_scatter.h"
 
 static int    _argc = 0;
 static char** _argv = nullptr;
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
+
+extern "C"
+{
+    extern void     timemory_register_ncclp();
+    extern void     timemory_deregister_ncclp();
+    extern uint64_t timemory_start_ncclp();
+    extern uint64_t timemory_stop_ncclp(uint64_t);
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -86,58 +99,28 @@ consume(long n)
         try_lk.try_lock();
 }
 
-// random number generator
-template <typename T = std::mt19937>
-T&
-get_rng(size_t initial_seed = 0)
-{
-    static T _instance = [=]() {
-        T _rng;
-        _rng.seed((initial_seed == 0) ? std::random_device()() : initial_seed);
-        return _rng;
-    }();
-    return _instance;
-}
-
-// random integer
-template <typename T, std::enable_if_t<(std::is_integral<T>::value), int> = 0>
-T
-get_random_value(T beg, T end)
-{
-    std::uniform_int_distribution<T> dist(beg, end);
-    return dist(get_rng());
-}
-
-template <typename T>
-struct identity
-{
-    using type = T;
-};
-
-template <typename T>
-using identity_t = typename identity<T>::type;
-
-template <typename T, std::enable_if_t<(std::is_floating_point<T>::value), int> = 0>
-T
-get_random_value(identity_t<T> beg, T end)
-{
-    std::uniform_real_distribution<T> dist(beg, end);
-    return dist(get_rng());
-}
-
 // get a random entry from vector
 template <typename Tp>
-Tp
+size_t
 random_entry(const std::vector<Tp>& v)
 {
-    return v.at(get_random_value(0, v.size() - 1));
+    std::mt19937 rng;
+    rng.seed(std::random_device()());
+    std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
+    return v.at(dist(rng));
 }
 
+template <typename Tp = tim::component::wall_clock>
+auto
+get_size()
+{
+    return tim::storage<Tp>::instance()->size();
+}
 }  // namespace details
 
 //--------------------------------------------------------------------------------------//
 
-class data_tracker_tests : public ::testing::Test
+class nccl_tests : public ::testing::Test
 {
 protected:
     void SetUp() override
@@ -150,57 +133,82 @@ protected:
             tim::settings::debug()       = false;
             tim::settings::json_output() = true;
             tim::settings::mpi_thread()  = false;
-            tim::settings::scientific()  = true;
             tim::mpi::initialize(_argc, _argv);
             tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
+            tim::settings::dart_output()      = true;
+            tim::settings::dart_count()       = 1;
+            tim::settings::banner()           = false;
+            tim::settings::ncclp_components() = "wall_clock";
         }
     }
+
+    void TearDown() override {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(data_tracker_tests, iteration_tracker)
+TEST_F(nccl_tests, all_gather)
 {
-    struct iteration_tag
-    {};
+    auto beg_sz = details::get_size();
+    int  ret    = test_main(allGatherEngine, _argc, _argv);
+    auto end_sz = details::get_size();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(end_sz - beg_sz, 1);
+}
 
-    using iteration_value_tracker_t = data_tracker<double, iteration_tag>;
-    using iteration_count_tracker_t = data_tracker<uint64_t, iteration_tag>;
-    using iteration_value_handle_t  = data_handler_t<iteration_value_tracker_t>;
+//--------------------------------------------------------------------------------------//
 
-    iteration_value_tracker_t::label()       = "iteration_value";
-    iteration_value_tracker_t::description() = "Iteration value tracker";
-    iteration_count_tracker_t::label()       = "iteration_count";
-    iteration_count_tracker_t::description() = "Iteration count tracker";
+TEST_F(nccl_tests, all_reduce)
+{
+    auto beg_sz = details::get_size();
+    int  ret    = test_main(allReduceEngine, _argc, _argv);
+    auto end_sz = details::get_size();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(end_sz - beg_sz, 1);
+}
 
-    using tuple_t =
-        tim::auto_tuple<wall_clock, iteration_count_tracker_t, iteration_value_tracker_t>;
+//--------------------------------------------------------------------------------------//
 
-    double       err      = std::numeric_limits<double>::max();
-    const double tol      = 1.0e-3;
-    uint64_t     num_iter = 0;
+TEST_F(nccl_tests, all_to_all)
+{
+    auto beg_sz = details::get_size();
+    int  ret    = test_main(alltoAllEngine, _argc, _argv);
+    auto end_sz = details::get_size();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(end_sz - beg_sz, 2);
+}
 
-    tuple_t t(details::get_test_name());
-    while(err > tol)
-    {
-        err = details::get_random_value<double>(0.0, 10.0);
-        t.store(std::plus<uint64_t>{}, 1);
-        t.store(iteration_value_handle_t{}, err);
-        ++num_iter;
-    }
-    t.stop();
+//--------------------------------------------------------------------------------------//
 
-    std::cout << "\n" << t << std::endl;
-    std::cout << "num_iter : " << num_iter << std::endl;
-    std::cout << "error    : " << err << "\n" << std::endl;
+TEST_F(nccl_tests, broadcast)
+{
+    auto beg_sz = details::get_size();
+    int  ret    = test_main(broadcastEngine, _argc, _argv);
+    auto end_sz = details::get_size();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(end_sz - beg_sz, 1);
+}
 
-    ASSERT_TRUE(num_iter != 0);
-    ASSERT_TRUE(t.get<iteration_count_tracker_t>()->get() == num_iter);
-    ASSERT_TRUE(t.get<iteration_value_tracker_t>()->get() < tol);
-    EXPECT_NEAR(t.get<iteration_value_tracker_t>()->get(), err, 1.0e-6);
+//--------------------------------------------------------------------------------------//
+
+TEST_F(nccl_tests, reduce)
+{
+    auto beg_sz = details::get_size();
+    int  ret    = test_main(reduceEngine, _argc, _argv);
+    auto end_sz = details::get_size();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(end_sz - beg_sz, 1);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(nccl_tests, reduce_scatter)
+{
+    auto beg_sz = details::get_size();
+    int  ret    = test_main(reduceScatterEngine, _argc, _argv);
+    auto end_sz = details::get_size();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(end_sz - beg_sz, 1);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -212,10 +220,13 @@ main(int argc, char** argv)
     _argc = argc;
     _argv = argv;
 
+    tim::set_env("TIMEMORY_NCCLP_REJECT_LIST",
+                 "ncclGroupStart, ncclGroupEnd, ncclCommCuDevice, ncclCommUserRank", 0);
+    timemory_register_ncclp();
     auto ret = RUN_ALL_TESTS();
+    timemory_deregister_ncclp();
 
     tim::timemory_finalize();
-    tim::dmp::finalize();
     return ret;
 }
 

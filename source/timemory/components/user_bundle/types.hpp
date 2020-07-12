@@ -64,6 +64,8 @@ TIMEMORY_BUNDLE_INDEX(list_bundle_idx, 11100)
 //
 TIMEMORY_BUNDLE_INDEX(mpip_bundle_idx, 11111)
 //
+TIMEMORY_BUNDLE_INDEX(ncclp_bundle_idx, 11112)
+//
 TIMEMORY_BUNDLE_INDEX(trace_bundle_idx, 20000)
 //
 TIMEMORY_BUNDLE_INDEX(profiler_bundle_idx, 22000)
@@ -79,6 +81,9 @@ TIMEMORY_COMPONENT_ALIAS(user_list_bundle, user_bundle<list_bundle_idx, api::nat
 TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle, user_bundle<ompt_bundle_idx, api::native_tag>)
 //
 TIMEMORY_COMPONENT_ALIAS(user_mpip_bundle, user_bundle<mpip_bundle_idx, api::native_tag>)
+//
+TIMEMORY_COMPONENT_ALIAS(user_ncclp_bundle,
+                         user_bundle<ncclp_bundle_idx, api::native_tag>)
 //
 TIMEMORY_COMPONENT_ALIAS(user_trace_bundle,
                          user_bundle<trace_bundle_idx, api::native_tag>)
@@ -169,3 +174,6 @@ TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE, "user_mpip_bundle",
                                  "mpip", "mpi_tools", "mpi")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_ncclp_bundle, USER_NCCLP_BUNDLE,
+                                 "user_ncclp_bundle", "ncclp", "nccl_tools", "nccl")

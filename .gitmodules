@@ -19,3 +19,6 @@
 [submodule "external/line-profiler"]
 	path = external/line-profiler
 	url = https://github.com/jrmadsen/line_profiler.git
+[submodule "source/tests/external/nccl-tests"]
+	path = source/tests/external/nccl-tests
+	url = https://github.com/jrmadsen/nccl-tests.git

@@ -22,10 +22,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/components/gotcha/mpip.hpp"
 #include "timemory/library.h"
 #include "timemory/timemory.hpp"
-//
-#include "timemory/components/gotcha/mpip.hpp"
+
+#include <dlfcn.h>
 
 #include <memory>
 #include <set>
@@ -50,10 +51,11 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, mpi_data_tracker_t, true_type
 //
 //--------------------------------------------------------------------------------------//
 //
-using api_t         = tim::api::native_tag;
-using mpi_toolset_t = tim::component_tuple<user_mpip_bundle, mpi_comm_data>;
-using mpip_handle_t = mpip_handle<mpi_toolset_t, api_t>;
-uint64_t global_id  = 0;
+using api_t            = tim::api::native_tag;
+using mpi_toolset_t    = tim::component_tuple<user_mpip_bundle, mpi_comm_data>;
+using mpip_handle_t    = mpip_handle<mpi_toolset_t, api_t>;
+uint64_t global_id     = 0;
+void*    libmpi_handle = nullptr;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -61,18 +63,6 @@ extern "C"
 {
     void timemory_mpip_library_ctor()
     {
-        auto mpip   = tim::get_env<std::string>("TIMEMORY_MPIP_COMPONENTS", "");
-        auto over   = (mpip.empty()) ? 1 : 0;
-        auto trace  = tim::get_env<std::string>("TIMEMORY_TRACE_COMPONENTS", "");
-        auto region = tim::get_env<std::string>("TIMEMORY_COMPONENTS", "");
-        auto glob   = tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "");
-        if(!trace.empty())
-            tim::set_env("TIMEMORY_MPIP_COMPONENTS", trace, over);
-        else if(!region.empty())
-            tim::set_env("TIMEMORY_MPIP_COMPONENTS", region, over);
-        else if(!glob.empty())
-            tim::set_env("TIMEMORY_MPIP_COMPONENTS", glob, over);
-
         mpi_data_tracker_t::label()       = "mpi_comm_data";
         mpi_data_tracker_t::description() = "Tracks MPI communication data";
     }
@@ -82,9 +72,18 @@ extern "C"
         // provide environment variable for enabling/disabling
         if(tim::get_env<bool>("TIMEMORY_ENABLE_MPIP", true))
         {
+            // make sure the symbols are loaded to be wrapped
+            auto libpath = tim::get_env<std::string>("TIMEMORY_MPI_LIBRARY", "libmpi.so");
+            libmpi_handle = dlopen(libpath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+            if(!libmpi_handle)
+                fprintf(stderr, "%s\n", dlerror());
+            dlerror();  // Clear any existing error
+
             configure_mpip<mpi_toolset_t, api_t>();
             user_mpip_bundle::global_init(nullptr);
-            return activate_mpip<mpi_toolset_t, api_t>();
+            auto ret = activate_mpip<mpi_toolset_t, api_t>();
+            dlclose(libmpi_handle);
+            return ret;
         }
         else
         {
