@@ -25,6 +25,7 @@
 
 #include "timemory-run.hpp"
 
+static bool                                       is_driver  = false;
 static strset_t                                   extra_libs = {};
 static std::vector<std::pair<uint64_t, string_t>> hash_ids;
 static std::map<string_t, bool>                   use_stubs;
@@ -235,6 +236,10 @@ main(int argc, char** argv)
         .description("Prefer this library types when available")
         .choices({ "shared", "static" })
         .count(1);
+    parser
+        .add_argument({ "--driver" }, "Force main or _init/_fini instrumentation")
+        .count(0)
+        .action([](auto&) { is_driver = true; });
     parser
         .add_argument({ "--mpi" },
                       "Enable MPI support (requires timemory built w/ MPI and GOTCHA "
@@ -861,7 +866,7 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    if(!main_func)
+    if(!main_func && is_driver)
     {
         fprintf(stderr, "[timemory-run]> Couldn't find '%s'\n", main_fname.c_str());
         if(!_mutatee_init || !_mutatee_fini)
@@ -885,7 +890,7 @@ main(int argc, char** argv)
           pair_t(fini_func, "timemory_trace_finalize"),
           pair_t(env_func, "timemory_trace_set_env") })
     {
-        if(itr.first == main_func && _mutatee_init && _mutatee_fini)
+        if(itr.first == main_func && !is_driver)
             continue;
         if(!itr.first)
         {
@@ -950,10 +955,12 @@ main(int argc, char** argv)
         main_entr_points = main_func->findPoint(BPatch_entry);
         main_exit_points = main_func->findPoint(BPatch_exit);
     }
-    else
+    else if(is_driver)
     {
-        main_entr_points = _mutatee_init->findPoint(BPatch_entry);
-        main_exit_points = _mutatee_fini->findPoint(BPatch_exit);
+        if(_mutatee_init)
+            main_entr_points = _mutatee_init->findPoint(BPatch_entry);
+        if(_mutatee_fini)
+            main_exit_points = _mutatee_fini->findPoint(BPatch_exit);
     }
 
     //----------------------------------------------------------------------------------//
@@ -1301,10 +1308,12 @@ main(int argc, char** argv)
 
     if(binary_rewrite)
     {
-        addr_space->insertSnippet(BPatch_sequence(init_names), *main_entr_points,
-                                  BPatch_callBefore, BPatch_firstSnippet);
-        addr_space->insertSnippet(BPatch_sequence(fini_names), *main_exit_points,
-                                  BPatch_callAfter, BPatch_firstSnippet);
+        if(main_entr_points)
+            addr_space->insertSnippet(BPatch_sequence(init_names), *main_entr_points,
+                                      BPatch_callBefore, BPatch_firstSnippet);
+        if(main_exit_points)
+            addr_space->insertSnippet(BPatch_sequence(fini_names), *main_exit_points,
+                                      BPatch_callAfter, BPatch_firstSnippet);
     }
     else if(app_thread)
     {
@@ -1364,23 +1373,27 @@ main(int argc, char** argv)
             printf("\nThe instrumented executable image is stored in '%s/%s'\n", cwd,
                    outfile.c_str());
 
-        printf("[timemory-run]> Getting linked libraries for %s...\n", cmdv0.c_str());
-        printf("[timemory-run]> Consider instrumenting the relevant libraries...\n\n");
+        if(main_func)
+        {
+            printf("[timemory-run]> Getting linked libraries for %s...\n", cmdv0.c_str());
+            printf(
+                "[timemory-run]> Consider instrumenting the relevant libraries...\n\n");
 
-        tim::set_env("LD_TRACE_LOADED_OBJECTS", "1", 1);
-        TIMEMORY_PIPE* ldd = timemory_popen(cmdv0.c_str());
-        tim::set_env("LD_TRACE_LOADED_OBJECTS", "0", 1);
+            tim::set_env("LD_TRACE_LOADED_OBJECTS", "1", 1);
+            TIMEMORY_PIPE* ldd = timemory_popen(cmdv0.c_str());
+            tim::set_env("LD_TRACE_LOADED_OBJECTS", "0", 1);
 
-        strvec_t linked_libraries = read_timemory_fork(ldd);
+            strvec_t linked_libraries = read_timemory_fork(ldd);
 
-        auto err = timemory_pclose(ldd);
-        if(err != 0)
-            perror("Error in timemory_fork");
+            auto err = timemory_pclose(ldd);
+            if(err != 0)
+                perror("Error in timemory_fork");
 
-        for(auto itr : linked_libraries)
-            printf("\t%s\n", itr.c_str());
+            for(auto itr : linked_libraries)
+                printf("\t%s\n", itr.c_str());
 
-        printf("\n");
+            printf("\n");
+        }
     }
     else
     {
