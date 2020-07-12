@@ -27,6 +27,7 @@
 #include "timemory/library.h"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
+#include "timemory/utility/bits/signals.hpp"
 
 #if defined(TIMEMORY_USE_MPI)
 #    include "timemory/backends/types/mpi/extern.hpp"
@@ -54,12 +55,7 @@ using trace_map_t    = std::unordered_map<size_t, std::deque<traceset_t>>;
 
 //======================================================================================//
 
-namespace
-{
-static auto trace_manager_handle  = tim::manager::instance();
-static auto trace_settings_handle = tim::settings::shared_instance<TIMEMORY_API>();
 static std::atomic<uint32_t> library_trace_count{ 0 };
-}  // namespace
 
 //--------------------------------------------------------------------------------------//
 
@@ -177,8 +173,6 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
         auto ret                 = MPI_Init(argc, argv);
         tim::mpi::is_finalized() = false;
         set_attr();
-        timemory_trace_init(get_trace_components().c_str(), read_command_line(),
-                            get_command().c_str());
         auto mode = tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
         if(mode == "trace")
             timemory_push_trace("MPI_Init(int*, char**)");
@@ -197,8 +191,6 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
         auto ret                 = MPI_Init_thread(argc, argv, req, prov);
         tim::mpi::is_finalized() = false;
         set_attr();
-        timemory_trace_init(get_trace_components().c_str(), read_command_line(),
-                            get_command().c_str());
         auto mode = tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
         if(mode == "trace")
             timemory_push_trace("MPI_Init_thread(int*, char**, int, int*)");
@@ -294,7 +286,7 @@ setup_mpi_gotcha()
 
 //--------------------------------------------------------------------------------------//
 
-using mpi_trace_bundle_t = tim::auto_tuple<mpi_trace_gotcha_t>;
+using mpi_trace_bundle_t = tim::component_tuple<mpi_trace_gotcha_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -328,7 +320,7 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
 
 //--------------------------------------------------------------------------------------//
 
-using mpi_trace_bundle_t = tim::auto_tuple<>;
+using mpi_trace_bundle_t = tim::component_tuple<>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -649,28 +641,6 @@ extern "C"
         if(get_library_state()[0])
             return;
 
-            // timemory_mpip_library_ctor();
-            // timemory_ompt_library_ctor();
-
-#if defined(TIMEMORY_MPI_GOTCHA)
-        if(!mpi_gotcha_handle.get())
-        {
-            mpi_gotcha_handle =
-                std::make_shared<mpi_trace_bundle_t>("timemory_trace_mpi_gotcha");
-            mpi_trace_gotcha::get_trace_components() = args;
-            mpi_trace_gotcha::read_command_line()    = read_command_line;
-            mpi_trace_gotcha::get_command()          = cmd;
-            if(mpi_is_attached)
-                mpi_trace_gotcha::set_attr();
-        }
-        else if(mpi_gotcha_handle.get())
-        {
-            PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
-                       (int) tim::process::get_id(), (int) tim::threading::get_id());
-            trace_manager_handle->update_metadata_prefix();
-        }
-#endif
-
         if(library_trace_count++ == 0)
         {
             PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
@@ -716,21 +686,32 @@ extern "C"
             tim::env::configure<user_trace_bundle>("TIMEMORY_TRACE_COMPONENTS", args);
 
             tim::settings::parse();
-        }
-        else
-        {
-            PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
-                       (int) tim::process::get_id(), (int) tim::threading::get_id(),
-                       args);
 
-            if(read_command_line)
+            std::function<void(int)> exit_func = [](int) { tim::timemory_finalize(); };
+            tim::signal_settings::set_exit_action(exit_func);
+            std::atexit(&tim::timemory_finalize);
+            std::at_quick_exit(&tim::timemory_finalize);
+
+#if defined(TIMEMORY_MPI_GOTCHA)
+            if(!mpi_gotcha_handle.get())
             {
-                auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
-                tim::config::read_command_line(_init);
+                mpi_gotcha_handle =
+                    std::make_shared<mpi_trace_bundle_t>("timemory_trace_mpi_gotcha");
+                mpi_trace_gotcha::get_trace_components() = args;
+                mpi_trace_gotcha::read_command_line()    = read_command_line;
+                mpi_trace_gotcha::get_command()          = cmd;
+                if(mpi_is_attached)
+                    mpi_trace_gotcha::set_attr();
+                mpi_gotcha_handle->start();
             }
+            else if(mpi_gotcha_handle.get())
+            {
+                PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
+                           (int) tim::process::get_id(), (int) tim::threading::get_id());
+                tim::manager::instance()->update_metadata_prefix();
+            }
+#endif
         }
-        auto manager = tim::manager::instance();
-        tim::consume_parameters(manager);
     }
     //
     //----------------------------------------------------------------------------------//
