@@ -346,3 +346,9 @@ if(_OMPT_TARGET AND _OPENMP)
         SOURCES         ompt_handle_tests.cpp
         LINK_LIBRARIES  ${_OMPT_TARGET} ${_OPENMP})
 endif()
+
+if(TARGET timemory-ncclp-library AND TARGET nccl_test_interface)
+    add_timemory_google_test(nccl_tests
+        SOURCES         nccl_tests.cpp
+        LINK_LIBRARIES  nccl_test_interface timemory-ncclp-library)
+endif()

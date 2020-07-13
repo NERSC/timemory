@@ -267,7 +267,8 @@ public:
     {
         return m_temporary.get(std::forward<Args>(args)...);
     }
-    /// invoke get member function on all components to get data labeled with component name
+    /// invoke get member function on all components to get data labeled with component
+    /// name
     template <typename... Args>
     auto get_labeled(Args&&... args) const
     {

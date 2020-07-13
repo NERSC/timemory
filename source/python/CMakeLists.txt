@@ -49,6 +49,7 @@ if(TIMEMORY_BUILD_PYTHON)
         timemory-python-compile-options
         timemory-mpip-library
         timemory-ompt-library
+        timemory-ncclp-library
         timemory-default-visibility)
 
     if(TIMEMORY_USE_CUDA)

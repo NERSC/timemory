@@ -514,7 +514,7 @@ public:
                           char> = 0>
     void init(Args&&... _args)
     {
-        T& _obj = std::get<index_of<T, data_type>::value>(m_data);
+        T&                      _obj = std::get<index_of<T, data_type>::value>(m_data);
         operation::construct<T> _tmp(_obj, std::forward<Args>(_args)...);
     }
 

@@ -270,7 +270,7 @@ if(TIMEMORY_BUILD_C)
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
             LINK_LIBRARIES      timemory-external-static
-	                        PRIVATE
+                                PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
                                     # timemory-hidden-visibility
@@ -324,6 +324,14 @@ if(_OMPT_LIB)
     target_link_libraries(timemory-ompt-library INTERFACE timemory-ompt ${_OMPT_LIB})
 else()
     inform_empty_interface(timemory-ompt-library "OpenMP stand-alone instrumentation library")
+endif()
+
+if(TARGET timemory-ncclp-shared)
+    target_compile_definitions(timemory-ncclp-library INTERFACE TIMEMORY_USE_NCCLP_LIBRARY)
+    target_link_libraries(timemory-ncclp-library INTERFACE timemory-ncclp-shared)
+    list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ncclp-shared)
+else()
+    inform_empty_interface(timemory-ncclp-library "NCCLP standalone instrumentation library")
 endif()
 
 #----------------------------------------------------------------------------------------#

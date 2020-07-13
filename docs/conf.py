@@ -76,7 +76,7 @@ shutil.copyfile(
     os.path.join(_bindir, "doc", "Doxyfile.timemory"),
     os.path.join(_docdir, "Doxyfile.timemory"))
 shutil.rmtree(_bindir)
-for t in ["timem", "timemory-run", "timemory-mpip", "timemory-ompt",
+for t in ["timem", "timemory-run", "timemory-mpip", "timemory-ompt", "timemory-ncclp",
           "timemory-avail", "timemory-jump", "timemory-stubs", "kokkos-connector"]:
     shutil.copyfile(
         os.path.join(_srcdir, "source", "tools", t, "README.md"),

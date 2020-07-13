@@ -59,6 +59,7 @@ TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_tuple_bundle, scope
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_list_bundle, scope::config)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ompt_bundle, scope::config)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_mpip_bundle, scope::config)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ncclp_bundle, scope::config)
 //
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(full_auto_timer_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(minimal_auto_timer_t)
