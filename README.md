@@ -119,7 +119,7 @@ and/or outgoing return value from function, or just provide stubs which can be o
 - Instrumentation Libraries
     - [kokkos-connector](source/tools/kokkos-connector/README.md): Kokkos Profiling Libraries
     - [timemory-mpip](source/tools/timemory-mpip/README.md): MPI Profiling Library (Linux-only)
-    - [timemory-mpip](source/tools/timemory-ncclp/README.md): NCCL Profiling Library (Linux-only)
+    - [timemory-ncclp](source/tools/timemory-ncclp/README.md): NCCL Profiling Library (Linux-only)
     - [timemory-ompt](source/tools/timemory-ompt/README.md): OpenMP Profiling Library
 
 ## Design Goals
