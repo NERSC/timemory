@@ -160,7 +160,22 @@ elseif(pybind11_FOUND)
     target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
 endif()
 
+if(WIN32)
+    # Windows produces:
+    #
+    #   CMake Warning (dev) at tests/test-python-install-import.cmake:3 (SET):
+    #   Syntax error in cmake code at
+    #     C:/projects/timemory/build-timemory/tests/test-python-install-import.cmake:3
+    #   when parsing string
+    #     C:\Python36-x64\Lib\site-packages
+    #   Invalid escape sequence \P
+    string(REPLACE "\\" "/" INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR}")
+else()
+    set(INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR}")
+endif()
+
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/test-python-install-import.cmake.in
     ${PROJECT_BINARY_DIR}/tests/test-python-install-import.cmake @ONLY)
+unset(INSTALL_PYTHONDIR)
 
 add_feature(CMAKE_INSTALL_PYTHONDIR "Installation prefix of the python bindings")
