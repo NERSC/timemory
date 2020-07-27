@@ -203,9 +203,14 @@ class Profiler():
         self._flat_profile = (settings.flat_profile or flat)
         self._timeline_profile = (settings.timeline_profile or timeline)
         self.components = components + _components.split(",")
+        self.components = [v.lower() for v in self.components]
+        self.components = list(dict.fromkeys(self.components))
         if len(self.components) == 0:
             self.components += ["wall_clock"]
-        os.environ["TIMEMORY_PROFILER_COMPONENTS"] = ",".join(self.components)
+        if _trace is None:
+            settings.trace_components = ','.join(self.components)
+        settings.profiler_components = ','.join(self.components)
+        # os.environ["TIMEMORY_PROFILER_COMPONENTS"] = ",".join(self.components)
         # print("USE = {}, COMPONENTS = {}".format(self._use, self.components))
 
     #------------------------------------------------------------------------------------#
