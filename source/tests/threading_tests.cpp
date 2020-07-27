@@ -109,7 +109,11 @@ compute_pi(uint64_t nstart, uint64_t nstop, double step, uint64_t nblock)
 //--------------------------------------------------------------------------------------//
 
 class threading_tests : public ::testing::Test
-{};
+{
+    void SetUp() override { tim::threading::affinity::set(); }
+};
+
+//--------------------------------------------------------------------------------------//
 
 static std::atomic<int> thread_count;
 int&
