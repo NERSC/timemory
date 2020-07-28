@@ -46,10 +46,13 @@ namespace component
 //
 //======================================================================================//
 //
-//  Activate perfmon (CPU)
+// perfmon marker (CPU)
 //
 //======================================================================================//
 //
+/// \struct likwid_marker
+/// \brief Provides likwid perfmon marker forwarding. Requires \def LIKWID_PERFMON to
+/// be defined before including <likwid-marker.h>
 struct likwid_marker : public base<likwid_marker, void>
 {
     // timemory component api
@@ -61,48 +64,71 @@ struct likwid_marker : public base<likwid_marker, void>
     static std::string description() { return "LIKWID perfmon (CPU) marker forwarding"; }
     static value_type  record() {}
 
-    static void global_init(storage_type*) { LIKWID_MARKER_INIT; }
-    static void thread_init(storage_type*) { LIKWID_MARKER_THREADINIT; }
-
-    likwid_marker() = default;
-
-    likwid_marker(const std::string& _prefix)
-    : prefix(_prefix)
+    static void global_init()
     {
-        register_marker();
+#if defined(TIMEMORY_USE_LIKWID_PERFMON)
+        likwid_markerInit();
+#endif
     }
+
+    static void thread_init()
+    {
+#if defined(TIMEMORY_USE_LIKWID_PERFMON)
+        likwid_markerThreadInit();
+#endif
+    }
+
+    static void next()
+    {
+#if defined(TIMEMORY_USE_LIKWID_PERFMON)
+        likwid_markerNextGroup();
+#endif
+    }
+
+    TIMEMORY_DEFAULT_OBJECT(likwid_marker)
 
     void start()
     {
-#if defined(TIMEMORY_USE_LIKWID)
-        likwid_markerStartRegion(prefix.c_str());
+#if defined(TIMEMORY_USE_LIKWID_PERFMON)
+        likwid_markerStartRegion(m_prefix);
 #endif
     }
 
     void stop()
     {
-#if defined(TIMEMORY_USE_LIKWID)
-        likwid_markerStopRegion(prefix.c_str());
+#if defined(TIMEMORY_USE_LIKWID_PERFMON)
+        likwid_markerStopRegion(m_prefix);
 #endif
     }
 
-    void reset()
+    void reset_region()
     {
-#if defined(TIMEMORY_USE_LIKWID)
-        likwid_markerResetRegion(prefix.c_str());
+#if defined(TIMEMORY_USE_LIKWID_PERFMON)
+        likwid_markerResetRegion(m_prefix);
 #endif
     }
 
     void register_marker()
     {
-#if defined(LIKWID_WITH_NVMON)
-        likwid_gpuMarkerRegisterRegion(prefix.c_str());
+#if defined(TIMEMORY_USE_LIKWID_PERFMON)
+        likwid_markerRegisterRegion(m_prefix);
 #endif
     }
 
-    void set_prefix(const std::string& _prefix)
+    likwid_data get() const
     {
-        prefix = _prefix;
+        likwid_data _data{};
+#if defined(TIMEMORY_USE_LIKWID_PERFMON)
+        likwid_markerGetRegion(m_prefix, &_data.nevents, _data.events.data(), &_data.time,
+                               &_data.count);
+        _data.events.resize(_data.nevents);
+#endif
+        return _data;
+    }
+
+    void set_prefix(const char* _prefix)
+    {
+        m_prefix = _prefix;
         register_marker();
     }
 
@@ -112,15 +138,18 @@ private:
     // Member Variables
     //
     //----------------------------------------------------------------------------------//
-    std::string prefix = "";
+    const char* m_prefix = nullptr;
 };
 //
 //======================================================================================//
 //
-//  Activate nvmon (GPU)
+// nvmon marker (GPU)
 //
 //======================================================================================//
 //
+/// \struct likwid_nvmarker
+/// \brief Provides likwid nvmon marker forwarding. Requires \def LIKWID_NVMON to
+/// be defined before including <likwid-marker.h>
 struct likwid_nvmarker : public base<likwid_nvmarker, void>
 {
     // timemory component api
@@ -132,48 +161,64 @@ struct likwid_nvmarker : public base<likwid_nvmarker, void>
     static std::string description() { return "LIKWID nvmon (GPU) marker forwarding"; }
     static value_type  record() {}
 
-    static void global_init(storage_type*) { LIKWID_NVMARKER_INIT; }
-    static void thread_init(storage_type*) { LIKWID_NVMARKER_THREADINIT; }
-
-    likwid_nvmarker() = default;
-
-    likwid_nvmarker(const std::string& _prefix)
-    : prefix(_prefix)
+    static void global_init()
     {
-        register_marker();
+#if defined(TIMEMORY_USE_LIKWID_NVMON)
+        likwid_gpuMarkerInit();
+#endif
     }
+
+    static void thread_init()
+    {
+#if defined(TIMEMORY_USE_LIKWID_NVMON)
+        likwid_gpuMarkerThreadInit();
+#endif
+    }
+
+    TIMEMORY_DEFAULT_OBJECT(likwid_nvmarker)
 
     void start()
     {
-#if defined(LIKWID_WITH_NVMON)
-        likwid_gpuMarkerStartRegion(prefix.c_str());
+#if defined(TIMEMORY_USE_LIKWID_NVMON)
+        likwid_gpuMarkerStartRegion(m_prefix);
 #endif
     }
 
     void stop()
     {
-#if defined(LIKWID_WITH_NVMON)
-        likwid_gpuMarkerStopRegion(prefix.c_str());
+#if defined(TIMEMORY_USE_LIKWID_NVMON)
+        likwid_gpuMarkerStopRegion(m_prefix);
 #endif
     }
 
     void reset()
     {
-#if defined(LIKWID_WITH_NVMON)
-        likwid_gpuMarkerResetRegion(prefix.c_str());
+#if defined(TIMEMORY_USE_LIKWID_NVMON)
+        likwid_gpuMarkerResetRegion(m_prefix);
 #endif
     }
 
     void register_marker()
     {
-#if defined(LIKWID_WITH_NVMON)
-        likwid_gpuMarkerRegisterRegion(prefix.c_str());
+#if defined(TIMEMORY_USE_LIKWID_NVMON)
+        likwid_gpuMarkerRegisterRegion(m_prefix);
 #endif
     }
 
-    void set_prefix(const std::string& _prefix)
+    likwid_data get() const
     {
-        prefix = _prefix;
+        likwid_data _data{};
+#if defined(TIMEMORY_USE_LIKWID_NVMON)
+        likwid_gpuMarkerGetRegion(m_prefix, &_data.nevents, _data.events.data(),
+                                  &_data.time, &_data.count);
+        _data.events.resize(_data.nevents);
+#endif
+        return _data;
+    }
+
+    void set_prefix(const char* _prefix)
+    {
+        m_prefix = _prefix;
         register_marker();
     }
 
@@ -183,7 +228,7 @@ private:
     // Member Variables
     //
     //----------------------------------------------------------------------------------//
-    std::string prefix = "";
+    const char* m_prefix = nullptr;
 };
 //
 }  // namespace component

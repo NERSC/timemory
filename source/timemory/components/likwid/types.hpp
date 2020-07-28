@@ -34,10 +34,33 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
+#if !defined(TIMEMORY_LIKWID_DATA_MAX_EVENTS)
+#    if defined(TIMEMORY_USE_LIKWID)
+#        define TIMEMORY_LIKWID_DATA_MAX_EVENTS 32
+#    else
+#        define TIMEMORY_LIKWID_DATA_MAX_EVENTS 0
+#    endif
+#endif
+
 //======================================================================================//
 //
 TIMEMORY_DECLARE_COMPONENT(likwid_marker)
 TIMEMORY_DECLARE_COMPONENT(likwid_nvmarker)
+//
+namespace tim
+{
+namespace component
+{
+/// \struct tim::component::likwid_data
+/// \brief If you want to process a code regions measurement results in the instrumented
+/// application itself, this data type will provide the intermediate results.
+/// The nevents parameter is used to specify the length of the events array. After the
+/// function returns, nevents is the number of events filled in the events array.
+/// The aggregated measurement time is returned in time and the amount of measurements is
+/// returned in count.
+struct likwid_data;
+}  // namespace component
+}  // namespace tim
 //
 //======================================================================================//
 //
@@ -49,7 +72,10 @@ TIMEMORY_DECLARE_COMPONENT(likwid_nvmarker)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_marker, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmarker, false_type)
 #else
-#    if !defined(TIMEMORY_USE_CUDA)
+#    if !defined(TIMEMORY_USE_LIKWID_PERFMON)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_marker, false_type)
+#    endif
+#    if !defined(TIMEMORY_USE_LIKWID_NVMON)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmarker, false_type)
 #    endif
 #endif
@@ -68,6 +94,32 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_nvmarker, true
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(likwid_marker, LIKWID_MARKER, "likwid_marker", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_marker, LIKWID_MARKER, "likwid_marker",
+                                 "likwid_perfmon_marker")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(likwid_nvmarker, LIKWID_NVMARKER, "likwid_nvmarker", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_nvmarker, LIKWID_NVMARKER, "likwid_nvmarker",
+                                 "likwid_nvmon_marker")
+//
+//--------------------------------------------------------------------------------------//
+//
+//                                  LIKWID_DATA
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace tim
+{
+namespace component
+{
+struct likwid_data
+{
+    using data_type = std::vector<double>;
+
+    TIMEMORY_DEFAULT_OBJECT(likwid_data)
+
+    int       nevents = TIMEMORY_LIKWID_DATA_MAX_EVENTS;
+    int       count   = 0;
+    double    time    = 0.0;
+    data_type events  = data_type(TIMEMORY_LIKWID_DATA_MAX_EVENTS, 0.0);
+};
+}  // namespace component
+}  // namespace tim

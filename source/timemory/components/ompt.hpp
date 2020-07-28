@@ -31,16 +31,11 @@
 
 #if defined(TIMEMORY_USE_OMPT)
 
-//======================================================================================//
-//
 #    include "timemory/components/base.hpp"
 #    include "timemory/components/macros.hpp"
-//
 #    include "timemory/components/ompt/components.hpp"
 #    include "timemory/components/ompt/tool.hpp"
 #    include "timemory/components/ompt/types.hpp"
-//
-//--------------------------------------------------------------------------------------//
 
 extern "C" int
 ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
