@@ -71,18 +71,17 @@ struct auto_start;
 struct auto_stop;
 struct explicit_start;
 struct explicit_stop;
-
+struct exit_report;
+struct no_init;
+struct no_fini;
+struct no_store;
 struct tree_scope : scope::tree
 {};
 struct flat_scope : scope::flat
 {};
 struct timeline_scope : scope::timeline
 {};
-
-struct exit_report;
-struct no_init;
-struct no_fini;
-struct no_store;
+//
 }  // namespace quirk
 }  // namespace tim
 

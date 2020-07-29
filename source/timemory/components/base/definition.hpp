@@ -107,7 +107,6 @@ base<Tp, Value>::stop()
     if(is_running)
     {
         set_stopped();
-        ++laps;
         static_cast<Type*>(this)->stop();
     }
 }
@@ -154,8 +153,12 @@ template <typename Tp, typename Value>
 void
 base<Tp, Value>::set_stopped()
 {
-    is_running   = false;
-    is_transient = true;
+    if(is_running)
+    {
+        ++laps;
+        is_running   = false;
+        is_transient = true;
+    }
 }
 //
 //--------------------------------------------------------------------------------------//

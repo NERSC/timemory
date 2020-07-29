@@ -58,9 +58,6 @@ struct start
     template <typename... Args>
     explicit start(type& obj, Args&&... args);
 
-    template <typename... Args>
-    explicit start(type& obj, non_vexing&&, Args&&... args);
-
 private:
     // resolution #1 (best)
     template <typename Up, typename... Args>
@@ -102,6 +99,18 @@ private:
     {
         SFINAE_WARNING(type);
     }
+
+private:
+    // set_started
+    template <typename Up>
+    auto set_sfinae(Up& obj, int) -> decltype(obj.set_started(), void())
+    {
+        obj.set_started();
+    }
+
+    template <typename Up>
+    auto set_sfinae(Up&, long)
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -126,7 +135,7 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        start<Tp>(obj, non_vexing{}, std::forward<Args>(args)...);
+        start<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
@@ -157,7 +166,7 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        start<Tp>(obj, non_vexing{}, std::forward<Args>(args)...);
+        start<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
@@ -188,7 +197,7 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        start<Tp>(obj, non_vexing{}, std::forward<Args>(args)...);
+        start<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
@@ -206,18 +215,7 @@ start<Tp>::start(type& obj, Args&&... args)
     if(!trait::runtime_enabled<type>::get())
         return;
     init_storage<Tp>::init();
-    sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-template <typename... Args>
-start<Tp>::start(type& obj, non_vexing&&, Args&&... args)
-{
-    if(!trait::runtime_enabled<type>::get())
-        return;
-    init_storage<Tp>::init();
+    set_sfinae(obj, 0);
     sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
 }
 //

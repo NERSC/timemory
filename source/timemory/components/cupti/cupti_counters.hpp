@@ -213,7 +213,6 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     //
     void start()
     {
-        set_started();
         value           = record();
         auto& _profiler = _get_profiler();
         if(_profiler.get())
@@ -230,10 +229,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         value_type tmp       = record();
         auto&      _profiler = _get_profiler();
         if(!_profiler.get())
-        {
-            set_stopped();
             return;
-        }
 
         kernel_results_t kernel_data =
             _profiler->get_kernel_events_and_metrics(*_get_labels());
@@ -263,7 +259,6 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
 
         value          = std::move(tmp);
         m_kernel_value = std::move(kernel_data);
-        set_stopped();
     }
 
     string_t get_display() const

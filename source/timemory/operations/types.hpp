@@ -38,6 +38,7 @@
 
 #include <functional>
 #include <iosfwd>
+#include <type_traits>
 
 namespace std
 {
@@ -124,13 +125,43 @@ struct has_data
 //
 //--------------------------------------------------------------------------------------//
 //
+namespace internal
+{
+template <typename U>
+auto
+resolve_record_type(int) -> decltype(
+    U::record(),
+    typename function_traits<decltype(std::declval<U>().record())>::result_type())
+{
+    return U::record();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename U>
+auto
+resolve_record_type(long) -> void
+{}
+}  // namespace internal
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename U>
+auto
+resolve_record_type()
+{
+    return internal::resolve_record_type<U>(0);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename T, typename V = typename T::value_type>
 struct check_record_type
 {
+    using type = typename function_traits<decltype(&resolve_record_type<T>)>::result_type;
     static constexpr bool value =
-        (!std::is_same<V, void>::value && is_enabled<T>::value &&
-         std::is_same<
-             V, typename function_traits<decltype(&T::record)>::result_type>::value);
+        (!std::is_void<V>::value && !std::is_void<type>::value && is_enabled<T>::value &&
+         std::is_same<V, type>::value);
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -408,6 +439,11 @@ struct generic_counter;
 //
 template <typename T, typename Op, typename Tag = TIMEMORY_API>
 struct generic_operator;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct cache;
 //
 //--------------------------------------------------------------------------------------//
 //

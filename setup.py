@@ -72,6 +72,10 @@ if args.help:
     left.append("--help")
 sys.argv = sys.argv[:1] + left
 
+runtime_req_file = ('.requirements/mpi_runtime.txt'
+                    if args.enable_mpi and not args.disable_mpi
+                    else '.requirements/runtime.txt')
+
 set_cmake_bool_option("TIMEMORY_BUILD_C", args.enable_c, args.disable_c)
 set_cmake_bool_option("TIMEMORY_BUILD_TOOLS",
                       args.enable_tools, args.disable_tools)
@@ -341,8 +345,7 @@ with warnings.catch_warnings():
         download_url='http://github.com/NERSC/timemory.git',
         zip_safe=False,
         setup_requires=[],
-        install_requires=parse_requirements(
-            '.requirements/runtime.txt'),
+        install_requires=parse_requirements(runtime_req_file),
         extras_require={
             'all': parse_requirements('requirements.txt'),
             'build': parse_requirements('.requirements/build.txt'),

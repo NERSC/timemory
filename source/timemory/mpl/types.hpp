@@ -64,6 +64,11 @@ class auto_hybrid;
 //
 namespace trait
 {
+//
+template <typename TraitT>
+std::string
+as_string();
+//
 /// \struct tim::trait::apply
 /// \brief generic functions for setting/accessing static properties on types
 template <template <typename...> class TraitT, typename... CommonT>
@@ -228,6 +233,15 @@ struct ompt_handle;
 
 template <typename T>
 struct supports_flamegraph;
+
+template <typename T>
+struct derivation_types;
+
+template <int OpT, typename T>
+struct python_args;
+
+template <typename T>
+struct cache;
 
 //--------------------------------------------------------------------------------------//
 //

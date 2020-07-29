@@ -102,10 +102,30 @@ base<Tp, Value>::add_sample(Vp&& _obj)
 //
 template <typename Tp, typename Value>
 template <typename Up, enable_if_t<(trait::base_has_accum<Up>::value), int>>
+Value&
+base<Tp, Value>::load()
+{
+    return (is_transient) ? accum : value;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Value>
+template <typename Up, enable_if_t<(trait::base_has_accum<Up>::value), int>>
 const Value&
 base<Tp, Value>::load() const
 {
     return (is_transient) ? accum : value;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Value>
+template <typename Up, enable_if_t<!(trait::base_has_accum<Up>::value), int>>
+Value&
+base<Tp, Value>::load()
+{
+    return value;
 }
 //
 //--------------------------------------------------------------------------------------//

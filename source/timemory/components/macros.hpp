@@ -396,6 +396,7 @@
         extern template struct init_storage<COMPONENT_NAME>;                             \
         extern template struct set_prefix<COMPONENT_NAME>;                               \
         extern template struct reset<COMPONENT_NAME>;                                    \
+        extern template struct cache<COMPONENT_NAME>;                                    \
         extern template struct get<COMPONENT_NAME>;                                      \
         extern template struct print<COMPONENT_NAME>;                                    \
         extern template struct print_header<COMPONENT_NAME>;                             \
@@ -426,6 +427,7 @@
         template struct init_storage<COMPONENT_NAME>;                                    \
         template struct set_prefix<COMPONENT_NAME>;                                      \
         template struct reset<COMPONENT_NAME>;                                           \
+        template struct cache<COMPONENT_NAME>;                                           \
         template struct get<COMPONENT_NAME>;                                             \
         template struct print<COMPONENT_NAME>;                                           \
         template struct print_header<COMPONENT_NAME>;                                    \

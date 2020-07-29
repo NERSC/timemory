@@ -103,6 +103,7 @@ public:
     using accum_type   = conditional_t<has_accum_v, value_type, EmptyT>;
     using last_type    = conditional_t<has_last_v, value_type, EmptyT>;
     using dynamic_type = typename trait::dynamic_base<Tp>::type;
+    using cache_type   = typename trait::cache<Tp>::type;
 
     using this_type         = Tp;
     using base_type         = base<Tp, Value>;
@@ -121,6 +122,7 @@ private:
     friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
+    friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
     friend struct operation::insert_node<Tp>;
@@ -260,8 +262,12 @@ protected:
     static void               cleanup() {}
 
     template <typename Up = Tp, enable_if_t<(trait::base_has_accum<Up>::value), int> = 0>
+    value_type& load();
+    template <typename Up = Tp, enable_if_t<(trait::base_has_accum<Up>::value), int> = 0>
     const value_type& load() const;
 
+    template <typename Up = Tp, enable_if_t<!(trait::base_has_accum<Up>::value), int> = 0>
+    value_type& load();
     template <typename Up = Tp, enable_if_t<!(trait::base_has_accum<Up>::value), int> = 0>
     const value_type& load() const;
 
@@ -374,6 +380,7 @@ public:
     using sample_type      = EmptyT;
     using sample_list_type = EmptyT;
     using dynamic_type     = typename trait::dynamic_base<Tp>::type;
+    using cache_type       = typename trait::cache<Tp>::type;
 
     using this_type    = Tp;
     using base_type    = base<Tp, value_type>;
@@ -385,6 +392,7 @@ private:
     friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
+    friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
     friend struct operation::insert_node<Tp>;
@@ -432,6 +440,13 @@ public:
 
     auto start(crtp::base) { this->start(); }
     auto stop(crtp::base) { this->stop(); }
+
+    template <typename CacheT                                     = cache_type,
+              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
+    void start(const CacheT&);
+    template <typename CacheT                                     = cache_type,
+              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
+    void stop(const CacheT&);
 
     void set_started();
     void set_stopped();

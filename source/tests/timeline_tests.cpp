@@ -183,6 +183,56 @@ TEST_F(timeline_tests, general)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(timeline_tests, timeline_quirk)
+{
+    using bundle_t = tim::component_bundle<TIMEMORY_API, wall_clock>;
+    bundle_t _bundle(details::get_test_name(),
+                     tim::quirk::config<tim::quirk::timeline_scope>{});
+    auto     _scope = _bundle.get_scope();
+    std::cout << "\nscope: " << _scope << '\n' << std::endl;
+    EXPECT_TRUE(_scope.is_timeline());
+    EXPECT_FALSE(_scope.is_tree());
+    EXPECT_FALSE(_scope.is_flat());
+    EXPECT_FALSE(_scope.is_flat_timeline());
+    EXPECT_FALSE(_scope.is_tree_timeline());
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timeline_tests, general_quirk)
+{
+    using bundle_t = tim::component_bundle<TIMEMORY_API, wall_clock>;
+    bundle_t _bundle(
+        details::get_test_name(),
+        tim::quirk::config<tim::quirk::timeline_scope, tim::quirk::no_store>{});
+    auto _scope1 = _bundle.get_scope();
+    auto _store1 = _bundle.get_store();
+    auto _scope2 = bundle_t::get_scope_config<tim::quirk::timeline_scope>();
+    auto _store2 = bundle_t::get_store_config<tim::quirk::config<tim::quirk::no_store>>();
+
+    std::cout << "\n[1] scope config : " << std::boolalpha << _scope1 << '\n';
+    std::cout << "[1] store config : " << std::boolalpha << _store1 << '\n';
+
+    EXPECT_TRUE(_scope1.is_timeline());
+    EXPECT_FALSE(_scope1.is_tree());
+    EXPECT_FALSE(_scope1.is_flat());
+    EXPECT_FALSE(_scope1.is_flat_timeline());
+    EXPECT_FALSE(_scope1.is_tree_timeline());
+    EXPECT_FALSE(_store1);
+
+    std::cout << "\n[2] scope config : " << std::boolalpha << _scope2 << '\n';
+    std::cout << "[2] store config : " << std::boolalpha << _store2 << '\n';
+
+    EXPECT_TRUE(_scope2.is_timeline());
+    EXPECT_FALSE(_scope2.is_tree());
+    EXPECT_FALSE(_scope2.is_flat());
+    EXPECT_FALSE(_scope2.is_flat_timeline());
+    EXPECT_FALSE(_scope2.is_tree_timeline());
+    EXPECT_FALSE(_store2);
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(timeline_tests, nested)
 {
     auto bsize = tim::storage<wall_clock>::instance()->size();

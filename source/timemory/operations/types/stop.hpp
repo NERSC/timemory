@@ -58,9 +58,6 @@ struct stop
     template <typename... Args>
     explicit stop(type& obj, Args&&... args);
 
-    template <typename... Args>
-    explicit stop(type& obj, non_vexing&&, Args&&... args);
-
 private:
     // resolution #1 (best)
     template <typename Up, typename... Args>
@@ -101,6 +98,18 @@ private:
     {
         SFINAE_WARNING(type);
     }
+
+private:
+    // set_started
+    template <typename Up>
+    auto set_sfinae(Up& obj, int) -> decltype(obj.set_stopped(), void())
+    {
+        obj.set_stopped();
+    }
+
+    template <typename Up>
+    auto set_sfinae(Up&, long)
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -125,7 +134,7 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        stop<Tp>(obj, non_vexing{}, std::forward<Args>(args)...);
+        stop<Tp>(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
@@ -156,7 +165,7 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        stop<Tp>(obj, non_vexing{}, std::forward<Args>(args)...);
+        stop<Tp>(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
@@ -187,7 +196,7 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        stop<Tp>(obj, non_vexing{}, std::forward<Args>(args)...);
+        stop<Tp>(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
@@ -205,18 +214,7 @@ stop<Tp>::stop(type& obj, Args&&... args)
     if(!trait::runtime_enabled<type>::get())
         return;
     sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
-}
-
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-template <typename... Args>
-stop<Tp>::stop(type& obj, non_vexing&&, Args&&... args)
-{
-    if(!trait::runtime_enabled<type>::get())
-        return;
-    sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
+    set_sfinae(obj, 0);
 }
 //
 //--------------------------------------------------------------------------------------//

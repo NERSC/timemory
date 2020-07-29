@@ -68,22 +68,42 @@ struct peak_rss : public base<peak_rss>
     static value_type record() { return get_peak_rss(); }
     double            get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return val / static_cast<double>(base_type::get_unit());
     }
     double get_display() const { return get(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
+
+    void start() { value = record(); }
     void stop()
     {
         auto tmp   = record();
         auto delta = tmp - value;
         accum      = std::max(static_cast<const value_type&>(accum), delta);
         value      = std::move(tmp);
-        set_stopped();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return _cache.get_peak_rss();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        auto tmp   = record(_cache);
+        auto delta = tmp - value;
+        accum      = std::max(static_cast<const value_type&>(accum), delta);
+        value      = std::move(tmp);
     }
 };
 
@@ -110,22 +130,17 @@ struct page_rss : public base<page_rss, int64_t>
     static value_type record() { return get_page_rss(); }
     double            get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return val / static_cast<double>(base_type::get_unit());
     }
     double get_display() const { return get(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void   start() { value = record(); }
+    void   stop()
     {
         auto tmp   = record();
         auto delta = tmp - value;
         accum      = std::max(accum, delta);
         value      = std::move(tmp);
-        set_stopped();
     }
     void measure() { accum = value = std::max<int64_t>(value, record()); }
 };
@@ -152,21 +167,39 @@ struct num_io_in : public base<num_io_in>
     static value_type record() { return get_num_io_in(); }
     value_type        get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return val;
     }
     value_type get_display() const { return get(); }
-    void       start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void       start() { value = record(); }
+    void       stop()
     {
         auto tmp = record();
         accum += (tmp - value);
         value = std::move(tmp);
-        set_stopped();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return _cache.get_num_io_in();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        auto tmp = record(_cache);
+        accum += (tmp - value);
+        value = std::move(tmp);
     }
 };
 
@@ -192,21 +225,39 @@ struct num_io_out : public base<num_io_out>
     static value_type record() { return get_num_io_out(); }
     value_type        get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return val;
     }
     value_type get_display() const { return get(); }
-    void       start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void       start() { value = record(); }
+    void       stop()
     {
         auto tmp = record();
         accum += (tmp - value);
         value = std::move(tmp);
-        set_stopped();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return _cache.get_num_io_out();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        auto tmp = record(_cache);
+        accum += (tmp - value);
+        value = std::move(tmp);
     }
 };
 
@@ -234,21 +285,39 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
     static value_type record() { return get_num_minor_page_faults(); }
     value_type        get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return val;
     }
     value_type get_display() const { return get(); }
-    void       start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void       start() { value = record(); }
+    void       stop()
     {
         auto tmp = record();
         accum += (tmp - value);
         value = std::move(tmp);
-        set_stopped();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return _cache.get_num_minor_page_faults();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        auto tmp = record(_cache);
+        accum += (tmp - value);
+        value = std::move(tmp);
     }
 };
 
@@ -274,21 +343,39 @@ struct num_major_page_faults : public base<num_major_page_faults>
     static value_type record() { return get_num_major_page_faults(); }
     value_type        get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return val;
     }
     value_type get_display() const { return get(); }
-    void       start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void       start() { value = record(); }
+    void       stop()
     {
         auto tmp = record();
         accum += (tmp - value);
         value = std::move(tmp);
-        set_stopped();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return _cache.get_num_major_page_faults();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        auto tmp = record(_cache);
+        accum += (tmp - value);
+        value = std::move(tmp);
     }
 };
 
@@ -317,21 +404,39 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
     static value_type record() { return get_num_voluntary_context_switch(); }
     value_type        get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return val;
     }
     value_type get() const { return get_display(); }
-    void       start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void       start() { value = record(); }
+    void       stop()
     {
         auto tmp = record();
         accum += (tmp - value);
         value = std::move(tmp);
-        set_stopped();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return _cache.get_num_voluntary_context_switch();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        auto tmp = record(_cache);
+        accum += (tmp - value);
+        value = std::move(tmp);
     }
 };
 
@@ -361,21 +466,39 @@ struct priority_context_switch : public base<priority_context_switch>
     static value_type record() { return get_num_priority_context_switch(); }
     value_type        get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return val;
     }
     value_type get() const { return get_display(); }
-    void       start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void       start() { value = record(); }
+    void       stop()
     {
         auto tmp = record();
         accum += (tmp - value);
         value = std::move(tmp);
-        set_stopped();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return _cache.get_num_priority_context_switch();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        auto tmp = record(_cache);
+        accum += (tmp - value);
+        value = std::move(tmp);
     }
 };
 
@@ -468,7 +591,7 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
 
     result_type get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
 
         double data  = std::get<0>(val);
         double delta = std::get<1>(val);
@@ -495,11 +618,7 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
         return result_type(data, rate);
     }
 
-    void start()
-    {
-        set_started();
-        value = record();
-    }
+    void start() { value = record(); }
 
     void stop()
     {
@@ -508,7 +627,6 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += diff;
         value = std::move(tmp);
-        set_stopped();
     }
 
     static unit_type get_unit()
@@ -652,7 +770,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 
     result_type get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
 
         double data  = std::get<0>(val);
         double delta = std::get<1>(val);
@@ -679,11 +797,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
         return result_type{ { data, rate } };
     }
 
-    void start()
-    {
-        set_started();
-        value = record();
-    }
+    void start() { value = record(); }
 
     void stop()
     {
@@ -695,7 +809,6 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
         accum[0] += diff[0];
         accum[1] += diff[1];
         value = tmp;
-        set_stopped();
     }
 
     static unit_type get_unit()
@@ -768,22 +881,17 @@ struct virtual_memory : public base<virtual_memory>
     static value_type  record() { return get_virt_mem(); }
     double             get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return val / static_cast<double>(base_type::get_unit());
     }
     double get_display() const { return get(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void   start() { value = record(); }
+    void   stop()
     {
         auto tmp   = record();
         auto delta = tmp - value;
         accum      = std::max(accum, delta);
         value      = std::move(tmp);
-        set_stopped();
     }
     void measure() { accum = value = std::max<int64_t>(value, record()); }
 };
@@ -809,15 +917,11 @@ struct user_mode_time : public base<user_mode_time, int64_t>
     double get_display() const { return get(); }
     double get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return static_cast<double>(val) / ratio_t::den * get_unit();
     }
 
-    void start()
-    {
-        set_started();
-        value = record();
-    }
+    void start() { value = record(); }
 
     void stop()
     {
@@ -827,7 +931,32 @@ struct user_mode_time : public base<user_mode_time, int64_t>
             accum += (tmp - value);
             value = std::move(tmp);
         }
-        set_stopped();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return _cache.get_user_mode_time();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        auto tmp = record(_cache);
+        if(tmp > value)
+        {
+            accum += (tmp - value);
+            value = std::move(tmp);
+        }
     }
 };
 
@@ -852,15 +981,11 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
     double get_display() const { return get(); }
     double get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return static_cast<double>(val) / ratio_t::den * get_unit();
     }
 
-    void start()
-    {
-        set_started();
-        value = record();
-    }
+    void start() { value = record(); }
 
     void stop()
     {
@@ -870,7 +995,32 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
             accum += (tmp - value);
             value = std::move(tmp);
         }
-        set_stopped();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return _cache.get_kernel_mode_time();
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        auto tmp = record(_cache);
+        if(tmp > value)
+        {
+            accum += (tmp - value);
+            value = std::move(tmp);
+        }
     }
 };
 
@@ -892,21 +1042,40 @@ struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64
     {
         return "Absolute value of high-water mark of memory allocation in RAM";
     }
+
     static value_type record() { return value_type{ get_peak_rss(), 0 }; }
 
-    void start()
-    {
-        set_started();
-        value = record();
-    }
+    void start() { value = record(); }
 
     void stop()
     {
         value = value_type{ value.first, record().first };
         accum = std::max(accum, value);
-        set_stopped();
     }
 
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    static value_type record(const CacheT& _cache)
+    {
+        return value_type{ _cache.get_peak_rss(), 0 };
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void start(const CacheT& _cache)
+    {
+        value = record(_cache);
+    }
+
+    template <typename CacheT                                        = cache_type,
+              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
+    void stop(const CacheT& _cache)
+    {
+        value = value_type{ value.first, record(_cache).first };
+        accum = std::max(accum, value);
+    }
+
+public:
     std::string get_display() const
     {
         std::stringstream ss, ssv, ssr;
@@ -933,7 +1102,7 @@ struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64
 
     result_type get() const
     {
-        result_type data = (is_transient) ? accum : value;
+        result_type data = base_type::load();
         data.first /= get_unit().first;
         data.second /= get_unit().second;
         return data;

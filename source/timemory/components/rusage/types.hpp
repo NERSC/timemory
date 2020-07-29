@@ -273,6 +273,34 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::virtual_memory, tru
 
 //--------------------------------------------------------------------------------------//
 //
+//                              RUSAGE_CACHE
+//
+//--------------------------------------------------------------------------------------//
+
+namespace tim
+{
+struct rusage_cache;
+struct rusage_cache_type
+{
+    using type = rusage_cache;
+};
+}  // namespace tim
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::peak_rss, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::num_io_in, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::num_io_out, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::num_minor_page_faults, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::num_major_page_faults, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::voluntary_context_switch,
+                               rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::priority_context_switch,
+                               rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::user_mode_time, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::kernel_mode_time, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::current_peak_rss, rusage_cache_type)
+
+//--------------------------------------------------------------------------------------//
+//
 //                              UNITS SPECIALIZATIONS
 //
 //--------------------------------------------------------------------------------------//

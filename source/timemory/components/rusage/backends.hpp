@@ -98,7 +98,48 @@ check_rusage_call(int ret, const char* _func)
     tim::consume_parameters(ret, _func);
 #endif
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+struct rusage_cache
+{
+#if defined(_UNIX)
+    using rusage_t = struct rusage;
 
+    rusage_cache()
+    {
+        check_rusage_call(getrusage(get_rusage_type(), &m_data), __FUNCTION__);
+    }
+#else
+    rusage_cache() = default;
+#endif
+
+    ~rusage_cache() = default;
+
+    rusage_cache(const rusage_cache&) = delete;
+    rusage_cache& operator=(const rusage_cache&) = delete;
+
+    rusage_cache(rusage_cache&&) = default;
+    rusage_cache& operator=(rusage_cache&&) = default;
+
+    inline int64_t get_peak_rss() const;
+    inline int64_t get_num_io_in() const;
+    inline int64_t get_num_io_out() const;
+    inline int64_t get_num_minor_page_faults() const;
+    inline int64_t get_num_major_page_faults() const;
+    inline int64_t get_num_voluntary_context_switch() const;
+    inline int64_t get_num_priority_context_switch() const;
+    inline int64_t get_user_mode_time() const;
+    inline int64_t get_kernel_mode_time() const;
+
+#if defined(_UNIX)
+private:
+    rusage_t m_data;
+#endif
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 int64_t
 get_peak_rss();
 int64_t
@@ -137,7 +178,125 @@ int64_t
 get_user_mode_time();
 int64_t
 get_kernel_mode_time();
-
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+rusage_cache::get_peak_rss() const
+{
+#if defined(_WINDOWS)
+    return tim::get_peak_rss();
+#else
+#    if defined(_MACOS)
+    // Darwin reports in bytes
+    return static_cast<int64_t>(m_data.ru_maxrss);
+#    else
+    // Linux reports in kilobytes
+    return static_cast<int64_t>(units::kilobyte * m_data.ru_maxrss);
+#    endif
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+rusage_cache::get_num_io_in() const
+{
+#if defined(_UNIX)
+    return static_cast<int64_t>(m_data.ru_inblock);
+#else
+    return tim::get_num_io_in();
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+rusage_cache::get_num_io_out() const
+{
+#if defined(_UNIX)
+    return static_cast<int64_t>(m_data.ru_oublock);
+#else
+    return tim::get_num_io_out();
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+rusage_cache::get_num_minor_page_faults() const
+{
+#if defined(_UNIX)
+    return static_cast<int64_t>(m_data.ru_minflt);
+#else
+    return tim::get_num_minor_page_faults();
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+rusage_cache::get_num_major_page_faults() const
+{
+#if defined(_UNIX)
+    return static_cast<int64_t>(m_data.ru_majflt);
+#else
+    return tim::get_num_major_page_faults();
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+rusage_cache::get_num_voluntary_context_switch() const
+{
+#if defined(_UNIX)
+    return static_cast<int64_t>(m_data.ru_nvcsw);
+#else
+    return tim::get_num_voluntary_context_switch();
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+rusage_cache::get_num_priority_context_switch() const
+{
+#if defined(_UNIX)
+    return static_cast<int64_t>(m_data.ru_nivcsw);
+#else
+    return tim::get_num_priority_context_switch();
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+rusage_cache::get_user_mode_time() const
+{
+#if defined(_UNIX)
+    constexpr int64_t MSEC = 1000000;
+    return static_cast<int64_t>(m_data.ru_utime.tv_sec * MSEC + m_data.ru_utime.tv_usec);
+#else
+    return tim::get_user_mode_time();
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+rusage_cache::get_kernel_mode_time() const
+{
+#if defined(_UNIX)
+    constexpr int64_t MSEC = 1000000;
+    return static_cast<int64_t>(m_data.ru_stime.tv_sec * MSEC + m_data.ru_stime.tv_usec);
+#else
+    return tim::get_kernel_mode_time();
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim
 //
 //======================================================================================//

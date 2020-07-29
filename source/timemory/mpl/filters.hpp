@@ -113,6 +113,42 @@ struct get_data_tuple<type_list<>>
 };
 
 //======================================================================================//
+//
+//      get trait type tuple
+//
+//======================================================================================//
+
+template <template <typename> class TraitT, typename T>
+struct get_trait_type_tuple
+{
+    using trait_type                = typename TraitT<T>::type;
+    static constexpr bool is_null_v = concepts::is_null_type<trait_type>::value;
+    using type = conditional_t<(is_null_v), type_list<>, type_list<trait_type>>;
+};
+
+template <template <typename> class TraitT, typename T>
+using get_trait_type_tuple_t = typename get_trait_type_tuple<TraitT, T>::type;
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class TraitT, typename... Types>
+struct get_trait_type
+{
+    using trait_type = convert_t<
+        type_concat_t<typename get_trait_type_tuple<TraitT, Types>::trait_type...>,
+        std::tuple<>>;
+    using type =
+        convert_t<type_concat_t<get_trait_type_tuple_t<TraitT, Types>...>, std::tuple<>>;
+};
+
+template <template <typename> class TraitT, typename... Types>
+struct get_trait_type<TraitT, type_list<Types...>> : get_trait_type<TraitT, Types...>
+{};
+
+template <template <typename> class TraitT, typename... T>
+using get_trait_type_t = typename get_trait_type<TraitT, T...>::type;
+
+//======================================================================================//
 // check if type is in expansion
 //
 template <typename...>
@@ -345,8 +381,8 @@ using is_one_of_integral = typename impl::is_one_of_integral<Types>;
 template <typename T>
 using remove_duplicates_t = typename impl::unique<T, type_list<>>::type;
 
-template <typename T>
-using unique_t = typename impl::unique<T, type_list<>>::type;
+template <typename T, typename TupleT = type_list<>>
+using unique_t = convert_t<typename impl::unique<T, type_list<>>::type, TupleT>;
 
 //======================================================================================//
 //
@@ -381,6 +417,10 @@ using get_data_value_t = typename impl::template get_data_tuple<TypeList>::value
 /// get the tuple of pair of descriptor and value
 template <typename TypeList>
 using get_data_label_t = typename impl::template get_data_tuple<TypeList>::label_type;
+
+/// get the tuple of types
+template <template <typename> class TraitT, typename TypeList>
+using get_trait_type_t = impl::get_trait_type_t<TraitT, convert_t<TypeList, type_list<>>>;
 
 //======================================================================================//
 //

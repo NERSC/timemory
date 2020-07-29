@@ -451,7 +451,6 @@ public:
 
     void start()
     {
-        set_started();
         switch(event_mode())
         {
             case MODE::ACTIVITY:
@@ -490,7 +489,6 @@ public:
                 break;
             }
         }
-        set_stopped();
     }
 
     //----------------------------------------------------------------------------------//

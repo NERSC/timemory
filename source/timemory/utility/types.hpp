@@ -184,6 +184,14 @@ struct type_list
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct null_type
+/// \brief this is a placeholder type for optional type-traits. It is used as the default
+/// type for the type-traits to signify there is no specialization.
+struct null_type
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \fn consume_parameters
 /// \brief use this function to get rid of "unused parameter" warnings
 template <typename... ArgsT>

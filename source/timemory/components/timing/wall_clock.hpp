@@ -71,17 +71,12 @@ struct wall_clock : public base<wall_clock, int64_t>
         return static_cast<double>(val) / ratio_t::den * get_unit();
     }
 
-    void start()
-    {
-        set_started();
-        value = record();
-    }
+    void start() { value = record(); }
 
     void stop()
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 };
 
