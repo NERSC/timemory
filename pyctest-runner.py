@@ -173,6 +173,23 @@ def run_pyctest():
     args = configure()
 
     #--------------------------------------------------------------------------#
+    # find srun and mpirun
+    #
+    dmprun = None
+    dmpargs = ['-n', '2']
+    for dmpexe in ('srun', 'jsrun', 'mpirun'):
+        try:
+            dmprun = helpers.FindExePath(dmpexe)
+            if dmprun is not None and os.path.isabs(dmprun):
+                if dmpexe == 'srun':
+                    dmpargs += ['-c', '1']
+                elif dmpexe == 'jsrun':
+                    dmpargs += ['-c', '1']
+                break
+        except Exception as e:
+            print('Exception: {}'.format(e))
+
+    #--------------------------------------------------------------------------#
     # Compiler version
     #
     if os.environ.get("CXX") is None:
@@ -560,9 +577,10 @@ def run_pyctest():
                    "TIMEOUT": "300",
                    "ENVIRONMENT": test_env})
 
-        if args.mpi:
+        if args.mpi and dmprun is not None:
+            ex_gotcha_cmd = [dmprun] + dmpargs + ["./ex_gotcha_mpi"]
             pyct.test(construct_name("ex-gotcha-mpi"),
-                      construct_command(["./ex_gotcha_mpi"], args),
+                      construct_command(ex_gotcha_cmd, args),
                       {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                        "LABELS": pyct.PROJECT_NAME,
                        "TIMEOUT": "300",

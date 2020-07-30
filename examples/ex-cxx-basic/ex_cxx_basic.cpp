@@ -24,6 +24,8 @@
 //
 
 #include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+
 #include <chrono>
 #include <thread>
 
@@ -62,15 +64,18 @@ main(int argc, char** argv)
         al.report_at_exit(true);
     };
 
-    tim::settings::timing_units()      = "sec";
-    tim::settings::timing_width()      = 12;
-    tim::settings::timing_precision()  = 6;
-    tim::settings::timing_scientific() = false;
-    tim::settings::memory_units()      = "KB";
-    tim::settings::memory_width()      = 12;
-    tim::settings::memory_precision()  = 3;
-    tim::settings::memory_scientific() = false;
+    tim::settings::timing_units()          = "sec";
+    tim::settings::timing_width()          = 12;
+    tim::settings::timing_precision()      = 6;
+    tim::settings::timing_scientific()     = false;
+    tim::settings::memory_units()          = "KB";
+    tim::settings::memory_width()          = 12;
+    tim::settings::memory_precision()      = 3;
+    tim::settings::memory_scientific()     = false;
+    tim::settings::enable_signal_handler() = true;
     tim::timemory_init(argc, argv);
+
+    std::cout << tim::signal_settings::str() << std::endl;
 
     //
     //  Provide some work
