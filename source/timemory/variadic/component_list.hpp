@@ -562,7 +562,7 @@ public:
               enable_if_t<trait::is_available<T>::value == true, int>       = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
-        auto&& _obj = get<T>();
+        auto* _obj = get<T>();
         if(_obj != nullptr)
             ((*_obj).*(_func))(std::forward<Args>(_args)...);
     }

@@ -590,16 +590,17 @@ public:
               enable_if_t<is_one_of<T, data_type>::value == true, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
-        auto&& _obj = get<T>();
-        ((_obj).*(_func))(std::forward<Args>(_args)...);
+        auto* _obj = get<T>();
+        ((*_obj).*(_func))(std::forward<Args>(_args)...);
     }
 
     template <typename T, typename Func, typename... Args,
               enable_if_t<is_one_of<T*, data_type>::value == true, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
-        auto&& _obj = get<T*>();
-        ((_obj).*(_func))(std::forward<Args>(_args)...);
+        auto* _obj = get<T*>();
+        if(_obj)
+            ((*_obj).*(_func))(std::forward<Args>(_args)...);
     }
 
     template <typename T, typename Func, typename... Args,
