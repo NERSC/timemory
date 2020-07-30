@@ -103,13 +103,20 @@ private:
 private:
     // set_started
     template <typename Up>
-    auto set_sfinae(Up& obj, int) -> decltype(obj.set_started(), void())
+    auto set_sfinae(Up& obj, int, int) -> decltype(obj.set_started(), void())
     {
         obj.set_started();
     }
 
     template <typename Up>
-    auto set_sfinae(Up&, long)
+    auto set_sfinae(Up& obj, int, long)
+        -> decltype(static_cast<base_t<Up>&>(obj).set_started(), void())
+    {
+        static_cast<base_t<Up>&>(obj).set_started();
+    }
+
+    template <typename Up>
+    auto set_sfinae(Up&, long, long)
     {}
 };
 //
@@ -215,8 +222,8 @@ start<Tp>::start(type& obj, Args&&... args)
     if(!trait::runtime_enabled<type>::get())
         return;
     init_storage<Tp>::init();
-    set_sfinae(obj, 0);
     sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
+    set_sfinae(obj, 0, 0);
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -159,6 +159,9 @@ struct is_gotcha;
 template <typename T>
 struct is_user_bundle;
 
+template <typename T, bool>
+struct component_value_type;
+
 template <typename T>
 struct collects_data;
 
@@ -229,6 +232,18 @@ template <typename T>
 struct report_values;
 
 template <typename T>
+struct report_self;
+
+template <typename T>
+struct report_metric_name;
+
+template <typename T>
+struct report_units;
+
+template <typename T>
+struct report_statistics;
+
+template <typename T>
 struct ompt_handle;
 
 template <typename T>
@@ -270,15 +285,79 @@ struct implements_storage;
 //
 namespace policy
 {
+/// \struct tim::policy::instance_tracker
+/// \brief Inherit from this policy to add reference counting support. Useful if
+/// you want to turn a global setting on/off when the number of components taking
+/// measurements has hit zero (e.g. all instances of component have called stop).
+/// Simply provides member functions and data values, increment/decrement is not
+/// automatically performed.
+/// In general, call instance_tracker::start or instance_tracker::stop inside
+/// of the components constructor if a component collects data and is using
+/// storage because instance(s) will be in the call-graph and thus, the instance
+/// count will always be > 0. Set the second template parameter to true if thread-local
+/// instance tracking is desired.
+/// \code{.cpp}
+/// struct foo
+/// : public base<foo, void>
+/// , public policy::instance_tracker<foo, false>
+/// {
+///     using value_type         = void;
+///     using instance_tracker_t = policy::instance_tracker<foo, false>;
+///
+///     void start()
+///     {
+///         auto cnt = instance_tracker_t::start();
+///         if(cnt == 0)
+///             // start something
+///     }
+///
+///     void stop()
+///     {
+///         auto cnt = instance_tracker_t::stop();
+///         if(cnt == 0)
+///             // stop something
+///     }
+/// };
+/// \endcode
 template <typename T, bool WithThreads = true>
 struct instance_tracker;
 
+/// \struct tim::policy::record_statistics
+/// \brief Specification of how to accumulate statistics. This will not be used
+/// unless \ref tim::trait::statistics has been assigned a type and \ref
+/// tim::trait::record_statistics is true. Set \ref tim::trait::permissive_statistics to
+/// allow implicit conversions, e.g. int -> size_t. \code{.cpp} template <typename CompT,
+/// typename Tp> struct record_statistics
+/// {
+///     using type            = Tp;
+///     using component_type  = CompT;
+///     using statistics_type = statistics<type>;
+///
+///     static void apply(statistics_type& stats, const component_type& obj)
+///     {
+///         // example:
+///         //      typeid(stats) is tim::statistics<double>
+///         //      obj.get() returns a double precision value
+///         stats += obj.get();
+///     }
+/// };
+/// \endcode
 template <typename CompT, typename T = typename trait::statistics<CompT>::type>
 struct record_statistics;
 
+/// \struct tim::policy::input_archive
+/// \brief Provides a static get() function which returns a shared pointer to an instance
+/// of the given archive format for input. Can also provides static functions for any
+/// global configuration options, if necessary.
 template <typename Archive, typename Api = api::native_tag>
 struct input_archive;
 
+/// \struct tim::policy::output_archive
+/// \brief Provides a static get() function which return a shared pointer to an instance
+/// of the given archive format for output. Can also provide static functions for any
+/// global configuration options for the archive format. For example, the (pretty) JSON
+/// output archive supports specification of the precision, indentation length, and the
+/// indentation character.
 template <typename Archive, typename Api = api::native_tag>
 struct output_archive;
 

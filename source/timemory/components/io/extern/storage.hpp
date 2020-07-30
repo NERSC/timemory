@@ -22,42 +22,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/tau_marker/types.hpp
- * \brief Declare the tau_marker component types
- */
-
 #pragma once
 
+#include "timemory/components/io/components.hpp"
 #include "timemory/components/macros.hpp"
-#include "timemory/enum.h"
-#include "timemory/mpl/type_traits.hpp"
+//
 #include "timemory/mpl/types.hpp"
-
-//======================================================================================//
 //
-/// \struct tau_marker
-/// \brief Forwards timemory labels to the TAU (Tuning and Analysis Utilities)
-TIMEMORY_DECLARE_COMPONENT(tau_marker)
-//
-//======================================================================================//
-//
-//                              IS AVAILABLE
-//
-//--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_USE_TAU)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::tau_marker, false_type)
+#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
+    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
+// source/header-only requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+#else
+// extern requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/declaration.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/declaration.hpp"
 #endif
-
-//--------------------------------------------------------------------------------------//
 //
-//                              REQUIRES PREFIX
-//
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::tau_marker, true_type)
-//
-//======================================================================================//
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(tau_marker, TAU_MARKER, "tau_marker", "tau")

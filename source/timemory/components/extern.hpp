@@ -104,6 +104,12 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_IO_EXTERN)
+#    include "timemory/components/io/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #if defined(TIMEMORY_USE_TIMING_EXTERN)
 #    include "timemory/components/timing/extern.hpp"
 #endif

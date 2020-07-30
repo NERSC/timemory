@@ -242,7 +242,11 @@ public:
     const value_type& get_value() const { return value; }
     const accum_type& get_accum() const { return accum; }
     const last_type&  get_last() const { return last; }
-    const bool&       get_is_transient() const { return is_transient; }
+    bool              get_is_transient() const { return (laps > 0 || is_transient); }
+    auto              get_is_running() const { return is_running; }
+    auto              get_is_on_stack() const { return is_on_stack; }
+    auto              get_is_flat() const { return is_flat; }
+    auto              get_depth_change() const { return depth_change; }
 
     void set_laps(int64_t v) { laps = v; }
     void set_value(value_type v) { value = v; }
@@ -460,6 +464,9 @@ public:
     dynamic_type* create() const;
 
     int64_t get_laps() const { return 0; }
+    auto    get_is_running() const { return is_running; }
+    auto    get_is_on_stack() const { return is_on_stack; }
+    auto    get_is_transient() const { return is_transient; }
 
     // used by operation::finalize::print<Type>
     void operator-=(const base_type&) {}

@@ -300,6 +300,12 @@ public:
         m_temporary.template initialize<Tp...>(std::forward<Args>(args)...);
     }
 
+    template <typename... Tail>
+    void disable()
+    {
+        m_temporary.template disable<Tail...>();
+    }
+
     template <typename Tp>
     decltype(auto) get()
     {

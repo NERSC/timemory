@@ -176,6 +176,14 @@ using identity_t = typename identity<T>::type;
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct null_type
+/// \brief this is a placeholder type for optional type-traits. It is used as the default
+/// type for the type-traits to signify there is no specialization.
+struct null_type
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \struct type_list
 /// \brief lightweight tuple-alternative for meta-programming logic
 template <typename... Tp>
@@ -184,11 +192,43 @@ struct type_list
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct null_type
-/// \brief this is a placeholder type for optional type-traits. It is used as the default
-/// type for the type-traits to signify there is no specialization.
-struct null_type
-{};
+/// \struct type_list
+/// \brief lightweight tuple-alternative for meta-programming logic
+template <size_t Idx, typename Tp>
+struct type_list_element;
+
+namespace internal
+{
+template <size_t Idx, size_t TargIdx, typename... Tail>
+struct type_list_element;
+
+template <size_t Idx, size_t TargIdx>
+struct type_list_element<Idx, TargIdx>
+{
+    using type = tim::null_type;
+    // TargIdx will be equal to Idx + 1 in second half of conditional statement
+    // below. If the second half of that conditional statement is entered, the
+    // following static_assert will be true
+    static_assert(TargIdx < Idx + 2, "Error! Index exceeded size of of type_list");
+};
+
+template <size_t Idx, size_t TargIdx, typename Tp, typename... Tail>
+struct type_list_element<Idx, TargIdx, Tp, Tail...>
+{
+    using type =
+        conditional_t<(Idx == TargIdx), Tp,
+                      typename type_list_element<Idx + 1, TargIdx, Tail...>::type>;
+};
+}  // namespace internal
+
+template <size_t Idx, typename... Types>
+struct type_list_element<Idx, type_list<Types...>>
+{
+    using type = typename internal::type_list_element<0, Idx, Types...>::type;
+};
+
+template <size_t Idx, typename Tp>
+using type_list_element_t = typename type_list_element<Idx, Tp>::type;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -258,23 +298,49 @@ namespace scope
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tree
+/// \brief Dummy struct to designates tree (hierarchical) storage. This scope (default)
+/// maintains nesting in the call-graph storage. In this scoping mode, the results
+/// will be separated from each other based on the identifier AND the current number
+/// of component instances in a "start" region. E.g. for two components with the
+/// same identifiers where the first calls start, then the second calls start then
+/// the second will be at a depth of +1 relative to the first (i.e. a child of the first).
+struct tree : std::integral_constant<int, 2>
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \struct flat
-/// \brief Dummy struct to designates flat (no hierarchy) storage
+/// \brief Dummy struct to designates flat (no hierarchy) storage.
+/// When flat scoping is globally enabled, all entries to the call-graph storage at
+/// entered at a depth of zero. Thus, if you want a report of all the function calls
+/// and their total values for each identifier, flat scoping should be globally enabled.
+/// This can be combined with timeline scoping to produce results where every measurement
+/// is its own call-graph entry at a depth of zero (produces a large amount of data).
+/// Flat-scoping can be enabled at the component bundler level also, there are two
+/// ways to do this: (1) to enable flat-scoping for all instances of the bundle, add \ref
+/// tim::quirk::flat_scope to the template parameters of the bundler; (2) to enable
+/// flat-scoping for specific bundler instances, pass \code{.cpp}
+/// tim::quirk::config<tim::quirk::flat_scope, ...>{} \endcode as the second argument to
+/// the constructor of the bundle.
 struct flat : std::integral_constant<int, 0>
 {};
 //
 //--------------------------------------------------------------------------------------//
 //
 /// \struct timeline
-/// \brief Dummy struct to designates timeline (hierarchical, non-duplicated) storage
+/// \brief Dummy struct to designates timeline (hierarchical, non-duplicated) storage.
+/// It is meaningless by itself and should be combined with \ref tim::scope::tree or
+/// \ref tim::scope::flat. A tree timeline has all the hierarchy properties of the
+/// tree scope but entries at the same depth with the same identifiers are separated
+/// entries in the resuls.
+/// Timeline-scoping can be enabled at the component bundler level also, there are two
+/// ways to do this: (1) to enable timeline-scoping for all instances of the bundle, add
+/// \ref tim::quirk::timeline_scope to the template parameters of the bundler; (2) to
+/// enable timeline-scoping for specific bundler instances, pass \code{.cpp}
+/// tim::quirk::config<tim::quirk::timeline_scope, ...>{} \endcode as the second argument
+/// to the constructor of the bundle.
 struct timeline : std::integral_constant<int, 1>
-{};
-//
-//--------------------------------------------------------------------------------------//
-//
-/// \struct tree
-/// \brief Dummy struct to designates tree (hierarchical) storage
-struct tree : std::integral_constant<int, 2>
 {};
 //
 //--------------------------------------------------------------------------------------//
@@ -324,7 +390,12 @@ get_default()
 }
 //
 //--------------------------------------------------------------------------------------//
-//
+/// \struct tim::scope::config
+/// \brief this data type encodes the options of storage scope. The default is
+/// hierarchical (tree) scope. Specification of flat scope overrides the hierarchy
+/// scope, e.g. you cannot have a hierarchical flat scope. The timeline scope
+/// is meaningless should a specification of tree or flat, thus the valid combinations
+/// are: tree, flat, tree + timeline, flat + timeline.
 struct config : public data_type
 {
     config()
@@ -624,3 +695,12 @@ struct outgoing
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+
+namespace std
+{
+template <size_t Idx, typename... Types>
+struct tuple_element<Idx, tim::type_list<Types...>>
+{
+    using type = typename tim::type_list_element<Idx, tim::type_list<Types...>>::type;
+};
+}  // namespace std

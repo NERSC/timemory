@@ -34,18 +34,70 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
+/// \struct wall_clock
+/// \brief the system's real time (i.e. wall time) clock, expressed as the amount of time
+/// since the epoch.
 TIMEMORY_DECLARE_COMPONENT(wall_clock)
+
+/// \struct system_clock
+/// \brief Extracts only the CPU time spent in kernel-mode. Uses clock().
+/// Only relevant as a time when a difference is computed. Do not use a single CPU time
+/// as an amount of time; it doesn't work that way.
 TIMEMORY_DECLARE_COMPONENT(system_clock)
+
+/// \struct user_clock
+/// \brief Extracts only the CPU time spent in user-mode. Uses clock()
+/// Only relevant as a time when a difference is computed. Do not use a single CPU time
+/// as an amount of time; it doesn't work that way.
 TIMEMORY_DECLARE_COMPONENT(user_clock)
+
+/// \struct cpu_clock
+/// \brief Extracts Total CPU time spent in both user- and kernel-mode. Uses clock()
+/// Only relevant as a time when a difference is computed. Do not use a single CPU time
+/// as an amount of time; it doesn't work that way.
 TIMEMORY_DECLARE_COMPONENT(cpu_clock)
+
+/// \struct monotonic_clock
+/// \brief Clock that increments monotonically, tracking the time since an arbitrary
+/// point, and will continue to increment while the system is asleep.
 TIMEMORY_DECLARE_COMPONENT(monotonic_clock)
+
+/// \struct monotonic_raw_clock
+/// \brief Clock that increments monotonically, tracking the time since an arbitrary point
+/// like CLOCK_MONOTONIC.  However, this clock is unaffected by frequency or time
+/// adjustments. It should not be compared to other system time sources.
 TIMEMORY_DECLARE_COMPONENT(monotonic_raw_clock)
+
+/// \struct thread_cpu_clock
+/// \brief This clock measures the CPU time within the current thread (excludes
+/// sibling/child threads) clock that tracks the amount of CPU (in user- or kernel-mode)
+/// used by the calling thread.
 TIMEMORY_DECLARE_COMPONENT(thread_cpu_clock)
+
+/// \struct process_cpu_clock
+/// \brief This clock measures the CPU time within the current process (excludes child
+/// processes) clock that tracks the amount of CPU (in user- or kernel-mode) used by the
+/// calling process.
 TIMEMORY_DECLARE_COMPONENT(process_cpu_clock)
+
+/// \struct cpu_util
+/// \brief This computes the CPU utilization percentage for the calling process and child
+/// processes. Extracts only the CPU time spent in both user- and kernel- mode
+/// and divides by wall clock time, e.g. \ref cpu_clock / \ref wall_clock * 100
 TIMEMORY_DECLARE_COMPONENT(cpu_util)
+
+/// \struct process_cpu_util
+/// \brief Computes the CPU utilization percentage for ONLY the calling process (all
+/// threads, excludes child processes). Extracts only the CPU time spent in both user- and
+/// kernel- mode and divides by wall clock time, e.g. \ref process_cpu_clock / \ref
+/// wall_clock * 100.
 TIMEMORY_DECLARE_COMPONENT(process_cpu_util)
+
+/// \struct thread_cpu_util
+/// \brief computes the CPU utilization percentage for ONLY the calling thread (excludes
+/// sibling and child threads). Extracts only the CPU time spent in both user- and kernel-
+/// mode and divides by wall clock time, e.g. \ref thread_cpu_clock / \ref wall_clock *
+/// 100.
 TIMEMORY_DECLARE_COMPONENT(thread_cpu_util)
 //
 //======================================================================================//
@@ -166,7 +218,7 @@ namespace trait
 template <>
 struct derivation_types<component::cpu_util>
 {
-    using type = std::tuple<
+    using type = type_list<
         type_list<component::wall_clock, component::cpu_clock>,
         type_list<component::wall_clock, component::user_clock, component::system_clock>>;
 };
@@ -177,7 +229,7 @@ template <>
 struct derivation_types<component::process_cpu_util>
 {
     using type =
-        std::tuple<type_list<component::wall_clock, component::process_cpu_clock>>;
+        type_list<type_list<component::wall_clock, component::process_cpu_clock>>;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -185,8 +237,7 @@ struct derivation_types<component::process_cpu_util>
 template <>
 struct derivation_types<component::thread_cpu_util>
 {
-    using type =
-        std::tuple<type_list<component::wall_clock, component::thread_cpu_clock>>;
+    using type = type_list<type_list<component::wall_clock, component::thread_cpu_clock>>;
 };
 //
 //--------------------------------------------------------------------------------------//

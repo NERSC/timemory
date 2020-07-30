@@ -307,12 +307,10 @@ struct is_user_bundle : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::component_value_type
-/// \brief trait that designates the type supports calling a function with a certain
-/// set of argument types (passed via a tuple)
+/// \brief trait that can be used to override the evaluation of the \ref
+/// tim::trait::collects_data trait. It checks to see if \ref tim::trait::data is
+/// specialized and, if not, evaluates to \code{.cpp} typename T::value_type \endcode
 ///
-template <typename T, bool>
-struct component_value_type;
-
 template <typename T>
 struct component_value_type<T, true>
 {
@@ -330,6 +328,12 @@ struct component_value_type<T, false>
     using value_type = void;
 };
 
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::collects_data
+/// \brief trait that specifies or determines if a component collects any data. Default
+/// behavior is to check if the component is available and extract the type and value
+/// fields from \ref tim::trait::component_value_type
+///
 template <typename T>
 struct collects_data
 {
@@ -338,7 +342,6 @@ struct collects_data
         typename component_value_type<T, is_available<T>::value>::value_type;
     static constexpr bool value =
         (!std::is_same<value_type, void>::value &&
-         !std::is_same<value_type, void*>::value &&
          !std::is_same<value_type, type_list<>>::value && is_available<T>::value);
     static_assert(std::is_void<value_type>::value != value,
                   "Error value_type is void and value is true");
@@ -347,7 +350,9 @@ struct collects_data
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::supports_args
 /// \brief trait that designates the type supports calling a function with a certain
-/// set of argument types (passed via a tuple)
+/// set of argument types (passed via a tuple).
+/// \deprecated This is legacy code and support for calling a function with given
+/// arguments is automatically determined.
 ///
 template <typename T, typename Tuple>
 struct supports_args : false_type
@@ -459,7 +464,7 @@ struct units
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::echo_enabled
-/// \brief trait the configures echo_measurement usage
+/// \brief trait that configures echo_measurement usage
 ///
 template <typename T>
 struct echo_enabled : true_type
@@ -467,7 +472,7 @@ struct echo_enabled : true_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::pretty_json
-/// \brief trait the configures whether JSON output uses pretty print. If set to
+/// \brief trait that configures whether JSON output uses pretty print. If set to
 /// false_type then the JSON will be compact
 ///
 template <typename T>
@@ -497,7 +502,7 @@ struct api_output_archive
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::input_archive
-/// \brief trait the configures output archive type
+/// \brief trait that configures output archive type
 ///
 template <typename T, typename Api>
 struct input_archive
@@ -507,7 +512,7 @@ struct input_archive
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::output_archive
-/// \brief trait the configures output archive type
+/// \brief trait that configures output archive type
 ///
 template <typename T, typename Api>
 struct output_archive
@@ -540,7 +545,7 @@ struct output_archive<manager, Api> : output_archive<manager, api::native_tag>
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::flat_storage
-/// \brief trait the configures type to always flat_storage the call-tree
+/// \brief trait that configures type to always flat_storage the call-tree
 ///
 template <typename T>
 struct flat_storage : false_type
@@ -548,8 +553,8 @@ struct flat_storage : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::report_sum
-/// \brief trait the configures type to not report the accumulated value (useful if
-/// meaningless)
+/// \brief trait that configures type to not report the accumulated value (useful if
+/// meaningless). Only applies to text output.
 ///
 template <typename T>
 struct report_sum : true_type
@@ -557,7 +562,8 @@ struct report_sum : true_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::report_mean
-/// \brief trait the configures type to not report the mean value (useful if meaningless)
+/// \brief trait that configures type to not report the mean value (useful if
+/// meaningless). Only applies to text output.
 ///
 template <typename T>
 struct report_mean : true_type
@@ -566,7 +572,7 @@ struct report_mean : true_type
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::report_values
 /// \brief trait that allows runtime configuration of reporting certain types of values
-/// (used in roofline)
+/// (used in roofline). Only applies to text output.
 ///
 template <typename T>
 struct report_values
@@ -587,6 +593,44 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::report_self
+/// \brief trait that configures type to not report the % self field (useful if
+/// meaningless). Only applies to text output.
+///
+template <typename T>
+struct report_self : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::report_metric_name
+/// \brief trait that configures type to not report the "METRIC" column, useful if
+/// redundant). Only applies to text output.
+///
+template <typename T>
+struct report_metric_name : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::report_units
+/// \brief trait that configures type to not report the "UNITS" column (useful if always
+/// empty). Only applies to text output.
+///
+template <typename T>
+struct report_units : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::report_statistics
+/// \brief trait that configures type to not report the "UNITS" column (useful if always
+/// empty). Only applies to text output and does NOT affect whether statistics are
+/// accumulated. For disabling statistics completely, see \ref
+/// tim::trait::record_statistics and \ref tim::policy::record_statistics.
+///
+template <typename T>
+struct report_statistics : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::supports_flamegraph
 /// \brief trait that designates a type supports flamegraph output
 ///
@@ -597,8 +641,21 @@ struct supports_flamegraph : false_type
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::derivation_types
 /// \brief trait that designates the type supports calling assemble and derive member
-/// functions with these types. Specializations MUST be structured as a std::tuple<...> of
-/// tim::type_list<...>
+/// functions with these types. Specializations MUST be structured as a
+/// tim::type_list<...> of tim::type_list<...> where each inner type_list entry is
+/// the list of component types required to perform a derivation.
+/// \code{.cpp}
+/// template <>
+/// struct derivation_types<cpu_util>
+/// {
+///     // can derive its data when present alongside wall_clock + cpu_clock and/or
+///     // wall_clock + user_clock + system_clock
+///     using type = type_list<
+///         type_list<wall_clock, cpu_clock>,
+///         type_list<wall_clock, user_clock, system_clock>
+///     >;
+/// };
+/// \endcode
 ///
 template <typename T>
 struct derivation_types : false_type
@@ -610,7 +667,27 @@ struct derivation_types : false_type
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::python_args
 /// \brief trait that designates the type supports these arguments from python.
-/// Specializations MUST be structured as a tim::type_list<...> of tim::type_list<...>
+/// Specializations MUST be structured as a tim::type_list<...> of tim::type_list<...>.
+/// The first argument is a \ref TIMEMORY_OPERATION enumerated type and for each
+/// inner \ref tim::type_list, a python member function for the stand-alone component
+/// will be generated with those arguments. E.g. to create a custom store member function
+/// accepting integer:
+/// \code{.py}
+/// foo = timemory.component.CaliperLoopMarker("example")
+/// foo.start()
+/// for i in range(10):
+///     foo.store(i)    # store member function accepting integer
+///     # ...
+/// foo.stop()
+/// \endcode
+/// The type-trait specification would look like this:
+/// \code{.cpp}
+/// template <>
+/// struct python_args<TIMEMORY_STORE, component::caliper_loop_marker>
+/// {
+///     using type = type_list<size_t>;
+/// };
+/// \endcode
 ///
 template <int OpT, typename T>
 struct python_args

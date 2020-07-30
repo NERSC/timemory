@@ -42,9 +42,10 @@
 /// \brief Extra enumerated components provided by a downstream application. If this
 /// macro is used, be sure to end the list with a comma
 ///
-/// \code
+/// \code{.cpp}
 /// #define TIMEMORY_USER_COMPONENT_ENUM MY_COMPONENT =
 /// TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE + 1,
+/// \endcode
 //
 #if !defined(TIMEMORY_USER_COMPONENT_ENUM)
 #    define TIMEMORY_USER_COMPONENT_ENUM
@@ -148,6 +149,9 @@ typedef int TIMEMORY_COMPONENT;
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \enum TIMEMORY_OPERATION
+/// \brief Enumerated identifiers for subset of common operations for usage in C code
+/// and specializations of \ref tim::trait::python_args.
 enum TIMEMORY_OPERATION
 {
     TIMEMORY_CONSTRUCT = 0,

@@ -469,6 +469,23 @@ public:
         return get<T>();
     }
 
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              enable_if_t<trait::is_available<T>::value && is_one_of<T, data_type>::value,
+                          int> = 0>
+    auto& get_reference()
+    {
+        return std::get<index_of<T, data_type>::value>(m_data);
+    }
+
+    template <
+        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+        enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value,
+                    int> = 0>
+    auto& get_reference()
+    {
+        return std::get<index_of<T*, data_type>::value>(m_data);
+    }
+
     //----------------------------------------------------------------------------------//
     ///  initialize a type that is in variadic list AND is available
     ///
@@ -557,6 +574,13 @@ public:
     void initialize(Args&&... args)
     {
         TIMEMORY_FOLD_EXPRESSION(this->init<T>(std::forward<Args>(args)...));
+    }
+
+    template <typename... Tail>
+    void disable()
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::generic_deleter<remove_pointer_t<Tail>>{
+            this->get_reference<Tail>() });
     }
 
     //----------------------------------------------------------------------------------//

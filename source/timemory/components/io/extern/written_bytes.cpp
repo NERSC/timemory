@@ -22,22 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/rusage/extern.hpp
- * \brief Include the extern declarations for rusage components
- */
-
-#pragma once
-
-#include "timemory/components/rusage/extern/current_peak_rss.hpp"
-#include "timemory/components/rusage/extern/kernel_mode_time.hpp"
-#include "timemory/components/rusage/extern/num_io_in.hpp"
-#include "timemory/components/rusage/extern/num_io_out.hpp"
-#include "timemory/components/rusage/extern/num_major_page_faults.hpp"
-#include "timemory/components/rusage/extern/num_minor_page_faults.hpp"
-#include "timemory/components/rusage/extern/page_rss.hpp"
-#include "timemory/components/rusage/extern/peak_rss.hpp"
-#include "timemory/components/rusage/extern/priority_context_switch.hpp"
-#include "timemory/components/rusage/extern/user_mode_time.hpp"
-#include "timemory/components/rusage/extern/virtual_memory.hpp"
-#include "timemory/components/rusage/extern/voluntary_context_switch.hpp"
+#include "timemory/components/io/extern/written_bytes.hpp"

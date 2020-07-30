@@ -74,7 +74,8 @@ struct caliper_common
 
     static void _init()
     {
-        puts("Initializing caliper...");
+        if(tim::settings::debug() || tim::settings::verbose() > 0)
+            puts("Initializing caliper...");
         cali_init();
     }
 
@@ -209,13 +210,17 @@ struct caliper_config
     void start()
     {
         DEBUG_PRINT_HERE("%s", "Starting Caliper ConfigManager");
-        get_manager().start();
+        auto cnt = instance_tracker_t::start();
+        if(cnt == 0)
+            get_manager().start();
     }
 
     void stop()
     {
         DEBUG_PRINT_HERE("%s", "Flushing Caliper ConfigManager");
-        get_manager().flush();
+        auto cnt = instance_tracker_t::stop();
+        if(cnt == 0)
+            get_manager().flush();
     }
 };
 //

@@ -74,11 +74,12 @@ namespace tim
 ///
 /// \struct storage_initializer
 /// \brief This provides an object that can initialize the storage opaquely, e.g.
-/// \code
+/// \code{.cpp}
 /// namespace
 /// {
 ///     tim::storage_initializer storage = tim::storage_initalizer::get<T>();
 /// }
+/// \endcode
 ///
 struct TIMEMORY_OPERATIONS_DLL storage_initializer
 {

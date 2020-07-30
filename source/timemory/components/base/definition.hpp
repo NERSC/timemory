@@ -93,7 +93,12 @@ base<Tp, Value>::start()
 {
     if(!is_running)
     {
+        // operation::start calls set_started but calling it again here
+        // ensures that if start is called on component which does not
+        // implement a start member function (thus re-entering this function)
+        // then re-entering the function does not introduce an infinite loop
         set_started();
+        // call derived implementation
         static_cast<Type*>(this)->start();
     }
 }
@@ -106,7 +111,12 @@ base<Tp, Value>::stop()
 {
     if(is_running)
     {
+        // operation::stop calls set_stopped but calling it again here
+        // ensures that if stop is called on component which does not
+        // implement a stop member function (thus re-entering this function)
+        // then re-entering the function does not introduce an infinite loop
         set_stopped();
+        // call derived implementation
         static_cast<Type*>(this)->stop();
     }
 }
@@ -156,8 +166,8 @@ base<Tp, Value>::set_stopped()
     if(is_running)
     {
         ++laps;
-        is_running   = false;
         is_transient = true;
+        is_running   = false;
     }
 }
 //

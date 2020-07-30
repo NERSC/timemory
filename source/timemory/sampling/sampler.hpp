@@ -150,9 +150,9 @@ public:
 
     /// \fn wait
     /// \brief Wait function with an optional user callback of type:
-    ///
-    ///         \code bool (*)(int a, int b)
-    ///
+    /// \code{.cpp}
+    ///     bool (*)(int a, int b)
+    /// \endcode
     /// where 'a' is the status, 'b' is the error value, and returns true if waiting
     /// should continue
     template <typename Func = std::function<bool(pid_t, int, int)>>

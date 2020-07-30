@@ -66,11 +66,11 @@ void
 base<Tp, Value>::CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
 {
     // clang-format off
-        ar(cereal::make_nvp("is_transient", is_transient),
-           cereal::make_nvp("laps", laps),
-           cereal::make_nvp("value", value),
-           cereal::make_nvp("accum", accum),
-           cereal::make_nvp("last", last));
+    ar(cereal::make_nvp("is_transient", is_transient),
+        cereal::make_nvp("laps", laps),
+        cereal::make_nvp("value", value),
+        cereal::make_nvp("accum", accum),
+        cereal::make_nvp("last", last));
     // clang-format on
 }
 //
@@ -105,7 +105,7 @@ template <typename Up, enable_if_t<(trait::base_has_accum<Up>::value), int>>
 Value&
 base<Tp, Value>::load()
 {
-    return (is_transient) ? accum : value;
+    return (get_is_transient()) ? accum : value;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -115,7 +115,7 @@ template <typename Up, enable_if_t<(trait::base_has_accum<Up>::value), int>>
 const Value&
 base<Tp, Value>::load() const
 {
-    return (is_transient) ? accum : value;
+    return (get_is_transient()) ? accum : value;
 }
 //
 //--------------------------------------------------------------------------------------//

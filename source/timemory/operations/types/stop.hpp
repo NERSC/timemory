@@ -100,15 +100,22 @@ private:
     }
 
 private:
-    // set_started
+    // set_stopped
     template <typename Up>
-    auto set_sfinae(Up& obj, int) -> decltype(obj.set_stopped(), void())
+    auto set_sfinae(Up& obj, int, int) -> decltype(obj.set_stopped(), void())
     {
         obj.set_stopped();
     }
 
     template <typename Up>
-    auto set_sfinae(Up&, long)
+    auto set_sfinae(Up& obj, int, long)
+        -> decltype(static_cast<base_t<Up>&>(obj).set_stopped(), void())
+    {
+        static_cast<base_t<Up>&>(obj).set_stopped();
+    }
+
+    template <typename Up>
+    auto set_sfinae(Up&, long, long)
     {}
 };
 //
@@ -214,7 +221,7 @@ stop<Tp>::stop(type& obj, Args&&... args)
     if(!trait::runtime_enabled<type>::get())
         return;
     sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
-    set_sfinae(obj, 0);
+    set_sfinae(obj, 0, 0);
 }
 //
 //--------------------------------------------------------------------------------------//

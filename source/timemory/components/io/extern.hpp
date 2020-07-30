@@ -22,12 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/**
+ * \file timemory/components/io/extern.hpp
+ * \brief Include the extern declarations for io components
+ */
+
 #pragma once
 
-#include "timemory/components/macros.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/rusage/extern/base.hpp"
-#include "timemory/components/rusage/extern/operations.hpp"
-#include "timemory/components/rusage/extern/storage.hpp"
-
-TIMEMORY_EXTERN_COMPONENT(written_bytes, true, std::array<int64_t, 2>)
+#include "timemory/components/io/extern/read_bytes.hpp"
+#include "timemory/components/io/extern/written_bytes.hpp"
