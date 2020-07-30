@@ -26,6 +26,7 @@ add_subdirectory(ex-statistics)
 add_subdirectory(ex-caliper)
 add_subdirectory(ex-gotcha)
 add_subdirectory(ex-likwid)
+add_subdirectory(ex-scorep)
 
 # GPU related
 add_subdirectory(ex-cuda-event)

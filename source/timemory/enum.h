@@ -60,7 +60,7 @@
 /// \brief The number of enumerated components defined by timemory
 //
 #if !defined(TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE)
-#    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE 64
+#    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE 65
 #endif
 //
 /// \enum TIMEMORY_NATIVE_COMPONENT
@@ -114,6 +114,7 @@ enum TIMEMORY_NATIVE_COMPONENT
     PROCESS_CPU_CLOCK,
     PROCESS_CPU_UTIL,
     READ_BYTES,
+    SCOREP,
     SYS_CLOCK,
     TAU_MARKER,
     THREAD_CPU_CLOCK,

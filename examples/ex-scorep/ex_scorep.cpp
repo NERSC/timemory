@@ -22,24 +22,57 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#include "timemory/timemory.hpp"
 
-#include "timemory/components/allinea/components.hpp"
-#include "timemory/components/caliper/components.hpp"
-#include "timemory/components/craypat/components.hpp"
-#include "timemory/components/cuda/components.hpp"
-#include "timemory/components/cupti/components.hpp"
-#include "timemory/components/data_tracker/components.hpp"
-#include "timemory/components/gotcha/components.hpp"
-#include "timemory/components/gperftools/components.hpp"
-#include "timemory/components/likwid/components.hpp"
-#include "timemory/components/ompt/components.hpp"
-#include "timemory/components/papi/components.hpp"
-#include "timemory/components/roofline/components.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/scorep/components.hpp"
-#include "timemory/components/tau_marker/components.hpp"
-#include "timemory/components/timing/components.hpp"
-#include "timemory/components/trip_count/components.hpp"
-#include "timemory/components/user_bundle/components.hpp"
-#include "timemory/components/vtune/components.hpp"
+#include <cstdio>
+#include <cstdlib>
+
+//
+// shorthand
+//
+using namespace tim::component;
+
+//
+// bundle of tools
+//
+using tuple_t = tim::auto_tuple<scorep>;
+
+//--------------------------------------------------------------------------------------//
+
+long
+fib(long n)
+{
+    return (n < 2) ? n : (fib(n - 1) + fib(n - 2));
+}
+
+//--------------------------------------------------------------------------------------//
+
+int
+main(int argc, char** argv)
+{
+    tim::settings::file_output() = false;
+    tim::settings::text_output() = false;
+    tim::timemory_init(argc, argv);
+
+    long nfib = (argc > 1) ? atol(argv[1]) : 40;
+    int  nitr = (argc > 2) ? atoi(argv[2]) : 10;
+
+    for(int i = 0; i < nitr; ++i)
+    {
+        TIMEMORY_MARKER(tuple_t, "total");
+        long ans = fib(nfib);
+
+        TIMEMORY_BLANK_MARKER(tuple_t, "nested/", i % 5);
+        ans += fib(nfib + (i % 3));
+
+        TIMEMORY_CONDITIONAL_BASIC_MARKER(i % 3 == 2, tuple_t, "occasional/", i);
+        ans += fib(nfib - 1);
+
+        printf("Answer = %li\n", ans);
+    }
+
+    tim::timemory_finalize();
+    return EXIT_SUCCESS;
+}
+
+//--------------------------------------------------------------------------------------//

@@ -22,24 +22,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/**
+ * \file timemory/components/scorep/types.hpp
+ * \brief Declare the scorep component types
+ */
+
 #pragma once
 
-#include "timemory/components/allinea/components.hpp"
-#include "timemory/components/caliper/components.hpp"
-#include "timemory/components/craypat/components.hpp"
-#include "timemory/components/cuda/components.hpp"
-#include "timemory/components/cupti/components.hpp"
-#include "timemory/components/data_tracker/components.hpp"
-#include "timemory/components/gotcha/components.hpp"
-#include "timemory/components/gperftools/components.hpp"
-#include "timemory/components/likwid/components.hpp"
-#include "timemory/components/ompt/components.hpp"
-#include "timemory/components/papi/components.hpp"
-#include "timemory/components/roofline/components.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/scorep/components.hpp"
-#include "timemory/components/tau_marker/components.hpp"
-#include "timemory/components/timing/components.hpp"
-#include "timemory/components/trip_count/components.hpp"
-#include "timemory/components/user_bundle/components.hpp"
-#include "timemory/components/vtune/components.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
+
+//======================================================================================//
+//
+TIMEMORY_DECLARE_COMPONENT(scorep)
+//
+//======================================================================================//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_USE_SCOREP)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::scorep, false_type)
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//                              REQUIRES PREFIX
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::scorep, true_type)
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(scorep, SCOREP, "scorep", "")

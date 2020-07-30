@@ -128,6 +128,13 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+// SCOREP component
+#if defined(TIMEMORY_USE_SCOREP)
+#    include "timemory/components/scorep/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 // VTune components
 #if defined(TIMEMORY_USE_VTUNE)
 #    include "timemory/components/vtune/components.hpp"

@@ -239,6 +239,7 @@ endif()
 define_default_option(_MPI ON)
 define_default_option(_UPCXX ON)
 define_default_option(_TAU ON)
+define_default_option(_SCOREP ON)
 define_default_option(_PAPI ${_USE_PAPI})
 define_default_option(_GPERFTOOLS ON)
 define_default_option(_VTUNE ON)
@@ -264,6 +265,8 @@ add_option(TIMEMORY_USE_SANITIZER
     "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
 add_option(TIMEMORY_USE_TAU
     "Enable TAU marking API" ${_TAU} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_SCOREP
+    "Enable Score-P instrumentation" ${_SCOREP} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_PAPI
     "Enable PAPI" ${_PAPI} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CLANG_TIDY

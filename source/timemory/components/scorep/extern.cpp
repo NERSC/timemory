@@ -22,24 +22,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#include "timemory/components/scorep/extern.hpp"
+#include <stddef.h>
 
-#include "timemory/components/allinea/components.hpp"
-#include "timemory/components/caliper/components.hpp"
-#include "timemory/components/craypat/components.hpp"
-#include "timemory/components/cuda/components.hpp"
-#include "timemory/components/cupti/components.hpp"
-#include "timemory/components/data_tracker/components.hpp"
-#include "timemory/components/gotcha/components.hpp"
-#include "timemory/components/gperftools/components.hpp"
-#include "timemory/components/likwid/components.hpp"
-#include "timemory/components/ompt/components.hpp"
-#include "timemory/components/papi/components.hpp"
-#include "timemory/components/roofline/components.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/scorep/components.hpp"
-#include "timemory/components/tau_marker/components.hpp"
-#include "timemory/components/timing/components.hpp"
-#include "timemory/components/trip_count/components.hpp"
-#include "timemory/components/user_bundle/components.hpp"
-#include "timemory/components/vtune/components.hpp"
+extern const struct SCOREP_Subsystem SCOREP_Subsystem_Substrates;
+extern const struct SCOREP_Subsystem SCOREP_Subsystem_TaskStack;
+extern const struct SCOREP_Subsystem SCOREP_Subsystem_MetricService;
+extern const struct SCOREP_Subsystem SCOREP_Subsystem_UnwindingService;
+extern const struct SCOREP_Subsystem SCOREP_Subsystem_SamplingService;
+extern const struct SCOREP_Subsystem SCOREP_Subsystem_Topologies;
+extern const struct SCOREP_Subsystem SCOREP_Subsystem_PlatformTopology;
+extern const struct SCOREP_Subsystem SCOREP_Subsystem_UserAdapter;
+
+const struct SCOREP_Subsystem* scorep_subsystems[] = {
+    &SCOREP_Subsystem_Substrates,       &SCOREP_Subsystem_TaskStack,
+    &SCOREP_Subsystem_MetricService,    &SCOREP_Subsystem_UnwindingService,
+    &SCOREP_Subsystem_SamplingService,  &SCOREP_Subsystem_Topologies,
+    &SCOREP_Subsystem_PlatformTopology, &SCOREP_Subsystem_UserAdapter
+};
+
+const size_t scorep_number_of_subsystems =
+    sizeof(scorep_subsystems) / sizeof(scorep_subsystems[0]);

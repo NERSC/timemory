@@ -11,8 +11,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -21,25 +21,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+//
+
+/**
+ * \file timemory/components/scorep/backends.hpp
+ * \brief Implementation of the scorep functions/utilities
+ */
 
 #pragma once
 
-#include "timemory/components/allinea/components.hpp"
-#include "timemory/components/caliper/components.hpp"
-#include "timemory/components/craypat/components.hpp"
-#include "timemory/components/cuda/components.hpp"
-#include "timemory/components/cupti/components.hpp"
-#include "timemory/components/data_tracker/components.hpp"
-#include "timemory/components/gotcha/components.hpp"
-#include "timemory/components/gperftools/components.hpp"
-#include "timemory/components/likwid/components.hpp"
-#include "timemory/components/ompt/components.hpp"
-#include "timemory/components/papi/components.hpp"
-#include "timemory/components/roofline/components.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/scorep/components.hpp"
-#include "timemory/components/tau_marker/components.hpp"
-#include "timemory/components/timing/components.hpp"
-#include "timemory/components/trip_count/components.hpp"
-#include "timemory/components/user_bundle/components.hpp"
-#include "timemory/components/vtune/components.hpp"
+#if defined(TIMEMORY_USE_SCOREP)
+#    define SCOREP_ENABLED
+#    define SCOREP_USER_ENABLE
+#    include "scorep/SCOREP_User.h"
+#    include "scorep/SCOREP_User_Types.h"
+
+using handle_type = SCOREP_User_RegionHandle;
+#endif
