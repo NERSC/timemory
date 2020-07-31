@@ -89,7 +89,7 @@ struct io_cache
     template <size_t NumReads = 4>
     static inline auto read()
     {
-        std::array<int64_t, NumReads> _data{ 0 };
+        std::array<int64_t, NumReads> _data{};
         return read<NumReads>(_data);
     }
 
