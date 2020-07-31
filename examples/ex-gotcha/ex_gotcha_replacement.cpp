@@ -119,29 +119,20 @@ init()
     // configure the initializer for the gotcha component which replaces exp with expf
     //
     exp2expf_t::get_initializer() = []() {
-        if(!use_timers) return;
+        if(!use_intercept) return;
         puts("Generating exp intercept...");
         TIMEMORY_C_GOTCHA(exp2expf_t, 0, exp);
     };
 
     //
-    // configure the initializer for the gotcha components which replace place wall-clock
+    // configure the initializer for the gotcha components which places wall-clock
     // timers around exp and sum_exp
     //
     exptime_t::get_initializer() = []() {
-        if(!use_intercept) return;
+        if(!use_timers) return;
         puts("Generating exp timers...");
         TIMEMORY_C_GOTCHA(exptime_t, 0, exp);
         TIMEMORY_CXX_GOTCHA(exptime_t, 1, sum_exp);
-    };
-
-    //
-    // set-up the initializer for the component bundle
-    //
-    exp_bundle_t::get_initializer() = [](exp_bundle_t&) {
-        // puts("Generating exp bundle...");
-        // cb.init<exp2expf_t>();
-        // cb.init<exptime_t>();
     };
 
     return true;
