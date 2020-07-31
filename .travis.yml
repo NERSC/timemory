@@ -250,7 +250,7 @@ script:
   - travis_wait 85 python ./pyctest-runner.py -cc ${CC} -cxx ${CXX} ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure -- ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
   - cd build-timemory/Linux
   - make install -j
-  - cmake -P tests/test-python-install-import.cmake
+  - if [ -f "tests/test-python-install-import.cmake" ]; then cmake -P tests/test-python-install-import.cmake; fi
   - echo "Testing is Done"
 
 after_success:

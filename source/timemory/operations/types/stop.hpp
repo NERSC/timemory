@@ -141,7 +141,7 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        stop<Tp>(obj, std::forward<Args>(args)...);
+        stop<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
@@ -172,7 +172,7 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        stop<Tp>(obj, std::forward<Args>(args)...);
+        stop<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
@@ -203,7 +203,7 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        stop<Tp>(obj, std::forward<Args>(args)...);
+        stop<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
