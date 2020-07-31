@@ -67,7 +67,7 @@ struct insert_node
 private:
     //  typical resolution: component
     template <typename Up, typename Vp = value_type, typename StorageT = storage<Up, Vp>,
-              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
+              enable_if_t<trait::implements_storage<Up, Vp>::value, int> = 0>
     auto sfinae(Up& _obj, int, int, int, scope::config _scope, int64_t _hash)
         -> decltype(_obj.is_on_stack && _obj.is_flat && _obj.get_storage() &&
                         _obj.graph_itr && _obj.depth_change,
@@ -133,7 +133,7 @@ struct pop_node
 private:
     //  typical resolution: component
     template <typename Up, typename Vp = value_type, typename StorageT = storage<Up, Vp>,
-              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
+              enable_if_t<trait::implements_storage<Up, Vp>::value, int> = 0>
     auto sfinae(Up& _obj, int, int, int, int)
         -> decltype(_obj.is_on_stack && _obj.depth_change && _obj.get_storage() &&
                         _obj.graph_itr,

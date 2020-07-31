@@ -163,6 +163,8 @@ struct record_max : false_type
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::array_serialization
 /// \brief trait that signifies that data is an array type
+/// \deprecated { This trait is no longer used as array types are determined by other
+/// means }
 ///
 template <typename T>
 struct array_serialization : false_type
@@ -173,6 +175,8 @@ struct array_serialization : false_type
 /// \brief trait that signifies that a component requires the prefix to be set right after
 /// construction. Types with this trait must contain a member string variable named
 /// prefix
+/// \deprecated { This trait is no longer used as this property is determined by other
+/// means }
 ///
 template <typename T>
 struct requires_prefix : false_type
@@ -180,7 +184,7 @@ struct requires_prefix : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::custom_label_printing
-/// \brief trait that signifies that a component handles it's label when printing
+/// \brief trait that signifies that a component will handle printing the label(s)
 ///
 template <typename T>
 struct custom_label_printing : false_type
@@ -188,7 +192,7 @@ struct custom_label_printing : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::custom_unit_printing
-/// \brief trait that signifies that a component includes it's units when printing
+/// \brief trait that signifies that a component will handle printing the units(s)
 ///
 template <typename T>
 struct custom_unit_printing : false_type
@@ -196,7 +200,7 @@ struct custom_unit_printing : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::custom_laps_printing
-/// \brief trait that signifies that a component includes it's laps when printing
+/// \brief trait that signifies that a component will handle printing the laps(s)
 ///
 template <typename T>
 struct custom_laps_printing : false_type
@@ -222,8 +226,8 @@ struct stop_priority : std::integral_constant<int, 0>
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::is_timing_category
-/// \brief trait that designates the width and precision should follow env specified
-/// timing settings
+/// \brief trait that designates the width and precision should follow formatting settings
+/// related to timing measurements
 ///
 template <typename T>
 struct is_timing_category : false_type
@@ -231,8 +235,8 @@ struct is_timing_category : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::is_memory_category
-/// \brief trait that designates the width and precision should follow env specified
-/// memory settings
+/// \brief trait that designates the width and precision should follow formatting settings
+/// related to memory measurements
 ///
 template <typename T>
 struct is_memory_category : false_type
@@ -240,7 +244,8 @@ struct is_memory_category : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::uses_timing_units
-/// \brief trait that designates the units should follow env specified timing settings
+/// \brief trait that designates the units should follow unit settings related to timing
+/// measurements
 ///
 template <typename T>
 struct uses_timing_units : false_type
@@ -248,7 +253,8 @@ struct uses_timing_units : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::uses_memory_units
-/// \brief trait that designates the units should follow env specified memory settings
+/// \brief trait that designates the units should follow unit settings related to memory
+/// measurements
 ///
 template <typename T>
 struct uses_memory_units : false_type
@@ -280,7 +286,7 @@ struct is_component : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::api_components
-/// \brief trait that designates apis of a component
+/// \brief trait that designates components in an API (tim::api)
 ///
 template <typename T, typename Tag>
 struct api_components
@@ -290,7 +296,8 @@ struct api_components
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::is_gotcha
-/// \brief trait that designates the type is a gotcha... ONLY gotcha should set to TRUE!
+/// \brief trait that designates the type is a gotcha
+/// \deprecated{ This is being migrated to a concept }
 ///
 template <typename T>
 struct is_gotcha : false_type
@@ -298,8 +305,8 @@ struct is_gotcha : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::is_user_bundle
-/// \brief trait that designates the type is a user-bundle... ONLY user-bundles should be
-/// TRUE!
+/// \brief trait that designates the type is a user-bundle
+/// \deprecated{ This is being migrated to a concept }
 ///
 template <typename T>
 struct is_user_bundle : false_type
@@ -399,9 +406,8 @@ struct thread_scope_only : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::custom_serialization
-/// \brief trait that signifies the component will be providing a separate split load(...)
-/// and store(...) for serialization so the base class should not provide a generic
-/// serialize(...) function
+/// \brief trait that signifies the component will be providing it's own split load(...)
+/// and store(...) for serialization so do not provide one in the base class
 ///
 template <typename T>
 struct custom_serialization : false_type
@@ -409,7 +415,7 @@ struct custom_serialization : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::record_statistics
-/// \brief trait that signifies the component will accumulate a min/max
+/// \brief trait that signifies the component will calculate min/max/stddev
 ///
 template <typename T>
 struct record_statistics : default_record_statistics_type
@@ -428,8 +434,8 @@ struct statistics
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::permissive_statistics
 /// \brief trait that will suppress compilation error in
-/// operation::add_statistics<Component> if the data type passed does not match
-/// statistics<Component>::type
+/// \code{.cpp} operation::add_statistics<Component> \endcode if the data type passed does
+/// not match \code{.cpp} statistics<Component>::type \endcode
 ///
 template <typename T>
 struct permissive_statistics : false_type
@@ -437,7 +443,7 @@ struct permissive_statistics : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::sampler
-/// \brief trait that signifies the component support sampling
+/// \brief trait that signifies the component supports sampling
 ///
 template <typename T>
 struct sampler : false_type
@@ -479,12 +485,24 @@ template <typename T>
 struct pretty_json : std::false_type
 {};
 
+/// \struct tim::trait::api_input_archive
+/// \brief trait that configures the default input archive type for an entire API
+/// specification, e.g. TIMEMORY_API (which is \code struct tim::api::native_tag
+/// \endcode). The input archive format of individual components is determined from the
+/// derived \ref tim::trait::input_archive
+///
 template <typename Api>
 struct api_input_archive
 {
     using type = TIMEMORY_INPUT_ARCHIVE;
 };
 
+/// \struct tim::trait::api_output_archive
+/// \brief trait that configures the default output archive type for an entire API
+/// specification, e.g. TIMEMORY_API (which is \code struct tim::api::native_tag
+/// \endcode). The output archive format of individual components is determined from the
+/// derived \ref tim::trait::output_archive
+///
 template <typename Api>
 struct api_output_archive
 {
@@ -715,44 +733,39 @@ struct cache
 };
 
 //--------------------------------------------------------------------------------------//
-}  // namespace trait
-}  // namespace tim
-
-//======================================================================================//
-//
-//                              Derived helper traits
-//
-//======================================================================================//
-
-namespace tim
-{
-//--------------------------------------------------------------------------------------//
 //
 //      determines if output is generated
 //
 //--------------------------------------------------------------------------------------//
-
+/// \struct tim::trait::generates_output
+/// \brief trait used to evaluate whether a component value type produces a useable value
 template <typename T, typename V>
 struct generates_output
 {
     using value_type            = V;
-    static constexpr bool value = (!(std::is_same<V, void>::value));
-};
-
-template <typename T>
-struct generates_output<T, type_list<>>
-{
-    using V                     = typename T::value_type;
-    using value_type            = V;
-    static constexpr bool value = (!(std::is_same<V, void>::value));
+    static constexpr bool value = (!concepts::is_null_type<value_type>::value);
 };
 
 template <typename T>
 struct generates_output<T, void>
 {
-    using V                     = void;
-    using value_type            = V;
+    using value_type            = void;
     static constexpr bool value = false;
+};
+
+template <typename T>
+struct generates_output<T, null_type>
+{
+    using value_type            = null_type;
+    static constexpr bool value = false;
+};
+
+template <typename T>
+struct generates_output<T, type_list<>>
+{
+    // this is default evaluation from trait::data<T>::value_type
+    using value_type            = typename T::value_type;
+    static constexpr bool value = (!concepts::is_null_type<value_type>::value);
 };
 
 //--------------------------------------------------------------------------------------//
@@ -760,34 +773,43 @@ struct generates_output<T, void>
 //      determines if storage should be implemented
 //
 //--------------------------------------------------------------------------------------//
-
+/// \struct tim::trait::implements_storage
+/// \brief This trait is used to determine whether the (expensive) instantiation of the
+/// storage class happens
 template <typename T, typename V>
 struct implements_storage
 {
     using value_type               = V;
     static constexpr bool avail_v  = trait::is_available<T>::value;
-    static constexpr bool output_v = generates_output<T, V>::value;
+    static constexpr bool output_v = trait::generates_output<T, value_type>::value;
     static constexpr bool value    = (avail_v && output_v);
 };
 
 template <typename T>
 struct implements_storage<T, type_list<>>
 {
-    using V                        = typename T::value_type;
-    using value_type               = V;
+    using value_type               = typename T::value_type;
     static constexpr bool avail_v  = trait::is_available<T>::value;
-    static constexpr bool output_v = generates_output<T, V>::value;
+    static constexpr bool output_v = trait::generates_output<T, value_type>::value;
     static constexpr bool value    = (avail_v && output_v);
 };
 
 template <typename T>
 struct implements_storage<T, void>
 {
-    using V                     = void;
-    using value_type            = V;
+    using value_type            = void;
     static constexpr bool value = false;
 };
 
+template <typename T>
+struct implements_storage<T, null_type>
+{
+    using value_type            = null_type;
+    static constexpr bool value = false;
+};
+
+//--------------------------------------------------------------------------------------//
+}  // namespace trait
 }  // namespace tim
 
 //======================================================================================//

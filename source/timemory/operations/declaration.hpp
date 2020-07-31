@@ -491,18 +491,20 @@ struct init_storage
     using pointer_t  = tim::base::storage*;
     using get_type   = std::tuple<pointer_t, bool, bool, bool>;
 
-    template <typename Up = Tp, enable_if_t<(trait::is_available<Up>::value), char> = 0>
+    template <typename Up                                             = Tp,
+              enable_if_t<trait::implements_storage<Up>::value, char> = 0>
     init_storage();
 
-    template <typename Up = Tp, enable_if_t<!(trait::is_available<Up>::value), char> = 0>
+    template <typename Up                                              = Tp,
+              enable_if_t<!trait::implements_storage<Up>::value, char> = 0>
     init_storage();
 
     template <typename U = Tp, typename V = typename U::value_type,
-              enable_if_t<(implements_storage<U, V>::value), int> = 0>
+              enable_if_t<trait::implements_storage<U, V>::value, int> = 0>
     static get_type get();
 
     template <typename U = Tp, typename V = typename U::value_type,
-              enable_if_t<!(implements_storage<U, V>::value), int> = 0>
+              enable_if_t<!trait::implements_storage<U, V>::value, int> = 0>
     static get_type get();
 
     static void init();

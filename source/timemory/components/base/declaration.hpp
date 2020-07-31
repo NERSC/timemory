@@ -117,7 +117,7 @@ public:
     using fmtflags          = std::ios_base::fmtflags;
 
 private:
-    friend class impl::storage<Tp, implements_storage<Tp, Value>::value>;
+    friend class impl::storage<Tp, trait::implements_storage<Tp, Value>::value>;
     friend class storage<Tp, Value>;
     friend struct node::graph<Tp>;
 
@@ -195,11 +195,11 @@ public:
     dynamic_type* create() const;
 
     template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
+              enable_if_t<(trait::implements_storage<Up, Vp>::value), int> = 0>
     void print(std::ostream&) const;
 
     template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<!(implements_storage<Up, Vp>::value), int> = 0>
+              enable_if_t<!(trait::implements_storage<Up, Vp>::value), int> = 0>
     void print(std::ostream&) const;
 
     bool operator<(const base_type& rhs) const { return (load() < rhs.load()); }

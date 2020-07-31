@@ -762,10 +762,10 @@ storage<Type, false>::master_instance()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Vp>
-class storage : public impl::storage<Tp, implements_storage<Tp, Vp>::value>
+class storage : public impl::storage<Tp, trait::implements_storage<Tp, Vp>::value>
 {
 public:
-    static constexpr bool implements_storage_v = implements_storage<Tp, Vp>::value;
+    static constexpr bool implements_storage_v = trait::implements_storage<Tp, Vp>::value;
     using this_type                            = storage<Tp, Vp>;
     using base_type                            = impl::storage<Tp, implements_storage_v>;
     using deleter_t                            = impl::storage_deleter<base_type>;
@@ -790,7 +790,7 @@ class storage<Tp, type_list<>>
 public:
     using Vp =
         conditional_t<(trait::is_available<Tp>::value), typename Tp::value_type, void>;
-    static constexpr bool implements_storage_v = implements_storage<Tp, Vp>::value;
+    static constexpr bool implements_storage_v = trait::implements_storage<Tp, Vp>::value;
     using this_type                            = storage<Tp, Vp>;
     using base_type                            = impl::storage<Tp, implements_storage_v>;
     using deleter_t                            = impl::storage_deleter<base_type>;

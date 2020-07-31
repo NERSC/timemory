@@ -258,6 +258,12 @@ struct python_args;
 template <typename T>
 struct cache;
 
+template <typename T, typename V = typename trait::data<T>::value_type>
+struct generates_output;
+
+template <typename T, typename V = typename trait::data<T>::value_type>
+struct implements_storage;
+
 //--------------------------------------------------------------------------------------//
 //
 //                              ALIASES
@@ -273,12 +279,6 @@ using output_archive_t = typename output_archive<T, TIMEMORY_API>::type;
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace trait
-
-template <typename T, typename V = typename trait::data<T>::value_type>
-struct generates_output;
-
-template <typename T, typename V = typename trait::data<T>::value_type>
-struct implements_storage;
 
 //======================================================================================//
 // generic helpers that can/should be inherited from
