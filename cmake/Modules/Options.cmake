@@ -16,6 +16,12 @@ function(DEFINE_DEFAULT_OPTION VAR VAL)
     if(TIMEMORY_REQUIRE_PACKAGES)
         set(${VAR} OFF PARENT_SCOPE)
     else()
+        foreach(_ARG ${ARGN})
+            if(NOT ${_ARG})
+                set(VAL OFF)
+                break()
+            endif()
+        endforeach()
         set(${VAR} ${VAL} PARENT_SCOPE)
     endif()
     set_property(GLOBAL APPEND PROPERTY DEFAULT_OPTION_VARIABLES ${VAR})
@@ -252,6 +258,7 @@ define_default_option(_OMPT OFF)
 define_default_option(_LIKWID ${_NON_APPLE_UNIX})
 define_default_option(_GOTCHA ${_NON_APPLE_UNIX})
 define_default_option(_NCCL ${_USE_CUDA})
+define_default_option(_LIKWID_NVMON ${_LIKWID} ${_NON_APPLE_UNIX} ${_CUDA})
 
 # timemory options
 add_option(TIMEMORY_USE_STATISTICS
@@ -285,7 +292,7 @@ add_option(TIMEMORY_USE_NVTX
 add_option(TIMEMORY_USE_CUPTI
     "Enable CUPTI profiling for NVIDIA GPUs" ${_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_NCCL
-    "Enable NCCL support for NVIDIA GPUs" ${_CUDA} CMAKE_DEFINE)
+    "Enable NCCL support for NVIDIA GPUs" ${_NCCL} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_PYTHON
@@ -302,6 +309,10 @@ add_option(TIMEMORY_USE_OMPT
     "Enable OpenMP tooling" ${_OMPT} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_LIKWID
     "Enable LIKWID marker forwarding" ${_LIKWID} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_LIKWID_PERFMON
+    "Enable LIKWID support for perf (CPU)" ${_LIKWID} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_LIKWID_NVMON
+    "Enable LIKWID support for nvidia (GPU)" ${_LIKWID_NVMON} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_GOTCHA
     "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
 add_option(TIMEMORY_BUILD_ERT

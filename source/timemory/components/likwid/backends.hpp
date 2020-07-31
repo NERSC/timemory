@@ -30,9 +30,4 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_LIKWID)
-#    include <likwid-marker.h>
-#    include <likwid.h>
-#endif
-
-#include "timemory/macros.hpp"
+#include "timemory/components/likwid/types.hpp"

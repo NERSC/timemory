@@ -21,29 +21,28 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-//
 
-/** \file timemory/components/general.hpp
- * \headerfile timemory/components/general.hpp "timemory/components/general.hpp"
- * Defines some short general components
- *
+/**
+ * \file timemory/components/extern/common.hpp
+ * \brief Includes the common set of headers required for an extern declaration
+ * or an instantiation
  */
 
 #pragma once
 
-#include <cassert>
-#include <cstdint>
-
-namespace tim
-{
-namespace component
-{
-//
-//--------------------------------------------------------------------------------------//
-//
-//          General Components with no specific category
-//
-//--------------------------------------------------------------------------------------//
-//
-}  // namespace component
-}  // namespace tim
+#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
+    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
+// source/header-only requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+#else
+// extern requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/declaration.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/declaration.hpp"
+#endif

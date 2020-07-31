@@ -40,5 +40,6 @@
 #include "timemory/components/tau_marker/components.hpp"
 #include "timemory/components/timing/components.hpp"
 #include "timemory/components/trip_count/components.hpp"
+#include "timemory/components/types.hpp"
 #include "timemory/components/user_bundle/components.hpp"
 #include "timemory/components/vtune/components.hpp"

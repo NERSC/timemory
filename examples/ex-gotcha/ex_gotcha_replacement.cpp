@@ -125,7 +125,7 @@ init()
     };
 
     //
-    // configure the initializer for the gotcha components which replace place wall-clock
+    // configure the initializer for the gotcha components which places wall-clock
     // timers around exp and sum_exp
     //
     exptime_t::get_initializer() = []() {
