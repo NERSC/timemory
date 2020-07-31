@@ -34,11 +34,27 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
+#if defined(TIMEMORY_USE_LIKWID)
+#    if !defined(LIKWID_PERFMON) && !defined(LIKWID_NVMON)
+#        define LIKWID_PERFMON
+#    endif
+#    include <likwid-marker.h>
+#    include <likwid.h>
+#endif
+
 #if !defined(TIMEMORY_LIKWID_DATA_MAX_EVENTS)
 #    if defined(TIMEMORY_USE_LIKWID)
 #        define TIMEMORY_LIKWID_DATA_MAX_EVENTS 32
 #    else
 #        define TIMEMORY_LIKWID_DATA_MAX_EVENTS 0
+#    endif
+#endif
+
+#if !defined(TIMEMORY_LIKWID_DATA_MAX_DEVICES)
+#    if defined(TIMEMORY_USE_LIKWID)
+#        define TIMEMORY_LIKWID_DATA_MAX_DEVICES 12
+#    else
+#        define TIMEMORY_LIKWID_DATA_MAX_DEVICES 0
 #    endif
 #endif
 
@@ -121,5 +137,22 @@ struct likwid_data
     double    time    = 0.0;
     data_type events  = data_type(TIMEMORY_LIKWID_DATA_MAX_EVENTS, 0.0);
 };
+//
+struct likwid_nvdata
+{
+    template <typename Tp>
+    using vec_type  = std::vector<Tp>;
+    using data_type = vec_type<double>;
+
+    TIMEMORY_DEFAULT_OBJECT(likwid_nvdata)
+
+    int           ndevices = TIMEMORY_LIKWID_DATA_MAX_DEVICES;
+    int           nevents  = TIMEMORY_LIKWID_DATA_MAX_EVENTS;
+    vec_type<int> count    = vec_type<int>(TIMEMORY_LIKWID_DATA_MAX_DEVICES, 0);
+    data_type     time     = data_type(TIMEMORY_LIKWID_DATA_MAX_DEVICES, 0.0);
+    data_type     events   = data_type(
+        TIMEMORY_LIKWID_DATA_MAX_DEVICES * TIMEMORY_LIKWID_DATA_MAX_EVENTS, 0.0);
+};
+//
 }  // namespace component
 }  // namespace tim

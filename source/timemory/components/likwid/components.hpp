@@ -168,13 +168,6 @@ struct likwid_nvmarker : public base<likwid_nvmarker, void>
 #endif
     }
 
-    static void thread_init()
-    {
-#if defined(TIMEMORY_USE_LIKWID_NVMON)
-        likwid_gpuMarkerThreadInit();
-#endif
-    }
-
     TIMEMORY_DEFAULT_OBJECT(likwid_nvmarker)
 
     void start()
@@ -205,16 +198,19 @@ struct likwid_nvmarker : public base<likwid_nvmarker, void>
 #endif
     }
 
-    likwid_data get() const
+    /*likwid_nvdata get() const
     {
-        likwid_data _data{};
+        likwid_nvdata _data{};
 #if defined(TIMEMORY_USE_LIKWID_NVMON)
-        likwid_gpuMarkerGetRegion(m_prefix, &_data.nevents, _data.events.data(),
-                                  &_data.time, &_data.count);
-        _data.events.resize(_data.nevents);
+        likwid_gpuMarkerGetRegion(m_prefix, &_data.ndevices, &_data.nevents,
+                                  &_data.events[0]), &_data.time[0],
+                                  &_data.count[0]);
+        _data.time.resize(_data.ndevices);
+        _data.count.resize(_data.ndevices);
+        _data.events.resize(_data.ndevices * _data.nevents);
 #endif
         return _data;
-    }
+     }*/
 
     void set_prefix(const char* _prefix)
     {

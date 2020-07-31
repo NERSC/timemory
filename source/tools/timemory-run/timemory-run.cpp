@@ -236,8 +236,7 @@ main(int argc, char** argv)
         .description("Prefer this library types when available")
         .choices({ "shared", "static" })
         .count(1);
-    parser
-        .add_argument({ "--driver" }, "Force main or _init/_fini instrumentation")
+    parser.add_argument({ "--driver" }, "Force main or _init/_fini instrumentation")
         .count(0)
         .action([](auto&) { is_driver = true; });
     parser
