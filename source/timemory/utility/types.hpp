@@ -146,7 +146,7 @@ template <typename... Types>
 using index_sequence_for = std::make_index_sequence<sizeof...(Types)>;
 //
 /// Alias template for enable_if
-template <bool B, typename T = void>
+template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
 //
 /// Alias template for decay

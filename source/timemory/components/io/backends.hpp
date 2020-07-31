@@ -67,14 +67,21 @@ struct io_cache
     }
 
     template <size_t N, size_t... Idx>
-    static inline auto& read(std::ifstream ifs, std::array<int64_t, N>& _data,
+    static inline auto& read(std::ifstream& ifs, std::array<int64_t, N>& _data,
                              std::index_sequence<Idx...>)
     {
         static_assert(N <= 4, "Error! Only four entries in the /proc/<PID>/io");
+        static_assert(N > 0, "Error! array size is zero");
+        static_assert(sizeof...(Idx) <= N,
+                      "Error! Number of indexes to read exceeds the array size");
         if(ifs)
         {
             std::string label = "";
             TIMEMORY_FOLD_EXPRESSION(ifs >> label >> std::get<Idx>(_data));
+        }
+        else
+        {
+            _data.fill(0);
         }
         return _data;
     }
@@ -83,14 +90,16 @@ struct io_cache
     static inline auto& read(std::array<int64_t, N>& _data)
     {
         std::ifstream ifs(get_filename().c_str());
-        return read(ifs, _data, std::make_index_sequence<NumReads>{});
+        _data = read(ifs, _data, std::make_index_sequence<NumReads>{});
+        return _data;
     }
 
     template <size_t NumReads = 4>
     static inline auto read()
     {
         std::array<int64_t, NumReads> _data{};
-        return read<NumReads>(_data);
+        _data = read<NumReads>(_data);
+        return _data;
     }
 
 public:
@@ -146,7 +155,8 @@ inline int64_t
 tim::get_char_read()
 {
 #if defined(_LINUX)
-    return io_cache::read<0>().back();
+    // read one value and return it
+    return io_cache::read<1>().back();
 #else
     return 0;
 #endif
@@ -158,7 +168,8 @@ inline int64_t
 tim::get_char_written()
 {
 #if defined(_LINUX)
-    return io_cache::read<1>().back();
+    // read two values and return the last one
+    return io_cache::read<2>().back();
 #else
     return 0;
 #endif
@@ -176,7 +187,8 @@ tim::get_bytes_read()
         return rusage.ri_diskio_bytesread;
     return 0;
 #elif defined(_LINUX)
-    return io_cache::read<2>().back();
+    // read three values and return the last one
+    return io_cache::read<3>().back();
 #else
     return 0;
 #endif
@@ -194,7 +206,8 @@ tim::get_bytes_written()
         return rusage.ri_diskio_byteswritten;
     return 0;
 #elif defined(_LINUX)
-    return io_cache::read<3>().back();
+    // read four values and return the last one
+    return io_cache::read<4>().back();
 #else
     return 0;
 #endif

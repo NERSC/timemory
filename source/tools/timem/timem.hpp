@@ -76,16 +76,7 @@ template <typename Tp>
 using vector_t = std::vector<Tp>;
 using string_t = std::string;
 
-template <typename Tp>
-using vector_t = std::vector<Tp>;
-using string_t = std::string;
-
 using namespace tim::component;
-
-//--------------------------------------------------------------------------------------//
-
-#define TIMEM_SIGNAL SIGALRM
-#define TIMEM_ITIMER ITIMER_REAL
 
 //--------------------------------------------------------------------------------------//
 // create a custom component tuple printer
@@ -159,26 +150,50 @@ struct timem_sample;
 template <typename Tp>
 struct timem_sample<Tp, true>
 {
-    explicit timem_sample(Tp& obj) { obj.measure(); }
+    template <typename... Args>
+    explicit timem_sample(Tp& obj, Args&&... args);
+
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, Args&&... args)
+        -> decltype(obj.measure(std::forward<Args>(args)...), void())
+    {
+        obj.measure(std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, Args&&...) -> decltype(obj.measure(), void())
+    {
+        obj.measure();
+    }
 };
+//
+template <typename Tp>
+template <typename... Args>
+timem_sample<Tp, true>::timem_sample(Tp& obj, Args&&... args)
+{
+    sfinae(obj, 0, std::forward<Args>(args)...);
+}
 //
 template <typename Tp>
 struct timem_sample<Tp, false>
 {
-    explicit timem_sample(Tp&) {}
+    template <typename... Args>
+    explicit timem_sample(Tp&, Args&&...)
+    {}
 };
 //
-template <>
-struct base_printer<component::read_bytes>
+/// this is a custom version of base_printer for {read,written}_{char,bytes} components
+template <typename Tp>
+struct custom_base_printer
 {
-    using type       = component::read_bytes;
+    using type       = Tp;
     using value_type = typename type::value_type;
     using base_type  = typename type::base_type;
-    using widths_t   = std::vector<int64_t>;
 
     template <typename Up                                        = value_type,
               enable_if_t<!(std::is_same<Up, void>::value), int> = 0>
-    explicit base_printer(std::ostream& _os, const type& _obj)
+    explicit custom_base_printer(std::ostream& _os, const type& _obj, int32_t _rank,
+                                 const std::string& _label)
     {
         std::stringstream ss, ssv, ssr, ssrank;
         auto              _prec  = base_type::get_precision();
@@ -192,69 +207,40 @@ struct base_printer<component::read_bytes>
         if(!std::get<0>(_disp).empty())
             ssv << " " << std::get<0>(_disp);
 
-        if(rank() > -1)
-            ssrank << rank() << "|> ";
+        if(_rank > -1)
+            ssrank << _rank << "|> ";
 
         ssr.setf(_flags);
         ssr << std::setw(_width) << std::setprecision(_prec) << std::get<1>(_val);
         if(!std::get<1>(_disp).empty())
             ssr << " " << std::get<1>(_disp);
 
-        ss << ssv.str() << " read\n    " << ssrank.str() << ssr.str() << " read";
+        ss << ssv.str() << " " << _label << "\n    " << ssrank.str() << ssr.str() << " "
+           << _label;
         _os << ss.str();
     }
 
-    template <typename Up                                       = value_type,
+    template <typename Up = value_type, typename... Args,
               enable_if_t<(std::is_same<Up, void>::value), int> = 0>
-    explicit base_printer(std::ostream&, const type&)
+    explicit custom_base_printer(std::ostream&, const type&, Args&&...)
     {}
-
-    static int32_t& rank() { return print_properties<component::read_bytes>::rank(); }
 };
 //
-template <>
-struct base_printer<component::written_bytes>
-{
-    using type       = component::written_bytes;
-    using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
-    using widths_t   = std::vector<int64_t>;
-
-    template <typename Up                                        = value_type,
-              enable_if_t<!(std::is_same<Up, void>::value), int> = 0>
-    explicit base_printer(std::ostream& _os, const type& _obj)
-    {
-        std::stringstream ss, ssv, ssr, ssrank;
-        auto              _prec  = base_type::get_precision();
-        auto              _width = base_type::get_width();
-        auto              _flags = base_type::get_format_flags();
-        auto              _disp  = _obj.get_display_unit();
-        auto              _val   = _obj.get();
-
-        ssv.setf(_flags);
-        ssv << std::setw(_width) << std::setprecision(_prec) << std::get<0>(_val);
-        if(!std::get<0>(_disp).empty())
-            ssv << " " << std::get<0>(_disp);
-
-        if(rank() > -1)
-            ssrank << rank() << "|> ";
-
-        ssr.setf(_flags);
-        ssr << std::setw(_width) << std::setprecision(_prec) << std::get<1>(_val);
-        if(!std::get<1>(_disp).empty())
-            ssr << " " << std::get<1>(_disp);
-
-        ss << ssv.str() << " written\n    " << ssrank.str() << ssr.str() << " written";
-        _os << ss.str();
-    }
-
-    template <typename Up                                       = value_type,
-              enable_if_t<(std::is_same<Up, void>::value), int> = 0>
-    explicit base_printer(std::ostream&, const type&)
-    {}
-
-    static int32_t& rank() { return print_properties<component::written_bytes>::rank(); }
-};
+#define CUSTOM_BASE_PRINTER_SPECIALIZATION(TYPE, LABEL)                                  \
+    template <>                                                                          \
+    struct base_printer<TYPE> : custom_base_printer<TYPE>                                \
+    {                                                                                    \
+        using type = TYPE;                                                               \
+        static int32_t& rank() { return print_properties<TYPE>::rank(); }                \
+        explicit base_printer(std::ostream& _os, const type& _obj)                       \
+        : custom_base_printer<type>(_os, _obj, rank(), LABEL)                            \
+        {}                                                                               \
+    };
+//
+CUSTOM_BASE_PRINTER_SPECIALIZATION(component::read_bytes, "bytes read")
+CUSTOM_BASE_PRINTER_SPECIALIZATION(component::read_char, "char read")
+CUSTOM_BASE_PRINTER_SPECIALIZATION(component::written_bytes, "bytes written")
+CUSTOM_BASE_PRINTER_SPECIALIZATION(component::written_char, "char written")
 //
 #if defined(TIMEMORY_USE_PAPI)
 //
@@ -439,10 +425,12 @@ public:
     auto get() { return base_type::get(); }
     auto get_labeled() { return base_type::get_labeled(); }
 
-    void sample()
+    template <typename... Args>
+    void sample(Args&&... args)
     {
-        base_type::sample();
-        apply<void>::access<opsample_t<data_type>>(this->m_data);
+        base_type::sample(std::forward<Args>(args)...);
+        apply<void>::access<opsample_t<data_type>>(this->m_data,
+                                                   std::forward<Args>(args)...);
     }
 
     auto mpi_get()
@@ -537,8 +525,8 @@ using timem_tuple_t = convert_t<available_t<type_list<Types...>>, timem_tuple<>>
         tim::timem_tuple_t<                                                              \
             wall_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,         \
             page_rss, virtual_memory, num_major_page_faults, num_minor_page_faults,      \
-            priority_context_switch, voluntary_context_switch, read_char, written_char,  \
-            read_bytes, written_bytes, user_mode_time, kernel_mode_time, papi_array_t>
+            priority_context_switch, voluntary_context_switch, read_char, read_bytes,    \
+            written_char, written_bytes, user_mode_time, kernel_mode_time, papi_array_t>
 #endif
 //
 #if !defined(TIMEM_PID_SIGNAL)
@@ -549,8 +537,11 @@ using timem_tuple_t = convert_t<available_t<type_list<Types...>>, timem_tuple<>>
 #    define TIMEM_PID_SIGNAL_STRING TIMEMORY_STRINGIZE(TIMEM_PID_SIGNAL)
 #endif
 //
-using timem_bundle_t = TIMEM_BUNDLE;
-using sampler_t      = tim::sampling::sampler<TIMEM_BUNDLE, 1>;
+using timem_bundle_t  = TIMEM_BUNDLE;
+using sampler_t       = tim::sampling::sampler<TIMEM_BUNDLE, 1>;
+using sampler_array_t = typename sampler_t::array_type;
+static_assert(std::is_same<sampler_array_t, std::array<timem_bundle_t, 1>>::value,
+              "Error! Sampler array is not std::array<timem_bundle_t, 1>");
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -566,7 +557,7 @@ get_sampler()
 inline timem_bundle_t*
 get_measure()
 {
-    return get_sampler()->get_samplers().at(0)->get_last();
+    return get_sampler()->get_last();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -575,19 +566,21 @@ struct timem_config
 {
     static constexpr bool papi_available = tim::trait::is_available<papi_array_t>::value;
 
-    bool        use_shell        = tim::get_env("TIMEM_USE_SHELL", false);
-    bool        use_mpi          = tim::get_env("TIMEM_USE_MPI", false);
-    bool        use_papi         = tim::get_env("TIMEM_USE_PAPI", papi_available);
-    bool        signal_delivered = false;
-    bool        debug            = tim::get_env("TIMEM_DEBUG", false);
-    int         verbose          = tim::get_env("TIMEM_VERBOSE", 0);
-    std::string shell            = tim::get_env<std::string>("SHELL", getusershell());
-    std::string shell_flags  = tim::get_env<std::string>("TIMEM_USE_SHELL_FLAGS", "-i");
-    double      sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 2.0);
-    double      sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 0.001);
-    pid_t       master_pid   = getpid();
-    pid_t       worker_pid   = getpid();
-    std::string command      = "";
+    bool          use_shell        = tim::get_env("TIMEM_USE_SHELL", false);
+    bool          use_mpi          = tim::get_env("TIMEM_USE_MPI", false);
+    bool          use_papi         = tim::get_env("TIMEM_USE_PAPI", papi_available);
+    bool          use_sample       = tim::get_env("TIMEM_SAMPLE", true);
+    bool          signal_delivered = false;
+    bool          debug            = tim::get_env("TIMEM_DEBUG", false);
+    int           verbose          = tim::get_env("TIMEM_VERBOSE", 0);
+    std::string   shell            = tim::get_env<std::string>("SHELL", getusershell());
+    std::string   shell_flags  = tim::get_env<std::string>("TIMEM_USE_SHELL_FLAGS", "-i");
+    double        sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 2.0);
+    double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 0.001);
+    pid_t         master_pid   = getpid();
+    pid_t         worker_pid   = getpid();
+    std::string   command      = "";
+    std::set<int> signal_types = { SIGALRM };
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -607,18 +600,20 @@ get_config()
 //--------------------------------------------------------------------------------------//
 //
 TIMEM_CONFIG_FUNCTION(use_shell)
+TIMEM_CONFIG_FUNCTION(use_mpi)
+TIMEM_CONFIG_FUNCTION(use_papi)
+TIMEM_CONFIG_FUNCTION(use_sample)
 TIMEM_CONFIG_FUNCTION(shell)
 TIMEM_CONFIG_FUNCTION(shell_flags)
 TIMEM_CONFIG_FUNCTION(sample_freq)
 TIMEM_CONFIG_FUNCTION(sample_delay)
-TIMEM_CONFIG_FUNCTION(use_mpi)
-TIMEM_CONFIG_FUNCTION(use_papi)
 TIMEM_CONFIG_FUNCTION(signal_delivered)
 TIMEM_CONFIG_FUNCTION(debug)
 TIMEM_CONFIG_FUNCTION(verbose)
 TIMEM_CONFIG_FUNCTION(command)
 TIMEM_CONFIG_FUNCTION(master_pid)
 TIMEM_CONFIG_FUNCTION(worker_pid)
+TIMEM_CONFIG_FUNCTION(signal_types)
 //
 //--------------------------------------------------------------------------------------//
 //

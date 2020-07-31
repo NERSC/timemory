@@ -102,6 +102,15 @@ main(int argc, char** argv)
             else
                 verbose() = p.get<int>("verbose");
         });
+    parser.add_argument({ "-q", "--quiet" }, "Suppress as much reporting as possible")
+        .count(0)
+        .action([](parser_t&) {
+            tim::settings::verbose()    = -1;
+            tim::settings::debug()      = false;
+            tim::settings::papi_quiet() = true;
+            verbose()                   = -1;
+            debug()                     = false;
+        });
     parser
         .add_argument({ "-d", "--sample-delay" },
                       "Set the delay before the sampler starts (seconds)")
@@ -111,7 +120,31 @@ main(int argc, char** argv)
         .add_argument({ "-f", "--sample-freq" },
                       "Set the frequency of the sampler (1/seconds)")
         .count(1)
-        .action([](parser_t& p) { sample_freq() = p.get<double>("sample-freq"); });
+        .action([](parser_t& p) {
+            sample_freq() = p.get<double>("sample-freq");
+            if(sample_freq() <= 0.0)
+                use_sample() = false;
+        });
+    /*parser
+        .add_argument({ "-t", "--sample-type" },
+                      "Configure the sampling intervals according to wall-clock time or "
+                      "cpu-clock time")
+        .choices({ "wall", "cpu" })
+        .action([](parser_t& p) {
+            using strvec_t = std::vector<std::string>;
+            auto c = p.get<strvec_t>("sample-type");
+            signal_types().clear();
+            for(auto&& itr : c)
+            {
+                if(itr == "wall")
+                    signal_types().insert(SIGALRM);
+                else if(itr == "cpu")
+                    signal_types().insert(SIGVTALRM);
+            }
+        });*/
+    parser.add_argument({ "--disable-sample" }, "Disable sampling completely")
+        .count(0)
+        .action([](parser_t&) { use_sample() = false; });
     parser.add_argument({ "-e", "--events", "--papi-events" },
                         "Set the hardware counter events to record");
     parser
@@ -222,6 +255,8 @@ main(int argc, char** argv)
     }
 
     tim::get_rusage_type() = RUSAGE_CHILDREN;
+    if(!use_sample())
+        signal_types().clear();
 
     // set the signal handler on this process if using mpi so that we can read
     // the file providing the PID. If not, fork provides the PID so this is
@@ -241,6 +276,13 @@ main(int argc, char** argv)
     using comm_t        = tim::mpi::comm_t;
     comm_t comm_world_v = tim::mpi::comm_world_v;
     comm_t comm_child_v;
+
+    if(!use_sample() || signal_types().empty())
+    {
+        tim::trait::apply<tim::trait::runtime_enabled>::set<
+            page_rss, virtual_memory, read_char, read_bytes, written_char, written_bytes>(
+            false);
+    }
 
     if(use_mpi())
     {
@@ -347,7 +389,7 @@ main(int argc, char** argv)
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         tim::process::get_target_id() = worker_pid();
         tim::settings::papi_attach()  = true;
-        get_sampler()                 = new sampler_t(compose_prefix(), { TIMEM_SIGNAL });
+        get_sampler()                 = new sampler_t(compose_prefix(), signal_types());
     }
 
     auto failed_fork = [&]() {
@@ -379,27 +421,29 @@ main(int argc, char** argv)
     else
     {
         // means parent process
-        /// \param TIMEM_SAMPLE_DELAY
+        /// \variable TIMEM_SAMPLE_DELAY
         /// \brief Environment variable, expressed in seconds, that sets the length
-        /// of time the timem executable waits before starting sampling of the relevant
-        /// measurements (components that read from child process status files)
+        /// of time the timem executable waits before starting sampling of the
+        /// relevant measurements (components that read from child process status
+        /// files)
         ///
-        double fdelay = get_config().sample_delay;
+        sampler_t::set_delay(get_config().sample_delay);
 
-        /// \param TIMEM_SAMPLE_FREQ
-        /// \brief Environment variable, expressed in 1/seconds, that sets the frequency
-        /// that the timem executable samples the relevant measurements (components
-        /// that read from child process status files)
+        /// \variable TIMEM_SAMPLE_FREQ
+        /// \brief Environment variable, expressed in 1/seconds, that sets the
+        /// frequency that the timem executable samples the relevant measurements
+        /// (components that read from child process status files)
         ///
-        double frate = get_config().sample_freq;
+        sampler_t::set_rate(get_config().sample_freq);
 
-        sampler_t::set_delay(fdelay);
-        sampler_t::set_rate(frate);
-        sampler_t::configure(TIMEM_SIGNAL);
+        sampler_t::configure(signal_types(), verbose());
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         // pause until first interrupt delivered
-        pause();
+        sampler_t::pause();
+
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "starting sampler");
+        get_sampler()->start();
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "target pid = %i",
                                (int) worker_pid());
@@ -408,7 +452,7 @@ main(int argc, char** argv)
         if((debug() && verbose() > 1) || verbose() > 2)
             std::cerr << "[BEFORE STOP][" << pid << "]> " << *get_measure() << std::endl;
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "stopping sampler");
         get_sampler()->stop();
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
@@ -488,8 +532,12 @@ parent_process(pid_t pid)
     if(use_mpi() || tim::mpi::size() > 1)
         _measurements = get_measure()->mpi_get();
     else
-        _measurements = { *get_measure() };
-
+    {
+        if(get_measure())
+            _measurements = { *get_measure() };
+        else
+            _measurements = {};
+    }
     if(_measurements.empty())
         return;
 

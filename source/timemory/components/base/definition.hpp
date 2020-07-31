@@ -572,8 +572,7 @@ template <typename Tp>
 void
 base<Tp, void>::set_started()
 {
-    is_running   = true;
-    is_transient = true;
+    is_running = true;
 }
 //
 //--------------------------------------------------------------------------------------//

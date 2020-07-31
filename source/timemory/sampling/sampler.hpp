@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/components/base.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
@@ -68,73 +69,164 @@ namespace tim
 {
 namespace sampling
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename CompT, size_t N>
+template <typename CompT, size_t N, int... SigIds>
 struct sampler;
+}
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename...> class CompT, size_t N, typename... Types>
-struct sampler<CompT<Types...>, N>
+namespace trait
 {
-    using this_type    = sampler<CompT<Types...>, N>;
+template <typename CompT, size_t N>
+struct is_component<sampling::sampler<CompT, N>> : true_type
+{};
+}  // namespace trait
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace sampling
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \value tim::sampling::dynamic
+/// \brief A bare enumeration value implicitly convertible to zero.
+enum
+{
+    dynamic = 0
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t N>
+struct fixed_size : std::true_type
+{};
+//
+template <>
+struct fixed_size<dynamic> : std::false_type
+{};
+//
+template <size_t N>
+using fixed_size_t = typename fixed_size<N>::type;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <int... Ids>
+struct fixed_sig : std::true_type
+{};
+//
+template <>
+struct fixed_sig<> : std::false_type
+{};
+//
+template <int... Ids>
+using fixed_sig_t = typename fixed_sig<Ids...>::type;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::sampling::sampler
+/// \brief The design of the sampler struct is similar to the \ref tim::component::gotcha
+/// component: the first template parameter is a specification of a bundle of components
+/// which the struct internally takes measurements with and the second template parameter
+/// is a size specification. The size specification is to help ensure that the allocation
+/// does not grow too significantly, however, by specifying the size as either 0 (zero)
+/// or \ref tim::sampling::dynamic, a std::vector is used instead of the fixed-sized
+/// std::array.
+/// \code{.cpp}
+/// // sampling components
+/// using sampler_bundle_t = tim::component_tuple<read_char, written_char>;
+/// using sample_t         = tim::sampling::sampler<sampler_bundle_t, 1, SIGALRM>;
+/// using bundle_t         = tim::component_tuple<wall_clock, sample_t>;
+///
+/// // create at least one instance before configuring
+/// bundle_t sampling_bundle("example");
+///
+/// sample_t::configure({ SIGALRM });       // configure the sampling
+/// sample_t::pause();                      // wait for one signal to be delivered
+///
+/// sampling_bundle.start();                // start sampling and wall-clock
+/// ...
+/// sampling_bundle.stop();                 // stop sampling and wall-clock
+///
+/// sample_t::pause();                      // wait for one signal to be delivered
+/// sampler_t::ignore({ SIGALRM });         // ignore future interrupts
+/// sampler_t::wait(process::target_pid()); // wait for pid to finish
+/// \endcode
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+struct sampler<CompT<Types...>, N, SigIds...>
+: component::base<sampler<CompT<Types...>, N, SigIds...>, void>
+, policy::instance_tracker<sampler<CompT<Types...>, N, SigIds...>, false>
+{
+    using this_type    = sampler<CompT<Types...>, N, SigIds...>;
+    using base_type    = component::base<this_type, void>;
     using components_t = CompT<Types...>;
-    using array_t      = std::array<components_t, N>;
     using signal_set_t = std::set<int>;
+    using array_t    = conditional_t<fixed_size_t<N>::value, std::array<components_t, N>,
+                                  std::vector<components_t>>;
+    using array_type = array_t;
+    using tracker_type = policy::instance_tracker<this_type, false>;
 
     static void  execute(int signum);
     static void  execute(int signum, siginfo_t*, void*);
     static auto& get_samplers() { return get_persistent_data().m_instances; }
+    static auto  get_latest_samples();
 
+public:
+    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
     sampler(const std::string& _label, signal_set_t _good,
-            signal_set_t _bad = signal_set_t{})
-    : m_idx(0)
-    , m_last(nullptr)
-    , m_good(_good)
-    , m_bad(_bad)
-    {
-        m_data.fill(components_t(_label));
-        auto_lock_t lk(type_mutex<this_type>());
-        get_samplers().push_back(this);
-    }
+            signal_set_t _bad = signal_set_t{});
 
-    ~sampler()
-    {
-        auto_lock_t lk(type_mutex<this_type>());
-        auto&       _samplers = get_samplers();
-        auto        itr       = std::find(_samplers.begin(), _samplers.end(), this);
-        if(itr != _samplers.end())
-            _samplers.erase(itr);
-    }
+    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
+    sampler(const std::string& _label, signal_set_t _good,
+            signal_set_t _bad = signal_set_t{});
 
-    void sample()
-    {
-        m_last = &(m_data.at((m_idx++) % N));
-        m_last->sample();
-    }
+    ~sampler();
 
-    void start()
-    {
-        for(auto& itr : m_data)
-            itr.start();
-    }
+    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
+    void sample();
 
-    void stop()
-    {
-        for(auto& itr : m_data)
-            itr.stop();
-    }
+    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
+    void sample();
 
+    template <typename Tp = fixed_sig_t<SigIds...>, enable_if_t<Tp::value> = 0>
+    void start();
+    template <typename Tp = fixed_sig_t<SigIds...>, enable_if_t<Tp::value> = 0>
+    void stop();
+
+    template <typename Tp = fixed_sig_t<SigIds...>, enable_if_t<!Tp::value> = 0>
+    void start();
+    template <typename Tp = fixed_sig_t<SigIds...>, enable_if_t<!Tp::value> = 0>
+    void stop();
+
+public:
     bool is_good(int v) const { return m_good.count(v) > 0; }
     bool is_bad(int v) const { return m_bad.count(v) > 0; }
+
+    auto good_count() const { return m_good.size(); }
+    auto bad_count() const { return m_bad.size(); }
+    auto count() const { return good_count() + bad_count(); }
+
+    auto& get_good() { return m_good; }
+    auto& get_bad() { return m_bad; }
+
+    const auto& get_good() const { return m_good; }
+    const auto& get_bad() const { return m_bad; }
 
     components_t*& get_last() { return m_last; }
     components_t*  get_last() const { return m_last; }
 
-    components_t&       get(size_t idx) { return m_data.at(idx % N); }
-    const components_t& get(size_t idx) const { return m_data.at(idx % N); }
+    components_t*& get_latest() { return m_last; }
+    components_t*  get_latest() const { return m_last; }
+
+    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
+    components_t& get(size_t idx);
+    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
+    components_t& get(size_t idx);
+
+    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
+    const components_t& get(size_t idx) const;
+    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
+    const components_t& get(size_t idx) const;
 
     array_t&       get_data() { return m_data; }
     const array_t& get_data() const { return m_data; }
@@ -142,11 +234,28 @@ struct sampler<CompT<Types...>, N>
 public:
     /// \fn configure
     /// \brief Set up the sampler
-    static void configure(int _signal = SIGALRM);
+    static void configure(std::set<int> _signals, int _verbose = 1);
+    static void configure(int _signal = SIGALRM, int _verbose = 1)
+    {
+        configure({ _signal }, _verbose);
+    }
 
     /// \fn ignore
-    /// \brief Ignore the sampler
-    static void ignore() { signal(get_persistent_data().m_signal, SIG_IGN); }
+    /// \brief Ignore the signals
+    static void ignore(std::set<int> _signals = {});
+
+    /// \fn clear
+    /// \brief Clear all signals. Recommended to call ignore() prior to clearing all the
+    /// signals
+    static void clear() { get_persistent_data().m_signals.clear(); }
+
+    /// \fn pause
+    /// \brief Pause until a signal is delivered
+    static void pause()
+    {
+        if(!get_persistent_data().m_signals.empty())
+            ::pause();
+    }
 
     /// \fn wait
     /// \brief Wait function with an optional user callback of type:
@@ -157,11 +266,30 @@ public:
     /// should continue
     template <typename Func = std::function<bool(pid_t, int, int)>>
     static int wait(pid_t _pid, int _verbose, bool _debug,
-                    Func&& _callback = [](pid_t, int, int) { return true; });
+                    Func&& _callback = [](pid_t _id, int, int) {
+                        return (_id != process::get_id());
+                    });
 
     template <typename Func = std::function<bool(pid_t, int, int)>>
     static int wait(int _verbose = settings::verbose(), bool _debug = settings::debug(),
-                    Func&& _callback = [](pid_t, int, int) { return true; })
+                    Func&& _callback = [](pid_t _id, int, int) {
+                        return _id != process::get_id();
+                    })
+    {
+        return wait(process::get_target_id(), _verbose, _debug,
+                    std::forward<Func>(_callback));
+    }
+
+    template <typename Func, enable_if_t<std::is_function<Func>::value> = 0>
+    static int wait(pid_t _pid, Func&& _callback, int _verbose = settings::verbose(),
+                    bool _debug = settings::debug())
+    {
+        return wait(_pid, _verbose, _debug, std::forward<Func>(_callback));
+    }
+
+    template <typename Func, enable_if_t<std::is_function<Func>::value> = 0>
+    static int wait(Func&& _callback, int _verbose = settings::verbose(),
+                    bool _debug = settings::debug())
     {
         return wait(process::get_target_id(), _verbose, _debug,
                     std::forward<Func>(_callback));
@@ -188,25 +316,19 @@ public:
 
     /// \fn get_delay
     /// \brief Get the delay of the sampler
-    static int64_t get_delay(int64_t units = units::usec)
-    {
-        float _us =
-            (get_persistent_data().m_custom_itimerval.it_value.tv_sec * units::usec) +
-            get_persistent_data().m_custom_itimerval.it_value.tv_usec;
-        _us *= static_cast<float>(units) / units::usec;
-        return std::max<int64_t>(_us, 1);
-    }
+    static int64_t get_delay(int64_t units = units::usec);
 
     /// \fn get_frequency
     /// \brief Get the frequency of the sampler
-    static int64_t get_frequency(int64_t units = units::usec)
-    {
-        float _us =
-            (get_persistent_data().m_custom_itimerval.it_interval.tv_sec * units::usec) +
-            get_persistent_data().m_custom_itimerval.it_interval.tv_usec;
-        _us *= static_cast<float>(units) / units::usec;
-        return std::max<int64_t>(_us, 1);
-    }
+    static int64_t get_frequency(int64_t units = units::usec);
+
+    /// \fn get_itimer
+    /// \brief Returns the itimer value associated with the given signal
+    static int get_itimer(int _signal);
+
+    /// \fn check_itimer
+    /// \brief Checks to see if there was an error setting or getting itimer val
+    static bool check_itimer(int _stat, bool _throw_exception = false);
 
 protected:
     size_t        m_idx  = 0;
@@ -221,7 +343,7 @@ private:
 
     struct persistent_data
     {
-        int                     m_signal = 0;
+        bool                    m_active = false;
         int                     m_flags  = SA_RESTART | SA_SIGINFO;
         double                  m_delay  = 0.001;
         double                  m_freq   = 1.0 / 2.0;
@@ -229,7 +351,8 @@ private:
         itimerval_t             m_custom_itimerval = { { 1, 0 }, { 0, units::msec } };
         sigaction_t             m_original_sigaction;
         itimerval_t             m_original_itimerval;
-        std::vector<this_type*> m_instances;
+        std::set<int>           m_signals   = {};
+        std::vector<this_type*> m_instances = {};
     };
 
     static persistent_data& get_persistent_data()
@@ -241,9 +364,194 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename...> class CompT, size_t N, typename... Types>
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+inline auto
+sampler<CompT<Types...>, N, SigIds...>::get_latest_samples()
+{
+    std::vector<components_t*> _last{};
+    auto_lock_t                lk(type_mutex<this_type>());
+    _last.reserve(get_persistent_data().m_instances.size());
+    for(auto& itr : get_persistent_data().m_instances)
+        _last.emplace_back(itr->get_last());
+    return _last;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<Tp::value>>
+sampler<CompT<Types...>, N, SigIds...>::sampler(const std::string& _label,
+                                                signal_set_t _good, signal_set_t _bad)
+: m_idx(0)
+, m_last(nullptr)
+, m_good(_good)
+, m_bad(_bad)
+{
+    TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
+    m_data.fill(components_t(_label));
+    m_last = &m_data.front();
+    auto_lock_t lk(type_mutex<this_type>());
+    get_samplers().push_back(this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<!Tp::value>>
+sampler<CompT<Types...>, N, SigIds...>::sampler(const std::string& _label,
+                                                signal_set_t _good, signal_set_t _bad)
+: m_idx(0)
+, m_last(nullptr)
+, m_good(_good)
+, m_bad(_bad)
+{
+    TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
+    m_data.emplace_back(components_t(_label));
+    m_last = &m_data.front();
+    auto_lock_t lk(type_mutex<this_type>());
+    get_samplers().push_back(this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+sampler<CompT<Types...>, N, SigIds...>::~sampler()
+{
+    auto_lock_t lk(type_mutex<this_type>());
+    auto&       _samplers = get_samplers();
+    auto        itr       = std::find(_samplers.begin(), _samplers.end(), this);
+    if(itr != _samplers.end())
+        _samplers.erase(itr);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<Tp::value>>
 void
-sampler<CompT<Types...>, N>::execute(int signum)
+sampler<CompT<Types...>, N, SigIds...>::sample()
+{
+    // if(!base_type::get_is_running())
+    //    return;
+    m_last = &(m_data.at((m_idx++) % N));
+    // print last 4 of 7 backtrace entries (i.e. offset by 3)
+    m_last->sample(get_demangled_backtrace<4, 3>());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<!Tp::value>>
+void
+sampler<CompT<Types...>, N, SigIds...>::sample()
+{
+    // if(!base_type::get_is_running())
+    //    return;
+    m_last = &m_data.back();
+    m_data.emplace_back(components_t(m_last->hash()));
+    // print last 4 of 7 backtrace entries (i.e. offset by 3)
+    m_last->sample(get_demangled_backtrace<4, 3>());
+}
+//
+//--------------------------------------------------------------------------------------//
+// one or more signals specified in template parameters
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<Tp::value>>
+void
+sampler<CompT<Types...>, N, SigIds...>::start()
+{
+    auto cnt = tracker_type::start();
+    base_type::set_started();
+    for(auto& itr : m_data)
+        itr.start();
+    if(cnt == 0)
+        configure({ SigIds... });
+}
+//
+//--------------------------------------------------------------------------------------//
+// one or more signals specified in template parameters
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<Tp::value>>
+void
+sampler<CompT<Types...>, N, SigIds...>::stop()
+{
+    auto cnt = tracker_type::stop();
+    base_type::set_stopped();
+    for(auto& itr : m_data)
+        itr.stop();
+    if(cnt == 0)
+        ignore({ SigIds... });
+}
+//
+//--------------------------------------------------------------------------------------//
+// no signals specified in template parameters
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<!Tp::value>>
+void
+sampler<CompT<Types...>, N, SigIds...>::start()
+{
+    base_type::set_started();
+    for(auto& itr : m_data)
+        itr.start();
+}
+//
+//--------------------------------------------------------------------------------------//
+// no signals specified in template parameters
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<!Tp::value>>
+void
+sampler<CompT<Types...>, N, SigIds...>::stop()
+{
+    base_type::set_stopped();
+    for(auto& itr : m_data)
+        itr.stop();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<Tp::value>>
+typename sampler<CompT<Types...>, N, SigIds...>::components_t&
+sampler<CompT<Types...>, N, SigIds...>::get(size_t idx)
+{
+    return m_data.at(idx % N);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<Tp::value>>
+const typename sampler<CompT<Types...>, N, SigIds...>::components_t&
+sampler<CompT<Types...>, N, SigIds...>::get(size_t idx) const
+{
+    return m_data.at(idx % N);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<!Tp::value>>
+typename sampler<CompT<Types...>, N, SigIds...>::components_t&
+sampler<CompT<Types...>, N, SigIds...>::get(size_t idx)
+{
+    return m_data.at(idx);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<!Tp::value>>
+const typename sampler<CompT<Types...>, N, SigIds...>::components_t&
+sampler<CompT<Types...>, N, SigIds...>::get(size_t idx) const
+{
+    return m_data.at(idx);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+void
+sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
 {
     if(settings::debug())
         printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
@@ -269,9 +577,9 @@ sampler<CompT<Types...>, N>::execute(int signum)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename...> class CompT, size_t N, typename... Types>
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 void
-sampler<CompT<Types...>, N>::execute(int signum, siginfo_t*, void*)
+sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
 {
     if(settings::debug())
         printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
@@ -297,67 +605,117 @@ sampler<CompT<Types...>, N>::execute(int signum, siginfo_t*, void*)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename...> class CompT, size_t N, typename... Types>
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 void
-sampler<CompT<Types...>, N>::configure(int _signal)
+sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _verbose)
 {
-    get_persistent_data().m_signal = _signal;
+    // already active
+    if(get_persistent_data().m_active)
+        return;
 
-    int _itimer = 0;
-    switch(_signal)
+    size_t wait_count = 0;
     {
-        case SIGALRM: _itimer = ITIMER_REAL; break;
-        case SIGVTALRM: _itimer = ITIMER_VIRTUAL; break;
-        case SIGPROF: _itimer = ITIMER_PROF; break;
+        auto_lock_t lk(type_mutex<this_type>());
+        for(auto& itr : get_samplers())
+            wait_count += itr->count();
     }
 
-    auto& _custom_sa   = get_persistent_data().m_custom_sigaction;
-    auto& _original_sa = get_persistent_data().m_original_sigaction;
+    if(wait_count == 0)
+    {
+        if(_verbose > 0)
+            fprintf(
+                stderr,
+                "[sampler::configure]> No existing sampler has been configured to "
+                "sample at a specific signal or fail at a specific signal. itimer "
+                "for will not be set. Sampler will only wait for target pid to exit\n");
+        _signals.clear();
+    }
+    else
+    {
+        TIMEMORY_FOLD_EXPRESSION(_signals.insert(SigIds));
+    }
 
-    memset(&_custom_sa, 0, sizeof(_custom_sa));
-    // sigfillset(&timem_sa.sa_mask);
-    // sigdelset(&timem_sa.sa_mask, _signal);
+    if(_signals.size() > 0)
+    {
+        auto& _custom_sa   = get_persistent_data().m_custom_sigaction;
+        auto& _custom_it   = get_persistent_data().m_custom_itimerval;
+        auto& _original_sa = get_persistent_data().m_original_sigaction;
+        auto& _original_it = get_persistent_data().m_original_itimerval;
 
-    _custom_sa.sa_handler   = &this_type::execute;
-    _custom_sa.sa_sigaction = &this_type::execute;
-    _custom_sa.sa_flags     = SA_RESTART | SA_SIGINFO;
+        memset(&_custom_sa, 0, sizeof(_custom_sa));
 
-    sigaction(_signal, &_custom_sa, &_original_sa);
+        _custom_sa.sa_handler   = &this_type::execute;
+        _custom_sa.sa_sigaction = &this_type::execute;
+        _custom_sa.sa_flags     = SA_RESTART | SA_SIGINFO;
 
-    for(auto& itr : get_samplers())
-        itr->start();
+        // start the interval timer
+        for(auto itr : _signals)
+        {
+            // get the associated itimer type
+            auto _itimer = get_itimer(itr);
+            if(_itimer < 0)
+            {
+                throw std::runtime_error(TIMEMORY_JOIN(
+                    " ", "Error! Alarm cannot be set for signal", itr,
+                    "because the signal does not map to a known itimer value"));
+            }
 
-    auto& _custom_it   = get_persistent_data().m_custom_itimerval;
+            // configure the sigaction
+            int _sret = sigaction(itr, &_custom_sa, &_original_sa);
+            if(_sret == 0)
+                get_persistent_data().m_signals.insert(itr);
+            else
+            {
+                throw std::runtime_error(TIMEMORY_JOIN(
+                    " ", "Error! sigaction could not be set for signal", itr));
+            }
+
+            // start the alarm (throws if fails)
+            check_itimer(setitimer(_itimer, &_custom_it, &_original_it), true);
+        }
+    }
+
+    // if active field based on whether there are signals
+    get_persistent_data().m_active = !get_persistent_data().m_signals.empty();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+inline void
+sampler<CompT<Types...>, N, SigIds...>::ignore(std::set<int> _signals)
+{
+    if(_signals.empty())
+        _signals = get_persistent_data().m_signals;
+
+    for(auto itr : _signals)
+        signal(itr, SIG_IGN);
+
     auto& _original_it = get_persistent_data().m_original_itimerval;
+    for(auto itr : _signals)
+    {
+        itimerval_t _curr;
+        auto        _itimer = get_itimer(itr);
+        if(_itimer < 0)
+            continue;
+        check_itimer(getitimer(_itimer, &_curr));
+        // stop the alarm
+        if(_curr.it_interval.tv_usec > 0 || _curr.it_interval.tv_sec > 0)
+            check_itimer(setitimer(_itimer, &_original_it, &_curr));
+    }
 
-    // start the interval timer
-    int _stat = setitimer(_itimer, &_custom_it, &_original_it);
-    if(_stat == EFAULT)
-    {
-        throw std::runtime_error(
-            TIMEMORY_JOIN(" ", "Error! setitimer returned EFAULT.",
-                          "Either the new itimerval or the old itimerval was invalid"));
-    }
-    else if(_stat == EINVAL)
-    {
-        throw std::runtime_error(TIMEMORY_JOIN(
-            " ", "Error! setitimer returned EINVAL.",
-            "Either the timer was not one of: ['ITIMER_REAL', 'ITIMER_VIRTUAL', "
-            "'ITIMER_PROF'] or the old itimerval was invalid"));
-    }
+    // if active field based on whether there are signals
+    get_persistent_data().m_active = !get_persistent_data().m_signals.empty();
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename...> class CompT, size_t N, typename... Types>
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 template <typename Func>
 int
-sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debug,
-                                  Func&& _callback)
+sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
+                                             bool _debug, Func&& _callback)
 {
-    // if(wait_pid < 1)
-    //    wait_pid = tim::process::get_target_id();
-
     if(_verbose > 2 || _debug)
         fprintf(stderr, "[%i]> waiting for pid %i...\n", process::get_id(), wait_pid);
 
@@ -472,21 +830,32 @@ sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debu
     //
     //----------------------------------------------------------------------------------//
 
-    int _signal = get_persistent_data().m_signal;
+    auto _signals = get_persistent_data().m_signals;
+    int  status   = 0;
+    int  errval   = 0;
+
+    // do not wait on self to exit so execute callback until
+    if(_signals.empty() && wait_pid == process::get_id())
+    {
+        do
+        {
+            std::this_thread::sleep_for(
+                std::chrono::microseconds(get_frequency(units::usec)));
+        } while(_callback(wait_pid, status, errval));
+        return diagnose_status(wait_pid, status);
+    }
 
     // loop while the errno is not EINTR (interrupt) and status designates
-    // it was stopped because of _signal
-    int status = 0;
-    int errval = 0;
+    // it was stopped because of signal
     int retval = 0;
     do
     {
         status = 0;
         errval = waitpid_eintr(wait_pid, status);
         print_info(wait_pid, status, errval, retval);
-    } while(
-        (errval == EINTR && (retval = diagnose_status(wait_pid, status)) == _signal) &&
-        (_callback(wait_pid, status, errval)));
+    } while((errval == EINTR &&
+             _signals.count(retval = diagnose_status(wait_pid, status)) != 0) &&
+            (_callback(wait_pid, status, errval)));
 
     print_info(wait_pid, status, errval, retval);
 
@@ -495,9 +864,9 @@ sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debu
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename...> class CompT, size_t N, typename... Types>
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 void
-sampler<CompT<Types...>, N>::set_delay(const double& fdelay)
+sampler<CompT<Types...>, N, SigIds...>::set_delay(const double& fdelay)
 {
     get_persistent_data().m_freq = fdelay;
     int delay_sec                = double(fdelay * units::usec) / units::usec;
@@ -513,9 +882,9 @@ sampler<CompT<Types...>, N>::set_delay(const double& fdelay)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename...> class CompT, size_t N, typename... Types>
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 void
-sampler<CompT<Types...>, N>::set_frequency(const double& ffreq)
+sampler<CompT<Types...>, N, SigIds...>::set_frequency(const double& ffreq)
 {
     get_persistent_data().m_freq = ffreq;
     int freq_sec                 = double(ffreq * units::usec) / units::usec;
@@ -528,6 +897,77 @@ sampler<CompT<Types...>, N>::set_frequency(const double& ffreq)
     // Configure the timer to expire after designated delay...
     get_persistent_data().m_custom_itimerval.it_interval.tv_sec  = freq_sec;
     get_persistent_data().m_custom_itimerval.it_interval.tv_usec = freq_usec;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+inline int64_t
+sampler<CompT<Types...>, N, SigIds...>::get_delay(int64_t units)
+{
+    float _us = (get_persistent_data().m_custom_itimerval.it_value.tv_sec * units::usec) +
+                get_persistent_data().m_custom_itimerval.it_value.tv_usec;
+    _us *= static_cast<float>(units) / units::usec;
+    return std::max<int64_t>(_us, 1);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+inline int64_t
+sampler<CompT<Types...>, N, SigIds...>::get_frequency(int64_t units)
+{
+    float _us =
+        (get_persistent_data().m_custom_itimerval.it_interval.tv_sec * units::usec) +
+        get_persistent_data().m_custom_itimerval.it_interval.tv_usec;
+    _us *= static_cast<float>(units) / units::usec;
+    return std::max<int64_t>(_us, 1);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+int
+sampler<CompT<Types...>, N, SigIds...>::get_itimer(int _signal)
+{
+    int _itimer = -1;
+    switch(_signal)
+    {
+        case SIGALRM: _itimer = ITIMER_REAL; break;
+        case SIGVTALRM: _itimer = ITIMER_VIRTUAL; break;
+        case SIGPROF: _itimer = ITIMER_PROF; break;
+    }
+    return _itimer;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+bool
+sampler<CompT<Types...>, N, SigIds...>::check_itimer(int _stat, bool _throw_exception)
+{
+    if(_stat == EFAULT)
+    {
+        auto msg =
+            TIMEMORY_JOIN(" ", "Warning! setitimer returned EFAULT.",
+                          "Either the new itimerval or the old itimerval was invalid");
+        if(_throw_exception)
+            throw std::runtime_error(msg);
+        else
+            std::cerr << msg << '\n';
+    }
+    else if(_stat == EINVAL)
+    {
+        auto msg = TIMEMORY_JOIN(" ", "Warning! setitimer returned EINVAL.",
+                                 "Either the timer was not one of: ['ITIMER_REAL', "
+                                 "'ITIMER_VIRTUAL', "
+                                 "'ITIMER_PROF'] or the old itimerval was invalid");
+        if(_throw_exception)
+            throw std::runtime_error(msg);
+        else
+            std::cerr << msg << '\n';
+    }
+    return (_stat != EFAULT && _stat != EINVAL);
 }
 //
 //--------------------------------------------------------------------------------------//
