@@ -31,15 +31,17 @@
 #pragma once
 
 #include "timemory/backends/process.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
+#include "timemory/variadic/macros.hpp"
 
+#include <array>
 #include <cstdint>
-#include <cstdio>
 #include <fstream>
-#include <iomanip>
-#include <ios>
-#include <iostream>
+#include <iosfwd>
 #include <string>
+#include <type_traits>
 
 #if defined(_UNIX)
 #    include <sys/resource.h>
@@ -48,16 +50,6 @@
 #        include <libproc.h>
 #        include <mach/mach.h>
 #    endif
-#elif defined(_WINDOWS)
-#    if !defined(NOMINMAX)
-#        define NOMINMAX
-#    endif
-// currently, this is causing a bunch of errors, need to disable
-// #    include <psapi.h>
-#    include <stdio.h>
-#    include <windows.h>
-#else
-#    error "Cannot define get_peak_rss() or get_page_rss() for an unknown OS."
 #endif
 
 //======================================================================================//
@@ -65,12 +57,112 @@
 namespace tim
 {
 //
+//--------------------------------------------------------------------------------------//
+//
+struct io_cache
+{
+    static inline auto get_filename()
+    {
+        return TIMEMORY_JOIN('/', "/proc", process::get_target_id(), "io");
+    }
+
+    template <size_t N, size_t... Idx>
+    static inline auto& read(std::ifstream ifs, std::array<int64_t, N>& _data,
+                             std::index_sequence<Idx...>)
+    {
+        static_assert(N <= 4, "Error! Only four entries in the /proc/<PID>/io");
+        if(ifs)
+        {
+            std::string label = "";
+            TIMEMORY_FOLD_EXPRESSION(ifs >> label >> std::get<Idx>(_data));
+        }
+        return _data;
+    }
+
+    template <size_t NumReads = 4, size_t N>
+    static inline auto& read(std::array<int64_t, N>& _data)
+    {
+        std::ifstream ifs(get_filename().c_str());
+        return read(ifs, _data, std::make_index_sequence<NumReads>{});
+    }
+
+    template <size_t NumReads = 4>
+    static inline auto read()
+    {
+        std::array<int64_t, NumReads> _data{ 0 };
+        return read<NumReads>(_data);
+    }
+
+public:
+#if defined(_LINUX)
+    io_cache()
+    : m_data(read())
+    {}
+#else
+    io_cache() = default;
+#endif
+
+    ~io_cache()               = default;
+    io_cache(const io_cache&) = delete;
+    io_cache& operator=(const io_cache&) = delete;
+    io_cache(io_cache&&)                 = default;
+    io_cache& operator=(io_cache&&) = default;
+
+#if !defined(_LINUX)
+
+    inline int64_t get_char_read() const { return 0; }
+    inline int64_t get_char_written() const { return 0; }
+    inline int64_t get_bytes_read() const { return 0; }
+    inline int64_t get_bytes_written() const { return 0; }
+
+#else
+
+    inline int64_t get_char_read() const { return std::get<0>(m_data); }
+    inline int64_t get_char_written() const { return std::get<1>(m_data); }
+    inline int64_t get_bytes_read() const { return std::get<2>(m_data); }
+    inline int64_t get_bytes_written() const { return std::get<3>(m_data); }
+
+private:
+    std::array<int64_t, 4> m_data{};
+#endif
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+int64_t
+get_char_read();
+int64_t
+get_char_written();
 int64_t
 get_bytes_read();
 int64_t
 get_bytes_written();
 //
 }  // namespace tim
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+tim::get_char_read()
+{
+#if defined(_LINUX)
+    return io_cache::read<0>().back();
+#else
+    return 0;
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+tim::get_char_written()
+{
+#if defined(_LINUX)
+    return io_cache::read<1>().back();
+#else
+    return 0;
+#endif
+}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -82,36 +174,12 @@ tim::get_bytes_read()
     if(proc_pid_rusage(process::get_target_id(), RUSAGE_INFO_CURRENT, (void**) &rusage) ==
        0)
         return rusage.ri_diskio_bytesread;
-#elif defined(_LINUX)
-
-#    if defined(TIMEM_DEBUG)
-    if(get_env("TIMEM_DEBUG", false))
-        printf("[%s@%s:%i]> using pid %li\n", __func__, __FILE__, __LINE__,
-               (long int) process::get_target_id());
-#    endif
-
-    std::stringstream fio;
-    fio << "/proc/" << process::get_target_id() << "/io";
-    std::string   label = "";
-    int64_t       value = 0;
-    std::ifstream ifs(fio.str().c_str());
-    if(ifs)
-    {
-        static constexpr int max_lines = 1;
-        for(int i = 0; i < max_lines && !ifs.eof(); ++i)
-        {
-            ifs >> label;
-            ifs >> value;
-            // if(label.find("read_bytes") != std::string::npos)
-            //    return value;
-            // if(label.find("rchar") != std::string::npos)
-            //    return value;
-        }
-        if(!ifs.eof())
-            return value;
-    }
-#endif
     return 0;
+#elif defined(_LINUX)
+    return io_cache::read<2>().back();
+#else
+    return 0;
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -124,36 +192,12 @@ tim::get_bytes_written()
     if(proc_pid_rusage(process::get_target_id(), RUSAGE_INFO_CURRENT, (void**) &rusage) ==
        0)
         return rusage.ri_diskio_byteswritten;
-#elif defined(_LINUX)
-
-#    if defined(TIMEM_DEBUG)
-    if(get_env("TIMEM_DEBUG", false))
-        printf("[%s@%s:%i]> using pid %li\n", __func__, __FILE__, __LINE__,
-               (long int) process::get_target_id());
-#    endif
-
-    std::stringstream fio;
-    fio << "/proc/" << process::get_target_id() << "/io";
-    std::string   label = "";
-    int64_t       value = 0;
-    std::ifstream ifs(fio.str().c_str());
-    if(ifs)
-    {
-        static constexpr int max_lines = 2;
-        for(int i = 0; i < max_lines && !ifs.eof(); ++i)
-        {
-            ifs >> label;
-            ifs >> value;
-            // if(label.find("write_bytes") != std::string::npos)
-            //     return value;
-            // if(label.find("wchar") != std::string::npos)
-            //    return value;
-        }
-        if(!ifs.eof())
-            return value;
-    }
-#endif
     return 0;
+#elif defined(_LINUX)
+    return io_cache::read<3>().back();
+#else
+    return 0;
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//

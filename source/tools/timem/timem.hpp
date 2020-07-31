@@ -534,11 +534,11 @@ using timem_tuple_t = convert_t<available_t<type_list<Types...>>, timem_tuple<>>
 //
 #if !defined(TIMEM_BUNDLE)
 #    define TIMEM_BUNDLE                                                                 \
-        tim::timem_tuple_t<wall_clock, user_clock, system_clock, cpu_clock, cpu_util,    \
-                           peak_rss, page_rss, virtual_memory, num_major_page_faults,    \
-                           num_minor_page_faults, priority_context_switch,               \
-                           voluntary_context_switch, read_bytes, written_bytes,          \
-                           user_mode_time, kernel_mode_time, papi_array_t>
+        tim::timem_tuple_t<                                                              \
+            wall_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,         \
+            page_rss, virtual_memory, num_major_page_faults, num_minor_page_faults,      \
+            priority_context_switch, voluntary_context_switch, read_char, written_char,  \
+            read_bytes, written_bytes, user_mode_time, kernel_mode_time, papi_array_t>
 #endif
 //
 #if !defined(TIMEM_PID_SIGNAL)

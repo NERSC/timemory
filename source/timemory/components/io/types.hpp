@@ -34,7 +34,33 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
+/// \struct tim::component::read_char
+/// \brief I/O counter: chars read
+/// The number of bytes which this task has caused to be read from storage. This
+/// is simply the sum of bytes which this process passed to read() and pread().
+/// It includes things like tty IO and it is unaffected by whether or not actual
+/// physical disk IO was required (the read might have been satisfied from
+/// pagecache)
+TIMEMORY_DECLARE_COMPONENT(read_char)
+
+/// \struct tim::component::written_char
+/// \brief I/O counter: chars written
+/// The number of bytes which this task has caused, or shall cause to be written
+/// to disk. Similar caveats apply here as with \ref tim::component::read_char (rchar).
+TIMEMORY_DECLARE_COMPONENT(written_char)
+
+/// \struct tim::component::read_bytes
+/// \brief I/O counter: bytes read
+/// Attempt to count the number of bytes which this process really did cause to
+/// be fetched from the storage layer. Done at the submit_bio() level, so it is
+/// accurate for block-backed filesystems. <please add status regarding NFS and
+/// CIFS at a later time>
 TIMEMORY_DECLARE_COMPONENT(read_bytes)
+
+/// \brief write_bytes
+/// I/O counter: bytes written
+/// Attempt to count the number of bytes which this process caused to be sent to
+/// the storage layer. This is done at page-dirtying time.
 TIMEMORY_DECLARE_COMPONENT(written_bytes)
 
 namespace tim
@@ -52,10 +78,27 @@ using pair_dd_t = std::pair<double, double>;
 
 //--------------------------------------------------------------------------------------//
 //
+//                                  AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+// LINUX only
+#if !defined(_LINUX)
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_char, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_char, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_bytes, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_type)
+
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
 //                              STATISTICS
 //
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_STATISTICS_TYPE(component::read_char, resource_usage::alias::pair_dd_t)
+TIMEMORY_STATISTICS_TYPE(component::written_char, resource_usage::alias::farray_t<2>)
 TIMEMORY_STATISTICS_TYPE(component::read_bytes, resource_usage::alias::pair_dd_t)
 TIMEMORY_STATISTICS_TYPE(component::written_bytes, resource_usage::alias::farray_t<2>)
 
@@ -65,8 +108,10 @@ TIMEMORY_STATISTICS_TYPE(component::written_bytes, resource_usage::alias::farray
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::written_bytes, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::read_char, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::written_char, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::read_bytes, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::written_bytes, false_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -76,6 +121,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::read_bytes, false_type)
 
 #if defined(_LINUX) || (defined(_UNIX) && !defined(_MACOS))
 
+TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::read_char, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::written_char, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::read_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::written_bytes, true_type)
 
@@ -87,6 +134,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::written_bytes, true_type
 //
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::read_char, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::written_char, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::read_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::written_bytes, true_type)
 
@@ -96,6 +145,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::written_bytes, t
 //
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::read_char, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::written_char, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::read_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::written_bytes, true_type)
 
@@ -105,18 +156,10 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::written_bytes, 
 //
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::read_char, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::written_char, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::read_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::written_bytes, true_type)
-
-//
-//      WINDOWS (non-UNIX)
-//
-#if !defined(_UNIX)
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_type)
-
-#endif
 
 //--------------------------------------------------------------------------------------//
 //
@@ -124,6 +167,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_typ
 //
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::read_char, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::written_char, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::read_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::written_bytes, true_type)
 
@@ -133,8 +178,30 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::written_bytes, tru
 //
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::read_char, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::written_char, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::read_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::written_bytes, true_type)
+
+//--------------------------------------------------------------------------------------//
+//
+//                                  IO_CACHE
+//
+//--------------------------------------------------------------------------------------//
+
+namespace tim
+{
+struct io_cache;
+struct io_cache_type
+{
+    using type = io_cache;
+};
+}  // namespace tim
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::read_char, io_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::written_char, io_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::read_bytes, io_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::written_bytes, io_cache_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -146,6 +213,24 @@ namespace tim
 {
 namespace trait
 {
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct units<component::read_char>
+{
+    using type         = std::pair<double, double>;
+    using display_type = std::pair<std::string, std::string>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct units<component::written_char>
+{
+    using type         = std::array<double, 2>;
+    using display_type = std::array<std::string, 2>;
+};
+
 //--------------------------------------------------------------------------------------//
 
 template <>
@@ -169,7 +254,9 @@ struct units<component::written_bytes>
 }  // namespace trait
 }  // namespace tim
 
+TIMEMORY_PROPERTY_SPECIALIZATION(read_char, READ_CHAR, "read_char", "rchar")
+TIMEMORY_PROPERTY_SPECIALIZATION(written_char, WRITTEN_CHAR, "written_char", "write_char",
+                                 "wchar")
 TIMEMORY_PROPERTY_SPECIALIZATION(read_bytes, READ_BYTES, "read_bytes", "")
-//
 TIMEMORY_PROPERTY_SPECIALIZATION(written_bytes, WRITTEN_BYTES, "written_bytes",
                                  "write_bytes")

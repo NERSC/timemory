@@ -22,14 +22,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/io/extern.hpp
- * \brief Include the extern declarations for io components
- */
-
 #pragma once
 
-#include "timemory/components/io/extern/read_bytes.hpp"
-#include "timemory/components/io/extern/read_char.hpp"
-#include "timemory/components/io/extern/written_bytes.hpp"
-#include "timemory/components/io/extern/written_char.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/io/components.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/mpl/types.hpp"
+
+#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
+    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
+// source/header-only requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+#else
+// extern requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/declaration.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/declaration.hpp"
+#endif
