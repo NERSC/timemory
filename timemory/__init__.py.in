@@ -85,6 +85,59 @@ w.r.t. corrupted sizes, set:
 before BEFORE running Python
 '''
 
+def __load_component_libs():
+    '''Loads the component libraries'''
+    import ctypes
+    import glob
+
+    relative_lib_path = '@LIB_RELPATH@'
+
+    def __valid_relpath(p):
+        global this_path
+        cp = os.path.join(this_path, relative_lib_path)
+        return os.path.exists(cp)
+
+    for i in range(5):
+        valid = __valid_relpath(relative_lib_path)
+        if valid:
+            break
+        else:
+            relative_lib_path = os.path.join('..', relative_lib_path)
+
+    ext = None
+    if platform.system().lower().startswith('darwin'):
+        ext = 'dylib'
+    elif platform.system().lower().startswith('linux'):
+        ext = 'so'
+    elif platform.system().lower().startswith('win'):
+        ext = 'dll'
+
+    def __load(name):
+        p = os.path.realpath(os.path.join(
+            this_path, relative_lib_path, name))
+        if not os.path.exists(p):
+            p = os.path.realpath(
+                os.path.join(this_path, relative_lib_path,
+                                'timemory', name))
+        ctypes.cdll.LoadLibrary(p)
+
+    extrapath = os.path.realpath(os.path.join(
+        this_path, relative_lib_path, 'timemory'))
+    extra = glob.glob('{}/*timemory*.{}'.format(extrapath, ext))
+    loaded = []
+    ntries = 0
+    while len(loaded) < len(extra) and ntries < len(extra):
+        ntries = ntries + 1
+        for entry in extra:
+            if entry in loaded:
+                continue
+            try:
+                __load(os.path.basename(entry))
+                loaded.append(entry)
+            except Exception as e:
+                pass
+    __load('libtimemory.{}'.format(ext))
+
 if os.environ.get("TIMEMORY_CXX_PLOT_MODE", None) is not None:
 
     from . import mpi_support
@@ -109,57 +162,14 @@ else:
         try:
             from . import libpytimemory
         except Exception as e:
-            import ctypes
-            import glob
-
-            relative_lib_path = '@LIB_RELPATH@'
-
-            def valid_relpath(p):
-                global this_path
-                cp = os.path.join(this_path, relative_lib_path)
-                return os.path.exists(cp)
-
-            for i in range(5):
-                valid = valid_relpath(relative_lib_path)
-                if valid:
-                    break
-                else:
-                    relative_lib_path = os.path.join('..', relative_lib_path)
-
-            ext = None
-            if platform.system().lower().startswith('darwin'):
-                ext = 'dylib'
-            elif platform.system().lower().startswith('linux'):
-                ext = 'so'
-            elif platform.system().lower().startswith('win'):
-                ext = 'dll'
-
-            def load(name):
-                p = os.path.realpath(os.path.join(
-                    this_path, relative_lib_path, name))
-                if not os.path.exists(p):
-                    p = os.path.realpath(
-                        os.path.join(this_path, relative_lib_path,
-                                     'timemory', name))
-                ctypes.cdll.LoadLibrary(p)
-
-            extrapath = os.path.realpath(os.path.join(
-                this_path, relative_lib_path, 'timemory'))
-            extra = glob.glob('{}/*timemory*.{}'.format(extrapath, ext))
-            loaded = []
-            ntries = 0
-            while len(loaded) < len(extra) and ntries < len(extra):
-                ntries = ntries + 1
-                for entry in extra:
-                    if entry in loaded:
-                        continue
-                    try:
-                        load(os.path.basename(entry))
-                        loaded.append(entry)
-                    except Exception as e:
-                        pass
-            load('libtimemory.{}'.format(ext))
-            from . import libpytimemory
+            if not platform.system().lower().startswith('win'):
+                try:
+                    __load_component_libs()
+                    from . import libpytimemory
+                except Exception as e2:
+                    print('Exception: {}'.format(e2))
+            else:
+                print('Exception: {}'.format(e))
 
         from . import plotting
         from . import roofline
