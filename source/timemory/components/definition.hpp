@@ -32,6 +32,7 @@
 #include "timemory/components/data_tracker/components.hpp"
 #include "timemory/components/gotcha/components.hpp"
 #include "timemory/components/gperftools/components.hpp"
+#include "timemory/components/io/components.hpp"
 #include "timemory/components/likwid/components.hpp"
 #include "timemory/components/ompt/components.hpp"
 #include "timemory/components/papi/components.hpp"

@@ -79,7 +79,6 @@ struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
     {
         if(StartSleep)
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        set_started();
         value = record();
     }
 
@@ -90,7 +89,6 @@ struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
         auto tmp = record();
         accum += (tmp - value);
         value = tmp;
-        set_stopped();
     }
 };
 

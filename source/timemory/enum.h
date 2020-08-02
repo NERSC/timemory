@@ -42,9 +42,10 @@
 /// \brief Extra enumerated components provided by a downstream application. If this
 /// macro is used, be sure to end the list with a comma
 ///
-/// \code
+/// \code{.cpp}
 /// #define TIMEMORY_USER_COMPONENT_ENUM MY_COMPONENT =
 /// TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE + 1,
+/// \endcode
 //
 #if !defined(TIMEMORY_USER_COMPONENT_ENUM)
 #    define TIMEMORY_USER_COMPONENT_ENUM
@@ -60,7 +61,7 @@
 /// \brief The number of enumerated components defined by timemory
 //
 #if !defined(TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE)
-#    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE 64
+#    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE 66
 #endif
 //
 /// \enum TIMEMORY_NATIVE_COMPONENT
@@ -114,6 +115,7 @@ enum TIMEMORY_NATIVE_COMPONENT
     PROCESS_CPU_CLOCK,
     PROCESS_CPU_UTIL,
     READ_BYTES,
+    READ_CHAR,
     SYS_CLOCK,
     TAU_MARKER,
     THREAD_CPU_CLOCK,
@@ -134,6 +136,7 @@ enum TIMEMORY_NATIVE_COMPONENT
     VTUNE_PROFILER,
     WALL_CLOCK,
     WRITTEN_BYTES,
+    WRITTEN_CHAR,
     TIMEMORY_USER_COMPONENT_ENUM TIMEMORY_COMPONENTS_END =
         (TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE + TIMEMORY_USER_COMPONENT_ENUM_SIZE)
 };
@@ -148,6 +151,9 @@ typedef int TIMEMORY_COMPONENT;
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \enum TIMEMORY_OPERATION
+/// \brief Enumerated identifiers for subset of common operations for usage in C code
+/// and specializations of \ref tim::trait::python_args.
 enum TIMEMORY_OPERATION
 {
     TIMEMORY_CONSTRUCT = 0,

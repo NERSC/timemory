@@ -48,14 +48,12 @@ namespace component
 //          Timing types
 //
 //--------------------------------------------------------------------------------------//
-// the system's real time (i.e. wall time) clock, expressed as the amount of time since
-// the epoch.
+//
 struct wall_clock : public base<wall_clock, int64_t>
 {
-    using ratio_t           = std::nano;
-    using value_type        = int64_t;
-    using base_type         = base<wall_clock, value_type>;
-    using statistics_policy = policy::record_statistics<wall_clock>;
+    using ratio_t    = std::nano;
+    using value_type = int64_t;
+    using base_type  = base<wall_clock, value_type>;
 
     static std::string label() { return "wall"; }
     static std::string description()
@@ -64,25 +62,11 @@ struct wall_clock : public base<wall_clock, int64_t>
     }
     static value_type record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
 
-    double get_display() const { return get(); }
-    double get() const
-    {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val) / ratio_t::den * get_unit();
-    }
+    double get() const { return static_cast<double>(load()) / ratio_t::den * get_unit(); }
+    auto   get_display() const { return get(); }
 
-    void start()
-    {
-        set_started();
-        value = record();
-    }
-
-    void stop()
-    {
-        value = (record() - value);
-        accum += value;
-        set_stopped();
-    }
+    void start() { value = record(); }
+    void stop() { accum += (value = (record() - value)); }
 };
 
 //--------------------------------------------------------------------------------------//

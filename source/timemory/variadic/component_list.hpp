@@ -409,6 +409,7 @@ public:
 
 public:
     // get member functions taking a type
+    /// return pointer to component instance
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               enable_if_t<is_one_of<T*, data_type>::value, int> = 0>
     T* get()
@@ -416,6 +417,7 @@ public:
         return std::get<index_of<T*, data_type>::value>(m_data);
     }
 
+    /// return pointer to component instance
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               enable_if_t<is_one_of<T*, data_type>::value, int> = 0>
     const T* get() const
@@ -430,6 +432,7 @@ public:
         return nullptr;
     }
 
+    /// return pointer to component instance
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               enable_if_t<!is_one_of<T*, data_type>::value, int> = 0>
     const T* get() const
@@ -437,6 +440,7 @@ public:
         return nullptr;
     }
 
+    /// generic get routine for opaque types
     void get(void*& ptr, size_t _hash)
     {
         using get_t = operation_t<operation::get>;
@@ -454,6 +458,16 @@ public:
     auto get_component()
     {
         return get<T>();
+    }
+
+    /// get a reference to the underlying pointer to component instance
+    template <
+        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+        enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value,
+                    int> = 0>
+    auto& get_reference()
+    {
+        return std::get<index_of<T*, data_type>::value>(m_data);
     }
 
     //----------------------------------------------------------------------------------//
@@ -524,14 +538,20 @@ public:
         }
     }
 
-    //----------------------------------------------------------------------------------//
-    //  variadic initialization
-    //
+    /// activate component types
     template <typename T, typename... Tail, typename... Args>
     void initialize(Args&&... args)
     {
         this->init<T>(std::forward<Args>(args)...);
         TIMEMORY_FOLD_EXPRESSION(this->init<Tail>(std::forward<Args>(args)...));
+    }
+
+    /// disable a component that was previously initialized
+    template <typename... Tail>
+    void disable()
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::generic_deleter<remove_pointer_t<Tail>>{
+            this->get_reference<Tail>() });
     }
 
     //----------------------------------------------------------------------------------//
@@ -542,7 +562,7 @@ public:
               enable_if_t<trait::is_available<T>::value == true, int>       = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
-        auto&& _obj = get<T>();
+        auto* _obj = get<T>();
         if(_obj != nullptr)
             ((*_obj).*(_func))(std::forward<Args>(_args)...);
     }

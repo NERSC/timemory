@@ -342,13 +342,14 @@
 #    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, VAR)                                                         \
         namespace tim                                                                                          \
         {                                                                                                      \
-        extern template class impl::storage<TYPE, implements_storage<TYPE>::value>;                            \
+        extern template class impl::storage<TYPE,                                                              \
+                                            trait::implements_storage<TYPE>::value>;                           \
         extern template class storage<TYPE, typename TYPE::value_type>;                                        \
         extern template class singleton<                                                                       \
-            impl::storage<TYPE, implements_storage<TYPE>::value>,                                              \
-            std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                              \
-                            impl::storage_deleter<                                                             \
-                                impl::storage<TYPE, implements_storage<TYPE>::value>>>>;                       \
+            impl::storage<TYPE, trait::implements_storage<TYPE>::value>,                                       \
+            std::unique_ptr<impl::storage<TYPE, trait::implements_storage<TYPE>::value>,                       \
+                            impl::storage_deleter<impl::storage<                                               \
+                                TYPE, trait::implements_storage<TYPE>::value>>>>;                              \
         extern template storage_singleton<storage<TYPE, typename TYPE::value_type>>*                           \
                                             get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
         extern template storage_initializer storage_initializer::get<TYPE>();                                  \
@@ -361,13 +362,13 @@
 #    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, VAR)                                              \
         namespace tim                                                                                   \
         {                                                                                               \
-        template class impl::storage<TYPE, implements_storage<TYPE>::value>;                            \
+        template class impl::storage<TYPE, trait::implements_storage<TYPE>::value>;                     \
         template class storage<TYPE, typename TYPE::value_type>;                                        \
         template class singleton<                                                                       \
-            impl::storage<TYPE, implements_storage<TYPE>::value>,                                       \
-            std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                       \
-                            impl::storage_deleter<                                                      \
-                                impl::storage<TYPE, implements_storage<TYPE>::value>>>>;                \
+            impl::storage<TYPE, trait::implements_storage<TYPE>::value>,                                \
+            std::unique_ptr<impl::storage<TYPE, trait::implements_storage<TYPE>::value>,                \
+                            impl::storage_deleter<impl::storage<                                        \
+                                TYPE, trait::implements_storage<TYPE>::value>>>>;                       \
         template storage_singleton<storage<TYPE, typename TYPE::value_type>>*                           \
                                      get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
         template storage_initializer storage_initializer::get<TYPE>();                                  \
@@ -396,6 +397,7 @@
         extern template struct init_storage<COMPONENT_NAME>;                             \
         extern template struct set_prefix<COMPONENT_NAME>;                               \
         extern template struct reset<COMPONENT_NAME>;                                    \
+        extern template struct cache<COMPONENT_NAME>;                                    \
         extern template struct get<COMPONENT_NAME>;                                      \
         extern template struct print<COMPONENT_NAME>;                                    \
         extern template struct print_header<COMPONENT_NAME>;                             \
@@ -426,6 +428,7 @@
         template struct init_storage<COMPONENT_NAME>;                                    \
         template struct set_prefix<COMPONENT_NAME>;                                      \
         template struct reset<COMPONENT_NAME>;                                           \
+        template struct cache<COMPONENT_NAME>;                                           \
         template struct get<COMPONENT_NAME>;                                             \
         template struct print<COMPONENT_NAME>;                                           \
         template struct print_header<COMPONENT_NAME>;                                    \

@@ -235,9 +235,9 @@
 
 #if !defined(PRINT_HERE)
 #    define PRINT_HERE(fmt, ...)                                                         \
-        (fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",                   \
+        (fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",                   \
                  (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),       \
-                 __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__),                         \
+                 __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__),                         \
          fflush(stderr))
 #endif
 
@@ -246,10 +246,10 @@
 #        define DEBUG_PRINT_HERE(fmt, ...)                                               \
             if(::tim::settings::debug())                                                 \
             {                                                                            \
-                fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",            \
+                fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",            \
                         (int) ::tim::process::get_id(),                                  \
-                        (int) ::tim::threading::get_id(), __FUNCTION__, __FILE__,        \
-                        __LINE__, __VA_ARGS__);                                          \
+                        (int) ::tim::threading::get_id(), __FILE__, __LINE__,            \
+                        __FUNCTION__, __VA_ARGS__);                                      \
                 fflush(stderr);                                                          \
             }
 #    else
@@ -261,9 +261,9 @@
 #    define VERBOSE_PRINT_HERE(VERBOSE_LEVEL, fmt, ...)                                  \
         if(::tim::settings::verbose() >= VERBOSE_LEVEL)                                  \
         {                                                                                \
-            fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",                \
+            fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",                \
                     (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),    \
-                    __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__);                      \
+                    __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__);                      \
             fflush(stderr);                                                              \
         }
 #endif
@@ -272,9 +272,9 @@
 #    define CONDITIONAL_PRINT_HERE(CONDITION, fmt, ...)                                  \
         if(CONDITION)                                                                    \
         {                                                                                \
-            fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",                \
+            fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",                \
                     (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),    \
-                    __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__);                      \
+                    __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__);                      \
             fflush(stderr);                                                              \
         }
 #endif
@@ -282,15 +282,15 @@
 #if !defined(PRETTY_PRINT_HERE)
 #    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
 #        define PRETTY_PRINT_HERE(fmt, ...)                                              \
-            (fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",               \
+            (fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",               \
                      (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),   \
-                     __PRETTY_FUNCTION__, __FILE__, __LINE__, __VA_ARGS__),              \
+                     __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__),                     \
              fflush(stderr))
 #    else
 #        define PRETTY_PRINT_HERE(fmt, ...)                                              \
-            (fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",               \
+            (fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",               \
                      (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),   \
-                     __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__),                     \
+                     __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__),                     \
              fflush(stderr))
 #    endif
 #endif

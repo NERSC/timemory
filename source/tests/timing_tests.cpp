@@ -93,20 +93,69 @@ protected:
         tim::settings::timing_units() = "sec";
         tim::settings::precision()    = 9;
     }
+
+    void TearDown() override { puts(""); }
 };
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp>
+std::string
+datastr(Tp* obj, const std::string& prefix = "")
+{
+    using namespace tim::stl;
+    using namespace tim::stl::ostream;
+    std::stringstream ss;
+    ss << std::boolalpha;
+    if(prefix.empty())
+        ss << tim::demangle<Tp>();
+    else
+        ss << prefix;
+    ss << ":\n";
+    ss << "    value     :: " << obj->get_value() << '\n';
+    ss << "    accum     :: " << obj->get_accum() << '\n';
+    ss << "    units     :: " << obj->get_unit() << '\n';
+    ss << "    disp unit :: " << obj->get_display_unit() << '\n';
+    ss << "    laps      :: " << obj->get_laps() << '\n';
+    ss << "    transient :: " << obj->get_is_transient() << '\n';
+    ss << "    running   :: " << obj->get_is_running() << '\n';
+    ss << "    depth chg :: " << obj->get_depth_change() << '\n';
+    ss << "    on stack  :: " << obj->get_is_on_stack() << '\n';
+    ss << "    is flat   :: " << obj->get_is_flat() << '\n';
+    return ss.str();
+}
+
+template <typename Tp>
+std::string
+datastr(Tp& obj, const std::string& prefix = "")
+{
+    return datastr(&obj, prefix);
+}
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(timing_tests, wall_timer)
 {
     CHECK_AVAILABLE(wall_clock);
+
     wall_clock obj;
     obj.start();
     details::do_sleep(1000);
     obj.stop();
+
+    tim::lightweight_tuple<wall_clock> ct(details::get_test_name());
+    ct.start();
+    details::do_sleep(1000);
+    ct.stop();
+    auto wc = ct.get<wall_clock>();
+
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
+    std::cout << ct << std::endl;
+    std::cout << datastr(obj, "manual wall_clock") << datastr(wc, "component wall_clock");
+
+    EXPECT_NEAR(1.0, obj.get(), timer_tolerance);
+    EXPECT_NEAR(obj.get(), ct.get<wall_clock>()->get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -120,6 +169,7 @@ TEST_F(timing_tests, monotonic_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
 }
 
@@ -134,6 +184,7 @@ TEST_F(timing_tests, monotonic_raw_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
 }
 
@@ -149,6 +200,7 @@ TEST_F(timing_tests, system_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     ASSERT_NEAR(0.0, obj.get(), timer_tolerance);
 }
 
@@ -164,6 +216,7 @@ TEST_F(timing_tests, user_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     ASSERT_NEAR(0.0, obj.get(), timer_tolerance);
 }
 
@@ -178,6 +231,7 @@ TEST_F(timing_tests, cpu_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
 }
 
@@ -193,6 +247,7 @@ TEST_F(timing_tests, cpu_utilization)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     ASSERT_NEAR(75.0, obj.get(), util_tolerance);
 }
 
@@ -208,6 +263,7 @@ TEST_F(timing_tests, thread_cpu_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     ASSERT_NEAR(0.0, obj.get(), timer_tolerance);
 }
 
@@ -225,6 +281,7 @@ TEST_F(timing_tests, thread_cpu_utilization)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     ASSERT_NEAR(50.0, obj.get(), util_tolerance);
 }
 
@@ -239,6 +296,7 @@ TEST_F(timing_tests, process_cpu_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     // this test seems to fail sporadically
     ASSERT_NEAR(1.0, obj.get(), 2.5 * timer_tolerance);
 }
@@ -257,6 +315,7 @@ TEST_F(timing_tests, process_cpu_utilization)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
+    std::cout << datastr(obj);
     ASSERT_NEAR(150.0, obj.get(), util_tolerance);
 }
 

@@ -22,4 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/rusage/extern/written_bytes.hpp"
+/**
+ * \file timemory/components/io/extern.hpp
+ * \brief Include the extern declarations for io components
+ */
+
+#pragma once
+
+#include "timemory/components/io/extern/read_bytes.hpp"
+#include "timemory/components/io/extern/read_char.hpp"
+#include "timemory/components/io/extern/written_bytes.hpp"
+#include "timemory/components/io/extern/written_char.hpp"

@@ -24,10 +24,8 @@
 
 #pragma once
 
+#include "timemory/components/io/components.hpp"
+#include "timemory/components/io/extern/common.hpp"
 #include "timemory/components/macros.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/rusage/extern/base.hpp"
-#include "timemory/components/rusage/extern/operations.hpp"
-#include "timemory/components/rusage/extern/storage.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(written_bytes, true, std::array<int64_t, 2>)
+TIMEMORY_EXTERN_COMPONENT(written_char, true, std::array<int64_t, 2>)

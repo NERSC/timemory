@@ -68,21 +68,16 @@ using printed_t = tim::component_tuple<wall_clock, system_clock, user_clock, cpu
                                        thread_cpu_clock, process_cpu_clock>;
 
 //--------------------------------------------------------------------------------------//
-
-// dummy
+// dummy component which tests that a component which does not implement anything can
+// compile
 //
 struct dummy_component : public base<dummy_component, void>
 {
     using value_type = void;
     using this_type  = dummy_component;
     using base_type  = base<this_type, value_type>;
-
     static std::string label() { return "dummy_component"; }
     static std::string description() { return "dummy component"; }
-    static value_type  record() {}
-
-    void start() {}
-    void stop() {}
 };
 
 namespace details

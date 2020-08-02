@@ -33,6 +33,7 @@
 #include "timemory/enum.h"
 
 #include <cstring>
+#include <regex>
 #include <set>
 #include <string>
 #include <typeindex>
@@ -93,70 +94,36 @@ struct state
         return _instance;
     }
 };
-//--------------------------------------------------------------------------------------//
-//
-/*
-struct dynamic_properties
-{
-    using properties_map_t = std::unordered_map<std::type_index, dynamic_properties*>;
-
-    dynamic_properties(int _idx, const char* _estr, const char* _id, const idset_t& _ids)
-    : m_idx(_idx)
-    , m_enum_string(_estr)
-    , m_id(_id)
-    , m_ids(_ids)
-    {}
-
-    int         get_value() const { return m_idx; }
-    const char* get_enum_string() const { return m_enum_string.c_str(); }
-    const char* get_id() const { return m_id.c_str(); }
-    idset_t     get_ids() const { return m_ids; }
-
-    bool operator==(int _idx) { return _idx == m_idx; }
-    bool operator==(const char* _key)
-    {
-        return (strcmp(_key, m_enum_string.c_str()) == 0 ||
-                m_ids.find(_key) != m_ids.end());
-    }
-    bool operator==(const std::string& _key)
-    {
-        return (m_enum_string == _key || m_ids.find(_key) != m_ids.end());
-    }
-
-    static const properties_map_t& get_properties_map()
-    {
-        return get_private_properties_map();
-    }
-
-protected:
-    static properties_map_t& get_private_properties_map()
-    {
-        static properties_map_t _instance{};
-        return _instance;
-    }
-
-protected:
-    int         m_idx;
-    std::string m_enum_string;
-    std::string m_id;
-    idset_t     m_ids;
-};*/
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
 struct static_properties
-// : dynamic_properties
 {
     static_properties();
 
     static constexpr bool matches(int _idx) { return (_idx == properties<Tp>::value); }
 
-    static bool matches(const std::string& _key)
+    static bool matches(const char* _key)
     {
-        return (strcmp(_key.c_str(), properties<Tp>::enum_string()) == 0 ||
-                properties<Tp>::ids().find(_key) != properties<Tp>::ids().end());
+        const auto regex_consts = std::regex_constants::ECMAScript |
+                                  std::regex_constants::icase |
+                                  std::regex_constants::optimize;
+        auto get_pattern = [](const std::string& _option) {
+            return std::string("^(.*[,;: \t\n\r]+|)") + _option + "([,;: \t\n\r]+.*|$)";
+        };
+        if(std::regex_match(_key, std::regex(get_pattern(properties<Tp>::enum_string()),
+                                             regex_consts)))
+            return true;
+        for(const auto& itr : properties<Tp>::ids())
+        {
+            if(std::regex_match(_key, std::regex(get_pattern(itr), regex_consts)))
+                return true;
+        }
+        return false;
     }
+
+    static bool matches(const std::string& _key) { return matches(_key.c_str()); }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -184,17 +151,6 @@ struct enumerator : properties<placeholder<nothing>>
     bool operator==(const char*) const { return false; }
     bool operator==(const std::string&) const { return false; }
 };
-//
-//--------------------------------------------------------------------------------------//
-//
-/*
-template <typename Tp>
-static_properties<Tp>::static_properties()
-: dynamic_properties(properties<Tp>::value, properties<Tp>::enum_string(),
-                     properties<Tp>::id(), properties<Tp>::ids())
-{
-    get_private_properties_map().insert({ std::type_index(typeid(Tp)), this });
-}*/
 //
 //--------------------------------------------------------------------------------------//
 //

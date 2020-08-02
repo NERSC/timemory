@@ -45,8 +45,6 @@ TIMEMORY_DECLARE_COMPONENT(num_major_page_faults)
 TIMEMORY_DECLARE_COMPONENT(voluntary_context_switch)
 TIMEMORY_DECLARE_COMPONENT(priority_context_switch)
 TIMEMORY_DECLARE_COMPONENT(virtual_memory)
-TIMEMORY_DECLARE_COMPONENT(read_bytes)
-TIMEMORY_DECLARE_COMPONENT(written_bytes)
 TIMEMORY_DECLARE_COMPONENT(user_mode_time)
 TIMEMORY_DECLARE_COMPONENT(kernel_mode_time)
 TIMEMORY_DECLARE_COMPONENT(current_peak_rss)
@@ -68,8 +66,6 @@ namespace resource_usage
 {
 namespace alias
 {
-template <size_t N>
-using farray_t  = std::array<double, N>;
 using pair_dd_t = std::pair<double, double>;
 }  // namespace alias
 }  // namespace resource_usage
@@ -89,8 +85,6 @@ TIMEMORY_STATISTICS_TYPE(component::num_minor_page_faults, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::num_major_page_faults, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::voluntary_context_switch, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::priority_context_switch, int64_t)
-TIMEMORY_STATISTICS_TYPE(component::read_bytes, resource_usage::alias::pair_dd_t)
-TIMEMORY_STATISTICS_TYPE(component::written_bytes, resource_usage::alias::farray_t<2>)
 TIMEMORY_STATISTICS_TYPE(component::virtual_memory, double)
 TIMEMORY_STATISTICS_TYPE(component::user_mode_time, double)
 TIMEMORY_STATISTICS_TYPE(component::kernel_mode_time, double)
@@ -116,15 +110,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(report_sum, component::current_peak_rss, false_ty
 
 //--------------------------------------------------------------------------------------//
 //
-//                              ECHO ENABLED TRAIT
-//
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::written_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::read_bytes, false_type)
-
-//--------------------------------------------------------------------------------------//
-//
 //                              FILE SAMPLER
 //
 //--------------------------------------------------------------------------------------//
@@ -132,8 +117,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::read_bytes, false_type)
 #if defined(_LINUX) || (defined(_UNIX) && !defined(_MACOS))
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::page_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::written_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::virtual_memory, true_type)
 
 #endif
@@ -144,28 +127,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::virtual_memory, true_typ
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::written_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::current_peak_rss,
                                true_type)
-
-//--------------------------------------------------------------------------------------//
-//
-//                              CUSTOM LABEL PRINTING
-//
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::written_bytes, true_type)
-
-//--------------------------------------------------------------------------------------//
-//
-//                              ARRAY SERIALIZATION
-//
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::written_bytes, true_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -189,8 +152,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_in, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_out, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_major_page_faults, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_minor_page_faults, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mode_time, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::kernel_mode_time, false_type)
@@ -211,8 +172,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::current_peak_rss, false_
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_in, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_out, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
 
 #    endif  // !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE) && defined(_MACOS)
@@ -246,8 +205,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::voluntary_context_
                                true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::priority_context_switch,
                                true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::written_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::virtual_memory, true_type)
 
 //--------------------------------------------------------------------------------------//
@@ -267,9 +224,35 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::kernel_mode_time, t
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::peak_rss, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::page_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::written_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::virtual_memory, true_type)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              RUSAGE_CACHE
+//
+//--------------------------------------------------------------------------------------//
+
+namespace tim
+{
+struct rusage_cache;
+struct rusage_cache_type
+{
+    using type = rusage_cache;
+};
+}  // namespace tim
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::peak_rss, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::num_io_in, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::num_io_out, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::num_minor_page_faults, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::num_major_page_faults, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::voluntary_context_switch,
+                               rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::priority_context_switch,
+                               rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::user_mode_time, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::kernel_mode_time, rusage_cache_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(cache, component::current_peak_rss, rusage_cache_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -291,25 +274,6 @@ struct units<component::current_peak_rss>
 };
 
 //--------------------------------------------------------------------------------------//
-
-template <>
-struct units<component::read_bytes>
-{
-    using type         = std::pair<double, double>;
-    using display_type = std::pair<std::string, std::string>;
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <>
-struct units<component::written_bytes>
-{
-    using type         = std::array<double, 2>;
-    using display_type = std::array<std::string, 2>;
-};
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace trait
 }  // namespace tim
 
@@ -336,11 +300,6 @@ TIMEMORY_PROPERTY_SPECIALIZATION(priority_context_switch, PRIORITY_CONTEXT_SWITC
                                  "priority_context_switch", "prio_ctx_switch")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(virtual_memory, VIRTUAL_MEMORY, "virtual_memory", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(read_bytes, READ_BYTES, "read_bytes", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(written_bytes, WRITTEN_BYTES, "written_bytes",
-                                 "write_bytes")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_mode_time, USER_MODE_TIME, "user_mode_time", "")
 //

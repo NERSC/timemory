@@ -42,7 +42,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Up, enable_if_t<(trait::is_available<Up>::value), char>>
+template <typename Up, enable_if_t<trait::implements_storage<Up>::value, char>>
 init_storage<Tp>::init_storage()
 {
 #if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
@@ -54,14 +54,15 @@ init_storage<Tp>::init_storage()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Up, enable_if_t<!(trait::is_available<Up>::value), char>>
+template <typename Up, enable_if_t<!trait::implements_storage<Up>::value, char>>
 init_storage<Tp>::init_storage()
 {}
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename U, typename V, enable_if_t<(implements_storage<U, V>::value), int>>
+template <typename U, typename V,
+          enable_if_t<trait::implements_storage<U, V>::value, int>>
 typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {
@@ -85,7 +86,8 @@ init_storage<Tp>::get()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename U, typename V, enable_if_t<!(implements_storage<U, V>::value), int>>
+template <typename U, typename V,
+          enable_if_t<!trait::implements_storage<U, V>::value, int>>
 typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {

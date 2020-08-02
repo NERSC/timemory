@@ -94,7 +94,7 @@ struct get_availability
     static info_type get_info()
     {
         bool     is_available = trait::is_available<Type>::value;
-        bool     file_output  = generates_output<Type>::value;
+        bool     file_output  = trait::generates_output<Type>::value;
         auto     name         = demangle<Type>();
         auto     label        = (file_output) ? Type::get_label() : std::string("");
         auto     description  = Type::get_description();

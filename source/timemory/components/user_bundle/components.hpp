@@ -348,7 +348,6 @@ public:
     //
     void start()
     {
-        base_type::set_started();
         for(auto& itr : m_bundle)
             itr.start(m_prefix, m_scope);
     }
@@ -357,7 +356,6 @@ public:
     {
         for(auto& itr : m_bundle)
             itr.stop();
-        base_type::set_stopped();
     }
 
     void clear()

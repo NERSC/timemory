@@ -172,14 +172,15 @@ private:
     struct quirk_config
     {
         static constexpr bool value =
-            is_one_of<T,
-                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
+            (is_one_of<T, contains_one_of_t<quirk::is_config,
+                                            type_concat_t<Types..., U...>>>::value ||
+             is_one_of<T, type_concat_t<Types..., U...>>::value);
     };
 
 public:
     explicit base_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),
                          scope::config _scope = scope::get_default())
-    : m_store(_store && settings::enabled())
+    : m_store(_store && settings::enabled() && get_store_config())
     , m_is_pushed(false)
     , m_scope(_scope + get_scope_config())
     , m_laps(0)
@@ -188,7 +189,7 @@ public:
 
     template <typename... T>
     explicit base_bundle(uint64_t hash, bool store, quirk::config<T...>)
-    : m_store(store && settings::enabled())
+    : m_store(store && settings::enabled() && get_store_config<T...>())
     , m_is_pushed(false)
     , m_scope(get_scope_config<T...>())
     , m_laps(0)
@@ -197,7 +198,7 @@ public:
 
     template <typename... T>
     explicit base_bundle(uint64_t hash, quirk::config<T...>)
-    : m_store(settings::enabled())
+    : m_store(settings::enabled() && get_store_config<T...>())
     , m_is_pushed(false)
     , m_scope(get_scope_config<T...>())
     , m_laps(0)
@@ -232,19 +233,17 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    bool& store() { return m_store; }
-
-    //----------------------------------------------------------------------------------//
-    //
-    const bool& store() const { return m_store; }
-
-    //----------------------------------------------------------------------------------//
-    //
+    bool&           store() { return m_store; }
+    const bool&     store() const { return m_store; }
     const string_t& prefix() const { return get_persistent_data().prefix; }
 
     //----------------------------------------------------------------------------------//
     //
+    bool&           get_store() { return m_store; }
+    auto&           get_scope() { return m_scope; }
+    const bool&     get_store() const { return m_store; }
     const string_t& get_prefix() const { return prefix(); }
+    const auto&     get_scope() const { return m_scope; }
 
     //----------------------------------------------------------------------------------//
 
@@ -254,6 +253,14 @@ public:
         return scope::config(quirk_config<quirk::flat_scope, T...>::value,
                              quirk_config<quirk::timeline_scope, T...>::value,
                              quirk_config<quirk::tree_scope, T...>::value);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename... T>
+    static auto get_store_config()
+    {
+        return !quirk_config<quirk::no_store, T...>::value;
     }
 
 protected:

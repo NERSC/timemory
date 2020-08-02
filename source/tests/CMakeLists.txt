@@ -118,6 +118,11 @@ add_timemory_google_test(data_tracker_tests
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-plotting timemory-analysis-tools)
 
+add_timemory_google_test(cache_tests
+    SOURCES         cache_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools)
+
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp

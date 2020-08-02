@@ -47,7 +47,9 @@ endif()
 # override any cache settings
 if(TIMEMORY_BUILD_TESTING)
     set(TIMEMORY_BUILD_GOOGLE_TEST ON)
-    set(TIMEMORY_BUILD_EXAMPLES ON)
+    if(NOT TIMEMORY_BUILD_MINIMAL_TESTING)
+        set(TIMEMORY_BUILD_EXAMPLES ON)
+    endif()
 endif()
 #
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")

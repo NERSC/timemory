@@ -154,7 +154,6 @@ public:
 
     void start()
     {
-        set_started();
         m_global_synced = false;
         m_global.start(m_stream);
     }
@@ -166,7 +165,6 @@ public:
         if(m_current_marker == 0 && m_num_markers == 0)
             m_global.stop(m_stream);
         sync();
-        set_stopped();
     }
 
     void sync()

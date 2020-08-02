@@ -73,16 +73,11 @@ struct system_clock : public base<system_clock>
                                    base_type::get_unit());
     }
     double get() const { return get_display(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void   start() { value = record(); }
+    void   stop()
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 };
 
@@ -108,16 +103,11 @@ struct user_clock : public base<user_clock>
                                    base_type::get_unit());
     }
     double get() const { return get_display(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void   start() { value = record(); }
+    void   stop()
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 };
 
@@ -146,16 +136,11 @@ struct cpu_clock : public base<cpu_clock>
                                    base_type::get_unit());
     }
     double get() const { return get_display(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void   start() { value = record(); }
+    void   stop()
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 };
 
@@ -185,16 +170,11 @@ struct monotonic_clock : public base<monotonic_clock>
                                    base_type::get_unit());
     }
     double get_display() const { return get(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void   start() { value = record(); }
+    void   stop()
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 };
 
@@ -225,16 +205,11 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
                                    base_type::get_unit());
     }
     double get() const { return get_display(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void   start() { value = record(); }
+    void   stop()
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 };
 
@@ -259,16 +234,11 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
                                    base_type::get_unit());
     }
     double get() const { return get_display(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void   start() { value = record(); }
+    void   stop()
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 };
 
@@ -295,16 +265,11 @@ struct process_cpu_clock : public base<process_cpu_clock>
                                    base_type::get_unit());
     }
     double get() const { return get_display(); }
-    void   start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
+    void   start() { value = record(); }
+    void   stop()
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 };
 
@@ -344,7 +309,6 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
 
     void start()
     {
-        set_started();
         if(!m_derive)
             value = record();
     }
@@ -356,7 +320,6 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
             value = (record() - value);
             accum += value;
         }
-        set_stopped();
     }
 
     this_type& operator+=(const this_type& rhs)
@@ -456,7 +419,6 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     double get() const { return get_display(); }
     void   start()
     {
-        set_started();
         if(!m_derive)
             value = record();
     }
@@ -467,7 +429,6 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
             value = (record() - value);
             accum += value;
         }
-        set_stopped();
     }
 
     this_type& operator+=(const this_type& rhs)
@@ -548,7 +509,6 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     double get() const { return get_display(); }
     void   start()
     {
-        set_started();
         if(!m_derive)
             value = record();
     }
@@ -559,7 +519,6 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
             value = (record() - value);
             accum += value;
         }
-        set_stopped();
     }
 
     this_type& operator+=(const this_type& rhs)

@@ -223,6 +223,7 @@ struct instance_tracker<Tp, true>
 public:
     using type                           = Tp;
     using int_type                       = int64_t;
+    using pair_type                      = std::pair<int_type, int_type>;
     static constexpr bool thread_support = true;
 
     instance_tracker()                        = default;
@@ -231,6 +232,12 @@ public:
     instance_tracker(instance_tracker&&)      = default;
     instance_tracker& operator=(const instance_tracker&) = default;
     instance_tracker& operator=(instance_tracker&&) = default;
+
+    enum
+    {
+        global_count = 0,
+        thread_count
+    };
 
 public:
     //----------------------------------------------------------------------------------//
@@ -260,18 +267,54 @@ protected:
 
     //----------------------------------------------------------------------------------//
     //
-    void start()
+    auto start()
     {
         m_tot = get_started()++;
         m_thr = get_thread_started()++;
+        return pair_type{ m_tot, m_thr };
     }
 
-    //----------------------------------------------------------------------------------//
-    //
-    void stop()
+    auto stop()
     {
         m_tot = --get_started();
         m_thr = --get_thread_started();
+        return pair_type{ m_tot, m_thr };
+    }
+
+    //----------------------------------------------------------------------------------//
+    // increment/decrement global and thread counts and return global count
+    template <size_t Idx>
+    enable_if_t<(Idx == global_count), int_type> start()
+    {
+        m_tot = get_started()++;
+        m_thr = get_thread_started()++;
+        return m_tot;
+    }
+
+    template <size_t Idx>
+    enable_if_t<(Idx == global_count), int_type> stop()
+    {
+        m_tot = --get_started();
+        m_thr = --get_thread_started();
+        return m_tot;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // increment/decrement global and thread counts and return thread count
+    template <size_t Idx>
+    enable_if_t<(Idx == thread_count), int_type> start()
+    {
+        m_tot = get_started()++;
+        m_thr = get_thread_started()++;
+        return m_thr;
+    }
+
+    template <size_t Idx>
+    enable_if_t<(Idx == thread_count), int_type> stop()
+    {
+        m_tot = --get_started();
+        m_thr = --get_thread_started();
+        return m_thr;
     }
 
     auto get_global_count() { return m_tot; }
@@ -320,11 +363,19 @@ protected:
 
     //----------------------------------------------------------------------------------//
     //
-    void start() { m_tot = get_started()++; }
+    auto start()
+    {
+        m_tot = get_started()++;
+        return m_tot;
+    }
 
     //----------------------------------------------------------------------------------//
     //
-    void stop() { m_tot = --get_started(); }
+    auto stop()
+    {
+        m_tot = --get_started();
+        return m_tot;
+    }
 
     auto get_global_count() { return m_tot; }
     auto global_tracker_start() { return (start(), m_tot); }

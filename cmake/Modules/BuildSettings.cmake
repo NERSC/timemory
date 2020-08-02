@@ -118,6 +118,16 @@ else()
 endif()
 
 #----------------------------------------------------------------------------------------#
+# use built-in instrumentation
+#
+add_interface_library(timemory-instrument-functions
+    "Adds compiler flags to enable compile-time instrumentation")
+add_target_flag_if_avail(timemory-instrument-functions "-finstrument-functions")
+if(NOT cxx_timemory_instrument_finstrument_functions)
+    add_disabled_interface(timemory-instrument-functions)
+endif()
+
+#----------------------------------------------------------------------------------------#
 # developer build flags
 #
 add_interface_library(timemory-develop-options "Adds developer compiler flags")

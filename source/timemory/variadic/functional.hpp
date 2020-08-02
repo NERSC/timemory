@@ -33,6 +33,7 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/operations/types/cache.hpp"
 #include "timemory/operations/types/generic.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/types.hpp"
@@ -396,6 +397,14 @@ get_labeled(TupleT<Tp...>& obj, Args&&... args)
     invoke_impl::invoke_out_of_order<operation::get_labeled_data, data_collect_type, 2,
                                      ApiT>(obj, _data, std::forward<Args>(args)...);
     return _data;
+}
+//
+template <typename... BundleT>
+TIMEMORY_HOT auto
+get_cache()
+{
+    operation::construct_cache<std::tuple<BundleT...>> tmp{};
+    return tmp();
 }
 //
 //--------------------------------------------------------------------------------------//

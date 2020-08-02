@@ -154,10 +154,10 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     {
         if(!timemory_mpi_finalize_comm_keyval())
             return;
-        auto lk                  = tim::trace::lock<tim::trace::library>();
-        auto _state              = tim::settings::enabled();
-        tim::settings::enabled() = false;
-        int  comm_key            = 0;
+        tim::trace::lock<tim::trace::library> lk{};
+        auto                                  _state = tim::settings::enabled();
+        tim::settings::enabled()                     = false;
+        int  comm_key                                = 0;
         auto ret = MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_trace_mpi_finalize,
                                           &comm_key, NULL);
         if(ret == MPI_SUCCESS)
@@ -403,7 +403,7 @@ extern "C"
     //
     void timemory_add_hash_id(uint64_t id, const char* name)
     {
-        auto lk = tim::trace::lock<tim::trace::library>();
+        tim::trace::lock<tim::trace::library> lk{};
         if(tim::settings::debug())
             fprintf(stderr, "[timemory-trace]> adding '%s' with hash %lu...\n", name,
                     (unsigned long) id);
@@ -432,8 +432,8 @@ extern "C"
     //
     void timemory_copy_hash_ids()
     {
-        auto                     lk = tim::trace::lock<tim::trace::library>();
-        static thread_local bool once_per_thread = false;
+        tim::trace::lock<tim::trace::library> lk{};
+        static thread_local bool              once_per_thread = false;
         if(!once_per_thread && tim::threading::get_id() > 0)
         {
             once_per_thread  = true;
@@ -450,7 +450,7 @@ extern "C"
         if(!timemory_trace_is_initialized())
             timemory_trace_init("", true, "");
 
-        auto lk = tim::trace::lock<tim::trace::library>();
+        tim::trace::lock<tim::trace::library> lk{};
 
         if(!lk)
             return;
@@ -489,7 +489,7 @@ extern "C"
     //
     void timemory_pop_trace_hash(uint64_t id)
     {
-        auto lk = tim::trace::lock<tim::trace::library>();
+        tim::trace::lock<tim::trace::library> lk{};
         if(!get_library_state()[0] || get_library_state()[1])
             return;
 
@@ -585,7 +585,7 @@ extern "C"
 
         uint64_t _hash = std::numeric_limits<uint64_t>::max();
         {
-            auto lk = tim::trace::lock<tim::trace::library>();
+            tim::trace::lock<tim::trace::library> lk{};
             if(tim::settings::debug())
                 PRINT_HERE("rank = %i, pid = %i, thread = %i, name = %s",
                            tim::dmp::rank(), (int) tim::process::get_id(),
@@ -606,7 +606,7 @@ extern "C"
     {
         uint64_t _hash = std::numeric_limits<uint64_t>::max();
         {
-            auto lk = tim::trace::lock<tim::trace::library>();
+            tim::trace::lock<tim::trace::library> lk{};
             if(!get_library_state()[0] || get_library_state()[1])
                 return;
             _hash = tim::get_hash_id(name);
@@ -630,7 +630,7 @@ extern "C"
     //
     void timemory_trace_set_env(const char* env_var, const char* env_val)
     {
-        auto lk = tim::trace::lock<tim::trace::library>();
+        tim::trace::lock<tim::trace::library> lk{};
         tim::set_env<std::string>(env_var, env_val, 0);
     }
     //
@@ -638,7 +638,7 @@ extern "C"
     //
     void timemory_trace_init(const char* args, bool read_command_line, const char* cmd)
     {
-        auto lk = tim::trace::lock<tim::trace::library>();
+        tim::trace::lock<tim::trace::library> lk{};
         if(get_library_state()[0])
             return;
 
@@ -723,7 +723,7 @@ extern "C"
     //
     void timemory_trace_finalize(void)
     {
-        auto lk = tim::trace::lock<tim::trace::library>();
+        tim::trace::lock<tim::trace::library> lk{};
         if(library_trace_count.load() == 0)
             return;
 

@@ -48,8 +48,8 @@ namespace trait
 template <>
 struct derivation_types<derived_cpu_util>
 {
-    using type = std::tuple<type_list<wall_clock, cpu_clock>,
-                            type_list<wall_clock, user_clock, system_clock>>;
+    using type = type_list<type_list<wall_clock, cpu_clock>,
+                           type_list<wall_clock, user_clock, system_clock>>;
 };
 }  // namespace trait
 

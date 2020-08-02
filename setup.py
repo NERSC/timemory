@@ -18,6 +18,9 @@ cmake_args = ['-DPYTHON_EXECUTABLE={}'.format(sys.executable),
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("-h", "--help", help="Print help", action='store_true')
 
+gotcha_opt = False
+if platform.system() == "Linux":
+    gotcha_opt = True
 
 def set_cmake_bool_option(opt, enable_opt, disable_opt):
     global cmake_args
@@ -45,19 +48,21 @@ def add_arg_bool_option(lc_name, disp_name, default=None):
 add_arg_bool_option("c", "TIMEMORY_BUILD_C")
 add_arg_bool_option("tools", "TIMEMORY_BUILD_TOOLS", default=True)
 add_arg_bool_option("mpi", "TIMEMORY_USE_MPI")
-add_arg_bool_option("tau", "TIMEMORY_USE_TAU")
-add_arg_bool_option("caliper", "TIMEMORY_USE_CALIPER")
+add_arg_bool_option("nccl", "TIMEMORY_USE_NCCL")
 add_arg_bool_option("upcxx", "TIMEMORY_USE_UPCXX")
 add_arg_bool_option("cuda", "TIMEMORY_USE_CUDA")
 add_arg_bool_option("cupti", "TIMEMORY_USE_CUPTI")
 add_arg_bool_option("papi", "TIMEMORY_USE_PAPI")
 add_arg_bool_option("arch", "TIMEMORY_USE_ARCH")
-add_arg_bool_option("vtune", "TIMEMORY_USE_VTUNE")
 add_arg_bool_option("ompt", "TIMEMORY_USE_OMPT")
-add_arg_bool_option("gotcha", "TIMEMORY_USE_GOTCHA")
-add_arg_bool_option("kokkos", "TIMEMORY_BUILD_KOKKOS_TOOLS")
+add_arg_bool_option("gotcha", "TIMEMORY_USE_GOTCHA", default=gotcha_opt)
+add_arg_bool_option("kokkos", "TIMEMORY_BUILD_KOKKOS_TOOLS", default=False)
 add_arg_bool_option("dyninst", "TIMEMORY_BUILD_DYNINST_TOOLS")
+add_arg_bool_option("tau", "TIMEMORY_USE_TAU")
+add_arg_bool_option("caliper", "TIMEMORY_USE_CALIPER")
+add_arg_bool_option("likwid", "TIMEMORY_USE_LIKWID")
 add_arg_bool_option("gperftools", "TIMEMORY_USE_GPERFTOOLS")
+add_arg_bool_option("vtune", "TIMEMORY_USE_VTUNE")
 add_arg_bool_option("pybind-install", "PYBIND11_INSTALL")
 add_arg_bool_option("build-testing", "TIMEMORY_BUILD_TESTING")
 parser.add_argument("--cxx-standard", default=14, type=int,
@@ -72,44 +77,52 @@ if args.help:
     left.append("--help")
 sys.argv = sys.argv[:1] + left
 
+runtime_req_file = ('.requirements/mpi_runtime.txt'
+                    if args.enable_mpi and not args.disable_mpi
+                    else '.requirements/runtime.txt')
+
 set_cmake_bool_option("TIMEMORY_BUILD_C", args.enable_c, args.disable_c)
 set_cmake_bool_option("TIMEMORY_BUILD_TOOLS",
                       args.enable_tools, args.disable_tools)
-set_cmake_bool_option("TIMEMORY_USE_TAU", args.enable_tau, args.disable_tau)
 set_cmake_bool_option("TIMEMORY_USE_MPI", args.enable_mpi, args.disable_mpi)
-set_cmake_bool_option("TIMEMORY_USE_TAU", args.enable_tau, args.disable_tau)
-set_cmake_bool_option("TIMEMORY_USE_CALIPER",
-                      args.enable_caliper, args.disable_caliper)
-set_cmake_bool_option("TIMEMORY_USE_GOTCHA",
-                      args.enable_gotcha, args.disable_gotcha)
-set_cmake_bool_option("TIMEMORY_USE_UPCXX",
-                      args.enable_upcxx, args.disable_upcxx)
+set_cmake_bool_option("TIMEMORY_USE_NCCL", args.enable_nccl, args.disable_nccl)
+set_cmake_bool_option("TIMEMORY_USE_UPCXX", args.enable_upcxx, args.disable_upcxx)
+set_cmake_bool_option("TIMEMORY_USE_GOTCHA", args.enable_gotcha,
+                      args.disable_gotcha)
 set_cmake_bool_option("TIMEMORY_USE_CUDA", args.enable_cuda, args.disable_cuda)
 set_cmake_bool_option("TIMEMORY_USE_CUPTI",
                       args.enable_cupti, args.disable_cupti)
 set_cmake_bool_option("TIMEMORY_USE_PAPI", args.enable_papi, args.disable_papi)
 set_cmake_bool_option("TIMEMORY_USE_ARCH", args.enable_arch, args.disable_arch)
-set_cmake_bool_option("TIMEMORY_USE_VTUNE",
-                      args.enable_vtune, args.disable_vtune)
 set_cmake_bool_option("TIMEMORY_USE_OMPT", args.enable_ompt, args.disable_ompt)
+set_cmake_bool_option("TIMEMORY_USE_DYNINST",
+                      args.enable_dyninst, args.disable_dyninst)
 set_cmake_bool_option("TIMEMORY_BUILD_OMPT_LIBRARY",
                       args.enable_ompt and args.enable_tools,
                       args.disable_ompt or args.disable_tools)
 set_cmake_bool_option("TIMEMORY_BUILD_MPIP_LIBRARY",
                       args.enable_gotcha and args.enable_mpi and args.enable_tools,
                       args.disable_gotcha or args.disable_mpi or args.disable_tools)
+set_cmake_bool_option("TIMEMORY_BUILD_NCCLP_LIBRARY",
+                      args.enable_gotcha and args.enable_nccl and args.enable_tools,
+                      args.disable_gotcha or args.disable_nccl or args.disable_tools)
+set_cmake_bool_option("TIMEMORY_BUILD_DYNINST_TOOLS",
+                      args.enable_dyninst, args.disable_dyninst)
+set_cmake_bool_option("TIMEMORY_BUILD_KOKKOS_TOOLS",
+                      args.enable_kokkos, args.disable_kokkos)
+set_cmake_bool_option("TIMEMORY_USE_TAU", args.enable_tau, args.disable_tau)
+set_cmake_bool_option("TIMEMORY_USE_CALIPER",
+                      args.enable_caliper, args.disable_caliper)
+set_cmake_bool_option("TIMEMORY_USE_LIKWID", args.enable_likwid,
+                      args.disable_likwid)
+set_cmake_bool_option("TIMEMORY_USE_VTUNE",
+                      args.enable_vtune, args.disable_vtune)
 set_cmake_bool_option("TIMEMORY_USE_GPERFTOOLS",
                       args.enable_gperftools, args.disable_gperftools)
 set_cmake_bool_option("PYBIND11_INSTALL",
                       args.enable_pybind_install, args.disable_pybind_install)
 set_cmake_bool_option("TIMEMORY_BUILD_TESTING",
                       args.enable_build_testing, args.disable_build_testing)
-set_cmake_bool_option("TIMEMORY_USE_DYNINST",
-                      args.enable_dyninst, args.disable_dyninst)
-set_cmake_bool_option("TIMEMORY_BUILD_DYNINST_TOOLS",
-                      args.enable_dyninst, args.disable_dyninst)
-set_cmake_bool_option("TIMEMORY_BUILD_KOKKOS_TOOLS",
-                      args.enable_kokkos, args.disable_kokkos)
 cmake_args.append("-DCMAKE_CXX_STANDARD={}".format(args.cxx_standard))
 
 
@@ -226,11 +239,14 @@ class custom_install(skinstall):
 
 
 # --------------------------------------------------------------------------- #
+gotcha_opt = False
 if platform.system() == "Darwin":
     # scikit-build will set this to 10.6 and C++ compiler check will fail
     version = platform.mac_ver()[0].split('.')
     version = ".".join([version[0], version[1]])
     cmake_args += ["-DCMAKE_OSX_DEPLOYMENT_TARGET={}".format(version)]
+elif platform.system() == "Linux":
+    gotcha_opt = True
 
 
 # --------------------------------------------------------------------------- #
@@ -341,10 +357,11 @@ with warnings.catch_warnings():
         download_url='http://github.com/NERSC/timemory.git',
         zip_safe=False,
         setup_requires=[],
-        install_requires=parse_requirements(
-            '.requirements/runtime.txt'),
+        install_requires=parse_requirements(runtime_req_file),
         extras_require={
-            'all': parse_requirements('requirements.txt'),
+            'all': parse_requirements('requirements.txt') +
+            parse_requirements('.requirements/mpi_runtime.txt'),
+            'mpi': parse_requirements('.requirements/mpi_runtime.txt'),
             'build': parse_requirements('.requirements/build.txt'),
         },
         keywords=get_keywords(),

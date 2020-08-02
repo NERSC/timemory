@@ -363,12 +363,21 @@ PYBIND11_MODULE(libpytimemory, tim)
         } catch(std::exception& e)
         {
 #if defined(_UNIX)
-            auto bt = tim::get_demangled_backtrace<32>();
+            auto             bt    = tim::get_demangled_backtrace<32>();
+            std::set<size_t> valid = {};
+            size_t           idx   = 0;
             for(const auto& itr : bt)
             {
-                std::cerr << "\nBacktrace:\n";
                 if(itr.length() > 0)
-                    std::cerr << itr << "\n";
+                    valid.insert(idx);
+                ++idx;
+            }
+            if(!valid.empty())
+            {
+                std::cerr << "\nBacktrace:\n";
+                for(auto itr : valid)
+                    std::cerr << "[" << std::setw(2) << itr << " / " << std::setw(2)
+                              << valid.size() << "] " << bt.at(itr) << '\n';
             }
             std::cerr << "\n" << std::flush;
 #endif
