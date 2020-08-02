@@ -39,6 +39,7 @@
 #include "timemory/variadic/types.hpp"
 
 #include "timemory/components/data_tracker/components.hpp"
+#include "timemory/components/io/components.hpp"
 #include "timemory/components/rusage/components.hpp"
 #include "timemory/components/timing/components.hpp"
 #include "timemory/components/trip_count/components.hpp"

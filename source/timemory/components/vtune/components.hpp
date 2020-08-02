@@ -66,7 +66,7 @@ struct vtune_event : public base<vtune_event, void>
     void start()
     {
         get_index()++;
-        set_started();
+
         if(m_index == 0)
             ittnotify::resume();
         if(!m_created)
@@ -83,7 +83,6 @@ struct vtune_event : public base<vtune_event, void>
         ittnotify::end_event(m_event);
         if(_index == 0)
             ittnotify::pause();
-        set_stopped();
     }
 
     void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
@@ -124,7 +123,7 @@ struct vtune_frame : public base<vtune_frame, void>
     void start()
     {
         get_index()++;
-        set_started();
+
         if(m_index == 0)
             ittnotify::resume();
         if(m_domain == nullptr)
@@ -139,7 +138,6 @@ struct vtune_frame : public base<vtune_frame, void>
             ittnotify::end_frame(m_domain);
         if(_index == 0)
             ittnotify::pause();
-        set_stopped();
     }
 
     void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
@@ -184,7 +182,7 @@ struct vtune_profiler
     void start()
     {
         tracker_type::start();
-        set_started();
+
         if(m_tot == 0)
             ittnotify::resume();
     }
@@ -192,7 +190,7 @@ struct vtune_profiler
     void stop()
     {
         tracker_type::stop();
-        set_stopped();
+
         if(m_tot == 0)
             ittnotify::pause();
     }

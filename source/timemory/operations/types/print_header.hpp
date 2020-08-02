@@ -71,8 +71,10 @@ struct print_header : public common_utils
 
         _os.set_prefix_begin();
         utility::write_header(_os, "LABEL");
-        utility::write_header(_os, "COUNT");
-        utility::write_header(_os, "DEPTH");
+        if(!trait::custom_laps_printing<type>::value)
+            utility::write_header(_os, "COUNT");
+        if(!trait::flat_storage<type>::value)
+            utility::write_header(_os, "DEPTH");
         _os.set_prefix_end();
 
         // auto _opzip = [](const std::string& _lhs, const std::string& _rhs) {
@@ -89,28 +91,36 @@ struct print_header : public common_utils
         auto w_value   = Tp::get_width();
         auto p_value   = Tp::get_precision();
 
-        utility::write_header(_os, "METRIC");
-        utility::write_header(_os, "UNITS");
+        if(trait::report_metric_name<type>::value)
+            utility::write_header(_os, "METRIC");
+        if(trait::report_units<type>::value)
+            utility::write_header(_os, "UNITS");
         if(trait::report_sum<type>::value && trait::report_values<type>::sum())
             utility::write_header(_os, "SUM", f_value, w_value, p_value);
         if(trait::report_mean<type>::value && trait::report_values<type>::mean())
             utility::write_header(_os, "MEAN", f_value, w_value, p_value);
-        print_statistics<Tp>::get_header(_os, _stats);
-        utility::write_header(_os, "% SELF", f_self, w_self, p_self);
+        if(trait::report_statistics<type>::value)
+            print_statistics<Tp>::get_header(_os, _stats);
+        if(trait::report_self<type>::value)
+            utility::write_header(_os, "% SELF", f_self, w_self, p_self);
 
         _os.insert_break();
         if(_labels.size() > 0)
         {
             for(size_t i = 0; i < _labels.size() - 1; ++i)
             {
-                utility::write_header(_os, "METRIC");
-                utility::write_header(_os, "UNITS");
+                if(trait::report_metric_name<type>::value)
+                    utility::write_header(_os, "METRIC");
+                if(trait::report_units<type>::value)
+                    utility::write_header(_os, "UNITS");
                 if(trait::report_sum<type>::value && trait::report_values<type>::sum())
                     utility::write_header(_os, "SUM", f_value, w_value, p_value);
                 if(trait::report_mean<type>::value && trait::report_values<type>::mean())
                     utility::write_header(_os, "MEAN", f_value, w_value, p_value);
-                print_statistics<Tp>::get_header(_os, _stats);
-                utility::write_header(_os, "% SELF", f_self, w_self, p_self);
+                if(trait::report_statistics<type>::value)
+                    print_statistics<Tp>::get_header(_os, _stats);
+                if(trait::report_self<type>::value)
+                    utility::write_header(_os, "% SELF", f_self, w_self, p_self);
                 _os.insert_break();
             }
         }

@@ -136,7 +136,37 @@ protected:
                details::get_test_name() != "bundle_3")
             {
                 PRINT_HERE("%s<%s, %s>", "initialize", "cpu_clock", "peak_rss");
+
+                // check that initialization works
                 _bundle.initialize<cpu_clock, peak_rss>();
+                ASSERT_TRUE(_bundle.get<cpu_clock>() != nullptr);
+                ASSERT_TRUE(_bundle.get<peak_rss>() != nullptr);
+
+                // check that re-initialization is ignored
+                cpu_clock* _cptr = _bundle.get<cpu_clock>();
+                peak_rss*  _pptr = _bundle.get<peak_rss>();
+                _bundle.init<cpu_clock>();
+                EXPECT_TRUE(_bundle.get<cpu_clock>() == _cptr);
+                EXPECT_TRUE(_bundle.get<peak_rss>() == _pptr);
+
+                // check that disable works
+                _bundle.disable<cpu_clock>();
+                fflush(stdout);
+                fflush(stderr);
+                std::cout << std::flush;
+                std::cerr << std::flush;
+                ASSERT_TRUE(_bundle.get<cpu_clock>() == nullptr);
+                ASSERT_TRUE(_bundle.get<peak_rss>() != nullptr);
+
+                // check that re-disabling is ignored
+                _bundle.disable<cpu_clock>();
+                EXPECT_TRUE(_bundle.get<cpu_clock>() == nullptr);
+                EXPECT_TRUE(_bundle.get<peak_rss>() != nullptr);
+
+                // check that initialization worked
+                _bundle.init<cpu_clock>();
+                ASSERT_TRUE(_bundle.get<cpu_clock>() != nullptr);
+                ASSERT_TRUE(_bundle.get<peak_rss>() != nullptr);
             }
         };
 

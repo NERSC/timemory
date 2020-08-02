@@ -427,7 +427,6 @@ struct papi_vector
         }
 
         tracker_type::start();
-        set_started();
         value = record();
     }
 
@@ -438,7 +437,6 @@ struct papi_vector
         tracker_type::stop();
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 
     //----------------------------------------------------------------------------------//
@@ -740,11 +738,7 @@ struct papi_array
     //----------------------------------------------------------------------------------//
     // start
     //
-    void start()
-    {
-        set_started();
-        value = record();
-    }
+    void start() { value = record(); }
 
     //----------------------------------------------------------------------------------//
 
@@ -752,7 +746,6 @@ struct papi_array
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 
     //----------------------------------------------------------------------------------//
@@ -794,7 +787,7 @@ protected:
 
     friend struct base<this_type, value_type>;
     friend class impl::storage<this_type,
-                               implements_storage<this_type, value_type>::value>;
+                               trait::implements_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//
@@ -1052,7 +1045,7 @@ protected:
 
     friend struct base<this_type, value_type>;
     friend class impl::storage<this_type,
-                               implements_storage<this_type, value_type>::value>;
+                               trait::implements_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//
@@ -1085,7 +1078,6 @@ public:
             papi_common::initialize<common_type>();
             events = get_events<common_type>();
         }
-        set_started();
         value = record();
     }
 
@@ -1096,7 +1088,6 @@ public:
     {
         value = (record() - value);
         accum += value;
-        set_stopped();
     }
 
     //----------------------------------------------------------------------------------//

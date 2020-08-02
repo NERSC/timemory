@@ -118,6 +118,11 @@ add_timemory_google_test(data_tracker_tests
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-plotting timemory-analysis-tools)
 
+add_timemory_google_test(cache_tests
+    SOURCES         cache_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools)
+
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp
@@ -345,4 +350,10 @@ if(_OMPT_TARGET AND _OPENMP)
         DISCOVER_TESTS
         SOURCES         ompt_handle_tests.cpp
         LINK_LIBRARIES  ${_OMPT_TARGET} ${_OPENMP})
+endif()
+
+if(TARGET timemory-ncclp-library AND TARGET nccl_test_interface)
+    add_timemory_google_test(nccl_tests
+        SOURCES         nccl_tests.cpp
+        LINK_LIBRARIES  nccl_test_interface timemory-ncclp-library)
 endif()

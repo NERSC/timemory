@@ -36,6 +36,8 @@
 
 //======================================================================================//
 //
+/// \struct tau_marker
+/// \brief Forwards timemory labels to the TAU (Tuning and Analysis Utilities)
 TIMEMORY_DECLARE_COMPONENT(tau_marker)
 //
 //======================================================================================//

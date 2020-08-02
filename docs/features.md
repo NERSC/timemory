@@ -6,6 +6,76 @@ It is very common for Python projects to implement expensive routines in C or C+
 of these languages will produce one combined report for all the languages (provided each language links to the same library).
 However, this is a feature of timemory. Timemory can be used in standalone C, C++, or Python projects.
 
+## Reusable Components
+
+Performance analysis tools provide a wide variety of routines and capabilities which can be useful to nearly
+every application in existence. However, nearly all these tools hide the vast majority of their capabilities
+and only provide a very limited API for users to build upon. Worse still, some of these tools only provide APIs
+which are generally useless outside of the context of their tool, e.g. the
+[Instrumentation and Tracing Technology API (ittnotify)](https://software.intel.com/content/www/us/en/develop/documentation/vtune-help/top/api-support/instrumentation-and-tracing-technology-apis/instrumentation-and-tracing-technology-api-reference/memory-allocation-apis.html)
+provided by Intel is an egregious misnomer for an API which essentially provides the same functionality as the appropriately named
+[NVIDIA Tools Extension SDK (NVTX)](https://github.com/NVIDIA/NVTX).
+
+Every measurement capability provided by timemory is provided as a stand-alone encapsulation
+of how to perform a single individual measurement which can be reused without any added overhead.
+For example, the `wall_clock` component is an encapsulation of recording the delta between
+two timepoints which cannot be improved by a custom implementation performing the same calculation
+because it maps directly to `start()` and `stop()` member functions which maps to:
+
+```cpp
+struct timespec ts;
+int64_t value = 0, accum = 0;
+
+// get the starting timestamp
+clock_gettime(clock_id, &ts);
+
+// convert to nanoseconds
+value = (ts.tv_sec * std::nano::den + ts.tv_nsec);
+
+// get the ending timestamp
+clock_gettime(clock_id, &ts);
+
+// convert and accumulate the difference
+accum += (ts.tv_sec * std::nano::den + ts.tv_nsec) - value;
+```
+
+The same goes for the component for collecting CPU and/or GPU hardware counters via the
+PAPI API -- the start and stop member functions are just encapsulate two functions calls to
+the PAPI interface and accumulate the difference. There is no hidden overhead or data
+storage, these components can used individually without interacting with anything else
+that timemory provides. **This feature has a very important implication:
+timemory components are composable**. If you want the rate of any component or the
+ratio of two component measurements, one simply has to create a new component which
+performs the desired calculation and that component will have all the capabilities and
+composability as the original component(s).
+
+Furthermore, these stand-alone tools are not limited to C++. Through the use of the
+excellent C++ template library for generating Python bindings, the vast majority
+of these components are also available as
+**highly-efficient stand-alone tools for Python codes**:
+
+```python
+from timemory.component import WallClock
+
+# encapsulation of how to take a wall-clock measurement
+wc = WallClock()
+
+# get the starting timestamp
+wc.start()
+
+# get the ending timestamp and the accumulate the difference
+wc.stop()
+
+# get the raw value of the last start/stop
+wc.get_value()
+
+# get the raw value of the accumulation
+wc.get_accum()
+
+# print the value in the globally configured units
+print("Elapsed time: {} {}".format(wc.get(), wc.display_units()))
+```
+
 ## Multithreading
 
 The multithreading overhead is essentially zero.

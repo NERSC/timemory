@@ -238,18 +238,42 @@ struct generic_deleter
 
     TIMEMORY_DELETED_OBJECT(generic_deleter)
 
-    template <typename Up, enable_if_t<(std::is_pointer<Up>::value), int> = 0>
-    explicit generic_deleter(Up& obj)
+    explicit generic_deleter(type*& obj)
     {
-        DEBUG_PRINT_HERE("%s %s", "deleting", demangle<Tp>().c_str());
+        DEBUG_PRINT_HERE("%s %s :: %p", "deleting pointer lvalue",
+                         demangle<type>().c_str(), (void*) obj);
         delete obj;
         obj = nullptr;
     }
 
-    template <typename Up, enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
-    explicit generic_deleter(Up&)
+    template <typename Up, enable_if_t<std::is_pointer<Up>::value, int> = 0>
+    explicit generic_deleter(Up&& obj)
     {
-        // static_assert(std::is_same<decay_t<Up>, type>::value, "Error! Up != type");
+        DEBUG_PRINT_HERE("%s %s :: %p", "deleting pointer rvalue",
+                         demangle<type>().c_str(), (void*) obj);
+        delete obj;
+        std::ref(std::forward<Up>(obj)).get() = nullptr;
+    }
+
+    template <typename... Deleter>
+    explicit generic_deleter(std::unique_ptr<type, Deleter...>& obj)
+    {
+        DEBUG_PRINT_HERE("%s %s :: %p", "deleting unique_ptr", demangle<type>().c_str(),
+                         (void*) obj.get());
+        obj.reset();
+    }
+
+    explicit generic_deleter(std::shared_ptr<type> obj)
+    {
+        DEBUG_PRINT_HERE("%s %s :: %p", "deleting shared_ptr", demangle<type>().c_str(),
+                         (void*) obj.get());
+        obj.reset();
+    }
+
+    template <typename Up, enable_if_t<!std::is_pointer<Up>::value, int> = 0>
+    explicit generic_deleter(Up&&)
+    {
+        DEBUG_PRINT_HERE("%s %s", "type is not deleted", demangle<type>().c_str());
     }
 };
 //

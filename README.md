@@ -117,8 +117,9 @@ and/or outgoing return value from function, or just provide stubs which can be o
         - Design based on [line-profiler](https://pypi.org/project/line-profiler/) package
         - Extended to use components: cpu-clock, memory-usage, context-switches, etc. (all components which collect scalar values)
 - Instrumentation Libraries
-    - [kokkos-connector](source/tools/kokkos-tools/README.md): Kokkos Profiling Libraries
+    - [kokkos-connector](source/tools/kokkos-connector/README.md): Kokkos Profiling Libraries
     - [timemory-mpip](source/tools/timemory-mpip/README.md): MPI Profiling Library (Linux-only)
+    - [timemory-ncclp](source/tools/timemory-ncclp/README.md): NCCL Profiling Library (Linux-only)
     - [timemory-ompt](source/tools/timemory-ompt/README.md): OpenMP Profiling Library
 
 ## Design Goals
@@ -248,22 +249,21 @@ And for a given bundle `component_tuple<A, B, C> obj`:
     - Returns `std::tuple<int, double>` because it detects the two return types from A and B and the lack of `get()` member function in component C.
 
 This design makes has several benefits and one downside in particular. The benefits
-are that timemory: (1) makes it extremely each to create a unified interface between two
-or more components which different interfaces and different capabilities, (2) invoking
-the different interfaces is very efficient because no logic is required at runtime to
-determine if a particular feature is implemented by a component, and (3) components
-get to define their own interface.
+are that timemory: (1) makes it extremely easy to create a unified interface between two
+or more components which different interfaces/capabilities, (2) invoking
+the different interfaces is efficient since no feature detection logic is required at
+runtime, and (3) components define their own interface.
 
 With respect to #2, consider the two more traditional implementations. If callbacks are
-used, a function pointer exists and a component that does not implement this feature
-will either have a null function pointer (requiring a check at compile time) or the
+used, a function pointer exists and a component which does not implement a feature
+will either have a null function pointer (requiring a check at runtime time) or the
 tool will implement an array of function pointers with an unknown size at compile-time.
-In the latter case, this will require heap allocations (expensive operations) and
-in both cases, the loop of the function pointers will likely be quiet ineffienct
+In the latter case, this will require heap allocations (which are expensive operations) and
+in both cases, the loop of the function pointers will likely be quite ineffienct
 since function pointers have a very high probability of thrashing the instruction cache.
-If dynamic polymorphism is the approach taken, then the result is multiple virtual table look-ups
+If dynamic polymorphism is used, then virtual table look-ups are required
 during every iteration. In the timemory approach, none of these additional overheads
-are present and there isn't even a for loop -- the bundle expands into a direct call to the
+are present and there isn't even a loop -- the bundle either expands into a direct call to the
 member function without any abstractions or nothing.
 
 With respect to #1 and #3, this has some interesting implications with regard to a

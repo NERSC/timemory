@@ -415,7 +415,6 @@ public:
 
     void start()
     {
-        set_started();
         m_wall_clock->start();
         m_papi_vector->start();
         value = value_type{ m_papi_vector->get_value(), m_wall_clock->get_value() };
@@ -429,7 +428,6 @@ public:
         m_wall_clock->stop();
         value = value_type{ m_papi_vector->get_value(), m_wall_clock->get_value() };
         accum += value_type{ m_papi_vector->get_accum(), m_wall_clock->get_accum() };
-        set_stopped();
     }
 
     //----------------------------------------------------------------------------------//
@@ -472,7 +470,7 @@ protected:
 
     friend struct base<this_type, value_type>;
     friend class impl::storage<this_type,
-                               implements_storage<this_type, value_type>::value>;
+                               trait::implements_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//

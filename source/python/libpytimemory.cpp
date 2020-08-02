@@ -53,6 +53,16 @@ extern "C"
 
 //======================================================================================//
 
+#if defined(TIMEMORY_USE_NCCLP_LIBRARY)
+extern "C"
+{
+    extern uint64_t timemory_start_ncclp();
+    extern uint64_t timemory_stop_ncclp(uint64_t);
+}
+#endif
+
+//======================================================================================//
+
 manager_wrapper::manager_wrapper()
 : m_manager(manager_t::instance().get())
 {}
@@ -283,7 +293,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //----------------------------------------------------------------------------------//
     //
-    auto _init_ompt = []() {
+    auto _start_ompt = []() {
 #if defined(TIMEMORY_USE_OMPT_LIBRARY)
         return timemory_start_ompt();
 #else
@@ -296,6 +306,27 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto _stop_ompt = [](uint64_t id) {
 #if defined(TIMEMORY_USE_OMPT_LIBRARY)
         return timemory_stop_ompt(id);
+#else
+        tim::consume_parameters(id);
+        return 0;
+#endif
+    };
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    auto _start_ncclp = []() {
+#if defined(TIMEMORY_USE_NCCLP_LIBRARY)
+        return timemory_start_ncclp();
+#else
+        return 0;
+#endif
+    };
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    auto _stop_ncclp = [](uint64_t id) {
+#if defined(TIMEMORY_USE_NCCLP_LIBRARY)
+        return timemory_stop_ncclp(id);
 #else
         tim::consume_parameters(id);
         return 0;
@@ -332,12 +363,21 @@ PYBIND11_MODULE(libpytimemory, tim)
         } catch(std::exception& e)
         {
 #if defined(_UNIX)
-            auto bt = tim::get_demangled_backtrace<32>();
+            auto             bt    = tim::get_demangled_backtrace<32>();
+            std::set<size_t> valid = {};
+            size_t           idx   = 0;
             for(const auto& itr : bt)
             {
-                std::cerr << "\nBacktrace:\n";
                 if(itr.length() > 0)
-                    std::cerr << itr << "\n";
+                    valid.insert(idx);
+                ++idx;
+            }
+            if(!valid.empty())
+            {
+                std::cerr << "\nBacktrace:\n";
+                for(auto itr : valid)
+                    std::cerr << "[" << std::setw(2) << itr << " / " << std::setw(2)
+                              << valid.size() << "] " << bt.at(itr) << '\n';
             }
             std::cerr << "\n" << std::flush;
 #endif
@@ -413,6 +453,10 @@ PYBIND11_MODULE(libpytimemory, tim)
         "init_mpip", _start_mpip,
         "Activate MPIP profiling (function name deprecated -- use start_mpip instead)");
     //----------------------------------------------------------------------------------//
+    tim.def(
+        "init_ompt", _start_ompt,
+        "Activate OMPT profiling (function name deprecated -- use start_ompt instead)");
+    //----------------------------------------------------------------------------------//
     tim.def("start_mpip", _start_mpip, "Activate MPIP profiling");
     //----------------------------------------------------------------------------------//
     tim.def("stop_mpip", _stop_mpip, "Deactivate MPIP profiling", py::arg("id"));
@@ -421,10 +465,14 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("mpi_init", _init_mpi, "Initialize MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("init_ompt", _init_ompt, "Activate OMPT (OpenMP tools) profiling");
+    tim.def("start_ompt", _start_ompt, "Activate OMPT (OpenMP tools) profiling");
     //----------------------------------------------------------------------------------//
     tim.def("stop_ompt", _stop_ompt, "Deactivate OMPT (OpenMP tools)  profiling",
             py::arg("id"));
+    //----------------------------------------------------------------------------------//
+    tim.def("start_ncclp", _start_ncclp, "Activate NCCL profiling");
+    //----------------------------------------------------------------------------------//
+    tim.def("stop_ncclp", _stop_ncclp, "Deactivate NCCL profiling", py::arg("id"));
 
     //==================================================================================//
     //

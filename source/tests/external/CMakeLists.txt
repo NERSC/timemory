@@ -45,3 +45,7 @@ if(NOT TIMEMORY_SKIP_BUILD AND TIMEMORY_BUILD_C)
             timemory-cxx-static timemory-c-static ${_LINK})
     endif()
 endif()
+
+if(TIMEMORY_USE_NCCL AND TIMEMORY_BUILD_NCCLP_LIBRARY)
+    add_subdirectory(nccl-tests)
+endif()

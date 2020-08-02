@@ -56,6 +56,8 @@ add_interface_library(timemory-cudart-static
     "Link to CUDA runtime (static library)")
 add_interface_library(timemory-nvtx
     "Enables CUDA NVTX support")
+add_interface_library(timemory-nccl
+    "Enables CUDA NCCL support")
 add_interface_library(timemory-caliper
     "Enables Caliper support")
 add_interface_library(timemory-gotcha
@@ -110,8 +112,11 @@ add_interface_library(timemory-mpip-library
     "Provides MPIP library for MPI performance analysis")
 add_interface_library(timemory-ompt-library
     "Provides OMPT library for OpenMP performance analysis")
+add_interface_library(timemory-ncclp-library
+    "Provides NCCLP library for NCCL performance analysis")
 
 target_link_libraries(timemory-mpip-library INTERFACE timemory-mpi timemory-gotcha)
+target_link_libraries(timemory-ncclp-library INTERFACE timemory-nccl timemory-gotcha)
 
 set(_DMP_LIBRARIES)
 
@@ -137,6 +142,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cuda
     # timemory-cudart
     timemory-nvtx
+    timemory-nccl
     timemory-cupti
     timemory-cudart-device
     #
@@ -162,6 +168,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-cuda
     timemory-cudart
     timemory-nvtx
+    timemory-nccl
     timemory-cupti
     timemory-cudart-device
     timemory-caliper
@@ -182,6 +189,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-cuda
     timemory-cudart-static
     timemory-nvtx
+    timemory-nccl
     timemory-cupti
     timemory-cudart-device
     timemory-caliper
@@ -294,7 +302,7 @@ function(find_package_interface)
         add_library(${PACKAGE_INTERFACE} INTERFACE)
         add_library(${PROJECT_NAME}::${PACKAGE_INTERFACE} ALIAS ${PACKAGE_INTERFACE})
     endif()
-    
+
     if("${PACKAGE_DESCRIPTION}" STREQUAL "")
         set(PACKAGE_DESCRIPTION "${PACKAGE_INTERFACE}")
     endif()
@@ -485,7 +493,7 @@ if(MPI_FOUND)
         set(_TYPE )
         if(MPI_${_LANG}_LIBRARIES)
             target_link_libraries(timemory-mpi INTERFACE ${MPI_${_LANG}_LIBRARIES})
-	    # add_rpath(${MPI_${_LANG}_LIBRARIES})
+        # add_rpath(${MPI_${_LANG}_LIBRARIES})
         endif()
 
         # compile flags
@@ -763,6 +771,27 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 #
+#                               NCCL
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_NCCL)
+    find_package(NCCL ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(NCCL_FOUND AND TIMEMORY_USE_CUDA)
+    add_rpath(${NCCL_LIBRARIES})
+    target_link_libraries(timemory-nccl INTERFACE ${NCCL_LIBRARIES})
+    target_include_directories(timemory-nccl SYSTEM INTERFACE ${NCCL_INCLUDE_DIRS})
+    target_compile_definitions(timemory-nccl INTERFACE TIMEMORY_USE_NCCL)
+else()
+    set(TIMEMORY_USE_NCCL OFF)
+    inform_empty_interface(timemory-nccl "NCCL")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
 #                               Google PerfTools
 #
 #----------------------------------------------------------------------------------------#
@@ -884,9 +913,9 @@ if(TIMEMORY_USE_GPERFTOOLS)
 
     target_include_directories(timemory-gperftools SYSTEM INTERFACE ${gperftools_INCLUDE_DIRS})
     target_include_directories(timemory-gperftools-static SYSTEM INTERFACE ${gperftools_INCLUDE_DIRS})
-    
+
     add_rpath(${gperftools_LIBRARIES} ${gperftools_ROOT_DIR}/lib ${gperftools_ROOT_DIR}/lib64)
-    
+
     if(TIMEMORY_USE_GPERFTOOLS_STATIC)
         # set local overloads
         set(gperftools_PREFER_SHARED OFF)
@@ -1034,9 +1063,19 @@ if(LIKWID_FOUND)
     target_link_libraries(timemory-likwid INTERFACE ${LIKWID_LIBRARIES})
     target_include_directories(timemory-likwid SYSTEM INTERFACE ${LIKWID_INCLUDE_DIRS})
     target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID)
+    if(TIMEMORY_USE_LIKWID_PERFMON)
+        target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID_PERFMON
+            LIKWID_PERFMON)
+    endif()
+    if(TIMEMORY_USE_LIKWID_NVMON)
+        target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID_NVMON
+            LIKWID_NVMON)
+    endif()
     add_rpath(${LIKWID_LIBRARIES})
 else()
     set(TIMEMORY_USE_LIKWID OFF)
+    set(TIMEMORY_USE_LIKWID_PERFMON OFF)
+    set(TIMEMORY_USE_LIKWID_NVMON OFF)
     inform_empty_interface(timemory-likwid "LIKWID")
 endif()
 
@@ -1199,12 +1238,12 @@ if(Dyninst_FOUND AND Boost_FOUND)
 
     find_path(TBB_INCLUDE_DIR
         NAMES tbb/tbb.h
-	PATH_SUFFIXES include)
+    PATH_SUFFIXES include)
 
     if(TBB_INCLUDE_DIR)
         set(TBB_INCLUDE_DIRS ${TBB_INCLUDE_DIR})
     endif()
-    
+
     if(DYNINST_HEADER_DIR)
         target_include_directories(timemory-dyninst SYSTEM INTERFACE ${DYNINST_HEADER_DIR})
     endif()

@@ -83,6 +83,13 @@ get_user_bundle_variables()
             []() { return settings::profiler_components(); },
             []() { return settings::components(); },
             []() { return settings::global_components(); } } },
+        { component::ncclp_bundle_idx,
+          { []() { return settings::ncclp_components(); },
+            []() { return settings::mpip_components(); },
+            []() { return settings::trace_components(); },
+            []() { return settings::profiler_components(); },
+            []() { return settings::components(); },
+            []() { return settings::global_components(); } } },
         { component::trace_bundle_idx,
           { []() { return settings::trace_components(); },
             []() { return settings::components(); },
@@ -341,7 +348,6 @@ public:
     //
     void start()
     {
-        base_type::set_started();
         for(auto& itr : m_bundle)
             itr.start(m_prefix, m_scope);
     }
@@ -350,7 +356,6 @@ public:
     {
         for(auto& itr : m_bundle)
             itr.stop();
-        base_type::set_stopped();
     }
 
     void clear()

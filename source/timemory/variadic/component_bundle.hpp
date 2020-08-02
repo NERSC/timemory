@@ -469,6 +469,23 @@ public:
         return get<T>();
     }
 
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              enable_if_t<trait::is_available<T>::value && is_one_of<T, data_type>::value,
+                          int> = 0>
+    auto& get_reference()
+    {
+        return std::get<index_of<T, data_type>::value>(m_data);
+    }
+
+    template <
+        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+        enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value,
+                    int> = 0>
+    auto& get_reference()
+    {
+        return std::get<index_of<T*, data_type>::value>(m_data);
+    }
+
     //----------------------------------------------------------------------------------//
     ///  initialize a type that is in variadic list AND is available
     ///
@@ -514,7 +531,7 @@ public:
                           char> = 0>
     void init(Args&&... _args)
     {
-        T& _obj = std::get<index_of<T, data_type>::value>(m_data);
+        T&                      _obj = std::get<index_of<T, data_type>::value>(m_data);
         operation::construct<T> _tmp(_obj, std::forward<Args>(_args)...);
     }
 
@@ -559,6 +576,13 @@ public:
         TIMEMORY_FOLD_EXPRESSION(this->init<T>(std::forward<Args>(args)...));
     }
 
+    template <typename... Tail>
+    void disable()
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::generic_deleter<remove_pointer_t<Tail>>{
+            this->get_reference<Tail>() });
+    }
+
     //----------------------------------------------------------------------------------//
     /// apply a member function to a type that is in variadic list AND is available
     ///
@@ -566,16 +590,17 @@ public:
               enable_if_t<is_one_of<T, data_type>::value == true, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
-        auto&& _obj = get<T>();
-        ((_obj).*(_func))(std::forward<Args>(_args)...);
+        auto* _obj = get<T>();
+        ((*_obj).*(_func))(std::forward<Args>(_args)...);
     }
 
     template <typename T, typename Func, typename... Args,
               enable_if_t<is_one_of<T*, data_type>::value == true, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
-        auto&& _obj = get<T*>();
-        ((_obj).*(_func))(std::forward<Args>(_args)...);
+        auto* _obj = get<T*>();
+        if(_obj)
+            ((*_obj).*(_func))(std::forward<Args>(_args)...);
     }
 
     template <typename T, typename Func, typename... Args,

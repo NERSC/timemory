@@ -451,7 +451,6 @@ public:
 
     void start()
     {
-        set_started();
         switch(event_mode())
         {
             case MODE::ACTIVITY:
@@ -490,7 +489,6 @@ public:
                 break;
             }
         }
-        set_stopped();
     }
 
     //----------------------------------------------------------------------------------//
@@ -615,7 +613,7 @@ protected:
 
     friend struct base<this_type, value_type>;
     friend class impl::storage<this_type,
-                               implements_storage<this_type, value_type>::value>;
+                               trait::implements_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//

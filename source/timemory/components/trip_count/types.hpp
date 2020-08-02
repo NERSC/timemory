@@ -34,18 +34,18 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
+/// \struct trip_count
+/// \brief Records the number of invocations. This is the most lightweight metric
+/// available since it only increments an integer and never records any statistics.
+/// If dynamic instrumentation is used and the overhead is significant, it is recommended
+/// to set this as the only component (-d trip_count) and then use the regex exclude
+/// option (-E) to remove any non-critical function calls which have very high
+/// trip-counts.
 TIMEMORY_DECLARE_COMPONENT(trip_count)
 //
-//======================================================================================//
-//
-//                              CUSTOM LAPS PRINTING
-//
-//--------------------------------------------------------------------------------------//
-//
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_laps_printing, component::trip_count, true_type)
-//
-//======================================================================================//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_mean, component::trip_count, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_self, component::trip_count, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::trip_count, false_type)
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(trip_count, TRIP_COUNT, "trip_count", "")

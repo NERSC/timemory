@@ -103,6 +103,7 @@ public:
     using accum_type   = conditional_t<has_accum_v, value_type, EmptyT>;
     using last_type    = conditional_t<has_last_v, value_type, EmptyT>;
     using dynamic_type = typename trait::dynamic_base<Tp>::type;
+    using cache_type   = typename trait::cache<Tp>::type;
 
     using this_type         = Tp;
     using base_type         = base<Tp, Value>;
@@ -116,11 +117,12 @@ public:
     using fmtflags          = std::ios_base::fmtflags;
 
 private:
-    friend class impl::storage<Tp, implements_storage<Tp, Value>::value>;
+    friend class impl::storage<Tp, trait::implements_storage<Tp, Value>::value>;
     friend class storage<Tp, Value>;
     friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
+    friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
     friend struct operation::insert_node<Tp>;
@@ -193,11 +195,11 @@ public:
     dynamic_type* create() const;
 
     template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
+              enable_if_t<(trait::implements_storage<Up, Vp>::value), int> = 0>
     void print(std::ostream&) const;
 
     template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<!(implements_storage<Up, Vp>::value), int> = 0>
+              enable_if_t<!(trait::implements_storage<Up, Vp>::value), int> = 0>
     void print(std::ostream&) const;
 
     bool operator<(const base_type& rhs) const { return (load() < rhs.load()); }
@@ -240,7 +242,11 @@ public:
     const value_type& get_value() const { return value; }
     const accum_type& get_accum() const { return accum; }
     const last_type&  get_last() const { return last; }
-    const bool&       get_is_transient() const { return is_transient; }
+    bool              get_is_transient() const { return (laps > 0 || is_transient); }
+    auto              get_is_running() const { return is_running; }
+    auto              get_is_on_stack() const { return is_on_stack; }
+    auto              get_is_flat() const { return is_flat; }
+    auto              get_depth_change() const { return depth_change; }
 
     void set_laps(int64_t v) { laps = v; }
     void set_value(value_type v) { value = v; }
@@ -260,8 +266,12 @@ protected:
     static void               cleanup() {}
 
     template <typename Up = Tp, enable_if_t<(trait::base_has_accum<Up>::value), int> = 0>
+    value_type& load();
+    template <typename Up = Tp, enable_if_t<(trait::base_has_accum<Up>::value), int> = 0>
     const value_type& load() const;
 
+    template <typename Up = Tp, enable_if_t<!(trait::base_has_accum<Up>::value), int> = 0>
+    value_type& load();
     template <typename Up = Tp, enable_if_t<!(trait::base_has_accum<Up>::value), int> = 0>
     const value_type& load() const;
 
@@ -374,6 +384,7 @@ public:
     using sample_type      = EmptyT;
     using sample_list_type = EmptyT;
     using dynamic_type     = typename trait::dynamic_base<Tp>::type;
+    using cache_type       = typename trait::cache<Tp>::type;
 
     using this_type    = Tp;
     using base_type    = base<Tp, value_type>;
@@ -385,6 +396,7 @@ private:
     friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
+    friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
     friend struct operation::insert_node<Tp>;
@@ -433,6 +445,13 @@ public:
     auto start(crtp::base) { this->start(); }
     auto stop(crtp::base) { this->stop(); }
 
+    template <typename CacheT                                     = cache_type,
+              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
+    void start(const CacheT&);
+    template <typename CacheT                                     = cache_type,
+              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
+    void stop(const CacheT&);
+
     void set_started();
     void set_stopped();
 
@@ -445,6 +464,9 @@ public:
     dynamic_type* create() const;
 
     int64_t get_laps() const { return 0; }
+    auto    get_is_running() const { return is_running; }
+    auto    get_is_on_stack() const { return is_on_stack; }
+    auto    get_is_transient() const { return is_transient; }
 
     // used by operation::finalize::print<Type>
     void operator-=(const base_type&) {}

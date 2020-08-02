@@ -137,7 +137,7 @@ random_entry(const std::vector<Tp>& v)
 
 //--------------------------------------------------------------------------------------//
 
-class empty_tests : public ::testing::Test
+class data_tracker_tests : public ::testing::Test
 {
 protected:
     void SetUp() override
@@ -162,7 +162,7 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(empty_tests, iteration_tracker)
+TEST_F(data_tracker_tests, iteration_tracker)
 {
     struct iteration_tag
     {};

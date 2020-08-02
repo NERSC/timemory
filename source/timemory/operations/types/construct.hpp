@@ -77,7 +77,8 @@ struct construct
     }
 
 private:
-    //  The equivalent of supports args
+    // resolution #1 (best)
+    // construction is possible with given arguments
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, int, Args&&... args)
         -> decltype(Up(std::forward<Args>(args)...), void())
@@ -85,7 +86,8 @@ private:
         obj = Up(std::forward<Args>(args)...);
     }
 
-    //  The equivalent of !supports_args
+    // resolution #2
+    // construction is not possible with given arguments
     template <typename Up, typename... Args>
     auto sfinae(Up&, long, Args&&...) -> decltype(void(), void())
     {}

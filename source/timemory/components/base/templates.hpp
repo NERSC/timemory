@@ -66,11 +66,11 @@ void
 base<Tp, Value>::CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
 {
     // clang-format off
-        ar(cereal::make_nvp("is_transient", is_transient),
-           cereal::make_nvp("laps", laps),
-           cereal::make_nvp("value", value),
-           cereal::make_nvp("accum", accum),
-           cereal::make_nvp("last", last));
+    ar(cereal::make_nvp("is_transient", is_transient),
+        cereal::make_nvp("laps", laps),
+        cereal::make_nvp("value", value),
+        cereal::make_nvp("accum", accum),
+        cereal::make_nvp("last", last));
     // clang-format on
 }
 //
@@ -102,10 +102,30 @@ base<Tp, Value>::add_sample(Vp&& _obj)
 //
 template <typename Tp, typename Value>
 template <typename Up, enable_if_t<(trait::base_has_accum<Up>::value), int>>
+Value&
+base<Tp, Value>::load()
+{
+    return (get_is_transient()) ? accum : value;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Value>
+template <typename Up, enable_if_t<(trait::base_has_accum<Up>::value), int>>
 const Value&
 base<Tp, Value>::load() const
 {
-    return (is_transient) ? accum : value;
+    return (get_is_transient()) ? accum : value;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Value>
+template <typename Up, enable_if_t<!(trait::base_has_accum<Up>::value), int>>
+Value&
+base<Tp, Value>::load()
+{
+    return value;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -198,7 +218,8 @@ base<Tp, Value>::get_display_unit()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, typename Vp, enable_if_t<(implements_storage<Up, Vp>::value), int>>
+template <typename Up, typename Vp,
+          enable_if_t<(trait::implements_storage<Up, Vp>::value), int>>
 void
 base<Tp, Value>::print(std::ostream& os) const
 {
@@ -209,7 +230,7 @@ base<Tp, Value>::print(std::ostream& os) const
 //
 template <typename Tp, typename Value>
 template <typename Up, typename Vp,
-          enable_if_t<!(implements_storage<Up, Vp>::value), int>>
+          enable_if_t<!(trait::implements_storage<Up, Vp>::value), int>>
 void
 base<Tp, Value>::print(std::ostream&) const
 {}

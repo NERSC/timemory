@@ -31,13 +31,17 @@
 
 namespace tim
 {
+//
+struct null_type;
+//
 namespace concepts
 {
 using false_type = std::false_type;
 using true_type  = std::true_type;
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a variadic type is empty
+/// \struct tim::concepts::is_empty
+/// \brief concept that specifies that a variadic type is empty
 ///
 template <typename T>
 struct is_empty : false_type
@@ -48,21 +52,48 @@ struct is_empty<Tuple<>> : true_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a type is a generic variadic wrapper
+/// \struct tim::concepts::is_null_type
+/// \brief concept that specifies that a type is not a useful type
+///
+template <typename T>
+struct is_null_type : false_type
+{};
+
+template <template <typename...> class Tuple>
+struct is_null_type<Tuple<>> : true_type
+{};
+
+template <>
+struct is_null_type<void> : true_type
+{};
+
+template <>
+struct is_null_type<false_type> : true_type
+{};
+
+template <>
+struct is_null_type<null_type> : true_type
+{};
+
+//----------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_variadic
+/// \brief concept that specifies that a type is a generic variadic wrapper
 ///
 template <typename T>
 struct is_variadic : false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a type is a timemory variadic wrapper
+/// \struct tim::concepts::is_wrapper
+/// \brief concept that specifies that a type is a timemory variadic wrapper
 ///
 template <typename T>
 struct is_wrapper : false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a type is a timemory variadic wrapper
+/// \struct tim::concepts::is_stack_wrapper
+/// \brief concept that specifies that a type is a timemory variadic wrapper
 /// and components are stack-allocated
 ///
 template <typename T>
@@ -70,7 +101,8 @@ struct is_stack_wrapper : false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a type is a timemory variadic wrapper
+/// \struct tim::concepts::is_heap_wrapper
+/// \brief concept that specifies that a type is a timemory variadic wrapper
 /// and components are heap-allocated
 ///
 template <typename T>
@@ -78,7 +110,8 @@ struct is_heap_wrapper : false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a type is a timemory variadic wrapper
+/// \struct tim::concepts::is_hybrid_wrapper
+/// \brief concept that specifies that a type is a timemory variadic wrapper
 /// and components are stack- and heap- allocated
 ///
 template <typename T>
@@ -86,7 +119,8 @@ struct is_hybrid_wrapper : false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a type is a timemory variadic wrapper
+/// \struct tim::concepts::is_comp_wrapper
+/// \brief concept that specifies that a type is a timemory variadic wrapper
 /// that does not perform auto start/stop, e.g. component_{tuple,list,hybrid}
 ///
 template <typename T>
@@ -94,7 +128,8 @@ struct is_comp_wrapper : false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a type is a timemory variadic wrapper
+/// \struct tim::concepts::is_auto_wrapper
+/// \brief concept that specifies that a type is a timemory variadic wrapper
 /// that performs auto start/stop, e.g. auto_{tuple,list,hybrid}
 ///
 template <typename T>
@@ -102,21 +137,24 @@ struct is_auto_wrapper : false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// determines if a variadic wrapper contains a gotcha component
+/// \struct tim::concepts::has_gotcha
+/// \brief determines if a variadic wrapper contains a gotcha component
 ///
 template <typename T>
 struct has_gotcha : std::false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a type is a user_bundle type
+/// \struct tim::concepts::has_user_bundle
+/// \brief concept that specifies that a type is a user_bundle type
 ///
 template <typename T>
 struct has_user_bundle : false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// converts a boolean to an integer
+/// \struct tim::concepts::bool_int
+/// \brief converts a boolean to an integer
 ///
 template <bool B, typename T = int>
 struct bool_int
@@ -125,7 +163,8 @@ struct bool_int
 };
 
 //----------------------------------------------------------------------------------//
-/// counts a series of booleans
+/// \struct tim::concepts::sum_bool_int
+/// \brief counts a series of booleans
 ///
 template <bool... B>
 struct sum_bool_int;
@@ -153,7 +192,8 @@ struct sum_bool_int<B, BoolTail...>
 };
 
 //----------------------------------------------------------------------------------//
-/// determines whether variadic structures are compatible
+/// \struct tim::concepts::compatible_wrappers
+/// \brief determines whether variadic structures are compatible
 ///
 template <typename Lhs, typename Rhs>
 struct compatible_wrappers

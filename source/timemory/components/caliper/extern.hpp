@@ -29,37 +29,13 @@
 
 #pragma once
 
-//======================================================================================//
-//
 #include "timemory/components/base.hpp"
-#include "timemory/components/macros.hpp"
-//
+#include "timemory/components/caliper/backends.hpp"
 #include "timemory/components/caliper/components.hpp"
 #include "timemory/components/caliper/types.hpp"
-//
-#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
-    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
-// source/header-only requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/definition.hpp"
-//
-#else
-// extern requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
-//
-#endif
-//
-//======================================================================================//
-//
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
+
 TIMEMORY_EXTERN_COMPONENT(caliper_marker, false, void)
 TIMEMORY_EXTERN_COMPONENT(caliper_config, false, void)
 TIMEMORY_EXTERN_COMPONENT(caliper_loop_marker, false, void)
-//
-//======================================================================================//

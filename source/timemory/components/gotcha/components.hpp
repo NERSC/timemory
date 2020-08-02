@@ -1102,11 +1102,7 @@ public:
 public:
     //----------------------------------------------------------------------------------//
 
-    void start()
-    {
-        set_started();
-        value = record();
-    }
+    void start() { value = record(); }
 
     void stop()
     {
@@ -1114,7 +1110,6 @@ public:
         auto tmp = record();
         accum += (value - tmp);
         value = std::move(std::max(value, tmp));
-        set_stopped();
     }
 
     //----------------------------------------------------------------------------------//

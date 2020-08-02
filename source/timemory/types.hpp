@@ -101,6 +101,7 @@
     component::process_cpu_clock,               \
     component::process_cpu_util,                \
     component::read_bytes,                      \
+    component::read_char,                       \
     component::stack_rss,                       \
     component::system_clock,                    \
     component::tau_marker,                      \
@@ -118,7 +119,8 @@
     component::vtune_frame,                     \
     component::vtune_profiler,                  \
     component::wall_clock,                      \
-    component::written_bytes
+    component::written_bytes,                   \
+    component::written_char
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -199,6 +201,7 @@ using available_list_t = available_component_list_t;
 using global_bundle_t = component_tuple<component::user_global_bundle>;
 using ompt_bundle_t   = component_tuple<component::user_ompt_bundle>;
 using mpip_bundle_t   = component_tuple<component::user_mpip_bundle>;
+using ncclp_bundle_t  = component_tuple<component::user_ncclp_bundle>;
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -16,6 +16,12 @@ function(DEFINE_DEFAULT_OPTION VAR VAL)
     if(TIMEMORY_REQUIRE_PACKAGES)
         set(${VAR} OFF PARENT_SCOPE)
     else()
+        foreach(_ARG ${ARGN})
+            if(NOT ${_ARG})
+                set(VAL OFF)
+                break()
+            endif()
+        endforeach()
         set(${VAR} ${VAL} PARENT_SCOPE)
     endif()
     set_property(GLOBAL APPEND PROPERTY DEFAULT_OPTION_VARIABLES ${VAR})
@@ -251,6 +257,8 @@ define_default_option(_CRAYPAT ON)
 define_default_option(_OMPT OFF)
 define_default_option(_LIKWID ${_NON_APPLE_UNIX})
 define_default_option(_GOTCHA ${_NON_APPLE_UNIX})
+define_default_option(_NCCL ${_USE_CUDA})
+define_default_option(_LIKWID_NVMON ${_LIKWID} ${_NON_APPLE_UNIX} ${_CUDA})
 
 # timemory options
 add_option(TIMEMORY_USE_STATISTICS
@@ -283,6 +291,8 @@ add_option(TIMEMORY_USE_NVTX
     "Enable NVTX marking API" ${_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CUPTI
     "Enable CUPTI profiling for NVIDIA GPUs" ${_CUDA} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_NCCL
+    "Enable NCCL support for NVIDIA GPUs" ${_NCCL} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_PYTHON
@@ -299,6 +309,10 @@ add_option(TIMEMORY_USE_OMPT
     "Enable OpenMP tooling" ${_OMPT} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_LIKWID
     "Enable LIKWID marker forwarding" ${_LIKWID} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_LIKWID_PERFMON
+    "Enable LIKWID support for perf (CPU)" ${_LIKWID} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_LIKWID_NVMON
+    "Enable LIKWID support for nvidia (GPU)" ${_LIKWID_NVMON} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_GOTCHA
     "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
 add_option(TIMEMORY_BUILD_ERT
@@ -342,6 +356,11 @@ if(_OMPT AND NOT BUILD_SHARED_LIBS)
     set(_OMPT OFF)
 endif()
 
+set(_NCCLP ${TIMEMORY_USE_NCCL})
+if(_NCCLP AND (NOT BUILD_SHARED_LIBS OR NOT TIMEMORY_USE_GOTCHA))
+    set(_NCCLP OFF)
+endif()
+
 set(_TIMEM ${TIMEMORY_BUILD_TOOLS})
 if(_TIMEM AND WIN32)
     set(_TIMEM OFF)
@@ -354,6 +373,7 @@ add_option(TIMEMORY_BUILD_DYNINST_TOOLS
     "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})
 add_option(TIMEMORY_BUILD_MPIP_LIBRARY "Build the mpiP library" ${_MPIP})
 add_option(TIMEMORY_BUILD_OMPT_LIBRARY "Build the OMPT library" ${_OMPT})
+add_option(TIMEMORY_BUILD_NCCLP_LIBRARY "Build the ncclP library" ${_NCCLP})
 
 unset(_MPIP)
 unset(_OMPT)
@@ -370,6 +390,13 @@ if(TIMEMORY_BUILD_OMPT_LIBRARY AND NOT TIMEMORY_USE_OMPT)
     message(AUTHOR_WARNING
         "TIMEMORY_BUILD_OMPT_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_OMPT=ON...")
     set(TIMEMORY_BUILD_OMPT_LIBRARY OFF CACHE BOOL "Build the OMPT library" FORCE)
+endif()
+
+if(TIMEMORY_BUILD_NCCLP_LIBRARY AND (NOT BUILD_SHARED_LIBS OR
+    NOT TIMEMORY_USE_NCCL OR NOT TIMEMORY_USE_GOTCHA))
+    message(AUTHOR_WARNING
+        "TIMEMORY_BUILD_NCCLP_LIBRARY requires BUILD_SHARED_LIBS=ON, TIMEMORY_USE_NCCL=ON, and TIMEMORY_USE_GOTCHA=ON...")
+    set(TIMEMORY_BUILD_NCCLP_LIBRARY OFF CACHE BOOL "Build the ncclP library" FORCE)
 endif()
 
 if(NOT BUILD_SHARED_LIBS AND TIMEMORY_BUILD_KOKKOS_TOOLS)

@@ -38,8 +38,6 @@
 #include "timemory/components/rusage/extern/page_rss.hpp"
 #include "timemory/components/rusage/extern/peak_rss.hpp"
 #include "timemory/components/rusage/extern/priority_context_switch.hpp"
-#include "timemory/components/rusage/extern/read_bytes.hpp"
 #include "timemory/components/rusage/extern/user_mode_time.hpp"
 #include "timemory/components/rusage/extern/virtual_memory.hpp"
 #include "timemory/components/rusage/extern/voluntary_context_switch.hpp"
-#include "timemory/components/rusage/extern/written_bytes.hpp"

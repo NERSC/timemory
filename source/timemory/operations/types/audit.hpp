@@ -73,7 +73,8 @@ struct audit
 
 private:
     //----------------------------------------------------------------------------------//
-    //  The equivalent of supports_args and an implementation provided
+    // resolution #1 (best)
+    // operation is supported with given arguments
     //
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, int, int, Args&&... args)
@@ -83,7 +84,8 @@ private:
     }
 
     //----------------------------------------------------------------------------------//
-    //  The equivalent of !supports_args and no implementation provided
+    // resolution #2
+    // operation is supported with first argument only
     //
     template <typename Up, typename Arg, typename... Args>
     auto sfinae(Up& obj, int, long, Arg&& arg, Args&&...)
@@ -93,7 +95,8 @@ private:
     }
 
     //----------------------------------------------------------------------------------//
-    //  The equivalent of !supports_args and no implementation provided
+    // resolution #3
+    // operation is not supported
     //
     template <typename Up, typename... Args>
     auto sfinae(Up&, long, long, Args&&...) -> decltype(void(), void())

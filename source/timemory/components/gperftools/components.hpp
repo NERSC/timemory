@@ -73,7 +73,6 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
 
     void start()
     {
-        set_started();
         if(!gperf::cpu::is_running())
         {
             index                 = this_type::get_index()++;
@@ -96,7 +95,6 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
             gperf::cpu::profiler_flush();
             gperf::cpu::profiler_stop();
         }
-        set_stopped();
     }
 
 protected:
@@ -145,7 +143,6 @@ struct gperftools_heap_profiler : public base<gperftools_heap_profiler, void>
 
     void start()
     {
-        set_started();
         if(!gperf::heap::is_running())
         {
             index      = this_type::get_index()++;
@@ -164,7 +161,6 @@ struct gperftools_heap_profiler : public base<gperftools_heap_profiler, void>
             gperf::heap::profiler_flush(prefix);
             gperf::heap::profiler_stop();
         }
-        set_stopped();
     }
 
     void set_prefix(const std::string& _prefix) { prefix = _prefix; }

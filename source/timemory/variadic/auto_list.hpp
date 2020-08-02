@@ -267,6 +267,12 @@ public:
         m_temporary.template initialize<Tp...>(std::forward<Args>(_args)...);
     }
 
+    template <typename... Tail>
+    void disable()
+    {
+        m_temporary.template disable<Tail...>();
+    }
+
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
