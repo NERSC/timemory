@@ -77,9 +77,6 @@ if(TIMEMORY_BUILD_PYTHON)
     if(UNIX AND NOT APPLE)
         set_target_properties(libpytimemory PROPERTIES INSTALL_RPATH
             "\$ORIGIN/${LIB_RELPATH}:\$ORIGIN/${LIB_RELPATH}/timemory:\$ORIGIN/../../..:\$ORIGIN/../../../timemory:\$ORIGIN:${CMAKE_INSTALL_RPATH}")
-    elseif(APPLE)
-        set_target_properties(libpytimemory PROPERTIES INSTALL_RPATH
-            "@loader_path/${LIB_RELPATH}:@loader_path/${LIB_RELPATH}/timemory:@loader_path/../../..:@loader_path/../../../timemory:@loader_path:${CMAKE_INSTALL_RPATH}")
     endif()
 
     install(TARGETS libpytimemory
