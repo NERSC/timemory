@@ -77,6 +77,7 @@ struct gpu_roofline
     using types_tuple   = std::tuple<Types...>;
 
     friend struct operation::record<this_type>;
+    friend struct operation::stop<this_type>;
 
     using ert_data_t     = ert::exec_data<count_type>;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
