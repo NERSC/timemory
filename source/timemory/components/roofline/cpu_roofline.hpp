@@ -77,6 +77,7 @@ struct cpu_roofline
     using record_type  = std::function<value_type()>;
 
     friend struct operation::record<this_type>;
+    friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
 
     using unit_type         = typename trait::units<this_type>::type;
