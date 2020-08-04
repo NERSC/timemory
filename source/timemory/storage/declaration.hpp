@@ -48,6 +48,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/types.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <atomic>
 #include <cstdint>

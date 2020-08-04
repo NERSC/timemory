@@ -246,8 +246,9 @@ public:
     , m_typeids(rhs.m_typeids)
     , m_bundle(rhs.m_bundle)
     {
-        for(auto& itr : m_bundle)
-            itr.set_copy(true);
+        if(m_typeids.size() > 0 && m_bundle.size() > 0)
+            for(auto& itr : m_bundle)
+                itr.set_copy(true);
     }
 
     explicit user_bundle(const char* _prefix, scope::config _scope = scope::get_default())
@@ -305,7 +306,9 @@ public:
     , m_prefix(std::move(rhs.m_prefix))
     , m_typeids(std::move(rhs.m_typeids))
     , m_bundle(std::move(rhs.m_bundle))
-    {}
+    {
+        rhs.m_bundle.clear();
+    }
 
     user_bundle& operator=(user_bundle&& rhs) noexcept
     {
@@ -316,6 +319,7 @@ public:
             m_prefix           = std::move(rhs.m_prefix);
             m_typeids          = std::move(rhs.m_typeids);
             m_bundle           = std::move(rhs.m_bundle);
+            rhs.m_bundle.clear();
         }
         return *this;
     }
@@ -345,9 +349,7 @@ public:
                 PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
                 return;
             }
-
-            obj.init();
-            get_data().emplace_back(std::forward<opaque>(obj));
+            get_data().push_back(obj);
         }
     }
 
@@ -402,8 +404,9 @@ public:
 
     void stop()
     {
-        for(auto& itr : m_bundle)
-            itr.stop();
+        if(m_typeids.size() > 0 && m_bundle.size() > 0)
+            for(size_t i = 0; i < m_bundle.size(); ++i)
+                m_bundle.at(i).stop();
     }
 
     void pop()
@@ -426,23 +429,25 @@ public:
     {
         auto  _typeid_hash = get_hash(demangle<T>());
         void* void_ptr     = nullptr;
-        for(auto& itr : m_bundle)
-        {
-            itr.get(void_ptr, _typeid_hash);
-            if(void_ptr)
-                return void_ptr;
-        }
+        if(m_typeids.size() > 0 && m_bundle.size() > 0)
+            for(auto& itr : m_bundle)
+            {
+                itr.get(void_ptr, _typeid_hash);
+                if(void_ptr)
+                    return void_ptr;
+            }
         return static_cast<T*>(void_ptr);
     }
 
     void get(void*& ptr, size_t _hash) const
     {
-        for(const auto& itr : m_bundle)
-        {
-            itr.get(ptr, _hash);
-            if(ptr)
-                break;
-        }
+        if(m_typeids.size() > 0 && m_bundle.size() > 0)
+            for(const auto& itr : m_bundle)
+            {
+                itr.get(ptr, _hash);
+                if(ptr)
+                    break;
+            }
     }
 
     void get() {}
@@ -485,9 +490,7 @@ public:
             }
             if(sum == 0)
                 return;
-
-            obj.init();
-            m_bundle.emplace_back(std::forward<opaque>(obj));
+            m_bundle.push_back(obj);
         }
     }
 
@@ -518,9 +521,9 @@ protected:
 private:
     struct persistent_data
     {
-        mutex_t        lock;
-        opaque_array_t data    = {};
-        typeid_vec_t   typeids = {};
+        mutex_t         m_lock;
+        opaque_array_t* m_data    = new opaque_array_t{};
+        typeid_vec_t    m_typeids = {};
     };
 
     //----------------------------------------------------------------------------------//
@@ -532,17 +535,17 @@ public:
     //----------------------------------------------------------------------------------//
     //  Bundle data
     //
-    static opaque_array_t& get_data() { return get_persistent_data().data; }
+    static opaque_array_t& get_data() { return *get_persistent_data().m_data; }
 
     //----------------------------------------------------------------------------------//
     //  The configuration strings
     //
-    static typeid_vec_t& get_typeids() { return get_persistent_data().typeids; }
+    static typeid_vec_t& get_typeids() { return get_persistent_data().m_typeids; }
 
     //----------------------------------------------------------------------------------//
     //  Get lock
     //
-    static mutex_t& get_lock() { return get_persistent_data().lock; }
+    static mutex_t& get_lock() { return get_persistent_data().m_lock; }
 };
 //
 //--------------------------------------------------------------------------------------//

@@ -4,10 +4,10 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 foreach(_VAR ROOT_DIR INCLUDE_DIR LIB_DIR PYTHON_DIR INCLUDE_DIRS MISSING_COMPONENTS
     FOUND_COMPONENTS LIBRARIES LIBRARY_FOUND SHARED_LIBRARY_FOUND STATIC_LIBRARY_FOUND
     ENABLED_LINK_LANGUAGES ENABLED_LINK_LIBRARIES)
-    unset(@PROJECT_NAME@_${_VAR})
+    unset(timemory_${_VAR})
 endforeach()
 
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-config-version.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/timemory-config-version.cmake)
 
 @PACKAGE_INIT@
 
@@ -15,21 +15,21 @@ include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-config-version.cmake)
 #   Settings
 #----------------------------------------------------------------------------------------#
 set(TIMEMORY_PYTHON_BINDINGS @TIMEMORY_BUILD_PYTHON@)
-if(NOT DEFINED @PROJECT_NAME@_DIR)
-    set(@PROJECT_NAME@_DIR ${CMAKE_CURRENT_LIST_DIR})
-endif(NOT DEFINED @PROJECT_NAME@_DIR)
+if(NOT DEFINED timemory_DIR)
+    set(timemory_DIR ${CMAKE_CURRENT_LIST_DIR})
+endif(NOT DEFINED timemory_DIR)
 set(TIMEMORY_C_LIBRARY @TIMEMORY_BUILD_C@)
 
 # compile options
-set(@PROJECT_NAME@_C_COMPILE_OPTIONS @PROJECT_C_COMPILE_OPTIONS@)
-set(@PROJECT_NAME@_CXX_COMPILE_OPTIONS @PROJECT_CXX_COMPILE_OPTIONS@)
-set(@PROJECT_NAME@_CUDA_COMPILE_OPTIONS @PROJECT_CUDA_COMPILE_OPTIONS@)
-set(@PROJECT_NAME@_BUILD_TYPE @CMAKE_BUILD_TYPE@)
+set(timemory_C_COMPILE_OPTIONS @PROJECT_C_COMPILE_OPTIONS@)
+set(timemory_CXX_COMPILE_OPTIONS @PROJECT_CXX_COMPILE_OPTIONS@)
+set(timemory_CUDA_COMPILE_OPTIONS @PROJECT_CUDA_COMPILE_OPTIONS@)
+set(timemory_BUILD_TYPE @CMAKE_BUILD_TYPE@)
 
 # installed and interface libraries
-set(@PROJECT_NAME@_COMPILED_LIBRARIES @TIMEMORY_COMPILED_LIBRARIES@)
-set(@PROJECT_NAME@_INTERFACE_LIBRARIES @TIMEMORY_INTERFACE_LIBRARIES@)
-set(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES @TIMEMORY_EMPTY_INTERFACE_LIBRARIES@)
+set(timemory_COMPILED_LIBRARIES @TIMEMORY_COMPILED_LIBRARIES@)
+set(timemory_INTERFACE_LIBRARIES @TIMEMORY_INTERFACE_LIBRARIES@)
+set(timemory_EMPTY_INTERFACE_LIBRARIES @TIMEMORY_EMPTY_INTERFACE_LIBRARIES@)
 
 set(_EMPTY_BUT_REQUIRED_INTERFACES)
 set(_DEPRECATED_INTERFACES nvtx)
@@ -62,23 +62,23 @@ if(_EMPTY_BUT_REQUIRED_INTERFACES)
 endif()
 
 if(TIMEMORY_PYTHON_BINDINGS)
-    set(@PROJECT_NAME@_PYTHON_MODULE_PREFIX "@PYTHON_MODULE_PREFIX@" CACHE STRING
-        "@PROJECT_NAME@ Python module prefix")
-    set(@PROJECT_NAME@_PYTHON_MODULE_EXTENSION "@PYTHON_MODULE_EXTENSION@" CACHE STRING
-        "@PROJECT_NAME@ Python module extension")
-    set(@PROJECT_NAME@_PYTHON_VERSION_MAJOR "@PYTHON_VERSION_MAJOR@" CACHE STRING
-        "@PROJECT_NAME@ Python major version")
-    set(@PROJECT_NAME@_PYTHON_VERSION_MINOR "@PYTHON_VERSION_MINOR@" CACHE STRING
-        "@PROJECT_NAME@ Python minor version")
-    set(@PROJECT_NAME@_PYBIND11_VERSION_MAJOR "@PYBIND11_VERSION_MAJOR@" CACHE STRING
-        "@PROJECT_NAME@ PyBind11 major version")
-    set(@PROJECT_NAME@_PYBIND11_VERSION_MINOR "@PYBIND11_VERSION_MINOR@" CACHE STRING
-        "@PROJECT_NAME@ PyBind11 minor version")
-    set(@PROJECT_NAME@_PYBIND11_VERSION_MINOR "@PYBIND11_VERSION_PATCH@" CACHE STRING
-        "@PROJECT_NAME@ PyBind11 minor version")
+    set(timemory_PYTHON_MODULE_PREFIX "@PYTHON_MODULE_PREFIX@" CACHE STRING
+        "timemory Python module prefix")
+    set(timemory_PYTHON_MODULE_EXTENSION "@PYTHON_MODULE_EXTENSION@" CACHE STRING
+        "timemory Python module extension")
+    set(timemory_PYTHON_VERSION_MAJOR "@PYTHON_VERSION_MAJOR@" CACHE STRING
+        "timemory Python major version")
+    set(timemory_PYTHON_VERSION_MINOR "@PYTHON_VERSION_MINOR@" CACHE STRING
+        "timemory Python minor version")
+    set(timemory_PYBIND11_VERSION_MAJOR "@PYBIND11_VERSION_MAJOR@" CACHE STRING
+        "timemory PyBind11 major version")
+    set(timemory_PYBIND11_VERSION_MINOR "@PYBIND11_VERSION_MINOR@" CACHE STRING
+        "timemory PyBind11 minor version")
+    set(timemory_PYBIND11_VERSION_MINOR "@PYBIND11_VERSION_PATCH@" CACHE STRING
+        "timemory PyBind11 minor version")
 endif()
 
-if(@PROJECT_NAME@_LANGUAGE_STANDARDS)
+if(timemory_LANGUAGE_STANDARDS)
     # language standards
     set(CMAKE_C_STANDARD @CMAKE_C_STANDARD@ CACHE STRING "")
     set(CMAKE_CXX_STANDARD @CMAKE_CXX_STANDARD@ CACHE STRING "")
@@ -95,12 +95,12 @@ if(@PROJECT_NAME@_LANGUAGE_STANDARDS)
     set(CMAKE_CUDA_EXTENSIONS @CMAKE_CUDA_EXTENSIONS@ CACHE BOOL "")
 endif()
 
-if(NOT @PROJECT_NAME@_ONETIME_MESSAGE_DELIVERED)
-    if(NOT @PROJECT_NAME@_FIND_QUIETLY)
-        set(_ENABLED ${@PROJECT_NAME@_INTERFACE_LIBRARIES})
-        set(_DISABLED ${@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES})
+if(NOT timemory_ONETIME_MESSAGE_DELIVERED)
+    if(NOT timemory_FIND_QUIETLY)
+        set(_ENABLED ${timemory_INTERFACE_LIBRARIES})
+        set(_DISABLED ${timemory_EMPTY_INTERFACE_LIBRARIES})
         message(STATUS "")
-        message(STATUS "@PROJECT_NAME@ was not compiled with support for the following INTERFACE libraries (empty INTERFACE targets):")
+        message(STATUS "timemory was not compiled with support for the following INTERFACE libraries (empty INTERFACE targets):")
         foreach(_LIB ${_DISABLED})
             message(STATUS "    ${_LIB}")
         endforeach()
@@ -108,7 +108,7 @@ if(NOT @PROJECT_NAME@_ONETIME_MESSAGE_DELIVERED)
         unset(_DISABLED)
         unset(_ENABLED)
     endif()
-    set(@PROJECT_NAME@_ONETIME_MESSAGE_DELIVERED ON CACHE BOOL "Onetime message")
+    set(timemory_ONETIME_MESSAGE_DELIVERED ON CACHE BOOL "Onetime message")
 endif()
 
 # languages
@@ -138,18 +138,18 @@ endif()
 
 if(TIMEMORY_INSTALL_TREE)
 
-    set_and_check(@PROJECT_NAME@_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
-    set_and_check(@PROJECT_NAME@_LIB_DIR "@PACKAGE_LIB_INSTALL_DIR@")
-    get_filename_component(@PROJECT_NAME@_ROOT_DIR ${@PROJECT_NAME@_INCLUDE_DIR} PATH)
+    set_and_check(timemory_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
+    set_and_check(timemory_LIB_DIR "@PACKAGE_LIB_INSTALL_DIR@")
+    get_filename_component(timemory_ROOT_DIR ${timemory_INCLUDE_DIR} PATH)
 
     if(@TIMEMORY_BUILD_PYTHON@)
-        set(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
-        if(NOT EXISTS ${@PROJECT_NAME@_PYTHON_DIR})
+        set(timemory_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
+        if(NOT EXISTS ${timemory_PYTHON_DIR})
             find_package(PythonInterp QUIET @TIMEMORY_FIND_REQUIREMENT@)
             if(PYTHONINTERP_FOUND)
                 execute_process(COMMAND
                     ${PYTHON_EXECUTABLE} -c "import site; print(site.getsitepackages()[0])"
-                    OUTPUT_VARIABLE @PROJECT_NAME@_PYTHON_DIR
+                    OUTPUT_VARIABLE timemory_PYTHON_DIR
                     OUTPUT_STRIP_TRAILING_WHITESPACE
                     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
             endif()
@@ -157,7 +157,7 @@ if(TIMEMORY_INSTALL_TREE)
     endif()
 
     foreach(_TYPE LIB INCLUDE PYTHON)
-        set(@PROJECT_NAME@_${_TYPE}_DIRS ${@PROJECT_NAME@_${_TYPE}_DIR})
+        set(timemory_${_TYPE}_DIRS ${timemory_${_TYPE}_DIR})
     endforeach()
 
     macro(TIMEMORY_DEPENDENT_PACKAGE _NAME _OPT)
@@ -196,17 +196,17 @@ if(TIMEMORY_INSTALL_TREE)
     set(CMAKE_MODULE_PATH ${_MODULE_PATH})
     unset(_MODULE_PATH)
 
-    include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-library-depends.cmake)
-    check_required_components(@PROJECT_NAME@)
+    include(${CMAKE_CURRENT_LIST_DIR}/timemory-library-depends.cmake)
+    check_required_components(timemory)
 
 else() # build tree
 
-    set(@PROJECT_NAME@_ROOT_DIR "@PROJECT_BINARY_DIR@")
-    set(@PROJECT_NAME@_INCLUDE_DIRS "@PROJECT_SOURCE_DIR@/source")
-    set(@PROJECT_NAME@_LIB_DIR "@PROJECT_BINARY_DIR@")
+    set(timemory_ROOT_DIR "@PROJECT_BINARY_DIR@")
+    set(timemory_INCLUDE_DIRS "@PROJECT_SOURCE_DIR@/source")
+    set(timemory_LIB_DIR "@PROJECT_BINARY_DIR@")
 
     if(@TIMEMORY_BUILD_PYTHON@)
-        set(@PROJECT_NAME@_PYTHON_DIR "@PROJECT_BINARY_DIR@")
+        set(timemory_PYTHON_DIR "@PROJECT_BINARY_DIR@")
     endif()
 
     MACRO(IMPORT_LIB _LIB _IMPORT_TYPE)
@@ -214,11 +214,11 @@ else() # build tree
             "@PROJECT_BINARY_DIR@/@PROJECT_NAME@-build.cmake")
     ENDMACRO()
 
-    foreach(_LIB ${@PROJECT_NAME@_INTERFACE_LIBRARIES})
+    foreach(_LIB ${timemory_INTERFACE_LIBRARIES})
         import_lib(${_LIB} INTERFACE_IMPORTED_LOCATION)
     endforeach()
 
-    foreach(_LIB ${@PROJECT_NAME@_COMPILED_LIBRARIES})
+    foreach(_LIB ${timemory_COMPILED_LIBRARIES})
         import_lib(${_LIB} IMPORTED_LOCATION)
     endforeach()
 
@@ -233,89 +233,106 @@ endif()
 #----------------------------------------------------------------------------------------#
 #   timemory link target
 #----------------------------------------------------------------------------------------#
-set(_PREFIX )
-if(TIMEMORY_INSTALL_TREE)
-    set(_PREFIX @PROJECT_NAME@::)
+
+set(timemory_LIBRARIES timemory::timemory-headers)
+set(timemory_C_LIBRARIES timemory::timemory-headers)
+set(timemory_CXX_LIBRARIES timemory::timemory-headers)
+
+if(TARGET timemory::timemory-cxx-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
+    list(APPEND timemory_LIBRARIES timemory::timemory-cxx-shared)
+    list(APPEND timemory_CXX_LIBRARIES timemory::timemory-cxx-shared)
+elseif(TARGET timemory::timemory-cxx-static)
+    list(APPEND timemory_LIBRARIES timemory::timemory-cxx-static)
+    list(APPEND timemory_CXX_LIBRARIES timemory::timemory-cxx-static)
 endif()
 
-set(@PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-headers)
-set(@PROJECT_NAME@_C_LIBRARIES ${_PREFIX}@LIBNAME@-headers)
-set(@PROJECT_NAME@_CXX_LIBRARIES ${_PREFIX}@LIBNAME@-headers)
-
-if(TARGET ${_PREFIX}@LIBNAME@-cxx-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
-    list(APPEND @PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-shared)
-    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-shared)
-elseif(TARGET ${_PREFIX}@LIBNAME@-cxx-static)
-    list(APPEND @PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-static)
-    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-static)
+if(TARGET timemory::timemory-c-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
+    list(APPEND timemory_LIBRARIES timemory::timemory-c-shared)
+    list(APPEND timemory_C_LIBRARIES timemory::timemory-c-shared)
+elseif(TARGET timemory::timemory-c-static)
+    list(APPEND timemory_LIBRARIES timemory::timemory-c-static)
+    list(APPEND timemory_C_LIBRARIES timemory::timemory-c-static)
 endif()
 
-if(TARGET ${_PREFIX}@LIBNAME@-c-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
-    list(APPEND @PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-c-shared)
-    list(APPEND @PROJECT_NAME@_C_LIBRARIES ${_PREFIX}@LIBNAME@-c-shared)
-elseif(TARGET ${_PREFIX}@LIBNAME@-c-static)
-    list(APPEND @PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-c-static)
-    list(APPEND @PROJECT_NAME@_C_LIBRARIES ${_PREFIX}@LIBNAME@-c-static)
+if(TARGET timemory::timemory-cxx-static)
+    list(APPEND timemory_STATIC_LIBRARIES timemory::timemory-cxx-static)
 endif()
 
-if(TARGET ${_PREFIX}@LIBNAME@-cxx-static)
-    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-static)
-endif()
-
-if(TARGET ${_PREFIX}@LIBNAME@-c-static)
-    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES ${_PREFIX}@LIBNAME@-c-static)
+if(TARGET timemory::timemory-c-static)
+    list(APPEND timemory_STATIC_LIBRARIES timemory::timemory-c-static)
 endif()
 
 #----------------------------------------------------------------------------------------#
 #   timemory component interface library
 #----------------------------------------------------------------------------------------#
 
-set(_@PROJECT_NAME@_MISSING_COMPONENTS )
-set(@PROJECT_NAME@_FOUND_COMPONENTS ${@PROJECT_NAME@_FIND_COMPONENTS})
+set(_timemory_MISSING_COMPONENTS )
+set(timemory_FOUND_COMPONENTS ${timemory_FIND_COMPONENTS})
+
+if(DEFINED TIMEMORY_COMPILER_INSTRUMENTATION AND TIMEMORY_COMPILER_INSTRUMENTATION)
+    set(TIMEMORY_SKIP_INTERFACE_LIBRARY ON)
+endif()
 
 # option to skip building the interface library
 set(TIMEMORY_BUILD_INTERFACE_LIBRARY ON)
 if(TIMEMORY_SKIP_INTERFACE_LIBRARY)
     set(TIMEMORY_BUILD_INTERFACE_LIBRARY OFF)
+elseif("${timemory_FIND_COMPONENTS}" STREQUAL "")
+    set(TIMEMORY_BUILD_INTERFACE_LIBRARY OFF)
 endif()
 
 # if build interface library is enabled
-if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
+if(TIMEMORY_BUILD_INTERFACE_LIBRARY OR TIMEMORY_COMPILER_INSTRUMENTATION)
 
-    set(_INTERFACE_LIB @LIBNAME@)
+    set(_INTERFACE_LIB timemory)
 
-    if(@PROJECT_NAME@_FIND_COMPONENTS_INTERFACE)
-        set(_INTERFACE_LIB ${@PROJECT_NAME@_FIND_COMPONENTS_INTERFACE})
+    if(timemory_FIND_COMPONENTS_INTERFACE)
+        set(_INTERFACE_LIB ${timemory_FIND_COMPONENTS_INTERFACE})
     endif()
 
-    if(@PROJECT_NAME@_INTERFACE_LIBRARY)
-        set(_INTERFACE_LIB ${@PROJECT_NAME@_INTERFACE_LIBRARY})
+    if(timemory_INTERFACE_LIBRARY)
+        set(_INTERFACE_LIB ${timemory_INTERFACE_LIBRARY})
     endif()
 
     if(NOT TARGET ${_INTERFACE_LIB})
         add_library(${_INTERFACE_LIB} INTERFACE IMPORTED)
     endif()
+
+endif()
+
+# include component libraries
+if(TIMEMORY_BUILD_INTERFACE_LIBRARY OR TIMEMORY_COMPILER_INSTRUMENTATION)
+    include(${CMAKE_CURRENT_LIST_DIR}/timemory-config-components.cmake)
+endif()
+
+# compiler instrumentation targets
+if(NOT TARGET timemory-compiler-instrumentation)
+    add_library(timemory-compiler-instrumentation INTERFACE IMPORTED)
+endif()
+
+if(NOT TARGET timemory::timemory-compiler-instrumentation)
+    add_library(timemory::timemory-compiler-instrumentation ALIAS
+        timemory-compiler-instrumentation)
 endif()
 
 # if build interface library is enabled and COMPONENTS were specified
-if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERFACE_LIBRARY)
+if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
 
     # create the interface library
-    include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-config-components.cmake)
-    if(TARGET @PROJECT_NAME@-headers)
-        target_link_libraries(${_INTERFACE_LIB} INTERFACE @PROJECT_NAME@-headers)
-    elseif(TARGET @PROJECT_NAME@::@PROJECT_NAME@-headers)
-        target_link_libraries(${_INTERFACE_LIB} INTERFACE @PROJECT_NAME@::@PROJECT_NAME@-headers)
-    endif()
-    
+    target_link_libraries(${_INTERFACE_LIB} INTERFACE timemory::timemory-headers)
+
     if(TIMEMORY_EXTRACT_INTERFACE)
-        set(@PROJECT_NAME@_INTERFACE_COMPONENTS ${_PREFIX}@LIBNAME@-headers ${_INTERFACE_LIB})
-        include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-target-extract.cmake)
+        set(timemory_INTERFACE_COMPONENTS timemory::timemory-headers ${_INTERFACE_LIB})
+        include(${CMAKE_CURRENT_LIST_DIR}/timemory-target-extract.cmake)
     endif()
 
-    # message(STATUS "library: '${_INTERFACE_LIB}' including '${@PROJECT_NAME@_INCLUDE_DIR}'")
-    # target_include_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_INCLUDE_DIRS})
-    # target_link_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_LIB_DIR})
+elseif(TIMEMORY_COMPILER_INSTRUMENTATION)
+
+    target_link_libraries(${_INTERFACE_LIB} INTERFACE
+        timemory::timemory-compiler-instrumentation)
+    # only the compiler-instrumentation
+    set(timemory_LIBRARIES timemory::timemory-compiler-instrumentation)
+
 endif()
 
 
@@ -325,34 +342,34 @@ endif()
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set timemory_FOUND to TRUE
 # if all listed variables are TRUE
-find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
-    @PROJECT_NAME@_ROOT_DIR
-    @PROJECT_NAME@_INCLUDE_DIRS
-    ${_@PROJECT_NAME@_MISSING_COMPONENTS})
+find_package_handle_standard_args(timemory DEFAULT_MSG
+    timemory_ROOT_DIR
+    timemory_INCLUDE_DIRS
+    ${_timemory_MISSING_COMPONENTS})
 
 unset(TIMEMORY_INSTALL_TREE)
 
 if(TARGET timemory-cxx-shared OR TARGET timemory-cxx-static)
-    set(@PROJECT_NAME@_LIBRARY_FOUND ON)
+    set(timemory_LIBRARY_FOUND ON)
 endif()
 
 if(TARGET timemory-cxx-shared)
-    set(@PROJECT_NAME@_SHARED_LIBRARY_FOUND ON)
+    set(timemory_SHARED_LIBRARY_FOUND ON)
 endif()
 
 if(TARGET timemory-cxx-static)
-    set(@PROJECT_NAME@_STATIC_LIBRARY_FOUND ON)
+    set(timemory_STATIC_LIBRARY_FOUND ON)
 endif()
 
-set(@PROJECT_NAME@_ENABLED_LINK_LANGUAGES )
-set(@PROJECT_NAME@_ENABLED_LINK_LIBRARIES )
+set(timemory_ENABLED_LINK_LANGUAGES )
+set(timemory_ENABLED_LINK_LIBRARIES )
 foreach(_LANG c cxx)
     foreach(_LINK shared static)
         if(TARGET timemory-${_LANG}-${_LINK})
             string(TOUPPER "${_LANG}" _ENABLED_LANG)
             string(TOUPPER "${_LINK}" _ENABLED_LINK)
-            list(APPEND @PROJECT_NAME@_ENABLED_LINK_LANGUAGES ${_ENABLED_LANG})
-            list(APPEND @PROJECT_NAME@_ENABLED_LINK_LIBRARIES ${_ENABLED_LINK})
+            list(APPEND timemory_ENABLED_LINK_LANGUAGES ${_ENABLED_LANG})
+            list(APPEND timemory_ENABLED_LINK_LIBRARIES ${_ENABLED_LINK})
             unset(_ENABLED_LANG)
         endif()
     endforeach()

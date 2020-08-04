@@ -1,6 +1,4 @@
 
-return()
-
 if(TIMEMORY_USE_DATA_TRACKER)
     set(NAME data_tracker)
     set(DEPS timemory-data_tracker)

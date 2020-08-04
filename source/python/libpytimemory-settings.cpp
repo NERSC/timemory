@@ -170,7 +170,7 @@ generate(py::module& _pymod)
 
              if cnt > 1:
                 _kwargs["nargs"] = cnt
- 
+
              if (max_cnt == 0):
                  if value == "true":
                      _kwargs["action"] = "store_true"

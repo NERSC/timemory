@@ -30,11 +30,16 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/data_tracker/types.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 
-#include "timemory/components/data_tracker/types.hpp"
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+#    include "pybind11/cast.h"
+#    include "pybind11/pybind11.h"
+#    include "pybind11/stl.h"
+#endif
 
 #include <cassert>
 #include <cstdint>
@@ -210,7 +215,6 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
               enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     this_type* add_secondary(const string_t& _key, Func&& f, const T& val)
     {
-        PRINT_HERE("%s :: adding secondary", demangle<this_type>().c_str());
         this_type _tmp;
         start_t   _start(_tmp);
         _tmp.store(std::forward<Func>(f), val);

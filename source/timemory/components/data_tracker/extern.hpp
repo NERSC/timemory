@@ -23,13 +23,18 @@
 // SOFTWARE.
 
 /**
- * \file timemory/operations/extern.hpp
- * \brief Include the extern declarations for operations
+ * \file timemory/components/data_tracker/extern.hpp
+ * \brief Include the extern declarations for data_tracker components
  */
 
 #pragma once
 
-#include "timemory/operations/declaration.hpp"
-#include "timemory/operations/definition.hpp"
-#include "timemory/operations/macros.hpp"
-#include "timemory/operations/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/data_tracker/components.hpp"
+#include "timemory/components/data_tracker/types.hpp"
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(data_tracker_integer, true, intmax_t)
+TIMEMORY_EXTERN_COMPONENT(data_tracker_unsigned, true, size_t)
+TIMEMORY_EXTERN_COMPONENT(data_tracker_floating, true, double)

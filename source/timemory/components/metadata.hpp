@@ -22,75 +22,52 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file "timemory/component/metadata.hpp"
+ * Provides metadata attributes for components
+ *
+ */
+
 #pragma once
 
-#include "timemory/environment/macros.hpp"
-#include "timemory/utility/types.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/variadic/macros.hpp"
 
-#include <iosfwd>
-#include <iostream>
 #include <string>
 
 namespace tim
 {
+namespace component
+{
 //
-//--------------------------------------------------------------------------------------//
-//
-//                              environment
-//
-//--------------------------------------------------------------------------------------//
-//
-class env_settings;
+template <typename Tp>
+struct metadata
+{
+    using type                                = Tp;
+    using value_type                          = TIMEMORY_COMPONENT;
+    static constexpr TIMEMORY_COMPONENT value = TIMEMORY_COMPONENTS_END;
+    static std::string                  label();
+    static std::string                  description();
+    static std::string                  extra_description() { return ""; }
+};
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-Tp
-get_env(const std::string& env_id, Tp _default = Tp());
-//
-//--------------------------------------------------------------------------------------//
-//
-template <>
 std::string
-get_env(const std::string& env_id, std::string _default);
-//
-//--------------------------------------------------------------------------------------//
-//
-template <>
-bool
-get_env(const std::string& env_id, bool _default);
+metadata<Tp>::label()
+{
+    return try_demangle<Tp>();
+}
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-Tp
-load_env(const std::string& env_id, Tp _default = Tp());
-//
-//--------------------------------------------------------------------------------------//
-//
-template <>
 std::string
-load_env(const std::string& env_id, std::string _default);
+metadata<Tp>::description()
+{
+    return try_demangle<Tp>();
+}
 //
-//--------------------------------------------------------------------------------------//
-//
-template <>
-bool
-load_env(const std::string& env_id, bool _default);
-//
-//--------------------------------------------------------------------------------------//
-//
-void
-print_env(std::ostream& os = std::cout);
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-void
-set_env(const std::string& env_var, const Tp& _val, int override = 0);
-//
-//--------------------------------------------------------------------------------------//
-//
+}  // namespace component
 }  // namespace tim
-
-TIMEMORY_SET_CLASS_VERSION(0, tim::env_settings)

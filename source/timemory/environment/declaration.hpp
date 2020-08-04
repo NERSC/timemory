@@ -98,7 +98,7 @@ public:
     static void serialize_environment(Archive& ar)
     {
         if(instance())
-            ar(*instance(), 0);
+            instance()->serialize(ar, TIMEMORY_GET_CLASS_VERSION(tim::env_settings));
     }
 
 private:

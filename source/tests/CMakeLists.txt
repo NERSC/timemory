@@ -97,6 +97,18 @@ set(ENV{TIMEMORY_ENABLED} OFF)
 
 add_subdirectory(external)
 
+if(TARGET timemory-compiler-instrument-shared)
+    add_timemory_google_test(instrumentation_shared_tests
+        SOURCES         instrumentation_tests.cpp
+        LINK_LIBRARIES  timemory-compiler-instrument-shared)
+endif()
+
+if(TARGET timemory-compiler-instrument-static)
+    add_timemory_google_test(instrumentation_static_tests
+        SOURCES         instrumentation_tests.cpp
+        LINK_LIBRARIES  timemory-compiler-instrument-static)
+endif()
+
 if(TARGET custom-record-functions)
     add_timemory_google_test(library_tests
         DISCOVER_TESTS

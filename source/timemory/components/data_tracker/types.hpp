@@ -49,6 +49,13 @@ TIMEMORY_DECLARE_TEMPLATE_COMPONENT(data_tracker, typename InpT,
 //
 namespace tim
 {
+namespace component
+{
+using data_tracker_integer  = data_tracker<intmax_t, api::native_tag>;
+using data_tracker_unsigned = data_tracker<size_t, api::native_tag>;
+using data_tracker_floating = data_tracker<double, api::native_tag>;
+}  // namespace component
+//
 namespace trait
 {
 template <typename InpT, typename Tag, typename Handler, typename StoreT>
@@ -72,7 +79,53 @@ namespace trait
 template <typename InpT, typename Tag, typename Handler, typename StoreT>
 struct base_has_accum<component::data_tracker<InpT, Tag, Handler, StoreT>> : false_type
 {};
+//
+template <typename InpT, typename Tag, typename Handler, typename StoreT>
+struct is_component<component::data_tracker<InpT, Tag, Handler, StoreT>> : true_type
+{};
+//
+template <>
+struct python_args<TIMEMORY_RECORD, component::data_tracker_integer>
+{
+    using type = type_list<intmax_t>;
+};
+//
+template <>
+struct python_args<TIMEMORY_RECORD, component::data_tracker_unsigned>
+{
+    using type = type_list<size_t>;
+};
+//
+template <>
+struct python_args<TIMEMORY_RECORD, component::data_tracker_floating>
+{
+    using type = type_list<double>;
+};
+//
 }  // namespace trait
 }  // namespace tim
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(data_tracker_integer, DATA_TRACKER_INTEGER,
+                                 "data_tracker_integer", "integer_data_tracker")
+TIMEMORY_PROPERTY_SPECIALIZATION(data_tracker_unsigned, DATA_TRACKER_UNSIGNED,
+                                 "data_tracker_unsigned", "unsigned_data_tracker")
+TIMEMORY_PROPERTY_SPECIALIZATION(data_tracker_floating, DATA_TRACKER_FLOATING,
+                                 "data_tracker_floating", "floating_data_tracker")
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    data_tracker_integer, "data_integer", "Stores signed integer data w.r.t. call-graph",
+    "Useful for tracking +/- values in different call-graph contexts")
+TIMEMORY_METADATA_SPECIALIZATION(
+    data_tracker_unsigned, "data_unsigned",
+    "Stores unsigned integer data w.r.t. call-graph",
+    "Useful for tracking iterations, etc. in different call-graph contexts")
+TIMEMORY_METADATA_SPECIALIZATION(
+    data_tracker_floating, "data_floating",
+    "Stores double-precision fp data w.r.t. call-graph",
+    "Useful for tracking values in different call-graph contexts")
 //
 //======================================================================================//

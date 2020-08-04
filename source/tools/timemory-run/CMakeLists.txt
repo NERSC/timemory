@@ -66,7 +66,6 @@ if(TIMEMORY_USE_DYNINST)
         timemory-headers
         timemory-dyninst
         timemory-dmp
-        timemory-arch
         timemory-compile-options
         timemory-roofline-options
         ${_LIBRARY})

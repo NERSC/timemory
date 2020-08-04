@@ -35,13 +35,17 @@ foreach(LIB_TYPE shared static)
 
     # build tree
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E create_symlink jump/libtimemory.so libtimemory-jump.so
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            jump/libtimemory.${CMAKE_SHARED_LIBRARY_SUFFIX}
+            libtimemory-jump.${CMAKE_SHARED_LIBRARY_SUFFIX}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
     # install tree
     install(CODE "
 EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink timemory/jump/libtimemory.so libtimemory-jump.so
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+        timemory/jump/libtimemory.${CMAKE_SHARED_LIBRARY_SUFFIX}
+        libtimemory-jump.${CMAKE_SHARED_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
     ")
 

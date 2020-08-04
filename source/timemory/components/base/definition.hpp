@@ -27,6 +27,7 @@
 #include "timemory/components/base/declaration.hpp"
 #include "timemory/components/base/templates.hpp"
 #include "timemory/components/base/types.hpp"
+#include "timemory/components/metadata.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/storage/types.hpp"
@@ -222,32 +223,7 @@ template <typename Tp, typename Value>
 std::string
 base<Tp, Value>::label()
 {
-    //
-    // generate a default output filename from
-    // (potentially demangled) typeid(Type).name() and strip out
-    // namespace and any template parameters + replace any spaces
-    // with underscores
-    //
-    std::string       _label = demangle<Type>();
-    std::stringstream msg;
-    msg << "Warning! " << _label << " does not provide a custom label!";
-#if defined(DEBUG)
-    // throw error when debugging
-    throw std::runtime_error(msg.str().c_str());
-#else
-    // warn when not debugging
-    if(settings::debug())
-        std::cerr << msg.str() << std::endl;
-#endif
-    if(_label.find(':') != std::string::npos)
-        _label = _label.substr(_label.find_last_of(':'));
-    if(_label.find('<') != std::string::npos)
-        _label = _label.substr(0, _label.find_first_of('<'));
-    while(_label.find(' ') != std::string::npos)
-        _label = _label.replace(_label.find(' '), 1, "_");
-    while(_label.find("__") != std::string::npos)
-        _label = _label.replace(_label.find("__"), 2, "_");
-    return _label;
+    return metadata<Tp>::label();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -256,18 +232,7 @@ template <typename Tp, typename Value>
 std::string
 base<Tp, Value>::description()
 {
-    std::string       _label = demangle<Type>();
-    std::stringstream msg;
-    msg << "Warning! " << _label << " does not provide a custom description!";
-#if defined(DEBUG)
-    // throw error when debugging
-    throw std::runtime_error(msg.str().c_str());
-#else
-    // warn when not debugging
-    if(settings::debug())
-        std::cerr << msg.str() << std::endl;
-#endif
-    return _label;
+    return metadata<Tp>::description();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -551,19 +516,7 @@ template <typename Tp>
 std::string
 base<Tp, void>::label()
 {
-    std::string _label = demangle<Type>();
-    if(settings::debug())
-        fprintf(stderr, "Warning! '%s' does not provide a custom label!\n",
-                _label.c_str());
-    if(_label.find(':') != std::string::npos)
-        _label = _label.substr(_label.find_last_of(':'));
-    if(_label.find('<') != std::string::npos)
-        _label = _label.substr(0, _label.find_first_of('<'));
-    while(_label.find(' ') != std::string::npos)
-        _label = _label.replace(_label.find(' '), 1, "_");
-    while(_label.find("__") != std::string::npos)
-        _label = _label.replace(_label.find("__"), 2, "_");
-    return _label;
+    return metadata<Tp>::label();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -572,11 +525,7 @@ template <typename Tp>
 std::string
 base<Tp, void>::description()
 {
-    std::string _label = demangle<Type>();
-    if(settings::debug())
-        fprintf(stderr, "Warning! '%s' does not provide a custom description!\n",
-                _label.c_str());
-    return _label;
+    return metadata<Tp>::description();
 }
 //
 //--------------------------------------------------------------------------------------//

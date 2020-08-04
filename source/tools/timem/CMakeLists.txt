@@ -68,7 +68,7 @@ install(TARGETS timem
 if(NOT TIMEMORY_USE_MPI)
     return()
 endif()
-  
+
 add_executable(timem-mpi ${_EXCLUDE} timem.cpp timem.hpp)
 
 target_link_libraries(timem-mpi PRIVATE

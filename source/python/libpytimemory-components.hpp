@@ -272,8 +272,6 @@ generate(py::module& _pymod);
 //
 namespace pysettings
 {
-struct settings
-{};
 //
 py::class_<tim::settings>
 generate(py::module& _pymod);

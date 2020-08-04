@@ -121,3 +121,15 @@ struct dynamic_base : std::false_type
 }  // namespace tim
 //
 //======================================================================================//
+
+namespace cereal
+{
+namespace detail
+{
+template <typename Tp, typename Vp>
+struct StaticVersion<tim::component::base<Tp, Vp>>
+{
+    static constexpr int32_t value = 0;
+};
+}  // namespace detail
+}  // namespace cereal

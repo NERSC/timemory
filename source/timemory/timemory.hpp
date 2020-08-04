@@ -162,6 +162,11 @@ struct dummy
 
 #else
 
+#    if defined(TIMEMORY_COMPILER_INSTRUMENTATION)
+#        error                                                                           \
+            "Error! Attempting to include timemory headers with compiler instrumentation enabled. Due to instability which arises from instrumenting internal routines in the API, this is currently not permitted. Please disable compiler instrumentation or disable the API."
+#    endif
+
 #    if !defined(TIMEMORY_MASTER_HEADER)
 #        define TIMEMORY_MASTER_HEADER
 #    endif

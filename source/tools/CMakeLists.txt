@@ -21,6 +21,12 @@ message(STATUS "Adding source/tools/timemory-stubs...")
 add_subdirectory(timemory-stubs)
 
 #----------------------------------------------------------------------------------------#
+# Build and install timemory-compiler-instrument library
+#
+message(STATUS "Adding source/tools/timemory-compiler-instrument...")
+add_subdirectory(timemory-compiler-instrument)
+
+#----------------------------------------------------------------------------------------#
 # Build and install timemory-avail tool
 #
 message(STATUS "Adding source/tools/timemory-avail...")

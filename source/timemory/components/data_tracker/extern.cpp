@@ -22,14 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/operations/extern.hpp
- * \brief Include the extern declarations for operations
- */
-
-#pragma once
-
-#include "timemory/operations/declaration.hpp"
-#include "timemory/operations/definition.hpp"
-#include "timemory/operations/macros.hpp"
-#include "timemory/operations/types.hpp"
+#include "timemory/components/data_tracker/extern.hpp"

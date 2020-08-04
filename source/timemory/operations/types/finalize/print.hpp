@@ -66,8 +66,8 @@ base::print::print_plot(const std::string& outfname, const std::string suffix)  
         if(!suffix.empty())
             plot_label += std::string(" ") + suffix;
 
-        plotting::plot(label, plot_label, settings::output_path(),
-                       settings::dart_output(), outfname);
+        plotting::plot(label, plot_label, settings::output_path(), dart_output(),
+                       outfname);
     }
 }
 //
@@ -245,7 +245,7 @@ print<Tp, true>::setup()
                    text_diffname.c_str());
     }
 
-    if(!(file_output && text_output) && !cout_output)
+    if(!(file_output() && text_output()) && !cout_output())
         return;
 
     write_stream(data_stream, node_results);
@@ -439,7 +439,7 @@ print<Tp, true>::update_data()
     }
 #endif
 
-    if(flame_output)
+    if(flame_output())
         operation::finalize::flamegraph<Tp>(data, label);
 }
 //
@@ -566,7 +566,6 @@ print<Tp, true>::print_dart()
         if(operation::echo_measurement<Tp>::lowercase(dtype) !=
            operation::echo_measurement<Tp>::lowercase(label))
         {
-            dart_output = false;
             return;
         }
     }

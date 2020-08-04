@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/components/metadata.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/dll.hpp"
 
@@ -202,10 +203,9 @@
         template <>                                                                      \
         struct properties<TYPE> : static_properties<TYPE>                                \
         {                                                                                \
-            using type                                = TYPE;                            \
-            using value_type                          = TIMEMORY_COMPONENT;              \
-            static constexpr TIMEMORY_COMPONENT value = ENUM;                            \
-                                                                                         \
+            using type                         = TYPE;                                   \
+            using value_type                   = TIMEMORY_COMPONENT;                     \
+            static constexpr value_type  value = ENUM;                                   \
             static constexpr const char* enum_string() { return #ENUM; }                 \
             static constexpr const char* id() { return ID; }                             \
             static const idset_t&        ids()                                           \
@@ -244,6 +244,38 @@
         }
 #elif !defined(TIMEMORY_PROPERTY_SPECIALIZATION) && defined(TIMEMORY_DISABLE_PROPERTIES)
 #    define TIMEMORY_PROPERTY_SPECIALIZATION(...)
+#endif
+
+//======================================================================================//
+
+/**
+ * \macro TIMEMORY_METADATA_SPECIALIZATION
+ * \brief Specialization of the property specialization
+ */
+
+#if !defined(TIMEMORY_METADATA_SPECIALIZATION) && !defined(TIMEMORY_DISABLE_METADATA)
+#    define TIMEMORY_METADATA_SPECIALIZATION(TYPE, LABEL, BASIC_DESC, ...)               \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        template <>                                                                      \
+        struct metadata<TYPE>                                                            \
+        {                                                                                \
+            using type                        = TYPE;                                    \
+            using value_type                  = TIMEMORY_COMPONENT;                      \
+            static constexpr value_type value = properties<TYPE>::value;                 \
+            static std::string          label() { return LABEL; }                        \
+            static std::string          description() { return BASIC_DESC; }             \
+            static std::string          extra_description()                              \
+            {                                                                            \
+                return TIMEMORY_JOIN(" ", __VA_ARGS__);                                  \
+            }                                                                            \
+        };                                                                               \
+        }                                                                                \
+        }
+#elif !defined(TIMEMORY_METADATA_SPECIALIZATION) && defined(TIMEMORY_DISABLE_METADATA)
+#    define TIMEMORY_METADATA_SPECIALIZATION(...)
 #endif
 
 //======================================================================================//

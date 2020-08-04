@@ -72,7 +72,7 @@ public:
     void (*timemory_trace_set_env_jump)(const char*, const char*);
     void (*timemory_trace_set_mpi_jump)(bool, bool);
 
-    jump(std::string&& libpath)
+    explicit jump(std::string&& libpath)
     {
         auto libhandle = dlopen(libpath.c_str(), RTLD_LAZY);
 
@@ -124,8 +124,13 @@ public:
 std::unique_ptr<jump>&
 get_jump()
 {
+#if defined(_MACOS)
     static std::unique_ptr<jump> obj = std::make_unique<jump>(
         tim::get_env<std::string>("TIMEMORY_JUMP_LIBRARY", "libtimemory.so"));
+#else
+    static std::unique_ptr<jump> obj = std::make_unique<jump>(
+        tim::get_env<std::string>("TIMEMORY_JUMP_LIBRARY", "libtimemory.dylib"));
+#endif
     return obj;
 }
 

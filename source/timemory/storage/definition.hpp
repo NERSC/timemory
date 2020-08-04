@@ -955,6 +955,12 @@ storage<Type, true>::get_shared_manager()
         // convert to upper-case
         for(auto& itr : _label)
             itr = toupper(itr);
+        for(auto itr : { ':', '<', '>' })
+        {
+            auto _pos = _label.find(itr);
+            while(_pos != std::string::npos)
+                _pos = _label.erase(_pos, 1).find(itr);
+        }
         std::stringstream env_var;
         env_var << "TIMEMORY_" << _label << "_ENABLED";
         auto _enabled = tim::get_env<bool>(env_var.str(), true);

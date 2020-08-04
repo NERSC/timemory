@@ -790,3 +790,36 @@ struct tuple_element<Idx, tim::type_list<Types...>>
     using type = typename tim::type_list_element<Idx, tim::type_list<Types...>>::type;
 };
 }  // namespace std
+
+//--------------------------------------------------------------------------------------//
+
+namespace cereal
+{
+namespace detail
+{
+template <typename Tp>
+struct StaticVersion;
+}  // namespace detail
+}  // namespace cereal
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_SET_CLASS_VERSION)
+#    define TIMEMORY_SET_CLASS_VERSION(VERSION_NUMBER, ...)                              \
+        namespace cereal                                                                 \
+        {                                                                                \
+        namespace detail                                                                 \
+        {                                                                                \
+        template <>                                                                      \
+        struct StaticVersion<__VA_ARGS__>                                                \
+        {                                                                                \
+            static constexpr std::int32_t value = VERSION_NUMBER;                        \
+        };                                                                               \
+        }                                                                                \
+        }
+#endif
+
+#if !defined(TIMEMORY_GET_CLASS_VERSION)
+#    define TIMEMORY_GET_CLASS_VERSION(...)                                              \
+        ::cereal::detail::StaticVersion<__VA_ARGS__>::value
+#endif

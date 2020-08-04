@@ -168,10 +168,26 @@
 #    define TIMEMORY_SETTINGS_TRY_CATCH_NVP(ENV_VAR, FUNC)                               \
         try                                                                              \
         {                                                                                \
-            auto& _VAL = FUNC();                                                         \
-            ar(cereal::make_nvp(ENV_VAR, _VAL));                                         \
+            ar(cereal::make_nvp(ENV_VAR, FUNC()));                                       \
         } catch(...)                                                                     \
         {}
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_SETTINGS_CEREAL_REGISTER)
+#    define TIMEMORY_SETTINGS_CEREAL_REGISTER(TYPE, LABEL)                               \
+        TIMEMORY_SET_CLASS_VERSION(TIMEMORY_GET_CLASS_VERSION(::tim::vsettings), TYPE)   \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace alias                                                                  \
+        {                                                                                \
+        using tsettings_##LABEL = tsettings<TYPE, TYPE>;                                 \
+        }                                                                                \
+        }                                                                                \
+        CEREAL_REGISTER_TYPE(tim::alias::tsettings_##LABEL)                              \
+        CEREAL_REGISTER_POLYMORPHIC_RELATION(::tim::vsettings,                           \
+                                             tim::alias::tsettings_##LABEL)
 #endif
 //
 //--------------------------------------------------------------------------------------//

@@ -29,6 +29,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include <limits>
+
 //--------------------------------------------------------------------------------------//
 
 namespace tim
@@ -43,6 +46,8 @@ struct trace
 struct region
 {};
 struct library
+{};
+struct compiler
 {};
 //
 //--------------------------------------------------------------------------------------//
@@ -79,6 +84,18 @@ struct lock
         {
             get_global() = false;
             m_value      = false;
+        }
+    }
+
+    void acquire()
+    {
+        int64_t itr = 0;
+        while(!m_value)
+        {
+            if((m_value = !get_global()))
+                get_global() = true;
+            if(itr++ == std::numeric_limits<int32_t>::max())
+                break;
         }
     }
 
