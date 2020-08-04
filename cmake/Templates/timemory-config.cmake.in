@@ -310,11 +310,6 @@ if(NOT TARGET timemory-compiler-instrumentation)
     add_library(timemory-compiler-instrumentation INTERFACE IMPORTED)
 endif()
 
-if(NOT TARGET timemory::timemory-compiler-instrumentation)
-    add_library(timemory::timemory-compiler-instrumentation ALIAS
-        timemory-compiler-instrumentation)
-endif()
-
 # if build interface library is enabled and COMPONENTS were specified
 if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
 
