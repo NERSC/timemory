@@ -34,6 +34,4 @@
 #    define SCOREP_ENABLED
 #    define SCOREP_USER_ENABLE
 #    include "scorep/SCOREP_User.h"
-
-using handle_type = SCOREP_User_RegionHandle;
 #endif

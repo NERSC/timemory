@@ -56,8 +56,6 @@ if(_MPI)
         target_compile_definitions(ex_scorep.mpi PRIVATE USE_OPENMP)
     endif()
 
-    # target_link_options(ex_scorep.mpi PRIVATE -Wl,--undefined,__wrap_pthread_create,-wrap,pthread_create,-wrap,pthread_join,-wrap,pthread_exit,-wrap,pthread_cancel,-wrap,pthread_detach,-wrap,pthread_mutex_init,-wrap,pthread_mutex_destroy,-wrap,pthread_mutex_lock,-wrap,pthread_mutex_unlock,-wrap,pthread_mutex_trylock,-wrap,pthread_cond_init,-wrap,pthread_cond_signal,-wrap,pthread_cond_broadcast,-wrap,pthread_cond_wait,-wrap,pthread_cond_timedwait,-wrap,pthread_cond_destroy)
-
     target_link_libraries(ex_scorep.mpi timemory-scorep-example ${_MPI})
     install(TARGETS ex_scorep.mpi DESTINATION DESTINATION bin
         COMPONENT examples OPTIONAL)

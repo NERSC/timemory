@@ -27,7 +27,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <thread>
-#include <omp.h>
+#if defined(_OPENMP)
+#    include <omp.h>
+#endif
 
 //
 // shorthand
@@ -49,10 +51,10 @@ fib(long n)
 
 //--------------------------------------------------------------------------------------//
 
-void 
+void
 consume(long nfib, int nitr)
 {
-    auto id = std::this_thread::get_id();
+    auto              id = std::this_thread::get_id();
     std::stringstream tid;
     tid << id;
 
@@ -60,11 +62,12 @@ consume(long nfib, int nitr)
     {
         TIMEMORY_MARKER(tuple_t, tid.str() + ":total");
         long ans = fib(nfib);
-            
+
         TIMEMORY_BLANK_MARKER(tuple_t, tid.str() + ":nested/", i % 2);
         ans += fib(nfib - 2);
 
-        TIMEMORY_CONDITIONAL_BASIC_MARKER(i % 3 == 1, tuple_t, tid.str() + ":occasional/", i);
+        TIMEMORY_CONDITIONAL_BASIC_MARKER(i % 3 == 1, tuple_t, tid.str() + ":occasional/",
+                                          i);
         ans += fib(nfib);
 
         printf("%d: Answer = %li\n", i, ans);
@@ -73,10 +76,10 @@ consume(long nfib, int nitr)
 
 //--------------------------------------------------------------------------------------//
 
-void 
+void
 consume_omp(long nfib, int nitr)
 {
-#pragma omp parallel for num_threads(2) schedule(static, nitr/2)
+#    pragma omp parallel for num_threads(2) schedule(static, nitr / 2)
     for(int i = 0; i < nitr; ++i)
     {
         TIMEMORY_MARKER(tuple_t, "total");
@@ -109,8 +112,8 @@ main(int argc, char** argv)
     // init scorep profiling from the main thread
     TIMEMORY_MARKER(tuple_t, "main");
 
-#if !defined (USE_MPI)
-#   if !defined(USE_OPENMP)
+#    if !defined(USE_MPI)
+#        if !defined(USE_OPENMP)
     std::cout << "Using STL threading \n";
 
     // do work from a thread and measure with Score-P
@@ -120,12 +123,12 @@ main(int argc, char** argv)
     t1.join();
     t2.join();
 
-#   else
+#        else
     std::cout << "Using OpenMP threading \n";
     consume_omp(nfib, nitr * 2);
-#   endif // USE_OPENMP
+#        endif  // USE_OPENMP
 
-#else
+#    else
     // do work from a thread and measure with Score-P
     std::thread t1(consume, nfib, nitr);
     std::thread t2(consume, nfib, nitr);
@@ -133,15 +136,15 @@ main(int argc, char** argv)
     t1.join();
     t2.join();
 
-#   if defined(USE_OPENMP)
+#        if defined(USE_OPENMP)
     tim::mpi::barrier();
     consume_omp(nfib, nitr * 2);
-#   endif // USE_OPENMP
+#        endif  // USE_OPENMP
 
-#endif // USE_MPI
+#    endif  // USE_MPI
 
-    tim::mpi::barrier();
     tim::timemory_finalize();
+    // tim::mpi::finalize();
 
     return EXIT_SUCCESS;
 }

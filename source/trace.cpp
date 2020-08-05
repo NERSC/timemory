@@ -34,6 +34,7 @@
 #endif
 
 #include <cstdarg>
+#include <cstdlib>
 #include <deque>
 #include <iostream>
 #include <unordered_map>
@@ -690,7 +691,11 @@ extern "C"
             std::function<void(int)> exit_func = [](int) { tim::timemory_finalize(); };
             tim::signal_settings::set_exit_action(exit_func);
             std::atexit(&tim::timemory_finalize);
+#if !defined(_MACOS)
+            // Apple clang version 11.0.3 (clang-1103.0.32.62) doesn't seem to have this
+            // function
             std::at_quick_exit(&tim::timemory_finalize);
+#endif
 
 #if defined(TIMEMORY_MPI_GOTCHA)
             if(!mpi_gotcha_handle.get())

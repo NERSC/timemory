@@ -151,11 +151,12 @@ if(TIMEMORY_USE_MPI)
          scorep_adapter_mpi_mgmt
 	 scorep_alloc_metric
 	 scorep_adapter_utils
-         )#scorep_online_access_mpp_mpi)
+         )
 else()
     list(APPEND ScoreP_FIND_COMPONENTS
-        scorep_mpp_mockup
-        )#scorep_online_access_mockup)
+         scorep_mpp_mockup
+	 scorep_alloc_metric
+         )
 endif()
 
 #------------------------------------------------------------------------------#

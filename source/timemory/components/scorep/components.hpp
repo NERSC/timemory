@@ -50,6 +50,9 @@ struct scorep : public base<scorep, void>
     using value_type = void;
     using this_type  = scorep;
     using base_type  = base<this_type, value_type>;
+#if defined(TIMEMORY_USE_SCOREP)
+    using handle_type = SCOREP_User_RegionHandle;
+#endif
 
     static std::string label() { return "scorep"; }
     static std::string description()

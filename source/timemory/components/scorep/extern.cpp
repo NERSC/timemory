@@ -36,8 +36,8 @@
 #include <scorep/SCOREP_Score_Types.hpp>
 #include <scorep/SCOREP_SubstrateEvents.h>
 #include <scorep/SCOREP_SubstratePlugins.h>
-#include <scorep/SCOREP_User_Functions.h>
 #include <scorep/SCOREP_User.h>
+#include <scorep/SCOREP_User_Functions.h>
 #include <scorep/SCOREP_User_Types.h>
 #include <scorep/SCOREP_User_Variables.h>
 
@@ -54,40 +54,24 @@ extern const struct SCOREP_Subsystem SCOREP_Subsystem_ThreadCreateWait;
 #if defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_INIT)
 extern const struct SCOREP_Subsystem SCOREP_Subsystem_IoManagement;
 extern const struct SCOREP_Subsystem SCOREP_Subsystem_MpiAdapter;
-/*
-extern const struct SCOREP_Subsystem SCOREP_AllocMetric_New;
-extern const struct SCOREP_Subsystem SCOREP_AllocMetric_GetAllocationSizeAttribute;
-extern const struct SCOREP_Subsystem SCOREP_AllocMetric_GetDeallocationSizeAttribute;
-extern const struct SCOREP_Subsystem SCOREP_AllocMetric_ReportLeaked;
-extern const struct SCOREP_Subsystem SCOREP_AllocMetric_Destroy;
-extern const struct SCOREP_Subsystem SCOREP_AllocMetric_AcquireAlloc;
-extern const struct SCOREP_Subsystem SCOREP_AllocMetric_HandleFree;
-extern const struct SCOREP_Subsystem SCOREP_AllocMetric_HandleAlloc;
-*/
 #endif
 
 const struct SCOREP_Subsystem* scorep_subsystems[] = {
-    &SCOREP_Subsystem_Substrates,       
-    &SCOREP_Subsystem_TaskStack,
-    &SCOREP_Subsystem_MetricService,    
-    &SCOREP_Subsystem_UnwindingService,
-    &SCOREP_Subsystem_SamplingService,  
-    &SCOREP_Subsystem_Topologies,
-    &SCOREP_Subsystem_PlatformTopology, 
-    &SCOREP_Subsystem_UserAdapter,
-    &SCOREP_Subsystem_PthreadAdapter,   
-    &SCOREP_Subsystem_ThreadCreateWait,
+    &SCOREP_Subsystem_Substrates,       &SCOREP_Subsystem_TaskStack,
+    &SCOREP_Subsystem_MetricService,    &SCOREP_Subsystem_UnwindingService,
+    &SCOREP_Subsystem_SamplingService,  &SCOREP_Subsystem_Topologies,
+    &SCOREP_Subsystem_PlatformTopology, &SCOREP_Subsystem_UserAdapter,
+    &SCOREP_Subsystem_PthreadAdapter,   &SCOREP_Subsystem_ThreadCreateWait,
 #if defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_INIT)
-    &SCOREP_Subsystem_IoManagement,     
-    &SCOREP_Subsystem_MpiAdapter,
-    /*    &SCOREP_AllocMetric_New,
-    &SCOREP_AllocMetric_GetAllocationSizeAttribute,
-    &SCOREP_AllocMetric_GetDeallocationSizeAttribute,
-    &SCOREP_AllocMetric_ReportLeaked,
-    &SCOREP_AllocMetric_Destroy,
-    &SCOREP_AllocMetric_AcquireAlloc,
-    &SCOREP_AllocMetric_HandleFree,
-    &SCOREP_AllocMetric_HandleAlloc,*/
+    &SCOREP_Subsystem_IoManagement,     &SCOREP_Subsystem_MpiAdapter,
+/*    &SCOREP_AllocMetric_New,
+&SCOREP_AllocMetric_GetAllocationSizeAttribute,
+&SCOREP_AllocMetric_GetDeallocationSizeAttribute,
+&SCOREP_AllocMetric_ReportLeaked,
+&SCOREP_AllocMetric_Destroy,
+&SCOREP_AllocMetric_AcquireAlloc,
+&SCOREP_AllocMetric_HandleFree,
+&SCOREP_AllocMetric_HandleAlloc,*/
 #endif
 };
 
