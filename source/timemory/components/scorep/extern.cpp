@@ -25,22 +25,6 @@
 #include "timemory/components/scorep/extern.hpp"
 #include <cstddef>
 
-#include <scorep/SCOREP_MetricPlugins.h>
-#include <scorep/SCOREP_MetricTypes.h>
-#include <scorep/SCOREP_PublicHandles.h>
-#include <scorep/SCOREP_PublicTypes.h>
-//#include <scorep/SCOREP_Score_Estimator.hpp>
-#include <scorep/SCOREP_Score_Event.hpp>
-#include <scorep/SCOREP_Score_Group.hpp>
-//#include <scorep/SCOREP_Score_Profile.hpp>
-#include <scorep/SCOREP_Score_Types.hpp>
-#include <scorep/SCOREP_SubstrateEvents.h>
-#include <scorep/SCOREP_SubstratePlugins.h>
-#include <scorep/SCOREP_User.h>
-#include <scorep/SCOREP_User_Functions.h>
-#include <scorep/SCOREP_User_Types.h>
-#include <scorep/SCOREP_User_Variables.h>
-
 extern const struct SCOREP_Subsystem SCOREP_Subsystem_Substrates;
 extern const struct SCOREP_Subsystem SCOREP_Subsystem_TaskStack;
 extern const struct SCOREP_Subsystem SCOREP_Subsystem_MetricService;
@@ -64,14 +48,6 @@ const struct SCOREP_Subsystem* scorep_subsystems[] = {
     &SCOREP_Subsystem_PthreadAdapter,   &SCOREP_Subsystem_ThreadCreateWait,
 #if defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_INIT)
     &SCOREP_Subsystem_IoManagement,     &SCOREP_Subsystem_MpiAdapter,
-/*    &SCOREP_AllocMetric_New,
-&SCOREP_AllocMetric_GetAllocationSizeAttribute,
-&SCOREP_AllocMetric_GetDeallocationSizeAttribute,
-&SCOREP_AllocMetric_ReportLeaked,
-&SCOREP_AllocMetric_Destroy,
-&SCOREP_AllocMetric_AcquireAlloc,
-&SCOREP_AllocMetric_HandleFree,
-&SCOREP_AllocMetric_HandleAlloc,*/
 #endif
 };
 
