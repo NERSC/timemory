@@ -51,6 +51,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::current_peak_rss, t
 // include rest of headers
 //
 #include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
 
 //
 // shorthand

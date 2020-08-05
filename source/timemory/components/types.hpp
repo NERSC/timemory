@@ -102,6 +102,7 @@ struct no_store;
 #include "timemory/components/papi/types.hpp"
 #include "timemory/components/roofline/types.hpp"
 #include "timemory/components/rusage/types.hpp"
+#include "timemory/components/scorep/types.hpp"
 #include "timemory/components/tau_marker/types.hpp"
 #include "timemory/components/timing/types.hpp"
 #include "timemory/components/trip_count/types.hpp"

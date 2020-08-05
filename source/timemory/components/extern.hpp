@@ -92,6 +92,12 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_SCOREP_EXTERN)
+#    include "timemory/components/scorep/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #if defined(TIMEMORY_USE_VTUNE_EXTERN)
 #    include "timemory/components/vtune/extern.hpp"
 #endif

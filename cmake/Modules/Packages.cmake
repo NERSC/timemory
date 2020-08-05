@@ -68,6 +68,8 @@ add_interface_library(timemory-vtune
     "Enables VTune support (ittnotify)")
 add_interface_library(timemory-tau
     "Enables TAU support")
+add_interface_library(timemory-scorep
+    "Enables ScoreP support")
 add_interface_library(timemory-ompt
     "Enables OpenMP-tools support")
 add_interface_library(timemory-python
@@ -157,6 +159,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
+    timemory-scorep
     timemory-ompt
     timemory-craypat
     timemory-allinea-map)
@@ -176,6 +179,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
+    timemory-scorep
     timemory-ompt
     timemory-craypat
     timemory-allinea-map
@@ -195,6 +199,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-caliper
     timemory-vtune
     timemory-tau
+    timemory-scorep
     timemory-ompt
     timemory-craypat
     timemory-allinea-map
@@ -1155,6 +1160,26 @@ if(TAU_FOUND)
 else()
     set(TIMEMORY_USE_TAU OFF)
     inform_empty_interface(timemory-tau "TAU")
+endif()
+
+#----------------------------------------------------------------------------------------#
+#
+#                               Score-P
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_SCOREP)
+    find_package(ScoreP ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(ScoreP_FOUND)
+    target_link_libraries(timemory-scorep INTERFACE ${ScoreP_LIBRARIES})
+    target_include_directories(timemory-scorep SYSTEM INTERFACE ${ScoreP_INCLUDE_DIRS})
+    target_compile_definitions(timemory-scorep INTERFACE TIMEMORY_USE_SCOREP)
+    add_rpath(${ScoreP_LIBRARIES})
+else()
+    set(TIMEMORY_USE_SCOREP OFF)
+    inform_empty_interface(timemory-scorep "ScoreP")
 endif()
 
 #----------------------------------------------------------------------------------------#
