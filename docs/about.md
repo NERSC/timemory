@@ -22,7 +22,7 @@ Timemory is actively developed by NERSC at Lawrence Berkeley National Laboratory
 | ------------------ | :---------------------------------------------------------------------------------------: | :-------------------------------------------: |
 | Jonathan R. Madsen | [NERSC](https://www.nersc.gov/about/nersc-staff/application-performance/jonathan-madsen/) |    [jrmadsen](https://github.com/jrmadsen)    |
 | Yunsong Wang       |       [NERSC](https://www.nersc.gov/about/nersc-staff/nesap-postdocs/yunsong-wang/)       | [PointKernel](https://github.com/PointKernel) |
-| Muhammad Haseeb       |       [NERSC](https://sites.google.com/a/fiu.edu/mhaseeb/)       | [mhaseeb123](https://github.com/mhaseeb123) |
+| Muhammad Haseeb       |       [NERSC](https://sites.google.com/fiu.edu/muhammadhaseeb)       | [mhaseeb123](https://github.com/mhaseeb123) |
 
 ## Contributions
 
