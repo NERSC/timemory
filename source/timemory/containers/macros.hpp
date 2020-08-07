@@ -135,8 +135,8 @@
 #    else
 #        define TIMEMORY_EXTERN_BUNDLE(...)
 #    endif
-//--------------------------------------------------------------------------------------//
-//
+#elif !defined(TIMEMORY_EXTERN_BUNDLE) && defined(_WINDOWS)
+#    define TIMEMORY_EXTERN_BUNDLE(...)
 #endif
 //
 //--------------------------------------------------------------------------------------//
