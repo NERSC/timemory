@@ -25,8 +25,6 @@
 
 /** \file timemory/variadic/component_bundle.hpp
  * \headerfile variadic/component_bundle.hpp "timemory/variadic/component_bundle.hpp"
- * This is the C++ class that bundles together components and enables
- * operation on the components as a single entity
  *
  */
 
@@ -53,6 +51,28 @@
 #include <iostream>
 #include <string>
 
+//======================================================================================//
+/// \class tim::component_bundle<typename Tag, Types...>
+/// \tparam Tag unique identifying type for the bundle which when \ref
+/// tim::trait::is_available<Tag> is false at compile-time or \ref
+/// tim::trait::runtime_enabled<Tag>() is false at runtime, then none of the components
+/// will be collected
+/// \tparam Types... Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper which combines the features of \ref
+/// tim::component_tuple<T...> and \ref tim::component_list<U..>. The "T" types
+/// (compile-time fixed, allocated on stack) should be specified as usual, the "U" types
+/// (runtime-time optional, allocated on the heap) should be specified as a pointer.
+/// Initialization of the optional types is similar to \ref tim::auto_list<U...> but no
+/// environment variable is built-in since, ideally, this environment variable should be
+/// customized based on the \ref Tag template parameter.
+///
+/// See also: \ref tim::auto_bundle<typename Tag, Types...>.
+/// The primary difference b/t the "component_*" and "auto_*" is that the latter
+/// used the constructor/destructor to call start and stop and is thus easier to
+/// just copy-and-paste into different places. However, the former is better suited for
+/// special configuration, data-access, etc.
+///
 namespace tim
 {
 //

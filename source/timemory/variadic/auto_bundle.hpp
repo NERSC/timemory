@@ -24,9 +24,6 @@
 //
 
 /** \file "timemory/variadic/auto_bundle.hpp"
- * Automatic starting and stopping of components. Accept unlimited number of
- * parameters. The constructor starts the components, the destructor stops the
- * components
  */
 
 #pragma once
@@ -44,7 +41,66 @@
 
 namespace tim
 {
-//
+//--------------------------------------------------------------------------------------//
+/// \class tim::auto_bundle<typename Tag, Types...>
+/// \tparam Tag unique identifying type for the bundle which when \ref
+/// tim::trait::is_available<Tag> is false at compile-time or \ref
+/// tim::trait::runtime_enabled<Tag>() is false at runtime, then none of the components
+/// will be collected
+/// \tparam Types... Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper which combines the features of \ref
+/// tim::auto_tuple<T...> and \ref tim::auto_list<U..>. The "T" types (compile-time fixed,
+/// allocated on stack) should be specified as usual, the "U" types (runtime-time
+/// optional, allocated on the heap) should be specified as a pointer. Initialization
+/// of the optional types is similar to \ref tim::auto_list<U...> but no environment
+/// variable is built-in since, ideally, this environment variable should be customized
+/// based on the \ref Tag template parameter.
+///
+/// \code{.cpp}
+///
+/// // dummy type identifying the context
+/// struct FooApi {};
+///
+/// using bundle_t = tim::auto_bundle<FooApi, wall_clock, cpu_clock*>;
+///
+/// void foo_init() // user initialization routine
+/// {
+///     bundle_t::get_initializer() = [](bundle_t& b)
+///     {
+///         static auto env_enum = tim::enumerate_components(
+///             tim::delimit(tim::get_env<string_t>("FOO_COMPONENTS", "wall_clock")));
+///
+///         :im::initialize(b, env_enum);
+///};
+///     };
+/// }
+/// void bar()
+/// {
+///     // will record whichever components are specified by "FOO_COMPONENT" in
+///     // environment, which "wall_clock" as the default
+///
+///     auto bar = bundle_t("foo");
+///     // ...
+/// }
+///
+/// int main(int argc, char** argv)
+/// {
+///     tim::timemory_init(argc, argv);
+///
+///     foo_init();
+///
+///     bar();
+///
+///     tim::timemory_finalize();
+/// }
+/// \endcode
+///
+/// The above code will record wall-clock, cpu-clock, and peak-rss. The intermediate
+/// storage will happen on the stack and when the destructor is called, it will add itself
+/// to the call-graph
+///
+
 template <typename Tag, typename... Types>
 class auto_bundle
 : public concepts::wrapper

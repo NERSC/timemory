@@ -57,6 +57,7 @@ bool alphabetical = false;
 bool all_info     = false;
 bool force_brief  = false;
 int  padding      = 4;
+string_t regex_key    = "";
 
 //--------------------------------------------------------------------------------------//
 
@@ -313,6 +314,10 @@ main(int argc, char** argv)
     parser.add_argument({ "-H", "--hw-counters" },
                         "Write the available hardware counters");
     parser.add_argument({ "-O", "--output" }, "Write results to file").count(1);
+    parser
+        .add_argument({ "-r", "--filter" },
+                      "Filter the output according to provided regex")
+        .count(1);
 
     auto err = parser.parse(argc, argv);
     if(err)
@@ -353,6 +358,9 @@ main(int argc, char** argv)
 
     if(parser.exists("output"))
         file = parser.get<std::string>("output");
+
+    if(parser.exists("filter"))
+        regex_key = parser.get<std::string>("filter");
 
     if(parser.exists("components"))
         include_components = true;

@@ -116,7 +116,7 @@ public:
     void add_text_output(const string_t& _label, const string_t& _file);
     void add_json_output(const string_t& _label, const string_t& _file);
 
-    /// \fn set_write_metadata
+    /// \fn void set_write_metadata(short)
     /// \brief Set to 0 for yes if other output, -1 for never, or 1 for yes
     void    set_write_metadata(short v) { m_write_metadata = v; }
     void    write_metadata(const char* = "");

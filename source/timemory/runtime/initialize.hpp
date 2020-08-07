@@ -88,12 +88,13 @@ initialize(CompList<CompTypes...>& obj, const std::string& components)
 
 //--------------------------------------------------------------------------------------//
 
-template <template <typename...> class CompList, typename... CompTypes,
-          template <typename, typename...> class Container, typename Intp,
-          typename... ExtraArgs,
-          typename std::enable_if<(std::is_integral<Intp>::value ||
-                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
-                                  int>::type>
+template <
+    template <typename...> class CompList, typename... CompTypes,
+    template <typename, typename...> class Container, typename Intp,
+    typename... ExtraArgs,
+    typename std::enable_if<std::is_integral<Intp>::value ||
+                                std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value,
+                            int>::type>
 void
 initialize(CompList<CompTypes...>& obj, const Container<Intp, ExtraArgs...>& components)
 {

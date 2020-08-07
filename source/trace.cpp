@@ -163,9 +163,9 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     {
         if(recursive())
             return MPI_Init(argc, argv);
-        recursive()              = true;
-        auto ret                 = MPI_Init(argc, argv);
-        tim::mpi::is_finalized() = false;
+        recursive() = true;
+        auto ret    = MPI_Init(argc, argv);
+        tim::mpi::set_finalized(false);
         set_attr();
         auto mode = tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
         if(mode == "trace")
@@ -181,9 +181,9 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     {
         if(recursive())
             return MPI_Init_thread(argc, argv, req, prov);
-        recursive()              = true;
-        auto ret                 = MPI_Init_thread(argc, argv, req, prov);
-        tim::mpi::is_finalized() = false;
+        recursive() = true;
+        auto ret    = MPI_Init_thread(argc, argv, req, prov);
+        tim::mpi::set_finalized(false);
         set_attr();
         auto mode = tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
         if(mode == "trace")
@@ -227,9 +227,9 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
         timemory_trace_mpi_finalize(MPI_COMM_WORLD, 0, nullptr, nullptr);
         if(tim::settings::debug())
             PRINT_HERE("%s", "finalizing MPI");
-        tim::mpi::is_finalized() = true;
-        auto ret                 = MPI_Finalize();
-        recursive()              = false;
+        tim::mpi::set_finalized(true);
+        auto ret    = MPI_Finalize();
+        recursive() = false;
         return ret;
     }
 

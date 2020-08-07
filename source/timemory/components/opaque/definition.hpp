@@ -103,8 +103,8 @@ get_opaque_hash(const std::string& key)
 //
 //  Configure the tool for a specific component
 //
-template <typename Toolset, enable_if_t<(trait::is_available<Toolset>::value &&
-                                         !concepts::is_wrapper<Toolset>::value),
+template <typename Toolset, enable_if_t<trait::is_available<Toolset>::value &&
+                                            !concepts::is_wrapper<Toolset>::value,
                                         int> = 0>
 auto
 get_opaque(scope::config _scope)
@@ -325,8 +325,8 @@ struct opaque_typeids<TupleT<T...>>
     }
 
     template <typename U       = TupleT<T...>,
-              enable_if_t<(trait::is_available<U>::value &&
-                           concepts::is_wrapper<TupleT<T...>>::value),
+              enable_if_t<trait::is_available<U>::value &&
+                              concepts::is_wrapper<TupleT<T...>>::value,
                           int> = 0>
     static result_type get()
     {
@@ -337,8 +337,8 @@ struct opaque_typeids<TupleT<T...>>
     }
 
     template <typename U       = TupleT<T...>,
-              enable_if_t<(trait::is_available<U>::value &&
-                           !concepts::is_wrapper<TupleT<T...>>::value),
+              enable_if_t<trait::is_available<U>::value &&
+                              !concepts::is_wrapper<TupleT<T...>>::value,
                           int> = 0>
     static result_type get()
     {

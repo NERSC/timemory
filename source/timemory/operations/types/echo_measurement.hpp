@@ -272,8 +272,8 @@ struct echo_measurement<Tp, true> : public common_utils
     ///
     template <typename Up = Tp, typename Vt = value_type,
               enable_if_t<is_enabled<Up>::value, char> = 0,
-              enable_if_t<(trait::array_serialization<Up>::value ||
-                           trait::iterable_measurement<Up>::value),
+              enable_if_t<trait::array_serialization<Up>::value ||
+                              trait::iterable_measurement<Up>::value,
                           int>                         = 0>
     echo_measurement(Up& obj, const strvec_t& hierarchy)
     {

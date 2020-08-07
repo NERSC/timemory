@@ -321,6 +321,10 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
 {
     insert_init();
 
+    using force_tree_t = trait::tree_storage<Type>;
+    using force_flat_t = trait::flat_storage<Type>;
+    using force_time_t = trait::timeline_storage<Type>;
+
     // if data is all the way up to the zeroth (relative) depth then worker
     // threads should insert a new dummy at the current master thread id and depth.
     // Be aware, this changes 'm_current' inside the data graph
@@ -329,13 +333,20 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
        _data().dummy_count() < settings::max_thread_bookmarks())
         _data().add_dummy();
 
-    auto hash_depth = scope_data.compute_depth(_data().depth());
-    auto hash_value = scope_data.compute_hash(hash_id, hash_depth, m_timeline_counter);
+    // compute the insertion depth
+    auto hash_depth = scope_data.compute_depth<force_tree_t, force_flat_t, force_time_t>(
+        _data().depth());
+
+    // compute the insertion key
+    auto hash_value = scope_data.compute_hash<force_tree_t, force_flat_t, force_time_t>(
+        hash_id, hash_depth, m_timeline_counter);
+
+    // alias the true id with the insertion key
     add_hash_id(hash_id, hash_value);
 
     // even when flat is combined with timeline, it still inserts at depth of 1
     // so this is easiest check
-    if(scope_data.is_flat())
+    if(scope_data.is_flat() || force_flat_t::value)
         return insert_flat(hash_value, obj, hash_depth);
 
     // in the case of tree + timeline, timeline will have appropriately modified the
@@ -450,6 +461,7 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
+    // PRINT_HERE("%s", "");
     bool has_head = _data().has_head();
     return insert_hierarchy(hash_id, obj, hash_depth, has_head);
 }
@@ -461,6 +473,7 @@ typename storage<Type, true>::iterator
 storage<Type, true>::insert_timeline(uint64_t hash_id, const Type& obj,
                                      uint64_t hash_depth)
 {
+    // PRINT_HERE("%s", "");
     auto         _current = _data().current();
     graph_node_t _node(hash_id, obj, hash_depth, m_thread_idx);
     return _data().emplace_child(_current, _node);
@@ -472,6 +485,7 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
+    // PRINT_HERE("%s", "");
     static thread_local auto _current = _data().head();
     static thread_local bool _first   = true;
     if(_first)
@@ -507,6 +521,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
                                       uint64_t hash_depth, bool has_head)
 {
     using id_hash_map_t = typename iterator_hash_map_t::mapped_type;
+    // PRINT_HERE("%s", "");
 
     auto& m_data = m_graph_data_instance;
     auto  tid    = m_thread_idx;
@@ -779,12 +794,12 @@ storage<Type, false>::master_instance()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Vp>
-class storage : public impl::storage<Tp, trait::implements_storage<Tp, Vp>::value>
+class storage : public impl::storage<Tp, trait::uses_value_storage<Tp, Vp>::value>
 {
 public:
-    static constexpr bool implements_storage_v = trait::implements_storage<Tp, Vp>::value;
+    static constexpr bool uses_value_storage_v = trait::uses_value_storage<Tp, Vp>::value;
     using this_type                            = storage<Tp, Vp>;
-    using base_type                            = impl::storage<Tp, implements_storage_v>;
+    using base_type                            = impl::storage<Tp, uses_value_storage_v>;
     using deleter_t                            = impl::storage_deleter<base_type>;
     using smart_pointer                        = std::unique_ptr<base_type, deleter_t>;
     using singleton_t                          = singleton<base_type, smart_pointer>;
@@ -809,7 +824,7 @@ public:
         conditional_t<trait::is_available<Tp>::value, typename Tp::value_type, void>;
     static constexpr bool implements_storage_v = trait::implements_storage<Tp, Vp>::value;
     using this_type                            = storage<Tp, Vp>;
-    using base_type                            = impl::storage<Tp, implements_storage_v>;
+    using base_type                            = impl::storage<Tp, uses_value_storage_v>;
     using deleter_t                            = impl::storage_deleter<base_type>;
     using smart_pointer                        = std::unique_ptr<base_type, deleter_t>;
     using singleton_t                          = singleton<base_type, smart_pointer>;

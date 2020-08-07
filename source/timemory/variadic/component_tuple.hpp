@@ -25,8 +25,6 @@
 
 /** \file timemory/variadic/component_tuple.hpp
  * \headerfile variadic/component_tuple.hpp "timemory/variadic/component_tuple.hpp"
- * This is the C++ class that bundles together components and enables
- * operation on the components as a single entity
  *
  */
 
@@ -61,6 +59,31 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
+/// \class tim::component_tuple<Types...>
+/// \tparam Types... Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper where all components are allocated
+/// on the stack and cannot be disabled at runtime. This bundler has the lowest
+/// overhead. Accepts unlimited number of template parameters. This bundler
+/// is used by \ref tim::auto_tuple whose constructor and destructor invoke the
+/// start() and stop() member functions respectively.
+///
+/// \code{.cpp}
+/// using bundle_t = tim::component_tuple<wall_clock, cpu_clock, peak_rss>;
+///
+/// void foo()
+/// {
+///     auto bar = bundle_t("foo");
+///     bar.start();
+///     // ...
+///     bar.stop();
+/// }
+/// \endcode
+///
+/// The above code will record wall-clock, cpu-clock, and peak-rss. The intermediate
+/// storage will happen on the stack and when the destructor is called, it will add itself
+/// to the call-graph
+///
 template <typename... Types>
 class component_tuple
 : public stack_bundle<available_t<concat<Types...>>>

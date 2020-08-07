@@ -43,4 +43,7 @@
 #include "timemory/storage/definition.hpp"
 #include "timemory/variadic/definition.hpp"
 
-TIMEMORY_EXTERN_BUNDLE(TIMEMORY_API, TIMEMORY_FULL_TUPLE_TYPES, TIMEMORY_FULL_LIST_TYPES)
+TIMEMORY_EXTERN_BUNDLE(component_bundle, TIMEMORY_API, TIMEMORY_FULL_TUPLE_TYPES,
+                       TIMEMORY_FULL_LIST_TYPES)
+TIMEMORY_EXTERN_BUNDLE(auto_bundle, TIMEMORY_API, TIMEMORY_FULL_TUPLE_TYPES,
+                       TIMEMORY_FULL_LIST_TYPES)

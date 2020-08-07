@@ -43,4 +43,5 @@
 #include "timemory/storage/definition.hpp"
 #include "timemory/variadic/definition.hpp"
 
-TIMEMORY_EXTERN_LIST(complete_list_t, TIMEMORY_COMPONENT_TYPES)
+TIMEMORY_EXTERN_BUNDLE(component_list, TIMEMORY_COMPONENT_TYPES)
+TIMEMORY_EXTERN_BUNDLE(auto_list, TIMEMORY_COMPONENT_TYPES)

@@ -101,7 +101,7 @@ extern "C"
         auto manager = tim::timemory_manager_master_instance();
         if(manager)
             manager->finalize();
-        ::tim::dmp::is_finalized() = true;
+        ::tim::dmp::set_finalized(true);
         if(tim::settings::debug())
         {
             printf("[%s@%s:%i]> timemory MPI_Finalize completed!\n", __FUNCTION__,

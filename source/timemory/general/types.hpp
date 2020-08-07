@@ -23,7 +23,6 @@
 // SOFTWARE.
 
 /** \headerfile "timemory/general/types.hpp"
- *  General forward declaration
  */
 
 #pragma once

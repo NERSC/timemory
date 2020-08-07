@@ -57,8 +57,7 @@
 #endif
 //
 /// \enum TIMEMORY_NATIVE_COMPONENT
-/// \brief Enumerated identifiers for timemory-provided components. If the user wishes
-/// to add to the enumerated components, use \ref TIMEMORY_USER_COMPONENT_ENUM
+/// \brief Enumerated identifiers for timemory-provided components.
 //
 enum TIMEMORY_NATIVE_COMPONENT
 {

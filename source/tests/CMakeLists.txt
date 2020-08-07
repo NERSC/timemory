@@ -35,7 +35,13 @@ if(TIMEMORY_USE_OMPT)
     endif()
 endif()
 
-# Optimization flags
+if(NOT PTL_DIR)
+    set(PTL_DIR ${PROJECT_BINARY_DIR}/external/ptl)
+endif()
+find_package(PTL QUIET)
+
+# add_library(no-store-merge INTERFACE)
+# add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
 add_library(test-opt-flags INTERFACE)
 string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
@@ -181,6 +187,11 @@ list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_THREADS=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
 
+add_timemory_google_test(traits_tests
+    SOURCES         traits_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools)
+
 add_timemory_google_test(component_bundle_tests
     MPI
     NPROCS          2
@@ -248,6 +259,14 @@ add_timemory_google_test(threading_tests
                     timemory::timemory-core
                     timemory::timemory-ompt
                     ${_LIBRARY} ${_OPENMP})
+
+if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
+    add_timemory_google_test(ptl_tests
+        SOURCES         ptl_tests.cpp
+        LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                        timemory-plotting timemory-analysis-tools timemory-ompt
+                        PTL::ptl)
+endif()
 
 add_timemory_google_test(stl_overload_tests
     DISCOVER_TESTS

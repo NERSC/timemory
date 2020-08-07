@@ -271,6 +271,7 @@ public:
     /// \param[in] _cb Callback for checking whether to exit
     ///
     /// \brief Wait function with an optional user callback of type:
+    ///
     /// \code{.cpp}
     ///     bool (*)(int a, int b)
     /// \endcode
@@ -304,23 +305,25 @@ public:
     }
 
     /// \fn void set_flags(int)
+    /// \param flags[in] the sigaction flags to use
+    ///
     /// \brief Set the sigaction flags, e.g. SA_RESTART | SA_SIGINFO
     static void set_flags(int _flags) { get_persistent_data().m_flags = _flags; }
 
-    /// \fn void set_delay(const double&)
+    /// \fn void set_delay(double)
     /// \brief Value, expressed in seconds, that sets the length of time the sampler
     /// waits before starting sampling of the relevant measurements
-    static void set_delay(const double& fdelay);
+    static void set_delay(double fdelay);
 
-    /// \fn void set_freq(const double&)
+    /// \fn void set_freq(double)
     /// \brief Value, expressed in 1/seconds, expressed in 1/seconds, that sets the
     /// frequency that the sampler samples the relevant measurements
-    static void set_frequency(const double& ffreq);
+    static void set_frequency(double ffreq);
 
-    /// \fn void set_rate(const double&)
+    /// \fn void set_rate(double)
     /// \brief Value, expressed in number of interupts per second, that configures the
     /// frequency that the sampler samples the relevant measurements
-    static void set_rate(const double& frate) { set_frequency(1.0 / frate); }
+    static void set_rate(double frate) { set_frequency(1.0 / frate); }
 
     /// \fn int64_t get_delay(int64_t)
     /// \brief Get the delay of the sampler
@@ -334,7 +337,7 @@ public:
     /// \brief Returns the itimer value associated with the given signal
     static int get_itimer(int _signal);
 
-    /// \fn bool check_itimer(int. bool)
+    /// \fn bool check_itimer(int, bool)
     /// \brief Checks to see if there was an error setting or getting itimer val
     static bool check_itimer(int _stat, bool _throw_exception = false);
 
@@ -881,7 +884,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 void
-sampler<CompT<Types...>, N, SigIds...>::set_delay(const double& fdelay)
+sampler<CompT<Types...>, N, SigIds...>::set_delay(double fdelay)
 {
     get_persistent_data().m_freq = fdelay;
     int delay_sec                = double(fdelay * units::usec) / units::usec;
@@ -899,7 +902,7 @@ sampler<CompT<Types...>, N, SigIds...>::set_delay(const double& fdelay)
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 void
-sampler<CompT<Types...>, N, SigIds...>::set_frequency(const double& ffreq)
+sampler<CompT<Types...>, N, SigIds...>::set_frequency(double ffreq)
 {
     get_persistent_data().m_freq = ffreq;
     int freq_sec                 = double(ffreq * units::usec) / units::usec;

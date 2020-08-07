@@ -140,9 +140,6 @@ template <typename T>
 struct custom_unit_printing;
 
 template <typename T>
-struct custom_laps_printing;
-
-template <typename T>
 struct start_priority;
 
 template <typename T>
@@ -236,19 +233,13 @@ template <typename T>
 struct pretty_json;
 
 template <typename T>
-struct flat_storage;
+struct report;
 
 template <typename T>
-struct report_sum;
+struct report_count;
 
 template <typename T>
-struct report_mean;
-
-template <typename T>
-struct report_values;
-
-template <typename T>
-struct report_self;
+struct report_depth;
 
 template <typename T>
 struct report_metric_name;
@@ -257,7 +248,16 @@ template <typename T>
 struct report_units;
 
 template <typename T>
+struct report_sum;
+
+template <typename T>
+struct report_mean;
+
+template <typename T>
 struct report_statistics;
+
+template <typename T>
+struct report_self;
 
 template <typename T>
 struct ompt_handle;
@@ -274,11 +274,23 @@ struct python_args;
 template <typename T>
 struct cache;
 
-template <typename T, typename V = typename trait::data<T>::value_type>
+template <typename T, typename V = trait::data<T>>
 struct generates_output;
 
-template <typename T, typename V = typename trait::data<T>::value_type>
-struct implements_storage;
+template <typename T>
+struct uses_storage;
+
+template <typename T>
+struct tree_storage;
+
+template <typename T>
+struct flat_storage;
+
+template <typename T>
+struct timeline_storage;
+
+template <typename T, typename V = trait::data<T>, typename A = trait::uses_storage<T>>
+struct uses_value_storage;
 
 //--------------------------------------------------------------------------------------//
 //

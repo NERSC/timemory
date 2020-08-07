@@ -83,12 +83,13 @@ insert(Bundle<Idx, Type>& obj, const std::string& components)
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t Idx, typename Type, template <size_t, typename> class Bundle,
-          template <typename, typename...> class Container, typename Intp,
-          typename... ExtraArgs,
-          typename std::enable_if<(std::is_integral<Intp>::value ||
-                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
-                                  int>::type>
+template <
+    size_t Idx, typename Type, template <size_t, typename> class Bundle,
+    template <typename, typename...> class Container, typename Intp,
+    typename... ExtraArgs,
+    typename std::enable_if<std::is_integral<Intp>::value ||
+                                std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value,
+                            int>::type>
 void
 insert(Bundle<Idx, Type>& obj, const Container<Intp, ExtraArgs...>& components)
 {

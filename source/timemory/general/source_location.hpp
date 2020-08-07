@@ -40,7 +40,9 @@
 namespace tim
 {
 //======================================================================================//
-
+/// \class tim::source_location
+/// \brief Provides source location information and variadic joining of source location
+/// tags
 class source_location
 {
 public:

@@ -30,8 +30,12 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/user_bundle/backends.hpp"
+#include "timemory/components/user_bundle/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/utility.hpp"

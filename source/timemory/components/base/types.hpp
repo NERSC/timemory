@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/components/macros.hpp"
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -38,11 +40,22 @@
 //
 namespace tim
 {
+namespace trait
+{
+template <typename Tp>
+struct data;
+
+template <typename Tp>
+using data_t = typename data<Tp>::type;
+}  // namespace trait
+
 namespace component
 {
 //
 // generic static polymorphic base class
-template <typename Tp, typename ValueType = int64_t>
+template <typename Tp,
+          typename ValueType = conditional_t<concepts::is_empty<trait::data_t<Tp>>::value,
+                                             int64_t, trait::data_t<Tp>>>
 struct base;
 //
 //--------------------------------------------------------------------------------------//

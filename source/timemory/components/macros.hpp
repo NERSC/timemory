@@ -32,6 +32,7 @@
 #include "timemory/components/metadata.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/dll.hpp"
+#include "timemory/macros.hpp"
 
 #include <string>
 #include <unordered_set>
@@ -172,6 +173,30 @@
 //--------------------------------------------------------------------------------------//
 //
 /**
+ * \macro TIMEMORY_TEMPLATE_COMPONENT
+ * \brief Declare a templated component type in the tim::component namespace
+ */
+#if !defined(TIMEMORY_TEMPLATE_COMPONENT)
+#    define TIMEMORY_TEMPLATE_COMPONENT(NAME, TEMPLATE_PARAM, ...)                       \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        template <TEMPLATE_PARAM>                                                        \
+        struct NAME;                                                                     \
+        }                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <TEMPLATE_PARAM>                                                        \
+        struct is_component<component::NAME<__VA_ARGS__>> : true_type                    \
+        {};                                                                              \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+/**
  * \macro TIMEMORY_COMPONENT_ALIAS
  * \brief Declare a non-templated alias to a component in the tim::component namespace
  */
@@ -298,110 +323,6 @@
         }                                                                                \
         }                                                                                \
         using tim::component::aliases::NAME;
-#endif
-
-//======================================================================================//
-//
-//      GENERIC TYPE-TRAIT SPECIALIZATION (for true_type/false_type traits)
-//
-//======================================================================================//
-
-#if !defined(TIMEMORY_DEFINE_CONCRETE_TRAIT)
-#    define TIMEMORY_DEFINE_CONCRETE_TRAIT(TRAIT, COMPONENT, VALUE)                      \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <>                                                                      \
-        struct TRAIT<COMPONENT> : VALUE                                                  \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_DEFINE_TEMPLATE_TRAIT)
-#    define TIMEMORY_DEFINE_TEMPLATE_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TYPE T>                                                                \
-        struct TRAIT<COMPONENT<T>> : VALUE                                               \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_DEFINE_VARIADIC_TRAIT)
-#    define TIMEMORY_DEFINE_VARIADIC_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TYPE... T>                                                             \
-        struct TRAIT<COMPONENT<T...>> : VALUE                                            \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-
-//======================================================================================//
-//
-//      STATISTICS TYPE-TRAIT SPECIALIZATION
-//
-//======================================================================================//
-
-#if !defined(TIMEMORY_STATISTICS_TYPE)
-#    define TIMEMORY_STATISTICS_TYPE(COMPONENT, TYPE)                                    \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <>                                                                      \
-        struct statistics<COMPONENT>                                                     \
-        {                                                                                \
-            using type = TYPE;                                                           \
-        };                                                                               \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_TEMPLATE_STATISTICS_TYPE)
-#    define TIMEMORY_TEMPLATE_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)            \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TEMPLATE_TYPE T>                                                       \
-        struct statistics<COMPONENT<T>>                                                  \
-        {                                                                                \
-            using type = TYPE;                                                           \
-        };                                                                               \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_VARIADIC_STATISTICS_TYPE)
-#    define TIMEMORY_VARIADIC_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)            \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TEMPLATE_TYPE... T>                                                    \
-        struct statistics<COMPONENT<T...>>                                               \
-        {                                                                                \
-            using type = TYPE;                                                           \
-        };                                                                               \
-        }                                                                                \
-        }
 #endif
 
 //======================================================================================//
@@ -641,14 +562,14 @@
 //
 #    if !defined(TIMEMORY_EXTERN_OPERATIONS)
 #        define TIMEMORY_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                     \
-            TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)
+            TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(TIMEMORY_ESC(COMPONENT_NAME), HAS_DATA)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_STORAGE)
 #        define TIMEMORY_EXTERN_STORAGE(COMPONENT_NAME, VAR)                             \
-            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(COMPONENT_NAME, VAR)
+            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(COMPONENT_NAME), VAR)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -665,14 +586,14 @@
 //
 #    if !defined(TIMEMORY_EXTERN_OPERATIONS)
 #        define TIMEMORY_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                     \
-            TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)
+            TIMEMORY_DECLARE_EXTERN_OPERATIONS(TIMEMORY_ESC(COMPONENT_NAME), HAS_DATA)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_STORAGE)
 #        define TIMEMORY_EXTERN_STORAGE(COMPONENT_NAME, VAR)                             \
-            TIMEMORY_DECLARE_EXTERN_STORAGE(COMPONENT_NAME, VAR)
+            TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(COMPONENT_NAME), VAR)
 #    endif
 //
 //--------------------------------------------------------------------------------------//

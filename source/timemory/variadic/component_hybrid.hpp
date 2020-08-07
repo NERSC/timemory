@@ -25,9 +25,6 @@
 
 /** \file timemory/variadic/component_hybrid.hpp
  * \headerfile variadic/component_hybrid.hpp "timemory/variadic/component_hybrid.hpp"
- * This is the C++ class that bundles together components and enables
- * operation on the components as a single entity
- *
  */
 
 #pragma once
@@ -54,6 +51,11 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
+/// \class component_hybrid<CompT, CompL>
+/// \tparam CompT a component_tuple specification
+/// \tparam CompL a component_list specification
+///
+///  \deprecated See \ref tim::component_bundle
 template <typename CompTuple, typename CompList>
 class component_hybrid : public concepts::hybrid_wrapper
 {

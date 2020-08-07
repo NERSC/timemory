@@ -182,6 +182,12 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     if(NOT TIMEMORY_BUILD_TESTING)
         set(_OPTS EXCLUDE_FROM_ALL)
     endif()
+    if(NOT TARGET timemory-test)
+        add_custom_target(timemory-test
+            COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target test
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+            COMMENT "Running tests...")
+    endif()
     include(GoogleTest)
     # list of arguments taking multiple values
     set(multival_args SOURCES DEPENDS PROPERTIES LINK_LIBRARIES COMMAND OPTIONS ENVIRONMENT)
@@ -215,6 +221,9 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         endif()
         set(TEST_LAUNCHER ${MPIEXEC_EXECUTABLE} -n ${TEST_NPROCS})
     endif()
+
+    # always add as a dependency
+    add_dependencies(timemory-test ${TEST_NAME})
 
     if("${TEST_COMMAND}" STREQUAL "")
         set(TEST_COMMAND ${TEST_LAUNCHER} $<TARGET_FILE:${TEST_NAME}>)

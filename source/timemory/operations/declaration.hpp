@@ -88,6 +88,14 @@ struct storage_initializer
     TIMEMORY_DEFAULT_OBJECT(storage_initializer)
 
     template <typename T>
+    static enable_if_t<trait::uses_storage<T>::value, storage_initializer> get()
+        TIMEMORY_VISIBILITY("default");
+
+    template <typename T>
+    static enable_if_t<!trait::uses_storage<T>::value, storage_initializer> get()
+        TIMEMORY_VISIBILITY("default");
+
+    template <size_t Idx>
     static storage_initializer get() TIMEMORY_VISIBILITY("default");
 
     template <typename T>
@@ -561,19 +569,19 @@ struct init_storage
     using get_type   = std::tuple<pointer_t, bool, bool, bool>;
 
     template <typename Up                                             = Tp,
-              enable_if_t<trait::implements_storage<Up>::value, char> = 0>
+              enable_if_t<trait::uses_value_storage<Up>::value, char> = 0>
     init_storage();
 
     template <typename Up                                              = Tp,
-              enable_if_t<!trait::implements_storage<Up>::value, char> = 0>
+              enable_if_t<!trait::uses_value_storage<Up>::value, char> = 0>
     init_storage();
 
     template <typename U = Tp, typename V = typename U::value_type,
-              enable_if_t<trait::implements_storage<U, V>::value, int> = 0>
+              enable_if_t<trait::uses_value_storage<U, V>::value, int> = 0>
     static get_type get();
 
     template <typename U = Tp, typename V = typename U::value_type,
-              enable_if_t<!trait::implements_storage<U, V>::value, int> = 0>
+              enable_if_t<!trait::uses_value_storage<U, V>::value, int> = 0>
     static get_type get();
 
     static void init();

@@ -25,8 +25,6 @@
 
 /** \file timemory/variadic/auto_hybrid.hpp
  * \headerfile timemory/variadic/auto_hybrid.hpp "timemory/variadic/auto_hybrid.hpp"
- * Automatic starting and stopping of components. Accept a component_tuple as first
- * type and component_list as second type
  *
  */
 
@@ -45,7 +43,11 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-
+/// \class auto_hybrid<CompT, CompL>
+/// \tparam CompT a component_tuple specification
+/// \tparam CompL a component_list specification
+///
+///  \deprecated See \ref tim::auto_bundle
 template <typename CompTuple, typename CompList>
 class auto_hybrid
 : public concepts::wrapper

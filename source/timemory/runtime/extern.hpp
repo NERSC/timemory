@@ -29,31 +29,33 @@
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/runtime/macros.hpp"
-#include "timemory/runtime/types.hpp"
-//
-//======================================================================================//
-//
-//
+#if defined(TIMEMORY_USER_BUNDLE_SOURCE)
+#    error "Should not be here
+#endif
+
 #include "timemory/backends/extern.hpp"
 #include "timemory/backends/types/mpi/extern.hpp"
 #include "timemory/components/extern.hpp"
 #include "timemory/components/user_bundle/extern.hpp"
+#include "timemory/containers/auto_timer.hpp"
+#include "timemory/containers/auto_user_bundle.hpp"
 #include "timemory/containers/extern.hpp"
 #include "timemory/environment/extern.hpp"
 #include "timemory/hash/extern.hpp"
 #include "timemory/manager/extern.hpp"
 #include "timemory/operations/extern.hpp"
 #include "timemory/plotting/extern.hpp"
-#include "timemory/storage/extern.hpp"
-//
-#include "timemory/containers/auto_timer.hpp"
-#include "timemory/containers/auto_user_bundle.hpp"
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/enumerate.hpp"
+#include "timemory/runtime/initialize.hpp"
+#include "timemory/runtime/insert.hpp"
+#include "timemory/runtime/invoker.hpp"
+#include "timemory/runtime/macros.hpp"
 #include "timemory/runtime/properties.hpp"
+#include "timemory/runtime/types.hpp"
+#include "timemory/storage/extern.hpp"
 #include "timemory/types.hpp"
-//
+
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_global_bundle, scope::config)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_tuple_bundle, scope::config)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_list_bundle, scope::config)
@@ -69,4 +71,3 @@ TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(complete_component_list_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(available_component_list_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(complete_auto_list_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(available_auto_list_t)
-//

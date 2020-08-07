@@ -177,7 +177,7 @@ class storage
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Vp = typename trait::data<Tp>::value_type>
+template <typename Tp, typename Vp = typename trait::collects_data<Tp>::type>
 class storage;
 //
 //--------------------------------------------------------------------------------------//

@@ -51,130 +51,21 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_EXTERN_NAME_COMBINE)
-#    define TIMEMORY_EXTERN_NAME_COMBINE(X, Y) X##Y
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_EXTERN_TUPLE_ALIAS)
-#    define TIMEMORY_EXTERN_TUPLE_ALIAS(Y) TIMEMORY_EXTERN_NAME_COMBINE(extern_tuple_, Y)
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_EXTERN_LIST_ALIAS)
-#    define TIMEMORY_EXTERN_LIST_ALIAS(Y) TIMEMORY_EXTERN_NAME_COMBINE(extern_list_, Y)
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_EXTERN_HYBRID_ALIAS)
-#    define TIMEMORY_EXTERN_HYBRID_ALIAS(Y)                                              \
-        TIMEMORY_EXTERN_NAME_COMBINE(extern_hybrid_, Y)
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-//      extern declaration
-//
-#if !defined(TIMEMORY_DECLARE_EXTERN_TUPLE)
-#    define TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, ...)                                   \
-        namespace tim                                                                    \
-        {                                                                                \
-        extern template class component_tuple<__VA_ARGS__>;                              \
-        extern template class auto_tuple<__VA_ARGS__>;                                   \
-        using TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS) = auto_tuple<__VA_ARGS__>;             \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_DECLARE_EXTERN_LIST)
-#    define TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, ...)                                    \
-        namespace tim                                                                    \
-        {                                                                                \
-        extern template class component_list<__VA_ARGS__>;                               \
-        extern template class auto_list<__VA_ARGS__>;                                    \
-        using TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS) = auto_list<__VA_ARGS__>;               \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_DECLARE_EXTERN_HYBRID)
-#    define TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)                                       \
-        namespace tim                                                                    \
-        {                                                                                \
-        extern template class component_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),      \
-                                               TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;      \
-        extern template class auto_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),           \
-                                          TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;           \
-        using TIMEMORY_EXTERN_HYBRID_ALIAS(_ALIAS) = auto_hybrid<                        \
-            TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS), TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;    \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
 #if !defined(TIMEMORY_DECLARE_EXTERN_BUNDLE)
-#    define TIMEMORY_DECLARE_EXTERN_BUNDLE(API, ...)                                     \
+#    define TIMEMORY_DECLARE_EXTERN_BUNDLE(TYPE, ...)                                    \
         namespace tim                                                                    \
         {                                                                                \
-        extern template class component_bundle<API, __VA_ARGS__>;                        \
-        extern template class auto_bundle<API, __VA_ARGS__>;                             \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-//      extern instantiation
-//
-#if !defined(TIMEMORY_INSTANTIATE_EXTERN_TUPLE)
-#    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, ...)                               \
-        namespace tim                                                                    \
-        {                                                                                \
-        template class component_tuple<__VA_ARGS__>;                                     \
-        template class auto_tuple<__VA_ARGS__>;                                          \
-        using TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS) = auto_tuple<__VA_ARGS__>;             \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_INSTANTIATE_EXTERN_LIST)
-#    define TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, ...)                                \
-        namespace tim                                                                    \
-        {                                                                                \
-        template class component_list<__VA_ARGS__>;                                      \
-        template class auto_list<__VA_ARGS__>;                                           \
-        using TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS) = auto_list<__VA_ARGS__>;               \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_INSTANTIATE_EXTERN_HYBRID)
-#    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)                                   \
-        namespace tim                                                                    \
-        {                                                                                \
-        template class component_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),             \
-                                        TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;             \
-        template class auto_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),                  \
-                                   TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;                  \
-        using TIMEMORY_EXTERN_HYBRID_ALIAS(_ALIAS) = auto_hybrid<                        \
-            TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS), TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;    \
+        extern template class TYPE<__VA_ARGS__>;                                         \
         }
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_INSTANTIATE_EXTERN_BUNDLE)
-#    define TIMEMORY_INSTANTIATE_EXTERN_BUNDLE(API, ...)                                 \
+#    define TIMEMORY_INSTANTIATE_EXTERN_BUNDLE(TYPE, ...)                                \
         namespace tim                                                                    \
         {                                                                                \
-        template class component_bundle<API, __VA_ARGS__>;                               \
-        template class auto_bundle<API, __VA_ARGS__>;                                    \
+        template class TYPE<__VA_ARGS__>;                                                \
         }
 #endif
 //
@@ -241,36 +132,9 @@
 //
 #    if !defined(TIMEMORY_EXTERN_BUNDLE)
 #        define TIMEMORY_EXTERN_BUNDLE(...) TIMEMORY_DECLARE_EXTERN_BUNDLE(__VA_ARGS__)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#else
-//
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_TUPLE)
-#        define TIMEMORY_EXTERN_TUPLE(...)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_LIST)
-#        define TIMEMORY_EXTERN_LIST(...)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_HYBRID)
-#        define TIMEMORY_EXTERN_HYBRID(...)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_BUNDLE)
+#    else
 #        define TIMEMORY_EXTERN_BUNDLE(...)
 #    endif
-//
 //--------------------------------------------------------------------------------------//
 //
 #endif

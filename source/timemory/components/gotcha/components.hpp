@@ -482,17 +482,17 @@ private:
     }
 
     //----------------------------------------------------------------------------------//
-    /// \fn get_data()
+    /// \fn array_t<gotcha_data>& get_data()
     /// \brief Gotcha wrapper data
     static array_t<gotcha_data>& get_data() { return get_persistent_data().m_data; }
 
     //----------------------------------------------------------------------------------//
-    /// \fn get_started()
+    /// \fn std::atomic<int64_t>& get_started()
     /// \brief Global counter of active gotchas started
     static std::atomic<int64_t>& get_started() { return get_persistent_data().m_started; }
 
     //----------------------------------------------------------------------------------//
-    /// \fn get_thread_started()
+    /// \fn int64_t& get_thread_started()
     /// \brief Thread-local counter of activate gotchas
     static int64_t& get_thread_started()
     {
@@ -501,7 +501,7 @@ private:
     }
 
     //----------------------------------------------------------------------------------//
-    /// \fn get_suppresses()
+    /// \fn std::set<std::string>& get_suppresses()
     /// \brief global suppression when being used
     static std::set<std::string>& get_suppresses()
     {
@@ -509,7 +509,7 @@ private:
     }
 
     //----------------------------------------------------------------------------------//
-    /// \brief is_permitted()
+    /// \brief bool is_permitted()
     /// Check the permit list and reject list for whether the component is permitted
     /// to be wrapped.
     template <size_t N, typename Ret, typename... Args>

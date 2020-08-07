@@ -24,7 +24,7 @@
 
 /** \file timemory/utility/conditional.hpp
  * \headerfile timemory/utility/conditional.hpp "timemory/utility/conditional.hpp"
- * Provides structure for conditionally generate a timemory component configuration
+ * Provides structure for conditionally generating a timemory component configuration
  *
  */
 
@@ -41,7 +41,7 @@ namespace tim
 /// \struct conditional
 /// \brief This provides a conditional generator
 ///
-/// \example tim::conditional
+/// \code{.cpp}
 ///
 ///     struct G4ProfileType
 ///     {
@@ -89,6 +89,7 @@ namespace tim
 ///         delete fTrackProfiler;
 ///     }
 ///
+/// \endcode
 template <size_t CategoryT, typename... EvalArgsT>
 struct conditional
 {
@@ -103,12 +104,12 @@ public:
     static std::string label(EvalArgsT... _args) { return get_labeler()(_args...); }
 
     ///
-    /// \fn get_evaluator
+    /// \fn eval_functor_t& get_evaluator()
     /// \brief This is the functor that determines whether to activate the profiler.
     /// By default, returns false.
     /// Use a lambda to customize the activation of the profiler for the category
     ///
-    /// \example tim::conditional::get_evaluator
+    /// \code{.cpp}
     ///
     ///     using TrackProfiler = G4Profiler<G4ProfileType::Track, const G4Track*>;
     ///
@@ -132,6 +133,7 @@ public:
     ///            << eMin << "," << eMax << "_MeV";
     ///         return ss.str();
     ///     };
+    /// \endcode
     ///
     static eval_functor_t& get_evaluator()
     {
@@ -140,13 +142,12 @@ public:
     }
 
     ///
-    /// \fn get_labeler
+    /// \fn label_functor_t& get_labeler()
     /// \brief This is the functor that generates a label for a profiling instance.
     /// By default, it returns an empty string.
     /// Use a lambda to customize the label for the profiling instance
     ///
-    /// \example tim::conditional::get_labeler
-    ///
+    /// \code{.cpp}
     ///     TrackProfiler::get_labeler() = [](const Track* t)
     ///     {
     ///         auto* p = t->GetDynamicParticle();
@@ -161,6 +162,7 @@ public:
     ///            << eMin << "," << eMax << "_MeV";
     ///         return ss.str();
     ///     };
+    /// \endcode
     ///
     static label_functor_t& get_labeler()
     {
