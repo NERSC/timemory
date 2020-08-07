@@ -32,6 +32,8 @@
 #include <atomic>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
+#include <utility>
 
 //--------------------------------------------------------------------------------------//
 
@@ -51,8 +53,11 @@ namespace trace
 /// if(!lk)
 ///     return;
 /// \endcode
-struct trace : std::true_type
-{};
+struct trace
+{
+    using type                  = std::true_type;
+    static constexpr bool value = true;
+};
 //
 /// \struct tim::trace::region
 /// \brief Prevents recursion within a thread for region functions. See also \see
@@ -63,8 +68,11 @@ struct trace : std::true_type
 /// if(!lk)
 ///     return;
 /// \endcode
-struct region : std::true_type
-{};
+struct region
+{
+    using type                  = std::true_type;
+    static constexpr bool value = true;
+};
 //
 /// \struct tim::trace::region
 /// \brief Prevents recursion within a thread for library functions. See also \see
@@ -75,8 +83,11 @@ struct region : std::true_type
 /// if(!lk)
 ///     return;
 /// \endcode
-struct library : std::true_type
-{};
+struct library
+{
+    using type                  = std::true_type;
+    static constexpr bool value = true;
+};
 //
 /// \struct tim::trace::compiler
 /// \brief Prevents recursion within a thread for compiler instrumentation functions. See
@@ -87,8 +98,11 @@ struct library : std::true_type
 /// if(!lk)
 ///     return;
 /// \endcode
-struct compiler : std::true_type
-{};
+struct compiler
+{
+    using type                  = std::true_type;
+    static constexpr bool value = true;
+};
 //
 /// \struct tim::trace::region
 /// \brief Prevents recursion within a process for threading wrappers. See also \see
@@ -99,8 +113,11 @@ struct compiler : std::true_type
 /// if(!lk)
 ///     return;
 /// \endcode
-struct threading : std::false_type
-{};
+struct threading
+{
+    using type                  = std::false_type;
+    static constexpr bool value = false;
+};
 //
 //--------------------------------------------------------------------------------------//
 //
