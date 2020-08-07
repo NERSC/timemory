@@ -101,13 +101,23 @@ public:
     template <typename... Args>
     explicit assemble(type& obj, Args&&... args);
 
-    template <typename Arg, size_t N = derived_tuple_v, std::enable_if_t<N != 0> = 0>
+    template <typename Arg, size_t N = derived_tuple_v, std::enable_if_t<(N > 0)> = 0>
     explicit assemble(type& obj, Arg&& arg)
     {
         bool b = false;
         sfinae(b, obj, make_index_sequence<N>{}, std::forward<Arg>(arg));
         if(!b)
             sfinae(obj, 0, 0, std::forward<Arg>(arg));
+    }
+
+    template <template <typename...> class BundleT, typename... Args>
+    explicit assemble(type& obj, BundleT<Args...>& arg)
+    {
+        bool           b = false;
+        constexpr auto N = derived_tuple_v;
+        sfinae(b, obj, make_index_sequence<N>{}, arg);
+        if(!b)
+            sfinae(obj, 0, 0, arg);
     }
 
 private:

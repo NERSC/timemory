@@ -108,6 +108,16 @@ public:
             sfinae(obj, 0, 0, std::forward<Arg>(arg));
     }
 
+    template <template <typename...> class BundleT, typename... Args>
+    explicit derive(type& obj, BundleT<Args...>& arg)
+    {
+        bool           b = false;
+        constexpr auto N = derived_tuple_v;
+        sfinae(b, obj, make_index_sequence<N>{}, arg);
+        if(!b)
+            sfinae(obj, 0, 0, arg);
+    }
+
 private:
     //  satisfies mpl condition and accepts arguments
     template <typename Up, size_t... Idx, typename... Args>
