@@ -1337,6 +1337,22 @@ else()
     inform_empty_interface(timemory-craypat "CrayPAT")
 endif()
 
+#----------------------------------------------------------------------------------------#
+#
+#                       PTL (Parallel Tasking Library)
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
+    checkout_git_submodule(RECURSIVE
+        RELATIVE_PATH external/ptl
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/PTL.git
+        REPO_BRANCH timemory)
+
+    message(STATUS "Adding external/ptl")
+    add_subdirectory(external/ptl)
+endif()
 
 #----------------------------------------------------------------------------------------#
 #
