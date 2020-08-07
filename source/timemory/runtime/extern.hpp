@@ -30,7 +30,7 @@
 #pragma once
 
 #if defined(TIMEMORY_USER_BUNDLE_SOURCE)
-#    error "Should not be here
+#    error "Error! Extern templates cannot be defined as part of user_bundle source"
 #endif
 
 #include "timemory/backends/extern.hpp"
