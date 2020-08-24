@@ -70,7 +70,7 @@ struct io_cache
     static inline auto& read(std::ifstream& ifs, std::array<int64_t, N>& _data,
                              std::index_sequence<Idx...>)
     {
-        static_assert(N <= 4, "Error! Only four entries in the /proc/<PID>/io");
+        static_assert(N <= 6, "Error! Only six entries in the /proc/<PID>/io");
         static_assert(N > 0, "Error! array size is zero");
         static_assert(sizeof...(Idx) <= N,
                       "Error! Number of indexes to read exceeds the array size");
@@ -86,7 +86,7 @@ struct io_cache
         return _data;
     }
 
-    template <size_t NumReads = 4, size_t N>
+    template <size_t NumReads = 6, size_t N>
     static inline auto& read(std::array<int64_t, N>& _data)
     {
         std::ifstream ifs(get_filename().c_str());
@@ -94,7 +94,7 @@ struct io_cache
         return _data;
     }
 
-    template <size_t NumReads = 4>
+    template <size_t NumReads = 6>
     static inline auto read()
     {
         std::array<int64_t, NumReads> _data{};
@@ -121,6 +121,8 @@ public:
 
     inline int64_t get_char_read() const { return 0; }
     inline int64_t get_char_written() const { return 0; }
+    inline int64_t get_syscall_read() const { return 0; }
+    inline int64_t get_syscall_written() const { return 0; }
     inline int64_t get_bytes_read() const { return 0; }
     inline int64_t get_bytes_written() const { return 0; }
 
@@ -128,11 +130,13 @@ public:
 
     inline int64_t get_char_read() const { return std::get<0>(m_data); }
     inline int64_t get_char_written() const { return std::get<1>(m_data); }
-    inline int64_t get_bytes_read() const { return std::get<2>(m_data); }
-    inline int64_t get_bytes_written() const { return std::get<3>(m_data); }
+    inline int64_t get_syscall_read() const { return std::get<2>(m_data); }
+    inline int64_t get_syscall_written() const { return std::get<3>(m_data); }
+    inline int64_t get_bytes_read() const { return std::get<4>(m_data); }
+    inline int64_t get_bytes_written() const { return std::get<5>(m_data); }
 
 private:
-    std::array<int64_t, 4> m_data{};
+    std::array<int64_t, 6> m_data{};
 #endif
 };
 //
@@ -142,6 +146,10 @@ int64_t
 get_char_read();
 int64_t
 get_char_written();
+int64_t
+get_syscall_read();
+int64_t
+get_syscall_written();
 int64_t
 get_bytes_read();
 int64_t
@@ -178,6 +186,32 @@ tim::get_char_written()
 //--------------------------------------------------------------------------------------//
 //
 inline int64_t
+tim::get_syscall_read()
+{
+#if defined(_LINUX)
+    // read one value and return it
+    return io_cache::read<3>().back();
+#else
+    return 0;
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
+tim::get_syscall_written()
+{
+#if defined(_LINUX)
+    // read two values and return the last one
+    return io_cache::read<4>().back();
+#else
+    return 0;
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline int64_t
 tim::get_bytes_read()
 {
 #if defined(_MACOS)
@@ -188,7 +222,7 @@ tim::get_bytes_read()
     return 0;
 #elif defined(_LINUX)
     // read three values and return the last one
-    return io_cache::read<3>().back();
+    return io_cache::read<5>().back();
 #else
     return 0;
 #endif
@@ -207,7 +241,7 @@ tim::get_bytes_written()
     return 0;
 #elif defined(_LINUX)
     // read four values and return the last one
-    return io_cache::read<4>().back();
+    return io_cache::read<6>().back();
 #else
     return 0;
 #endif

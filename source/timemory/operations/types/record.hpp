@@ -55,17 +55,17 @@ struct record
     record(type& obj, const type& rhs);
 
     template <typename T                                       = type, typename... Args,
-              enable_if_t<(check_record_type<T>::value), char> = 0>
+              enable_if_t<check_record_type<T>::value, char> = 0>
     explicit record(T& obj, Args&&... args);
 
     template <typename T                                        = type, typename... Args,
-              enable_if_t<!(check_record_type<T>::value), char> = 0>
+              enable_if_t<!check_record_type<T>::value, char> = 0>
     explicit record(T&, Args&&...);
 
 private:
     //  satisfies mpl condition and accepts arguments
     template <typename Up, typename Vp, typename T, typename... Args,
-              enable_if_t<(check_record_type<Up, Vp>::value), int> = 0>
+              enable_if_t<check_record_type<Up, Vp>::value, int> = 0>
     auto sfinae(T& obj, int, int, Args&&... args)
         -> decltype((std::declval<T&>().value = obj.record(std::forward<Args>(args)...)),
                     void())
@@ -75,7 +75,7 @@ private:
 
     //  satisfies mpl condition but does not accept arguments
     template <typename Up, typename Vp, typename T, typename... Args,
-              enable_if_t<(check_record_type<Up, Vp>::value), int> = 0>
+              enable_if_t<check_record_type<Up, Vp>::value, int> = 0>
     auto sfinae(T& obj, int, long, Args&&...)
         -> decltype((std::declval<T&>().value = obj.record()), void())
     {
@@ -84,27 +84,20 @@ private:
 
     //  satisfies mpl condition but does not accept arguments
     template <typename Up, typename Vp, typename T, typename... Args,
-              enable_if_t<(check_record_type<Up, Vp>::value), int> = 0>
+              enable_if_t<check_record_type<Up, Vp>::value, int> = 0>
     auto sfinae(T&, long, long, Args&&...) -> decltype(void(), void())
     {}
 
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename Vp, typename T, typename... Args,
-              enable_if_t<!(check_record_type<Up, Vp>::value), int> = 0>
+              enable_if_t<!check_record_type<Up, Vp>::value, int> = 0>
     auto sfinae(T&, long, long, Args&&...) -> decltype(void(), void())
     {
         SFINAE_WARNING(type);
     }
 
-    //  satisfies mpl condition and accepts arguments
-    template <typename T, enable_if_t<(trait::record_max<T>::value), int> = 0>
-    auto sfinae(T& obj, const T& rhs, int, int) -> decltype(std::max(obj, rhs), void())
-    {
-        obj = std::max(obj, rhs);
-    }
-
     //  satisfies mpl condition but does not accept arguments
-    template <typename T, enable_if_t<!(trait::record_max<T>::value), int> = 0>
+    template <typename T>
     auto sfinae(T& obj, const T& rhs, int, long) -> decltype((obj += rhs), void())
     {
         obj += rhs;
@@ -131,7 +124,7 @@ record<Tp>::record(type& obj, const type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename T, typename... Args, enable_if_t<(check_record_type<T>::value), char>>
+template <typename T, typename... Args, enable_if_t<check_record_type<T>::value, char>>
 record<Tp>::record(T& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
@@ -142,7 +135,7 @@ record<Tp>::record(T& obj, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename T, typename... Args, enable_if_t<!(check_record_type<T>::value), char>>
+template <typename T, typename... Args, enable_if_t<!check_record_type<T>::value, char>>
 record<Tp>::record(T&, Args&&...)
 {}
 //

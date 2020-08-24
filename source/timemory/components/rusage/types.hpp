@@ -92,16 +92,6 @@ TIMEMORY_STATISTICS_TYPE(component::current_peak_rss, resource_usage::alias::pai
 
 //--------------------------------------------------------------------------------------//
 //
-//                              RECORD MAX
-//
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::peak_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::page_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::virtual_memory, true_type)
-
-//--------------------------------------------------------------------------------------//
-//
 //                              REPORT SUM
 //
 //--------------------------------------------------------------------------------------//
@@ -164,7 +154,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::current_peak_rss, false_
 //
 #if defined(_UNIX)
 
-/// \param TIMEMORY_USE_UNMAINTAINED_RUSAGE
+/// \macro TIMEMORY_USE_UNMAINTAINED_RUSAGE
 /// \brief This macro enables the globally disable rusage structures that are
 /// unmaintained by the Linux kernel and are zero on macOS
 ///

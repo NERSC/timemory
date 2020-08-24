@@ -155,6 +155,8 @@ private:
 /// \struct tim::trait::record_max
 /// \brief trait that signifies that updating w.r.t. another instance should
 /// be a max of the two instances
+/// \deprecated This is no longer used. Overload the operators for +=, -=, etc. to obtain
+/// previous functionality.
 //
 template <typename T>
 struct record_max : false_type

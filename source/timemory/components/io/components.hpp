@@ -30,7 +30,6 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/data/statistics.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
@@ -47,12 +46,20 @@ namespace component
 {
 //--------------------------------------------------------------------------------------//
 
+/// \struct tim::component::read_char
+/// \brief I/O counter for chars read. The number of bytes which this task has caused to
+/// be read from storage. This is simply the sum of bytes which this process passed to
+/// read() and pread(). It includes things like tty IO and it is unaffected by whether or
+/// not actual physical disk IO was required (the read might have been satisfied from
+/// pagecache)
 struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
 {
     using this_type   = read_char;
     using value_type  = std::pair<int64_t, int64_t>;
     using base_type   = base<this_type, value_type>;
     using result_type = std::pair<double, double>;
+    using unit_type         = typename trait::units<this_type>::type;
+    using display_unit_type = typename trait::units<this_type>::display_type;
 
     static std::string label() { return "read_char"; }
     static std::string description()
@@ -247,12 +254,18 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
 
 //--------------------------------------------------------------------------------------//
 
+/// \struct tim::component::written_char
+/// \brief I/O counter for chars written. The number of bytes which this task has caused,
+/// or shall cause to be written to disk. Similar caveats apply here as with \ref
+/// tim::component::read_char (rchar).
 struct written_char : public base<written_char, std::array<int64_t, 2>>
 {
     using this_type   = written_char;
     using value_type  = std::array<int64_t, 2>;
     using base_type   = base<this_type, value_type>;
     using result_type = std::array<double, 2>;
+    using unit_type         = typename trait::units<this_type>::type;
+    using display_unit_type = typename trait::units<this_type>::display_type;
 
     static std::string label() { return "written_char"; }
     static std::string description()
@@ -450,12 +463,18 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
 
 //--------------------------------------------------------------------------------------//
 
+/// \struct tim::component::read_bytes
+/// \brief I/O counter for bytes read. Attempt to count the number of bytes which this
+/// process really did cause to be fetched from the storage layer. Done at the
+/// submit_bio() level, so it is accurate for block-backed filesystems.
 struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
 {
     using this_type   = read_bytes;
     using value_type  = std::pair<int64_t, int64_t>;
     using base_type   = base<this_type, value_type>;
     using result_type = std::pair<double, double>;
+    using unit_type         = typename trait::units<this_type>::type;
+    using display_unit_type = typename trait::units<this_type>::display_type;
 
     static std::string label() { return "read_bytes"; }
     static std::string description()
@@ -650,12 +669,17 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
 
 //--------------------------------------------------------------------------------------//
 
+/// \struct tim::component::written_bytes
+/// \brief I/O counter for bytes written. Attempt to count the number of bytes which this
+/// process caused to be sent to the storage layer. This is done at page-dirtying time.
 struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 {
     using this_type   = written_bytes;
     using value_type  = std::array<int64_t, 2>;
     using base_type   = base<this_type, value_type>;
     using result_type = std::array<double, 2>;
+    using unit_type         = typename trait::units<this_type>::type;
+    using display_unit_type = typename trait::units<this_type>::display_type;
 
     static std::string label() { return "written_bytes"; }
     static std::string description()

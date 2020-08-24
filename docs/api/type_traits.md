@@ -12,7 +12,7 @@ not restricted for specializing downstream. Please note, specializations may be 
 or cause compilation errors if extern templates are used. Ignoring specializations commonly happen in
 output routines like `tim::operation::print<T>` where the value of the specialization
 is used at runtime and the body of the output routine is not actually instantiated in the
-user code. 
+user code.
 
 ```eval_rst
 .. doxygenstruct:: tim::trait::api_components
@@ -46,7 +46,6 @@ user code.
 .. doxygenstruct:: tim::trait::permissive_statistics
 .. doxygenstruct:: tim::trait::pretty_json
 .. doxygenstruct:: tim::trait::python_args
-.. doxygenstruct:: tim::trait::record_max
 .. doxygenstruct:: tim::trait::record_statistics
 .. doxygenstruct:: tim::trait::report_mean
 .. doxygenstruct:: tim::trait::report_metric_name
