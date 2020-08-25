@@ -228,12 +228,16 @@ def run(args, cmd):
 
     if args.rerun is None or args.rerun == "ai":
         os.environ["TIMEMORY_ROOFLINE_MODE"] = "ai"
+        os.environ["TIMEMORY_ROOFLINE_MODE_CPU"] = "ai"
+        os.environ["TIMEMORY_ROOFLINE_MODE_GPU"] = "ai"
         p = sp.Popen(cmd)
         ret = p.wait()
         handle_error(ret, cmd, args.keep_going)
 
     if args.rerun is None or args.rerun == "op":
         os.environ["TIMEMORY_ROOFLINE_MODE"] = "op"
+        os.environ["TIMEMORY_ROOFLINE_MODE_CPU"] = "op"
+        os.environ["TIMEMORY_ROOFLINE_MODE_GPU"] = "op"
         p = sp.Popen(cmd)
         ret = p.wait()
         handle_error(ret, cmd, args.keep_going)

@@ -34,6 +34,10 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build flags" FORCE)
 endif()
 
+if(NOT CMAKE_VERSION VERSION_LESS 3.18)
+    cmake_policy(SET CMP0104 OLD)
+endif()
+
 set(BUILD_SHARED_LIBS ON)
 set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ language standard")
 set(CMAKE_CUDA_STANDARD 14 CACHE STRING "CUDA language standard")
