@@ -43,11 +43,19 @@ foreach(LIB_TYPE shared static)
         timemory-hidden-visibility)
 
     target_compile_options(timemory-compiler-instrument-${LIB_TYPE} INTERFACE
+        $<$<COMPILE_LANGUAGE:C>:-g>
+        $<$<COMPILE_LANGUAGE:CXX>:-g>      
+        $<$<COMPILE_LANGUAGE:C>:-fno-omit-frame-pointer>
+        $<$<COMPILE_LANGUAGE:CXX>:-fno-omit-frame-pointer>      
+        $<$<COMPILE_LANGUAGE:C>:-fno-optimize-sibling-calls>
+        $<$<COMPILE_LANGUAGE:CXX>:-fno-optimize-sibling-calls>      
         $<$<COMPILE_LANGUAGE:C>:-finstrument-functions>
         $<$<COMPILE_LANGUAGE:CXX>:-finstrument-functions>
-        $<$<COMPILE_LANGUAGE:C>:-fvisibility=hidden>
-        $<$<COMPILE_LANGUAGE:CXX>:-fvisibility=hidden>
     )
+      
+    target_compile_options(timemory-compiler-instrument-${LIB_TYPE} PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:-fvisibility=hidden>
+        $<$<COMPILE_LANGUAGE:CXX>:-fvisibility=hidden>)
 
     install(TARGETS timemory-compiler-instrument-${LIB_TYPE}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler)

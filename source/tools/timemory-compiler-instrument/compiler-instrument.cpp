@@ -67,13 +67,15 @@ using namespace tim::component;
 template <typename Tp>
 using uomap_t = std::unordered_map<void*, std::unordered_map<void*, Tp>>;
 
+//using trace_set_t =
+//    tim::component_bundle<TIMEMORY_API, wall_clock, cpu_clock, peak_rss, page_rss,
+//                          virtual_memory, read_char, written_char, read_bytes,
+//                          written_bytes, voluntary_context_switch, num_minor_page_faults>;
 using trace_set_t =
-    tim::component_bundle<TIMEMORY_API, wall_clock, cpu_clock, peak_rss, page_rss,
-                          virtual_memory, read_char, written_char, read_bytes,
-                          written_bytes, voluntary_context_switch, num_minor_page_faults>;
+    tim::component_bundle<TIMEMORY_API, monotonic_clock>;
 using trace_vec_t    = std::vector<trace_set_t>;
 using throttle_map_t = uomap_t<bool>;
-using overhead_map_t = uomap_t<std::pair<wall_clock, size_t>>;
+using overhead_map_t = uomap_t<std::pair<monotonic_clock, size_t>>;
 using trace_map_t    = uomap_t<trace_vec_t>;
 using label_map_t    = std::unordered_map<void*, size_t>;
 
@@ -194,7 +196,11 @@ finalize()
 {
     get_enabled() = false;
     auto lk       = new tim::trace::lock<tim::trace::compiler>{};
-    PRINT_HERE("%s", "finalizing compiler instrumentation");
+    if(get_trace_map())
+        PRINT_HERE("finalizing compiler instrumentation. %lu results",
+                   (unsigned long) get_trace_map()->size());
+    else
+        PRINT_HERE("%s", "finalizing compiler instrumentation");
     lk->acquire();
 
     // clean up trace map
@@ -245,19 +251,20 @@ extern "C"
             return;
 
         auto _label = get_label(this_fn, call_site);
-        if(!get_first().first)
-            return;
+        // if(!get_first().first)
+        //    return;
 
         static auto _allocated = (allocate(), true);
 
-        // auto&       _overhead = get_overhead();
-        // const auto& _throttle = get_throttle();
-        // if((*_throttle)[call_site][this_fn])
-        //    return;
+        auto&       _overhead = get_overhead();
+        const auto& _throttle = get_throttle();
+        if((*_throttle)[call_site][this_fn])
+            return;
 
         (*_trace_map)[call_site][this_fn].emplace_back(trace_set_t(_label));
         (*_trace_map)[call_site][this_fn].back().start();
-        //(*_overhead)[call_site][this_fn].first.start();
+        if((*_overhead)[call_site][this_fn].second == 0)
+            (*_overhead)[call_site][this_fn].first.start();
 
         tim::consume_parameters(_initialized, _allocated);
     }
@@ -281,13 +288,11 @@ extern "C"
         if(!_trace_map)
             return;
 
-        // auto& _overhead = get_overhead();
-        // auto& _throttle = get_throttle();
+        auto& _overhead = get_overhead();
+        auto& _throttle = get_throttle();
 
-        // if((*_throttle)[call_site][this_fn])
-        //    return;
-
-        //(*_overhead)[call_site][this_fn].first.stop();
+        if((*_throttle)[call_site][this_fn])
+            return;
 
         if((*_trace_map)[call_site][this_fn].empty())
             return;
@@ -297,21 +302,17 @@ extern "C"
             (*_trace_map)[call_site][this_fn].pop_back();
         }
 
-        /*
-        if(_throttle && (*_throttle)[call_site][this_fn] > 0)
-            return;
-
-        if(!_overhead)
-            return;
-
-        auto _count = ++((*_overhead)[call_site][this_fn].second);
-        if(_count % tim::settings::throttle_count() == 0)
+        static auto throttle_count = tim::settings::throttle_count();
+        static auto throttle_value = tim::settings::throttle_value();
+        auto        _count         = ++((*_overhead)[call_site][this_fn].second);
+        if(_count % throttle_count == 0)
         {
+            (*_overhead)[call_site][this_fn].first.stop();
             auto _accum = (*_overhead)[call_site][this_fn].first.get_accum() / _count;
-            if(_accum < tim::settings::throttle_value())
+            if(_accum < throttle_value)
                 (*_throttle)[call_site][this_fn] = true;
             (*_overhead)[call_site][this_fn].first.reset();
             (*_overhead)[call_site][this_fn].second = 0;
-        }*/
+        }
     }
 }  // extern "C"

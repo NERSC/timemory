@@ -51,12 +51,12 @@ using info_type      = std::tuple<string_t, bool, str_vec_t>;
 template <typename Tp, size_t N>
 using array_t = std::array<Tp, N>;
 
-char global_delim = '|';
-bool markdown     = false;
-bool alphabetical = false;
-bool all_info     = false;
-bool force_brief  = false;
-int  padding      = 4;
+char     global_delim = '|';
+bool     markdown     = false;
+bool     alphabetical = false;
+bool     all_info     = false;
+bool     force_brief  = false;
+int      padding      = 4;
 string_t regex_key    = "";
 
 //--------------------------------------------------------------------------------------//
