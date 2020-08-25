@@ -34,33 +34,9 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-/// \struct tim::component::read_char
-/// \brief I/O counter: chars read
-/// The number of bytes which this task has caused to be read from storage. This
-/// is simply the sum of bytes which this process passed to read() and pread().
-/// It includes things like tty IO and it is unaffected by whether or not actual
-/// physical disk IO was required (the read might have been satisfied from
-/// pagecache)
 TIMEMORY_DECLARE_COMPONENT(read_char)
-
-/// \struct tim::component::written_char
-/// \brief I/O counter: chars written
-/// The number of bytes which this task has caused, or shall cause to be written
-/// to disk. Similar caveats apply here as with \ref tim::component::read_char (rchar).
 TIMEMORY_DECLARE_COMPONENT(written_char)
-
-/// \struct tim::component::read_bytes
-/// \brief I/O counter: bytes read
-/// Attempt to count the number of bytes which this process really did cause to
-/// be fetched from the storage layer. Done at the submit_bio() level, so it is
-/// accurate for block-backed filesystems. <please add status regarding NFS and
-/// CIFS at a later time>
 TIMEMORY_DECLARE_COMPONENT(read_bytes)
-
-/// \brief write_bytes
-/// I/O counter: bytes written
-/// Attempt to count the number of bytes which this process caused to be sent to
-/// the storage layer. This is done at page-dirtying time.
 TIMEMORY_DECLARE_COMPONENT(written_bytes)
 
 namespace tim

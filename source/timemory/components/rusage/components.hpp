@@ -76,11 +76,11 @@ struct peak_rss : public base<peak_rss>
     void start() { value = record(); }
     void stop()
     {
-        auto tmp   = record();
-        auto delta = tmp - value;
-        accum      = std::max(static_cast<const value_type&>(accum), delta);
-        value      = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
+
+    void measure() { accum = value = std::max<int64_t>(value, record()); }
 
     template <typename CacheT                                        = cache_type,
               enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
@@ -137,10 +137,8 @@ struct page_rss : public base<page_rss, int64_t>
     void   start() { value = record(); }
     void   stop()
     {
-        auto tmp   = record();
-        auto delta = tmp - value;
-        accum      = std::max(accum, delta);
-        value      = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
     void measure() { accum = value = std::max<int64_t>(value, record()); }
 };
