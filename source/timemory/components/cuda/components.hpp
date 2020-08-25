@@ -321,7 +321,7 @@ struct cuda_profiler
         static std::atomic<int32_t> _once;
         if(_once++ > 0)
             return;
-#if defined(TIMEMORY_USE_CUDA)
+#if defined(TIMEMORY_USE_CUDA) && (CUDA_VERSION < 11000)
         cudaProfilerInitialize(_infile.c_str(), _outfile.c_str(),
                                (_mode == mode::nvp) ? cudaKeyValuePair : cudaCSV);
 #else

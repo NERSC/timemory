@@ -177,6 +177,9 @@ public:
         }
         else
         {
+            strvec_t events  = { "global_load", "global_store" };
+            strvec_t metrics = { "ldst_executed" };
+            /*
             strvec_t events  = { "active_warps", "global_load", "global_store" };
             strvec_t metrics = { "ldst_executed",
                                  "ldst_issued",
@@ -191,28 +194,31 @@ public:
                                  "l2_write_transactions",
                                  "dram_read_transactions",
                                  "dram_write_transactions" };
-
+            */
 #if defined(TIMEMORY_CUDA_FP16)
             if(is_one_of<cuda::fp16_t, types_tuple>::value)
             {
-                for(string_t itr : { "flop_count_hp", "flop_count_hp_add",
-                                     "flop_count_hp_mul", "flop_count_hp_fma" })
-                    metrics.push_back(itr);
+                // for(string_t itr : { "flop_count_hp", "flop_count_hp_add",
+                //                     "flop_count_hp_mul", "flop_count_hp_fma" })
+                //    metrics.push_back(itr);
+                metrics.push_back("flop_count_hp");
             }
 #endif
 
             if(is_one_of<float, types_tuple>::value)
             {
-                for(string_t itr : { "flop_count_sp", "flop_count_sp_add",
-                                     "flop_count_sp_mul", "flop_count_sp_fma" })
-                    metrics.push_back(itr);
+                // for(string_t itr : { "flop_count_sp", "flop_count_sp_add",
+                //                     "flop_count_sp_mul", "flop_count_sp_fma" })
+                //    metrics.push_back(itr);
+                metrics.push_back("flop_count_sp");
             }
 
             if(is_one_of<double, types_tuple>::value)
             {
-                for(string_t itr : { "flop_count_dp", "flop_count_dp_add",
-                                     "flop_count_dp_mul", "flop_count_dp_fma" })
-                    metrics.push_back(itr);
+                // for(string_t itr : { "flop_count_dp", "flop_count_dp_add",
+                //                     "flop_count_dp_mul", "flop_count_dp_fma" })
+                //    metrics.push_back(itr);
+                metrics.push_back("flop_count_dp");
             }
 
             // integer
