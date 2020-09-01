@@ -209,7 +209,7 @@ add_connector_config(context_switch
 
 if(TIMEMORY_USE_GPERFTOOLS)
     add_connector_config(gperftools
-        COMPONENTS gperftools
+        COMPONENTS gperftools_cpu_profiler gperftools_heap_profiler
         TARGETS timemory::timemory-gperftools)
 endif()
 
