@@ -52,8 +52,7 @@ target_link_libraries(timem PRIVATE
     timemory-cereal
     timemory-arch
     timemory-papi
-    timem-libexplain
-    ${_STATIC_LIB})
+    timem-libexplain)
 
 add_target_flag_if_avail(timem "-g")
 
