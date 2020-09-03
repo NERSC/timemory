@@ -555,6 +555,31 @@ if(MPI_FOUND)
         target_link_libraries(timemory-mpi INTERFACE timemory-no-mpi-init)
     endif()
 
+    target_link_libraries(timemory-mpi INTERFACE MPI::MPI_${_LANG})
+
+    if(NOT "$ENV{CRAYPE_VERSION}" STREQUAL "")
+        set(_PMI_INCLUDE "$ENV{CRAY_PMI_INCLUDE_OPTS}")
+        set(_PMI_LINKOPT "$ENV{CRAY_PMI_POST_LINK_OPTS}")
+        string(REGEX REPLACE "^-I" "" _PMI_INCLUDE "${_PMI_INCLUDE}")
+        string(REGEX REPLACE "^-L" "" _PMI_LINKOPT "${_PMI_LINKOPT}")
+        string(REGEX REPLACE "^-l" "" _PMI_LINKOPT "${_PMI_LINKOPT}")
+        string(REPLACE " " ";" _PMI_INCLUDE "${_PMI_INCLUDE}")
+        string(REPLACE " " ";" _PMI_LINKOPT "${_PMI_LINKOPT}")
+        string(REPLACE ":" ";" _PMI_LIBPATH "$ENV{CRAY_LD_LIBRARY_PATH}")
+        foreach(_DIR ${_PMI_INCLUDE} ${_PMI_LIBPATH})
+            get_filename_component(_DIR "${_DIR}" DIRECTORY)
+            list(APPEND _PMI_HINTS ${_DIR})
+        endforeach()
+        find_library(PMI_LIBRARY
+            NAMES pmi
+            PATHS ${_PMI_HINTS}
+            HINTS ${_PMI_HINTS}
+            PATH_SUFFIXES lib64 lib)
+        if(PMI_LIBRARY)
+            message(STATUS "Found PMI library: ${PMI_LIBRARY}")
+            target_link_libraries(timemory-mpi INTERFACE ${PMI_LIBRARY})
+        endif()
+    endif()
 else()
 
     set(TIMEMORY_USE_MPI OFF)
