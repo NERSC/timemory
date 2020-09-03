@@ -85,6 +85,7 @@ w.r.t. corrupted sizes, set:
 before BEFORE running Python
 '''
 
+
 def __load_component_libs():
     '''Loads the component libraries'''
     import ctypes
@@ -118,7 +119,7 @@ def __load_component_libs():
         if not os.path.exists(p):
             p = os.path.realpath(
                 os.path.join(this_path, relative_lib_path,
-                                'timemory', name))
+                             'timemory', name))
         ctypes.cdll.LoadLibrary(p)
 
     extrapath = os.path.realpath(os.path.join(
@@ -137,6 +138,7 @@ def __load_component_libs():
             except Exception as e:
                 pass
     __load('libtimemory.{}'.format(ext))
+
 
 if os.environ.get("TIMEMORY_CXX_PLOT_MODE", None) is not None:
 

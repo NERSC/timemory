@@ -134,7 +134,7 @@ struct TIMEMORY_SETTINGS_DLL settings
                                     false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, banner, "TIMEMORY_BANNER",
                                     "Notify about tim::manager creation and destruction",
-                                    (get_env<bool>("TIMEMORY_LIBRARY_CTOR", true)))
+                                    (get_env<bool>("TIMEMORY_LIBRARY_CTOR", false)))
     TIMEMORY_MEMBER_STATIC_REFERENCE(
         bool, flat_profile, "TIMEMORY_FLAT_PROFILE",
         "Set the label hierarchy mode to default to flat",
@@ -390,14 +390,14 @@ struct TIMEMORY_SETTINGS_DLL settings
         bool, upcxx_init, "TIMEMORY_UPCXX_INIT",
         "Enable/disable timemory calling upcxx::init() during certain "
         "timemory_init(...) invocations",
-        true)
+        false)
 
     /// timemory will try to call upcxx::finalize during timemory_finalize()
     TIMEMORY_MEMBER_STATIC_ACCESSOR(
         bool, upcxx_finalize, "TIMEMORY_UPCXX_FINALIZE",
         "Enable/disable timemory calling upcxx::finalize() during "
         "timemory_finalize()",
-        true)
+        false)
 
     //----------------------------------------------------------------------------------//
     //      PAPI

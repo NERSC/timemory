@@ -150,11 +150,7 @@ class XMLOutputArchive;
 #endif
 
 #if !defined(TIMEMORY_DEFAULT_PLOTTING)
-#    if defined(TIMEMORY_USE_PLOTTING)
-#        define TIMEMORY_DEFAULT_PLOTTING true
-#    else
-#        define TIMEMORY_DEFAULT_PLOTTING false
-#    endif
+#    define TIMEMORY_DEFAULT_PLOTTING false
 #endif
 
 #if !defined(TIMEMORY_DEFAULT_ENABLED)

@@ -65,13 +65,22 @@ template <typename Archive, typename Up,
 void
 base<Tp, Value>::CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
 {
-    // clang-format off
-    ar(cereal::make_nvp("is_transient", is_transient),
-        cereal::make_nvp("laps", laps),
-        cereal::make_nvp("value", value),
-        cereal::make_nvp("accum", accum),
-        cereal::make_nvp("last", last));
-    // clang-format on
+    auto try_catch = [&](const char* key, auto& val) {
+        try
+        {
+            ar(cereal::make_nvp(key, val));
+        } catch(cereal::Exception& e)
+        {
+            if(settings::debug() || settings::verbose() > -1)
+                fprintf(stderr, "Warning! '%s' threw exception: %s\n", key, e.what());
+        }
+    };
+
+    try_catch("is_transient", is_transient);
+    try_catch("laps", laps);
+    try_catch("value", value);
+    try_catch("accum", accum);
+    try_catch("last", last);
 }
 //
 //--------------------------------------------------------------------------------------//

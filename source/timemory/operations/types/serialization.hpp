@@ -56,17 +56,26 @@ struct serialization
               enable_if_t<(is_enabled<Up>::value), char> = 0>
     serialization(const Up& obj, Archive& ar, const unsigned int)
     {
-        // clang-format off
-        ar(cereal::make_nvp("is_transient", obj.get_is_transient()),
-           cereal::make_nvp("laps", obj.get_laps()),
-           cereal::make_nvp("value", obj.get_value()),
-           cereal::make_nvp("accum", obj.get_accum()),
-           cereal::make_nvp("last", obj.get_last()),
-           cereal::make_nvp("repr_data", obj.get()),
-           cereal::make_nvp("repr_display", obj.get_display()),
-           cereal::make_nvp("units", type::get_unit()),
-           cereal::make_nvp("display_units", type::get_display_unit()));
-        // clang-format on
+        auto try_catch = [&](const char* key, const auto& val) {
+            try
+            {
+                ar(cereal::make_nvp(key, val));
+            } catch(cereal::Exception& e)
+            {
+                if(settings::debug() || settings::verbose() > -1)
+                    fprintf(stderr, "Warning! '%s' threw exception: %s\n", key, e.what());
+            }
+        };
+
+        try_catch("is_transient", obj.get_is_transient());
+        try_catch("laps", obj.get_laps());
+        try_catch("value", obj.get_value());
+        try_catch("accum", obj.get_accum());
+        try_catch("last", obj.get_last());
+        try_catch("repr_data", obj.get());
+        try_catch("repr_display", obj.get_display());
+        try_catch("units", type::get_unit());
+        try_catch("display_units", type::get_display_unit());
     }
 
     template <typename Archive, typename Up = Tp,

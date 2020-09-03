@@ -111,7 +111,7 @@ manager::manager()
     if(_first && settings::banner())
         printf("#------------------------- tim::manager initialized "
                "[id=%i][pid=%i] "
-               "-------------------------#\n\n",
+               "-------------------------#\n",
                m_instance_count, process::get_id());
 #    endif
 
@@ -136,7 +136,7 @@ manager::~manager()
 #    if !defined(TIMEMORY_DISABLE_BANNER)
     if(_last && settings::banner())
     {
-        printf("\n\n#---------------------- tim::manager destroyed "
+        printf("#---------------------- tim::manager destroyed "
                "[rank=%i][id=%i][pid=%i] "
                "----------------------#\n",
                m_rank, m_instance_count, process::get_id());
