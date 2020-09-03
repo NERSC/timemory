@@ -527,6 +527,8 @@ if(MPI_FOUND)
         endif()
         unset(_FLAGS)
 
+        target_link_libraries(timemory-mpi INTERFACE MPI::MPI_${_LANG})
+
     endforeach()
 
     if(MPI_EXTRA_LIBRARY)
@@ -555,8 +557,6 @@ if(MPI_FOUND)
         target_link_libraries(timemory-mpi INTERFACE timemory-no-mpi-init)
     endif()
 
-    target_link_libraries(timemory-mpi INTERFACE MPI::MPI_${_LANG})
-
     if(NOT "$ENV{CRAYPE_VERSION}" STREQUAL "")
         set(_PMI_INCLUDE "$ENV{CRAY_PMI_INCLUDE_OPTS}")
         set(_PMI_LINKOPT "$ENV{CRAY_PMI_POST_LINK_OPTS}")
@@ -579,6 +579,10 @@ if(MPI_FOUND)
             message(STATUS "Found PMI library: ${PMI_LIBRARY}")
             target_link_libraries(timemory-mpi INTERFACE ${PMI_LIBRARY})
         endif()
+        unset(_PMI_INCLUDE)
+        unset(_PMI_LINKOPT)
+        unset(_PMI_HINTS)
+        unset(_DIR)
     endif()
 else()
 
