@@ -100,6 +100,10 @@ string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")
 if(SKBUILD)
     set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}
         CACHE PATH "Installation directory for python")
+elseif(SPACK_BUILD)
+    set(CMAKE_INSTALL_PYTHONDIR
+        lib/python${PYBIND11_PYTHON_VERSION}/site-packages
+        CACHE PATH "Installation directory for python")
 else()
     # make sure Python3 finds the same exe and library
     SET(Python3_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE FILEPATH "Path to Python3 interpreter" FORCE)

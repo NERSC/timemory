@@ -466,3 +466,6 @@ endif()
 if(TIMEMORY_USE_PYTHON)
     set(TIMEMORY_BUILD_PYTHON ON)
 endif()
+
+option(SPACK_BUILD "Tweak some installation directories when building via spack" OFF)
+mark_as_advanced(SPACK_BUILD)
