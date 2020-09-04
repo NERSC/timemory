@@ -355,6 +355,31 @@ endif()
 # include threading because of rooflines
 target_link_libraries(timemory-headers INTERFACE timemory-threading)
 
+# minimum: C++14
+target_compile_features(timemory-headers INTERFACE
+    cxx_std_14
+    cxx_auto_type
+    cxx_alias_templates
+    cxx_constexpr
+    cxx_decltype
+    cxx_decltype_auto
+    cxx_defaulted_functions
+    cxx_delegating_constructors
+    cxx_deleted_functions
+    cxx_extern_templates
+    cxx_generic_lambdas
+    cxx_noexcept
+    cxx_range_for
+    cxx_return_type_deduction
+    cxx_rvalue_references
+    cxx_thread_local
+    cxx_trailing_return_types
+    cxx_variadic_macros
+    cxx_variadic_templates
+    cxx_template_template_parameters)
+
+# Set CUDA at end in case we end up disabling it
+
 #----------------------------------------------------------------------------------------#
 #
 #                        timemory extern initializaiton
@@ -1363,6 +1388,11 @@ endif()
 #                       Include customizable UserPackages file
 #
 #----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_CUDA)
+    # minimum: CUDA/C++14
+    target_compile_features(timemory-headers INTERFACE cxx_cuda_14)
+endif()
 
 include(UserPackages)
 
