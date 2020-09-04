@@ -1391,7 +1391,7 @@ endif()
 
 if(TIMEMORY_USE_CUDA)
     # minimum: CUDA/C++14
-    target_compile_features(timemory-headers INTERFACE cxx_cuda_14)
+    target_compile_features(timemory-headers INTERFACE cuda_std_14)
 endif()
 
 include(UserPackages)
