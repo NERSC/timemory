@@ -54,10 +54,10 @@ namespace component
 /// pagecache)
 struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
 {
-    using this_type   = read_char;
-    using value_type  = std::pair<int64_t, int64_t>;
-    using base_type   = base<this_type, value_type>;
-    using result_type = std::pair<double, double>;
+    using this_type         = read_char;
+    using value_type        = std::pair<int64_t, int64_t>;
+    using base_type         = base<this_type, value_type>;
+    using result_type       = std::pair<double, double>;
     using unit_type         = typename trait::units<this_type>::type;
     using display_unit_type = typename trait::units<this_type>::display_type;
 
@@ -260,10 +260,10 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
 /// tim::component::read_char (rchar).
 struct written_char : public base<written_char, std::array<int64_t, 2>>
 {
-    using this_type   = written_char;
-    using value_type  = std::array<int64_t, 2>;
-    using base_type   = base<this_type, value_type>;
-    using result_type = std::array<double, 2>;
+    using this_type         = written_char;
+    using value_type        = std::array<int64_t, 2>;
+    using base_type         = base<this_type, value_type>;
+    using result_type       = std::array<double, 2>;
     using unit_type         = typename trait::units<this_type>::type;
     using display_unit_type = typename trait::units<this_type>::display_type;
 
@@ -469,10 +469,10 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
 /// submit_bio() level, so it is accurate for block-backed filesystems.
 struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
 {
-    using this_type   = read_bytes;
-    using value_type  = std::pair<int64_t, int64_t>;
-    using base_type   = base<this_type, value_type>;
-    using result_type = std::pair<double, double>;
+    using this_type         = read_bytes;
+    using value_type        = std::pair<int64_t, int64_t>;
+    using base_type         = base<this_type, value_type>;
+    using result_type       = std::pair<double, double>;
     using unit_type         = typename trait::units<this_type>::type;
     using display_unit_type = typename trait::units<this_type>::display_type;
 
@@ -674,10 +674,10 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
 /// process caused to be sent to the storage layer. This is done at page-dirtying time.
 struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 {
-    using this_type   = written_bytes;
-    using value_type  = std::array<int64_t, 2>;
-    using base_type   = base<this_type, value_type>;
-    using result_type = std::array<double, 2>;
+    using this_type         = written_bytes;
+    using value_type        = std::array<int64_t, 2>;
+    using base_type         = base<this_type, value_type>;
+    using result_type       = std::array<double, 2>;
     using unit_type         = typename trait::units<this_type>::type;
     using display_unit_type = typename trait::units<this_type>::display_type;
 

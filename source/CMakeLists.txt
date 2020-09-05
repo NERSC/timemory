@@ -129,16 +129,18 @@ if(_BUILD_SHARED_CXX)
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
-    target_link_libraries(timemory-cxx-shared PUBLIC
-        timemory-external-shared
-        timemory-vector
-        timemory-extern
+    target_link_libraries(timemory-cxx-shared
+        PUBLIC
         timemory-headers
+        timemory-extern
+        timemory-vector
+        timemory-external-shared
+        ${TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES}
+        ${TIMEMORY_SHARED_FACTORY_LIBRARIES}
+        PRIVATE
         ${TIMEMORY_SHARED_GLOBAL_LIBRARIES}
         ${TIMEMORY_SHARED_EXTERN_LIBRARIES}
-        ${TIMEMORY_SHARED_COMPONENT_LIBRARIES}
-        ${TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES}
-        ${TIMEMORY_SHARED_FACTORY_LIBRARIES})
+        ${TIMEMORY_SHARED_COMPONENT_LIBRARIES})
 
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
@@ -177,16 +179,18 @@ if(_BUILD_STATIC_CXX)
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
-    target_link_libraries(timemory-cxx-static PUBLIC
-        timemory-external-static
-        timemory-vector
-        timemory-extern
+    target_link_libraries(timemory-cxx-static
+        PUBLIC
         timemory-headers
+        timemory-extern
+        timemory-vector
+        timemory-external-static
+        ${TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES}
+        ${TIMEMORY_STATIC_FACTORY_LIBRARIES}
+        PRIVATE
         ${TIMEMORY_STATIC_GLOBAL_LIBRARIES}
         ${TIMEMORY_STATIC_EXTERN_LIBRARIES}
-        ${TIMEMORY_STATIC_COMPONENT_LIBRARIES}
-        ${TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES}
-        ${TIMEMORY_STATIC_FACTORY_LIBRARIES})
+        ${TIMEMORY_STATIC_COMPONENT_LIBRARIES})
 
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options
