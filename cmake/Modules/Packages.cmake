@@ -321,7 +321,7 @@ function(find_package_interface)
 
         # add any compile definitions
         foreach(_DEF ${PACKAGE_COMPILE_DEFINITIONS})
-            target_compile_definitions(${PACKAGE_INTERFACE} INTERFACE ${_DEF})
+            timemory_target_compile_definitions(${PACKAGE_INTERFACE} INTERFACE ${_DEF})
         endforeach()
 
         # add any compile-flags
@@ -341,7 +341,7 @@ endfunction()
 #----------------------------------------------------------------------------------------#
 
 # this target is always linked whenever timemory is used via cmake
-target_compile_definitions(timemory-headers INTERFACE TIMEMORY_CMAKE)
+timemory_target_compile_definitions(timemory-headers INTERFACE TIMEMORY_CMAKE)
 
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
@@ -387,7 +387,7 @@ target_compile_features(timemory-headers INTERFACE
 #----------------------------------------------------------------------------------------#
 
 if(NOT WIN32)
-    target_compile_definitions(timemory-extern INTERFACE TIMEMORY_USE_EXTERN)
+    timemory_target_compile_definitions(timemory-extern INTERFACE TIMEMORY_USE_EXTERN)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -396,7 +396,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-target_compile_definitions(timemory-statistics INTERFACE TIMEMORY_USE_STATISTICS)
+timemory_target_compile_definitions(timemory-statistics INTERFACE TIMEMORY_USE_STATISTICS)
 if(TIMEMORY_USE_STATISTICS)
     target_link_libraries(timemory-headers INTERFACE timemory-statistics)
 endif()
@@ -424,7 +424,7 @@ target_include_directories(timemory-cereal SYSTEM INTERFACE
 # timemory-headers always provides timemory-cereal
 target_link_libraries(timemory-headers INTERFACE timemory-cereal)
 target_link_libraries(timemory-cereal-xml INTERFACE timemory-cereal)
-target_compile_definitions(timemory-cereal-xml INTERFACE TIMEMORY_USE_XML_ARCHIVE)
+timemory_target_compile_definitions(timemory-cereal-xml INTERFACE TIMEMORY_USE_XML_ARCHIVE)
 
 #----------------------------------------------------------------------------------------#
 #
@@ -506,7 +506,7 @@ else()
 endif()
 
 # interface to kill MPI init in headers
-target_compile_definitions(timemory-no-mpi-init INTERFACE TIMEMORY_MPI_INIT=0)
+timemory_target_compile_definitions(timemory-no-mpi-init INTERFACE TIMEMORY_MPI_INIT=0)
 
 if(MPI_FOUND)
 
@@ -564,7 +564,7 @@ if(MPI_FOUND)
         target_include_directories(timemory-mpi SYSTEM INTERFACE ${MPI_INCLUDE_PATH})
     endif()
 
-    target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
+    timemory_target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
 
     # used by python
     if(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
@@ -631,13 +631,16 @@ if(UPCXX_FOUND)
 
     add_rpath(${UPCXX_LIBRARIES})
     target_link_libraries(timemory-upcxx INTERFACE ${UPCXX_LIBRARIES})
-    target_compile_options(timemory-upcxx INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_OPTIONS}>)
+    target_compile_options(timemory-upcxx INTERFACE
+        $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_OPTIONS}>)
     target_compile_features(timemory-upcxx INTERFACE cxx_std_${UPCXX_CXX_STANDARD})
     target_include_directories(timemory-upcxx SYSTEM INTERFACE ${UPCXX_INCLUDE_DIRS})
-    target_compile_definitions(timemory-upcxx INTERFACE ${UPCXX_DEFINITIONS} TIMEMORY_USE_UPCXX)
+    target_compile_definitions(timemory-upcxx INTERFACE ${UPCXX_DEFINITIONS})
+    timemory_target_compile_definitions(timemory-upcxx INTERFACE TIMEMORY_USE_UPCXX)
 
     if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-        target_link_options(timemory-upcxx INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_LINK_OPTIONS}>)
+        target_link_options(timemory-upcxx INTERFACE
+            $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_LINK_OPTIONS}>)
     else()
         set_target_properties(timemory-upcxx PROPERTIES INTERFACE_LINK_OPTIONS
             $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_LINK_OPTIONS}>)
@@ -702,8 +705,8 @@ if(PAPI_FOUND)
     target_link_libraries(timemory-papi INTERFACE papi-shared)
     target_link_libraries(timemory-papi-static INTERFACE papi-static)
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES papi-shared papi-static)
-    target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
-    target_compile_definitions(timemory-papi-static INTERFACE TIMEMORY_USE_PAPI)
+    timemory_target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
+    timemory_target_compile_definitions(timemory-papi-static INTERFACE TIMEMORY_USE_PAPI)
 else()
     set(TIMEMORY_USE_PAPI OFF)
     inform_empty_interface(timemory-papi "PAPI (shared libraries)")
@@ -774,8 +777,7 @@ endif()
 
 if(CUPTI_FOUND)
 
-    target_compile_definitions(timemory-cupti INTERFACE
-        TIMEMORY_USE_CUPTI)
+    timemory_target_compile_definitions(timemory-cupti INTERFACE TIMEMORY_USE_CUPTI)
 
     target_include_directories(timemory-cupti SYSTEM INTERFACE
         ${CUPTI_INCLUDE_DIRS})
@@ -816,7 +818,7 @@ if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
     add_rpath(${NVTX_LIBRARIES})
     target_link_libraries(timemory-nvtx INTERFACE ${NVTX_LIBRARIES})
     target_include_directories(timemory-nvtx SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
-    target_compile_definitions(timemory-nvtx INTERFACE TIMEMORY_USE_NVTX)
+    timemory_target_compile_definitions(timemory-nvtx INTERFACE TIMEMORY_USE_NVTX)
 else()
     set(TIMEMORY_USE_NVTX OFF)
     inform_empty_interface(timemory-nvtx "NVTX")
@@ -837,7 +839,7 @@ if(NCCL_FOUND AND TIMEMORY_USE_CUDA)
     add_rpath(${NCCL_LIBRARIES})
     target_link_libraries(timemory-nccl INTERFACE ${NCCL_LIBRARIES})
     target_include_directories(timemory-nccl SYSTEM INTERFACE ${NCCL_INCLUDE_DIRS})
-    target_compile_definitions(timemory-nccl INTERFACE TIMEMORY_USE_NCCL)
+    timemory_target_compile_definitions(timemory-nccl INTERFACE TIMEMORY_USE_NCCL)
 else()
     set(TIMEMORY_USE_NCCL OFF)
     inform_empty_interface(timemory-nccl "NCCL")
@@ -1025,7 +1027,7 @@ else()
 endif()
 
 if(caliper_FOUND)
-    target_compile_definitions(timemory-caliper INTERFACE TIMEMORY_USE_CALIPER)
+    timemory_target_compile_definitions(timemory-caliper INTERFACE TIMEMORY_USE_CALIPER)
     if(TIMEMORY_BUILD_CALIPER)
         target_include_directories(timemory-caliper SYSTEM INTERFACE
             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/caliper/include>
@@ -1082,7 +1084,7 @@ else()
 endif()
 
 if(gotcha_FOUND)
-    target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
+    timemory_target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
     foreach(_LIB gotcha gotcha-include Gotcha Gotcha::gotcha Gotcha::Gotcha)
         if(TARGET ${_LIB})
             target_link_libraries(timemory-gotcha INTERFACE ${_LIB})
@@ -1116,14 +1118,14 @@ endif()
 if(LIKWID_FOUND)
     target_link_libraries(timemory-likwid INTERFACE ${LIKWID_LIBRARIES})
     target_include_directories(timemory-likwid SYSTEM INTERFACE ${LIKWID_INCLUDE_DIRS})
-    target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID)
+    timemory_target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID)
     if(TIMEMORY_USE_LIKWID_PERFMON)
-        target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID_PERFMON
-            LIKWID_PERFMON)
+        timemory_target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID_PERFMON)
+        target_compile_definitions(timemory-likwid INTERFACE LIKWID_PERFMON)
     endif()
     if(TIMEMORY_USE_LIKWID_NVMON)
-        target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID_NVMON
-            LIKWID_NVMON)
+        timemory_target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID_NVMON)
+        target_compile_definitions(timemory-likwid INTERFACE LIKWID_NVMON)
     endif()
     add_rpath(${LIKWID_LIBRARIES})
 else()
@@ -1170,9 +1172,9 @@ if(TIMEMORY_USE_OMPT AND TIMEMORY_BUILD_OMPT)
             list(APPEND OMPT_EXPORT_TARGETS ${_TARG})
         endif()
     endforeach()
-    target_compile_definitions(timemory-ompt INTERFACE TIMEMORY_USE_OMPT)
+    timemory_target_compile_definitions(timemory-ompt INTERFACE TIMEMORY_USE_OMPT)
 elseif(TIMEMORY_USE_OMPT)
-    target_compile_definitions(timemory-ompt INTERFACE TIMEMORY_USE_OMPT)
+    timemory_target_compile_definitions(timemory-ompt INTERFACE TIMEMORY_USE_OMPT)
 else()
     set(TIMEMORY_BUILD_OMPT OFF)
     set(TIMEMORY_USE_OMPT OFF)
@@ -1193,7 +1195,7 @@ endif()
 if(ittnotify_FOUND)
     target_link_libraries(timemory-vtune INTERFACE ${ITTNOTIFY_LIBRARIES})
     target_include_directories(timemory-vtune SYSTEM INTERFACE ${ITTNOTIFY_INCLUDE_DIRS})
-    target_compile_definitions(timemory-vtune INTERFACE TIMEMORY_USE_VTUNE)
+    timemory_target_compile_definitions(timemory-vtune INTERFACE TIMEMORY_USE_VTUNE)
     add_rpath(${ITTNOTIFY_LIBRARIES})
 else()
     set(TIMEMORY_USE_VTUNE OFF)
@@ -1214,7 +1216,7 @@ endif()
 if(TAU_FOUND)
     target_link_libraries(timemory-tau INTERFACE ${TAU_LIBRARIES})
     target_include_directories(timemory-tau SYSTEM INTERFACE ${TAU_INCLUDE_DIRS})
-    target_compile_definitions(timemory-tau INTERFACE TIMEMORY_USE_TAU)
+    timemory_target_compile_definitions(timemory-tau INTERFACE TIMEMORY_USE_TAU)
     add_rpath(${TAU_LIBRARIES})
 else()
     set(TIMEMORY_USE_TAU OFF)
@@ -1328,7 +1330,7 @@ if(Dyninst_FOUND AND Boost_FOUND)
         ${DYNINST_INCLUDE_DIRS} ${DYNINST_INCLUDE_DIR}
         ${Dyninst_INCLUDE_DIRS} ${Dyninst_INCLUDE_DIR}
         ${TBB_INCLUDE_DIRS}     ${Boost_INCLUDE_DIRS})
-    target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
+    timemory_target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
 else()
     set(TIMEMORY_USE_DYNINST OFF)
     inform_empty_interface(timemory-dyninst "dyninst")
@@ -1351,7 +1353,7 @@ if(AllineaMAP_FOUND)
     add_rpath(${AllineaMAP_LIBRARIES})
     target_link_libraries(timemory-allinea-map INTERFACE ${AllineaMAP_LIBRARIES})
     target_include_directories(timemory-allinea-map SYSTEM INTERFACE ${AllineaMAP_INCLUDE_DIRS})
-    target_compile_definitions(timemory-allinea-map INTERFACE TIMEMORY_USE_ALLINEA_MAP)
+    timemory_target_compile_definitions(timemory-allinea-map INTERFACE TIMEMORY_USE_ALLINEA_MAP)
 else()
     set(TIMEMORY_USE_ALLINEA_MAP OFF)
     inform_empty_interface(timemory-allinea-map "Allinea MAP")
@@ -1373,7 +1375,8 @@ if(CrayPAT_FOUND)
     target_link_libraries(timemory-craypat INTERFACE ${CrayPAT_LIBRARIES})
     target_link_directories(timemory-craypat INTERFACE ${CrayPAT_LIBRARY_DIRS})
     target_include_directories(timemory-craypat SYSTEM INTERFACE ${CrayPAT_INCLUDE_DIRS})
-    target_compile_definitions(timemory-craypat INTERFACE TIMEMORY_USE_CRAYPAT CRAYPAT)
+    timemory_target_compile_definitions(timemory-craypat INTERFACE TIMEMORY_USE_CRAYPAT)
+    target_compile_definitions(timemory-craypat INTERFACE CRAYPAT)
     add_target_flag_if_avail(timemory-craypat "-g" "-debug pubnames"
         "-Qlocation,ld,${CrayPAT_LIBRARY_DIR}" "-fno-omit-frame-pointer"
         "-fno-optimize-sibling-calls")

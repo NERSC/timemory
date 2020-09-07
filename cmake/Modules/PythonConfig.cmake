@@ -40,7 +40,8 @@ else()
     add_feature(PYTHON_EXECUTABLE "Python executable")
     add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE)
     set(TIMEMORY_PYTHON_PLOTTER "${PYTHON_EXECUTABLE}")
-    target_compile_definitions(timemory-plotting INTERFACE TIMEMORY_USE_PLOTTING
+    timemory_target_compile_definitions(timemory-plotting INTERFACE
+        TIMEMORY_USE_PLOTTING
         TIMEMORY_PYTHON_PLOTTER="${PYTHON_EXECUTABLE}")
     target_link_libraries(timemory-headers INTERFACE timemory-plotting)
 endif()
@@ -151,17 +152,21 @@ else()
     ENDIF()
 endif()
 
+if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
+    timemory_target_compile_definitions(timemory-python INTERFACE
+        TIMEMORY_USE_PYTHON)
+    target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
+endif()
+
 if(TIMEMORY_BUILD_PYTHON)
-    target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
     target_include_directories(timemory-python SYSTEM INTERFACE
         ${PYTHON_INCLUDE_DIRS}
         $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
-    target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
 elseif(pybind11_FOUND)
-    target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
     target_include_directories(timemory-python SYSTEM INTERFACE
-        ${PYTHON_INCLUDE_DIRS} ${PYBIND11_INCLUDE_DIR} ${PYBIND11_INCLUDE_DIRS})
-    target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
+        ${PYTHON_INCLUDE_DIRS}
+        ${PYBIND11_INCLUDE_DIR}
+        ${PYBIND11_INCLUDE_DIRS})
 endif()
 
 if(WIN32)

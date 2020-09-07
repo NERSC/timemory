@@ -157,7 +157,8 @@ foreach(_TYPE default protected hidden)
     if(NOT cxx_timemory_${_TYPE}_visibility_fvisibility_${_TYPE})
         add_disabled_interface(timemory-${_TYPE}-visibility)
     else()
-        target_compile_definitions(timemory-${_TYPE}-visibility INTERFACE TIMEMORY_USE_VISIBILITY)
+        timemory_target_compile_definitions(timemory-${_TYPE}-visibility INTERFACE
+            TIMEMORY_USE_VISIBILITY)
     endif()
 endforeach()
 

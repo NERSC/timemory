@@ -482,14 +482,13 @@ macro(BUILD_LIBRARY)
         PUBLIC ${LIBRARY_INCLUDE_DIRECTORIES})
 
     # compile definitions
-    target_compile_definitions(${LIBRARY_TARGET_NAME}
+    timemory_target_compile_definitions(${LIBRARY_TARGET_NAME}
         PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})
 
     # compile flags
-    target_compile_options(${LIBRARY_TARGET_NAME}
-        PRIVATE
-            $<$<COMPILE_LANGUAGE:C>:${LIBRARY_C_COMPILE_OPTIONS}>
-            $<$<COMPILE_LANGUAGE:CXX>:${LIBRARY_CXX_COMPILE_OPTIONS}>)
+    target_compile_options(${LIBRARY_TARGET_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:${LIBRARY_C_COMPILE_OPTIONS}>
+        $<$<COMPILE_LANGUAGE:CXX>:${LIBRARY_CXX_COMPILE_OPTIONS}>)
 
     # cuda flags
     get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
@@ -700,19 +699,17 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG)
         endif()
 
-        target_compile_definitions(${TARGET_NAME} PRIVATE
-            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_SOURCE>
-            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_${COMP_CATEGORY}_SOURCE>
-            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_${UPP_COMP}_SOURCE>)
+        timemory_target_compile_definitions(${TARGET_NAME} PRIVATE
+            TIMEMORY_SOURCE
+            TIMEMORY_${UPP_COMP}_SOURCE)
 
         set(_USE_VIS PUBLIC)
         if(COMP_USE_INTERFACE)
             set(_USE_VIS INTERFACE)
         endif()
 
-        target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
-            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_USE_${COMP_CATEGORY}_EXTERN>
-            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_USE_${UPP_COMP}_EXTERN>)
+        timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
+            TIMEMORY_USE_${UPP_COMP}_EXTERN)
 
         string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)
 
