@@ -37,11 +37,11 @@
 #    include "timemory/components/papi/components.hpp"
 #    include "timemory/components/papi/extern.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(component::cpu_roofline_sp_flops, true,
+TIMEMORY_EXTERN_COMPONENT(cpu_roofline_sp_flops, true,
                           std::pair<std::vector<long long>, double>)
-TIMEMORY_EXTERN_COMPONENT(component::cpu_roofline_dp_flops, true,
+TIMEMORY_EXTERN_COMPONENT(cpu_roofline_dp_flops, true,
                           std::pair<std::vector<long long>, double>)
-TIMEMORY_EXTERN_COMPONENT(component::cpu_roofline_flops, true,
+TIMEMORY_EXTERN_COMPONENT(cpu_roofline_flops, true,
                           std::pair<std::vector<long long>, double>)
 #endif
 
@@ -50,13 +50,13 @@ TIMEMORY_EXTERN_COMPONENT(component::cpu_roofline_flops, true,
 #    include "timemory/components/cupti/extern.hpp"
 
 #    if !defined(TIMEMORY_DISABLE_CUDA_HALF)
-TIMEMORY_EXTERN_COMPONENT(component::gpu_roofline_hp_flops, true,
+TIMEMORY_EXTERN_COMPONENT(gpu_roofline_hp_flops, true,
                           std::pair<std::vector<long long>, double>)
 #    endif
-TIMEMORY_EXTERN_COMPONENT(component::gpu_roofline_sp_flops, true,
+TIMEMORY_EXTERN_COMPONENT(gpu_roofline_sp_flops, true,
                           std::pair<std::vector<long long>, double>)
-TIMEMORY_EXTERN_COMPONENT(component::gpu_roofline_dp_flops, true,
+TIMEMORY_EXTERN_COMPONENT(gpu_roofline_dp_flops, true,
                           std::pair<std::vector<long long>, double>)
-TIMEMORY_EXTERN_COMPONENT(component::gpu_roofline_flops, true,
+TIMEMORY_EXTERN_COMPONENT(gpu_roofline_flops, true,
                           std::pair<std::vector<long long>, double>)
 #endif
