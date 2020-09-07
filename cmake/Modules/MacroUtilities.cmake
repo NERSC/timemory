@@ -701,9 +701,9 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         endif()
 
         target_compile_definitions(${TARGET_NAME} PRIVATE
-            TIMEMORY_SOURCE
-            TIMEMORY_${COMP_CATEGORY}_SOURCE
-            TIMEMORY_${UPP_COMP}_SOURCE)
+            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_SOURCE>
+            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_${COMP_CATEGORY}_SOURCE>
+            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_${UPP_COMP}_SOURCE>)
 
         set(_USE_VIS PUBLIC)
         if(COMP_USE_INTERFACE)
@@ -711,15 +711,8 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         endif()
 
         target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
-            TIMEMORY_USE_${COMP_CATEGORY}_EXTERN
-            TIMEMORY_USE_${UPP_COMP}_EXTERN)
-
-        if(WIN32 AND "${LINK}" STREQUAL "shared")
-            target_compile_definitions(${TARGET_NAME}
-                PRIVATE TIMEMORY_DLL_EXPORT 
-                # INTERFACE TIMEMORY_DLL_IMPORT
-            )
-        endif()
+            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_USE_${COMP_CATEGORY}_EXTERN>
+            $<$<COMPILE_LANGUAGE:CXX>:TIMEMORY_USE_${UPP_COMP}_EXTERN>)
 
         string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)
 

@@ -56,7 +56,7 @@ endif()
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
     add_flag_if_avail("-finline-functions" "-funroll-loops"
         "-ftree-vectorize" "-ftree-loop-optimize" "-ftree-loop-vectorize"
-        "-fsection-anchors" "-fno-signaling-nans" "-fno-trapping-math"
+        "-fno-signaling-nans" "-fno-trapping-math"
         "-fno-signed-zeros" "-ffinite-math-only" "-fno-math-errno"
         "-fpredictive-commoning" "-fvariable-expansion-in-unroller")
     # add_flag_if_avail("-freciprocal-math" "-fno-signed-zeros" "-mfast-fp")
