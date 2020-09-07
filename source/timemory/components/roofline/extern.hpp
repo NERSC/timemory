@@ -33,132 +33,30 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/components/roofline/components.hpp"
 
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-#if defined(TIMEMORY_USE_PAPI_EXTERN)
-//
-TIMEMORY_EXTERN_TEMPLATE(
-    struct base<cpu_roofline<float>, std::pair<std::vector<long long>, double>>)
-//
-TIMEMORY_EXTERN_TEMPLATE(
-    struct base<cpu_roofline<double>, std::pair<std::vector<long long>, double>>)
-//
-TIMEMORY_EXTERN_TEMPLATE(
-    struct base<cpu_roofline<float, double>, std::pair<std::vector<long long>, double>>)
-//
+#if defined(TIMEMORY_USE_PAPI)
+#    include "timemory/components/papi/components.hpp"
+#    include "timemory/components/papi/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(component::cpu_roofline_sp_flops, true,
+                          std::pair<std::vector<long long>, double>)
+TIMEMORY_EXTERN_COMPONENT(component::cpu_roofline_dp_flops, true,
+                          std::pair<std::vector<long long>, double>)
+TIMEMORY_EXTERN_COMPONENT(component::cpu_roofline_flops, true,
+                          std::pair<std::vector<long long>, double>)
 #endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_USE_CUPTI_EXTERN)
-//
+
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/components/cupti/components.hpp"
+#    include "timemory/components/cupti/extern.hpp"
+
 #    if !defined(TIMEMORY_DISABLE_CUDA_HALF)
-TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<cuda::fp16_t, float, double>,
-                                     std::tuple<typename cupti_activity::value_type,
-                                                typename cupti_counters::value_type>>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<cuda::fp16_t>,
-                                     std::tuple<typename cupti_activity::value_type,
-                                                typename cupti_counters::value_type>>)
-#    else
-TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<float, double>,
-                                     std::tuple<typename cupti_activity::value_type,
-                                                typename cupti_counters::value_type>>)
+TIMEMORY_EXTERN_COMPONENT(component::gpu_roofline_hp_flops, true,
+                          std::pair<std::vector<long long>, double>)
 #    endif
-//
-TIMEMORY_EXTERN_TEMPLATE(
-    struct base<gpu_roofline<float>, std::tuple<typename cupti_activity::value_type,
-                                                typename cupti_counters::value_type>>)
-//
-TIMEMORY_EXTERN_TEMPLATE(
-    struct base<gpu_roofline<double>, std::tuple<typename cupti_activity::value_type,
-                                                 typename cupti_counters::value_type>>)
-//
+TIMEMORY_EXTERN_COMPONENT(component::gpu_roofline_sp_flops, true,
+                          std::pair<std::vector<long long>, double>)
+TIMEMORY_EXTERN_COMPONENT(component::gpu_roofline_dp_flops, true,
+                          std::pair<std::vector<long long>, double>)
+TIMEMORY_EXTERN_COMPONENT(component::gpu_roofline_flops, true,
+                          std::pair<std::vector<long long>, double>)
 #endif
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-#if defined(TIMEMORY_USE_PAPI_EXTERN)
-//
-TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<float, double>)
-//
-TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<float>)
-//
-TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<double>)
-//
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_USE_CUPTI_EXTERN)
-//
-#    if !defined(TIMEMORY_DISABLE_CUDA_HALF)
-TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<cuda::fp16_t, float, double>)
-TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<cuda::fp16_t>)
-#    else
-TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<float, double>)
-#    endif
-//
-TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<float>)
-//
-TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<double>)
-//
-#endif
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-#if defined(TIMEMORY_USE_PAPI_EXTERN)
-//
-TIMEMORY_EXTERN_OPERATIONS(component::cpu_roofline_sp_flops, true)
-TIMEMORY_EXTERN_OPERATIONS(component::cpu_roofline_dp_flops, true)
-TIMEMORY_EXTERN_OPERATIONS(component::cpu_roofline_flops, true)
-//
-#endif
-//
-#if defined(TIMEMORY_USE_CUPTI_EXTERN)
-//
-#    if !defined(TIMEMORY_DISABLE_CUDA_HALF)
-TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_hp_flops, true)
-#    endif
-TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_sp_flops, true)
-TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_dp_flops, true)
-TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_flops, true)
-//
-#endif
-//
-//======================================================================================//
-//
-#if defined(TIMEMORY_USE_PAPI_EXTERN)
-//
-TIMEMORY_EXTERN_STORAGE(component::cpu_roofline_sp_flops, cpu_roofline_sp_flops)
-TIMEMORY_EXTERN_STORAGE(component::cpu_roofline_dp_flops, cpu_roofline_dp_flops)
-TIMEMORY_EXTERN_STORAGE(component::cpu_roofline_flops, cpu_roofline_flops)
-//
-#endif
-//
-#if defined(TIMEMORY_USE_CUPTI_EXTERN)
-//
-// TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_hp_flops, gpu_roofline_hp_flops)
-TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_sp_flops, gpu_roofline_sp_flops)
-TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_dp_flops, gpu_roofline_dp_flops)
-// TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_flops, gpu_roofline_flops)
-//
-#endif
-//
-//======================================================================================//
