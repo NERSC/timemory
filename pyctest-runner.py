@@ -231,7 +231,6 @@ def run_pyctest():
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_BUILD_DEVELOPER": "ON" if args.developer else "OFF",
         "TIMEMORY_BUILD_TESTING": "ON" if not args.quick else "OFF",
-        "TIMEMORY_BUILD_MINIMAL_TESTING": "ON" if args.quick else "OFF",
         "TIMEMORY_BUILD_EXAMPLES": "OFF" if args.quick else "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON" if args.extra_optimizations
                                               else "OFF",
@@ -255,17 +254,23 @@ def run_pyctest():
         "TIMEMORY_USE_COMPILE_TIMING": "ON" if args.timing else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
-        "USE_PAPI": "ON" if args.papi else "OFF",
-        "USE_MPI": "ON" if args.mpi else "OFF",
-        "USE_CALIPER": "ON" if args.caliper else "OFF",
         "PYTHON_EXECUTABLE": "{}".format(sys.executable),
     }
+
+    if args.papi:
+        build_opts["USE_PAPI"] = "ON"
+
+    if args.caliper:
+        build_opts["USE_CALIPER"] = "ON"
+
+    if args.mpi:
+        build_opts["USE_MPI"] = "ON"
 
     if args.mpi and args.mpi_init:
         build_opts["TIMEMORY_USE_MPI_INIT"] = "ON"
 
-    if args.ompt:
-        build_opts["OPENMP_ENABLE_LIBOMPTARGET"] = "OFF"
+    # if args.ompt:
+    #    build_opts["OPENMP_ENABLE_LIBOMPTARGET"] = "OFF"
 
     if args.tools:
         build_opts["TIMEMORY_BUILD_MPIP_LIBRARY"] = "ON" if (
