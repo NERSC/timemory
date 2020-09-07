@@ -713,7 +713,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
             TIMEMORY_USE_${UPP_COMP}_EXTERN)
 
-        if(COMP_USE_CATEGORY)
+        if("${COMP_CATEGORY}" STREQUAL "COMPONENT" OR COMP_USE_CATEGORY)
             timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
                 TIMEMORY_USE_${COMP_CATEGORY}_EXTERN)
         endif()
