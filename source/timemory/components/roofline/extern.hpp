@@ -52,15 +52,19 @@ TIMEMORY_EXTERN_COMPONENT(cpu_roofline_flops, true,
 #    if !defined(TIMEMORY_DISABLE_CUDA_HALF)
 TIMEMORY_EXTERN_COMPONENT(
     gpu_roofline_hp_flops, true,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>)
+    std::tuple<typename ::tim::component::cupti_activity::value_type,
+               typename ::tim::component::cupti_counters::value_type>)
 #    endif
 TIMEMORY_EXTERN_COMPONENT(
     gpu_roofline_sp_flops, true,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>)
+    std::tuple<typename ::tim::component::cupti_activity::value_type,
+               typename ::tim::component::cupti_counters::value_type>)
 TIMEMORY_EXTERN_COMPONENT(
     gpu_roofline_dp_flops, true,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>)
+    std::tuple<typename ::tim::component::cupti_activity::value_type,
+               typename ::tim::component::cupti_counters::value_type>)
 TIMEMORY_EXTERN_COMPONENT(
     gpu_roofline_flops, true,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>)
+    std::tuple<typename ::tim::component::cupti_activity::value_type,
+               typename ::tim::component::cupti_counters::value_type>)
 #endif
