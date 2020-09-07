@@ -29,9 +29,14 @@
 
 #pragma once
 
+#include "timemory/backends/types/cupti.hpp"
 #include "timemory/components/cupti/components.hpp"
 #include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"
 
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/backends/cupti.hpp"
+#endif
+
 TIMEMORY_EXTERN_COMPONENT(cupti_activity, true, uint64_t)
-TIMEMORY_EXTERN_COMPONENT(cupti_counters, true, cupti::profiler::results_t)
+TIMEMORY_EXTERN_COMPONENT(cupti_counters, true, ::tim::cupti::profiler::results_t)
