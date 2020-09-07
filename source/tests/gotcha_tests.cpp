@@ -169,7 +169,7 @@ protected:
             tim::settings::debug()        = false;
             tim::settings::json_output()  = true;
             tim::settings::mpi_thread()   = false;
-            tim::mpi::initialize(_argc, _argv);
+            tim::dmp::initialize(_argc, _argv);
 #if defined(TIMEMORY_USE_PAPI)
             cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
             cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);

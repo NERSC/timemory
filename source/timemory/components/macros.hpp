@@ -337,11 +337,23 @@
         {                                                                                \
         using namespace tim::component;                                                  \
         namespace component = tim::component;                                            \
-        tim::storage_initializer storage_initializer__##VAR =                            \
+        tim::storage_initializer _TIM_STORAGE_INIT(VAR) =                                \
             tim::storage_initializer::get<TYPE>();                                       \
         }
 #endif
-//
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_INITIALIZE_STORAGE)
+#    define TIMEMORY_INITIALIZE_STORAGE(...)                                             \
+        namespace                                                                        \
+        {                                                                                \
+        using namespace tim::component;                                                  \
+        namespace component              = tim::component;                               \
+        auto _TIM_STORAGE_INIT(__LINE__) = tim::storage_initializer::get<__VA_ARGS__>(); \
+        }
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
