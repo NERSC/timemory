@@ -238,4 +238,7 @@ private:
     graph_data*                      m_master  = nullptr;
     std::multimap<int64_t, iterator> m_dummies = {};
 };
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim

@@ -204,6 +204,15 @@ public:
     dmp_result_t   upc_get();
     dmp_result_t   dmp_get();
 
+    template <typename Tp>
+    Tp& get(Tp&);
+    template <typename Tp>
+    Tp& mpi_get(Tp&);
+    template <typename Tp>
+    Tp& upc_get(Tp&);
+    template <typename Tp>
+    Tp& dmp_get(Tp&);
+
     std::shared_ptr<printer_t> get_printer() const { return m_printer; }
 
     const iterator_hash_map_t get_node_ids() const { return m_node_ids; }

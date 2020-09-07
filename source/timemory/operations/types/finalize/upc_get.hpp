@@ -32,6 +32,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/finalize/get.hpp"
 
 namespace tim
 {
@@ -45,16 +46,30 @@ namespace finalize
 template <typename Type>
 struct upc_get<Type, true>
 {
-    static constexpr bool has_data = true;
-    using storage_type             = impl::storage<Type, has_data>;
-    using result_type              = typename storage_type::result_array_t;
-    using distrib_type             = typename storage_type::dmp_result_t;
-    using result_node              = typename storage_type::result_node;
-    using graph_type               = typename storage_type::graph_t;
-    using graph_node               = typename storage_type::graph_node;
-    using hierarchy_type           = typename storage_type::uintvector_t;
+    static constexpr bool value  = true;
+    using storage_type           = impl::storage<Type, value>;
+    using result_type            = typename storage_type::result_array_t;
+    using distrib_type           = typename storage_type::dmp_result_t;
+    using result_node            = typename storage_type::result_node;
+    using graph_type             = typename storage_type::graph_t;
+    using graph_node             = typename storage_type::graph_node;
+    using hierarchy_type         = typename storage_type::uintvector_t;
+    using get_type               = get<Type, value>;
+    using basic_tree_type        = typename get_type::basic_tree_vector_type;
+    using basic_tree_vector_type = std::vector<basic_tree_type>;
 
-    upc_get(storage_type&, distrib_type&);
+    explicit upc_get(storage_type& _storage)
+    : m_storage(&_storage)
+    {}
+
+    distrib_type&           operator()(distrib_type&);
+    basic_tree_vector_type& operator()(basic_tree_vector_type&);
+
+    template <typename Archive>
+    Archive& operator()(Archive&);
+
+private:
+    storage_type* m_storage = nullptr;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -62,16 +77,26 @@ struct upc_get<Type, true>
 template <typename Type>
 struct upc_get<Type, false>
 {
-    static constexpr bool has_data = false;
-    using storage_type             = impl::storage<Type, has_data>;
+    static constexpr bool value = false;
+    using storage_type          = impl::storage<Type, value>;
+
     upc_get(storage_type&) {}
+
+    template <typename Tp>
+    Tp& operator()(Tp&)
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
+typename upc_get<Type, true>::distrib_type&
+upc_get<Type, true>::operator()(distrib_type& results)
 {
+    if(!m_storage)
+        return results;
+
+    auto& data = *m_storage;
 #if !defined(TIMEMORY_USE_UPCXX)
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using UPC++");
@@ -110,6 +135,9 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
             auto ia =
                 policy::input_archive<cereal::JSONInputArchive, api::native_tag>::get(ss);
             (*ia)(cereal::make_nvp("data", ret));
+            if(settings::debug())
+                printf("[RECV: %i]> data size: %lli\n", comm_rank,
+                       (long long int) ret.size());
         }
         return ret;
     };
@@ -260,6 +288,125 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
     }
 
 #endif
+
+    return results;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename upc_get<Type, true>::basic_tree_vector_type&
+upc_get<Type, true>::operator()(basic_tree_vector_type& bt)
+{
+    if(!m_storage)
+        return bt;
+
+    auto& data = *m_storage;
+#if !defined(TIMEMORY_USE_UPCXX)
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory not using UPC++");
+
+    auto entry = basic_tree_type{};
+    bt         = basic_tree_vector_type(1, data.get(entry));
+#else
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory using UPC++");
+
+    upc::barrier(upc::world());
+
+    int comm_rank = upc::rank(upc::world());
+    int comm_size = upc::size(upc::world());
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert a result to a serialization
+    //
+    auto send_serialize = [&](const basic_tree_type& src) {
+        std::stringstream ss;
+        {
+            auto oa = policy::output_archive<cereal::MinimalJSONOutputArchive,
+                                             api::native_tag>::get(ss);
+            (*oa)(cereal::make_nvp("data", src));
+        }
+        return ss.str();
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert the serialization to a result
+    //
+    auto recv_serialize = [&](const std::string& src) {
+        basic_tree_type   ret;
+        std::stringstream ss;
+        ss << src;
+        {
+            auto ia =
+                policy::input_archive<cereal::JSONInputArchive, api::native_tag>::get(ss);
+            (*ia)(cereal::make_nvp("data", ret));
+            if(settings::debug())
+                printf("[RECV: %i]> data size: %lli\n", comm_rank,
+                       (long long int) ret.size());
+        }
+        return ret;
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Function executed on remote node
+    //
+    auto remote_serialize = [=]() {
+        return send_serialize(storage_type::master_instance()->get());
+    };
+
+    bt       = basic_tree_vector_type(comm_size);
+    auto ret = basic_tree_type{};
+
+    if(comm_rank == 0)
+    {
+        //
+        //  The root rank receives data from all non-root ranks and reports all data
+        //
+        for(int i = 1; i < comm_size; ++i)
+        {
+            upc::future_t<std::string> fut = upc::rpc(i, remote_serialize);
+            while(!fut.ready())
+                upc::progress();
+            fut.wait();
+            bt[i] = recv_serialize(fut.result());
+        }
+        bt[comm_rank] = data.get(ret);
+    }
+
+    upc::barrier(upc::world());
+
+    if(comm_rank != 0)
+        bt = basic_tree_vector_type(1, data.get(ret));
+
+#endif
+    return bt;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Archive>
+Archive&
+upc_get<Type, true>::operator()(Archive& ar)
+{
+    if(!m_storage)
+        return ar;
+
+    if(!upc::is_initialized())
+    {
+        get_type{ m_storage }(ar);
+    }
+    else
+    {
+        auto bt = basic_tree_vector_type{};
+        (*this)(bt);
+        ar.setNextName(demangle<Type>().c_str());
+        ar.startNode();
+        ar(cereal::make_nvp("upcxx", bt));
+        ar.finishNode();
+    }
+    return ar;
 }
 //
 //--------------------------------------------------------------------------------------//

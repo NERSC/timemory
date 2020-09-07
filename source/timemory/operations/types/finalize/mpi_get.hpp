@@ -32,6 +32,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/finalize/get.hpp"
 
 namespace tim
 {
@@ -45,24 +46,38 @@ namespace finalize
 template <typename Type>
 struct mpi_get<Type, true>
 {
-    static constexpr bool has_data = true;
-    using this_type                = mpi_get<Type, has_data>;
-    using storage_type             = impl::storage<Type, has_data>;
-    using result_type              = typename storage_type::result_array_t;
-    using distrib_type             = typename storage_type::dmp_result_t;
-    using result_node              = typename storage_type::result_node;
-    using graph_type               = typename storage_type::graph_t;
-    using graph_node               = typename storage_type::graph_node;
-    using hierarchy_type           = typename storage_type::uintvector_t;
+    static constexpr bool value  = true;
+    using this_type              = mpi_get<Type, value>;
+    using storage_type           = impl::storage<Type, value>;
+    using result_type            = typename storage_type::result_array_t;
+    using distrib_type           = typename storage_type::dmp_result_t;
+    using result_node            = typename storage_type::result_node;
+    using graph_type             = typename storage_type::graph_t;
+    using graph_node             = typename storage_type::graph_node;
+    using hierarchy_type         = typename storage_type::uintvector_t;
+    using get_type               = get<Type, value>;
+    using basic_tree_type        = typename get_type::basic_tree_vector_type;
+    using basic_tree_vector_type = std::vector<basic_tree_type>;
 
     static auto& plus(Type& lhs, const Type& rhs) { return (lhs += rhs); }
 
-    mpi_get(storage_type&, distrib_type&);
+    explicit mpi_get(storage_type& _storage)
+    : m_storage(&_storage)
+    {}
+
+    distrib_type&           operator()(distrib_type&);
+    basic_tree_vector_type& operator()(basic_tree_vector_type&);
+
+    template <typename Archive>
+    Archive& operator()(Archive&);
 
     // this serializes a type (src) and adds it to dst, if !collapse_processes
     // then it uses the adder to combine the data
     mpi_get(std::vector<Type>& dst, const Type& src,
             std::function<Type&(Type& lhs, const Type& rhs)>&& adder = this_type::plus);
+
+private:
+    storage_type* m_storage = nullptr;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -70,19 +85,26 @@ struct mpi_get<Type, true>
 template <typename Type>
 struct mpi_get<Type, false>
 {
-    static constexpr bool has_data = false;
-    using this_type                = mpi_get<Type, has_data>;
+    static constexpr bool value = false;
+    using storage_type          = impl::storage<Type, value>;
 
-    template <typename... Tp>
-    mpi_get(Tp&&...)
+    mpi_get(storage_type&) {}
+
+    template <typename Tp>
+    Tp& operator()(Tp&)
     {}
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
+typename mpi_get<Type, true>::distrib_type&
+mpi_get<Type, true>::operator()(distrib_type& results)
 {
+    if(!m_storage)
+        return results;
+
+    auto& data = *m_storage;
 #if !defined(TIMEMORY_USE_MPI)
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using MPI");
@@ -293,6 +315,134 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
     }
 
 #endif
+
+    return results;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename mpi_get<Type, true>::basic_tree_vector_type&
+mpi_get<Type, true>::operator()(basic_tree_vector_type& bt)
+{
+    if(!m_storage)
+        return bt;
+
+    auto& data = *m_storage;
+#if !defined(TIMEMORY_USE_MPI)
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory not using MPI");
+
+    auto entry = basic_tree_type{};
+    bt         = basic_tree_vector_type(1, data.get(entry));
+#else
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory using MPI");
+
+    // not yet implemented
+    // auto comm =
+    //    (settings::mpi_output_per_node()) ? mpi::get_node_comm() : mpi::comm_world_v;
+    auto comm = mpi::comm_world_v;
+    mpi::barrier(comm);
+
+    int comm_rank = mpi::rank(comm);
+    int comm_size = mpi::size(comm);
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert a result to a serialization
+    //
+    auto send_serialize = [&](const basic_tree_type& src) {
+        std::stringstream ss;
+        {
+            auto oa = policy::output_archive<cereal::MinimalJSONOutputArchive,
+                                             api::native_tag>::get(ss);
+            (*oa)(cereal::make_nvp("data", src));
+        }
+        return ss.str();
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert the serialization to a result
+    //
+    auto recv_serialize = [&](const std::string& src) {
+        basic_tree_type   ret;
+        std::stringstream ss;
+        ss << src;
+        {
+            auto ia =
+                policy::input_archive<cereal::JSONInputArchive, api::native_tag>::get(ss);
+            (*ia)(cereal::make_nvp("data", ret));
+            if(settings::debug())
+                printf("[RECV: %i]> data size: %lli\n", comm_rank,
+                       (long long int) ret.size());
+        }
+        return ret;
+    };
+
+    bt = basic_tree_vector_type(comm_size);
+
+    auto ret = basic_tree_type{};
+    ret      = data.get(ret);
+
+    if(comm_rank == 0)
+    {
+        //
+        //  The root rank receives data from all non-root ranks and reports all data
+        //
+        for(int i = 1; i < comm_size; ++i)
+        {
+            std::string str;
+            if(settings::debug())
+                printf("[RECV: %i]> starting %i\n", comm_rank, i);
+            mpi::recv(str, i, 0, comm);
+            if(settings::debug())
+                printf("[RECV: %i]> completed %i\n", comm_rank, i);
+            bt[i] = recv_serialize(str);
+        }
+        bt[comm_rank] = ret;
+    }
+    else
+    {
+        auto str_ret = send_serialize(ret);
+        //
+        //  The non-root rank sends its data to the root rank and only reports own data
+        //
+        if(settings::debug())
+            printf("[SEND: %i]> starting\n", comm_rank);
+        mpi::send(str_ret, 0, 0, comm);
+        if(settings::debug())
+            printf("[SEND: %i]> completed\n", comm_rank);
+        bt = basic_tree_vector_type(1, ret);
+    }
+#endif
+
+    return bt;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Archive>
+Archive&
+mpi_get<Type, true>::operator()(Archive& ar)
+{
+    if(!m_storage)
+        return ar;
+
+    if(!mpi::is_initialized())
+    {
+        get_type{ m_storage }(ar);
+    }
+    else
+    {
+        ar.setNextName(demangle<Type>().c_str());
+        ar.startNode();
+        auto bt = basic_tree_vector_type{};
+        (*this)(bt);
+        ar(cereal::make_nvp("mpi", bt));
+        ar.finishNode();
+    }
+    return ar;
 }
 //
 //--------------------------------------------------------------------------------------//

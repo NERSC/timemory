@@ -784,23 +784,22 @@ storage<Type, true>::merge(this_type* itr)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type, true>::dmp_result_t
-storage<Type, true>::dmp_get()
+typename storage<Type, true>::result_array_t
+storage<Type, true>::get()
 {
-    dmp_result_t _ret;
-    operation::finalize::dmp_get<Type, true>(*this, _ret);
+    result_array_t _ret;
+    operation::finalize::get<Type, true>{ *this }(_ret);
     return _ret;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type, true>::result_array_t
-storage<Type, true>::get()
+template <typename Tp>
+Tp&
+storage<Type, true>::get(Tp& _ret)
 {
-    result_array_t _ret;
-    operation::finalize::get<Type, true>(*this, _ret);
-    return _ret;
+    return operation::finalize::get<Type, true>{ *this }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -810,8 +809,18 @@ typename storage<Type, true>::dmp_result_t
 storage<Type, true>::mpi_get()
 {
     dmp_result_t _ret;
-    operation::finalize::mpi_get<Type, true>(*this, _ret);
+    operation::finalize::mpi_get<Type, true>{ *this }(_ret);
     return _ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+Tp&
+storage<Type, true>::mpi_get(Tp& _ret)
+{
+    return operation::finalize::mpi_get<Type, true>{ *this }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -821,8 +830,39 @@ typename storage<Type, true>::dmp_result_t
 storage<Type, true>::upc_get()
 {
     dmp_result_t _ret;
-    operation::finalize::upc_get<Type, true>(*this, _ret);
+    operation::finalize::upc_get<Type, true>{ *this }(_ret);
     return _ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+Tp&
+storage<Type, true>::upc_get(Tp& _ret)
+{
+    return operation::finalize::upc_get<Type, true>{ *this }(_ret);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type, true>::dmp_result_t
+storage<Type, true>::dmp_get()
+{
+    dmp_result_t _ret;
+    operation::finalize::dmp_get<Type, true>{ *this }(_ret);
+    return _ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+Tp&
+storage<Type, true>::dmp_get(Tp& _ret)
+{
+    return operation::finalize::dmp_get<Type, true>{ *this }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//

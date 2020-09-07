@@ -26,6 +26,7 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/hash.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/serializer.hpp"
@@ -229,9 +230,6 @@ result<Tp>::result(uint64_t _hash, const Tp& _data, const string_t& _prefix,
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace node
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
@@ -243,16 +241,48 @@ namespace cereal
 //
 template <typename Archive, typename Tp>
 void
+save(Archive& ar, const tim::node::graph<Tp>& d)
+{
+    ar(cereal::make_nvp("hash", d.id()),
+       cereal::make_nvp("prefix", ::tim::get_hash_identifier(d.id())),
+       cereal::make_nvp("entry", d.obj()), cereal::make_nvp("depth", d.depth()),
+       cereal::make_nvp("stats", d.stats()), cereal::make_nvp("tid", d.tid()),
+       cereal::make_nvp("pid", d.pid()));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Archive, typename Tp>
+void
+load(Archive& ar, tim::node::graph<Tp>& d)
+{
+    std::string _prefix{};
+    ar(cereal::make_nvp("hash", d.id()), cereal::make_nvp("prefix", _prefix),
+       cereal::make_nvp("entry", d.obj()), cereal::make_nvp("depth", d.depth()),
+       cereal::make_nvp("stats", d.stats()), cereal::make_nvp("tid", d.tid()),
+       cereal::make_nvp("pid", d.pid()));
+    auto _id = tim::add_hash_id(_prefix);
+    if(_id != d.id())
+        tim::add_hash_id(_id, d.id());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Archive, typename Tp>
+struct specialize<Archive, tim::node::graph<Tp>,
+                  cereal::specialization::non_member_load_save>
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Archive, typename Tp>
+void
 save(Archive& ar, const tim::node::result<Tp>& r)
 {
-    // clang-format off
-    ar(cereal::make_nvp("hash", r.hash()),
-       cereal::make_nvp("prefix", r.prefix()),
-       cereal::make_nvp("depth", r.depth()),
-       cereal::make_nvp("entry", r.data()),
+    ar(cereal::make_nvp("hash", r.hash()), cereal::make_nvp("prefix", r.prefix()),
+       cereal::make_nvp("depth", r.depth()), cereal::make_nvp("entry", r.data()),
        cereal::make_nvp("stats", r.stats()),
        cereal::make_nvp("rolling_hash", r.rolling_hash()));
-    // clang-format on
     // ar(cereal::make_nvp("hierarchy", r.hierarchy()));
 }
 //
@@ -262,14 +292,10 @@ template <typename Archive, typename Tp>
 void
 load(Archive& ar, tim::node::result<Tp>& r)
 {
-    // clang-format off
-    ar(cereal::make_nvp("hash", r.hash()),
-       cereal::make_nvp("prefix", r.prefix()),
-       cereal::make_nvp("depth", r.depth()),
-       cereal::make_nvp("entry", r.data()),
+    ar(cereal::make_nvp("hash", r.hash()), cereal::make_nvp("prefix", r.prefix()),
+       cereal::make_nvp("depth", r.depth()), cereal::make_nvp("entry", r.data()),
        cereal::make_nvp("stats", r.stats()),
        cereal::make_nvp("rolling_hash", r.rolling_hash()));
-    // clang-format on
     // ar(cereal::make_nvp("hierarchy", r.hierarchy()));
 }
 //
