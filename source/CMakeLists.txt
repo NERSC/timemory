@@ -145,8 +145,6 @@ if(_BUILD_SHARED_CXX)
         ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
-    target_compile_definitions(timemory-cxx-shared PUBLIC ${_USE_EXTERN})
-
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
     endif()
@@ -206,16 +204,10 @@ if(_BUILD_STATIC_CXX)
     endif()
 endif()
 
-if(WIN32)
-    if(_BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
-        # make sure on Windows, static is built first. There is something weird
-        # happening here when built in parallel...
-        add_dependencies(timemory-cxx-shared timemory-cxx-static)
-    endif()
-    if(_BUILD_SHARED_CXX)
-        target_compile_definitions(timemory-cxx-shared
-            PRIVATE TIMEMORY_DLL_EXPORT INTERFACE TIMEMORY_DLL_IMPORT)
-    endif()
+if(WIN32 AND _BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
+    # make sure on Windows, static is built first. There is something weird
+    # happening here when built in parallel...
+    add_dependencies(timemory-cxx-shared timemory-cxx-static)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -310,7 +302,8 @@ if(TARGET timemory-ompt-shared)
 endif()
 
 if(TARGET timemory-mpip-shared)
-    target_compile_definitions(timemory-mpip-library INTERFACE TIMEMORY_USE_MPIP_LIBRARY)
+    timemory_target_compile_definitions(timemory-mpip-library INTERFACE
+        TIMEMORY_USE_MPIP_LIBRARY)
     target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mpip-shared)
 else()
@@ -318,14 +311,16 @@ else()
 endif()
 
 if(_OMPT_LIB)
-    target_compile_definitions(timemory-ompt-library INTERFACE TIMEMORY_USE_OMPT_LIBRARY)
+    timemory_target_compile_definitions(timemory-ompt-library INTERFACE
+        TIMEMORY_USE_OMPT_LIBRARY)
     target_link_libraries(timemory-ompt-library INTERFACE timemory-ompt ${_OMPT_LIB})
 else()
     inform_empty_interface(timemory-ompt-library "OpenMP stand-alone instrumentation library")
 endif()
 
 if(TARGET timemory-ncclp-shared)
-    target_compile_definitions(timemory-ncclp-library INTERFACE TIMEMORY_USE_NCCLP_LIBRARY)
+    timemory_target_compile_definitions(timemory-ncclp-library INTERFACE
+        TIMEMORY_USE_NCCLP_LIBRARY)
     target_link_libraries(timemory-ncclp-library INTERFACE timemory-ncclp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ncclp-shared)
 else()
