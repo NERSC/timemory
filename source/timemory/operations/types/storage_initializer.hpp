@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/components/properties.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -62,8 +63,7 @@ invoke_preinit(long)
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
-storage_initializer
-storage_initializer::get()
+storage_initializer storage_initializer::get(std::true_type)
 {
     auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
     if(!library_ctor)
@@ -88,6 +88,24 @@ storage_initializer::get()
 
     consume_parameters(_master);
     return _worker;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+storage_initializer storage_initializer::get(std::false_type)
+{
+    return storage_initializer{};
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Idx, enable_if_t<Idx != TIMEMORY_COMPONENTS_END>>
+storage_initializer
+storage_initializer::get()
+{
+    using type = typename component::enumerator<Idx>::type;
+    return storage_initializer::get<type>();
 }
 //
 //--------------------------------------------------------------------------------------//
