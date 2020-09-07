@@ -22,38 +22,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/environment/macros.hpp
- * \brief Include the macros for environment
- */
-
 #pragma once
 
-#include "timemory/dll.hpp"
 #include "timemory/utility/macros.hpp"
 
-//======================================================================================//
-//
-// Define macros for environment
-//
-#if defined(TIMEMORY_ENVIRONMENT_SOURCE)
-#    define TIMEMORY_ENVIRONMENT_LINKAGE(...) __VA_ARGS__
-#else
-#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
-#        define TIMEMORY_ENVIRONMENT_LINKAGE(...) extern __VA_ARGS__
-#    else
-#        define TIMEMORY_ENVIRONMENT_LINKAGE(...) inline __VA_ARGS__
-#    endif
+#if defined(TIMEMORY_CORE_SOURCE)
+#    define TIMEMORY_ENVIRONMENT_SOURCE
+#elif defined(TIMEMORY_USE_CORE_EXTERN)
+#    define TIMEMORY_USE_ENVIRONMENT_EXTERN
 #endif
 //
-//--------------------------------------------------------------------------------------//
-//
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
+#    define TIMEMORY_USE_ENVIRONMENT_EXTERN
+#endif
+
 #if defined(TIMEMORY_ENVIRONMENT_SOURCE)
-#    define TIMEMORY_ENVIRONMENT_DLL tim_dll_export
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
-#    define TIMEMORY_ENVIRONMENT_DLL tim_dll_import
+#    define TIMEMORY_ENVIRONMENT_LINKAGE(...) __VA_ARGS__
+#elif defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
+#    define TIMEMORY_ENVIRONMENT_LINKAGE(...) extern __VA_ARGS__
 #else
-#    define TIMEMORY_ENVIRONMENT_DLL
+#    define TIMEMORY_ENVIRONMENT_LINKAGE(...) inline __VA_ARGS__
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -66,7 +54,7 @@
             template TYPE get_env<TYPE>(const std::string&, TYPE);                       \
             template void set_env<TYPE>(const std::string&, const TYPE&, int);           \
             }
-#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
+#    elif defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
 #        define TIMEMORY_ENVIRONMENT_EXTERN_TEMPLATE(TYPE)                               \
             namespace tim                                                                \
             {                                                                            \

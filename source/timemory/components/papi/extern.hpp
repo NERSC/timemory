@@ -29,62 +29,11 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_PAPI)
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/components/papi/components.hpp"
 
-//======================================================================================//
-//
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/macros.hpp"
-//
-#    include "timemory/components/papi/components.hpp"
-#    include "timemory/components/papi/types.hpp"
-//
-#    if defined(TIMEMORY_COMPONENT_SOURCE) ||                                            \
-        (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
-// source/header-only requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/definition.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/definition.hpp"
-#    else
-// extern requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/declaration.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/declaration.hpp"
-#    endif
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<papi_vector, std::vector<long long>>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<papi_array<8>, std::array<long long, 8>>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<papi_array<16>, std::array<long long, 16>>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<papi_array<32>, std::array<long long, 32>>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::papi_vector, true)
-TIMEMORY_EXTERN_OPERATIONS(component::papi_array8_t, true)
-TIMEMORY_EXTERN_OPERATIONS(component::papi_array16_t, true)
-TIMEMORY_EXTERN_OPERATIONS(component::papi_array32_t, true)
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_STORAGE(component::papi_vector, papi_vector)
-TIMEMORY_EXTERN_STORAGE(component::papi_array8_t, papi_array8)
-TIMEMORY_EXTERN_STORAGE(component::papi_array16_t, papi_array16)
-TIMEMORY_EXTERN_STORAGE(component::papi_array32_t, papi_array32)
-//
-//======================================================================================//
-
-#endif  // TIMEMORY_USE_PAPI
+TIMEMORY_EXTERN_COMPONENT(papi_vector, true, std::vector<long long>)
+TIMEMORY_EXTERN_COMPONENT(papi_array8_t, true, std::array<long long, 8>)
+TIMEMORY_EXTERN_COMPONENT(papi_array16_t, true, std::array<long long, 16>)
+TIMEMORY_EXTERN_COMPONENT(papi_array32_t, true, std::array<long long, 32>)

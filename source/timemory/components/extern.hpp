@@ -26,7 +26,7 @@
 
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_USE_ALLINEA_EXTERN)
+#if defined(TIMEMORY_USE_ALLINEA_MAP_EXTERN)
 #    include "timemory/components/allinea/extern.hpp"
 #endif
 //
@@ -124,6 +124,12 @@
 //
 #if defined(TIMEMORY_USE_OMPT_EXTERN)
 #    include "timemory/components/ompt/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#    include "timemory/components/user_bundle/extern.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//

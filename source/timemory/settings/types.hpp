@@ -81,11 +81,11 @@ get_descriptions()
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_SETTINGS_DLL setting_callback_map_t&
-                      get_parse_callbacks() TIMEMORY_VISIBILITY("default");
+setting_callback_map_t&
+get_parse_callbacks() TIMEMORY_VISIBILITY("default");
 //
-TIMEMORY_SETTINGS_DLL setting_description_map_t&
-                      get_setting_descriptions() TIMEMORY_VISIBILITY("default");
+setting_description_map_t&
+get_setting_descriptions() TIMEMORY_VISIBILITY("default");
 //
 //--------------------------------------------------------------------------------------//
 //

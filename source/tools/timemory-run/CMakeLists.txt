@@ -56,10 +56,10 @@ if(TIMEMORY_USE_DYNINST)
 
     add_target_flag_if_avail(timemory-run-interface "-Wno-unused-function")
 
-    if(TARGET timemory::timemory-settings-static)
-        set(_LIBRARY timemory::timemory-settings-static)
-    elseif(TARGET timemory::timemory-settings-shared)
-        set(_LIBRARY timemory::timemory-settings-shared)
+    if(TARGET timemory::timemory-core-static)
+        set(_LIBRARY timemory::timemory-core-static)
+    elseif(TARGET timemory::timemory-core-shared)
+        set(_LIBRARY timemory::timemory-core-shared)
     endif()
 
     target_link_libraries(timemory-run-interface INTERFACE

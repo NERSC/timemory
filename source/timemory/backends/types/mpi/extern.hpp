@@ -54,20 +54,18 @@
 //
 //--------------------------------------------------------------------------------------//
 
+#    if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MPI_INIT_EXTERN)
+#        define TIMEMORY_USE_MPI_INIT_EXTERN
+#    endif
+
 //--------------------------------------------------------------------------------------//
 //
 #    if defined(TIMEMORY_MPI_INIT_SOURCE)
-//
 #        define TIMEMORY_MPI_INIT_LINKAGE(...) __VA_ARGS__
-//
+#    elif !defined(TIMEMORY_USE_MPI_INIT_EXTERN)
+#        define TIMEMORY_MPI_INIT_LINKAGE(...) inline __VA_ARGS__
 #    else
-//
-#        if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MPI_INIT_EXTERN)
-#            define TIMEMORY_MPI_INIT_LINKAGE(...) inline __VA_ARGS__
-#        else
-#            define TIMEMORY_MPI_INIT_LINKAGE(...) extern __VA_ARGS__
-#        endif
-//
+#        define TIMEMORY_MPI_INIT_LINKAGE(...) extern __VA_ARGS__
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -79,14 +77,13 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MPI_INIT_EXTERN) ||         \
-        defined(TIMEMORY_MPI_INIT_SOURCE)
+#    if defined(TIMEMORY_USE_MPI_INIT_EXTERN) || defined(TIMEMORY_MPI_INIT_SOURCE)
     extern ::tim::manager* timemory_manager_master_instance();
 #    endif
     //
     //----------------------------------------------------------------------------------//
     //
-#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MPI_INIT_EXTERN)
+#    if defined(TIMEMORY_USE_MPI_INIT_EXTERN)
     //
     //----------------------------------------------------------------------------------//
     //

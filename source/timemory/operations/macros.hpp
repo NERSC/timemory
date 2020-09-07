@@ -31,39 +31,14 @@
 
 #include "timemory/dll.hpp"
 
-//======================================================================================//
-//
-//                              Define macros for operations
-//
-//======================================================================================//
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_OPERATIONS_EXTERN)
+#    define TIMEMORY_USE_OPERATIONS_EXTERN
+#endif
 //
 #if defined(TIMEMORY_OPERATIONS_SOURCE)
-//
 #    define TIMEMORY_OPERATIONS_LINKAGE(...) __VA_ARGS__
-//
+#elif !defined(TIMEMORY_USE_OPERATIONS_EXTERN)
+#    define TIMEMORY_OPERATIONS_LINKAGE(...) inline __VA_ARGS__
 #else
-//
-#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_OPERATIONS_EXTERN)
-//
-#        define TIMEMORY_OPERATIONS_LINKAGE(...) inline __VA_ARGS__
-//
-#    else
-//
-#        define TIMEMORY_OPERATIONS_LINKAGE(...) extern __VA_ARGS__
-//
-#    endif
-//
+#    define TIMEMORY_OPERATIONS_LINKAGE(...) extern __VA_ARGS__
 #endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_OPERATIONS_SOURCE)
-#    define TIMEMORY_OPERATIONS_DLL tim_dll_export
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_OPERATIONS_EXTERN)
-#    define TIMEMORY_OPERATIONS_DLL tim_dll_import
-#else
-#    define TIMEMORY_OPERATIONS_DLL
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//

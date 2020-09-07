@@ -32,7 +32,6 @@
 #pragma once
 
 // forward declare any types
-#include "timemory/components/base/types.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/types.hpp"
 #include "timemory/mpl/types.hpp"

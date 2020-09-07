@@ -32,35 +32,14 @@
 #include "timemory/compat/macros.h"
 #include "timemory/dll.hpp"
 
-//======================================================================================//
-//
-// Define macros for manager
-//
-//======================================================================================//
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MANAGER_EXTERN)
+#    define TIMEMORY_USE_MANAGER_EXTERN
+#endif
 //
 #if defined(TIMEMORY_MANAGER_SOURCE)
-//
 #    define TIMEMORY_MANAGER_LINKAGE(...) __VA_ARGS__
-//
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)
-//
+#elif defined(TIMEMORY_USE_MANAGER_EXTERN)
 #    define TIMEMORY_MANAGER_LINKAGE(...) extern __VA_ARGS__
-//
 #else
-//
 #    define TIMEMORY_MANAGER_LINKAGE(...) inline __VA_ARGS__
-//
 #endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_MANAGER_SOURCE)
-#    define TIMEMORY_MANAGER_DLL tim_dll_export
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)
-#    define TIMEMORY_MANAGER_DLL tim_dll_import
-#else
-#    define TIMEMORY_MANAGER_DLL
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//

@@ -86,8 +86,7 @@
 #endif
 
 // don't define these symbols in header-only mode
-#if defined(TIMEMORY_COMPONENT_SOURCE) || defined(TIMEMORY_USE_EXTERN) ||                \
-    defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#if defined(TIMEMORY_COMPONENT_SOURCE) || defined(TIMEMORY_USE_COMPONENT_EXTERN)
 //
 extern "C"
 {

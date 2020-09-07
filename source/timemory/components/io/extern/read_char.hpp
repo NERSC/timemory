@@ -24,8 +24,8 @@
 
 #pragma once
 
+#include "timemory/components/extern/common.hpp"
 #include "timemory/components/io/components.hpp"
-#include "timemory/components/io/extern/common.hpp"
 #include "timemory/components/macros.hpp"
 
 TIMEMORY_EXTERN_COMPONENT(read_char, true, std::pair<int64_t, int64_t>)

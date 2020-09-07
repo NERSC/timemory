@@ -52,10 +52,7 @@ namespace operation
 namespace finalize
 {
 //
-//--------------------------------------------------------------------------------------//
-//
-#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_OPERATIONS_EXTERN)) ||        \
-    defined(TIMEMORY_OPERATIONS_SOURCE)
+#if defined(TIMEMORY_OPERATIONS_SOURCE) || !defined(TIMEMORY_USE_OPERATIONS_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -117,7 +114,7 @@ base::print::print_text(const std::string& outfname, stream_type stream)
 //
 //--------------------------------------------------------------------------------------//
 //
-#endif  // !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_OPERATIONS_SOURCE)
+#endif  // !defined(TIMEMORY_OPERATIONS_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //

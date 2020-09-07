@@ -24,15 +24,14 @@
 
 #pragma once
 
+#include "timemory/components.hpp"
+#include "timemory/components/opaque.hpp"
 #include "timemory/components/placeholder.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
 #include "timemory/runtime/macros.hpp"
-//
-#include "timemory/components/factory.hpp"
 #include "timemory/variadic/definition.hpp"
-//
 
 #include <set>
 #include <string>

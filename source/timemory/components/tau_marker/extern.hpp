@@ -29,51 +29,8 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_TAU)
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/components/tau_marker/components.hpp"
 
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/macros.hpp"
-//
-#    include "timemory/components/tau_marker/components.hpp"
-#    include "timemory/components/tau_marker/types.hpp"
-//
-#    if defined(TIMEMORY_COMPONENT_SOURCE) ||                                            \
-        (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
-// source/header-only requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/definition.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/definition.hpp"
-#    else
-// extern requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/declaration.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/declaration.hpp"
-#    endif
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<tau_marker, void>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::tau_marker, false)
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_STORAGE(component::tau_marker, tau_marker)
-//
-//======================================================================================//
-
-#endif  // TIMEMORY_USE_TAU
+TIMEMORY_EXTERN_COMPONENT(tau_marker, false, void)

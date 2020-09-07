@@ -30,25 +30,12 @@
 
 #pragma once
 
-#if defined(TIMEMORY_ERT_SOURCE)
-#    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
-#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...) template __VA_ARGS__;
-#    endif
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ERT_EXTERN)
-#    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
-#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
-#    endif
-#else
-#    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
-#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...)
-#    endif
-#endif
-
 #include "timemory/backends/device.hpp"
 #include "timemory/components/timing/wall_clock.hpp"
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
+#include "timemory/ert/types.hpp"
 #include "timemory/operations/extern.hpp"
 #include "timemory/storage/definition.hpp"
 

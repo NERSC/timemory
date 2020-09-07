@@ -42,10 +42,35 @@
 #include <type_traits>
 
 //======================================================================================//
-//
+
 #if !defined(TIMEMORY_FOLD_EXPRESSION)
 #    define TIMEMORY_FOLD_EXPRESSION(...)                                                \
         ::tim::consume_parameters(::std::initializer_list<int>{ (__VA_ARGS__, 0)... })
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_RETURN_FOLD_EXPRESSION)
+#    define TIMEMORY_RETURN_FOLD_EXPRESSION(...)                                         \
+        ::std::make_tuple((::tim::consume_parameters(), __VA_ARGS__)...)
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_DECLARE_EXTERN_TEMPLATE)
+#    define TIMEMORY_DECLARE_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE)
+#    define TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(...) template __VA_ARGS__;
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_ESC)
+#    define TIMEMORY_ESC(...) __VA_ARGS__
 #endif
 
 //======================================================================================//
@@ -475,6 +500,22 @@ struct config : public data_type
     bool is_flat_timeline() const { return (is_flat() && is_timeline()); }
     bool is_tree_timeline() const { return (is_tree() && is_timeline()); }
 
+    template <bool ForceFlatT>
+    bool is_flat() const
+    {
+        return (ForceFlatT) ? true : this->test(flat::value);
+    }
+
+    template <bool ForceTreeT, bool ForceTimeT>
+    bool is_tree() const
+    {
+        return (ForceTreeT)
+                   ? true
+                   : ((ForceTimeT) ? false
+                                   : (this->none() || (this->test(tree::value) &&
+                                                       !this->test(flat::value))));
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const config& obj)
     {
         std::stringstream ss;
@@ -487,45 +528,57 @@ struct config : public data_type
         return os;
     }
 
+    template <typename ForceTreeT = false_type, typename ForceFlatT = false_type,
+              typename ForceTimeT = false_type>
     uint64_t compute_depth(uint64_t _current)
     {
+        static_assert(!(ForceTreeT::value && ForceFlatT::value),
+                      "Error! Type cannot enforce tree-based call-stack depth storage "
+                      "and flat call-stack depth storage simulatenously");
         // flat:     always at depth of 1
         // tree:     features nesting
-        // timeline: retains current depth
-        if(is_flat())
+        // timeline: features nesting if not flat and depth of 1 if flat
+        if(ForceFlatT::value || is_flat())
         {
             // flat + timeline will be differentiated via compute_hash
             // flat + tree is invalid and flat takes precedence
+            // printf("compute_depth is flat at %i\n", (int) _current);
             return 1;
         }
-        else if(is_timeline())
-        {
-            // tree + timeline is essentially a flat profile at the given depth
-            // bc returning a nested depth for tree + timeline would look like recursion
-            return _current + 1;
-        }
-        // if neither flat nor timeline are enabled, return the nested depth
+        // if not flat, return the nested depth and compute_hash will account
+        // for whether the entry is a duplicate or not
+        // printf("compute_depth is tree or timeline at %i\n", (int) _current);
         return _current + 1;
     }
 
+    template <typename ForceTreeT = false_type, typename ForceFlatT = false_type,
+              typename ForceTimeT = false_type>
     uint64_t compute_hash(uint64_t _id, uint64_t _depth, uint64_t& _counter)
     {
         // flat/tree:  always compute the same hash for a given depth and key
         // timeline:   uses a counter to differentiate idential hashes occurring at diff
         //             time points.
-        // below is a fall-through (i.e. not if-else). Thus, either tree or flat can be
+        // below is a fall-through (i.e. not an if-else) bc either tree or flat can be
         // combined with timeline but in the case of tree + flat, flat will take
         // precedence.
-        if(is_tree() || is_flat())
-            _id ^= _depth;
-        if(is_timeline())
+        if(is_tree<ForceTreeT::value, ForceTimeT::value>() ||
+           is_flat<ForceFlatT::value>())
         {
+            // printf("compute_hash is tree or flat at %i\n", (int) _depth);
+            _id ^= _depth;
+        }
+        if(ForceTimeT::value || is_timeline())
+        {
+            // printf("compute_hash is timeline at %i\n", (int) _depth);
 #if defined(TIMEMORY_USE_TIMELINE_RNG)
             _id ^= get_random_value<uint64_t>();
 #else
             _id ^= _counter++;
 #endif
         }
+        // printf("compute_hash is %i at depth %i (counter = %i)\n", (int) _id, (int)
+        // _depth,
+        //       (int) _counter);
         return _id;
     }
 

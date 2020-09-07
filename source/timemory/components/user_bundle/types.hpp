@@ -39,15 +39,9 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_USER_BUNDLE_SOURCE)
-#    define TIMEMORY_USER_BUNDLE_DLL tim_dll_export
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
-#    define TIMEMORY_USER_BUNDLE_DLL tim_dll_import
-#else
-#    define TIMEMORY_USER_BUNDLE_DLL
+
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#    define TIMEMORY_USE_USER_BUNDLE_EXTERN
 #endif
 
 //======================================================================================//

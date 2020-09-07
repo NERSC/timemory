@@ -19,4 +19,4 @@ build_intermediate_library(
     HEADERS             ${header_files}
     SOURCES             ${source_files}
     DEPENDS             ${DEPS}
-    PROPERTY_DEPENDS    GLOBAL COMPONENT FACTORY)
+    PROPERTY_DEPENDS    GLOBAL COMPONENT)

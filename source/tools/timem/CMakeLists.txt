@@ -14,7 +14,7 @@ if(NOT TIMEMORY_BUILD_TIMEM)
 endif()
 
 set(_STATIC_LIB)
-foreach(_TARG hash settings manager timing-component rusage-component)
+foreach(_TARG core timing-component rusage-component)
     if(TARGET timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
         list(APPEND _STATIC_LIB timemory-${_TARG}-static)
     endif()

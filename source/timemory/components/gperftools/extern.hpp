@@ -29,50 +29,9 @@
 
 #pragma once
 
-#include "timemory/components/base.hpp"
-#include "timemory/components/macros.hpp"
-//
+#include "timemory/components/extern/common.hpp"
 #include "timemory/components/gperftools/components.hpp"
-#include "timemory/components/gperftools/types.hpp"
-//
-#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
-    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
-// source/header-only requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/definition.hpp"
-#else
-// extern requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
-#endif
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<gperftools_heap_profiler, void>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<gperftools_cpu_profiler, void>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::gperftools_heap_profiler, false)
-TIMEMORY_EXTERN_OPERATIONS(component::gperftools_cpu_profiler, false)
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_STORAGE(component::gperftools_heap_profiler, gperftools_heap_profiler)
-TIMEMORY_EXTERN_STORAGE(component::gperftools_cpu_profiler, gperftools_cpu_profiler)
-//
-//======================================================================================//
+#include "timemory/components/macros.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(gperftools_heap_profiler, false, void)
+TIMEMORY_EXTERN_COMPONENT(gperftools_cpu_profiler, false, void)

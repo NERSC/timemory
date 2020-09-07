@@ -22,43 +22,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/hash/macros.hpp
- * \brief Include the macros for hash
- */
-
 #pragma once
 
-#include "timemory/dll.hpp"
-
-//======================================================================================//
+#if defined(TIMEMORY_CORE_SOURCE)
+#    define TIMEMORY_HASH_SOURCE
+#elif defined(TIMEMORY_USE_CORE_EXTERN)
+#    define TIMEMORY_USE_HASH_EXTERN
+#endif
 //
-// Define macros for hash
-//
-//======================================================================================//
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_HASH_EXTERN)
+#    define TIMEMORY_USE_HASH_EXTERN
+#endif
 //
 #if defined(TIMEMORY_HASH_SOURCE)
-//
-#    define TIMEMORY_HASH_LINKAGE(...) tim_dll_export __VA_ARGS__
-//
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_HASH_EXTERN)
-//
-#    define TIMEMORY_HASH_LINKAGE(...) extern tim_dll_import __VA_ARGS__
-//
+#    define TIMEMORY_HASH_LINKAGE(...) __VA_ARGS__
+#elif defined(TIMEMORY_USE_HASH_EXTERN)
+#    define TIMEMORY_HASH_LINKAGE(...) extern __VA_ARGS__
 #else
-//
 #    define TIMEMORY_HASH_LINKAGE(...) inline __VA_ARGS__
-//
 #endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_HASH_SOURCE)
-#    define TIMEMORY_HASH_DLL tim_dll_export
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_HASH_EXTERN)
-#    define TIMEMORY_HASH_DLL tim_dll_import
-#else
-#    define TIMEMORY_HASH_DLL
-#endif
-//
-//--------------------------------------------------------------------------------------//

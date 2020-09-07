@@ -29,55 +29,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_CUPTI)
+#include "timemory/components/cupti/components.hpp"
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
 
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/macros.hpp"
-//
-#    include "timemory/components/cupti/backends.hpp"
-#    include "timemory/components/cupti/components.hpp"
-#    include "timemory/components/cupti/types.hpp"
-//
-#    if defined(TIMEMORY_COMPONENT_SOURCE) ||                                            \
-        (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
-// source/header-only requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/definition.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/definition.hpp"
-#    else
-// extern requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/declaration.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/declaration.hpp"
-#    endif
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<cupti_activity, uint64_t>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<cupti_counters, cupti::profiler::results_t>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::cupti_activity, true)
-TIMEMORY_EXTERN_OPERATIONS(component::cupti_counters, true)
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_STORAGE(component::cupti_activity, cupti_activity)
-TIMEMORY_EXTERN_STORAGE(component::cupti_counters, cupti_counters)
-//
-//======================================================================================//
-
-#endif
+TIMEMORY_EXTERN_COMPONENT(cupti_activity, true, uint64_t)
+TIMEMORY_EXTERN_COMPONENT(cupti_counters, true, cupti::profiler::results_t)

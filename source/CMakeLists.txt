@@ -105,8 +105,6 @@ timemory_get_property_depends(TIMEMORY_SHARED_COMPONENT_LIBRARIES SHARED COMPONE
 timemory_get_property_depends(TIMEMORY_STATIC_COMPONENT_LIBRARIES STATIC COMPONENT)
 timemory_get_property_depends(TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES SHARED USER_BUNDLE)
 timemory_get_property_depends(TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES STATIC USER_BUNDLE)
-timemory_get_property_depends(TIMEMORY_SHARED_FACTORY_LIBRARIES SHARED FACTORY)
-timemory_get_property_depends(TIMEMORY_STATIC_FACTORY_LIBRARIES STATIC FACTORY)
 
 if(CMAKE_CUDA_COMPILER)
     set_source_files_properties(${cxx_sources} PROPERTIES
@@ -135,12 +133,10 @@ if(_BUILD_SHARED_CXX)
         timemory-extern
         timemory-vector
         timemory-external-shared
-        ${TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES}
-        ${TIMEMORY_SHARED_FACTORY_LIBRARIES}
-        PRIVATE
         ${TIMEMORY_SHARED_GLOBAL_LIBRARIES}
         ${TIMEMORY_SHARED_EXTERN_LIBRARIES}
-        ${TIMEMORY_SHARED_COMPONENT_LIBRARIES})
+        ${TIMEMORY_SHARED_COMPONENT_LIBRARIES}
+        ${TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES})
 
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
@@ -185,12 +181,10 @@ if(_BUILD_STATIC_CXX)
         timemory-extern
         timemory-vector
         timemory-external-static
-        ${TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES}
-        ${TIMEMORY_STATIC_FACTORY_LIBRARIES}
-        PRIVATE
         ${TIMEMORY_STATIC_GLOBAL_LIBRARIES}
         ${TIMEMORY_STATIC_EXTERN_LIBRARIES}
-        ${TIMEMORY_STATIC_COMPONENT_LIBRARIES})
+        ${TIMEMORY_STATIC_COMPONENT_LIBRARIES}
+        ${TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES})
 
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options

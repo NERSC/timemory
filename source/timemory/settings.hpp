@@ -31,10 +31,8 @@
 #pragma once
 
 #include "timemory/settings/declaration.hpp"
+#include "timemory/settings/macros.hpp"
 
-#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN) &&           \
-    !defined(TIMEMORY_SETTINGS_SOURCE)
+#if defined(TIMEMORY_SETTINGS_SOURCE) || !defined(TIMEMORY_USE_SETTINGS_EXTERN)
 #    include "timemory/settings/settings.cpp"
-#else
-// #    include "timemory/settings/extern.hpp"
 #endif

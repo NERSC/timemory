@@ -12,28 +12,64 @@ endforeach()
 set(${PROJECT_NAME}_CMAKE_DEFINES "${${PROJECT_NAME}_CMAKE_DEFINES}\n")
 
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/defines.h.in
-    ${CMAKE_CURRENT_LIST_DIR}/defines.h.in @ONLY)
+    ${CMAKE_CURRENT_BINARY_DIR}/defines.h.in @ONLY)
 
-configure_file(${CMAKE_CURRENT_LIST_DIR}/defines.h.in
-    ${CMAKE_CURRENT_LIST_DIR}/defines.h @ONLY)
+configure_file(${CMAKE_CURRENT_BINARY_DIR}/defines.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/defines.h @ONLY)
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_BINARY_DIR}/defines.h
+        ${CMAKE_CURRENT_LIST_DIR}/defines.h
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    ERROR_VARIABLE ERR_MSG
+    RESULT_VARIABLE RET
+)
 
 install(FILES ${CMAKE_CURRENT_LIST_DIR}/defines.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
 
-# subdirs
-add_subdirectory(utility)
-add_subdirectory(hash)
-add_subdirectory(environment)
-add_subdirectory(settings)
-add_subdirectory(plotting)
+file(GLOB_RECURSE header_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.hpp)
+file(GLOB_RECURSE source_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp)
+
+build_intermediate_library(
+    USE_INTERFACE
+    INSTALL_SOURCE
+    NAME                core
+    TARGET              core
+    CATEGORY            GLOBAL
+    FOLDER              components
+    HEADERS             ${header_files}
+    SOURCES             ${source_files})
+
+# core
+#add_subdirectory(utility)
+#add_subdirectory(hash)
+#add_subdirectory(environment)
+#add_subdirectory(settings)
+#add_subdirectory(plotting)
+
+# global
 add_subdirectory(manager)
 add_subdirectory(config)
 add_subdirectory(operations)
 add_subdirectory(backends)
 add_subdirectory(variadic)
 
+# components
 add_subdirectory(components)
 
+# extern
 add_subdirectory(containers)
 add_subdirectory(runtime)
 add_subdirectory(storage)

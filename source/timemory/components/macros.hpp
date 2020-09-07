@@ -37,6 +37,12 @@
 
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#    define TIMEMORY_USE_COMPONENT_EXTERN
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
 /**
  * \macro TIMEMORY_DECLARE_COMPONENT
  * \brief Declare a non-templated component type in the tim::component namespace
@@ -392,6 +398,15 @@
 #    define TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                 \
         namespace tim                                                                    \
         {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        namespace factory                                                                \
+        {                                                                                \
+        extern template opaque           get_opaque<COMPONENT_NAME>();                   \
+        extern template opaque           get_opaque<COMPONENT_NAME>(scope::config);      \
+        extern template std::set<size_t> get_typeids<COMPONENT_NAME>();                  \
+        }                                                                                \
+        }                                                                                \
         namespace operation                                                              \
         {                                                                                \
         extern template struct init_storage<COMPONENT_NAME>;                             \
@@ -423,6 +438,15 @@
 #    define TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)             \
         namespace tim                                                                    \
         {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        namespace factory                                                                \
+        {                                                                                \
+        template opaque           get_opaque<COMPONENT_NAME>();                          \
+        template opaque           get_opaque<COMPONENT_NAME>(scope::config);             \
+        template std::set<size_t> get_typeids<COMPONENT_NAME>();                         \
+        }                                                                                \
+        }                                                                                \
         namespace operation                                                              \
         {                                                                                \
         template struct init_storage<COMPONENT_NAME>;                                    \
@@ -450,7 +474,7 @@
 
 //======================================================================================//
 
-#if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_COMPONENT_SOURCE)
+#if defined(TIMEMORY_COMPONENT_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -474,7 +498,7 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#elif defined(TIMEMORY_USE_COMPONENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -527,9 +551,32 @@
 #if !defined(TIMEMORY_EXTERN_COMPONENT)
 #    define TIMEMORY_EXTERN_COMPONENT(NAME, HAS_DATA, ...)                               \
         TIMEMORY_EXTERN_TEMPLATE(                                                        \
-            struct tim::component::base<tim::component::NAME, __VA_ARGS__>)              \
-        TIMEMORY_EXTERN_OPERATIONS(component::NAME, HAS_DATA)                            \
-        TIMEMORY_EXTERN_STORAGE(component::NAME, NAME)
+            struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
+                                        __VA_ARGS__>)                                    \
+        TIMEMORY_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)              \
+        TIMEMORY_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_DECLARE_EXTERN_COMPONENT)
+#    define TIMEMORY_DECLARE_EXTERN_COMPONENT(NAME, HAS_DATA, ...)                       \
+        TIMEMORY_DECLARE_EXTERN_TEMPLATE(                                                \
+            struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
+                                        __VA_ARGS__>)                                    \
+        TIMEMORY_DECLARE_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)      \
+        TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_COMPONENT)
+#    define TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(NAME, HAS_DATA, ...)                   \
+        TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(                                            \
+            struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
+                                        __VA_ARGS__>)                                    \
+        TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)  \
+        TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
 #endif
 
 //======================================================================================//

@@ -81,7 +81,7 @@ namespace tim
 /// }
 /// \endcode
 ///
-struct TIMEMORY_OPERATIONS_DLL storage_initializer
+struct storage_initializer
 {
     TIMEMORY_DEFAULT_OBJECT(storage_initializer)
 

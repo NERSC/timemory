@@ -61,7 +61,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-class TIMEMORY_MANAGER_DLL manager
+class manager
 {
 public:
     using this_type        = manager;
