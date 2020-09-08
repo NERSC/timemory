@@ -91,7 +91,8 @@ manager_wrapper::get()
 }
 
 //--------------------------------------------------------------------------------------//
-
+namespace impl
+{
 template <typename Tp, typename Archive,
           tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
@@ -106,15 +107,15 @@ template <typename Tp, typename Archive>
 auto
 get_json(Archive&, long)
 {}
-
+}  // namespace impl
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename Archive,
           tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive& ar, std::true_type)
+get_json(Archive& ar, int)
 {
-    get_json<Tp>(ar, 0);
+    impl::get_json<Tp>(ar, 0);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -122,7 +123,7 @@ get_json(Archive& ar, std::true_type)
 template <typename Tp, typename Archive,
           tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive&, std::false_type)
+get_json(Archive&, ...)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -131,8 +132,7 @@ template <typename Archive, size_t... Idx>
 auto
 get_json(Archive& ar, std::index_sequence<Idx...>)
 {
-    TIMEMORY_FOLD_EXPRESSION(
-        get_json<tim::decay_t<enumerator_t<Idx>>>(ar, enumerator_vt<Idx>{}));
+    TIMEMORY_FOLD_EXPRESSION(get_json<tim::decay_t<enumerator_t<Idx>>>(ar, 0));
 }
 
 //======================================================================================//
