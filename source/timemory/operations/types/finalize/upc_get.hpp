@@ -55,6 +55,7 @@ struct upc_get<Type, true>
     using graph_node             = typename storage_type::graph_node;
     using hierarchy_type         = typename storage_type::uintvector_t;
     using get_type               = get<Type, value>;
+    using metadata_t             = typename get_type::metadata;
     using basic_tree_type        = typename get_type::basic_tree_vector_type;
     using basic_tree_vector_type = std::vector<basic_tree_type>;
 
@@ -399,10 +400,12 @@ upc_get<Type, true>::operator()(Archive& ar)
     }
     else
     {
+        auto idstr = get_type::get_identifier();
+        ar.setNextName(idstr.c_str());
+        ar.startNode();
+        get_type{}(ar, metadata_t{});
         auto bt = basic_tree_vector_type{};
         (*this)(bt);
-        ar.setNextName(demangle<Type>().c_str());
-        ar.startNode();
         ar(cereal::make_nvp("upcxx", bt));
         ar.finishNode();
     }

@@ -434,9 +434,9 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         array_t<double> _accum = _get(accum);
         ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
            cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
-           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp),
-           cereal::make_nvp("units", unit_array()),
-           cereal::make_nvp("display_units", display_unit_array()));
+           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp));
+        // ar(cereal::make_nvp("units", unit_array()),
+        //   cereal::make_nvp("display_units", display_unit_array()));
     }
 
     //----------------------------------------------------------------------------------//

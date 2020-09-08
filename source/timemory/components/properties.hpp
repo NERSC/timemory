@@ -137,6 +137,9 @@ struct properties : static_properties<Tp>
     static constexpr const char* enum_string() { return "TIMEMORY_COMPONENTS_END"; }
     static constexpr const char* id() { return ""; }
     static idset_t               ids() { return idset_t{}; }
+    template <typename Archive>
+    void serialize(Archive&, const unsigned int)
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//

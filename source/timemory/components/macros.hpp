@@ -168,6 +168,18 @@
                 static idset_t _instance{ ID, __VA_ARGS__ };                             \
                 return _instance;                                                        \
             }                                                                            \
+            template <typename Archive>                                                  \
+            void save(Archive& ar, const unsigned int) const                             \
+            {                                                                            \
+                std::string           _enum = enum_string();                             \
+                std::string           _id   = id();                                      \
+                std::set<std::string> _ids  = ids();                                     \
+                ar(cereal::make_nvp("value", ENUM), cereal::make_nvp("enum", _enum),     \
+                   cereal::make_nvp("id", _id), cereal::make_nvp("ids", _ids));          \
+            }                                                                            \
+            template <typename Archive>                                                  \
+            void load(Archive&, const unsigned int)                                      \
+            {}                                                                           \
         };                                                                               \
         template <>                                                                      \
         struct enumerator<ENUM> : properties<TYPE>                                       \

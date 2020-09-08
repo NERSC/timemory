@@ -584,8 +584,6 @@ template <typename Archive>
 void
 storage<Type, true>::serialize(Archive& ar, const unsigned int version)
 {
-    using bool_type = typename trait::array_serialization<Type>::type;
-
     auto   num_instances = instance_count().load();
     auto&& _results      = dmp_get();
     for(uint64_t i = 0; i < _results.size(); ++i)
@@ -597,7 +595,7 @@ storage<Type, true>::serialize(Archive& ar, const unsigned int version)
 
         ar(cereal::make_nvp("rank", i));
         ar(cereal::make_nvp("concurrency", num_instances));
-        m_printer->print_metadata(bool_type{}, ar, _results.at(i).front().data());
+        m_printer->print_metadata(ar, _results.at(i).front().data());
         Type::extra_serialization(ar, 1);
         save(ar, _results.at(i));
 

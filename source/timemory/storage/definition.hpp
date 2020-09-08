@@ -351,7 +351,7 @@ storage<Type, true>::storage()
     }
 
     get_shared_manager();
-    m_printer = std::make_shared<printer_t>(Type::get_label(), this);
+    // m_printer = std::make_shared<printer_t>(Type::get_label(), this);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -694,13 +694,15 @@ storage<Type, true>::_data()
 
         if(!m_is_master && master_instance())
         {
-            static bool _data_init = master_instance()->data_init();
-            auto&       m          = master_instance()->data();
+            static thread_local bool _data_init = master_instance()->data_init();
+            auto&                    m          = master_instance()->data();
             consume_parameters(_data_init);
 
             if(!lk.owns_lock())
                 lk.lock();
 
+            DEBUG_PRINT_HERE("[%s]> Worker: %i, master ptr: %p", demangle<Type>().c_str(),
+                             (int) m_thread_idx, (void*) &m);
             if(m.current())
             {
                 auto         _current = m.current();
@@ -714,12 +716,15 @@ storage<Type, true>::_data()
             }
             else
             {
-                graph_node_t node(0, object_base_t::dummy(), 0, m_thread_idx);
                 if(!m_graph_data_instance)
-                    m_graph_data_instance = new graph_data_t(node, 0, nullptr);
-                m_graph_data_instance->depth()     = 0;
-                m_graph_data_instance->sea_level() = 0;
+                {
+                    graph_node_t node(0, object_base_t::dummy(), 1, m_thread_idx);
+                    m_graph_data_instance = new graph_data_t(node, 1, &m);
+                }
+                m_graph_data_instance->depth()     = 1;
+                m_graph_data_instance->sea_level() = 1;
             }
+            m_graph_data_instance->set_master(&m);
         }
         else
         {
@@ -733,6 +738,8 @@ storage<Type, true>::_data()
                 m_graph_data_instance = new graph_data_t(node, 0, nullptr);
             m_graph_data_instance->depth()     = 0;
             m_graph_data_instance->sea_level() = 0;
+            DEBUG_PRINT_HERE("[%s]> Master: %i, master ptr: %p", demangle<Type>().c_str(),
+                             (int) m_thread_idx, (void*) m_graph_data_instance);
         }
 
         if(m_node_ids.size() == 0)

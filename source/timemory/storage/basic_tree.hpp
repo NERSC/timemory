@@ -48,7 +48,8 @@ struct basic_tree
     template <typename GraphT, typename ItrT>
     this_type& operator()(GraphT g, ItrT root)
     {
-        m_node               = *root;
+        m_inclusive          = *root;
+        m_exclusive          = *root;
         using iterator_t     = typename GraphT::sibling_iterator;
         iterator_t _begin    = g.begin(root);
         iterator_t _end      = g.end(root);
@@ -57,7 +58,11 @@ struct basic_tree
         {
             m_children.reserve(nchildren);
             for(auto itr = _begin; itr != _end; ++itr)
+            {
+                m_exclusive.data() -= itr->data();
+                m_exclusive.stats() -= itr->stats();
                 m_children.push_back(child_type{}(g, itr));
+            }
         }
         return *this;
     }
@@ -65,26 +70,31 @@ struct basic_tree
     template <typename Archive>
     void save(Archive& ar, const unsigned int) const
     {
-        ar(cereal::make_nvp("node", m_node));
-        ar(cereal::make_nvp("children", m_children));
+        ar(cereal::make_nvp("inclusive", m_inclusive),
+           cereal::make_nvp("exclusive", m_exclusive),
+           cereal::make_nvp("children", m_children));
     }
 
     template <typename Archive>
     void load(Archive& ar, const unsigned int)
     {
-        ar(cereal::make_nvp("node", m_node));
-        ar(cereal::make_nvp("children", m_children));
+        ar(cereal::make_nvp("inclusive", m_inclusive),
+           cereal::make_nvp("exclusive", m_exclusive),
+           cereal::make_nvp("children", m_children));
     }
 
-    auto& get_node() { return m_node; }
+    auto& get_inclusive() { return m_inclusive; }
+    auto& get_exclusive() { return m_exclusive; }
     auto& get_children() { return m_children; }
 
-    const auto& get_node() const { return m_node; }
+    const auto& get_inclusive() const { return m_inclusive; }
+    const auto& get_exclusive() const { return m_exclusive; }
     const auto& get_children() const { return m_children; }
 
 private:
-    value_type    m_node     = {};
-    children_type m_children = {};
+    value_type    m_inclusive = {};
+    value_type    m_exclusive = {};
+    children_type m_children  = {};
 };
 
 }  // namespace tim

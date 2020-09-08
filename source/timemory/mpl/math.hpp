@@ -193,6 +193,14 @@ inline void
 divide(std::tuple<>&, Up&&)
 {}
 
+inline void
+divide(std::tuple<>&, const uint64_t&)
+{}
+
+inline void
+divide(std::tuple<>&, const int64_t&)
+{}
+
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename std::enable_if<(std::is_integral<Tp>::value &&

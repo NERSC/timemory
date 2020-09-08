@@ -418,10 +418,10 @@ PYBIND11_MODULE(libpytimemory, tim)
             std::strcpy(_argv_i, _str.c_str());
             _argv[i] = _argv_i;
         }
-        auto _argv_deleter = [](int __argc, char** __argv) {
-            for(int i = 0; i < __argc; ++i)
-                delete[] __argv[i];
-            delete[] __argv;
+        auto _argv_deleter = [](int fargc, char** fargv) {
+            for(int i = 0; i < fargc; ++i)
+                delete[] fargv[i];
+            delete[] fargv;
         };
         return std::make_tuple(_argc, _argv, _argv_deleter);
     };
@@ -481,10 +481,14 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto _init_mpi = [_get_argv]() {
         try
         {
-            auto _args = _get_argv();
-            tim::mpi::initialize(&std::get<0>(_args), &std::get<1>(_args));
+            auto                             _args = _get_argv();
+            int                              _argc = std::get<0>(_args);
+            char**                           _argv = std::get<1>(_args);
+            std::function<void(int, char**)> _argd = std::get<2>(_args);
+            // initialize mpi
+            tim::mpi::initialize(&_argc, &_argv);
             // delete the c-arrays
-            std::get<2>(_args)(std::get<0>(_args), std::get<1>(_args));
+            _argd(_argc, _argv);
         } catch(std::exception& e)
         {
             PRINT_HERE("ERROR: %s", e.what());

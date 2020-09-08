@@ -86,6 +86,9 @@ struct graph : public data<Tp>::node_type
     const uint16_t&   tid() const { return std::get<4>(*this); }
     const uint16_t&   pid() const { return std::get<5>(*this); }
 
+    Tp&       data() { return this->obj(); }
+    const Tp& data() const { return this->obj(); }
+
     graph();
     explicit graph(base_type&& _base);
     graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint16_t _tid,

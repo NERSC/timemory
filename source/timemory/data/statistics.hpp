@@ -253,16 +253,18 @@ public:
     template <typename Archive>
     void save(Archive& ar, const unsigned int) const
     {
-        ar(cereal::make_nvp("sum", m_sum), cereal::make_nvp("sqr", m_sqr),
+        auto _mean = (m_cnt > 0) ? get_mean() : value_type{};
+        ar(cereal::make_nvp("sum", m_sum), cereal::make_nvp("count", m_cnt),
            cereal::make_nvp("min", m_min), cereal::make_nvp("max", m_max),
-           cereal::make_nvp("count", m_cnt), cereal::make_nvp("var", get_variance()));
+           cereal::make_nvp("sqr", m_sqr), cereal::make_nvp("mean", _mean),
+           cereal::make_nvp("stddev", get_stddev()));
     }
 
     template <typename Archive>
     void load(Archive& ar, const unsigned int)
     {
-        ar(cereal::make_nvp("sum", m_sum), cereal::make_nvp("sqr", m_sqr),
-           cereal::make_nvp("min", m_min), cereal::make_nvp("max", m_max),
+        ar(cereal::make_nvp("sum", m_sum), cereal::make_nvp("min", m_min),
+           cereal::make_nvp("max", m_max), cereal::make_nvp("sqr", m_sqr),
            cereal::make_nvp("count", m_cnt));
     }
 };

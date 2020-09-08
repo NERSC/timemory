@@ -63,6 +63,8 @@ struct get<Type, true>
     using basic_tree_type        = basic_tree<graph_node>;
     using basic_tree_vector_type = std::vector<basic_tree_type>;
 
+    TIMEMORY_DEFAULT_OBJECT(get)
+
     explicit get(storage_type& _storage)
     : m_storage(&_storage)
     {}
@@ -77,11 +79,51 @@ struct get<Type, true>
     template <typename Archive>
     Archive& operator()(Archive&);
 
+    struct metadata
+    {};
+
+    template <typename Archive>
+    Archive& operator()(Archive&, metadata);
+
 public:
-    static auto get_label() { return get_label_sfinae(Type{}, 0, 0); }
-    static auto get_description() { return get_description_sfinae(Type{}, 0, 0); }
-    static auto get_unit() { return get_unit_sfinae(Type{}, 0, 0); }
-    static auto get_display_unit() { return get_display_unit_sfinae(Type{}, 0, 0); }
+    static std::string get_identifier(const Type& _obj = Type{})
+    {
+        std::string idstr = component::properties<Type>::enum_string();
+        if(idstr.empty())
+            idstr = get_identifier_sfinae(_obj, 0);
+        if(idstr.empty())
+            idstr = demangle<Type>();
+        return idstr;
+    }
+    static auto get_label(const Type& _obj = Type{})
+    {
+        return get_label_sfinae(_obj, 0, 0);
+    }
+    static auto get_description(const Type& _obj = Type{})
+    {
+        return get_description_sfinae(_obj, 0, 0);
+    }
+    static auto get_unit(const Type& _obj = Type{})
+    {
+        return get_unit_sfinae(_obj, 0, 0);
+    }
+    static auto get_display_unit(const Type& _obj = Type{})
+    {
+        return get_display_unit_sfinae(_obj, 0, 0);
+    }
+
+private:
+    template <typename Tp>
+    static auto get_identifier_sfinae(const Tp& _data, int) -> decltype(_data.label())
+    {
+        return _data.label();
+    }
+
+    template <typename Tp>
+    static auto get_identifier_sfinae(const Tp&, long)
+    {
+        return std::string{};
+    }
 
 private:
     template <typename Tp>
@@ -406,34 +448,46 @@ get<Type, true>::operator()(basic_tree_vector_type& bt)
 template <typename Type>
 template <typename Archive>
 Archive&
+get<Type, true>::operator()(Archive& ar, metadata)
+{
+    bool _thread_scope_only = trait::thread_scope_only<Type>::value;
+    auto _num_thr_count     = manager::get_thread_count();
+    auto _num_pid_count     = dmp::size();
+
+    ar(cereal::make_nvp("properties", component::properties<Type>{}));
+    ar(cereal::make_nvp("type", get_label()));
+    ar(cereal::make_nvp("description", get_description()));
+    ar(cereal::make_nvp("unit_value", get_unit()));
+    ar(cereal::make_nvp("unit_repr", get_display_unit()));
+    ar(cereal::make_nvp("thread_scope_only", _thread_scope_only));
+    ar(cereal::make_nvp("mpi_size", mpi::size()));
+    ar(cereal::make_nvp("upcxx_size", upc::size()));
+    ar(cereal::make_nvp("thread_count", _num_thr_count));
+    ar(cereal::make_nvp("process_count", _num_pid_count));
+    return ar;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Archive>
+Archive&
 get<Type, true>::operator()(Archive& ar)
 {
     if(!m_storage)
         return ar;
-
-    bool _thread_scope_only = trait::thread_scope_only<Type>::value;
-    auto _num_thr_count     = manager::get_thread_count();
-    auto _num_pid_count     = dmp::size();
 
     m_storage->m_node_init = dmp::is_initialized();
     m_storage->m_node_rank = dmp::rank();
     m_storage->m_node_size = dmp::size();
     m_storage->merge();
 
-    auto bt = basic_tree_vector_type{};
-    (*this)(bt);
-    ar.setNextName(demangle<Type>().c_str());
+    auto idstr = get_identifier();
+    ar.setNextName(idstr.c_str());
     ar.startNode();
-    ar(cereal::make_nvp("label", get_label()));
-    ar(cereal::make_nvp("description", get_description()));
-    ar(cereal::make_nvp("unit", get_unit()));
-    ar(cereal::make_nvp("display_unit", get_display_unit()));
-    ar(cereal::make_nvp("thread_scope_only", _thread_scope_only));
-    ar(cereal::make_nvp("mpi_rank", mpi::rank()));
-    ar(cereal::make_nvp("upcxx_rank", upc::rank()));
-    ar(cereal::make_nvp("thread_count", _num_thr_count));
-    ar(cereal::make_nvp("process_count", _num_pid_count));
-    ar(cereal::make_nvp("graph", bt));
+    (*this)(ar, metadata{});
+    auto bt = basic_tree_vector_type{};
+    ar(cereal::make_nvp("graph", (*this)(bt)));
     ar.finishNode();
     return ar;
 }

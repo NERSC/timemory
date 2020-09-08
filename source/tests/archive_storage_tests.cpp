@@ -42,7 +42,8 @@ using lock_t  = std::unique_lock<mutex_t>;
 
 using namespace tim::component;
 
-using comp_bundle_t = tim::component_bundle_t<TIMEMORY_API, wall_clock, cpu_clock>;
+using comp_bundle_t =
+    tim::component_bundle_t<TIMEMORY_API, wall_clock, cpu_clock, current_peak_rss>;
 using auto_bundle_t = tim::convert_t<comp_bundle_t, tim::auto_bundle<TIMEMORY_API>>;
 
 //--------------------------------------------------------------------------------------//
@@ -110,18 +111,18 @@ generate_history(int n, int m)
     }
     for(int j = 0; j < n; ++j)
     {
-        TIMEMORY_MARKER(auto_bundle_t, j);
-        consume(500);
+        TIMEMORY_MARKER(auto_bundle_t, "outer-loop-", j % 2);
+        consume(250);
         for(int i = 0; i < m; ++i)
         {
-            TIMEMORY_MARKER(auto_bundle_t, i);
-            fibonacci(40 + (i % 2));
+            TIMEMORY_MARKER(auto_bundle_t, "inner-loop-", i);
+            fibonacci(38 + (i % 2));
             {
-                TIMEMORY_MARKER(auto_bundle_t, "");
+                TIMEMORY_BASIC_MARKER(auto_bundle_t, "do-sleep");
                 do_sleep(50 * (i + 1));
             }
             {
-                TIMEMORY_MARKER(auto_bundle_t, "");
+                TIMEMORY_BASIC_MARKER(auto_bundle_t, "consume");
                 consume(50 * (i + 1));
             }
         }
@@ -144,11 +145,13 @@ protected:
         static bool configured = false;
         if(!configured)
         {
-            configured                   = true;
-            tim::settings::verbose()     = 0;
-            tim::settings::debug()       = false;
-            tim::settings::auto_output() = false;
-            tim::settings::mpi_thread()  = false;
+            configured                         = true;
+            tim::settings::verbose()           = 0;
+            tim::settings::debug()             = false;
+            tim::settings::mpi_thread()        = false;
+            tim::settings::cout_output()       = false;
+            tim::settings::text_output()       = true;
+            tim::settings::flamegraph_output() = false;
             tim::dmp::initialize(_argc, _argv);
             tim::timemory_init(_argc, _argv);
             tim::settings::dart_output() = true;
@@ -156,7 +159,7 @@ protected:
             tim::settings::banner()      = false;
             std::vector<std::thread> threads;
             for(uint64_t i = 0; i < 2; ++i)
-                threads.emplace_back(std::thread(details::generate_history, 2, 2));
+                threads.emplace_back(std::thread(details::generate_history, 5, 2));
             for(auto& itr : threads)
                 itr.join();
             std::cout << "Configured" << std::endl;
@@ -213,7 +216,7 @@ TEST_F(archive_storage_tests, archive_hierarchy)
             cc_storage->get(*ar);
         }
         f_results[details::get_test_name()] = ss.str();
-        std::cout << ss.str() << std::endl;
+        // std::cout << ss.str() << std::endl;
         auto fname =
             tim::settings::compose_output_filename(details::get_test_name(), "json");
         std::ofstream ofs(fname.c_str());
@@ -333,6 +336,7 @@ TEST_F(archive_storage_tests, check_archive)
         EXPECT_NE(f_results["upc_archive_hierarchy"], f_results["dmp_archive_hierarchy"]);
     }
 }
+
 //--------------------------------------------------------------------------------------//
 
 int
@@ -352,4 +356,4 @@ main(int argc, char** argv)
 //--------------------------------------------------------------------------------------//
 
 // ensure the storage is initialized on the master thread
-TIMEMORY_INITIALIZE_STORAGE(wall_clock, cpu_clock, cpu_roofline_flops)
+TIMEMORY_INITIALIZE_STORAGE(wall_clock, cpu_clock, current_peak_rss)
