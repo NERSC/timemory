@@ -28,6 +28,7 @@
 #include "timemory/components.hpp"
 #include "timemory/components/extern.hpp"
 #include "timemory/components/ompt.hpp"
+#include "timemory/enum.h"
 #include "timemory/library.h"
 #include "timemory/settings/extern.hpp"
 
@@ -63,11 +64,13 @@ extern "C"
 
 //======================================================================================//
 
-namespace
-{
 template <size_t Idx>
 using enumerator_t = typename tim::component::enumerator<Idx>::type;
-}
+
+template <size_t Idx>
+using enumerator_vt =
+    tim::conditional_t<tim::trait::is_available<enumerator_t<Idx>>::value, std::true_type,
+                       std::false_type>;
 
 //======================================================================================//
 
@@ -89,7 +92,8 @@ manager_wrapper::get()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename Archive>
+template <typename Tp, typename Archive,
+          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
 get_json(Archive& ar, int) -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
 {
@@ -106,9 +110,9 @@ get_json(Archive&, long)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename Archive,
-          enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive& ar)
+get_json(Archive& ar, std::true_type)
 {
     get_json<Tp>(ar, 0);
 }
@@ -116,9 +120,9 @@ get_json(Archive& ar)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename Archive,
-          enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
+          tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive&)
+get_json(Archive&, std::false_type)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -127,7 +131,8 @@ template <typename Archive, size_t... Idx>
 auto
 get_json(Archive& ar, std::index_sequence<Idx...>)
 {
-    TIMEMORY_FOLD_EXPRESSION(get_json<enumerator_t<Idx>>(ar));
+    TIMEMORY_FOLD_EXPRESSION(
+        get_json<tim::decay_t<enumerator_t<Idx>>>(ar, enumerator_vt<Idx>{}));
 }
 
 //======================================================================================//
