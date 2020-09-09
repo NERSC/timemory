@@ -29,11 +29,8 @@
 
 #pragma once
 
-#include "timemory/components/base.hpp"
 #include "timemory/components/extern/common.hpp"
-#include "timemory/components/likwid/backends.hpp"
 #include "timemory/components/likwid/components.hpp"
-#include "timemory/components/likwid/types.hpp"
 #include "timemory/components/macros.hpp"
 
 TIMEMORY_EXTERN_COMPONENT(likwid_marker, false, void)

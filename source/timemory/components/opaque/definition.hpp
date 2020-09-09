@@ -23,21 +23,14 @@
 // SOFTWARE.
 //
 
-/**
- * \file timemory/components/opaque.hpp
- * \brief Implementation of the opaque
- */
-
 #pragma once
 
+#include "timemory/components/opaque/declaration.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
-#include "timemory/variadic/types.hpp"
 
 #include <cassert>
 #include <cstdint>

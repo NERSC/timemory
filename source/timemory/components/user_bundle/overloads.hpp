@@ -33,24 +33,10 @@
 
 #pragma once
 
-//======================================================================================//
-//
 #if defined(TIMEMORY_USER_BUNDLE_SOURCE)
-//
 #    define TIMEMORY_USER_BUNDLE_LINKAGE(...) __VA_ARGS__
-//
+#elif !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#    define TIMEMORY_USER_BUNDLE_LINKAGE(...) inline __VA_ARGS__
 #else
-//
-#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
-//
-#        define TIMEMORY_USER_BUNDLE_LINKAGE(...) inline __VA_ARGS__
-//
-#    else
-//
-#        define TIMEMORY_USER_BUNDLE_LINKAGE(...) __VA_ARGS__
-//
-#    endif
-//
+#    define TIMEMORY_USER_BUNDLE_LINKAGE(...) __VA_ARGS__
 #endif
-//
-//======================================================================================//

@@ -35,6 +35,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/finalize/get.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
 
@@ -52,10 +53,7 @@ namespace operation
 namespace finalize
 {
 //
-//--------------------------------------------------------------------------------------//
-//
-#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_OPERATIONS_EXTERN)) ||        \
-    defined(TIMEMORY_OPERATIONS_SOURCE)
+#if defined(TIMEMORY_OPERATIONS_SOURCE) || !defined(TIMEMORY_USE_OPERATIONS_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -117,7 +115,12 @@ base::print::print_text(const std::string& outfname, stream_type stream)
 //
 //--------------------------------------------------------------------------------------//
 //
-#endif  // !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_OPERATIONS_SOURCE)
+TIMEMORY_OPERATIONS_LINKAGE(void)
+base::print::print_tree(const std::string&) {}
+//
+//--------------------------------------------------------------------------------------//
+//
+#endif  // !defined(TIMEMORY_OPERATIONS_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -170,6 +173,7 @@ print<Tp, true>::setup()
     auto fext       = (is_minimal_json || is_pretty_json) ? ".json" : ".xml";
     auto extensions = tim::delimit(settings::input_extensions(), ",; ");
 
+    tree_outfname = settings::compose_output_filename(label + ".tree", fext);
     json_outfname = settings::compose_output_filename(label, fext);
     text_outfname = settings::compose_output_filename(label, ".txt");
 
@@ -399,29 +403,14 @@ print<Tp, true>::update_data()
 template <typename Tp>
 template <typename Archive>
 void
-print<Tp, true>::print_metadata(true_type, Archive& ar, const Tp& obj)
+print<Tp, true>::print_metadata(Archive& ar, const Tp& obj)
 {
-    // clang-format off
-    ar(cereal::make_nvp("type", obj.label_array()),
-       cereal::make_nvp("description", obj.description_array()),
-       cereal::make_nvp("unit_value", obj.unit_array()),
-       cereal::make_nvp("unit_repr", obj.display_unit_array()));
-    // clang-format on
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-template <typename Archive>
-void
-print<Tp, true>::print_metadata(false_type, Archive& ar, const Tp& obj)
-{
-    // clang-format off
-    ar(cereal::make_nvp("type", obj.get_label()),
-       cereal::make_nvp("description", obj.get_description()),
-       cereal::make_nvp("unit_value", obj.get_unit()),
-       cereal::make_nvp("unit_repr", obj.get_display_unit()));
-    // clang-format on
+    using metadata_get_type = finalize::get<Tp, true>;
+    ar(cereal::make_nvp("type", metadata_get_type::get_label(obj)),
+       cereal::make_nvp("description", metadata_get_type::get_description(obj)),
+       cereal::make_nvp("unit_value", metadata_get_type::get_unit(obj)),
+       cereal::make_nvp("unit_repr", metadata_get_type::get_display_unit(obj)),
+       cereal::make_nvp("properties", component::properties<Tp>{}));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -432,8 +421,6 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
                             int64_t concurrency)
 {
     using policy_type = policy::output_archive_t<Tp>;
-    using bool_type   = typename trait::array_serialization<Tp>::type;
-
     if(outfname.length() > 0)
     {
         std::ofstream ofs(outfname.c_str());
@@ -467,7 +454,7 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
 
                     (*oa)(cereal::make_nvp("rank", i));
                     (*oa)(cereal::make_nvp("concurrency", concurrency));
-                    print_metadata(bool_type{}, *oa, results.at(i).front().data());
+                    print_metadata(*oa, results.at(i).front().data());
                     Tp::extra_serialization(*oa, 1);
                     save(*oa, results.at(i));
 
@@ -480,6 +467,42 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
         if(ofs)
             ofs << std::endl;
         ofs.close();
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+print<Tp, true>::print_tree(const std::string& outfname)
+{
+    using policy_type = policy::output_archive_t<Tp>;
+
+    if(outfname.length() > 0)
+    {
+        std::stringstream ss;
+        {
+            // ensure write final block during destruction before the file is closed
+            auto oa = policy_type::get(ss);
+
+            oa->setNextName("timemory");
+            oa->startNode();
+            data->dmp_get(*oa);
+            oa->finishNode();
+        }
+        if(node_rank == 0)
+        {
+            auto fext = outfname.substr(outfname.find_last_of(".") + 1);
+            if(fext.empty())
+                fext = "unknown";
+            manager::instance()->add_file_output(fext, label, outfname);
+            printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
+                   outfname.c_str());
+            std::ofstream ofs(outfname.c_str());
+            if(ofs)
+                ofs << ss.str() << std::endl;
+            ofs.close();
+        }
     }
 }
 //

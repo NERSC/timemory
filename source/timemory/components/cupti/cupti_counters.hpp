@@ -434,9 +434,9 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         array_t<double> _accum = _get(accum);
         ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
            cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
-           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp),
-           cereal::make_nvp("units", unit_array()),
-           cereal::make_nvp("display_units", display_unit_array()));
+           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp));
+        // ar(cereal::make_nvp("units", unit_array()),
+        //   cereal::make_nvp("display_units", display_unit_array()));
     }
 
     //----------------------------------------------------------------------------------//
@@ -547,8 +547,10 @@ private:
 
     static void init()
     {
+        auto _init_cb = tim::get_env<bool>("TIMEMORY_CUPTI_INIT_CB", true);
         cupti::init_driver();
-        cuda::device_sync();
+        if(_init_cb)
+            cuda::device_sync();
         clear();
 
         auto& _profiler = _get_profiler();
@@ -584,7 +586,7 @@ private:
 
             if(_evt.size() > 0 || _met.size() > 0)
             {
-                _profiler.reset(new cupti::profiler(_evt, _met, _dev));
+                _profiler.reset(new cupti::profiler(_evt, _met, _dev, _init_cb));
                 _used_devs.insert(_dev);
                 for(const auto& itr : _evt)
                     _used_evts.insert(itr);

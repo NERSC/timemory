@@ -110,17 +110,17 @@ foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
     set(PROJECT_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${TYPE}DIR})
 endforeach()
 
-configure_file(${PROJECT_SOURCE_DIR}/source/timemory/version.h.in
-    ${PROJECT_SOURCE_DIR}/source/timemory/version.h @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/version.h.in
+    ${PROJECT_BINARY_DIR}/source/timemory/version.h @ONLY)
 
-# execute_process(
-#    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#        ${PROJECT_BINARY_DIR}/source/timemory/_version.h
-#        ${PROJECT_BINARY_DIR}/source/timemory/version.h
-#    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-#    ERROR_VARIABLE ERR_MSG
-#    RESULT_VARIABLE RET
-#)
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_BINARY_DIR}/source/timemory/version.h
+        ${PROJECT_SOURCE_DIR}/source/timemory/version.h
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    ERROR_VARIABLE ERR_MSG
+    RESULT_VARIABLE RET
+)
 
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MASTER_PROJECT ON)

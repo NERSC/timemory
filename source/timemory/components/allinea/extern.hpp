@@ -29,48 +29,8 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_ALLINEA_MAP)
+#include "timemory/components/allinea/components.hpp"
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
 
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/macros.hpp"
-//
-#    include "timemory/components/allinea/components.hpp"
-#    include "timemory/components/allinea/types.hpp"
-//
-#    if defined(TIMEMORY_COMPONENT_SOURCE) ||                                            \
-        (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
-// source/header-only requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/definition.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/definition.hpp"
-#    else
-// extern requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/declaration.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/declaration.hpp"
-#    endif
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<allinea_map, void>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::allinea_map, false)
-TIMEMORY_EXTERN_STORAGE(component::allinea_map, allinea_map)
-//
-//======================================================================================//
-
-#endif  // TIMEMORY_USE_ALLINEA_MAP
+TIMEMORY_EXTERN_COMPONENT(allinea_map, false, void)

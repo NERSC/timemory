@@ -49,28 +49,73 @@ namespace tim
 namespace upc
 {
 #if defined(TIMEMORY_USE_UPCXX)
+//
 using comm_t = ::upcxx::team;
-template <typename Tp>
-using future_t = ::upcxx::future<Tp>;
-template <typename Tp>
-using promise_t = ::upcxx::promise<Tp>;
+//
 inline comm_t&
 world()
 {
     return ::upcxx::world();
 }
+//
+template <typename... Args>
+inline auto
+rpc(Args&&... args)
+{
+    ::upcxx::rpc(std::forward<Args>(args)...);
+}
+//
+inline auto
+progress()
+{
+    return ::upcxx::progress();
+}
+//
+template <typename Tp>
+using future_t = ::upcxx::future<Tp>;
+//
+template <typename Tp>
+using promise_t = ::upcxx::promise<Tp>;
+//
 #else
+//
 using comm_t = int32_t;
-template <typename Tp>
-using future_t = ::std::future<Tp>;
-template <typename Tp>
-using promise_t = ::std::promise<Tp>;
+//
 inline comm_t&
 world()
 {
     static comm_t _instance = 0;
     return _instance;
 }
+//
+template <typename... Args>
+inline auto
+rpc(Args&&...)
+{}
+//
+inline auto
+progress()
+{}
+//
+template <typename Tp>
+class future : public std::future<Tp>
+{
+public:
+    bool ready()
+    {
+        this->wait();
+        return true;
+    }
+
+    auto result() { return this->get(); }
+};
+//
+template <typename Tp>
+using promise_t = ::std::promise<Tp>;
+//
+template <typename Tp>
+using future_t = future<Tp>;
+//
 #endif
 
 //--------------------------------------------------------------------------------------//

@@ -1,4 +1,8 @@
 
+if(WIN32 OR APPLE)
+	return()
+endif()
+
 set(NAME io)
 
 file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)

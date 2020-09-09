@@ -31,6 +31,7 @@
 #include "timemory/components/cupti/components.hpp"
 #include "timemory/components/roofline/backends.hpp"
 #include "timemory/components/roofline/types.hpp"
+#include "timemory/components/timing/wall_clock.hpp"
 
 #include "timemory/ert/configuration.hpp"
 

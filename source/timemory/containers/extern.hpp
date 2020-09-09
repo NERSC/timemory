@@ -29,24 +29,18 @@
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/containers/macros.hpp"
-//
-#include "timemory/containers/types.hpp"
-//
 #include "timemory/containers/declaration.hpp"
-//
-//======================================================================================//
-//
-#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_CONTAINERS_EXTERN)
+#include "timemory/containers/macros.hpp"
+#include "timemory/containers/types.hpp"
+
+#if !defined(TIMEMORY_USE_CONTAINERS_EXTERN)
 #    include "timemory/operations/definition.hpp"
 #    include "timemory/storage/definition.hpp"
 #else
 #    include "timemory/operations/extern.hpp"
 #    include "timemory/storage/extern.hpp"
 #endif
-//
+
 #include "timemory/containers/types/complete_list.hpp"
 #include "timemory/containers/types/full_auto_timer.hpp"
 #include "timemory/containers/types/minimal_auto_timer.hpp"

@@ -118,6 +118,8 @@ typedef enum
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/backends/hardware_counters.hpp"
+
 namespace tim
 {
 namespace cupti
@@ -821,7 +823,7 @@ struct profiler
     using kernel_pair_t    = std::pair<std::string, results_t>;
     using kernel_results_t = std::vector<kernel_pair_t>;
 
-    profiler(const strvec_t&, const strvec_t&, const int = 0) {}
+    profiler(const strvec_t&, const strvec_t&, const int = 0, bool = true) {}
 
     ~profiler() {}
 

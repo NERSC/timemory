@@ -28,6 +28,7 @@
 #include "timemory/components.hpp"
 #include "timemory/components/extern.hpp"
 #include "timemory/components/ompt.hpp"
+#include "timemory/enum.h"
 #include "timemory/library.h"
 #include "timemory/settings/extern.hpp"
 
@@ -63,6 +64,16 @@ extern "C"
 
 //======================================================================================//
 
+template <size_t Idx>
+using enumerator_t = typename tim::component::enumerator<Idx>::type;
+
+template <size_t Idx>
+using enumerator_vt =
+    tim::conditional_t<tim::trait::is_available<enumerator_t<Idx>>::value, std::true_type,
+                       std::false_type>;
+
+//======================================================================================//
+
 manager_wrapper::manager_wrapper()
 : m_manager(manager_t::instance().get())
 {}
@@ -77,6 +88,51 @@ manager_t*
 manager_wrapper::get()
 {
     return manager_t::instance().get();
+}
+
+//--------------------------------------------------------------------------------------//
+namespace impl
+{
+template <typename Tp, typename Archive,
+          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+auto
+get_json(Archive& ar, int) -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
+{
+    tim::storage<Tp>::instance()->dmp_get(ar);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp, typename Archive>
+auto
+get_json(Archive&, long)
+{}
+}  // namespace impl
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp, typename Archive,
+          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+auto
+get_json(Archive& ar, int)
+{
+    impl::get_json<Tp>(ar, 0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp, typename Archive,
+          tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
+auto
+get_json(Archive&, ...)
+{}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Archive, size_t... Idx>
+auto
+get_json(Archive& ar, std::index_sequence<Idx...>)
+{
+    TIMEMORY_FOLD_EXPRESSION(get_json<tim::decay_t<enumerator_t<Idx>>>(ar, 0));
 }
 
 //======================================================================================//
@@ -251,9 +307,31 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json = []() {
+    auto _as_json_classic = []() {
         using tuple_type = typename auto_list_t::tuple_type;
         auto json_str    = manager_t::get_storage<tuple_type>::serialize();
+        if(tim::settings::debug())
+            std::cout << "JSON CLASSIC:\n" << json_str << std::endl;
+        return json_str;
+    };
+    //----------------------------------------------------------------------------------//
+    auto _as_json_hierarchy = []() {
+        std::stringstream ss;
+        {
+            using policy_type = tim::policy::output_archive_t<tim::manager>;
+            auto oa           = policy_type::get(ss);
+            oa->setNextName("timemory");
+            oa->startNode();
+            get_json(*oa, std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+            oa->finishNode();
+        }
+        if(tim::settings::debug())
+            std::cout << "JSON HIERARCHY:\n" << ss.str() << std::endl;
+        return ss.str();
+    };
+    //----------------------------------------------------------------------------------//
+    auto _as_json = [_as_json_classic, _as_json_hierarchy](bool hierarchy) {
+        auto json_str    = (hierarchy) ? _as_json_hierarchy() : _as_json_classic();
         auto json_module = py::module::import("json");
         return json_module.attr("loads")(json_str);
     };
@@ -333,6 +411,26 @@ PYBIND11_MODULE(libpytimemory, tim)
 #endif
     };
     //----------------------------------------------------------------------------------//
+    auto _get_argv = []() {
+        py::module sys   = py::module::import("sys");
+        auto       argv  = sys.attr("argv").cast<py::list>();
+        int        _argc = argv.size();
+        char**     _argv = new char*[argv.size()];
+        for(int i = 0; i < _argc; ++i)
+        {
+            auto  _str    = argv[i].cast<std::string>();
+            char* _argv_i = new char[_str.size()];
+            std::strcpy(_argv_i, _str.c_str());
+            _argv[i] = _argv_i;
+        }
+        auto _argv_deleter = [](int fargc, char** fargv) {
+            for(int i = 0; i < fargc; ++i)
+                delete[] fargv[i];
+            delete[] fargv;
+        };
+        return std::make_tuple(_argc, _argv, _argv_deleter);
+    };
+    //----------------------------------------------------------------------------------//
     auto _init = [](py::list argv, std::string _prefix, std::string _suffix) {
         if(argv.size() < 1)
             return;
@@ -385,10 +483,17 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _init_mpi = []() {
+    auto _init_mpi = [_get_argv]() {
         try
         {
-            // tim::mpi::init();
+            auto                             _args = _get_argv();
+            int                              _argc = std::get<0>(_args);
+            char**                           _argv = std::get<1>(_args);
+            std::function<void(int, char**)> _argd = std::get<2>(_args);
+            // initialize mpi
+            tim::mpi::initialize(&_argc, &_argv);
+            // delete the c-arrays
+            _argd(_argc, _argv);
         } catch(std::exception& e)
         {
             PRINT_HERE("ERROR: %s", e.what());
@@ -398,11 +503,41 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto _finalize_mpi = []() {
         try
         {
-            // tim::mpi::finalize();
+            tim::mpi::finalize();
         } catch(std::exception& e)
         {
             PRINT_HERE("ERROR: %s", e.what());
         }
+    };
+    //----------------------------------------------------------------------------------//
+    auto _init_upcxx = []() {
+        try
+        {
+            tim::upc::initialize();
+        } catch(std::exception& e)
+        {
+            PRINT_HERE("ERROR: %s", e.what());
+        }
+    };
+    //----------------------------------------------------------------------------------//
+    auto _finalize_upcxx = []() {
+        try
+        {
+            tim::mpi::finalize();
+        } catch(std::exception& e)
+        {
+            PRINT_HERE("ERROR: %s", e.what());
+        }
+    };
+    //----------------------------------------------------------------------------------//
+    auto _init_dmp = [_init_mpi, _init_upcxx]() {
+        _init_mpi();
+        _init_upcxx();
+    };
+    //----------------------------------------------------------------------------------//
+    auto _finalize_dmp = [_finalize_mpi, _finalize_upcxx]() {
+        _finalize_mpi();
+        _finalize_upcxx();
     };
     //----------------------------------------------------------------------------------//
 
@@ -447,7 +582,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     tim.def("finalize", _finalize,
             "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("get", _as_json, "Get the storage data");
+    tim.def("get", _as_json, "Get the storage data", py::arg("hierarchy") = false);
     //----------------------------------------------------------------------------------//
     tim.def(
         "init_mpip", _start_mpip,
@@ -461,9 +596,17 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("stop_mpip", _stop_mpip, "Deactivate MPIP profiling", py::arg("id"));
     //----------------------------------------------------------------------------------//
+    tim.def("mpi_init", _init_mpi, "Initialize MPI");
+    //----------------------------------------------------------------------------------//
     tim.def("mpi_finalize", _finalize_mpi, "Finalize MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("mpi_init", _init_mpi, "Initialize MPI");
+    tim.def("upcxx_init", _init_upcxx, "Initialize UPC++");
+    //----------------------------------------------------------------------------------//
+    tim.def("upcxx_finalize", _finalize_upcxx, "Finalize UPC++");
+    //----------------------------------------------------------------------------------//
+    tim.def("dmp_init", _init_dmp, "Initialize MPI and/or UPC++");
+    //----------------------------------------------------------------------------------//
+    tim.def("dmp_finalize", _finalize_dmp, "Finalize MPI and/or UPC++");
     //----------------------------------------------------------------------------------//
     tim.def("start_ompt", _start_ompt, "Activate OMPT (OpenMP tools) profiling");
     //----------------------------------------------------------------------------------//

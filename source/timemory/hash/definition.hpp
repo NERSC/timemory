@@ -42,8 +42,7 @@
 #include <string>
 #include <unordered_map>
 
-#if(!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_HASH_EXTERN)) ||              \
-    defined(TIMEMORY_HASH_SOURCE)
+#if defined(TIMEMORY_HASH_SOURCE) || !defined(TIMEMORY_USE_HASH_EXTERN)
 
 namespace tim
 {

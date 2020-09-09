@@ -31,16 +31,12 @@
 
 #include "timemory/dll.hpp"
 
-//======================================================================================//
-//
-// Define macros for hash
-//
-//======================================================================================//
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_RUNTIME_EXTERN)
+#    define TIMEMORY_USE_RUNTIME_EXTERN
+#endif
 //
 #if !defined(TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE)
-//
 #    if defined(TIMEMORY_RUNTIME_SOURCE)
-//
 #        define TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(TYPE, ...)                  \
             namespace tim                                                                \
             {                                                                            \
@@ -51,13 +47,9 @@
             template void configure(TYPE&, int, __VA_ARGS__);                            \
             }                                                                            \
             }
-//
-#    elif !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_RUNTIME_EXTERN)
-//
+#    elif !defined(TIMEMORY_USE_RUNTIME_EXTERN)
 #        define TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(...)
-//
 #    else
-//
 #        define TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(TYPE, ...)                  \
             namespace tim                                                                \
             {                                                                            \
@@ -68,17 +60,13 @@
             extern template void configure(TYPE&, int, __VA_ARGS__);                     \
             }                                                                            \
             }
-//
 #    endif
-//
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE)
-//
 #    if defined(TIMEMORY_RUNTIME_SOURCE)
-//
 #        define TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(...)                         \
             namespace tim                                                                \
             {                                                                            \
@@ -87,13 +75,9 @@
             template void initialize(__VA_ARGS__&, int);                                 \
             }                                                                            \
             }
-//
-#    elif !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_RUNTIME_EXTERN)
-//
+#    elif !defined(TIMEMORY_USE_RUNTIME_EXTERN)
 #        define TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(...)
-//
 #    else
-//
 #        define TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(...)                         \
             namespace tim                                                                \
             {                                                                            \
@@ -102,10 +86,5 @@
             extern template void initialize(__VA_ARGS__&, int);                          \
             }                                                                            \
             }
-//
 #    endif
-//
 #endif
-//
-//--------------------------------------------------------------------------------------//
-//

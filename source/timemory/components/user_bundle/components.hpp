@@ -174,6 +174,10 @@ public:
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
+    friend struct operation::record<this_type>;
+    friend struct operation::start<this_type>;
+    friend struct operation::stop<this_type>;
+
     using start_func_t  = std::function<void*(const string_t&, scope::config)>;
     using stop_func_t   = std::function<void(void*)>;
     using get_func_t    = std::function<void(void*, void*&, size_t)>;

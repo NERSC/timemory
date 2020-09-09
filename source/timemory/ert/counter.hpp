@@ -33,7 +33,6 @@
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
 #include "timemory/components/cuda/backends.hpp"
-#include "timemory/components/timing/components.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
@@ -42,6 +41,7 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
 
 #include <array>
 #include <atomic>

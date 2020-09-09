@@ -29,59 +29,12 @@
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/components/base.hpp"
-#include "timemory/components/macros.hpp"
-//
 #include "timemory/components/craypat/components.hpp"
-#include "timemory/components/craypat/types.hpp"
-//
-#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
-    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
-// source/header-only requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/definition.hpp"
-#else
-// extern requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
-#endif
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<craypat_record, void>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<craypat_region, void>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<craypat_counters, std::vector<unsigned long>>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<craypat_heap_stats, void>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<craypat_flush_buffer, unsigned long>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::craypat_record, false)
-TIMEMORY_EXTERN_OPERATIONS(component::craypat_region, false)
-TIMEMORY_EXTERN_OPERATIONS(component::craypat_counters, true)
-TIMEMORY_EXTERN_OPERATIONS(component::craypat_heap_stats, false)
-TIMEMORY_EXTERN_OPERATIONS(component::craypat_flush_buffer, false)
-//
-TIMEMORY_EXTERN_STORAGE(component::craypat_record, craypat_record)
-TIMEMORY_EXTERN_STORAGE(component::craypat_region, craypat_region)
-TIMEMORY_EXTERN_STORAGE(component::craypat_counters, craypat_counters)
-TIMEMORY_EXTERN_STORAGE(component::craypat_heap_stats, craypat_heap_stats)
-TIMEMORY_EXTERN_STORAGE(component::craypat_flush_buffer, craypat_flush_buffer)
-//
-//======================================================================================//
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(craypat_record, false, void)
+TIMEMORY_EXTERN_COMPONENT(craypat_region, false, void)
+TIMEMORY_EXTERN_COMPONENT(craypat_counters, true, std::vector<unsigned long>)
+TIMEMORY_EXTERN_COMPONENT(craypat_heap_stats, false, void)
+TIMEMORY_EXTERN_COMPONENT(craypat_flush_buffer, false, unsigned long)

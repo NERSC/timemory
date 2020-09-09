@@ -69,6 +69,10 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
     using tuple_type     = concepts::tuple_type_t<Components>;
     using component_type = concepts::component_type_t<Components>;
 
+    friend struct operation::record<this_type>;
+    friend struct operation::start<this_type>;
+    friend struct operation::stop<this_type>;
+
     template <typename Tp>
     using array_t = std::array<Tp, Nt>;
 

@@ -37,6 +37,12 @@
 
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#    define TIMEMORY_USE_COMPONENT_EXTERN
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
 /**
  * \macro TIMEMORY_DECLARE_COMPONENT
  * \brief Declare a non-templated component type in the tim::component namespace
@@ -162,6 +168,18 @@
                 static idset_t _instance{ ID, __VA_ARGS__ };                             \
                 return _instance;                                                        \
             }                                                                            \
+            template <typename Archive>                                                  \
+            void save(Archive& ar, const unsigned int) const                             \
+            {                                                                            \
+                std::string           _enum = enum_string();                             \
+                std::string           _id   = id();                                      \
+                std::set<std::string> _ids  = ids();                                     \
+                ar(cereal::make_nvp("value", ENUM), cereal::make_nvp("enum", _enum),     \
+                   cereal::make_nvp("id", _id), cereal::make_nvp("ids", _ids));          \
+            }                                                                            \
+            template <typename Archive>                                                  \
+            void load(Archive&, const unsigned int)                                      \
+            {}                                                                           \
         };                                                                               \
         template <>                                                                      \
         struct enumerator<ENUM> : properties<TYPE>                                       \
@@ -331,11 +349,23 @@
         {                                                                                \
         using namespace tim::component;                                                  \
         namespace component = tim::component;                                            \
-        tim::storage_initializer storage_initializer__##VAR =                            \
+        tim::storage_initializer _TIM_STORAGE_INIT(VAR) =                                \
             tim::storage_initializer::get<TYPE>();                                       \
         }
 #endif
-//
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_INITIALIZE_STORAGE)
+#    define TIMEMORY_INITIALIZE_STORAGE(...)                                             \
+        namespace                                                                        \
+        {                                                                                \
+        using namespace tim::component;                                                  \
+        namespace component              = tim::component;                               \
+        auto _TIM_STORAGE_INIT(__LINE__) = tim::storage_initializer::get<__VA_ARGS__>(); \
+        }
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
@@ -392,6 +422,15 @@
 #    define TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                 \
         namespace tim                                                                    \
         {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        namespace factory                                                                \
+        {                                                                                \
+        extern template opaque           get_opaque<COMPONENT_NAME>();                   \
+        extern template opaque           get_opaque<COMPONENT_NAME>(scope::config);      \
+        extern template std::set<size_t> get_typeids<COMPONENT_NAME>();                  \
+        }                                                                                \
+        }                                                                                \
         namespace operation                                                              \
         {                                                                                \
         extern template struct init_storage<COMPONENT_NAME>;                             \
@@ -423,6 +462,15 @@
 #    define TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)             \
         namespace tim                                                                    \
         {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        namespace factory                                                                \
+        {                                                                                \
+        template opaque           get_opaque<COMPONENT_NAME>();                          \
+        template opaque           get_opaque<COMPONENT_NAME>(scope::config);             \
+        template std::set<size_t> get_typeids<COMPONENT_NAME>();                         \
+        }                                                                                \
+        }                                                                                \
         namespace operation                                                              \
         {                                                                                \
         template struct init_storage<COMPONENT_NAME>;                                    \
@@ -450,7 +498,7 @@
 
 //======================================================================================//
 
-#if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_COMPONENT_SOURCE)
+#if defined(TIMEMORY_COMPONENT_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -474,7 +522,7 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#elif defined(TIMEMORY_USE_COMPONENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -527,9 +575,32 @@
 #if !defined(TIMEMORY_EXTERN_COMPONENT)
 #    define TIMEMORY_EXTERN_COMPONENT(NAME, HAS_DATA, ...)                               \
         TIMEMORY_EXTERN_TEMPLATE(                                                        \
-            struct tim::component::base<tim::component::NAME, __VA_ARGS__>)              \
-        TIMEMORY_EXTERN_OPERATIONS(component::NAME, HAS_DATA)                            \
-        TIMEMORY_EXTERN_STORAGE(component::NAME, NAME)
+            struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
+                                        __VA_ARGS__>)                                    \
+        TIMEMORY_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)              \
+        TIMEMORY_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_DECLARE_EXTERN_COMPONENT)
+#    define TIMEMORY_DECLARE_EXTERN_COMPONENT(NAME, HAS_DATA, ...)                       \
+        TIMEMORY_DECLARE_EXTERN_TEMPLATE(                                                \
+            struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
+                                        __VA_ARGS__>)                                    \
+        TIMEMORY_DECLARE_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)      \
+        TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_COMPONENT)
+#    define TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(NAME, HAS_DATA, ...)                   \
+        TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(                                            \
+            struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
+                                        __VA_ARGS__>)                                    \
+        TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)  \
+        TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
 #endif
 
 //======================================================================================//

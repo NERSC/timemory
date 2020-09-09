@@ -32,36 +32,22 @@
 #include "timemory/compat/macros.h"
 #include "timemory/dll.hpp"
 
-//======================================================================================//
-//
-// Define macros for settings
-//
-//======================================================================================//
-//
-#if defined(TIMEMORY_SETTINGS_SOURCE)
-//
-#    define TIMEMORY_SETTINGS_LINKAGE(...) __VA_ARGS__
-//
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
-//
-#    define TIMEMORY_SETTINGS_LINKAGE(...) __VA_ARGS__
-//
-#else
-//
-#    define TIMEMORY_SETTINGS_LINKAGE(...) inline __VA_ARGS__
-//
+#if defined(TIMEMORY_CORE_SOURCE)
+#    define TIMEMORY_SETTINGS_SOURCE
+#elif defined(TIMEMORY_USE_CORE_EXTERN)
+#    define TIMEMORY_USE_SETTINGS_EXTERN
 #endif
 //
-//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN)
+#    define TIMEMORY_USE_SETTINGS_EXTERN
+#endif
 //
-#if !defined(TIMEMORY_SETTINGS_DLL)
-#    if defined(TIMEMORY_SETTINGS_SOURCE)
-#        define TIMEMORY_SETTINGS_DLL tim_dll_export
-#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
-#        define TIMEMORY_SETTINGS_DLL tim_dll_import
-#    else
-#        define TIMEMORY_SETTINGS_DLL
-#    endif
+#if defined(TIMEMORY_SETTINGS_SOURCE)
+#    define TIMEMORY_SETTINGS_LINKAGE(...) __VA_ARGS__
+#elif defined(TIMEMORY_USE_SETTINGS_EXTERN)
+#    define TIMEMORY_SETTINGS_LINKAGE(...) __VA_ARGS__
+#else
+#    define TIMEMORY_SETTINGS_LINKAGE(...) inline __VA_ARGS__
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -164,7 +150,7 @@
             template settings*                 settings::instance<API>();                \
             }
 //
-#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
+#    elif defined(TIMEMORY_USE_SETTINGS_EXTERN)
 //
 #        define TIMEMORY_SETTINGS_EXTERN_TEMPLATE(API)                                   \
             namespace tim                                                                \

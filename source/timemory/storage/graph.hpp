@@ -778,12 +778,6 @@ public:
             ar(cereal::make_nvp("node", *itr));
     }
 
-    size_t data_size()
-    {
-        return 0;
-        // return m_alloc.alloc_bytes();
-    }
-
 private:
     AllocatorT  m_alloc;
     inline void m_head_initialize();

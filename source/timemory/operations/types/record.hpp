@@ -54,11 +54,11 @@ struct record
 
     record(type& obj, const type& rhs);
 
-    template <typename T                                       = type, typename... Args,
+    template <typename T                                     = type, typename... Args,
               enable_if_t<check_record_type<T>::value, char> = 0>
     explicit record(T& obj, Args&&... args);
 
-    template <typename T                                        = type, typename... Args,
+    template <typename T                                      = type, typename... Args,
               enable_if_t<!check_record_type<T>::value, char> = 0>
     explicit record(T&, Args&&...);
 

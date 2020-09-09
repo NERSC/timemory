@@ -29,9 +29,17 @@
 
 #pragma once
 
+#include "timemory/backends/dmp.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/storage/basic_tree.hpp"
+#include "timemory/storage/types.hpp"
+#include "timemory/utility/serializer.hpp"
+
+#include <string>
+#include <vector>
 
 namespace tim
 {
@@ -45,16 +53,164 @@ namespace finalize
 template <typename Type>
 struct get<Type, true>
 {
-    static constexpr bool has_data = true;
-    using storage_type             = impl::storage<Type, has_data>;
-    using result_type              = typename storage_type::result_array_t;
-    using distrib_type             = typename storage_type::dmp_result_t;
-    using result_node              = typename storage_type::result_node;
-    using graph_type               = typename storage_type::graph_t;
-    using graph_node               = typename storage_type::graph_node;
-    using hierarchy_type           = typename storage_type::uintvector_t;
+    static constexpr bool value  = true;
+    using storage_type           = impl::storage<Type, value>;
+    using result_type            = typename storage_type::result_array_t;
+    using distrib_type           = typename storage_type::dmp_result_t;
+    using result_node            = typename storage_type::result_node;
+    using graph_type             = typename storage_type::graph_t;
+    using graph_node             = typename storage_type::graph_node;
+    using hierarchy_type         = typename storage_type::uintvector_t;
+    using basic_tree_type        = basic_tree<graph_node>;
+    using basic_tree_vector_type = std::vector<basic_tree_type>;
 
-    get(storage_type&, result_type&);
+    TIMEMORY_DEFAULT_OBJECT(get)
+
+    explicit get(storage_type& _storage)
+    : m_storage(&_storage)
+    {}
+
+    explicit get(storage_type* _storage)
+    : m_storage(_storage)
+    {}
+
+    result_type&            operator()(result_type&);
+    basic_tree_vector_type& operator()(basic_tree_vector_type&);
+
+    template <typename Archive>
+    Archive& operator()(Archive&);
+
+    struct metadata
+    {};
+
+    template <typename Archive>
+    Archive& operator()(Archive&, metadata);
+
+public:
+    static std::string get_identifier(const Type& _obj = Type{})
+    {
+        std::string idstr = component::properties<Type>::enum_string();
+        if(idstr.empty())
+            idstr = get_identifier_sfinae(_obj, 0);
+        if(idstr.empty())
+            idstr = demangle<Type>();
+        return idstr;
+    }
+    static auto get_label(const Type& _obj = Type{})
+    {
+        return get_label_sfinae(_obj, 0, 0);
+    }
+    static auto get_description(const Type& _obj = Type{})
+    {
+        return get_description_sfinae(_obj, 0, 0);
+    }
+    static auto get_unit(const Type& _obj = Type{})
+    {
+        return get_unit_sfinae(_obj, 0, 0);
+    }
+    static auto get_display_unit(const Type& _obj = Type{})
+    {
+        return get_display_unit_sfinae(_obj, 0, 0);
+    }
+
+private:
+    template <typename Tp>
+    static auto get_identifier_sfinae(const Tp& _data, int) -> decltype(_data.label())
+    {
+        return _data.label();
+    }
+
+    template <typename Tp>
+    static auto get_identifier_sfinae(const Tp&, long)
+    {
+        return std::string{};
+    }
+
+private:
+    template <typename Tp>
+    static auto get_label_sfinae(const Tp& _data, int, int)
+        -> decltype(_data.label_array())
+    {
+        return _data.label_array();
+    }
+
+    template <typename Tp>
+    static auto get_label_sfinae(const Tp& _data, int, long) -> decltype(_data.label())
+    {
+        return _data.label();
+    }
+
+    template <typename Tp>
+    static auto get_label_sfinae(const Tp&, long, long)
+    {
+        return std::string{};
+    }
+
+private:
+    template <typename Tp>
+    static auto get_description_sfinae(const Tp& _data, int, int)
+        -> decltype(_data.description_array())
+    {
+        return _data.description_array();
+    }
+
+    template <typename Tp>
+    static auto get_description_sfinae(const Tp& _data, int, long)
+        -> decltype(_data.description())
+    {
+        return _data.description();
+    }
+
+    template <typename Tp>
+    static auto get_description_sfinae(const Tp&, long, long)
+    {
+        return std::string{};
+    }
+
+private:
+    template <typename Tp>
+    static auto get_unit_sfinae(const Tp& _data, int, int) -> decltype(_data.unit_array())
+    {
+        return _data.unit_array();
+    }
+
+    template <typename Tp>
+    static auto get_unit_sfinae(const Tp& _data, int, long) -> decltype(_data.unit())
+
+    {
+        return _data.unit();
+    }
+
+    template <typename Tp>
+    static auto get_unit_sfinae(const Tp&, long, long) -> int64_t
+    {
+        return 0;
+    }
+
+private:
+    template <typename Tp>
+    static auto get_display_unit_sfinae(const Tp& _data, int, int)
+        -> decltype(_data.display_unit_array())
+    {
+        return _data.display_unit_array();
+    }
+
+    template <typename Tp>
+    static auto get_display_unit_sfinae(const Tp& _data, int, long)
+        -> decltype(_data.display_unit())
+
+    {
+        return _data.display_unit();
+    }
+
+    template <typename Tp>
+    static auto get_display_unit_sfinae(const Tp&, long, long)
+    {
+        return std::string{};
+    }
+
+private:
+    storage_type* m_storage = nullptr;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -62,21 +218,31 @@ struct get<Type, true>
 template <typename Type>
 struct get<Type, false>
 {
-    static constexpr bool has_data = false;
-    using storage_type             = impl::storage<Type, has_data>;
+    static constexpr bool value = false;
+    using storage_type          = impl::storage<Type, value>;
+
     get(storage_type&) {}
+
+    template <typename Tp>
+    Tp& operator()(Tp&)
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-get<Type, true>::get(storage_type& data, result_type& ret)
+typename get<Type, true>::result_type&
+get<Type, true>::operator()(result_type& ret)
 {
-    bool _thread_scope_only = trait::thread_scope_only<Type>::value;
-    bool _use_tid_prefix    = (!settings::collapse_threads() || _thread_scope_only);
-    bool _use_pid_prefix    = (!settings::collapse_processes());
-    auto _num_thr_count     = manager::get_thread_count();
-    auto _num_pid_count     = dmp::size();
+    if(!m_storage)
+        return ret;
+
+    auto& data               = *m_storage;
+    bool  _thread_scope_only = trait::thread_scope_only<Type>::value;
+    bool  _use_tid_prefix    = (!settings::collapse_threads() || _thread_scope_only);
+    bool  _use_pid_prefix    = (!settings::collapse_processes());
+    auto  _num_thr_count     = manager::get_thread_count();
+    auto  _num_pid_count     = dmp::size();
 
     data.m_node_init = dmp::is_initialized();
     data.m_node_rank = dmp::rank();
@@ -257,6 +423,74 @@ get<Type, true>::get(storage_type& data, result_type& ret)
     };
 
     ret = convert_graph();
+    return ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename get<Type, true>::basic_tree_vector_type&
+get<Type, true>::operator()(basic_tree_vector_type& bt)
+{
+    using sibling_iterator = typename graph_type::sibling_iterator;
+
+    if(!m_storage)
+        return bt;
+
+    auto& data = *m_storage;
+    auto& t    = data.graph();
+    for(sibling_iterator itr = t.begin(); itr != t.end(); ++itr)
+        bt.push_back(basic_tree_type{}(t, itr));
+    return bt;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Archive>
+Archive&
+get<Type, true>::operator()(Archive& ar, metadata)
+{
+    bool _thread_scope_only = trait::thread_scope_only<Type>::value;
+    auto _num_thr_count     = manager::get_thread_count();
+    auto _num_pid_count     = dmp::size();
+
+    ar(cereal::make_nvp("properties", component::properties<Type>{}));
+    ar(cereal::make_nvp("type", get_label()));
+    ar(cereal::make_nvp("description", get_description()));
+    ar(cereal::make_nvp("unit_value", get_unit()));
+    ar(cereal::make_nvp("unit_repr", get_display_unit()));
+    ar(cereal::make_nvp("thread_scope_only", _thread_scope_only));
+    ar(cereal::make_nvp("mpi_size", mpi::size()));
+    ar(cereal::make_nvp("upcxx_size", upc::size()));
+    ar(cereal::make_nvp("thread_count", _num_thr_count));
+    ar(cereal::make_nvp("process_count", _num_pid_count));
+    return ar;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Archive>
+Archive&
+get<Type, true>::operator()(Archive& ar)
+{
+    if(!m_storage)
+        return ar;
+
+    m_storage->m_node_init = dmp::is_initialized();
+    m_storage->m_node_rank = dmp::rank();
+    m_storage->m_node_size = dmp::size();
+    m_storage->merge();
+
+    auto idstr = get_identifier();
+    ar.setNextName(idstr.c_str());
+    ar.startNode();
+    (*this)(ar, metadata{});
+    auto bt = basic_tree_vector_type{};
+    ar(cereal::make_nvp("graph", (*this)(bt)));
+    ar.finishNode();
+    return ar;
 }
 //
 //--------------------------------------------------------------------------------------//

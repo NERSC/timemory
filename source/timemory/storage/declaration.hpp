@@ -204,6 +204,15 @@ public:
     dmp_result_t   upc_get();
     dmp_result_t   dmp_get();
 
+    template <typename Tp>
+    Tp& get(Tp&);
+    template <typename Tp>
+    Tp& mpi_get(Tp&);
+    template <typename Tp>
+    Tp& upc_get(Tp&);
+    template <typename Tp>
+    Tp& dmp_get(Tp&);
+
     std::shared_ptr<printer_t> get_printer() const { return m_printer; }
 
     const iterator_hash_map_t get_node_ids() const { return m_node_ids; }
@@ -575,8 +584,6 @@ template <typename Archive>
 void
 storage<Type, true>::serialize(Archive& ar, const unsigned int version)
 {
-    using bool_type = typename trait::array_serialization<Type>::type;
-
     auto   num_instances = instance_count().load();
     auto&& _results      = dmp_get();
     for(uint64_t i = 0; i < _results.size(); ++i)
@@ -588,7 +595,7 @@ storage<Type, true>::serialize(Archive& ar, const unsigned int version)
 
         ar(cereal::make_nvp("rank", i));
         ar(cereal::make_nvp("concurrency", num_instances));
-        m_printer->print_metadata(bool_type{}, ar, _results.at(i).front().data());
+        m_printer->print_metadata(ar, _results.at(i).front().data());
         Type::extra_serialization(ar, 1);
         save(ar, _results.at(i));
 
@@ -785,11 +792,11 @@ public:
 template <typename Tp>
 class storage<Tp, type_list<>>
 : public storage<
-      Tp, conditional_t<(trait::is_available<Tp>::value), typename Tp::value_type, void>>
+      Tp, conditional_t<trait::is_available<Tp>::value, typename Tp::value_type, void>>
 {
 public:
     using Vp =
-        conditional_t<(trait::is_available<Tp>::value), typename Tp::value_type, void>;
+        conditional_t<trait::is_available<Tp>::value, typename Tp::value_type, void>;
     static constexpr bool implements_storage_v = trait::implements_storage<Tp, Vp>::value;
     using this_type                            = storage<Tp, Vp>;
     using base_type                            = impl::storage<Tp, implements_storage_v>;

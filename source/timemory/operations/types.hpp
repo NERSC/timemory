@@ -139,15 +139,15 @@ resolve_record_type(int) -> decltype(
 //--------------------------------------------------------------------------------------//
 //
 template <typename U>
-auto
-resolve_record_type(long) -> void
+void
+resolve_record_type(long)
 {}
 }  // namespace internal
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename U>
-auto
+decltype(internal::resolve_record_type<U>(0))
 resolve_record_type()
 {
     return internal::resolve_record_type<U>(0);
@@ -527,7 +527,7 @@ namespace base
 //
 //--------------------------------------------------------------------------------------//
 //
-struct TIMEMORY_OPERATIONS_DLL print
+struct print
 {
     using this_type   = print;
     using stream_type = std::shared_ptr<utility::stream>;
@@ -547,10 +547,12 @@ struct TIMEMORY_OPERATIONS_DLL print
     virtual void write(std::ostream& os, stream_type stream);
     virtual void print_cout(stream_type stream);
     virtual void print_text(const std::string& fname, stream_type stream);
+    virtual void print_tree(const std::string& fname);
     virtual void print_plot(const std::string& fname, const std::string suffix);
 
     auto get_label() const { return label; }
     auto get_text_output_name() const { return text_outfname; }
+    auto get_tree_output_name() const { return tree_outfname; }
     auto get_json_output_name() const { return json_outfname; }
     auto get_json_input_name() const { return json_inpfname; }
     auto get_text_diff_name() const { return text_diffname; }
@@ -579,6 +581,7 @@ protected:
     bool    json_forced    = false;
     bool    file_output    = settings::file_output();
     bool    cout_output    = settings::cout_output();
+    bool    tree_output    = (settings::json_output() || json_forced) && file_output;
     bool    json_output    = (settings::json_output() || json_forced) && file_output;
     bool    text_output    = settings::text_output() && file_output;
     bool    dart_output    = settings::dart_output();
@@ -597,6 +600,7 @@ protected:
     std::string label             = "";
     std::string description       = "";
     std::string text_outfname     = "";
+    std::string tree_outfname     = "";
     std::string json_outfname     = "";
     std::string json_inpfname     = "";
     std::string text_diffname     = "";
@@ -649,6 +653,9 @@ struct print<Tp, true> : public base::print
             update_data();
         else
             setup();
+
+        if(file_output && tree_output)
+            print_tree(tree_outfname);
 
         if(node_init && node_rank > 0)
             return;
@@ -717,6 +724,7 @@ struct print<Tp, true> : public base::print
             fprintf(stderr, "Exception: %s\n", e.what());
         }
     }
+    virtual void print_tree(const std::string& fname);
 
     void write_stream(stream_type& stream, result_type& results);
     void print_json(const std::string& fname, result_type& results, int64_t concurrency);
@@ -726,10 +734,7 @@ struct print<Tp, true> : public base::print
     auto get_node_delta() const { return node_delta; }
 
     template <typename Archive>
-    void print_metadata(true_type, Archive& ar, const Tp& obj);
-
-    template <typename Archive>
-    void print_metadata(false_type, Archive& ar, const Tp& obj);
+    void print_metadata(Archive& ar, const Tp& obj);
 
     std::vector<result_node*> get_flattened(result_type& results)
     {

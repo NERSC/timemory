@@ -37,6 +37,9 @@
 #include "timemory/manager/declaration.hpp"
 #include "timemory/operations/types/fini.hpp"
 #include "timemory/operations/types/init.hpp"
+#include "timemory/operations/types/node.hpp"
+#include "timemory/operations/types/start.hpp"
+#include "timemory/operations/types/stop.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/storage/macros.hpp"
@@ -351,7 +354,7 @@ storage<Type, true>::storage()
     }
 
     get_shared_manager();
-    m_printer = std::make_shared<printer_t>(Type::get_label(), this);
+    // m_printer = std::make_shared<printer_t>(Type::get_label(), this);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -694,13 +697,15 @@ storage<Type, true>::_data()
 
         if(!m_is_master && master_instance())
         {
-            static bool _data_init = master_instance()->data_init();
-            auto&       m          = master_instance()->data();
+            static thread_local bool _data_init = master_instance()->data_init();
+            auto&                    m          = master_instance()->data();
             consume_parameters(_data_init);
 
             if(!lk.owns_lock())
                 lk.lock();
 
+            DEBUG_PRINT_HERE("[%s]> Worker: %i, master ptr: %p", demangle<Type>().c_str(),
+                             (int) m_thread_idx, (void*) &m);
             if(m.current())
             {
                 auto         _current = m.current();
@@ -714,12 +719,15 @@ storage<Type, true>::_data()
             }
             else
             {
-                graph_node_t node(0, object_base_t::dummy(), 0, m_thread_idx);
                 if(!m_graph_data_instance)
-                    m_graph_data_instance = new graph_data_t(node, 0, nullptr);
-                m_graph_data_instance->depth()     = 0;
-                m_graph_data_instance->sea_level() = 0;
+                {
+                    graph_node_t node(0, object_base_t::dummy(), 1, m_thread_idx);
+                    m_graph_data_instance = new graph_data_t(node, 1, &m);
+                }
+                m_graph_data_instance->depth()     = 1;
+                m_graph_data_instance->sea_level() = 1;
             }
+            m_graph_data_instance->set_master(&m);
         }
         else
         {
@@ -733,6 +741,8 @@ storage<Type, true>::_data()
                 m_graph_data_instance = new graph_data_t(node, 0, nullptr);
             m_graph_data_instance->depth()     = 0;
             m_graph_data_instance->sea_level() = 0;
+            DEBUG_PRINT_HERE("[%s]> Master: %i, master ptr: %p", demangle<Type>().c_str(),
+                             (int) m_thread_idx, (void*) m_graph_data_instance);
         }
 
         if(m_node_ids.size() == 0)
@@ -784,23 +794,22 @@ storage<Type, true>::merge(this_type* itr)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type, true>::dmp_result_t
-storage<Type, true>::dmp_get()
+typename storage<Type, true>::result_array_t
+storage<Type, true>::get()
 {
-    dmp_result_t _ret;
-    operation::finalize::dmp_get<Type, true>(*this, _ret);
+    result_array_t _ret;
+    operation::finalize::get<Type, true>{ *this }(_ret);
     return _ret;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type, true>::result_array_t
-storage<Type, true>::get()
+template <typename Tp>
+Tp&
+storage<Type, true>::get(Tp& _ret)
 {
-    result_array_t _ret;
-    operation::finalize::get<Type, true>(*this, _ret);
-    return _ret;
+    return operation::finalize::get<Type, true>{ *this }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -810,8 +819,18 @@ typename storage<Type, true>::dmp_result_t
 storage<Type, true>::mpi_get()
 {
     dmp_result_t _ret;
-    operation::finalize::mpi_get<Type, true>(*this, _ret);
+    operation::finalize::mpi_get<Type, true>{ *this }(_ret);
     return _ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+Tp&
+storage<Type, true>::mpi_get(Tp& _ret)
+{
+    return operation::finalize::mpi_get<Type, true>{ *this }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -821,8 +840,39 @@ typename storage<Type, true>::dmp_result_t
 storage<Type, true>::upc_get()
 {
     dmp_result_t _ret;
-    operation::finalize::upc_get<Type, true>(*this, _ret);
+    operation::finalize::upc_get<Type, true>{ *this }(_ret);
     return _ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+Tp&
+storage<Type, true>::upc_get(Tp& _ret)
+{
+    return operation::finalize::upc_get<Type, true>{ *this }(_ret);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type, true>::dmp_result_t
+storage<Type, true>::dmp_get()
+{
+    dmp_result_t _ret;
+    operation::finalize::dmp_get<Type, true>{ *this }(_ret);
+    return _ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+Tp&
+storage<Type, true>::dmp_get(Tp& _ret)
+{
+    return operation::finalize::dmp_get<Type, true>{ *this }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//

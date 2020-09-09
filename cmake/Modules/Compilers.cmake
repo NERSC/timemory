@@ -318,6 +318,20 @@ function(ADD_USER_FLAGS _TARGET _LANGUAGE)
         $<$<COMPILE_LANGUAGE:${_LANGUAGE}>:${_FLAGS}>)
 endfunction()
 
+#----------------------------------------------------------------------------------------#
+# add compiler definition
+#----------------------------------------------------------------------------------------#
+function(TIMEMORY_TARGET_COMPILE_DEFINITIONS _TARG _VIS)
+    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    foreach(_DEF ${ARGN})
+        target_compile_definitions(${_TARG} ${_VIS}
+            $<$<COMPILE_LANGUAGE:CXX>:${_DEF}>)
+        if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST LANGUAGES)
+            target_compile_definitions(${_TARG} ${_VIS}
+                $<$<COMPILE_LANGUAGE:CUDA>:${_DEF}>)
+        endif()
+    endforeach()
+endfunction()
 
 #----------------------------------------------------------------------------------------#
 # determine compiler types for each language

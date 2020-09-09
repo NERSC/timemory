@@ -131,6 +131,13 @@ public:
         if(!m_master)
             return;
 
+        if(depth() == m_master->depth())
+            return;
+
+        DEBUG_PRINT_HERE("[%s]> Adding dummy for depth = %i, master depth = %i",
+                         demangle<NodeT>().c_str(), (int) depth(),
+                         (int) m_master->depth());
+
         auto _current = m_master->current();
         auto _id      = _current->id();
         auto _depth   = _current->depth();
@@ -238,4 +245,7 @@ private:
     graph_data*                      m_master  = nullptr;
     std::multimap<int64_t, iterator> m_dummies = {};
 };
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim

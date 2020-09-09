@@ -31,40 +31,25 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/macros.hpp"
-//
+#include "timemory/components/opaque.hpp"
+#include "timemory/components/types.hpp"
 #include "timemory/components/user_bundle/components.hpp"
 #include "timemory/components/user_bundle/types.hpp"
-//
 #include "timemory/environment/extern.hpp"
 #include "timemory/hash/extern.hpp"
 #include "timemory/manager/extern.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/plotting/extern.hpp"
-#include "timemory/settings/extern.hpp"
-//
-#if defined(TIMEMORY_USER_BUNDLE_SOURCE) ||                                              \
-    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN))
-// source/header-only requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/definition.hpp"
-#else
-// extern requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
-#endif
-//
-#include "timemory/components/extern.hpp"
-//
 #include "timemory/runtime/enumerate.hpp"
-//
-//======================================================================================//
-//
-#if defined(TIMEMORY_SOURCE) || defined(TIMEMORY_USER_BUNDLE_SOURCE)
+#include "timemory/settings/extern.hpp"
+#include "timemory/storage/declaration.hpp"
+
+#if defined(TIMEMORY_USER_BUNDLE_SOURCE)
+#    include "timemory/components/extern.hpp"
+#    include "timemory/storage/definition.hpp"
+#endif
+
+#if defined(TIMEMORY_USER_BUNDLE_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -83,13 +68,12 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...)                                \
-            template TIMEMORY_USER_BUNDLE_DLL __VA_ARGS__;
+#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...) template __VA_ARGS__;
 #    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#elif defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -108,8 +92,7 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...)                                \
-            extern template TIMEMORY_USER_BUNDLE_DLL __VA_ARGS__;
+#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...) extern template __VA_ARGS__;
 #    endif
 //
 //--------------------------------------------------------------------------------------//

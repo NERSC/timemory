@@ -482,14 +482,13 @@ macro(BUILD_LIBRARY)
         PUBLIC ${LIBRARY_INCLUDE_DIRECTORIES})
 
     # compile definitions
-    target_compile_definitions(${LIBRARY_TARGET_NAME}
+    timemory_target_compile_definitions(${LIBRARY_TARGET_NAME}
         PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})
 
     # compile flags
-    target_compile_options(${LIBRARY_TARGET_NAME}
-        PRIVATE
-            $<$<COMPILE_LANGUAGE:C>:${LIBRARY_C_COMPILE_OPTIONS}>
-            $<$<COMPILE_LANGUAGE:CXX>:${LIBRARY_CXX_COMPILE_OPTIONS}>)
+    target_compile_options(${LIBRARY_TARGET_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:${LIBRARY_C_COMPILE_OPTIONS}>
+        $<$<COMPILE_LANGUAGE:CXX>:${LIBRARY_CXX_COMPILE_OPTIONS}>)
 
     # cuda flags
     get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
@@ -602,6 +601,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
 
     # options
     set(_options    USE_INTERFACE
+                    USE_CATEGORY
                     INSTALL_SOURCE
                     FORCE_SHARED
                     FORCE_STATIC)
@@ -700,7 +700,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG)
         endif()
 
-        target_compile_definitions(${TARGET_NAME} PRIVATE
+        timemory_target_compile_definitions(${TARGET_NAME} PRIVATE
             TIMEMORY_SOURCE
             TIMEMORY_${COMP_CATEGORY}_SOURCE
             TIMEMORY_${UPP_COMP}_SOURCE)
@@ -710,15 +710,12 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             set(_USE_VIS INTERFACE)
         endif()
 
-        target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
-            TIMEMORY_USE_${COMP_CATEGORY}_EXTERN
+        timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
             TIMEMORY_USE_${UPP_COMP}_EXTERN)
 
-        if(WIN32 AND "${LINK}" STREQUAL "shared")
-            target_compile_definitions(${TARGET_NAME}
-                PRIVATE TIMEMORY_DLL_EXPORT 
-                # INTERFACE TIMEMORY_DLL_IMPORT
-            )
+        if("${COMP_CATEGORY}" STREQUAL "COMPONENT" OR COMP_USE_CATEGORY)
+            timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
+                TIMEMORY_USE_${COMP_CATEGORY}_EXTERN)
         endif()
 
         string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)

@@ -87,6 +87,10 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     using stop_t =
         operation::generic_operator<this_type, operation::stop<this_type>, Tag>;
 
+    friend struct operation::record<this_type>;
+    friend struct operation::start<this_type>;
+    friend struct operation::stop<this_type>;
+
     static std::string& label()
     {
         static std::string _instance = []() {

@@ -32,7 +32,6 @@
 
 #include "timemory/backends/device.hpp"
 #include "timemory/components/cuda/backends.hpp"
-#include "timemory/components/timing/components.hpp"
 #include "timemory/defines.h"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/counter.hpp"

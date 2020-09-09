@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
@@ -43,6 +44,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <vector>
 
@@ -81,13 +83,79 @@ namespace tim
 /// }
 /// \endcode
 ///
-struct TIMEMORY_OPERATIONS_DLL storage_initializer
+struct storage_initializer
 {
     TIMEMORY_DEFAULT_OBJECT(storage_initializer)
 
     template <typename T>
     static storage_initializer get() TIMEMORY_VISIBILITY("default");
+
+    template <typename T>
+    static storage_initializer get(std::true_type) TIMEMORY_VISIBILITY("default");
+
+    template <typename T>
+    static storage_initializer get(std::false_type) TIMEMORY_VISIBILITY("default");
+
+    template <size_t Idx, enable_if_t<Idx != TIMEMORY_COMPONENTS_END> = 0>
+    static storage_initializer get() TIMEMORY_VISIBILITY("default");
+
+    template <size_t Idx, enable_if_t<Idx == TIMEMORY_COMPONENTS_END> = 0>
+    static auto get() TIMEMORY_VISIBILITY("default");
+
+    template <typename... Tp, enable_if_t<sizeof...(Tp) != 1> = 0>
+    static auto get() TIMEMORY_VISIBILITY("default");
+
+    template <size_t... Idx, enable_if_t<sizeof...(Idx) != 1> = 0>
+    static auto get() TIMEMORY_VISIBILITY("default");
+
+    template <size_t... Idx>
+    static auto get(std::index_sequence<Idx...>) TIMEMORY_VISIBILITY("default");
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+storage_initializer
+storage_initializer::get()
+{
+    return get<T>(trait::is_available_t<T>{});
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Idx, enable_if_t<Idx == TIMEMORY_COMPONENTS_END>>
+auto
+storage_initializer::get()
+{
+    return get(std::make_index_sequence<Idx>{});
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Tp, enable_if_t<sizeof...(Tp) != 1>>
+auto
+storage_initializer::get()
+{
+    return TIMEMORY_RETURN_FOLD_EXPRESSION(storage_initializer::get<Tp>());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t... Idx, enable_if_t<sizeof...(Idx) != 1>>
+auto
+storage_initializer::get()
+{
+    return TIMEMORY_RETURN_FOLD_EXPRESSION(storage_initializer::get<Idx>());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t... Idx>
+auto
+storage_initializer::get(std::index_sequence<Idx...>)
+{
+    return TIMEMORY_RETURN_FOLD_EXPRESSION(storage_initializer::get<Idx>());
+}
 //
 //--------------------------------------------------------------------------------------//
 //

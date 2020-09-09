@@ -100,6 +100,7 @@
 #    pragma warning(disable : 4700)   // uninitialized local variable used
 #    pragma warning(disable : 4786)   // ID truncated to '255' char in debug info
 #    pragma warning(disable : 4996)   // function may be unsafe
+#    pragma warning(disable : 5030)   // attribute is not recognized
 #    pragma warning(disable : 26495)  // Always initialize member variable (cereal issue)
 
 #endif

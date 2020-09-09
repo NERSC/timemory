@@ -74,8 +74,8 @@ struct serialization
         try_catch("last", obj.get_last());
         try_catch("repr_data", obj.get());
         try_catch("repr_display", obj.get_display());
-        try_catch("units", type::get_unit());
-        try_catch("display_units", type::get_display_unit());
+        // try_catch("units", type::get_unit());
+        // try_catch("display_units", type::get_display_unit());
     }
 
     template <typename Archive, typename Up = Tp,

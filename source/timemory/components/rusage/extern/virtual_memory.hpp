@@ -24,10 +24,8 @@
 
 #pragma once
 
+#include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/components/rusage/components.hpp"
-#include "timemory/components/rusage/extern/base.hpp"
-#include "timemory/components/rusage/extern/operations.hpp"
-#include "timemory/components/rusage/extern/storage.hpp"
 
 TIMEMORY_EXTERN_COMPONENT(virtual_memory, true, int64_t)

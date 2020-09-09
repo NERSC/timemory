@@ -419,7 +419,8 @@ struct profiler
     using kernel_pair_t    = std::pair<std::string, results_t>;
     using kernel_results_t = std::vector<kernel_pair_t>;
 
-    profiler(const strvec_t& events, const strvec_t& metrics, const int device_num = 0)
+    profiler(const strvec_t& events, const strvec_t& metrics, const int device_num = 0,
+             bool init_cb = true)
     : m_device_num(device_num)
     , m_event_names(events)
     , m_metric_names(metrics)
@@ -427,7 +428,8 @@ struct profiler
         int device_count = 0;
 
         // sync before starting
-        cuda::device_sync();
+        if(init_cb)
+            cuda::device_sync();
 
         TIMEMORY_CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_KERNEL));
         TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGetCount(&device_count));
@@ -527,7 +529,7 @@ struct profiler
         m_kernel_data[impl::dummy_kernel_id] = dummy_data;
         cuptiEnableKernelReplayMode(m_context);
         static std::atomic<int> _once(0);
-        if(_once++ == 0)
+        if(_once++ == 0 && init_cb)
         {
             // store the initial data so that warmup does not show up
             kernel_map_t _initial = m_kernel_data;

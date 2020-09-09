@@ -114,7 +114,7 @@ protected:
             tim::settings::debug()       = false;
             tim::settings::json_output() = true;
             tim::settings::mpi_thread()  = false;
-            tim::mpi::initialize(_argc, _argv);
+            tim::dmp::initialize(_argc, _argv);
             tim::timemory_init(_argc, _argv);
             tim::settings::dart_output() = true;
             tim::settings::dart_count()  = 1;

@@ -22,48 +22,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/plotting/macros.hpp
- * \brief Include the macros for plotting
- */
-
 #pragma once
 
-#include "timemory/dll.hpp"
-
-//======================================================================================//
+#if defined(TIMEMORY_CORE_SOURCE)
+#    define TIMEMORY_PLOTTING_SOURCE
+#elif defined(TIMEMORY_USE_CORE_EXTERN)
+#    define TIMEMORY_USE_PLOTTING_EXTERN
+#endif
 //
-// Define macros for plotting
-//
-//======================================================================================//
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_PLOTTING_EXTERN)
+#    define TIMEMORY_USE_PLOTTING_EXTERN
+#endif
 //
 #if defined(TIMEMORY_PLOTTING_SOURCE)
-//
 #    define TIMEMORY_PLOTTING_LINKAGE(...) __VA_ARGS__
-//
+#elif !defined(TIMEMORY_USE_PLOTTING_EXTERN)
+#    define TIMEMORY_PLOTTING_LINKAGE(...) inline __VA_ARGS__
 #else
-//
-#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_PLOTTING_EXTERN)
-//
-#        define TIMEMORY_PLOTTING_LINKAGE(...) inline __VA_ARGS__
-//
-#    else
-//
-#        define TIMEMORY_PLOTTING_LINKAGE(...) extern __VA_ARGS__
-//
-#    endif
-//
+#    define TIMEMORY_PLOTTING_LINKAGE(...) extern __VA_ARGS__
 #endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_PLOTTING_SOURCE)
-#    define TIMEMORY_PLOTTING_DLL tim_dll_export
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_PLOTTING_EXTERN)
-#    define TIMEMORY_PLOTTING_DLL tim_dll_import
-#else
-#    define TIMEMORY_PLOTTING_DLL
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//

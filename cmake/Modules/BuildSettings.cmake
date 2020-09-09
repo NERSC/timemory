@@ -55,7 +55,10 @@ endif()
 #
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
     add_flag_if_avail("-finline-functions" "-funroll-loops"
-        "-ftree-vectorize" "-ftree-loop-optimize" "-ftree-loop-vectorize")
+        "-ftree-vectorize" "-ftree-loop-optimize" "-ftree-loop-vectorize"
+        "-fno-signaling-nans" "-fno-trapping-math"
+        "-fno-signed-zeros" "-ffinite-math-only" "-fno-math-errno"
+        "-fpredictive-commoning" "-fvariable-expansion-in-unroller")
     # add_flag_if_avail("-freciprocal-math" "-fno-signed-zeros" "-mfast-fp")
 endif()
 
@@ -154,7 +157,8 @@ foreach(_TYPE default protected hidden)
     if(NOT cxx_timemory_${_TYPE}_visibility_fvisibility_${_TYPE})
         add_disabled_interface(timemory-${_TYPE}-visibility)
     else()
-        target_compile_definitions(timemory-${_TYPE}-visibility INTERFACE TIMEMORY_USE_VISIBILITY)
+        timemory_target_compile_definitions(timemory-${_TYPE}-visibility INTERFACE
+            TIMEMORY_USE_VISIBILITY)
     endif()
 endforeach()
 

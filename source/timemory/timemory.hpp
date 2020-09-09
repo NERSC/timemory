@@ -175,6 +175,8 @@ struct dummy
 //
 #    include "timemory/version.h"
 //
+#    include "timemory/components/types.hpp"
+//
 #    include "timemory/extern.hpp"
 //
 #    include "timemory/api.hpp"

@@ -120,8 +120,7 @@ read_fork(TIMEMORY_PIPE* ldd)
 }  // namespace popen
 }  // namespace tim
 
-#    if !defined(TIMEMORY_UTILITY_SOURCE) &&                                             \
-        !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_UTILITY_EXTERN))
+#    if !defined(TIMEMORY_UTILITY_SOURCE) && !defined(TIMEMORY_USE_UTILITY_EXTERN)
 #        include "timemory/utility/popen.cpp"
 #    endif
 

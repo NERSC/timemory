@@ -108,7 +108,7 @@ protected:
             tim::settings::json_output() = true;
             tim::settings::mpi_thread()  = false;
             tim::settings::scientific()  = true;
-            tim::mpi::initialize(_argc, _argv);
+            tim::dmp::initialize(_argc, _argv);
             tim::timemory_init(_argc, _argv);
             tim::settings::dart_output() = true;
             tim::settings::dart_count()  = 1;
@@ -244,14 +244,14 @@ TEST_F(component_bundle_tests, get)
     auto lhs = lhs_t(TIMEMORY_JOIN("/", details::get_test_name(), "lhs"));
     auto rhs = rhs_t(TIMEMORY_JOIN("/", details::get_test_name(), "rhs"));
 
-    tim::invoke::start(std::forward_as_tuple(lhs, rhs));
-    tim::invoke::mark_begin(std::forward_as_tuple(lhs, rhs));
+    tim::invoke::disjoint::start(std::forward_as_tuple(lhs, rhs));
+    tim::invoke::disjoint::mark_begin(std::forward_as_tuple(lhs, rhs));
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
     details::consume(1000);
 
-    tim::invoke::mark_end(std::forward_as_tuple(lhs, rhs));
-    tim::invoke::stop(std::forward_as_tuple(lhs, rhs));
+    tim::invoke::disjoint::mark_end(std::forward_as_tuple(lhs, rhs));
+    tim::invoke::disjoint::stop(std::forward_as_tuple(lhs, rhs));
 
     auto cb = lhs.get();
     auto ab = rhs.get();

@@ -49,9 +49,7 @@ namespace plotting
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_PLOTTING_EXTERN)) ||          \
-    defined(TIMEMORY_PLOTTING_SOURCE)
-
+#if defined(TIMEMORY_PLOTTING_SOURCE) || !defined(TIMEMORY_USE_PLOTTING_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //

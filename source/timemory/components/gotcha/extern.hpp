@@ -29,53 +29,8 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_GOTCHA)
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/gotcha/components.hpp"
+#include "timemory/components/macros.hpp"
 
-//======================================================================================//
-//
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/macros.hpp"
-//
-#    include "timemory/components/gotcha/components.hpp"
-#    include "timemory/components/gotcha/types.hpp"
-//
-#    if defined(TIMEMORY_COMPONENT_SOURCE) ||                                            \
-        (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
-// source/header-only requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/definition.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/definition.hpp"
-#    else
-// extern requirements
-#        include "timemory/environment/declaration.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/declaration.hpp"
-#        include "timemory/settings/declaration.hpp"
-#        include "timemory/storage/declaration.hpp"
-#    endif
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<malloc_gotcha, double>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::malloc_gotcha, true)
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_STORAGE(component::malloc_gotcha, malloc_gotcha)
-//
-//======================================================================================//
-
-#endif  // TIMEMORY_USE_GOTCHA
+TIMEMORY_EXTERN_COMPONENT(malloc_gotcha, true, double)

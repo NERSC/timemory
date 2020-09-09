@@ -29,10 +29,7 @@
 
 #pragma once
 
-#include "timemory/components/base.hpp"
-#include "timemory/components/caliper/backends.hpp"
 #include "timemory/components/caliper/components.hpp"
-#include "timemory/components/caliper/types.hpp"
 #include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"
 

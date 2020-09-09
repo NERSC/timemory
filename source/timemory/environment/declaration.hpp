@@ -51,7 +51,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-class TIMEMORY_ENVIRONMENT_DLL env_settings
+class env_settings
 {
 public:
     using mutex_t        = std::recursive_mutex;

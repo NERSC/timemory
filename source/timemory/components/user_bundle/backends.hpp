@@ -30,4 +30,4 @@
 
 #pragma once
 
-#include "timemory/components/opaque.hpp"
+#include "timemory/components/opaque/declaration.hpp"

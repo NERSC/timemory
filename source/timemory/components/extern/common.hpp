@@ -30,19 +30,16 @@
 
 #pragma once
 
-#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
-    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
+#include "timemory/components/macros.hpp"
+#include "timemory/components/opaque/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/operations/definition.hpp"
+#include "timemory/plotting/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
+
+#if defined(TIMEMORY_COMPONENT_SOURCE) || !defined(TIMEMORY_USE_COMPONENT_EXTERN)
 // source/header-only requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/settings/declaration.hpp"
+#    include "timemory/components/opaque/definition.hpp"
 #    include "timemory/storage/definition.hpp"
-#else
-// extern requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
 #endif

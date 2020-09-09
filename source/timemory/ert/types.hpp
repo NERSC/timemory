@@ -30,6 +30,24 @@
 
 #pragma once
 
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_ERT_EXTERN)
+#    define TIMEMORY_USE_ERT_EXTERN
+#endif
+
+#if defined(TIMEMORY_ERT_SOURCE)
+#    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
+#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...) template __VA_ARGS__;
+#    endif
+#elif defined(TIMEMORY_USE_ERT_EXTERN)
+#    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
+#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
+#    endif
+#else
+#    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
+#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...)
+#    endif
+#endif
+
 // clang-format off
 namespace tim { namespace component { struct wall_clock; } }
 // clang-format on

@@ -53,7 +53,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN)
+#if defined(TIMEMORY_SETTINGS_SOURCE) || !defined(TIMEMORY_USE_SETTINGS_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -245,7 +245,7 @@ settings::parse()
 //
 //----------------------------------------------------------------------------------//
 //
-#endif  // !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_SETTINGS_SOURCE)
+#endif  // !defined(TIMEMORY_USE_SETTINGS_EXTERN) || defined(TIMEMORY_SETTINGS_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //

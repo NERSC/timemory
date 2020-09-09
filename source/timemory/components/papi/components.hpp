@@ -676,6 +676,8 @@ struct papi_array
     using array_t = std::array<Tp, MaxNumEvents>;
 
     friend struct operation::record<this_type>;
+    friend struct operation::start<this_type>;
+    friend struct operation::stop<this_type>;
 
     //----------------------------------------------------------------------------------//
 
@@ -993,7 +995,9 @@ struct papi_tuple
     template <typename Tp>
     using array_t = std::array<Tp, num_events>;
 
-    friend struct operation::record<common_type>;
+    friend struct operation::record<this_type>;
+    friend struct operation::start<this_type>;
+    friend struct operation::stop<this_type>;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -1150,9 +1154,9 @@ public:
         }
         ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
            cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
-           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp),
-           cereal::make_nvp("units", unit_array()),
-           cereal::make_nvp("display_units", display_unit_array()));
+           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp));
+        // ar(cereal::make_nvp("units", unit_array()),
+        //   cereal::make_nvp("display_units", display_unit_array()));
     }
 
     entry_type get_display(int evt_type) const

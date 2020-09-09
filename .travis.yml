@@ -181,7 +181,7 @@ matrix:
             - mpich
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_TYPE=Release && BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17'"
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_TYPE=Release && BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17 --extra-optimizations'"
     # Clang 5.0
     - os: linux
       dist: xenial

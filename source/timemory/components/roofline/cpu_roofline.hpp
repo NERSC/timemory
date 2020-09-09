@@ -32,6 +32,7 @@
 #include "timemory/components/papi/components.hpp"
 #include "timemory/components/roofline/backends.hpp"
 #include "timemory/components/roofline/types.hpp"
+#include "timemory/components/timing/wall_clock.hpp"
 
 #include "timemory/ert/configuration.hpp"
 
@@ -587,8 +588,8 @@ public:
 
         ar(cereal::make_nvp("value", value));
         ar(cereal::make_nvp("accum", accum));
-        ar(cereal::make_nvp("units", unit_array()));
-        ar(cereal::make_nvp("display_units", display_unit_array()));
+        // ar(cereal::make_nvp("units", unit_array()));
+        // ar(cereal::make_nvp("display_units", display_unit_array()));
     }
 
     //----------------------------------------------------------------------------------//

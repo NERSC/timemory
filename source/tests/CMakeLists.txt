@@ -123,6 +123,12 @@ add_timemory_google_test(cache_tests
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-analysis-tools)
 
+add_timemory_google_test(archive_storage_tests
+    SOURCES         archive_storage_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools
+                    timemory-mpi timemory-upcxx)
+
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp

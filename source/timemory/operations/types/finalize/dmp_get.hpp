@@ -32,6 +32,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/finalize/get.hpp"
 
 namespace tim
 {
@@ -45,16 +46,30 @@ namespace finalize
 template <typename Type>
 struct dmp_get<Type, true>
 {
-    static constexpr bool has_data = true;
-    using storage_type             = impl::storage<Type, has_data>;
-    using result_type              = typename storage_type::result_array_t;
-    using distrib_type             = typename storage_type::dmp_result_t;
-    using result_node              = typename storage_type::result_node;
-    using graph_type               = typename storage_type::graph_t;
-    using graph_node               = typename storage_type::graph_node;
-    using hierarchy_type           = typename storage_type::uintvector_t;
+    static constexpr bool value  = true;
+    using storage_type           = impl::storage<Type, value>;
+    using result_type            = typename storage_type::result_array_t;
+    using distrib_type           = typename storage_type::dmp_result_t;
+    using result_node            = typename storage_type::result_node;
+    using graph_type             = typename storage_type::graph_t;
+    using graph_node             = typename storage_type::graph_node;
+    using hierarchy_type         = typename storage_type::uintvector_t;
+    using get_type               = get<Type, value>;
+    using basic_tree_type        = typename get_type::basic_tree_vector_type;
+    using basic_tree_vector_type = std::vector<basic_tree_type>;
 
-    dmp_get(storage_type&, distrib_type&);
+    explicit dmp_get(storage_type& _storage)
+    : m_storage(&_storage)
+    {}
+
+    distrib_type&           operator()(distrib_type&);
+    basic_tree_vector_type& operator()(basic_tree_vector_type&);
+
+    template <typename Archive>
+    Archive& operator()(Archive&);
+
+private:
+    storage_type* m_storage = nullptr;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -62,29 +77,88 @@ struct dmp_get<Type, true>
 template <typename Type>
 struct dmp_get<Type, false>
 {
-    static constexpr bool has_data = false;
-    using storage_type             = impl::storage<Type, has_data>;
+    static constexpr bool value = false;
+    using storage_type          = impl::storage<Type, value>;
+
     dmp_get(storage_type&) {}
+
+    template <typename Tp>
+    Tp& operator()(Tp&)
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-dmp_get<Type, true>::dmp_get(storage_type& data, distrib_type& results)
+typename dmp_get<Type, true>::distrib_type&
+dmp_get<Type, true>::operator()(distrib_type& results)
 {
-    auto fallback_get = [&]() { return distrib_type(1, data.get()); };
+    if(!m_storage)
+        return results;
 
+    auto& data = *m_storage;
+    auto  _sz  = results.size();
 #if defined(TIMEMORY_USE_UPCXX) && defined(TIMEMORY_USE_MPI)
-    results = (mpi::is_initialized())
-                  ? data.mpi_get()
-                  : ((upc::is_initialized()) ? data.upc_get() : fallback_get());
+    results.clear();
+    auto _mpi = (mpi::is_initialized()) ? data.mpi_get() : distrib_type{};
+    auto _upc = (upc::is_initialized()) ? data.upc_get() : distrib_type{};
+    for(auto&& itr : _mpi)
+        results.emplace_back(std::move(itr));
+    for(auto&& itr : _upc)
+        results.emplace_back(std::move(itr));
 #elif defined(TIMEMORY_USE_UPCXX)
-    results = (upc::is_initialized()) ? data.upc_get() : fallback_get();
+    if(upc::is_initialized())
+    {
+        for(auto&& itr : data.upc_get())
+            results.emplace_back(std::move(itr));
+    }
 #elif defined(TIMEMORY_USE_MPI)
-    results = (mpi::is_initialized()) ? data.mpi_get() : fallback_get();
-#else
-    results = fallback_get();
+    if(mpi::is_initialized())
+    {
+        for(auto&& itr : data.mpi_get())
+            results.emplace_back(std::move(itr));
+    }
 #endif
+    // if none of the above added any data, add the serial results
+    if(_sz == results.size())
+        results.emplace_back(std::move(data.get()));
+    return results;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Archive>
+Archive&
+dmp_get<Type, true>::operator()(Archive& ar)
+{
+    if(!m_storage)
+        return ar;
+
+    auto& data  = *m_storage;
+    bool  empty = true;
+
+#if defined(TIMEMORY_USE_UPCXX)
+    if(upc::is_initialized())
+    {
+        empty = false;
+        data.upc_get(ar);
+    }
+#endif
+
+#if defined(TIMEMORY_USE_MPI)
+    if(mpi::is_initialized())
+    {
+        empty = false;
+        data.mpi_get(ar);
+    }
+#endif
+
+    // if none of the above added any data, add the serial results
+    if(empty)
+        data.get(ar);
+
+    return ar;
 }
 //
 //--------------------------------------------------------------------------------------//

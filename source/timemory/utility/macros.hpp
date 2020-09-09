@@ -34,13 +34,21 @@
 
 #pragma once
 
-#include "timemory/dll.hpp"
-
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
 #include <string>
 #include <utility>
+
+#if defined(TIMEMORY_CORE_SOURCE)
+#    define TIMEMORY_UTILITY_SOURCE
+#elif defined(TIMEMORY_USE_CORE_EXTERN)
+#    define TIMEMORY_USE_UTILITY_EXTERN
+#endif
+//
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_UTILITY_EXTERN)
+#    define TIMEMORY_USE_UTILITY_EXTERN
+#endif
 
 //======================================================================================//
 //
@@ -358,16 +366,4 @@ _DBG(const char* msg)
 #    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
 #else
 #    define TIMEMORY_UTILITY_LINKAGE(...) inline __VA_ARGS__
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_UTILITY_DLL)
-#    if defined(TIMEMORY_UTILITY_SOURCE)
-#        define TIMEMORY_UTILITY_DLL tim_dll_export
-#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_UTILITY_EXTERN)
-#        define TIMEMORY_UTILITY_DLL tim_dll_import
-#    else
-#        define TIMEMORY_UTILITY_DLL
-#    endif
 #endif

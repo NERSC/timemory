@@ -29,55 +29,10 @@
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/components/base.hpp"
-#include "timemory/components/macros.hpp"
-//
 #include "timemory/components/cuda/components.hpp"
-#include "timemory/components/cuda/types.hpp"
-//
-#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
-    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
-// source/header-only requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/definition.hpp"
-#else
-// extern requirements
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
-#endif
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<cuda_event, float>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<cuda_profiler, void>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<nvtx_marker, void>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::cuda_event, true)
-TIMEMORY_EXTERN_OPERATIONS(component::cuda_profiler, false)
-TIMEMORY_EXTERN_OPERATIONS(component::nvtx_marker, false)
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_STORAGE(component::cuda_event, cuda_event)
-TIMEMORY_EXTERN_STORAGE(component::cuda_profiler, cuda_profiler)
-TIMEMORY_EXTERN_STORAGE(component::nvtx_marker, nvtx_marker)
-//
-//======================================================================================//
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(cuda_event, true, float)
+TIMEMORY_EXTERN_COMPONENT(cuda_profiler, false, void)
+TIMEMORY_EXTERN_COMPONENT(nvtx_marker, false, void)

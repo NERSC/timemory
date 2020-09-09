@@ -50,7 +50,7 @@ namespace regex_const = std::regex_constants;
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
+#if !defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -311,7 +311,7 @@ env_settings::instance()
 //
 //--------------------------------------------------------------------------------------//
 //
-#endif  // !defined(TIMEMORY_USE_EXTERN) && defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
+#endif  // !defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //

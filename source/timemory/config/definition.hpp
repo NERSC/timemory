@@ -32,9 +32,8 @@
 #include "timemory/config/declaration.hpp"
 #include "timemory/config/macros.hpp"
 #include "timemory/config/types.hpp"
-//
-#if defined(TIMEMORY_CONFIG_SOURCE) ||                                                   \
-    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_CONFIG_EXTERN))
+
+#if defined(TIMEMORY_CONFIG_SOURCE) || !defined(TIMEMORY_USE_CONFIG_EXTERN)
 //
 #    include "timemory/backends/process.hpp"
 #    include "timemory/manager/declaration.hpp"
@@ -42,10 +41,8 @@
 #    include "timemory/settings/declaration.hpp"
 #    include "timemory/utility/signals.hpp"
 #    include "timemory/utility/utility.hpp"
-//
+
 #    include <string>
-//
-#endif
 
 namespace tim
 {
@@ -53,11 +50,6 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 //                              config
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_CONFIG_SOURCE) ||                                                   \
-    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_CONFIG_EXTERN))
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -194,10 +186,8 @@ timemory_finalize()
         PRINT_HERE("%s", "done");
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-#endif  // SOURCE or (NOT USE_EXTERN AND NOT USE_CONFIG_EXTERN)
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace tim
+//
+//--------------------------------------------------------------------------------------//
+//
+#endif  // defined(TIMEMORY_CONFIG_SOURCE) || !defined(TIMEMORY_USE_CONFIG_EXTERN)

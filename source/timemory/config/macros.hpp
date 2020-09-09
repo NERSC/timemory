@@ -37,30 +37,16 @@
 //
 //======================================================================================//
 //
-#if !defined(TIMEMORY_CONFIG_DLL)
-#    if defined(TIMEMORY_CONFIG_SOURCE)
-#        define TIMEMORY_CONFIG_DLL tim_dll_export
-#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_CONFIG_EXTERN)
-#        define TIMEMORY_CONFIG_DLL tim_dll_import
-#    else
-#        define TIMEMORY_CONFIG_DLL
-#    endif
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_CONFIG_EXTERN)
+#    define TIMEMORY_USE_CONFIG_EXTERN
 #endif
 //
-//======================================================================================//
-//
 #if defined(TIMEMORY_CONFIG_SOURCE)
-//
 #    define TIMEMORY_CONFIG_LINKAGE(...) __VA_ARGS__
-//
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_CONFIG_EXTERN)
-//
+#elif defined(TIMEMORY_USE_CONFIG_EXTERN)
 #    define TIMEMORY_CONFIG_LINKAGE(...) extern __VA_ARGS__
-//
 #else
-//
 #    define TIMEMORY_CONFIG_LINKAGE(...) inline __VA_ARGS__
-//
 #endif
 //
 //--------------------------------------------------------------------------------------//

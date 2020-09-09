@@ -105,8 +105,6 @@ timemory_get_property_depends(TIMEMORY_SHARED_COMPONENT_LIBRARIES SHARED COMPONE
 timemory_get_property_depends(TIMEMORY_STATIC_COMPONENT_LIBRARIES STATIC COMPONENT)
 timemory_get_property_depends(TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES SHARED USER_BUNDLE)
 timemory_get_property_depends(TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES STATIC USER_BUNDLE)
-timemory_get_property_depends(TIMEMORY_SHARED_FACTORY_LIBRARIES SHARED FACTORY)
-timemory_get_property_depends(TIMEMORY_STATIC_FACTORY_LIBRARIES STATIC FACTORY)
 
 if(CMAKE_CUDA_COMPILER)
     set_source_files_properties(${cxx_sources} PROPERTIES
@@ -129,16 +127,16 @@ if(_BUILD_SHARED_CXX)
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
-    target_link_libraries(timemory-cxx-shared PUBLIC
-        timemory-external-shared
-        timemory-vector
-        timemory-extern
+    target_link_libraries(timemory-cxx-shared
+        PUBLIC
         timemory-headers
+        timemory-extern
+        timemory-vector
+        timemory-external-shared
         ${TIMEMORY_SHARED_GLOBAL_LIBRARIES}
         ${TIMEMORY_SHARED_EXTERN_LIBRARIES}
         ${TIMEMORY_SHARED_COMPONENT_LIBRARIES}
-        ${TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES}
-        ${TIMEMORY_SHARED_FACTORY_LIBRARIES})
+        ${TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES})
 
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
@@ -146,8 +144,6 @@ if(_BUILD_SHARED_CXX)
         # timemory-hidden-visibility
         ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
-
-    target_compile_definitions(timemory-cxx-shared PUBLIC ${_USE_EXTERN})
 
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
@@ -160,6 +156,13 @@ if(_BUILD_SHARED_CXX)
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         target_compile_definitions(timemory-cxx-shared PRIVATE DEBUG)
     endif()
+
+    if(WIN32)
+        target_compile_definitions(timemory-cxx-shared
+            PRIVATE     TIMEMORY_DLL_EXPORT 
+            INTERFACE   TIMEMORY_DLL_IMPORT)
+    endif()
+
 endif()
 
 if(_BUILD_STATIC_CXX)
@@ -177,16 +180,16 @@ if(_BUILD_STATIC_CXX)
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
-    target_link_libraries(timemory-cxx-static PUBLIC
-        timemory-external-static
-        timemory-vector
-        timemory-extern
+    target_link_libraries(timemory-cxx-static
+        PUBLIC
         timemory-headers
+        timemory-extern
+        timemory-vector
+        timemory-external-static
         ${TIMEMORY_STATIC_GLOBAL_LIBRARIES}
         ${TIMEMORY_STATIC_EXTERN_LIBRARIES}
         ${TIMEMORY_STATIC_COMPONENT_LIBRARIES}
-        ${TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES}
-        ${TIMEMORY_STATIC_FACTORY_LIBRARIES})
+        ${TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES})
 
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options
@@ -208,16 +211,10 @@ if(_BUILD_STATIC_CXX)
     endif()
 endif()
 
-if(WIN32)
-    if(_BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
-        # make sure on Windows, static is built first. There is something weird
-        # happening here when built in parallel...
-        add_dependencies(timemory-cxx-shared timemory-cxx-static)
-    endif()
-    if(_BUILD_SHARED_CXX)
-        target_compile_definitions(timemory-cxx-shared
-            PRIVATE TIMEMORY_DLL_EXPORT INTERFACE TIMEMORY_DLL_IMPORT)
-    endif()
+if(WIN32 AND _BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
+    # make sure on Windows, static is built first. There is something weird
+    # happening here when built in parallel...
+    add_dependencies(timemory-cxx-shared timemory-cxx-static)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -254,7 +251,8 @@ if(TIMEMORY_BUILD_C)
 
         if(WIN32)
             target_compile_definitions(timemory-c-shared
-                PRIVATE TIMEMORY_CDLL_EXPORT INTERFACE TIMEMORY_CDLL_IMPORT)
+                PRIVATE     TIMEMORY_CDLL_EXPORT 
+                INTERFACE   TIMEMORY_CDLL_IMPORT)
         endif()
     endif()
 
@@ -312,7 +310,8 @@ if(TARGET timemory-ompt-shared)
 endif()
 
 if(TARGET timemory-mpip-shared)
-    target_compile_definitions(timemory-mpip-library INTERFACE TIMEMORY_USE_MPIP_LIBRARY)
+    timemory_target_compile_definitions(timemory-mpip-library INTERFACE
+        TIMEMORY_USE_MPIP_LIBRARY)
     target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mpip-shared)
 else()
@@ -320,14 +319,16 @@ else()
 endif()
 
 if(_OMPT_LIB)
-    target_compile_definitions(timemory-ompt-library INTERFACE TIMEMORY_USE_OMPT_LIBRARY)
+    timemory_target_compile_definitions(timemory-ompt-library INTERFACE
+        TIMEMORY_USE_OMPT_LIBRARY)
     target_link_libraries(timemory-ompt-library INTERFACE timemory-ompt ${_OMPT_LIB})
 else()
     inform_empty_interface(timemory-ompt-library "OpenMP stand-alone instrumentation library")
 endif()
 
 if(TARGET timemory-ncclp-shared)
-    target_compile_definitions(timemory-ncclp-library INTERFACE TIMEMORY_USE_NCCLP_LIBRARY)
+    timemory_target_compile_definitions(timemory-ncclp-library INTERFACE
+        TIMEMORY_USE_NCCLP_LIBRARY)
     target_link_libraries(timemory-ncclp-library INTERFACE timemory-ncclp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ncclp-shared)
 else()
