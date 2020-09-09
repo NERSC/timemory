@@ -29,6 +29,6 @@
 
 #pragma once
 
+#include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
-#include "timemory/operations/declaration.hpp"

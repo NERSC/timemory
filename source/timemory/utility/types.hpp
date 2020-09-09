@@ -86,7 +86,7 @@
 #if !defined(TIMEMORY_FLATTEN) && !(defined(_WIN32) || defined(_WIN64))
 #    define TIMEMORY_FLATTEN [[gnu::flatten]]
 #else
-#    define TIMEMORY_FLATTEN 
+#    define TIMEMORY_FLATTEN
 #endif
 
 //======================================================================================//

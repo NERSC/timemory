@@ -71,10 +71,9 @@ struct generic_operator
     //
     //----------------------------------------------------------------------------------//
 public:
-
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
-              enable_if_t<std::is_pointer<Up>::value, int>          = 0>
+              enable_if_t<std::is_pointer<Up>::value, int>     = 0>
     TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up obj, Args&&... args)
     {
         check<Up>();
@@ -84,7 +83,7 @@ public:
 
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
-              enable_if_t<std::is_pointer<Up>::value, int>          = 0>
+              enable_if_t<std::is_pointer<Up>::value, int>     = 0>
     TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up obj, Up rhs, Args&&... args)
     {
         check<Up>();
@@ -94,7 +93,6 @@ public:
 
     //----------------------------------------------------------------------------------//
 private:
-
     template <typename Up, typename... Args>
     TIMEMORY_ALWAYS_INLINE auto pointer_sfinae(Up obj, int, int, Args&&... args)
         -> decltype(Op(*obj, std::forward<Args>(args)...), void())
@@ -139,10 +137,9 @@ private:
     //
     //----------------------------------------------------------------------------------//
 public:
-
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
-              enable_if_t<!std::is_pointer<Up>::value, int>         = 0>
+              enable_if_t<!std::is_pointer<Up>::value, int>    = 0>
     TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up& obj, Args&&... args)
     {
         check<Up>();
@@ -151,7 +148,7 @@ public:
 
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
-              enable_if_t<!std::is_pointer<Up>::value, int>         = 0>
+              enable_if_t<!std::is_pointer<Up>::value, int>    = 0>
     TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
     {
         check<Up>();
@@ -160,7 +157,6 @@ public:
 
     //----------------------------------------------------------------------------------//
 private:
-
     template <typename Up, typename... Args>
     TIMEMORY_ALWAYS_INLINE auto sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(Op(obj, std::forward<Args>(args)...), void())
@@ -223,7 +219,6 @@ private:
     //
     //----------------------------------------------------------------------------------//
 public:
-
     // if the type is not available, never do anything
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<!trait::is_available<Rp>::value, int> = 0>
