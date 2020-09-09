@@ -168,6 +168,16 @@ upc_get<Type, true>::operator()(distrib_type& results)
         results[comm_rank] = data.get();
     }
 
+    //------------------------------------------------------------------------------//
+    //  Calculate the total number of measurement records
+    //
+    auto get_num_records = [&](const auto& _inp) {
+        int _sz = 0;
+        for(const auto& itr : _inp)
+            _sz += itr.size();
+        return _sz;
+    };
+
     upcxx::barrier(upcxx::world());
 
     if(comm_rank != 0)
@@ -353,7 +363,8 @@ upc_get<Type, true>::operator()(basic_tree_vector_type& bt)
     //  Function executed on remote node
     //
     auto remote_serialize = [=]() {
-        return send_serialize(storage_type::master_instance()->get());
+        basic_tree_type ret;
+        return send_serialize(storage_type::master_instance()->get(ret));
     };
 
     bt       = basic_tree_vector_type(comm_size);

@@ -62,7 +62,7 @@ template <typename... Args>
 inline auto
 rpc(Args&&... args)
 {
-    ::upcxx::rpc(std::forward<Args>(args)...);
+    return ::upcxx::rpc(std::forward<Args>(args)...);
 }
 //
 inline auto
