@@ -281,13 +281,15 @@ TEST_F(variadic_tests, get)
     auto cl2 = list_t2("cl2");
     auto cl3 = list_t3("cl3");
 
-    tim::invoke::start(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
-    tim::invoke::mark_begin(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    namespace disjoint = tim::invoke::disjoint;
+
+    disjoint::start(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    disjoint::mark_begin(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    tim::invoke::mark_end(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
-    tim::invoke::stop(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    disjoint::mark_end(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    disjoint::stop(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
 
     auto dt0 = ct0.get();
     auto dt1 = ct1.get();

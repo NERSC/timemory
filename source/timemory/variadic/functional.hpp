@@ -522,11 +522,11 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT auto
 get(TupleT<Tp...>& obj, Args&&... args)
 {
-    return get<TIMEMORY_API>(obj, std::forward<Args>(args)...);
+    return ::tim::invoke::get<TIMEMORY_API>(obj, std::forward<Args>(args)...);
 }
 //
-template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
-          typename... Tp, typename... Args>
+template <typename ApiT, template <typename...> class TupleT, typename... Tp,
+          typename... Args>
 TIMEMORY_HOT auto
 get_labeled(TupleT<Tp...>& obj, Args&&... args)
 {
@@ -560,6 +560,9 @@ get_cache()
 //          Forwarded bundles
 //
 //--------------------------------------------------------------------------------------//
+//
+namespace disjoint
+{
 //
 namespace invoke_impl
 {
@@ -856,6 +859,7 @@ add_secondary(TupleT<Tp...>&& obj, Args&&... args)
                                    std::make_index_sequence<sizeof...(Tp)>{},
                                    std::forward<Args>(args)...);
 }
+}  // namespace disjoint
 //
 //--------------------------------------------------------------------------------------//
 //
