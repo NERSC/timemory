@@ -2,6 +2,7 @@
 # IDE files
 /CMakeLists.txt.user*
 /.vscode
+/.vs
 /*.nja
 settings.json
 *.swp

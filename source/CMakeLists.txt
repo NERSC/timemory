@@ -156,6 +156,13 @@ if(_BUILD_SHARED_CXX)
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         target_compile_definitions(timemory-cxx-shared PRIVATE DEBUG)
     endif()
+
+    if(WIN32)
+        target_compile_definitions(timemory-cxx-shared
+            PRIVATE     TIMEMORY_DLL_EXPORT 
+            INTERFACE   TIMEMORY_DLL_IMPORT)
+    endif()
+
 endif()
 
 if(_BUILD_STATIC_CXX)
@@ -244,7 +251,8 @@ if(TIMEMORY_BUILD_C)
 
         if(WIN32)
             target_compile_definitions(timemory-c-shared
-                PRIVATE TIMEMORY_CDLL_EXPORT INTERFACE TIMEMORY_CDLL_IMPORT)
+                PRIVATE     TIMEMORY_CDLL_EXPORT 
+                INTERFACE   TIMEMORY_CDLL_IMPORT)
         endif()
     endif()
 

@@ -118,6 +118,8 @@ typedef enum
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/backends/hardware_counters.hpp"
+
 namespace tim
 {
 namespace cupti

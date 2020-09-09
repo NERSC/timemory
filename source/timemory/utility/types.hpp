@@ -75,26 +75,34 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_ALWAYS_INLINE)
+#if !defined(TIMEMORY_ALWAYS_INLINE) && !(defined(_WIN32) || defined(_WIN64))
 #    define TIMEMORY_ALWAYS_INLINE [[gnu::always_inline]]
+#else
+#    define TIMEMORY_ALWAYS_INLINE inline
 #endif
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_FLATTEN)
+#if !defined(TIMEMORY_FLATTEN) && !(defined(_WIN32) || defined(_WIN64))
 #    define TIMEMORY_FLATTEN [[gnu::flatten]]
+#else
+#    define TIMEMORY_FLATTEN 
 #endif
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_HOT)
+#if !defined(TIMEMORY_HOT) && !(defined(_WIN32) || defined(_WIN64))
 #    define TIMEMORY_HOT [[gnu::hot]]
+#else
+#    define TIMEMORY_HOT
 #endif
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_COLD)
+#if !defined(TIMEMORY_COLD) && !(defined(_WIN32) || defined(_WIN64))
 #    define TIMEMORY_COLD [[gnu::cold]]
+#else
+#    define TIMEMORY_COLD
 #endif
 
 //======================================================================================//

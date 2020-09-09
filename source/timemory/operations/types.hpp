@@ -139,15 +139,15 @@ resolve_record_type(int) -> decltype(
 //--------------------------------------------------------------------------------------//
 //
 template <typename U>
-auto
-resolve_record_type(long) -> void
+void
+resolve_record_type(long)
 {}
 }  // namespace internal
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename U>
-auto
+decltype(internal::resolve_record_type<U>(0))
 resolve_record_type()
 {
     return internal::resolve_record_type<U>(0);
@@ -630,8 +630,6 @@ struct print<Tp, true> : public base::print
     using hierarchy_type           = typename storage_type::uintvector_t;
     using callback_type            = std::function<void(this_type*)>;
     using stream_type              = std::shared_ptr<utility::stream>;
-    using get_type                 = dmp_get<Tp, has_data>;
-    using result_tree              = typename get_type::basic_tree_vector_type;
 
     static callback_type& get_default_callback()
     {
@@ -731,7 +729,6 @@ struct print<Tp, true> : public base::print
     void write_stream(stream_type& stream, result_type& results);
     void print_json(const std::string& fname, result_type& results, int64_t concurrency);
     auto get_data() const { return data; }
-    auto get_tree_results() const { return tree_results; }
     auto get_node_results() const { return node_results; }
     auto get_node_input() const { return node_input; }
     auto get_node_delta() const { return node_delta; }
@@ -756,7 +753,6 @@ protected:
     result_type   node_results = {};
     result_type   node_input   = {};
     result_type   node_delta   = {};
-    result_tree   tree_results = {};
 };
 //
 //--------------------------------------------------------------------------------------//

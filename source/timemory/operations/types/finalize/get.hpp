@@ -35,6 +35,7 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/storage/basic_tree.hpp"
+#include "timemory/storage/types.hpp"
 #include "timemory/utility/serializer.hpp"
 
 #include <string>
