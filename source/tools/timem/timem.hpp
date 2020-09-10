@@ -26,7 +26,6 @@
 
 #define TIMEM_DEBUG
 #define TIMEMORY_DISABLE_BANNER
-#define TIMEMORY_DISABLE_METADATA
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
 
 #include "timemory/macros.hpp"
@@ -38,8 +37,11 @@ TIMEMORY_FORWARD_DECLARE_COMPONENT(page_rss)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::page_rss, false_type)
 #endif
 
+#include "timemory/components/timing/child.hpp"
 #include "timemory/sampling/sampler.hpp"
 #include "timemory/timemory.hpp"
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::papi_array_t, true_type)
 
 // C includes
 #include <errno.h>
@@ -73,8 +75,9 @@ extern "C"
 #include <vector>
 
 template <typename Tp>
-using vector_t = std::vector<Tp>;
-using string_t = std::string;
+using vector_t       = std::vector<Tp>;
+using string_t       = std::string;
+using stringstream_t = std::stringstream;
 
 using namespace tim::component;
 
@@ -83,21 +86,6 @@ using namespace tim::component;
 //
 namespace tim
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              TRAIT SPECIALIZATION
-//
-//--------------------------------------------------------------------------------------//
-//
-namespace trait
-{
-//
-template <>
-struct custom_label_printing<papi_array_t> : true_type
-{};
-//
-}  // namespace trait
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -132,7 +120,7 @@ struct custom_print
         if(!tim::trait::runtime_enabled<Tp>::get())
             return;
 
-        std::stringstream ss;
+        stringstream_t ss;
         if(N == 0)
             ss << std::endl;
         ss << "    ";
@@ -195,12 +183,12 @@ struct custom_base_printer
     explicit custom_base_printer(std::ostream& _os, const type& _obj, int32_t _rank,
                                  const std::string& _label)
     {
-        std::stringstream ss, ssv, ssr, ssrank;
-        auto              _prec  = base_type::get_precision();
-        auto              _width = base_type::get_width();
-        auto              _flags = base_type::get_format_flags();
-        auto              _disp  = _obj.get_display_unit();
-        auto              _val   = _obj.get();
+        stringstream_t ss, ssv, ssr, ssrank;
+        auto           _prec  = base_type::get_precision();
+        auto           _width = base_type::get_width();
+        auto           _flags = base_type::get_format_flags();
+        auto           _disp  = _obj.get_display_unit();
+        auto           _val   = _obj.get();
 
         ssv.setf(_flags);
         ssv << std::setw(_width) << std::setprecision(_prec) << std::get<0>(_val);
@@ -323,7 +311,7 @@ papi_array_t::get_display() const
         auto     _width     = base_type::get_width();
         auto     _flags     = base_type::get_format_flags();
 
-        std::stringstream ss, ssv, ssi;
+        stringstream_t ss, ssv, ssi;
         ssv.setf(_flags);
         ssv << std::setw(_width) << std::setprecision(_prec) << _obj_value;
         if(!_disp.empty())
@@ -338,7 +326,7 @@ papi_array_t::get_display() const
         os << ss.str();
     };
 
-    std::stringstream ss;
+    stringstream_t ss;
     for(size_type i = 0; i < events.size(); ++i)
     {
         _get_display(ss, i);
@@ -424,6 +412,7 @@ public:
     void reset() { base_type::reset(); }
     auto get() { return base_type::get(); }
     auto get_labeled() { return base_type::get_labeled(); }
+    void set_output(std::ofstream* ofs) { m_ofs = ofs; }
 
     template <typename... Args>
     void sample(Args&&... args)
@@ -431,6 +420,8 @@ public:
         base_type::sample(std::forward<Args>(args)...);
         apply<void>::access<opsample_t<data_type>>(this->m_data,
                                                    std::forward<Args>(args)...);
+        if(m_ofs)
+            (*m_ofs) << get_local_datetime("[===== %r %F =====]\n") << *this << std::endl;
     }
 
     auto mpi_get()
@@ -445,17 +436,21 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const timem_tuple<Types...>& obj)
     {
-        std::stringstream ssp;
-        std::stringstream ssd;
-        auto&&            _data  = obj.m_data;
-        auto&&            _key   = obj.key();
-        auto&&            _width = obj.output_width();
+        stringstream_t ssp;
+        stringstream_t ssd;
+        auto&&         _data  = obj.m_data;
+        auto&&         _key   = obj.key();
+        auto&&         _width = obj.output_width();
 
         using print_t = custom_operation_t<operation::custom_print, data_type>;
         apply<void>::access_with_indices<print_t>(_data, std::ref(ssd));
 
         ssp << std::setw(_width) << std::left << _key;
         os << ssp.str() << ssd.str();
+
+        if(&os != obj.m_ofs && obj.m_ofs)
+            *(obj.m_ofs) << get_local_datetime("[===== %r %F =====]\n") << ssp.str()
+                         << ssd.str() << std::endl;
 
         return os;
     }
@@ -510,7 +505,8 @@ private:
 
 private:
     using base_type::m_data;
-    bool m_empty = false;
+    bool           m_empty = false;
+    std::ofstream* m_ofs   = nullptr;
 };
 //
 template <typename... Types>
@@ -522,11 +518,12 @@ using timem_tuple_t = convert_t<available_t<type_list<Types...>>, timem_tuple<>>
 //
 #if !defined(TIMEM_BUNDLE)
 #    define TIMEM_BUNDLE                                                                 \
-        tim::timem_tuple_t<                                                              \
-            wall_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,         \
-            page_rss, virtual_memory, num_major_page_faults, num_minor_page_faults,      \
-            priority_context_switch, voluntary_context_switch, read_char, read_bytes,    \
-            written_char, written_bytes, user_mode_time, kernel_mode_time, papi_array_t>
+        tim::timem_tuple_t<wall_clock, child_user_clock, child_system_clock,             \
+                           child_cpu_clock, child_cpu_util, peak_rss, page_rss,          \
+                           virtual_memory, num_major_page_faults, num_minor_page_faults, \
+                           priority_context_switch, voluntary_context_switch, read_char, \
+                           read_bytes, written_char, written_bytes, user_mode_time,      \
+                           kernel_mode_time, papi_array_t>
 #endif
 //
 #if !defined(TIMEM_PID_SIGNAL)
@@ -573,13 +570,14 @@ struct timem_config
     bool          signal_delivered = false;
     bool          debug            = tim::get_env("TIMEM_DEBUG", false);
     int           verbose          = tim::get_env("TIMEM_VERBOSE", 0);
-    std::string   shell            = tim::get_env<std::string>("SHELL", getusershell());
-    std::string   shell_flags  = tim::get_env<std::string>("TIMEM_USE_SHELL_FLAGS", "-i");
-    double        sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 2.0);
+    string_t      shell            = tim::get_env<string_t>("SHELL", getusershell());
+    string_t      shell_flags  = tim::get_env<string_t>("TIMEM_USE_SHELL_FLAGS", "-i");
+    string_t      output_file  = tim::get_env<string_t>("TIMEM_OUTPUT", "");
+    double        sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 1.0);
     double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 0.001);
     pid_t         master_pid   = getpid();
     pid_t         worker_pid   = getpid();
-    std::string   command      = "";
+    string_t      command      = "";
     std::set<int> signal_types = { SIGALRM };
 };
 //
@@ -605,6 +603,7 @@ TIMEM_CONFIG_FUNCTION(use_papi)
 TIMEM_CONFIG_FUNCTION(use_sample)
 TIMEM_CONFIG_FUNCTION(shell)
 TIMEM_CONFIG_FUNCTION(shell_flags)
+TIMEM_CONFIG_FUNCTION(output_file)
 TIMEM_CONFIG_FUNCTION(sample_freq)
 TIMEM_CONFIG_FUNCTION(sample_delay)
 TIMEM_CONFIG_FUNCTION(signal_delivered)

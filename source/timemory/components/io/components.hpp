@@ -168,6 +168,7 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
 
     void stop()
     {
+        using namespace tim::component::operators;
         auto diff         = (record() - value);
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += (value = diff);
@@ -377,6 +378,7 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
 
     void stop()
     {
+        using namespace tim::component::operators;
         auto diff         = (record() - value);
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += (value = diff);
@@ -583,6 +585,7 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
 
     void stop()
     {
+        using namespace tim::component::operators;
         auto diff         = (record() - value);
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += (value = diff);
@@ -790,6 +793,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 
     void stop()
     {
+        using namespace tim::component::operators;
         auto diff         = (record() - value);
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += (value = diff);

@@ -294,13 +294,13 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
 
     //----------------------------------------------------------------------------------//
 
-    static void global_init(storage_type*)
+    static void global_init()
     {
         // if(get_default_ready())
         //     configure();
     }
 
-    static void global_finalize(storage_type*)
+    static void global_finalize()
     {
         while(get_started() > 0)
             --get_started();
@@ -309,7 +309,7 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
         disable();
     }
 
-    static void thread_init(storage_type*)
+    static void thread_init()
     {
         auto& _data = get_data();
         for(size_t i = 0; i < Nt; ++i)
@@ -1096,12 +1096,12 @@ public:
         accum = 0.0;
     }
 
-    malloc_gotcha()                 = default;
-    ~malloc_gotcha()                = default;
-    malloc_gotcha(const this_type&) = default;
-    malloc_gotcha(this_type&&)      = default;
+    malloc_gotcha()                     = default;
+    ~malloc_gotcha()                    = default;
+    malloc_gotcha(const this_type&)     = default;
+    malloc_gotcha(this_type&&) noexcept = default;
     malloc_gotcha& operator=(const this_type&) = default;
-    malloc_gotcha& operator=(this_type&&) = default;
+    malloc_gotcha& operator=(this_type&&) noexcept = default;
 
 public:
     //----------------------------------------------------------------------------------//

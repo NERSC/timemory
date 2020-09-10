@@ -370,8 +370,10 @@ MACRO(ADD_INTERFACE_LIBRARY _TARGET)
     add_library(${PROJECT_NAME}::${_TARGET} ALIAS ${_TARGET})
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
     add_enabled_interface(${_TARGET})
-    set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_INTERFACE_DOC
-        "${PROJECT_NAME}::${_TARGET}` | ${ARGN} |")
+    if(NOT "${ARGN}" STREQUAL "")
+        set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_INTERFACE_DOC
+            "${PROJECT_NAME}::${_TARGET}` | ${ARGN} |")
+    endif()
 ENDMACRO()
 
 
@@ -538,11 +540,10 @@ function(TIMEMORY_GET_INTERNAL_DEPENDS VAR LINK)
     # link to itself
     set(DEPENDS)
     foreach(DEP ${ARGN})
-        if(TARGET ${DEP})
-            list(APPEND DEPENDS ${DEP})
-        endif()
         if(TARGET ${DEP}-${LINK})
             list(APPEND DEPENDS ${DEP}-${LINK})
+        elseif(TARGET ${DEP})
+            list(APPEND DEPENDS ${DEP})
         endif()
         if(TARGET ${DEP}-component-${LINK})
             list(APPEND DEPENDS ${DEP}-component-${LINK})
@@ -639,16 +640,20 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     
     string(TOUPPER "${COMP_NAME}" UPP_COMP)
     string(REPLACE "-" "_" UPP_COMP "${UPP_COMP}")
+    string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)
 
     set(_LIB_TYPES)
+    set(_LIB_DEFAULT_TYPE)
     if(_BUILD_SHARED_CXX OR COMP_FORCE_SHARED)
         list(APPEND _LIB_TYPES shared)
         set(shared_OPTIONS PIC TYPE SHARED)
+        set(_LIB_DEFAULT_TYPE shared)
     endif()
 
     if(_BUILD_STATIC_CXX OR COMP_FORCE_STATIC)
         list(APPEND _LIB_TYPES static)
         set(static_OPTIONS TYPE STATIC)
+        set(_LIB_DEFAULT_TYPE static)
     endif()
 
     set(_SOURCES ${COMP_SOURCES} ${COMP_HEADERS})
@@ -717,8 +722,11 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
                 TIMEMORY_USE_${COMP_CATEGORY}_EXTERN)
         endif()
-
-        string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)
+        
+        if(NOT TARGET timemory-${LC_CATEGORY}-${LINK})
+            add_interface_library(timemory-${LC_CATEGORY}-${LINK})
+        endif()
+        target_link_libraries(timemory-${LC_CATEGORY}-${LINK} INTERFACE ${TARGET_NAME})
 
         install(TARGETS ${TARGET_NAME}
             DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
@@ -733,7 +741,19 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     if(COMP_INSTALL_SOURCE)
         install_header_files(${COMP_SOURCES})
     endif()
-    
+
+    if(NOT TARGET timemory-${COMP_TARGET})
+        add_interface_library(timemory-${COMP_TARGET})
+        target_link_libraries(timemory-${COMP_TARGET} INTERFACE
+            timemory-${COMP_TARGET}-${_LIB_DEFAULT_TYPE})
+    endif()
+
+    if(NOT TARGET timemory-${LC_CATEGORY})
+        add_interface_library(timemory-${LC_CATEGORY})
+        target_link_libraries(timemory-${LC_CATEGORY} INTERFACE
+            timemory-${LC_CATEGORY}-${_LIB_DEFAULT_TYPE})
+    endif()
+
     if(WIN32 AND TARGET timemory-${COMP_TARGET}-shared AND TARGET timemory-${COMP_TARGET}-static)
         add_dependencies(timemory-${COMP_TARGET}-shared timemory-${COMP_TARGET}-static)
     endif()

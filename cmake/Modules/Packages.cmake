@@ -54,8 +54,6 @@ add_interface_library(timemory-cudart-device
     "Link to CUDA device runtime")
 add_interface_library(timemory-cudart-static
     "Link to CUDA runtime (static library)")
-add_interface_library(timemory-nvtx
-    "Enables CUDA NVTX support")
 add_interface_library(timemory-nccl
     "Enables CUDA NCCL support")
 add_interface_library(timemory-caliper
@@ -81,20 +79,8 @@ add_interface_library(timemory-craypat
 
 add_interface_library(timemory-coverage
     "Enables code-coverage flags")
-add_interface_library(timemory-gperftools-compile-options
-    "Enables compiler flags for resolving function calls in gperftools output")
-add_interface_library(timemory-all-gperftools
-    "Enables all gperftools components (cpu and heap profilers)")
 add_interface_library(timemory-gperftools
     "Enables user-selected gperftools component (${_GPERF_COMPONENTS})")
-add_interface_library(timemory-gperftools-cpu
-    "Enables gperftools cpu profiler support")
-add_interface_library(timemory-gperftools-heap
-    "Enables gperftools heap profiler support")
-add_interface_library(timemory-gperftools-static
-    "Enables gperftools support via static linking")
-add_interface_library(timemory-tcmalloc-minimal
-    "Enables gperftools tcmalloc_minimal library")
 
 add_interface_library(timemory-roofline
     "Enables flags and libraries for proper roofline generation")
@@ -130,10 +116,14 @@ if(TIMEMORY_USE_UPCXX)
     target_link_libraries(timemory-dmp INTERFACE timemory-upcxx)
 endif()
 
-set(TIMEMORY_EXTENSION_INTERFACES
-    timemory-mpi
-    timemory-upcxx
+set(TIMEMORY_RUNTIME_INTERFACES
+    #
+    timemory-dmp
     timemory-threading
+    #
+)
+
+set(TIMEMORY_EXTENSION_INTERFACES
     #
     timemory-statistics
     #
@@ -141,13 +131,11 @@ set(TIMEMORY_EXTENSION_INTERFACES
     #
     timemory-cuda
     # timemory-cudart
-    timemory-nvtx
     timemory-nccl
     timemory-cupti
     timemory-cudart-device
     #
-    timemory-gperftools-cpu
-    timemory-gperftools-heap
+    timemory-gperftools
     #
     timemory-python
     timemory-plotting
@@ -167,7 +155,6 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-papi
     timemory-cuda
     timemory-cudart
-    timemory-nvtx
     timemory-nccl
     timemory-cupti
     timemory-cudart-device
@@ -188,7 +175,6 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-papi-static
     timemory-cuda
     timemory-cudart-static
-    timemory-nvtx
     timemory-nccl
     timemory-cupti
     timemory-cudart-device
@@ -203,9 +189,9 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
 
 set(_GPERF_IN_LIBRARY OFF)
 # if not python or force requested
-if(NOT TIMEMORY_USE_PYTHON OR TIMEMORY_FORCE_GPERFTOOLS_PYTHON)
+if(NOT TIMEMORY_USE_PYTHON)
     list(APPEND TIMEMORY_EXTERNAL_SHARED_INTERFACES timemory-gperftools)
-    list(APPEND TIMEMORY_EXTERNAL_STATIC_INTERFACES timemory-gperftools-static)
+    list(APPEND TIMEMORY_EXTERNAL_STATIC_INTERFACES timemory-gperftools)
     set(_GPERF_IN_LIBRARY ON)
 endif()
 
@@ -229,7 +215,7 @@ if(TIMEMORY_USE_SANITIZER)
 endif()
 
 if(TIMEMORY_USE_GPERFTOOLS AND NOT TIMEMORY_USE_COVERAGE)
-    target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools-cpu)
+    target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools)
 endif()
 
 if(TIMEMORY_USE_COVERAGE)
@@ -482,89 +468,42 @@ endif()
 #                               MPI
 #
 #----------------------------------------------------------------------------------------#
+# always try to find MPI even if it is not used
+#
+
+# MS-MPI standard install
+if(WIN32)
+    list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI"
+        "C:/Program\ Files/Microsoft\ SDKs/MPI")
+endif()
+
+# MPI C compiler from environment
+if(NOT "$ENV{MPICC}" STREQUAL "")
+    set(MPI_C_COMPILER $ENV{MPICC} CACHE FILEPATH "MPI C compiler")
+endif()
+
+# MPI C++ compiler from environment
+if(NOT "$ENV{MPICXX}" STREQUAL "")
+    set(MPI_CXX_COMPILER $ENV{MPICXX} CACHE FILEPATH "MPI C++ compiler")
+endif()
 
 if(TIMEMORY_USE_MPI)
-    # MS-MPI standard install
-    if(WIN32)
-        list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI"
-            "C:/Program\ Files/Microsoft\ SDKs/MPI")
-    endif()
-
-    # MPI C compiler from environment
-    if(NOT "$ENV{MPICC}" STREQUAL "")
-        set(MPI_C_COMPILER $ENV{MPICC} CACHE FILEPATH "MPI C compiler")
-    endif()
-
-    # MPI C++ compiler from environment
-    if(NOT "$ENV{MPICXX}" STREQUAL "")
-        set(MPI_CXX_COMPILER $ENV{MPICXX} CACHE FILEPATH "MPI C++ compiler")
-    endif()
-
-    find_package(MPI ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(MPI ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 else()
-    set(MPI_FOUND OFF)
+    find_package(MPI QUIET)
 endif()
 
 # interface to kill MPI init in headers
 timemory_target_compile_definitions(timemory-no-mpi-init INTERFACE TIMEMORY_MPI_INIT=0)
 
 if(MPI_FOUND)
+    target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
 
     foreach(_LANG C CXX)
-        # include directories
-        target_include_directories(timemory-mpi SYSTEM INTERFACE ${MPI_${_LANG}_INCLUDE_PATH})
-
-        # link targets
-        set(_TYPE )
-        if(MPI_${_LANG}_LIBRARIES)
-            target_link_libraries(timemory-mpi INTERFACE ${MPI_${_LANG}_LIBRARIES})
-        # add_rpath(${MPI_${_LANG}_LIBRARIES})
+        if(TARGET MPI::MPI_${_LANG})
+            target_link_libraries(timemory-mpi INTERFACE MPI::MPI_${_LANG})
         endif()
-
-        # compile flags
-        to_list(_FLAGS "${MPI_${_LANG}_COMPILE_FLAGS}")
-        foreach(_FLAG ${_FLAGS})
-            if("${_LANG}" STREQUAL "CXX")
-                add_cxx_flag_if_avail("${_FLAG}" timemory-mpi)
-            else()
-                add_c_flag_if_avail("${_FLAG}" timemory-mpi)
-            endif()
-        endforeach()
-        unset(_FLAGS)
-
-        option(TIMEMORY_USE_MPI_LINK_FLAGS "Use MPI link flags" OFF)
-        mark_as_advanced(TIMEMORY_USE_MPI_LINK_FLAGS)
-        # compile flags
-        if(TIMEMORY_USE_MPI_LINK_FLAGS)
-            to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
-            foreach(_FLAG ${_FLAGS})
-                if(EXISTS "${_FLAG}" AND IS_DIRECTORY "${_FLAG}")
-                    continue()
-                endif()
-                if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-                    target_link_options(timemory-mpi INTERFACE
-                        $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
-                else()
-                    set_target_properties(timemory-mpi PROPERTIES
-                        INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
-                endif()
-            endforeach()
-        endif()
-        unset(_FLAGS)
-
-        target_link_libraries(timemory-mpi INTERFACE MPI::MPI_${_LANG})
-
     endforeach()
-
-    if(MPI_EXTRA_LIBRARY)
-        target_link_libraries(timemory-mpi INTERFACE ${MPI_EXTRA_LIBRARY})
-    endif()
-
-    if(MPI_INCLUDE_PATH)
-        target_include_directories(timemory-mpi SYSTEM INTERFACE ${MPI_INCLUDE_PATH})
-    endif()
-
-    timemory_target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
 
     # used by python
     if(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
@@ -576,8 +515,6 @@ if(MPI_FOUND)
         set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
     endif()
 
-    add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" OFF
-        CMAKE_DEFINE)
     if(NOT TIMEMORY_USE_MPI_INIT)
         target_link_libraries(timemory-mpi INTERFACE timemory-no-mpi-init)
     endif()
@@ -622,9 +559,13 @@ endif()
 #                               UPC++
 #
 #----------------------------------------------------------------------------------------#
+# always try to find UPC++ even if it is not used
+#
 
 if(TIMEMORY_USE_UPCXX)
     find_package(UPCXX ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+else()
+    find_package(UPCXX QUIET)
 endif()
 
 if(UPCXX_FOUND)
@@ -746,11 +687,11 @@ endif()
 
 if(TIMEMORY_USE_CUDA)
 
-    set(PROJECT_USE_CUDA_OPTION                 TIMEMORY_USE_CUDA)
-    set(PROJECT_CUDA_DEFINITION                 TIMEMORY_USE_CUDA)
-    set(PROJECT_CUDA_INTERFACE_PREFIX           timemory)
-    set(PROJECT_CUDA_DISABLE_HALF2_OPTION       TIMEMORY_DISABLE_CUDA_HALF)
-    set(PROJECT_CUDA_DISABLE_HALF2_DEFINITION   TIMEMORY_DISABLE_CUDA_HALF)
+    set(PROJECT_USE_CUDA_OPTION            TIMEMORY_USE_CUDA)
+    set(PROJECT_CUDA_DEFINITION            TIMEMORY_USE_CUDA)
+    set(PROJECT_CUDA_INTERFACE_PREFIX      timemory)
+    set(PROJECT_CUDA_USE_HALF_OPTION       TIMEMORY_USE_CUDA_HALF)
+    set(PROJECT_CUDA_USE_HALF_DEFINITION   TIMEMORY_USE_CUDA_HALF)
 
     include(CUDAConfig)
 
@@ -810,18 +751,18 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_USE_NVTX)
-    find_package(NVTX ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+if(TIMEMORY_USE_CUDA)
+    find_package(NVTX ${TIMEMORY_FIND_QUIETLY})
 endif()
 
 if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
     add_rpath(${NVTX_LIBRARIES})
-    target_link_libraries(timemory-nvtx INTERFACE ${NVTX_LIBRARIES})
-    target_include_directories(timemory-nvtx SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
-    timemory_target_compile_definitions(timemory-nvtx INTERFACE TIMEMORY_USE_NVTX)
+    target_link_libraries(timemory-cuda INTERFACE ${NVTX_LIBRARIES})
+    target_include_directories(timemory-cuda SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
+    target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
 else()
     set(TIMEMORY_USE_NVTX OFF)
-    inform_empty_interface(timemory-nvtx "NVTX")
+    inform_empty_interface(timemory-cuda "NVTX")
 endif()
 
 
@@ -875,9 +816,9 @@ if(TIMEMORY_USE_GPERFTOOLS)
     # general set of compiler flags when using gperftools
     #
     if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
-        add_target_flag_if_avail(timemory-gperftools-compile-options "-g" "-rdynamic")
+        add_target_flag_if_avail(timemory-gperftools "-g" "-rdynamic")
     else()
-        add_target_flag_if_avail(timemory-gperftools-compile-options "-g")
+        add_target_flag_if_avail(timemory-gperftools"-g")
     endif()
 
     # NOTE:
@@ -896,9 +837,11 @@ if(TIMEMORY_USE_GPERFTOOLS)
     #
     # Reference: https://github.com/gperftools/gperftools and "TCMALLOC" section
     #
-    add_target_flag_if_avail(timemory-gperftools-compile-options
-        "-fno-builtin-malloc" "-fno-builtin-calloc"
-        "-fno-builtin-realloc" "-fno-builtin-free")
+    if("tcmalloc" IN_LIST _GPERF_COMPONENTS)
+        add_target_flag_if_avail(timemory-gperftools
+            "-fno-builtin-malloc" "-fno-builtin-calloc"
+            "-fno-builtin-realloc" "-fno-builtin-free")
+    endif()
 
     #
     # NOTE:
@@ -928,68 +871,14 @@ if(TIMEMORY_USE_GPERFTOOLS)
         INTERFACE               timemory-gperftools
         INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         COMPILE_DEFINITIONS     ${_DEFINITIONS}
-        LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "gperftools with user defined components"
         FIND_ARGS               COMPONENTS ${_GPERF_COMPONENTS})
 
-    find_package_interface(
-        NAME                    gperftools
-        INTERFACE               timemory-all-gperftools
-        INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
-        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS
-        LINK_LIBRARIES          timemory-gperftools-compile-options
-        DESCRIPTION             "tcmalloc_and_profiler (preference for shared)"
-        FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS tcmalloc_and_profiler)
-
-    find_package_interface(
-        NAME                    gperftools
-        INTERFACE               timemory-gperftools-cpu
-        INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
-        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_PROFILER
-        LINK_LIBRARIES          timemory-gperftools-compile-options
-        DESCRIPTION             "CPU profiler"
-        FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS profiler)
-
-    find_package_interface(
-        NAME                    gperftools
-        INTERFACE               timemory-gperftools-heap
-        INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
-        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_TCMALLOC
-        LINK_LIBRARIES          timemory-gperftools-compile-options
-        DESCRIPTION             "heap profiler and heap checker"
-        FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS tcmalloc)
-
-    find_package_interface(
-        NAME                    gperftools
-        INTERFACE               timemory-tcmalloc-minimal
-        INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
-        LINK_LIBRARIES          timemory-gperftools-compile-options
-        DESCRIPTION             "threading-optimized malloc replacement"
-        FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS tcmalloc_minimal)
 
     target_include_directories(timemory-gperftools SYSTEM INTERFACE ${gperftools_INCLUDE_DIRS})
-    target_include_directories(timemory-gperftools-static SYSTEM INTERFACE ${gperftools_INCLUDE_DIRS})
 
     add_rpath(${gperftools_LIBRARIES} ${gperftools_ROOT_DIR}/lib ${gperftools_ROOT_DIR}/lib64)
 
-    if(TIMEMORY_USE_GPERFTOOLS_STATIC)
-        # set local overloads
-        set(gperftools_PREFER_SHARED OFF)
-        set(gperftools_PREFER_STATIC ON)
-
-        find_package_interface(
-            NAME                    gperftools
-            INTERFACE               timemory-gperftools-static
-            LINK_LIBRARIES          timemory-gperftools-compile-options
-            DESCRIPTION             "tcmalloc_and_profiler (preference for static)"
-            FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS tcmalloc_and_profiler)
-
-        # remove local overloads
-        unset(gperftools_PREFER_SHARED)
-        unset(gperftools_PREFER_STATIC)
-    else()
-        inform_empty_interface(timemory-gperftools-static "gperftools static linking")
-    endif()
 endif()
 
 
@@ -1249,7 +1138,6 @@ target_link_libraries(timemory-gpu-roofline INTERFACE
     timemory-roofline-options
     timemory-cupti
     timemory-cuda
-    # timemory-cudart
     timemory-cudart-device)
 
 generate_composite_interface(timemory-roofline

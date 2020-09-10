@@ -77,18 +77,18 @@ public:
         const hash_result_type& get_hash() const { return std::get<1>(m_result); }
         const result_type&      get() const { return m_result; }
 
-        explicit captured(const result_type& _result)
-        : m_result(_result)
+        explicit captured(result_type _result)
+        : m_result(std::move(_result))
         {}
 
         captured()  = default;
         ~captured() = default;
 
-        captured(const captured&) = default;
-        captured(captured&&)      = default;
+        captured(const captured&)     = default;
+        captured(captured&&) noexcept = default;
 
         captured& operator=(const captured&) = default;
-        captured& operator=(captured&&) = default;
+        captured& operator=(captured&&) noexcept = default;
 
     protected:
         friend class source_location;
@@ -273,7 +273,7 @@ protected:
         if(shorten)
         {
             if(_filename.find(delim) != std::string::npos)
-                _filename = _filename.substr(_filename.find_last_of(delim) + 1).c_str();
+                _filename = _filename.substr(_filename.find_last_of(delim) + 1);
         }
 
         if(_line < 0)

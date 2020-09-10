@@ -54,9 +54,9 @@
 #endif
 
 #if defined(TIMEMORY_USE_CUDA) && (defined(__NVCC__) || defined(__CUDACC__)) &&          \
-    (__CUDA_ARCH__ >= 530 || !defined(__CUDA_ARCH__))
-#    if !defined(TIMEMORY_CUDA_FP16) && !defined(TIMEMORY_DISABLE_CUDA_HALF)
-#        define TIMEMORY_CUDA_FP16
+    defined(__CUDA_ARCH__) && (__CUDA_ARCH__ >= 530)
+#    if defined(TIMEMORY_USE_CUDA_HALF)
+#        undef TIMEMORY_USE_CUDA_HALF
 #    endif
 #endif
 
@@ -71,7 +71,7 @@ const char*
 get_error_string(error_t err);
 
 // half-precision floating point
-#if !defined(TIMEMORY_CUDA_FP16)
+#if !defined(TIMEMORY_USE_CUDA_HALF)
 
 // make a different type
 struct half2

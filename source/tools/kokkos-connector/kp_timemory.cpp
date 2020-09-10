@@ -21,21 +21,12 @@ static std::string spacer =
     "#---------------------------------------------------------------------------#";
 
 // this just differentiates Kokkos from other user_bundles
-struct KokkosProfiler;
+struct KokkosProfiler
+{};
 using KokkosUserBundle = tim::component::user_bundle<0, KokkosProfiler>;
 
-// memory trackers
-struct KokkosMemory
-{};
-using KokkosMemoryTracker = data_tracker<int64_t, KokkosMemory>;
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, KokkosMemoryTracker, std::true_type);
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, KokkosMemoryTracker, std::true_type);
-
 // set up the configuration of tools
-using profile_entry_t =
-    tim::component_hybrid<tim::component_tuple<KokkosUserBundle>,
-                          tim::component_list<cpu_util, KokkosMemoryTracker>>;
+using profile_entry_t = tim::component_tuple<KokkosUserBundle>;
 
 // various data structurs used
 using section_entry_t = std::tuple<std::string, profile_entry_t>;
@@ -46,37 +37,10 @@ using pointer_map_t   = std::map<const void* const, profile_entry_t>;
 
 //--------------------------------------------------------------------------------------//
 
-static uint64_t
-get_unique_id()
-{
-    static thread_local uint64_t _instance = 0;
-    return _instance++;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Tp>
-Tp&
-get_tl_static()
-{
-    static thread_local Tp _instance;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
 static profile_map_t&
 get_profile_map()
 {
     return get_tl_static<profile_map_t>();
-}
-
-//--------------------------------------------------------------------------------------//
-
-static pointer_map_t&
-get_pointer_map()
-{
-    return get_tl_static<pointer_map_t>();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -122,6 +86,19 @@ stop_profiler(uint64_t kernid)
         get_profile_map().at(kernid).stop();
 }
 
+//--------------------------------------------------------------------------------------//
+
+bool
+configure_environment()
+{
+    tim::set_env("TIMEMORY_TIME_OUTPUT", "ON", 0);
+    tim::set_env("TIMEMORY_COUT_OUTPUT", "OFF", 0);
+    tim::set_env("TIMEMORY_ADD_SECONDARY", "OFF", 0);
+    return true;
+}
+
+static auto env_configured = (configure_environment(), true);
+
 //======================================================================================//
 //
 //      Kokkos symbols
@@ -132,13 +109,11 @@ extern "C" void
 kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                      const uint32_t devInfoCount, void* deviceInfo)
 {
+    tim::consume_parameters(devInfoCount, deviceInfo);
     printf("%s\n", spacer.c_str());
     printf("# KokkosP: timemory Connector (sequence is %d, version: %llu)\n", loadSeq,
            (unsigned long long) interfaceVer);
     printf("%s\n\n", spacer.c_str());
-
-    KokkosMemoryTracker::label()       = "kokkos_memory";
-    KokkosMemoryTracker::description() = "Kokkos Memory tracker";
 
     // if using roofline, we want to suppress time_output which
     // would result in the second pass (required by roofline) to end
@@ -147,11 +122,16 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     auto papi_events             = tim::get_env<std::string>("PAPI_EVENTS", "");
     tim::settings::papi_events() = papi_events;
 
+    printf("%s\n", spacer.c_str());
+    printf("# KokkosP: timemory Connector (sequence is %d, version: %llu)\n", loadSeq,
+           (unsigned long long) interfaceVer);
+    printf("%s\n\n", spacer.c_str());
+
     // timemory_init is expecting some args so generate some
-    auto  dir  = TIMEMORY_JOIN("_", loadSeq, interfaceVer, devInfoCount);
-    char* cstr = strdup(dir.c_str());
-    tim::timemory_init(1, &cstr);
-    free(cstr);
+    std::array<char*, 1> cstr = { { strdup("kp_timemory") } };
+    tim::timemory_init(1, cstr.data());
+    free(cstr.at(0));
+    assert(env_configured);
 
     std::string default_components =
         (use_roofline) ? "gpu_roofline_flops, cpu_roofline" : "wall_clock, peak_rss";
@@ -160,10 +140,10 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
         default_components += ", papi_vector";
 
     // check environment variables "KOKKOS_TIMEMORY_COMPONENTS" and
-    // "KOKKOS_PROFILE_COMPONENTS"
+    // "TIMEMORY_KOKKOS_COMPONENTS"
     tim::env::configure<KokkosUserBundle>(
-        "KOKKOS_TIMEMORY_COMPONENTS",
-        tim::get_env("KOKKOS_PROFILE_COMPONENTS", default_components));
+        "TIMEMORY_KOKKOS_COMPONENTS",
+        tim::get_env("KOKKOS_TIMEMORY_COMPONENTS", default_components));
 }
 
 extern "C" void
@@ -280,56 +260,6 @@ extern "C" void
 kokkosp_stop_profile_section(uint32_t secid)
 {
     start_profiler(secid);
-}
-
-//--------------------------------------------------------------------------------------//
-
-extern "C" void
-kokkosp_allocate_data(const SpaceHandle space, const char* label, const void* const ptr,
-                      const uint64_t size)
-{
-    get_pointer_map().insert({ ptr, profile_entry_t(TIMEMORY_JOIN("/", "kokkos/allocate",
-                                                                  space.name, label)) });
-    get_pointer_map()[ptr].get_list().init<KokkosMemoryTracker>();
-    get_pointer_map()[ptr].start();
-    get_pointer_map()[ptr].store(std::plus<int64_t>{}, size);
-}
-
-extern "C" void
-kokkosp_deallocate_data(const SpaceHandle, const char*, const void* const ptr,
-                        const uint64_t)
-{
-    auto itr = get_pointer_map().find(ptr);
-    if(itr != get_pointer_map().end())
-    {
-        itr->second.stop();
-        get_pointer_map().erase(itr);
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-extern "C" void
-kokkosp_begin_deep_copy(SpaceHandle dst_handle, const char* dst_name, const void*,
-                        SpaceHandle src_handle, const char* src_name, const void*,
-                        uint64_t size)
-{
-    auto name = TIMEMORY_JOIN("/", "kokkos/deep_copy",
-                              TIMEMORY_JOIN('=', dst_handle.name, dst_name),
-                              TIMEMORY_JOIN('=', src_handle.name, src_name));
-    get_profile_stack().push_back(profile_entry_t(name, true));
-    get_profile_stack().back().get_list().init<KokkosMemoryTracker>();
-    get_profile_stack().back().start();
-    get_profile_stack().back().store(std::plus<int64_t>{}, size);
-}
-
-extern "C" void
-kokkosp_end_deep_copy()
-{
-    if(get_profile_stack().empty())
-        return;
-    get_profile_stack().back().stop();
-    get_profile_stack().pop_back();
 }
 
 //--------------------------------------------------------------------------------------//

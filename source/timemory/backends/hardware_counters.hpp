@@ -68,8 +68,8 @@ struct info
     : base_type(std::forward<base_type>(rhs))
     {}
 
-    info(bool _avail, int _cat, int32_t _idx, int32_t _off, string_t _sym,
-         string_t _pysym, string_t _short, string_t _long)
+    info(bool _avail, int _cat, int32_t _idx, int32_t _off, const string_t& _sym,
+         const string_t& _pysym, const string_t& _short, const string_t& _long)
     : base_type(_avail, _cat, _idx, _off, _sym, _pysym, _short, _long)
     {}
 

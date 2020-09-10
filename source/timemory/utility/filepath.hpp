@@ -98,8 +98,8 @@ osrepr(string_t _path)
     // OS-dependent representation
     while(_path.find("\\\\") != std::string::npos)
         _path.replace(_path.find("\\\\"), 2, "/");
-    while(_path.find("\\") != std::string::npos)
-        _path.replace(_path.find("\\"), 1, "/");
+    while(_path.find('\\') != std::string::npos)
+        _path.replace(_path.find('\\'), 1, "/");
     return _path;
 }
 

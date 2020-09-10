@@ -156,17 +156,15 @@ if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
     timemory_target_compile_definitions(timemory-python INTERFACE
         TIMEMORY_USE_PYTHON)
     target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
+    target_include_directories(timemory-python SYSTEM INTERFACE
+        ${PYTHON_INCLUDE_DIRS}
+        ${PYBIND11_INCLUDE_DIRS}
+        $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
 endif()
 
-if(TIMEMORY_BUILD_PYTHON)
-    target_include_directories(timemory-python SYSTEM INTERFACE
-        ${PYTHON_INCLUDE_DIRS}
-        $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
-elseif(pybind11_FOUND)
-    target_include_directories(timemory-python SYSTEM INTERFACE
-        ${PYTHON_INCLUDE_DIRS}
-        ${PYBIND11_INCLUDE_DIR}
-        ${PYBIND11_INCLUDE_DIRS})
+if(APPLE)
+    target_link_libraries(timemory-python INTERFACE
+        "$<$<LINK_LANGUAGE:CXX>:-undefined dynamic_lookup>")
 endif()
 
 if(WIN32)

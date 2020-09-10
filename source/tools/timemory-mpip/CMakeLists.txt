@@ -19,9 +19,8 @@ target_link_libraries(timemory-mpip-shared PUBLIC
 
 # private link targets
 target_link_libraries(timemory-mpip-shared PRIVATE
-    timemory-compile-options
-    timemory-arch
-    timemory-vector)
+    timemory::timemory-default-visibility
+    timemory::timemory-compile-options)
 
 # use rpath
 set_target_properties(timemory-mpip-shared PROPERTIES

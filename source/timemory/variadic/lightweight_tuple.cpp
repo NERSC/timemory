@@ -43,12 +43,6 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-lightweight_tuple<Types...>::lightweight_tuple()
-{}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
 template <typename... T, typename Func>
 lightweight_tuple<Types...>::lightweight_tuple(const string_t&     key,
                                                quirk::config<T...> config,

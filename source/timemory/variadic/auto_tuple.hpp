@@ -146,10 +146,10 @@ public:
     ~auto_tuple();
 
     // copy and move
-    auto_tuple(const this_type&) = default;
-    auto_tuple(this_type&&)      = default;
+    auto_tuple(const this_type&)     = default;
+    auto_tuple(this_type&&) noexcept = default;
     this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) = default;
+    this_type& operator=(this_type&&) noexcept = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 

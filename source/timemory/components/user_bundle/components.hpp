@@ -39,6 +39,7 @@
 #include "timemory/components/user_bundle/backends.hpp"
 #include "timemory/components/user_bundle/types.hpp"
 
+#include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/types.hpp"
 
 #include <functional>
@@ -62,8 +63,10 @@ using user_bundle_spec_t = std::function<std::string()>;
 using user_bundle_variables_t =
     std::unordered_map<size_t, std::vector<user_bundle_spec_t>>;
 //
-static inline user_bundle_variables_t&
-get_user_bundle_variables()
+template <typename ApiT = TIMEMORY_API>
+static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
+                               user_bundle_variables_t&>
+    get_user_bundle_variables(ApiT = ApiT{})
 {
     static user_bundle_variables_t _instance = {
         { component::global_bundle_idx,
@@ -104,6 +107,17 @@ get_user_bundle_variables()
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename ApiT = TIMEMORY_API>
+static inline std::enable_if_t<!std::is_same<ApiT, TIMEMORY_API>::value,
+                               user_bundle_variables_t&>
+    get_user_bundle_variables(ApiT = ApiT{})
+{
+    static user_bundle_variables_t _instance{};
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename VecT>
 auto
 get_bundle_components(const VecT& _priority)
@@ -127,27 +141,19 @@ get_bundle_components(const VecT& _priority)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Idx, typename Api,
-          enable_if_t<(std::is_same<Api, api::native_tag>::value), int> = 0>
+template <size_t Idx, typename Api, typename AltApi = Api>
 void
-initialize_bundle()
+initialize_bundle(AltApi _api = AltApi{})
 {
     using user_bundle_type = component::user_bundle<Idx, Api>;
-    auto itr               = env::get_user_bundle_variables().find(Idx);
-    if(itr != env::get_user_bundle_variables().end())
+    auto itr               = env::get_user_bundle_variables(_api).find(Idx);
+    if(itr != env::get_user_bundle_variables(_api).end())
     {
         auto _enum = env::get_bundle_components(itr->second);
         tim::configure<user_bundle_type>(_enum);
     }
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <size_t Idx, typename Api,
-          enable_if_t<!(std::is_same<Api, api::native_tag>::value), int> = 0>
-void
-initialize_bundle()
-{}
 }  // namespace env
 //
 //--------------------------------------------------------------------------------------//
@@ -191,7 +197,7 @@ public:
     }
     static value_type record() {}
 
-    static void global_init(storage_type*) TIMEMORY_VISIBILITY("default");
+    static void global_init(storage_type* = nullptr) TIMEMORY_VISIBILITY("default");
 
     using opaque_array_t = std::vector<opaque>;
     using typeid_vec_t   = std::vector<size_t>;
@@ -273,7 +279,7 @@ public:
         return *this;
     }
 
-    user_bundle(user_bundle&& rhs)
+    user_bundle(user_bundle&& rhs) noexcept
     : base_type(std::move(rhs))
     , m_scope(std::move(rhs.m_scope))
     , m_prefix(std::move(rhs.m_prefix))
@@ -281,7 +287,7 @@ public:
     , m_bundle(std::move(rhs.m_bundle))
     {}
 
-    user_bundle& operator=(user_bundle&& rhs)
+    user_bundle& operator=(user_bundle&& rhs) noexcept
     {
         if(this != &rhs)
         {
@@ -312,7 +318,7 @@ public:
                 }
                 sum += itr;
                 if(itr > 0)
-                    get_typeids().emplace_back(std::move(itr));
+                    get_typeids().emplace_back(itr);
             }
             if(sum == 0)
             {
@@ -424,7 +430,7 @@ public:
                 if(itr > 0 && contains(itr, m_typeids))
                     return;
                 sum += itr;
-                m_typeids.emplace_back(std::move(itr));
+                m_typeids.emplace_back(itr);
             }
             if(sum == 0)
                 return;

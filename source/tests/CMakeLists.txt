@@ -38,6 +38,10 @@ target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
 if(NOT TIMEMORY_USE_ARCH)
   add_target_flag_if_avail(test-opt-flags "-march=native")
 endif()
+add_library(test-debug-flags INTERFACE)
+string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_DEBUG}")
+target_compile_options(test-debug-flags INTERFACE ${_FLAGS})
+add_target_flag_if_avail(test-debug-flags "-O0")
 
 add_library(test-werror-flags INTERFACE)
 add_target_flag_if_avail(test-werror-flags "-W" "-Wall" "-Wextra" "-pedantic"
@@ -231,14 +235,12 @@ if(TIMEMORY_USE_CUDA)
                         timemory-cuda    timemory-cudart timemory-develop-options
                         timemory-plotting timemory-analysis-tools
                         ${_LIBRARY})
-endif()
-
-if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_NVTX)
+    #
     add_timemory_google_test(cuda_nvtx_tests
         DISCOVER_TESTS
         SOURCES         cuda_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options timemory-develop-options
-                        timemory-cuda    timemory-cudart timemory-nvtx
+                        timemory-cuda    timemory-cudart
                         timemory-plotting timemory-analysis-tools
                         ${_LIBRARY})
 endif()
@@ -269,13 +271,19 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
     endif()
 endif()
 
-if(_HAS_PROFILER)
+if(TIMEMORY_USE_GPERFTOOLS)
     add_timemory_google_test(gperf_cpu_tests
         SOURCES         gperf_cpu_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                        timemory-gperftools-cpu timemory-plotting timemory-analysis-tools
+                        timemory-gperftools timemory-plotting timemory-analysis-tools
                         ${_LIBRARY}
         ENVIRONMENT     "CPUPROFILE_FREQUENCY=1000;CPUPROFILE_REALTIME=1")
+    add_timemory_google_test(gperf_heap_tests
+        DISCOVER_TESTS
+        SOURCES         gperf_heap_tests.cpp
+        LINK_LIBRARIES  timemory-headers    timemory-arch   timemory-compile-options timemory-develop-options
+                        timemory-gperftools timemory-plotting timemory-analysis-tools
+                        ${_LIBRARY})
 endif()
 
 add_timemory_google_test(gperf_fake_cpu_tests
@@ -284,21 +292,13 @@ add_timemory_google_test(gperf_fake_cpu_tests
     LINK_LIBRARIES  timemory-headers timemory-plotting timemory-analysis-tools
                     ${_LIBRARY})
 
-if(_HAS_TCMALLOC)
-    add_timemory_google_test(gperf_heap_tests
-        DISCOVER_TESTS
-        SOURCES         gperf_heap_tests.cpp
-        LINK_LIBRARIES  timemory-headers    timemory-arch   timemory-compile-options timemory-develop-options
-                        timemory-gperftools-heap timemory-plotting timemory-analysis-tools
-                        ${_LIBRARY})
-endif()
 
 if(TIMEMORY_USE_GOTCHA)
     add_timemory_google_test(gotcha_tests
         DISCOVER_TESTS
         SOURCES         gotcha_tests.cpp
         LINK_LIBRARIES  timemory-headers    timemory-compile-options timemory-develop-options
-                        timemory-gotcha     timemory-mpi
+                        timemory-gotcha     timemory-dmp
                         timemory-papi       timemory-vector
                         timemory-arch       gotcha-tests-lib
                         timemory-plotting   timemory-analysis-tools
@@ -317,7 +317,7 @@ if(TIMEMORY_USE_MPI)
         DISCOVER_TESTS
         SOURCES         mpi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                        timemory-plotting timemory-analysis-tools timemory-mpi
+                        timemory-plotting timemory-analysis-tools timemory-dmp
                         ${_LIBRARY})
 endif()
 
@@ -334,14 +334,14 @@ add_timemory_google_test(variadic_tests
     DISCOVER_TESTS
     SOURCES         variadic_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools timemory-mpi
+                    timemory-plotting timemory-analysis-tools timemory-dmp
                     ${_LIBRARY})
 
 add_timemory_google_test(derived_tests
     DISCOVER_TESTS
     SOURCES         derived_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools timemory-mpi
+                    timemory-plotting timemory-analysis-tools timemory-dmp
                     ${_LIBRARY})
 
 set(_OMPT_TARGET)

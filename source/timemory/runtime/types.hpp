@@ -175,7 +175,7 @@ void
 configure(Tp& obj, int idx, Args&&... args);
 //
 int
-enumerate(std::string key);
+enumerate(const std::string& key);
 //
 int
 enumerate(const char* key);

@@ -318,7 +318,7 @@ std::vector<double> create_rand_nums(int num_elements)
 // Computes the average of an array of numbers
 double compute_avg(const std::vector<double>& array)
 {
-    return std::accumulate(array.begin(), array.end(), 0.0f) / array.size();
+    return std::accumulate(array.begin(), array.end(), 0.0) / array.size();
 }
 
 //--------------------------------------------------------------------------------------//

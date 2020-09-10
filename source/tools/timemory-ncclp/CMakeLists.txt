@@ -19,10 +19,8 @@ target_link_libraries(timemory-ncclp-shared PUBLIC
 
 # private link targets
 target_link_libraries(timemory-ncclp-shared PRIVATE
-    timemory-compile-options
-    timemory-default-visibility
-    timemory-arch
-    timemory-vector)
+    timemory::timemory-default-visibility
+    timemory::timemory-compile-options)
 
 # use rpath
 set_target_properties(timemory-ncclp-shared PROPERTIES

@@ -131,12 +131,12 @@ public:
     //{}
 #endif
 
-    cuda_event()                  = default;
-    ~cuda_event()                 = default;
-    cuda_event(const cuda_event&) = default;
-    cuda_event(cuda_event&&)      = default;
+    cuda_event()                      = default;
+    ~cuda_event()                     = default;
+    cuda_event(const cuda_event&)     = default;
+    cuda_event(cuda_event&&) noexcept = default;
     cuda_event& operator=(const cuda_event&) = default;
-    cuda_event& operator=(cuda_event&&) = default;
+    cuda_event& operator=(cuda_event&&) noexcept = default;
 
     float get_display() const
     {
@@ -295,14 +295,14 @@ struct cuda_profiler
         return _instance;
     }
 
-    static void global_init(storage_type*)
+    static void global_init()
     {
 #if defined(TIMEMORY_USE_CUDA)
         cudaProfilerStop();
 #endif
     }
 
-    static void global_finalize(storage_type*)
+    static void global_finalize()
     {
 #if defined(TIMEMORY_USE_CUDA)
         cudaProfilerStop();

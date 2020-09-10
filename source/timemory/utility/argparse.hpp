@@ -643,6 +643,14 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    argument& add_argument(const std::vector<std::string>& _names,
+                           const std::string& desc, bool req = false)
+    {
+        return add_argument().names(_names).description(desc).required(req);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
     template <typename BoolFuncT, typename ActionFuncT>
     this_type& add_action(BoolFuncT&& _b, ActionFuncT& _act)
     {

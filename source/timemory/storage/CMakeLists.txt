@@ -6,8 +6,8 @@ build_intermediate_library(
     USE_INTERFACE
     NAME                storage
     TARGET              storage
-    CATEGORY            EXTERN
+    CATEGORY            GLOBAL
     FOLDER              components
     HEADERS             ${header_files}
     SOURCES             ${source_files}
-    PROPERTY_DEPENDS    GLOBAL COMPONENT USER_BUNDLE)
+    PROPERTY_DEPENDS    GLOBAL)

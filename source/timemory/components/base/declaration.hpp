@@ -158,11 +158,11 @@ public:
     base();
     virtual ~base() = default;
 
-    explicit base(const base_type&) = default;
-    explicit base(base_type&&)      = default;
+    explicit base(const base_type&)     = default;
+    explicit base(base_type&&) noexcept = default;
 
     base& operator=(const base_type&) = default;
-    base& operator=(base_type&&) = default;
+    base& operator=(base_type&&) noexcept = default;
 
 public:
     template <typename Archive>
@@ -420,11 +420,11 @@ private:
 
 public:
     base();
-    virtual ~base()                 = default;
-    explicit base(const base_type&) = default;
-    explicit base(base_type&&)      = default;
+    virtual ~base()                     = default;
+    explicit base(const base_type&)     = default;
+    explicit base(base_type&&) noexcept = default;
     base& operator=(const base_type&) = default;
-    base& operator=(base_type&&) = default;
+    base& operator=(base_type&&) noexcept = default;
 
 public:
     template <typename Archive>

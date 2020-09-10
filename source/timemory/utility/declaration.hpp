@@ -118,12 +118,16 @@ public:
     static const signal_set_t& get_enabled();
     static const signal_set_t& get_disabled();
     static const signal_set_t& get_default();
+    static bool&               enable_all();
+    static bool&               disable_all();
 
 protected:
     struct signals_data_t
     {
         signals_data_t();
-        bool              signals_active;
+        bool              signals_active = false;
+        bool              enable_all     = false;
+        bool              disable_all    = false;
         signal_set_t      signals_default;
         signal_set_t      signals_enabled;
         signal_set_t      signals_disabled;

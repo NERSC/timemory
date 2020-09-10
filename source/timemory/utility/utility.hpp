@@ -31,6 +31,9 @@
 
 #pragma once
 
+#include "timemory/macros/compiler.hpp"
+#include "timemory/macros/language.hpp"
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -74,13 +77,7 @@ using pid_t = int;
 #if !defined(DEFAULT_UMASK)
 #    define DEFAULT_UMASK 0777
 #endif
-/*
-#if(_POSIX_C_SOURCE >= 2) || defined(_BSD_SOURCE) || defined(_SVID_SOURCE)
-#    if !defined(TIMEMORY_USE_POPEN)
-#        define TIMEMORY_USE_POPEN
-#    endif
-#endif
-*/
+
 //--------------------------------------------------------------------------------------//
 
 // stringify some macro -- uses TIMEMORY_STRINGIZE2 which does the actual
@@ -137,7 +134,7 @@ template <typename Tp>
 mutex_t&
 type_mutex(const uint64_t& _n = 0)
 {
-    static mutex_t* _mutex = new mutex_t();
+    static auto* _mutex = new mutex_t();
     if(_n == 0)
         return *_mutex;
 
@@ -157,11 +154,10 @@ demangle(const char* _cstr)
 #if defined(TIMEMORY_ENABLE_DEMANGLE)
     // demangling a string when delimiting
     int   _ret    = 0;
-    char* _demang = abi::__cxa_demangle(_cstr, 0, 0, &_ret);
+    char* _demang = abi::__cxa_demangle(_cstr, nullptr, nullptr, &_ret);
     if(_demang && _ret == 0)
         return std::string(const_cast<const char*>(_demang));
-    else
-        return _cstr;
+    return _cstr;
 #else
     return _cstr;
 #endif
@@ -216,21 +212,21 @@ inline std::string
 dirname(std::string _fname)
 {
 #if defined(_UNIX)
-    char* _cfname = realpath(_fname.c_str(), NULL);
+    char* _cfname = realpath(_fname.c_str(), nullptr);
     _fname        = std::string(_cfname);
     free(_cfname);
 
     while(_fname.find("\\\\") != std::string::npos)
         _fname.replace(_fname.find("\\\\"), 2, "/");
-    while(_fname.find("\\") != std::string::npos)
-        _fname.replace(_fname.find("\\"), 1, "/");
+    while(_fname.find('\\') != std::string::npos)
+        _fname.replace(_fname.find('\\'), 1, "/");
 
-    return _fname.substr(0, _fname.find_last_of("/"));
+    return _fname.substr(0, _fname.find_last_of('/'));
 #elif defined(_WINDOWS)
-    while(_fname.find("/") != std::string::npos)
-        _fname.replace(_fname.find("/"), 1, "\\");
+    while(_fname.find('/') != std::string::npos)
+        _fname.replace(_fname.find('/'), 1, "\\");
 
-    _fname = _fname.substr(0, _fname.find_last_of("\\"));
+    _fname = _fname.substr(0, _fname.find_last_of('\\'));
     return (_fname.at(_fname.length() - 1) == '\\')
                ? _fname.substr(0, _fname.length() - 1)
                : _fname;
@@ -262,7 +258,7 @@ launch_process(const char* cmd, const std::string& extra = "")
         return false;
     }
 #else
-    if(std::system(nullptr))
+    if(std::system(nullptr) != 0)
     {
         int ec = std::system(cmd);
 
@@ -293,8 +289,8 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
 #if defined(_UNIX)
     while(_dir.find("\\\\") != std::string::npos)
         _dir.replace(_dir.find("\\\\"), 2, "/");
-    while(_dir.find("\\") != std::string::npos)
-        _dir.replace(_dir.find("\\"), 1, "/");
+    while(_dir.find('\\') != std::string::npos)
+        _dir.replace(_dir.find('\\'), 1, "/");
 
     if(_dir.length() == 0)
         return 0;
@@ -307,8 +303,8 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
     }
 #elif defined(_WINDOWS)
     consume_parameters(umask);
-    while(_dir.find("/") != std::string::npos)
-        _dir.replace(_dir.find("/"), 1, "\\");
+    while(_dir.find('/') != std::string::npos)
+        _dir.replace(_dir.find('/'), 1, "\\");
 
     if(_dir.length() == 0)
         return 0;
@@ -440,7 +436,7 @@ template <typename ContainerT = std::vector<std::string>,
           typename PredicateT = std::function<string_t(string_t)>>
 inline ContainerT
 delimit(const string_t& line, const string_t& delimiters = ",; ",
-        PredicateT&& predicate = [](string_t s) -> string_t { return s; })
+        PredicateT&& predicate = [](const string_t& s) -> string_t { return s; })
 {
     auto _get_first_not_of = [&delimiters](const string_t& _string, const size_t& _beg) {
         return _string.find_first_not_of(delimiters, _beg);
@@ -466,7 +462,7 @@ delimit(const string_t& line, const string_t& delimiters = ",; ",
         // starting at the position of the new string, find the next delimiter
         _delimp = _get_first_of(line, _beginp);
         // if(d2 == string_t::npos) { d2 = string_t::npos; }
-        string_t _tmp = "";
+        string_t _tmp;
         try
         {
             // starting at the position of the new string, get the characters
@@ -625,7 +621,7 @@ public:
         return *this;
     }
 
-    string_t os() const
+    static string_t os()
     {
 #if defined(_WINDOWS)
         return "\\";
@@ -634,7 +630,7 @@ public:
 #endif
     }
 
-    string_t inverse() const
+    static string_t inverse()
     {
 #if defined(_WINDOWS)
         return "/";
@@ -644,16 +640,16 @@ public:
     }
 
     // OS-dependent representation
-    string_t osrepr(string_t _path)
+    static string_t osrepr(string_t _path)
     {
 #if defined(_WINDOWS)
-        while(_path.find("/") != std::string::npos)
-            _path.replace(_path.find("/"), 1, "\\");
+        while(_path.find('/') != std::string::npos)
+            _path.replace(_path.find('/'), 1, "\\");
 #elif defined(_UNIX)
         while(_path.find("\\\\") != std::string::npos)
             _path.replace(_path.find("\\\\"), 2, "/");
-        while(_path.find("\\") != std::string::npos)
-            _path.replace(_path.find("\\"), 1, "/");
+        while(_path.find('\\') != std::string::npos)
+            _path.replace(_path.find('\\'), 1, "/");
 #endif
         return _path;
     }
@@ -747,7 +743,7 @@ inline size_t
 fnv_hash_bytes(const void* ptr, size_t len, size_t hash)
 {
     const char* cptr = static_cast<const char*>(ptr);
-    for(; len; --len)
+    for(; len > 0U; --len)
     {
         hash ^= static_cast<size_t>(*cptr++);
         hash *= static_cast<size_t>(16777619UL);
@@ -799,7 +795,7 @@ inline size_t
 fnv_hash_bytes(const void* ptr, size_t len, size_t hash)
 {
     const char* cptr = static_cast<const char*>(ptr);
-    for(; len; --len)
+    for(; len > 0U; --len)
     {
         hash ^= static_cast<size_t>(*cptr++);
         hash *= static_cast<size_t>(1099511628211ULL);
@@ -817,7 +813,7 @@ hash_bytes(const void* ptr, size_t len, size_t seed)
 {
     size_t      hash = seed;
     const char* cptr = reinterpret_cast<const char*>(ptr);
-    for(; len; --len)
+    for(; len > 0U; --len)
         hash = (hash * 131) + *cptr++;
     return hash;
 }
@@ -846,7 +842,7 @@ get_hash(T&& obj)
 inline size_t
 get_hash(const std::string& str)
 {
-    static constexpr size_t seed = static_cast<size_t>(0xc70f6907UL);
+    static constexpr auto seed = static_cast<size_t>(0xc70f6907UL);
     return hash_bytes(static_cast<const void*>(str.data()), str.length(), seed);
 }
 
@@ -855,7 +851,7 @@ get_hash(const std::string& str)
 inline size_t
 get_hash(std::string&& str)
 {
-    static constexpr size_t seed = static_cast<size_t>(0xc70f6907UL);
+    static constexpr auto seed = static_cast<size_t>(0xc70f6907UL);
     return hash_bytes(static_cast<const void*>(str.data()), str.length(), seed);
 }
 
@@ -864,7 +860,7 @@ get_hash(std::string&& str)
 inline size_t
 get_hash(const char* cstr)
 {
-    static constexpr size_t seed = static_cast<size_t>(0xc70f6907UL);
+    static constexpr auto seed = static_cast<size_t>(0xc70f6907UL);
     return hash_bytes(static_cast<const void*>(cstr), strlen(cstr), seed);
 }
 
@@ -873,7 +869,7 @@ get_hash(const char* cstr)
 inline size_t
 get_hash(char* cstr)
 {
-    static constexpr size_t seed = static_cast<size_t>(0xc70f6907UL);
+    static constexpr auto seed = static_cast<size_t>(0xc70f6907UL);
     return hash_bytes(static_cast<const void*>(cstr), strlen(cstr), seed);
 }
 

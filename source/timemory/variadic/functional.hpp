@@ -30,12 +30,12 @@
  */
 
 #include "timemory/api.hpp"
+#include "timemory/macros/language.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/available.hpp"
-#include "timemory/mpl/concepts.hpp"
 #include "timemory/operations/types/cache.hpp"
 #include "timemory/operations/types/generic.hpp"
-#include "timemory/settings/declaration.hpp"
+#include "timemory/settings/settings.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <type_traits>

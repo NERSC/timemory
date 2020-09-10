@@ -141,10 +141,10 @@ public:
     ~auto_bundle();
 
     // copy and move
-    auto_bundle(const this_type&) = default;
-    auto_bundle(this_type&&)      = default;
+    auto_bundle(const this_type&)     = default;
+    auto_bundle(this_type&&) noexcept = default;
     this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) = default;
+    this_type& operator=(this_type&&) noexcept = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 

@@ -40,24 +40,24 @@
     {}
 
 // general
-#include <cereal/cereal.hpp>
-#include <cereal/macros.hpp>
+#include "cereal/cereal.hpp"
+#include "cereal/macros.hpp"
 
 // types
-#include <cereal/types/array.hpp>
-#include <cereal/types/common.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/memory.hpp>
-#include <cereal/types/set.hpp>
-#include <cereal/types/string.hpp>
-#include <cereal/types/tuple.hpp>
-#include <cereal/types/utility.hpp>
-#include <cereal/types/vector.hpp>
+#include "cereal/types/array.hpp"
+#include "cereal/types/common.hpp"
+#include "cereal/types/map.hpp"
+#include "cereal/types/memory.hpp"
+#include "cereal/types/set.hpp"
+#include "cereal/types/string.hpp"
+#include "cereal/types/tuple.hpp"
+#include "cereal/types/utility.hpp"
+#include "cereal/types/vector.hpp"
 
 // archives
-#include <cereal/archives/json.hpp>
+#include "cereal/archives/json.hpp"
 #if defined(TIMEMORY_USE_XML_ARCHIVE)
-#    include <cereal/archives/xml.hpp>
+#    include "cereal/archives/xml.hpp"
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ > 7)

@@ -66,13 +66,15 @@ get_group_info()
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_UTILITY_LINKAGE(void)
+void
 drop_privileges(int permanent)
 {
-    gid_t newgid = getgid(), oldgid = getegid();
-    uid_t newuid = getuid(), olduid = geteuid();
+    gid_t newgid = getgid();
+    gid_t oldgid = getegid();
+    uid_t newuid = getuid();
+    uid_t olduid = geteuid();
 
-    if(!permanent)
+    if(permanent == 0)
     {
         // Save information about the privileges that are being dropped so that they
         // can be restored later.
@@ -87,7 +89,7 @@ drop_privileges(int permanent)
     // system call requires root privileges.  Drop ancillary groups regardless of
     // whether privileges are being dropped temporarily or permanently.
     //
-    if(!olduid)
+    if(olduid == 0)
         setgroups(1, &newgid);
 
     if(newgid != oldgid)
@@ -96,7 +98,7 @@ drop_privileges(int permanent)
         auto ret = setegid(newgid);
         if(ret != 0)
             abort();
-        if(permanent && setgid(newgid) == -1)
+        if(permanent != 0 && setgid(newgid) == -1)
             abort();
 #    else
         if(setregid((permanent ? newgid : -1), newgid) == -1)
@@ -110,16 +112,16 @@ drop_privileges(int permanent)
         auto ret = seteuid(newuid);
         if(ret != 0)
             abort();
-        if(permanent && setuid(newuid) == -1)
+        if(permanent != 0 && setuid(newuid) == -1)
             abort();
 #    else
-        if(setreuid((permanent ? newuid : -1), newuid) == -1)
+        if(setreuid(((permanent != 0) ? newuid : -1), newuid) == -1)
             abort();
 #    endif
     }
 
     // verify that the changes were successful
-    if(permanent)
+    if(permanent != 0)
     {
         if(newgid != oldgid && (setegid(oldgid) != -1 || getegid() != newgid))
             abort();
@@ -137,8 +139,8 @@ drop_privileges(int permanent)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_UTILITY_LINKAGE(void)
-restore_privileges(void)
+void
+restore_privileges()
 {
     if(geteuid() != get_group_info().user_id)
         if(seteuid(get_group_info().user_id) == -1 ||
@@ -148,15 +150,16 @@ restore_privileges(void)
         if(setegid(get_group_info().group_id) == -1 ||
            getegid() != get_group_info().group_id)
             abort();
-    if(!get_group_info().user_id)
+    if(get_group_info().user_id == 0U)
         setgroups(get_group_info().ngroups, get_group_info().groups);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-static TIMEMORY_UTILITY_LINKAGE(int) open_devnull(int fd)
+int
+open_devnull(int fd)
 {
-    FILE* f = 0;
+    FILE* f = nullptr;
     switch(fd)
     {
         case 0: f = freopen("/dev/null", "rb", stdin); break;
@@ -164,13 +167,13 @@ static TIMEMORY_UTILITY_LINKAGE(int) open_devnull(int fd)
         case 2: f = freopen("/dev/null", "wb", stderr); break;
         default: break;
     }
-    return (f && fileno(f) == fd);
+    return (f != nullptr && fileno(f) == fd) ? 1 : 0;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_UTILITY_LINKAGE(void)
-sanitize_files(void)
+void
+sanitize_files()
 {
     int         fds;
     struct stat st;
@@ -187,7 +190,7 @@ sanitize_files(void)
     // open them using /dev/null.  If any are unsuccessful, abort.
     for(int fd = 0; fd < 3; ++fd)
     {
-        if(fstat(fd, &st) == -1 && (errno != EBADF || !open_devnull(fd)))
+        if(fstat(fd, &st) == -1 && (errno != EBADF || open_devnull(fd) == 0))
         {
             abort();
         }
@@ -196,8 +199,8 @@ sanitize_files(void)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_UTILITY_LINKAGE(pid_t)
-fork(void)
+pid_t
+fork()
 {
     pid_t childpid;
 
@@ -217,7 +220,7 @@ fork(void)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_UTILITY_LINKAGE(TIMEMORY_PIPE*)
+TIMEMORY_PIPE*
 popen(const char* path, char** argv, char** envp)
 {
     int            stdin_pipe[2]  = { 0, 0 };
@@ -288,7 +291,7 @@ popen(const char* path, char** argv, char** envp)
         return nullptr;
     }
 
-    if(!p->child_pid)
+    if(p->child_pid == 0)
     {
         // this is the child process
         close(stdout_pipe[0]);
@@ -315,7 +318,7 @@ popen(const char* path, char** argv, char** envp)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_UTILITY_LINKAGE(int)
+int
 pclose(TIMEMORY_PIPE* p)
 {
     int   status;
@@ -335,8 +338,7 @@ pclose(TIMEMORY_PIPE* p)
     delete p;
     if(pid != -1 && WIFEXITED(status))
         return WEXITSTATUS(status);
-    else
-        return (pid == -1 ? -1 : 0);
+    return (pid == -1 ? -1 : 0);
 }
 //
 //--------------------------------------------------------------------------------------//

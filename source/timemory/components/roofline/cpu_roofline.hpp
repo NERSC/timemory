@@ -35,6 +35,7 @@
 #include "timemory/components/timing/wall_clock.hpp"
 
 #include "timemory/ert/configuration.hpp"
+#include "timemory/ert/extern.hpp"
 
 #include <array>
 #include <memory>
@@ -263,7 +264,7 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static void global_init(storage_type*)
+    static void global_init()
     {
         if(settings::debug() || settings::verbose() > 2)
             PRINT_HERE("%s", "global initialization of cpu_roofline");
@@ -272,7 +273,7 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static void thread_init(storage_type*)
+    static void thread_init()
     {
         if(settings::debug() || settings::verbose() > 2)
             PRINT_HERE("%s", "thread initialization of cpu_roofline");
@@ -281,7 +282,7 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static void thread_finalize(storage_type*) {}
+    static void thread_finalize() {}
 
     //----------------------------------------------------------------------------------//
 
@@ -399,11 +400,11 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    // ~cpu_roofline()                       = default;
-    // cpu_roofline(const cpu_roofline& rhs) = default;
-    // cpu_roofline(cpu_roofline&& rhs)      = default;
-    // this_type& operator=(const this_type&) = default;
-    // this_type& operator=(this_type&&) = default;
+    ~cpu_roofline()                           = default;
+    cpu_roofline(const cpu_roofline& rhs)     = default;
+    cpu_roofline(cpu_roofline&& rhs) noexcept = default;
+    this_type& operator=(const this_type&) = default;
+    this_type& operator=(this_type&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
 

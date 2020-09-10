@@ -57,6 +57,11 @@ get_local_datetime(const char* dt_format);
 //
 //--------------------------------------------------------------------------------------//
 //
+struct vsettings;
+//
+template <typename Tp, typename Vp = Tp>
+struct tsettings;
+//
 struct settings;
 //
 //--------------------------------------------------------------------------------------//

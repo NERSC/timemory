@@ -31,7 +31,6 @@
 #pragma once
 
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -70,7 +69,7 @@
 #    include <winsock.h>
 
 EXTERN_C inline int
-gettimeofday(struct timeval* t, void* timezone)
+gettimeofday(struct timeval* t, void* timezone) noexcept
 {
     struct _timeb timebuffer;
 #    if defined(_WIN64)
@@ -104,7 +103,7 @@ struct tms
 // All times are in CLK_TCKths of a second.
 
 EXTERN_C inline clock_t
-times(struct tms* __buffer)
+times(struct tms* __buffer) noexcept
 {
     __buffer->tms_utime  = clock();
     __buffer->tms_stime  = 0;
@@ -125,7 +124,7 @@ enum clockid_t
 };
 
 EXTERN_C inline LARGE_INTEGER
-get_filetime_offset()
+get_filetime_offset() noexcept
 {
     SYSTEMTIME    s;
     FILETIME      f;
@@ -146,7 +145,7 @@ get_filetime_offset()
 }
 
 EXTERN_C inline int
-clock_gettime(clockid_t, struct timespec* tv)
+clock_gettime(clockid_t, struct timespec* tv) noexcept
 {
     LARGE_INTEGER        t;
     FILETIME             f;
@@ -252,51 +251,30 @@ struct time_units<std::ratio<3600 * 24, 1>>
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Precision>
-int64_t
-clock_tick()
+inline int64_t
+clock_tick() noexcept
 {
-    auto _get_sys_tick = []() {
 #if defined(_WINDOWS)
-        return CLOCKS_PER_SEC;
+    return CLOCKS_PER_SEC;
 #else
-        return ::sysconf(_SC_CLK_TCK);
+    return ::sysconf(_SC_CLK_TCK);
 #endif
-    };
+}
 
-    static int64_t result = 0;
-    if(result == 0)
-    {
-        result = _get_sys_tick();
-        if(result <= 0)
-        {
-            std::stringstream ss;
-            ss << "Could not retrieve number of clock ticks "
-               << "per second (_SC_CLK_TCK / CLOCKS_PER_SEC).";
-            result = _get_sys_tick();
-            throw std::runtime_error(ss.str().c_str());
-        }
-        else if(result > Precision::den)  // den == std::ratio::denominator
-        {
-            std::stringstream ss;
-            ss << "Found more than 1 clock tick per " << time_units<Precision>::str
-               << ". cpu_clock can't handle that.";
-            result = _get_sys_tick();
-            throw std::runtime_error(ss.str().c_str());
-        }
-        else
-        {
-            result = Precision::den / _get_sys_tick();
-        }
-    }
-    return result;
+//--------------------------------------------------------------------------------------//
+
+template <typename Precision, typename Ret = int64_t>
+inline Ret
+clock_tick() noexcept
+{
+    return static_cast<Ret>(Precision::den) / static_cast<Ret>(clock_tick());
 }
 
 //--------------------------------------------------------------------------------------//
 // general struct for the differnt clock_gettime functions
 template <typename Tp = double, typename Precision = std::ratio<1>>
-Tp
-get_clock_now(clockid_t clock_id)
+inline Tp
+get_clock_now(clockid_t clock_id) noexcept
 {
     constexpr Tp factor = static_cast<Tp>(std::nano::den) / Precision::den;
 #if defined(_MACOS)
@@ -312,8 +290,8 @@ get_clock_now(clockid_t clock_id)
 // the system's real time (i.e. wall time) clock, expressed as the amount of time since
 // the epoch.
 template <typename Tp = double, typename Precision = std::ratio<1>>
-Tp
-get_clock_real_now()
+inline Tp
+get_clock_real_now() noexcept
 {
     using clock_type    = std::chrono::steady_clock;
     using duration_type = std::chrono::duration<clock_type::rep, Precision>;
@@ -327,8 +305,8 @@ get_clock_real_now()
 // clock that increments monotonically, tracking the time since an arbitrary point,
 // and will continue to increment while the system is asleep.
 template <typename Tp = double, typename Precision = std::ratio<1>>
-Tp
-get_clock_monotonic_now()
+inline Tp
+get_clock_monotonic_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_MONOTONIC);
 }
@@ -338,8 +316,8 @@ get_clock_monotonic_now()
 // CLOCK_MONOTONIC.  However, this clock is unaffected by frequency or time adjustments.
 // It should not be compared to other system time sources.
 template <typename Tp = double, typename Precision = std::ratio<1>>
-Tp
-get_clock_monotonic_raw_now()
+inline Tp
+get_clock_monotonic_raw_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_MONOTONIC_RAW);
 }
@@ -350,8 +328,8 @@ get_clock_monotonic_raw_now()
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // thread.
 template <typename Tp = double, typename Precision = std::ratio<1>>
-Tp
-get_clock_thread_now()
+inline Tp
+get_clock_thread_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_THREAD_CPUTIME_ID);
 }
@@ -361,62 +339,118 @@ get_clock_thread_now()
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // process.
 template <typename Tp = double, typename Precision = std::ratio<1>>
-Tp
-get_clock_process_now()
+inline Tp
+get_clock_process_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_PROCESS_CPUTIME_ID);
 }
 
 //--------------------------------------------------------------------------------------//
-// uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesn’t work that way.
-// units are reported in number of clock ticks per second
-//
 // this function extracts only the CPU time spent in user-mode
+// for this process and child processes
 template <typename Tp = double, typename Precision = std::ratio<1>>
-Tp
-get_clock_user_now()
+inline Tp
+get_clock_user_now() noexcept
 {
-    // return clock() / units::clocks_per_sec;
-    struct tms _tms;
+    tms _tms;
     ::times(&_tms);
     return (_tms.tms_utime + _tms.tms_cutime) * static_cast<Tp>(clock_tick<Precision>());
 }
 
 //--------------------------------------------------------------------------------------//
-// uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesn’t work that way.
-// units are reported in number of clock ticks per second
-//
 // this function extracts only the CPU time spent in kernel-mode
+// for this process and child processes
 template <typename Tp = double, typename Precision = std::ratio<1>>
-Tp
-get_clock_system_now()
+inline Tp
+get_clock_system_now() noexcept
 {
     tms _tms;
     ::times(&_tms);
-#if defined(_WINDOWS)
-    return (static_cast<Tp>(_tms.tms_stime) + static_cast<Tp>(_tms.tms_cstime)) *
-           static_cast<Tp>(clock_tick<Precision>());
-#else
     return (_tms.tms_stime + _tms.tms_cstime) * static_cast<Tp>(clock_tick<Precision>());
-#endif
 }
 
 //--------------------------------------------------------------------------------------//
-// uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesn’t work that way.
-// units are reported in number of clock ticks per second
-//
 // this function extracts only the CPU time spent in both user- and kernel- mode
+// for this process and child processes
 template <typename Tp = double, typename Precision = std::ratio<1>>
-Tp
-get_clock_cpu_now()
+inline Tp
+get_clock_cpu_now() noexcept
 {
     tms _tms;
     ::times(&_tms);
     return (_tms.tms_utime + _tms.tms_cutime + _tms.tms_stime + _tms.tms_cstime) *
            static_cast<Tp>(clock_tick<Precision>());
+}
+
+//--------------------------------------------------------------------------------------//
+// this function extracts only the CPU time spent in user-mode
+// for this process only
+template <typename Tp = double, typename Precision = std::ratio<1>>
+inline Tp
+get_self_clock_user_now() noexcept
+{
+    tms _tms;
+    ::times(&_tms);
+    return _tms.tms_utime * static_cast<Tp>(clock_tick<Precision>());
+}
+
+//--------------------------------------------------------------------------------------//
+// this function extracts only the CPU time spent in kernel-mode
+// for this process only
+template <typename Tp = double, typename Precision = std::ratio<1>>
+inline Tp
+get_self_clock_system_now() noexcept
+{
+    tms _tms;
+    ::times(&_tms);
+    return _tms.tms_stime * static_cast<Tp>(clock_tick<Precision>());
+}
+
+//--------------------------------------------------------------------------------------//
+// this function extracts only the CPU time spent in both user- and kernel- mode
+// for this process only
+template <typename Tp = double, typename Precision = std::ratio<1>>
+inline Tp
+get_self_clock_cpu_now() noexcept
+{
+    return (clock() * static_cast<Tp>(Precision::den)) / static_cast<Tp>(CLOCKS_PER_SEC);
+}
+
+//--------------------------------------------------------------------------------------//
+// this function extracts only the CPU time spent in user-mode
+// for this process only
+template <typename Tp = double, typename Precision = std::ratio<1>>
+inline Tp
+get_child_clock_user_now() noexcept
+{
+    tms _tms;
+    ::times(&_tms);
+    return _tms.tms_cutime * static_cast<Tp>(clock_tick<Precision>());
+}
+
+//--------------------------------------------------------------------------------------//
+// this function extracts only the CPU time spent in kernel-mode
+// for this process only
+template <typename Tp = double, typename Precision = std::ratio<1>>
+inline Tp
+get_child_clock_system_now() noexcept
+{
+    tms _tms;
+    ::times(&_tms);
+    return _tms.tms_cstime * static_cast<Tp>(clock_tick<Precision>());
+}
+
+//--------------------------------------------------------------------------------------//
+// this function extracts only the CPU time spent in both user- and kernel- mode
+// for this process only
+template <typename Tp = double, typename Precision = std::ratio<1>>
+inline Tp
+get_child_clock_cpu_now() noexcept
+{
+    tms _tms;
+    ::times(&_tms);
+    return (_tms.tms_cutime + _tms.tms_cstime) * static_cast<Tp>(clock_tick<Precision>());
+    return (clock() * static_cast<Tp>(Precision::den)) / static_cast<Tp>(CLOCKS_PER_SEC);
 }
 
 //--------------------------------------------------------------------------------------//

@@ -165,11 +165,11 @@ public:
     , m_list(_list)
     {}
 
-    component_hybrid(const component_hybrid&) = default;
-    component_hybrid(component_hybrid&&)      = default;
+    component_hybrid(const component_hybrid&)     = default;
+    component_hybrid(component_hybrid&&) noexcept = default;
 
     component_hybrid& operator=(const component_hybrid& rhs) = default;
-    component_hybrid& operator=(component_hybrid&&) = default;
+    component_hybrid& operator=(component_hybrid&&) noexcept = default;
 
     component_hybrid clone(bool _store, scope::config _scope)
     {

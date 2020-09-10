@@ -332,7 +332,7 @@ TEST_F(hybrid_tests, auto_timer)
         return static_cast<double>(val.first) / val.second * 100.0;
     };
 
-    auto  _cpu  = *obj.get<user_clock>() + *obj.get<system_clock>();
+    auto  _cpu  = *obj.get<cpu_clock>();
     auto& _rc   = *obj.get<wall_clock>();
     auto& _util = *obj.get<cpu_util>();
 
@@ -344,18 +344,15 @@ TEST_F(hybrid_tests, auto_timer)
     ASSERT_NEAR(1.25, _cpu.get(), timer_tolerance);
     ASSERT_NEAR(125.0, _util.get(), util_tolerance);
 
-    auto _cpu2 = *obj.get<user_clock>() + *obj.get<system_clock>();
-    ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu2.get());
-
-    cpu_clock _cpu_obj = *obj.get<user_clock>() + *obj.get<system_clock>();
-    double    _cpu_val = obj.get<user_clock>()->get() + obj.get<system_clock>()->get();
+    cpu_clock _cpu_obj = *obj.get<cpu_clock>();
+    double    _cpu_val = obj.get<cpu_clock>()->get();
     ASSERT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
     details::print_info(_cpu_obj, _cpu_val, "sec");
 
     auto _obj  = tim::get(obj);
-    auto _cpu3 = std::get<1>(_obj) + std::get<2>(_obj);
+    auto _cpu2 = std::get<1>(_obj);
 
-    ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu3);
+    ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu2);
 }
 
 //--------------------------------------------------------------------------------------//

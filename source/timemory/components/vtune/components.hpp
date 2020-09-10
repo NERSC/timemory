@@ -60,8 +60,8 @@ struct vtune_event : public base<vtune_event, void>
     }
     static value_type record() {}
 
-    static void global_init(storage_type*) { ittnotify::pause(); }
-    static void global_finalize(storage_type*) { ittnotify::pause(); }
+    static void global_init() { ittnotify::pause(); }
+    static void global_finalize() { ittnotify::pause(); }
 
     void start()
     {
@@ -117,8 +117,8 @@ struct vtune_frame : public base<vtune_frame, void>
     }
     static value_type record() {}
 
-    static void global_init(storage_type*) { ittnotify::pause(); }
-    static void global_finalize(storage_type*) { ittnotify::pause(); }
+    static void global_init() { ittnotify::pause(); }
+    static void global_finalize() { ittnotify::pause(); }
 
     void start()
     {
@@ -174,8 +174,8 @@ struct vtune_profiler
     }
     static value_type record() {}
 
-    static void global_init(storage_type*) { ittnotify::pause(); }
-    static void global_finalize(storage_type*) { ittnotify::pause(); }
+    static void global_init() { ittnotify::pause(); }
+    static void global_finalize() { ittnotify::pause(); }
 
     using tracker_type::m_tot;
 

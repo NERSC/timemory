@@ -34,8 +34,10 @@
 #include "timemory/components/timing/wall_clock.hpp"
 
 #include "timemory/ert/configuration.hpp"
+#include "timemory/ert/extern.hpp"
 
 #include <array>
+#include <cassert>
 #include <memory>
 #include <numeric>
 #include <utility>
@@ -196,7 +198,7 @@ public:
                                  "dram_read_transactions",
                                  "dram_write_transactions" };
             */
-#if defined(TIMEMORY_CUDA_FP16)
+#if defined(TIMEMORY_USE_CUDA_HALF)
             if(is_one_of<cuda::fp16_t, types_tuple>::value)
             {
                 // for(string_t itr : { "flop_count_hp", "flop_count_hp_add",
@@ -307,12 +309,12 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void global_init(storage_type*)
+    static void global_init()
     {
         if(event_mode() == MODE::ACTIVITY)
-            activity_type::global_init(nullptr);
+            activity_type::global_init();
         else
-            counters_type::global_init(nullptr);
+            counters_type::global_init();
     }
 
     //----------------------------------------------------------------------------------//
@@ -328,12 +330,13 @@ public:
     static void global_finalize(storage_type* _store)
     {
         if(event_mode() == MODE::ACTIVITY)
-            activity_type::global_finalize(nullptr);
+            activity_type::global_finalize();
         else
-            counters_type::global_finalize(nullptr);
+            counters_type::global_finalize();
 
         if(_store && _store->size() > 0)
         {
+            assert(_store->is_finalizing());
             // run roofline peak generation
             auto ert_config = get_finalizer();
             auto ert_data   = get_ert_data();
@@ -345,8 +348,8 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void thread_init(storage_type*) {}
-    static void thread_finalize(storage_type*) {}
+    static void thread_init() {}
+    static void thread_finalize() {}
 
     //----------------------------------------------------------------------------------//
 
@@ -440,8 +443,8 @@ public:
         return *this;
     }
 
-    gpu_roofline(gpu_roofline&&) = default;
-    gpu_roofline& operator=(gpu_roofline&&) = default;
+    gpu_roofline(gpu_roofline&&) noexcept = default;
+    gpu_roofline& operator=(gpu_roofline&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
 
@@ -481,6 +484,7 @@ public:
 
     void stop()
     {
+        using namespace tim::component::operators;
         switch(event_mode())
         {
             case MODE::ACTIVITY:
@@ -734,7 +738,7 @@ private:
             }
         }
 
-        cupti_data(cupti_data&& rhs)
+        cupti_data(cupti_data&& rhs) noexcept
         {
             switch(event_mode())
             {
@@ -767,7 +771,7 @@ private:
             return *this;
         }
 
-        cupti_data& operator=(cupti_data&& rhs)
+        cupti_data& operator=(cupti_data&& rhs) noexcept
         {
             if(this == &rhs)
                 return *this;
@@ -883,7 +887,7 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
-#if defined(TIMEMORY_DISABLE_CUDA_HALF)
+#if !defined(TIMEMORY_USE_CUDA_HALF)
 
 template <>
 struct gpu_roofline<cuda::fp16_t>
@@ -960,6 +964,8 @@ struct gpu_roofline<cuda::fp16_t>
     }
 
 public:
+    TIMEMORY_DEFAULT_OBJECT(gpu_roofline)
+
     //----------------------------------------------------------------------------------//
 
     static MODE& event_mode()

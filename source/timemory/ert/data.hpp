@@ -76,11 +76,11 @@ struct exec_params
     , block_size(_block_size)
     {}
 
-    ~exec_params()                  = default;
-    exec_params(const exec_params&) = default;
-    exec_params(exec_params&&)      = default;
+    ~exec_params()                      = default;
+    exec_params(const exec_params&)     = default;
+    exec_params(exec_params&&) noexcept = default;
     exec_params& operator=(const exec_params&) = default;
-    exec_params& operator=(exec_params&&) = default;
+    exec_params& operator=(exec_params&&) noexcept = default;
 
     uint64_t working_set_min = 16;
     uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
@@ -140,10 +140,10 @@ public:
     //
     exec_data() = default;
     ~exec_data() {}
-    exec_data(const exec_data&) = delete;
-    exec_data(exec_data&&)      = default;
+    exec_data(const exec_data&)     = delete;
+    exec_data(exec_data&&) noexcept = default;
     exec_data& operator=(const exec_data&) = delete;
-    exec_data& operator=(exec_data&&) = default;
+    exec_data& operator=(exec_data&&) noexcept = default;
 
 public:
     //----------------------------------------------------------------------------------//

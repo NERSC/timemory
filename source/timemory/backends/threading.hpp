@@ -128,7 +128,7 @@ struct affinity
 #if defined(_MACOS)
             int    count;
             size_t count_len = sizeof(count);
-            sysctlbyname("hw.physicalcpu", &count, &count_len, NULL, 0);
+            sysctlbyname("hw.physicalcpu", &count, &count_len, nullptr, 0);
             return static_cast<int64_t>(count);
 #elif defined(_LINUX)
             std::ifstream ifs("/proc/cpuinfo");

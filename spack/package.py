@@ -22,11 +22,13 @@ class Timemory(CMakePackage):
     version('3.0.0', commit='b36b1673b2c6b7ff3126d8261bef0f8f176c7beb',
             submodules=True)
 
-
     variant('shared', default=True, description='Build shared libraries')
     variant('static', default=False, description='Build static libraries')
     variant('python', default=False, description='Enable Python support')
-    variant('mpi', default=False, description='Enable MPI support')
+    variant('mpi', default=False,
+            description='Enable support for MPI aggregation')
+    variant('nccl', default=False,
+            description='Enable support for wrapping NCCL functions')
     variant('tau', default=False, description='Enable TAU support')
     variant('papi', default=False, description='Enable PAPI support')
     variant('cuda', default=False, description='Enable CUDA support')
@@ -97,6 +99,7 @@ class Timemory(CMakePackage):
     depends_on('py-cython', when='+python', type=('build'))
     depends_on('py-ipython', when='+python', type=('run'))
     depends_on('mpi', when='+mpi')
+    depends_on('nccl', when='+nccl')
     depends_on('tau', when='+tau')
     depends_on('papi', when='+papi')
     depends_on('cuda', when='+cuda')
@@ -127,6 +130,8 @@ class Timemory(CMakePackage):
               msg='+python require tls_model=global-dynamic')
     conflicts('tls_model=local-exec', when='+python',
               msg='+python require tls_model=global-dynamic')
+    conflicts('+nccl', when='~gotcha',
+              msg='+nccl requires +gotcha')
     conflicts('+mpip_library', when='~mpi', msg='+mpip_library requires +mpi')
     conflicts('+mpip_library', when='~gotcha',
               msg='+mpip_library requires +gotcha')
@@ -164,6 +169,10 @@ class Timemory(CMakePackage):
         if '+python' in spec:
             args.append('-DPYTHON_EXECUTABLE={0}'.format(
                 spec['python'].command.path))
+
+        if '+nccl' in spec:
+            args.append('-DTIMEMORY_USE_NCCL=ON')
+            args.append('-DTIMEMORY_BUILD_NCCLP_LIBRARY=ON')
 
         if '+mpi' in spec:
             args.append('-DTIMEMORY_USE_MPI_LINK_FLAGS=OFF')

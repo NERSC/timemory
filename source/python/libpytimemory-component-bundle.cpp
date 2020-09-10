@@ -210,7 +210,7 @@ generate(py::module& _pymod)
         }
     };
 
-    pybundle_t::global_init(nullptr);
+    pybundle_t::global_init();
 
     //==================================================================================//
     //

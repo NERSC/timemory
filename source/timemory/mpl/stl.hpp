@@ -196,7 +196,7 @@ operator/=(std::vector<Tp, Extra...>&, const std::vector<Tp, Extra...>&);
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, size_t N>
-const std::array<Tp, N>
+std::array<Tp, N>
 operator+(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 {
     math::plus(lhs, rhs);
@@ -206,7 +206,7 @@ operator+(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-const std::tuple<Types...>
+std::tuple<Types...>
 operator+(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 {
     math::plus(lhs, rhs);
@@ -216,7 +216,7 @@ operator+(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs>
-const std::pair<Lhs, Rhs>
+std::pair<Lhs, Rhs>
 operator+(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 {
     math::plus(lhs, rhs);
@@ -226,7 +226,7 @@ operator+(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename... Extra>
-const std::vector<Tp, Extra...>
+std::vector<Tp, Extra...>
 operator+(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs)
 {
     math::plus(lhs, rhs);
@@ -240,7 +240,7 @@ operator+(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, size_t N>
-const std::array<Tp, N>
+std::array<Tp, N>
 operator-(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 {
     math::minus(lhs, rhs);
@@ -250,7 +250,7 @@ operator-(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-const std::tuple<Types...>
+std::tuple<Types...>
 operator-(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 {
     math::minus(lhs, rhs);
@@ -260,7 +260,7 @@ operator-(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs>
-const std::pair<Lhs, Rhs>
+std::pair<Lhs, Rhs>
 operator-(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 {
     math::minus(lhs, rhs);
@@ -270,7 +270,7 @@ operator-(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename... Extra>
-const std::vector<Tp, Extra...>
+std::vector<Tp, Extra...>
 operator-(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs)
 {
     math::minus(lhs, rhs);
@@ -284,7 +284,7 @@ operator-(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, size_t N>
-const std::array<Tp, N> operator*(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
+std::array<Tp, N> operator*(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 {
     math::multiply(lhs, rhs);
     return lhs;
@@ -293,8 +293,7 @@ const std::array<Tp, N> operator*(std::array<Tp, N> lhs, const std::array<Tp, N>
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-const std::tuple<Types...> operator*(std::tuple<Types...>        lhs,
-                                     const std::tuple<Types...>& rhs)
+std::tuple<Types...> operator*(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 {
     math::multiply(lhs, rhs);
     return lhs;
@@ -303,8 +302,7 @@ const std::tuple<Types...> operator*(std::tuple<Types...>        lhs,
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs>
-const std::pair<Lhs, Rhs> operator*(std::pair<Lhs, Rhs>        lhs,
-                                    const std::pair<Lhs, Rhs>& rhs)
+std::pair<Lhs, Rhs> operator*(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 {
     math::multiply(lhs, rhs);
     return lhs;
@@ -313,8 +311,8 @@ const std::pair<Lhs, Rhs> operator*(std::pair<Lhs, Rhs>        lhs,
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename... Extra>
-const std::vector<Tp, Extra...> operator*(std::vector<Tp, Extra...>        lhs,
-                                          const std::vector<Tp, Extra...>& rhs)
+std::vector<Tp, Extra...> operator*(std::vector<Tp, Extra...>        lhs,
+                                    const std::vector<Tp, Extra...>& rhs)
 {
     math::multiply(lhs, rhs);
     return lhs;
@@ -327,7 +325,7 @@ const std::vector<Tp, Extra...> operator*(std::vector<Tp, Extra...>        lhs,
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, size_t N>
-const std::array<Tp, N>
+std::array<Tp, N>
 operator/(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 {
     math::divide(lhs, rhs);
@@ -337,7 +335,7 @@ operator/(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-const std::tuple<Types...>
+std::tuple<Types...>
 operator/(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 {
     math::divide(lhs, rhs);
@@ -347,7 +345,7 @@ operator/(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs>
-const std::pair<Lhs, Rhs>
+std::pair<Lhs, Rhs>
 operator/(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 {
     math::divide(lhs, rhs);
@@ -357,7 +355,7 @@ operator/(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename... Extra>
-const std::vector<Tp, Extra...>
+std::vector<Tp, Extra...>
 operator/(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs)
 {
     math::divide(lhs, rhs);

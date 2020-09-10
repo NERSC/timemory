@@ -83,12 +83,12 @@ public:
     //----------------------------------------------------------------------------------//
     //  default construction
     //
-    counter()               = default;
-    ~counter()              = default;
-    counter(const counter&) = default;
-    counter(counter&&)      = default;
+    counter()                   = default;
+    ~counter()                  = default;
+    counter(const counter&)     = default;
+    counter(counter&&) noexcept = default;
     counter& operator=(const counter&) = default;
-    counter& operator=(counter&&) = default;
+    counter& operator=(counter&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
     // standard creation

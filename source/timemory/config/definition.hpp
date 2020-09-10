@@ -60,12 +60,12 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
     if(settings::debug() || settings::verbose() > 3)
         PRINT_HERE("%s", "");
 
-    std::string exe_name = argv[0];
+    std::string exe_name = (argc > 0) ? argv[0] : "";
 
-    while(exe_name.find("\\") != std::string::npos)
+    while(exe_name.find('\\') != std::string::npos)
         exe_name = exe_name.substr(exe_name.find_last_of('\\') + 1);
 
-    while(exe_name.find("/") != std::string::npos)
+    while(exe_name.find('/') != std::string::npos)
         exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
 
     static const std::vector<std::string> _exe_suffixes = { ".py", ".exe" };
@@ -85,6 +85,9 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
     size_t pos = std::string::npos;
     while((pos = exe_name.find("--")) != std::string::npos)
         exe_name.erase(pos, 1);
+
+    if(exe_name.empty())
+        exe_name = "timemory-output";
 
     settings::output_path() = exe_name;
     // allow environment overrides

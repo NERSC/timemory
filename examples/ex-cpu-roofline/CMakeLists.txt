@@ -8,7 +8,7 @@ endif()
 project(timemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cpu_roofline)
-set(COMPONENTS compile-options analysis-tools cpu-roofline)
+set(COMPONENTS compile-options analysis-tools cpu-roofline ert)
 
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS mpi)
 

@@ -69,7 +69,7 @@ struct flamegraph
 //
 template <typename Type>
 template <typename Up, enable_if_t<(trait::supports_flamegraph<Up>::value), int>>
-flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)
+flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)  // NOLINT
 {
     // auto node_init        = dmp::is_initialized();
     // auto node_size        = dmp::size();
@@ -219,7 +219,7 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)
 //
 template <typename Type>
 template <typename Up, enable_if_t<!(trait::supports_flamegraph<Up>::value), int>>
-flamegraph<Type>::flamegraph(storage_type*, std::string)
+flamegraph<Type>::flamegraph(storage_type*, std::string)  // NOLINT
 {}
 //
 //--------------------------------------------------------------------------------------//

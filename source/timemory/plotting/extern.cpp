@@ -22,12 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//======================================================================================//
-// clang-format off
-//
-#include "timemory/plotting/definition.hpp"
-//
 #include "timemory/plotting/extern.hpp"
-//
-// clang-format on
-//======================================================================================//
+#include "timemory/plotting/definition.hpp"
+
+#if defined(TIMEMORY_USE_PYTHON)
+#endif

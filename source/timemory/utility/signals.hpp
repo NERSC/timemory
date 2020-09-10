@@ -306,7 +306,7 @@ disable_signal_detection()
     sigemptyset(&tim_signal_termaction().sa_mask);
     tim_signal_termaction().sa_handler = SIG_DFL;
 
-    auto _disable = [](signal_settings::signal_set_t _set) {
+    auto _disable = [](const signal_settings::signal_set_t& _set) {
         for(auto itr = _set.cbegin(); itr != _set.cend(); ++itr)
         {
             int _itr = static_cast<int>(*itr);

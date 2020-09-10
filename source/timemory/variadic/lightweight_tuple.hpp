@@ -119,7 +119,7 @@ public:
     };
 
 public:
-    lightweight_tuple();
+    lightweight_tuple() = default;
 
     template <typename... T, typename Func = initializer_type>
     explicit lightweight_tuple(const string_t& key, quirk::config<T...> = {},
@@ -138,11 +138,11 @@ public:
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    lightweight_tuple(const lightweight_tuple&) = default;
-    lightweight_tuple(lightweight_tuple&&)      = default;
+    lightweight_tuple(const lightweight_tuple&)     = default;
+    lightweight_tuple(lightweight_tuple&&) noexcept = default;
 
     lightweight_tuple& operator=(const lightweight_tuple& rhs) = default;
-    lightweight_tuple& operator=(lightweight_tuple&&) = default;
+    lightweight_tuple& operator=(lightweight_tuple&&) noexcept = default;
 
     lightweight_tuple clone(bool store, scope::config _scope = scope::get_default());
 

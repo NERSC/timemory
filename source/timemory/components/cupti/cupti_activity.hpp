@@ -152,7 +152,7 @@ struct cupti_activity : public base<cupti_activity, uint64_t>
 
     //----------------------------------------------------------------------------------//
 
-    static void global_init(storage_type*)
+    static void global_init()
     {
         static std::atomic<short> _once(0);
         if(_once++ > 0)
@@ -163,10 +163,7 @@ struct cupti_activity : public base<cupti_activity, uint64_t>
 
     //----------------------------------------------------------------------------------//
 
-    static void global_finalize(storage_type*)
-    {
-        cupti::activity::finalize_trace(get_kind_types());
-    }
+    static void global_finalize() { cupti::activity::finalize_trace(get_kind_types()); }
 
     //----------------------------------------------------------------------------------//
 
@@ -179,6 +176,11 @@ public:
 
     // make sure it is removed
     ~cupti_activity() { cupti::activity::get_receiver().remove(this); }
+
+    cupti_activity(const cupti_activity&)     = default;
+    cupti_activity(cupti_activity&&) noexcept = default;
+    cupti_activity& operator=(const cupti_activity&) = default;
+    cupti_activity& operator=(cupti_activity&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
     // start
@@ -194,6 +196,7 @@ public:
 
     void stop()
     {
+        using namespace tim::component::operators;
         cupti::activity::stop_trace(this);
         auto tmp     = cupti::activity::get_receiver().get();
         auto kernels = cupti::activity::get_receiver().get_named(m_kernels_index, true);

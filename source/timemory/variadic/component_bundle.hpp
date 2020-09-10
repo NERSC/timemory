@@ -112,7 +112,7 @@ public:
         static initializer_type _instance = [](this_type& cl) {
             static auto env_enum = []() {
                 auto _tag = demangle<Tag>();
-                for(auto itr : { string_t("tim::"), string_t("api::") })
+                for(const auto& itr : { string_t("tim::"), string_t("api::") })
                 {
                     auto _pos = _tag.find(itr);
                     do
@@ -123,8 +123,8 @@ public:
                     } while(_pos != std::string::npos);
                 }
 
-                for(auto itr : { string_t("::"), string_t("<"), string_t(">"),
-                                 string_t(" "), string_t("__") })
+                for(const auto& itr : { string_t("::"), string_t("<"), string_t(">"),
+                                        string_t(" "), string_t("__") })
                 {
                     auto _pos = _tag.find(itr);
                     do
@@ -197,10 +197,10 @@ public:
     //      Copy/move construct and assignment
     //------------------------------------------------------------------------//
     component_bundle(const component_bundle& rhs);
-    component_bundle(component_bundle&&) = default;
+    component_bundle(component_bundle&&) noexcept = default;
 
     component_bundle& operator=(const component_bundle& rhs);
-    component_bundle& operator=(component_bundle&&) = default;
+    component_bundle& operator=(component_bundle&&) noexcept = default;
 
     component_bundle clone(bool store, scope::config _scope = scope::get_default());
 

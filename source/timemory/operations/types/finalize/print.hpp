@@ -58,7 +58,7 @@ namespace finalize
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_OPERATIONS_LINKAGE(void)
-base::print::print_plot(const std::string& outfname, const std::string suffix)
+base::print::print_plot(const std::string& outfname, const std::string suffix)  // NOLINT
 {
     if(node_rank == 0)
     {
@@ -74,7 +74,7 @@ base::print::print_plot(const std::string& outfname, const std::string suffix)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_OPERATIONS_LINKAGE(void)
-base::print::write(std::ostream& os, stream_type stream)
+base::print::write(std::ostream& os, stream_type stream)  // NOLINT
 {
     if(stream)
         os << *stream << std::flush;
@@ -83,17 +83,17 @@ base::print::write(std::ostream& os, stream_type stream)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_OPERATIONS_LINKAGE(void)
-base::print::print_cout(stream_type stream)
+base::print::print_cout(stream_type stream)  // NOLINT
 {
     printf("\n");
-    write(std::cout, stream);
+    write(std::cout, stream);  // NOLINT
     printf("\n");
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_OPERATIONS_LINKAGE(void)
-base::print::print_text(const std::string& outfname, stream_type stream)
+base::print::print_text(const std::string& outfname, stream_type stream)  // NOLINT
 {
     if(outfname.length() > 0 && stream)
     {
@@ -137,7 +137,7 @@ print<Tp, true>::setup()
         itr = toupper(itr);
 
     // find the max width
-    for(const auto mitr : node_results)
+    for(const auto& mitr : node_results)
     {
         for(const auto& itr : mitr)
         {
@@ -180,7 +180,7 @@ print<Tp, true>::setup()
     if(settings::diff_output())
     {
         extensions.insert(extensions.begin(), fext);
-        for(auto itr : extensions)
+        for(const auto& itr : extensions)
         {
             auto inpfname = settings::compose_input_filename(label, itr);
             if(file_exists(inpfname))
@@ -426,7 +426,7 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
         std::ofstream ofs(outfname.c_str());
         if(ofs)
         {
-            auto fext = outfname.substr(outfname.find_last_of(".") + 1);
+            auto fext = outfname.substr(outfname.find_last_of('.') + 1);
             if(fext.empty())
                 fext = "unknown";
             manager::instance()->add_file_output(fext, label, outfname);

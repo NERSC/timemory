@@ -61,7 +61,9 @@ build_intermediate_library(
 
 # global
 add_subdirectory(manager)
+add_subdirectory(ert)
 add_subdirectory(config)
+add_subdirectory(storage)
 add_subdirectory(operations)
 add_subdirectory(backends)
 add_subdirectory(variadic)
@@ -69,11 +71,8 @@ add_subdirectory(variadic)
 # components
 add_subdirectory(components)
 
-# extern
 add_subdirectory(containers)
 add_subdirectory(runtime)
-add_subdirectory(storage)
-add_subdirectory(ert)
 
 # add_subdirectory(compat)
 # add_subdirectory(data)

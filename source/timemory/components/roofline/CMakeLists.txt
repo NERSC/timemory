@@ -9,7 +9,7 @@ if(TIMEMORY_USE_PAPI OR TIMEMORY_USE_CUPTI)
 
     if(TIMEMORY_USE_CUPTI AND CMAKE_CUDA_COMPILER)
         set_source_files_properties(${source_files} PROPERTIES
-            LANGUAGE CUDA
+            # LANGUAGE CUDA
             LINKER_LANGUAGE CUDA)
     endif()
 

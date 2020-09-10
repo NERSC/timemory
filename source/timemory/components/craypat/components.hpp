@@ -58,12 +58,9 @@ struct craypat_record
         return "Toggles CrayPAT recording on calling thread";
     }
 
-    static void global_init(storage_type*) { backend::craypat::record(PAT_STATE_OFF); }
+    static void global_init() { backend::craypat::record(PAT_STATE_OFF); }
 
-    static void global_finalize(storage_type*)
-    {
-        backend::craypat::record(PAT_STATE_OFF);
-    }
+    static void global_finalize() { backend::craypat::record(PAT_STATE_OFF); }
 
     void start()
     {
@@ -167,7 +164,7 @@ struct craypat_counters : base<craypat_counters, std::vector<unsigned long>>
         }
     }
 
-    static void global_init(storage_type*) { configure(); }
+    static void global_init() { configure(); }
 
     static value_type record()
     {
@@ -220,6 +217,7 @@ struct craypat_counters : base<craypat_counters, std::vector<unsigned long>>
 
     void stop()
     {
+        using namespace tim::component::operators;
         value = (record() - value);
         accum += value;
     }

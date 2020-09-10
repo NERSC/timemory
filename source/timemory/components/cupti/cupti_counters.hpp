@@ -134,8 +134,8 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
             init();
     }
 
-    static void global_init(storage_type*) { configure(); }
-    static void global_finalize(storage_type*) { clear(); }
+    static void global_init() { configure(); }
+    static void global_finalize() { clear(); }
 
     static const profptr_t& get_profiler() { return _get_profiler(); }
     static const strvec_t&  get_events() { return *_get_events(); }
@@ -160,9 +160,9 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     }
 
     ~cupti_counters() {}
-    cupti_counters(const cupti_counters&) = default;
-    cupti_counters(cupti_counters&&)      = default;
-    cupti_counters& operator              =(const cupti_counters& rhs)
+    cupti_counters(const cupti_counters&)     = default;
+    cupti_counters(cupti_counters&&) noexcept = default;
+    cupti_counters& operator                  =(const cupti_counters& rhs)
     {
         if(this != &rhs)
         {
@@ -172,7 +172,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         }
         return *this;
     }
-    cupti_counters& operator=(cupti_counters&&) = default;
+    cupti_counters& operator=(cupti_counters&&) noexcept = default;
 
     static int64_t unit() { return 1; }
     // leave these empty
@@ -225,6 +225,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     void stop()
     {
         using namespace stl;
+        using namespace tim::component::operators;
 
         value_type tmp       = record();
         auto&      _profiler = _get_profiler();

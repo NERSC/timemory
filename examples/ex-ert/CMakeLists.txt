@@ -27,7 +27,7 @@ option(USE_KOKKOS "Enable Kokkos" OFF)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-ert-example)
 set(COMPONENTS headers compile-options vector analysis-tools
-    OPTIONAL_COMPONENTS mpi cuda cuda-compiler)
+    OPTIONAL_COMPONENTS mpi cuda cuda-compiler ert)
 
 if(USE_CUDA)
     check_language(CUDA)
@@ -43,6 +43,9 @@ if(USE_CUDA)
 endif()
 
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
+if(NOT TARGET timemory::timemory-ert)
+  return()
+endif()
 
 add_executable(ex_ert ex_ert.cpp)
 target_link_libraries(ex_ert timemory-ert-example)

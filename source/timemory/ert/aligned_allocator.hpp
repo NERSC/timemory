@@ -196,7 +196,7 @@ public:
     // constructors and destructors
     aligned_allocator() {}
     aligned_allocator(const aligned_allocator&) {}
-    aligned_allocator(aligned_allocator&&) {}
+    aligned_allocator(aligned_allocator&&) noexcept {}
     template <typename U>
     aligned_allocator(const aligned_allocator<U, _Align_v>&)
     {}

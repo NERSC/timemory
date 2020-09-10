@@ -80,7 +80,7 @@ extern "C"
             dlerror();  // Clear any existing error
 
             configure_mpip<mpi_toolset_t, api_t>();
-            user_mpip_bundle::global_init(nullptr);
+            user_mpip_bundle::global_init();
             auto ret = activate_mpip<mpi_toolset_t, api_t>();
             dlclose(libmpi_handle);
             return ret;
@@ -129,7 +129,7 @@ struct mpi_comm_data : base<mpi_comm_data, void>
 
     static void preinit() { timemory_mpip_library_ctor(); }
 
-    static void global_init(storage_type*)
+    static void global_init()
     {
         auto _data = tim::get_env("TIMEMORY_MPIP_COMM_DATA", true);
         if(_data)

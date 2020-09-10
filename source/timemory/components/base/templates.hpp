@@ -253,3 +253,5 @@ base<Tp, Value>::print(std::ostream&) const
 }  // namespace tim
 //
 //======================================================================================//
+
+#include "timemory/components/opaque/definition.hpp"

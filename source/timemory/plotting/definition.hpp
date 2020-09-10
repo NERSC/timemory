@@ -33,7 +33,9 @@
 #include "timemory/plotting/macros.hpp"
 #include "timemory/plotting/types.hpp"
 #include "timemory/settings/declaration.hpp"
-#include "timemory/types.hpp"
+#if defined(TIMEMORY_USE_PYTHON)
+#    include "pybind11/embed.h"
+#endif
 
 namespace tim
 {
@@ -54,8 +56,8 @@ namespace plotting
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_PLOTTING_LINKAGE(void)
-plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
-     string_t _json_file)
+plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
+     bool _echo_dart, const string_t& _json_file)
 {
     auto_lock_t lk(type_mutex<std::ostream>());
 
@@ -74,7 +76,7 @@ plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
 
     auto _info = TIMEMORY_LABEL("");
 
-    auto _file = _json_file;
+    const auto& _file = _json_file;
     {
         std::ifstream ifs(_file.c_str());
         bool          exists = ifs.good();
@@ -88,15 +90,6 @@ plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
         }
     }
 
-    auto cmd = operation::join(" ", settings::python_exe(), "-m", "timemory.plotting",
-                               "-f", _file, "-t", "\"" + _prefix, "\"", "-o", _dir);
-
-    if(_echo_dart)
-        cmd += " -e";
-
-    if(settings::verbose() > 2 || settings::debug())
-        PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
-
     auto _ctor = get_env<std::string>("TIMEMORY_LIBRARY_CTOR", "");
     auto _bann = get_env<std::string>("TIMEMORY_BANNER", "");
     auto _plot = get_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "");
@@ -108,8 +101,39 @@ plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
     set_env<std::string>("TIMEMORY_LIBRARY_CTOR", "OFF", 1);
     set_env<std::string>("TIMEMORY_BANNER", "OFF", 1);
     set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "1", 1);
+#    if defined(TIMEMORY_USE_PYTHON)
+    auto cmd = operation::join(" ", "-f", _file, "-t",
+                               TIMEMORY_JOIN("\"", "", _prefix, ""), "-o", _dir);
+
+    if(_echo_dart)
+        cmd += " -e";
+
+    tim::set_env("TIMEMORY_EMBEDDED_PLOT_ARGS", cmd.c_str(), 1);
+    {
+        py::scoped_interpreter guard{};
+        py::exec(R"(
+             import os
+             from timemory.plotting import embedded_plot
+             _args = os.environ.get("TIMEMORY_EMBEDDED_PLOT_ARGS")
+             if _args is not None:
+                 embedded_plot(_args.split(" "))
+             )",
+                 py::globals());
+    }
+    tim::set_env("TIMEMORY_EMBEDDED_PLOT_ARGS", "");
+#    else
+    auto cmd =
+        operation::join(" ", settings::python_exe(), "-m", "timemory.plotting", "-f",
+                        _file, "-t", TIMEMORY_JOIN("\"", "", _prefix, ""), "-o", _dir);
+
+    if(_echo_dart)
+        cmd += " -e";
+
+    if(settings::verbose() > 2 || settings::debug())
+        PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
 
     launch_process(cmd.c_str(), _info + " plot generation failed");
+#    endif
 
     // revert the environment
     set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", _plot, 1);

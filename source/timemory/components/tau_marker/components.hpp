@@ -56,48 +56,31 @@ struct tau_marker : public base<tau_marker, void>
     {
         return "Forwards markers to TAU instrumentation (via Tau_start and Tau_stop)";
     }
-    static value_type record() {}
 
-    static void global_init(storage_type*)
-    {
 #if defined(TIMEMORY_USE_TAU)
-        Tau_set_node(dmp::rank());
-#endif
+    static void global_init() { Tau_set_node(dmp::rank()); }
+    static void thread_init() { TAU_REGISTER_THREAD(); }
+    static void start(const char* _prefix) { Tau_start(_prefix); }
+
+    static void stop(const char* _prefix)
+    {
+        Tau_stop(_prefix);
+        consume_parameters(_prefix);
     }
 
-    static void thread_init(storage_type*)
-    {
-#if defined(TIMEMORY_USE_TAU)
-        TAU_REGISTER_THREAD();
-#endif
-    }
+    TIMEMORY_DEFAULT_OBJECT(tau_marker)
 
-    tau_marker(const std::string& _prefix = "")
+    tau_marker(const char* _prefix)
     : m_prefix(_prefix)
     {}
 
-    void start()
-    {
-#if defined(TIMEMORY_USE_TAU)
-        Tau_start(m_prefix.c_str());
-#endif
-    }
-    void stop()
-    {
-#if defined(TIMEMORY_USE_TAU)
-        Tau_stop(m_prefix.c_str());
-#endif
-    }
+    void start() { Tau_start(m_prefix); }
+    void stop() { Tau_stop(m_prefix); }
+    void set_prefix(const char* _prefix) { m_prefix = _prefix; }
 
-    void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
-
-    //----------------------------------------------------------------------------------//
-    //
-    // Member Variables
-    //
-    //----------------------------------------------------------------------------------//
 private:
-    std::string m_prefix = "";
+    const char m_prefix = nullptr;
+#endif
 };
 //
 }  // namespace component

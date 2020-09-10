@@ -119,8 +119,8 @@ struct rusage_cache
     rusage_cache(const rusage_cache&) = delete;
     rusage_cache& operator=(const rusage_cache&) = delete;
 
-    rusage_cache(rusage_cache&&) = default;
-    rusage_cache& operator=(rusage_cache&&) = default;
+    rusage_cache(rusage_cache&&) noexcept = default;
+    rusage_cache& operator=(rusage_cache&&) noexcept = default;
 
     inline int64_t get_peak_rss() const;
     inline int64_t get_num_io_in() const;

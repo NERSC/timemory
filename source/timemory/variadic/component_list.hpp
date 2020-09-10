@@ -146,8 +146,8 @@ public:
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    component_list(component_list&&) = default;
-    component_list& operator=(component_list&&) = default;
+    component_list(component_list&&) noexcept = default;
+    component_list& operator=(component_list&&) noexcept = default;
 
     component_list(const component_list& rhs);
     component_list& operator=(const component_list& rhs);
@@ -388,7 +388,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        std::string _key   = "";
+        std::string _key;
         auto        keyitr = get_hash_ids()->find(m_hash);
         if(keyitr != get_hash_ids()->end())
             _key = keyitr->second;

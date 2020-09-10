@@ -31,13 +31,12 @@ were not available when timemory was installed.
 | `timemory::timemory-jump-shared`  | C/C++/Fortran jump library                                        |
 | `timemory::timemory-jump-static`  | C/C++/Fortran jump library                                        |
 | INTERFACE LIBRARIES               |                                                                   |
-| `timemory::timemory-address-sanitizer` | Adds compiler flags to enable address sanitizer (-fsanitizer=address) |
-| `timemory::timemory-alignment-sanitizer` | Adds compiler flags to enable alignment sanitizer (-fsanitizer=alignment) |
-| `timemory::timemory-all-gperftools` | Enables all gperftools components (cpu and heap profilers) |
+| `timemory::timemory-address-sanitizer` | Adds compiler flags to enable address sanitizer (-fsanitize=address) |
+| `timemory::timemory-alignment-sanitizer` | Adds compiler flags to enable alignment sanitizer (-fsanitize=alignment) |
 | `timemory::timemory-allinea-map` | Enables Allinea-MAP support |
 | `timemory::timemory-analysis-tools` | Internal. Provides sanitizer, gperftools-cpu, coverage, xray |
 | `timemory::timemory-arch` | Adds architecture-specific compiler flags |
-| `timemory::timemory-bounds-sanitizer` | Adds compiler flags to enable bounds sanitizer (-fsanitizer=bounds) |
+| `timemory::timemory-bounds-sanitizer` | Adds compiler flags to enable bounds sanitizer (-fsanitize=bounds) |
 | `timemory::timemory-caliper` | Enables Caliper support |
 | `timemory::timemory-cereal-xml` | Enables XML serialization output |
 | `timemory::timemory-cereal` | Provides include flags for serialization library |
@@ -61,40 +60,37 @@ were not available when timemory was installed.
 | `timemory::timemory-external-shared` | Provides a single target for all the timemory extensions (shared libraries) |
 | `timemory::timemory-external-static` | Provides a single target for all the timemory extensions (static libraries) |
 | `timemory::timemory-gotcha` | Enables Gotcha support |
-| `timemory::timemory-gperftools-compile-options` | Enables compiler flags for resolving function calls in gperftools output |
-| `timemory::timemory-gperftools-cpu` | Enables gperftools cpu profiler support |
-| `timemory::timemory-gperftools-heap` | Enables gperftools heap profiler support |
-| `timemory::timemory-gperftools-static` | Enables gperftools support via static linking |
 | `timemory::timemory-gperftools` | Enables user-selected gperftools component () |
 | `timemory::timemory-gpu-roofline` | Enables flags and libraries for proper GPU roofline generation |
 | `timemory::timemory-headers` | Provides minimal set of include flags to compile with timemory |
 | `timemory::timemory-hidden-visibility` | Adds -fvisibility=hidden compiler flag |
-| `timemory::timemory-leak-sanitizer` | Adds compiler flags to enable leak sanitizer (-fsanitizer=leak) |
+| `timemory::timemory-instrument-functions` | Adds compiler flags to enable compile-time instrumentation |
+| `timemory::timemory-leak-sanitizer` | Adds compiler flags to enable leak sanitizer (-fsanitize=leak) |
 | `timemory::timemory-likwid` | Enables LIKWID support |
 | `timemory::timemory-lto` | Adds link-time-optimization flags |
-| `timemory::timemory-memory-sanitizer` | Adds compiler flags to enable memory sanitizer (-fsanitizer=memory) |
+| `timemory::timemory-memory-sanitizer` | Adds compiler flags to enable memory sanitizer (-fsanitize=memory) |
 | `timemory::timemory-mpi` | Enables MPI support |
 | `timemory::timemory-mpip-library` | Provides MPIP library for MPI performance analysis |
+| `timemory::timemory-nccl` | Enables CUDA NCCL support |
+| `timemory::timemory-ncclp-library` | Provides NCCLP library for NCCL performance analysis |
 | `timemory::timemory-no-mpi-init` | Disables the generation of MPI_Init and MPI_Init_thread symbols |
-| `timemory::timemory-null-sanitizer` | Adds compiler flags to enable null sanitizer (-fsanitizer=null) |
-| `timemory::timemory-nvtx` | Enables CUDA NVTX support |
+| `timemory::timemory-null-sanitizer` | Adds compiler flags to enable null sanitizer (-fsanitize=null) |
 | `timemory::timemory-ompt-library` | Provides OMPT library for OpenMP performance analysis |
 | `timemory::timemory-ompt` | Enables OpenMP-tools support |
 | `timemory::timemory-papi-static` | Enables PAPI support + links to static library |
 | `timemory::timemory-papi` | Enables PAPI support |
 | `timemory::timemory-plotting` | Enables python plotting support (system call) |
-| `timemory::timemory-protected-visibility` | Adds -fvisibility=protected compiler flag |
 | `timemory::timemory-python` | Enables python support (embedded interpreter) |
 | `timemory::timemory-roofline-options` | Compiler flags for roofline generation |
 | `timemory::timemory-roofline` | Enables flags and libraries for proper roofline generation |
+| `timemory::timemory-sanitizer-compile-options` | Adds compiler flags for sanitizers |
 | `timemory::timemory-sanitizer` | Adds compiler flags to enable leak sanitizer (-fsanitizer=leak) |
 | `timemory::timemory-statistics` | Enables statistics for all components which define TIMEMORY_STATISTICS_TYPE(...) |
 | `timemory::timemory-tau` | Enables TAU support |
-| `timemory::timemory-tcmalloc-minimal` | Enables gperftools tcmalloc_minimal library |
-| `timemory::timemory-thread-sanitizer` | Adds compiler flags to enable thread sanitizer (-fsanitizer=thread) |
+| `timemory::timemory-thread-sanitizer` | Adds compiler flags to enable thread sanitizer (-fsanitize=thread) |
 | `timemory::timemory-threading` | Enables multithreading support |
-| `timemory::timemory-undefined-sanitizer` | Adds compiler flags to enable undefined sanitizer (-fsanitizer=undefined) |
-| `timemory::timemory-unreachable-sanitizer` | Adds compiler flags to enable unreachable sanitizer (-fsanitizer=unreachable) |
+| `timemory::timemory-undefined-sanitizer` | Adds compiler flags to enable undefined sanitizer (-fsanitize=undefined) |
+| `timemory::timemory-unreachable-sanitizer` | Adds compiler flags to enable unreachable sanitizer (-fsanitize=unreachable) |
 | `timemory::timemory-upcxx` | Enables UPC++ support |
 | `timemory::timemory-vector` | Adds pre-processor definition of the max vectorization width in bytes |
 | `timemory::timemory-vtune` | Enables VTune support (ittnotify) |

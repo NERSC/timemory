@@ -11,6 +11,7 @@ file(GLOB cxx_headers                    ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hp
 file(GLOB cxx_headers_variadic           ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
 file(GLOB_RECURSE cxx_headers_backends   ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB_RECURSE cxx_headers_components ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
+file(GLOB cxx_headers_macros        ${CMAKE_CURRENT_LIST_DIR}/timemory/macros/*.hpp)
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
 file(GLOB cxx_headers_general       ${CMAKE_CURRENT_LIST_DIR}/timemory/general/*.hpp)
 file(GLOB cxx_headers_data          ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
@@ -42,7 +43,8 @@ set(timemory_glob_headers
     ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
     ${cxx_headers_backends} ${cxx_headers_components} ${cxx_headers_mpl}
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
-    ${cxx_headers_category_bits} ${cxx_headers_general} ${compat_headers})
+    ${cxx_headers_category_bits} ${cxx_headers_general} ${cxx_headers_macros}
+    ${compat_headers})
 
 if(TIMEMORY_SOURCE_GROUP)
     source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_glob_headers})

@@ -27,7 +27,7 @@
 #endif
 
 #include "libpytimemory-components.hpp"
-#include "timemory/settings/extern.hpp"
+#include "timemory/settings.hpp"
 
 using string_t = std::string;
 
@@ -44,131 +44,125 @@ namespace pysettings
 //
 //--------------------------------------------------------------------------------------//
 //
-py::class_<pysettings::settings>
+template <typename Tp, typename... Tail,
+          tim::enable_if_t<(sizeof...(Tail) == 0), int> = 0>
+auto
+add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> _obj)
+{
+    auto _tidx = std::type_index(typeid(Tp));
+    auto _ridx = std::type_index(typeid(Tp&));
+
+    if(_obj && _obj->get_type_index() == _tidx)
+    {
+        auto _env = _obj->get_env_name();
+        // member property
+        _class.def_property(
+            _obj->get_name().c_str(),
+            [_env](tim::settings* _object) { return _object->get<Tp>(_env); },
+            [_env](tim::settings* _object, Tp v) { return _object->set(_env, v); },
+            _obj->get_description().c_str());
+        // static property
+        if(_obj->get_value_index() == _tidx)
+        {
+            _class.def_property_static(
+                _obj->get_name().c_str(),
+                [_obj](py::object) {
+                    return (_obj) ? static_cast<tim::tsettings<Tp>*>(_obj.get())->get()
+                                  : Tp{};
+                },
+                [_obj](py::object, Tp v) {
+                    if(_obj)
+                        static_cast<tim::tsettings<Tp>*>(_obj.get())->get() = v;
+                },
+                _obj->get_description().c_str());
+            return true;
+        }
+        else if(_obj->get_value_index() == _ridx)
+        {
+            _class.def_property_static(
+                _obj->get_name().c_str(),
+                [_obj](py::object) {
+                    return (_obj)
+                               ? static_cast<tim::tsettings<Tp, Tp&>*>(_obj.get())->get()
+                               : Tp{};
+                },
+                [_obj](py::object, Tp v) {
+                    if(_obj)
+                        static_cast<tim::tsettings<Tp, Tp&>*>(_obj.get())->get() = v;
+                },
+                _obj->get_description().c_str());
+            return true;
+        }
+    }
+    return false;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename... Tail, tim::enable_if_t<(sizeof...(Tail) > 0), int> = 0>
+auto
+add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> _obj)
+{
+    auto ret = add_property<Tp>(_class, _obj);
+    if(!ret)
+        return add_property<Tail...>(_class, _obj);
+    else
+        return ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Tail>
+auto
+add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> _obj,
+             tim::type_list<Tail...>)
+{
+    return add_property<Tail...>(_class, _obj);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+py::class_<tim::settings>
 generate(py::module& _pymod)
 {
-    py::class_<pysettings::settings> settings(
-        _pymod, "settings", "Global configuration settings for timemory");
+    // auto pyargparse = py::module::import("argparse");
+    py::class_<tim::settings> settings(_pymod, "settings",
+                                       "Global configuration settings for timemory");
 
-    settings.def(py::init<>(), "Dummy");
+    auto _init = []() {
+        return new tim::settings(*tim::settings::instance<tim::api::native_tag>());
+    };
+    settings.def(py::init(_init), "Create a copy of the global settings");
+
     // to parse changes in env vars
-    settings.def("parse", &tim::settings::parse);
+    settings.def("parse", [](tim::settings* obj) { tim::settings::parse(obj); },
+                 "Update the values of the settings from the current environment");
+    settings.def_static("parse", []() { tim::settings::parse(); },
+                        "Update the values of the settings from the current environment");
 
-    using strvector_t = std::vector<std::string>;
+    std::set<std::string> names;
+    auto                  _settings = tim::settings::instance<tim::api::native_tag>();
+    if(_settings)
+    {
+        for(auto& itr : *_settings)
+        {
+            if(!add_property(settings, itr.second, tim::settings::data_type_list_t{}))
+                names.insert(itr.second->get_name());
+        }
+        if(names.size() > 0)
+        {
+            std::stringstream ss, msg;
+            for(auto& itr : names)
+                ss << ", " << itr;
+            msg << "Warning! The following settings were not added to python: "
+                << ss.str().substr(2);
+            std::cerr << msg.str() << std::endl;
+        }
 
-    SETTING_PROPERTY(bool, suppress_parsing);
-    SETTING_PROPERTY(bool, enabled);
-    SETTING_PROPERTY(bool, auto_output);
-    SETTING_PROPERTY(bool, cout_output);
-    SETTING_PROPERTY(bool, file_output);
-    SETTING_PROPERTY(bool, text_output);
-    SETTING_PROPERTY(bool, json_output);
-    SETTING_PROPERTY(bool, dart_output);
-    SETTING_PROPERTY(bool, time_output);
-    SETTING_PROPERTY(bool, plot_output);
-    SETTING_PROPERTY(bool, diff_output);
-    SETTING_PROPERTY(bool, flamegraph_output);
-    SETTING_PROPERTY(int, verbose);
-    SETTING_PROPERTY(bool, debug);
-    SETTING_PROPERTY(bool, banner);
-    SETTING_PROPERTY(bool, flat_profile);
-    SETTING_PROPERTY(bool, timeline_profile);
-    SETTING_PROPERTY(bool, collapse_threads);
-    SETTING_PROPERTY(bool, collapse_processes);
-    SETTING_PROPERTY(bool, destructor_report);
-    SETTING_PROPERTY(uint16_t, max_depth);
-    SETTING_PROPERTY(string_t, time_format);
-    SETTING_PROPERTY(string_t, python_exe);
-    SETTING_PROPERTY(strvector_t, command_line);
-    SETTING_PROPERTY(size_t, throttle_count);
-    SETTING_PROPERTY(size_t, throttle_value);
-    // width/precision
-    SETTING_PROPERTY(int16_t, precision);
-    SETTING_PROPERTY(int16_t, width);
-    SETTING_PROPERTY(bool, scientific);
-    SETTING_PROPERTY(int16_t, timing_precision);
-    SETTING_PROPERTY(int16_t, timing_width);
-    SETTING_PROPERTY(string_t, timing_units);
-    SETTING_PROPERTY(bool, timing_scientific);
-    SETTING_PROPERTY(int16_t, memory_precision);
-    SETTING_PROPERTY(int16_t, memory_width);
-    SETTING_PROPERTY(string_t, memory_units);
-    SETTING_PROPERTY(bool, memory_scientific);
-    // output
-    SETTING_PROPERTY(string_t, output_path);
-    SETTING_PROPERTY(string_t, output_prefix);
-    // dart
-    SETTING_PROPERTY(string_t, dart_type);
-    SETTING_PROPERTY(uint64_t, dart_count);
-    SETTING_PROPERTY(bool, dart_label);
-    // parallelism
-    SETTING_PROPERTY(size_t, max_thread_bookmarks);
-    SETTING_PROPERTY(bool, cpu_affinity);
-    SETTING_PROPERTY(bool, mpi_init);
-    SETTING_PROPERTY(bool, mpi_finalize);
-    SETTING_PROPERTY(bool, mpi_thread);
-    SETTING_PROPERTY(string_t, mpi_thread_type);
-    SETTING_PROPERTY(bool, upcxx_init);
-    SETTING_PROPERTY(bool, upcxx_finalize);
-    SETTING_PROPERTY(int32_t, node_count);
-    // misc
-    SETTING_PROPERTY(bool, stack_clearing);
-    SETTING_PROPERTY(bool, add_secondary);
-    SETTING_PROPERTY(tim::process::id_t, target_pid);
-    // components
-    SETTING_PROPERTY(string_t, global_components);
-    SETTING_PROPERTY(string_t, tuple_components);
-    SETTING_PROPERTY(string_t, list_components);
-    SETTING_PROPERTY(string_t, ompt_components);
-    SETTING_PROPERTY(string_t, mpip_components);
-    SETTING_PROPERTY(string_t, trace_components);
-    SETTING_PROPERTY(string_t, profiler_components);
-    SETTING_PROPERTY(string_t, components);
-    // papi
-    SETTING_PROPERTY(bool, papi_multiplexing);
-    SETTING_PROPERTY(bool, papi_fail_on_error);
-    SETTING_PROPERTY(bool, papi_quiet);
-    SETTING_PROPERTY(string_t, papi_events);
-    SETTING_PROPERTY(bool, papi_attach);
-    SETTING_PROPERTY(int, papi_overflow);
-    // cuda/nvtx/cupti
-    SETTING_PROPERTY(uint64_t, cuda_event_batch_size);
-    SETTING_PROPERTY(bool, nvtx_marker_device_sync);
-    SETTING_PROPERTY(int32_t, cupti_activity_level);
-    SETTING_PROPERTY(string_t, cupti_activity_kinds);
-    SETTING_PROPERTY(string_t, cupti_events);
-    SETTING_PROPERTY(string_t, cupti_metrics);
-    SETTING_PROPERTY(int, cupti_device);
-    // roofline
-    SETTING_PROPERTY(string_t, roofline_mode);
-    SETTING_PROPERTY(string_t, cpu_roofline_mode);
-    SETTING_PROPERTY(string_t, gpu_roofline_mode);
-    SETTING_PROPERTY(string_t, cpu_roofline_events);
-    SETTING_PROPERTY(string_t, gpu_roofline_events);
-    SETTING_PROPERTY(bool, roofline_type_labels);
-    SETTING_PROPERTY(bool, roofline_type_labels_cpu);
-    SETTING_PROPERTY(bool, roofline_type_labels_gpu);
-    SETTING_PROPERTY(bool, instruction_roofline);
-    // ert
-    SETTING_PROPERTY(uint64_t, ert_num_threads);
-    SETTING_PROPERTY(uint64_t, ert_num_threads_cpu);
-    SETTING_PROPERTY(uint64_t, ert_num_threads_gpu);
-    SETTING_PROPERTY(uint64_t, ert_num_streams);
-    SETTING_PROPERTY(uint64_t, ert_grid_size);
-    SETTING_PROPERTY(uint64_t, ert_block_size);
-    SETTING_PROPERTY(uint64_t, ert_alignment);
-    SETTING_PROPERTY(uint64_t, ert_min_working_size);
-    SETTING_PROPERTY(uint64_t, ert_min_working_size_cpu);
-    SETTING_PROPERTY(uint64_t, ert_min_working_size_gpu);
-    SETTING_PROPERTY(uint64_t, ert_max_data_size);
-    SETTING_PROPERTY(uint64_t, ert_max_data_size_cpu);
-    SETTING_PROPERTY(uint64_t, ert_max_data_size_gpu);
-    SETTING_PROPERTY(string_t, ert_skip_ops);
-    // signals
-    SETTING_PROPERTY(bool, allow_signal_handler);
-    SETTING_PROPERTY(bool, enable_signal_handler);
-    SETTING_PROPERTY(bool, enable_all_signals);
-    SETTING_PROPERTY(bool, disable_all_signals);
+        using strvector_t = std::vector<std::string>;
+        SETTING_PROPERTY(strvector_t, command_line);
+        SETTING_PROPERTY(strvector_t, environment);
+    }
 
     return settings;
 }

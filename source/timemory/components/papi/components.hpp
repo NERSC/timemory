@@ -37,6 +37,7 @@
 
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/types.hpp"
+#include "timemory/components/timing/wall_clock.hpp"
 
 #include <algorithm>
 #include <array>
@@ -362,8 +363,8 @@ struct papi_vector
 
     static auto& get_initializer() { return papi_common::get_initializer<common_type>(); }
     static void  configure() { papi_common::initialize<common_type>(); }
-    static void  thread_init(storage_type*) { papi_common::initialize<common_type>(); }
-    static void  thread_finalize(storage_type*)
+    static void  thread_init() { papi_common::initialize<common_type>(); }
+    static void  thread_finalize()
     {
         papi_common::finalize<common_type>();
         papi_common::finalize_papi();
@@ -382,11 +383,11 @@ struct papi_vector
 
     //----------------------------------------------------------------------------------//
 
-    ~papi_vector()                      = default;
-    papi_vector(const papi_vector& rhs) = default;
-    papi_vector(papi_vector&& rhs)      = default;
+    ~papi_vector()                          = default;
+    papi_vector(const papi_vector& rhs)     = default;
+    papi_vector(papi_vector&& rhs) noexcept = default;
     this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) = default;
+    this_type& operator=(this_type&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
 
@@ -434,6 +435,7 @@ struct papi_vector
 
     void stop()
     {
+        using namespace tim::component::operators;
         tracker_type::stop();
         value = (record() - value);
         accum += value;
@@ -683,8 +685,8 @@ struct papi_array
 
     static auto& get_initializer() { return papi_common::get_initializer<common_type>(); }
     static void  configure() { papi_common::initialize<common_type>(); }
-    static void  thread_init(storage_type*) { papi_common::initialize<common_type>(); }
-    static void  thread_finalize(storage_type*)
+    static void  thread_init() { papi_common::initialize<common_type>(); }
+    static void  thread_finalize()
     {
         papi_common::finalize<common_type>();
         papi_common::finalize_papi();
@@ -704,10 +706,10 @@ struct papi_array
     //----------------------------------------------------------------------------------//
 
     ~papi_array() {}
-    papi_array(const papi_array& rhs) = default;
-    papi_array(papi_array&& rhs)      = default;
+    papi_array(const papi_array& rhs)     = default;
+    papi_array(papi_array&& rhs) noexcept = default;
     this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) = default;
+    this_type& operator=(this_type&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
 
@@ -746,6 +748,7 @@ struct papi_array
 
     void stop()
     {
+        using namespace tim::component::operators;
         value = (record() - value);
         accum += value;
     }
@@ -1010,8 +1013,8 @@ public:
         papi_common::get_events<common_type>() = { EventTypes... };
         papi_common::initialize<common_type>();
     }
-    static void thread_init(storage_type*) { this_type::configure(); }
-    static void thread_finalize(storage_type*)
+    static void thread_init() { this_type::configure(); }
+    static void thread_finalize()
     {
         papi_common::finalize<common_type>();
         papi_common::finalize_papi();
@@ -1069,8 +1072,8 @@ public:
 
     papi_tuple(const papi_tuple& rhs) = default;
     this_type& operator=(const this_type& rhs) = default;
-    papi_tuple(papi_tuple&& rhs)               = default;
-    this_type& operator=(this_type&&) = default;
+    papi_tuple(papi_tuple&& rhs) noexcept      = default;
+    this_type& operator=(this_type&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
     // start
@@ -1090,6 +1093,7 @@ public:
     //
     void stop()
     {
+        using namespace tim::component::operators;
         value = (record() - value);
         accum += value;
     }
@@ -1258,6 +1262,126 @@ public:
     }
 };
 //
+template <int... EventTypes>
+struct papi_rate_tuple
+: public base<papi_rate_tuple<EventTypes...>,
+              std::pair<papi_tuple<EventTypes...>, wall_clock>>
+{
+    using size_type                   = std::size_t;
+    static const size_type num_events = sizeof...(EventTypes);
+
+    using tuple_type   = papi_tuple<EventTypes...>;
+    using value_type   = std::pair<tuple_type, wall_clock>;
+    using this_type    = papi_rate_tuple<EventTypes...>;
+    using base_type    = base<this_type, value_type>;
+    using storage_type = typename base_type::storage_type;
+    using common_type  = this_type;
+
+    template <typename Tp>
+    using array_t = std::array<Tp, num_events>;
+
+    friend struct operation::record<common_type>;
+    friend struct operation::start<this_type>;
+    friend struct operation::stop<this_type>;
+
+public:
+    static void configure() { tuple_type::configure(); }
+    static void thread_init() { tuple_type::thread_init(); }
+    static void thread_finalize() { tuple_type::thread_finalize(); }
+    static void initialize() { tuple_type::initialize(); }
+    static void finalize() { tuple_type::finalize(); }
+
+    static std::string label() { return tuple_type::label() + "_rate"; }
+    static std::string description()
+    {
+        return "Divides the given set of HW counters by the elapsed time of the "
+               "measurement";
+    }
+
+public:
+    void start()
+    {
+        value.first.start();
+        value.second.start();
+    }
+    void stop()
+    {
+        value.first.stop();
+        value.second.stop();
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        value.first += rhs.value.first;
+        value.second += rhs.value.second;
+        return *this;
+    }
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        value.first -= rhs.value.first;
+        value.second -= rhs.value.second;
+        return *this;
+    }
+
+    auto get() const
+    {
+        auto _val = value.first.get();
+        for(auto& itr : _val)
+            itr /= value.second.get();
+        return _val;
+    }
+
+    static auto label_array()
+    {
+        auto arr = tuple_type::label_array();
+        for(auto& itr : arr)
+            itr += " per " + wall_clock::get_display_unit();
+        return arr;
+    }
+
+    static auto description_array()
+    {
+        auto arr = tuple_type::description_array();
+        for(auto& itr : arr)
+            itr += " Rate";
+        return arr;
+    }
+
+    static auto display_unit_array()
+    {
+        auto arr = tuple_type::display_unit_array();
+        for(auto& itr : arr)
+        {
+            if(itr.empty())
+                itr = "1";
+            itr += "/" + wall_clock::display_unit();
+        }
+        return arr;
+    }
+
+    static auto unit_array()
+    {
+        std::array<double, num_events> arr;
+        auto                           _units = tuple_type::unit_array();
+        for(size_t i = 0; i < _units.size(); ++i)
+            arr.at(i) = _units.at(i);
+        for(auto& itr : _units)
+            itr /= wall_clock::unit();
+        return arr;
+    }
+
+protected:
+    using base_type::is_transient;
+    using base_type::laps;
+    using base_type::set_started;
+    using base_type::set_stopped;
+    using base_type::value;
+
+    friend struct base<this_type, value_type>;
+    friend class impl::storage<this_type,
+                               trait::implements_storage<this_type, value_type>::value>;
+};
 }  // namespace component
 }  // namespace tim
 //

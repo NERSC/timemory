@@ -83,7 +83,7 @@ struct mangler
 template <typename... Args>
 struct mangler<std::tuple<Args...>>
 {
-    static std::string mangle(std::string func, bool is_memfun, bool is_const,
+    static std::string mangle(const std::string& func, bool is_memfun, bool is_const,
                               bool nsp = false)
     {
         return mangler<Args...>::mangle(func, is_memfun, is_const, nsp);

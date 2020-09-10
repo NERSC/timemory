@@ -60,13 +60,19 @@ struct wall_clock : public base<wall_clock, int64_t>
     {
         return "Real-clock timer (i.e. wall-clock timer)";
     }
-    static value_type record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
+    static value_type record() noexcept
+    {
+        return tim::get_clock_real_now<int64_t, ratio_t>();
+    }
 
-    double get() const { return static_cast<double>(load()) / ratio_t::den * get_unit(); }
-    auto   get_display() const { return get(); }
+    double get() const noexcept
+    {
+        return static_cast<double>(load()) / ratio_t::den * get_unit();
+    }
+    auto get_display() const noexcept { return get(); }
 
-    void start() { value = record(); }
-    void stop() { accum += (value = (record() - value)); }
+    void start() noexcept { value = record(); }
+    void stop() noexcept { accum += (value = (record() - value)); }
 };
 
 //--------------------------------------------------------------------------------------//

@@ -60,9 +60,9 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
     }
     static value_type record() {}
 
-    static void thread_init(storage_type*) { gperf::cpu::register_thread(); }
+    static void thread_init() { gperf::cpu::register_thread(); }
 
-    static void global_finalize(storage_type*)
+    static void global_finalize()
     {
         if(gperf::cpu::is_running())
         {
@@ -132,7 +132,7 @@ struct gperftools_heap_profiler : public base<gperftools_heap_profiler, void>
     }
     static value_type record() {}
 
-    static void global_finalize(storage_type*)
+    static void global_finalize()
     {
         if(gperf::heap::is_running())
         {

@@ -181,35 +181,29 @@ public:
     explicit base_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),
                          scope::config _scope = scope::get_default())
     : m_store(_store && settings::enabled() && get_store_config())
-    , m_is_pushed(false)
     , m_scope(_scope + get_scope_config())
-    , m_laps(0)
     , m_hash(_hash)
     {}
 
     template <typename... T>
     explicit base_bundle(uint64_t hash, bool store, quirk::config<T...>)
     : m_store(store && settings::enabled() && get_store_config<T...>())
-    , m_is_pushed(false)
     , m_scope(get_scope_config<T...>())
-    , m_laps(0)
     , m_hash(hash)
     {}
 
     template <typename... T>
     explicit base_bundle(uint64_t hash, quirk::config<T...>)
     : m_store(settings::enabled() && get_store_config<T...>())
-    , m_is_pushed(false)
     , m_scope(get_scope_config<T...>())
-    , m_laps(0)
     , m_hash(hash)
     {}
 
-    ~base_bundle()                  = default;
-    base_bundle(const base_bundle&) = default;
-    base_bundle(base_bundle&&)      = default;
+    ~base_bundle()                      = default;
+    base_bundle(const base_bundle&)     = default;
+    base_bundle(base_bundle&&) noexcept = default;
     base_bundle& operator=(const base_bundle&) = default;
-    base_bundle& operator=(base_bundle&&) = default;
+    base_bundle& operator=(base_bundle&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
     //

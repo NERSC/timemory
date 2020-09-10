@@ -79,7 +79,7 @@ class stl_overload_tests : public ::testing::Test
 #define GET(VAR, N) std::get<N>(VAR)
 
 constexpr size_t N         = 2;
-const double     tolerance = std::numeric_limits<float>::epsilon();
+const double     tolerance = static_cast<double>(std::numeric_limits<float>::epsilon());
 
 using int_type    = int;
 using real_type   = double;
