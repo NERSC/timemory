@@ -583,13 +583,13 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
 
     using archive_type = cereal::SettingsTextArchive;
     using array_type   = typename archive_type::array_type;
-    using exclude_type = typename archive_type::exclude_type;
+    using unique_set   = typename archive_type::unique_set;
     using width_type   = array_t<int64_t, 5>;
     using width_bool   = array_t<bool, 5>;
 
-    array_type   _setting_output;
-    exclude_type _settings_exclude = { "TIMEMORY_ENVIRONMENT", "TIMEMORY_COMMAND_LINE",
-                                       "cereal_class_version", "settings" };
+    array_type _setting_output;
+    unique_set _settings_exclude = { "TIMEMORY_ENVIRONMENT", "TIMEMORY_COMMAND_LINE",
+                                     "cereal_class_version", "settings" };
 
     cereal::SettingsTextArchive settings_archive(_setting_output, _settings_exclude);
     settings::serialize_settings(settings_archive);
@@ -600,14 +600,37 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
 
     if(alphabetical)
     {
-        std::sort(
-            _setting_output.begin(), _setting_output.end(),
-            [](const auto& lhs, const auto& rhs) { return (lhs.at(0) < rhs.at(0)); });
+        std::sort(_setting_output.begin(), _setting_output.end(),
+                  [](const auto& lhs, const auto& rhs) {
+                      return (lhs.find("identifier")->second <
+                              rhs.find("identifier")->second);
+                  });
     }
 
     array_t<string_t, 5> _labels = { "ENVIRONMENT VARIABLE", "VALUE", "DATA TYPE",
                                      "C++ STATIC ACCESSOR", "DESCRIPTION" };
+    array_t<string_t, 5> _keys   = { "environ", "value", "data_type", "accessor",
+                                   "description" };
     array_t<bool, 5>     _center = { false, true, true, false, false };
+
+    std::vector<array_t<string_t, 5>> _results;
+    for(const auto& itr : _setting_output)
+    {
+        array_t<string_t, 5> _tmp{};
+        for(size_t j = 0; j < _keys.size(); ++j)
+        {
+            auto eitr = itr.find(_keys.at(j));
+            if(eitr != itr.end())
+                _tmp.at(j) = eitr->second;
+        }
+        if(!_tmp.at(0).empty())
+            _results.push_back(_tmp);
+    }
+
+    for(const auto& itr : _results)
+        for(size_t i = 0; i < itr.size(); ++i)
+            _widths.at(i) =
+                std::max<uint64_t>(_widths.at(i), itr.at(i).length() + padding);
 
     if(!markdown)
         os << banner(_widths, _wusing, '-');
@@ -622,7 +645,7 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
     }
     os << "\n" << banner(_widths, _wusing, '-');
 
-    for(const auto& itr : _setting_output)
+    for(const auto& itr : _results)
     {
         os << global_delim;
         for(size_t i = 0; i < itr.size(); ++i)

@@ -64,15 +64,16 @@ class SettingsTextArchive
 , public traits::TextArchive
 {
 public:
-    using width_type   = std::array<uint64_t, 5>;
-    using value_type   = std::array<std::string, 5>;
-    using array_type   = std::vector<value_type>;
-    using exclude_type = std::set<std::string>;
+    using width_type = std::vector<uint64_t>;
+    using value_type = std::string;
+    using entry_type = std::map<std::string, value_type>;
+    using array_type = std::vector<entry_type>;
+    using unique_set = std::set<std::string>;
 
 public:
     //! Construct, outputting to the provided stream
     /// @param stream The array of output data
-    SettingsTextArchive(array_type& stream, exclude_type exclude)
+    SettingsTextArchive(array_type& stream, unique_set exclude)
     : OutputArchive<SettingsTextArchive>(this)
     , output_stream(&stream)
     , exclude_stream(exclude)
@@ -94,20 +95,39 @@ public:
 
     void startNode() { name_counter.push(0); }
 
-    void finishNode()
-    {
-        name_counter.pop();
-        current_stream = nullptr;
-    }
+    void finishNode() { name_counter.pop(); }
 
     //! Sets the name for the next node created with startNode
     void setNextName(const char* name)
     {
-        if(exclude_stream.count(name) == 0)
+        if(exclude_stream.count(name) > 0)
         {
-            output_stream->push_back(value_type{});
-            current_stream           = &output_stream->back();
-            current_stream->at(0)    = name;
+            fprintf(stderr, "Warning! Excluding '%s'\n", name);
+            return;
+        }
+
+        if(current_entry && value_keys.count(name) > 0)
+        {
+            fprintf(stderr, "Message! Using '%s'\n", name);
+            current_entry->insert({ name, "" });
+            current_value = &((*current_entry)[name]);
+            return;
+        }
+        else if(value_keys.count(name) > 0)
+        {
+            fprintf(stderr, "Warning! '%s' is special and does not have an entry\n",
+                    name);
+            return;
+        }
+
+        // if(!current_entry)
+        {
+            fprintf(stderr, "Message! Saving '%s'\n", name);
+            current_value = nullptr;
+            output_stream->push_back(entry_type{});
+            current_entry = &(output_stream->back());
+
+            current_entry->insert({ "identifier", name });
             std::string       func   = name;
             const std::string prefix = "TIMEMORY_";
             func                     = func.erase(0, prefix.length());
@@ -115,46 +135,53 @@ public:
                            [](char& c) { return tolower(c); });
             std::stringstream ss;
             ss << "settings::" << func << "()";
-            current_stream->at(3) = ss.str();
+            current_entry->insert({ "accessor", ss.str() });
         }
-        else
-        {
-            current_stream = nullptr;
-        }
+        // else { fprintf(stderr, "Warning! ignoring '%s'\n", name); }
     }
 
     void setNextType(const char* name)
     {
-        if(current_stream)
+        /*if(current_entry && !current_value)
         {
             std::stringstream ss;
             ss << std::boolalpha << name;
-            current_stream->at(2) = ss.str();
-        }
+            current_entry->insert({ "data_type", ss.str() });
+        }*/
     }
 
 public:
     template <typename Tp>
     inline void saveValue(Tp _val)
     {
-        if(current_stream)
+        std::stringstream ssval;
+        ssval << std::boolalpha << _val;
+        if(current_value)
         {
-            std::stringstream ssval;
-            ssval << std::boolalpha << _val;
-            current_stream->at(1) = ssval.str();
+            std::string dtype =
+                (std::is_same<Tp, std::string>::value) ? "string" : tim::demangle<Tp>();
+
+            current_entry->insert({ "data_type", dtype });
+            *current_value = ssval.str();
         }
-        current_stream = nullptr;
+        else
+        {
+            // fprintf(stderr, "Warning! missed '%s'\n", ssval.str().c_str());
+        }
     }
 
     void writeName() {}
 
-    void makeArray() { current_stream = nullptr; }
+    void makeArray() {}
 
 private:
-    value_type*          current_stream = nullptr;
+    value_type*          current_value = nullptr;
+    entry_type*          current_entry = nullptr;
     array_type*          output_stream;
-    exclude_type         exclude_stream;
+    unique_set           exclude_stream;
     std::stack<uint32_t> name_counter;  //!< Counter for creating unique names
+    unique_set           value_keys = { "name",      "environ", "description", "count",
+                              "max_count", "cmdline", "value" };
 };
 
 //======================================================================================//
