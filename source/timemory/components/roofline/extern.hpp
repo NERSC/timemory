@@ -49,7 +49,7 @@ TIMEMORY_EXTERN_COMPONENT(cpu_roofline_flops, true,
 #    include "timemory/components/cupti/components.hpp"
 #    include "timemory/components/cupti/extern.hpp"
 
-#    if !defined(TIMEMORY_DISABLE_CUDA_HALF)
+#    if defined(TIMEMORY_USE_CUDA_HALF)
 TIMEMORY_EXTERN_COMPONENT(
     gpu_roofline_hp_flops, true,
     std::tuple<typename ::tim::component::cupti_activity::value_type,
