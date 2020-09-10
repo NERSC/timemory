@@ -29,7 +29,7 @@ endif()
 add_flag_if_avail(
     "-W"
     "${OS_FLAG}"
-    "-Wabi"
+    # "-Wabi"
     "-Wdouble-promotion"
     "-Wno-unknown-pragmas"
     "-Wno-ignored-attributes"
@@ -38,7 +38,8 @@ add_flag_if_avail(
     "-Wno-missing-field-initializers")
 
 if(CMAKE_CXX_COMPILER_IS_GNU)
-    add_cxx_flag_if_avail(
+    add_target_cxx_flag_if_avail(
+        timemory-compile-options
         "-Wno-class-memaccess"
         "-Wno-cast-function-type")
 endif()

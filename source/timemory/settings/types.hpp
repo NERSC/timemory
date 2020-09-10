@@ -46,12 +46,6 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-using setting_callback_t        = std::function<void()>;
-using setting_callback_map_t    = std::map<std::string, setting_callback_t>;
-using setting_description_map_t = std::map<std::string, std::string>;
-//
-//--------------------------------------------------------------------------------------//
-//
 std::string
 get_local_datetime(const char* dt_format);
 //
@@ -63,34 +57,6 @@ template <typename Tp, typename Vp = Tp>
 struct tsettings;
 //
 struct settings;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename... T>
-inline setting_callback_map_t&
-get_parse_callback_map()
-{
-    static setting_callback_map_t _instance;
-    return _instance;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename... T>
-inline setting_description_map_t&
-get_descriptions()
-{
-    static setting_description_map_t _instance;
-    return _instance;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-setting_callback_map_t&
-get_parse_callbacks() TIMEMORY_VISIBILITY("default");
-//
-setting_description_map_t&
-get_setting_descriptions() TIMEMORY_VISIBILITY("default");
 //
 //--------------------------------------------------------------------------------------//
 //

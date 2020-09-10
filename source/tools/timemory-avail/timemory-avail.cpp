@@ -605,18 +605,6 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
             [](const auto& lhs, const auto& rhs) { return (lhs.at(0) < rhs.at(0)); });
     }
 
-    for(auto& itr : _setting_output)
-    {
-        // get the description
-        auto ditr = tim::get_setting_descriptions().find(itr.at(0));
-        if(ditr != tim::get_setting_descriptions().end())
-            itr.back() = ditr->second;
-
-        for(size_t i = 0; i < itr.size(); ++i)
-            _widths.at(i) =
-                std::max<uint64_t>(_widths.at(i), itr.at(i).length() + padding);
-    }
-
     array_t<string_t, 5> _labels = { "ENVIRONMENT VARIABLE", "VALUE", "DATA TYPE",
                                      "C++ STATIC ACCESSOR", "DESCRIPTION" };
     array_t<bool, 5>     _center = { false, true, true, false, false };
