@@ -29,8 +29,6 @@ endif()
 add_flag_if_avail(
     "-W"
     "${OS_FLAG}"
-    # "-Wabi"
-    "-Wdouble-promotion"
     "-Wno-unknown-pragmas"
     "-Wno-ignored-attributes"
     "-Wno-attributes"
@@ -140,7 +138,12 @@ endif()
 add_interface_library(timemory-develop-options "Adds developer compiler flags")
 if(TIMEMORY_BUILD_DEVELOPER)
     add_target_flag_if_avail(timemory-develop-options
-        "-Wshadow" "-Wextra" "-Wpedantic" "-Werror")
+        # "-Wabi"
+        "-Wdouble-promotion"
+        "-Wshadow"
+        "-Wextra"
+        "-Wpedantic"
+        "-Werror")
 endif()
 
 #----------------------------------------------------------------------------------------#

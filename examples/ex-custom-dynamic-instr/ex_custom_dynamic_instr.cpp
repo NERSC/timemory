@@ -49,7 +49,7 @@ struct inst_per_cycle : public base<inst_per_cycle, std::array<long long, 2>>
 
     static std::string label() { return "inst_per_cycle"; }
     static std::string description() { return "number of instructions per cycle"; }
-    static void        thread_init(storage_type*) { hw_t::thread_init(nullptr); }
+    static void        thread_init(storage_type*) { hw_t::thread_init(); }
 
     void start()
     {
