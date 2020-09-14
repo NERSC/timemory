@@ -31,6 +31,7 @@
 
 #include "timemory/environment/macros.hpp"
 #include "timemory/environment/types.hpp"
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/utility.hpp"

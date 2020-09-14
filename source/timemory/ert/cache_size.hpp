@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -45,6 +46,13 @@
 #if defined(_MACOS)
 #    include <sys/sysctl.h>
 #elif defined(_WINDOWS) || defined(_WIN32) || defined(_WIN64)
+// without this, windows will define macros for min and max
+#    if !defined(NOMINMIX)
+#        define NOMINMAX
+#    endif
+#    if !defined(WIN32_LEAN_AND_MEAN)
+#        define WIN32_LEAN_AND_MEAN
+#    endif
 #    include <cstdlib>
 #    include <windows.h>
 #elif defined(_LINUX)

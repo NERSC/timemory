@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/backends/process.hpp"
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cstdint>
@@ -51,6 +52,9 @@
 #elif defined(_WINDOWS)
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
+#    endif
+#    if !defined(WIN32_LEAN_AND_MEAN)
+#        define WIN32_LEAN_AND_MEAN
 #    endif
 // currently, this is causing a bunch of errors, need to disable
 // #    include <psapi.h>

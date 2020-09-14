@@ -23,22 +23,22 @@
 // SOFTWARE.
 //
 
-#include "timemory/utility/popen.hpp"
+#if !defined(_WINDOWS)
 
-#if !defined(OPEN_MAX)
-#    define OPEN_MAX 1024
-#endif
+#    include "timemory/utility/popen.hpp"
 
-#if !defined(NGROUPS_MAX)
-#    define NGROUPS_MAX 16
-#endif
+#    if !defined(OPEN_MAX)
+#        define OPEN_MAX 1024
+#    endif
+
+#    if !defined(NGROUPS_MAX)
+#        define NGROUPS_MAX 16
+#    endif
 
 extern "C"
 {
     extern char** environ;
 }
-
-#if !defined(_WINDOWS)
 
 namespace tim
 {
@@ -350,6 +350,6 @@ pclose(TIMEMORY_PIPE* p)
 
 namespace
 {
-static int windows_popen = 0;
+int windows_popen = 0;
 }
 #endif
