@@ -36,8 +36,9 @@
 
 using namespace tim::component;
 
-static int    _argc = 0;
-static char** _argv = nullptr;
+static int    _argc       = 0;
+static char** _argv       = nullptr;
+static bool   _configured = false;
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
@@ -106,10 +107,9 @@ class derived_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
-        static bool configured = false;
-        if(!configured)
+        if(!_configured)
         {
-            configured                   = true;
+            _configured                  = true;
             tim::settings::verbose()     = 0;
             tim::settings::debug()       = false;
             tim::settings::json_output() = true;
@@ -337,8 +337,11 @@ main(int argc, char** argv)
 
     auto ret = RUN_ALL_TESTS();
 
-    tim::timemory_finalize();
-    tim::dmp::finalize();
+    if(_configured)
+    {
+        tim::timemory_finalize();
+        tim::dmp::finalize();
+    }
     return ret;
 }
 
