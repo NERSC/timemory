@@ -132,13 +132,20 @@ generate(py::module& _pymod)
     auto _init = []() {
         return new tim::settings(*tim::settings::instance<tim::api::native_tag>());
     };
-    settings.def(py::init(_init), "Create a copy of the global settings");
+    auto _parse = [](py::object _instance) {
+        auto* _obj = _instance.cast<tim::settings*>();
+        if(_instance.is_none() || _obj == nullptr)
+            tim::settings::parse();
+        else
+            tim::settings::parse(_obj);
+    };
 
+    // create an instance
+    settings.def(py::init(_init), "Create a copy of the global settings");
     // to parse changes in env vars
-    settings.def("parse", [](tim::settings* obj) { tim::settings::parse(obj); },
-                 "Update the values of the settings from the current environment");
-    settings.def_static("parse", []() { tim::settings::parse(); },
-                        "Update the values of the settings from the current environment");
+    settings.def_static("parse", _parse,
+                        "Update the values of the settings from the current environment",
+                        py::arg("instance") = py::none{});
 
     std::set<std::string> names;
     auto                  _settings = tim::settings::instance<tim::api::native_tag>();
