@@ -55,47 +55,36 @@ struct start
 
     TIMEMORY_DELETED_OBJECT(start)
 
-    template <typename... Args>
-    explicit start(type& obj, Args&&... args);
+    explicit start(type& obj) { impl(obj); }
 
-private:
-    // resolution #1 (best)
-    template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, int, int, Args&&... args)
-        -> decltype(static_cast<base_t<Up>&>(obj).start(crtp::base{},
-                                                        std::forward<Args>(args)...),
-                    void())
+    template <typename Arg, typename... Args>
+    start(type& obj, Arg& arg, Args&&... args)
     {
-        static_cast<base_t<Up>&>(obj).start(crtp::base{}, std::forward<Args>(args)...);
+        impl(obj, std::forward<Arg>(arg), std::forward<Args>(args)...);
     }
 
-    // resolution #2
+private:
+    template <typename... Args>
+    void impl(type& obj, Args&&... args);
+
+    // resolution #1 (best)
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, int, long, Args&&... args)
+    auto do_sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(obj.start(std::forward<Args>(args)...), void())
     {
         obj.start(std::forward<Args>(args)...);
     }
 
-    // resolution #3
+    // resolution #2
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, long, long, Args&&...)
-        -> decltype(static_cast<base_t<Up>&>(obj).start(crtp::base{}), void())
-    {
-        static_cast<base_t<Up>&>(obj).start(crtp::base{});
-    }
-
-    // resolution #4
-    template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, long, long, Args&&...)
-        -> decltype(obj.start(), void())
+    auto do_sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.start(), void())
     {
         obj.start();
     }
 
-    // resolution #5 (worst) - no member function or does not satisfy mpl condition
+    // resolution #3 (worst) - no member function
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, long, long, Args&&...)
+    void do_sfinae(Up&, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
     }
@@ -103,21 +92,28 @@ private:
 private:
     // set_started
     template <typename Up>
-    auto set_sfinae(Up& obj, int, int) -> decltype(obj.set_started(), void())
+    auto set_sfinae(Up& obj, int) -> decltype(obj.set_started(), void())
     {
         obj.set_started();
     }
 
     template <typename Up>
-    auto set_sfinae(Up& obj, int, long)
-        -> decltype(static_cast<base_t<Up>&>(obj).set_started(), void())
+    auto set_sfinae(Up&, long) -> void
+    {}
+
+private:
+    // is_running
+    template <typename Up>
+    auto is_sfinae(Up& obj, int) -> decltype(obj.get_is_running())
     {
-        static_cast<base_t<Up>&>(obj).set_started();
+        return obj.get_is_running();
     }
 
     template <typename Up>
-    auto set_sfinae(Up&, long, long)
-    {}
+    auto is_sfinae(Up&, long) -> bool
+    {
+        return false;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -217,13 +213,18 @@ private:
 //
 template <typename Tp>
 template <typename... Args>
-start<Tp>::start(type& obj, Args&&... args)
+void
+start<Tp>::impl(type& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
-    init_storage<Tp>::init();
-    sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
-    set_sfinae(obj, 0, 0);
+
+    // init_storage<Tp>::init();
+    if(!is_sfinae(obj, 0))
+    {
+        set_sfinae(obj, 0);
+        do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//

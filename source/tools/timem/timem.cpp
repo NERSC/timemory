@@ -52,12 +52,15 @@ main(int argc, char** argv)
     tim::settings::upcxx_init()     = false;
     tim::settings::upcxx_finalize() = false;
     // other settings
-    tim::settings::banner()      = false;
-    tim::settings::auto_output() = false;
-    tim::settings::file_output() = false;
-    tim::settings::scientific()  = false;
-    tim::settings::width()       = 16;
-    tim::settings::precision()   = 6;
+    tim::settings::banner()           = false;
+    tim::settings::auto_output()      = false;
+    tim::settings::file_output()      = false;
+    tim::settings::scientific()       = false;
+    tim::settings::width()            = 16;
+    tim::settings::precision()        = 6;
+    tim::settings::enabled()          = true;
+    tim::settings::suppress_parsing() = true;
+    // ensure manager never writes metadata
     tim::manager::instance()->set_write_metadata(-1);
 
     auto _mpi_argc = 1;
@@ -439,6 +442,8 @@ main(int argc, char** argv)
     }
     else
     {
+        // ensure always enabled
+        tim::settings::enabled() = true;
         if(!output_file().empty())
         {
             auto fname = output_file();

@@ -125,7 +125,7 @@ private:
     friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
-    friend struct operation::insert_node<Tp>;
+    friend struct operation::push_node<Tp>;
     friend struct operation::pop_node<Tp>;
     friend struct operation::record<Tp>;
     friend struct operation::reset<Tp>;
@@ -165,11 +165,6 @@ public:
     base& operator=(base_type&&) noexcept = default;
 
 public:
-    template <typename Archive>
-    static void extra_serialization(Archive&, const unsigned int)
-    {}
-
-public:
     template <typename... Args>
     static void configure(Args&&...)
     {}
@@ -177,11 +172,6 @@ public:
 public:
     void reset();    /// reset the values
     void measure();  /// just record a measurment
-    void start();    /// start measurement
-    void stop();     /// stop measurement
-
-    auto start(crtp::base) { this->start(); }
-    auto stop(crtp::base) { this->stop(); }
 
     void set_started();  // store that start has been called
     void set_stopped();  // store that stop has been called
@@ -263,7 +253,6 @@ public:
 
 protected:
     static base_storage_type* get_storage();
-    static void               cleanup() {}
 
     template <typename Up = Tp, enable_if_t<(trait::base_has_accum<Up>::value), int> = 0>
     value_type& load();
@@ -399,7 +388,7 @@ private:
     friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
-    friend struct operation::insert_node<Tp>;
+    friend struct operation::push_node<Tp>;
     friend struct operation::pop_node<Tp>;
     friend struct operation::record<Tp>;
     friend struct operation::reset<Tp>;
@@ -427,11 +416,6 @@ public:
     base& operator=(base_type&&) noexcept = default;
 
 public:
-    template <typename Archive>
-    static void extra_serialization(Archive&, const unsigned int)
-    {}
-
-public:
     template <typename... Args>
     static void configure(Args&&...)
     {}
@@ -439,18 +423,6 @@ public:
 public:
     void reset();    // reset the values
     void measure();  // just record a measurment
-    void start();
-    void stop();
-
-    auto start(crtp::base) { this->start(); }
-    auto stop(crtp::base) { this->stop(); }
-
-    template <typename CacheT                                     = cache_type,
-              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
-    void start(const CacheT&);
-    template <typename CacheT                                     = cache_type,
-              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
-    void stop(const CacheT&);
 
     void set_started();
     void set_stopped();
@@ -473,8 +445,6 @@ public:
     void operator-=(const Type&) {}
 
 protected:
-    static void cleanup() {}
-
     static Type dummy() { return Tp{}; }
 
     void plus(const base_type& rhs)

@@ -378,8 +378,7 @@ TIMEMORY_HOT void
 push(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
-        invoke_impl::invoke<operation::insert_node, ApiT>(obj,
-                                                          std::forward<Args>(args)...);
+        invoke_impl::invoke<operation::push_node, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>

@@ -35,6 +35,7 @@
 #include "timemory/environment/declaration.hpp"
 #include "timemory/operations/types/assemble.hpp"
 #include "timemory/operations/types/cache.hpp"
+#include "timemory/operations/types/cleanup.hpp"
 #include "timemory/operations/types/construct.hpp"
 #include "timemory/operations/types/copy.hpp"
 #include "timemory/operations/types/derive.hpp"

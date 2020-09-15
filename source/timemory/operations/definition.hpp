@@ -39,6 +39,7 @@
 #include "timemory/operations/types/audit.hpp"
 #include "timemory/operations/types/base_printer.hpp"
 #include "timemory/operations/types/cache.hpp"
+#include "timemory/operations/types/cleanup.hpp"
 #include "timemory/operations/types/compose.hpp"
 #include "timemory/operations/types/construct.hpp"
 #include "timemory/operations/types/copy.hpp"

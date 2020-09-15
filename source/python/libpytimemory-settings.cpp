@@ -51,19 +51,21 @@ add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> 
 {
     using Tp   = tim::decay_t<Up>;
     auto _tidx = std::type_index(typeid(Tp));
-    auto _ridx = std::type_index(typeid(Tp&));
 
     if(_obj && _obj->get_type_index() == _tidx)
     {
-        auto _env = _obj->get_env_name();
+        bool _is_ref = dynamic_cast<tim::tsettings<Tp, Tp&>*>(_obj.get()) != nullptr;
+        /*
+        auto _env    = _obj->get_env_name();
         // member property
         _class.def_property(
             _obj->get_name().c_str(),
             [_env](tim::settings* _object) { return _object->get<Tp>(_env); },
             [_env](tim::settings* _object, Tp v) { return _object->set(_env, v); },
             _obj->get_description().c_str());
+        */
         // static property
-        if(_obj->get_value_index() == _tidx)
+        if(!_is_ref)
         {
             _class.def_property_static(
                 _obj->get_name().c_str(),
@@ -78,7 +80,7 @@ add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> 
                 _obj->get_description().c_str());
             return true;
         }
-        else if(_obj->get_value_index() == _ridx)
+        else
         {
             _class.def_property_static(
                 _obj->get_name().c_str(),
@@ -131,7 +133,9 @@ generate(py::module& _pymod)
                                        "Global configuration settings for timemory");
 
     auto _init = []() {
-        return new tim::settings(*tim::settings::instance<tim::api::native_tag>());
+        auto ret = new tim::settings{};
+        *ret     = *tim::settings::instance<tim::api::native_tag>();
+        return ret;
     };
     auto _parse = [](py::object _instance) {
         auto* _obj = _instance.cast<tim::settings*>();

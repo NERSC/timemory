@@ -455,7 +455,7 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
                     (*oa)(cereal::make_nvp("rank", i));
                     (*oa)(cereal::make_nvp("concurrency", concurrency));
                     print_metadata(*oa, results.at(i).front().data());
-                    Tp::extra_serialization(*oa, 1);
+                    operation::extra_serialization<Tp>{ *oa };
                     save(*oa, results.at(i));
 
                     oa->finishNode();

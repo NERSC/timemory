@@ -220,7 +220,7 @@ private:
     template <typename Tp, typename... Args>
     void apply_store(Tp& _obj, Args&&... args)
     {
-        operation::insert_node<Tp>(_obj, m_scope_config, m_prefix_hash);
+        operation::push_node<Tp>(_obj, m_scope_config, m_prefix_hash);
         operation::start<Tp> _start(_obj);
         operation::store<Tp>(_obj, std::forward<Args>(args)...);
         operation::stop<Tp>     _stop(_obj);

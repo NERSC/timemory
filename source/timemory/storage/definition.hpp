@@ -426,15 +426,15 @@ template <typename Type>
 void
 storage<Type, true>::stack_clear()
 {
-    std::unordered_set<Type*> _stack = m_stack;
     if(settings::stack_clearing())
+    {
+        std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
-            operation::stop<Type>     _stopper(*itr);
-            operation::pop_node<Type> _popper(*itr);
-            // static_cast<Base*>(itr)->stop();
-            // static_cast<Base*>(itr)->pop_node();
+            operation::stop<Type>{ *itr };
+            operation::pop_node<Type>{ *itr };
         }
+    }
     m_stack.clear();
 }
 //
@@ -1030,11 +1030,11 @@ template <typename Type>
 void
 storage<Type, false>::stack_clear()
 {
-    using Base                       = typename Type::base_type;
-    std::unordered_set<Type*> _stack = m_stack;
-    for(auto& itr : _stack)
+    if(settings::stack_clearing())
     {
-        static_cast<Base*>(itr)->stop();
+        std::unordered_set<Type*> _stack = m_stack;
+        for(auto& itr : _stack)
+            operation::stop<Type>{ *itr };
     }
     m_stack.clear();
 }

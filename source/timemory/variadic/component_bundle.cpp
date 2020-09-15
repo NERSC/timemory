@@ -313,7 +313,7 @@ component_bundle<Tag, Types...>::start(mpl::piecewise_select<Tp...>, Args&&... a
 
     TIMEMORY_FOLD_EXPRESSION(
         operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
-    TIMEMORY_FOLD_EXPRESSION(operation::insert_node<Tp>(
+    TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
         std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
 
     // start components

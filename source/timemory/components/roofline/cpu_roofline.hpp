@@ -312,7 +312,7 @@ struct cpu_roofline
     //----------------------------------------------------------------------------------//
 
     template <typename Archive>
-    static void extra_serialization(Archive& ar, const unsigned int /*version*/)
+    static void extra_serialization(Archive& ar)
     {
         auto _ert_data = get_ert_data();
         if(!_ert_data.get())  // for input

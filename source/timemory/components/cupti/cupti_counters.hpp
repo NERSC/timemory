@@ -443,7 +443,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     //----------------------------------------------------------------------------------//
     //
     template <typename Archive>
-    static void extra_serialization(Archive& ar, const unsigned int /*version*/)
+    static void extra_serialization(Archive& ar)
     {
         auto& _devices = *_get_device();
         auto& _events  = *_get_events();

@@ -84,7 +84,19 @@ TIMEMORY_COMPONENT_ALIAS(user_trace_bundle,
 //
 TIMEMORY_COMPONENT_ALIAS(user_profiler_bundle,
                          user_bundle<profiler_bundle_idx, api::native_tag>)
-
+//
+#if !defined(TIMEMORY_USE_OMPT)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ompt_bundle, false_type)
+#endif
+//
+#if !defined(TIMEMORY_USE_MPI) || !defined(TIMEMORY_USE_GOTCHA)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mpip_bundle, false_type)
+#endif
+//
+#if !defined(TIMEMORY_USE_NCCL) || !defined(TIMEMORY_USE_GOTCHA)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ncclp_bundle, false_type)
+#endif
+//
 //--------------------------------------------------------------------------------------//
 //
 //                              IS USER BUNDLE

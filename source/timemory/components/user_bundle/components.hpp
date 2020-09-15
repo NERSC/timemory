@@ -171,9 +171,11 @@ template <size_t Idx, typename Tag>
 struct user_bundle : public base<user_bundle<Idx, Tag>, void>
 {
 public:
-    using mutex_t  = std::mutex;
-    using lock_t   = std::unique_lock<mutex_t>;
-    using string_t = std::string;
+    static constexpr auto index = Idx;
+    using tag_type              = Tag;
+    using mutex_t               = std::mutex;
+    using lock_t                = std::unique_lock<mutex_t>;
+    using string_t              = std::string;
 
     using value_type   = void;
     using this_type    = user_bundle<Idx, Tag>;

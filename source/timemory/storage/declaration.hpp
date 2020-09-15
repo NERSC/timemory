@@ -173,7 +173,7 @@ public:
     void get_shared_manager();
 
     virtual void print() final { internal_print(); }
-    virtual void cleanup() final { Type::cleanup(); }
+    virtual void cleanup() final { operation::cleanup<Type>{}; }
     virtual void disable() final { trait::runtime_enabled<component_type>::set(false); }
     virtual void initialize() final;
     virtual void finalize() final;
@@ -596,7 +596,7 @@ storage<Type, true>::serialize(Archive& ar, const unsigned int version)
         ar(cereal::make_nvp("rank", i));
         ar(cereal::make_nvp("concurrency", num_instances));
         m_printer->print_metadata(ar, _results.at(i).front().data());
-        Type::extra_serialization(ar, 1);
+        operation::extra_serialization<Type>{ ar };
         save(ar, _results.at(i));
 
         ar.finishNode();
@@ -705,7 +705,7 @@ public:
     this_type& operator=(this_type&& rhs) = delete;
 
     virtual void print() final { finalize(); }
-    virtual void cleanup() final { Type::cleanup(); }
+    virtual void cleanup() final { operation::cleanup<Type>{}; }
     virtual void stack_clear() final;
     virtual void disable() final { trait::runtime_enabled<component_type>::set(false); }
 
