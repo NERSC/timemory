@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/components/timing/wall_clock.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
