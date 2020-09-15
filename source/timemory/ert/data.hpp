@@ -141,9 +141,9 @@ public:
     exec_data() = default;
     ~exec_data() {}
     exec_data(const exec_data&)     = delete;
-    exec_data(exec_data&&) noexcept = default;
+    exec_data(exec_data&&) = default;
     exec_data& operator=(const exec_data&) = delete;
-    exec_data& operator=(exec_data&&) noexcept = default;
+    exec_data& operator=(exec_data&&) = default;
 
 public:
     //----------------------------------------------------------------------------------//

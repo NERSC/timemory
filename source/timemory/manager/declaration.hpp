@@ -77,6 +77,7 @@ public:
     using finalizer_pair_t = std::pair<std::string, finalizer_func_t>;
     using finalizer_list_t = std::deque<finalizer_pair_t>;
     using finalizer_void_t = std::multimap<void*, finalizer_func_t>;
+    using settings_ptr_t   = std::shared_ptr<settings>;
     using filemap_t        = std::map<string_t, std::map<string_t, std::set<string_t>>>;
 
 public:
@@ -258,6 +259,8 @@ private:
     finalizer_list_t       m_worker_finalizers  = {};
     finalizer_void_t       m_pointer_fini       = {};
     filemap_t              m_output_files       = {};
+    settings_ptr_t         m_settings           = 
+        settings::shared_instance<TIMEMORY_API>();
 
 private:
     struct persistent_data

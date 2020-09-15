@@ -75,8 +75,14 @@ struct tsettings : public vsettings
     void      set(const Tp& _value) { m_value = _value; }
     // void      set(Tp&& _value) { m_value = std::forward<Tp>(_value); }
 
-    virtual void parse() final { set(get_env<Tp>(m_env_name, get())); }
-    virtual void parse(const std::string& v) final { set(get_value<Tp>(v)); }
+    virtual void parse() final 
+	{ 
+		m_value = get_env<decay_t<Tp>>(m_env_name, m_value); 
+	}
+    virtual void parse(const std::string& v) final
+    {
+        m_value = get_value<decay_t<Tp>>(v);
+    }
 
     virtual void add_argument(argparse::argument_parser& p) final
     {
@@ -154,7 +160,7 @@ struct tsettings : public vsettings
         ar(cereal::make_nvp("value", m_value));
     }
 
-    template <typename Up = Tp>
+    template <typename Up = decay_t<Tp>>
     enable_if_t<std::is_same<Up, bool>::value, Up> get_value(const std::string& val)
     {
         if(!val.empty())
@@ -170,19 +176,19 @@ struct tsettings : public vsettings
         return true;
     }
 
-    template <typename Up = Tp>
+    template <typename Up = decay_t<Tp>>
     enable_if_t<!std::is_same<Up, bool>::value && !std::is_same<Up, std::string>::value,
                 Up>
     get_value(const std::string& str)
     {
         std::stringstream ss;
         ss << str;
-        Tp val{};
+        Up val{};
         ss >> val;
         return val;
     }
 
-    template <typename Up = Tp>
+    template <typename Up = decay_t<Tp>>
     enable_if_t<std::is_same<Up, std::string>::value, Up> get_value(
         const std::string& val)
     {
@@ -190,11 +196,11 @@ struct tsettings : public vsettings
     }
 
 private:
-    template <typename Up = Tp, enable_if_t<std::is_same<Up, bool>::value> = 0>
+    template <typename Up = decay_t<Tp>, enable_if_t<std::is_same<Up, bool>::value> = 0>
     auto get_action()
     {
         return [&](parser_t& p) {
-            auto id = argparse::helpers::ltrim(
+            std::string id = argparse::helpers::ltrim(
                 m_cmdline.back(), [](int c) { return static_cast<char>(c) == '-'; });
             auto val = p.get<std::string>(id);
             if(val.empty())
@@ -212,22 +218,24 @@ private:
         };
     }
 
-    template <typename Up = Tp, enable_if_t<!std::is_same<Up, bool>::value &&
-                                            !std::is_same<Up, std::string>::value> = 0>
+    template <typename Up                                        = decay_t<Tp>,
+              enable_if_t<!std::is_same<Up, bool>::value &&
+						  !std::is_same<Up, std::string>::value> = 0>
     auto get_action()
     {
         return [&](parser_t& p) {
-            auto id = argparse::helpers::ltrim(
+            std::string id = argparse::helpers::ltrim(
                 m_cmdline.back(), [](int c) { return static_cast<char>(c) == '-'; });
             m_value = p.get<Up>(id);
         };
     }
 
-    template <typename Up = Tp, enable_if_t<std::is_same<Up, std::string>::value> = 0>
+    template <typename Up                                       = decay_t<Tp>,
+              enable_if_t<std::is_same<Up, std::string>::value> = 0>
     auto get_action()
     {
         return [&](parser_t& p) {
-            auto id = argparse::helpers::ltrim(
+            std::string id = argparse::helpers::ltrim(
                 m_cmdline.back(), [](int c) { return static_cast<char>(c) == '-'; });
             auto _vec = p.get<std::vector<std::string>>(id);
             if(_vec.empty())

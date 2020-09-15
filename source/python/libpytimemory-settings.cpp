@@ -44,11 +44,12 @@ namespace pysettings
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename... Tail,
+template <typename Up, typename... Tail,
           tim::enable_if_t<(sizeof...(Tail) == 0), int> = 0>
 auto
 add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> _obj)
 {
+    using Tp   = tim::decay_t<Up>;
     auto _tidx = std::type_index(typeid(Tp));
     auto _ridx = std::type_index(typeid(Tp&));
 

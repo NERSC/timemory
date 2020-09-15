@@ -108,7 +108,7 @@ manager::manager()
     }
 
 #    if !defined(TIMEMORY_DISABLE_BANNER)
-    if(_first && settings::banner())
+    if(_first && m_settings->get_banner())
         printf("#------------------------- tim::manager initialized "
                "[id=%i][pid=%i] "
                "-------------------------#\n",
@@ -134,7 +134,7 @@ manager::~manager()
     }
 
 #    if !defined(TIMEMORY_DISABLE_BANNER)
-    if(_last && settings::banner())
+    if(_last && m_settings && m_settings->get_banner())
     {
         printf("#---------------------- tim::manager destroyed "
                "[rank=%i][id=%i][pid=%i] "
