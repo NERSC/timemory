@@ -131,7 +131,10 @@ add_timemory_google_test(archive_storage_tests
     SOURCES         archive_storage_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-analysis-tools
-                    timemory-mpi timemory-upcxx)
+                    timemory-mpi
+                    timemory-upcxx
+                    timemory::timemory-core
+                    timemory::timemory-timing-component)
 
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS

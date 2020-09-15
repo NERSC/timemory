@@ -22,19 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/plotting/extern.hpp
- * \brief Include the extern declarations for plotting
- */
-
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/plotting/macros.hpp"
-//
-#include "timemory/plotting/types.hpp"
-//
 #include "timemory/plotting/declaration.hpp"
-//
-//======================================================================================//
+#include "timemory/plotting/macros.hpp"
+#include "timemory/plotting/types.hpp"

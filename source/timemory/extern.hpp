@@ -24,9 +24,42 @@
 
 #pragma once
 
+//
+#if defined(TIMEMORY_USE_CORE_EXTERN)
+// clang-format off
+#    include "timemory/hash/extern.hpp"
+#    include "timemory/environment/extern.hpp"
+#    include "timemory/settings/extern.hpp"
+#    include "timemory/plotting/extern.hpp"
+// clang-format on
+#endif
+//
+#if defined(TIMEMORY_USE_MANAGER_EXTERN)
+#    include "timemory/manager/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_ERT_EXTERN)
+#    include "timemory/ert/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_CONFIG_EXTERN)
+#    include "timemory/config/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_STORAGE_EXTERN)
+#    include "timemory/storage/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_OPERATIONS_EXTERN)
+#    include "timemory/operations/extern.hpp"
+#endif
+//
 #if defined(TIMEMORY_USE_BACKEND_EXTERN)
 #    include "timemory/backends/extern.hpp"
 #    include "timemory/backends/types/mpi/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_VARIADIC_EXTERN)
 #endif
 //
 #if defined(TIMEMORY_USE_COMPONENT_EXTERN)
@@ -41,43 +74,7 @@
 #    include "timemory/containers/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
-#    include "timemory/environment/extern.hpp"
-#endif
-//
-#if defined(TIMEMORY_USE_ERT_EXTERN)
-#    include "timemory/ert/extern.hpp"
-#endif
-//
-#if defined(TIMEMORY_USE_HASH_EXTERN)
-#    include "timemory/hash/extern.hpp"
-#endif
-//
-#if defined(TIMEMORY_USE_MANAGER_EXTERN)
-#    include "timemory/manager/extern.hpp"
-#endif
-//
-#if defined(TIMEMORY_USE_OPERATIONS_EXTERN)
-#    include "timemory/operations/extern.hpp"
-#endif
-//
-#if defined(TIMEMORY_USE_PLOTTING_EXTERN)
-#    include "timemory/plotting/extern.hpp"
-#endif
-//
 #if defined(TIMEMORY_USE_RUNTIME_EXTERN)
 #    include "timemory/runtime/extern.hpp"
-#endif
-//
-#if defined(TIMEMORY_USE_STORAGE_EXTERN)
-#    include "timemory/storage/extern.hpp"
-#endif
-//
-#if defined(TIMEMORY_USE_CONFIG_EXTERN)
-#    include "timemory/config/extern.hpp"
-#endif
-//
-#if defined(TIMEMORY_USE_SETTINGS_EXTERN)
-#    include "timemory/settings/extern.hpp"
 #endif
 //

@@ -22,17 +22,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/plotting/definition.hpp
- * \brief The definitions for the types in plotting
- */
-
 #pragma once
 
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/plotting/macros.hpp"
 #include "timemory/plotting/types.hpp"
 #include "timemory/settings/declaration.hpp"
+
 #if defined(TIMEMORY_USE_PYTHON)
 #    include "pybind11/embed.h"
 #endif

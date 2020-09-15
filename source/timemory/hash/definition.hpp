@@ -22,12 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/hash/definition.hpp
- * \brief The definitions for the types in hash
- * Provides correlation between the hashes and the the prefix for components
- */
-
 #pragma once
 
 #include "timemory/api.hpp"

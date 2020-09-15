@@ -677,8 +677,10 @@ settings::set(const std::string& _key, Tp&& _val)
     return false;
 }
 //
+//
 //----------------------------------------------------------------------------------//
 //
 }  // namespace tim
 
+TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
 CEREAL_CLASS_VERSION(tim::settings, 2)

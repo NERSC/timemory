@@ -259,8 +259,7 @@ private:
     finalizer_list_t       m_worker_finalizers  = {};
     finalizer_void_t       m_pointer_fini       = {};
     filemap_t              m_output_files       = {};
-    settings_ptr_t         m_settings           = 
-        settings::shared_instance<TIMEMORY_API>();
+    settings_ptr_t         m_settings = settings::shared_instance<TIMEMORY_API>();
 
 private:
     struct persistent_data

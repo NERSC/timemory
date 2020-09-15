@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/settings/macros.hpp
- * \brief Include the macros for settings
- */
-
 #pragma once
 
 #include "timemory/compat/macros.h"
@@ -190,6 +185,17 @@
             {                                                                            \
             template std::shared_ptr<settings> settings::shared_instance<API>();         \
             template settings*                 settings::instance<API>();                \
+            template void settings::serialize_settings(cereal::JSONInputArchive&);       \
+            template void settings::serialize_settings(                                  \
+                cereal::PrettyJSONOutputArchive&);                                       \
+            template void settings::serialize_settings(                                  \
+                cereal::MinimalJSONOutputArchive&);                                      \
+            template void settings::serialize_settings(cereal::JSONInputArchive&,        \
+                                                       settings&);                       \
+            template void settings::serialize_settings(cereal::PrettyJSONOutputArchive&, \
+                                                       settings&);                       \
+            template void settings::serialize_settings(                                  \
+                cereal::MinimalJSONOutputArchive&, settings&);                           \
             }
 //
 #    elif defined(TIMEMORY_USE_SETTINGS_EXTERN)
@@ -199,6 +205,18 @@
             {                                                                            \
             extern template std::shared_ptr<settings> settings::shared_instance<API>();  \
             extern template settings*                 settings::instance<API>();         \
+            extern template void                      settings::serialize_settings(      \
+                cereal::JSONInputArchive&);                         \
+            extern template void settings::serialize_settings(                           \
+                cereal::PrettyJSONOutputArchive&);                                       \
+            extern template void settings::serialize_settings(                           \
+                cereal::MinimalJSONOutputArchive&);                                      \
+            extern template void settings::serialize_settings(cereal::JSONInputArchive&, \
+                                                              settings&);                \
+            extern template void settings::serialize_settings(                           \
+                cereal::PrettyJSONOutputArchive&, settings&);                            \
+            extern template void settings::serialize_settings(                           \
+                cereal::MinimalJSONOutputArchive&, settings&);                           \
             }
 //
 #    else

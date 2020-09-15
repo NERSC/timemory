@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/plotting/types.hpp
- * \brief Declare the plotting types
- */
-
 #pragma once
 
 #include "timemory/plotting/macros.hpp"

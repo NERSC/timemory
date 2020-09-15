@@ -934,5 +934,3 @@ settings::read(const string_t& inp)
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
-
-TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)

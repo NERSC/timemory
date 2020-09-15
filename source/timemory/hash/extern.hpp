@@ -22,19 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/hash/extern.hpp
- * \brief Include the extern declarations for hash
- */
-
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/hash/macros.hpp"
-//
-#include "timemory/hash/types.hpp"
-//
 #include "timemory/hash/declaration.hpp"
-//
-//======================================================================================//
+#include "timemory/hash/macros.hpp"
+#include "timemory/hash/types.hpp"

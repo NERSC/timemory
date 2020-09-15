@@ -23,3 +23,4 @@
 // SOFTWARE.
 
 #include "timemory/environment/extern.hpp"
+#include "timemory/environment/definition.hpp"

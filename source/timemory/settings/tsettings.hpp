@@ -75,10 +75,7 @@ struct tsettings : public vsettings
     void      set(const Tp& _value) { m_value = _value; }
     // void      set(Tp&& _value) { m_value = std::forward<Tp>(_value); }
 
-    virtual void parse() final 
-	{ 
-		m_value = get_env<decay_t<Tp>>(m_env_name, m_value); 
-	}
+    virtual void parse() final { m_value = get_env<decay_t<Tp>>(m_env_name, m_value); }
     virtual void parse(const std::string& v) final
     {
         m_value = get_value<decay_t<Tp>>(v);
@@ -220,7 +217,7 @@ private:
 
     template <typename Up                                        = decay_t<Tp>,
               enable_if_t<!std::is_same<Up, bool>::value &&
-						  !std::is_same<Up, std::string>::value> = 0>
+                          !std::is_same<Up, std::string>::value> = 0>
     auto get_action()
     {
         return [&](parser_t& p) {

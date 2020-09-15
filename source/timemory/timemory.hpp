@@ -178,21 +178,21 @@ struct dummy
 #    include "timemory/extern.hpp"
 //
 #    include "timemory/api.hpp"
-#    include "timemory/enum.h"
-#    include "timemory/types.hpp"                 
-#    include "timemory/units.hpp"
 #    include "timemory/config.hpp"
+#    include "timemory/enum.h"
 #    include "timemory/plotting.hpp"
+#    include "timemory/types.hpp"
+#    include "timemory/units.hpp"
 //
+#    include "timemory/components.hpp"
+#    include "timemory/containers.hpp"
+#    include "timemory/ert.hpp"
+#    include "timemory/settings.hpp"
 #    include "timemory/utility.hpp"
-#    include "timemory/components.hpp"  
-#    include "timemory/settings.hpp"    
-#    include "timemory/containers.hpp"        
 #    include "timemory/variadic.hpp"
-#    include "timemory/ert.hpp"  
 //
 #    include "timemory/definition.hpp"
-#    include "timemory/runtime.hpp"  
+#    include "timemory/runtime.hpp"
 //
 //======================================================================================//
 //
