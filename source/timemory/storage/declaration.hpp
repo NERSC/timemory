@@ -38,6 +38,7 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/cleanup.hpp"
 #include "timemory/storage/graph.hpp"
 #include "timemory/storage/graph_data.hpp"
 #include "timemory/storage/macros.hpp"
