@@ -74,3 +74,17 @@
 #        define _UNIX
 #    endif
 #endif
+
+//--------------------------------------------------------------------------------------//
+// this ensures that winnt.h never causes a 64-bit build to fail
+#if defined(_WINDOWS)
+#    if !defined(NOMINMIX)
+#        define NOMINMAX
+#    endif
+#    if !defined(WIN32_LEAN_AND_MEAN)
+#        define WIN32_LEAN_AND_MEAN
+#    endif
+#    include <Windows.h>
+#endif
+
+//--------------------------------------------------------------------------------------//

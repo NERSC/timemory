@@ -74,8 +74,17 @@ struct executor;
 template <typename ExecutorT>
 struct callback;
 
+namespace cache_size
+{
+template <size_t Level>
+size_t
+get();
+
+size_t
+get(const int&);
+
+size_t
+get_max();
+}  // namespace cache_size
 }  // namespace ert
 }  // namespace tim
-
-// lightweight functions with no internal includes
-#include "timemory/ert/cache_size.hpp"

@@ -61,13 +61,6 @@
 //
 
 // without this, windows will define macros for min and max
-#    if !defined(NOMINMIX)
-#        define NOMINMAX
-#    endif
-#    if !defined(WIN32_LEAN_AND_MEAN)
-#        define WIN32_LEAN_AND_MEAN
-#    endif
-
 #    include <sys/timeb.h>
 #    include <sys/types.h>
 #    include <winsock.h>
@@ -88,9 +81,7 @@ gettimeofday(struct timeval* t, void* timezone) noexcept
 
 #    define __need_clock_t
 
-#    include <Windows.h>
 #    include <time.h>
-#    include <windows.h>
 
 // Structure describing CPU time used by a process and its children.
 struct tms

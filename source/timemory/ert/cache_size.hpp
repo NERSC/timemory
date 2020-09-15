@@ -36,6 +36,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <numeric>
 #include <sstream>
@@ -45,18 +47,6 @@
 
 #if defined(_MACOS)
 #    include <sys/sysctl.h>
-#elif defined(_WINDOWS) || defined(_WIN32) || defined(_WIN64)
-// without this, windows will define macros for min and max
-#    if !defined(NOMINMIX)
-#        define NOMINMAX
-#    endif
-#    if !defined(WIN32_LEAN_AND_MEAN)
-#        define WIN32_LEAN_AND_MEAN
-#    endif
-#    include <cstdlib>
-#    include <windows.h>
-#elif defined(_LINUX)
-#    include <cstdio>
 #endif
 
 namespace tim
@@ -191,16 +181,16 @@ cache_size()
 
 //======================================================================================//
 
-template <size_t _Level>
+template <size_t Level>
 inline size_t
 get()
 {
     // only enable queries 1, 2, 3
-    static_assert(_Level > 0 && _Level < 4,
+    static_assert(Level > 0 && Level < 4,
                   "Request for cache level that is not supported");
 
     // avoid multiple queries
-    static size_t _value = impl::cache_size(_Level);
+    static size_t _value = impl::cache_size(Level);
     return _value;
 }
 
