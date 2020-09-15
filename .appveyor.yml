@@ -19,26 +19,32 @@ environment:
       CPP: 14
       CONFIG: MinSizeRel
       EXAMPLES: "ON"
+      BUILD_STATIC: "OFF"
     - PYTHON: 37
       CPP: 17
       CONFIG: RelWithDebInfo
       EXAMPLES: "OFF"
+      BUILD_STATIC: "ON"
     - CONDA: 36
       CPP: 14
       CONFIG: MinSizeRel
       EXAMPLES: "OFF"
+      BUILD_STATIC: "ON"
     - CONDA: 37
       CPP: 17
       CONFIG: Release
       EXAMPLES: "OFF"
+      BUILD_STATIC: "ON"
     - PYTHON: 38
       CPP: 17
       CONFIG: MinSizeRel
       EXAMPLES: "ON"
+      BUILD_STATIC: "OFF"
     - CONDA: 38
       CPP: 14
       CONFIG: MinSizeRel
       EXAMPLES: "ON"
+      BUILD_STATIC: "OFF"
 
 install:
   # Configure environment
@@ -92,8 +98,8 @@ build_script:
   - mkdir build-timemory
   - cd build-timemory
   - cmake .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
-    -DBUILD_STATIC_LIBS=ON
     -DBUILD_SHARED_LIBS=ON
+    -DBUILD_STATIC_LIBS="%BUILD_STATIC%"
     -DCMAKE_BUILD_TYPE="%CONFIG%"
     -DCMAKE_CXX_STANDARD="%CPP%"
     -DCMAKE_INSTALL_PREFIX=..\install-timemory
