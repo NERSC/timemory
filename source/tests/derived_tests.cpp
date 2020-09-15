@@ -24,6 +24,8 @@
 
 #include "gtest/gtest.h"
 
+#include "timemory/timemory.hpp"
+
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
@@ -31,8 +33,6 @@
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/timemory.hpp"
 
 using namespace tim::component;
 
@@ -337,6 +337,7 @@ main(int argc, char** argv)
 
     auto ret = RUN_ALL_TESTS();
 
+    tim::enable_signal_detection();
     if(_configured)
     {
         tim::timemory_finalize();
