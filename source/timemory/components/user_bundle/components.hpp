@@ -199,7 +199,8 @@ public:
     }
     static value_type record() {}
 
-    static void global_init(storage_type* = nullptr) TIMEMORY_VISIBILITY("default");
+    static void global_init() TIMEMORY_VISIBILITY("default");
+    static void global_init(storage_type*) { global_init(); }
 
     using opaque_array_t = std::vector<opaque>;
     using typeid_vec_t   = std::vector<size_t>;
@@ -499,7 +500,7 @@ public:
 //
 template <size_t Idx, typename Tag>
 void
-user_bundle<Idx, Tag>::global_init(storage_type*)
+user_bundle<Idx, Tag>::global_init()
 {
     env::initialize_bundle<Idx, Tag>();
 }
