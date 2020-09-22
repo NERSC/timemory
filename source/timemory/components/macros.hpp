@@ -454,7 +454,6 @@
         extern template struct extra_serialization<COMPONENT_NAME>;                      \
         extern template struct echo_measurement<                                         \
             COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                 \
-        extern template struct finalize::flamegraph<COMPONENT_NAME>;                     \
         extern template struct finalize::get<                                            \
             COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
         extern template struct finalize::mpi_get<                                        \
@@ -509,7 +508,6 @@
         template struct extra_serialization<COMPONENT_NAME>;                             \
         template struct echo_measurement<COMPONENT_NAME,                                 \
                                          trait::echo_enabled<COMPONENT_NAME>::value>;    \
-        template struct finalize::flamegraph<COMPONENT_NAME>;                            \
         template struct finalize::get<                                                   \
             COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
         template struct finalize::mpi_get<                                               \
