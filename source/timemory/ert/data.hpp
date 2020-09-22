@@ -139,16 +139,16 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    exec_data()                 = default;
-    ~exec_data()                = default;
+    exec_data() {}
+    ~exec_data() {}
+
     exec_data(const exec_data&) = delete;
+    exec_data& operator=(const exec_data&) = delete;
 
     exec_data(this_type&& rhs)
     : m_labels(std::move(rhs.m_labels))
     , m_values(std::move(rhs.m_values))
     {}
-
-    exec_data& operator=(const exec_data&) = delete;
 
     this_type& operator=(this_type&& rhs)
     {
@@ -259,7 +259,7 @@ protected:
     labels_type m_labels = { { "label", "working-set", "trials", "total-bytes",
                                "total-ops", "ops-per-set", "counter", "device", "dtype",
                                "exec-params" } };
-    value_array m_values;
+    value_array m_values = {};
 
 private:
     //----------------------------------------------------------------------------------//
