@@ -135,15 +135,27 @@ public:
     using size_type      = typename value_array::size_type;
     using iterator       = typename value_array::iterator;
     using const_iterator = typename value_array::const_iterator;
+    using this_type      = exec_data<Tp>;
 
     //----------------------------------------------------------------------------------//
     //
-    exec_data() = default;
-    ~exec_data() {}
+    exec_data()                 = default;
+    ~exec_data()                = default;
     exec_data(const exec_data&) = delete;
-    exec_data(exec_data&&)      = default;
+
+    exec_data(this_type&& rhs)
+    : m_labels(std::move(rhs.m_labels))
+    , m_values(std::move(rhs.m_values))
+    {}
+
     exec_data& operator=(const exec_data&) = delete;
-    exec_data& operator=(exec_data&&) = default;
+
+    this_type& operator=(this_type&& rhs)
+    {
+        m_labels = std::move(rhs.m_labels);
+        m_values = std::move(rhs.m_values);
+        return *this;
+    }
 
 public:
     //----------------------------------------------------------------------------------//
