@@ -35,6 +35,8 @@
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/manager/declaration.hpp"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/operations/types/fini.hpp"
 #include "timemory/operations/types/init.hpp"
 #include "timemory/operations/types/node.hpp"
