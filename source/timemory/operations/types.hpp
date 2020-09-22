@@ -75,6 +75,9 @@ struct remove_pointers<Tuple<Tp...>>
 template <typename Tp>
 using remove_pointers_t = typename remove_pointers<Tp>::type;
 //
+template <typename Tp>
+struct basic_tree;
+//
 //--------------------------------------------------------------------------------------//
 //
 namespace utility
@@ -507,8 +510,32 @@ struct merge<Type, true>
     using graph_t                  = typename storage_type::graph_type;
     using result_type              = typename storage_type::result_array_t;
 
+    template <typename Tp>
+    using vector_t = std::vector<Tp>;
+
+    TIMEMORY_DEFAULT_OBJECT(merge)
+
     merge(storage_type& lhs, storage_type& rhs);
     merge(result_type& lhs, const result_type& rhs);
+
+    // unary
+    template <typename Tp>
+    basic_tree<Tp> operator()(const basic_tree<Tp>& _bt);
+
+    template <typename Tp>
+    vector_t<basic_tree<Tp>> operator()(const vector_t<basic_tree<Tp>>& _bt);
+
+    template <typename Tp>
+    vector_t<basic_tree<Tp>> operator()(const vector_t<vector_t<basic_tree<Tp>>>& _bt,
+                                        size_t _root = 0);
+
+    // binary
+    template <typename Tp>
+    basic_tree<Tp> operator()(const basic_tree<Tp>&, const basic_tree<Tp>&);
+
+    template <typename Tp>
+    vector_t<basic_tree<Tp>> operator()(const vector_t<basic_tree<Tp>>&,
+                                        const vector_t<basic_tree<Tp>>&);
 };
 //
 //--------------------------------------------------------------------------------------//

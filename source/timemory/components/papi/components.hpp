@@ -1174,7 +1174,7 @@ public:
         auto val          = (is_transient) ? accum : value;
         auto _get_display = [&](std::ostream& os, size_type idx) {
             auto     _obj_value = val[idx];
-            auto     _evt_type  = get_events<common_type>()[idx];
+            auto     _evt_type  = std::vector<int>({ EventTypes... }).at(idx);
             string_t _label     = papi::get_event_info(_evt_type).short_descr;
             string_t _disp      = papi::get_event_info(_evt_type).units;
             auto     _prec      = base_type::get_precision();

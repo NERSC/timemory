@@ -102,42 +102,38 @@ public:
     {
         if(exclude_stream.count(name) > 0)
         {
-            fprintf(stderr, "Warning! Excluding '%s'\n", name);
+            // fprintf(stderr, "Warning! Excluding '%s'\n", name);
             return;
         }
 
         if(current_entry && value_keys.count(name) > 0)
         {
-            fprintf(stderr, "Message! Using '%s'\n", name);
+            // fprintf(stderr, "Message! Using '%s'\n", name);
             current_entry->insert({ name, "" });
             current_value = &((*current_entry)[name]);
             return;
         }
         else if(value_keys.count(name) > 0)
         {
-            fprintf(stderr, "Warning! '%s' is special and does not have an entry\n",
-                    name);
+            // fprintf(stderr, "Warning! '%s' is special and does not have an entry\n",
+            //        name);
             return;
         }
 
-        // if(!current_entry)
-        {
-            fprintf(stderr, "Message! Saving '%s'\n", name);
-            current_value = nullptr;
-            output_stream->push_back(entry_type{});
-            current_entry = &(output_stream->back());
+        // fprintf(stderr, "Message! Saving '%s'\n", name);
+        current_value = nullptr;
+        output_stream->push_back(entry_type{});
+        current_entry = &(output_stream->back());
 
-            current_entry->insert({ "identifier", name });
-            std::string       func   = name;
-            const std::string prefix = "TIMEMORY_";
-            func                     = func.erase(0, prefix.length());
-            std::transform(func.begin(), func.end(), func.begin(),
-                           [](char& c) { return tolower(c); });
-            std::stringstream ss;
-            ss << "settings::" << func << "()";
-            current_entry->insert({ "accessor", ss.str() });
-        }
-        // else { fprintf(stderr, "Warning! ignoring '%s'\n", name); }
+        current_entry->insert({ "identifier", name });
+        std::string       func   = name;
+        const std::string prefix = "TIMEMORY_";
+        func                     = func.erase(0, prefix.length());
+        std::transform(func.begin(), func.end(), func.begin(),
+                       [](char& c) { return tolower(c); });
+        std::stringstream ss;
+        ss << "settings::" << func << "()";
+        current_entry->insert({ "accessor", ss.str() });
     }
 
     void setNextType(const char* name)

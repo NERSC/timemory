@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/hash/types.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -48,9 +49,9 @@ struct basic_tree
     template <typename GraphT, typename ItrT>
     this_type& operator()(GraphT g, ItrT root)
     {
-        m_inclusive          = *root;
-        m_exclusive          = *root;
-        using iterator_t     = typename GraphT::sibling_iterator;
+        using iterator_t = typename GraphT::sibling_iterator;
+
+        m_value              = *root;
         iterator_t _begin    = g.begin(root);
         iterator_t _end      = g.end(root);
         auto       nchildren = std::distance(_begin, _end);
@@ -59,10 +60,84 @@ struct basic_tree
             m_children.reserve(nchildren);
             for(auto itr = _begin; itr != _end; ++itr)
             {
-                m_exclusive.data() -= itr->data();
-                m_exclusive.stats() -= itr->stats();
-                m_children.push_back(child_type{}(g, itr));
+                if(!itr->is_dummy())
+                {
+                    m_value.exclusive().data() -= itr->data();
+                    m_value.exclusive().stats() -= itr->stats();
+                    m_children.push_back(child_type{}(g, itr));
+                }
+                else
+                {
+                    iterator_t _dbegin = g.begin(itr);
+                    iterator_t _dend   = g.end(itr);
+                    for(auto ditr = _dbegin; ditr != _dend; ++ditr)
+                    {
+                        if(!ditr->is_dummy())
+                            m_children.push_back(child_type{}(g, ditr));
+                    }
+                }
             }
+        }
+        return *this;
+    }
+
+    friend bool operator==(const this_type& lhs, const this_type& rhs)
+    {
+        auto _lhash = get_hash_id(get_hash_aliases(), lhs.m_value.hash());
+        auto _rhash = get_hash_id(get_hash_aliases(), rhs.m_value.hash());
+        return (_lhash == _rhash);
+    }
+
+    friend bool operator!=(const this_type& lhs, const this_type& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        if(*this == rhs)
+        {
+            m_value += rhs.m_value;
+        }
+
+        for(auto& ritr : rhs.m_children)
+        {
+            bool found = false;
+            for(auto& itr : m_children)
+            {
+                if(itr == ritr)
+                {
+                    found = true;
+                    itr += ritr;
+                    break;
+                }
+            }
+            if(!found)
+                m_children.insert(m_children.end(), ritr);
+        }
+        return *this;
+    }
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        if(*this == rhs)
+        {
+            m_value -= rhs.m_value;
+        }
+
+        for(auto& ritr : rhs.m_children)
+        {
+            bool found = false;
+            for(auto& itr : m_children)
+            {
+                if(itr == ritr)
+                {
+                    found = true;
+                    itr -= ritr;
+                }
+            }
+            if(!found)
+                m_children.insert(m_children.end(), ritr);
         }
         return *this;
     }
@@ -70,30 +145,23 @@ struct basic_tree
     template <typename Archive>
     void save(Archive& ar, const unsigned int) const
     {
-        ar(cereal::make_nvp("inclusive", m_inclusive),
-           cereal::make_nvp("exclusive", m_exclusive),
-           cereal::make_nvp("children", m_children));
+        ar(cereal::make_nvp("node", m_value), cereal::make_nvp("children", m_children));
     }
 
     template <typename Archive>
     void load(Archive& ar, const unsigned int)
     {
-        ar(cereal::make_nvp("inclusive", m_inclusive),
-           cereal::make_nvp("exclusive", m_exclusive),
-           cereal::make_nvp("children", m_children));
+        ar(cereal::make_nvp("node", m_value), cereal::make_nvp("children", m_children));
     }
 
-    auto& get_inclusive() { return m_inclusive; }
-    auto& get_exclusive() { return m_exclusive; }
+    auto& get_value() { return m_value; }
     auto& get_children() { return m_children; }
 
-    const auto& get_inclusive() const { return m_inclusive; }
-    const auto& get_exclusive() const { return m_exclusive; }
+    const auto& get_value() const { return m_value; }
     const auto& get_children() const { return m_children; }
 
 private:
-    value_type    m_inclusive = {};
-    value_type    m_exclusive = {};
+    value_type    m_value     = {};
     children_type m_children  = {};
 };
 

@@ -29,15 +29,12 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 
 namespace tim
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-//  hash storage
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -47,9 +44,6 @@ using graph_hash_alias_t        = std::unordered_map<hash_result_type, hash_resu
 using graph_hash_map_ptr_t      = std::shared_ptr<graph_hash_map_t>;
 using graph_hash_map_ptr_pair_t = std::pair<graph_hash_map_ptr_t, graph_hash_map_ptr_t>;
 using graph_hash_alias_ptr_t    = std::shared_ptr<graph_hash_alias_t>;
-//
-//--------------------------------------------------------------------------------------//
-//
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -69,6 +63,11 @@ get_hash_id(Tp&& prefix)
 {
     return std::hash<std::string>()(std::forward<Tp>(prefix));
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+hash_result_type
+get_hash_id(const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -105,23 +104,23 @@ get_hash_identifier(hash_result_type _hash_id);
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Tag = TIMEMORY_API, typename Ptr = std::shared_ptr<Tp>,
-          typename Pair = std::pair<Ptr, Ptr>>
-Pair&
+template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
+          typename PairT = std::pair<PtrT, PtrT>>
+PairT&
 get_shared_ptr_pair();
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Tag = TIMEMORY_API, typename Ptr = std::shared_ptr<Tp>,
-          typename Pair = std::pair<Ptr, Ptr>>
-Ptr
+template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
+          typename PairT = std::pair<PtrT, PtrT>>
+PtrT
 get_shared_ptr_pair_instance();
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Tag = TIMEMORY_API, typename Ptr = std::shared_ptr<Tp>,
-          typename Pair = std::pair<Ptr, Ptr>>
-Ptr
+template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
+          typename PairT = std::pair<PtrT, PtrT>>
+PtrT
 get_shared_ptr_pair_master_instance();
 //
 //--------------------------------------------------------------------------------------//
