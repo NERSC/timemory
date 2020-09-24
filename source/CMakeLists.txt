@@ -12,6 +12,7 @@ file(GLOB cxx_headers_variadic           ${CMAKE_CURRENT_LIST_DIR}/timemory/vari
 file(GLOB_RECURSE cxx_headers_backends   ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB_RECURSE cxx_headers_components ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
 file(GLOB cxx_headers_macros        ${CMAKE_CURRENT_LIST_DIR}/timemory/macros/*.hpp)
+file(GLOB cxx_headers_api           ${CMAKE_CURRENT_LIST_DIR}/timemory/api/*.hpp)
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
 file(GLOB cxx_headers_general       ${CMAKE_CURRENT_LIST_DIR}/timemory/general/*.hpp)
 file(GLOB cxx_headers_data          ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
@@ -40,7 +41,7 @@ endforeach()
 
 # all the headers
 set(timemory_glob_headers
-    ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
+    ${c_headers} ${cxx_headers} ${cxx_headers_variadic} ${cxx_headers_api}
     ${cxx_headers_backends} ${cxx_headers_components} ${cxx_headers_mpl}
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
     ${cxx_headers_category_bits} ${cxx_headers_general} ${cxx_headers_macros}

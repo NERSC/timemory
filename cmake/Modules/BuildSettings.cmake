@@ -12,9 +12,14 @@ include(GNUInstallDirs)
 include(Compilers)
 
 
-find_library(dl_LIBRARY NAMES dl)
-if(dl_LIBRARY)
-    target_link_libraries(timemory-compile-options INTERFACE ${dl_LIBRARY})
+if(CMAKE_DL_LIBS)
+    set(dl_LIBRARY ${CMAKE_DL_LIBS})
+    target_link_libraries(timemory-compile-options INTERFACE ${CMAKE_DL_LIBS})
+else()
+    find_library(dl_LIBRARY NAMES dl)
+    if(dl_LIBRARY)
+        target_link_libraries(timemory-compile-options INTERFACE ${dl_LIBRARY})
+    endif()
 endif()
 
 if(WIN32)
@@ -93,7 +98,8 @@ if(NOT cxx_timemory_lto_flto_thin)
 endif()
 
 if(TIMEMORY_BUILD_LTO)
-    target_link_libraries(timemory-compile-options INTERFACE timemory-lto)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+    # target_link_libraries(timemory-compile-options INTERFACE timemory-lto)
 endif()
 
 #----------------------------------------------------------------------------------------#

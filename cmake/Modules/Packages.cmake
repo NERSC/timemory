@@ -330,14 +330,34 @@ endfunction()
 timemory_target_compile_definitions(timemory-headers INTERFACE TIMEMORY_CMAKE)
 
 target_include_directories(timemory-headers INTERFACE
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
 
 target_include_directories(timemory-headers SYSTEM INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-if(TIMEMORY_LINK_RT)
+# if cmake provides dl library, use that
+if(CMAKE_DL_LIBS)
+    set(dl_LIBRARY "${CMAKE_DL_LIBS}" CACHE STRING "dynamic linking libraries")
+endif()
+
+find_library(rt_LIBRARY NAMES rt)
+find_library(dl_LIBRARY NAMES dl)
+
+# dynamic linking library
+if(dl_LIBRARY)
+    target_link_libraries(timemory-headers INTERFACE ${dl_LIBRARY})
+elseif(TIMEMORY_LINK_DL)
+    target_link_libraries(timemory-headers INTERFACE dl)
+endif()
+
+# Realtime Extensions library
+if(rt_LIBRARY)
+    target_link_libraries(timemory-headers INTERFACE ${rt_LIBRARY})
+elseif(TIMEMORY_LINK_RT)
     target_link_libraries(timemory-headers INTERFACE rt)
 endif()
+
 # include threading because of rooflines
 target_link_libraries(timemory-headers INTERFACE timemory-threading)
 

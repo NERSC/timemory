@@ -38,10 +38,6 @@ endif()
 if(NOT CMAKE_VERSION VERSION_LESS 3.18)
     cmake_policy(SET CMP0104 OLD)
 endif()
-# set these as the defaults
-set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
-set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
 # this gets annoying
 if(TIMEMORY_BUILD_GOOGLE_TEST OR TIMEMORY_BUILD_TESTING)
     set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
@@ -94,6 +90,34 @@ endif()
 
 project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
 
+# Check if project is being used directly or via add_subdirectory
+set(${PROJECT_NAME}_MASTER_PROJECT ON)
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(${PROJECT_NAME}_MASTER_PROJECT OFF)
+endif()
+
+# set these as the defaults
+if(timemory_MASTER_PROJECT)
+    set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
+    set(CMAKE_UNITY_BUILD ON CACHE BOOL "Enable unity build")
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL
+        "Add compile flag to hide symbols of inline functions")
+    set(CMAKE_C_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
+    set(CMAKE_CXX_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
+else()
+    set(CMAKE_ENABLE_EXPORTS ON)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    if(NOT DEFINED TIMEMORY_UNITY_BUILD)
+        set(CMAKE_UNITY_BUILD ON)
+    endif()
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+    set(CMAKE_C_VISIBILITY_PRESET "default")
+    set(CMAKE_CXX_VISIBILITY_PRESET "default")
+endif()
+
 # install directories
 include(GNUInstallDirs)
 # cmake installation folder -- change CMAKE_INSTALL_DATAROOTDIR to tweak this
@@ -109,24 +133,6 @@ foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
     # generic "PROJECT_INSTALL_" variables (used by documentation)"
     set(PROJECT_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${TYPE}DIR})
 endforeach()
-
-configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/version.h.in
-    ${PROJECT_BINARY_DIR}/source/timemory/version.h @ONLY)
-
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${PROJECT_BINARY_DIR}/source/timemory/version.h
-        ${PROJECT_SOURCE_DIR}/source/timemory/version.h
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    ERROR_VARIABLE ERR_MSG
-    RESULT_VARIABLE RET
-)
-
-# Check if project is being used directly or via add_subdirectory
-set(${PROJECT_NAME}_MASTER_PROJECT ON)
-if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    set(${PROJECT_NAME}_MASTER_PROJECT OFF)
-endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
     ${CMAKE_CURRENT_LIST_DIR}/external/pybind11/tools
