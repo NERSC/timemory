@@ -33,6 +33,7 @@
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
 #include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/timing/ert_timer.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"

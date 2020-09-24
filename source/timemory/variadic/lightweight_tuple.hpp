@@ -100,9 +100,6 @@ public:
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
 public:
-    //
-    //----------------------------------------------------------------------------------//
-    //
     static initializer_type& get_initializer()
     {
         static initializer_type _instance = [](this_type&) {};

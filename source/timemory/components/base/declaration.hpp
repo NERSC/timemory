@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/components/base/types.hpp"
+#include "timemory/components/properties.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/storage/types.hpp"

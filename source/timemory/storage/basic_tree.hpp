@@ -161,8 +161,8 @@ struct basic_tree
     const auto& get_children() const { return m_children; }
 
 private:
-    value_type    m_value     = {};
-    children_type m_children  = {};
+    value_type    m_value    = {};
+    children_type m_children = {};
 };
 
 }  // namespace tim

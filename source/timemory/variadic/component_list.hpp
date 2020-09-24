@@ -112,16 +112,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    static auto& get_initializer()
-    {
-        static auto env_enum = enumerate_components(
-            tim::delimit(tim::get_env<string_t>("TIMEMORY_COMPONENT_LIST_INIT", "")));
-
-        static initializer_type _instance = [=](this_type& cl) {
-            ::tim::initialize(cl, env_enum);
-        };
-        return _instance;
-    }
+    static initializer_type& get_initializer();
 
 public:
     component_list();

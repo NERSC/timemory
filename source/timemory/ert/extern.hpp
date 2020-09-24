@@ -31,7 +31,7 @@
 #pragma once
 
 #include "timemory/backends/device.hpp"
-#include "timemory/components/timing/wall_clock.hpp"
+#include "timemory/components/timing/ert_timer.hpp"
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
@@ -52,21 +52,20 @@ namespace ert
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(class exec_data<component::wall_clock>)
+TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(class exec_data<component::ert_timer>)
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(class counter<device::cpu, float, component::wall_clock>)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
-    class counter<device::cpu, double, component::wall_clock>)
-//
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
-    struct configuration<device::cpu, float, component::wall_clock>)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
-    struct configuration<device::cpu, double, component::wall_clock>)
+TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(class counter<device::cpu, float, component::ert_timer>)
+TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(class counter<device::cpu, double, component::ert_timer>)
 //
 TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
-    struct executor<device::cpu, float, component::wall_clock>)
+    struct configuration<device::cpu, float, component::ert_timer>)
 TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
-    struct executor<device::cpu, double, component::wall_clock>)
+    struct configuration<device::cpu, double, component::ert_timer>)
+//
+TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
+    struct executor<device::cpu, float, component::ert_timer>)
+TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
+    struct executor<device::cpu, double, component::ert_timer>)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -74,32 +73,31 @@ TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(class counter<device::gpu, float, component::ert_timer>)
 TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
-    class counter<device::gpu, float, component::wall_clock>)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
-    class counter<device::gpu, double, component::wall_clock>)
+    class counter<device::gpu, double, component::ert_timer>)
 //
 #if defined(TIMEMORY_USE_CUDA_HALF)
 TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
-    class counter<device::gpu, cuda::fp16_t, component::wall_clock>)
+    class counter<device::gpu, cuda::fp16_t, component::ert_timer>)
 #endif
 //
 TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
-    struct configuration<device::gpu, float, component::wall_clock>)
+    struct configuration<device::gpu, float, component::ert_timer>)
 TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
-    struct configuration<device::gpu, double, component::wall_clock>)
+    struct configuration<device::gpu, double, component::ert_timer>)
 //
 TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
-    struct executor<device::gpu, float, component::wall_clock>)
+    struct executor<device::gpu, float, component::ert_timer>)
 TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
-    struct executor<device::gpu, double, component::wall_clock>)
+    struct executor<device::gpu, double, component::ert_timer>)
 //
 #if defined(TIMEMORY_USE_CUDA_HALF)
 TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
-    struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>)
+    struct configuration<device::gpu, cuda::fp16_t, component::ert_timer>)
 //
 TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
-    struct executor<device::gpu, cuda::fp16_t, component::wall_clock>)
+    struct executor<device::gpu, cuda::fp16_t, component::ert_timer>)
 #endif
 //
 }  // namespace ert

@@ -178,7 +178,7 @@ public:
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-struct result : private data<Tp>::result_type
+struct result : public data<Tp>::result_type
 {
     using uintvector_t = std::vector<uint64_t>;
     using base_type    = typename data<Tp>::result_type;

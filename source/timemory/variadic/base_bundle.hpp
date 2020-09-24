@@ -29,6 +29,15 @@
 
 #pragma once
 
+#include "timemory/components/base/types.hpp"
+#include "timemory/components/types.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/filters.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/operations/types.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/variadic/types.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
@@ -38,30 +47,8 @@
 #include <iostream>
 #include <string>
 
-#include "timemory/components/base/types.hpp"
-#include "timemory/components/types.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/filters.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/operations/types.hpp"
-#include "timemory/runtime/types.hpp"
-#include "timemory/variadic/types.hpp"
-
-//======================================================================================//
-//
 namespace tim
 {
-template <typename T>
-struct pointer
-{
-    using type = T*;
-};
-
-template <typename T>
-struct pointer<T*> : pointer<T>
-{};
-
-//======================================================================================//
 //
 /// \class base_bundle
 /// \brief This is the generic structure for a variadic bundle of components

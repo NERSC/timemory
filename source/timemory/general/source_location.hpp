@@ -36,6 +36,7 @@
 #include "timemory/mpl/apply.hpp"
 
 #include <array>
+#include <cstring>
 #include <ostream>
 #include <sstream>
 #include <string>
