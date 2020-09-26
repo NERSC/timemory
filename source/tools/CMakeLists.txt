@@ -6,6 +6,7 @@
 ##########################################################################################
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME tools)
+set(CMAKE_UNITY_BUILD OFF)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-jump library

@@ -74,7 +74,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--quick --build-libs static --mpi --papi --stats --tools --cxx-standard=17'"
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --python --lto --stats --gotcha --arch --cxx-standard=17'"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -115,7 +115,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--quick --build-libs static --caliper --mpi --papi --ompt --stats --tools --cxx-standard=14'"
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--quick --build-libs static --caliper --mpi --papi --ompt --stats --tools --lto --cxx-standard=14'"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7
@@ -141,7 +141,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared --papi --gotcha --python --kokkos --stats --cxx-standard=14'"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared --papi --gotcha --python --kokkos --stats --ipo --cxx-standard=14'"
     # GCC 7
     - os: linux
       dist: bionic
@@ -181,7 +181,7 @@ matrix:
             - mpich
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_TYPE=Release && BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17 --extra-optimizations'"
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_TYPE=Release && BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17 --ipo --extra-optimizations'"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -222,7 +222,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs shared --gotcha --caliper --mpi --papi --python --stats --tools --cxx-standard=14'"
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--quick --build-libs shared --gotcha --caliper --mpi --papi --python --stats --tools --cxx-standard=14'"
 
     # ------------------------------------------------------------------------ #
 

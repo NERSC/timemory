@@ -25,7 +25,7 @@ if(TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON)
         ${PYTHON_EXECUTABLE} -c "import sys; print('{}'.format(sys.prefix))"
         OUTPUT_VARIABLE _INSTALL_PREFIX
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 endif()
 
 set(_PATH_VARS INCLUDE_INSTALL_DIR)
@@ -35,7 +35,7 @@ endif()
 
 configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config.cmake.in
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+    ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
     INSTALL_PREFIX ${_INSTALL_PREFIX}
     PATH_VARS
@@ -43,26 +43,26 @@ configure_package_config_file(
         LIB_INSTALL_DIR)
 
 write_basic_package_version_file(
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
+    ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config-components.cmake.in
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
+    ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
     @ONLY)
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-target-extract.cmake.in
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-target-extract.cmake
+    ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-target-extract.cmake
     @ONLY)
 
 install(
     FILES
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-target-extract.cmake
+        ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+        ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
+        ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
+        ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-target-extract.cmake
     DESTINATION
         ${CMAKE_INSTALL_CONFIGDIR})
 
@@ -89,8 +89,11 @@ endif()
 if(TIMEMORY_USE_GPERFTOOLS)
     foreach(_TYPE cpu heap)
         configure_file(${PROJECT_SOURCE_DIR}/scripts/gperf-${_TYPE}-profile.sh
-            ${CMAKE_BINARY_DIR}/gperf-${_TYPE}-profile.sh COPYONLY)
+            ${PROJECT_BINARY_DIR}/gperf-${_TYPE}-profile.sh COPYONLY)
     endforeach()
     configure_file(${PROJECT_SOURCE_DIR}/scripts/gprof2dot.py
-        ${CMAKE_BINARY_DIR}/gprof2dot.py COPYONLY)
+        ${PROJECT_BINARY_DIR}/gprof2dot.py COPYONLY)
 endif()
+
+export(PACKAGE ${PROJECT_NAME})
+

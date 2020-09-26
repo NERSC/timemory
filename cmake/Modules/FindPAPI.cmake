@@ -48,117 +48,91 @@
 #
 
 #----------------------------------------------------------------------------------------#
-include(CMakeParseArguments)
 
-function(FIND_STATIC_LIBRARY _VAR)
-    set(_options    )
-    set(_onevalue   DOC)
-    set(_multival   NAMES HINTS PATHS PASS_SUFFIXES)
+include(LocalFindUtilities)
 
-    cmake_parse_arguments(
-        LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
+#----------------------------------------------------------------------------------------#
 
-    SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-    find_library(${_VAR}
-                NAMES ${LIBRARY_NAMES}
-                HINTS ${LIBRARY_HINTS}
-                PATHS ${LIBRARY_PATHS}
-                PATH_SUFFIXES ${LIBRARY_PATH_SUFFIXES}
-                DOC "${LIBRARY_DOC}")
-endfunction()
+find_root_path(
+    PAPI_ROOT       include/papi.h
+    HINTS
+      ENV PAPI_ROOT
+      ENV PAPI_ROOT_DIR
+      ENV CRAY_PAPI_PREFIX
+      ENV PAPI_ROOT_DIR
+      ENV LIBRARY_PATH
+      ENV LD_LIBRARY_PATH
+      ENV DYLD_LIBRARY_PATH
+    CACHE)
+
+#----------------------------------------------------------------------------------------#
+
+if(PAPI_ROOT)
+    set(PAPI_FIND_ARGS NO_CMAKE_ENVIRONMENT_PATH)
+    # PAPI_ROOT_DIR is not required but this variable is passed as first arg
+    # to find_package_handle_standard_args to display the root directory
+    set(PAPI_FIND_VARS PAPI_ROOT_DIR)
+endif()
 
 #----------------------------------------------------------------------------------------#
 
 find_path(PAPI_ROOT_DIR
-    NAMES
-        include/papi.h
-    HINTS
-        ENV PAPI_ROOT_DIR
-    DOC
-        "PAPI root installation directory")
+    NAMES   include/papi.h
+    HINTS   ${PAPI_ROOT}
+    PATHS   ${PAPI_ROOT}
+    DOC     "PAPI root installation directory"
+    ${PAPI_FIND_ARGS})
 
 #----------------------------------------------------------------------------------------#
 
 find_path(PAPI_INCLUDE_DIR
-    NAMES
-        papi.h
-    HINTS
-        ${PAPI_ROOT_DIR}
-        ENV PAPI_ROOT_DIR
-        ENV CPATH
-    PATH_SUFFIXES
-        include
-    DOC
-        "Path to the PAPI headers")
+    NAMES           papi.h
+    HINTS           ${PAPI_ROOT}
+    PATHS           ${PAPI_ROOT}
+    PATH_SUFFIXES   include
+    DOC             "Path to the PAPI headers"
+    ${PAPI_FIND_ARGS})
 
 #----------------------------------------------------------------------------------------#
 
 find_library(PAPI_LIBRARY
-    NAMES
-        papi
-    HINTS
-        ${PAPI_ROOT_DIR}
-        ENV PAPI_ROOT_DIR
-        ENV LIBRARY_PATH
-        ENV LD_LIBRARY_PATH
-        ENV DYLD_LIBRARY_PATH
-    PATH_SUFFIXES
-        lib
-        lib64
-    DOC
-        "Path to the PAPI library")
+    NAMES           papi
+    HINTS           ${PAPI_ROOT}
+    PATHS           ${PAPI_ROOT}
+    PATH_SUFFIXES   lib lib64
+    DOC             "Path to the PAPI library"
+    ${PAPI_FIND_ARGS})
 
 #----------------------------------------------------------------------------------------#
 
 find_library(PAPI_pfm_LIBRARY
-    NAMES
-        pfm libpfm.so libpfm.so.4
-    HINTS
-        ${PAPI_ROOT_DIR}
-        ENV PAPI_ROOT_DIR
-        ENV LIBRARY_PATH
-        ENV LD_LIBRARY_PATH
-        ENV DYLD_LIBRARY_PATH
-    PATH_SUFFIXES
-        lib
-        lib64
-    DOC
-        "Path to the PAPI library")
+    NAMES           pfm libpfm.so libpfm.so.4
+    HINTS           ${PAPI_ROOT}
+    PATHS           ${PAPI_ROOT}
+    PATH_SUFFIXES   lib lib64
+    DOC             "Path to the PAPI pfm library"
+    ${PAPI_FIND_ARGS})
 
 #----------------------------------------------------------------------------------------#
 
 find_static_library(PAPI_STATIC_LIBRARY
-    NAMES
-        papi
-    HINTS
-        ${PAPI_ROOT_DIR}
-        ENV PAPI_ROOT_DIR
-        ENV LD_LIBRARY_PATH
-        ENV LIBRARY_PATH
-        ENV DYLD_LIBRARY_PATH
-    PATH_SUFFIXES
-        lib
-        lib64
-    DOC
-        "Path to the PAPI library")
+    NAMES           papi
+    HINTS           ${PAPI_ROOT}
+    PATHS           ${PAPI_ROOT}
+    PATH_SUFFIXES   lib lib64
+    DOC             "Path to the PAPI static library"
+    ${PAPI_FIND_ARGS})
 
 #
 #----------------------------------------------------------------------------------------#
 
-find_static_library(PAPI_pfm_STATIC_LIBRARY
-    NAMES
-        pfm libpfm.a
-    HINTS
-        ${PAPI_ROOT_DIR}
-        ENV PAPI_ROOT_DIR
-        ENV LIBRARY_PATH
-        ENV LD_LIBRARY_PATH
-        ENV DYLD_LIBRARY_PATH
-    PATH_SUFFIXES
-        lib
-        lib64
-    DOC
-        "Path to the PAPI library")
+find_static_library(PAPI_pfm_LIBRARY
+    NAMES           pfm libpfm.a libpfm
+    HINTS           ${PAPI_ROOT}
+    PATHS           ${PAPI_ROOT}
+    PATH_SUFFIXES   lib lib64
+    DOC             "Path to the PAPI pfm static library"
+    ${PAPI_FIND_ARGS})
 
 #----------------------------------------------------------------------------------------#
 
@@ -166,7 +140,7 @@ include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set PAPI_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(PAPI DEFAULT_MSG
-    PAPI_INCLUDE_DIR PAPI_LIBRARY)
+    ${PAPI_FIND_VARS} PAPI_INCLUDE_DIR PAPI_LIBRARY)
 
 #----------------------------------------------------------------------------------------#
 
@@ -179,17 +153,20 @@ if(PAPI_FOUND)
     target_include_directories(papi-static INTERFACE ${PAPI_INCLUDE_DIR})
     get_filename_component(PAPI_INCLUDE_DIRS ${PAPI_INCLUDE_DIR} REALPATH)
     get_filename_component(PAPI_LIBRARIES ${PAPI_LIBRARY} REALPATH)
+
+    if(PAPI_STATIC_LIBRARY)
+        target_link_libraries(papi-static INTERFACE ${PAPI_STATIC_LIBRARY})
+        list(APPEND PAPI_STATIC_LIBRARIES ${PAPI_STATIC_LIBRARY})
+    endif()
+
     if(PAPI_pfm_LIBRARY)
         target_link_libraries(papi-shared INTERFACE ${PAPI_pfm_LIBRARY})
         list(APPEND PAPI_LIBRARIES ${PAPI_pfm_LIBRARY})
-    elseif(PAPI_pfm_STATIC_LIBRARY)
-        target_link_libraries(papi-shared INTERFACE ${PAPI_pfm_STATIC_LIBRARY})
-        list(APPEND PAPI_LIBRARIES ${PAPI_pfm_STATIC_LIBRARY})
     endif()
+
     if(PAPI_pfm_STATIC_LIBRARY)
         target_link_libraries(papi-static INTERFACE ${PAPI_pfm_STATIC_LIBRARY})
-    else()
-        target_link_libraries(papi-static INTERFACE ${PAPI_pfm_LIBRARY})
+        list(APPEND PAPI_STATIC_LIBRARIES ${PAPI_pfm_STATIC_LIBRARY})
     endif()
 endif()
 

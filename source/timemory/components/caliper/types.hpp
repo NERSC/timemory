@@ -59,8 +59,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper_loop_marker, fal
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(caliper_marker, CALIPER, "caliper_marker", "caliper",
-                                 "cali")
+TIMEMORY_PROPERTY_SPECIALIZATION(caliper_marker, CALIPER_MARKER, "caliper_marker",
+                                 "caliper", "cali")
 TIMEMORY_PROPERTY_SPECIALIZATION(caliper_config, CALIPER_CONFIG, "caliper_config", "")
 TIMEMORY_PROPERTY_SPECIALIZATION(caliper_loop_marker, CALIPER_LOOP_MARKER,
                                  "caliper_loop_marker", "")

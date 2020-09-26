@@ -66,6 +66,7 @@ file(GLOB_RECURSE source_files
     ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp)
 
 build_intermediate_library(
+    FORCE_OBJECT
     USE_INTERFACE
     INSTALL_SOURCE
     NAME                core

@@ -251,7 +251,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 inline bool
 enable_signal_detection(signal_settings::signal_set_t operations)
 {
-    if(!settings::allow_signal_handler())
+    if(!signal_settings::allow())
     {
         if(signal_settings::is_active())
             disable_signal_detection();

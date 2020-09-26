@@ -33,7 +33,8 @@
 #include "timemory/manager/declaration.hpp"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
-//
+#include "timemory/utility/signals.hpp"
+
 //--------------------------------------------------------------------------------------//
 //
 //          if not using extern and not compiling manager library, everything
@@ -646,11 +647,29 @@ timemory_library_constructor()
     else if(!_master)
         _master = manager::master_instance();
 
-    if(_worker != _master)
-        printf("[%s]> manager :: master != worker : %p vs. %p\n", __FUNCTION__,
-               (void*) _master.get(), (void*) _worker.get());
-
-    std::atexit(tim::timemory_finalize);
+    if(_worker == _master)
+    {
+        std::atexit(tim::timemory_finalize);
+    }
+    else
+    {
+        printf("[%s]> manager :: master != worker : %p vs. %p. TLS behavior is abnormal. "
+               "Report any issues to https://github.com/NERSC/timemory/issues\n",
+               __FUNCTION__, (void*) _master.get(), (void*) _worker.get());
+        if(!signal_settings::is_active())
+        {
+            enable_signal_detection({ sys_signal::SegFault, sys_signal::Bus });
+            auto _exit_action = [](int nsig) {
+                auto _manager = manager::instance();
+                if(_manager)
+                {
+                    std::cout << "Finalizing after signal: " << nsig << std::endl;
+                    _manager->finalize();
+                }
+            };
+            signal_settings::set_exit_action(_exit_action);
+        }
+    }
 }
 //
 //--------------------------------------------------------------------------------------//

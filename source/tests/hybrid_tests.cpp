@@ -205,17 +205,17 @@ TEST_F(hybrid_tests, type_check)
     auto att = tim::demangle<tim::auto_timer>();
     auto ati = tim::demangle<identity_type_t<tim::auto_timer>>();
 
-    auto make_readable = [](auto& itr, const auto& old_key, const auto& new_key) {
+    auto make_readable = [](auto& itr, const auto& _old_key, const auto& _new_key) {
         size_t n = 0;
-        while((n = itr.find(old_key)) != std::string::npos)
-            itr = itr.replace(n, old_key.length(), new_key);
+        while((n = itr.find(_old_key)) != std::string::npos)
+            itr = itr.replace(n, _old_key.length(), _new_key);
     };
 
-    auto apply_make_readable = [&](const auto& old_key, const auto& new_key) {
-        make_readable(clt, old_key, new_key);
-        make_readable(cli, old_key, new_key);
-        make_readable(att, old_key, new_key);
-        make_readable(ati, old_key, new_key);
+    auto apply_make_readable = [&](const auto& _old_key, const auto& _new_key) {
+        make_readable(clt, _old_key, _new_key);
+        make_readable(cli, _old_key, _new_key);
+        make_readable(att, _old_key, _new_key);
+        make_readable(ati, _old_key, _new_key);
     };
 
     auto old_key = std::string(", tim::component_");

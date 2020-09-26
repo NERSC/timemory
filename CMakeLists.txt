@@ -27,6 +27,7 @@ if(TIMEMORY_CCACHE_BUILD)
     endif()
 endif()
 
+cmake_policy(SET CMP0022 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
@@ -101,7 +102,6 @@ if(timemory_MASTER_PROJECT)
     set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
     set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
-    set(CMAKE_UNITY_BUILD ON CACHE BOOL "Enable unity build")
     set(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL
         "Add compile flag to hide symbols of inline functions")
     set(CMAKE_C_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
@@ -110,9 +110,6 @@ else()
     set(CMAKE_ENABLE_EXPORTS ON)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-    if(NOT DEFINED TIMEMORY_UNITY_BUILD)
-        set(CMAKE_UNITY_BUILD ON)
-    endif()
     set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
     set(CMAKE_C_VISIBILITY_PRESET "default")
     set(CMAKE_CXX_VISIBILITY_PRESET "default")
@@ -225,14 +222,21 @@ unset(_TLS_OPTIONS)
 #----------------------------------------------------------------------------------------#
 
 include(CMakeParseArguments)
+
 message(STATUS "Adding clang-format...")
 include(ClangFormat)
+
 message(STATUS "Configuring compilers...")
 include(Compilers)
+
 message(STATUS "Configuring build settings...")
 include(BuildSettings)
+
 message(STATUS "Configuring external packages and interface libraries...")
 include(Packages)
+
+# only after submodules have been added
+set(CMAKE_UNITY_BUILD ${TIMEMORY_UNITY_BUILD})
 
 #----------------------------------------------------------------------------------------#
 #   timemory exports
@@ -242,32 +246,6 @@ message(STATUS "Exporting interface libraries...")
 install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}-library-depends)
-
-if(TIMEMORY_BUILD_CALIPER)
-    set(_CALIPER_TARGETS)
-    foreach(CALIPER_TARGET caliper caliper-serial caliper-tools-util caliper-mpi)
-        if(TARGET ${CALIPER_TARGET})
-            list(APPEND _CALIPER_TARGETS ${CALIPER_TARGET})
-        endif()
-    endforeach()
-    list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_CALIPER_TARGETS})
-    install(TARGETS ${_CALIPER_TARGETS}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        EXPORT ${PROJECT_NAME}-library-depends)
-endif()
-
-if(TIMEMORY_BUILD_OMPT)
-    set(_OMPT_TARGETS)
-    foreach(OMPT_TARGET omp omptarget)
-        if(TARGET ${OMPT_TARGET})
-            list(APPEND _OMPT_TARGETS ${OMPT_TARGET})
-        endif()
-    endforeach()
-    list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_OMPT_TARGETS})
-    install(TARGETS ${_OMPT_TARGETS}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        EXPORT ${PROJECT_NAME}-library-depends)
-endif()
 
 #----------------------------------------------------------------------------------------#
 #   timemory source
@@ -298,7 +276,7 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 
 if(TIMEMORY_BUILD_EXAMPLES)
     message(STATUS "Adding examples...")
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING
+    set(timemory_DIR "${PROJECT_BINARY_DIR}" CACHE STRING
         "timemory build examples directory" FORCE)
     add_subdirectory(examples)
 endif()

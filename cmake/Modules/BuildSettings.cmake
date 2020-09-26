@@ -92,14 +92,19 @@ add_target_flag_if_avail(timemory-lto "-flto=thin")
 if(NOT cxx_timemory_lto_flto_thin)
     add_target_flag_if_avail(timemory-lto "-flto")
     if(NOT cxx_timemory_lto_flto)
-        set(TIMEMORY_BUILD_LTO OFF)
         add_disabled_interface(timemory-compile-timing)
+    else()
+        set_target_properties(timemory-lto PROPERTIES
+            INTERFACE_LINK_OPTIONS -flto)
     endif()
+else()
+    set_target_properties(timemory-lto PROPERTIES
+        INTERFACE_LINK_OPTIONS -flto=thin)
 endif()
 
 if(TIMEMORY_BUILD_LTO)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-    # target_link_libraries(timemory-compile-options INTERFACE timemory-lto)
+    target_link_libraries(timemory-compile-options INTERFACE timemory-lto)
 endif()
 
 #----------------------------------------------------------------------------------------#

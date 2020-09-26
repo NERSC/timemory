@@ -174,6 +174,7 @@ if(TIMEMORY_INSTALL_TREE)
     set(OpenMP_DIR "@OpenMP_DIR@")
     set(Dyninst_DIR "@Dyninst_DIR@")
     set(Boost_DIR "@Boost_DIR@")
+    set(PAPI_DIR "@PAPI_DIR@")
     # set(Kokkos_DIR "@Kokkos_DIR@")
 
     # temporarily override module path for quiet version of FindBoost.cmake
@@ -186,6 +187,7 @@ if(TIMEMORY_INSTALL_TREE)
     timemory_dependent_package(gotcha   @TIMEMORY_USE_GOTCHA@)
     timemory_dependent_package(OpenMP   @TIMEMORY_USE_OMPT@)
     timemory_dependent_package(Dyninst  @TIMEMORY_USE_DYNINST@)
+    timemory_dependent_package(PAPI     @TIMEMORY_USE_PAPI@)
     timemory_dependent_package(Boost    @TIMEMORY_USE_DYNINST@ QUIET COMPONENTS
         "@TIMEMORY_BOOST_COMPONENTS@")
     # timemory_dependent_package(Kokkos @TIMEMORY_USE_KOKKOS@)
@@ -209,7 +211,7 @@ else() # build tree
 
     MACRO(IMPORT_LIB _LIB _IMPORT_TYPE)
         set_property(TARGET ${_LIB} PROPERTY ${_IMPORT_TYPE}
-            "${CMAKE_BINARY_DIR}/@PROJECT_NAME@-build.cmake")
+            "@PROJECT_BINARY_DIR@/@PROJECT_NAME@-build.cmake")
     ENDMACRO()
 
     foreach(_LIB ${@PROJECT_NAME@_INTERFACE_LIBRARIES})

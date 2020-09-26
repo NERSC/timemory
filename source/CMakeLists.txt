@@ -100,14 +100,21 @@ add_subdirectory(timemory)
 
 get_property(CXX_EXTRA_SOURCES GLOBAL PROPERTY TIMEMORY_CXX_LIBRARY_SOURCES)
 
-timemory_get_property_depends(TIMEMORY_SHARED_GLOBAL_LIBRARIES SHARED GLOBAL)
-timemory_get_property_depends(TIMEMORY_STATIC_GLOBAL_LIBRARIES STATIC GLOBAL)
-timemory_get_property_depends(TIMEMORY_SHARED_EXTERN_LIBRARIES SHARED EXTERN)
-timemory_get_property_depends(TIMEMORY_STATIC_EXTERN_LIBRARIES STATIC EXTERN)
-timemory_get_property_depends(TIMEMORY_SHARED_COMPONENT_LIBRARIES SHARED COMPONENT)
-timemory_get_property_depends(TIMEMORY_STATIC_COMPONENT_LIBRARIES STATIC COMPONENT)
-timemory_get_property_depends(TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES SHARED USER_BUNDLE)
-timemory_get_property_depends(TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES STATIC USER_BUNDLE)
+timemory_get_property_depends(TIMEMORY_OBJECT_GLOBAL_LIBRARIES OBJECT GLOBAL)
+timemory_get_property_depends(TIMEMORY_OBJECT_EXTERN_LIBRARIES OBJECT EXTERN)
+timemory_get_property_depends(TIMEMORY_OBJECT_COMPONENT_LIBRARIES OBJECT COMPONENT)
+timemory_get_property_depends(TIMEMORY_OBJECT_USER_BUNDLE_LIBRARIES OBJECT USER_BUNDLE)
+
+if(NOT TIMEMORY_BUILD_LTO)
+    timemory_get_property_depends(TIMEMORY_SHARED_GLOBAL_LIBRARIES SHARED GLOBAL)
+    timemory_get_property_depends(TIMEMORY_STATIC_GLOBAL_LIBRARIES STATIC GLOBAL)
+    timemory_get_property_depends(TIMEMORY_SHARED_EXTERN_LIBRARIES SHARED EXTERN)
+    timemory_get_property_depends(TIMEMORY_STATIC_EXTERN_LIBRARIES STATIC EXTERN)
+    timemory_get_property_depends(TIMEMORY_SHARED_COMPONENT_LIBRARIES SHARED COMPONENT)
+    timemory_get_property_depends(TIMEMORY_STATIC_COMPONENT_LIBRARIES STATIC COMPONENT)
+    timemory_get_property_depends(TIMEMORY_SHARED_USER_BUNDLE_LIBRARIES SHARED USER_BUNDLE)
+    timemory_get_property_depends(TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES STATIC USER_BUNDLE)
+endif()
 
 if(CMAKE_CUDA_COMPILER)
     set_source_files_properties(${cxx_sources} PROPERTIES
@@ -127,6 +134,10 @@ if(_BUILD_SHARED_CXX)
         SOURCES             ${CXX_LIBRARY_SOURCES}
                             ${CXX_EXTERN_TARGETS}
                             ${CXX_EXTRA_SOURCES}
+                            ${TIMEMORY_OBJECT_GLOBAL_LIBRARIES}
+                            ${TIMEMORY_OBJECT_EXTERN_LIBRARIES}
+                            ${TIMEMORY_OBJECT_COMPONENT_LIBRARIES}
+                            ${TIMEMORY_OBJECT_USER_BUNDLE_LIBRARIES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
@@ -135,7 +146,7 @@ if(_BUILD_SHARED_CXX)
         timemory-headers
         timemory-extern
         timemory-vector
-        timemory-external-shared
+        ${TIMEMORY_EXTERNAL_SHARED_INTERFACES}
         ${TIMEMORY_SHARED_GLOBAL_LIBRARIES}
         ${TIMEMORY_SHARED_EXTERN_LIBRARIES}
         ${TIMEMORY_SHARED_COMPONENT_LIBRARIES}
@@ -144,17 +155,12 @@ if(_BUILD_SHARED_CXX)
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
         timemory-develop-options
-        # timemory-hidden-visibility
         ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
     endif()
-
-    target_include_directories(timemory-cxx-shared PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         target_compile_definitions(timemory-cxx-shared PRIVATE DEBUG)
@@ -180,6 +186,10 @@ if(_BUILD_STATIC_CXX)
         SOURCES             ${CXX_LIBRARY_SOURCES}
                             ${CXX_EXTERN_TARGETS}
                             ${CXX_EXTRA_SOURCES}
+                            ${TIMEMORY_OBJECT_GLOBAL_LIBRARIES}
+                            ${TIMEMORY_OBJECT_EXTERN_LIBRARIES}
+                            ${TIMEMORY_OBJECT_COMPONENT_LIBRARIES}
+                            ${TIMEMORY_OBJECT_USER_BUNDLE_LIBRARIES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
@@ -188,7 +198,7 @@ if(_BUILD_STATIC_CXX)
         timemory-headers
         timemory-extern
         timemory-vector
-        timemory-external-static
+        ${TIMEMORY_EXTERNAL_STATIC_INTERFACES}
         ${TIMEMORY_STATIC_GLOBAL_LIBRARIES}
         ${TIMEMORY_STATIC_EXTERN_LIBRARIES}
         ${TIMEMORY_STATIC_COMPONENT_LIBRARIES}
@@ -197,7 +207,6 @@ if(_BUILD_STATIC_CXX)
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options
         timemory-develop-options
-        # timemory-hidden-visibility
         ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
@@ -247,10 +256,6 @@ if(TIMEMORY_BUILD_C)
                                     timemory-cxx-shared
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
-
-        target_include_directories(timemory-c-shared PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
         if(WIN32)
             target_compile_definitions(timemory-c-shared
@@ -375,7 +380,8 @@ set(LIBRARIES ${TIMEMORY_COMPILED_LIBRARIES}
 
 export(TARGETS  ${LIBRARIES}
     NAMESPACE   ${PROJECT_NAME}::
-    FILE        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-build.cmake)
+    FILE        ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-build.cmake
+    EXPORT_LINK_INTERFACE_LIBRARIES)
 
 
 #----------------------------------------------------------------------------------------#

@@ -222,9 +222,13 @@ add_option(TIMEMORY_BUILD_QUIET
     "Disable verbose messages" OFF NO_FEATURE)
 add_option(TIMEMORY_REQUIRE_PACKAGES
     "All find_package(...) use REQUIRED" OFF)
-if(_NON_APPLE_UNIX OR TIMEMORY_BUILD_DOCS)
-    add_option(TIMEMORY_BUILD_GOTCHA
-        "Enable building GOTCHA (set to OFF for external)" ON)
+add_option(TIMEMORY_BUILD_GOTCHA
+    "Enable building GOTCHA (set to OFF for external)" ON)
+add_option(TIMEMORY_UNITY_BUILD
+    "Same as CMAKE_UNITY_BUILD but is not propagated to submodules" ON)
+
+if(NOT _NON_APPLE_UNIX)
+    set(TIMEMORY_BUILD_GOTCHA OFF)
 endif()
 
 if(TIMEMORY_BUILD_QUIET)
