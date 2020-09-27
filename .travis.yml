@@ -74,7 +74,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --lto --stats --gotcha --arch --cxx-standard=17'"
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --lto --cxx-standard=17'"
     # Clang 5.0
     - os: linux
       dist: xenial

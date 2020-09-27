@@ -27,8 +27,8 @@
 #include "timemory/macros/os.hpp"
 
 #if defined(_WINDOWS)
+#    include <WinSock2.h>
 #    include <Ws2tcpip.h>
-#    include <winsock2.h>
 #else
 #    include <arpa/inet.h>
 #    include <netdb.h>

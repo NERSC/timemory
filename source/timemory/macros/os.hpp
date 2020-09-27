@@ -77,6 +77,9 @@
 
 //--------------------------------------------------------------------------------------//
 // this ensures that winnt.h never causes a 64-bit build to fail
+// also solves issue with ws2def.h and winsock2.h:
+//  https://www.zachburlingame.com/2011/05/
+//      resolving-redefinition-errors-betwen-ws2def-h-and-winsock-h/
 #if defined(_WINDOWS)
 #    if !defined(NOMINMIX)
 #        define NOMINMAX
@@ -84,6 +87,10 @@
 #    if !defined(WIN32_LEAN_AND_MEAN)
 #        define WIN32_LEAN_AND_MEAN
 #    endif
+#    if !defined(WIN32)
+#        define WIN32
+#    endif
+#    include <WinSock2.h>
 #    include <Windows.h>
 #endif
 
