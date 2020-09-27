@@ -96,6 +96,11 @@ add_timemory_google_test(warning_tests
     SOURCES         warning_tests.cpp
     LINK_LIBRARIES  test-werror-flags)
 
+add_timemory_google_test(socket_tests
+    SOURCES         socket_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools)
+
 add_timemory_google_test(argparse_tests
     SOURCES         argparse_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options

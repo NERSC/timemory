@@ -132,8 +132,8 @@ protected:
         signals_data& operator=(signals_data&&) = default;
 
         bool              signals_active    = false;
-        bool              enable_all     = false;
-        bool              disable_all    = false;
+        bool              enable_all        = false;
+        bool              disable_all       = false;
         signal_set_t      signals_enabled   = {};
         signal_set_t      signals_disabled  = {};
         signal_function_t signals_exit_func = [](int) {};

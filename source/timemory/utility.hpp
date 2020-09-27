@@ -34,6 +34,7 @@
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/singleton.hpp"
+#include "timemory/utility/socket.hpp"
 #include "timemory/utility/type_id.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
