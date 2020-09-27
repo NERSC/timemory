@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "timemory/cereal/archives.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/data/statistics.hpp"
 #include "timemory/mpl/apply.hpp"
@@ -38,6 +37,7 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/runtime/types.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
 
 namespace tim
 {

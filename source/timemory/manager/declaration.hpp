@@ -31,7 +31,6 @@
 
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/threading.hpp"
-#include "timemory/cereal/archives.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/manager/macros.hpp"
@@ -39,6 +38,7 @@
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/tpls/cereal.hpp"
 
 #include <atomic>
 #include <cstdint>

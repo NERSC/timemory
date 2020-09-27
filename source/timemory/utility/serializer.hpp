@@ -25,6 +25,6 @@
 #pragma once
 
 // provided for backwards compatibility
-#include "timemory/cereal/archives.hpp"
-#include "timemory/cereal/cereal.hpp"
-#include "timemory/cereal/types.hpp"
+#include "timemory/tpls/cereal.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/tpls/cereal/types.hpp"

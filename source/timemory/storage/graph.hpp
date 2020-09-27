@@ -42,9 +42,9 @@
 #include <stdexcept>
 #include <vector>
 
-#include "timemory/cereal/cereal.hpp"
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/tpls/cereal.hpp"
 #include "timemory/units.hpp"
 
 //--------------------------------------------------------------------------------------//

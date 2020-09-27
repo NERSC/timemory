@@ -75,9 +75,9 @@
 #include "timemory/operations/types/storage_initializer.hpp"
 #include "timemory/operations/types/store.hpp"
 //
-#include "timemory/cereal/archives.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/storage/declaration.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
 //
 //--------------------------------------------------------------------------------------//
 //

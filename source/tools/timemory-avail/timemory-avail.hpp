@@ -34,7 +34,7 @@
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
 
 #include "cereal/external/base64.hpp"
-#include "timemory/cereal/archives.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
 #include "timemory/utility/utility.hpp"
 
 #include <algorithm>

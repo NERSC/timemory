@@ -32,13 +32,13 @@
 #include "timemory/api.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
-#include "timemory/cereal/cereal.hpp"
 #include "timemory/compat/macros.h"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/tsettings.hpp"
 #include "timemory/settings/types.hpp"
 #include "timemory/settings/vsettings.hpp"
+#include "timemory/tpls/cereal.hpp"
 
 #include <atomic>
 #include <string>

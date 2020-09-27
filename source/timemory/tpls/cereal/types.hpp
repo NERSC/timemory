@@ -24,8 +24,7 @@
 
 #pragma once
 
-#include "timemory/cereal/cereal.hpp"
-#include "timemory/cereal/types.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 
 // cereal will cause some -Wclass-memaccess warnings that are quite annoying
 #if defined(__GNUC__) && (__GNUC__ > 7)
@@ -33,11 +32,16 @@
 #    pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
 
-// archives
-#include "cereal/archives/json.hpp"
-#if defined(TIMEMORY_USE_XML_ARCHIVE)
-#    include "cereal/archives/xml.hpp"
-#endif
+// types
+#include "cereal/types/array.hpp"
+#include "cereal/types/common.hpp"
+#include "cereal/types/map.hpp"
+#include "cereal/types/memory.hpp"
+#include "cereal/types/set.hpp"
+#include "cereal/types/string.hpp"
+#include "cereal/types/tuple.hpp"
+#include "cereal/types/utility.hpp"
+#include "cereal/types/vector.hpp"
 
 #if defined(__GNUC__) && (__GNUC__ > 7)
 #    pragma GCC diagnostic pop
