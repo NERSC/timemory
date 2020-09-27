@@ -14,7 +14,7 @@ def get_tools(extra=[]):
     """
     Return the caliper component
     """
-    components = ["caliper"] + extra
+    components = ["caliper_marker"] + extra
     return [getattr(timemory.component, x) for x in components]
 
 
