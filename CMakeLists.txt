@@ -102,17 +102,10 @@ if(timemory_MASTER_PROJECT)
     set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
     set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
-    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL
-        "Add compile flag to hide symbols of inline functions")
-    set(CMAKE_C_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
-    set(CMAKE_CXX_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
 else()
     set(CMAKE_ENABLE_EXPORTS ON)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-    set(CMAKE_C_VISIBILITY_PRESET "default")
-    set(CMAKE_CXX_VISIBILITY_PRESET "default")
 endif()
 
 # install directories
@@ -237,6 +230,18 @@ include(Packages)
 
 # only after submodules have been added
 set(CMAKE_UNITY_BUILD ${TIMEMORY_UNITY_BUILD})
+
+# set these as the defaults
+if(timemory_MASTER_PROJECT)
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL
+        "Add compile flag to hide symbols of inline functions")
+    set(CMAKE_C_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
+    set(CMAKE_CXX_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
+else()
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+    set(CMAKE_C_VISIBILITY_PRESET "default")
+    set(CMAKE_CXX_VISIBILITY_PRESET "default")
+endif()
 
 #----------------------------------------------------------------------------------------#
 #   timemory exports
