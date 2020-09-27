@@ -24,6 +24,7 @@
 
 #include "timemory/settings/settings.hpp"
 #include "timemory/backends/dmp.hpp"
+#include "timemory/cereal/archives.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/types.hpp"
@@ -31,12 +32,30 @@
 #include "timemory/utility/bits/signals.hpp"
 #include "timemory/utility/declaration.hpp"
 #include "timemory/utility/filepath.hpp"
-#include "timemory/utility/serializer.hpp"
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/macros.hpp"
 
 namespace tim
 {
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Archive>
+void
+settings::serialize_settings(Archive& ar)
+{
+    if(settings::instance())
+        ar(cereal::make_nvp("settings", *settings::instance()));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Archive>
+void
+settings::serialize_settings(Archive& ar, settings& _obj)
+{
+    ar(cereal::make_nvp("settings", _obj));
+}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -934,3 +953,5 @@ settings::read(const string_t& inp)
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
+
+#include "timemory/settings/extern.hpp"

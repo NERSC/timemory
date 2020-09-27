@@ -32,6 +32,7 @@
 #include "timemory/api.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/cereal/cereal.hpp"
 #include "timemory/compat/macros.h"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/settings/macros.hpp"
@@ -280,17 +281,10 @@ public:
     void save(Archive& ar, const unsigned int) const;
 
     template <typename Archive>
-    static void serialize_settings(Archive& ar)
-    {
-        if(settings::instance())
-            ar(cereal::make_nvp("settings", *settings::instance()));
-    }
+    static void serialize_settings(Archive&);
 
     template <typename Archive>
-    static void serialize_settings(Archive& ar, settings& _obj)
-    {
-        ar(cereal::make_nvp("settings", _obj));
-    }
+    static void serialize_settings(Archive&, settings&);
 
     /// read a configuration file
     bool read(const string_t&);
@@ -677,10 +671,10 @@ settings::set(const std::string& _key, Tp&& _val)
     return false;
 }
 //
-//
 //----------------------------------------------------------------------------------//
 //
 }  // namespace tim
 
-TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
+// TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
+
 CEREAL_CLASS_VERSION(tim::settings, 2)

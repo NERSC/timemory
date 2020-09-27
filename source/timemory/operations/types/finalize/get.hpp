@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/cereal/cereal.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
@@ -37,7 +38,6 @@
 #include "timemory/storage/basic_tree.hpp"
 #include "timemory/storage/node.hpp"
 #include "timemory/storage/types.hpp"
-#include "timemory/utility/serializer.hpp"
 
 #include <string>
 #include <vector>

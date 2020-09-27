@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "timemory/cereal/cereal.hpp"
 #include "timemory/components/base/declaration.hpp"
 #include "timemory/components/base/types.hpp"
 #include "timemory/mpl/math.hpp"
@@ -42,7 +43,6 @@
 #include "timemory/operations/types/serialization.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/serializer.hpp"
 
 #include <cassert>
 

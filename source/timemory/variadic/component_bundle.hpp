@@ -33,13 +33,13 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/cereal/cereal.hpp"
 #include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"

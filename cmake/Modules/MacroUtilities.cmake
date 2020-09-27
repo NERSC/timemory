@@ -508,7 +508,8 @@ FUNCTION(BUILD_LIBRARY)
 
     # link libraries
     target_link_libraries(${LIBRARY_TARGET_NAME}
-        PUBLIC ${LIBRARY_LINK_LIBRARIES})
+        PUBLIC ${LIBRARY_LINK_LIBRARIES}
+        PRIVATE ${_ANALYSIS_TOOLS} ${_ARCH_LIBRARY})
 
     # other properties
     if(NOT "${LIBRARY_TYPE}" STREQUAL "OBJECT")
@@ -788,7 +789,6 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             timemory-compile-options
             timemory-develop-options
             timemory-${COMP_VISIBILITY}-visibility
-            ${_ANALYSIS_TOOLS}
             ${_ARCH_LIBRARY}
             ${COMP_PRIVATE_LINK})
 

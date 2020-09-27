@@ -33,8 +33,8 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/cereal/archives.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/utility/serializer.hpp"
 //
 #include <type_traits>
 

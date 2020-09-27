@@ -196,6 +196,11 @@
                                                        settings&);                       \
             template void settings::serialize_settings(                                  \
                 cereal::MinimalJSONOutputArchive&, settings&);                           \
+            template void settings::save(cereal::PrettyJSONOutputArchive&,               \
+                                         const unsigned int) const;                      \
+            template void settings::save(cereal::MinimalJSONOutputArchive&,              \
+                                         const unsigned int) const;                      \
+            template void settings::load(cereal::JSONInputArchive&, const unsigned int); \
             }
 //
 #    elif defined(TIMEMORY_USE_SETTINGS_EXTERN)
@@ -217,6 +222,12 @@
                 cereal::PrettyJSONOutputArchive&, settings&);                            \
             extern template void settings::serialize_settings(                           \
                 cereal::MinimalJSONOutputArchive&, settings&);                           \
+            extern template void settings::save(cereal::PrettyJSONOutputArchive&,        \
+                                                const unsigned int) const;               \
+            extern template void settings::save(cereal::MinimalJSONOutputArchive&,       \
+                                                const unsigned int) const;               \
+            extern template void settings::load(cereal::JSONInputArchive&,               \
+                                                const unsigned int);                     \
             }
 //
 #    else

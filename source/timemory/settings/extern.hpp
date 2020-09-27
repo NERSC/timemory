@@ -24,4 +24,7 @@
 
 #pragma once
 
-#include "timemory/settings/settings.hpp"
+#include "timemory/cereal/archives.hpp"
+#include "timemory/settings.hpp"
+
+TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)

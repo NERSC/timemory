@@ -24,8 +24,8 @@
 
 #pragma once
 
+#include "timemory/cereal/cereal.hpp"
 #include "timemory/hash/types.hpp"
-#include "timemory/utility/serializer.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <iterator>

@@ -33,12 +33,12 @@
 
 //----------------------------------------------------------------------------//
 
+#include "timemory/cereal/cereal.hpp"
 #include "timemory/data/functional.hpp"
 #include "timemory/data/stream.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/stl.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
 
 #include <cmath>
 #include <fstream>

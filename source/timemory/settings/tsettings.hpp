@@ -24,10 +24,10 @@
 
 #pragma once
 
+#include "timemory/cereal/cereal.hpp"
 #include "timemory/settings/types.hpp"
 #include "timemory/settings/vsettings.hpp"
 #include "timemory/utility/argparse.hpp"
-#include "timemory/utility/serializer.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <iomanip>

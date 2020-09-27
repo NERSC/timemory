@@ -24,10 +24,10 @@
 
 #pragma once
 
+#include "timemory/cereal/cereal.hpp"
 #include "timemory/components/timing/backends.hpp"
 #include "timemory/operations/types/base_printer.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/serializer.hpp"
 
 #include <cstdint>
 #include <iosfwd>

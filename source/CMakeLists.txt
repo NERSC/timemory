@@ -11,6 +11,7 @@ file(GLOB cxx_headers                    ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hp
 file(GLOB cxx_headers_variadic           ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
 file(GLOB_RECURSE cxx_headers_backends   ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB_RECURSE cxx_headers_components ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
+file(GLOB cxx_headers_cereal        ${CMAKE_CURRENT_LIST_DIR}/timemory/cereal/*.hpp)
 file(GLOB cxx_headers_macros        ${CMAKE_CURRENT_LIST_DIR}/timemory/macros/*.hpp)
 file(GLOB cxx_headers_api           ${CMAKE_CURRENT_LIST_DIR}/timemory/api/*.hpp)
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
@@ -43,7 +44,7 @@ endforeach()
 set(timemory_glob_headers
     ${c_headers} ${cxx_headers} ${cxx_headers_variadic} ${cxx_headers_api}
     ${cxx_headers_backends} ${cxx_headers_components} ${cxx_headers_mpl}
-    ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
+    ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data} ${cxx_headers_cereal}
     ${cxx_headers_category_bits} ${cxx_headers_general} ${cxx_headers_macros}
     ${compat_headers})
 
@@ -154,9 +155,7 @@ if(_BUILD_SHARED_CXX)
 
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
-        timemory-develop-options
-        ${_ANALYSIS_TOOLS}
-        ${_ARCH_LIBRARY})
+        timemory-develop-options)
 
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
@@ -206,9 +205,7 @@ if(_BUILD_STATIC_CXX)
 
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options
-        timemory-develop-options
-        ${_ANALYSIS_TOOLS}
-        ${_ARCH_LIBRARY})
+        timemory-develop-options)
 
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_C)
@@ -252,10 +249,8 @@ if(TIMEMORY_BUILD_C)
                                 PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
-                                    # timemory-hidden-visibility
-                                    timemory-cxx-shared
-                                    ${_ANALYSIS_TOOLS}
-                                    ${_ARCH_LIBRARY})
+                                    timemory-analysis-tools
+                                    timemory-cxx-shared)
 
         if(WIN32)
             target_compile_definitions(timemory-c-shared
@@ -279,10 +274,8 @@ if(TIMEMORY_BUILD_C)
                                 PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
-                                    # timemory-hidden-visibility
-                                    timemory-cxx-static
-                                    ${_ANALYSIS_TOOLS}
-                                    ${_ARCH_LIBRARY})
+                                    timemory-analysis-tools
+                                    timemory-cxx-static)
 
         target_include_directories(timemory-c-static PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>

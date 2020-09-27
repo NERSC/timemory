@@ -26,10 +26,10 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/cereal/archives.hpp"
 #include "timemory/hash.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/utility/serializer.hpp"
 
 #include <cstdint>
 #include <set>
