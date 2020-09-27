@@ -139,7 +139,7 @@ class TimemoryThrottleTests(unittest.TestCase):
             tim.trace.pop(self.shortDescription())
         tim.trace.pop("true")
 
-        self.expectTrue(tim.trace.is_throttled(self.shortDescription()))
+        self.assertTrue(tim.trace.is_throttled(self.shortDescription()))
 
     # ---------------------------------------------------------------------------------- #
     # test expect_false
@@ -154,7 +154,7 @@ class TimemoryThrottleTests(unittest.TestCase):
             consume(v)
             tim.trace.pop(self.shortDescription())
 
-        self.expectFalse(tim.trace.is_throttled(self.shortDescription()))
+        self.assertFalse(tim.trace.is_throttled(self.shortDescription()))
 
     # ---------------------------------------------------------------------------------- #
     def test_region_serial(self):
@@ -250,7 +250,7 @@ class TimemoryThrottleTests(unittest.TestCase):
         for i in range(self.nthreads):
             _answer = False if (i % 2 == 1) else True
             print("thread " + str(i) + " throttling: " + str(is_throttled[i]))
-            self.expectTrue(is_throttled[i] == _answer)
+            self.assertTrue(is_throttled[i] == _answer)
 
     # ---------------------------------------------------------------------------------- #
     # test tuple_serial
@@ -264,8 +264,8 @@ class TimemoryThrottleTests(unittest.TestCase):
                 for i in range(n):
                     with marker(components=("wall_clock"), key=self.shortDescription()):
                         pass
-            self.expectFalse(tim.trace.is_throttled("thread"))
-            self.expectFalse(tim.trace.is_throttled(
+            self.assertFalse(tim.trace.is_throttled("thread"))
+            self.assertFalse(tim.trace.is_throttled(
                 self.shortDescription()))
 
         # run with auto tuple (wall_clock)
@@ -285,9 +285,9 @@ class TimemoryThrottleTests(unittest.TestCase):
                     with marker(components=("wall_clock"), key=self.shortDescription()):
                         pass
 
-            self.expectFalse(tim.trace.is_throttled(
+            self.assertFalse(tim.trace.is_throttled(
                 self.shortDescription()))
-            self.expectFalse(tim.trace.is_throttled("thread"))
+            self.assertFalse(tim.trace.is_throttled("thread"))
 
         # thread handles
         threads = []

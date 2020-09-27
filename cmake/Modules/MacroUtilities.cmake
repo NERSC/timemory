@@ -778,7 +778,6 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         target_include_directories(${TARGET_NAME} PUBLIC ${COMP_INCLUDES})
 
         target_link_libraries(${TARGET_NAME} PUBLIC
-            timemory-external-${LINK}
             timemory-headers
             timemory-vector
             ${DEPENDS}
@@ -788,8 +787,8 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             timemory-dmp
             timemory-compile-options
             timemory-develop-options
+            timemory-external-${LINK}
             timemory-${COMP_VISIBILITY}-visibility
-            ${_ARCH_LIBRARY}
             ${COMP_PRIVATE_LINK})
 
         if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
