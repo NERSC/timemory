@@ -28,7 +28,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--quick --build-libs static --papi --mpi --ompt --gotcha --caliper --kokkos --stats --tools --cxx-standard=14'"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--quick --build-libs static shared --python --papi --ompt --gotcha --caliper --kokkos --stats --tools --cxx-standard=14'"
     # GCC 7
     - os: linux
       dist: bionic
