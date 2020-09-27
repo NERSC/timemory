@@ -33,7 +33,7 @@
 
 //----------------------------------------------------------------------------//
 
-#include "timemory/cereal/cereal.hpp"
+#include "timemory/cereal/archives.hpp"
 #include "timemory/data/functional.hpp"
 #include "timemory/data/stream.hpp"
 #include "timemory/mpl/math.hpp"

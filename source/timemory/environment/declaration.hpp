@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "timemory/cereal/cereal.hpp"
+#include "timemory/cereal/archives.hpp"
 #include "timemory/environment/macros.hpp"
 #include "timemory/environment/types.hpp"
 #include "timemory/macros/os.hpp"

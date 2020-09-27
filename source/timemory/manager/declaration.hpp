@@ -31,6 +31,7 @@
 
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/cereal/archives.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/manager/macros.hpp"
