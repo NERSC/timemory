@@ -44,7 +44,7 @@
 
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/os.hpp"
-#include "timemory/tpls/cereal.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"
 
 //--------------------------------------------------------------------------------------//

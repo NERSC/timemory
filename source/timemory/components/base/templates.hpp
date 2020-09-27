@@ -41,7 +41,7 @@
 #include "timemory/operations/types/base_printer.hpp"
 #include "timemory/operations/types/serialization.hpp"
 #include "timemory/storage/declaration.hpp"
-#include "timemory/tpls/cereal.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"
 
 #include <cassert>

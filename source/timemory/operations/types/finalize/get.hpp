@@ -37,7 +37,7 @@
 #include "timemory/storage/basic_tree.hpp"
 #include "timemory/storage/node.hpp"
 #include "timemory/storage/types.hpp"
-#include "timemory/tpls/cereal.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 
 #include <string>
 #include <vector>

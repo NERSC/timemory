@@ -37,7 +37,7 @@
 #include "timemory/data/stream.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/stl.hpp"
-#include "timemory/tpls/cereal.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cmath>

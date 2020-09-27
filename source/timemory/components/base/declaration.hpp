@@ -35,7 +35,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/storage/types.hpp"
-#include "timemory/tpls/cereal.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 
 //======================================================================================//
 

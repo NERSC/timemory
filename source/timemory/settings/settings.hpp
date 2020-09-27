@@ -38,7 +38,7 @@
 #include "timemory/settings/tsettings.hpp"
 #include "timemory/settings/types.hpp"
 #include "timemory/settings/vsettings.hpp"
-#include "timemory/tpls/cereal.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 
 #include <atomic>
 #include <string>

@@ -38,7 +38,7 @@
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
-#include "timemory/tpls/cereal.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/functional.hpp"
