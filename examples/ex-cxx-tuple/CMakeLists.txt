@@ -18,6 +18,9 @@ endif()
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-cxx-tuple-example)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
+# this tend to cause the CI to exceed the time-limit
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 target_link_libraries(${EXE_NAME} timemory-cxx-tuple-example)
 install(TARGETS ${EXE_NAME} DESTINATION bin OPTIONAL)
