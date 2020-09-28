@@ -231,14 +231,19 @@ include(Packages)
 # only after submodules have been added
 set(CMAKE_UNITY_BUILD ${TIMEMORY_UNITY_BUILD})
 
+set(_HIDE_INLINES ON)
+if(CMAKE_CXX_COMPILER_IS_CLANG AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6)
+  set(_HIDE_INLINES OFF)
+endif()
+
 # set these as the defaults
 if(timemory_MASTER_PROJECT)
-    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ${_HIDE_INLINES} CACHE BOOL
         "Add compile flag to hide symbols of inline functions")
     set(CMAKE_C_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
     set(CMAKE_CXX_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
 else()
-    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ${_HIDE_INLINES})
     set(CMAKE_C_VISIBILITY_PRESET "default")
     set(CMAKE_CXX_VISIBILITY_PRESET "default")
 endif()
