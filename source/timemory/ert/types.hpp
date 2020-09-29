@@ -49,7 +49,7 @@
 #endif
 
 // clang-format off
-namespace tim { namespace component { struct wall_clock; } }
+namespace tim { namespace component { struct ert_timer; } }
 // clang-format on
 
 namespace tim
@@ -59,10 +59,10 @@ namespace ert
 class thread_barrier;
 struct exec_params;
 
-template <typename Tp = component::wall_clock>
+template <typename Tp = component::ert_timer>
 class exec_data;
 
-template <typename DeviceT, typename Tp, typename CounterT = component::wall_clock>
+template <typename DeviceT, typename Tp, typename CounterT = component::ert_timer>
 class counter;
 
 template <typename DeviceT, typename Tp, typename CounterT>
@@ -74,8 +74,17 @@ struct executor;
 template <typename ExecutorT>
 struct callback;
 
+namespace cache_size
+{
+template <size_t Level>
+size_t
+get();
+
+size_t
+get(const int&);
+
+size_t
+get_max();
+}  // namespace cache_size
 }  // namespace ert
 }  // namespace tim
-
-// lightweight functions with no internal includes
-#include "timemory/ert/cache_size.hpp"

@@ -65,8 +65,9 @@ enumerate_components(const Container<StringT, ExtraArgs...>& component_names)
     for(const auto& itr : component_names)
         _set.insert(runtime::enumerate(std::string(itr)));
     std::vector<TIMEMORY_COMPONENT> _vec;
+    _vec.reserve(_set.size());
     for(auto&& itr : _set)
-        _vec.emplace_back(std::move(itr));
+        _vec.emplace_back(itr);
     return _vec;
 }
 
@@ -97,7 +98,7 @@ std::set<TIMEMORY_COMPONENT>
 enumerate_components(const std::set<std::string, ExtraArgs...>& component_names)
 {
     std::set<TIMEMORY_COMPONENT> vec;
-    for(auto itr : component_names)
+    for(const auto& itr : component_names)
         vec.insert(runtime::enumerate(itr));
     return vec;
 }

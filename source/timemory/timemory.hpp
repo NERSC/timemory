@@ -175,51 +175,24 @@ struct dummy
 //
 #    include "timemory/version.h"
 //
-#    include "timemory/components/types.hpp"
-//
 #    include "timemory/extern.hpp"
 //
 #    include "timemory/api.hpp"
-#    include "timemory/enum.h"
-#    include "timemory/units.hpp"
-#    include "timemory/utility/macros.hpp"
-//
-#    include "timemory/components.hpp"  // 5.0
-#    include "timemory/settings.hpp"    // 3.1
-#    include "timemory/utility/mangler.hpp"
-#    include "timemory/utility/utility.hpp"
-//
-#    include "timemory/containers/auto_timer.hpp"        // 3.8
-#    include "timemory/containers/auto_user_bundle.hpp"  // 5.5
-#    include "timemory/variadic/auto_bundle.hpp"
-#    include "timemory/variadic/auto_hybrid.hpp"  // 9.7
-#    include "timemory/variadic/auto_list.hpp"    // 5.6
-#    include "timemory/variadic/auto_tuple.hpp"
-//
-#    include "timemory/types.hpp"                  // 3.5
-#    include "timemory/variadic/macros.hpp"        // 3.2
-//
-#    include "timemory/ert/aligned_allocator.hpp"  // 3.5
-#    include "timemory/ert/configuration.hpp"      // 4
-//
-//======================================================================================//
-//
 #    include "timemory/config.hpp"
-#    include "timemory/plotting.hpp"             // 3.5
-#    include "timemory/utility/conditional.hpp"  // 0.1
+#    include "timemory/enum.h"
+#    include "timemory/plotting.hpp"
+#    include "timemory/types.hpp"
+#    include "timemory/units.hpp"
 //
-//======================================================================================//
+#    include "timemory/components.hpp"
+#    include "timemory/containers.hpp"
+#    include "timemory/ert.hpp"
+#    include "timemory/settings.hpp"
+#    include "timemory/utility.hpp"
+#    include "timemory/variadic.hpp"
 //
 #    include "timemory/definition.hpp"
-//
-//======================================================================================//
-//
-// 3.5 total
-#    include "timemory/runtime/configure.hpp"   // 3.5
-#    include "timemory/runtime/enumerate.hpp"   // 3.5
-#    include "timemory/runtime/initialize.hpp"  // 3.1
-#    include "timemory/runtime/insert.hpp"      // 3.1
-#    include "timemory/runtime/properties.hpp"  // 3.2
+#    include "timemory/runtime.hpp"
 //
 //======================================================================================//
 //

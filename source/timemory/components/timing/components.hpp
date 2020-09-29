@@ -65,16 +65,19 @@ struct system_clock : public base<system_clock>
 
     static std::string label() { return "sys"; }
     static std::string description() { return "CPU time spent in kernel-mode"; }
-    static value_type  record() { return tim::get_clock_system_now<int64_t, ratio_t>(); }
-    double             get_display() const
+    static value_type  record() noexcept
+    {
+        return tim::get_clock_system_now<int64_t, ratio_t>();
+    }
+    double get() const noexcept
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    double get() const { return get_display(); }
-    void   start() { value = record(); }
-    void   stop()
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -95,16 +98,19 @@ struct user_clock : public base<user_clock>
 
     static std::string label() { return "user"; }
     static std::string description() { return "CPU time spent in user-mode"; }
-    static value_type  record() { return tim::get_clock_user_now<int64_t, ratio_t>(); }
-    double             get_display() const
+    static value_type  record() noexcept
+    {
+        return tim::get_clock_user_now<int64_t, ratio_t>();
+    }
+    double get() const noexcept
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    double get() const { return get_display(); }
-    void   start() { value = record(); }
-    void   stop()
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -128,16 +134,19 @@ struct cpu_clock : public base<cpu_clock>
     {
         return "Total CPU time spent in both user- and kernel-mode";
     }
-    static value_type record() { return tim::get_clock_cpu_now<int64_t, ratio_t>(); }
-    double            get_display() const
+    static value_type record() noexcept
+    {
+        return tim::get_clock_cpu_now<int64_t, ratio_t>();
+    }
+    double get() const noexcept
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    double get() const { return get_display(); }
-    void   start() { value = record(); }
-    void   stop()
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -163,15 +172,15 @@ struct monotonic_clock : public base<monotonic_clock>
     {
         return tim::get_clock_monotonic_now<int64_t, ratio_t>();
     }
-    double get() const
+    double get() const noexcept
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    double get_display() const { return get(); }
-    void   start() { value = record(); }
-    void   stop()
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -198,15 +207,15 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     {
         return tim::get_clock_monotonic_raw_now<int64_t, ratio_t>();
     }
-    double get_display() const
+    double get() const noexcept
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    double get() const { return get_display(); }
-    void   start() { value = record(); }
-    void   stop()
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -226,16 +235,19 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
 
     static std::string label() { return "thread_cpu"; }
     static std::string description() { return "CPU-clock timer for the calling thread"; }
-    static value_type  record() { return tim::get_clock_thread_now<int64_t, ratio_t>(); }
-    double             get_display() const
+    static value_type  record() noexcept
+    {
+        return tim::get_clock_thread_now<int64_t, ratio_t>();
+    }
+    double get() const noexcept
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    double get() const { return get_display(); }
-    void   start() { value = record(); }
-    void   stop()
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -257,16 +269,19 @@ struct process_cpu_clock : public base<process_cpu_clock>
     {
         return "CPU-clock timer for the calling process (all threads)";
     }
-    static value_type record() { return tim::get_clock_process_now<int64_t, ratio_t>(); }
-    double            get_display() const
+    static value_type record() noexcept
+    {
+        return tim::get_clock_process_now<int64_t, ratio_t>();
+    }
+    double get() const noexcept
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    double get() const { return get_display(); }
-    void   start() { value = record(); }
-    void   stop()
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -297,24 +312,25 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     {
         return value_type(cpu_clock::record(), wall_clock::record());
     }
-    double get_display() const
+    double get() const noexcept
     {
         const auto& _data = (is_transient) ? accum : value;
         double      denom = (_data.second > 0) ? _data.second : 1;
         double      numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    double serialization() { return get_display(); }
-    double get() const { return get_display(); }
+    double serialization() noexcept { return get_display(); }
+    double get_display() const noexcept { return get(); }
 
-    void start()
+    void start() noexcept
     {
         if(!m_derive)
             value = record();
     }
 
-    void stop()
+    void stop() noexcept
     {
+        using namespace tim::component::operators;
         if(!m_derive)
         {
             value = (record() - value);
@@ -322,7 +338,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         }
     }
 
-    this_type& operator+=(const this_type& rhs)
+    this_type& operator+=(const this_type& rhs) noexcept
     {
         accum += rhs.accum;
         value += rhs.value;
@@ -331,7 +347,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         return *this;
     }
 
-    this_type& operator-=(const this_type& rhs)
+    this_type& operator-=(const this_type& rhs) noexcept
     {
         accum -= rhs.accum;
         value -= rhs.value;
@@ -340,21 +356,22 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         return *this;
     }
 
-    bool assemble(const wall_clock* wc, const cpu_clock* cc)
+    bool assemble(const wall_clock* wc, const cpu_clock* cc) noexcept
     {
         if(wc && cc)
             m_derive = true;
         return m_derive;
     }
 
-    bool assemble(const wall_clock* wc, const user_clock* uc, const system_clock* sc)
+    bool assemble(const wall_clock* wc, const user_clock* uc,
+                  const system_clock* sc) noexcept
     {
         if(wc && uc && sc)
             m_derive = true;
         return m_derive;
     }
 
-    bool derive(const wall_clock* wc, const cpu_clock* cc)
+    bool derive(const wall_clock* wc, const cpu_clock* cc) noexcept
     {
         if(m_derive && wc && cc)
         {
@@ -366,7 +383,8 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         return false;
     }
 
-    bool derive(const wall_clock* wc, const user_clock* uc, const system_clock* sc)
+    bool derive(const wall_clock* wc, const user_clock* uc,
+                const system_clock* sc) noexcept
     {
         if(m_derive && wc && uc && sc)
         {
@@ -378,7 +396,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         return false;
     }
 
-    bool is_derived() const { return m_derive; }
+    bool is_derived() const noexcept { return m_derive; }
 
 private:
     bool m_derive = false;
@@ -407,7 +425,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     {
         return value_type(process_cpu_clock::record(), wall_clock::record());
     }
-    double get_display() const
+    double get() const noexcept
     {
         const auto& _data =
             (is_transient) ? static_cast<const value_type&>(accum) : value;
@@ -415,15 +433,16 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         double numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    double serialization() { return get_display(); }
-    double get() const { return get_display(); }
-    void   start()
+    double serialization() noexcept { return get_display(); }
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept
     {
         if(!m_derive)
             value = record();
     }
-    void stop()
+    void stop() noexcept
     {
+        using namespace tim::component::operators;
         if(!m_derive)
         {
             value = (record() - value);
@@ -431,7 +450,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         }
     }
 
-    this_type& operator+=(const this_type& rhs)
+    this_type& operator+=(const this_type& rhs) noexcept
     {
         accum += rhs.accum;
         value += rhs.value;
@@ -440,7 +459,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         return *this;
     }
 
-    this_type& operator-=(const this_type& rhs)
+    this_type& operator-=(const this_type& rhs) noexcept
     {
         accum -= rhs.accum;
         value -= rhs.value;
@@ -449,14 +468,14 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         return *this;
     }
 
-    bool assemble(const wall_clock* wc, const process_cpu_clock* cc)
+    bool assemble(const wall_clock* wc, const process_cpu_clock* cc) noexcept
     {
         if(wc && cc)
             m_derive = true;
         return m_derive;
     }
 
-    bool derive(const wall_clock* wc, const process_cpu_clock* cc)
+    bool derive(const wall_clock* wc, const process_cpu_clock* cc) noexcept
     {
         if(m_derive && wc && cc)
         {
@@ -468,7 +487,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         return false;
     }
 
-    bool is_derived() const { return m_derive; }
+    bool is_derived() const noexcept { return m_derive; }
 
 private:
     bool m_derive = false;
@@ -497,7 +516,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     {
         return value_type(thread_cpu_clock::record(), wall_clock::record());
     }
-    double get_display() const
+    double get() const noexcept
     {
         const auto& _data =
             (is_transient) ? static_cast<const value_type&>(accum) : value;
@@ -505,15 +524,16 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         double numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    double serialization() { return get_display(); }
-    double get() const { return get_display(); }
-    void   start()
+    double serialization() noexcept { return get_display(); }
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept
     {
         if(!m_derive)
             value = record();
     }
-    void stop()
+    void stop() noexcept
     {
+        using namespace tim::component::operators;
         if(!m_derive)
         {
             value = (record() - value);
@@ -521,7 +541,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         }
     }
 
-    this_type& operator+=(const this_type& rhs)
+    this_type& operator+=(const this_type& rhs) noexcept
     {
         accum += rhs.accum;
         value += rhs.value;
@@ -530,7 +550,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         return *this;
     }
 
-    this_type& operator-=(const this_type& rhs)
+    this_type& operator-=(const this_type& rhs) noexcept
     {
         accum -= rhs.accum;
         value -= rhs.value;
@@ -539,14 +559,14 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         return *this;
     }
 
-    bool assemble(const wall_clock* wc, const thread_cpu_clock* cc)
+    bool assemble(const wall_clock* wc, const thread_cpu_clock* cc) noexcept
     {
         if(wc && cc)
             m_derive = true;
         return m_derive;
     }
 
-    bool derive(const wall_clock* wc, const thread_cpu_clock* cc)
+    bool derive(const wall_clock* wc, const thread_cpu_clock* cc) noexcept
     {
         if(m_derive && wc && cc)
         {
@@ -558,7 +578,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         return false;
     }
 
-    bool is_derived() const { return m_derive; }
+    bool is_derived() const noexcept { return m_derive; }
 
 private:
     bool m_derive = false;

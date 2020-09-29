@@ -29,9 +29,8 @@
 
 #pragma once
 
-#include "timemory/components/macros.hpp"
 #include "timemory/mpl/math.hpp"
-#include "timemory/mpl/stl.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <type_traits>
 
@@ -48,7 +47,7 @@ struct base;
 //
 //--------------------------------------------------------------------------------------//
 //
-namespace
+namespace operators
 {
 //
 //--------------------------------------------------------------------------------------//
@@ -58,7 +57,7 @@ namespace
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-const Tp
+Tp
 operator-(Tp lhs, const Tp& rhs)
 {
     math::minus(lhs, rhs);
@@ -67,7 +66,7 @@ operator-(Tp lhs, const Tp& rhs)
 //
 //--------------------------------------------------------------------------------------//
 //
-}  // namespace
+}  // namespace operators
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -120,7 +120,7 @@ int main(int argc, char** argv)
     {
         auto itr = fibvalues.at(i);
         auto ret = fibonacci(itr);
-        ret_sum += pow(ret, 2);
+        ret_sum += ret * ret;
     }
 
     std::vector<long> ret_reduce;
@@ -208,7 +208,7 @@ void allreduce(const vector_t<long>& sendbuf, vector_t<long>& recvbuf)
 #else
     std::copy(sendbuf.begin(), sendbuf.end(), recvbuf.begin());
 #endif
-    for(auto& itr : recvbuf) itr = log(itr);
+    for(auto& itr : recvbuf) itr = static_cast<long>(log(itr));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -318,7 +318,7 @@ std::vector<double> create_rand_nums(int num_elements)
 // Computes the average of an array of numbers
 double compute_avg(const std::vector<double>& array)
 {
-    return std::accumulate(array.begin(), array.end(), 0.0f) / array.size();
+    return std::accumulate(array.begin(), array.end(), 0.0) / array.size();
 }
 
 //--------------------------------------------------------------------------------------//

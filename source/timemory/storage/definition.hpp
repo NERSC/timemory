@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/storage/definition.hpp
- * \brief The definitions for the types in storage
- */
-
 #pragma once
 
 #include "timemory/backends/process.hpp"
@@ -409,7 +404,7 @@ storage<Type, true>::finalize()
     manager::instance()->is_finalizing(true);
 
     using fini_t = operation::fini<Type>;
-    auto upcast  = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+    auto upcast  = static_cast<tim::storage<Type>*>(this);
 
     if(m_thread_init)
         fini_t(upcast, operation::mode_constant<operation::fini_mode::thread>{});
@@ -426,15 +421,15 @@ template <typename Type>
 void
 storage<Type, true>::stack_clear()
 {
-    std::unordered_set<Type*> _stack = m_stack;
     if(settings::stack_clearing())
+    {
+        std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
-            operation::stop<Type>     _stopper(*itr);
-            operation::pop_node<Type> _popper(*itr);
-            // static_cast<Base*>(itr)->stop();
-            // static_cast<Base*>(itr)->pop_node();
+            operation::stop<Type>{ *itr };
+            operation::pop_node<Type>{ *itr };
         }
+    }
     m_stack.clear();
 }
 //
@@ -452,8 +447,7 @@ storage<Type, true>::global_init()
             if(m_is_master)
             {
                 using init_t = operation::init<Type>;
-                auto upcast =
-                    static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+                auto upcast  = static_cast<tim::storage<Type>*>(this);
                 init_t(upcast, operation::mode_constant<operation::init_mode::global>{});
             }
             return m_global_init;
@@ -475,8 +469,7 @@ storage<Type, true>::thread_init()
             bool _global_init = global_init();
             consume_parameters(_global_init);
             using init_t = operation::init<Type>;
-            auto upcast =
-                static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+            auto upcast  = static_cast<tim::storage<Type>*>(this);
             init_t(upcast, operation::mode_constant<operation::init_mode::thread>{});
             return m_thread_init;
         }();
@@ -1030,11 +1023,11 @@ template <typename Type>
 void
 storage<Type, false>::stack_clear()
 {
-    using Base                       = typename Type::base_type;
-    std::unordered_set<Type*> _stack = m_stack;
-    for(auto& itr : _stack)
+    if(settings::stack_clearing())
     {
-        static_cast<Base*>(itr)->stop();
+        std::unordered_set<Type*> _stack = m_stack;
+        for(auto& itr : _stack)
+            operation::stop<Type>{ *itr };
     }
     m_stack.clear();
 }
@@ -1053,7 +1046,7 @@ storage<Type, false>::initialize()
 
     m_initialized = true;
 
-    auto upcast  = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+    auto upcast  = static_cast<tim::storage<Type>*>(this);
     using init_t = operation::init<Type>;
 
     if(!m_is_master)
@@ -1083,7 +1076,7 @@ storage<Type, false>::finalize()
         printf("[%s]> finalizing...\n", m_label.c_str());
 
     using fini_t = operation::fini<Type>;
-    auto upcast  = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+    auto upcast  = static_cast<tim::storage<Type>*>(this);
 
     m_finalized = true;
     manager::instance()->is_finalizing(true);

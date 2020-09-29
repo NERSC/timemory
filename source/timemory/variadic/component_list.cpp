@@ -31,16 +31,31 @@
 #include "timemory/hash/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/runtime/types.hpp"
+#include "timemory/utility/utility.hpp"
 #include "timemory/variadic/functional.hpp"
 
-//======================================================================================//
-//
-//
+#include <string>
+
+namespace tim
+{
 //
 //--------------------------------------------------------------------------------------//
 //
-namespace tim
+template <typename... Types>
+typename component_list<Types...>::initializer_type&
+component_list<Types...>::get_initializer()
 {
+    static auto env_enum = enumerate_components(
+        tim::delimit(tim::get_env<std::string>("TIMEMORY_COMPONENT_LIST_INIT", "")));
+
+    static initializer_type _instance = [=](this_type& cl) {
+        ::tim::initialize(cl, env_enum);
+    };
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename... Types>
 component_list<Types...>::component_list()
 {
@@ -48,7 +63,7 @@ component_list<Types...>::component_list()
         init_storage();
     apply_v::set_value(m_data, nullptr);
 }
-
+//
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>

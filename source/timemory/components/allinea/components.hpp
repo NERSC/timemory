@@ -60,8 +60,8 @@ struct allinea_map
     static std::string label() { return "allinea_map"; }
     static std::string description() { return "Controls the AllineaMAP sampler"; }
 
-    static void global_init(storage_type*) { backend::allinea::stop_sampling(); }
-    static void global_finalize(storage_type*) { backend::allinea::stop_sampling(); }
+    static void global_init() { backend::allinea::stop_sampling(); }
+    static void global_finalize() { backend::allinea::stop_sampling(); }
 
     void start()
     {

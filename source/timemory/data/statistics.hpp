@@ -37,8 +37,8 @@
 #include "timemory/data/stream.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/stl.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
 
 #include <cmath>
 #include <fstream>
@@ -61,13 +61,15 @@ public:
     using compute_value_t = math::compute<Tp, Vp>;
 
 public:
-    inline statistics()                  = default;
-    inline ~statistics()                 = default;
-    inline statistics(const statistics&) = default;
-    inline statistics(statistics&&)      = default;
+    inline statistics()                      = default;
+    inline ~statistics()                     = default;
+    inline statistics(const statistics&)     = default;
+    inline statistics(statistics&&) noexcept = default;
+    inline statistics& operator=(const statistics&) = default;
+    inline statistics& operator=(statistics&&) noexcept = default;
 
     inline explicit statistics(const value_type& val)
-    : m_cnt(0)
+    : m_cnt(1)
     , m_sum(val)
     , m_sqr(compute_type::sqr(val))
     , m_min(val)
@@ -75,15 +77,12 @@ public:
     {}
 
     inline explicit statistics(value_type&& val)
-    : m_cnt(0)
+    : m_cnt(1)
     , m_sum(std::move(val))
     , m_sqr(compute_type::sqr(m_sum))
     , m_min(m_sum)
     , m_max(m_sum)
     {}
-
-    statistics& operator=(const statistics&) = default;
-    statistics& operator=(statistics&&) = default;
 
     statistics& operator=(const value_type& val)
     {
@@ -159,6 +158,8 @@ public:
 
     inline statistics& operator-=(const value_type& val)
     {
+        if(m_cnt > 1)
+            --m_cnt;
         compute_type::minus(m_sum, val);
         compute_type::minus(m_sqr, compute_type::sqr(val));
         compute_type::minus(m_min, val);
@@ -215,7 +216,7 @@ public:
             compute_type::minus(m_sqr, rhs.m_sqr);
             m_min = compute_type::min(m_min, rhs.m_min);
             m_max = compute_type::max(m_max, rhs.m_max);
-            m_cnt += std::abs(m_cnt - rhs.m_cnt);
+            // m_cnt += std::abs(m_cnt - rhs.m_cnt);
         }
         return *this;
     }
@@ -240,12 +241,12 @@ public:
     }
 
     // friend operator for addition
-    friend const statistics operator+(const statistics& lhs, const statistics& rhs)
+    friend statistics operator+(const statistics& lhs, const statistics& rhs)
     {
         return statistics(lhs) += rhs;
     }
 
-    friend const statistics operator-(const statistics& lhs, const statistics& rhs)
+    friend statistics operator-(const statistics& lhs, const statistics& rhs)
     {
         return statistics(lhs) -= rhs;
     }
@@ -304,3 +305,7 @@ operator+=(::tim::statistics<tuple<>>& _lhs, const Tp&)
 
 //--------------------------------------------------------------------------------------//
 }  // namespace std
+
+CEREAL_CLASS_VERSION(tim::statistics<int64_t>, 0)
+CEREAL_CLASS_VERSION(tim::statistics<float>, 0)
+CEREAL_CLASS_VERSION(tim::statistics<double>, 0)

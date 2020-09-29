@@ -41,5 +41,6 @@
 #elif defined(TIMEMORY_USE_MANAGER_EXTERN)
 #    define TIMEMORY_MANAGER_LINKAGE(...) extern __VA_ARGS__
 #else
+#    define TIMEMORY_MANGER_INLINE
 #    define TIMEMORY_MANAGER_LINKAGE(...) inline __VA_ARGS__
 #endif

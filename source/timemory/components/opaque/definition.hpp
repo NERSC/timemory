@@ -114,12 +114,12 @@ get_opaque(scope::config _scope)
     auto _init = []() { operation::init_storage<Toolset>(); };
 
     auto _start = [=](const string_t& _prefix, scope::config arg_scope) {
-        auto                            _hash   = add_hash_id(_prefix);
-        Toolset*                        _result = new Toolset{};
-        operation::set_prefix<Toolset>  _opprefix(*_result, _prefix);
-        operation::reset<Toolset>       _opreset(*_result);
-        operation::insert_node<Toolset> _opinsert(*_result, _scope + arg_scope, _hash);
-        operation::start<Toolset>       _opstart(*_result);
+        auto                           _hash   = add_hash_id(_prefix);
+        Toolset*                       _result = new Toolset{};
+        operation::set_prefix<Toolset> _opprefix(*_result, _prefix);
+        operation::reset<Toolset>      _opreset(*_result);
+        operation::push_node<Toolset>  _opinsert(*_result, _scope + arg_scope, _hash);
+        operation::start<Toolset>      _opstart(*_result);
         consume_parameters(_opprefix, _opreset, _opinsert, _opstart);
         return (void*) _result;
     };

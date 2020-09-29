@@ -33,13 +33,14 @@
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
 #include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/timing/ert_timer.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
 #include "timemory/ert/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
 
 #include <array>
 #include <atomic>
@@ -76,11 +77,11 @@ struct exec_params
     , block_size(_block_size)
     {}
 
-    ~exec_params()                  = default;
-    exec_params(const exec_params&) = default;
-    exec_params(exec_params&&)      = default;
+    ~exec_params()                      = default;
+    exec_params(const exec_params&)     = default;
+    exec_params(exec_params&&) noexcept = default;
     exec_params& operator=(const exec_params&) = default;
-    exec_params& operator=(exec_params&&) = default;
+    exec_params& operator=(exec_params&&) noexcept = default;
 
     uint64_t working_set_min = 16;
     uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
@@ -135,15 +136,27 @@ public:
     using size_type      = typename value_array::size_type;
     using iterator       = typename value_array::iterator;
     using const_iterator = typename value_array::const_iterator;
+    using this_type      = exec_data<Tp>;
 
     //----------------------------------------------------------------------------------//
     //
-    exec_data() = default;
+    exec_data() {}
     ~exec_data() {}
+
     exec_data(const exec_data&) = delete;
-    exec_data(exec_data&&)      = default;
     exec_data& operator=(const exec_data&) = delete;
-    exec_data& operator=(exec_data&&) = default;
+
+    exec_data(this_type&& rhs)
+    : m_labels(std::move(rhs.m_labels))
+    , m_values(std::move(rhs.m_values))
+    {}
+
+    this_type& operator=(this_type&& rhs)
+    {
+        m_labels = std::move(rhs.m_labels);
+        m_values = std::move(rhs.m_values);
+        return *this;
+    }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -247,7 +260,7 @@ protected:
     labels_type m_labels = { { "label", "working-set", "trials", "total-bytes",
                                "total-ops", "ops-per-set", "counter", "device", "dtype",
                                "exec-params" } };
-    value_array m_values;
+    value_array m_values = {};
 
 private:
     //----------------------------------------------------------------------------------//

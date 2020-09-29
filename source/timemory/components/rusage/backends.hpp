@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/backends/process.hpp"
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cstdint>
@@ -51,6 +52,9 @@
 #elif defined(_WINDOWS)
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
+#    endif
+#    if !defined(WIN32_LEAN_AND_MEAN)
+#        define WIN32_LEAN_AND_MEAN
 #    endif
 // currently, this is causing a bunch of errors, need to disable
 // #    include <psapi.h>
@@ -119,8 +123,8 @@ struct rusage_cache
     rusage_cache(const rusage_cache&) = delete;
     rusage_cache& operator=(const rusage_cache&) = delete;
 
-    rusage_cache(rusage_cache&&) = default;
-    rusage_cache& operator=(rusage_cache&&) = default;
+    rusage_cache(rusage_cache&&) noexcept = default;
+    rusage_cache& operator=(rusage_cache&&) noexcept = default;
 
     inline int64_t get_peak_rss() const;
     inline int64_t get_num_io_in() const;

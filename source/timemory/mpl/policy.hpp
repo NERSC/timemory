@@ -37,7 +37,7 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/runtime/types.hpp"
-#include "timemory/utility/serializer.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
 
 namespace tim
 {
@@ -226,12 +226,12 @@ public:
     using pair_type                      = std::pair<int_type, int_type>;
     static constexpr bool thread_support = true;
 
-    instance_tracker()                        = default;
-    ~instance_tracker()                       = default;
-    instance_tracker(const instance_tracker&) = default;
-    instance_tracker(instance_tracker&&)      = default;
+    instance_tracker()                            = default;
+    ~instance_tracker()                           = default;
+    instance_tracker(const instance_tracker&)     = default;
+    instance_tracker(instance_tracker&&) noexcept = default;
     instance_tracker& operator=(const instance_tracker&) = default;
-    instance_tracker& operator=(instance_tracker&&) = default;
+    instance_tracker& operator=(instance_tracker&&) noexcept = default;
 
     enum
     {
@@ -340,12 +340,12 @@ public:
     using int_type                       = int64_t;
     static constexpr bool thread_support = false;
 
-    instance_tracker()                        = default;
-    ~instance_tracker()                       = default;
-    instance_tracker(const instance_tracker&) = default;
-    instance_tracker(instance_tracker&&)      = default;
+    instance_tracker()                            = default;
+    ~instance_tracker()                           = default;
+    instance_tracker(const instance_tracker&)     = default;
+    instance_tracker(instance_tracker&&) noexcept = default;
     instance_tracker& operator=(const instance_tracker&) = default;
-    instance_tracker& operator=(instance_tracker&&) = default;
+    instance_tracker& operator=(instance_tracker&&) noexcept = default;
 
 public:
     //----------------------------------------------------------------------------------//

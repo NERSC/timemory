@@ -36,9 +36,8 @@ foreach(_TYPE ${LIB_TYPES})
 
     # private link targets
     target_link_libraries(${TARGET_NAME} PRIVATE
-        timemory-compile-options
-        timemory-arch
-        timemory-vector)
+        timemory::timemory-default-visibility
+        timemory::timemory-compile-options)
 
     # use rpath
     set_target_properties(${TARGET_NAME} PROPERTIES

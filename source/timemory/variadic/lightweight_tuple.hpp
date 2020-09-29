@@ -31,6 +31,19 @@
 
 #pragma once
 
+#include "timemory/backends/dmp.hpp"
+#include "timemory/general/source_location.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/filters.hpp"
+#include "timemory/operations/types.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/types.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/variadic/base_bundle.hpp"
+#include "timemory/variadic/functional.hpp"
+#include "timemory/variadic/types.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
@@ -39,19 +52,6 @@
 #include <ios>
 #include <iostream>
 #include <string>
-
-#include "timemory/backends/dmp.hpp"
-#include "timemory/general/source_location.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/filters.hpp"
-#include "timemory/operations/types.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/types.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/variadic/base_bundle.hpp"
-#include "timemory/variadic/functional.hpp"
-#include "timemory/variadic/types.hpp"
 
 //======================================================================================//
 
@@ -100,9 +100,6 @@ public:
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
 public:
-    //
-    //----------------------------------------------------------------------------------//
-    //
     static initializer_type& get_initializer()
     {
         static initializer_type _instance = [](this_type&) {};
@@ -119,7 +116,7 @@ public:
     };
 
 public:
-    lightweight_tuple();
+    lightweight_tuple() = default;
 
     template <typename... T, typename Func = initializer_type>
     explicit lightweight_tuple(const string_t& key, quirk::config<T...> = {},
@@ -138,11 +135,11 @@ public:
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    lightweight_tuple(const lightweight_tuple&) = default;
-    lightweight_tuple(lightweight_tuple&&)      = default;
+    lightweight_tuple(const lightweight_tuple&)     = default;
+    lightweight_tuple(lightweight_tuple&&) noexcept = default;
 
     lightweight_tuple& operator=(const lightweight_tuple& rhs) = default;
-    lightweight_tuple& operator=(lightweight_tuple&&) = default;
+    lightweight_tuple& operator=(lightweight_tuple&&) noexcept = default;
 
     lightweight_tuple clone(bool store, scope::config _scope = scope::get_default());
 

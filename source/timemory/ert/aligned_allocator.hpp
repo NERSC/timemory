@@ -30,19 +30,8 @@
 
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
-#    if !defined(_WINDOWS)
-#        define _WINDOWS
-#    endif
-#elif defined(__APPLE__) || defined(__MACH__)
-#    if !defined(_MACOS)
-#        define _MACOS
-#    endif
-#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
-#    if !defined(_LINUX)
-#        define _LINUX
-#    endif
-#endif
+#include "timemory/backends/device.hpp"
+#include "timemory/macros/os.hpp"
 
 #if !defined(_WINDOWS)
 #    define RESTRICT(TYPE) TYPE __restrict__
@@ -70,9 +59,6 @@
 #elif defined(_MACOS)
 #    include <malloc/malloc.h>
 #endif
-
-#include "timemory/backends/device.hpp"
-#include "timemory/settings/declaration.hpp"
 
 namespace tim
 {
@@ -196,7 +182,7 @@ public:
     // constructors and destructors
     aligned_allocator() {}
     aligned_allocator(const aligned_allocator&) {}
-    aligned_allocator(aligned_allocator&&) {}
+    aligned_allocator(aligned_allocator&&) noexcept {}
     template <typename U>
     aligned_allocator(const aligned_allocator<U, _Align_v>&)
     {}

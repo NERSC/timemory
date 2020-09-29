@@ -22,12 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/hash/definition.hpp
- * \brief The definitions for the types in hash
- * Provides correlation between the hashes and the the prefix for components
- */
-
 #pragma once
 
 #include "timemory/api.hpp"
@@ -70,6 +64,17 @@ get_hash_aliases()
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(hash_result_type)
+get_hash_id(const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id)
+{
+    auto _alias_itr = _hash_alias->find(_hash_id);
+    if(_alias_itr != _hash_alias->end())
+        return _alias_itr->second;
+    return _hash_id;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(hash_result_type)
 add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
 {
     hash_result_type _hash_id = get_hash_id(prefix);
@@ -94,8 +99,9 @@ add_hash_id(const std::string& prefix)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(void)
-add_hash_id(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash_alias,
-            hash_result_type _hash_id, hash_result_type _alias_hash_id)
+add_hash_id(const graph_hash_map_ptr_t&   _hash_map,
+            const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id,
+            hash_result_type _alias_hash_id)
 {
     if(_hash_alias->find(_alias_hash_id) == _hash_alias->end() &&
        _hash_map->find(_hash_id) != _hash_map->end())
@@ -117,8 +123,8 @@ add_hash_id(hash_result_type _hash_id, hash_result_type _alias_hash_id)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(std::string)
-get_hash_identifier(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash_alias,
-                    hash_result_type _hash_id)
+get_hash_identifier(const graph_hash_map_ptr_t&   _hash_map,
+                    const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id)
 {
     auto _map_itr   = _hash_map->find(_hash_id);
     auto _alias_itr = _hash_alias->find(_hash_id);
@@ -132,13 +138,13 @@ get_hash_identifier(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash
             return _map_itr->second;
     }
 
-#    if defined(DEBUG)
-    // if(settings::verbose() > 0 || settings::debug())
+    if(_hash_id > 0)
     {
         std::stringstream ss;
         ss << "Error! node with hash " << _hash_id
-           << " did not have an associated prefix!\n";
-        ss << "Hash map:\n";
+           << " did not have an associated prefix!";
+#    if defined(DEBUG)
+        ss << "\nHash map:\n";
         auto _w = 30;
         for(const auto& itr : *_hash_map)
             ss << "    " << std::setw(_w) << itr.first << " : " << (itr.second) << "\n";
@@ -148,9 +154,9 @@ get_hash_identifier(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash
             for(const auto& itr : *_hash_alias)
                 ss << "    " << std::setw(_w) << itr.first << " : " << itr.second << "\n";
         }
+#    endif
         fprintf(stderr, "%s\n", ss.str().c_str());
     }
-#    endif
 
     return std::string("unknown-hash=") + std::to_string(_hash_id);
 }

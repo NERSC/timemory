@@ -31,11 +31,12 @@
 
 #pragma once
 
+#include "timemory/utility/declaration.hpp"
+
 #include <cstdlib>
+#include <iomanip>
 #include <sstream>
 #include <string>
-
-#include "timemory/settings/declaration.hpp"
 
 namespace tim
 {
@@ -57,20 +58,7 @@ dummy_func(int)
 
 //======================================================================================//
 
-inline signal_settings::signals_data_t::signals_data_t()
-: signals_active(false)
-, signals_default(
-      { sys_signal::Hangup,       sys_signal::Interrupt,    sys_signal::Quit,
-        sys_signal::Illegal,      sys_signal::Trap,         sys_signal::Abort,
-        sys_signal::Emulate,      sys_signal::Kill,         sys_signal::Bus,
-        sys_signal::SegFault,     sys_signal::System,       sys_signal::Pipe,
-        sys_signal::Alarm,        sys_signal::Terminate,    sys_signal::Urgent,
-        sys_signal::Stop,         sys_signal::CPUtime,      sys_signal::FileSize,
-        sys_signal::VirtualAlarm, sys_signal::ProfileAlarm, sys_signal::User1,
-        sys_signal::User2 })
-, signals_enabled(signals_default)
-, signals_disabled()
-, signals_exit_func(internal::dummy_func)
+inline signal_settings::signals_data::signals_data()
 {
 #if defined(DEBUG)
     signals_default.insert(sys_signal::FPE);
@@ -143,7 +131,7 @@ signal_settings::check_environment()
         match_t("USER2", sys_signal::User2),
     };
 
-    for(auto itr : _list)
+    for(const auto& itr : _list)
     {
         auto _enable  = get_env("SIGNAL_ENABLE_" + itr.first, false);
         auto _disable = get_env("SIGNAL_DISABLE_" + itr.first, false);
@@ -154,11 +142,11 @@ signal_settings::check_environment()
             signal_settings::disable(itr.second);
     }
 
-    if(settings::enable_all_signals())
+    if(enable_all())
         for(const auto& itr : f_signals().signals_disabled)
             signal_settings::enable(itr);
 
-    if(settings::disable_all_signals())
+    if(disable_all())
         for(const auto& itr : f_signals().signals_enabled)
             signal_settings::disable(itr);
 }
@@ -172,8 +160,9 @@ signal_settings::str(const sys_signal& _type)
 
     std::stringstream ss;
     auto              _descript = [&](const descript_tuple_t& _data) {
-        ss << " Signal: " << std::get<0>(_data) << " (error code: " << std::get<1>(_data)
-           << ") " << std::get<2>(_data);
+        ss << " Signal: " << std::setw(8) << std::get<0>(_data)
+           << " (error code: " << std::setw(4) << std::get<1>(_data) << ") "
+           << std::setw(40) << std::get<2>(_data);
     };
 
     // some of these signals are not handled but added in case they are
@@ -228,7 +217,7 @@ signal_settings::str(const sys_signal& _type)
 //======================================================================================//
 
 inline std::string
-signal_settings::str()
+signal_settings::str(bool report_disabled)
 {
     std::stringstream ss;
     auto              spacer = []() { return "    "; };
@@ -239,14 +228,17 @@ signal_settings::str()
        << spacer() << "Signal detection activated. Signal exception settings:\n"
        << std::endl;
 
-    ss << spacer() << "Enabled:" << std::endl;
+    if(report_disabled)
+        ss << spacer() << "Enabled:" << std::endl;
     for(const auto& itr : f_signals().signals_enabled)
-        ss << spacer() << spacer() << signal_settings::str(itr) << std::endl;
+        ss << spacer() << spacer() << signal_settings::str(itr) << '\n';
 
-    ss << "\n" << spacer() << "Disabled:" << std::endl;
-    for(const auto& itr : f_signals().signals_disabled)
-        ss << spacer() << spacer() << signal_settings::str(itr) << std::endl;
-
+    if(report_disabled)
+    {
+        ss << "\n" << spacer() << "Disabled:" << std::endl;
+        for(const auto& itr : f_signals().signals_disabled)
+            ss << spacer() << spacer() << signal_settings::str(itr) << '\n';
+    }
 #else
 
     ss << std::endl << spacer() << "Signal detection not available" << std::endl;
@@ -266,6 +258,22 @@ signal_settings::is_active()
 
 //======================================================================================//
 
+inline bool&
+signal_settings::enable_all()
+{
+    return f_signals().enable_all;
+}
+
+//======================================================================================//
+
+inline bool&
+signal_settings::disable_all()
+{
+    return f_signals().disable_all;
+}
+
+//======================================================================================//
+
 inline void
 signal_settings::set_active(bool val)
 {
@@ -277,7 +285,7 @@ signal_settings::set_active(bool val)
 inline void
 signal_settings::set_exit_action(signal_function_t _f)
 {
-    f_signals().signals_exit_func = _f;
+    f_signals().signals_exit_func = std::move(_f);
 }
 
 //======================================================================================//

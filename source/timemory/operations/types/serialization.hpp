@@ -32,6 +32,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
 
 namespace tim
 {
@@ -40,9 +41,6 @@ namespace operation
 //
 //--------------------------------------------------------------------------------------//
 //
-//
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
 struct serialization
@@ -81,6 +79,52 @@ struct serialization
     template <typename Archive, typename Up = Tp,
               enable_if_t<!(is_enabled<Up>::value), char> = 0>
     serialization(const Up&, Archive&, const unsigned int)
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct extra_serialization
+{
+    using PrettyJson_t  = cereal::PrettyJSONOutputArchive;
+    using MinimalJson_t = cereal::MinimalJSONOutputArchive;
+
+    TIMEMORY_DELETED_OBJECT(extra_serialization)
+
+    explicit extra_serialization(PrettyJson_t& ar, unsigned int ver = 0)
+    {
+        sfinae(ar, ver, 0, 0);
+    }
+
+    explicit extra_serialization(MinimalJson_t& ar, unsigned int ver = 0)
+    {
+        sfinae(ar, ver, 0, 0);
+    }
+
+    template <typename Archive>
+    explicit extra_serialization(Archive& ar, unsigned int ver = 0)
+    {
+        sfinae(ar, ver, 0, 0);
+    }
+
+private:
+    template <typename Archive, typename Up = Tp>
+    auto sfinae(Archive& ar, unsigned int ver, int, int)
+        -> decltype(Up::extra_serialization(ar, ver), void())
+    {
+        Up::extra_serialization(ar, ver);
+    }
+
+    template <typename Archive, typename Up = Tp>
+    auto sfinae(Archive& ar, unsigned int, int, long)
+        -> decltype(Up::extra_serialization(ar), void())
+    {
+        Up::extra_serialization(ar);
+    }
+
+    template <typename Archive, typename Up = Tp>
+    auto sfinae(Archive&, unsigned int, long, long)
     {}
 };
 //

@@ -112,10 +112,10 @@ public:
     ~auto_list();
 
     // copy and move
-    auto_list(const this_type&) = default;
-    auto_list(this_type&&)      = default;
+    auto_list(const this_type&)     = default;
+    auto_list(this_type&&) noexcept = default;
     this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) = default;
+    this_type& operator=(this_type&&) noexcept = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 

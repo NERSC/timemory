@@ -108,7 +108,7 @@ public:
     static void        enable(const sys_signal&);
     static void        disable(const sys_signal&);
     static std::string str(const sys_signal&);
-    static std::string str();
+    static std::string str(bool report_disabled = false);
     static void        check_environment();
     static void        set_exit_action(signal_function_t _f);
     static void        exit_action(int errcode);
@@ -118,21 +118,36 @@ public:
     static const signal_set_t& get_enabled();
     static const signal_set_t& get_disabled();
     static const signal_set_t& get_default();
+    static bool&               enable_all();
+    static bool&               disable_all();
 
 protected:
-    struct signals_data_t
+    struct signals_data
     {
-        signals_data_t();
-        bool              signals_active;
-        signal_set_t      signals_default;
-        signal_set_t      signals_enabled;
-        signal_set_t      signals_disabled;
-        signal_function_t signals_exit_func;
+        signals_data();
+        ~signals_data()                   = default;
+        signals_data(const signals_data&) = default;
+        signals_data(signals_data&&)      = default;
+        signals_data& operator=(const signals_data&) = default;
+        signals_data& operator=(signals_data&&) = default;
+
+        bool              signals_active    = false;
+        bool              enable_all        = false;
+        bool              disable_all       = false;
+        signal_set_t      signals_enabled   = {};
+        signal_set_t      signals_disabled  = {};
+        signal_function_t signals_exit_func = [](int) {};
+        signal_set_t      signals_default   = {
+            sys_signal::Quit,     sys_signal::Illegal,   sys_signal::Trap,
+            sys_signal::Abort,    sys_signal::Kill,      sys_signal::Bus,
+            sys_signal::SegFault, sys_signal::Terminate, sys_signal::Urgent,
+            sys_signal::Stop,
+        };
     };
 
-    static signals_data_t& f_signals()
+    static signals_data& f_signals()
     {
-        static signal_settings::signals_data_t instance;
+        static signal_settings::signals_data instance{};
         return instance;
     }
 };

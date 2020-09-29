@@ -172,9 +172,8 @@ struct num_io_in : public base<num_io_in>
     void       start() { value = record(); }
     void       stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
 
     template <typename CacheT                                        = cache_type,
@@ -230,9 +229,8 @@ struct num_io_out : public base<num_io_out>
     void       start() { value = record(); }
     void       stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
 
     template <typename CacheT                                        = cache_type,
@@ -290,9 +288,8 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
     void       start() { value = record(); }
     void       stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
 
     template <typename CacheT                                        = cache_type,
@@ -348,9 +345,8 @@ struct num_major_page_faults : public base<num_major_page_faults>
     void       start() { value = record(); }
     void       stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
 
     template <typename CacheT                                        = cache_type,
@@ -409,9 +405,8 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
     void       start() { value = record(); }
     void       stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
 
     template <typename CacheT                                        = cache_type,
@@ -471,9 +466,8 @@ struct priority_context_switch : public base<priority_context_switch>
     void       start() { value = record(); }
     void       stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
 
     template <typename CacheT                                        = cache_type,
@@ -524,10 +518,8 @@ struct virtual_memory : public base<virtual_memory>
     void   start() { value = record(); }
     void   stop()
     {
-        auto tmp   = record();
-        auto delta = tmp - value;
-        accum      = std::max(accum, delta);
-        value      = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
     void measure() { accum = value = std::max<int64_t>(value, record()); }
 };
@@ -564,8 +556,8 @@ struct user_mode_time : public base<user_mode_time, int64_t>
         auto tmp = record();
         if(tmp > value)
         {
-            accum += (tmp - value);
-            value = std::move(tmp);
+            value = (tmp - value);
+            accum += value;
         }
     }
 
@@ -628,8 +620,8 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
         auto tmp = record();
         if(tmp > value)
         {
-            accum += (tmp - value);
-            value = std::move(tmp);
+            value = (tmp - value);
+            accum += value;
         }
     }
 
@@ -685,6 +677,7 @@ struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64
 
     void stop()
     {
+        using namespace tim::component::operators;
         value = value_type{ value.first, record().first };
         accum = std::max(accum, value);
     }

@@ -34,7 +34,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/utility/serializer.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
 //
 #include <type_traits>
 

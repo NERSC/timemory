@@ -152,9 +152,11 @@ public:
     static void configure(int device = 0);
     static void finalize();
 
-    static void global_init(storage_type*) { configure(); }
+    static void global_init() { configure(); }
 
-    static void global_finalize(storage_type*) { finalize(); }
+    static void global_finalize() { finalize(); }
+
+    TIMEMORY_DEFAULT_OBJECT(cupti_profiler)
 
     value_type record()
     {
@@ -194,6 +196,7 @@ public:
 
     void stop()
     {
+        using namespace tim::component::operators;
         TIMEMORY_CUPTI_API_CALL(cuptiProfilerPopRange(&popRangeParams));
         auto _count = --get_counter();
         if(_count == 0)

@@ -33,7 +33,6 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
-#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
@@ -154,6 +153,24 @@ rank(comm_t comm = comm_world_v);
 //--------------------------------------------------------------------------------------//
 
 inline bool&
+use_mpi_thread()
+{
+    static bool _instance = true;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::string&
+use_mpi_thread_type()
+{
+    static std::string _instance = {};
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool&
 fail_on_error()
 {
     static bool _instance = false;
@@ -228,7 +245,11 @@ inline bool&
 is_finalized()
 {
 #if defined(TIMEMORY_USE_MPI)
-    static bool _instance = false;
+    int32_t _fini = 0;
+    MPI_Finalized(&_fini);
+    static bool _instance = static_cast<bool>(_fini);
+    if(!_instance)
+        _instance = static_cast<bool>(_fini);
 #else
     static bool _instance = true;
 #endif
@@ -258,7 +279,7 @@ initialize(int& argc, char**& argv)
     {
         using namespace threading;
         bool success_v = false;
-        if(settings::mpi_thread())
+        if(use_mpi_thread())
         {
             auto _init = [&](int itr) {
                 int  _actual = -1;
@@ -277,7 +298,7 @@ initialize(int& argc, char**& argv)
             // int _provided = 0;
             // MPI_Query_thread(&_provided);
 
-            auto _mpi_type = settings::mpi_thread_type();
+            auto _mpi_type = use_mpi_thread_type();
             if(_mpi_type == "single")
                 success_v = _init(single);
             else if(_mpi_type == "serialized")
@@ -311,16 +332,12 @@ initialize(int* argc, char*** argv)
 inline void
 finalize()
 {
-    // is_initialized has a check against is_finalized(), if manually invoking
-    // MPI_Finalize() [not recommended bc timemory will do it when MPI support is enabled]
-    // then set that value to true, e.g.
-    //          tim::mpi::is_finalized() = true;
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
     {
         // barrier();
         MPI_Finalize();
-        is_finalized() = true;  // to try to avoid calling MPI_Initialized(...) after
+        is_finalized() = true;
         // finalized
     }
 #endif

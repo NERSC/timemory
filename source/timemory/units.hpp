@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cctype>
@@ -45,6 +46,13 @@
 #endif
 
 #if defined(_WINDOWS)
+// without this, windows will define macros for min and max
+#    if !defined(NOMINMIX)
+#        define NOMINMAX
+#    endif
+#    if !defined(WIN32_LEAN_AND_MEAN)
+#        define WIN32_LEAN_AND_MEAN
+#    endif
 // clang-format off
 #    include <windows.h>
 #    include <sysinfoapi.h>

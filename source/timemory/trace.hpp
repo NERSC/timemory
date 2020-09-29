@@ -63,8 +63,8 @@ struct lock
             get_global() = false;
     }
 
-    lock(lock&&)  = default;
-    lock& operator=(lock&&) = default;
+    lock(lock&&) noexcept = default;
+    lock& operator=(lock&&) noexcept = default;
 
     lock(const lock&) = delete;
     lock& operator=(const lock&) = delete;

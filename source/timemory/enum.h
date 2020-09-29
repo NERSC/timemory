@@ -43,8 +43,7 @@
 /// macro is used, be sure to end the list with a comma
 ///
 /// \code{.cpp}
-/// #define TIMEMORY_USER_COMPONENT_ENUM MY_COMPONENT =
-/// TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE + 1,
+/// #define TIMEMORY_USER_COMPONENT_ENUM MY_COMPONENT,
 /// \endcode
 //
 #if !defined(TIMEMORY_USER_COMPONENT_ENUM)
@@ -55,13 +54,6 @@
 /// \brief Macro specifying how many user component enumerations are provided
 #if !defined(TIMEMORY_USER_COMPONENT_ENUM_SIZE)
 #    define TIMEMORY_USER_COMPONENT_ENUM_SIZE 16
-#endif
-//
-/// \macro TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE
-/// \brief The number of enumerated components defined by timemory
-//
-#if !defined(TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE)
-#    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE 66
 #endif
 //
 /// \enum TIMEMORY_NATIVE_COMPONENT
@@ -137,9 +129,17 @@ enum TIMEMORY_NATIVE_COMPONENT
     WALL_CLOCK,
     WRITTEN_BYTES,
     WRITTEN_CHAR,
+    TIMEMORY_NATIVE_COMPONENTS_END,
     TIMEMORY_USER_COMPONENT_ENUM TIMEMORY_COMPONENTS_END =
-        (TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE + TIMEMORY_USER_COMPONENT_ENUM_SIZE)
+        (TIMEMORY_NATIVE_COMPONENTS_END + TIMEMORY_USER_COMPONENT_ENUM_SIZE)
 };
+//
+/// \macro TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE
+/// \brief The number of enumerated components natively defined by timemory
+//
+#if !defined(TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE)
+#    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE TIMEMORY_NATIVE_COMPONENTS_END
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //

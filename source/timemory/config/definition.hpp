@@ -57,15 +57,19 @@ TIMEMORY_CONFIG_LINKAGE(void)
 timemory_init(int argc, char** argv, const std::string& _prefix,
               const std::string& _suffix)
 {
-    if(settings::debug() || settings::verbose() > 3)
-        PRINT_HERE("%s", "");
+    static auto _settings = settings::instance();
+    if(_settings)
+    {
+        if(_settings->get_debug() || _settings->get_verbose() > 3)
+            PRINT_HERE("%s", "");
+    }
 
-    std::string exe_name = argv[0];
+    std::string exe_name = (argc > 0) ? argv[0] : "";
 
-    while(exe_name.find("\\") != std::string::npos)
+    while(exe_name.find('\\') != std::string::npos)
         exe_name = exe_name.substr(exe_name.find_last_of('\\') + 1);
 
-    while(exe_name.find("/") != std::string::npos)
+    while(exe_name.find('/') != std::string::npos)
         exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
 
     static const std::vector<std::string> _exe_suffixes = { ".py", ".exe" };
@@ -86,26 +90,41 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
     while((pos = exe_name.find("--")) != std::string::npos)
         exe_name.erase(pos, 1);
 
-    settings::output_path() = exe_name;
-    // allow environment overrides
-    settings::parse();
+    if(exe_name.empty())
+        exe_name = "timemory-output";
 
-    if(settings::enable_signal_handler())
+    if(_settings)
     {
-        auto default_signals = signal_settings::get_default();
-        for(auto& itr : default_signals)
-            signal_settings::enable(itr);
-        // should return default and any modifications from environment
-        auto enabled_signals = signal_settings::get_enabled();
-        enable_signal_detection(enabled_signals);
+        _settings->get_output_path() = exe_name;
+        // allow environment overrides
+        settings::parse(_settings);
+
+        if(_settings->get_enable_signal_handler())
+        {
+            auto default_signals = signal_settings::get_default();
+            for(auto& itr : default_signals)
+                signal_settings::enable(itr);
+            // should return default and any modifications from environment
+            auto enabled_signals = signal_settings::get_enabled();
+            enable_signal_detection(enabled_signals);
+
+            auto _exit_action = [](int nsig) {
+                auto _manager = manager::instance();
+                if(_manager)
+                {
+                    std::cout << "Finalizing after signal: " << nsig << std::endl;
+                    _manager->finalize();
+                }
+            };
+            signal_settings::set_exit_action(_exit_action);
+        }
+
+        settings::store_command_line(argc, argv);
     }
 
-    settings::store_command_line(argc, argv);
-
-    auto _manager = manager::instance();
+    static auto _manager = manager::instance();
     if(_manager)
         _manager->update_metadata_prefix();
-    consume_parameters(_manager);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -150,40 +169,47 @@ timemory_init(int* argc, char*** argv, const std::string& _prefix,
 TIMEMORY_CONFIG_LINKAGE(void)
 timemory_finalize()
 {
-    if(settings::debug() || settings::verbose() > 3)
-        PRINT_HERE("%s", "");
-
-    if(settings::enable_signal_handler())
+    auto _settings = settings::instance();
+    if(_settings)
     {
-        if(settings::debug())
-            PRINT_HERE("%s", "disabling signal detection");
-        disable_signal_detection();
-    }
+        if(_settings->get_debug() || _settings->get_verbose() > 3)
+            PRINT_HERE("%s", "");
 
-    if(settings::debug())
-        PRINT_HERE("%s", "finalizing manager");
+        if(_settings->get_enable_signal_handler())
+        {
+            if(_settings->get_debug())
+                PRINT_HERE("%s", "disabling signal detection");
+            disable_signal_detection();
+        }
+
+        if(_settings->get_debug())
+            PRINT_HERE("%s", "finalizing manager");
+    }
 
     auto _manager = manager::instance();
     if(_manager)
         _manager->finalize();
 
-    if(settings::upcxx_finalize())
+    if(_settings)
     {
-        if(settings::debug())
-            PRINT_HERE("%s", "finalizing upcxx");
+        if(_settings->get_upcxx_finalize())
+        {
+            if(_settings->get_debug())
+                PRINT_HERE("%s", "finalizing upcxx");
 
-        upc::finalize();
+            upc::finalize();
+        }
+
+        if(_settings->get_mpi_finalize())
+        {
+            if(_settings->get_debug())
+                PRINT_HERE("%s", "finalizing mpi");
+            mpi::finalize();
+        }
+
+        if(_settings->get_debug())
+            PRINT_HERE("%s", "done");
     }
-
-    if(settings::mpi_finalize())
-    {
-        if(settings::debug())
-            PRINT_HERE("%s", "finalizing mpi");
-        mpi::finalize();
-    }
-
-    if(settings::debug())
-        PRINT_HERE("%s", "done");
 }
 //
 }  // namespace tim

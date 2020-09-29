@@ -43,9 +43,10 @@ extern "C"
     extern void     timemory_deregister_ompt();
 }
 
-static const double pi_epsilon = std::numeric_limits<float>::epsilon();
-static const long   nfib       = 39;
-static const long   noff       = 4;
+static const double pi_epsilon =
+    static_cast<double>(std::numeric_limits<float>::epsilon());
+static const long nfib = 39;
+static const long noff = 4;
 
 //--------------------------------------------------------------------------------------//
 

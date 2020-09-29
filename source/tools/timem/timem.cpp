@@ -52,12 +52,15 @@ main(int argc, char** argv)
     tim::settings::upcxx_init()     = false;
     tim::settings::upcxx_finalize() = false;
     // other settings
-    tim::settings::banner()      = false;
-    tim::settings::auto_output() = false;
-    tim::settings::file_output() = false;
-    tim::settings::scientific()  = false;
-    tim::settings::width()       = 16;
-    tim::settings::precision()   = 6;
+    tim::settings::banner()           = false;
+    tim::settings::auto_output()      = false;
+    tim::settings::file_output()      = false;
+    tim::settings::scientific()       = false;
+    tim::settings::width()            = 16;
+    tim::settings::precision()        = 6;
+    tim::settings::enabled()          = true;
+    tim::settings::suppress_parsing() = true;
+    // ensure manager never writes metadata
     tim::manager::instance()->set_write_metadata(-1);
 
     auto _mpi_argc = 1;
@@ -75,14 +78,24 @@ main(int argc, char** argv)
 
     auto help_action = [](parser_t& p) {
         if(tim::dmp::rank() == 0)
+        {
+            stringstream_t hs;
+            hs << "-- <CMD> <ARGS>\n\n";
+            hs << "Examples:\n";
+            hs << "    timem sleep 2\n";
+            hs << "    timem -s /bin/zsh -- find /usr\n";
+            hs << "    timemory-avail -H | grep PAPI | grep -i cache\n";
+            hs << "    srun -N 1 -n 1 timem -e PAPI_L1_TCM PAPI_L2_TCM PAPI_L3_TCM -- "
+                  "./myexe\n";
             p.print_help("-- <CMD> <ARGS>");
+        }
         exit(EXIT_FAILURE);
     };
 
     auto parser = parser_t(argv[0]);
 
     parser.enable_help();
-    parser.on_error([=](parser_t& p, parser_err_t _err) {
+    parser.on_error([=](parser_t& p, const parser_err_t& _err) {
         std::cerr << _err << std::endl;
         help_action(p);
     });
@@ -118,35 +131,19 @@ main(int argc, char** argv)
         .action([](parser_t& p) { sample_delay() = p.get<double>("sample-delay"); });
     parser
         .add_argument({ "-f", "--sample-freq" },
-                      "Set the frequency of the sampler (1/seconds)")
+                      "Set the frequency of the sampler (number of interrupts per second")
         .count(1)
         .action([](parser_t& p) {
             sample_freq() = p.get<double>("sample-freq");
             if(sample_freq() <= 0.0)
                 use_sample() = false;
         });
-    /*parser
-        .add_argument({ "-t", "--sample-type" },
-                      "Configure the sampling intervals according to wall-clock time or "
-                      "cpu-clock time")
-        .choices({ "wall", "cpu" })
-        .action([](parser_t& p) {
-            using strvec_t = std::vector<std::string>;
-            auto c = p.get<strvec_t>("sample-type");
-            signal_types().clear();
-            for(auto&& itr : c)
-            {
-                if(itr == "wall")
-                    signal_types().insert(SIGALRM);
-                else if(itr == "cpu")
-                    signal_types().insert(SIGVTALRM);
-            }
-        });*/
     parser.add_argument({ "--disable-sample" }, "Disable sampling completely")
         .count(0)
         .action([](parser_t&) { use_sample() = false; });
     parser.add_argument({ "-e", "--events", "--papi-events" },
-                        "Set the hardware counter events to record");
+                        "Set the hardware counter events to record (ref: `timemory-avail "
+                        "-H | grep PAPI`)");
     parser
         .add_argument(
             { "--mpi" },
@@ -158,6 +155,13 @@ main(int argc, char** argv)
     parser.add_argument({ "--disable-mpi" }, "Disable MPI_Finalize")
         .count(0)
         .action([](parser_t&) { timem_mpi_was_finalized() = true; });
+    parser
+        .add_argument(
+            { "-o", "--output" },
+            "Write intermediate data to an output process-specific file. Some metrics, "
+            "such as those associated with timers, may report intermediate values (e.g. "
+            "starting timestamps as number of \"seconds\")")
+        .max_count(1);
     parser
         .add_argument({ "-i", "--indiv" },
                       "Output individual results for each process (i.e. rank) instead of "
@@ -193,6 +197,9 @@ main(int argc, char** argv)
     // make sure config is instantiated
     tim::consume_parameters(get_config());
 
+    sample_delay() = std::max<double>(sample_delay(), 1.0e-6);
+    sample_freq()  = std::min<double>(sample_freq(), 5000.);
+
     if(parser.exists("mpi"))
     {
 #if !defined(TIMEMORY_USE_MPI)
@@ -207,8 +214,8 @@ main(int argc, char** argv)
         if(!tim::trait::is_available<papi_array_t>::value)
             throw std::runtime_error("Error! timemory was not built with PAPI support");
 
-        auto              evts = parser.get<std::vector<std::string>>("events");
-        std::stringstream ss;
+        auto           evts = parser.get<std::vector<std::string>>("events");
+        stringstream_t ss;
         for(const auto& itr : evts)
             ss << itr << ",";
         tim::settings::papi_events() = ss.str().substr(0, ss.str().length() - 1);
@@ -224,7 +231,7 @@ main(int argc, char** argv)
     tim::settings::output_prefix()    = "";
 
     auto compose_prefix = [&]() {
-        std::stringstream ss;
+        stringstream_t ss;
         ss << "[" << command().c_str() << "] measurement totals";
         if(use_mpi())
             ss << " (# ranks = " << tim::mpi::size() << "):";
@@ -235,15 +242,28 @@ main(int argc, char** argv)
         return ss.str();
     };
 
-    if(argc > 1)
+    for(int i = 0; i < _argc; ++i)
+        std::cout << _argv[i] << " ";
+    std::cout << std::endl;
+
+    if(_argc > 1)
     {
-        command() = std::string(const_cast<const char*>(_argv[0]));
+        // e.g. timem mycmd
+        command() = std::string(const_cast<const char*>(_argv[1]));
     }
     else
     {
         command()              = std::string(const_cast<const char*>(_argv[0]));
         tim::get_rusage_type() = RUSAGE_CHILDREN;
         exit(EXIT_SUCCESS);
+    }
+
+    if(parser.exists("output"))
+    {
+        auto ofname = parser.get<string_t>("output");
+        if(ofname.empty())
+            ofname = TIMEMORY_JOIN("", argv[0], "-output", '/', command());
+        output_file() = ofname;
     }
 
     if(tim::settings::papi_events().empty())
@@ -287,10 +307,10 @@ main(int argc, char** argv)
     if(use_mpi())
     {
         tim::trait::apply<tim::trait::runtime_enabled>::set<
-            user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
-            num_major_page_faults, num_minor_page_faults, priority_context_switch,
-            voluntary_context_switch, user_mode_time, kernel_mode_time, papi_array_t>(
-            false);
+            child_user_clock, child_system_clock, child_cpu_clock, child_cpu_util,
+            peak_rss, num_major_page_faults, num_minor_page_faults,
+            priority_context_switch, voluntary_context_switch, user_mode_time,
+            kernel_mode_time, papi_array_t>(false);
 
         using info_t      = tim::mpi::info_t;
         using argvector_t = tim::argparse::argument_vector;
@@ -408,10 +428,12 @@ main(int argc, char** argv)
         return cond;
     };
 
-    int ec = 0;
+    int  ec  = 0;
+    auto ofs = std::unique_ptr<std::ofstream>{};
 
     if(failed_fork())
     {
+        puts("Failure to fork");
         exit(EXIT_FAILURE);
     }
     else if(is_child())
@@ -420,6 +442,18 @@ main(int argc, char** argv)
     }
     else
     {
+        // ensure always enabled
+        tim::settings::enabled() = true;
+        if(!output_file().empty())
+        {
+            auto fname = output_file();
+            fname += "-" + std::to_string(worker_pid()) + ".log";
+            auto output_dir = output_file().substr(0, output_file().find_last_of('/'));
+            if(output_dir != output_file())
+                tim::makedir(output_dir);
+            ofs = std::make_unique<std::ofstream>(fname.c_str());
+        }
+
         // means parent process
         /// \variable TIMEM_SAMPLE_DELAY
         /// \brief Environment variable, expressed in seconds, that sets the length
@@ -427,14 +461,14 @@ main(int argc, char** argv)
         /// relevant measurements (components that read from child process status
         /// files)
         ///
-        sampler_t::set_delay(get_config().sample_delay);
+        sampler_t::set_delay(sample_delay());
 
         /// \variable TIMEM_SAMPLE_FREQ
         /// \brief Environment variable, expressed in 1/seconds, that sets the
         /// frequency that the timem executable samples the relevant measurements
         /// (components that read from child process status files)
         ///
-        sampler_t::set_rate(get_config().sample_freq);
+        sampler_t::set_frequency(1.0 / sample_freq());
 
         sampler_t::configure(signal_types(), verbose());
 
@@ -444,6 +478,13 @@ main(int argc, char** argv)
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "starting sampler");
         get_sampler()->start();
+
+        if(ofs)
+        {
+            CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
+                                   "Setting output file");
+            get_measure()->set_output(ofs.get());
+        }
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "target pid = %i",
                                (int) worker_pid());
@@ -485,7 +526,7 @@ read_pid(pid_t _master)
     pid_t _worker = 0;
     // get the child pid from a file
     {
-        std::stringstream fname;
+        stringstream_t fname;
         fname << tim::get_env<std::string>("TMPDIR", "/tmp") << "/.timemory-pid-"
               << _master;
         std::ifstream ifs(fname.str().c_str());
@@ -541,13 +582,13 @@ parent_process(pid_t pid)
     if(_measurements.empty())
         return;
 
-    std::stringstream _oss;
+    stringstream_t _oss;
     for(size_t i = 0; i < _measurements.size(); ++i)
     {
         auto& itr = _measurements.at(i);
         if(itr.empty())
             continue;
-        if(_measurements.size() > 0 && (use_mpi() || tim::mpi::size() > 1))
+        if(!_measurements.empty() && (use_mpi() || tim::mpi::size() > 1))
             itr.set_rank(i);
         _oss << "\n" << itr << std::flush;
     }

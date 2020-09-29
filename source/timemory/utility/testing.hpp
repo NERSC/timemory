@@ -52,34 +52,41 @@
 // EXPECT_FLOAT_EQ
 // EXPECT_DOUBLE_EQ
 
-#define EXPECT_EQ(lhs, rhs)                                                              \
-    if(lhs != rhs)                                                                       \
-    {                                                                                    \
-        std::stringstream ss;                                                            \
-        ss << #lhs << " != " << #rhs << " @ line " << __LINE__ << " of " << __FILE__;    \
-        std::cerr << ss.str() << std::endl;                                              \
-        throw std::runtime_error(ss.str());                                              \
-    }
+#if !defined(EXPECT_EQ)
+#    define EXPECT_EQ(lhs, rhs)                                                          \
+        if(lhs != rhs)                                                                   \
+        {                                                                                \
+            std::stringstream ss;                                                        \
+            ss << #lhs << " != " << #rhs << " @ line " << __LINE__ << " of "             \
+               << __FILE__;                                                              \
+            std::cerr << ss.str() << std::endl;                                          \
+            throw std::runtime_error(ss.str());                                          \
+        }
+#endif
 
-#define ASSERT_FALSE(expr)                                                               \
-    if(expr)                                                                             \
-    {                                                                                    \
-        std::stringstream ss;                                                            \
-        ss << "Expression: ( " << #expr << " ) "                                         \
-           << "failed @ line " << __LINE__ << " of " << __FILE__;                        \
-        std::cerr << ss.str() << std::endl;                                              \
-        throw std::runtime_error(ss.str());                                              \
-    }
+#if !defined(ASSERT_FALSE)
+#    define ASSERT_FALSE(expr)                                                           \
+        if(expr)                                                                         \
+        {                                                                                \
+            std::stringstream ss;                                                        \
+            ss << "Expression: ( " << #expr << " ) "                                     \
+               << "failed @ line " << __LINE__ << " of " << __FILE__;                    \
+            std::cerr << ss.str() << std::endl;                                          \
+            throw std::runtime_error(ss.str());                                          \
+        }
+#endif
 
-#define ASSERT_TRUE(expr)                                                                \
-    if(!(expr))                                                                          \
-    {                                                                                    \
-        std::stringstream ss;                                                            \
-        ss << "Expression: !( " << #expr << " ) "                                        \
-           << "failed @ line " << __LINE__ << " of " << __FILE__;                        \
-        std::cerr << ss.str() << std::endl;                                              \
-        throw std::runtime_error(ss.str());                                              \
-    }
+#if !defined(ASSERT_TRUE)
+#    define ASSERT_TRUE(expr)                                                            \
+        if(!(expr))                                                                      \
+        {                                                                                \
+            std::stringstream ss;                                                        \
+            ss << "Expression: !( " << #expr << " ) "                                    \
+               << "failed @ line " << __LINE__ << " of " << __FILE__;                    \
+            std::cerr << ss.str() << std::endl;                                          \
+            throw std::runtime_error(ss.str());                                          \
+        }
+#endif
 
 inline std::string
 rank_prefix()

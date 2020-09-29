@@ -205,7 +205,7 @@ struct range
         using llu = long long unsigned;
         char desc[512];
         sprintf(desc, "(%llu,%llu,%llu)", (llu) m_begin, (llu) m_end, (llu) m_stride);
-        return std::move(desc);
+        return std::move(desc);  // NOLINT
     }
 
 protected:

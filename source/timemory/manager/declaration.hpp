@@ -38,6 +38,7 @@
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -77,6 +78,7 @@ public:
     using finalizer_pair_t = std::pair<std::string, finalizer_func_t>;
     using finalizer_list_t = std::deque<finalizer_pair_t>;
     using finalizer_void_t = std::multimap<void*, finalizer_func_t>;
+    using settings_ptr_t   = std::shared_ptr<settings>;
     using filemap_t        = std::map<string_t, std::map<string_t, std::set<string_t>>>;
 
 public:
@@ -258,6 +260,7 @@ private:
     finalizer_list_t       m_worker_finalizers  = {};
     finalizer_void_t       m_pointer_fini       = {};
     filemap_t              m_output_files       = {};
+    settings_ptr_t         m_settings = settings::shared_instance<TIMEMORY_API>();
 
 private:
     struct persistent_data
@@ -300,7 +303,7 @@ private:
 public:
     static void set_persistent_master(pointer_t _pinst)
     {
-        tim::manager::f_manager_persistent_data().master_instance = _pinst;
+        tim::manager::f_manager_persistent_data().master_instance = std::move(_pinst);
     }
 
     static void update_settings(const settings& _settings)
@@ -349,7 +352,7 @@ manager::add_finalizer(const std::string& _key, StackFunc&& _stack_func,
     // ensure there are no duplicates
     remove_finalizer(_key);
 
-    m_metadata_prefix = settings::get_output_prefix(true);
+    m_metadata_prefix = settings::get_global_output_prefix(true);
 
     if(m_write_metadata == 0)
         m_write_metadata = 1;
@@ -562,23 +565,5 @@ manager::filtered_get_storage<Types...>::size(pointer_t _manager)
 //
 //--------------------------------------------------------------------------------------//
 //
-extern "C"
-{
-#if !defined(_WINDOWS)
-#    if(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)) &&         \
-        !defined(TIMEMORY_MANAGER_SOURCE)
 
-    extern ::tim::manager* timemory_manager_master_instance();
-    extern void            timemory_library_constructor() __library_ctor__;
-
-#    else
-
-    ::tim::manager* timemory_manager_master_instance();
-    void            timemory_library_constructor() __library_ctor__;
-
-#    endif
-#endif
-}
-//
-//--------------------------------------------------------------------------------------//
-//
+CEREAL_CLASS_VERSION(tim::manager, 0)

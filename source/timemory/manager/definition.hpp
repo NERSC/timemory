@@ -33,7 +33,8 @@
 #include "timemory/manager/declaration.hpp"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
-//
+#include "timemory/utility/signals.hpp"
+
 //--------------------------------------------------------------------------------------//
 //
 //          if not using extern and not compiling manager library, everything
@@ -108,7 +109,7 @@ manager::manager()
     }
 
 #    if !defined(TIMEMORY_DISABLE_BANNER)
-    if(_first && settings::banner())
+    if(_first && m_settings->get_banner())
         printf("#------------------------- tim::manager initialized "
                "[id=%i][pid=%i] "
                "-------------------------#\n",
@@ -134,7 +135,7 @@ manager::~manager()
     }
 
 #    if !defined(TIMEMORY_DISABLE_BANNER)
-    if(_last && settings::banner())
+    if(_last && m_settings && m_settings->get_banner())
     {
         printf("#---------------------- tim::manager destroyed "
                "[rank=%i][id=%i][pid=%i] "
@@ -354,10 +355,10 @@ manager::write_metadata(const char* context)
         return;
     }
 
-    bool _banner      = _settings->m__banner;
-    bool _auto_output = _settings->m__auto_output;
-    bool _file_output = _settings->m__file_output;
-    auto _outp_prefix = _settings->get_output_prefix();
+    bool _banner      = _settings->get_banner();
+    bool _auto_output = _settings->get_auto_output();
+    bool _file_output = _settings->get_file_output();
+    auto _outp_prefix = _settings->get_global_output_prefix();
 
     static bool written = false;
     if(written || m_write_metadata < 1)
@@ -589,38 +590,27 @@ manager::master_instance()
     static auto _pinst = get_shared_ptr_pair_master_instance<manager, TIMEMORY_API>();
     manager::f_manager_persistent_data().master_instance = _pinst;
     return _pinst;
-    // return f_manager_persistent_data().master_instance;
 }
 //
 //----------------------------------------------------------------------------------//
 //
-}  // namespace tim
-//
-//--------------------------------------------------------------------------------------//
-//
-extern "C"
+TIMEMORY_MANAGER_LINKAGE(manager*)
+timemory_manager_master_instance()
 {
+    static auto _pinst = tim::get_shared_ptr_pair<manager, TIMEMORY_API>();
+    manager::set_persistent_master(_pinst.first);
+    return _pinst.first.get();
+}
 //
 //----------------------------------------------------------------------------------//
 //
-#    if defined(_WINDOWS)
-    static
-#    endif
-        ::tim::manager*
-        timemory_manager_master_instance()
-    {
-        static auto _pinst = tim::get_shared_ptr_pair<tim::manager, TIMEMORY_API>();
-        tim::manager::set_persistent_master(_pinst.first);
-        return _pinst.first.get();
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    __library_ctor__ void timemory_library_constructor()
-    {
+TIMEMORY_MANAGER_LINKAGE(void)
+timemory_library_constructor()
+{
+    static auto _preloaded = []() {
         auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
         if(!library_ctor)
-            return;
+            return true;
 
         auto       ld_preload   = tim::get_env<std::string>("LD_PRELOAD", "");
         auto       dyld_preload = tim::get_env<std::string>("DYLD_INSERT_LIBRARIES", "");
@@ -629,40 +619,71 @@ extern "C"
            std::regex_search(dyld_preload, lib_regex))
         {
             tim::set_env("TIMEMORY_LIBRARY_CTOR", "OFF", 1);
-            return;
+            return true;
         }
+        return false;
+    }();
 
-        auto _debug   = tim::settings::debug();
-        auto _verbose = tim::settings::verbose();
+    if(_preloaded)
+        return;
 
-        if(_debug || _verbose > 3)
-            printf("[%s]> initializing manager...\n", __FUNCTION__);
+    static thread_local bool _once = false;
+    if(_once)
+        return;
+    _once = true;
 
-        auto        _inst        = timemory_manager_master_instance();
-        static auto _dir         = tim::settings::output_path();
-        static auto _prefix      = tim::settings::output_prefix();
-        static auto _time_output = tim::settings::time_output();
-        static auto _time_format = tim::settings::time_format();
-        tim::consume_parameters(_dir, _prefix, _time_output, _time_format);
+    auto _debug   = tim::settings::debug();
+    auto _verbose = tim::settings::verbose();
 
-        static auto              _master = tim::manager::master_instance();
-        static thread_local auto _worker = tim::manager::instance();
+    if(_debug || _verbose > 3)
+        printf("[%s]> initializing manager...\n", __FUNCTION__);
 
-        if(!_master && _inst)
-            _master.reset(_inst);
-        else if(!_master)
-            _master = tim::manager::master_instance();
+    auto                     _inst   = timemory_manager_master_instance();
+    static auto              _master = manager::master_instance();
+    static thread_local auto _worker = manager::instance();
 
-        if(_worker != _master)
-            printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
-                   (void*) _master.get(), (void*) _worker.get());
+    if(!_master && _inst)
+        _master.reset(_inst);
+    else if(!_master)
+        _master = manager::master_instance();
 
+    if(_worker == _master)
+    {
         std::atexit(tim::timemory_finalize);
     }
-    //
-    //----------------------------------------------------------------------------------//
-    //
+    else
+    {
+        printf("[%s]> manager :: master != worker : %p vs. %p. TLS behavior is abnormal. "
+               "Report any issues to https://github.com/NERSC/timemory/issues\n",
+               __FUNCTION__, (void*) _master.get(), (void*) _worker.get());
+        if(!signal_settings::is_active())
+        {
+            enable_signal_detection({ sys_signal::SegFault, sys_signal::Bus });
+            auto _exit_action = [](int nsig) {
+                auto _manager = manager::instance();
+                if(_manager)
+                {
+                    std::cout << "Finalizing after signal: " << nsig << std::endl;
+                    _manager->finalize();
+                }
+            };
+            signal_settings::set_exit_action(_exit_action);
+        }
+    }
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if defined(TIMEMORY_MANGER_INLINE)
+namespace
+{
+static auto timemory_library_is_constructed = (timemory_library_constructor(), true);
+}
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //

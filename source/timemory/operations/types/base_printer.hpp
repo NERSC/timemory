@@ -133,7 +133,7 @@ private:
                      << _value.at(i % _vn);
 
             // get display returned an empty string
-            if(ss_value.str().find_first_not_of(" ") == std::string::npos)
+            if(ss_value.str().find_first_not_of(' ') == std::string::npos)
                 continue;
 
             // check traits to see if we should print
@@ -182,7 +182,7 @@ private:
                      << _value.at(i % _vn);
 
             // get display returned an empty string
-            if(ss_value.str().find_first_not_of(" ") == std::string::npos)
+            if(ss_value.str().find_first_not_of(' ') == std::string::npos)
                 continue;
 
             // check traits to see if we should print
@@ -232,7 +232,7 @@ private:
                      << _value.at(i % _vn);
 
             // get display returned an empty string
-            if(ss_value.str().find_first_not_of(" ") == std::string::npos)
+            if(ss_value.str().find_first_not_of(' ') == std::string::npos)
                 continue;
 
             if(i + 1 < _n)
@@ -272,7 +272,7 @@ private:
         ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
 
         // get display returned an empty string
-        if(ss_value.str().find_first_not_of(" ") == std::string::npos)
+        if(ss_value.str().find_first_not_of(' ') == std::string::npos)
             return;
 
         // check traits to see if we should print

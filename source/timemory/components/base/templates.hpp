@@ -41,8 +41,8 @@
 #include "timemory/operations/types/base_printer.hpp"
 #include "timemory/operations/types/serialization.hpp"
 #include "timemory/storage/declaration.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/serializer.hpp"
 
 #include <cassert>
 
@@ -253,3 +253,5 @@ base<Tp, Value>::print(std::ostream&) const
 }  // namespace tim
 //
 //======================================================================================//
+
+#include "timemory/components/opaque/definition.hpp"

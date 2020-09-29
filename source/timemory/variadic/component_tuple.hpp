@@ -39,8 +39,8 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/types.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"
@@ -157,11 +157,11 @@ public:
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    component_tuple(const component_tuple&) = default;
-    component_tuple(component_tuple&&)      = default;
+    component_tuple(const component_tuple&)     = default;
+    component_tuple(component_tuple&&) noexcept = default;
 
     component_tuple& operator=(const component_tuple& rhs) = default;
-    component_tuple& operator=(component_tuple&&) = default;
+    component_tuple& operator=(component_tuple&&) noexcept = default;
 
     component_tuple clone(bool store, scope::config _scope = scope::get_default());
 

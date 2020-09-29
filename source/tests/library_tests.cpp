@@ -361,10 +361,10 @@ TEST_F(library_tests, c_auto_timer_macro)
 
     auto wc_n = wc_size_orig + 2;
     auto cu_n = cu_size_orig + 2;
-    auto cc_n = cc_size_orig + 0;
+    auto cc_n = cc_size_orig + 2;
     auto pr_n = pr_size_orig + 2;
-    auto uc_n = uc_size_orig + 2;
-    auto sc_n = sc_size_orig + 2;
+    auto uc_n = uc_size_orig + 0;
+    auto sc_n = sc_size_orig + 0;
 
     printf("\n");
     printf("wc_size_req = %lu\n", (long unsigned) wc_n);

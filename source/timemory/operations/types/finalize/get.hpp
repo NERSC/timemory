@@ -35,8 +35,9 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/storage/basic_tree.hpp"
+#include "timemory/storage/node.hpp"
 #include "timemory/storage/types.hpp"
-#include "timemory/utility/serializer.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 
 #include <string>
 #include <vector>
@@ -61,7 +62,7 @@ struct get<Type, true>
     using graph_type             = typename storage_type::graph_t;
     using graph_node             = typename storage_type::graph_node;
     using hierarchy_type         = typename storage_type::uintvector_t;
-    using basic_tree_type        = basic_tree<graph_node>;
+    using basic_tree_type        = basic_tree<node::tree<Type>>;
     using basic_tree_vector_type = std::vector<basic_tree_type>;
 
     TIMEMORY_DEFAULT_OBJECT(get)
@@ -441,7 +442,12 @@ get<Type, true>::operator()(basic_tree_vector_type& bt)
     auto& t    = data.graph();
     for(sibling_iterator itr = t.begin(); itr != t.end(); ++itr)
         bt.push_back(basic_tree_type{}(t, itr));
+
+    bt = merge<Type, true>{}(bt);
     return bt;
+    // return (trait::thread_scope_only<Type>::value || !settings::collapse_threads())
+    //           ? bt
+    //           : merge<Type, true>{}(bt);
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -692,14 +692,14 @@ struct result
         return *this;
     }
 
-    result(result&& rhs)
+    result(result&& rhs) noexcept
     {
         std::swap(is_event_value, rhs.is_event_value);
         std::swap(name, rhs.name);
         std::swap(data, rhs.data);
     }
 
-    result& operator=(result&& rhs)
+    result& operator=(result&& rhs) noexcept
     {
         if(this == &rhs)
             return *this;
@@ -921,7 +921,7 @@ public:
     receiver(receiver&& rhs) noexcept
     : m_external_hold(rhs.m_external_hold)
     , m_elapsed(rhs.m_elapsed)
-    , m_named_index_counter(rhs.m_named_index_counter)
+    , m_named_index_counter(rhs.m_named_index_counter)  // NOLINT
     , m_named_elapsed(rhs.m_named_elapsed)
     {
         std::swap(m_data, rhs.m_data);

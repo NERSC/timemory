@@ -38,9 +38,8 @@
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
-#include "timemory/storage/types.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"
@@ -104,57 +103,7 @@ public:
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
 public:
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    static initializer_type& get_initializer()
-    {
-        static initializer_type _instance = [](this_type& cl) {
-            static auto env_enum = []() {
-                auto _tag = demangle<Tag>();
-                for(auto itr : { string_t("tim::"), string_t("api::") })
-                {
-                    auto _pos = _tag.find(itr);
-                    do
-                    {
-                        if(_pos != std::string::npos)
-                            _tag = _tag.erase(_pos, itr.length());
-                        _pos = _tag.find(itr);
-                    } while(_pos != std::string::npos);
-                }
-
-                for(auto itr : { string_t("::"), string_t("<"), string_t(">"),
-                                 string_t(" "), string_t("__") })
-                {
-                    auto _pos = _tag.find(itr);
-                    do
-                    {
-                        if(_pos != std::string::npos)
-                            _tag = _tag.replace(_pos, itr.length(), "_");
-                        _pos = _tag.find(itr);
-                    } while(_pos != std::string::npos);
-                }
-
-                if(_tag.length() > 0 && _tag.at(0) == '_')
-                    _tag = _tag.substr(1);
-                if(_tag.length() > 0 && _tag.at(_tag.size() - 1) == '_')
-                    _tag = _tag.substr(0, _tag.size() - 1);
-
-                for(auto& itr : _tag)
-                    itr = toupper(itr);
-                auto env_var = string_t("TIMEMORY_") + _tag + "_COMPONENTS";
-                if(settings::debug() || settings::verbose() > 0)
-                    PRINT_HERE("%s is using environment variable: '%s'",
-                               demangle<this_type>().c_str(), env_var.c_str());
-
-                // get environment variable
-                return enumerate_components(
-                    tim::delimit(tim::get_env<string_t>(env_var, "")));
-            }();
-            ::tim::initialize(cl, env_enum);
-        };
-        return _instance;
-    }
+    static initializer_type& get_initializer();
 
 public:
     template <typename T, typename... U>
@@ -197,10 +146,10 @@ public:
     //      Copy/move construct and assignment
     //------------------------------------------------------------------------//
     component_bundle(const component_bundle& rhs);
-    component_bundle(component_bundle&&) = default;
+    component_bundle(component_bundle&&) noexcept = default;
 
     component_bundle& operator=(const component_bundle& rhs);
-    component_bundle& operator=(component_bundle&&) = default;
+    component_bundle& operator=(component_bundle&&) noexcept = default;
 
     component_bundle clone(bool store, scope::config _scope = scope::get_default());
 

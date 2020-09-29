@@ -32,11 +32,27 @@ set(@PROJECT_NAME@_INTERFACE_LIBRARIES @TIMEMORY_INTERFACE_LIBRARIES@)
 set(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES @TIMEMORY_EMPTY_INTERFACE_LIBRARIES@)
 
 set(_EMPTY_BUT_REQUIRED_INTERFACES)
+set(_DEPRECATED_INTERFACES nvtx)
 foreach(_EMPTY_INTERFACE ${@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES})
     string(REPLACE "@PROJECT_NAME@-" "" _NAME "${_EMPTY_INTERFACE}")
+    if(_NAME IN_LIST _DEPRECATED_INTERFACES)
+       list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_EMPTY_INTERFACE})
+       list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_NAME})
+       unset(@PROJECT_NAME@_FIND_REQUIRED_${_EMPTY_INTERFACE})
+       unset(@PROJECT_NAME@_FIND_REQUIRED_${_NAME})
+       continue()
+    endif()
     if(@PROJECT_NAME@_FIND_REQUIRED_${_NAME})
         list(APPEND _EMPTY_BUT_REQUIRED_INTERFACES ${_NAME})
     endif()
+endforeach()
+
+foreach(_COMP ${@PROJECT_NAME@_FIND_COMPONENTS})
+    foreach(_DEPRECATED ${_DEPRECATED_INTERFACES})
+        if("${_COMP}" MATCHES ".*${_DEPRECATED}.*")
+            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_COMP})
+        endif()
+    endforeach()
 endforeach()
 
 if(_EMPTY_BUT_REQUIRED_INTERFACES)
@@ -158,6 +174,7 @@ if(TIMEMORY_INSTALL_TREE)
     set(OpenMP_DIR "@OpenMP_DIR@")
     set(Dyninst_DIR "@Dyninst_DIR@")
     set(Boost_DIR "@Boost_DIR@")
+    set(PAPI_DIR "@PAPI_DIR@")
     # set(Kokkos_DIR "@Kokkos_DIR@")
 
     # temporarily override module path for quiet version of FindBoost.cmake
@@ -170,6 +187,7 @@ if(TIMEMORY_INSTALL_TREE)
     timemory_dependent_package(gotcha   @TIMEMORY_USE_GOTCHA@)
     timemory_dependent_package(OpenMP   @TIMEMORY_USE_OMPT@)
     timemory_dependent_package(Dyninst  @TIMEMORY_USE_DYNINST@)
+    timemory_dependent_package(PAPI     @TIMEMORY_USE_PAPI@)
     timemory_dependent_package(Boost    @TIMEMORY_USE_DYNINST@ QUIET COMPONENTS
         "@TIMEMORY_BOOST_COMPONENTS@")
     # timemory_dependent_package(Kokkos @TIMEMORY_USE_KOKKOS@)
@@ -193,7 +211,7 @@ else() # build tree
 
     MACRO(IMPORT_LIB _LIB _IMPORT_TYPE)
         set_property(TARGET ${_LIB} PROPERTY ${_IMPORT_TYPE}
-            "${CMAKE_BINARY_DIR}/@PROJECT_NAME@-build.cmake")
+            "@PROJECT_BINARY_DIR@/@PROJECT_NAME@-build.cmake")
     ENDMACRO()
 
     foreach(_LIB ${@PROJECT_NAME@_INTERFACE_LIBRARIES})

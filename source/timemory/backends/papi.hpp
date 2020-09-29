@@ -445,7 +445,7 @@ print_hw_info()
     printf("\n");
     printf("                    Vendor :   %s\n", hwinfo->vendor_string);
     printf("                     Model :   %s\n", hwinfo->model_string);
-    printf("                   CPU MHz :   %f\n", hwinfo->mhz);
+    printf("                   CPU MHz :   %f\n", static_cast<double>(hwinfo->mhz));
     printf("               CPU Max MHz :   %i\n", hwinfo->cpu_max_mhz);
     printf("               CPU Min MHz :   %i\n", hwinfo->cpu_min_mhz);
     printf("          Total NUMA nodes :   %i\n", hwinfo->nnodes);

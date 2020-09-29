@@ -30,12 +30,12 @@
  */
 
 #include "timemory/api.hpp"
+#include "timemory/macros/language.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/available.hpp"
-#include "timemory/mpl/concepts.hpp"
 #include "timemory/operations/types/cache.hpp"
 #include "timemory/operations/types/generic.hpp"
-#include "timemory/settings/declaration.hpp"
+#include "timemory/settings/settings.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <type_traits>
@@ -378,8 +378,7 @@ TIMEMORY_HOT void
 push(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
-        invoke_impl::invoke<operation::insert_node, ApiT>(obj,
-                                                          std::forward<Args>(args)...);
+        invoke_impl::invoke<operation::push_node, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>

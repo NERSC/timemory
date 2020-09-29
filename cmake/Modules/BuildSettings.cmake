@@ -12,9 +12,14 @@ include(GNUInstallDirs)
 include(Compilers)
 
 
-find_library(dl_LIBRARY NAMES dl)
-if(dl_LIBRARY)
-    target_link_libraries(timemory-compile-options INTERFACE ${dl_LIBRARY})
+if(CMAKE_DL_LIBS)
+    set(dl_LIBRARY ${CMAKE_DL_LIBS})
+    target_link_libraries(timemory-compile-options INTERFACE ${CMAKE_DL_LIBS})
+else()
+    find_library(dl_LIBRARY NAMES dl)
+    if(dl_LIBRARY)
+        target_link_libraries(timemory-compile-options INTERFACE ${dl_LIBRARY})
+    endif()
 endif()
 
 if(WIN32)
@@ -27,38 +32,50 @@ endif()
 # set the compiler flags
 #
 add_flag_if_avail(
-    "-W" "${OS_FLAG}" "-Wno-unknown-pragmas" "-Wno-ignored-attributes" "-Wno-attributes"
-    "-Wno-mismatched-tags" "-Wno-missing-field-initializers")
+    "-W"
+    "${OS_FLAG}"
+    "-Wno-unknown-pragmas"
+    "-Wno-ignored-attributes"
+    "-Wno-attributes"
+    "-Wno-missing-field-initializers")
+
+add_cxx_flag_if_avail(
+    "-Wno-mismatched-tags")
 
 if(CMAKE_CXX_COMPILER_IS_GNU)
-    add_cxx_flag_if_avail("-Wno-class-memaccess")
-    add_cxx_flag_if_avail("-Wno-cast-function-type")
+    add_target_cxx_flag_if_avail(
+        timemory-compile-options
+        "-Wno-class-memaccess"
+        "-Wno-cast-function-type")
 endif()
 
 if(TIMEMORY_BUILD_QUIET)
-    add_flag_if_avail("-Wno-unused-value" "-Wno-unused-function"
-        "-Wno-unknown-pragmas" "-Wno-deprecated-declarations" "-Wno-implicit-fallthrough"
-        "-Wno-unused-command-line-argument"
-        )
-endif()
-
-if(NOT CMAKE_CXX_COMPILER_IS_GNU)
-    # these flags succeed with GNU compiler but are unknown (clang flags)
-    # add_cxx_flag_if_avail("-Wno-exceptions")
-    # add_cxx_flag_if_avail("-Wno-unused-private-field")
-else()
-    # add_cxx_flag_if_avail("-Wno-class-memaccess")
+    add_flag_if_avail(
+        "-Wno-unused-value"
+        "-Wno-unused-function"
+        "-Wno-unknown-pragmas"
+        "-Wno-deprecated-declarations"
+        "-Wno-implicit-fallthrough"
+        "-Wno-unused-command-line-argument")
 endif()
 
 #----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
-    add_flag_if_avail("-finline-functions" "-funroll-loops"
-        "-ftree-vectorize" "-ftree-loop-optimize" "-ftree-loop-vectorize"
-        "-fno-signaling-nans" "-fno-trapping-math"
-        "-fno-signed-zeros" "-ffinite-math-only" "-fno-math-errno"
-        "-fpredictive-commoning" "-fvariable-expansion-in-unroller")
+    add_flag_if_avail(
+        "-finline-functions"
+        "-funroll-loops"
+        "-ftree-vectorize"
+        "-ftree-loop-optimize"
+        "-ftree-loop-vectorize"
+        "-fno-signaling-nans"
+        "-fno-trapping-math"
+        "-fno-signed-zeros"
+        "-ffinite-math-only"
+        "-fno-math-errno"
+        "-fpredictive-commoning"
+        "-fvariable-expansion-in-unroller")
     # add_flag_if_avail("-freciprocal-math" "-fno-signed-zeros" "-mfast-fp")
 endif()
 
@@ -75,12 +92,18 @@ add_target_flag_if_avail(timemory-lto "-flto=thin")
 if(NOT cxx_timemory_lto_flto_thin)
     add_target_flag_if_avail(timemory-lto "-flto")
     if(NOT cxx_timemory_lto_flto)
-        set(TIMEMORY_BUILD_LTO OFF)
         add_disabled_interface(timemory-compile-timing)
+    else()
+        set_target_properties(timemory-lto PROPERTIES
+            INTERFACE_LINK_OPTIONS -flto)
     endif()
+else()
+    set_target_properties(timemory-lto PROPERTIES
+        INTERFACE_LINK_OPTIONS -flto=thin)
 endif()
 
 if(TIMEMORY_BUILD_LTO)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
     target_link_libraries(timemory-compile-options INTERFACE timemory-lto)
 endif()
 
@@ -136,7 +159,13 @@ endif()
 add_interface_library(timemory-develop-options "Adds developer compiler flags")
 if(TIMEMORY_BUILD_DEVELOPER)
     add_target_flag_if_avail(timemory-develop-options
-        "-Wshadow" "-Wextra" "-Wpedantic" "-Werror")
+        # "-Wabi"
+        "-Wdouble-promotion"
+        "-Wshadow"
+        "-Wextra"
+        "-Wpedantic"
+        "-Werror"
+        "/showIncludes")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -144,16 +173,13 @@ endif()
 #
 add_interface_library(timemory-default-visibility
     "Adds -fvisibility=default compiler flag")
-add_interface_library(timemory-protected-visibility
-    "Adds -fvisibility=protected compiler flag")
 add_interface_library(timemory-hidden-visibility
     "Adds -fvisibility=hidden compiler flag")
 
 add_target_flag_if_avail(timemory-default-visibility "-fvisibility=default")
-add_target_flag_if_avail(timemory-protected-visibility "-fvisibility=protected")
 add_target_flag_if_avail(timemory-hidden-visibility "-fvisibility=hidden")
 
-foreach(_TYPE default protected hidden)
+foreach(_TYPE default hidden)
     if(NOT cxx_timemory_${_TYPE}_visibility_fvisibility_${_TYPE})
         add_disabled_interface(timemory-${_TYPE}-visibility)
     else()
@@ -196,18 +222,27 @@ add_cmake_defines(TIMEMORY_VEC VALUE)
 #
 set(SANITIZER_TYPES address memory thread leak undefined unreachable null bounds alignment)
 set_property(CACHE SANITIZER_TYPE PROPERTY STRINGS "${SANITIZER_TYPES}")
-
-foreach(_TYPE ${SANITIZER_TYPES})
-    add_interface_library(timemory-${_TYPE}-sanitizer
-        "Adds compiler flags to enable ${_TYPE} sanitizer (-fsanitizer=${_TYPE})")
-    set(_FLAGS "-fno-optimize-sibling-calls" "-fno-omit-frame-pointer"
-        "-fno-inline-functions" "-fsanitize=${_TYPE}")
-    add_target_flag(timemory-${_TYPE}-sanitizer ${_FLAGS})
-    set_property(TARGET timemory-${_TYPE}-sanitizer PROPERTY INTERFACE_LINK_OPTIONS ${_FLAGS})
-endforeach()
-
+add_interface_library(timemory-sanitizer-compile-options "Adds compiler flags for sanitizers")
 add_interface_library(timemory-sanitizer
     "Adds compiler flags to enable ${SANITIZER_TYPE} sanitizer (-fsanitizer=${SANITIZER_TYPE})")
+
+set(COMMON_SANITIZER_FLAGS "-fno-optimize-sibling-calls" "-fno-omit-frame-pointer" "-fno-inline-functions")
+add_target_flag(timemory-sanitizer-compile-options ${COMMON_SANITIZER_FLAGS})
+
+foreach(_TYPE ${SANITIZER_TYPES})
+    set(_FLAG "-fsanitize=${_TYPE}")
+    add_interface_library(timemory-${_TYPE}-sanitizer
+        "Adds compiler flags to enable ${_TYPE} sanitizer (${_FLAG})")
+    add_target_flag(timemory-${_TYPE}-sanitizer ${_FLAG})
+    target_link_libraries(timemory-${_TYPE}-sanitizer INTERFACE
+        timemory-sanitizer-compile-options)
+    set_property(TARGET timemory-${_TYPE}-sanitizer PROPERTY
+        INTERFACE_LINK_OPTIONS ${_FLAG} ${COMMON_SANITIZER_FLAGS})
+endforeach()
+
+unset(_FLAG)
+unset(COMMON_SANITIZER_FLAGS)
+
 if(TIMEMORY_USE_SANITIZER)
     foreach(_TYPE ${SANITIZER_TYPE})
         if(TARGET timemory-${_TYPE}-sanitizer)

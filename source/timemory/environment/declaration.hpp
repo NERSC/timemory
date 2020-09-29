@@ -22,17 +22,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/environment/declaration.hpp
- * \brief The declaration for the types for environment without definitions
- */
-
 #pragma once
 
 #include "timemory/environment/macros.hpp"
 #include "timemory/environment/types.hpp"
+#include "timemory/macros/os.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
 #include "timemory/utility/utility.hpp"
 
 #include <iosfwd>
@@ -233,3 +229,5 @@ set_env(const std::string& env_var, const Tp& _val, int override)
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
+
+CEREAL_CLASS_VERSION(tim::env_settings, 0)

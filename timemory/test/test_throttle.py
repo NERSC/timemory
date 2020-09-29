@@ -212,7 +212,7 @@ class TimemoryThrottleTests(unittest.TestCase):
 
         # _run function
         def _run(name, idx):
-            tim.trace.push("mthread")
+            name = "{}_{}".format(name, idx)
             n = 2 * settings.throttle_count
             v = 2 * settings.throttle_value
             if (idx % 2 == 1):
@@ -225,11 +225,13 @@ class TimemoryThrottleTests(unittest.TestCase):
                     tim.trace.push(name)
                     tim.trace.pop(name)
 
-            tim.trace.pop("mthread")
             is_throttled[idx] = tim.trace.is_throttled(name)
 
         # thread handles
         threads = []
+
+        # all threads
+        tim.trace.push(self.shortDescription())
 
         # make new threads
         for i in range(self.nthreads):
@@ -241,6 +243,8 @@ class TimemoryThrottleTests(unittest.TestCase):
         # wait for join
         for itr in threads:
             itr.join()
+
+        tim.trace.pop(self.shortDescription())
 
         # check assertion
         for i in range(self.nthreads):

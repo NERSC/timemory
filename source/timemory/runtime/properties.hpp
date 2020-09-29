@@ -143,7 +143,7 @@ do_enumerator_enumerate(component_hash_map_t& _map, component_key_set_t& _set)
             };
 
             _add(_id);
-            for(auto itr : component::properties<type>::ids())
+            for(const auto& itr : component::properties<type>::ids())
                 _add(itr);
         }
     }
@@ -259,7 +259,7 @@ configure(Tp& obj, int idx, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 inline int
-enumerate(std::string key)
+enumerate(const std::string& key)
 {
     using data_t = std::tuple<component_hash_map_t, std::function<void(const char*)>>;
     static auto _data = []() {

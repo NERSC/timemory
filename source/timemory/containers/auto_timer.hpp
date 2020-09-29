@@ -62,17 +62,17 @@ using full_auto_timer_t =
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_MINIMAL_AUTO_TIMER)
-//
-using auto_timer_tuple_t = minimal_auto_tuple_t;
-using auto_timer_list_t  = minimal_auto_list_t;
-using auto_timer         = minimal_auto_timer_t;
-//
-#else
+#if defined(TIMEMORY_FULL_AUTO_TIMER)
 //
 using auto_timer_tuple_t = full_auto_tuple_t;
 using auto_timer_list_t  = full_auto_list_t;
 using auto_timer         = full_auto_timer_t;
+//
+#else
+//
+using auto_timer_tuple_t = minimal_auto_tuple_t;
+using auto_timer_list_t  = minimal_auto_list_t;
+using auto_timer         = minimal_auto_timer_t;
 //
 #endif
 //

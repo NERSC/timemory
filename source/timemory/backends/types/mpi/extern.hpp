@@ -77,13 +77,7 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-#    if defined(TIMEMORY_USE_MPI_INIT_EXTERN) || defined(TIMEMORY_MPI_INIT_SOURCE)
-    extern ::tim::manager* timemory_manager_master_instance();
-#    endif
-    //
-    //----------------------------------------------------------------------------------//
-    //
-#    if defined(TIMEMORY_USE_MPI_INIT_EXTERN)
+#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MPI_INIT_EXTERN)
     //
     //----------------------------------------------------------------------------------//
     //
@@ -104,7 +98,7 @@ extern "C"
             printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
                    __FILE__, __LINE__);
         }
-        auto manager = timemory_manager_master_instance();
+        auto manager = tim::timemory_manager_master_instance();
         if(manager)
             manager->finalize();
         ::tim::dmp::is_finalized() = true;
@@ -124,7 +118,7 @@ extern "C"
         MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_MPI_Finalize, &comm_key, NULL);
         MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, NULL);
 
-        static auto _manager = timemory_manager_master_instance();
+        static auto _manager = tim::timemory_manager_master_instance();
         tim::consume_parameters(_manager);
     }
     //

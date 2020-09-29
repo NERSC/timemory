@@ -141,10 +141,10 @@ public:
     ~auto_bundle();
 
     // copy and move
-    auto_bundle(const this_type&) = default;
-    auto_bundle(this_type&&)      = default;
+    auto_bundle(const this_type&)     = default;
+    auto_bundle(this_type&&) noexcept = default;
     this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) = default;
+    this_type& operator=(this_type&&) noexcept = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 
@@ -371,7 +371,6 @@ auto_bundle<Tag, Types...>::auto_bundle(const string_t& key, quirk::config<T...>
                                          quirk_config<quirk::flat_scope, T...>::value)
                         : component_type{})
 , m_reference_object(nullptr)
-
 {
     if(m_enabled)
     {
@@ -395,7 +394,6 @@ auto_bundle<Tag, Types...>::auto_bundle(const captured_location_t& loc,
                                          quirk_config<quirk::flat_scope, T...>::value)
                         : component_type{})
 , m_reference_object(nullptr)
-
 {
     if(m_enabled)
     {
@@ -417,7 +415,6 @@ auto_bundle<Tag, Types...>::auto_bundle(const string_t& key, scope::config _scop
 , m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
 {
     if(m_enabled)
     {
@@ -437,7 +434,6 @@ auto_bundle<Tag, Types...>::auto_bundle(const captured_location_t& loc,
 , m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
 {
     if(m_enabled)
     {
@@ -456,7 +452,6 @@ auto_bundle<Tag, Types...>::auto_bundle(size_t hash, scope::config _scope,
 , m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
 {
     if(m_enabled)
     {
@@ -493,7 +488,6 @@ auto_bundle<Tag, Types...>::auto_bundle(const string_t& key, bool store,
                    quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
 {
     if(m_enabled)
     {
@@ -514,7 +508,6 @@ auto_bundle<Tag, Types...>::auto_bundle(const captured_location_t& loc, bool sto
                    quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
 {
     if(m_enabled)
     {
@@ -534,7 +527,6 @@ auto_bundle<Tag, Types...>::auto_bundle(size_t hash, bool store, scope::config _
                    quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
 {
     if(m_enabled)
     {

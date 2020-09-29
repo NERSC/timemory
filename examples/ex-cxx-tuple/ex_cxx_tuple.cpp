@@ -222,7 +222,7 @@ test_2_timing()
 {
     print_info(__FUNCTION__);
 
-    auto_tuple_t         runtime(TIMEMORY_JOIN("_", __func__, "runtime"), false);
+    auto_tuple_t runtime(TIMEMORY_JOIN("_", __func__, "runtime"), tim::scope::tree{});
     std::atomic<int64_t> ret;
     {
         TIMEMORY_MARKER(auto_tuple_t, "");

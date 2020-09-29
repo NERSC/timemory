@@ -85,7 +85,7 @@ generate(py::module& _pymod)
     //
     //----------------------------------------------------------------------------------//
     py::module              sig = _pymod.def_submodule("signals", "Signals submodule");
-    py::enum_<sys_signal_t> sys_signal_enum(sig, "sys_signal", py::arithmetic(),
+    py::enum_<sys_signal_t> sys_signal_enum(sig, "Signal", py::arithmetic(),
                                             "Signals for timemory module");
 
     //----------------------------------------------------------------------------------//
@@ -138,9 +138,10 @@ generate(py::module& _pymod)
         .value("ProfileAlarm", sys_signal_t::ProfileAlarm)
         .value("User1", sys_signal_t::User1)
         .value("User2", sys_signal_t::User2);
+    sys_signal_enum.export_values();
 
     return sig;
 }
-};  // namespace pysignals
+}  // namespace pysignals
 //
 //======================================================================================//

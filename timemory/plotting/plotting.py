@@ -144,6 +144,8 @@ _default_font_size = 11
 plotted_files = []
 """ A list of all files that have been plotted """
 
+verbosity = os.environ.get('TIMEMORY_VERBOSE', 0)
+
 #==============================================================================#
 
 
@@ -716,10 +718,15 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
                 output_dir, imgfname), echo_dart)
 
             imgfname = os.path.join(output_dir, imgfname)
-            print("Opening '{}' for output...".format(imgfname))
+            if verbosity > 0:
+                print("Opening '{}' for output...".format(imgfname))
+            else:
+                lbl = os.path.basename(imgfname).strip('.{}'.format(params.img_type))
+                print("[{}]|0> Outputting '{}'...".format(lbl, imgfname))
             plt.savefig(imgfname, dpi=params.img_dpi)
             plt.close()
-            print("Closed '{}'...".format(imgfname))
+            if verbosity > 0:
+                print("Closed '{}'...".format(imgfname))
 
 
 #==============================================================================#

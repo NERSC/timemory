@@ -24,13 +24,13 @@
 
 #pragma once
 
-#include "timemory/components/types.hpp"
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include <tuple>
+#include <type_traits>
 
 namespace tim
 {

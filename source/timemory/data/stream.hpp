@@ -322,7 +322,9 @@ public:
     void delim(char v) { m_delim = v; }
     void setf(format_flags v) { m_format = v; }
 
+    // NOLINTNEXTLINE
     void set_name(string_t v) { m_name = v; }
+    // NOLINTNEXTLINE
     void set_banner(string_t v) { m_banner = v; }
 
     static int64_t index(const string_t& _val, const vector_t<string_t>& _obj)
@@ -450,9 +452,10 @@ public:
             int64_t col = ++norder_col;
 
             stringstream_t _ss;
-            auto           _key    = itr;
-            auto           _offset = offset[_key]++;
-            auto           _idx    = index(_key, obj.m_headers);
+            // NOLINTNEXTLINE
+            auto _key    = itr;
+            auto _offset = offset[_key]++;
+            auto _idx    = index(_key, obj.m_headers);
             if(_idx < 0 ||
                (_idx >= 0 && !(_offset < (int) obj.m_headers[_idx].second.size())))
             {
@@ -493,7 +496,7 @@ public:
                 int64_t col = ++norder_col;
 
                 stringstream_t _ss;
-                auto           _key    = itr;
+                auto           _key    = itr;  // NOLINT
                 auto           _offset = offset[_key]++;
 
                 auto _hidx = index(_key, obj.m_headers);

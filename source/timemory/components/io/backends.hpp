@@ -114,8 +114,8 @@ public:
     ~io_cache()               = default;
     io_cache(const io_cache&) = delete;
     io_cache& operator=(const io_cache&) = delete;
-    io_cache(io_cache&&)                 = default;
-    io_cache& operator=(io_cache&&) = default;
+    io_cache(io_cache&&) noexcept        = default;
+    io_cache& operator=(io_cache&&) noexcept = default;
 
 #if !defined(_LINUX)
 

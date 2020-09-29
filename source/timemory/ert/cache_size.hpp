@@ -30,11 +30,14 @@
 
 #pragma once
 
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <numeric>
 #include <sstream>
@@ -44,11 +47,6 @@
 
 #if defined(_MACOS)
 #    include <sys/sysctl.h>
-#elif defined(_WINDOWS) || defined(_WIN32) || defined(_WIN64)
-#    include <cstdlib>
-#    include <windows.h>
-#elif defined(_LINUX)
-#    include <cstdio>
 #endif
 
 namespace tim
@@ -183,16 +181,16 @@ cache_size()
 
 //======================================================================================//
 
-template <size_t _Level>
+template <size_t Level>
 inline size_t
 get()
 {
     // only enable queries 1, 2, 3
-    static_assert(_Level > 0 && _Level < 4,
+    static_assert(Level > 0 && Level < 4,
                   "Request for cache level that is not supported");
 
     // avoid multiple queries
-    static size_t _value = impl::cache_size(_Level);
+    static size_t _value = impl::cache_size(Level);
     return _value;
 }
 

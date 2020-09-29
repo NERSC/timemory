@@ -37,8 +37,8 @@
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/storage/types.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/serializer.hpp"
 
 //======================================================================================//
 //
@@ -89,48 +89,23 @@ base<Tp, Value>::measure()
 //
 template <typename Tp, typename Value>
 void
-base<Tp, Value>::start()
-{
-    if(!is_running)
-    {
-        // operation::start calls set_started but calling it again here
-        // ensures that if start is called on component which does not
-        // implement a start member function (thus re-entering this function)
-        // then re-entering the function does not introduce an infinite loop
-        set_started();
-        // call derived implementation
-        static_cast<Type*>(this)->start();
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-void
-base<Tp, Value>::stop()
-{
-    if(is_running)
-    {
-        // operation::stop calls set_stopped but calling it again here
-        // ensures that if stop is called on component which does not
-        // implement a stop member function (thus re-entering this function)
-        // then re-entering the function does not introduce an infinite loop
-        set_stopped();
-        // call derived implementation
-        static_cast<Type*>(this)->stop();
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-void
 base<Tp, Value>::get(void*& ptr, size_t typeid_hash) const
 {
     static size_t this_typeid_hash = std::hash<std::string>()(demangle<Type>());
     if(!ptr && typeid_hash == this_typeid_hash)
         ptr = reinterpret_cast<void*>(const_cast<base_type*>(this));
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+/*template <typename Tp, typename Value>
+bool
+base<Tp, Value>::get(void*& ptr, std::type_index type_idx) const
+{
+    if(!ptr && type_idx == std::type_index(typeid(Tp)))
+        return ((ptr = reinterpret_cast<void*>(const_cast<base_type*>(this))), true);
+    return false;
+}*/
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -538,32 +513,6 @@ base<Tp, void>::measure()
 {
     // is_running   = false;
     is_transient = false;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-void
-base<Tp, void>::start()
-{
-    if(!is_running)
-    {
-        set_started();
-        static_cast<Type*>(this)->start();
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-void
-base<Tp, void>::stop()
-{
-    if(is_running)
-    {
-        set_stopped();
-        static_cast<Type*>(this)->stop();
-    }
 }
 //
 //--------------------------------------------------------------------------------------//

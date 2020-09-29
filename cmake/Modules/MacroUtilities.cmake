@@ -370,8 +370,10 @@ MACRO(ADD_INTERFACE_LIBRARY _TARGET)
     add_library(${PROJECT_NAME}::${_TARGET} ALIAS ${_TARGET})
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
     add_enabled_interface(${_TARGET})
-    set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_INTERFACE_DOC
-        "${PROJECT_NAME}::${_TARGET}` | ${ARGN} |")
+    if(NOT "${ARGN}" STREQUAL "")
+        set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_INTERFACE_DOC
+            "${PROJECT_NAME}::${_TARGET}` | ${ARGN} |")
+    endif()
 ENDMACRO()
 
 
@@ -416,7 +418,7 @@ ENDFUNCTION()
 #----------------------------------------------------------------------------------------#
 # macro to build a library of type: shared, static, object
 #
-macro(BUILD_LIBRARY)
+FUNCTION(BUILD_LIBRARY)
 
     # options
     set(_options    PIC NO_CACHE_LIST)
@@ -453,20 +455,28 @@ macro(BUILD_LIBRARY)
         set(LIBRARY_OUTPUT_DIR ${PROJECT_BINARY_DIR})
     endif()
 
-    if(NOT WIN32 AND NOT XCODE)
-        list(APPEND LIBRARY_EXTRA_PROPERTIES
-            VERSION                     ${PROJECT_VERSION}
-            SOVERSION                   ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+    if(NOT "${LIBRARY_TYPE}" STREQUAL "OBJECT")
+        if(NOT WIN32 AND NOT XCODE)
+            list(APPEND LIBRARY_EXTRA_PROPERTIES
+                VERSION                     ${PROJECT_VERSION}
+                SOVERSION                   ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+        endif()
+
+        if(NOT WIN32)
+            set(LIB_PREFIX )
+            list(APPEND LIBRARY_EXTRA_PROPERTIES
+                LIBRARY_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR}
+                ARCHIVE_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR}
+                RUNTIME_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR})
+        else()
+            set(LIB_PREFIX lib)
+        endif()
     endif()
 
-    if(NOT WIN32)
-        set(LIB_PREFIX )
-        list(APPEND LIBRARY_EXTRA_PROPERTIES
-            LIBRARY_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR}
-            ARCHIVE_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR}
-            RUNTIME_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR})
-    else()
-        set(LIB_PREFIX lib)
+    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    set(_CUDA OFF)
+    if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST LANGUAGES)
+        set(_CUDA ON)
     endif()
 
     # add the library or sources
@@ -491,43 +501,83 @@ macro(BUILD_LIBRARY)
         $<$<COMPILE_LANGUAGE:CXX>:${LIBRARY_CXX_COMPILE_OPTIONS}>)
 
     # cuda flags
-    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
-    if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST LANGUAGES)
-        target_compile_options(${LIBRARY_TARGET_NAME}
-            PRIVATE
-                $<$<COMPILE_LANGUAGE:CUDA>:${LIBRARY_CUDA_COMPILE_OPTIONS}>)
-    endif()
-
-    # link options
-    if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-        target_link_options(${LIBRARY_TARGET_NAME} PUBLIC ${LIBRARY_LINK_OPTIONS})
-    elseif(NOT "${LIBRARY_LINK_OPTIONS}" STREQUAL "")
-        list(APPEND LIBRARY_EXTRA_PROPERTIES LINK_OPTIONS ${LIBRARY_LINK_OPTIONS})
+    if(_CUDA)
+        target_compile_options(${LIBRARY_TARGET_NAME} PRIVATE
+            $<$<COMPILE_LANGUAGE:CUDA>:${LIBRARY_CUDA_COMPILE_OPTIONS}>)
     endif()
 
     # link libraries
     target_link_libraries(${LIBRARY_TARGET_NAME}
-        PUBLIC ${LIBRARY_LINK_LIBRARIES})
+        PUBLIC ${LIBRARY_LINK_LIBRARIES}
+        PRIVATE ${_ANALYSIS_TOOLS} ${_ARCH_LIBRARY})
 
     # other properties
-    set_target_properties(
-        ${LIBRARY_TARGET_NAME}      PROPERTIES
-        OUTPUT_NAME                 ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
-        LANGUAGE                    ${LIBRARY_LANGUAGE}
-        LINKER_LANGUAGE             ${LIBRARY_LINKER_LANGUAGE}
-        POSITION_INDEPENDENT_CODE   ${LIBRARY_PIC}
-        ${LIBRARY_EXTRA_PROPERTIES})
+    if(NOT "${LIBRARY_TYPE}" STREQUAL "OBJECT")
+        # link options
+        if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+            target_link_options(${LIBRARY_TARGET_NAME} PUBLIC ${LIBRARY_LINK_OPTIONS})
+        elseif(NOT "${LIBRARY_LINK_OPTIONS}" STREQUAL "")
+            list(APPEND LIBRARY_EXTRA_PROPERTIES LINK_OPTIONS ${LIBRARY_LINK_OPTIONS})
+        endif()
+        #
+        set_target_properties(
+            ${LIBRARY_TARGET_NAME}      PROPERTIES
+            OUTPUT_NAME                 ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
+            LANGUAGE                    ${LIBRARY_LANGUAGE}
+            LINKER_LANGUAGE             ${LIBRARY_LINKER_LANGUAGE}
+            POSITION_INDEPENDENT_CODE   ${LIBRARY_PIC}
+            ${LIBRARY_EXTRA_PROPERTIES})
+    else()
+        set_target_properties(
+            ${LIBRARY_TARGET_NAME}      PROPERTIES
+            LANGUAGE                    ${LIBRARY_LANGUAGE}
+            POSITION_INDEPENDENT_CODE   ${LIBRARY_PIC}
+            ${LIBRARY_EXTRA_PROPERTIES})
+    endif()
 
+    set(COMPILED_TYPES "SHARED" "STATIC" "MODULE")
     if(NOT LIBRARY_NO_CACHE_LIST)
         # add to cached list of compiled libraries
-        set(COMPILED_TYPES "SHARED" "STATIC" "MODULE")
         if("${LIBRARY_TYPE}" IN_LIST COMPILED_TYPES)
             cache_list(APPEND ${PROJECT_NAME_UC}_COMPILED_LIBRARIES ${LIBRARY_TARGET_NAME})
         endif()
     endif()
     unset(COMPILED_TYPES)
 
-endmacro()
+    if(TIMEMORY_USE_PYTHON AND "${LIBRARY_TYPE}" STREQUAL "SHARED")
+        set(_PREFIX ${CMAKE_${LIBRARY_TYPE}_LIBRARY_PREFIX})
+        set(_SUFFIX ${CMAKE_${LIBRARY_TYPE}_LIBRARY_SUFFIX})
+        set(_FILENAME ${_PREFIX}${LIBRARY_OUTPUT_NAME}${_SUFFIX})
+        set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+        if(NOT IS_ABSOLUTE "${_PYLIB}")
+            set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
+        endif()
+
+        file(RELATIVE_PATH INSTALL_RELPATH "${_PYLIB}"
+            "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+        file(RELATIVE_PATH BINARY_RELPATH "${PROJECT_BINARY_DIR}/timemory"
+            "${PROJECT_BINARY_DIR}")
+
+        # build tree
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                ${BINARY_RELPATH}${_FILENAME}
+                ${_FILENAME}
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
+
+        # install tree
+        install(CODE
+"
+IF(EXISTS \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${_FILENAME}\")
+    EXECUTE_PROCESS(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            ${INSTALL_RELPATH}${_FILENAME} ${_PYLIB}/${_FILENAME}
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+ENDIF()
+")
+    endif()
+
+ENDFUNCTION()
 
 
 #----------------------------------------------------------------------------------------#
@@ -538,19 +588,30 @@ function(TIMEMORY_GET_INTERNAL_DEPENDS VAR LINK)
     # link to itself
     set(DEPENDS)
     foreach(DEP ${ARGN})
-        if(TARGET ${DEP})
+        #
+        if(TARGET ${DEP}-object)
+            list(APPEND DEPENDS $<TARGET_OBJECTS:${DEP}-object>)
+        elseif(TARGET ${DEP}-${LINK})
+            list(APPEND DEPENDS ${DEP}-${LINK})
+        elseif(TARGET ${DEP})
             list(APPEND DEPENDS ${DEP})
         endif()
-        if(TARGET ${DEP}-${LINK})
-            list(APPEND DEPENDS ${DEP}-${LINK})
-        endif()
-        if(TARGET ${DEP}-component-${LINK})
+        #
+        if(TARGET ${DEP}-component-object)
+            list(APPEND DEPENDS $<TARGET_OBJECTS:${DEP}-component-object>)
+        elseif(TARGET ${DEP}-component-${LINK})
             list(APPEND DEPENDS ${DEP}-component-${LINK})
         endif()
-        if(TARGET timemory-${DEP}-${LINK})
+        #
+        if(TARGET timemory-${DEP}-object)
+            list(APPEND DEPENDS $<TARGET_OBJECTS:timemory-${DEP}-object>)
+        elseif(TARGET timemory-${DEP}-${LINK})
             list(APPEND DEPENDS timemory-${DEP}-${LINK})
         endif()
-        if(TARGET timemory-${DEP}-component-${LINK})
+        #
+        if(TARGET timemory-${DEP}-component-object)
+            list(APPEND DEPENDS $<TARGET_OBJECTS:timemory-${DEP}-component-object>)
+        elseif(TARGET timemory-${DEP}-component-${LINK})
             list(APPEND DEPENDS timemory-${DEP}-component-${LINK})
         endif()
     endforeach()
@@ -566,7 +627,16 @@ function(TIMEMORY_GET_PROPERTY_DEPENDS VAR LINK)
     set(DEPENDS)
     foreach(DEP ${ARGN})
         get_property(TMP GLOBAL PROPERTY TIMEMORY_${LINK}_${DEP}_LIBRARIES)
-        list(APPEND DEPENDS ${TMP})
+        foreach(_ENTRY ${TMP})
+            if(NOT TARGET ${_ENTRY})
+                continue()
+            endif()
+            if("${LINK}" STREQUAL "OBJECT")
+                list(APPEND DEPENDS $<TARGET_OBJECTS:${_ENTRY}>)
+            else()
+                list(APPEND DEPENDS ${_ENTRY})
+            endif()
+        endforeach()
     endforeach()
     set(${VAR} "${DEPENDS}" PARENT_SCOPE)
 endfunction()
@@ -603,6 +673,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     set(_options    USE_INTERFACE
                     USE_CATEGORY
                     INSTALL_SOURCE
+                    FORCE_OBJECT
                     FORCE_SHARED
                     FORCE_STATIC)
     # single-value
@@ -615,6 +686,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     set(_multival   HEADERS
                     SOURCES
                     DEPENDS
+                    INCLUDES
                     PROPERTY_DEPENDS
                     PUBLIC_LINK
                     PRIVATE_LINK)
@@ -639,16 +711,26 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     
     string(TOUPPER "${COMP_NAME}" UPP_COMP)
     string(REPLACE "-" "_" UPP_COMP "${UPP_COMP}")
+    string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)
 
     set(_LIB_TYPES)
+    set(_LIB_DEFAULT_TYPE)
+
+    if(TIMEMORY_BUILD_LTO OR COMP_FORCE_OBJECT)
+        list(APPEND _LIB_TYPES object)
+        set(object_OPTIONS PIC TYPE OBJECT)
+    endif()
+
     if(_BUILD_SHARED_CXX OR COMP_FORCE_SHARED)
         list(APPEND _LIB_TYPES shared)
         set(shared_OPTIONS PIC TYPE SHARED)
+        set(_LIB_DEFAULT_TYPE shared)
     endif()
 
     if(_BUILD_STATIC_CXX OR COMP_FORCE_STATIC)
         list(APPEND _LIB_TYPES static)
         set(static_OPTIONS TYPE STATIC)
+        set(_LIB_DEFAULT_TYPE static)
     endif()
 
     set(_SOURCES ${COMP_SOURCES} ${COMP_HEADERS})
@@ -658,15 +740,29 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         string(TOUPPER "${LINK}" UPP_LINK)
         set(TARGET_NAME timemory-${COMP_TARGET}-${LINK})
 
-        # set the depends before creating the library so it does not
-        # link to itself
-        timemory_get_internal_depends(DEPENDS ${LINK} ${COMP_DEPENDS})
-        timemory_get_property_depends(PROPERTY_DEPENDS ${UPP_LINK} ${COMP_PROPERTY_DEPENDS})
+        if(NOT "${LINK}" STREQUAL OBJECT AND TARGET timemory-${COMP_TARGET}-object)
+            set(_SOURCES $<TARGET_OBJECTS:timemory-${COMP_TARGET}-object>)
+        endif()
+
+        # set the depends before creating the library so it does not link to itself
+        timemory_get_internal_depends(_DEPENDS ${LINK} ${COMP_DEPENDS})
+        timemory_get_property_depends(_PROPERTY_OBJS OBJECT ${COMP_PROPERTY_DEPENDS})
+        timemory_get_property_depends(_PROPERTY_LINK ${UPP_LINK} ${COMP_PROPERTY_DEPENDS})
+
+        foreach(_DEP ${_DEPENDS} ${_PROPERTY_OBJS} ${_PROPERTY_LINK})
+            if("${_DEP}" MATCHES ".*TARGET_OBJECTS:.*")
+                list(APPEND _SOURCES ${_DEP})
+            else()
+                list(APPEND DEPENDS ${_DEP})
+            endif()
+        endforeach()
 
         set_property(GLOBAL APPEND PROPERTY TIMEMORY_HEADERS ${COMP_HEADERS})
         set_property(GLOBAL APPEND PROPERTY TIMEMORY_SOURCES ${COMP_SOURCES})
         set_property(GLOBAL APPEND PROPERTY TIMEMORY_${UPP_LINK}_${COMP_CATEGORY}_LIBRARIES
             timemory-${COMP_TARGET}-${LINK})
+
+        # message(STATUS "Building ${TARGET_NAME}")
 
         build_library(
             NO_CACHE_LIST
@@ -679,21 +775,20 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             SOURCES             ${_SOURCES}
             CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
 
+        target_include_directories(${TARGET_NAME} PUBLIC ${COMP_INCLUDES})
+
         target_link_libraries(${TARGET_NAME} PUBLIC
-            timemory-external-${LINK}
             timemory-headers
             timemory-vector
             ${DEPENDS}
-            ${PROPERTY_DEPENDS}
             ${COMP_PUBLIC_LINK})
 
         target_link_libraries(${TARGET_NAME} PRIVATE
             timemory-dmp
             timemory-compile-options
             timemory-develop-options
+            timemory-external-${LINK}
             timemory-${COMP_VISIBILITY}-visibility
-            ${_ANALYSIS_TOOLS}
-            ${_ARCH_LIBRARY}
             ${COMP_PRIVATE_LINK})
 
         if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -717,28 +812,57 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
                 TIMEMORY_USE_${COMP_CATEGORY}_EXTERN)
         endif()
+        
+        if("${LINK}" STREQUAL "OBJECT")
+            if(NOT TARGET timemory-${LC_CATEGORY}-${LINK})
+                add_interface_library(timemory-${LC_CATEGORY}-${LINK})
+            endif()
+            if(NOT "timemory-${LC_CATEGORY}-${LINK}" STREQUAL "${TARGET_NAME}")
+                target_sources(timemory-${LC_CATEGORY}-${LINK} INTERFACE
+                    $<TARGET_OBJECTS:${TARGET_NAME}>)
+            endif()
+        else()
+            if(NOT TARGET timemory-${LC_CATEGORY}-${LINK})
+                add_interface_library(timemory-${LC_CATEGORY}-${LINK})
+            endif()
 
-        string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)
+            if(NOT "timemory-${LC_CATEGORY}-${LINK}" STREQUAL "${TARGET_NAME}")
+                target_link_libraries(timemory-${LC_CATEGORY}-${LINK} INTERFACE ${TARGET_NAME})
+            endif()
 
-        install(TARGETS ${TARGET_NAME}
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
-            EXPORT      ${PROJECT_NAME}-library-depends)
+            install(TARGETS ${TARGET_NAME}
+                DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
+                EXPORT      ${PROJECT_NAME}-library-depends)
 
-        set_property(GLOBAL APPEND PROPERTY TIMEMORY_INTERMEDIATE_TARGETS ${TARGET_NAME})
-        set_property(GLOBAL APPEND PROPERTY TIMEMORY_INTERMEDIATE_${UPP_LINK}_TARGETS
-            ${TARGET_NAME})
+            set_property(GLOBAL APPEND PROPERTY TIMEMORY_INTERMEDIATE_TARGETS ${TARGET_NAME})
+            set_property(GLOBAL APPEND PROPERTY TIMEMORY_INTERMEDIATE_${UPP_LINK}_TARGETS
+                ${TARGET_NAME})
+        endif()
 
     endforeach()
 
     if(COMP_INSTALL_SOURCE)
         install_header_files(${COMP_SOURCES})
     endif()
-    
+
+    if(NOT TARGET timemory-${COMP_TARGET})
+        add_interface_library(timemory-${COMP_TARGET})
+        target_link_libraries(timemory-${COMP_TARGET} INTERFACE
+            timemory-${COMP_TARGET}-${_LIB_DEFAULT_TYPE})
+    endif()
+
+    if(NOT TARGET timemory-${LC_CATEGORY})
+        add_interface_library(timemory-${LC_CATEGORY})
+        target_link_libraries(timemory-${LC_CATEGORY} INTERFACE
+            timemory-${LC_CATEGORY}-${_LIB_DEFAULT_TYPE})
+    endif()
+
     if(WIN32 AND TARGET timemory-${COMP_TARGET}-shared AND TARGET timemory-${COMP_TARGET}-static)
         add_dependencies(timemory-${COMP_TARGET}-shared timemory-${COMP_TARGET}-static)
     endif()
 
 endmacro()
+
 
 FUNCTION(ADD_CMAKE_DEFINES _VAR)
     # parse args
@@ -816,7 +940,7 @@ ENDFUNCTION()
 # function print_enabled_features()
 #          Print enabled  features plus their docstrings.
 #
-FUNCTION(print_enabled_features)
+FUNCTION(PRINT_ENABLED_FEATURES)
     set(_basemsg "The following features are defined/enabled (+):")
     set(_currentFeatureText "${_basemsg}")
     get_property(_features GLOBAL PROPERTY ${PROJECT_NAME}_FEATURES)
@@ -864,7 +988,7 @@ ENDFUNCTION()
 # function print_disabled_features()
 #          Print disabled features plus their docstrings.
 #
-FUNCTION(print_disabled_features)
+FUNCTION(PRINT_DISABLED_FEATURES)
     set(_basemsg "The following features are NOT defined/enabled (-):")
     set(_currentFeatureText "${_basemsg}")
     get_property(_features GLOBAL PROPERTY ${PROJECT_NAME}_FEATURES)
@@ -895,7 +1019,7 @@ ENDFUNCTION()
 # function print_enabled_interfaces()
 #          Print enabled INTERFACE libraries plus their docstrings.
 #
-FUNCTION(print_enabled_interfaces)
+FUNCTION(PRINT_ENABLED_INTERFACES)
     set(_basemsg "The following INTERFACE libraries are enabled:")
     set(_currentFeatureText "${_basemsg}")
     get_property(_enabled GLOBAL PROPERTY ${PROJECT_NAME}_ENABLED_INTERFACES)
@@ -924,7 +1048,7 @@ ENDFUNCTION()
 # function print_disabled_interfaces()
 #          Print disabled interfaces plus their docstrings.
 #
-FUNCTION(print_disabled_interfaces)
+FUNCTION(PRINT_DISABLED_INTERFACES)
     set(_basemsg "The following INTERFACE libraries are NOT enabled (empty INTERFACE libraries):")
     set(_currentFeatureText "${_basemsg}")
     get_property(_disabled GLOBAL PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES)
@@ -946,7 +1070,7 @@ ENDFUNCTION()
 # function print_features()
 #          Print all features plus their docstrings.
 #
-FUNCTION(print_features)
+FUNCTION(PRINT_FEATURES)
     message(STATUS "")
     print_enabled_features()
     print_disabled_features()
@@ -956,63 +1080,5 @@ FUNCTION(print_features)
 ENDFUNCTION()
 
 
-#----------------------------------------------------------------------------------------#
-MACRO(DETERMINE_LIBDIR_DEFAULT VAR)
-    set(_LIBDIR_DEFAULT "lib")
-    # Override this default 'lib' with 'lib64' iff:
-    #  - we are on Linux system but NOT cross-compiling
-    #  - we are NOT on debian
-    #  - we are on a 64 bits system
-    # reason is: amd64 ABI: https://github.com/hjl-tools/x86-psABI/wiki/X86-psABI
-    # For Debian with multiarch, use 'lib/${CMAKE_LIBRARY_ARCHITECTURE}' if
-    # CMAKE_LIBRARY_ARCHITECTURE is set (which contains e.g. "i386-linux-gnu"
-    # and CMAKE_INSTALL_PREFIX is "/usr"
-    # See http://wiki.debian.org/Multiarch
-    if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
-        set(__LAST_LIBDIR_DEFAULT "lib")
-        # __LAST_LIBDIR_DEFAULT is the default value that we compute from
-        # _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX, not a cache entry for
-        # the value that was last used as the default.
-        # This value is used to figure out whether the user changed the
-        # LIBDIR_DEFAULT value manually, or if the value was the
-        # default one. When CMAKE_INSTALL_PREFIX changes, the value is
-        # updated to the new default, unless the user explicitly changed it.
-    endif()
-    if(CMAKE_SYSTEM_NAME MATCHES "^(Linux|kFreeBSD|GNU)$"
-            AND NOT CMAKE_CROSSCOMPILING)
-        if (EXISTS "/etc/debian_version") # is this a debian system ?
-            if(CMAKE_LIBRARY_ARCHITECTURE)
-                if("${CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
-                    set(_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
-                endif()
-                if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX
-                        AND "${_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
-                    set(__LAST_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
-                endif()
-            endif()
-        else() # not debian, rely on CMAKE_SIZEOF_VOID_P:
-            if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
-                message(AUTHOR_WARNING
-                    "Unable to determine default LIBDIR_DEFAULT directory "
-                    "because no target architecture is known. "
-                    "Please enable at least one language before including GNUInstallDirs.")
-            else()
-                if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-                    set(_LIBDIR_DEFAULT "lib64")
-                    if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
-                        set(__LAST_LIBDIR_DEFAULT "lib64")
-                    endif()
-                endif()
-            endif()
-        endif()
-    endif()
-
-    # assign the variable
-    set(${VAR} "${_LIBDIR_DEFAULT}")
-ENDMACRO()
-
-#----------------------------------------------------------------------------------------#
-# always determine the default lib directory
-DETERMINE_LIBDIR_DEFAULT(LIBDIR_DEFAULT)
-
 cmake_policy(POP)
+

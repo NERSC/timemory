@@ -292,12 +292,12 @@ check_cost(snippet_t snippet)
     // test copy constructor too.
     copy = snippet;
     cost = snippet.getCost();
-    if(cost < 0.0)
+    if(cost < 0.0f)
         printf("*Error*: negative snippet cost\n");
-    else if(cost == 0.0)
+    else if(cost == 0.0f)
         printf("*Warning*: zero snippet cost\n");
-    else if(cost > 0.01)
-        printf("*Error*: snippet cost of %f, exceeds max expected of 0.1", cost);
+    else if(cost > 0.01f)
+        printf("*Error*: snippet cost of %f, exceeds max expected of 0.1", (double) cost);
 }
 
 //======================================================================================//

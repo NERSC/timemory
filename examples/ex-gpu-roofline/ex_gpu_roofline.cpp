@@ -24,9 +24,10 @@
 //
 
 #if ROOFLINE_FP_BYTES == 2
-#    define TIMEMORY_CUDA_FP16
+#    define TIMEMORY_USE_CUDA_HALF
 #endif
 
+#include "timemory/ert.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/testing.hpp"
@@ -42,7 +43,7 @@ using params_t       = tim::device::params<device_t>;
 using stream_t       = tim::cuda::stream_t;
 using default_device = device_t;
 
-#if !defined(TIMEMORY_DISABLE_CUDA_HALF)
+#if defined(TIMEMORY_USE_CUDA_HALF)
 using fp16_t = tim::cuda::fp16_t;
 #endif
 
@@ -60,7 +61,7 @@ using cpu_roofline_t = cpu_roofline_dp_flops;
 using gpu_roofline_t = gpu_roofline_sp_flops;
 using cpu_roofline_t = cpu_roofline_sp_flops;
 
-#elif(ROOFLINE_FP_BYTES == 2) && !defined(TIMEMORY_DISABLE_CUDA_HALF)
+#elif(ROOFLINE_FP_BYTES == 2) && defined(TIMEMORY_USE_CUDA_HALF)
 
 using gpu_roofline_t = gpu_roofline_hp_flops;
 using cpu_roofline_t = cpu_roofline_sp_flops;
@@ -92,7 +93,7 @@ amypx(int64_t n, Tp* x, Tp* y, int64_t nitr)
 //--------------------------------------------------------------------------------------//
 // amypx calculation
 //
-#if !defined(TIMEMORY_DISABLE_CUDA_HALF)
+#if defined(TIMEMORY_USE_CUDA_HALF)
 template <>
 GLOBAL_CALLABLE void
 amypx(int64_t n, fp16_t* x, fp16_t* y, int64_t nitr)
@@ -156,7 +157,7 @@ exec_amypx(int64_t data_size, int64_t nitr, params_t params,
 }
 
 //--------------------------------------------------------------------------------------//
-#if !defined(TIMEMORY_DISABLE_CUDA_HALF)
+#if defined(TIMEMORY_USE_CUDA_HALF)
 template <>
 void
 exec_amypx<fp16_t>(int64_t data_size, int64_t nitr, params_t params,
@@ -261,7 +262,7 @@ main(int argc, char** argv)
     for(auto& itr : streams)
         tim::cuda::stream_create(itr);
 
-#if !defined(TIMEMORY_DISABLE_CUDA_HALF)
+#if defined(TIMEMORY_USE_CUDA_HALF)
     customize_roofline<fp16_t>(num_threads, working_size, memory_factor, num_streams,
                                grid_size, block_size);
 #endif
@@ -289,10 +290,10 @@ main(int argc, char** argv)
     // run amypx calculations
     //
 
-#if !defined(TIMEMORY_DISABLE_CUDA_HALF)
+#if defined(TIMEMORY_USE_CUDA_HALF)
     {
         printf("Executing fp16 routines...\n");
-        simple_timer_t routine("fp16", false, true);
+        simple_timer_t routine("fp16", tim::scope::tree{}, true);
         exec_amypx<fp16_t>(data_size / 2, iterations * 2, params, streams);
         exec_amypx<fp16_t>(data_size * 1, iterations / 1, params, streams);
         exec_amypx<fp16_t>(data_size * 2, iterations / 2, params, streams);
@@ -301,7 +302,7 @@ main(int argc, char** argv)
 
     {
         printf("Executing fp32 routines...\n");
-        simple_timer_t routine("fp32", false, true);
+        simple_timer_t routine("fp32", tim::scope::tree{}, true);
         exec_amypx<float>(data_size / 2, iterations * 2, params, streams);
         exec_amypx<float>(data_size * 1, iterations / 1, params, streams);
         exec_amypx<float>(data_size * 2, iterations / 2, params, streams);
@@ -309,7 +310,7 @@ main(int argc, char** argv)
 
     {
         printf("Executing fp64 routines...\n");
-        simple_timer_t routine("fp64", false, true);
+        simple_timer_t routine("fp64", tim::scope::tree{}, true);
         exec_amypx<double>(data_size / 2, iterations * 2, params, streams);
         exec_amypx<double>(data_size * 1, iterations / 1, params, streams);
         exec_amypx<double>(data_size * 2, iterations / 2, params, streams);

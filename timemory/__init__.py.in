@@ -219,7 +219,6 @@ else:
                    'units',
                    'options',
                    'signals',
-                   'signals.sys_signal',
                    # --------------- functions -------------#
                    'report',
                    'LINE',

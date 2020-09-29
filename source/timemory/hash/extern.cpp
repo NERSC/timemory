@@ -22,14 +22,5 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//======================================================================================//
-// clang-format off
-//
-#include "timemory/hash/types.hpp"
-#include "timemory/hash/declaration.hpp"
-#include "timemory/hash/definition.hpp"
-//
 #include "timemory/hash/extern.hpp"
-//
-// clang-format on
-//======================================================================================//
+#include "timemory/hash/definition.hpp"

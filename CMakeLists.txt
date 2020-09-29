@@ -27,6 +27,7 @@ if(TIMEMORY_CCACHE_BUILD)
     endif()
 endif()
 
+cmake_policy(SET CMP0022 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
@@ -38,10 +39,6 @@ endif()
 if(NOT CMAKE_VERSION VERSION_LESS 3.18)
     cmake_policy(SET CMP0104 OLD)
 endif()
-# set these as the defaults
-set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
-set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
 # this gets annoying
 if(TIMEMORY_BUILD_GOOGLE_TEST OR TIMEMORY_BUILD_TESTING)
     set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
@@ -94,6 +91,23 @@ endif()
 
 project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
 
+# Check if project is being used directly or via add_subdirectory
+set(${PROJECT_NAME}_MASTER_PROJECT ON)
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(${PROJECT_NAME}_MASTER_PROJECT OFF)
+endif()
+
+# set these as the defaults
+if(timemory_MASTER_PROJECT)
+    set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
+else()
+    set(CMAKE_ENABLE_EXPORTS ON)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 # install directories
 include(GNUInstallDirs)
 # cmake installation folder -- change CMAKE_INSTALL_DATAROOTDIR to tweak this
@@ -109,24 +123,6 @@ foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
     # generic "PROJECT_INSTALL_" variables (used by documentation)"
     set(PROJECT_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${TYPE}DIR})
 endforeach()
-
-configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/version.h.in
-    ${PROJECT_BINARY_DIR}/source/timemory/version.h @ONLY)
-
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${PROJECT_BINARY_DIR}/source/timemory/version.h
-        ${PROJECT_SOURCE_DIR}/source/timemory/version.h
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    ERROR_VARIABLE ERR_MSG
-    RESULT_VARIABLE RET
-)
-
-# Check if project is being used directly or via add_subdirectory
-set(${PROJECT_NAME}_MASTER_PROJECT ON)
-if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    set(${PROJECT_NAME}_MASTER_PROJECT OFF)
-endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
     ${CMAKE_CURRENT_LIST_DIR}/external/pybind11/tools
@@ -219,14 +215,38 @@ unset(_TLS_OPTIONS)
 #----------------------------------------------------------------------------------------#
 
 include(CMakeParseArguments)
+
 message(STATUS "Adding clang-format...")
 include(ClangFormat)
+
 message(STATUS "Configuring compilers...")
 include(Compilers)
+
 message(STATUS "Configuring build settings...")
 include(BuildSettings)
+
 message(STATUS "Configuring external packages and interface libraries...")
 include(Packages)
+
+# only after submodules have been added
+set(CMAKE_UNITY_BUILD ${TIMEMORY_UNITY_BUILD})
+
+set(_HIDE_INLINES ON)
+if(CMAKE_CXX_COMPILER_IS_CLANG AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6)
+  set(_HIDE_INLINES OFF)
+endif()
+
+# set these as the defaults
+if(timemory_MASTER_PROJECT)
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ${_HIDE_INLINES} CACHE BOOL
+        "Add compile flag to hide symbols of inline functions")
+    set(CMAKE_C_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
+    set(CMAKE_CXX_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
+else()
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ${_HIDE_INLINES})
+    set(CMAKE_C_VISIBILITY_PRESET "default")
+    set(CMAKE_CXX_VISIBILITY_PRESET "default")
+endif()
 
 #----------------------------------------------------------------------------------------#
 #   timemory exports
@@ -236,32 +256,6 @@ message(STATUS "Exporting interface libraries...")
 install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}-library-depends)
-
-if(TIMEMORY_BUILD_CALIPER)
-    set(_CALIPER_TARGETS)
-    foreach(CALIPER_TARGET caliper caliper-serial caliper-tools-util caliper-mpi)
-        if(TARGET ${CALIPER_TARGET})
-            list(APPEND _CALIPER_TARGETS ${CALIPER_TARGET})
-        endif()
-    endforeach()
-    list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_CALIPER_TARGETS})
-    install(TARGETS ${_CALIPER_TARGETS}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        EXPORT ${PROJECT_NAME}-library-depends)
-endif()
-
-if(TIMEMORY_BUILD_OMPT)
-    set(_OMPT_TARGETS)
-    foreach(OMPT_TARGET omp omptarget)
-        if(TARGET ${OMPT_TARGET})
-            list(APPEND _OMPT_TARGETS ${OMPT_TARGET})
-        endif()
-    endforeach()
-    list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_OMPT_TARGETS})
-    install(TARGETS ${_OMPT_TARGETS}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        EXPORT ${PROJECT_NAME}-library-depends)
-endif()
 
 #----------------------------------------------------------------------------------------#
 #   timemory source
@@ -292,7 +286,7 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 
 if(TIMEMORY_BUILD_EXAMPLES)
     message(STATUS "Adding examples...")
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING
+    set(timemory_DIR "${PROJECT_BINARY_DIR}" CACHE STRING
         "timemory build examples directory" FORCE)
     add_subdirectory(examples)
 endif()

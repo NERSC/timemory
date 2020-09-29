@@ -22,18 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/environment/extern.hpp
- * \brief Include the extern declarations for environment
- */
-
 #pragma once
 
-//======================================================================================//
-//
 #include "timemory/environment/declaration.hpp"
-#include "timemory/environment/definition.hpp"
 #include "timemory/environment/macros.hpp"
 #include "timemory/environment/types.hpp"
-//
-//======================================================================================//

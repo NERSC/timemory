@@ -8,9 +8,12 @@ endif()
 project(timemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cpu_roofline)
-set(COMPONENTS compile-options analysis-tools cpu-roofline)
+set(COMPONENTS compile-options analysis-tools cpu-roofline ert component)
 
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS mpi)
+
+# this tend to cause the CI to exceed the time-limit
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
 add_library(cpu-fp-single INTERFACE)
 add_library(cpu-fp-double INTERFACE)

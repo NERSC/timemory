@@ -13,9 +13,18 @@ if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     return()
 endif()
 
+if(TIMEMORY_BUILD_DOCS)
+    FIND_PACKAGE(Doxygen)
+    if(NOT Doxygen_FOUND)
+        message(STATUS "Doxygen executable cannot be found. Disable TIMEMORY_BUILD_DOCS")
+        set(TIMEMORY_BUILD_DOCS OFF)
+    endif()
+endif()
+
 #----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_BUILD_DOCS)
+if(TIMEMORY_BUILD_DOCS AND Doxygen_FOUND)
+
     get_property(TIMEMORY_DOXYGEN_DEFINE GLOBAL PROPERTY
         ${PROJECT_NAME}_CMAKE_DEFINES)
     get_property(TIMEMORY_CMAKE_OPTIONS GLOBAL PROPERTY
@@ -181,13 +190,8 @@ endif() # TIMEMORY_BUILD_DOCS
 # Macro to generate documentation
 # from:
 #   http://www.cmake.org/pipermail/cmake/2007-May/014174.html
-MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
+FUNCTION(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
 
-    FIND_PACKAGE(Doxygen)
-    if(NOT Doxygen_FOUND)
-     message(STATUS "Doxygen executable cannot be found. Disable TIMEMORY_BUILD_DOCS")
-	 return()
-    endif()
     SET(DOXYFILE_FOUND false)
 
     IF(EXISTS ${PROJECT_BINARY_DIR}/doc/${DOXYGEN_CONFIG_FILE})
@@ -238,12 +242,12 @@ MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
         MESSAGE(STATUS "Doxygen not found - Documentation will not be generated")
     ENDIF(DOXYGEN_FOUND)
 
-ENDMACRO(GENERATE_DOCUMENTATION)
+ENDFUNCTION()
 
 #----------------------------------------------------------------------------------------#
 # Macro to generate PDF manual from LaTeX using pdflatex
-# assumes manual is in ${CMAKE_SOURCE_DIR}/doc
-MACRO(GENERATE_MANUAL MANUAL_TEX MANUAL_BUILD_PATH EXTRA_FILES_TO_COPY)
+# assumes manual is in ${PROJECT_SOURCE_DIR}/doc
+FUNCTION(GENERATE_MANUAL MANUAL_TEX MANUAL_BUILD_PATH EXTRA_FILES_TO_COPY)
 
     find_program(PDFLATEX pdflatex)
 
@@ -251,18 +255,19 @@ MACRO(GENERATE_MANUAL MANUAL_TEX MANUAL_BUILD_PATH EXTRA_FILES_TO_COPY)
         # name with no path is given
         set(MANUAL_NAME ${MANUAL_TEX})
         # set to full path
-        set(MANUAL_BUILD_PATH ${CMAKE_BINARY_DIR}/${MANUAL_BUILD_PATH})
+        set(MANUAL_BUILD_PATH ${PROJECT_BINARY_DIR}/${MANUAL_BUILD_PATH})
 
-        if(NOT EXISTS ${CMAKE_SOURCE_DIR}/doc/${MANUAL_TEX})
-            message(FATAL_ERROR "LaTeX of manual for ${PROJECT_NAME} is not in ${CMAKE_SOURCE_DIR}/doc")
+        if(NOT EXISTS ${PROJECT_SOURCE_DIR}/doc/${MANUAL_TEX})
+            message(FATAL_ERROR
+                "LaTeX of manual for ${PROJECT_NAME} is not in ${PROJECT_SOURCE_DIR}/doc")
         endif()
 
-        configure_file(${CMAKE_SOURCE_DIR}/doc/${MANUAL_TEX}
+        configure_file(${PROJECT_SOURCE_DIR}/doc/${MANUAL_TEX}
                        ${MANUAL_BUILD_PATH}/${MANUAL_NAME}
                        COPYONLY)
 
         foreach(_file ${EXTRA_FILES_TO_COPY})
-            configure_file(${CMAKE_SOURCE_DIR}/doc/${_file}
+            configure_file(${PROJECT_SOURCE_DIR}/doc/${_file}
                            ${MANUAL_BUILD_PATH}/${_file}
                            COPYONLY)
         endforeach()
@@ -273,4 +278,4 @@ MACRO(GENERATE_MANUAL MANUAL_TEX MANUAL_BUILD_PATH EXTRA_FILES_TO_COPY)
                             ${MANUAL_BUILD_PATH}
         )
     endif()
-ENDMACRO()
+ENDFUNCTION()

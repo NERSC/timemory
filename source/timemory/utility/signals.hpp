@@ -251,7 +251,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 inline bool
 enable_signal_detection(signal_settings::signal_set_t operations)
 {
-    if(!settings::allow_signal_handler())
+    if(!signal_settings::allow())
     {
         if(signal_settings::is_active())
             disable_signal_detection();
@@ -306,7 +306,7 @@ disable_signal_detection()
     sigemptyset(&tim_signal_termaction().sa_mask);
     tim_signal_termaction().sa_handler = SIG_DFL;
 
-    auto _disable = [](signal_settings::signal_set_t _set) {
+    auto _disable = [](const signal_settings::signal_set_t& _set) {
         for(auto itr = _set.cbegin(); itr != _set.cend(); ++itr)
         {
             int _itr = static_cast<int>(*itr);

@@ -89,8 +89,7 @@ timer_decorator(const std::string& key, bool report_at_exit)
     auto_timer_decorator* _ptr = new auto_timer_decorator();
     if(!tim::settings::enabled())
         return _ptr;
-    return &(*_ptr =
-                 new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit));
+    return &(*_ptr = new auto_timer_t(key, tim::scope::get_default(), report_at_exit));
 }
 //
 }  // namespace init

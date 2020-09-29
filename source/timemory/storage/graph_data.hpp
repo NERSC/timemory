@@ -33,6 +33,7 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/graph.hpp"
@@ -142,7 +143,8 @@ public:
         auto _id      = _current->id();
         auto _depth   = _current->depth();
 
-        NodeT node(_id, NodeT::get_dummy(), _depth, threading::get_id());
+        NodeT node(_id, NodeT::get_dummy(), _depth, threading::get_id(),
+                   process::get_id(), true);
         m_depth     = _depth;
         m_sea_level = _depth;
         m_current   = m_graph.insert_after(m_head, node);

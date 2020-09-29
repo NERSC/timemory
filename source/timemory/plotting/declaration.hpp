@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/plotting/declaration.hpp
- * \brief The declaration for the types for plotting without definitions
- */
-
 #pragma once
 
 #include "timemory/plotting/macros.hpp"
@@ -55,14 +50,15 @@ namespace plotting
 //--------------------------------------------------------------------------------------//
 //
 void
-plot(std::string _label, std::string _prefix, const std::string& _dir, bool _echo_dart,
-     std::string _json_file);
+plot(const std::string& _label, const std::string& _prefix, const std::string& _dir,
+     bool _echo_dart, const std::string& _json_file) TIMEMORY_VISIBILITY("default");
 //
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types,
-          typename std::enable_if<(sizeof...(Types) > 0), int>::type = 0>
 void
+echo_dart_file(const string_t& filepath, attributes_t attributes)
+    TIMEMORY_VISIBILITY("default");
+//
+template <typename... Types>
+std::enable_if_t<(sizeof...(Types) > 0), void>
 plot(std::string _prefix = "", const std::string& _dir = settings::output_path(),
      bool _echo_dart = settings::dart_output(), std::string _json_file = "");
 //
@@ -153,9 +149,10 @@ struct plot<type_list<Types...>> : plot<Types...>
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename... Types, typename std::enable_if<(sizeof...(Types) > 0), int>::type>
-void
-plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_file)
+template <typename... Types>
+std::enable_if_t<(sizeof...(Types) > 0), void>
+plot(const string_t& _prefix, const string_t& _dir, bool _echo_dart,
+     const string_t& _json_file)
 {
     impl::plot<Types...>::generate(_prefix, _dir, _echo_dart, _json_file);
 }
@@ -175,7 +172,7 @@ echo_dart_file(const string_t& filepath, attributes_t attributes)
         return _str;
     };
 
-    auto contains = [&lowercase](const string_t& str, std::set<string_t> items) {
+    auto contains = [&lowercase](const string_t& str, const std::set<string_t>& items) {
         for(const auto& itr : items)
         {
             if(lowercase(str).find(itr) != string_t::npos)
@@ -191,12 +188,12 @@ echo_dart_file(const string_t& filepath, attributes_t attributes)
     if(attributes.find("name") == attributes.end())
     {
         auto name = filepath;
-        if(name.find("/") != string_t::npos)
-            name = name.substr(name.find_last_of("/") + 1);
-        if(name.find("\\") != string_t::npos)
-            name = name.substr(name.find_last_of("\\") + 1);
-        if(name.find(".") != string_t::npos)
-            name.erase(name.find_last_of("."));
+        if(name.find('/') != string_t::npos)
+            name = name.substr(name.find_last_of('/') + 1);
+        if(name.find('\\') != string_t::npos)
+            name = name.substr(name.find_last_of('\\') + 1);
+        if(name.find('.') != string_t::npos)
+            name.erase(name.find_last_of('.'));
         attributes["name"] = name;
     }
 

@@ -32,6 +32,8 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/storage/basic_tree.hpp"
+#include "timemory/storage/graph.hpp"
 
 namespace tim
 {
@@ -210,6 +212,201 @@ merge<Type, true>::merge(result_type& dst, const result_type& src)
         }
     }
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+basic_tree<Tp>
+merge<Type, true>::operator()(const basic_tree<Tp>& _bt)
+{
+    using children_type = typename basic_tree<Tp>::children_type;
+
+    // do nothing if no children
+    if(_bt.get_children().empty())
+        return _bt;
+
+    // make copy
+    auto _ret = _bt;
+    // recursively apply
+    for(auto& itr : _ret.get_children())
+        itr = (*this)(itr);
+
+    // aggregate children
+    children_type _children{};
+    for(auto& itr : _ret.get_children())
+    {
+        bool found = false;
+        for(auto& citr : _children)
+        {
+            if(citr == itr)
+            {
+                found = true;
+                citr += itr;
+            }
+        }
+        if(!found)
+            _children.push_back(itr);
+    }
+
+    // update new children
+    _ret.get_children() = _children;
+    return _ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+basic_tree<Tp>
+merge<Type, true>::operator()(const basic_tree<Tp>& _lhs, const basic_tree<Tp>& _rhs)
+{
+    return basic_tree<Tp>{ _lhs } += _rhs;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+std::vector<basic_tree<Tp>>
+merge<Type, true>::operator()(const std::vector<basic_tree<Tp>>& _bt)
+{
+    auto _ret = _bt;
+    for(auto& itr : _ret)
+        itr = (*this)(itr);
+    return _ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+std::vector<basic_tree<Tp>>
+merge<Type, true>::operator()(const std::vector<basic_tree<Tp>>& _lhs,
+                              const std::vector<basic_tree<Tp>>& _rhs)
+{
+    using basic_t      = basic_tree<Tp>;
+    using basic_vec_t  = std::vector<basic_t>;
+    using basic_map_t  = std::map<size_t, basic_t>;
+    using basic_bool_t = std::vector<bool>;
+
+    auto _p  = basic_map_t{};  // map of paired instances in lhs and rhs
+    auto _ul = basic_map_t{};  // map of unpaired instances in lhs
+    auto _ur = basic_map_t{};  // map of unpaired instances in rhs
+    auto _bl = basic_bool_t(_lhs.size(), false);  // track if unpaired
+    auto _br = basic_bool_t(_rhs.size(), false);
+    for(size_t i = 0; i < _lhs.size(); ++i)
+    {
+        const auto& _l = _lhs.at(i);
+        // look for any matches b/t lhs and rhs
+        for(size_t j = 0; j < _rhs.size(); ++j)
+        {
+            const auto& _r = _rhs.at(j);
+            if(_l == _r)
+            {
+                _bl.at(i) = true;
+                _br.at(j) = true;
+                if(_p.find(i) == _p.end())
+                    _p[i] = (*this)(_l);
+                _p[i] += (*this)(_r);
+            }
+        }
+        // insert any unmatched instances into unused-lhs map
+        if(!_bl.at(i))
+            _ul[i] = (*this)(_l);
+    }
+
+    for(size_t j = 0; j < _rhs.size(); ++j)
+    {
+        // insert any unmatched instances into unused-rhs map
+        const auto& _r = _rhs.at(j);
+        if(!_br.at(j))
+            _ur[j] = (*this)(_r);
+    }
+
+    // create the final product
+    auto _ret = basic_vec_t{};
+    auto n    = std::max<size_t>(_lhs.size(), _rhs.size());
+    for(size_t i = 0; i < n; ++i)
+    {
+        auto _append = [&](auto& _obj) {
+            auto itr = _obj.find(i);
+            if(itr != _obj.end())
+                _ret.push_back(itr->second);
+        };
+        _append(_p);
+        _append(_ul);
+        _append(_ur);
+    }
+
+    return (*this)(_ret);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Tp>
+std::vector<basic_tree<Tp>>
+merge<Type, true>::operator()(const std::vector<std::vector<basic_tree<Tp>>>& _bt,
+                              size_t                                          _root)
+{
+    if(_bt.empty())
+        return _bt;
+
+    if(_root >= _bt.size())
+        _root = 0;
+    auto _ret = _bt.at(_root);
+    for(size_t i = 0; i < _ret.size(); ++i)
+    {
+        if(i == _root)
+            continue;
+        _ret = (*this)(_ret, _ret.at(i));
+    }
+
+    return (*this)(_ret);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+/*template <typename Type>
+template <typename Tp>
+void
+merge<Type, true>::operator()(GraphT& _g, ItrT _root, ItrT _rhs)
+{
+    using pre_order_iterator = typename GraphT::pre_order_iterator;
+    using sibling_iterator   = typename GraphT::sibling_iterator;
+
+    auto _equiv = [](ItrT _lhs, ItrT _rhs) {
+        if(_lhs->depth() != _rhs->depth())
+            return false;
+        auto _lhs_id = get_hash_id(get_hash_aliases(), _lhs->id());
+        auto _rhs_id = get_hash_id(get_hash_aliases(), _rhs->id());
+        return (_lhs_id == _rhs_id);
+    };
+
+    for(sibling_iterator ritr = _rhs.begin(); ritr != _rhs.end(); ++ritr)
+    {
+        bool found = false;
+        for(sibling_iterator itr = _root.begin(); itr != _root.end(); ++itr)
+        {
+            if(_equiv(ritr, itr))
+            {
+                found = true;
+                if(itr != ritr)
+                {
+                    itr->data() += ritr->data();
+                    itr->data().plus(ritr->data());
+                    itr->stats() += ritr->stats();
+                }
+            }
+        }
+        if(!found)
+        {
+            pre_order_iterator citr = ritr;
+            _g.append_child(_root, citr);
+        }
+    }
+}*/
 //
 //--------------------------------------------------------------------------------------//
 //

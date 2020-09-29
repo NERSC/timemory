@@ -134,7 +134,7 @@ using range_id_t = uint32_t;
 
 struct message_t
 {
-    std::string ascii = "";
+    std::string ascii;
 };
 
 //--------------------------------------------------------------------------------------//

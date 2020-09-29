@@ -22,15 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/settings/macros.hpp
- * \brief Include the macros for settings
- */
-
 #pragma once
 
 #include "timemory/compat/macros.h"
-#include "timemory/dll.hpp"
 
 #if defined(TIMEMORY_CORE_SOURCE)
 #    define TIMEMORY_SETTINGS_SOURCE
@@ -43,10 +37,16 @@
 #endif
 //
 #if defined(TIMEMORY_SETTINGS_SOURCE)
+#    define TIMEMORY_SETTINGS_COMPILE_MODE
+#    define TIMEMORY_SETTINGS_INLINE
 #    define TIMEMORY_SETTINGS_LINKAGE(...) __VA_ARGS__
 #elif defined(TIMEMORY_USE_SETTINGS_EXTERN)
+#    define TIMEMORY_SETTINGS_EXTERN_MODE
+#    define TIMEMORY_SETTINGS_INLINE
 #    define TIMEMORY_SETTINGS_LINKAGE(...) __VA_ARGS__
 #else
+#    define TIMEMORY_SETTINGS_HEADER_MODE
+#    define TIMEMORY_SETTINGS_INLINE inline
 #    define TIMEMORY_SETTINGS_LINKAGE(...) inline __VA_ARGS__
 #endif
 //
@@ -55,7 +55,10 @@
 #if !defined(TIMEMORY_STATIC_ACCESSOR)
 #    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
     public:                                                                              \
-        static TYPE& FUNC() { return instance()->m__##FUNC; }                            \
+        static TYPE& FUNC() TIMEMORY_VISIBILITY("default")                               \
+        {                                                                                \
+            return instance()->m__##FUNC;                                                \
+        }                                                                                \
                                                                                          \
     private:                                                                             \
         TYPE m__##FUNC = INIT;
@@ -63,56 +66,90 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_STATIC_SETTING_INITIALIZER)
-#    define TIMEMORY_STATIC_SETTING_INITIALIZER(TYPE, FUNC, ENV_VAR, DESC, INIT)         \
-    private:                                                                             \
-        static TYPE generate__##FUNC()                                                   \
+#if !defined(TIMEMORY_SETTINGS_MEMBER_DECL)
+#    define TIMEMORY_SETTINGS_MEMBER_DECL(TYPE, FUNC, ENV_VAR)                           \
+    public:                                                                              \
+        TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            auto _parse = []() { FUNC() = tim::get_env<TYPE>(ENV_VAR, FUNC()); };        \
-            get_setting_descriptions()[ENV_VAR] = DESC;                                  \
-            get_parse_callbacks()[ENV_VAR]      = _parse;                                \
-            return get_env<TYPE>(ENV_VAR, INIT);                                         \
+            return static_cast<tsettings<TYPE>*>(m_data[ENV_VAR].get())->get();          \
+        }                                                                                \
+                                                                                         \
+        TYPE get_##FUNC() const                                                          \
+        {                                                                                \
+            auto ret = m_data.find(ENV_VAR);                                             \
+            if(ret == m_data.end())                                                      \
+                return TYPE{};                                                           \
+            if(!ret->second)                                                             \
+                return TYPE{};                                                           \
+            return static_cast<tsettings<TYPE>*>(ret->second.get())->get();              \
+        }                                                                                \
+                                                                                         \
+        static TYPE& FUNC() TIMEMORY_VISIBILITY("default")                               \
+        {                                                                                \
+            return instance()->get_##FUNC();                                             \
         }
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_MEMBER_STATIC_ACCESSOR)
-#    define TIMEMORY_MEMBER_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, DESC, INIT)             \
+#if !defined(TIMEMORY_SETTINGS_REFERENCE_DECL)
+#    define TIMEMORY_SETTINGS_REFERENCE_DECL(TYPE, FUNC, ENV_VAR)                        \
     public:                                                                              \
-        static TYPE& FUNC() { return instance()->m__##FUNC; }                            \
-                                                                                         \
-    private:                                                                             \
-        TYPE generate__##FUNC()                                                          \
+        TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            auto _parse = []() { FUNC() = tim::get_env<TYPE>(ENV_VAR, FUNC()); };        \
-            get_setting_descriptions()[ENV_VAR] = DESC;                                  \
-            get_parse_callbacks()[ENV_VAR]      = _parse;                                \
-            return get_env<TYPE>(ENV_VAR, INIT);                                         \
+            return static_cast<tsettings<TYPE, TYPE&>*>(m_data[ENV_VAR].get())->get();   \
         }                                                                                \
-        TYPE m__##FUNC = generate__##FUNC();
+                                                                                         \
+        TYPE get_##FUNC() const                                                          \
+        {                                                                                \
+            auto ret = m_data.find(ENV_VAR);                                             \
+            if(ret == m_data.end())                                                      \
+                return TYPE{};                                                           \
+            if(!ret->second)                                                             \
+                return TYPE{};                                                           \
+            return static_cast<tsettings<TYPE, TYPE&>*>(ret->second.get())->get();       \
+        }                                                                                \
+                                                                                         \
+        static TYPE& FUNC() TIMEMORY_VISIBILITY("default")                               \
+        {                                                                                \
+            return instance()->get_##FUNC();                                             \
+        }
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_MEMBER_STATIC_REFERENCE)
-#    define TIMEMORY_MEMBER_STATIC_REFERENCE(TYPE, FUNC, ENV_VAR, DESC, GETTER, SETTER)  \
-    public:                                                                              \
-        static TYPE& FUNC() { return *(instance()->m__##FUNC); }                         \
-                                                                                         \
-    private:                                                                             \
-        TYPE* generate__##FUNC()                                                         \
-        {                                                                                \
-            auto _parse = []() {                                                         \
-                auto ret = tim::get_env<TYPE>(ENV_VAR, GETTER());                        \
-                GETTER() = ret;                                                          \
-                SETTER(ret);                                                             \
-            };                                                                           \
-            get_setting_descriptions()[ENV_VAR] = DESC;                                  \
-            get_parse_callbacks()[ENV_VAR]      = _parse;                                \
-            return &GETTER();                                                            \
-        }                                                                                \
-        TYPE* m__##FUNC = generate__##FUNC();
+#if !defined(TIMEMORY_SETTINGS_MEMBER_IMPL)
+#    define TIMEMORY_SETTINGS_MEMBER_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT)               \
+        m_order.push_back(ENV_VAR);                                                      \
+        m_data.insert(                                                                   \
+            { ENV_VAR, std::make_shared<tsettings<TYPE>>(INIT, #FUNC, ENV_VAR, DESC) });
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_SETTINGS_MEMBER_ARG_IMPL)
+#    define TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT, ...)      \
+        m_order.push_back(ENV_VAR);                                                      \
+        m_data.insert({ ENV_VAR, std::make_shared<tsettings<TYPE>>(                      \
+                                     INIT, #FUNC, ENV_VAR, DESC, __VA_ARGS__) });
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_SETTINGS_REFERENCE_IMPL)
+#    define TIMEMORY_SETTINGS_REFERENCE_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT)            \
+        m_order.push_back(ENV_VAR);                                                      \
+        m_data.insert({ ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(               \
+                                     INIT, #FUNC, ENV_VAR, DESC) });
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL)
+#    define TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT, ...)   \
+        m_order.push_back(ENV_VAR);                                                      \
+        m_data.insert({ ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(               \
+                                     INIT, #FUNC, ENV_VAR, DESC, __VA_ARGS__) });
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -148,6 +185,22 @@
             {                                                                            \
             template std::shared_ptr<settings> settings::shared_instance<API>();         \
             template settings*                 settings::instance<API>();                \
+            template void settings::serialize_settings(cereal::JSONInputArchive&);       \
+            template void settings::serialize_settings(                                  \
+                cereal::PrettyJSONOutputArchive&);                                       \
+            template void settings::serialize_settings(                                  \
+                cereal::MinimalJSONOutputArchive&);                                      \
+            template void settings::serialize_settings(cereal::JSONInputArchive&,        \
+                                                       settings&);                       \
+            template void settings::serialize_settings(cereal::PrettyJSONOutputArchive&, \
+                                                       settings&);                       \
+            template void settings::serialize_settings(                                  \
+                cereal::MinimalJSONOutputArchive&, settings&);                           \
+            template void settings::save(cereal::PrettyJSONOutputArchive&,               \
+                                         const unsigned int) const;                      \
+            template void settings::save(cereal::MinimalJSONOutputArchive&,              \
+                                         const unsigned int) const;                      \
+            template void settings::load(cereal::JSONInputArchive&, const unsigned int); \
             }
 //
 #    elif defined(TIMEMORY_USE_SETTINGS_EXTERN)
@@ -157,6 +210,24 @@
             {                                                                            \
             extern template std::shared_ptr<settings> settings::shared_instance<API>();  \
             extern template settings*                 settings::instance<API>();         \
+            extern template void                      settings::serialize_settings(      \
+                cereal::JSONInputArchive&);                         \
+            extern template void settings::serialize_settings(                           \
+                cereal::PrettyJSONOutputArchive&);                                       \
+            extern template void settings::serialize_settings(                           \
+                cereal::MinimalJSONOutputArchive&);                                      \
+            extern template void settings::serialize_settings(cereal::JSONInputArchive&, \
+                                                              settings&);                \
+            extern template void settings::serialize_settings(                           \
+                cereal::PrettyJSONOutputArchive&, settings&);                            \
+            extern template void settings::serialize_settings(                           \
+                cereal::MinimalJSONOutputArchive&, settings&);                           \
+            extern template void settings::save(cereal::PrettyJSONOutputArchive&,        \
+                                                const unsigned int) const;               \
+            extern template void settings::save(cereal::MinimalJSONOutputArchive&,       \
+                                                const unsigned int) const;               \
+            extern template void settings::load(cereal::JSONInputArchive&,               \
+                                                const unsigned int);                     \
             }
 //
 #    else

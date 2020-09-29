@@ -23,8 +23,8 @@
 // SOFTWARE.
 
 /**
- * \file timemory/operations/types/insert_node.hpp
- * \brief Definition for various functions for insert_node in operations
+ * \file timemory/operations/types/push_node.hpp
+ * \brief Definition for various functions for push_node in operations
  */
 
 #pragma once
@@ -49,18 +49,19 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-struct insert_node
+struct push_node
 {
     using type       = Tp;
     using value_type = typename type::value_type;
 
-    TIMEMORY_DELETED_OBJECT(insert_node)
+    TIMEMORY_DELETED_OBJECT(push_node)
 
-    insert_node(type& obj, scope::config _scope, int64_t _hash)
+    push_node(type& obj, scope::config _scope, int64_t _hash)
     {
         if(!trait::runtime_enabled<type>::get())
             return;
 
+        init_storage<Tp>::init();
         sfinae(obj, 0, 0, 0, _scope, _hash);
     }
 
@@ -74,7 +75,7 @@ private:
                     void())
     {
         using storage_type = storage<Tp, value_type>;
-        // obj.insert_node(std::forward<Args>(args)...);
+        // obj.push_node(std::forward<Args>(args)...);
         if(!_obj.is_on_stack)
         {
             _obj.is_on_stack = true;

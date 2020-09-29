@@ -1,6 +1,5 @@
 ---
 Checks: "-*,\
-google-readability-casting,\
 misc-*,\
 -misc-incorrect-roundings,\
 -misc-macro-parentheses,\
@@ -33,10 +32,9 @@ readability-*,\
 -readability-simplify-boolean-expr,\
 -readability-magic-numbers,\
 -readability-uppercase-literal-suffix,\
--google-readability-casting,\
--header-filter=.*/timemory/.*.\
+-header-filter=.*timemory/.*,\
 "
-HeaderFilterRegex: 'source/[^/]*\.(hh|cc|h|c|hpp|cpp|icpp)$'
+HeaderFilterRegex: '.*timemory.*.hpp'
 CheckOptions:
   - key:             readability-braces-around-statements.ShortStatementLines
     value:           '2'

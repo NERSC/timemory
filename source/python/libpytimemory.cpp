@@ -154,7 +154,11 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     //
     using pytim::string_t;
-    py::add_ostream_redirect(tim, "ostream_redirect");
+    try
+    {
+        py::add_ostream_redirect(tim, "ostream_redirect");
+    } catch(std::exception&)
+    {}
 
     //==================================================================================//
     //

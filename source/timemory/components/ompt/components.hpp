@@ -95,17 +95,14 @@ struct ompt_handle
         consume_parameters(_data_tracker);
     }
 
-    static void global_init(storage_type*)
+    static void global_init()
     {
         // if handle gets initialized (i.e. used), it indicates we want to disable
         trait::runtime_enabled<toolset_type>::set(false);
         configure();
     }
 
-    static void global_finalize(storage_type*)
-    {
-        trait::runtime_enabled<toolset_type>::set(false);
-    }
+    static void global_finalize() { trait::runtime_enabled<toolset_type>::set(false); }
 
     void start()
     {
@@ -182,7 +179,7 @@ struct ompt_data_tracker : public base<ompt_data_tracker<Api>, void>
         consume_parameters(_tracker_storage);
     }
 
-    static void global_init(storage_type*)
+    static void global_init()
     {
         preinit();
         tracker_t::label() = "ompt_data_tracker";
@@ -223,7 +220,7 @@ private:
     template <typename Tp, typename... Args>
     void apply_store(Tp& _obj, Args&&... args)
     {
-        operation::insert_node<Tp>(_obj, m_scope_config, m_prefix_hash);
+        operation::push_node<Tp>(_obj, m_scope_config, m_prefix_hash);
         operation::start<Tp> _start(_obj);
         operation::store<Tp>(_obj, std::forward<Args>(args)...);
         operation::stop<Tp>     _stop(_obj);

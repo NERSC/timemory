@@ -19,6 +19,9 @@ if(USE_CALIPER)
     list(APPEND COMPONENTS caliper)
 endif()
 
+# this tend to cause the CI to exceed the time-limit
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+
 set(TIMEMORY_EXTRACT_INTERFACE ON)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS cxx)
 add_executable(ex_cxx_basic ex_cxx_basic.cpp)

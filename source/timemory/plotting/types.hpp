@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/plotting/types.hpp
- * \brief Declare the plotting types
- */
-
 #pragma once
 
 #include "timemory/plotting/macros.hpp"
@@ -34,8 +29,19 @@
 #include <map>
 #include <string>
 
+#if defined(TIMEMORY_USE_PYTHON)
+#    include "pybind11/embed.h"
+#endif
+
 namespace tim
 {
+//
+#if defined(TIMEMORY_USE_PYTHON)
+namespace py = pybind11;
+#else
+namespace py
+{}
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //

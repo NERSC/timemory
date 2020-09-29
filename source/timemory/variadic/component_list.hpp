@@ -41,8 +41,8 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/types.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"
@@ -112,16 +112,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    static auto& get_initializer()
-    {
-        static auto env_enum = enumerate_components(
-            tim::delimit(tim::get_env<string_t>("TIMEMORY_COMPONENT_LIST_INIT", "")));
-
-        static initializer_type _instance = [=](this_type& cl) {
-            ::tim::initialize(cl, env_enum);
-        };
-        return _instance;
-    }
+    static initializer_type& get_initializer();
 
 public:
     component_list();
@@ -146,8 +137,8 @@ public:
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    component_list(component_list&&) = default;
-    component_list& operator=(component_list&&) = default;
+    component_list(component_list&&) noexcept = default;
+    component_list& operator=(component_list&&) noexcept = default;
 
     component_list(const component_list& rhs);
     component_list& operator=(const component_list& rhs);
@@ -388,7 +379,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        std::string _key   = "";
+        std::string _key;
         auto        keyitr = get_hash_ids()->find(m_hash);
         if(keyitr != get_hash_ids()->end())
             _key = keyitr->second;

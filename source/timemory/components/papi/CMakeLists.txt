@@ -1,7 +1,7 @@
 
 if(TIMEMORY_USE_PAPI)
     set(NAME papi)
-    set(DEPS timemory-papi)
+    set(DEPS timemory::timemory-papi)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

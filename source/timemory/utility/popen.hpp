@@ -53,36 +53,33 @@ namespace tim
 namespace popen
 {
 //
-//--------------------------------------------------------------------------------------//
-//
 using string_t = std::string;
 using strvec_t = std::vector<string_t>;
 //
-//--------------------------------------------------------------------------------------//
-//
-typedef struct TIMEMORY_PIPE
+struct TIMEMORY_PIPE
 {
-    FILE* read_fd;
-    FILE* write_fd;
+    FILE* read_fd  = nullptr;
+    FILE* write_fd = nullptr;
     pid_t child_pid;
-} TIMEMORY_PIPE;
-//
-//--------------------------------------------------------------------------------------//
+};
 //
 TIMEMORY_UTILITY_LINKAGE(TIMEMORY_PIPE*)
 popen(const char* path, char** argv = nullptr, char** envp = nullptr);
 //
-//--------------------------------------------------------------------------------------//
-//
 TIMEMORY_UTILITY_LINKAGE(int)
 pclose(TIMEMORY_PIPE* p);
 //
-//--------------------------------------------------------------------------------------//
-//
 TIMEMORY_UTILITY_LINKAGE(pid_t)
-fork(void);
+fork();
 //
-//--------------------------------------------------------------------------------------//
+TIMEMORY_UTILITY_LINKAGE(void)
+sanitize_files();
+//
+TIMEMORY_UTILITY_LINKAGE(int)
+open_devnull(int fd);
+//
+TIMEMORY_UTILITY_LINKAGE(void)
+drop_privileges(int permanent);
 //
 inline strvec_t
 read_fork(TIMEMORY_PIPE* ldd)
@@ -105,7 +102,7 @@ read_fork(TIMEMORY_PIPE* ldd)
         while((loc = line.find_first_of("\n\t")) != string_t::npos)
             line.erase(loc, 1);
         auto delim = tim::delimit(line, " \n\t=>");
-        for(auto itr : delim)
+        for(const auto& itr : delim)
         {
             if(itr.find('/') == 0)
                 linked_libraries.push_back(itr);

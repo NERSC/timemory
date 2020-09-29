@@ -201,13 +201,13 @@ add_option(TIMEMORY_BUILD_GOOGLE_TEST
 add_option(TIMEMORY_BUILD_EXAMPLES
     "Build the examples"  ${TIMEMORY_BUILD_TESTING})
 add_option(TIMEMORY_BUILD_C
-    "Build the C compatible library" OFF)
+    "Build the C compatible library" ON)
 add_option(TIMEMORY_BUILD_PYTHON
     "Build Python binds for ${PROJECT_NAME}" OFF)
 add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
-    "Enable building tools" OFF)
+    "Enable building tools" ON)
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_CALIPER
@@ -222,9 +222,13 @@ add_option(TIMEMORY_BUILD_QUIET
     "Disable verbose messages" OFF NO_FEATURE)
 add_option(TIMEMORY_REQUIRE_PACKAGES
     "All find_package(...) use REQUIRED" OFF)
-if(_NON_APPLE_UNIX OR TIMEMORY_BUILD_DOCS)
-    add_option(TIMEMORY_BUILD_GOTCHA
-        "Enable building GOTCHA (set to OFF for external)" ON)
+add_option(TIMEMORY_BUILD_GOTCHA
+    "Enable building GOTCHA (set to OFF for external)" ON)
+add_option(TIMEMORY_UNITY_BUILD
+    "Same as CMAKE_UNITY_BUILD but is not propagated to submodules" ON)
+
+if(NOT _NON_APPLE_UNIX)
+    set(TIMEMORY_BUILD_GOTCHA OFF)
 endif()
 
 if(TIMEMORY_BUILD_QUIET)
@@ -265,6 +269,8 @@ add_option(TIMEMORY_USE_STATISTICS
     "Enable statistics by default" ON CMAKE_DEFINE)
 add_option(TIMEMORY_USE_MPI
     "Enable MPI usage" ${_MPI} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_MPI_INIT
+    "Enable MPI_Init and MPI_Init_thread wrappers" OFF CMAKE_DEFINE)
 add_option(TIMEMORY_USE_UPCXX
     "Enable UPCXX usage (MPI support takes precedence)" ${_UPCXX} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_SANITIZER
@@ -279,8 +285,6 @@ add_option(TIMEMORY_USE_COVERAGE
     "Enable code-coverage" ${_USE_COVERAGE})
 add_option(TIMEMORY_USE_GPERFTOOLS
     "Enable gperftools" ${_GPERFTOOLS} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_GPERFTOOLS_STATIC
-    "Enable gperftools static targets (enable if gperftools library are built with -fPIC)" OFF)
 add_option(TIMEMORY_USE_ARCH
     "Enable architecture flags" OFF CMAKE_DEFINE)
 add_option(TIMEMORY_USE_VTUNE
@@ -338,7 +342,7 @@ if(${PROJECT_NAME}_MASTER_PROJECT)
 endif()
 
 if(TIMEMORY_USE_CUDA OR TIMEMORY_BUILD_DOCS)
-    add_option(TIMEMORY_DISABLE_CUDA_HALF "Disable half/half2 if CUDA_ARCH < 60" ON)
+    add_option(TIMEMORY_USE_CUDA_HALF "Enable half/half2 if CUDA_ARCH >= 60" OFF)
 endif()
 
 set(_DYNINST OFF)
@@ -416,11 +420,7 @@ if(TIMEMORY_BUILD_DOCS)
     mark_as_advanced(TIMEMORY_BUILD_DOXYGEN)
 endif()
 
-if(TIMEMORY_BUILD_PYTHON)
-    set(PYBIND11_INSTALL ON CACHE BOOL "Don't install Pybind11")
-else()
-    set(PYBIND11_INSTALL OFF)
-endif()
+set(PYBIND11_INSTALL OFF CACHE BOOL "Install Pybind11")
 
 # clang-tidy
 macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)

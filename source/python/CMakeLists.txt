@@ -59,10 +59,10 @@ if(TIMEMORY_BUILD_PYTHON)
     set_target_properties(libpytimemory PROPERTIES
         PREFIX                      ""
         SUFFIX                      "${PYTHON_MODULE_EXTENSION}"
-        LIBRARY_OUTPUT_DIRECTORY    ${CMAKE_BINARY_DIR}/timemory
-        ARCHIVE_OUTPUT_DIRECTORY    ${CMAKE_BINARY_DIR}/timemory
-        RUNTIME_OUTPUT_DIRECTORY    ${CMAKE_BINARY_DIR}/timemory
-        PDB_OUTPUT_DIRECTORY        ${CMAKE_BINARY_DIR}/timemory
+        LIBRARY_OUTPUT_DIRECTORY    ${PROJECT_BINARY_DIR}/timemory
+        ARCHIVE_OUTPUT_DIRECTORY    ${PROJECT_BINARY_DIR}/timemory
+        RUNTIME_OUTPUT_DIRECTORY    ${PROJECT_BINARY_DIR}/timemory
+        PDB_OUTPUT_DIRECTORY        ${PROJECT_BINARY_DIR}/timemory
         INSTALL_RPATH_USE_LINK_PATH ON
         ${EXTRA_PROPERTIES})
 

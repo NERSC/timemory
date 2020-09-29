@@ -85,7 +85,7 @@ extern "C"
             dlerror();  // Clear any existing error
 
             configure_ncclp<nccl_toolset_t, api_t>();
-            user_ncclp_bundle::global_init(nullptr);
+            user_ncclp_bundle::global_init();
             auto ret = activate_ncclp<nccl_toolset_t, api_t>();
             dlclose(libnccl_handle);
             return ret;
@@ -134,7 +134,7 @@ struct nccl_comm_data : base<nccl_comm_data, void>
 
     static void preinit() { timemory_ncclp_library_ctor(); }
 
-    static void global_init(storage_type*)
+    static void global_init()
     {
         auto _data = tim::get_env("TIMEMORY_NCCLP_COMM_DATA", true);
         if(_data)

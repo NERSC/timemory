@@ -31,24 +31,72 @@
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"
+#include "timemory/runtime/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"
 
-//======================================================================================//
-//
-//      tim::get functions
-//
 namespace tim
 {
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
+typename component_bundle<Tag, Types...>::initializer_type&
+component_bundle<Tag, Types...>::get_initializer()
+{
+    static initializer_type _instance = [](this_type& cl) {
+        static auto env_enum = []() {
+            auto _tag = demangle<Tag>();
+            for(const auto& itr : { string_t("tim::"), string_t("api::") })
+            {
+                auto _pos = _tag.find(itr);
+                do
+                {
+                    if(_pos != std::string::npos)
+                        _tag = _tag.erase(_pos, itr.length());
+                    _pos = _tag.find(itr);
+                } while(_pos != std::string::npos);
+            }
+
+            for(const auto& itr : { string_t("::"), string_t("<"), string_t(">"),
+                                    string_t(" "), string_t("__") })
+            {
+                auto _pos = _tag.find(itr);
+                do
+                {
+                    if(_pos != std::string::npos)
+                        _tag = _tag.replace(_pos, itr.length(), "_");
+                    _pos = _tag.find(itr);
+                } while(_pos != std::string::npos);
+            }
+
+            if(_tag.length() > 0 && _tag.at(0) == '_')
+                _tag = _tag.substr(1);
+            if(_tag.length() > 0 && _tag.at(_tag.size() - 1) == '_')
+                _tag = _tag.substr(0, _tag.size() - 1);
+
+            for(auto& itr : _tag)
+                itr = toupper(itr);
+            auto env_var = string_t("TIMEMORY_") + _tag + "_COMPONENTS";
+            if(settings::debug() || settings::verbose() > 0)
+                PRINT_HERE("%s is using environment variable: '%s'",
+                           demangle<this_type>().c_str(), env_var.c_str());
+
+            // get environment variable
+            return enumerate_components(
+                tim::delimit(tim::get_env<string_t>(env_var, "")));
+        }();
+        ::tim::initialize(cl, env_enum);
+    };
+    return _instance;
+}
+
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
 component_bundle<Tag, Types...>::component_bundle()
 {
     apply_v::set_value(m_data, nullptr);
-    // if(settings::enabled())
-    //    init_storage();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -64,10 +112,6 @@ component_bundle<Tag, Types...>::component_bundle(const string_t&     key,
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        // IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value)
-        //{
-        //    init_storage();
-        //}
         IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope<Tag>(m_data, m_scope);
@@ -88,10 +132,6 @@ component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        // IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value)
-        //{
-        //    init_storage();
-        //}
         IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
         set_prefix(loc.get_hash());
         invoke::set_scope<Tag>(m_data, m_scope);
@@ -115,7 +155,6 @@ component_bundle<Tag, Types...>::component_bundle(const string_t& key, const boo
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        // IF_CONSTEXPR(!quirk_config<quirk::no_store>::value) { init_storage(); }
         IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope<Tag>(m_data, m_scope);
@@ -139,7 +178,6 @@ component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        // IF_CONSTEXPR(!quirk_config<quirk::no_store>::value) { init_storage(); }
         IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(loc.get_hash());
         invoke::set_scope<Tag>(m_data, m_scope);
@@ -163,7 +201,6 @@ component_bundle<Tag, Types...>::component_bundle(size_t hash, const bool& store
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        // IF_CONSTEXPR(!quirk_config<quirk::no_store>::value) { init_storage(); }
         IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(hash);
         invoke::set_scope<Tag>(m_data, m_scope);
@@ -313,7 +350,7 @@ component_bundle<Tag, Types...>::start(mpl::piecewise_select<Tp...>, Args&&... a
 
     TIMEMORY_FOLD_EXPRESSION(
         operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
-    TIMEMORY_FOLD_EXPRESSION(operation::insert_node<Tp>(
+    TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
         std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
 
     // start components

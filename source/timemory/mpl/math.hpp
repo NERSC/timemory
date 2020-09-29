@@ -30,6 +30,9 @@
 
 #pragma once
 
+#include "timemory/mpl/types.hpp"
+#include "timemory/utility/types.hpp"
+
 #include <array>
 #include <cassert>
 #include <cmath>
@@ -37,10 +40,6 @@
 #include <limits>
 #include <utility>
 #include <vector>
-
-#include "timemory/mpl/types.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
 
 //======================================================================================//
 

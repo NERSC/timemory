@@ -41,13 +41,13 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
         string(REPLACE "${PROJECT_SOURCE_DIR}/" "" _DIR "${_DIR}")
         if(EXISTS ${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py)
             configure_file(${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py
-                ${CMAKE_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
+                ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
         elseif(EXISTS ${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py.in)
             configure_file(${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py.in
-                ${CMAKE_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
+                ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
         endif()
         if(CMAKE_INSTALL_PYTHONDIR)
-            install(FILES ${CMAKE_BINARY_DIR}/${_DIR}/${_FILE}.py
+            install(FILES ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py
                 DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_DIR})
         endif()
     endforeach()

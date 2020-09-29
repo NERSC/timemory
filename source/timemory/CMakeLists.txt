@@ -17,17 +17,40 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/defines.h.in
 configure_file(${CMAKE_CURRENT_BINARY_DIR}/defines.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/defines.h @ONLY)
 
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_BINARY_DIR}/defines.h
-        ${CMAKE_CURRENT_LIST_DIR}/defines.h
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    ERROR_VARIABLE ERR_MSG
-    RESULT_VARIABLE RET
-)
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
 
-install(FILES ${CMAKE_CURRENT_LIST_DIR}/defines.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
+if(timemory_MASTER_PROJECT)
+    install(
+        FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/defines.h
+            ${CMAKE_CURRENT_BINARY_DIR}/version.h
+        DESTINATION
+            ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
+else()
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_BINARY_DIR}/defines.h
+            ${CMAKE_CURRENT_LIST_DIR}/defines.h
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        ERROR_VARIABLE ERR_MSG
+        RESULT_VARIABLE RET
+    )
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_BINARY_DIR}/version.h
+            ${CMAKE_CURRENT_LIST_DIR}/version.h
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        ERROR_VARIABLE ERR_MSG
+        RESULT_VARIABLE RET
+    )
+    install(
+        FILES
+            ${CMAKE_CURRENT_LIST_DIR}/defines.h
+            ${CMAKE_CURRENT_LIST_DIR}/version.h
+        DESTINATION
+            ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
+endif()
 
 file(GLOB_RECURSE header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.hpp
@@ -43,6 +66,7 @@ file(GLOB_RECURSE source_files
     ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp)
 
 build_intermediate_library(
+    FORCE_OBJECT
     USE_INTERFACE
     INSTALL_SOURCE
     NAME                core
@@ -61,7 +85,9 @@ build_intermediate_library(
 
 # global
 add_subdirectory(manager)
+add_subdirectory(ert)
 add_subdirectory(config)
+add_subdirectory(storage)
 add_subdirectory(operations)
 add_subdirectory(backends)
 add_subdirectory(variadic)
@@ -69,11 +95,8 @@ add_subdirectory(variadic)
 # components
 add_subdirectory(components)
 
-# extern
 add_subdirectory(containers)
 add_subdirectory(runtime)
-add_subdirectory(storage)
-add_subdirectory(ert)
 
 # add_subdirectory(compat)
 # add_subdirectory(data)

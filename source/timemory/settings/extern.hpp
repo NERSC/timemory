@@ -24,10 +24,7 @@
 
 #pragma once
 
-#include "timemory/dll.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/settings/definition.hpp"
-#include "timemory/settings/macros.hpp"
-#include "timemory/settings/types.hpp"
+#include "timemory/settings.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
 
 TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)

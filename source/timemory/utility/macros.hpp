@@ -23,15 +23,6 @@
 //  IN THE SOFTWARE.
 //
 
-/** \file macros.hpp
- * \headerfile macros.hpp "timemory/utility/macros.hpp"
- * Useful macros for:
- *   - Operating system
- *   - Language
- *   - Compiler
- *   - Windows-specific macros
- */
-
 #pragma once
 
 #include <cstdint>
@@ -48,165 +39,6 @@
 //
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_UTILITY_EXTERN)
 #    define TIMEMORY_USE_UTILITY_EXTERN
-#endif
-
-//======================================================================================//
-//
-//      Operating System
-//
-//======================================================================================//
-
-// machine bits
-#if defined(__x86_64__)
-#    if !defined(_64BIT)
-#        define _64BIT
-#    endif
-#else
-#    if !defined(_32BIT)
-#        define _32BIT
-#    endif
-#endif
-
-//--------------------------------------------------------------------------------------//
-// base operating system
-
-#if defined(_WIN32) || defined(_WIN64)
-#    if !defined(_WINDOWS)
-#        define _WINDOWS
-#    endif
-
-//--------------------------------------------------------------------------------------//
-
-#elif defined(__APPLE__) || defined(__MACH__)
-#    if !defined(_MACOS)
-#        define _MACOS
-#    endif
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
-
-//--------------------------------------------------------------------------------------//
-
-#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
-#    if !defined(_LINUX)
-#        define _LINUX
-#    endif
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
-
-//--------------------------------------------------------------------------------------//
-
-#elif defined(__unix__) || defined(__unix) || defined(unix)
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
-#endif
-
-//======================================================================================//
-//
-//      LANGUAGE
-//
-//======================================================================================//
-
-// Define C++14
-#ifndef CXX14
-#    if __cplusplus > 201103L  // C++14
-#        define CXX14
-#    endif
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-// Define C++17
-#ifndef CXX17
-#    if __cplusplus > 201402L  // C++17
-#        define CXX17
-#    endif
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(CXX14)
-#    if !defined(_WINDOWS)
-#        error "timemory requires __cplusplus > 201103L (C++14)"
-#    endif
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(IF_CONSTEXPR)
-#    if defined(CXX17)
-#        define IF_CONSTEXPR(...) if constexpr(__VA_ARGS__)
-#    else
-#        define IF_CONSTEXPR(...) if(__VA_ARGS__)
-#    endif
-#endif
-
-//======================================================================================//
-//
-//      Compiler
-//
-//======================================================================================//
-
-//  clang compiler
-#if defined(__clang__)
-#    define _TIMEMORY_CLANG
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-//  nvcc compiler
-#if defined(__NVCC__)
-#    define _TIMEMORY_NVCC
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-//  Intel compiler
-#if defined(__INTEL_COMPILER)
-#    define _TIMEMORY_INTEL
-#    if __INTEL_COMPILER < 1500
-#        warning "Intel compilers < 1500 have been known to have compiler errors"
-#    endif
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-// GNU compiler
-#if defined(__GNUC__) && !defined(_TIMEMORY_CLANG)
-#    if(__GNUC__ <= 4 && __GNUC_MINOR__ < 9)
-#        warning "GCC compilers < 4.9 have been known to have compiler errors"
-#    elif(__GNUC__ >= 4 && __GNUC_MINOR__ >= 9) || __GNUC__ >= 5
-#        define _TIMEMORY_GNU
-#    endif
-#endif
-
-//======================================================================================//
-//
-//      Demangling
-//
-//======================================================================================//
-
-#if(defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG) || defined(_TIMEMORY_INTEL) ||    \
-    defined(_TIMEMORY_NVCC)) &&                                                          \
-    defined(_UNIX)
-#    if !defined(TIMEMORY_ENABLE_DEMANGLE)
-#        define TIMEMORY_ENABLE_DEMANGLE 1
-#    endif
-#endif
-
-//======================================================================================//
-//
-//      WINDOWS WARNINGS
-//
-//======================================================================================//
-
-#if defined(_WINDOWS)
-#    if !defined(NOMINMAX)
-#        define NOMINMAX
-#    endif
-#    include <Windows.h>
 #endif
 
 //======================================================================================//
@@ -309,8 +141,8 @@ template <typename... Args>
 inline void
 __LOG(std::string file, int line, const char* msg, Args&&... args)
 {
-    if(file.find("/") != std::string::npos)
-        file = file.substr(file.find_last_of("/"));
+    if(file.find('/') != std::string::npos)
+        file = file.substr(file.find_last_of('/'));
     fprintf(stderr, "[Log @ %s:%i]> ", file.c_str(), line);
     fprintf(stderr, msg, std::forward<Args>(args)...);
     fprintf(stderr, "\n");
@@ -321,8 +153,8 @@ __LOG(std::string file, int line, const char* msg, Args&&... args)
 inline void
 __LOG(std::string file, int line, const char* msg)
 {
-    if(file.find("/") != std::string::npos)
-        file = file.substr(file.find_last_of("/"));
+    if(file.find('/') != std::string::npos)
+        file = file.substr(file.find_last_of('/'));
     fprintf(stderr, "[Log @ %s:%i]> %s\n", file.c_str(), line, msg);
 }
 
