@@ -40,7 +40,6 @@ import multiprocessing as mp
 PY3 = sys.version_info[0] == 3
 
 
-# ---------------------------------------------------------------------------- #
 # Python 3.x compatibility utils: execfile
 try:
     execfile
@@ -54,7 +53,6 @@ except NameError:
             exec_(compile(f.read(), filename, 'exec'), globals, locals)
 
 
-# ---------------------------------------------------------------------------- #
 def find_script(script_name):
     """ Find the script.
 
@@ -74,11 +72,27 @@ def find_script(script_name):
     raise SystemExit(1)
 
 
-# ---------------------------------------------------------------------------- #
-def parse_args():
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-                        help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
+def parse_args(args=None):
+    """Parse the arguments"""
+
+    if args is None:
+        args = sys.argv
+
+    from ..libpytimemory.profiler import config as _profiler_config
+
+    def str2bool(v):
+        if isinstance(v, bool):
+           return v
+        if v.lower() in ('yes', 'true', 't', 'y', '1'):
+            return True
+        elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+            return False
+        else:
+            raise argparse.ArgumentTypeError('Boolean value expected.')
+
+    parser = argparse.ArgumentParser(add_help=True)
+    #parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+    #                    help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
     parser.add_argument("-c", "--components", nargs='+',
                         default=["wall_clock"], help="List of components")
     parser.add_argument("-d", "--output-dir", default=None, type=str,
@@ -90,10 +104,38 @@ def parse_args():
                         "to profile a single section of code.")
     parser.add_argument('-s', '--setup', default=None,
                         help="Code to execute before the code to profile")
-    return parser.parse_known_args()
+    parser.add_argument('--trace-c', type=str2bool, nargs='?', const=True,
+                        default=_profiler_config.trace_c,
+                        help="Enable profiling C functions")
+    parser.add_argument('-a', '--include-args',
+                        type=str2bool, nargs='?', const=True,
+                        default=_profiler_config.include_args,
+                        help="Encode the argument values")
+    parser.add_argument('-l', '--include-line',
+                        type=str2bool, nargs='?', const=True,
+                        default=_profiler_config.include_line,
+                        help="Encode the function line number")
+    parser.add_argument('-f', '--include-file',
+                        type=str2bool, nargs='?', const=True,
+                        default=_profiler_config.include_filename,
+                        help="Encode the function filename")
+    parser.add_argument('-F', '--full-filepath',
+                        type=str2bool, nargs='?', const=True,
+                        default=_profiler_config.full_filepath,
+                        help="Encode the full function filename (instead of basename)")
+    parser.add_argument('-m', '--max-stack-depth', type=int,
+                        default=_profiler_config.max_stack_depth,
+                        help="Maximum stack depth")
+    parser.add_argument('--skip-funcs', type=str, nargs='?',
+                        default=_profiler_config.skip_functions,
+                        help="Filter out any entries with these function names")
+    parser.add_argument('--skip-files', type=str, nargs='?',
+                        default=_profiler_config.skip_filenames,
+                        help="Filter out any entries from these files")
+
+    return parser.parse_known_args(args)
 
 
-# ---------------------------------------------------------------------------- #
 def get_value(env_var, default_value, dtype, arg=None):
     if arg is not None:
         return dtype(arg)
@@ -104,8 +146,6 @@ def get_value(env_var, default_value, dtype, arg=None):
             return dtype(default_value)
         else:
             return dtype(val)
-
-# ---------------------------------------------------------------------------- #
 
 
 def run(prof, cmd):
@@ -131,12 +171,38 @@ def run(prof, cmd):
     prof.runctx(code, globs, None)
 
 
-# ---------------------------------------------------------------------------- #
 def main():
-    opts, argv = parse_args()
+    """Main function"""
+
+    opts = None
+    argv = None
+    if "--" in sys.argv:
+        _idx = sys.argv.index("--")
+        _argv = sys.argv[_idx+1:]
+        opts, argv = parse_args(sys.argv[:_idx])
+        argv = _argv
+    else:
+        opts, argv = parse_args()
+
+    from ..libpytimemory import initialize
+
+    if os.path.isfile(argv[0]):
+        argv[0] = os.path.realpath(argv[0])
+
+    initialize(argv)
+
+    from ..libpytimemory.profiler import config as _profiler_config
+    _profiler_config.trace_c = opts.trace_c
+    _profiler_config.include_args = opts.include_args
+    _profiler_config.include_line = opts.include_line
+    _profiler_config.include_filename = opts.include_file
+    _profiler_config.full_filepath = opts.full_filepath
+    _profiler_config.max_stack_depth = opts.max_stack_depth
+    _profiler_config.skip_functions = opts.skip_funcs
+    _profiler_config.skip_filenames = opts.skip_files
 
     # print("opts: {}".format(opts))
-    print("argv: {}".format(argv))
+    print("[timemory]> profiling: {}".format(argv))
 
     sys.argv[:] = argv
     if opts.setup is not None:
@@ -155,7 +221,7 @@ def main():
     from . import Profiler, FakeProfiler
 
     output_path = get_value("TIMEMORY_OUTPUT_PATH",
-                            "timemory-output", str, opts.output_dir)
+                            settings.output_path, str, opts.output_dir)
     settings.output_path = output_path
 
     # if len(argv) > 1 and argv[0] != "--"):
@@ -191,7 +257,6 @@ def main():
                             (script_file,), ns, ns)
             if not opts.builtin:
                 prof.stop()
-            finalize()
         except (KeyboardInterrupt, SystemExit):
             pass
     except Exception as e:
@@ -199,8 +264,12 @@ def main():
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=10)
         print('Exception - {}'.format(e))
+    finally:
+        del prof
+        del fake
+        finalize()
 
 
-# ---------------------------------------------------------------------------- #
 if __name__ == "__main__":
     main()
+

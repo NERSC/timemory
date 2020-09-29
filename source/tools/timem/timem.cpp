@@ -242,9 +242,9 @@ main(int argc, char** argv)
         return ss.str();
     };
 
-    for(int i = 0; i < _argc; ++i)
-        std::cout << _argv[i] << " ";
-    std::cout << std::endl;
+    // for(int i = 0; i < _argc; ++i)
+    //    std::cout << _argv[i] << " ";
+    // std::cout << std::endl;
 
     if(_argc > 1)
     {

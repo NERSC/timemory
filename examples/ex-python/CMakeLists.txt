@@ -3,36 +3,33 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 project(timemory-Python-Example LANGUAGES C CXX)
 
 if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
+    set(TARGET_BINARY_DIR ${CMAKE_BINARY_DIR})
     if(NOT TIMEMORY_USE_PYTHON)
         return()
     endif()
+else()
+    set(TARGET_BINARY_DIR ${PROJECT_BINARY_DIR})
 endif()
 
 if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")
 endif()
 
-configure_file(${PROJECT_SOURCE_DIR}/ex_sample.py
-    ${CMAKE_BINARY_DIR}/ex_python_sample @ONLY)
-
-configure_file(${PROJECT_SOURCE_DIR}/ex_profiler.py
-    ${CMAKE_BINARY_DIR}/ex_python_profiler @ONLY)
-
-configure_file(${PROJECT_SOURCE_DIR}/ex_general.py
-    ${CMAKE_BINARY_DIR}/ex_python_general @ONLY)
-
-install(
-    FILES
-        ${CMAKE_BINARY_DIR}/ex_python_sample
-        ${CMAKE_BINARY_DIR}/ex_python_profiler
-        ${CMAKE_BINARY_DIR}/ex_python_general
-    DESTINATION bin
-    PERMISSIONS
-        OWNER_EXECUTE OWNER_READ OWNER_WRITE
-        GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ
-    COMPONENT examples
-    OPTIONAL)
+foreach(_TYPE sample profiler general builtin external)
+    set(FILENAME ex_python_${_TYPE})
+    configure_file(
+        ${PROJECT_SOURCE_DIR}/ex_${_TYPE}.py
+        ${TARGET_BINARY_DIR}/ex_python_${_TYPE}
+        @ONLY)
+    install(FILES   ${TARGET_BINARY_DIR}/ex_python_${_TYPE}
+        DESTINATION bin
+        PERMISSIONS
+            OWNER_EXECUTE OWNER_READ OWNER_WRITE
+            GROUP_EXECUTE GROUP_READ
+            WORLD_EXECUTE WORLD_READ
+        COMPONENT examples
+        OPTIONAL)
+endforeach()
 
 if(NOT TARGET pybind11::module)
     find_package(pybind11 QUIET)
@@ -70,14 +67,14 @@ target_link_libraries(libex_python_bindings PRIVATE
     MPI::MPI_C MPI::MPI_CXX ${_OMP} ${_COMPILE_OPTS})
 
 configure_file(${PROJECT_SOURCE_DIR}/ex_bindings.py
-    ${CMAKE_BINARY_DIR}/ex_python_bindings @ONLY)
+    ${TARGET_BINARY_DIR}/ex_python_bindings @ONLY)
 
 install(TARGETS libex_python_bindings DESTINATION bin
     COMPONENT examples OPTIONAL)
 
 install(
     FILES
-        ${CMAKE_BINARY_DIR}/ex_python_bindings
+        ${TARGET_BINARY_DIR}/ex_python_bindings
     DESTINATION bin
     PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE
