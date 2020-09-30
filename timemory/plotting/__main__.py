@@ -25,9 +25,9 @@
 # SOFTWARE.
 #
 
-''' @file __main__.py
+""" @file __main__.py
 Command line execution for plotting library
-'''
+"""
 
 from __future__ import absolute_import
 import os
@@ -35,13 +35,16 @@ import sys
 
 from . import embedded_plot
 
+
 def try_plot():
-    debug = os.environ.get('TIMEMORY_DEBUG', False)
-    verbose = int(os.environ.get('TIMEMORY_VERBOSE', 0))
+    debug = os.environ.get("TIMEMORY_DEBUG", False)
+    verbose = int(os.environ.get("TIMEMORY_VERBOSE", 0))
     verbose += 4 if debug else 0
     if verbose > 3:
-        print('Plotting with args: {}'.format(sys.argv))
-    embedded_plot(sys.argv[1:], True, os.environ.get('TIMEMORY_VERBOSE', verbose))
+        print("Plotting with args: {}".format(sys.argv))
+    embedded_plot(
+        sys.argv[1:], True, os.environ.get("TIMEMORY_VERBOSE", verbose)
+    )
 
 
 if __name__ == "__main__":

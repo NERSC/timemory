@@ -60,7 +60,7 @@ def check_available(component):
 
 # compute fibonacci
 def fibonacci(n):
-    return n if n < 2 else (fibonacci(n-1) + fibonacci(n-2))
+    return n if n < 2 else (fibonacci(n - 1) + fibonacci(n - 2))
 
 
 def fib(n, instr):
@@ -69,7 +69,7 @@ def fib(n, instr):
             return n if n < 2 else (fib(n - 1, True) + fib(n - 2, False))
 
     else:
-        return n if n < 2 else (fibonacci(n-1) + fibonacci(n-2))
+        return n if n < 2 else (fibonacci(n - 1) + fibonacci(n - 2))
 
 
 # sleep for n millisec
@@ -84,12 +84,12 @@ def consume(n):
         # get current time in nsec
         now = time.time_ns()
         # try until time point
-        while(time.time_ns() < (now + (n * 1e6))):
+        while time.time_ns() < (now + (n * 1e6)):
             pass
     except:
         now = 1000 * time.time()
         # try until time point
-        while((1000 * time.time()) < (now + n)):
+        while (1000 * time.time()) < (now + n):
             pass
 
 
@@ -124,7 +124,7 @@ class TimemoryTimelineTests(unittest.TestCase):
         tim.settings.parse()
 
         # put one empty marker
-        with marker(components=["wall_clock"], key=''):
+        with marker(components=["wall_clock"], key=""):
             pass
 
     def setUp(self):
@@ -143,8 +143,7 @@ class TimemoryTimelineTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_parse(self):
-        """parse
-        """
+        """parse"""
         tim.settings.timeline_profile = False
         os.environ["TIMEMORY_TIMELINE_PROFILE"] = "ON"
         tim.settings.parse()
@@ -159,8 +158,7 @@ class TimemoryTimelineTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_no_timeline(self):
-        """no_timeline
-        """
+        """no_timeline"""
         old_data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
         os.environ["TIMEMORY_TIMELINE_PROFILE"] = "OFF"
 
@@ -173,7 +171,7 @@ class TimemoryTimelineTests(unittest.TestCase):
 
         # counts must be == 1
         data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
-        #print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
+        # print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
         maxcnt = 1
         for k in data:
             if k not in old_data:
@@ -184,8 +182,7 @@ class TimemoryTimelineTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_timeline(self):
-        """timeline
-        """
+        """timeline"""
         n = 5
 
         old_data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
@@ -197,7 +194,7 @@ class TimemoryTimelineTests(unittest.TestCase):
 
         # inspect data
         data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
-        #print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
+        # print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
 
         # counts must be == 1
         for k in data:
@@ -212,5 +209,5 @@ def run():
     unittest.main()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

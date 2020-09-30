@@ -31,18 +31,21 @@ from . import utils
 __all__ = ["execute"]
 
 
-def execute(cmd, prefix="cpu.prof",
-            freq=250,
-            malloc_stats=0,
-            realtime=1,
-            preload=True,
-            selected=0,
-            image_type="jpeg",
-            echo_dart=False,
-            libs=[],
-            args=["--no_strip_temp", "--functions"],
-            generate=["text", "cum", "dot"],
-            dot_args=[]):
+def execute(
+    cmd,
+    prefix="cpu.prof",
+    freq=250,
+    malloc_stats=0,
+    realtime=1,
+    preload=True,
+    selected=0,
+    image_type="jpeg",
+    echo_dart=False,
+    libs=[],
+    args=["--no_strip_temp", "--functions"],
+    generate=["text", "cum", "dot"],
+    dot_args=[],
+):
 
     os.environ["CPUPROFILE_FREQUENCY"] = "{}".format(freq)
     os.environ["MALLOCSTATS"] = "{}".format(malloc_stats)
@@ -74,6 +77,6 @@ def execute(cmd, prefix="cpu.prof",
     print("exeuting: {}, exe: {}".format(cmd, exe))
     utils.execute(cmd, "{}.log".format(fname))
 
-    utils.post_process(cmd[0], fname, image_type, echo_dart,
-                       libs, args, generate, dot_args)
-    
+    utils.post_process(
+        cmd[0], fname, image_type, echo_dart, libs, args, generate, dot_args
+    )

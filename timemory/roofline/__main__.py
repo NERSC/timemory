@@ -25,9 +25,9 @@
 # SOFTWARE.
 #
 
-''' @file __main__.py
+""" @file __main__.py
 Command line execution for roofline plotting library
-'''
+"""
 
 import os
 import sys
@@ -41,71 +41,169 @@ import timemory
 import timemory.roofline as _roofline
 
 
-
 def parse_args(add_run_args=False):
-    parser = argparse.ArgumentParser(add_help=False, prog='timemory.roofline',
-                                     formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     epilog ='''\
+    parser = argparse.ArgumentParser(
+        add_help=False,
+        prog="timemory.roofline",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""\
 Examples:
   - Perform a Roofline analysis with default parameters
         python -m timemory.roofline -- ./application
   - Perform a Roofline analysis with user-defined dimensions: 1000x800, DPI = 50
         python -m timemory.roofline -P 1000 800 50 -- ./application
-                                     ''')
+                                     """,
+    )
 
-    parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-                        help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
-    parser.add_argument("-d", "--display",
-                        action='store_true', help="Display plot")
-    parser.add_argument("-o", "--output-file", type=str, help="Output file",
-                        default="roofline")
-    parser.add_argument("-D", "--output-dir", type=str, help="Output directory",
-                        default=os.getcwd())
+    parser.add_argument(
+        "-h",
+        "--help",
+        action="help",
+        default=argparse.SUPPRESS,
+        help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(
+            sys.argv[0]
+        ),
+    )
+    parser.add_argument(
+        "-d", "--display", action="store_true", help="Display plot"
+    )
+    parser.add_argument(
+        "-o", "--output-file", type=str, help="Output file", default="roofline"
+    )
+    parser.add_argument(
+        "-D",
+        "--output-dir",
+        type=str,
+        help="Output directory",
+        default=os.getcwd(),
+    )
     lbandwidth = ["l1", "l2", "l3", "dram"]
-    parser.add_argument("-b", "--bandwidth", type=str, help='Bandwidth type - available optionss are: '
-                        +', '.join(lbandwidth)+", \"dram\" as default.", choices=lbandwidth, metavar='',
-                        dest="bandwidths", default=['dram'])
-    parser.add_argument("-tb", "--txn_bandwidth", type=float, metavar='',
-                        help="GPU Instruction Roofline transaction bandwidth peak: L1, L2, DRAM. "
-                        + "Three arguments are expected. \"437.5 93.6 25.9\" (NVIDIA V100 values)"
-                        + " as default.", dest="txns_bandwidths", default=[437.5, 93.6, 25.9], nargs=3)
-    parser.add_argument("-iP", "--inst_peak", type=float,
-                        help="GPU Instruction peak (per warp) in GIPS (NVIDIA V100 peak set by default)",
-                        dest='inst_peak', default=[489.60], nargs=1)
-    parser.add_argument("--format", type=str,
-                        help="Image format", default="png")
-    parser.add_argument("-T", "--title", type=str, dest='title',
-                        help="Title for the plot, \"Roofline\" as default.", default="Roofline")
-    parser.add_argument("-P", "--plot-dimensions", type=int, metavar='',
-                        help="Image dimensions: Width, Height, DPI. Three arguments are expected."
-                        + " \"1600 1200 100\" as default.", default=[1600, 1200, 100], nargs=3)
-    parser.add_argument("-R", "--rank", type=int,
-                        help="MPI Rank", default=None)
-    parser.add_argument("-v", "--verbose", type=int,
-                        help="Verbosity", default=None)
-    parser.add_argument("-e", "--echo-dart", action='store_true',
-                        help="Echo image as DartMeasurementFile")
-    ltype = ["cpu_roofline", "cpu_roofline_sp",
-             "cpu_roofline_dp", "gpu_roofline", "gpu_roofline_hp",
-             "gpu_roofline_sp", "gpu_roofline_dp", "gpu_roofline_inst"]
-    parser.add_argument("-t", "--rtype", type=str, choices=ltype,
-                        help='Roofline type - available optionss are: '+', '.join(ltype) +
-                        ", \"cpu_roofline\" as default.", metavar='', default="cpu_roofline")
+    parser.add_argument(
+        "-b",
+        "--bandwidth",
+        type=str,
+        help="Bandwidth type - available optionss are: "
+        + ", ".join(lbandwidth)
+        + ', "dram" as default.',
+        choices=lbandwidth,
+        metavar="",
+        dest="bandwidths",
+        default=["dram"],
+    )
+    parser.add_argument(
+        "-tb",
+        "--txn_bandwidth",
+        type=float,
+        metavar="",
+        help="GPU Instruction Roofline transaction bandwidth peak: L1, L2, DRAM. "
+        + 'Three arguments are expected. "437.5 93.6 25.9" (NVIDIA V100 values)'
+        + " as default.",
+        dest="txns_bandwidths",
+        default=[437.5, 93.6, 25.9],
+        nargs=3,
+    )
+    parser.add_argument(
+        "-iP",
+        "--inst_peak",
+        type=float,
+        help="GPU Instruction peak (per warp) in GIPS (NVIDIA V100 peak set by default)",
+        dest="inst_peak",
+        default=[489.60],
+        nargs=1,
+    )
+    parser.add_argument(
+        "--format", type=str, help="Image format", default="png"
+    )
+    parser.add_argument(
+        "-T",
+        "--title",
+        type=str,
+        dest="title",
+        help='Title for the plot, "Roofline" as default.',
+        default="Roofline",
+    )
+    parser.add_argument(
+        "-P",
+        "--plot-dimensions",
+        type=int,
+        metavar="",
+        help="Image dimensions: Width, Height, DPI. Three arguments are expected."
+        + ' "1600 1200 100" as default.',
+        default=[1600, 1200, 100],
+        nargs=3,
+    )
+    parser.add_argument(
+        "-R", "--rank", type=int, help="MPI Rank", default=None
+    )
+    parser.add_argument(
+        "-v", "--verbose", type=int, help="Verbosity", default=None
+    )
+    parser.add_argument(
+        "-e",
+        "--echo-dart",
+        action="store_true",
+        help="Echo image as DartMeasurementFile",
+    )
+    ltype = [
+        "cpu_roofline",
+        "cpu_roofline_sp",
+        "cpu_roofline_dp",
+        "gpu_roofline",
+        "gpu_roofline_hp",
+        "gpu_roofline_sp",
+        "gpu_roofline_dp",
+        "gpu_roofline_inst",
+    ]
+    parser.add_argument(
+        "-t",
+        "--rtype",
+        type=str,
+        choices=ltype,
+        help="Roofline type - available optionss are: "
+        + ", ".join(ltype)
+        + ', "cpu_roofline" as default.',
+        metavar="",
+        default="cpu_roofline",
+    )
 
     if add_run_args:
-        parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
-                            action='store_true')
-        parser.add_argument("-k", "--keep-going", help="Continue despite execution errors",
-                            action='store_true')
-        parser.add_argument("-r", "--rerun", help="Re-run this mode and not the other", type=str,
-                            choices=["ai", "op"], default=None)
-        parser.add_argument("-n", "--num-threads", help="Set the number of threads for peak calculation",
-                            default=None, type=int)
+        parser.add_argument(
+            "-p",
+            "--preload",
+            help="Enable preloading libtimemory.so",
+            action="store_true",
+        )
+        parser.add_argument(
+            "-k",
+            "--keep-going",
+            help="Continue despite execution errors",
+            action="store_true",
+        )
+        parser.add_argument(
+            "-r",
+            "--rerun",
+            help="Re-run this mode and not the other",
+            type=str,
+            choices=["ai", "op"],
+            default=None,
+        )
+        parser.add_argument(
+            "-n",
+            "--num-threads",
+            help="Set the number of threads for peak calculation",
+            default=None,
+            type=int,
+        )
     else:
-        parser.add_argument("-ai", "--arithmetic-intensity",
-                            type=str, help="AI intensity input")
-        parser.add_argument("-op", "--operations",
-                            type=str, help="Operations input")
+        parser.add_argument(
+            "-ai",
+            "--arithmetic-intensity",
+            type=str,
+            help="AI intensity input",
+        )
+        parser.add_argument(
+            "-op", "--operations", type=str, help="Operations input"
+        )
 
     return parser.parse_args()
 
@@ -116,8 +214,8 @@ def plot(args):
         fname = os.path.basename(args.output_file)
         fdir = os.path.realpath(args.output_dir)
 
-        fai = open(args.arithmetic_intensity, 'r')
-        fop = open(args.operations, 'r')
+        fai = open(args.arithmetic_intensity, "r")
+        fop = open(args.operations, "r")
 
         ai_data = json.load(fai)
         op_data = json.load(fop)
@@ -128,34 +226,61 @@ def plot(args):
         band_labels = [element.upper() for element in args.bandwidths]
 
         if len(ai_ranks) != len(op_ranks):
-            raise RuntimeError("Number of ranks in output files is different: {} vs. {}".format(
-                len(ai_ranks), len(op_ranks)))
+            raise RuntimeError(
+                "Number of ranks in output files is different: {} vs. {}".format(
+                    len(ai_ranks), len(op_ranks)
+                )
+            )
 
         if len(op_data) == 1:
-            _roofline.plot_roofline(ai_ranks[0], op_ranks[0], band_labels,
-                                    args.txns_bandwidths, args.inst_peak, args.rtype,
-                                    args.display, fname, args.format, fdir, args.title,
-                                    args.plot_dimensions[0], args.plot_dimensions[1],
-                                    args.plot_dimensions[2], args.echo_dart)
+            _roofline.plot_roofline(
+                ai_ranks[0],
+                op_ranks[0],
+                band_labels,
+                args.txns_bandwidths,
+                args.inst_peak,
+                args.rtype,
+                args.display,
+                fname,
+                args.format,
+                fdir,
+                args.title,
+                args.plot_dimensions[0],
+                args.plot_dimensions[1],
+                args.plot_dimensions[2],
+                args.echo_dart,
+            )
         else:
             _rank = 0
             for _ai, _op in zip(ai_ranks, op_ranks):
                 _fname = "{}_{}".format(fname, _rank)
                 _title = "{} (MPI rank: {})".format(args.title, _rank)
-                _roofline.plot_roofline(_ai, _op, band_labels,
-                                        args.txns_bandwidths, args.inst_peak, args.rtype,
-                                        args.display, _fname, args.format, fdir, _title,
-                                        args.plot_dimensions[0], args.plot_dimensions[1],
-                                        args.plot_dimensions[2], args.echo_dart)
+                _roofline.plot_roofline(
+                    _ai,
+                    _op,
+                    band_labels,
+                    args.txns_bandwidths,
+                    args.inst_peak,
+                    args.rtype,
+                    args.display,
+                    _fname,
+                    args.format,
+                    fdir,
+                    _title,
+                    args.plot_dimensions[0],
+                    args.plot_dimensions[1],
+                    args.plot_dimensions[2],
+                    args.echo_dart,
+                )
                 _rank += 1
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
-        print('Exception - {}'.format(e))
+        print("Exception - {}".format(e))
         sys.exit(1)
 
-    print('Done - {}'.format(sys.argv[0]))
+    print("Done - {}".format(sys.argv[0]))
     sys.exit(0)
 
 
@@ -177,7 +302,8 @@ def run(args, cmd):
 
     if args.num_threads is not None:
         os.environ["TIMEMORY_ROOFLINE_NUM_THREADS"] = "{}".format(
-            args.num_threads)
+            args.num_threads
+        )
 
     if args.preload:
         # walk back up the tree until we find libtimemory-preload.<EXT>
@@ -186,6 +312,7 @@ def run(args, cmd):
         preload_env = None
 
         import platform
+
         if platform.system() == "Linux":
             libname = "libtimemory.so"
             preload_env = "LD_PRELOAD"
@@ -207,20 +334,32 @@ def run(args, cmd):
             current_preload = os.environ.get(preload_env)
             if current_preload is not None:
                 os.environ[preload_env] = "{}:{}".format(
-                    current_preload, preload)
+                    current_preload, preload
+                )
             else:
                 os.environ[preload_env] = "{}".format(preload)
         elif libname is not None:
-            print("Warning! Unable to locate '{}'. Preloading failed".format(libname))
+            print(
+                "Warning! Unable to locate '{}'. Preloading failed".format(
+                    libname
+                )
+            )
 
     def handle_error(ret, cmd, keep_going):
         err_msg = "Error executing: '{}'".format(" ".join(cmd))
         if ret != 0 and not keep_going:
             raise RuntimeError(err_msg)
         elif ret != 0 and keep_going:
-            barrier = "="*80
-            err_msg = "\n\n" + barrier + "\n\n    ERROR: " + \
-                err_msg + "\n\n" + barrier + "\n\n"
+            barrier = "=" * 80
+            err_msg = (
+                "\n\n"
+                + barrier
+                + "\n\n    ERROR: "
+                + err_msg
+                + "\n\n"
+                + barrier
+                + "\n\n"
+            )
             sys.stderr.write(err_msg)
             sys.stderr.flush()
 
@@ -245,14 +384,18 @@ def run(args, cmd):
     _rank = "" if args.rank is None else "_{}".format(args.rank)
     if "gpu_roofline" in args.rtype:
         args.arithmetic_intensity = os.path.join(
-            output_path, "{}{}_activity.json".format(output_prefix, args.rtype))
+            output_path, "{}{}_activity.json".format(output_prefix, args.rtype)
+        )
         args.operations = os.path.join(
-            output_path, "{}{}_counters.json".format(output_prefix, args.rtype))
+            output_path, "{}{}_counters.json".format(output_prefix, args.rtype)
+        )
     else:
         args.arithmetic_intensity = os.path.join(
-            output_path, "{}{}_ai.json".format(output_prefix, args.rtype))
+            output_path, "{}{}_ai.json".format(output_prefix, args.rtype)
+        )
         args.operations = os.path.join(
-            output_path, "{}{}_op.json".format(output_prefix, args.rtype))
+            output_path, "{}{}_op.json".format(output_prefix, args.rtype)
+        )
 
 
 def try_plot():
@@ -264,16 +407,18 @@ def try_plot():
 
         _argsets = [_argv, _cmd]
         _i = 0
-        _separator = '--'
+        _separator = "--"
 
         for _arg in sys.argv[1:]:
             if _arg == _separator:
                 _i += 1
                 if _i >= len(_argsets):
                     sys.exit(
-                        "ERROR: Too many \"{}\" separators provided "
-                        "(expected at most {}).".format(_separator,
-                                                        len(_argsets) - 1))
+                        'ERROR: Too many "{}" separators provided '
+                        "(expected at most {}).".format(
+                            _separator, len(_argsets) - 1
+                        )
+                    )
             else:
                 _argsets[_i].append(_arg)
 

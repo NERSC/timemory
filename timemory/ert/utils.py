@@ -33,7 +33,7 @@ from functools import reduce
 
 # Make a list into a space seperated string
 def list_2_string(text_list):
-    return reduce(operator.add, [t+" " for t in text_list])
+    return reduce(operator.add, [t + " " for t in text_list])
 
 
 # Execute a command without generating a new shell
@@ -116,7 +116,7 @@ def parse_int_list(input):
         if len(minmax) == 1:
             retlist.append(int(minmax[0]))
         else:
-            for i in range(int(minmax[0]), int(minmax[1])+1):
+            for i in range(int(minmax[0]), int(minmax[1]) + 1):
                 retlist.append(i)
 
     return sorted(list(set(retlist)))

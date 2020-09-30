@@ -24,9 +24,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-''' @file roofline/__init__.py
+""" @file roofline/__init__.py
 Roofline plotting routines for TiMemory module
-'''
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -49,7 +49,8 @@ __status__ = "Development"
 try:
     from . import roofline
     from .roofline import *
-    __all__ = ['plot_roofline']
+
+    __all__ = ["plot_roofline"]
 except Exception as e:
     sys.stderr.write("{}\n".format(e))
     warnings.warn("timemory.roofline is disabled")

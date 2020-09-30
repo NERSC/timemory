@@ -25,9 +25,9 @@
 # SOFTWARE.
 #
 
-''' @file __main__.py
+""" @file __main__.py
 Command line execution for profiler
-'''
+"""
 
 import os
 import sys
@@ -46,29 +46,30 @@ try:
 except NameError:
     # Python 3.x doesn't have 'execfile' builtin
     import builtins
+
     exec_ = getattr(builtins, "exec")
 
     def execfile(filename, globals=None, locals=None):
-        with open(filename, 'rb') as f:
-            exec_(compile(f.read(), filename, 'exec'), globals, locals)
+        with open(filename, "rb") as f:
+            exec_(compile(f.read(), filename, "exec"), globals, locals)
 
 
 def find_script(script_name):
-    """ Find the script.
+    """Find the script.
 
     If the input is not a file, then $PATH will be searched.
     """
     if os.path.isfile(script_name):
         return script_name
-    path = os.getenv('PATH', os.defpath).split(os.pathsep)
+    path = os.getenv("PATH", os.defpath).split(os.pathsep)
     for dir in path:
-        if dir == '':
+        if dir == "":
             continue
         fn = os.path.join(dir, script_name)
         if os.path.isfile(fn):
             return fn
 
-    sys.stderr.write('Could not find script %s\n' % script_name)
+    sys.stderr.write("Could not find script %s\n" % script_name)
     raise SystemExit(1)
 
 
@@ -82,56 +83,111 @@ def parse_args(args=None):
 
     def str2bool(v):
         if isinstance(v, bool):
-           return v
-        if v.lower() in ('yes', 'true', 't', 'y', '1'):
+            return v
+        if v.lower() in ("yes", "true", "t", "y", "1"):
             return True
-        elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        elif v.lower() in ("no", "false", "f", "n", "0"):
             return False
         else:
-            raise argparse.ArgumentTypeError('Boolean value expected.')
+            raise argparse.ArgumentTypeError("Boolean value expected.")
 
     parser = argparse.ArgumentParser(add_help=True)
-    #parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+    # parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
     #                    help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
-    parser.add_argument("-c", "--components", nargs='+',
-                        default=["wall_clock"], help="List of components")
-    parser.add_argument("-d", "--output-dir", default=None, type=str,
-                        help="Output path of results")
-    parser.add_argument('-b', '--builtin', action='store_true',
-                        help="Put 'profile' in the builtins. Use 'profile.enable()' and "
-                        "'profile.disable()' in your code to turn it on and off, or "
-                        "'@profile' to decorate a single function, or 'with profile:' "
-                        "to profile a single section of code.")
-    parser.add_argument('-s', '--setup', default=None,
-                        help="Code to execute before the code to profile")
-    parser.add_argument('--trace-c', type=str2bool, nargs='?', const=True,
-                        default=_profiler_config.trace_c,
-                        help="Enable profiling C functions")
-    parser.add_argument('-a', '--include-args',
-                        type=str2bool, nargs='?', const=True,
-                        default=_profiler_config.include_args,
-                        help="Encode the argument values")
-    parser.add_argument('-l', '--include-line',
-                        type=str2bool, nargs='?', const=True,
-                        default=_profiler_config.include_line,
-                        help="Encode the function line number")
-    parser.add_argument('-f', '--include-file',
-                        type=str2bool, nargs='?', const=True,
-                        default=_profiler_config.include_filename,
-                        help="Encode the function filename")
-    parser.add_argument('-F', '--full-filepath',
-                        type=str2bool, nargs='?', const=True,
-                        default=_profiler_config.full_filepath,
-                        help="Encode the full function filename (instead of basename)")
-    parser.add_argument('-m', '--max-stack-depth', type=int,
-                        default=_profiler_config.max_stack_depth,
-                        help="Maximum stack depth")
-    parser.add_argument('--skip-funcs', type=str, nargs='?',
-                        default=_profiler_config.skip_functions,
-                        help="Filter out any entries with these function names")
-    parser.add_argument('--skip-files', type=str, nargs='?',
-                        default=_profiler_config.skip_filenames,
-                        help="Filter out any entries from these files")
+    parser.add_argument(
+        "-c",
+        "--components",
+        nargs="+",
+        default=["wall_clock"],
+        help="List of components",
+    )
+    parser.add_argument(
+        "-d",
+        "--output-dir",
+        default=None,
+        type=str,
+        help="Output path of results",
+    )
+    parser.add_argument(
+        "-b",
+        "--builtin",
+        action="store_true",
+        help="Put 'profile' in the builtins. Use 'profile.enable()' and "
+        "'profile.disable()' in your code to turn it on and off, or "
+        "'@profile' to decorate a single function, or 'with profile:' "
+        "to profile a single section of code.",
+    )
+    parser.add_argument(
+        "-s",
+        "--setup",
+        default=None,
+        help="Code to execute before the code to profile",
+    )
+    parser.add_argument(
+        "--trace-c",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=_profiler_config.trace_c,
+        help="Enable profiling C functions",
+    )
+    parser.add_argument(
+        "-a",
+        "--include-args",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=_profiler_config.include_args,
+        help="Encode the argument values",
+    )
+    parser.add_argument(
+        "-l",
+        "--include-line",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=_profiler_config.include_line,
+        help="Encode the function line number",
+    )
+    parser.add_argument(
+        "-f",
+        "--include-file",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=_profiler_config.include_filename,
+        help="Encode the function filename",
+    )
+    parser.add_argument(
+        "-F",
+        "--full-filepath",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=_profiler_config.full_filepath,
+        help="Encode the full function filename (instead of basename)",
+    )
+    parser.add_argument(
+        "-m",
+        "--max-stack-depth",
+        type=int,
+        default=_profiler_config.max_stack_depth,
+        help="Maximum stack depth",
+    )
+    parser.add_argument(
+        "--skip-funcs",
+        type=str,
+        nargs="?",
+        default=_profiler_config.skip_functions,
+        help="Filter out any entries with these function names",
+    )
+    parser.add_argument(
+        "--skip-files",
+        type=str,
+        nargs="?",
+        default=_profiler_config.skip_filenames,
+        help="Filter out any entries from these files",
+    )
 
     return parser.parse_known_args(args)
 
@@ -154,18 +210,19 @@ def run(prof, cmd):
 
     progname = cmd[0]
     sys.path.insert(0, os.path.dirname(progname))
-    with open(progname, 'rb') as fp:
-        code = compile(fp.read(), progname, 'exec')
+    with open(progname, "rb") as fp:
+        code = compile(fp.read(), progname, "exec")
 
     import __main__
+
     dict = __main__.__dict__
     print("code: {} {}".format(type(code).__name__, code))
     globs = {
-        '__file__': progname,
-        '__name__': '__main__',
-        '__package__': None,
-        '__cached__': None,
-        **dict
+        "__file__": progname,
+        "__name__": "__main__",
+        "__package__": None,
+        "__cached__": None,
+        **dict,
     }
 
     prof.runctx(code, globs, None)
@@ -178,7 +235,7 @@ def main():
     argv = None
     if "--" in sys.argv:
         _idx = sys.argv.index("--")
-        _argv = sys.argv[_idx+1:]
+        _argv = sys.argv[_idx + 1 :]
         opts, argv = parse_args(sys.argv[:_idx])
         argv = _argv
     else:
@@ -192,6 +249,7 @@ def main():
     initialize(argv)
 
     from ..libpytimemory.profiler import config as _profiler_config
+
     _profiler_config.trace_c = opts.trace_c
     _profiler_config.include_args = opts.include_args
     _profiler_config.include_line = opts.include_line
@@ -210,7 +268,7 @@ def main():
         # imports.
         setup_file = find_script(opts.setup)
         __file__ = setup_file
-        __name__ = '__main__'
+        __name__ = "__main__"
         # Make sure the script's directory is on sys.path instead of just
         # kernprof.py's.
         sys.path.insert(0, os.path.dirname(setup_file))
@@ -220,15 +278,16 @@ def main():
     from ..libpytimemory import settings, finalize
     from . import Profiler, FakeProfiler
 
-    output_path = get_value("TIMEMORY_OUTPUT_PATH",
-                            settings.output_path, str, opts.output_dir)
+    output_path = get_value(
+        "TIMEMORY_OUTPUT_PATH", settings.output_path, str, opts.output_dir
+    )
     settings.output_path = output_path
 
     # if len(argv) > 1 and argv[0] != "--"):
     #    raise RuntimeError("Specify command to run with -- <command-to-run>")
     script_file = find_script(sys.argv[0])
     __file__ = script_file
-    __name__ = '__main__'
+    __name__ = "__main__"
     # Make sure the script's directory is on sys.path instead of just
     # kernprof.py's.
     sys.path.insert(0, os.path.dirname(script_file))
@@ -241,8 +300,8 @@ def main():
     else:
         import __builtin__ as builtins
 
-    builtins.__dict__['profile'] = prof
-    builtins.__dict__['noprofile'] = fake
+    builtins.__dict__["profile"] = prof
+    builtins.__dict__["noprofile"] = fake
 
     try:
         try:
@@ -253,17 +312,19 @@ def main():
             if opts.builtin:
                 execfile(script_file, ns, ns)
             else:
-                prof.runctx('execfile_(%r, globals())' %
-                            (script_file,), ns, ns)
+                prof.runctx(
+                    "execfile_(%r, globals())" % (script_file,), ns, ns
+                )
             if not opts.builtin:
                 prof.stop()
         except (KeyboardInterrupt, SystemExit):
             pass
     except Exception as e:
         import traceback
+
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=10)
-        print('Exception - {}'.format(e))
+        print("Exception - {}".format(e))
     finally:
         del prof
         del fake
@@ -272,4 +333,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -23,9 +23,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-''' @file timemory/gperftools/__init__.py
+""" @file timemory/gperftools/__init__.py
 Plotting routines for gperf
-'''
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -52,7 +52,7 @@ try:
     from . import heap_profiler
 
     # __all__ = ['utils', 'cpu_profiler', 'heap_profiler']
-    
+
 except Exception as e:
     sys.stderr.write("{}\n".format(e))
     warnings.warn("timemory.gperftools is disabled")

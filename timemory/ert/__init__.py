@@ -38,4 +38,4 @@ __version__ = "@PROJECT_VERSION@"
 __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
-__all__ = ['core', 'utils']
+__all__ = ["core", "utils"]

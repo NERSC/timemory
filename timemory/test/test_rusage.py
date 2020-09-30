@@ -71,7 +71,7 @@ byte_tolerance = tot_rw
 # --------------------------- helper functions ----------------------------------------- #
 # compute fibonacci
 def fibonacci(n):
-    return n if n < 2 else (fibonacci(n-1) + fibonacci(n-2))
+    return n if n < 2 else (fibonacci(n - 1) + fibonacci(n - 2))
 
 
 # get a random entry
@@ -99,7 +99,7 @@ def allocate():
         nfib = random_entry(v)
         ret += fibonacci(nfib)
 
-    if(ret < 0):
+    if ret < 0:
         print("fibonacci({}) * {} = {}\n".format(nfib, niter, ret))
 
     current_peak.stop()
@@ -191,10 +191,9 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test peak rss
     def test_peak_rss(self):
-        """peak rss
-        """
+        """peak rss"""
         if not comp.PeakRss.available:
-            raise unittest.SkipTest('[{}] not available'.format('peak_rss'))
+            raise unittest.SkipTest("[{}] not available".format("peak_rss"))
 
         print_info(self.shortDescription(), peak, tot_size)
         self.assertAlmostEqual(tot_size, peak.get(), delta=peak_tolerance)
@@ -202,10 +201,9 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test page rss
     def test_page_rss(self):
-        """page rss
-        """
+        """page rss"""
         if not comp.PageRss.available:
-            raise unittest.SkipTest('[{}] not available'.format('page_rss'))
+            raise unittest.SkipTest("[{}] not available".format("page_rss"))
 
         print_info(self.shortDescription(), curr, tot_size)
         self.assertAlmostEqual(tot_size, curr.get(), delta=curr_tolerance)
@@ -213,10 +211,9 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test read_bytes
     def test_read_bytes(self):
-        """read bytes
-        """
+        """read bytes"""
         if not comp.ReadBytes.available:
-            raise unittest.SkipTest('[{}] not available'.format('read_bytes'))
+            raise unittest.SkipTest("[{}] not available".format("read_bytes"))
 
         print_info_wb_rb(self.shortDescription(), rb, tot_rw)
         self.assertAlmostEqual(tot_rw, rb.get()[0], delta=byte_tolerance)
@@ -224,11 +221,11 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test write_bytes
     def test_written_bytes(self):
-        """written bytes
-        """
+        """written bytes"""
         if not comp.WrittenBytes.available:
             raise unittest.SkipTest(
-                '[{}] not available'.format('written_bytes'))
+                "[{}] not available".format("written_bytes")
+            )
 
         print_info_wb_rb(self.shortDescription(), wb, tot_rw)
         self.assertAlmostEqual(tot_rw, wb.get()[0], delta=byte_tolerance)
@@ -236,15 +233,18 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test write_bytes
     def test_current_peak_rss(self):
-        """current peak rss
-        """
+        """current peak rss"""
         if not comp.CurrentPeakRss.available:
             raise unittest.SkipTest(
-                '[{}] not available'.format('current_peak_rss'))
+                "[{}] not available".format("current_peak_rss")
+            )
 
         print_info_curr_peak(self.shortDescription(), current_peak, tot_size)
-        self.assertAlmostEqual(tot_size, current_peak.get()[1] - current_peak.get()[0],
-                               delta=peak_tolerance)
+        self.assertAlmostEqual(
+            tot_size,
+            current_peak.get()[1] - current_peak.get()[0],
+            delta=peak_tolerance,
+        )
 
 
 # ----------------------------- main test runner ---------------------------------------- #
@@ -254,5 +254,5 @@ def run():
     unittest.main()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

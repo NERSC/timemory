@@ -23,9 +23,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-''' @file test/__main__.py
+""" @file test/__main__.py
 Run all timemory unittests
-'''
+"""
 
 from __future__ import absolute_import
 
@@ -45,20 +45,26 @@ import timemory as tim
 # discover and run all timemory unittests in the current directory
 def run_all_tests():
     # auto discover unittests from test_*.py files into the timemory test suite
-    timTestSuite = unittest.defaultTestLoader.discover(start_dir=os.path.dirname(os.path.abspath(__file__)), 
-                                                       pattern='test*.py')
+    timTestSuite = unittest.defaultTestLoader.discover(
+        start_dir=os.path.dirname(os.path.abspath(__file__)),
+        pattern="test*.py",
+    )
 
     # print the loaded tests
-    print('============= Loaded Tests =============\n\n {}\n'.format(timTestSuite))
+    print(
+        "============= Loaded Tests =============\n\n {}\n".format(
+            timTestSuite
+        )
+    )
 
     # create a results object to store test results
     result = unittest.TestResult()
 
-    # enable stdout buffer  
+    # enable stdout buffer
     result.buffer = True
 
     # run all tests in timTestSuite, use result object to store results
-    print ('\n============= Tests Stdout =============\n')
+    print("\n============= Tests Stdout =============\n")
     # run the tests
     timTestSuite.run(result)
 
@@ -69,7 +75,7 @@ def run_all_tests():
     tim.finalize()
 
     # print the results
-    print ('\n============= Results =============\n')
+    print("\n============= Results =============\n")
     print("{}\n".format(result))
 
 

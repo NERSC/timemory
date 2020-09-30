@@ -24,9 +24,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-''' @file plotting.py
+""" @file plotting.py
 Plotting routines for TiMemory module
-'''
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -39,19 +39,21 @@ __version__ = "@PROJECT_VERSION@"
 __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
-__all__ = ['plot',
-           'plot_maximums',
-           'plot_all',
-           'plot_generic',
-           'read',
-           'plot_data',
-           'timemory_data',
-           'echo_dart_tag',
-           'add_plotted_files',
-           'make_output_directory',
-           'nested_dict',
-           'plot_parameters',
-           'plotted_files']
+__all__ = [
+    "plot",
+    "plot_maximums",
+    "plot_all",
+    "plot_generic",
+    "read",
+    "plot_data",
+    "timemory_data",
+    "echo_dart_tag",
+    "add_plotted_files",
+    "make_output_directory",
+    "nested_dict",
+    "plot_parameters",
+    "plotted_files",
+]
 
 import sys
 import os
@@ -74,27 +76,27 @@ _matplotlib_backend = None
 # a previous bug inserted wrong value for levels, this gets around it
 _excess_levels = 64
 
-#----------------------------------------------------------------------------------------#
 # check with timemory.options
 #
 try:
     import timemory.options
+
     if timemory.options.matplotlib_backend != "default":
         _matplotlib_backend = timemory.options.matplotlib_backend
 except:
     pass
 
 
-#----------------------------------------------------------------------------------------#
 # if not display variable we probably want to use agg
 #
-if (os.environ.get("DISPLAY") is None and
-    os.environ.get("MPLBACKEND") is None and
-        _matplotlib_backend is None):
+if (
+    os.environ.get("DISPLAY") is None
+    and os.environ.get("MPLBACKEND") is None
+    and _matplotlib_backend is None
+):
     os.environ.setdefault("MPLBACKEND", "agg")
 
 
-#----------------------------------------------------------------------------------------#
 # tornado helps set the matplotlib backend but is not necessary
 #
 try:
@@ -103,24 +105,25 @@ except:
     pass
 
 
-#----------------------------------------------------------------------------------------#
 # import matplotlib and pyplot but don't fail
 #
 try:
     import matplotlib
     import matplotlib.pyplot as plt
+
     _matplotlib_backend = matplotlib.get_backend()
 except:
     try:
         import matplotlib
+
         matplotlib.use("agg", warn=False)
         import matplotlib.pyplot as plt
+
         _matplotlib_backend = matplotlib.get_backend()
     except:
         pass
 
 
-#----------------------------------------------------------------------------------------#
 #
 #
 _default_min_percent = 0.05  # 5% of max
@@ -129,10 +132,10 @@ _default_min_percent = 0.05  # 5% of max
 _default_img_dpi = 60
 """ Default image dots-per-square inch """
 
-_default_img_size = {'w': 1000, 'h': 600}
+_default_img_size = {"w": 1000, "h": 600}
 """ Default image size """
 
-_default_img_type = 'jpeg'
+_default_img_type = "jpeg"
 """ Default image type """
 
 _default_log_x = False
@@ -144,12 +147,12 @@ _default_font_size = 11
 plotted_files = []
 """ A list of all files that have been plotted """
 
-verbosity = os.environ.get('TIMEMORY_VERBOSE', 0)
+verbosity = os.environ.get("TIMEMORY_VERBOSE", 0)
 
-#==============================================================================#
+# ==============================================================================#
 
 
-class plot_parameters():
+class plot_parameters:
     """
     A class for reducing the amount of data in plot by specifying a minimum
     percentage of the max value and the fields to check against
@@ -169,13 +172,15 @@ class plot_parameters():
     font_size = copy.copy(_default_font_size)
     """ Global image plotting params (these should be modified instead of _default_*) """
 
-    def __init__(self,
-                 min_percent=min_percent,
-                 img_dpi=img_dpi,
-                 img_size=img_size,
-                 img_type=img_type,
-                 log_xaxis=log_xaxis,
-                 font_size=font_size):
+    def __init__(
+        self,
+        min_percent=min_percent,
+        img_dpi=img_dpi,
+        img_size=img_size,
+        img_type=img_type,
+        log_xaxis=log_xaxis,
+        font_size=font_size,
+    ):
         self.min_percent = min_percent
         self.img_dpi = img_dpi
         self.img_size = img_size
@@ -186,24 +191,31 @@ class plot_parameters():
         self.font_size = font_size
 
     def __str__(self):
-        _c = 'Image: {} = {}%, {} = {}, {} = {}, {} = {}'.format(
-            'min %', self.min_percent,
-            'dpi', self.img_dpi,
-            'size', self.img_size,
-            'type', self.img_type)
-        return '[{}]'.format(_c)
+        _c = "Image: {} = {}%, {} = {}, {} = {}, {} = {}".format(
+            "min %",
+            self.min_percent,
+            "dpi",
+            self.img_dpi,
+            "size",
+            self.img_size,
+            "type",
+            self.img_type,
+        )
+        return "[{}]".format(_c)
 
 
-#==============================================================================#
+# ==============================================================================#
 def echo_dart_tag(name, filepath, img_type=plot_parameters.img_type):
     """
     Printing this string will upload the results to CDash when running CTest
     """
-    print('<DartMeasurementFile name="{}" '.format(name) +
-          'type="image/{}">{}</DartMeasurementFile>'.format(img_type, filepath))
+    print(
+        '<DartMeasurementFile name="{}" '.format(name)
+        + 'type="image/{}">{}</DartMeasurementFile>'.format(img_type, filepath)
+    )
 
 
-#==============================================================================#
+# ==============================================================================#
 def add_plotted_files(name, filepath, echo_dart):
     """
     Adds a file to the plotted file list and print CDash dart string
@@ -221,25 +233,26 @@ def add_plotted_files(name, filepath, echo_dart):
         plotted_files.append([name, filepath])
 
 
-#==============================================================================#
+# ==============================================================================#
 def make_output_directory(directory):
     """
     mkdir -p
     """
-    if not os.path.exists(directory) and directory != '':
+    if not os.path.exists(directory) and directory != "":
         os.makedirs(directory)
 
 
-#==============================================================================#
+# ==============================================================================#
 def nested_dict():
     return collections.defaultdict(nested_dict)
 
 
-#==============================================================================#
-class timemory_data():
+# ==============================================================================#
+class timemory_data:
     """
     This class is for internal usage. It holds the JSON data
     """
+
     # ------------------------------------------------------------------------ #
 
     def __init__(self, func, obj, stats):
@@ -247,8 +260,8 @@ class timemory_data():
         initialize data from JSON object
         """
         self.func = func
-        self.is_transient = obj['is_transient']
-        self.laps = obj['laps']
+        self.is_transient = obj["is_transient"]
+        self.laps = obj["laps"]
 
         def process(inp, key):
             inst = None
@@ -267,13 +280,13 @@ class timemory_data():
                 inst = inp[key]
             return inst
 
-        self.data = process(obj, 'repr_data')
-        self.value = process(obj, 'value')
-        self.accum = process(obj, 'accum')
-        self.sum = process(stats, 'sum')
-        self.sqr = process(stats, 'sqr')
-        self.min = process(stats, 'min')
-        self.max = process(stats, 'max')
+        self.data = process(obj, "repr_data")
+        self.value = process(obj, "value")
+        self.accum = process(obj, "accum")
+        self.sum = process(stats, "sum")
+        self.sqr = process(stats, "sqr")
+        self.min = process(stats, "min")
+        self.max = process(stats, "max")
 
     # ------------------------------------------------------------------------ #
     def plottable(self, params):
@@ -294,8 +307,9 @@ class timemory_data():
         """
         printing data
         """
-        return "\"{}\" : laps = {}, value = {}, accum = {}, data = {}".format(
-            self.func, self.laps, self.value, self.accum, self.data)
+        return '"{}" : laps = {}, value = {}, accum = {}, data = {}'.format(
+            self.func, self.laps, self.value, self.accum, self.data
+        )
 
     # ------------------------------------------------------------------------ #
     def __repr__(self):
@@ -346,8 +360,8 @@ class timemory_data():
         return getattr(self, key)
 
 
-#==============================================================================#
-class plot_data():
+# ==============================================================================#
+class plot_data:
     """
     A custom configuration for the data to be plotted
 
@@ -367,17 +381,19 @@ class plot_data():
         output_name (str):
     """
 
-    def __init__(self,
-                 filename="output",
-                 concurrency=1, mpi_size=1,
-                 timemory_functions=[],
-                 title="",
-                 units="",
-                 ctype="",
-                 description="",
-                 plot_params=plot_parameters(),
-                 output_name=None):
-
+    def __init__(
+        self,
+        filename="output",
+        concurrency=1,
+        mpi_size=1,
+        timemory_functions=[],
+        title="",
+        units="",
+        ctype="",
+        description="",
+        plot_params=plot_parameters(),
+        output_name=None,
+    ):
         def _convert(_obj):
             if isinstance(_obj, dict):
                 _ret = []
@@ -461,13 +477,14 @@ class plot_data():
         String repr
         """
         _list = [
-            ('Filename', self.filename),
-            ('Concurrency', self.concurrency),
-            ('MPI ranks', self.mpi_size),
-            ('# functions', len(self)),
-            ('Title', self.title),
-            ('Parameters', self.plot_params)]
-        _str = '\n'
+            ("Filename", self.filename),
+            ("Concurrency", self.concurrency),
+            ("MPI ranks", self.mpi_size),
+            ("# functions", len(self)),
+            ("Title", self.title),
+            ("Parameters", self.plot_params),
+        ]
+        _str = "\n"
         for entry in _list:
             _str = '{}\t{} : "{}"\n'.format(_str, entry[0], entry[1])
         return _str
@@ -477,12 +494,12 @@ class plot_data():
         """
         Construct the title for the plot
         """
-        return '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(self.title,
-                                                                  self.mpi_size,
-                                                                  int(self.concurrency))
+        return '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(
+            self.title, self.mpi_size, int(self.concurrency)
+        )
 
 
-#==============================================================================#
+# ==============================================================================#
 def read(json_obj, plot_params=plot_parameters()):
     """
     Read the JSON data -- i.e. process JSON object of TiMemory data
@@ -490,20 +507,20 @@ def read(json_obj, plot_params=plot_parameters()):
 
     # some fields
     data = json_obj
-    nranks = len(data['ranks']) if 'ranks' in data else 1
+    nranks = len(data["ranks"]) if "ranks" in data else 1
     concurrency_sum = 0
     timemory_functions = nested_dict()
 
     # print('num ranks = {}'.format(nranks))
 
     # rank = data['rank']
-    nthrd = data['concurrency']    # concurrency
-    ctype = data['type']           # collection type
-    cdesc = data['description']    # collection description
-    unitr = data['unit_repr']      # collection unit display repr
-    gdata = data['graph']          # graph data
-    ngraph = len(gdata)             # number of graph entries
-    roofl = data['roofline'] if 'roofline' in data else None
+    nthrd = data["concurrency"]  # concurrency
+    ctype = data["type"]  # collection type
+    cdesc = data["description"]  # collection description
+    unitr = data["unit_repr"]  # collection unit display repr
+    gdata = data["graph"]  # graph data
+    ngraph = len(gdata)  # number of graph entries
+    roofl = data["roofline"] if "roofline" in data else None
 
     # if roofl is not None:
     #    print(roofl)
@@ -514,7 +531,7 @@ def read(json_obj, plot_params=plot_parameters()):
     # loop over ranks
     for i in range(0, ngraph):
         _data = gdata[i]
-        tag = _data['prefix']
+        tag = _data["prefix"]
 
         def _replace(_tag, _a, _b, _n=0):
             _c = 0
@@ -525,8 +542,8 @@ def read(json_obj, plot_params=plot_parameters()):
                     break
             return _tag
 
-        _stats = _data['stats'] if 'stats' in _data else None
-        tfunc = timemory_data(tag, _data['entry'], _stats)
+        _stats = _data["stats"] if "stats" in _data else None
+        tfunc = timemory_data(tag, _data["entry"], _stats)
 
         if tfunc.laps == 0:
             continue
@@ -542,16 +559,18 @@ def read(json_obj, plot_params=plot_parameters()):
 
     # ------------------------------------------------------------------------ #
     # return a plot_data object
-    return plot_data(concurrency=(concurrency_sum / nranks),
-                     mpi_size=nranks,
-                     description=cdesc,
-                     ctype=ctype,
-                     units=unitr,
-                     timemory_functions=timemory_functions,
-                     plot_params=plot_params)
+    return plot_data(
+        concurrency=(concurrency_sum / nranks),
+        mpi_size=nranks,
+        description=cdesc,
+        ctype=ctype,
+        units=unitr,
+        timemory_functions=timemory_functions,
+        plot_params=plot_params,
+    )
 
 
-#==============================================================================#
+# ==============================================================================#
 def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
 
     if _matplotlib_backend is None:
@@ -560,7 +579,8 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
             import matplotlib.pyplot as plt
         except:
             warnings.warn(
-                "Matplotlib could not find a suitable backend. Skipping plotting...")
+                "Matplotlib could not find a suitable backend. Skipping plotting..."
+            )
             return
 
     import numpy as np
@@ -573,11 +593,12 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
         else:
             return _obj
 
-    font = {'family': 'serif',
-            'color':  'black',
-            'weight': 'bold',
-            'size': _plot_data.plot_params.font_size,
-            }
+    font = {
+        "family": "serif",
+        "color": "black",
+        "weight": "bold",
+        "size": _plot_data.plot_params.font_size,
+    }
 
     filename = [get_obj_idx(_plot_data.filename, idx)]
     plot_params = _plot_data.plot_params
@@ -592,15 +613,18 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     # print("Plot types: {}".format(types))
 
     if ntics == 0:
-        print('{} had no data less than the minimum time ({} {})'.format(
-            filename, _type_min, _type_unit))
+        print(
+            "{} had no data less than the minimum time ({} {})".format(
+                filename, _type_min, _type_unit
+            )
+        )
         return False
 
     avgs = []
     stds = []
 
     for func, obj in _plot_data.items():
-        ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
+        ytics.append("{} x [ {} counts ]".format(func, obj.laps))
         avgs.append(get_obj_idx(obj.data, idx))
         stds.append(0.0)
 
@@ -609,9 +633,13 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     # the thickness of the bars: can also be len(x) sequence
     thickness = 1.0
 
-    f = plt.figure(figsize=(plot_params.img_size['w'] / plot_params.img_dpi,
-                            plot_params.img_size['h'] / plot_params.img_dpi),
-                   dpi=plot_params.img_dpi)
+    f = plt.figure(
+        figsize=(
+            plot_params.img_size["w"] / plot_params.img_dpi,
+            plot_params.img_size["h"] / plot_params.img_dpi,
+        ),
+        dpi=plot_params.img_dpi,
+    )
     ax = f.add_subplot(111)
     ax.yaxis.tick_right()
     f.subplots_adjust(left=0.05, right=0.75, bottom=0.10, top=0.90)
@@ -624,33 +652,40 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     # construct the plots
     _colors = None
     if len(types) == 1:
-        _colors = ['grey', 'darkblue']
-    _plot = plt.barh(ind, avgs, thickness, xerr=stds,
-                     alpha=1.0, antialiased=False, color=_colors)
+        _colors = ["grey", "darkblue"]
+    _plot = plt.barh(
+        ind,
+        avgs,
+        thickness,
+        xerr=stds,
+        alpha=1.0,
+        antialiased=False,
+        color=_colors,
+    )
 
     grid_lines = []
     for i in range(0, ntics):
         if i % nitem == 0:
             grid_lines.append(i)
 
-    plt.yticks(ind, ytics, ha='left', **font)
+    plt.yticks(ind, ytics, ha="left", **font)
     plt.setp(ax.get_yticklabels(), **font)
     plt.setp(ax.get_xticklabels(), **font)
-    #plt.setp(ax.get_yticklabels(), fontsize='small')
+    # plt.setp(ax.get_yticklabels(), fontsize='small')
 
     # Shrink current axis's height by 10% on the bottom
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.90, box.height])
 
     # Add grid
-    ax.xaxis.grid(which='both')
+    ax.xaxis.grid(which="both")
     ax.yaxis.grid()
     if plot_params.log_xaxis:
-        ax.set_xscale('log')
+        ax.set_xscale("log")
     return True
 
 
-#==============================================================================#
+# ==============================================================================#
 def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
 
     #
@@ -660,7 +695,8 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
             import matplotlib.pyplot as plt
         except:
             warnings.warn(
-                "Matplotlib could not find a suitable backend. Skipping plotting...")
+                "Matplotlib could not find a suitable backend. Skipping plotting..."
+            )
             return
 
     import matplotlib
@@ -682,46 +718,51 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
             _fname = "{}_{}".format(_fname, "_".join(_ctype.lower().split()))
         _units = get_obj_idx(_plot_data.units, idx)
         _desc = get_obj_idx(_plot_data.description, idx)
-        _plot_min = (params.max_value * (0.01 * params.min_percent))
+        _plot_min = params.max_value * (0.01 * params.min_percent)
 
         _do_plot = plot_generic(_plot_data, _plot_min, _units, idx)
 
         if not _do_plot:
             return
 
-        _xlabel = '{}'.format(_desc.title())
+        _xlabel = "{}".format(_desc.title())
         if _units:
-            _xlabel = '{} [{}]'.format(_xlabel, _units)
+            _xlabel = "{} [{}]".format(_xlabel, _units)
 
-        font = {'family': 'serif',
-                'color':  'black',
-                'weight': 'bold',
-                'size': 22, }
+        font = {
+            "family": "serif",
+            "color": "black",
+            "weight": "bold",
+            "size": 22,
+        }
 
         plt.xlabel(_xlabel, **font)
         title = title.replace(' "', '"').strip()
         plt.title('"{}" Report for {}'.format(_desc.title(), title), **font)
         if disp:
-            print('Displaying plot...')
+            print("Displaying plot...")
             plt.show()
         else:
             make_output_directory(output_dir)
             imgfname = os.path.basename(_fname)
-            imgfname = imgfname.replace('.json', '.{}'.format(params.img_type))
-            imgfname = imgfname.replace('.py', '.{}'.format(params.img_type))
-            if not '.{}'.format(params.img_type) in imgfname:
-                imgfname += '.{}'.format(params.img_type)
-            while '..' in imgfname:
-                imgfname = imgfname.replace('..', '.')
+            imgfname = imgfname.replace(".json", ".{}".format(params.img_type))
+            imgfname = imgfname.replace(".py", ".{}".format(params.img_type))
+            if not ".{}".format(params.img_type) in imgfname:
+                imgfname += ".{}".format(params.img_type)
+            while ".." in imgfname:
+                imgfname = imgfname.replace("..", ".")
 
-            add_plotted_files(imgfname, os.path.join(
-                output_dir, imgfname), echo_dart)
+            add_plotted_files(
+                imgfname, os.path.join(output_dir, imgfname), echo_dart
+            )
 
             imgfname = os.path.join(output_dir, imgfname)
             if verbosity > 0:
                 print("Opening '{}' for output...".format(imgfname))
             else:
-                lbl = os.path.basename(imgfname).strip('.{}'.format(params.img_type))
+                lbl = os.path.basename(imgfname).strip(
+                    ".{}".format(params.img_type)
+                )
                 print("[{}]|0> Outputting '{}'...".format(lbl, imgfname))
             plt.savefig(imgfname, dpi=params.img_dpi)
             plt.close()
@@ -729,9 +770,16 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
                 print("Closed '{}'...".format(imgfname))
 
 
-#==============================================================================#
-def plot_maximums(output_name, title, data, plot_params=plot_parameters(),
-                  display=False, output_dir='.', echo_dart=None):
+# ==============================================================================#
+def plot_maximums(
+    output_name,
+    title,
+    data,
+    plot_params=plot_parameters(),
+    display=False,
+    output_dir=".",
+    echo_dart=None,
+):
     """
     A function to plot JSON data
 
@@ -750,6 +798,7 @@ def plot_maximums(output_name, title, data, plot_params=plot_parameters(),
     try:
         # try here in case running as main on C++ output
         import timemory.options as options
+
         if echo_dart is None and options.echo_dart:
             echo_dart = True
         elif echo_dart is None:
@@ -760,13 +809,15 @@ def plot_maximums(output_name, title, data, plot_params=plot_parameters(),
     _combined = None
     for _data in data:
         if _combined is None:
-            _combined = plot_data(filename=output_name,
-                                  output_name=output_name,
-                                  concurrency=_data.concurrency,
-                                  mpi_size=_data.mpi_size,
-                                  timemory_functions={},
-                                  title=title,
-                                  plot_params=plot_params)
+            _combined = plot_data(
+                filename=output_name,
+                output_name=output_name,
+                concurrency=_data.concurrency,
+                mpi_size=_data.mpi_size,
+                timemory_functions={},
+                title=title,
+                plot_params=plot_params,
+            )
 
         _key = list(_data.timemory_functions.keys())[0]
         _obj = _data.timemory_functions[_key]
@@ -781,13 +832,20 @@ def plot_maximums(output_name, title, data, plot_params=plot_parameters(),
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
-        print('Exception - {}'.format(e))
+        print("Exception - {}".format(e))
         print('Error! Unable to plot "{}"...'.format(_combined.filename))
 
 
-#==============================================================================#
-def plot(data=[], files=[], plot_params=plot_parameters(),
-         combine=False, display=False, output_dir='.', echo_dart=None):
+# ==============================================================================#
+def plot(
+    data=[],
+    files=[],
+    plot_params=plot_parameters(),
+    combine=False,
+    display=False,
+    output_dir=".",
+    echo_dart=None,
+):
     """
     A function to plot JSON data
 
@@ -806,6 +864,7 @@ def plot(data=[], files=[], plot_params=plot_parameters(),
     try:
         # try here in case running as main on C++ output
         import timemory.options as options
+
         if echo_dart is None and options.echo_dart:
             echo_dart = True
         elif echo_dart is None:
@@ -841,7 +900,8 @@ def plot(data=[], files=[], plot_params=plot_parameters(),
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(
-                exc_type, exc_value, exc_traceback, limit=5)
-            print('Exception - {}'.format(e))
+                exc_type, exc_value, exc_traceback, limit=5
+            )
+            print("Exception - {}".format(e))
             print('Error! Unable to plot "{}"...'.format(_data.filename))
     # print('Done')
