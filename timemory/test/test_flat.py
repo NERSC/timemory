@@ -55,7 +55,7 @@ from timemory.bundle import auto_timer, auto_tuple, marker
 # --------------------------- helper functions ----------------------------------------- #
 # compute fibonacci
 def fibonacci(n):
-    return n if n < 2 else (fibonacci(n-1) + fibonacci(n-2))
+    return n if n < 2 else (fibonacci(n - 1) + fibonacci(n - 2))
 
 
 def fib(n, instr):
@@ -63,7 +63,7 @@ def fib(n, instr):
         with marker(components=["wall_clock"], key="fib"):
             return n if n < 2 else (fib(n - 1, True) + fib(n - 2, False))
     else:
-        return n if n < 2 else (fibonacci(n-1) + fibonacci(n-2))
+        return n if n < 2 else (fibonacci(n - 1) + fibonacci(n - 2))
 
 
 # sleep for n millisec
@@ -78,12 +78,12 @@ def consume(n):
         # get current time in nsec
         now = time.time_ns()
         # try until time point
-        while(time.time_ns() < (now + (n * 1e6))):
+        while time.time_ns() < (now + (n * 1e6)):
             pass
     except:
         now = 1000 * time.time()
         # try until time point
-        while((1000 * time.time()) < (now + n)):
+        while (1000 * time.time()) < (now + n):
             pass
 
 
@@ -133,8 +133,7 @@ class TimemoryFlatTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_parse(self):
-        """parse
-        """
+        """parse"""
         tim.settings.flat_profile = False
         os.environ["TIMEMORY_FLAT_PROFILE"] = "ON"
         tim.settings.parse()
@@ -149,8 +148,7 @@ class TimemoryFlatTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_no_flat(self):
-        """not_flat
-        """
+        """not_flat"""
         os.environ["TIMEMORY_FLAT_PROFILE"] = "OFF"
         tim.settings.parse()
         n = 25
@@ -162,13 +160,12 @@ class TimemoryFlatTests(unittest.TestCase):
         # inspect data
         data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
         self.assertEqual(data[-1]["depth"], n)
-        #print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
+        # print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
 
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_flat(self):
-        """flat
-        """
+        """flat"""
         n = 25
         with marker(components=["wall_clock"], key=self.shortDescription()):
             with profile(components=["wall_clock"]):
@@ -178,7 +175,7 @@ class TimemoryFlatTests(unittest.TestCase):
         # inspect data
         data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
         self.assertEqual(data[-1]["depth"], 0)
-        #print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
+        # print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
 
 
 # ----------------------------- main test runner ---------------------------------------- #
@@ -188,5 +185,5 @@ def run():
     unittest.main()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

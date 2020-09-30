@@ -43,35 +43,39 @@ from os.path import dirname
 from os.path import basename
 from os.path import join
 
-__all__ = ['FILE', 'FUNC', 'LINE']
+__all__ = ["FILE", "FUNC", "LINE"]
 
 
-def FILE(back=2, only_basename=True, use_dirname=False,
-         noquotes=True):
+def FILE(back=2, only_basename=True, use_dirname=False, noquotes=True):
     """
     Returns the file name
     """
+
     def get_fcode(back):
-        fname = '<module>'
+        fname = "<module>"
         try:
             fname = sys._getframe(back).f_code.co_filename
         except Exception as e:
             print(e)
-            fname = '<module>'
+            fname = "<module>"
         return fname
 
     result = None
     if only_basename is True:
         if use_dirname is True:
-            result = ("{}".format(join(basename(dirname(get_fcode(back))),
-                                       basename(get_fcode(back)))))
+            result = "{}".format(
+                join(
+                    basename(dirname(get_fcode(back))),
+                    basename(get_fcode(back)),
+                )
+            )
         else:
-            result = ("{}".format(basename(get_fcode(back))))
+            result = "{}".format(basename(get_fcode(back)))
     else:
-        result = ("{}".format(get_fcode(back)))
+        result = "{}".format(get_fcode(back))
 
     if noquotes is False:
-        result = ("'{}'".format(result))
+        result = "'{}'".format(result)
 
     return result
 
@@ -80,7 +84,7 @@ def FUNC(back=2):
     """
     Returns the function name
     """
-    return ("{}".format(sys._getframe(back).f_code.co_name))
+    return "{}".format(sys._getframe(back).f_code.co_name)
 
 
 def LINE(back=1):

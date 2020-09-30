@@ -38,13 +38,15 @@ __version__ = "@PROJECT_VERSION@"
 __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
-__all__ = ['util',
-           'base_decorator',
-           'auto_timer',
-           'timer',
-           'rss_usage',
-           'marker',
-           'auto_tuple']
+__all__ = [
+    "util",
+    "base_decorator",
+    "auto_timer",
+    "timer",
+    "rss_usage",
+    "marker",
+    "auto_tuple",
+]
 
 from . import util
 from .util import *

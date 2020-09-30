@@ -60,7 +60,7 @@ def check_available(component):
 
 # compute fibonacci
 def fibonacci(n):
-    return n if n < 2 else (fibonacci(n-1) + fibonacci(n-2))
+    return n if n < 2 else (fibonacci(n - 1) + fibonacci(n - 2))
 
 
 # sleep for n nanosec
@@ -75,12 +75,12 @@ def consume(n):
         # get current time in nsec
         now = time.time_ns()
         # try until time point
-        while(time.time_ns() < (now + n)):
+        while time.time_ns() < (now + n):
             pass
     except:
         now = 1e9 * time.time()
         # try until time point
-        while((1e9 * time.time()) < (now + n)):
+        while (1e9 * time.time()) < (now + n):
             pass
 
 
@@ -118,8 +118,8 @@ class TimemoryThrottleTests(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         # unset environment variables
-        del os.environ['TIMEMORY_VERBOSE']
-        del os.environ['TIMEMORY_COLLAPSE_THREADS']
+        del os.environ["TIMEMORY_VERBOSE"]
+        del os.environ["TIMEMORY_COLLAPSE_THREADS"]
 
         # tim.trace.finalize()
         # timemory finalize
@@ -130,8 +130,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test expect_true
     def test_expect_true(self):
-        """expect_true
-        """
+        """expect_true"""
         n = 2 * settings.throttle_count
         tim.trace.push("true")
         for i in range(n):
@@ -144,8 +143,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test expect_false
     def test_expect_false(self):
-        """expect_false
-        """
+        """expect_false"""
         n = 2 * settings.throttle_count
         v = 2 * settings.throttle_value
 
@@ -158,8 +156,8 @@ class TimemoryThrottleTests(unittest.TestCase):
 
     # ---------------------------------------------------------------------------------- #
     def test_region_serial(self):
-        """region_serial
-        """
+        """region_serial"""
+
         def _run(name):
             tim.region.push("rsthread")
             n = 8 * settings.throttle_count
@@ -178,8 +176,8 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test region_multithreaded
     def test_region_multithreaded(self):
-        """region_multithreaded
-        """
+        """region_multithreaded"""
+
         def _run(name):
             tim.region.push("rthread")
             n = 8 * settings.throttle_count
@@ -192,8 +190,7 @@ class TimemoryThrottleTests(unittest.TestCase):
         threads = []
 
         for i in range(self.nthreads):
-            thd = threading.Thread(
-                target=_run, args=(self.shortDescription(),))
+            thd = threading.Thread(target=_run, args=(self.shortDescription(),))
             thd.start()
             threads.append(thd)
 
@@ -203,8 +200,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test multithreaded
     def test_multithreaded(self):
-        """multithreaded
-        """
+        """multithreaded"""
         # using tuple_t = tim::auto_tuple<tim::component::wall_clock>;
 
         # np.array of False
@@ -215,7 +211,7 @@ class TimemoryThrottleTests(unittest.TestCase):
             name = "{}_{}".format(name, idx)
             n = 2 * settings.throttle_count
             v = 2 * settings.throttle_value
-            if (idx % 2 == 1):
+            if idx % 2 == 1:
                 for i in range(n):
                     tim.trace.push(name)
                     consume(v)
@@ -236,7 +232,8 @@ class TimemoryThrottleTests(unittest.TestCase):
         # make new threads
         for i in range(self.nthreads):
             thd = threading.Thread(
-                target=_run, args=(self.shortDescription(), i))
+                target=_run, args=(self.shortDescription(), i)
+            )
             thd.start()
             threads.append(thd)
 
@@ -255,18 +252,21 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test tuple_serial
     def test_tuple_serial(self):
-        """tuple_serial
-        """
+        """tuple_serial"""
+
         @marker(components=("wall_clock"), key="thread")
         def _run(name):
-            with auto_tuple(get_config(["wall_clock"]), key="auto_tuple_serial"):
+            with auto_tuple(
+                get_config(["wall_clock"]), key="auto_tuple_serial"
+            ):
                 n = 8 * settings.throttle_count
                 for i in range(n):
-                    with marker(components=("wall_clock"), key=self.shortDescription()):
+                    with marker(
+                        components=("wall_clock"), key=self.shortDescription()
+                    ):
                         pass
             self.assertFalse(tim.trace.is_throttled("thread"))
-            self.assertFalse(tim.trace.is_throttled(
-                self.shortDescription()))
+            self.assertFalse(tim.trace.is_throttled(self.shortDescription()))
 
         # run with auto tuple (wall_clock)
         for i in range(self.nthreads):
@@ -275,18 +275,21 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test tuple_multithreaded
     def test_tuple_multithreaded(self):
-        """tuple_multithreaded
-        """
+        """tuple_multithreaded"""
+
         @marker(components=("wall_clock"), key="thread")
         def _run(name):
-            with auto_tuple(get_config(["wall_clock"]), key="auto_tuple_multithreaded"):
+            with auto_tuple(
+                get_config(["wall_clock"]), key="auto_tuple_multithreaded"
+            ):
                 n = 8 * settings.throttle_count
                 for i in range(n):
-                    with marker(components=("wall_clock"), key=self.shortDescription()):
+                    with marker(
+                        components=("wall_clock"), key=self.shortDescription()
+                    ):
                         pass
 
-            self.assertFalse(tim.trace.is_throttled(
-                self.shortDescription()))
+            self.assertFalse(tim.trace.is_throttled(self.shortDescription()))
             self.assertFalse(tim.trace.is_throttled("thread"))
 
         # thread handles
@@ -294,8 +297,7 @@ class TimemoryThrottleTests(unittest.TestCase):
 
         # make new threads
         for i in range(self.nthreads):
-            thd = threading.Thread(
-                target=_run, args=(self.shortDescription(), ))
+            thd = threading.Thread(target=_run, args=(self.shortDescription(),))
             thd.start()
             threads.append(thd)
 
@@ -311,5 +313,5 @@ def run():
     unittest.main()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

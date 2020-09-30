@@ -122,11 +122,11 @@ def get_linked_libraries(exes, libs=[]):
             continue
 
         if is_darwin:
-            result = sp.run(['otool', '-L', "{}".format(exe)], stdout=sp.PIPE)
-            output = result.stdout.decode('utf-8').split()
+            result = sp.run(["otool", "-L", "{}".format(exe)], stdout=sp.PIPE)
+            output = result.stdout.decode("utf-8").split()
         elif is_linux:
-            result = sp.run(['ldd', "{}".format(exe)], stdout=sp.PIPE)
-            output = result.stdout.decode('utf-8').split()
+            result = sp.run(["ldd", "{}".format(exe)], stdout=sp.PIPE)
+            output = result.stdout.decode("utf-8").split()
 
         if output is None:
             print("No linked libraries found for '{}'!".format(exe))
@@ -146,8 +146,11 @@ def get_linked_libraries(exes, libs=[]):
 
 
 def echo_dart_measurement(_name, _path, _type="jpeg"):
-    print('<DartMeasurementFile name="{}" type="image/{}">{}</DartMeasurementFile>'.format(
-        _name, _type, _path))
+    print(
+        '<DartMeasurementFile name="{}" type="image/{}">{}</DartMeasurementFile>'.format(
+            _name, _type, _path
+        )
+    )
 
 
 def handle_error(ret, cmd, keep_going):
@@ -158,14 +161,21 @@ def handle_error(ret, cmd, keep_going):
     if ret != 0 and not keep_going:
         raise RuntimeError(err_msg)
     elif ret != 0 and keep_going:
-        barrier = "="*80
-        err_msg = "\n\n" + barrier + "\n\n    ERROR: " + \
-            err_msg + "\n\n" + barrier + "\n\n"
+        barrier = "=" * 80
+        err_msg = (
+            "\n\n"
+            + barrier
+            + "\n\n    ERROR: "
+            + err_msg
+            + "\n\n"
+            + barrier
+            + "\n\n"
+        )
         sys.stderr.write(err_msg)
         sys.stderr.flush()
 
 
-def execute(cmd, outf, keep_going=True, timeout=5*60):
+def execute(cmd, outf, keep_going=True, timeout=5 * 60):
     """
     Execute a command
     """
@@ -180,10 +190,10 @@ def execute(cmd, outf, keep_going=True, timeout=5*60):
     handle_error(p.returncode, cmd, keep_going)
 
     if errs is not None:
-        print("{}".format(outs.decode('utf-8')))
+        print("{}".format(outs.decode("utf-8")))
 
     if outs is not None and outf is not None:
-        f = open(outf, 'w')
+        f = open(outf, "w")
         f.write(outs)
 
 
@@ -207,19 +217,21 @@ def add_preload(libs):
     if preload_env is not None:
         current_preload = os.environ.get(preload_env)
         if current_preload is not None:
-            os.environ[preload_env] = "{}:{}".format(
-                current_preload, preload)
+            os.environ[preload_env] = "{}:{}".format(current_preload, preload)
         else:
             os.environ[preload_env] = "{}".format(preload)
 
 
-def post_process(exe, fname,
-                 image_type="jpeg",
-                 echo_dart=False,
-                 liblist=[],
-                 args=["--no_strip_temp", "--functions"],
-                 generate=["text", "cum", "dot"],
-                 dot_args=[]):
+def post_process(
+    exe,
+    fname,
+    image_type="jpeg",
+    echo_dart=False,
+    liblist=[],
+    args=["--no_strip_temp", "--functions"],
+    generate=["text", "cum", "dot"],
+    dot_args=[],
+):
 
     linked = get_linked_libraries(exe)
     libs = []
@@ -229,25 +241,35 @@ def post_process(exe, fname,
             if signature not in libs:
                 libs += [signature]
 
-    if 'text' in generate:
-        execute(["google-pprof", "--text"] + libs +
-                args + [exe, fname], "{}.txt".format(fname))
+    if "text" in generate:
+        execute(
+            ["google-pprof", "--text"] + libs + args + [exe, fname],
+            "{}.txt".format(fname),
+        )
 
-    if 'cum' in generate:
-        execute(["google-pprof", "--text", "--cum"] + libs +
-                args + [exe, fname], "{}.cum.txt".format(fname))
+    if "cum" in generate:
+        execute(
+            ["google-pprof", "--text", "--cum"] + libs + args + [exe, fname],
+            "{}.cum.txt".format(fname),
+        )
 
-    if 'dot' in generate:
+    if "dot" in generate:
         oname = "{}.dot".format(fname)
         iname = "{}.{}".format(fname, image_type)
-        execute(["google-pprof", "--dot"] +
-                libs + args + [exe, fname], oname)
-        execute(["dot"] + dot_args +
-                ["-T{}".format(image_type), oname, "-o", iname], None)
+        execute(["google-pprof", "--dot"] + libs + args + [exe, fname], oname)
+        execute(
+            ["dot"]
+            + dot_args
+            + ["-T{}".format(image_type), oname, "-o", iname],
+            None,
+        )
         if echo_dart:
-            echo_dart_measurement(os.path.basename(
-                iname), os.path.realpath(iname), image_type)
+            echo_dart_measurement(
+                os.path.basename(iname), os.path.realpath(iname), image_type
+            )
 
-    if 'callgrind' in generate:
-        execute(["google-pprof", "--callgrind"] + libs +
-                args + [exe, fname], "{}.callgrind".format(fname))
+    if "callgrind" in generate:
+        execute(
+            ["google-pprof", "--callgrind"] + libs + args + [exe, fname],
+            "{}.callgrind".format(fname),
+        )

@@ -59,7 +59,7 @@ def check_available(component):
 
 # compute fibonacci
 def fibonacci(n):
-    return n if n < 2 else (fibonacci(n-1) + fibonacci(n-2))
+    return n if n < 2 else (fibonacci(n - 1) + fibonacci(n - 2))
 
 
 # cpu utilization for n milliseconds
@@ -69,12 +69,12 @@ def consume(n):
         # get current time in nsec
         now = time.time_ns()
         # try until time point
-        while(time.time_ns() < (now + (n * 1e6))):
+        while time.time_ns() < (now + (n * 1e6)):
             pass
     except:
         now = 1000 * time.time()
         # try until time point
-        while((1000 * time.time()) < (now + n)):
+        while (1000 * time.time()) < (now + n):
             pass
 
 
@@ -103,10 +103,9 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test wall timer
     def test_wall_clock(self):
-        """wall_timer
-        """
-        if not comp.MonotonicClock.available:
-            raise unittest.SkipTest('[{}] not available'.format('wall_clock'))
+        """wall_timer"""
+        if not comp.WallClock.available:
+            raise unittest.SkipTest("[{}] not available".format("wall_clock"))
 
         obj = comp.WallClock(self.shortDescription())
         obj.push()
@@ -115,8 +114,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(1.0, obj.get(), delta=deltatimer)
@@ -124,11 +122,11 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test monotonic timer
     def test_monotonic_clock(self):
-        """monotonic_timer
-        """
+        """monotonic_timer"""
         if not comp.MonotonicClock.available:
             raise unittest.SkipTest(
-                '[{}] not available'.format('monotonic_clock'))
+                "[{}] not available".format("monotonic_clock")
+            )
 
         obj = comp.MonotonicClock(self.shortDescription())
         obj.push()
@@ -137,8 +135,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(1.0, obj.get(), delta=deltatimer)
@@ -146,11 +143,11 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test monotonic timer raw
     def test_monotonic_raw_clock(self):
-        """monotonic_raw_timer
-        """
+        """monotonic_raw_timer"""
         if not comp.MonotonicRawClock.available:
             raise unittest.SkipTest(
-                '[{}] not available'.format('monotonic_raw_clock'))
+                "[{}] not available".format("monotonic_raw_clock")
+            )
 
         obj = comp.MonotonicRawClock(self.shortDescription())
         obj.push()
@@ -159,8 +156,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(1.0, obj.get(), delta=deltatimer)
@@ -168,10 +164,9 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test system timer
     def test_system_clock(self):
-        """system_timer
-        """
+        """system_timer"""
         if not comp.SysClock.available:
-            raise unittest.SkipTest('[{}] not available'.format('sys_clock'))
+            raise unittest.SkipTest("[{}] not available".format("sys_clock"))
 
         obj = comp.SysClock(self.shortDescription())
         obj.push()
@@ -180,8 +175,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(0.0, obj.get(), delta=deltatimer)
@@ -189,10 +183,9 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test user timer
     def test_user_clock(self):
-        """user_timer
-        """
+        """user_timer"""
         if not comp.UserClock.available:
-            raise unittest.SkipTest('[{}] not available'.format('user_clock'))
+            raise unittest.SkipTest("[{}] not available".format("user_clock"))
 
         obj = comp.UserClock(self.shortDescription())
         obj.push()
@@ -201,8 +194,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(0.0, obj.get(), delta=deltatimer)
@@ -210,10 +202,9 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test cpu timer
     def test_cpu_clock(self):
-        """cpu_timer
-        """
+        """cpu_timer"""
         if not comp.CpuClock.available:
-            raise unittest.SkipTest('[{}] not available'.format('cpu_clock'))
+            raise unittest.SkipTest("[{}] not available".format("cpu_clock"))
 
         obj = comp.CpuClock(self.shortDescription())
         obj.push()
@@ -222,8 +213,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(0.0, obj.get(), delta=deltatimer)
@@ -231,10 +221,9 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test cpu utilization
     def test_cpu_util(self):
-        """cpu_utilization
-        """
+        """cpu_utilization"""
         if not comp.CpuUtil.available:
-            raise unittest.SkipTest('[{}] not available'.format('cpu_util'))
+            raise unittest.SkipTest("[{}] not available".format("cpu_util"))
 
         obj = comp.CpuUtil(self.shortDescription())
         obj.push()
@@ -246,8 +235,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(75.0, obj.get(), delta=deltautil)
@@ -255,11 +243,11 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test thread cpu clock
     def test_thread_cpu_clock(self):
-        """thread_cpu_timer
-        """
+        """thread_cpu_timer"""
         if not comp.ThreadCpuClock.available:
             raise unittest.SkipTest(
-                '[{}] not available'.format('thread_cpu_clock'))
+                "[{}] not available".format("thread_cpu_clock")
+            )
 
         obj = comp.ThreadCpuClock(self.shortDescription())
         obj.push()
@@ -268,8 +256,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(0.0, obj.get(), delta=deltatimer)
@@ -277,11 +264,11 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test thread cpu utilization
     def test_thread_cpu_util(self):
-        """thread_cpu_utilization
-        """
+        """thread_cpu_utilization"""
         if not comp.ThreadCpuUtil.available:
             raise unittest.SkipTest(
-                '[{}] not available'.format('thread_cpu_util'))
+                "[{}] not available".format("thread_cpu_util")
+            )
 
         obj = comp.ThreadCpuUtil(self.shortDescription())
         obj.push()
@@ -293,8 +280,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(75.0, obj.get(), delta=deltautil)
@@ -302,11 +288,11 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test process_cpu_clock
     def test_process_cpu_clock(self):
-        """process_cpu_timer
-        """
+        """process_cpu_timer"""
         if not comp.ProcessCpuClock.available:
             raise unittest.SkipTest(
-                '[{}] not available'.format('process_cpu_clock'))
+                "[{}] not available".format("process_cpu_clock")
+            )
 
         obj = comp.ProcessCpuClock(self.shortDescription())
         obj.push()
@@ -315,8 +301,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(0.0, obj.get(), delta=deltatimer)
@@ -324,11 +309,11 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test process cpu utilization
     def test_process_cpu_util(self):
-        """process_cpu_utilization
-        """
+        """process_cpu_utilization"""
         if not comp.ProcessCpuUtil.available:
             raise unittest.SkipTest(
-                '[{}] not available'.format('process_cpu_util'))
+                "[{}] not available".format("process_cpu_util")
+            )
 
         obj = comp.ProcessCpuUtil(self.shortDescription())
         obj.push()
@@ -340,8 +325,7 @@ class TimemoryTimingTests(unittest.TestCase):
         obj.stop()
         obj.pop()
 
-        print("\n[{}]> result: {}".format(
-            self.shortDescription(), obj.get()))
+        print("\n[{}]> result: {}".format(self.shortDescription(), obj.get()))
 
         # check for near equal
         self.assertAlmostEqual(75.0, obj.get(), delta=deltautil)
@@ -354,5 +338,5 @@ def run():
     unittest.main()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

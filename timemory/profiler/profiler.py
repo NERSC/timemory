@@ -42,13 +42,11 @@ from ..libpytimemory import component_bundle
 __all__ = ["profile", "Profiler", "FakeProfiler", "Config"]
 
 
-#----------------------------------------------------------------------------------------#
 #
 def _default_functor():
     return True
 
 
-#----------------------------------------------------------------------------------------#
 #
 PY3 = sys.version_info[0] == 3
 PY35 = PY3 and sys.version_info[1] >= 5
@@ -56,9 +54,11 @@ PY35 = PY3 and sys.version_info[1] >= 5
 # exec (from https://bitbucket.org/gutworth/six/):
 if PY3:
     import builtins
+
     exec_ = getattr(builtins, "exec")
     del builtins
 else:
+
     def exec_(_code_, _globs_=None, _locs_=None):
         """Execute code in a namespace."""
         if _globs_ is None:
@@ -72,29 +72,28 @@ else:
         exec("""exec _code_ in _globs_, _locs_""")
 
 
-#----------------------------------------------------------------------------------------#
 #
 Config = _profiler_config
 
 
-#----------------------------------------------------------------------------------------#
 #
-class Profiler():
+class Profiler:
     """
     Provides decorators and context-manager for the timemory profilers
     """
+
     global _default_functor
 
     # static variable
     _conditional_functor = _default_functor
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     @staticmethod
     def condition(functor):
         Profiler._conditional_functor = functor
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     @staticmethod
     def is_enabled():
@@ -108,9 +107,11 @@ class Profiler():
             pass
         return False
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
-    def __init__(self, components=[], flat=False, timeline=False, *args, **kwargs):
+    def __init__(
+        self, components=[], flat=False, timeline=False, *args, **kwargs
+    ):
         """
         Arguments:
             - components [list of strings]  : list of timemory components
@@ -123,39 +124,44 @@ class Profiler():
         _components = _profl if _trace is None else _trace
 
         self._original_profiler_function = sys.getprofile()
-        self._use = (not _profiler_config._is_running and Profiler.is_enabled() is True)
-        self._flat_profile = (settings.flat_profile or flat)
-        self._timeline_profile = (settings.timeline_profile or timeline)
+        self._use = (
+            not _profiler_config._is_running and Profiler.is_enabled() is True
+        )
+        self._flat_profile = settings.flat_profile or flat
+        self._timeline_profile = settings.timeline_profile or timeline
         self.components = components + _components.split(",")
         self.components = [v.lower() for v in self.components]
         self.components = list(dict.fromkeys(self.components))
         if len(self.components) == 0:
             self.components += ["wall_clock"]
         if _trace is None:
-            settings.trace_components = ','.join(self.components)
-        settings.profiler_components = ','.join(self.components)
+            settings.trace_components = ",".join(self.components)
+        settings.profiler_components = ",".join(self.components)
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def configure(self):
         _profiler_init()
-        _profiler_bundle.configure(self.components, self._flat_profile,
-                                   self._timeline_profile)
+        _profiler_bundle.configure(
+            self.components, self._flat_profile, self._timeline_profile
+        )
         self._original_profiler_function = sys.getprofile()
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def start(self):
         """
         Start the profiler explicitly
         """
 
-        self._use = (not _profiler_config._is_running and Profiler.is_enabled() is True)
+        self._use = (
+            not _profiler_config._is_running and Profiler.is_enabled() is True
+        )
         if self._use and not _profiler_config._is_running:
             self.configure()
             sys.setprofile(_profiler_function)
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def stop(self):
         """
@@ -166,14 +172,16 @@ class Profiler():
             sys.setprofile(self._original_profiler_function)
             _profiler_fini()
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def __call__(self, func):
         """
         Decorator
         """
 
-        self._use = (not _profiler_config._is_running and Profiler.is_enabled() is True)
+        self._use = (
+            not _profiler_config._is_running and Profiler.is_enabled() is True
+        )
         # print("[__call__:beg]> use: {}, _is_running: {}".format(self._use,
         #      _profiler_config._is_running))
 
@@ -194,7 +202,7 @@ class Profiler():
 
         return ret
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def __enter__(self, *args, **kwargs):
         """
@@ -202,7 +210,7 @@ class Profiler():
         """
         self.start()
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def __exit__(self, exec_type, exec_value, exec_tb):
         """
@@ -210,11 +218,16 @@ class Profiler():
         """
 
         self.stop()
-        if exec_type is not None and exec_value is not None and exec_tb is not None:
+        if (
+            exec_type is not None
+            and exec_value is not None
+            and exec_tb is not None
+        ):
             import traceback
+
             traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def run(self, cmd):
         """
@@ -222,13 +235,14 @@ class Profiler():
         """
 
         import __main__
+
         dict = __main__.__dict__
         if isinstance(cmd, str):
             return self.runctx(cmd, dict, dict)
         else:
             return self.runctx(" ".join(cmd), dict, dict)
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def runctx(self, cmd, globals, locals):
         """
@@ -248,7 +262,7 @@ class Profiler():
 
         return self
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def runcall(self, func, *args, **kw):
         """
@@ -270,11 +284,10 @@ class Profiler():
 
         return ret
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def add_module(self, mod):
-        """ Add all the functions in a module and its classes.
-        """
+        """Add all the functions in a module and its classes."""
         from inspect import isclass, isfunction
 
         nfuncsadded = 0
@@ -294,24 +307,24 @@ class Profiler():
 profile = Profiler
 
 
-class FakeProfiler():
+class FakeProfiler:
     """
     Provides decorators and context-manager for the timemory profiles which do nothing
     """
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     @staticmethod
     def condition(functor):
         pass
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     @staticmethod
     def is_enabled():
         return False
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def __init__(self, *args, **kwargs):
         """
@@ -322,18 +335,20 @@ class FakeProfiler():
         """
         pass
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def __call__(self, func):
         """
         Decorator
         """
+
         @wraps(func)
         def function_wrapper(*args, **kwargs):
             return func(*args, **kwargs)
+
         return function_wrapper
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def __enter__(self, *args, **kwargs):
         """
@@ -341,12 +356,17 @@ class FakeProfiler():
         """
         pass
 
-    #------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------#
     #
     def __exit__(self, exec_type, exec_value, exec_tb):
         """
         Context manager
         """
         import traceback
-        if exec_type is not None and exec_value is not None and exec_tb is not None:
+
+        if (
+            exec_type is not None
+            and exec_value is not None
+            and exec_tb is not None
+        ):
             traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)

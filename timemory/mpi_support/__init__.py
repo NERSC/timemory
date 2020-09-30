@@ -42,8 +42,10 @@ __status__ = "Development"
 from . import mpi_support
 from .mpi_support import *
 
-__all__ = ['mpi_support',
-           'mpi_exe_info',
-           'mpi_c_info',
-           'mpi_cxx_info',
-           'is_supported']
+__all__ = [
+    "mpi_support",
+    "mpi_exe_info",
+    "mpi_c_info",
+    "mpi_cxx_info",
+    "is_supported",
+]

@@ -32,51 +32,49 @@
 from __future__ import absolute_import
 import os
 
-__all__ = ['mpi_exe_info',
-           'mpi_c_info',
-           'mpi_cxx_info',
-           'is_supported',
-           'enable_mpip']
+__all__ = [
+    "mpi_exe_info",
+    "mpi_c_info",
+    "mpi_cxx_info",
+    "is_supported",
+    "enable_mpip",
+]
 
-#----------------------------------------------------------------------------------------#
+
 def _path_to_file(pfile):
-    return '{}/{}'.format(os.path.dirname(__file__), pfile)
+    return "{}/{}".format(os.path.dirname(__file__), pfile)
 
 
-#----------------------------------------------------------------------------------------#
 def mpi_exe_info():
     """
     Returns information about the MPI executable used in compilation
     """
-    print (open(_path_to_file('mpi_exe_info.txt'), 'r').read())
+    print(open(_path_to_file("mpi_exe_info.txt"), "r").read())
 
 
-#----------------------------------------------------------------------------------------#
 def mpi_c_info():
     """
     Returns information about the MPI C libraries used in compilation
     """
-    print (open(_path_to_file('mpi_c_info.txt'), 'r').read())
+    print(open(_path_to_file("mpi_c_info.txt"), "r").read())
 
 
-#----------------------------------------------------------------------------------------#
 def mpi_cxx_info():
     """
     Returns information about the MPI C++ libraries used in compilation
     """
-    print (open(_path_to_file('mpi_cxx_info.txt'), 'r').read())
+    print(open(_path_to_file("mpi_cxx_info.txt"), "r").read())
 
 
-#----------------------------------------------------------------------------------------#
 def is_supported():
     """
     Returns whether MPI is supported
     """
     import timemory
+
     return timemory.has_mpi_support()
 
 
-#----------------------------------------------------------------------------------------#
 def enable_mpip(permit=[], reject=[]):
     """
     Enable the MPIP Gotcha routines (Linux-only)
@@ -85,6 +83,7 @@ def enable_mpip(permit=[], reject=[]):
         reject_list (list):   the names of the MPI functions to exclude from wrapping
     """
     import timemory
+
     if len(permit) > 0:
         os.environ["TIMEMORY_MPIP_PERMIT_LIST"] = ";".join(permit)
     if len(reject) > 0:
