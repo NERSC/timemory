@@ -90,6 +90,50 @@
 //--------------------------------------------------------------------------------------//
 //
 /**
+ * \macro TIMEMORY_SET_COMPONENT_APIS
+ * \brief Declare a component is part of one or more APIs
+ */
+
+#if !defined(TIMEMORY_SET_COMPONENT_API)
+#    define TIMEMORY_SET_COMPONENT_API(COMP, ...)                                        \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <>                                                                      \
+        struct component_apis<COMP>                                                      \
+        {                                                                                \
+            using type = type_list<__VA_ARGS__>;                                         \
+        };                                                                               \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+/**
+ * \macro TIMEMORY_SET_TEMPLATE_COMPONENT_API
+ * \brief Declare a component is part of one or more APIs
+ */
+
+#if !defined(TIMEMORY_SET_TEMPLATE_COMPONENT_API)
+#    define TIMEMORY_SET_TEMPLATE_COMPONENT_API(TARGS, TSPECIAL, ...)                    \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <TARGS>                                                                 \
+        struct component_apis<TSPECIAL>                                                  \
+        {                                                                                \
+            using type = type_list<__VA_ARGS__>;                                         \
+        };                                                                               \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+/**
  * \macro TIMEMORY_BUNDLE_INDEX
  * \brief Declare a bundle index
  */

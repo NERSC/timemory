@@ -163,6 +163,10 @@ public:
                 for(const auto& itr : get_events<void>())
                     std::cerr << "    " << papi::get_event_info(itr).short_descr << "\n";
                 std::cerr << std::flush;
+                // disable all the papi APIs with concrete instantiations
+                tim::trait::apply<tim::trait::runtime_enabled>::set<
+                    api::papi, papi_array_t, papi_common, papi_vector, papi_array8_t,
+                    papi_array16_t, papi_array32_t>(false);
             }
         }
         return _working;

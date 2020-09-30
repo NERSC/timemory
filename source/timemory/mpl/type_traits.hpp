@@ -111,17 +111,50 @@ struct data
 };
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::component_apis
+/// \brief trait to specify the APIs that the component is logically a part of
+///
+template <typename T>
+struct component_apis
+{
+    using type = type_list<>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct runtime_enabled<void>
+{
+    // GET specialization if component is available
+    static bool get() { return get_runtime_value(); }
+
+    // SET specialization if component is available
+    static void set(bool val) { get_runtime_value() = val; }
+
+private:
+    static bool& get_runtime_value()
+    {
+        static bool _instance = TIMEMORY_DEFAULT_ENABLED;
+        return _instance;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::runtime_enabled
-/// \brief trait that signifies that an implementation is enabled at runtime
+/// \brief trait that signifies that an implementation is enabled at runtime. The
+/// value returned from get() is for the specific setting for the type, the
+/// global settings (type: void) and the specific settings for it's APIs
 ///
 template <typename T>
 struct runtime_enabled
 {
+    using apitypes_t = typename component_apis<T>::type;
     // GET specialization if component is available
     template <typename U = T>
     static enable_if_t<is_available<U>::value, bool> get()
     {
-        return get_runtime_value();
+        return (get_runtime_value() && runtime_enabled<void>::get() &&
+                apply<runtime_enabled>{}(apitypes_t{}));
     }
 
     // SET specialization if component is available

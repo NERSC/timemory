@@ -226,6 +226,12 @@ add_option(TIMEMORY_BUILD_GOTCHA
     "Enable building GOTCHA (set to OFF for external)" ON)
 add_option(TIMEMORY_UNITY_BUILD
     "Same as CMAKE_UNITY_BUILD but is not propagated to submodules" ON)
+if(NOT CMAKE_VERSION VERSION_LESS 3.16)
+    add_option(TIMEMORY_PRECOMPILE_HEADERS
+        "Pre-compile headers where possible" ON)
+else()
+    set(TIMEMORY_PRECOMPILE_HEADERS OFF)
+endif()
 
 if(NOT _NON_APPLE_UNIX)
     set(TIMEMORY_BUILD_GOTCHA OFF)

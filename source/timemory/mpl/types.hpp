@@ -75,6 +75,8 @@ template <template <typename...> class TraitT, typename... CommonT>
 struct apply
 {
     //
+    TIMEMORY_DEFAULT_OBJECT(apply)
+    //
     template <typename... Types, typename... Args>
     static inline void set(Args&&... args)
     {
@@ -87,6 +89,14 @@ struct apply
     {
         return std::make_tuple(
             TraitT<Types, CommonT...>::get(std::forward<Args>(args)...)...);
+    }
+    //
+    template <typename... Types>
+    inline bool operator()(type_list<Types...>)
+    {
+        bool _ret = true;
+        TIMEMORY_FOLD_EXPRESSION(_ret = _ret && TraitT<Types>::get());
+        return _ret;
     }
 };  //
 //
@@ -102,7 +112,7 @@ struct is_available;
 template <typename T>
 struct data;
 
-template <typename T>
+template <typename T = void>
 struct runtime_enabled;
 
 template <typename T>
@@ -152,6 +162,9 @@ struct is_component;
 
 template <typename T, typename Tag = void>
 struct api_components;
+
+template <typename T>
+struct component_apis;
 
 template <typename T>
 struct is_gotcha;

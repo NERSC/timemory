@@ -41,6 +41,9 @@
 
 //======================================================================================//
 //
+TIMEMORY_DECLARE_API(papi)
+TIMEMORY_DEFINE_API(papi)
+//
 TIMEMORY_DECLARE_COMPONENT(papi_vector)
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(papi_tuple, int... EventTypes)
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(papi_array, size_t MaxNumEvents)
@@ -50,6 +53,24 @@ TIMEMORY_COMPONENT_ALIAS(papi_array8_t, papi_array<8>)
 TIMEMORY_COMPONENT_ALIAS(papi_array16_t, papi_array<16>)
 TIMEMORY_COMPONENT_ALIAS(papi_array32_t, papi_array<32>)
 TIMEMORY_COMPONENT_ALIAS(papi_array_t, papi_array<TIMEMORY_PAPI_ARRAY_SIZE>)
+//
+TIMEMORY_SET_COMPONENT_API(component::papi_vector, api::papi)
+TIMEMORY_SET_COMPONENT_API(component::papi_array8_t, api::papi)
+TIMEMORY_SET_COMPONENT_API(component::papi_array16_t, api::papi)
+TIMEMORY_SET_COMPONENT_API(component::papi_array32_t, api::papi)
+//
+#if(TIMEMORY_PAPI_ARRAY_SIZE != 8 && TIMEMORY_PAPI_ARRAY_SIZE != 16 &&                   \
+    TIMEMORY_PAPI_ARRAY_SIZE != 32)
+TIMEMORY_SET_COMPONENT_API(component::papi_array_t, api::papi)
+#endif
+//
+TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(int... Evts),
+                                    TIMEMORY_ESC(component::papi_tuple<Evts...>),
+                                    api::papi)
+//
+TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(int... Evts),
+                                    TIMEMORY_ESC(component::papi_rate_tuple<Evts...>),
+                                    api::papi)
 //
 //======================================================================================//
 //
@@ -64,6 +85,7 @@ namespace tim
 {
 namespace trait
 {
+//
 template <int... Idx>
 struct statistics<component::papi_tuple<Idx...>>
 {
@@ -75,6 +97,7 @@ struct statistics<component::papi_rate_tuple<Idx...>>
 {
     using type = std::array<double, sizeof...(Idx)>;
 };
+//
 }  // namespace trait
 }  // namespace tim
 //

@@ -34,6 +34,10 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
+// timers API
+TIMEMORY_DECLARE_API(timers)
+TIMEMORY_DEFINE_API(timers)
+
 /// \struct wall_clock
 /// \brief the system's real time (i.e. wall time) clock, expressed as the amount of time
 /// since the epoch.
@@ -105,6 +109,20 @@ TIMEMORY_DECLARE_COMPONENT(thread_cpu_util)
 //                              TYPE-TRAITS
 //
 //======================================================================================//
+//
+TIMEMORY_SET_COMPONENT_API(component::wall_clock, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::system_clock, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::user_clock, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::cpu_clock, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::monotonic_clock, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::monotonic_raw_clock, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::thread_cpu_clock, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::process_cpu_clock, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::cpu_util, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::process_cpu_util, api::timers, api::native_tag)
+TIMEMORY_SET_COMPONENT_API(component::thread_cpu_util, api::timers, api::native_tag)
+//
+//--------------------------------------------------------------------------------------//
 //
 //                              STATISTICS
 //
