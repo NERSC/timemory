@@ -9,12 +9,12 @@ import sys
 import numpy as np
 
 
-@profile
+@profile  # noqa: F821
 def fib(n):
     return n if n < 2 else (fib(n-1) + fib(n-2))
 
 
-@profile
+@profile  # noqa: F821
 def inefficient(n):
     a = 0
     for i in range(n):
