@@ -154,9 +154,7 @@ def post_process(args):
     try:
         if args.type == "cpu_profiler":
             if args.input is None:
-                raise RuntimeError(
-                    "No input file provided for post-processing"
-                )
+                raise RuntimeError("No input file provided for post-processing")
 
             _utils.post_process(
                 args.exe,

@@ -275,9 +275,7 @@ class ert_core:
         for run_file in run_files:
             run_configure_filename = "%s/config.ert" % run_file
             if os.path.exists(run_configure_filename):
-                if filecmp.cmp(
-                    self.configure_filename, run_configure_filename
-                ):
+                if filecmp.cmp(self.configure_filename, run_configure_filename):
                     self.results_dir = run_file
                     no_dir = False
                     if self.options.verbose > 0:
@@ -496,8 +494,7 @@ class ert_core:
             output = open(outputname, "a")
         except IOError:
             sys.stderr.write(
-                "Unable to open output file, %s, to add metadata\n"
-                % outputfile
+                "Unable to open output file, %s, to add metadata\n" % outputfile
             )
             return 1
 
@@ -718,9 +715,7 @@ class ert_core:
                                             % run_dir
                                         )
 
-                                        for t in xrange(
-                                            1, num_experiments + 1
-                                        ):
+                                        for t in xrange(1, num_experiments + 1):
                                             output = "%s/try.%03d" % (
                                                 run_dir,
                                                 t,
@@ -851,33 +846,25 @@ class ert_core:
         if self.options.post and self.options.gnuplot:
             for run_dir in self.run_list:
                 if (
-                    self.make_graph(
-                        run_dir, "Graph 1 (%s)" % run_dir, "graph1"
-                    )
+                    self.make_graph(run_dir, "Graph 1 (%s)" % run_dir, "graph1")
                     != 0
                 ):
                     return 1
 
                 if (
-                    self.make_graph(
-                        run_dir, "Graph 2 (%s)" % run_dir, "graph2"
-                    )
+                    self.make_graph(run_dir, "Graph 2 (%s)" % run_dir, "graph2")
                     != 0
                 ):
                     return 1
 
                 if (
-                    self.make_graph(
-                        run_dir, "Graph 3 (%s)" % run_dir, "graph3"
-                    )
+                    self.make_graph(run_dir, "Graph 3 (%s)" % run_dir, "graph3")
                     != 0
                 ):
                     return 1
 
                 if (
-                    self.make_graph(
-                        run_dir, "Graph 4 (%s)" % run_dir, "graph4"
-                    )
+                    self.make_graph(run_dir, "Graph 4 (%s)" % run_dir, "graph4")
                     != 0
                 ):
                     return 1

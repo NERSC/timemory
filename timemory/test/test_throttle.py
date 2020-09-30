@@ -190,9 +190,7 @@ class TimemoryThrottleTests(unittest.TestCase):
         threads = []
 
         for i in range(self.nthreads):
-            thd = threading.Thread(
-                target=_run, args=(self.shortDescription(),)
-            )
+            thd = threading.Thread(target=_run, args=(self.shortDescription(),))
             thd.start()
             threads.append(thd)
 
@@ -299,9 +297,7 @@ class TimemoryThrottleTests(unittest.TestCase):
 
         # make new threads
         for i in range(self.nthreads):
-            thd = threading.Thread(
-                target=_run, args=(self.shortDescription(),)
-            )
+            thd = threading.Thread(target=_run, args=(self.shortDescription(),))
             thd.start()
             threads.append(thd)
 

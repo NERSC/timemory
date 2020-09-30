@@ -312,9 +312,7 @@ def main():
             if opts.builtin:
                 execfile(script_file, ns, ns)
             else:
-                prof.runctx(
-                    "execfile_(%r, globals())" % (script_file,), ns, ns
-                )
+                prof.runctx("execfile_(%r, globals())" % (script_file,), ns, ns)
             if not opts.builtin:
                 prof.stop()
         except (KeyboardInterrupt, SystemExit):

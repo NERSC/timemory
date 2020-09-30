@@ -33,10 +33,10 @@ def run_mpi(nitr=100, nsize=1000000):
     for i in range(nitr):
         # passing MPI datatypes explicitly
         if rank == 0:
-            data = numpy.arange(nsize, dtype='i')
+            data = numpy.arange(nsize, dtype="i")
             comm.Send([data, MPI.INT], dest=1, tag=77)
         elif rank == 1:
-            data = numpy.empty(nsize, dtype='i')
+            data = numpy.empty(nsize, dtype="i")
             comm.Recv([data, MPI.INT], source=0, tag=77)
 
         # automatic MPI datatype discovery
@@ -63,22 +63,41 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--iterations', required=False,
-                        default=100, type=int, help="Iterations")
-    parser.add_argument('-n', '--size', required=False,
-                        default=1000000, type=int, help="Array size")
+    parser.add_argument(
+        "-i",
+        "--iterations",
+        required=False,
+        default=100,
+        type=int,
+        help="Iterations",
+    )
+    parser.add_argument(
+        "-n",
+        "--size",
+        required=False,
+        default=1000000,
+        type=int,
+        help="Array size",
+    )
 
     args = parser.parse_args()
     timemory.enable_signal_detection()
     timemory.settings.width = 12
     timemory.settings.precision = 6
 
-    with profile(["wall_clock", "user_clock", "system_clock", "cpu_util",
-                  "peak_rss", "thread_cpu_clock", "thread_cpu_util"]):
+    with profile(
+        [
+            "wall_clock",
+            "user_clock",
+            "system_clock",
+            "cpu_util",
+            "peak_rss",
+            "thread_cpu_clock",
+            "thread_cpu_util",
+        ]
+    ):
         ans = main(args)
         print("Answer = {}".format(ans))
 
     timemory.finalize()
     print("Python Finished")
-
-

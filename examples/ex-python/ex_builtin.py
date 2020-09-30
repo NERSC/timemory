@@ -11,7 +11,7 @@ import numpy as np
 
 @profile  # noqa: F821
 def fib(n):
-    return n if n < 2 else (fib(n-1) + fib(n-2))
+    return n if n < 2 else (fib(n - 1) + fib(n - 2))
 
 
 @profile  # noqa: F821

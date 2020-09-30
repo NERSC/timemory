@@ -52,9 +52,7 @@ def run_all_tests():
 
     # print the loaded tests
     print(
-        "============= Loaded Tests =============\n\n {}\n".format(
-            timTestSuite
-        )
+        "============= Loaded Tests =============\n\n {}\n".format(timTestSuite)
     )
 
     # create a results object to store test results

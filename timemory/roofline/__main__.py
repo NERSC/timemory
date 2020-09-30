@@ -132,9 +132,7 @@ Examples:
         default=[1600, 1200, 100],
         nargs=3,
     )
-    parser.add_argument(
-        "-R", "--rank", type=int, help="MPI Rank", default=None
-    )
+    parser.add_argument("-R", "--rank", type=int, help="MPI Rank", default=None)
     parser.add_argument(
         "-v", "--verbose", type=int, help="Verbosity", default=None
     )

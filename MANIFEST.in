@@ -6,21 +6,22 @@ include VERSION
 include LICENSE
 include README.md
 include CHANGES.md
-include meta.yaml
-include conda_build_config.yaml
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
 include requirements.txt
 include update-conda-yaml.py
 
 # recursive includes
 
 recursive-include cmake *
+recursive-include recipe *
 recursive-include examples *
 recursive-include external *
 recursive-include source *
 recursive-include timemory *
-recursive-include .licenses *
 recursive-include tests *
 recursive-include scripts *
+recursive-include .misc *
 recursive-include .requirements *
 
 # global exclude
@@ -31,10 +32,7 @@ global-exclude *__pycache__*
 
 # recursive excludes
 
-recursive-exclude pybind11/docs/.build *
-recursive-exclude build *
+recursive-exclude timemory.egg-info *
 recursive-exclude _skbuild *
+recursive-exclude build *
 recursive-exclude dist *
-recursive-exclude TiMemory.egg-info *
-recursive-exclude html *
-recursive-exclude images *

@@ -529,9 +529,7 @@ def get_hotspots(op_data, ai_data):
         return False
 
     for i in range(0, max_length):
-        if check_ignore(
-            ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]
-        ):
+        if check_ignore(ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]):
             continue
 
         ai_repr = ai_graph_data[i]["entry"]["repr_data"]
@@ -549,9 +547,7 @@ def get_hotspots(op_data, ai_data):
         avg_runtime /= len(all_runtime) - 1.0
 
     for i in range(0, max_length):
-        if check_ignore(
-            ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]
-        ):
+        if check_ignore(ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]):
             continue
 
         runtimes = []
