@@ -172,6 +172,10 @@ def run_pyctest():
     #
     args = configure()
 
+    google_pprof = helpers.FindExePath("google-pprof")
+    if google_pprof is None:
+        google_pprof = helpers.FindExePath("pprof")
+
     # find srun and mpirun
     #
     dmprun = None
@@ -412,7 +416,7 @@ def run_pyctest():
     def construct_command(cmd, args):
         global clobber_notes
         _cmd = []
-        if args.profile is not None:
+        if args.profile is not None and google_pprof is not None:
             _exe = os.path.basename(cmd[0])
             if args.profile == "cpu":
                 _cmd.append(os.path.join(pyct.BINARY_DIRECTORY,
@@ -464,25 +468,67 @@ def run_pyctest():
 
     # create tests
     #
-    if args.quick:
-        if args.python:
-            pyct.test("timemory-python",
-                      [sys.executable, "-c", "\"import timemory\""],
+    if args.python:
+        pyct.test("timemory-python",
+                  [sys.executable, "-c", "\"import timemory\""],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": base_env})
+
+        pyct.test("timemory-python-profiler",
+                  [sys.executable, "-m", "timemory.profiler",
+                   "--max-stack-depth=10",
+                   "-l", "-f", "-F", "-c", "wall_clock", "peak_rss",
+                   "--",
+                   "./ex_python_external", "20"],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": base_env})
+
+        pyct.test("timemory-python-profiler-builtin",
+                  [sys.executable, "-m", "timemory.profiler",
+                   "--max-stack-depth=10", "-b",
+                   "-l", "-f", "-F", "-c", "wall_clock", "peak_rss",
+                   "--",
+                   "./ex_python_builtin", "20"],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": base_env})
+
+        pyct.test("timemory-python-line-profiler",
+                  [sys.executable, "-m", "timemory.profiler",
+                   "-v", "-l", "-c", "peak_rss",
+                   "--",
+                   "./ex_python_external", "20"],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": base_env})
+
+        pyct.test("timemory-python-line-profiler-builtin",
+                  [sys.executable, "-m", "timemory.profiler",
+                   "-v", "-l", "-b", "-c", "wall_clock",
+                   "--",
+                   "./ex_python_builtin", "20"],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": base_env})
+
+        pyunittests = ["flat", "rusage", "throttle", "timeline", "timing"]
+        for t in pyunittests:
+            pyct.test("python-unittest-{}".format(t),
+                      [sys.executable, "-m",
+                       "timemory.test.test_{}".format(t)],
                       {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                        "LABELS": pyct.PROJECT_NAME,
                        "TIMEOUT": "300",
-                       "ENVIRONMENT": base_env})
+                       "ENVIRONMENT": test_env})
 
-            pyunittests = ["flat", "rusage", "throttle", "timeline", "timing"]
-            for t in pyunittests:
-                pyct.test("python-unittest-{}".format(t),
-                          [sys.executable, "-m",
-                           "timemory.test.test_{}".format(t)],
-                          {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                           "LABELS": pyct.PROJECT_NAME,
-                           "TIMEOUT": "300",
-                           "ENVIRONMENT": test_env})
-    else:
+    if not args.quick:
         if args.tools:
             pyct.test("timem-timemory-avail",
                       ["./timem", "./timemory-avail"],
@@ -609,23 +655,6 @@ def run_pyctest():
                            "ENVIRONMENT": test_env})
 
         if args.python:
-            pyct.test("timemory-python",
-                      [sys.executable, "-c", "\"import timemory\""],
-                      {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                       "LABELS": pyct.PROJECT_NAME,
-                       "TIMEOUT": "300",
-                       "ENVIRONMENT": base_env})
-
-            pyunittests = ["flat", "rusage", "throttle", "timeline", "timing"]
-            for t in pyunittests:
-                pyct.test("python-unittest-{}".format(t),
-                          [sys.executable, "-m",
-                           "timemory.test.test_{}".format(t)],
-                          {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                           "LABELS": pyct.PROJECT_NAME,
-                           "TIMEOUT": "300",
-                           "ENVIRONMENT": base_env})
-
             pyct.test(construct_name("ex-python-bindings"),
                       construct_command(["mpirun", "-np", "2", sys.executable,
                                          "./ex_python_bindings"], args),

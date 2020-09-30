@@ -30,92 +30,22 @@ import copy
 from functools import wraps
 from collections import deque
 
-__all__ = ["profile", "Profiler", "FakeProfiler"]
-#
-#   Variables
-#
-_records = deque()
-_counter = 0
-_skip_counts = []
-_is_running = False
-_start_events = ["call"]  # + ["c_call"]
-_stop_events = ["return"]  # + ["c_return"]
-_always_skipped_functions = ["__exit__", "_handle_fromlist", "<module>"]
-_always_skipped_files = ["__init__.py", "__main__.py", "<frozen importlib._bootstrap>"]
-
-#
-#   Profiler settings
-#
-_include_line = True
-_include_filepath = True
-_full_filepath = False
+from ..libpytimemory.profiler import profiler_function as _profiler_function
+from ..libpytimemory.profiler import config as _profiler_config
+from ..libpytimemory.profiler import initialize as _profiler_init
+from ..libpytimemory.profiler import finalize as _profiler_fini
+from ..libpytimemory.profiler import profiler_bundle as _profiler_bundle
+from ..libpytimemory import settings
+from ..libpytimemory import component_bundle
 
 
+__all__ = ["profile", "Profiler", "FakeProfiler", "Config"]
+
+
+#----------------------------------------------------------------------------------------#
+#
 def _default_functor():
     return True
-
-
-def _profiler_function(frame, event, arg):
-    from ..libpytimemory import settings
-    from ..libpytimemory import component_bundle
-
-    global _records
-    global _include_line
-    global _include_filepath
-    global _full_filepath
-    global _counter
-    global _skip_counts
-    global _start_events
-    global _stop_events
-    global _always_skipped_functions
-
-    _count = copy.copy(_counter)
-
-    if event in _start_events:
-        if not settings.enabled:
-            _skip_counts.append(_count)
-            return
-
-        _func = "{}".format(frame.f_code.co_name)
-        _line = int(frame.f_lineno) if _include_line else -1
-        _file = "" if not _include_filepath else "{}".format(
-            frame.f_code.co_filename)
-
-        # skip anything from this file
-        if _file == __file__:
-            _skip_counts.append(_count)
-            return
-
-        # check if skipped function
-        if _func in _always_skipped_functions:
-            _skip_counts.append(_count)
-            return
-
-        # check if skipped file
-        if os.path.basename(_file) in _always_skipped_files:
-            _skip_counts.append(_count)
-            return
-
-        if not _full_filepath and len(_file) > 0:
-            _file = os.path.basename(_file)
-
-        if "__init__.py" not in _file:
-            entry = component_bundle(_func, _file, _line)
-            entry.start()
-            _records.append(entry)
-        else:
-            _skip_counts.append(_count)
-        _counter += 1
-
-    elif event in _stop_events:
-
-        if _count in _skip_counts:
-            _skip_counts.remove(_count)
-        elif len(_records) > 0:
-            entry = _records.pop()
-            entry.stop()
-            del entry
-        _counter -= 1
 
 
 #----------------------------------------------------------------------------------------#
@@ -140,6 +70,11 @@ else:
         elif _locs_ is None:
             _locs_ = _globs_
         exec("""exec _code_ in _globs_, _locs_""")
+
+
+#----------------------------------------------------------------------------------------#
+#
+Config = _profiler_config
 
 
 #----------------------------------------------------------------------------------------#
@@ -182,24 +117,13 @@ class Profiler():
             - flat [bool]                   : enable flat profiling
             - timeline [bool]               : enable timeline profiling
         """
-        from ..libpytimemory import settings
-
-        global _records
-        global _include_line
-        global _include_filepath
-        global _full_filepath
-        global _counter
-        global _skip_counts
-        global _start_events
-        global _stop_events
-        global _is_running
 
         _trace = settings.trace_components
         _profl = settings.profiler_components
         _components = _profl if _trace is None else _trace
 
         self._original_profiler_function = sys.getprofile()
-        self._use = (not _is_running and Profiler.is_enabled() is True)
+        self._use = (not _profiler_config._is_running and Profiler.is_enabled() is True)
         self._flat_profile = (settings.flat_profile or flat)
         self._timeline_profile = (settings.timeline_profile or timeline)
         self.components = components + _components.split(",")
@@ -210,8 +134,14 @@ class Profiler():
         if _trace is None:
             settings.trace_components = ','.join(self.components)
         settings.profiler_components = ','.join(self.components)
-        # os.environ["TIMEMORY_PROFILER_COMPONENTS"] = ",".join(self.components)
-        # print("USE = {}, COMPONENTS = {}".format(self._use, self.components))
+
+    #------------------------------------------------------------------------------------#
+    #
+    def configure(self):
+        _profiler_init()
+        _profiler_bundle.configure(self.components, self._flat_profile,
+                                   self._timeline_profile)
+        self._original_profiler_function = sys.getprofile()
 
     #------------------------------------------------------------------------------------#
     #
@@ -219,15 +149,10 @@ class Profiler():
         """
         Start the profiler explicitly
         """
-        from ..libpytimemory import component_bundle
-        global _is_running
 
-        if self._use:
-            self._original_profiler_function = sys.getprofile()
-            _is_running = True
-            component_bundle.reset()
-            component_bundle.configure(self.components, self._flat_profile,
-                                       self._timeline_profile)
+        self._use = (not _profiler_config._is_running and Profiler.is_enabled() is True)
+        if self._use and not _profiler_config._is_running:
+            self.configure()
             sys.setprofile(_profiler_function)
 
     #------------------------------------------------------------------------------------#
@@ -236,11 +161,10 @@ class Profiler():
         """
         Stop the profiler explicitly
         """
-        global _is_running
 
-        if self._use:
-            _is_running = False
+        if self._use and _profiler_config._is_running:
             sys.setprofile(self._original_profiler_function)
+            _profiler_fini()
 
     #------------------------------------------------------------------------------------#
     #
@@ -248,63 +172,46 @@ class Profiler():
         """
         Decorator
         """
-        from ..libpytimemory import component_bundle
-        global _is_running
 
-        if self._use:
-            self._original_profiler_function = sys.getprofile()
-            _is_running = True
-            component_bundle.reset()
-            component_bundle.configure(self.components, self._flat_profile,
-                                       self._timeline_profile)
+        self._use = (not _profiler_config._is_running and Profiler.is_enabled() is True)
+        # print("[__call__:beg]> use: {}, _is_running: {}".format(self._use,
+        #      _profiler_config._is_running))
+
+        if self._use and not _profiler_config._is_running:
+            self.configure()
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
-            if self._use:
+            if self._use and sys.getprofile() != _profiler_function:
                 sys.setprofile(_profiler_function)
-            _ret = func(*args, **kwargs)
-            if self._use:
-                sys.setprofile(self._original_profiler_function)
-            return _ret
+            return func(*args, **kwargs)
 
-        _ret = function_wrapper
+        ret = function_wrapper
 
-        if self._use:
-            _is_running = False
+        # print("[__call__:end]> use: {}, _is_running: {}".format(self._use,
+        #      _profiler_config._is_running))
+        self.stop()
 
-        return _ret
+        return ret
 
     #------------------------------------------------------------------------------------#
     #
     def __enter__(self, *args, **kwargs):
         """
-        Context manager
+        Context manager start function
         """
-        from ..libpytimemory import component_bundle
-        global _is_running
-
-        if self._use:
-            self._original_profiler_function = sys.getprofile()
-            _is_running = True
-            component_bundle.reset()
-            component_bundle.configure(self.components, self._flat_profile,
-                                       self._timeline_profile)
-            sys.setprofile(_profiler_function)
+        self.start()
 
     #------------------------------------------------------------------------------------#
     #
     def __exit__(self, exec_type, exec_value, exec_tb):
         """
-        Context manager
+        Context manager stop function
         """
-        global _is_running
 
-        if self._use:
-            _is_running = False
-            sys.setprofile(self._original_profiler_function)
-
-        import traceback
+        self.stop()
         if exec_type is not None and exec_value is not None and exec_tb is not None:
+            import traceback
             traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)
 
     #------------------------------------------------------------------------------------#
@@ -313,6 +220,7 @@ class Profiler():
         """
         Execute and profile a command
         """
+
         import __main__
         dict = __main__.__dict__
         if isinstance(cmd, str):
@@ -326,21 +234,18 @@ class Profiler():
         """
         Profile a context
         """
-        from ..libpytimemory import component_bundle
-        global _is_running
 
         if self._use:
-            self._original_profiler_function = sys.getprofile()
-            _is_running = True
-            component_bundle.reset()
-            component_bundle.configure(self.components, self._flat_profile,
-                                       self._timeline_profile)
+            self.configure()
+            sys.setprofile(_profiler_function)
 
         try:
             exec_(cmd, globals, locals)
         finally:
             if self._use:
-                _is_running = False
+                sys.setprofile(self._original_profiler_function)
+                _profiler_fini()
+
         return self
 
     #------------------------------------------------------------------------------------#
@@ -349,20 +254,21 @@ class Profiler():
         """
         Profile a single function call.
         """
-        from ..libpytimemory import component_bundle
-        global _is_running
+
+        ret = None
 
         if self._use:
-            self._original_profiler_function = sys.getprofile()
-            _is_running = True
-            component_bundle.reset()
-            component_bundle.configure(self.components, self._flat_profile,
-                                       self._timeline_profile)
+            self.configure()
+            sys.setprofile(_profiler_function)
+
         try:
-            return func(*args, **kw)
+            ret = func(*args, **kw)
         finally:
             if self._use:
-                _is_running = False
+                sys.setprofile(self._original_profiler_function)
+                _profiler_fini()
+
+        return ret
 
     #------------------------------------------------------------------------------------#
     #

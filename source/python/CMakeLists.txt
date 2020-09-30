@@ -6,7 +6,8 @@
 ##########################################################################################
 
 if(TIMEMORY_BUILD_PYTHON)
-    unset(CMAKE_CXX_CLANG_TIDY)
+    set(CMAKE_CXX_CLANG_TIDY)
+    set(CMAKE_UNITY_BUILD OFF)
     set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
 
     add_library(timemory-python-compile-options INTERFACE)
@@ -41,16 +42,16 @@ if(TIMEMORY_BUILD_PYTHON)
 
     target_link_libraries(libpytimemory PRIVATE
         pybind11::module
-        timemory-python
-        timemory-headers
-        timemory-cxx-shared
-        timemory-compile-options
-        timemory-external-shared
-        timemory-python-compile-options
-        timemory-mpip-library
-        timemory-ompt-library
-        timemory-ncclp-library
-        timemory-default-visibility)
+        timemory::timemory-python
+        timemory::timemory-headers
+        timemory::timemory-cxx-shared
+        timemory::timemory-compile-options
+        timemory::timemory-external-shared
+        timemory::timemory-python-compile-options
+        timemory::timemory-mpip-library
+        timemory::timemory-ompt-library
+        timemory::timemory-ncclp-library
+        timemory::timemory-default-visibility)
 
     if(TIMEMORY_USE_CUDA)
         set(EXTRA_PROPERTIES LINKER_LANGUAGE CUDA)

@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include "timemory/macros/os.hpp"
+
 #include <array>
 #include <bitset>
 #include <functional>
@@ -75,7 +77,17 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_ALWAYS_INLINE) && !(defined(_WIN32) || defined(_WIN64))
+#if !defined(TIMEMORY_ATTRIBUTE)
+#    if defined(_WINDOWS)
+#        define TIMEMORY_ATTRIBUTE(...) __declspec(__VA_ARGS__)
+#    else
+#        define TIMEMORY_ATTRIBUTE(...) __attribute__((__VA_ARGS__))
+#    endif
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_ALWAYS_INLINE) && !defined(_WINDOWS)
 #    define TIMEMORY_ALWAYS_INLINE [[gnu::always_inline]]
 #else
 #    define TIMEMORY_ALWAYS_INLINE inline
@@ -83,7 +95,7 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_FLATTEN) && !(defined(_WIN32) || defined(_WIN64))
+#if !defined(TIMEMORY_FLATTEN) && !defined(_WINDOWS)
 #    define TIMEMORY_FLATTEN [[gnu::flatten]]
 #else
 #    define TIMEMORY_FLATTEN
@@ -91,7 +103,7 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_HOT) && !(defined(_WIN32) || defined(_WIN64))
+#if !defined(TIMEMORY_HOT) && !defined(_WINDOWS)
 #    define TIMEMORY_HOT [[gnu::hot]]
 #else
 #    define TIMEMORY_HOT
@@ -99,7 +111,7 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_COLD) && !(defined(_WIN32) || defined(_WIN64))
+#if !defined(TIMEMORY_COLD) && !defined(_WINDOWS)
 #    define TIMEMORY_COLD [[gnu::cold]]
 #else
 #    define TIMEMORY_COLD
@@ -131,8 +143,8 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_ATTRIBUTES)
-#    define TIMEMORY_ATTRIBUTES(...) __VA_ARGS__
+#if !defined(TIMEMORY_NOINLINE)
+#    define TIMEMORY_NOINLINE TIMEMORY_ATTRIBUTE(noinline)
 #endif
 
 //======================================================================================//

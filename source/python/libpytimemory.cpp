@@ -177,6 +177,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto pycomp = pycomponents::generate(tim);
     pyrss_usage::generate(tim, pyunit);
     pyenumeration::generate(pycomp);
+    pyprofile::generate(tim);
 
     //==================================================================================//
     //

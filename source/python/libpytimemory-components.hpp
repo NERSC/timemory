@@ -245,3 +245,13 @@ generate(py::module& _pymod, py::module& _pyunits);
 }  // namespace pyrss_usage
 //
 //--------------------------------------------------------------------------------------//
+//
+//                                      PROFILER
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace pyprofile
+{
+py::module
+generate(py::module& _pymod);
+}  // namespace pyprofile
