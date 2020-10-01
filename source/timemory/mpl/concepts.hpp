@@ -54,7 +54,7 @@
         static constexpr bool value =                                                    \
             is_##CONCEPT::template have<typename std::remove_cv<Tp>::type>::value;       \
     };
-// constexpr operator bool() const noexcept { return value; }                       \
+// constexpr operator bool() const noexcept { return value; }
 
 //--------------------------------------------------------------------------------------//
 
