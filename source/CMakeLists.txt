@@ -56,15 +56,6 @@ endif()
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
 
-if(NOT CMAKE_VERSION VERSION_LESS 3.16)
-    set(_PRECOMPILE_HEADERS)
-    foreach(_HEADER ${cereal_headers} ${cxx_header_tpls})
-        list(APPEND _PRECOMPILE_HEADERS [[${_HEADER}]])
-    endforeach()
-    target_precompile_headers(timemory-headers INTERFACE
-        $<BUILD_INTERFACE:${_PRECOMPILE_HEADERS}>)
-endif()
-
 #----------------------------------------------------------------------------------------#
 # build library setup
 #

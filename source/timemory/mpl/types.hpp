@@ -112,6 +112,15 @@ struct is_available;
 template <typename T>
 struct data;
 
+template <typename T, bool>
+struct component_value_type;
+
+template <typename T>
+struct collects_data;
+
+template <typename T>
+using runtime_configurable = concepts::is_runtime_configurable<T>;
+
 template <typename T = void>
 struct runtime_enabled;
 
@@ -171,12 +180,6 @@ struct is_gotcha;
 
 template <typename T>
 struct is_user_bundle;
-
-template <typename T, bool>
-struct component_value_type;
-
-template <typename T>
-struct collects_data;
 
 template <typename T, typename Tuple>
 struct supports_args;

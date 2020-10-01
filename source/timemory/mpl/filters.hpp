@@ -392,13 +392,13 @@ using unique_t = convert_t<typename impl::unique<T, type_list<>>::type, TupleT>;
 
 /// filter out any types that are not available
 template <typename... Types>
-using filter_gotchas = impl::filter_false<trait::is_gotcha, std::tuple<Types...>>;
+using filter_gotchas = get_false_types_t<trait::is_gotcha, std::tuple<Types...>>;
 
 template <typename T>
-using filter_gotchas_t = impl::filter_false<trait::is_gotcha, T>;
+using filter_gotchas_t = get_false_types_t<trait::is_gotcha, T>;
 
 template <typename T>
-using filter_empty_t = impl::filter_true<concepts::is_empty, T>;
+using filter_empty_t = get_true_types_t<concepts::is_empty, T>;
 
 //======================================================================================//
 //
@@ -436,6 +436,14 @@ using sort = convert_t<typename impl::sortT<PrioT, convert_t<Tuple, type_list<>>
                                             convert_t<BegT, type_list<>>,
                                             convert_t<EndT, type_list<>>>::type,
                        std::tuple<>>;
+
+template <typename... Types>
+using runtime_configurable_t =
+    typename get_true_types<concepts::is_runtime_configurable, Types...>::type;
+
+template <typename... Types>
+using external_function_wrappers_t =
+    typename get_true_types<concepts::is_external_function_wrapper, Types...>::type;
 
 }  // namespace mpl
 

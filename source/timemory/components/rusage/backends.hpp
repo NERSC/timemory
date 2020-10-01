@@ -32,6 +32,7 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cstdint>

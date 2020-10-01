@@ -36,12 +36,28 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(data_tracker, typename InpT,
                                     typename Tag     = api::native_tag,
                                     typename Handler = data::handler<InpT, Tag>,
                                     typename StoreT  = InpT)
+
+//--------------------------------------------------------------------------------------//
+//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace tim
+{
+namespace trait
+{
+template <typename InpT, typename Tag, typename Handler, typename StoreT>
+struct component_apis<component::data_tracker<InpT, Tag, Handler, StoreT>>
+{
+    using type = type_list<project::timemory, category::logger, os::agnostic>;
+};
+}  // namespace trait
+}  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //

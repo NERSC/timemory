@@ -24,87 +24,176 @@
 
 #pragma once
 
-/** \file timemory/api.hpp
- * \headerfile timemory/api.hpp "timemory/api.hpp"
- *
- * This is a declaration of API types
- *
- */
-
 #include "timemory/defines.h"
+#include "timemory/macros/os.hpp"
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/version.h"
 
 #include <type_traits>
 
-//
-//--------------------------------------------------------------------------------------//
-//
-/**
- * \macro TIMEMORY_DECLARE_API
- * \brief Declare an API category
- */
-
-#if !defined(TIMEMORY_DECLARE_API)
-#    define TIMEMORY_DECLARE_API(NAME)                                                   \
+/// \macro TIMEMORY_DECLARE_NS_API(NS, NAME)
+/// \brief Declare an API category. APIs are used to designate
+/// different project implementations, different external library tools, etc.
+///
+#if !defined(TIMEMORY_DECLARE_NS_API)
+#    define TIMEMORY_DECLARE_NS_API(NS, NAME)                                            \
         namespace tim                                                                    \
         {                                                                                \
-        namespace api                                                                    \
+        namespace NS                                                                     \
         {                                                                                \
         struct NAME;                                                                     \
         }                                                                                \
         }
 #endif
-//
-//--------------------------------------------------------------------------------------//
-//
-/**
- * \macro TIMEMORY_DEFINE_API
- * \brief Define an API category
- */
 
-#if !defined(TIMEMORY_DEFINE_API)
-#    define TIMEMORY_DEFINE_API(NAME)                                                    \
+#if !defined(TIMEMORY_DECLARE_API)
+#    define TIMEMORY_DECLARE_API(NAME) TIMEMORY_DECLARE_NS_API(api, NAME)
+#endif
+
+//
+/// \macro TIMEMORY_DEFINE_NS_API(NS, NAME)
+/// \param NS sub-namespace within tim::api
+/// \param NAME the name of the API
+///
+/// \brief Define an API category within a namespace
+///
+#if !defined(TIMEMORY_DEFINE_NS_API)
+#    define TIMEMORY_DEFINE_NS_API(NS, NAME)                                             \
         namespace tim                                                                    \
         {                                                                                \
-        namespace api                                                                    \
+        namespace NS                                                                     \
         {                                                                                \
-        struct NAME                                                                      \
-        {};                                                                              \
-        }                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <>                                                                      \
-        struct is_api<api::NAME> : true_type                                             \
+        struct NAME : public concepts::api                                               \
         {};                                                                              \
         }                                                                                \
         }
 #endif
+
+///
+/// \macro TIMEMORY_DEFINE_API
+/// \brief Define an API category. APIs are used to designate
+/// different project implementations, different external library tools, etc.
+/// Note: this macro inherits from \ref concepts::api instead of specializing
+/// is_api<...>, thus allowing specialization from tools downstream
+///
+#if !defined(TIMEMORY_DEFINE_API)
+#    define TIMEMORY_DEFINE_API(NAME) TIMEMORY_DEFINE_NS_API(api, NAME)
+#endif
+
+//
+// General APIs
+//
+TIMEMORY_DEFINE_NS_API(project, none)      // dummy type
+TIMEMORY_DEFINE_NS_API(project, timemory)  // provided by timemory API exclusively
+TIMEMORY_DEFINE_NS_API(project, python)    // provided by timemory python interface
+//
+// Device APIs
+//
+TIMEMORY_DECLARE_NS_API(device, cpu)  // collects data on CPU
+TIMEMORY_DECLARE_NS_API(device, gpu)  // collects data on GPU
+//
+// Category APIs
+//
+TIMEMORY_DEFINE_NS_API(category, debugger)          // provided debugging utilities
+TIMEMORY_DEFINE_NS_API(category, decorator)         // decorates external profiler
+TIMEMORY_DEFINE_NS_API(category, external)          // relies on external package
+TIMEMORY_DEFINE_NS_API(category, io)                // collects I/O data
+TIMEMORY_DEFINE_NS_API(category, logger)            // logs generic data or messages
+TIMEMORY_DEFINE_NS_API(category, hardware_counter)  // collects HW counter data
+TIMEMORY_DEFINE_NS_API(category, memory)            // collects memory data
+TIMEMORY_DEFINE_NS_API(category, resource_usage)    // collects resource usage data
+TIMEMORY_DEFINE_NS_API(category, timing)            // collects timing data
+TIMEMORY_DEFINE_NS_API(category, visualization)     // related to viz (currently unused)
+//
+// External Third-party library APIs
+//
+TIMEMORY_DEFINE_NS_API(tpls, allinea)
+TIMEMORY_DEFINE_NS_API(tpls, caliper)
+TIMEMORY_DEFINE_NS_API(tpls, craypat)
+TIMEMORY_DEFINE_NS_API(tpls, gotcha)
+TIMEMORY_DEFINE_NS_API(tpls, gperftools)
+TIMEMORY_DEFINE_NS_API(tpls, intel)
+TIMEMORY_DEFINE_NS_API(tpls, likwid)
+TIMEMORY_DEFINE_NS_API(tpls, nvidia)
+TIMEMORY_DEFINE_NS_API(tpls, openmp)
+TIMEMORY_DEFINE_NS_API(tpls, papi)
+TIMEMORY_DEFINE_NS_API(tpls, tau)
+//
+// OS-specific APIs
+//
+TIMEMORY_DEFINE_NS_API(os, agnostic)
+TIMEMORY_DEFINE_NS_API(os, unix)
+TIMEMORY_DEFINE_NS_API(os, linux)
+TIMEMORY_DEFINE_NS_API(os, darwin)
+TIMEMORY_DEFINE_NS_API(os, windows)
 //
 //--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, project::timemory, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, project::python, true_type)
+//
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::debugger, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::decorator, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::external, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::io, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::logger, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::hardware_counter,
+                                 true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::resource_usage,
+                                 true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::timing, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::visualization,
+                                 true_type)
+//
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::allinea, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::caliper, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::craypat, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::gotcha, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::gperftools, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::intel, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::likwid, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::nvidia, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::openmp, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::papi, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, tpls::tau, true_type)
 //
 namespace tim
 {
-//
-using true_type  = std::true_type;
-using false_type = std::false_type;
+namespace api
+{
+using native_tag = project::timemory;
+}
 //
 namespace trait
 {
-template <typename T>
-struct is_api : false_type
+//
+#if !defined(_UNIX)
+template <>
+struct is_available<os::unix> : false_type
 {};
+#endif
+//
+#if !defined(_LINUX)
+template <>
+struct is_available<os::linux> : false_type
+{};
+#endif
+//
+#if !defined(_MACOS)
+template <>
+struct is_available<os::darwin> : false_type
+{};
+#endif
+//
+#if !defined(_WINDOWS)
+template <>
+struct is_available<os::windows> : false_type
+{};
+#endif
+//
 }  // namespace trait
 //
 }  // namespace tim
-
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_DECLARE_API(native_tag)
-TIMEMORY_DEFINE_API(native_tag)
-
-TIMEMORY_DECLARE_API(python)
-TIMEMORY_DEFINE_API(python)
 //
 //--------------------------------------------------------------------------------------//
 //

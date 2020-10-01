@@ -166,7 +166,7 @@ struct caliper_config
     ///     args --> pybind11::args --> pybind11::tuple
     ///     kwargs --> pybind11::kwargs --> pybind11::dict
     ///
-    void configure(api::python, pybind11::args _args, pybind11::kwargs _kwargs)
+    void configure(project::python, pybind11::args _args, pybind11::kwargs _kwargs)
     {
         std::string cmd = "";
         {
@@ -276,7 +276,7 @@ public:
     ///     without that member function is not invalid
     ///
     template <template <typename...> class BundleT>
-    static void configure(api::python,
+    static void configure(project::python,
                           pybind11::class_<BundleT<caliper_marker>>& _pyclass)
     {
         // define two lambdas to pass to pybind11 instead of &caliper_marker
@@ -367,7 +367,7 @@ struct caliper_loop_marker
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
     template <template <typename...> class BundleT>
-    static void configure(api::python, pybind11::class_<BundleT<caliper_marker>>&)
+    static void configure(project::python, pybind11::class_<BundleT<caliper_marker>>&)
     {}
 #endif
 

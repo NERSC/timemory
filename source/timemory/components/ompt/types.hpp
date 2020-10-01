@@ -46,7 +46,14 @@ TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)
 //
 TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle, user_bundle<ompt_bundle_idx, api::native_tag>)
 //
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
+//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SET_COMPONENT_API(component::user_ompt_bundle, tpls::openmp, category::external,
+                           os::agnostic)
 //
 namespace tim
 {
@@ -70,6 +77,10 @@ using ompt_data_tracker_t = data_tracker<int64_t, ompt_target_data_tag>;
 }  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_USE_OMPT)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::openmp, false_type)
+#endif
 //
 namespace tim
 {

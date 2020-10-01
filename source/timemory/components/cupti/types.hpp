@@ -34,13 +34,24 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
 TIMEMORY_DECLARE_COMPONENT(cupti_activity)
 TIMEMORY_DECLARE_COMPONENT(cupti_counters)
 TIMEMORY_DECLARE_COMPONENT(cupti_profiler)
+
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SET_COMPONENT_API(component::cupti_activity, tpls::nvidia, device::gpu,
+                           category::external, category::timing, os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::cupti_counters, tpls::nvidia, device::gpu,
+                           category::external, category::hardware_counter, os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::cupti_profiler, tpls::nvidia, device::gpu,
+                           category::external, category::hardware_counter, os::agnostic)
+//
+//--------------------------------------------------------------------------------------//
 //
 //                              STATISTICS
 //
@@ -59,6 +70,10 @@ TIMEMORY_STATISTICS_TYPE(component::cupti_profiler, std::vector<double>)
 #if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_counters, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_activity, false_type)
+#endif
+//
+#if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA) ||                       \
+    !defined(TIMEMORY_USE_CUPTI_NVPERF)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_profiler, false_type)
 #endif
 //

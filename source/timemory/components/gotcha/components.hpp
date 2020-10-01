@@ -56,7 +56,9 @@ namespace component
 //  TODO: filter any gotcha components out of Components
 //
 template <size_t Nt, typename Components, typename Differentiator>
-struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
+struct gotcha
+: public base<gotcha<Nt, Components, Differentiator>, void>
+, public concepts::external_function_wrapper
 {
     static_assert(concepts::has_gotcha<Components>::value == false,
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
@@ -1020,7 +1022,9 @@ namespace component
 {
 //======================================================================================//
 //
-struct malloc_gotcha : base<malloc_gotcha, double>
+struct malloc_gotcha
+: base<malloc_gotcha, double>
+, public concepts::external_function_wrapper
 {
 #if defined(TIMEMORY_USE_CUDA)
     static constexpr uintmax_t data_size = 5;

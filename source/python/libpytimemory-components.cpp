@@ -224,10 +224,10 @@ get_display_unit(py::class_<pytuple_t<T>>& _pyclass, long, long)
 template <typename T, typename... Args>
 static inline auto
 configure(py::class_<pytuple_t<T>>& _pyclass, int, int, Args&&... args)
-    -> decltype(T::configure(tim::api::python{}, std::forward<Args>(args)...), void())
+    -> decltype(T::configure(tim::project::python{}, std::forward<Args>(args)...), void())
 {
     auto _configure = [](Args&&... _args) {
-        T::configure(tim::api::python{}, std::forward<Args>(_args)...);
+        T::configure(tim::project::python{}, std::forward<Args>(_args)...);
     };
     _pyclass.def_static("configure", _configure, "Configure the tool");
 }
@@ -238,13 +238,13 @@ template <typename T, typename... Args>
 static inline auto
 configure(py::class_<pytuple_t<T>>& _pyclass, int, long, Args&&... args)
     -> decltype(std::declval<pytuple_t<T>>().template get<T>()->configure(
-                    tim::api::python{}, std::forward<Args>(args)...),
+                    tim::project::python{}, std::forward<Args>(args)...),
                 void())
 {
     using bundle_t  = pytuple_t<T>;
     auto _configure = [](bundle_t* obj, Args&&... _args) {
         if(obj->template get<T>())
-            obj->template get<T>()->configure(tim::api::python{},
+            obj->template get<T>()->configure(tim::project::python{},
                                               std::forward<Args>(_args)...);
     };
     _pyclass.def("configure", _configure, "Configure the tool");
@@ -262,9 +262,9 @@ configure(py::class_<pytuple_t<T>>&, long, long, Args&&...)
 template <typename T>
 static inline auto
 configure(py::class_<pytuple_t<T>>& _pyclass, int)
-    -> decltype(T::configure(tim::api::python{}, _pyclass))
+    -> decltype(T::configure(tim::project::python{}, _pyclass))
 {
-    T::configure(tim::api::python{}, _pyclass);
+    T::configure(tim::project::python{}, _pyclass);
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -34,8 +34,6 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
 TIMEMORY_DECLARE_COMPONENT(gperftools_cpu_profiler)
 TIMEMORY_DECLARE_COMPONENT(gperftools_heap_profiler)
 //
@@ -43,12 +41,27 @@ TIMEMORY_DECLARE_COMPONENT(gperftools_heap_profiler)
 //
 TIMEMORY_COMPONENT_ALIAS(gperf_cpu_profiler, gperftools_cpu_profiler)
 TIMEMORY_COMPONENT_ALIAS(gperf_heap_profiler, gperftools_heap_profiler)
+
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SET_COMPONENT_API(component::gperftools_cpu_profiler, tpls::gperftools,
+                           category::external, category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::gperftools_heap_profiler, tpls::gperftools,
+                           category::external, category::memory, os::unix)
+//
+//--------------------------------------------------------------------------------------//
 //
 //                              IS AVAILABLE
 //
 //--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_USE_GPERFTOOLS)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::gperftools, false_type)
+#endif
 //
 //      GPERF and gperftools_heap_profiler
 //

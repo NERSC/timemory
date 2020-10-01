@@ -61,13 +61,15 @@ namespace tim
 // variadic list of components
 //
 template <typename... Types>
-class lightweight_tuple : public stack_bundle<available_t<std::tuple<Types...>>>
+class lightweight_tuple
+: public stack_bundle<available_t<type_list<Types...>>>
+, public concepts::comp_wrapper
 {
     // manager is friend so can use above
     friend class manager;
 
 public:
-    using bundle_type         = stack_bundle<available_t<std::tuple<Types...>>>;
+    using bundle_type         = stack_bundle<available_t<type_list<Types...>>>;
     using this_type           = lightweight_tuple<Types...>;
     using captured_location_t = source_location::captured;
 

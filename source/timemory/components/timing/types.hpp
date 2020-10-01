@@ -29,14 +29,11 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-
-// timers API
-TIMEMORY_DECLARE_API(timers)
-TIMEMORY_DEFINE_API(timers)
 
 /// \struct wall_clock
 /// \brief the system's real time (i.e. wall time) clock, expressed as the amount of time
@@ -110,17 +107,30 @@ TIMEMORY_DECLARE_COMPONENT(thread_cpu_util)
 //
 //======================================================================================//
 //
-TIMEMORY_SET_COMPONENT_API(component::wall_clock, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::system_clock, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::user_clock, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::cpu_clock, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::monotonic_clock, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::monotonic_raw_clock, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::thread_cpu_clock, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::process_cpu_clock, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::cpu_util, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::process_cpu_util, api::timers, api::native_tag)
-TIMEMORY_SET_COMPONENT_API(component::thread_cpu_util, api::timers, api::native_tag)
+// OS-agnostic
+TIMEMORY_SET_COMPONENT_API(component::wall_clock, project::timemory, category::timing,
+                           os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::system_clock, project::timemory, category::timing,
+                           os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::user_clock, project::timemory, category::timing,
+                           os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::cpu_clock, project::timemory, category::timing,
+                           os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::cpu_util, project::timemory, category::timing,
+                           os::agnostic)
+// Available on Unix
+TIMEMORY_SET_COMPONENT_API(component::monotonic_clock, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::monotonic_raw_clock, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::thread_cpu_clock, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::process_cpu_clock, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::process_cpu_util, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::thread_cpu_util, project::timemory,
+                           category::timing, os::unix)
 //
 //--------------------------------------------------------------------------------------//
 //

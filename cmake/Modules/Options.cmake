@@ -228,7 +228,7 @@ add_option(TIMEMORY_UNITY_BUILD
     "Same as CMAKE_UNITY_BUILD but is not propagated to submodules" ON)
 if(NOT CMAKE_VERSION VERSION_LESS 3.16)
     add_option(TIMEMORY_PRECOMPILE_HEADERS
-        "Pre-compile headers where possible" ON)
+        "Pre-compile headers where possible" OFF)
 else()
     set(TIMEMORY_PRECOMPILE_HEADERS OFF)
 endif()

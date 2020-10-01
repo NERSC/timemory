@@ -55,6 +55,8 @@ namespace tim
 ///
 template <typename Tag, typename... Types>
 class base_bundle
+: public concepts::variadic
+, public concepts::wrapper
 {
 public:
     using tag_type = Tag;
@@ -338,7 +340,9 @@ public:
 //======================================================================================//
 //
 template <typename... Types>
-struct stack_bundle : public base_bundle<TIMEMORY_API, Types...>
+struct stack_bundle
+: public base_bundle<TIMEMORY_API, Types...>
+, public concepts::stack_wrapper
 {
     using data_type = std::tuple<Types...>;
 
@@ -349,7 +353,9 @@ struct stack_bundle : public base_bundle<TIMEMORY_API, Types...>
 };
 
 template <typename... Types>
-struct stack_bundle<std::tuple<Types...>> : public base_bundle<TIMEMORY_API, Types...>
+struct stack_bundle<std::tuple<Types...>>
+: public base_bundle<TIMEMORY_API, Types...>
+, public concepts::stack_wrapper
 {
     using data_type = std::tuple<Types...>;
 
@@ -360,7 +366,9 @@ struct stack_bundle<std::tuple<Types...>> : public base_bundle<TIMEMORY_API, Typ
 };
 
 template <typename... Types>
-struct stack_bundle<type_list<Types...>> : public base_bundle<TIMEMORY_API, Types...>
+struct stack_bundle<type_list<Types...>>
+: public base_bundle<TIMEMORY_API, Types...>
+, public concepts::stack_wrapper
 {
     using data_type = std::tuple<Types...>;
 
@@ -373,7 +381,9 @@ struct stack_bundle<type_list<Types...>> : public base_bundle<TIMEMORY_API, Type
 //======================================================================================//
 //
 template <typename... Types>
-struct heap_bundle : public base_bundle<TIMEMORY_API, Types...>
+struct heap_bundle
+: public base_bundle<TIMEMORY_API, Types...>
+, public concepts::heap_wrapper
 {
     using data_type = std::tuple<Types*...>;
 
@@ -384,7 +394,9 @@ struct heap_bundle : public base_bundle<TIMEMORY_API, Types...>
 };
 
 template <typename... Types>
-struct heap_bundle<std::tuple<Types...>> : public base_bundle<TIMEMORY_API, Types...>
+struct heap_bundle<std::tuple<Types...>>
+: public base_bundle<TIMEMORY_API, Types...>
+, public concepts::heap_wrapper
 {
     using data_type = std::tuple<Types*...>;
 
@@ -395,7 +407,9 @@ struct heap_bundle<std::tuple<Types...>> : public base_bundle<TIMEMORY_API, Type
 };
 
 template <typename... Types>
-struct heap_bundle<type_list<Types...>> : public base_bundle<TIMEMORY_API, Types...>
+struct heap_bundle<type_list<Types...>>
+: public base_bundle<TIMEMORY_API, Types...>
+, public concepts::heap_wrapper
 {
     using data_type = std::tuple<Types*...>;
 

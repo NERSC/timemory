@@ -38,9 +38,13 @@
 //
 TIMEMORY_DECLARE_COMPONENT(allinea_map)
 //
+TIMEMORY_SET_COMPONENT_API(component::allinea_map, tpls::allinea, category::external,
+                           os::linux)
+//
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_USE_ALLINEA_MAP)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::allinea, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::allinea_map, false_type)
 #endif
 //

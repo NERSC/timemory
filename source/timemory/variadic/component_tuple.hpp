@@ -62,7 +62,9 @@ namespace tim
 // variadic list of components
 //
 template <typename... Types>
-class component_tuple : public stack_bundle<available_t<concat<Types...>>>
+class component_tuple
+: public stack_bundle<available_t<concat<Types...>>>
+, public concepts::comp_wrapper
 {
     // manager is friend so can use above
     friend class manager;

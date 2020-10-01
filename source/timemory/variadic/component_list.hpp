@@ -63,7 +63,9 @@ namespace tim
 // variadic list of components
 //
 template <typename... Types>
-class component_list : public heap_bundle<available_t<concat<Types...>>>
+class component_list
+: public heap_bundle<available_t<concat<Types...>>>
+, public concepts::comp_wrapper
 {
     static const std::size_t num_elements = sizeof...(Types);
 

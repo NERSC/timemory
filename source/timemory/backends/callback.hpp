@@ -25,12 +25,26 @@
 
 /** \file callback.hpp
  * \headerfile callback.hpp "timemory/details/callback.hpp"
- * Provides implementation of callback for cuda_event
+ * Provides implementation of callback for cudaEvent_t
  *
  */
 
 #pragma once
 
+#if defined(TIMEMORY_USE_CUDA)
+
+#    include <condition_variable>
+#    include <memory>
+#    include <mutex>
+#    include <thread>
+
+#    include <cuda.h>
+#    include <cuda_runtime_api.h>
+
+namespace tim
+{
+namespace cuda
+{
 //--------------------------------------------------------------------------------------//
 // Create thread
 //
@@ -125,7 +139,7 @@ struct heterogeneous_workload
     int          id;
     int          cudaDeviceID;
     cudaStream_t stream;
-    cuda_event*  event;
+    cudaEvent_t* event;
     bool         success;
 };
 
@@ -161,3 +175,8 @@ static void CUDART_CB
 {
     cutStartThread(postprocess, data);
 }
+
+}  // namespace cuda
+}  // namespace tim
+
+#endif

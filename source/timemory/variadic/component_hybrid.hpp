@@ -55,7 +55,7 @@ namespace tim
 // variadic list of components
 //
 template <typename CompTuple, typename CompList>
-class component_hybrid
+class component_hybrid : public concepts::hybrid_wrapper
 {
     static_assert((concepts::is_stack_wrapper<CompTuple>::value &&
                    concepts::is_heap_wrapper<CompList>::value),

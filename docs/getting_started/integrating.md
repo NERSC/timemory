@@ -80,6 +80,7 @@ were not available when timemory was installed.
 | `timemory::timemory-papi-static` | Enables PAPI support + links to static library |
 | `timemory::timemory-papi` | Enables PAPI support |
 | `timemory::timemory-plotting` | Enables python plotting support (system call) |
+| `timemory::timemory-precompiled-headers` | Provides timemory-headers + precompiles headers if CMAKE_VERSION >= 3.16 |
 | `timemory::timemory-python` | Enables python support (embedded interpreter) |
 | `timemory::timemory-roofline-options` | Compiler flags for roofline generation |
 | `timemory::timemory-roofline` | Enables flags and libraries for proper roofline generation |

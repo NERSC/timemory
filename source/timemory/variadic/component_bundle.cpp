@@ -130,7 +130,7 @@ component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc
 , m_data(invoke::construct<data_type, Tag>(loc, config))
 {
     apply_v::set_value(m_data, nullptr);
-    if(m_store)
+    if(m_store && trait::runtime_enabled<Tag>::get())
     {
         IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
         set_prefix(loc.get_hash());
@@ -153,7 +153,7 @@ component_bundle<Tag, Types...>::component_bundle(const string_t& key, const boo
 , m_data(invoke::construct<data_type, Tag>(key, store, _scope))
 {
     apply_v::set_value(m_data, nullptr);
-    if(m_store)
+    if(m_store && trait::runtime_enabled<Tag>::get())
     {
         IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
@@ -176,7 +176,7 @@ component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc
 , m_data(invoke::construct<data_type, Tag>(loc, store, _scope))
 {
     apply_v::set_value(m_data, nullptr);
-    if(m_store)
+    if(m_store && trait::runtime_enabled<Tag>::get())
     {
         IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(loc.get_hash());
@@ -199,7 +199,7 @@ component_bundle<Tag, Types...>::component_bundle(size_t hash, const bool& store
 , m_data(invoke::construct<data_type, Tag>(hash, store, _scope))
 {
     apply_v::set_value(m_data, nullptr);
-    if(m_store)
+    if(m_store && trait::runtime_enabled<Tag>::get())
     {
         IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(hash);
@@ -297,6 +297,8 @@ template <typename... Args>
 void
 component_bundle<Tag, Types...>::measure(Args&&... args)
 {
+    if(!trait::runtime_enabled<Tag>::get())
+        return;
     invoke::measure<Tag>(m_data, std::forward<Args>(args)...);
 }
 
@@ -308,9 +310,10 @@ template <typename... Args>
 void
 component_bundle<Tag, Types...>::sample(Args&&... args)
 {
-    sample_type _samples;
-    apply_v::access2<operation_t<operation::sample>>(m_data, _samples,
-                                                     std::forward<Args>(args)...);
+    sample_type _samples{};
+    if(trait::runtime_enabled<Tag>::get())
+        apply_v::access2<operation_t<operation::sample>>(m_data, _samples,
+                                                         std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -321,6 +324,8 @@ template <typename... Args>
 void
 component_bundle<Tag, Types...>::start(mpl::lightweight, Args&&... args)
 {
+    if(!trait::runtime_enabled<Tag>::get())
+        return;
     assemble(*this);
     invoke::start<Tag>(m_data, std::forward<Args>(args)...);
 }
@@ -332,6 +337,8 @@ template <typename... Args>
 void
 component_bundle<Tag, Types...>::stop(mpl::lightweight, Args&&... args)
 {
+    if(!trait::runtime_enabled<Tag>::get())
+        return;
     invoke::stop<Tag>(m_data, std::forward<Args>(args)...);
     ++m_laps;
     derive(*this);
@@ -384,6 +391,9 @@ template <typename... Args>
 void
 component_bundle<Tag, Types...>::start(Args&&... args)
 {
+    if(!trait::runtime_enabled<Tag>::get())
+        return;
+
     // push components into the call-stack
     if(m_store)
         push();
@@ -399,6 +409,9 @@ template <typename... Args>
 void
 component_bundle<Tag, Types...>::stop(Args&&... args)
 {
+    if(!trait::runtime_enabled<Tag>::get())
+        return;
+
     // stop components
     stop(mpl::lightweight{}, std::forward<Args>(args)...);
 
@@ -415,6 +428,9 @@ template <typename... Args>
 component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::record(Args&&... args)
 {
+    if(!trait::runtime_enabled<Tag>::get())
+        return *this;
+
     ++m_laps;
     invoke::record<Tag>(m_data, std::forward<Args>(args)...);
     return *this;
@@ -532,6 +548,8 @@ template <typename Tag, typename... Types>
 void
 component_bundle<Tag, Types...>::set_scope(scope::config val)
 {
+    if(!trait::runtime_enabled<Tag>::get())
+        return;
     m_scope = val;
     invoke::set_scope<Tag>(m_data, m_scope);
 }
@@ -555,6 +573,8 @@ template <typename Tag, typename... Types>
 void
 component_bundle<Tag, Types...>::set_prefix(const string_t& _key) const
 {
+    if(!trait::runtime_enabled<Tag>::get())
+        return;
     invoke::set_prefix<Tag>(m_data, m_hash, _key);
 }
 
@@ -564,6 +584,8 @@ template <typename Tag, typename... Types>
 void
 component_bundle<Tag, Types...>::set_prefix(size_t _hash) const
 {
+    if(!trait::runtime_enabled<Tag>::get())
+        return;
     auto itr = get_hash_ids()->find(_hash);
     if(itr != get_hash_ids()->end())
         invoke::set_prefix<Tag>(m_data, _hash, itr->second);

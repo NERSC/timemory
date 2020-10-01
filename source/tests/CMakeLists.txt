@@ -106,6 +106,19 @@ if(_LIBRARY_TARGET)
         LINK_LIBRARIES  ${_LIBRARY_TARGET})
 endif()
 
+add_timemory_google_test(api_tests
+    DISCOVER_TESTS
+    SOURCES         api_tests.cpp
+    LINK_LIBRARIES  common-test-libs
+                    timemory::timemory-core
+                    timemory::timemory-timing-component)
+
+add_timemory_google_test(type_trait_tests
+    DISCOVER_TESTS
+    SOURCES         type_trait_tests.cpp
+    LINK_LIBRARIES  common-test-libs
+                    timemory::timemory-core)
+
 add_timemory_google_test(warning_tests
     SOURCES         warning_tests.cpp
     LINK_LIBRARIES  test-werror-flags)

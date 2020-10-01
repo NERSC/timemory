@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/vtune/types.hpp
- * \brief Declare the vtune component types
- */
-
 #pragma once
 
 #include "timemory/components/macros.hpp"
@@ -34,19 +29,32 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
 TIMEMORY_DECLARE_COMPONENT(vtune_event)
 TIMEMORY_DECLARE_COMPONENT(vtune_frame)
 TIMEMORY_DECLARE_COMPONENT(vtune_profiler)
+
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_SET_COMPONENT_API(component::vtune_event, category::logger, category::external,
+                           tpls::intel)
+
+TIMEMORY_SET_COMPONENT_API(component::vtune_frame, category::decorator,
+                           category::external, tpls::intel)
+
+TIMEMORY_SET_COMPONENT_API(component::vtune_profiler, category::external, tpls::intel)
+
+//--------------------------------------------------------------------------------------//
 //
 //                              IS AVAILABLE
 //
 //--------------------------------------------------------------------------------------//
 
 #if !defined(TIMEMORY_USE_VTUNE)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::intel, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_event, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_frame, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_profiler, false_type)

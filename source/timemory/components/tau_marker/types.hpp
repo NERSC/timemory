@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/tau_marker/types.hpp
- * \brief Declare the tau_marker component types
- */
-
 #pragma once
 
 #include "timemory/components/macros.hpp"
@@ -34,19 +29,26 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
 /// \struct tau_marker
 /// \brief Forwards timemory labels to the TAU (Tuning and Analysis Utilities)
 TIMEMORY_DECLARE_COMPONENT(tau_marker)
+
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_SET_COMPONENT_API(component::tau_marker, category::external, tpls::tau)
+
+//--------------------------------------------------------------------------------------//
 //
 //                              IS AVAILABLE
 //
 //--------------------------------------------------------------------------------------//
 
 #if !defined(TIMEMORY_USE_TAU)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::tau, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::tau_marker, false_type)
 #endif
 
