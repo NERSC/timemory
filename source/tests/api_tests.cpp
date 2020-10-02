@@ -40,8 +40,6 @@ static char** _argv = nullptr;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
-using namespace tim::component;
-
 //--------------------------------------------------------------------------------------//
 
 namespace details
@@ -135,13 +133,15 @@ protected:
     }
 };
 
-namespace os       = tim::os;
-namespace api      = tim::api;
-namespace project  = tim::project;
-namespace category = tim::category;
-namespace tpls     = tim::tpls;
-namespace trait    = tim::trait;
-namespace concepts = tim::concepts;
+namespace os       = ::tim::os;
+namespace api      = ::tim::api;
+namespace project  = ::tim::project;
+namespace category = ::tim::category;
+namespace tpls     = ::tim::tpls;
+namespace trait    = ::tim::trait;
+namespace concepts = ::tim::concepts;
+
+using namespace tim::component;
 
 using tim_bundle_t  = tim::component_bundle<project::timemory, wall_clock, cpu_clock>;
 using cali_bundle_t = tim::component_bundle<tpls::caliper, caliper_marker, wall_clock>;
