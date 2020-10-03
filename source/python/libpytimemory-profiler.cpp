@@ -50,7 +50,8 @@ using strset_t = std::unordered_set<std::string>;
 struct config
 {
     bool        is_running               = false;
-    bool        trace_c                  = false;
+    bool        trace_c                  = true;
+    bool        include_internal         = false;
     bool        include_args             = false;
     bool        include_line             = true;
     bool        include_filename         = true;
@@ -85,7 +86,8 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
 {
     if(user_profiler_bundle::bundle_size() == 0)
     {
-        DEBUG_PRINT_HERE("%s", "Profiler bundle is empty");
+        if(tim::settings::debug())
+            PRINT_HERE("%s", "Profiler bundle is empty");
         return;
     }
 
@@ -103,11 +105,19 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
 
     // only support PyTrace_{CALL,C_CALL,RETURN,C_RETURN}
     if(what < 0)
+    {
+        if(tim::settings::debug())
+            PRINT_HERE("%s", "Ignoring what != {CALL,C_CALL,RETURN,C_RETURN}");
         return;
+    }
 
     // if PyTrace_C_{CALL,RETURN} is not enabled
     if(!get_config().trace_c && (what == PyTrace_C_CALL || what == PyTrace_C_RETURN))
+    {
+        if(tim::settings::debug())
+            PRINT_HERE("%s", "Ignoring C call/return");
         return;
+    }
 
     // get the depth of the frame
     auto _fdepth = get_depth(frame);
@@ -120,8 +130,9 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     // if frame exceeds max stack-depth
     if(_iscall && _sdepth > get_config().max_stack_depth)
     {
-        DEBUG_PRINT_HERE("skipping %i > %i", (int) _sdepth,
-                         (int) get_config().max_stack_depth);
+        if(tim::settings::debug())
+            PRINT_HERE("skipping %i > %i", (int) _sdepth,
+                       (int) get_config().max_stack_depth);
         return;
     }
 
@@ -199,7 +210,8 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
         auto  _full       = _get_filename();
         auto  _file       = _get_basename(_full);
 
-        if(strncmp(_full.c_str(), _timemory_path.c_str(), _timemory_path.length()) == 0)
+        if(!get_config().include_internal &&
+           strncmp(_full.c_str(), _timemory_path.c_str(), _timemory_path.length()) == 0)
         {
             //++get_config().ignore_stack_depth;
             return;
@@ -324,6 +336,8 @@ generate(py::module& _pymod)
                            get_config().is_running)
     CONFIGURATION_PROPERTY("trace_c", bool, "Enable tracing C functions",
                            get_config().trace_c)
+    CONFIGURATION_PROPERTY("include_internal", bool, "Include functions within timemory",
+                           get_config().include_internal)
     CONFIGURATION_PROPERTY("include_args", bool, "Encode the function arguments",
                            get_config().include_args)
     CONFIGURATION_PROPERTY("include_line", bool, "Encode the function line number",

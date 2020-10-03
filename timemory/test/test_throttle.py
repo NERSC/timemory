@@ -120,11 +120,6 @@ class TimemoryThrottleTests(unittest.TestCase):
         # unset environment variables
         del os.environ["TIMEMORY_VERBOSE"]
         del os.environ["TIMEMORY_COLLAPSE_THREADS"]
-
-        # tim.trace.finalize()
-        # timemory finalize
-        # tim.finalize()
-        # tim.dmp.finalize()
         pass
 
     # ---------------------------------------------------------------------------------- #
@@ -248,62 +243,6 @@ class TimemoryThrottleTests(unittest.TestCase):
             _answer = False if (i % 2 == 1) else True
             print("thread " + str(i) + " throttling: " + str(is_throttled[i]))
             self.assertTrue(is_throttled[i] == _answer)
-
-    # ---------------------------------------------------------------------------------- #
-    # test tuple_serial
-    def test_tuple_serial(self):
-        """tuple_serial"""
-
-        @marker(components=("wall_clock"), key="thread")
-        def _run(name):
-            with auto_tuple(
-                get_config(["wall_clock"]), key="auto_tuple_serial"
-            ):
-                n = 8 * settings.throttle_count
-                for i in range(n):
-                    with marker(
-                        components=("wall_clock"), key=self.shortDescription()
-                    ):
-                        pass
-            self.assertFalse(tim.trace.is_throttled("thread"))
-            self.assertFalse(tim.trace.is_throttled(self.shortDescription()))
-
-        # run with auto tuple (wall_clock)
-        for i in range(self.nthreads):
-            _run(self.shortDescription())
-
-    # ---------------------------------------------------------------------------------- #
-    # test tuple_multithreaded
-    def test_tuple_multithreaded(self):
-        """tuple_multithreaded"""
-
-        @marker(components=("wall_clock"), key="thread")
-        def _run(name):
-            with auto_tuple(
-                get_config(["wall_clock"]), key="auto_tuple_multithreaded"
-            ):
-                n = 8 * settings.throttle_count
-                for i in range(n):
-                    with marker(
-                        components=("wall_clock"), key=self.shortDescription()
-                    ):
-                        pass
-
-            self.assertFalse(tim.trace.is_throttled(self.shortDescription()))
-            self.assertFalse(tim.trace.is_throttled("thread"))
-
-        # thread handles
-        threads = []
-
-        # make new threads
-        for i in range(self.nthreads):
-            thd = threading.Thread(target=_run, args=(self.shortDescription(),))
-            thd.start()
-            threads.append(thd)
-
-        # wait for join
-        for itr in threads:
-            itr.join()
 
 
 # ----------------------------- main test runner ---------------------------------------- #

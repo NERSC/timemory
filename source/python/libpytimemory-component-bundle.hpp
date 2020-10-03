@@ -123,7 +123,7 @@ component_bundle(const std::string& func, const std::string& file, const int lin
         try
         {
             auto v = itr.cast<std::string>();
-            sargs  = (sargs.empty()) ? v : TIMEMORY_JOIN("/", sargs, v);
+            sargs  = (sargs.empty()) ? v : TIMEMORY_JOIN('/', sargs, v);
         } catch(...)
         {}
     }
@@ -197,16 +197,7 @@ generate(py::module& _pymod, const char* _name, const char* _doc)
 
         if(tim::settings::debug() || tim::settings::verbose() > 3)
         {
-            size_t fsize = bundle_t::size();
-            if((fsize - isize) < components.size())
-            {
-                std::stringstream ss;
-                ss << "Warning: final size " << fsize << ", input size " << isize
-                   << ". Difference is less than the components size: "
-                   << components.size();
-                PRINT_HERE("%s", ss.str().c_str());
-                throw std::runtime_error(ss.str());
-            }
+            auto fsize = components.size();
             PRINT_HERE("final size: %lu, input size: %lu, components size: %lu\n",
                        (unsigned long) fsize, (unsigned long) isize,
                        (unsigned long) components.size());

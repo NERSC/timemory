@@ -39,7 +39,7 @@ from ..libpytimemory import settings
 from ..libpytimemory import component_bundle
 
 
-__all__ = ["profile", "Profiler", "FakeProfiler", "Config"]
+__all__ = ["profile", "config", "Profiler", "FakeProfiler", "Config"]
 
 
 #
@@ -73,6 +73,7 @@ else:
 
 
 #
+config = _profiler_config
 Config = _profiler_config
 
 
@@ -182,8 +183,6 @@ class Profiler:
         self._use = (
             not _profiler_config._is_running and Profiler.is_enabled() is True
         )
-        # print("[__call__:beg]> use: {}, _is_running: {}".format(self._use,
-        #      _profiler_config._is_running))
 
         if self._use and not _profiler_config._is_running:
             self.configure()
@@ -196,8 +195,6 @@ class Profiler:
 
         ret = function_wrapper
 
-        # print("[__call__:end]> use: {}, _is_running: {}".format(self._use,
-        #      _profiler_config._is_running))
         self.stop()
 
         return ret
@@ -217,7 +214,9 @@ class Profiler:
         Context manager stop function
         """
 
-        self.stop()
+        if self._use and _profiler_config._is_running:
+            sys.setprofile(self._original_profiler_function)
+            _profiler_fini()
         if (
             exec_type is not None
             and exec_value is not None
