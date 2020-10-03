@@ -112,7 +112,7 @@ class TimemoryThrottleTests(unittest.TestCase):
 
         tim.trace.init("wall_clock", False, "throttle_tests")
 
-        self.nthreads = 4
+        self.nthreads = min(4, os.cpu_count())
 
     # Tear down class: finalize
     @classmethod

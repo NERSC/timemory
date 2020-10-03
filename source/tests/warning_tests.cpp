@@ -29,6 +29,9 @@
 #include <chrono>
 #include <thread>
 
+static int    _argc = 0;
+static char** _argv = nullptr;
+
 //--------------------------------------------------------------------------------------//
 
 class warning_tests : public ::testing::Test
@@ -36,9 +39,44 @@ class warning_tests : public ::testing::Test
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(warning_tests, dummy)
+TEST_F(warning_tests, enabled)
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::stringstream ss;
+    ss << "debug = True\n";
+    ss << "verbose = 1\n";
+    ss << "enabled = OFF\n";
+    ss << "fake_test = dummy\n";
+
+    tim::settings::debug()           = false;
+    tim::settings::verbose()         = 0;
+    tim::settings::enabled()         = true;
+    tim::settings::config_file()     = "";
+    tim::settings::suppress_config() = true;
+
+    tim::set_env("TIMEMORY_SUPPRESS_PARSING", "ON", 1);
+
+    tim::timemory_init(_argc, _argv);
+
+    auto _settings = tim::settings::instance();
+    auto _rsuccess = _settings->read(ss);
+
+    _settings->parse();
+    tim::set_env("TIMEMORY_GLOBAL_COMPONENTS", "wall_clock", 1);
+
+    EXPECT_FALSE(_rsuccess) << " Unsuccessful read";
+    EXPECT_TRUE(tim::settings::suppress_parsing());
+    EXPECT_TRUE(tim::settings::debug());
+    EXPECT_FALSE(tim::settings::enabled());
+    EXPECT_EQ(tim::settings::verbose(), 1);
+    EXPECT_EQ(tim::settings::global_components(), std::string{});
+
+    EXPECT_EQ(tim::settings::suppress_parsing(), _settings->get_suppress_parsing());
+    EXPECT_EQ(tim::settings::debug(), _settings->get_debug());
+    EXPECT_EQ(tim::settings::enabled(), _settings->get_enabled());
+    EXPECT_EQ(tim::settings::verbose(), _settings->get_verbose());
+    EXPECT_EQ(tim::settings::global_components(), _settings->get_global_components());
+
+    tim::timemory_finalize();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -47,7 +85,13 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
+    _argc = argc;
+    _argv = argv;
     return RUN_ALL_TESTS();
 }
+
+//--------------------------------------------------------------------------------------//
+
+// TIMEMORY_INITIALIZE_STORAGE(TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//

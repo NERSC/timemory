@@ -31,6 +31,10 @@ foreach(_TYPE sample profiler general builtin external)
         OPTIONAL)
 endforeach()
 
+if(TIMEMORY_BUILD_MINIMAL_TESTING)
+    return()
+endif()
+
 if(NOT TARGET pybind11::module)
     find_package(pybind11 QUIET)
 endif()

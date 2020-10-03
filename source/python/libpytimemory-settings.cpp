@@ -144,6 +144,13 @@ generate(py::module& _pymod)
         else
             tim::settings::parse(_obj);
     };
+    auto _read = [](py::object _instance, std::string inp) {
+        auto* _obj = _instance.cast<tim::settings*>();
+        if(_instance.is_none() || _obj == nullptr)
+            tim::settings::instance()->read(inp);
+        else
+            _obj->read(inp);
+    };
 
     // create an instance
     settings.def(py::init(_init), "Create a copy of the global settings");
@@ -151,6 +158,7 @@ generate(py::module& _pymod)
     settings.def_static("parse", _parse,
                         "Update the values of the settings from the current environment",
                         py::arg("instance") = py::none{});
+    settings.def_static("read", _read, "Read the settings from JSON or text file");
 
     std::set<std::string> names;
     auto                  _settings = tim::settings::instance<tim::api::native_tag>();

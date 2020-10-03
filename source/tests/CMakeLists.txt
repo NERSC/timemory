@@ -32,19 +32,21 @@ if(TIMEMORY_USE_OMPT)
     endif()
 endif()
 
-# add_library(no-store-merge INTERFACE)
-# add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
+# Optimization flags
 add_library(test-opt-flags INTERFACE)
 string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
 if(NOT TIMEMORY_USE_ARCH)
   add_target_flag_if_avail(test-opt-flags "-march=native")
 endif()
+
+# Debug flags
 add_library(test-debug-flags INTERFACE)
 string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_DEBUG}")
 target_compile_options(test-debug-flags INTERFACE ${_FLAGS})
-add_target_flag_if_avail(test-debug-flags "-O0")
+add_target_flag_if_avail(test-debug-flags "-O0" "-g")
 
+# Any warnings trigger an error flags
 add_library(test-werror-flags INTERFACE)
 add_target_flag_if_avail(test-werror-flags "-W" "-Wall" "-Wextra" "-pedantic"
     "-Wno-mismatched-tags" "-Werror")
@@ -121,7 +123,8 @@ add_timemory_google_test(type_trait_tests
 
 add_timemory_google_test(warning_tests
     SOURCES         warning_tests.cpp
-    LINK_LIBRARIES  test-werror-flags)
+    LINK_LIBRARIES  test-werror-flags
+                    test-debug-flags)
 
 add_timemory_google_test(socket_tests
     SOURCES         socket_tests.cpp

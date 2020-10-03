@@ -104,7 +104,9 @@ struct settings
     //
     //==================================================================================//
 
+    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, config_file, "TIMEMORY_CONFIG_FILE")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, suppress_parsing, "TIMEMORY_SUPPRESS_PARSING")
+    TIMEMORY_SETTINGS_MEMBER_DECL(bool, suppress_config, "TIMEMORY_SUPPRESS_CONFIG")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, enabled, "TIMEMORY_ENABLED")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, auto_output, "TIMEMORY_AUTO_OUTPUT")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, cout_output, "TIMEMORY_COUT_OUTPUT")
@@ -288,6 +290,7 @@ public:
 
     /// read a configuration file
     bool read(const string_t&);
+    bool read(std::istream&, string_t = "");
 
 public:
     template <size_t Idx = 0>

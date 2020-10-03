@@ -423,6 +423,9 @@ def run_pyctest():
         "PYTHON_EXECUTABLE": "{}".format(sys.executable),
     }
 
+    if args.quick and args.python:
+        build_opts["TIMEMORY_BUILD_MINIMAL_TESTING"] = "ON"
+
     if args.papi:
         build_opts["USE_PAPI"] = "ON"
 
@@ -724,7 +727,7 @@ def run_pyctest():
                 "peak_rss",
                 "--",
                 "./ex_python_builtin",
-                "20",
+                "10",
             ],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -769,7 +772,7 @@ def run_pyctest():
                 "wall_clock",
                 "--",
                 "./ex_python_builtin",
-                "20",
+                "10",
             ],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
