@@ -125,7 +125,6 @@ protected:
 
 using namespace tim;
 using namespace tim::component;
-namespace concepts = tim::concepts;
 
 #define TEST_API TIMEMORY_API
 #define TEST_NAME(A, ...)                                                                \
