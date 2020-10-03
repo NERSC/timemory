@@ -386,7 +386,7 @@ print<Tp, true>::update_data()
                     std::cout << " :: ";
                 std::cout << data->get_prefix(_hierarchy[i]);
                 if(i + 1 < _hierarchy.size())
-                    std::cout << "/";
+                    std::cout << '/';
             }
             std::cout << std::endl;
         }

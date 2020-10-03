@@ -49,8 +49,8 @@ main(int argc, char** argv)
     kokkosp_init_library(0, 0, 0, nullptr);
 
     std::string exe = argv[0];
-    if(exe.find("/") != std::string::npos)
-        exe = exe.substr(exe.find_last_of("/") + 1);
+    if(exe.find('/') != std::string::npos)
+        exe = exe.substr(exe.find_last_of('/') + 1);
 
     // start recording application
     kokkosp_push_profile_region(exe.c_str());

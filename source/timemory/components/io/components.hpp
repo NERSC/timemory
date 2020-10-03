@@ -209,11 +209,11 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
         if(settings::timing_units().length() > 0)
         {
             auto _tval = std::get<0>(units::get_timing_unit(settings::timing_units()));
-            _rate      = apply<std::string>::join("/", _mem, _tval);
+            _rate      = apply<std::string>::join('/', _mem, _tval);
         }
         else if(settings::memory_units().length() > 0)
         {
-            _rate = apply<std::string>::join("/", _mem, "sec");
+            _rate = apply<std::string>::join('/', _mem, "sec");
         }
 
         return _instance;
@@ -419,11 +419,11 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
         if(settings::timing_units().length() > 0)
         {
             auto _tval = std::get<0>(units::get_timing_unit(settings::timing_units()));
-            _rate      = apply<std::string>::join("/", _mem, _tval);
+            _rate      = apply<std::string>::join('/', _mem, _tval);
         }
         else if(settings::memory_units().length() > 0)
         {
-            _rate = apply<std::string>::join("/", _mem, "sec");
+            _rate = apply<std::string>::join('/', _mem, "sec");
         }
 
         return _instance;
@@ -626,11 +626,11 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
         if(settings::timing_units().length() > 0)
         {
             auto _tval = std::get<0>(units::get_timing_unit(settings::timing_units()));
-            _rate      = apply<std::string>::join("/", _mem, _tval);
+            _rate      = apply<std::string>::join('/', _mem, _tval);
         }
         else if(settings::memory_units().length() > 0)
         {
-            _rate = apply<std::string>::join("/", _mem, "sec");
+            _rate = apply<std::string>::join('/', _mem, "sec");
         }
 
         return _instance;
@@ -834,11 +834,11 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
         if(settings::timing_units().length() > 0)
         {
             auto _tval = std::get<0>(units::get_timing_unit(settings::timing_units()));
-            _rate      = apply<std::string>::join("/", _mem, _tval);
+            _rate      = apply<std::string>::join('/', _mem, _tval);
         }
         else if(settings::memory_units().length() > 0)
         {
-            _rate = apply<std::string>::join("/", _mem, "sec");
+            _rate = apply<std::string>::join('/', _mem, "sec");
         }
 
         return _instance;

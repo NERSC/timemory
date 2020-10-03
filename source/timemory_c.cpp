@@ -192,12 +192,12 @@ extern "C"
         else if(_mode == 2)
         {
             auto _filestr = std::string(_file);
-            ss << _func << "/" << _filestr.substr(_filestr.find_last_of('/') + 1) << ":"
+            ss << _func << '/' << _filestr.substr(_filestr.find_last_of('/') + 1) << ":"
                << _line;
         }
 
         if(_extra && strlen(_extra) > 0)
-            ss << "/" << _extra;
+            ss << '/' << _extra;
         std::string buff = ss.str();
         free_cstr()[buff] += 1;
         return free_cstr().find(buff)->first.c_str();

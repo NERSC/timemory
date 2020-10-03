@@ -544,7 +544,7 @@ public:
         for(auto& itr : arr)
         {
             size_t n = std::string::npos;
-            while((n = itr.find("/")) != std::string::npos)
+            while((n = itr.find('/')) != std::string::npos)
                 itr.replace(n, 1, "_per_");
         }
 
@@ -865,7 +865,7 @@ public:
         for(auto& itr : arr)
         {
             size_t n = std::string::npos;
-            while((n = itr.find("/")) != std::string::npos)
+            while((n = itr.find('/')) != std::string::npos)
                 itr.replace(n, 1, "_per_");
         }
 

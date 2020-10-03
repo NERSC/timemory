@@ -492,10 +492,11 @@ public:
     //----------------------------------------------------------------------------------//
     /// shorthand for apply<string_t>::join(...)
     ///
-    template <typename... Args>
-    static string_t join(const std::string& _delim, Args&&... _args)
+    template <typename Tp, typename... Args>
+    static string_t join(Tp&& _delim, Args&&... _args)
     {
-        return apply<string_t>::join(_delim, std::forward<Args>(_args)...);
+        return apply<string_t>::join(std::forward<Tp>(_delim),
+                                     std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

@@ -288,7 +288,7 @@ public:
 
     static std::string get_type_string()
     {
-        return apply<std::string>::join("_", demangle(typeid(Types).name())...);
+        return apply<std::string>::join('_', demangle(typeid(Types).name())...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -1011,7 +1011,7 @@ public:
 
     static std::string get_type_string()
     {
-        return apply<std::string>::join("_", demangle(typeid(cuda::fp16_t).name()));
+        return apply<std::string>::join('_', demangle(typeid(cuda::fp16_t).name()));
     }
 
     //----------------------------------------------------------------------------------//

@@ -168,7 +168,7 @@ struct nccl_comm_data : base<nccl_comm_data, void>
                ncclDataType_t datatype, ncclRedOp_t, int root, ncclComm_t, cudaStream_t)
     {
         int size = NCCL_Type_size(datatype);
-        add(_name, count * size, TIMEMORY_JOIN("_", _name, "root", root));
+        add(_name, count * size, TIMEMORY_JOIN('_', _name, "root", root));
     }
 
     // ncclSend
@@ -176,7 +176,7 @@ struct nccl_comm_data : base<nccl_comm_data, void>
                ncclDataType_t datatype, int peer, ncclComm_t, cudaStream_t)
     {
         int size = NCCL_Type_size(datatype);
-        add(_name, count * size, TIMEMORY_JOIN("_", _name, "root", peer));
+        add(_name, count * size, TIMEMORY_JOIN('_', _name, "root", peer));
     }
 
     // ncclBcast
@@ -185,7 +185,7 @@ struct nccl_comm_data : base<nccl_comm_data, void>
                int root, ncclComm_t, cudaStream_t)
     {
         int size = NCCL_Type_size(datatype);
-        add(_name, count * size, TIMEMORY_JOIN("_", _name, "root", root));
+        add(_name, count * size, TIMEMORY_JOIN('_', _name, "root", root));
     }
 
     // ncclBroadcast
@@ -193,7 +193,7 @@ struct nccl_comm_data : base<nccl_comm_data, void>
                ncclDataType_t datatype, int root, ncclComm_t, cudaStream_t)
     {
         int size = NCCL_Type_size(datatype);
-        add(_name, count * size, TIMEMORY_JOIN("_", _name, "root", root));
+        add(_name, count * size, TIMEMORY_JOIN('_', _name, "root", root));
     }
 
     // ncclAllReduce

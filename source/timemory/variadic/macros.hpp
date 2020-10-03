@@ -77,13 +77,17 @@ using string = tim::apply<std::string>;
 
 //--------------------------------------------------------------------------------------//
 
-#    define _TIM_FILESTR                                                                 \
-        std::string(__FILE__).substr(                                                    \
-            std::string(__FILE__).find_last_of(_TIM_FILENAME_DELIM) + 1)
+#    if defined(__FILE_NAME__)
+#        define _TIM_FILESTR __FILE_NAME__
+#    else
+#        define _TIM_FILESTR                                                             \
+            std::string(__FILE__).substr(                                                \
+                std::string(__FILE__).find_last_of(_TIM_FILENAME_DELIM) + 1)
+#    endif
 
 //--------------------------------------------------------------------------------------//
 
-#    define _TIM_FILELINE ::tim::string::join(":", _TIM_FILESTR, _TIM_LINESTR)
+#    define _TIM_FILELINE ::tim::string::join(':', _TIM_FILESTR, _TIM_LINESTR)
 
 //--------------------------------------------------------------------------------------//
 
@@ -99,7 +103,7 @@ using string = tim::apply<std::string>;
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_FULL_LABEL ::tim::string::join("/", _TIM_FUNC, _TIM_FILELINE)
+#    define TIMEMORY_FULL_LABEL ::tim::string::join('/', _TIM_FUNC, _TIM_FILELINE)
 
 //--------------------------------------------------------------------------------------//
 

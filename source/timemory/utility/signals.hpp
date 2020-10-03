@@ -239,7 +239,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     {
         auto& itr = bt.at(i);
         if(itr.length() > 0)
-            serr << prefix.str() << "[" << i << "/" << sz << "]> " << itr << "\n";
+            serr << prefix.str() << "[" << i << '/' << sz << "]> " << itr << "\n";
     }
     std::cerr << serr.str().c_str() << std::flush;
 

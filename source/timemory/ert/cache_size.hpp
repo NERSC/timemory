@@ -134,7 +134,7 @@ cache_size(const int& _level)
     auto level = (_level == 1) ? 0 : (_level);
     // location of files
     std::stringstream fpath;
-    fpath << "/sys/devices/system/cpu/cpu0/cache/index" << level << "/";
+    fpath << "/sys/devices/system/cpu/cpu0/cache/index" << level << '/';
 
     // files to read
     const std::array<std::string, 3> files(
