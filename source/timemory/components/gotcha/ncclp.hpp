@@ -209,9 +209,8 @@ tim::component::deactivate_ncclp(uint64_t id)
 //
 #if !defined(TIMEMORY_USE_GOTCHA) || !defined(TIMEMORY_USE_NCCL)
 //
-template <typename Toolset, typename Tag, typename... Args>
-void
-tim::component::configure_ncclp(Args&&...)
+template <typename Toolset, typename Tag>
+void configure_ncclp(std::set<std::string>, std::set<std::string>)
 {}
 //
 #else

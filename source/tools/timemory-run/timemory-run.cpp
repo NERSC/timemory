@@ -1473,10 +1473,10 @@ read_collection(const string_t& fname, strset_t& collection_set)
     {
         for(auto itr : collection_paths)
         {
-            itr = TIMEMORY_JOIN("/", pitr, itr);
+            itr = TIMEMORY_JOIN('/', pitr, itr);
             searched_paths += itr;
             searched_paths += ", ";
-            auto fpath = TIMEMORY_JOIN("/", itr, fname);
+            auto fpath = TIMEMORY_JOIN('/', itr, fname);
 
             verbprintf(0, "trying to read collection file @ %s...", fpath.c_str());
             std::ifstream ifs(fpath.c_str());
@@ -1484,7 +1484,7 @@ read_collection(const string_t& fname, strset_t& collection_set)
             if(!ifs)
             {
                 verbprintf(0, "trying to read collection file @ %s...", fpath.c_str());
-                fpath = TIMEMORY_JOIN("/", itr, to_lower(fname));
+                fpath = TIMEMORY_JOIN('/', itr, to_lower(fname));
                 ifs.open(fpath.c_str());
             }
 

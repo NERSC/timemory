@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
@@ -105,6 +106,33 @@ TIMEMORY_DECLARE_COMPONENT(thread_cpu_util)
 //                              TYPE-TRAITS
 //
 //======================================================================================//
+//
+// OS-agnostic
+TIMEMORY_SET_COMPONENT_API(component::wall_clock, project::timemory, category::timing,
+                           os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::system_clock, project::timemory, category::timing,
+                           os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::user_clock, project::timemory, category::timing,
+                           os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::cpu_clock, project::timemory, category::timing,
+                           os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::cpu_util, project::timemory, category::timing,
+                           os::agnostic)
+// Available on Unix
+TIMEMORY_SET_COMPONENT_API(component::monotonic_clock, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::monotonic_raw_clock, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::thread_cpu_clock, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::process_cpu_clock, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::process_cpu_util, project::timemory,
+                           category::timing, os::unix)
+TIMEMORY_SET_COMPONENT_API(component::thread_cpu_util, project::timemory,
+                           category::timing, os::unix)
+//
+//--------------------------------------------------------------------------------------//
 //
 //                              STATISTICS
 //

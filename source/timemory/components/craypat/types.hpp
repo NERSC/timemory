@@ -29,20 +29,34 @@
 
 #pragma once
 
+#include "timemory/components/craypat/backends.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-//
-#include "timemory/components/craypat/backends.hpp"
 
-//======================================================================================//
-//
 TIMEMORY_DECLARE_COMPONENT(craypat_record)
 TIMEMORY_DECLARE_COMPONENT(craypat_region)
 TIMEMORY_DECLARE_COMPONENT(craypat_counters)
 TIMEMORY_DECLARE_COMPONENT(craypat_heap_stats)
 TIMEMORY_DECLARE_COMPONENT(craypat_flush_buffer)
+
+//--------------------------------------------------------------------------------------//
+//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SET_COMPONENT_API(component::craypat_record, tpls::craypat, category::external,
+                           os::linux)
+TIMEMORY_SET_COMPONENT_API(component::craypat_region, tpls::craypat, category::external,
+                           category::decorator, os::linux)
+TIMEMORY_SET_COMPONENT_API(component::craypat_counters, tpls::craypat, category::external,
+                           os::linux)
+TIMEMORY_SET_COMPONENT_API(component::craypat_heap_stats, tpls::craypat,
+                           category::external, os::linux)
+TIMEMORY_SET_COMPONENT_API(component::craypat_flush_buffer, tpls::craypat,
+                           category::external, os::linux)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -61,6 +75,7 @@ TIMEMORY_STATISTICS_TYPE(component::craypat_counters, std::vector<unsigned long>
 //
 #if !defined(TIMEMORY_USE_CRAYPAT)
 //
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::craypat, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::craypat_record, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::craypat_region, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::craypat_counters, false_type)

@@ -216,7 +216,7 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         ADD_TEST(
             NAME                ${TEST_NAME}
             COMMAND             ${TEST_COMMAND}
-            WORKING_DIRECTORY   ${CMAKE_CURRENT_LIST_DIR}
+            WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR}
             ${TEST_OPTIONS})
         SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
     endif()
@@ -664,10 +664,37 @@ macro(INSTALL_HEADER_FILES)
 endmacro()
 
 
+#-----------------------------------------------------------------------
+# Add pre-compiled headers
+#
+FUNCTION(TIMEMORY_TARGET_PRECOMPILE_HEADERS _TARG)
+    cmake_parse_arguments(
+        HEAD "INSTALL_INTERFACE" "" "FILES" ${ARGN})
+
+    if(TIMEMORY_PRECOMPILE_HEADERS)
+        set(_BINARY_IFACE)
+        set(_INSTALL_IFACE)
+        foreach(_HEADER ${HEAD_FILES})
+            string(REPLACE "${PROJECT_SOURCE_DIR}/" "" _HEADER "${_HEADER}")
+            list(APPEND _BINARY_IFACE "${_HEADER}")
+            string(REPLACE "external/cereal/include/" "" _HEADER "${_HEADER}")
+            string(REPLACE "source/" "" _HEADER "${_HEADER}")
+            list(APPEND _INSTALL_IFACE "<${_HEADER}>")
+        endforeach()
+        target_precompile_headers(${_TARG} INTERFACE
+            $<BUILD_INTERFACE:${_BINARY_IFACE}>)
+        if(HEAD_INSTALL_INTERFACE)
+            target_precompile_headers(${_TARG} INTERFACE
+                $<BUILD_INTERFACE:${_PRECOMPILE_HEADERS}>)
+        endif()
+    endif()
+ENDFUNCTION()
+
+
 #----------------------------------------------------------------------------------------#
 # macro to build a library of type: shared, static, object
 #
-macro(BUILD_INTERMEDIATE_LIBRARY)
+FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
 
     # options
     set(_options    USE_INTERFACE
@@ -861,7 +888,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         add_dependencies(timemory-${COMP_TARGET}-shared timemory-${COMP_TARGET}-static)
     endif()
 
-endmacro()
+ENDFUNCTION()
 
 
 FUNCTION(ADD_CMAKE_DEFINES _VAR)

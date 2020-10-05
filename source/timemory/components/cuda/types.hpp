@@ -43,18 +43,25 @@ class object;
 }
 #endif
 
-//======================================================================================//
-//
 TIMEMORY_DECLARE_COMPONENT(cuda_event)
 TIMEMORY_DECLARE_COMPONENT(cuda_profiler)
 TIMEMORY_DECLARE_COMPONENT(nvtx_marker)
 TIMEMORY_COMPONENT_ALIAS(cuda_nvtx, nvtx_marker)
+
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
+//                                  APIs
 //
-//                              TYPE-TRAITS
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
+TIMEMORY_SET_COMPONENT_API(component::cuda_event, tpls::nvidia, device::gpu,
+                           category::external, os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::cuda_profiler, tpls::nvidia, category::external,
+                           os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::nvtx_marker, tpls::nvidia, category::external,
+                           category::decorator, os::agnostic)
+//
+//--------------------------------------------------------------------------------------//
 //
 //                              STATISTICS
 //
@@ -111,6 +118,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::nvtx_marker, true_typ
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_USE_CUDA)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::nvidia, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cuda_event, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cuda_profiler, false_type)
 #endif

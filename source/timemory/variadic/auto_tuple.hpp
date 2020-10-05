@@ -55,6 +55,10 @@ namespace tim
 
 template <typename... Types>
 class auto_tuple
+: public concepts::wrapper
+, public concepts::variadic
+, public concepts::auto_wrapper
+, public concepts::stack_wrapper
 {
 public:
     using this_type           = auto_tuple<Types...>;

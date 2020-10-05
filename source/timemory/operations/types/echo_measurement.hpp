@@ -77,7 +77,7 @@ struct echo_measurement<Tp, true> : public common_utils
                        : type::get_label();
         }
 
-        auto _extra = join("/", std::forward<Args>(_args)...);
+        auto _extra = join('/', std::forward<Args>(_args)...);
         auto _label = uppercase(type::get_label());
         _unit       = replace(_unit, "", { " " });
         string_t _name =

@@ -30,26 +30,28 @@
 
 #pragma once
 
-#include "timemory/backends/device.hpp"
-#include "timemory/backends/hardware_counters.hpp"
-#include "timemory/backends/types/cupti.hpp"
-#include "timemory/components/cuda/backends.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/utility/utility.hpp"
+#if defined(TIMEMORY_USE_CUPTI)
 
-#include <cassert>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
-#include <list>
-#include <map>
-#include <sstream>
-#include <string>
-#include <thread>
-#include <unordered_map>
-#include <vector>
+#    include "timemory/backends/device.hpp"
+#    include "timemory/backends/hardware_counters.hpp"
+#    include "timemory/backends/types/cupti.hpp"
+#    include "timemory/components/cuda/backends.hpp"
+#    include "timemory/macros.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/utility/utility.hpp"
+
+#    include <cassert>
+#    include <cstdint>
+#    include <cstdio>
+#    include <cstring>
+#    include <iostream>
+#    include <list>
+#    include <map>
+#    include <sstream>
+#    include <string>
+#    include <thread>
+#    include <unordered_map>
+#    include <vector>
 
 //--------------------------------------------------------------------------------------//
 
@@ -277,7 +279,7 @@ static void CUPTIAPI
     // get the correlation data ID
     uint64_t corr_data = *cbInfo->correlationData;
 
-#if defined(DEBUG)
+#    if defined(DEBUG)
     printf("[kern] %s\n", cbInfo->symbolName);
     // construct a name
     std::stringstream _kernel_name_ss;
@@ -285,7 +287,7 @@ static void CUPTIAPI
     _kernel_name_ss << std::string(_sym_name) << "_" << cbInfo->contextUid << "_"
                     << corr_data;
     auto current_kernel_name = _kernel_name_ss.str();
-#endif
+#    endif
 
     _LOG("... begin callback for %s...\n", current_kernel_name.c_str());
     if(cbInfo->callbackSite == CUPTI_API_ENTER)
@@ -366,7 +368,7 @@ static void CUPTIAPI
                     pass_data.event_values.push_back(normalized);
 
 // print collected value
-#if defined(DEBUG)
+#    if defined(DEBUG)
                     {
                         char   eventName[128];
                         size_t eventNameSize = sizeof(eventName) - 1;
@@ -386,7 +388,7 @@ static void CUPTIAPI
                              (unsigned long long) sum, numTotalInstances, numInstances,
                              (unsigned long long) normalized);
                     }
-#endif
+#    endif
                 }
                 free(values);
                 free(eventIds);
@@ -1064,7 +1066,7 @@ compute_api_kind(CUpti_ActivityComputeApiKind kind)
 inline int64_t
 get_elapsed(CUpti_Activity* record)
 {
-#define _CUPTI_CAST_RECORD(ToType, var) ToType* var = (ToType*) record
+#    define _CUPTI_CAST_RECORD(ToType, var) ToType* var = (ToType*) record
 
     switch(record->kind)
     {
@@ -1109,7 +1111,7 @@ get_elapsed(CUpti_Activity* record)
         default: break;
     }
     return 0;
-#undef _CUPTI_CAST_RECORD
+#    undef _CUPTI_CAST_RECORD
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1117,7 +1119,7 @@ get_elapsed(CUpti_Activity* record)
 inline const char*
 get_name(CUpti_Activity* record)
 {
-#define _CUPTI_CAST_RECORD(ToType, var) ToType* var = (ToType*) record
+#    define _CUPTI_CAST_RECORD(ToType, var) ToType* var = (ToType*) record
 
     switch(record->kind)
     {
@@ -1164,7 +1166,7 @@ get_name(CUpti_Activity* record)
         default: break;
     }
     return "";
-#undef _CUPTI_CAST_RECORD
+#    undef _CUPTI_CAST_RECORD
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1862,8 +1864,10 @@ tim::cupti::available_metrics_info(CUdevice device)
     return metric_info;
 }
 
-#undef TIMEMORY_CUPTI_PROFILER_NAME_SHORT
-#undef TIMEMORY_CUPTI_PROFILER_NAME_LONG
-#undef TIMEMORY_CUPTI_BUFFER_SIZE
-#undef TIMEMORY_CUPTI_ALIGN_SIZE
-#undef TIMEMORY_CUPTI_ALIGN_BUFFER
+#    undef TIMEMORY_CUPTI_PROFILER_NAME_SHORT
+#    undef TIMEMORY_CUPTI_PROFILER_NAME_LONG
+#    undef TIMEMORY_CUPTI_BUFFER_SIZE
+#    undef TIMEMORY_CUPTI_ALIGN_SIZE
+#    undef TIMEMORY_CUPTI_ALIGN_BUFFER
+
+#endif

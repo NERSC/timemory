@@ -105,7 +105,7 @@ template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false<Predicate, std::tuple<Ts...>>
 {
     using type = tuple_concat_t<
-        typename filter_if_false_result<Predicate<Ts>::value, Ts>::type...>;
+        conditional_t<Predicate<Ts>::value, std::tuple<Ts>, std::tuple<>>...>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -113,10 +113,9 @@ struct filter_if_false<Predicate, std::tuple<Ts...>>
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false<Predicate, type_list<Ts...>>
 {
-    using type =
-        convert_t<tuple_concat_t<
-                      typename filter_if_false_result<Predicate<Ts>::value, Ts>::type...>,
-                  type_list<>>;
+    using type = convert_t<tuple_concat_t<conditional_t<Predicate<Ts>::value,
+                                                        std::tuple<Ts>, std::tuple<>>...>,
+                           type_list<>>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -124,10 +123,9 @@ struct filter_if_false<Predicate, type_list<Ts...>>
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false<Predicate, component_list<Ts...>>
 {
-    using type =
-        convert_t<tuple_concat_t<
-                      typename filter_if_false_result<Predicate<Ts>::value, Ts>::type...>,
-                  component_list<>>;
+    using type = convert_t<tuple_concat_t<conditional_t<Predicate<Ts>::value,
+                                                        std::tuple<Ts>, std::tuple<>>...>,
+                           component_list<>>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -135,10 +133,9 @@ struct filter_if_false<Predicate, component_list<Ts...>>
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false<Predicate, component_tuple<Ts...>>
 {
-    using type =
-        convert_t<tuple_concat_t<
-                      typename filter_if_false_result<Predicate<Ts>::value, Ts>::type...>,
-                  component_tuple<>>;
+    using type = convert_t<tuple_concat_t<conditional_t<Predicate<Ts>::value,
+                                                        std::tuple<Ts>, std::tuple<>>...>,
+                           component_tuple<>>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -146,10 +143,9 @@ struct filter_if_false<Predicate, component_tuple<Ts...>>
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false<Predicate, auto_list<Ts...>>
 {
-    using type =
-        convert_t<tuple_concat_t<
-                      typename filter_if_false_result<Predicate<Ts>::value, Ts>::type...>,
-                  auto_list<>>;
+    using type = convert_t<tuple_concat_t<conditional_t<Predicate<Ts>::value,
+                                                        std::tuple<Ts>, std::tuple<>>...>,
+                           auto_list<>>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -157,10 +153,9 @@ struct filter_if_false<Predicate, auto_list<Ts...>>
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false<Predicate, auto_tuple<Ts...>>
 {
-    using type =
-        convert_t<tuple_concat_t<
-                      typename filter_if_false_result<Predicate<Ts>::value, Ts>::type...>,
-                  auto_tuple<>>;
+    using type = convert_t<tuple_concat_t<conditional_t<Predicate<Ts>::value,
+                                                        std::tuple<Ts>, std::tuple<>>...>,
+                           auto_tuple<>>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -184,8 +179,9 @@ struct filter_if_false_after_decay;
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false_after_decay<Predicate, std::tuple<Ts...>>
 {
-    using type = tuple_concat_t<typename filter_if_false_result<
-        Predicate<decay_t<remove_pointer_t<Ts>>>::value, Ts>::type...>;
+    using type =
+        tuple_concat_t<conditional_t<Predicate<decay_t<remove_pointer_t<Ts>>>::value,
+                                     std::tuple<Ts>, std::tuple<>>...>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -193,10 +189,10 @@ struct filter_if_false_after_decay<Predicate, std::tuple<Ts...>>
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false_after_decay<Predicate, type_list<Ts...>>
 {
-    using type =
-        convert_t<tuple_concat_t<typename filter_if_false_result<
-                      Predicate<decay_t<remove_pointer_t<Ts>>>::value, Ts>::type...>,
-                  std::tuple<>>;
+    using type = convert_t<
+        tuple_concat_t<conditional_t<Predicate<decay_t<remove_pointer_t<Ts>>>::value,
+                                     std::tuple<Ts>, std::tuple<>>...>,
+        type_list<>>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -214,8 +210,8 @@ using filter_false_after_decay_t =
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_true
 {
-    using type =
-        tuple_concat_t<typename filter_if_true_result<Predicate<Ts>::value, Ts>::type...>;
+    using type = tuple_concat_t<
+        conditional_t<Predicate<Ts>::value, std::tuple<>, std::tuple<Ts>>...>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -223,8 +219,8 @@ struct filter_if_true
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_true<Predicate, std::tuple<Ts...>>
 {
-    using type =
-        tuple_concat_t<typename filter_if_true_result<Predicate<Ts>::value, Ts>::type...>;
+    using type = tuple_concat_t<
+        conditional_t<Predicate<Ts>::value, std::tuple<>, std::tuple<Ts>>...>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -232,8 +228,9 @@ struct filter_if_true<Predicate, std::tuple<Ts...>>
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_true<Predicate, type_list<Ts...>>
 {
-    using type =
-        tuple_concat_t<typename filter_if_true_result<Predicate<Ts>::value, Ts>::type...>;
+    using type = convert_t<tuple_concat_t<conditional_t<Predicate<Ts>::value,
+                                                        std::tuple<>, std::tuple<Ts>>...>,
+                           type_list<>>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -246,6 +243,12 @@ using filter_true = typename filter_if_true<Predicate, Sequence>::type;
 }  // namespace impl
 
 //======================================================================================//
+
+template <template <typename> class Predicate, typename Sequence>
+using filter_true_t = impl::filter_true<Predicate, Sequence>;
+
+template <template <typename> class Predicate, typename Sequence>
+using filter_false_t = impl::filter_false<Predicate, Sequence>;
 
 ///
 ///  generic alias for extracting all types with a specified trait enabled
@@ -265,8 +268,12 @@ struct get_true_types<Predicate, std::tuple<Sequence...>>
 template <template <typename> class Predicate, typename... Sequence>
 struct get_true_types<Predicate, type_list<Sequence...>>
 {
-    using type = impl::filter_false<Predicate, std::tuple<Sequence...>>;
+    using type =
+        convert_t<impl::filter_false<Predicate, std::tuple<Sequence...>>, type_list<>>;
 };
+
+template <template <typename> class Predicate, typename... Sequence>
+using get_true_types_t = typename get_true_types<Predicate, Sequence...>::type;
 
 ///
 ///  generic alias for extracting all types with a specified trait disabled
@@ -286,8 +293,12 @@ struct get_false_types<Predicate, std::tuple<Sequence...>>
 template <template <typename> class Predicate, typename... Sequence>
 struct get_false_types<Predicate, type_list<Sequence...>>
 {
-    using type = impl::filter_true<Predicate, std::tuple<Sequence...>>;
+    using type =
+        convert_t<impl::filter_true<Predicate, std::tuple<Sequence...>>, type_list<>>;
 };
+
+template <template <typename> class Predicate, typename... Sequence>
+using get_false_types_t = typename get_false_types<Predicate, Sequence...>::type;
 
 //======================================================================================//
 //

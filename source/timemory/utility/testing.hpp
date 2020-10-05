@@ -112,11 +112,11 @@ rank_prefix()
         rank_sout << "#\t"                                                               \
                   << "[" << argv_0 << "] ";                                              \
         if(num_fail > 0)                                                                 \
-            rank_sout << "\e[1;31mTESTS FAILED\e[0m: " << nfail_counter << "/"           \
+            rank_sout << "\e[1;31mTESTS FAILED\e[0m: " << nfail_counter << '/'           \
                       << ntest_counter << std::endl;                                     \
         else                                                                             \
             rank_sout << "\e[1;36mTESTS PASSED\e[0m: "                                   \
-                      << (ntest_counter - nfail_counter) << "/" << ntest_counter         \
+                      << (ntest_counter - nfail_counter) << '/' << ntest_counter         \
                       << std::endl;                                                      \
         rank_sout << "#\n" << filler.str() << "\n" << std::endl;                         \
         rank_cout << rank_sout.str();                                                    \

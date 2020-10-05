@@ -360,9 +360,8 @@ struct function_signature
         {
             if(m_info_end)
             {
-                ss << "/"
-                   << "[{" << m_row.first << "," << m_col.first << "}-{" << m_row.second
-                   << "," << m_col.second << "}]";
+                ss << '/' << "[{" << m_row.first << "," << m_col.first << "}-{"
+                   << m_row.second << "," << m_col.second << "}]";
             }
             else
             {
@@ -372,7 +371,7 @@ struct function_signature
         else
         {
             if(use_file_info && m_file.length() > 0)
-                ss << "/" << m_file;
+                ss << '/' << m_file;
             if(use_line_info && m_row.first > 0)
                 ss << ":" << m_row.first;
         }

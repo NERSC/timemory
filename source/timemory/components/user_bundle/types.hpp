@@ -49,41 +49,31 @@
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx, typename Tag)
 //
 TIMEMORY_BUNDLE_INDEX(global_bundle_idx, 10000)
-//
 TIMEMORY_BUNDLE_INDEX(tuple_bundle_idx, 11000)
-//
 TIMEMORY_BUNDLE_INDEX(list_bundle_idx, 11100)
-//
 // TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)
-//
 TIMEMORY_BUNDLE_INDEX(mpip_bundle_idx, 11111)
-//
 TIMEMORY_BUNDLE_INDEX(ncclp_bundle_idx, 11112)
-//
 TIMEMORY_BUNDLE_INDEX(trace_bundle_idx, 20000)
-//
 TIMEMORY_BUNDLE_INDEX(profiler_bundle_idx, 22000)
 //
 TIMEMORY_COMPONENT_ALIAS(user_global_bundle,
-                         user_bundle<global_bundle_idx, api::native_tag>)
-//
+                         user_bundle<global_bundle_idx, project::timemory>)
 TIMEMORY_COMPONENT_ALIAS(user_tuple_bundle,
-                         user_bundle<tuple_bundle_idx, api::native_tag>)
-//
-TIMEMORY_COMPONENT_ALIAS(user_list_bundle, user_bundle<list_bundle_idx, api::native_tag>)
-//
-TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle, user_bundle<ompt_bundle_idx, api::native_tag>)
-//
-TIMEMORY_COMPONENT_ALIAS(user_mpip_bundle, user_bundle<mpip_bundle_idx, api::native_tag>)
-//
+                         user_bundle<tuple_bundle_idx, project::timemory>)
+TIMEMORY_COMPONENT_ALIAS(user_list_bundle,
+                         user_bundle<list_bundle_idx, project::timemory>)
+TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle,
+                         user_bundle<ompt_bundle_idx, project::timemory>)
+TIMEMORY_COMPONENT_ALIAS(user_mpip_bundle,
+                         user_bundle<mpip_bundle_idx, project::timemory>)
 TIMEMORY_COMPONENT_ALIAS(user_ncclp_bundle,
-                         user_bundle<ncclp_bundle_idx, api::native_tag>)
-//
+                         user_bundle<ncclp_bundle_idx, project::timemory>)
 TIMEMORY_COMPONENT_ALIAS(user_trace_bundle,
-                         user_bundle<trace_bundle_idx, api::native_tag>)
+                         user_bundle<trace_bundle_idx, project::timemory>)
 //
 TIMEMORY_COMPONENT_ALIAS(user_profiler_bundle,
-                         user_bundle<profiler_bundle_idx, api::native_tag>)
+                         user_bundle<profiler_bundle_idx, project::timemory>)
 //
 #if !defined(TIMEMORY_USE_OMPT)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ompt_bundle, false_type)
@@ -103,7 +93,16 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ncclp_bundle, false
 //                              REQUIRES PREFIX
 //
 //--------------------------------------------------------------------------------------//
-
+//
+TIMEMORY_SET_COMPONENT_API(component::user_global_bundle, project::timemory, os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::user_list_bundle, project::timemory, os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::user_tuple_bundle, project::timemory, os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::user_mpip_bundle, project::timemory, os::linux)
+TIMEMORY_SET_COMPONENT_API(component::user_ncclp_bundle, project::timemory, os::linux)
+TIMEMORY_SET_COMPONENT_API(component::user_trace_bundle, project::timemory, os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::user_profiler_bundle, project::timemory,
+                           os::agnostic)
+//
 namespace tim
 {
 namespace trait

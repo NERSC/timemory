@@ -168,7 +168,9 @@ namespace component
 //--------------------------------------------------------------------------------------//
 //
 template <size_t Idx, typename Tag>
-struct user_bundle : public base<user_bundle<Idx, Tag>, void>
+struct user_bundle
+: public base<user_bundle<Idx, Tag>, void>
+, concepts::runtime_configurable
 {
 public:
     static constexpr auto index = Idx;

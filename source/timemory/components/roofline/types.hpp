@@ -53,8 +53,26 @@ TIMEMORY_COMPONENT_ALIAS(gpu_roofline_flops, gpu_roofline<cuda::fp16_t, float, d
 #else
 TIMEMORY_COMPONENT_ALIAS(gpu_roofline_flops, gpu_roofline<float, double>)
 #endif
+
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(typename... Types),
+                                    TIMEMORY_ESC(component::cpu_roofline<Types...>),
+                                    tpls::papi, category::external,
+                                    category::hardware_counter, category::timing,
+                                    os::linux)
+
+TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(typename... Types),
+                                    TIMEMORY_ESC(component::gpu_roofline<Types...>),
+                                    tpls::nvidia, category::external,
+                                    category::hardware_counter, category::timing,
+                                    os::agnostic)
+
+//--------------------------------------------------------------------------------------//
 //
 //                              STATISTICS
 //

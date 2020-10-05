@@ -45,7 +45,7 @@ import inspect
 import numpy as np
 import timemory as tim
 from timemory import component as comp
-from timemory.profiler import profile
+from timemory.profiler import profile, config
 from timemory.bundle import auto_timer, auto_tuple, marker
 
 # --------------------------- test setup variables ----------------------------------- #
@@ -124,36 +124,42 @@ class TimemoryTimelineTests(unittest.TestCase):
         tim.settings.parse()
 
         # put one empty marker
-        with marker(components=["wall_clock"], key=""):
+        with marker(components=["wall_clock"], key="dummy"):
             pass
 
     def setUp(self):
         # set up environment variables
-        os.environ["TIMEMORY_TIMELINE_PROFILE"] = "ON"
-        tim.settings.parse()
+        tim.settings.timeline_profile = True
+        config.include_internal = True
+
+    def tearDown(self):
+        config.include_internal = False
 
     # Tear down class: finalize
     @classmethod
     def tearDownClass(self):
-        # timemory finalize
-        # tim.finalize()
-        # tim.dmp.finalize()
         pass
 
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_parse(self):
         """parse"""
+        tim.settings.timeline_profile = True
+        self.assertTrue(tim.settings.timeline_profile)
+
         tim.settings.timeline_profile = False
+        self.assertFalse(tim.settings.timeline_profile)
+
         os.environ["TIMEMORY_TIMELINE_PROFILE"] = "ON"
         tim.settings.parse()
 
-        print("timeline_profile() = ", tim.settings.timeline_profile)
         ret = os.environ.get("TIMEMORY_TIMELINE_PROFILE")
 
-        print("environment = ", ret)
         self.assertTrue(ret)
         self.assertTrue(tim.settings.timeline_profile)
+
+        # reset
+        tim.settings.timeline_profile = False
 
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
@@ -161,17 +167,17 @@ class TimemoryTimelineTests(unittest.TestCase):
         """no_timeline"""
         old_data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
         os.environ["TIMEMORY_TIMELINE_PROFILE"] = "OFF"
-
         tim.settings.parse()
+
         n = 5
         with marker(components=["wall_clock"], key=self.shortDescription()):
-            with profile(components=["wall_clock"]):
-                ret = fibonacci(n)
-                print("\nfibonacci({}) = {}".format(n, ret))
+            for i in range(n):
+                with marker(components=["wall_clock"], key=self.shortDescription()):
+                    ret = fibonacci(n)
 
         # counts must be == 1
         data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
-        # print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
+
         maxcnt = 1
         for k in data:
             if k not in old_data:
@@ -183,18 +189,16 @@ class TimemoryTimelineTests(unittest.TestCase):
     # test profiler_depth
     def test_timeline(self):
         """timeline"""
-        n = 5
-
         old_data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
 
+        n = 5
         with marker(components=["wall_clock"], key=self.shortDescription()):
-            with profile(components=["wall_clock"]):
-                ret = fibonacci(n)
-                print("\nfibonacci({}) = {}".format(n, ret))
+            for i in range(n):
+                with marker(components=["wall_clock"], key=self.shortDescription()):
+                    ret = fibonacci(n)
 
         # inspect data
         data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
-        # print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
 
         # counts must be == 1
         for k in data:

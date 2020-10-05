@@ -39,7 +39,6 @@
 #    define TIMEMORY_PAPI_ARRAY_SIZE 8
 #endif
 
-//======================================================================================//
 //
 TIMEMORY_DECLARE_COMPONENT(papi_vector)
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(papi_tuple, int... EventTypes)
@@ -50,6 +49,25 @@ TIMEMORY_COMPONENT_ALIAS(papi_array8_t, papi_array<8>)
 TIMEMORY_COMPONENT_ALIAS(papi_array16_t, papi_array<16>)
 TIMEMORY_COMPONENT_ALIAS(papi_array32_t, papi_array<32>)
 TIMEMORY_COMPONENT_ALIAS(papi_array_t, papi_array<TIMEMORY_PAPI_ARRAY_SIZE>)
+//
+TIMEMORY_SET_COMPONENT_API(component::papi_vector, tpls::papi, category::external,
+                           category::hardware_counter, os::linux)
+//
+TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(size_t MaxNumEvents),
+                                    TIMEMORY_ESC(component::papi_array<MaxNumEvents>),
+                                    tpls::papi, category::external,
+                                    category::hardware_counter, os::linux)
+//
+TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(int... Evts),
+                                    TIMEMORY_ESC(component::papi_tuple<Evts...>),
+                                    tpls::papi, category::external,
+                                    category::hardware_counter, os::linux)
+//
+TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(int... Evts),
+                                    TIMEMORY_ESC(component::papi_rate_tuple<Evts...>),
+                                    tpls::papi, category::external,
+                                    category::hardware_counter, category::timing,
+                                    os::linux)
 //
 //======================================================================================//
 //
@@ -64,6 +82,7 @@ namespace tim
 {
 namespace trait
 {
+//
 template <int... Idx>
 struct statistics<component::papi_tuple<Idx...>>
 {
@@ -75,6 +94,7 @@ struct statistics<component::papi_rate_tuple<Idx...>>
 {
     using type = std::array<double, sizeof...(Idx)>;
 };
+//
 }  // namespace trait
 }  // namespace tim
 //
@@ -85,6 +105,7 @@ struct statistics<component::papi_rate_tuple<Idx...>>
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_USE_PAPI)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::papi, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::papi_vector, false_type)
 TIMEMORY_DEFINE_TEMPLATE_TRAIT(is_available, component::papi_array, false_type, size_t)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::papi_tuple, false_type, int)

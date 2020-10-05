@@ -163,7 +163,7 @@ inline void
 echo_dart_file(const string_t& filepath, attributes_t attributes)
 {
     auto attribute_string = [](const string_t& key, const string_t& item) {
-        return operation::join("", key, "=", "\"", item, "\"");
+        return operation::join("", key, '=', "\"", item, "\"");
     };
 
     auto lowercase = [](string_t _str) {

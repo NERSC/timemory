@@ -33,6 +33,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/mpl/available.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
 //
@@ -111,40 +112,79 @@ struct data
 };
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::component_apis
+/// \brief trait to specify the APIs that the component is logically a part of
+///
+template <typename T>
+struct component_apis
+{
+    using type = type_list<>;
+};
+
+template <typename T>
+using component_apis_t = typename component_apis<T>::type;
+
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct runtime_enabled<void>
+{
+    // GET specialization if component is available
+    static bool get() { return get_runtime_value(); }
+
+    // SET specialization if component is available
+    static void set(bool val) { get_runtime_value() = val; }
+
+private:
+    static bool& get_runtime_value()
+    {
+        static bool _instance = TIMEMORY_DEFAULT_ENABLED;
+        return _instance;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::runtime_enabled
-/// \brief trait that signifies that an implementation is enabled at runtime
+/// \brief trait that signifies that an implementation is enabled at runtime. The
+/// value returned from get() is for the specific setting for the type, the
+/// global settings (type: void) and the specific settings for it's APIs
 ///
 template <typename T>
 struct runtime_enabled
 {
+    // type-list of APIs that are runtime configurable
+    using api_type_list =
+        get_true_types_t<concepts::is_runtime_configurable, component_apis_t<T>>;
+
     // GET specialization if component is available
     template <typename U = T>
-    static enable_if_t<is_available<U>::value, bool> get()
+    TIMEMORY_HOT static inline enable_if_t<is_available<U>::value, bool> get()
     {
-        return get_runtime_value();
+        return (runtime_enabled<void>::get() && get_runtime_value() &&
+                apply<runtime_enabled>{}(api_type_list{}));
     }
 
     // SET specialization if component is available
     template <typename U = T>
-    static enable_if_t<is_available<U>::value, void> set(bool val)
+    TIMEMORY_HOT static inline enable_if_t<is_available<U>::value, void> set(bool val)
     {
         get_runtime_value() = val;
     }
 
     // GET specialization if component is NOT available
     template <typename U = T>
-    static enable_if_t<!is_available<U>::value, bool> get()
+    static inline enable_if_t<!is_available<U>::value, bool> get()
     {
         return false;
     }
 
     // SET specialization if component is NOT available
     template <typename U = T>
-    static enable_if_t<!is_available<U>::value, void> set(bool)
+    static inline enable_if_t<!is_available<U>::value, void> set(bool)
     {}
 
 private:
-    static bool& get_runtime_value()
+    TIMEMORY_HOT static bool& get_runtime_value()
     {
         static bool _instance = is_available<T>::value;
         return _instance;

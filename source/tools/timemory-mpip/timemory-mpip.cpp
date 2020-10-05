@@ -149,8 +149,8 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         MPI_Type_size(datatype, &size);
         tracker_t _t(_name);
         add(_t, count * size);
-        add_secondary(_t, TIMEMORY_JOIN("_", _name, "dst", dst), count * size,
-                      TIMEMORY_JOIN("_", _name, "dst", dst, "tag", tag));
+        add_secondary(_t, TIMEMORY_JOIN('_', _name, "dst", dst), count * size,
+                      TIMEMORY_JOIN('_', _name, "dst", dst, "tag", tag));
     }
 
     // MPI_Recv
@@ -161,8 +161,8 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         MPI_Type_size(datatype, &size);
         tracker_t _t(_name);
         add(_t, count * size);
-        add_secondary(_t, TIMEMORY_JOIN("_", _name, "dst", dst), count * size,
-                      TIMEMORY_JOIN("_", _name, "dst", dst, "tag", tag));
+        add_secondary(_t, TIMEMORY_JOIN('_', _name, "dst", dst), count * size,
+                      TIMEMORY_JOIN('_', _name, "dst", dst, "tag", tag));
     }
 
     // MPI_Isend
@@ -173,8 +173,8 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         MPI_Type_size(datatype, &size);
         tracker_t _t(_name);
         add(_t, count * size);
-        add_secondary(_t, TIMEMORY_JOIN("_", _name, "dst", dst), count * size,
-                      TIMEMORY_JOIN("_", _name, "dst", dst, "tag", tag));
+        add_secondary(_t, TIMEMORY_JOIN('_', _name, "dst", dst), count * size,
+                      TIMEMORY_JOIN('_', _name, "dst", dst, "tag", tag));
     }
 
     // MPI_Irecv
@@ -185,8 +185,8 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         MPI_Type_size(datatype, &size);
         tracker_t _t(_name);
         add(_t, count * size);
-        add_secondary(_t, TIMEMORY_JOIN("_", _name, "dst", dst), count * size,
-                      TIMEMORY_JOIN("_", _name, "dst", dst, "tag", tag));
+        add_secondary(_t, TIMEMORY_JOIN('_', _name, "dst", dst), count * size,
+                      TIMEMORY_JOIN('_', _name, "dst", dst, "tag", tag));
     }
 
     // MPI_Bcast
@@ -195,7 +195,7 @@ struct mpi_comm_data : base<mpi_comm_data, void>
     {
         int size = 0;
         MPI_Type_size(datatype, &size);
-        add(_name, count * size, TIMEMORY_JOIN("_", _name, "root", root));
+        add(_name, count * size, TIMEMORY_JOIN('_', _name, "root", root));
     }
 
     // MPI_Allreduce
@@ -218,10 +218,10 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         MPI_Type_size(recvtype, &recv_size);
         tracker_t _t(_name);
         add(_t, sendcount * send_size + recvcount * recv_size);
-        add_secondary(_t, TIMEMORY_JOIN("_", _name, "send"), sendcount * send_size,
-                      TIMEMORY_JOIN("_", _name, "send", "tag", sendtag));
-        add_secondary(_t, TIMEMORY_JOIN("_", _name, "recv"), recvcount * recv_size,
-                      TIMEMORY_JOIN("_", _name, "recv", "tag", recvtag));
+        add_secondary(_t, TIMEMORY_JOIN('_', _name, "send"), sendcount * send_size,
+                      TIMEMORY_JOIN('_', _name, "send", "tag", sendtag));
+        add_secondary(_t, TIMEMORY_JOIN('_', _name, "recv"), recvcount * recv_size,
+                      TIMEMORY_JOIN('_', _name, "recv", "tag", recvtag));
     }
 
     // MPI_Gather
@@ -235,11 +235,11 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         MPI_Type_size(recvtype, &recv_size);
         tracker_t _t(_name);
         add(_t, sendcount * send_size + recvcount * recv_size);
-        tracker_t _r(TIMEMORY_JOIN("_", _name, "root", root));
+        tracker_t _r(TIMEMORY_JOIN('_', _name, "root", root));
         add(_r, sendcount * send_size + recvcount * recv_size);
-        add_secondary(_r, TIMEMORY_JOIN("_", _name, "root", root, "send"),
+        add_secondary(_r, TIMEMORY_JOIN('_', _name, "root", root, "send"),
                       sendcount * send_size);
-        add_secondary(_r, TIMEMORY_JOIN("_", _name, "root", root, "recv"),
+        add_secondary(_r, TIMEMORY_JOIN('_', _name, "root", root, "recv"),
                       recvcount * recv_size);
     }
 
@@ -253,11 +253,11 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         MPI_Type_size(recvtype, &recv_size);
         tracker_t _t(_name);
         add(_t, sendcount * send_size + recvcount * recv_size);
-        tracker_t _r(TIMEMORY_JOIN("_", _name, "root", root));
+        tracker_t _r(TIMEMORY_JOIN('_', _name, "root", root));
         add(_r, sendcount * send_size + recvcount * recv_size);
-        add_secondary(_r, TIMEMORY_JOIN("_", _name, "root", root, "send"),
+        add_secondary(_r, TIMEMORY_JOIN('_', _name, "root", root, "send"),
                       sendcount * send_size);
-        add_secondary(_r, TIMEMORY_JOIN("_", _name, "root", root, "recv"),
+        add_secondary(_r, TIMEMORY_JOIN('_', _name, "root", root, "recv"),
                       recvcount * recv_size);
     }
 
@@ -271,8 +271,8 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         MPI_Type_size(recvtype, &recv_size);
         tracker_t _t(_name);
         add(_t, sendcount * send_size + recvcount * recv_size);
-        add_secondary(_t, TIMEMORY_JOIN("_", _name, "send"), sendcount * send_size);
-        add_secondary(_t, TIMEMORY_JOIN("_", _name, "recv"), recvcount * recv_size);
+        add_secondary(_t, TIMEMORY_JOIN('_', _name, "send"), sendcount * send_size);
+        add_secondary(_t, TIMEMORY_JOIN('_', _name, "recv"), recvcount * recv_size);
     }
 
 private:

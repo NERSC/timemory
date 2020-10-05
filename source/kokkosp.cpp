@@ -113,7 +113,7 @@ extern "C"
 
     void kokkosp_begin_parallel_for(const char* name, uint32_t devid, uint64_t* kernid)
     {
-        auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
         *kernid    = kokkosp::get_unique_id();
         kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *kernid);
         kokkosp::start_profiler<kokkosp::kokkos_bundle>(*kernid);
@@ -129,7 +129,7 @@ extern "C"
 
     void kokkosp_begin_parallel_reduce(const char* name, uint32_t devid, uint64_t* kernid)
     {
-        auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
         *kernid    = kokkosp::get_unique_id();
         kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *kernid);
         kokkosp::start_profiler<kokkosp::kokkos_bundle>(*kernid);
@@ -145,7 +145,7 @@ extern "C"
 
     void kokkosp_begin_parallel_scan(const char* name, uint32_t devid, uint64_t* kernid)
     {
-        auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
         *kernid    = kokkosp::get_unique_id();
         kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *kernid);
         kokkosp::start_profiler<kokkosp::kokkos_bundle>(*kernid);
@@ -180,7 +180,7 @@ extern "C"
     {
         *secid = kokkosp::get_unique_id();
         auto pname =
-            TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "section", secid), name);
+            TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "section", secid), name);
         kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *secid);
     }
 

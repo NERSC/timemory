@@ -104,6 +104,30 @@ struct vsettings
 
     virtual bool matches(const std::string&) const;
 
+    template <typename Tp>
+    std::pair<bool, Tp> get() const
+    {
+        auto _ref = dynamic_cast<const tsettings<Tp, Tp&>*>(this);
+        if(_ref)
+            return { true, _ref->get() };
+        else
+        {
+            auto _nref = dynamic_cast<const tsettings<Tp, Tp>*>(this);
+            if(_nref)
+                return { true, _nref->get() };
+        }
+        return { false, Tp{} };
+    }
+
+    template <typename Tp>
+    bool get(Tp& _val) const
+    {
+        auto&& _ret = this->get<Tp>();
+        if(_ret.first)
+            _val = _ret.second;
+        return _ret.first;
+    }
+
 protected:
     std::type_index          m_type_index  = std::type_index(typeid(void));
     std::type_index          m_value_index = std::type_index(typeid(void));

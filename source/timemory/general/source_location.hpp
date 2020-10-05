@@ -115,7 +115,7 @@ public:
                         m_result = result_type(obj.m_prefix, add_hash_id(obj.m_prefix));
                     else
                     {
-                        auto _tmp = join_type::join("/", obj.m_prefix.c_str(), _suffix);
+                        auto _tmp = join_type::join('/', obj.m_prefix.c_str(), _suffix);
                         m_result  = result_type(_tmp, add_hash_id(_tmp));
                     }
                     break;
@@ -280,16 +280,16 @@ protected:
         if(_line < 0)
         {
             if(_filename.length() > 0)
-                m_prefix = join_type::join("", _func, "@", _filename);
+                m_prefix = join_type::join("", _func, '@', _filename);
             else
                 m_prefix = _func;
         }
         else
         {
             if(_filename.length() > 0)
-                m_prefix = join_type::join("", _func, "@", _filename, ":", _line);
+                m_prefix = join_type::join("", _func, '@', _filename, ':', _line);
             else
-                m_prefix = join_type::join("", _func, ":", _line);
+                m_prefix = join_type::join("", _func, ':', _line);
         }
     }
 
@@ -322,7 +322,7 @@ private:
     std::string _join(const char* _arg)
     {
         return (strcmp(_arg, "") == 0) ? m_prefix
-                                       : join_type::join("/", m_prefix.c_str(), _arg);
+                                       : join_type::join('/', m_prefix.c_str(), _arg);
     }
 };
 

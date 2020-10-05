@@ -29,23 +29,78 @@
 
 //--------------------------------------------------------------------------------------//
 
+#define TIMEMORY_IMPL_IS_CONCEPT(CONCEPT)                                                \
+    struct CONCEPT                                                                       \
+    {};                                                                                  \
+    template <typename Tp>                                                               \
+    struct is_##CONCEPT                                                                  \
+    {                                                                                    \
+    private:                                                                             \
+        template <typename, typename = std::true_type>                                   \
+        struct have : std::false_type                                                    \
+        {};                                                                              \
+        template <typename U>                                                            \
+        struct have<U, typename std::is_base_of<typename U::CONCEPT, U>::type>           \
+        : std::true_type                                                                 \
+        {};                                                                              \
+        template <typename U>                                                            \
+        struct have<U, typename std::is_base_of<typename U::CONCEPT##_type, U>::type>    \
+        : std::true_type                                                                 \
+        {};                                                                              \
+                                                                                         \
+    public:                                                                              \
+        using type = typename is_##CONCEPT::template have<                               \
+            typename std::remove_cv<Tp>::type>::type;                                    \
+        static constexpr bool value =                                                    \
+            is_##CONCEPT::template have<typename std::remove_cv<Tp>::type>::value;       \
+    };
+// constexpr operator bool() const noexcept { return value; }
+
+//--------------------------------------------------------------------------------------//
+
 namespace tim
 {
 //
+using true_type  = std::true_type;
+using false_type = std::false_type;
+//
 struct null_type;
+//
+namespace trait
+{
+template <typename Tp>
+struct is_available;
+}
+//
+namespace
+{
+template <typename Tp>
+struct anonymous
+{
+    using type = Tp;
+};
+//
+template <typename Tp>
+using anonymous_t = typename anonymous<Tp>::type;
+}  // namespace
+//
+namespace component
+{
+template <size_t Idx, typename Tag>
+struct user_bundle;
+//
+template <size_t Nt, typename ComponentsT, typename DifferentiatorT = anonymous_t<void>>
+struct gotcha;
+}  // namespace component
 //
 namespace concepts
 {
-using false_type = std::false_type;
-using true_type  = std::true_type;
-
+//
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_empty
 /// \brief concept that specifies that a variadic type is empty
 ///
-template <typename T>
-struct is_empty : false_type
-{};
+TIMEMORY_IMPL_IS_CONCEPT(empty)
 
 template <template <typename...> class Tuple>
 struct is_empty<Tuple<>> : true_type
@@ -55,9 +110,7 @@ struct is_empty<Tuple<>> : true_type
 /// \struct tim::concepts::is_null_type
 /// \brief concept that specifies that a type is not a useful type
 ///
-template <typename T>
-struct is_null_type : false_type
-{};
+TIMEMORY_IMPL_IS_CONCEPT(null_type)
 
 template <template <typename...> class Tuple>
 struct is_null_type<Tuple<>> : true_type
@@ -72,69 +125,89 @@ struct is_null_type<false_type> : true_type
 {};
 
 template <>
-struct is_null_type<null_type> : true_type
+struct is_null_type<::tim::null_type> : true_type
 {};
+
+//----------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_api
+/// \brief concept that specifies that a type is an API. APIs are used to designate
+/// different project implementations, different external library tools, etc.
+///
+TIMEMORY_IMPL_IS_CONCEPT(api)
 
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_variadic
 /// \brief concept that specifies that a type is a generic variadic wrapper
 ///
-template <typename T>
-struct is_variadic : false_type
-{};
+TIMEMORY_IMPL_IS_CONCEPT(variadic)
 
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 ///
-template <typename T>
-struct is_wrapper : false_type
-{};
+TIMEMORY_IMPL_IS_CONCEPT(wrapper)
 
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_stack_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// and components are stack-allocated
 ///
-template <typename T>
-struct is_stack_wrapper : false_type
-{};
+TIMEMORY_IMPL_IS_CONCEPT(stack_wrapper)
 
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_heap_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// and components are heap-allocated
 ///
-template <typename T>
-struct is_heap_wrapper : false_type
-{};
+TIMEMORY_IMPL_IS_CONCEPT(heap_wrapper)
 
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_hybrid_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// and components are stack- and heap- allocated
 ///
-template <typename T>
-struct is_hybrid_wrapper : false_type
-{};
+TIMEMORY_IMPL_IS_CONCEPT(hybrid_wrapper)
+
+//----------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_mixed_wrapper
+/// \brief concept that specifies that a type is a timemory variadic wrapper
+/// and variadic types are mix of stack- and heap- allocated
+///
+TIMEMORY_IMPL_IS_CONCEPT(mixed_wrapper)
+
+//----------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_tagged
+/// \brief concept that specifies that a type's template parameters include
+/// a API specific tag as one of the template parameters (usually first)
+///
+TIMEMORY_IMPL_IS_CONCEPT(tagged)
 
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_comp_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// that does not perform auto start/stop, e.g. component_{tuple,list,hybrid}
 ///
-template <typename T>
-struct is_comp_wrapper : false_type
-{};
+TIMEMORY_IMPL_IS_CONCEPT(comp_wrapper)
 
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_auto_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// that performs auto start/stop, e.g. auto_{tuple,list,hybrid}
 ///
-template <typename T>
-struct is_auto_wrapper : false_type
-{};
+TIMEMORY_IMPL_IS_CONCEPT(auto_wrapper)
+
+//----------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_runtime_configurable
+/// \brief concept that specifies that a component type supports configurating the
+/// set of components that it collects at runtime (e.g. user_bundle)
+///
+TIMEMORY_IMPL_IS_CONCEPT(runtime_configurable)
+
+//----------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_external_function_wrapper
+/// \brief concept that specifies that a component type wraps external functions
+///
+TIMEMORY_IMPL_IS_CONCEPT(external_function_wrapper)
 
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::has_gotcha
@@ -327,52 +400,52 @@ TIMEMORY_CONCEPT_ALIAS(component_type_t, component_type)
 
 //--------------------------------------------------------------------------------------//
 
-#define TIMEMORY_DEFINE_CONCRETE_CONCEPT(CONCEPT, COMPONENT, VALUE)                      \
+#define TIMEMORY_DEFINE_CONCRETE_CONCEPT(CONCEPT, SPECIALIZED_TYPE, VALUE)               \
     namespace tim                                                                        \
     {                                                                                    \
     namespace concepts                                                                   \
     {                                                                                    \
     template <>                                                                          \
-    struct CONCEPT<COMPONENT> : VALUE                                                    \
+    struct CONCEPT<SPECIALIZED_TYPE> : VALUE                                             \
     {};                                                                                  \
     }                                                                                    \
     }
 
 //--------------------------------------------------------------------------------------//
 
-#define TIMEMORY_DEFINE_TEMPLATE_CONCEPT(CONCEPT, COMPONENT, VALUE, TYPE)                \
+#define TIMEMORY_DEFINE_TEMPLATE_CONCEPT(CONCEPT, SPECIALIZED_TYPE, VALUE, TYPE)         \
     namespace tim                                                                        \
     {                                                                                    \
     namespace concepts                                                                   \
     {                                                                                    \
     template <TYPE T>                                                                    \
-    struct CONCEPT<COMPONENT<T>> : VALUE                                                 \
+    struct CONCEPT<SPECIALIZED_TYPE<T>> : VALUE                                          \
     {};                                                                                  \
     }                                                                                    \
     }
 
 //--------------------------------------------------------------------------------------//
 
-#define TIMEMORY_DEFINE_VARIADIC_CONCEPT(CONCEPT, COMPONENT, VALUE, TYPE)                \
+#define TIMEMORY_DEFINE_VARIADIC_CONCEPT(CONCEPT, SPECIALIZED_TYPE, VALUE, TYPE)         \
     namespace tim                                                                        \
     {                                                                                    \
     namespace concepts                                                                   \
     {                                                                                    \
     template <TYPE... T>                                                                 \
-    struct CONCEPT<COMPONENT<T...>> : VALUE                                              \
+    struct CONCEPT<SPECIALIZED_TYPE<T...>> : VALUE                                       \
     {};                                                                                  \
     }                                                                                    \
     }
 
 //--------------------------------------------------------------------------------------//
 
-#define TIMEMORY_DEFINE_CONCRETE_CONCEPT_TYPE(CONCEPT, COMPONENT, ...)                   \
+#define TIMEMORY_DEFINE_CONCRETE_CONCEPT_TYPE(CONCEPT, SPECIALIZED_TYPE, ...)            \
     namespace tim                                                                        \
     {                                                                                    \
     namespace concepts                                                                   \
     {                                                                                    \
     template <>                                                                          \
-    struct CONCEPT<COMPONENT>                                                            \
+    struct CONCEPT<SPECIALIZED_TYPE>                                                     \
     {                                                                                    \
         using type = __VA_ARGS__;                                                        \
     };                                                                                   \
@@ -381,13 +454,13 @@ TIMEMORY_CONCEPT_ALIAS(component_type_t, component_type)
 
 //--------------------------------------------------------------------------------------//
 
-#define TIMEMORY_DEFINE_TEMPLATE_CONCEPT_TYPE(CONCEPT, COMPONENT, TYPE, ...)             \
+#define TIMEMORY_DEFINE_TEMPLATE_CONCEPT_TYPE(CONCEPT, SPECIALIZED_TYPE, TYPE, ...)      \
     namespace tim                                                                        \
     {                                                                                    \
     namespace concepts                                                                   \
     {                                                                                    \
     template <TYPE T>                                                                    \
-    struct CONCEPT<COMPONENT<T>>                                                         \
+    struct CONCEPT<SPECIALIZED_TYPE<T>>                                                  \
     {                                                                                    \
         using type = __VA_ARGS__;                                                        \
     };                                                                                   \
@@ -396,13 +469,13 @@ TIMEMORY_CONCEPT_ALIAS(component_type_t, component_type)
 
 //--------------------------------------------------------------------------------------//
 
-#define TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(CONCEPT, COMPONENT, TYPE, ...)             \
+#define TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(CONCEPT, SPECIALIZED_TYPE, TYPE, ...)      \
     namespace tim                                                                        \
     {                                                                                    \
     namespace concepts                                                                   \
     {                                                                                    \
     template <TYPE... T>                                                                 \
-    struct CONCEPT<COMPONENT<T...>>                                                      \
+    struct CONCEPT<SPECIALIZED_TYPE<T...>>                                               \
     {                                                                                    \
         using type = __VA_ARGS__;                                                        \
     };                                                                                   \

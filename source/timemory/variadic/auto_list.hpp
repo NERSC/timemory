@@ -55,6 +55,10 @@ namespace tim
 
 template <typename... Types>
 class auto_list
+: public concepts::wrapper
+, public concepts::variadic
+, public concepts::auto_wrapper
+, public concepts::heap_wrapper
 {
 public:
     using this_type           = auto_list<Types...>;

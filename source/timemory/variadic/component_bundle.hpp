@@ -53,16 +53,19 @@
 #include <iostream>
 #include <string>
 
-//======================================================================================//
-
 namespace tim
 {
 //
 template <typename Tag, typename... Types>
-class component_bundle : public api_bundle<Tag, implemented_t<Types...>>
+class component_bundle
+: public api_bundle<Tag, implemented_t<Types...>>
+, public concepts::tagged
+, public concepts::comp_wrapper
+, public concepts::hybrid_wrapper
 {
-    // manager is friend so can use above
-    friend class manager;
+    static_assert(concepts::is_api<Tag>::value,
+                  "Error! The first template parameter of a 'component_bundle' must "
+                  "statisfy the 'is_api' concept");
 
     template <typename TagT, typename... Tp>
     friend class auto_bundle;

@@ -35,8 +35,6 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
 TIMEMORY_DECLARE_COMPONENT(peak_rss)
 TIMEMORY_DECLARE_COMPONENT(page_rss)
 TIMEMORY_DECLARE_COMPONENT(num_io_in)
@@ -58,9 +56,7 @@ TIMEMORY_DECLARE_COMPONENT(data_rss)
 TIMEMORY_DECLARE_COMPONENT(num_msg_sent)
 TIMEMORY_DECLARE_COMPONENT(num_msg_recv)
 TIMEMORY_DECLARE_COMPONENT(num_signals)
-//
-//======================================================================================//
-//
+
 namespace tim
 {
 namespace resource_usage
@@ -71,6 +67,45 @@ using pair_dd_t = std::pair<double, double>;
 }  // namespace alias
 }  // namespace resource_usage
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_SET_COMPONENT_API(component::peak_rss, project::timemory, category::memory,
+                           category::resource_usage, os::agnostic)
+
+TIMEMORY_SET_COMPONENT_API(component::current_peak_rss, project::timemory,
+                           category::memory, category::resource_usage, os::agnostic)
+
+TIMEMORY_SET_COMPONENT_API(component::page_rss, project::timemory, category::memory,
+                           category::resource_usage, os::agnostic)
+
+TIMEMORY_SET_COMPONENT_API(component::virtual_memory, project::timemory, category::memory,
+                           category::resource_usage, os::linux)
+
+TIMEMORY_SET_COMPONENT_API(component::num_io_in, project::timemory, category::io,
+                           category::resource_usage, os::unix)
+
+TIMEMORY_SET_COMPONENT_API(component::num_io_out, project::timemory, category::io,
+                           category::resource_usage, os::unix)
+
+TIMEMORY_SET_COMPONENT_API(component::num_minor_page_faults, project::timemory,
+                           category::resource_usage, os::unix)
+
+TIMEMORY_SET_COMPONENT_API(component::voluntary_context_switch, project::timemory,
+                           category::resource_usage, os::unix)
+
+TIMEMORY_SET_COMPONENT_API(component::priority_context_switch, project::timemory,
+                           category::resource_usage, os::unix)
+
+TIMEMORY_SET_COMPONENT_API(component::user_mode_time, project::timemory, category::timing,
+                           os::unix)
+
+TIMEMORY_SET_COMPONENT_API(component::kernel_mode_time, project::timemory,
+                           category::timing, os::unix)
 
 //--------------------------------------------------------------------------------------//
 //

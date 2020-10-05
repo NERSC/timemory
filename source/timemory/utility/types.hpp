@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/macros/os.hpp"
+#include "timemory/mpl/concepts.hpp"
 
 #include <array>
 #include <bitset>
@@ -224,7 +225,7 @@ using identity_t = typename identity<T>::type;
 /// \struct null_type
 /// \brief this is a placeholder type for optional type-traits. It is used as the default
 /// type for the type-traits to signify there is no specialization.
-struct null_type
+struct null_type : concepts::null_type
 {};
 //
 //--------------------------------------------------------------------------------------//

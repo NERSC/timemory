@@ -30,60 +30,62 @@
 
 #pragma once
 
-#include "timemory/components/base.hpp"
-#include "timemory/components/cupti/backends.hpp"
-#include "timemory/components/cupti/types.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/settings/declaration.hpp"
+#if defined(TIMEMORY_USE_CUPTI_NVPERF)
 
-#include <nvperf_cuda_host.h>
-#include <nvperf_host.h>
-#include <nvperf_target.h>
-//
-#include <cupti_profiler_target.h>
-#include <cupti_target.h>
-//
-#include <cuda.h>
+#    include "timemory/components/base.hpp"
+#    include "timemory/components/cupti/backends.hpp"
+#    include "timemory/components/cupti/types.hpp"
+#    include "timemory/macros.hpp"
+#    include "timemory/settings/declaration.hpp"
 
-#include <cstdint>
-#include <fstream>
-#include <iostream>
-#include <string>
-#include <vector>
+#    include <nvperf_cuda_host.h>
+#    include <nvperf_host.h>
+#    include <nvperf_target.h>
+//
+#    include <cupti_profiler_target.h>
+#    include <cupti_target.h>
+//
+#    include <cuda.h>
+
+#    include <cstdint>
+#    include <fstream>
+#    include <iostream>
+#    include <string>
+#    include <vector>
 //
 //======================================================================================//
 //
-#if !defined(TIMEMORY_CUPTI_API_CALL)
-#    define TIMEMORY_CUPTI_API_CALL(...) TIMEMORY_CUPTI_CALL(__VA_ARGS__)
-#endif
+#    if !defined(TIMEMORY_CUPTI_API_CALL)
+#        define TIMEMORY_CUPTI_API_CALL(...) TIMEMORY_CUPTI_CALL(__VA_ARGS__)
+#    endif
 //
 //======================================================================================//
 //
-#if !defined(TIMEMORY_NVPW_API_CALL)
-#    define TIMEMORY_NVPW_API_CALL(apiFuncCall)                                          \
+#    if !defined(TIMEMORY_NVPW_API_CALL)
+#        define TIMEMORY_NVPW_API_CALL(apiFuncCall)                                      \
+            do                                                                           \
+            {                                                                            \
+                NVPA_Status _status = apiFuncCall;                                       \
+                if(_status != NVPA_STATUS_SUCCESS)                                       \
+                {                                                                        \
+                    fprintf(stderr, "%s:%d: error: function %s failed with error %d.\n", \
+                            __FILE__, __LINE__, #apiFuncCall, _status);                  \
+                    exit(-1);                                                            \
+                }                                                                        \
+            } while(0)
+#    endif
+//
+//======================================================================================//
+//
+#    define TIMEMORY_RETURN_IF_NVPW_ERROR(retval, actual)                                \
         do                                                                               \
         {                                                                                \
-            NVPA_Status _status = apiFuncCall;                                           \
-            if(_status != NVPA_STATUS_SUCCESS)                                           \
+            if(NVPA_STATUS_SUCCESS != actual)                                            \
             {                                                                            \
-                fprintf(stderr, "%s:%d: error: function %s failed with error %d.\n",     \
-                        __FILE__, __LINE__, #apiFuncCall, _status);                      \
-                exit(-1);                                                                \
+                fprintf(stderr, "FAILED: %s\n", #actual);                                \
+                return retval;                                                           \
             }                                                                            \
         } while(0)
-#endif
-//
-//======================================================================================//
-//
-#define TIMEMORY_RETURN_IF_NVPW_ERROR(retval, actual)                                    \
-    do                                                                                   \
-    {                                                                                    \
-        if(NVPA_STATUS_SUCCESS != actual)                                                \
-        {                                                                                \
-            fprintf(stderr, "FAILED: %s\n", #actual);                                    \
-            return retval;                                                               \
-        }                                                                                \
-    } while(0)
 //
 //======================================================================================//
 //
@@ -109,12 +111,12 @@ MoveScopeExit(T t)
 //
 //======================================================================================//
 //
-#define NV_ANONYMOUS_VARIABLE_DIRECT(name, line) name##line
-#define NV_ANONYMOUS_VARIABLE_INDIRECT(name, line)                                       \
-    NV_ANONYMOUS_VARIABLE_DIRECT(name, line)
-#define SCOPE_EXIT(func)                                                                 \
-    const auto NV_ANONYMOUS_VARIABLE_INDIRECT(EXIT, __LINE__) =                          \
-        MoveScopeExit([=]() { func; })
+#    define NV_ANONYMOUS_VARIABLE_DIRECT(name, line) name##line
+#    define NV_ANONYMOUS_VARIABLE_INDIRECT(name, line)                                   \
+        NV_ANONYMOUS_VARIABLE_DIRECT(name, line)
+#    define SCOPE_EXIT(func)                                                             \
+        const auto NV_ANONYMOUS_VARIABLE_INDIRECT(EXIT, __LINE__) =                      \
+            MoveScopeExit([=]() { func; })
 //
 //======================================================================================//
 //
@@ -1444,3 +1446,5 @@ cupti_profiler::ReadBinaryFile(const char* pFileName, std::vector<uint8_t>& imag
 //
 }  // namespace component
 }  // namespace tim
+
+#endif

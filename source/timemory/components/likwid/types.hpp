@@ -62,7 +62,19 @@
 //
 TIMEMORY_DECLARE_COMPONENT(likwid_marker)
 TIMEMORY_DECLARE_COMPONENT(likwid_nvmarker)
+
+//--------------------------------------------------------------------------------------//
 //
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SET_COMPONENT_API(component::likwid_marker, tpls::likwid, category::external,
+                           category::decorator, category::hardware_counter, os::linux)
+TIMEMORY_SET_COMPONENT_API(component::likwid_nvmarker, tpls::likwid, device::gpu,
+                           category::external, category::decorator,
+                           category::hardware_counter, os::linux)
+
 namespace tim
 {
 namespace component
@@ -85,6 +97,7 @@ struct likwid_data;
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_USE_LIKWID)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::likwid, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_marker, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmarker, false_type)
 #else

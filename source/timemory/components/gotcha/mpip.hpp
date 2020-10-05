@@ -208,9 +208,8 @@ tim::component::deactivate_mpip(uint64_t id)
 //
 #if !defined(TIMEMORY_USE_GOTCHA) || !defined(TIMEMORY_USE_MPI)
 //
-template <typename Toolset, typename Tag, typename... Args>
-void
-tim::component::configure_mpip(Args&&...)
+template <typename Toolset, typename Tag>
+void configure_mpip(std::set<std::string>, std::set<std::string>)
 {}
 //
 #else

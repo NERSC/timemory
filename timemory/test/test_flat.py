@@ -46,7 +46,7 @@ import inspect
 import numpy as np
 import timemory as tim
 from timemory import component as comp
-from timemory.profiler import profile
+from timemory.profiler import profile, config
 from timemory.bundle import auto_timer, auto_tuple, marker
 
 # --------------------------- test setup variables ----------------------------------- #
@@ -106,7 +106,6 @@ class TimemoryFlatTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # set up environment variables
-        os.environ["TIMEMORY_FLAT_PROFILE"] = "ON"
         tim.settings.verbose = 1
         tim.settings.debug = False
         tim.settings.json_output = True
@@ -114,68 +113,67 @@ class TimemoryFlatTests(unittest.TestCase):
         tim.settings.dart_output = True
         tim.settings.dart_count = 1
         tim.settings.banner = False
-
         tim.settings.parse()
 
     def setUp(self):
-        # set up environment variables
-        os.environ["TIMEMORY_FLAT_PROFILE"] = "ON"
-        tim.settings.parse()
+        tim.settings.flat_profile = True
+        config.include_internal = True
+
+    def tearDown(self):
+        config.include_internal = False
 
     # Tear down class: finalize
     @classmethod
     def tearDownClass(self):
-        # timemory finalize
-        # tim.finalize()
-        # tim.dmp.finalize()
         pass
 
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_parse(self):
         """parse"""
+
+        tim.settings.flat_profile = True
+        self.assertTrue(tim.settings.flat_profile)
+
         tim.settings.flat_profile = False
+        self.assertFalse(tim.settings.flat_profile)
+
         os.environ["TIMEMORY_FLAT_PROFILE"] = "ON"
         tim.settings.parse()
 
-        print("\nflat_profile() = ", tim.settings.flat_profile)
         ret = os.environ.get("TIMEMORY_FLAT_PROFILE")
 
-        print("environment = ", ret)
         self.assertTrue(ret)
         self.assertTrue(tim.settings.flat_profile)
+
+        # reset
+        tim.settings.flat_profile = False
 
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_no_flat(self):
         """not_flat"""
-        os.environ["TIMEMORY_FLAT_PROFILE"] = "OFF"
-        tim.settings.parse()
-        n = 25
+        n = 10
+        tim.settings.flat_profile = False
         with marker(components=["wall_clock"], key=self.shortDescription()):
-            with profile(components=["wall_clock"]):
-                ret = fibonacci(n)
-                print("\nfibonacci({}) = {}".format(n, ret))
+            ret = fib(n, True)
 
         # inspect data
         data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
         self.assertEqual(data[-1]["depth"], n)
-        # print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
 
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_flat(self):
         """flat"""
-        n = 25
+        n = 10
         with marker(components=["wall_clock"], key=self.shortDescription()):
-            with profile(components=["wall_clock"]):
+            with profile(components=["wall_clock"], flat=True, timeline=False):
                 ret = fibonacci(n)
-                print("\nfibonacci({}) = {}".format(n, ret))
 
         # inspect data
         data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
         self.assertEqual(data[-1]["depth"], 0)
-        # print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
 
 
 # ----------------------------- main test runner ---------------------------------------- #

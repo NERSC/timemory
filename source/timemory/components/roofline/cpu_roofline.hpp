@@ -331,7 +331,7 @@ struct cpu_roofline
 
     static std::string get_type_string()
     {
-        return apply<std::string>::join("_", demangle(typeid(Types).name())...);
+        return apply<std::string>::join('_', demangle(typeid(Types).name())...);
     }
 
     //----------------------------------------------------------------------------------//

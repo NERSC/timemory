@@ -62,6 +62,34 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
     {
         if(_settings->get_debug() || _settings->get_verbose() > 3)
             PRINT_HERE("%s", "");
+
+        auto _ncfg = _settings->get_suppress_config();
+        if(!_ncfg)
+        {
+            // default configuration files
+            std::set<std::string> _dcfg = {
+                get_env<string_t>("HOME") + std::string("/.timemory.cfg"),
+                get_env<string_t>("HOME") + std::string("/.timemory.json"),
+                get_env<string_t>("HOME") + std::string("/.config/timemory.cfg"),
+                get_env<string_t>("HOME") + std::string("/.config/timemory.json")
+            };
+
+            auto _cfg = _settings->get_config_file();
+            for(auto&& citr : tim::delimit(_cfg, ",;"))
+            {
+                try
+                {
+                    _settings->read(citr);
+                } catch(std::runtime_error& e)
+                {
+                    if(_dcfg.find(citr) == _dcfg.end())
+                    {
+                        std::cerr << e.what() << std::endl;
+                        throw;
+                    }
+                }
+            }
+        }
     }
 
     std::string exe_name = (argc > 0) ? argv[0] : "";

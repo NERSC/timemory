@@ -37,16 +37,36 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
-TIMEMORY_DECLARE_TEMPLATE_COMPONENT(gotcha, size_t Nt, typename Components,
-                                    typename Differentiator = void)
+// Declared in timemory/mpl/concepts.hpp
+// TIMEMORY_DECLARE_TEMPLATE_COMPONENT(gotcha, size_t Nt, typename Components,
+//                                    typename Differentiator = anonymous_t<void>)
 //
 TIMEMORY_DECLARE_COMPONENT(malloc_gotcha)
 //
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(mpip_handle, typename Toolset, typename Tag)
+
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
+//                                  APIs
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace tim
+{
+namespace trait
+{
+template <size_t Nt, typename ComponentsT, typename DiffT>
+struct component_apis<component::gotcha<Nt, ComponentsT, DiffT>>
+{
+    using type = type_list<tpls::gotcha, category::external, os::linux>;
+};
+}  // namespace trait
+}  // namespace tim
+//
+TIMEMORY_SET_COMPONENT_API(component::malloc_gotcha, tpls::gotcha, category::external,
+                           category::memory, os::linux)
+//
+//--------------------------------------------------------------------------------------//
 //
 //                              STATISTICS
 //
@@ -62,6 +82,7 @@ TIMEMORY_STATISTICS_TYPE(component::malloc_gotcha, double)
 //
 #if !defined(TIMEMORY_USE_GOTCHA)
 //
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::gotcha, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::malloc_gotcha, false_type)
 //
 namespace tim

@@ -339,10 +339,18 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize()
 {
+    auto homedir = get_env<string_t>("HOME");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, config_file, "TIMEMORY_CONFIG", "Configuration file for timemory",
-        TIMEMORY_JOIN("/", get_env<string_t>("HOME"), "timemory.cfg"),
+        string_t, config_file, "TIMEMORY_CONFIG_FILE", "Configuration file for timemory",
+        TIMEMORY_JOIN(';', TIMEMORY_JOIN('/', homedir, ".timemory.cfg"),
+                      TIMEMORY_JOIN('/', homedir, ".timemory.json"),
+                      TIMEMORY_JOIN('/', homedir, ".config", "timemory.cfg"),
+                      TIMEMORY_JOIN('/', homedir, ".config", "timemory.json")),
         strvector_t({ "-C", "--timemory-config" }))
+
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(bool, suppress_config, "TIMEMORY_SUPPRESS_CONFIG",
+                                      "Disable processing of setting configuration files",
+                                      false, strvector_t({ "--timemory-no-config" }))
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, enabled, "TIMEMORY_ENABLED", "Activation state of timemory",
@@ -388,6 +396,7 @@ settings::initialize()
                                       "Generate plot outputs from json outputs",
                                       TIMEMORY_DEFAULT_PLOTTING,
                                       strvector_t({ "--timemory-plot-output" }))
+
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, diff_output, "TIMEMORY_DIFF_OUTPUT",
         "Generate a difference output vs. a pre-existing output (see also: "
@@ -849,7 +858,17 @@ settings::read(const string_t& inp)
     if(!ifs)
         throw std::runtime_error(
             TIMEMORY_JOIN(" ", "Error reading configuration file:", inp));
-    if(inp.find(".json") != std::string::npos)
+
+    return read(ifs, inp);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_INLINE
+bool
+settings::read(std::istream& ifs, std::string inp)
+{
+    if(inp.find(".json") != std::string::npos || inp == "json")
     {
         using policy_type = policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>;
         auto ia           = policy_type::get(ifs);
@@ -873,7 +892,7 @@ settings::read(const string_t& inp)
         return true;
     }
 #if defined(TIMEMORY_USE_XML_ARCHIVE) || defined(TIMEMORY_XML_SUPPORT)
-    else if(inp.find(".xml") != std::string::npos)
+    else if(inp.find(".xml") != std::string::npos || inp == "xml")
     {
         using policy_type = policy::input_archive<cereal::XMLInputArchive, TIMEMORY_API>;
         auto ia           = policy_type::get(ifs);
@@ -899,6 +918,9 @@ settings::read(const string_t& inp)
 #endif
     else
     {
+        if(inp.empty())
+            inp = "text";
+
         std::string line = "";
 
         auto is_comment = [](const std::string& s) {
@@ -935,13 +957,25 @@ settings::read(const string_t& inp)
                 // if there was any fields, remove the leading comma
                 if(val.length() > 0)
                     val = val.substr(1);
+                auto incr = valid;
                 for(auto itr : *this)
                 {
                     if(itr.second->matches(key))
                     {
+                        if(get_debug() || get_verbose() > 0)
+                            fprintf(stderr, "[timemory::settings]['%s']> %-30s :: %s\n",
+                                    inp.c_str(), key.c_str(), val.c_str());
                         ++valid;
                         itr.second->parse(val);
                     }
+                }
+
+                if(incr == valid)
+                {
+                    fprintf(stderr,
+                            "[timemory::settings]['%s']> WARNING! Unknown setting "
+                            "ignored: '%s' (value = '%s')\n",
+                            inp.c_str(), key.c_str(), val.c_str());
                 }
             }
         }

@@ -14,6 +14,8 @@ enable_testing()
 
 add_interface_library(timemory-headers
     "Provides minimal set of include flags to compile with timemory")
+add_interface_library(timemory-precompiled-headers
+    "Provides timemory-headers + precompiles headers if CMAKE_VERSION >= 3.16")
 add_interface_library(timemory-cereal
     "Provides include flags for serialization library")
 add_interface_library(timemory-cereal-xml
@@ -386,6 +388,39 @@ target_compile_features(timemory-headers INTERFACE
 
 # Set CUDA at end in case we end up disabling it
 
+if(NOT TIMEMORY_PRECOMPILE_HEADERS)
+    inform_empty_interface(timemory-precompiled-headers "Precompiled-headers for timemory")
+else()
+    if(BUILD_SHARED_LIBS)
+        set(_EXTERNAL_INTERFACE timemory::timemory-external-shared)
+    else()
+        set(_EXTERNAL_INTERFACE timemory::timemory-external-static)
+    endif()
+    target_link_libraries(timemory-precompiled-headers INTERFACE
+        timemory::timemory-headers
+        timemory::timemory-vector
+        timemory::timemory-plotting
+        timemory::timemory-compile-options
+        timemory::timemory-default-visibility
+        ${TIMEMORY_RUNTIME_INTERFACES}
+        ${_EXTERNAL_INTERFACE})
+    file(GLOB_RECURSE timemory_precompiled_headers
+        ${PROJECT_SOURCE_DIR}/source/timemory/backends*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/environment*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/ert*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/hash*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/manager*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/mpl*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/plotting*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/settings*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/storage*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/tpls*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/utility*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/variadic*.hpp)
+    timemory_target_precompile_headers(timemory-precompiled-headers
+        FILES ${timemory_precompiled_headers})
+endif()
+
 #----------------------------------------------------------------------------------------#
 #
 #                        timemory extern initializaiton
@@ -757,8 +792,15 @@ if(CUPTI_FOUND)
         INTERFACE_INSTALL_RPATH                 ""
         INTERFACE_INSTALL_RPATH_USE_LINK_PATH   ${HAS_CUDA_DRIVER_LIBRARY})
 
-    add_rpath(${CUPTI_cupti_LIBRARY} ${CUPTI_nvperf_host_LIBRARY}
-        ${CUPTI_nvperf_target_LIBRARY})
+    if(CUPTI_nvperf_host_LIBRARY AND CUPTI_nvperf_target_LIBRARY)
+        timemory_target_compile_definitions(timemory-cupti INTERFACE
+            TIMEMORY_USE_CUPTI_NVPERF)
+        add_rpath(${CUPTI_cupti_LIBRARY} ${CUPTI_nvperf_host_LIBRARY}
+            ${CUPTI_nvperf_target_LIBRARY})
+    else()
+        add_rpath(${CUPTI_cupti_LIBRARY})
+    endif()
+
 else()
     set(TIMEMORY_USE_CUPTI OFF)
     inform_empty_interface(timemory-cupti "CUPTI")

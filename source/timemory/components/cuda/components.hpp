@@ -249,7 +249,8 @@ public:
     ///     without that member function is not invalid
     ///
     template <template <typename...> class BundleT>
-    static void configure(api::python, pybind11::class_<BundleT<cuda_event>>& _pyclass)
+    static void configure(project::python,
+                          pybind11::class_<BundleT<cuda_event>>& _pyclass)
     {
         auto _sync = [](BundleT<cuda_event>* obj) {
             obj->template get<cuda_event>()->sync();
@@ -357,7 +358,7 @@ public:
     ///     args --> pybind11::args --> pybind11::tuple
     ///     kwargs --> pybind11::kwargs --> pybind11::dict
     ///
-    static void configure(api::python, pybind11::args _args, pybind11::kwargs _kwargs)
+    static void configure(project::python, pybind11::args _args, pybind11::kwargs _kwargs)
     {
         auto _config = get_initializer()();
         if(_args.size() > 0)
@@ -545,7 +546,8 @@ public:
     ///     without that member function is not invalid
     ///
     template <template <typename...> class BundleT>
-    static void configure(api::python, pybind11::class_<BundleT<nvtx_marker>>& _pyclass)
+    static void configure(project::python,
+                          pybind11::class_<BundleT<nvtx_marker>>& _pyclass)
     {
         _pyclass.def_property_static(
             "use_device_sync", [](pybind11::object) { return use_device_sync(); },

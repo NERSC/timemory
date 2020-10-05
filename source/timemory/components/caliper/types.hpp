@@ -29,14 +29,12 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-//
-TIMEMORY_DEFINE_API(caliper)
 //
 TIMEMORY_DECLARE_COMPONENT(caliper_config)
 TIMEMORY_DECLARE_COMPONENT(caliper_marker)
@@ -46,12 +44,17 @@ TIMEMORY_DECLARE_COMPONENT(caliper_loop_marker)
 //
 TIMEMORY_COMPONENT_ALIAS(caliper, caliper_marker)
 //
-TIMEMORY_DECLARE_API_COMPONENTS(api::caliper, component::caliper_marker,
-                                component::caliper_config, component::caliper_loop_marker)
+TIMEMORY_SET_COMPONENT_API(component::caliper_config, tpls::caliper, category::external,
+                           os::unix)
+TIMEMORY_SET_COMPONENT_API(component::caliper_marker, tpls::caliper, category::external,
+                           os::unix)
+TIMEMORY_SET_COMPONENT_API(component::caliper_loop_marker, tpls::caliper,
+                           category::external, os::unix)
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_USE_CALIPER)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::caliper, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper_marker, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper_config, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper_loop_marker, false_type)

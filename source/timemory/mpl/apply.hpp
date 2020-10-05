@@ -415,7 +415,7 @@ struct apply<std::string>
     template <typename SepT, typename Arg, if_string_t<Arg, true> = 0>
     static Ret join(SepT&&, Arg&& _arg) noexcept
     {
-        return std::move(_arg);
+        return std::forward<Arg>(_arg);
     }
 
     //----------------------------------------------------------------------------------//
@@ -430,7 +430,8 @@ struct apply<std::string>
 
     //----------------------------------------------------------------------------------//
 
-    static Ret join(const string_t&) noexcept { return Ret{ "" }; }
+    static Ret join(const string_t&) noexcept { return Ret{}; }
+    static Ret join(const char) noexcept { return Ret{}; }
 
     //----------------------------------------------------------------------------------//
 };

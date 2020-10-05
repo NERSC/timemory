@@ -218,10 +218,10 @@ start(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
     {
-        using data_type        = std::tuple<Tp...>;
-        using priority_types_t = impl::filter_false<negative_start_priority, data_type>;
+        using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+        using priority_types_t = filter_false_t<negative_start_priority, data_type>;
         using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
-        using delayed_types_t  = impl::filter_false<positive_start_priority, data_type>;
+        using delayed_types_t  = filter_false_t<positive_start_priority, data_type>;
         using delayed_tuple_t  = mpl::sort<trait::start_priority, delayed_types_t>;
 
         // start high priority components
@@ -250,10 +250,10 @@ stop(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
     {
-        using data_type        = std::tuple<Tp...>;
-        using priority_types_t = impl::filter_false<negative_stop_priority, data_type>;
+        using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+        using priority_types_t = filter_false_t<negative_stop_priority, data_type>;
         using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
-        using delayed_types_t  = impl::filter_false<positive_stop_priority, data_type>;
+        using delayed_types_t  = filter_false_t<positive_stop_priority, data_type>;
         using delayed_tuple_t  = mpl::sort<trait::stop_priority, delayed_types_t>;
 
         // stop high priority components

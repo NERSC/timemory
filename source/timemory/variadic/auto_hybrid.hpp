@@ -48,6 +48,10 @@ namespace tim
 
 template <typename CompTuple, typename CompList>
 class auto_hybrid
+: public concepts::wrapper
+, public concepts::variadic
+, public concepts::auto_wrapper
+, public concepts::hybrid_wrapper
 {
     static_assert((concepts::is_stack_wrapper<CompTuple>::value &&
                    concepts::is_heap_wrapper<CompList>::value),

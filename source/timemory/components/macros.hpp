@@ -90,6 +90,50 @@
 //--------------------------------------------------------------------------------------//
 //
 /**
+ * \macro TIMEMORY_SET_COMPONENT_APIS
+ * \brief Declare a component is part of one or more APIs
+ */
+
+#if !defined(TIMEMORY_SET_COMPONENT_API)
+#    define TIMEMORY_SET_COMPONENT_API(COMP, ...)                                        \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <>                                                                      \
+        struct component_apis<COMP>                                                      \
+        {                                                                                \
+            using type = type_list<__VA_ARGS__>;                                         \
+        };                                                                               \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+/**
+ * \macro TIMEMORY_SET_TEMPLATE_COMPONENT_API
+ * \brief Declare a component is part of one or more APIs
+ */
+
+#if !defined(TIMEMORY_SET_TEMPLATE_COMPONENT_API)
+#    define TIMEMORY_SET_TEMPLATE_COMPONENT_API(TARGS, TSPECIAL, ...)                    \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <TARGS>                                                                 \
+        struct component_apis<TSPECIAL>                                                  \
+        {                                                                                \
+            using type = type_list<__VA_ARGS__>;                                         \
+        };                                                                               \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+/**
  * \macro TIMEMORY_BUNDLE_INDEX
  * \brief Declare a bundle index
  */
@@ -344,13 +388,12 @@
 //--------------------------------------------------------------------------------------//
 
 #if !defined(TIMEMORY_STORAGE_INITIALIZER)
-#    define TIMEMORY_STORAGE_INITIALIZER(TYPE, VAR)                                      \
+#    define TIMEMORY_STORAGE_INITIALIZER(TYPE, ...)                                      \
         namespace                                                                        \
         {                                                                                \
-        using namespace tim::component;                                                  \
-        namespace component = tim::component;                                            \
-        tim::storage_initializer _TIM_STORAGE_INIT(VAR) =                                \
-            tim::storage_initializer::get<TYPE>();                                       \
+        using namespace ::tim::component;                                                \
+        namespace component                 = ::tim::component;                          \
+        auto _TIM_STORAGE_INIT(__COUNTER__) = ::tim::storage_initializer::get<TYPE>();   \
         }
 #endif
 
@@ -360,55 +403,72 @@
 #    define TIMEMORY_INITIALIZE_STORAGE(...)                                             \
         namespace                                                                        \
         {                                                                                \
-        using namespace tim::component;                                                  \
-        namespace component              = tim::component;                               \
-        auto _TIM_STORAGE_INIT(__LINE__) = tim::storage_initializer::get<__VA_ARGS__>(); \
+        using namespace ::tim::component;                                                \
+        namespace component = ::tim::component;                                          \
+        auto _TIM_STORAGE_INIT(__COUNTER__) =                                            \
+            ::tim::storage_initializer::get<__VA_ARGS__>();                              \
         }
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_EXTERN_STORAGE_ALIASES)
+#    define TIMEMORY_EXTERN_STORAGE_ALIASES                                              \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace alias                                                                  \
+        {                                                                                \
+        template <typename T>                                                            \
+        using storage_t = storage<T, typename T::value_type>;                            \
+        template <typename T>                                                            \
+        using storage_impl_t = impl::storage<T, trait::implements_storage<T>::value>;    \
+        template <typename T>                                                            \
+        using storage_deleter_t = impl::storage_deleter<storage_impl_t<T>>;              \
+        template <typename T>                                                            \
+        using storage_pointer_t =                                                        \
+            std::unique_ptr<alias::storage_impl_t<T>, alias::storage_deleter_t<T>>;      \
+        }                                                                                \
+        }
+#endif
+//
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, VAR)                                                         \
-        namespace tim                                                                                          \
-        {                                                                                                      \
-        extern template class impl::storage<TYPE,                                                              \
-                                            trait::implements_storage<TYPE>::value>;                           \
-        extern template class storage<TYPE, typename TYPE::value_type>;                                        \
-        extern template class singleton<                                                                       \
-            impl::storage<TYPE, trait::implements_storage<TYPE>::value>,                                       \
-            std::unique_ptr<impl::storage<TYPE, trait::implements_storage<TYPE>::value>,                       \
-                            impl::storage_deleter<impl::storage<                                               \
-                                TYPE, trait::implements_storage<TYPE>::value>>>>;                              \
-        extern template storage_singleton<storage<TYPE, typename TYPE::value_type>>*                           \
-                                            get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
-        extern template storage_initializer storage_initializer::get<TYPE>();                                  \
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                                       \
+        TIMEMORY_EXTERN_STORAGE_ALIASES                                                      \
+        namespace tim                                                                        \
+        {                                                                                    \
+        extern template class impl::storage<TYPE,                                            \
+                                            trait::implements_storage<TYPE>::value>;         \
+        extern template class storage<TYPE, typename TYPE::value_type>;                      \
+        extern template class singleton<alias::storage_impl_t<TYPE>,                         \
+                                        alias::storage_pointer_t<TYPE>>;                     \
+        extern template storage_singleton<alias::storage_t<TYPE>>*                           \
+                                            get_storage_singleton<alias::storage_t<TYPE>>(); \
+        extern template storage_initializer storage_initializer::get<TYPE>();                \
         }
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_INSTANTIATE_EXTERN_STORAGE)
-#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, VAR)                                              \
-        namespace tim                                                                                   \
-        {                                                                                               \
-        template class impl::storage<TYPE, trait::implements_storage<TYPE>::value>;                     \
-        template class storage<TYPE, typename TYPE::value_type>;                                        \
-        template class singleton<                                                                       \
-            impl::storage<TYPE, trait::implements_storage<TYPE>::value>,                                \
-            std::unique_ptr<impl::storage<TYPE, trait::implements_storage<TYPE>::value>,                \
-                            impl::storage_deleter<impl::storage<                                        \
-                                TYPE, trait::implements_storage<TYPE>::value>>>>;                       \
-        template storage_singleton<storage<TYPE, typename TYPE::value_type>>*                           \
-                                     get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
-        template storage_initializer storage_initializer::get<TYPE>();                                  \
-        }                                                                                               \
-        namespace                                                                                       \
-        {                                                                                               \
-        using namespace tim::component;                                                                 \
-        namespace component = tim::component;                                                           \
-        tim::storage_initializer storage_initializer__##VAR =                                           \
-            tim::storage_initializer::get<TYPE>();                                                      \
+#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, ...)                               \
+        TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
+        namespace tim                                                                    \
+        {                                                                                \
+        template class impl::storage<TYPE, trait::implements_storage<TYPE>::value>;      \
+        template class storage<TYPE, typename TYPE::value_type>;                         \
+        template class singleton<alias::storage_impl_t<TYPE>,                            \
+                                 alias::storage_pointer_t<TYPE>>;                        \
+        template storage_singleton<alias::storage_t<TYPE>>*                              \
+                                     get_storage_singleton<alias::storage_t<TYPE>>();    \
+        template storage_initializer storage_initializer::get<TYPE>();                   \
+        }                                                                                \
+        namespace                                                                        \
+        {                                                                                \
+        using namespace ::tim::component;                                                \
+        namespace component                 = ::tim::component;                          \
+        auto _TIM_STORAGE_INIT(__COUNTER__) = ::tim::storage_initializer::get<TYPE>();   \
         }
 #endif
 

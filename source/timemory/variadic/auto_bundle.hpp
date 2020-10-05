@@ -44,11 +44,20 @@
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-
+//
 template <typename Tag, typename... Types>
 class auto_bundle
+: public concepts::wrapper
+, public concepts::variadic
+, public concepts::auto_wrapper
+, public concepts::mixed_wrapper
+, public concepts::hybrid_wrapper
+, public concepts::tagged
 {
+    static_assert(concepts::is_api<Tag>::value,
+                  "Error! The first template parameter of an 'auto_bundle' must "
+                  "statisfy the 'is_api' concept");
+
 public:
     using this_type           = auto_bundle<Tag, Types...>;
     using base_type           = component_bundle<Tag, Types...>;
