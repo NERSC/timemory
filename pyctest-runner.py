@@ -690,6 +690,21 @@ def run_pyctest():
             "timemory-python-profiler",
             [
                 sys.executable,
+                "./ex_python_profiler",
+                "10",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-profiler-main",
+            [
+                sys.executable,
                 "-m",
                 "timemory.profiler",
                 "--max-stack-depth=10",
@@ -701,7 +716,7 @@ def run_pyctest():
                 "peak_rss",
                 "--",
                 "./ex_python_external",
-                "20",
+                "12",
             ],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -738,6 +753,70 @@ def run_pyctest():
         )
 
         pyct.test(
+            "timemory-python-trace",
+            [
+                sys.executable,
+                "./ex_python_tracer",
+                "10",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-trace-main",
+            [
+                sys.executable,
+                "-m",
+                "timemory.trace",
+                "-l",
+                "-f",
+                "-F",
+                "-c",
+                "wall_clock",
+                "peak_rss",
+                "--",
+                "./ex_python_external",
+                "12",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-trace-builtin",
+            [
+                sys.executable,
+                "-m",
+                "timemory.trace",
+                "-b",
+                "-l",
+                "-f",
+                "-F",
+                "-c",
+                "wall_clock",
+                "peak_rss",
+                "--",
+                "./ex_python_builtin",
+                "10",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
             "timemory-python-line-profiler",
             [
                 sys.executable,
@@ -749,7 +828,7 @@ def run_pyctest():
                 "peak_rss",
                 "--",
                 "./ex_python_external",
-                "20",
+                "12",
             ],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -1207,7 +1286,7 @@ def run_pyctest():
         pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
         if args.coverage:
             script = os.path.join(
-                pyct.SOURCE_DIRECTORY, "cmake", "Scripts", "submit-coverage.sh"
+                pyct.SOURCE_DIRECTORY, "scripts", "submit-coverage.sh"
             )
             cov = pyct.command([script, pyct.BINARY_DIRECTORY])
             cov.SetWorkingDirectory(pyct.SOURCE_DIRECTORY)

@@ -152,7 +152,7 @@ write_ctest_notes(py::object man, std::string directory, bool append)
     ss << std::endl;
 
     // loop over ASCII report filenames
-    for(const auto& itr : filenames)
+    for(auto itr : filenames)
     {
         std::string fname = itr.cast<std::string>();
 #if defined(_WIN32) || defined(_WIN64)

@@ -25,10 +25,6 @@
 # SOFTWARE.
 
 from __future__ import absolute_import
-import os
-import imp
-import sys
-import importlib
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
@@ -42,10 +38,14 @@ __status__ = "Development"
 """
 This submodule imports the library calls associated with dynamic
 instrumentation (tracing). These library calls are subject to
-throttling.
+throttling. Also, provides the timemory Python tracer
 """
+
+__all__ = ["trace"]
 
 try:
     from ..libpytimemory.trace import *
+    from . import tracer
+    from .tracer import *
 except Exception as e:
     print("{}".format(e))

@@ -172,7 +172,9 @@ class TimemoryTimelineTests(unittest.TestCase):
         n = 5
         with marker(components=["wall_clock"], key=self.shortDescription()):
             for i in range(n):
-                with marker(components=["wall_clock"], key=self.shortDescription()):
+                with marker(
+                    components=["wall_clock"], key=self.shortDescription()
+                ):
                     ret = fibonacci(n)
 
         # counts must be == 1
@@ -194,7 +196,9 @@ class TimemoryTimelineTests(unittest.TestCase):
         n = 5
         with marker(components=["wall_clock"], key=self.shortDescription()):
             for i in range(n):
-                with marker(components=["wall_clock"], key=self.shortDescription()):
+                with marker(
+                    components=["wall_clock"], key=self.shortDescription()
+                ):
                     ret = fibonacci(n)
 
         # inspect data

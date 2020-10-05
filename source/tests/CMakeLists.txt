@@ -263,6 +263,16 @@ if(TIMEMORY_USE_PAPI)
                         timemory::timemory-roofline-options
                         test-opt-flags
                         ${_LIBRARY})
+
+    # roofline
+    add_timemory_google_test(cpu_roofline_tests
+        DISCOVER_TESTS
+        SOURCES         cpu_roofline_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-papi
+                        timemory::timemory-plotting
+                        timemory::timemory-arch
+                        ${_LIBRARY})
 endif()
 
 add_timemory_google_test(apply_tests
@@ -273,7 +283,7 @@ add_timemory_google_test(apply_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
-if(TIMEMORY_USE_ARCH AND OFF)
+if(TIMEMORY_USE_ARCH)
     add_timemory_google_test(aligned_allocator_tests
         DISCOVER_TESTS
         SOURCES         aligned_allocator_tests.cpp

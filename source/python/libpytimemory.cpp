@@ -27,10 +27,13 @@
 #include "libpytimemory-components.hpp"
 #include "timemory/components.hpp"
 #include "timemory/components/extern.hpp"
-#include "timemory/components/ompt.hpp"
 #include "timemory/enum.h"
 #include "timemory/library.h"
 #include "timemory/settings/extern.hpp"
+
+#if defined(TIMEMORY_USE_OMPT)
+#    include "timemory/components/ompt.hpp"
+#endif
 
 //======================================================================================//
 
@@ -178,24 +181,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     pyrss_usage::generate(tim, pyunit);
     pyenumeration::generate(pycomp);
     pyprofile::generate(tim);
-
-    //==================================================================================//
-    //
-    //      Tracing submodule
-    //
-    //==================================================================================//
-
-    py::module _trace = tim.def_submodule(
-        "trace", "C/C++/Fortran-compatible library functions (subject to throttling)");
-
-    _trace.def("init", &timemory_trace_init, "Initialize Tracing",
-               py::arg("args") = "wall_clock", py::arg("read_command_line") = false,
-               py::arg("cmd") = "");
-    _trace.def("finalize", &timemory_trace_finalize, "Finalize Tracing");
-    _trace.def("is_throttled", &timemory_is_throttled, "Check if key is throttled",
-               py::arg("key"));
-    _trace.def("push", &timemory_push_trace, "Push Trace", py::arg("key"));
-    _trace.def("pop", &timemory_pop_trace, "Pop Trace", py::arg("key"));
+    pytrace::generate(tim);
 
     //==================================================================================//
     //

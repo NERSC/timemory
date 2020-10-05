@@ -105,6 +105,7 @@ public:
     void cleanup();
     void finalize();
     void read_command_line();
+    bool is_finalized() { return m_is_finalized; }
 
     void add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file);
@@ -240,6 +241,7 @@ protected:
 private:
     /// notifies that it is finalizing
     bool            m_is_finalizing   = false;
+    bool            m_is_finalized    = false;
     short           m_write_metadata  = 0;
     int32_t         m_instance_count  = 0;
     int32_t         m_rank            = 0;

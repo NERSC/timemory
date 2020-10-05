@@ -942,10 +942,20 @@ storage<Type, true>::get_shared_manager()
         m_manager = tim::manager::instance();
         if(!m_manager)
             return;
-        // if(m_manager->is_finalizing())
-        //    return;
 
-        auto _label = Type::label();
+        auto   _label = Type::label();
+        size_t pos    = std::string::npos;
+        // remove the namespaces
+        for(auto itr : { "tim::component::", "tim::project::", "tim::tpls::",
+                         "tim::api::", "tim::" })
+        {
+            while((pos = _label.find(itr)) != std::string::npos)
+                _label = _label.replace(pos, std::string(itr).length(), "");
+        }
+        // replace spaces with underscores
+        while((pos = _label.find(' ')) != std::string::npos)
+            _label = _label.replace(pos, 1, "_");
+        // convert to upper-case
         for(auto& itr : _label)
             itr = toupper(itr);
         std::stringstream env_var;

@@ -255,3 +255,16 @@ namespace pyprofile
 py::module
 generate(py::module& _pymod);
 }  // namespace pyprofile
+//
+//--------------------------------------------------------------------------------------//
+//
+//                                      TRACER
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace pytrace
+{
+py::module
+generate(py::module& _pymod);
+//
+}  // namespace pytrace

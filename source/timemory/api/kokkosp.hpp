@@ -36,8 +36,7 @@
 #    define TIMEMORY_KOKKOSP_POSTFIX TIMEMORY_VISIBILITY("default")
 #endif
 
-TIMEMORY_DECLARE_API(kokkosp)
-TIMEMORY_DEFINE_API(kokkosp)
+TIMEMORY_DEFINE_NS_API(project, kokkosp)
 
 struct SpaceHandle
 {
@@ -73,7 +72,7 @@ enum
 //--------------------------------------------------------------------------------------//
 
 inline Space
-get_space(SpaceHandle const& handle)
+get_space(const SpaceHandle& handle)
 {
     switch(handle.name[0])
     {
@@ -132,7 +131,7 @@ inline Tp&
 get_tl_static()
 {
     // create a thread-local instance
-    static thread_local Tp _instance;
+    static thread_local Tp _instance{};
     // on first pass, add to cleanup
     static thread_local bool _init = [&]() {
         get_cleanup_mutex().lock();
@@ -152,7 +151,7 @@ inline Tp&
 get_static()
 {
     // create a thread-local instance
-    static Tp _instance;
+    static Tp _instance{};
     // on first pass, add to cleanup
     static bool _init = [&]() {
         get_cleanup_mutex().lock();
@@ -177,11 +176,11 @@ cleanup()
 
 //--------------------------------------------------------------------------------------//
 
-using memory_tracker = component::data_tracker<int64_t, api::kokkosp>;
-using kokkos_bundle  = component::user_bundle<0, api::kokkosp>;
+using memory_tracker = component::data_tracker<int64_t, project::kokkosp>;
+using kokkos_bundle  = component::user_bundle<0, project::kokkosp>;
 
 template <typename... Tail>
-using profiler_t = tim::component_bundle_t<api::kokkosp, memory_tracker, Tail...>;
+using profiler_t = tim::component_bundle_t<project::kokkosp, memory_tracker, Tail...>;
 
 template <typename... Tail>
 using profiler_section_t = std::tuple<std::string, profiler_t<Tail...>>;

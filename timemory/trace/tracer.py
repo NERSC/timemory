@@ -25,17 +25,18 @@
 # SOFTWARE.
 
 import sys
+import threading
 from functools import wraps
 
-from ..libpytimemory.profiler import profiler_function as _profiler_function
-from ..libpytimemory.profiler import config as _profiler_config
-from ..libpytimemory.profiler import profiler_init as _profiler_init
-from ..libpytimemory.profiler import profiler_finalize as _profiler_fini
-from ..libpytimemory.profiler import profiler_bundle as _profiler_bundle
+from ..libpytimemory.trace import tracer_function as _tracer_function
+from ..libpytimemory.trace import config as _tracer_config
+from ..libpytimemory.trace import tracer_init as _tracer_init
+from ..libpytimemory.trace import tracer_finalize as _tracer_fini
+from ..libpytimemory.trace import trace_bundle as _tracer_bundle
 from ..libpytimemory import settings
 
 
-__all__ = ["profile", "config", "Profiler", "FakeProfiler", "Config"]
+__all__ = ["trace", "config", "Tracer", "FakeTracer", "Config"]
 
 
 #
@@ -69,14 +70,14 @@ else:
 
 
 #
-config = _profiler_config
-Config = _profiler_config
+config = _tracer_config
+Config = _tracer_config
 
 
 #
-class Profiler:
+class Tracer:
     """
-    Provides decorators and context-manager for the timemory profilers
+    Provides decorators and context-manager for the timemory tracers
     """
 
     global _default_functor
@@ -88,26 +89,26 @@ class Profiler:
     #
     @staticmethod
     def condition(functor):
-        Profiler._conditional_functor = functor
+        Tracer._conditional_functor = functor
 
     # ------------------------------------------------------------------------------------#
     #
     @staticmethod
     def is_enabled():
-        ret = Profiler._conditional_functor()
+        ret = Tracer._conditional_functor()
         try:
             if ret is True:
                 return True
             elif ret is False:
                 return False
-        except:
+        except Exception as e:
             pass
         return False
 
     # ------------------------------------------------------------------------------------#
     #
     def __init__(
-        self, components=[], flat=False, timeline=False, *args, **kwargs
+        self, components=[], flat=True, timeline=False, *args, **kwargs
     ):
         """
         Arguments:
@@ -120,9 +121,9 @@ class Profiler:
         _profl = settings.profiler_components
         _components = _profl if _trace is None else _trace
 
-        self._original_profiler_function = sys.getprofile()
+        self._original_tracer_function = sys.gettrace()
         self._use = (
-            not _profiler_config._is_running and Profiler.is_enabled() is True
+            not _tracer_config._is_running and Tracer.is_enabled() is True
         )
         self._flat_profile = settings.flat_profile or flat
         self._timeline_profile = settings.timeline_profile or timeline
@@ -133,41 +134,43 @@ class Profiler:
             self.components += ["wall_clock"]
         if _trace is None:
             settings.trace_components = ",".join(self.components)
-        settings.profiler_components = ",".join(self.components)
+        settings.trace_components = ",".join(self.components)
 
     # ------------------------------------------------------------------------------------#
     #
     def configure(self):
-        _profiler_init()
-        _profiler_bundle.configure(
+        _tracer_init()
+        _tracer_bundle.configure(
             self.components, self._flat_profile, self._timeline_profile
         )
-        self._original_profiler_function = sys.getprofile()
+        self._original_tracer_function = sys.gettrace()
 
     # ------------------------------------------------------------------------------------#
     #
     def start(self):
         """
-        Start the profiler explicitly
+        Start the tracer explicitly
         """
 
         self._use = (
-            not _profiler_config._is_running and Profiler.is_enabled() is True
+            not _tracer_config._is_running and Tracer.is_enabled() is True
         )
-        if self._use and not _profiler_config._is_running:
+        if self._use and not _tracer_config._is_running:
             self.configure()
-            sys.setprofile(_profiler_function)
+            sys.settrace(_tracer_function)
+            threading.settrace(_tracer_function)
 
     # ------------------------------------------------------------------------------------#
     #
     def stop(self):
         """
-        Stop the profiler explicitly
+        Stop the tracer explicitly
         """
 
-        if self._use and _profiler_config._is_running:
-            sys.setprofile(self._original_profiler_function)
-            _profiler_fini()
+        if self._use and _tracer_config._is_running:
+            sys.settrace(self._original_tracer_function)
+            threading.settrace(self._original_tracer_function)
+            _tracer_fini()
 
     # ------------------------------------------------------------------------------------#
     #
@@ -177,16 +180,17 @@ class Profiler:
         """
 
         self._use = (
-            not _profiler_config._is_running and Profiler.is_enabled() is True
+            not _tracer_config._is_running and Tracer.is_enabled() is True
         )
 
-        if self._use and not _profiler_config._is_running:
+        if self._use and not _tracer_config._is_running:
             self.configure()
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
-            if self._use and sys.getprofile() != _profiler_function:
-                sys.setprofile(_profiler_function)
+            if self._use and sys.gettrace() != _tracer_function:
+                sys.settrace(_tracer_function)
+                threading.settrace(_tracer_function)
             return func(*args, **kwargs)
 
         ret = function_wrapper
@@ -210,9 +214,10 @@ class Profiler:
         Context manager stop function
         """
 
-        if self._use and _profiler_config._is_running:
-            sys.setprofile(self._original_profiler_function)
-            _profiler_fini()
+        if self._use and _tracer_config._is_running:
+            sys.settrace(self._original_tracer_function)
+            threading.settrace(self._original_tracer_function)
+            _tracer_fini()
         if (
             exec_type is not None
             and exec_value is not None
@@ -226,7 +231,7 @@ class Profiler:
     #
     def run(self, cmd):
         """
-        Execute and profile a command
+        Execute and trace a command
         """
 
         import __main__
@@ -241,19 +246,21 @@ class Profiler:
     #
     def runctx(self, cmd, globals, locals):
         """
-        Profile a context
+        Trace a context
         """
 
         if self._use:
             self.configure()
-            sys.setprofile(_profiler_function)
+            sys.settrace(_tracer_function)
+            threading.settrace(_tracer_function)
 
         try:
             exec_(cmd, globals, locals)
         finally:
             if self._use:
-                sys.setprofile(self._original_profiler_function)
-                _profiler_fini()
+                sys.settrace(self._original_tracer_function)
+                threading.settrace(self._original_tracer_function)
+                _tracer_fini()
 
         return self
 
@@ -261,21 +268,23 @@ class Profiler:
     #
     def runcall(self, func, *args, **kw):
         """
-        Profile a single function call.
+        Trace a single function call.
         """
 
         ret = None
 
         if self._use:
             self.configure()
-            sys.setprofile(_profiler_function)
+            sys.settrace(_tracer_function)
+            threading.settrace(_tracer_function)
 
         try:
             ret = func(*args, **kw)
         finally:
             if self._use:
-                sys.setprofile(self._original_profiler_function)
-                _profiler_fini()
+                sys.settrace(self._original_tracer_function)
+                threading.settrace(self._original_tracer_function)
+                _tracer_fini()
 
         return ret
 
@@ -299,12 +308,12 @@ class Profiler:
         return nfuncsadded
 
 
-profile = Profiler
+trace = Tracer
 
 
-class FakeProfiler:
+class FakeTracer:
     """
-    Provides decorators and context-manager for the timemory profiles which do nothing
+    Provides decorators and context-manager for the timemory traces which do nothing
     """
 
     # ------------------------------------------------------------------------------------#

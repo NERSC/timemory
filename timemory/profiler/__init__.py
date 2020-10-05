@@ -25,10 +25,6 @@
 # SOFTWARE.
 
 from __future__ import absolute_import
-import os
-import imp
-import sys
-import importlib
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
@@ -39,7 +35,15 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
+"""
+This submodule imports the timemory Python function profiler
+"""
+
 __all__ = ["profiler"]
 
-from . import profiler
-from .profiler import *
+try:
+    from ..libpytimemory.profiler import *
+    from . import profiler
+    from .profiler import *
+except Exception as e:
+    print("{}".format(e))

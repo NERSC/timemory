@@ -3,6 +3,7 @@
 """Example
 @PYTHON_EXECUTABLE@ -m timemory.profiler -m 10 -- ./@FILENAME@
 @PYTHON_EXECUTABLE@ -m timemory.line_profiler -v -- ./@FILENAME@
+@PYTHON_EXECUTABLE@ -m timemory.trace -- ./@FILENAME@
 """
 
 import sys

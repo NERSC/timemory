@@ -85,6 +85,7 @@ namespace tim
 TIMEMORY_MANAGER_LINKAGE_API
 manager::manager()
 : m_is_finalizing(false)
+, m_is_finalized(false)
 , m_write_metadata(0)
 , m_instance_count(f_manager_instance_count()++)
 , m_rank(dmp::rank())
@@ -270,6 +271,8 @@ manager::finalize()
 
     if(m_instance_count == 0 && m_rank == 0)
         write_metadata("manager::finalize");
+
+    m_is_finalized = true;
 }
 //
 //----------------------------------------------------------------------------------//
