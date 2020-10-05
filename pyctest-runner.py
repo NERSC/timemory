@@ -356,6 +356,7 @@ def run_pyctest():
     cmd.SetOutputStripTrailingWhitespace(True)
     cmd.Execute()
     compiler_version = cmd.Output()
+    cn = os.environ["CXX"]
     try:
         cn = compiler_version.split()[0]
         cv = re.search(r"(\b)\d.\d.\d$", compiler_version)
@@ -365,7 +366,7 @@ def run_pyctest():
         cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
         cmd.SetOutputStripTrailingWhitespace(True)
         cmd.Execute()
-        compiler_version = cmd.Output()
+        compiler_version = "{}-{}".format(cn, cmd.Output())
 
     # Set the build name
     #
