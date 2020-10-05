@@ -358,7 +358,7 @@ def run_pyctest():
     compiler_version = cmd.Output()
     try:
         cn = compiler_version.split()[0]
-        cv = re.search(r"(\b)\d.\d.\d", compiler_version)
+        cv = re.search(r"(\b)\d.\d.\d$", compiler_version)
         compiler_version = "{}-{}".format(cn, cv.group()[0])
     except Exception as e:
         print("Exception! {}".format(e))
