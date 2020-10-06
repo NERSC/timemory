@@ -577,12 +577,13 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
         try:
             import matplotlib
             import matplotlib.pyplot as plt
-            import numpy as np
         except:
             warnings.warn(
                 "Matplotlib could not find a suitable backend. Skipping plotting..."
             )
             return
+
+    import numpy as np
 
     def get_obj_idx(_obj, _idx):
         if isinstance(_obj, list):
