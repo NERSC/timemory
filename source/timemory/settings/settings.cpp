@@ -854,7 +854,7 @@ TIMEMORY_SETTINGS_INLINE
 bool
 settings::read(const string_t& inp)
 {
-    std::ifstream ifs(inp.c_str());
+    std::ifstream ifs(inp);
     if(!ifs)
         throw std::runtime_error(
             TIMEMORY_JOIN(" ", "Error reading configuration file:", inp));

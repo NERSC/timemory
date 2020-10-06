@@ -539,10 +539,10 @@ struct argument_parser
             if(inp.empty() && found())
                 return true;
 
-            namespace regex_const       = std::regex_constants;
-            const auto regex_constants  = regex_const::ECMAScript | regex_const::icase;
-            const std::string y_pattern = "^(on|true|yes|y|t|[1-9]+)$";
-            const std::string n_pattern = "^(off|false|no|n|f|0)$";
+            namespace regex_const             = std::regex_constants;
+            const auto        regex_constants = regex_const::egrep | regex_const::icase;
+            const std::string y_pattern       = "^(on|true|yes|y|t|[1-9]+)$";
+            const std::string n_pattern       = "^(off|false|no|n|f|0)$";
             auto is_y = std::regex_match(inp, std::regex(y_pattern, regex_constants));
             auto is_n = std::regex_match(inp, std::regex(n_pattern, regex_constants));
             if(is_y)

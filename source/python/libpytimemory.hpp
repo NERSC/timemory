@@ -98,16 +98,6 @@ protected:
 
 //======================================================================================//
 
-#if _PYTHON_MAJOR_VERSION > 2
-#    define PYOBJECT_SELF
-#    define PYOBJECT_SELF_PARAM
-#else
-#    define PYOBJECT_SELF py::object,
-#    define PYOBJECT_SELF_PARAM py::object
-#endif
-
-//======================================================================================//
-
 namespace pytim
 {
 using string_t = std::string;

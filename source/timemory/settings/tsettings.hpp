@@ -162,10 +162,28 @@ struct tsettings : public vsettings
     {
         if(!val.empty())
         {
-            namespace regex_const      = std::regex_constants;
-            const auto regex_constants = regex_const::ECMAScript | regex_const::icase;
-            const std::string pattern  = "^(off|false|no|n|f|0)$";
-            if(std::regex_match(val, std::regex(pattern, regex_constants)))
+            namespace regex_const             = std::regex_constants;
+            const auto        regex_constants = regex_const::egrep | regex_const::icase;
+            const std::string pattern         = "^(off|false|no|n|f|0)$";
+            bool              _match          = false;
+            try
+            {
+                _match = std::regex_match(val, std::regex(pattern, regex_constants));
+            } catch(std::bad_cast&)
+            {
+                auto _val = val;
+                for(auto& itr : _val)
+                    itr = tolower(itr);
+                for(const auto& itr : { "off", "false", "no", "n", "f", "0" })
+                {
+                    if(_val == itr)
+                    {
+                        _match = true;
+                        break;
+                    }
+                }
+            }
+            if(_match)
                 return false;
             else
                 return true;
@@ -205,9 +223,26 @@ private:
             else
             {
                 namespace regex_const      = std::regex_constants;
-                const auto regex_constants = regex_const::ECMAScript | regex_const::icase;
+                const auto regex_constants = regex_const::egrep | regex_const::icase;
                 const std::string pattern  = "^(off|false|no|n|f|0)$";
-                if(std::regex_match(val, std::regex(pattern, regex_constants)))
+                bool              _match   = false;
+                try
+                {
+                    _match = std::regex_match(val, std::regex(pattern, regex_constants));
+                } catch(std::bad_cast&)
+                {
+                    for(auto& itr : val)
+                        itr = tolower(itr);
+                    for(const auto& itr : { "off", "false", "no", "n", "f", "0" })
+                    {
+                        if(val == itr)
+                        {
+                            _match = true;
+                            break;
+                        }
+                    }
+                }
+                if(_match)
                     m_value = false;
                 else
                     m_value = true;
