@@ -258,6 +258,6 @@ after_success:
   - eval "${MATRIX_EVAL}"
   # Create lcov report: capture coverage info, filter, debugging, and upload
   - if [ -n "${COVERAGE}" ]; then echo "Capturing coverage..."; lcov --directory . --capture --output-file coverage.info ; fi
-  - if [ -n "${COVERAGE}" ]; then echo "Removing some coverage..."; lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/external/*' '*/examples/*' '*/source/tests/*' --output-file coverage.info; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Removing some coverage..."; lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/external/*' '*/examples/*' '*/source/tests/*' '*/source/tools/*' --output-file coverage.info; fi
   - if [ -n "${COVERAGE}" ]; then echo "Listing coverage..."; lcov --list coverage.info; fi
   - if [ -n "${COVERAGE}" ]; then echo "Submitting coverage..."; bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"; fi

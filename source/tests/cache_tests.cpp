@@ -115,6 +115,55 @@ random_entry(const std::vector<Tp>& v)
 }
 
 void
+allocate_basic(bool _write = false)
+{
+    auto v    = std::vector<int64_t>(nelements, 15);
+    auto ret  = fibonacci(0);
+    long nfib = details::random_entry(v);
+    auto ofs  = std::shared_ptr<std::ofstream>{};
+    auto n    = niter;
+
+    if(_write)
+    {
+        n *= 10;
+        nfib -= 10;
+        static bool       _first = true;
+        std::stringstream _existing;
+        if(!_first)
+        {
+            std::ifstream ifs(".cache_tests.dat");
+            if(ifs)
+            {
+                while(!ifs.eof())
+                {
+                    std::string _inp;
+                    ifs >> _inp;
+                    _existing << _inp << '\n';
+                }
+            }
+        }
+
+        ofs = std::make_shared<std::ofstream>(".cache_tests.dat");
+        if(ofs && !(*ofs))
+            ofs.reset();
+        if(ofs)
+            *ofs << _existing.str();
+        _first = false;
+    }
+
+    for(int64_t i = 0; i < n; ++i)
+    {
+        nfib = details::random_entry(v);
+        ret += details::fibonacci(nfib);
+        if(ofs && *ofs)
+            *ofs << "i=" << i << ",nfib=" << nfib << ",ret=" << ret << '\n';
+    }
+
+    if(ret < 0)
+        printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
+}
+
+void
 allocate()
 {
     if(!cache.at(0))
@@ -133,17 +182,7 @@ allocate()
     cache_bundle->reset();
     cache_bundle->start(*cache.at(0));
 
-    std::vector<int64_t> v(nelements, 15);
-    auto                 ret  = fibonacci(0);
-    long                 nfib = details::random_entry(v);
-    for(int64_t i = 0; i < niter; ++i)
-    {
-        nfib = details::random_entry(v);
-        ret += details::fibonacci(nfib);
-    }
-
-    if(ret < 0)
-        printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
+    allocate_basic();
 
     bundle->stop();
     cache_bundle->stop(*cache.at(0));
@@ -322,6 +361,88 @@ TEST_F(cache_tests, rusage)
     print_rusage_cache(_rusage);
     auto check = std::is_same<decltype(_cache), std::tuple<tim::rusage_cache>>::value;
     EXPECT_TRUE(check);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp, typename Arg,
+          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+double
+get_value(Arg& _arg)
+{
+    auto _obj = _arg.template get<Tp>();
+    if(_obj)
+        return std::get<0>(_obj->get());
+    return 0;
+}
+
+template <typename Tp, typename Arg,
+          tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
+double
+get_value(Arg&)
+{
+    return -1.0;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, io)
+{
+    using io_bundle_t =
+        tim::component_tuple<read_bytes, read_char, written_bytes, written_char>;
+    using timing_t   = tim::auto_tuple<wall_clock>;
+    using cache_type = tim::io_cache;
+
+    int                   n = 50;
+    std::array<double, 4> _tot;
+    _tot.fill(0.0);
+
+    std::array<std::string, 4> _labels = { { "read_bytes", "read_char", "written_bytes",
+                                             "written_char" } };
+
+    for(int i = 0; i < n; ++i)
+    {
+        io_bundle_t _bundle{ details::get_test_name() };
+        {
+            TIMEMORY_BLANK_MARKER(timing_t, details::get_test_name(), '/', "non-cached");
+            // traditional
+            _bundle.start();
+            details::allocate_basic(true);
+            _bundle.stop();
+        }
+        {
+            TIMEMORY_BLANK_MARKER(timing_t, details::get_test_name(), '/', "cached");
+            // using cache
+            _bundle.start(cache_type{});
+            details::allocate_basic(true);
+            _bundle.stop(cache_type{});
+        }
+        // for checks
+        _tot.at(0) += get_value<read_bytes>(_bundle);
+        _tot.at(1) += get_value<read_char>(_bundle);
+        _tot.at(2) += get_value<written_bytes>(_bundle);
+        _tot.at(3) += get_value<written_char>(_bundle);
+
+        std::cout << _bundle << std::endl;
+        if(i + 1 == n)
+        {
+            std::cout << "[io_cache]\n" << cache_type{} << std::flush;
+            std::stringstream cmd;
+            cmd << "cat /proc/" << tim::process::get_id() << "/io";
+            std::cout << "[system]\n";
+            std::system(cmd.str().c_str());
+        }
+    }
+
+    for(int i = 0; i < 4; ++i)
+    {
+        if(_tot.at(i) == -1.0 * n)
+            continue;
+        else if(_labels.at(i) == "written_bytes")
+            EXPECT_GE(_tot.at(i), 0.0) << " " << _labels.at(i) << " = " << _tot.at(i);
+        else
+            EXPECT_GT(_tot.at(i), 0.0) << " " << _labels.at(i) << " = " << _tot.at(i);
+    }
 }
 
 //--------------------------------------------------------------------------------------//

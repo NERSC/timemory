@@ -43,7 +43,12 @@ from os.path import dirname
 from os.path import basename
 from os.path import join
 
-__all__ = ["FILE", "FUNC", "LINE"]
+__all__ = ["FILE", "FUNC", "LINE", "FRAME"]
+
+
+def FRAME(back=2):
+    """Returns a frame"""
+    return sys._getframe(back)
 
 
 def FILE(back=2, only_basename=True, use_dirname=False, noquotes=True):

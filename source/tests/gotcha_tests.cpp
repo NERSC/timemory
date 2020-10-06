@@ -40,9 +40,8 @@ using namespace tim::component;
 using tim::component_tuple_t;
 
 // create a hybrid for inside the gotcha
-using gotcha_tuple_t = component_tuple_t<wall_clock, cpu_clock, peak_rss>;
-using gotcha_list_t =
-    tim::component_list_t<papi_array_t, cpu_roofline_sp_flops, cpu_roofline_dp_flops>;
+using gotcha_tuple_t  = component_tuple_t<wall_clock, cpu_clock, peak_rss>;
+using gotcha_list_t   = tim::component_list_t<cpu_roofline_dp_flops>;
 using gotcha_hybrid_t = tim::auto_hybrid_t<gotcha_tuple_t, gotcha_list_t>;
 
 // create gotcha types for various bundles of functions
@@ -390,7 +389,7 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
-    using toolset_t = tim::auto_tuple_t<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
+    using toolset_t = tim::auto_tuple_t<gotcha_tuple_t, malloc_gotcha, mpi_gotcha_t>;
 
     malloc_gotcha::configure<gotcha_tuple_t>();
 
@@ -424,7 +423,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
     tool.stop();
     PRINT_HERE("%s", "stopped");
 
-    malloc_gotcha_t& mc = *tool.get<malloc_gotcha_t>();
+    malloc_gotcha& mc = *tool.get<malloc_gotcha>();
     std::cout << mc << std::endl;
 
     auto rank = tim::mpi::rank();
@@ -446,6 +445,109 @@ TEST_F(gotcha_tests, malloc_gotcha)
 
     ASSERT_NEAR(fsum, 4986708.50 * size, tolerance);
     ASSERT_NEAR(dsum, 4986870.45 * size, tolerance);
+}
+
+//======================================================================================//
+
+TEST_F(gotcha_tests, void_function)
+{
+    auto _dbg              = tim::settings::debug();
+    tim::settings::debug() = true;
+
+    using puts_bundle_t = tim::component_tuple<trip_count>;
+    using puts_gotcha_t = tim::component::gotcha<1, puts_bundle_t>;
+    using void_bundle_t = tim::lightweight_tuple<puts_gotcha_t>;
+
+    puts_gotcha_t::get_initializer() = [=]() {
+        TIMEMORY_CXX_GOTCHA(puts_gotcha_t, 0, ext::do_puts);
+    };
+
+    auto _beg_ct = tim::storage<trip_count>::instance()->size();
+
+    void_bundle_t _bundle{ details::get_test_name() };
+    _bundle.start();
+    for(int i = 0; i < 10; ++i)
+        ext::do_puts(details::get_test_name().c_str());
+    _bundle.stop();
+
+    auto _end_ct = tim::storage<trip_count>::instance()->size();
+    EXPECT_EQ(_end_ct - _beg_ct, 1) << " begin: " << _beg_ct << ", end: " << _end_ct;
+
+    tim::settings::debug() = _dbg;
+}
+
+//======================================================================================//
+
+namespace tim
+{
+namespace component
+{
+struct exp_intercept : public base<exp_intercept, void>
+{
+    static auto& get_intercepts()
+    {
+        static uint64_t _instance{ 0 };
+        return _instance;
+    }
+
+    static auto& puts_intercepts()
+    {
+        static uint64_t _instance{ 0 };
+        return _instance;
+    }
+
+    void operator()(const char* msg)
+    {
+        ++puts_intercepts();
+        puts(msg);
+    }
+
+    double operator()(double val)
+    {
+        std::stringstream ss;
+        ss << "computing exp(" << val << ")";
+        ext::do_puts(ss.str().c_str());
+        ++get_intercepts();
+        return exp(val);
+    }
+};
+}  // namespace component
+}  // namespace tim
+
+TEST_F(gotcha_tests, replacement)
+{
+    auto _dbg              = tim::settings::debug();
+    tim::settings::debug() = true;
+
+    using exp_intercept_t = gotcha<2, std::tuple<>, exp_intercept>;
+    using exp_bundle_t    = tim::component_bundle<TIMEMORY_API, exp_intercept_t>;
+
+    static_assert(exp_intercept_t::components_size == 0,
+                  "exp_intercept_t should have no components");
+    static_assert(exp_intercept_t::differentiator_is_component,
+                  "exp_intercept_t won't replace exp");
+
+    //
+    // configure the initializer for the gotcha component which replaces exp with expf
+    //
+    exp_intercept_t::get_initializer() = []() {
+        puts("Generating exp intercept...");
+        TIMEMORY_C_GOTCHA(exp_intercept_t, 0, exp);
+        TIMEMORY_CXX_GOTCHA(exp_intercept_t, 1, ext::do_puts);
+    };
+
+    {
+        TIMEMORY_BLANK_MARKER(exp_bundle_t, details::get_test_name());
+        double ret = 10.0;
+        for(int i = 0; i < 10; ++i)
+            ret += exp(ret);
+        printf("result: %f\n", ret);
+    }
+
+    EXPECT_EQ(exp_intercept::get_intercepts(), 10);
+    EXPECT_EQ(exp_intercept::puts_intercepts(), 10);
+
+    tim::settings::debug() = _dbg;
 }
 
 //======================================================================================//
@@ -676,3 +778,7 @@ main(int argc, char** argv)
 }
 
 //======================================================================================//
+
+TIMEMORY_INITIALIZE_STORAGE(mpi_gotcha_t)
+TIMEMORY_INITIALIZE_STORAGE(work_gotcha_t)
+TIMEMORY_INITIALIZE_STORAGE(memfun_gotcha_t)

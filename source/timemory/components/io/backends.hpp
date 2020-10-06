@@ -102,6 +102,19 @@ struct io_cache
         return _data;
     }
 
+    friend std::ostream& operator<<(std::ostream& os, const io_cache& obj)
+    {
+        std::stringstream ss;
+        ss << "rchar: " << obj.get_char_read() << '\n';
+        ss << "wchar: " << obj.get_char_written() << '\n';
+        ss << "syscr: " << obj.get_syscall_read() << '\n';
+        ss << "syscw: " << obj.get_syscall_written() << '\n';
+        ss << "read_bytes: " << obj.get_bytes_read() << '\n';
+        ss << "write_bytes: " << obj.get_bytes_written() << '\n';
+        os << ss.str();
+        return os;
+    }
+
 public:
 #if defined(_LINUX)
     io_cache()

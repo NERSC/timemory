@@ -37,7 +37,7 @@ import inspect
 from enum import Enum
 from functools import wraps
 
-from ..common import FILE, FUNC, LINE
+from ..common import FILE, FUNC, LINE, FRAME
 from ..libpytimemory import settings, timer_decorator, component_decorator
 from ..libpytimemory import timer, rss_usage, component
 
@@ -145,22 +145,16 @@ class base_decorator(object):
     # ------------------------------------------------------------------------------------#
     #
 
-    def arg_string(self, args, kwargs):
+    def arg_string(self, _frame):
         """
         Generate a string of the arguments
         """
         # _str = '{}'.format(self.class_string(args, kwargs))
         _str = ""
         if self.add_args:
-            _str = "{}(".format(_str)
-            for i in range(0, len(args)):
-                if i == 0:
-                    _str = "{}{}".format(_str, args[i])
-                else:
-                    _str = "{}, {}".format(_str, args[i])
-            for key, val in kwargs:
-                _str = "{}, {}={}".format(_str, key, val)
-            return "{})".format(_str)
+            _str = "{}".format(
+                inspect.formatargvalues(*inspect.getargvalues(_frame))
+            )
         return _str
 
 
@@ -194,7 +188,6 @@ class auto_timer(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __call__(self, func):
         """
         Decorator
@@ -209,16 +202,17 @@ class auto_timer(base_decorator):
                 is_decorator=True, is_context_manager=False
             )
 
+            _frame = FRAME(1)
             _func = func.__name__
             _key = ""
-            _args = self.arg_string(args, kwargs)
+            _args = self.arg_string(_frame)
             if self.signature == context.blank:
                 _key = "{}{}".format(self.key, _args)
             elif self.signature == context.basic:
-                _key = "{}/{}/{}".format(_func, self.key, _args)
+                _key = "{}{}/{}".format(_func, _args, self.key)
             elif self.signature == context.full:
-                _key = "{}/{}:{}/{}{}".format(
-                    _func, _file, _line, self.key, _args
+                _key = "{}{}@{}:{}/{}".format(
+                    _func, _args, _file, _line, self.key
                 )
             _key = _key.strip("/")
 
@@ -231,7 +225,6 @@ class auto_timer(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __enter__(self, *args, **kwargs):
         """
         Context manager
@@ -239,23 +232,23 @@ class auto_timer(base_decorator):
         _file = FILE(3)
         _line = LINE(2)
         _func = FUNC(2)
+        _frame = FRAME(2)
         self.determine_signature(is_decorator=False, is_context_manager=True)
 
         _key = ""
-        _args = self.arg_string(args, kwargs)
+        _args = self.arg_string(_frame)
         if self.signature == context.blank:
             _key = "{}{}".format(self.key, _args)
         elif self.signature == context.basic:
-            _key = "{}/{}/{}".format(_func, self.key, _args)
+            _key = "{}{}/{}".format(_func, _args, self.key)
         elif self.signature == context.full:
-            _key = "{}/{}:{}/{}{}".format(_func, _file, _line, self.key, _args)
+            _key = "{}{}@{}:{}/{}".format(_func, _args, _file, _line, self.key)
         _key = _key.strip("/")
 
         self._self_obj = timer_decorator(_key, self.report_at_exit)
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __exit__(self, exc_type, exc_value, exc_traceback):
         del self._self_obj
 
@@ -293,7 +286,6 @@ class timer(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __call__(self, func):
         """
         Decorator
@@ -308,16 +300,17 @@ class timer(base_decorator):
                 is_decorator=True, is_context_manager=False
             )
 
+            _frame = FRAME(1)
             _func = func.__name__
             _key = ""
-            _args = self.arg_string(args, kwargs)
+            _args = self.arg_string(_frame)
             if self.signature == context.blank:
                 _key = "{}{}".format(self.key, _args)
             elif self.signature == context.basic:
-                _key = "{}/{}/{}".format(_func, self.key, _args)
+                _key = "{}{}/{}".format(_func, _args, self.key)
             elif self.signature == context.full:
-                _key = "{}/{}:{}/{}{}".format(
-                    _func, _file, _line, self.key, _args
+                _key = "{}{}@{}:{}/{}".format(
+                    _func, _args, _file, _line, self.key
                 )
             _key = _key.strip("/")
 
@@ -333,7 +326,6 @@ class timer(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __enter__(self, *args, **kwargs):
         """
         Context manager
@@ -341,16 +333,17 @@ class timer(base_decorator):
         _file = FILE(3)
         _line = LINE(2)
         _func = FUNC(2)
+        _frame = FRAME(2)
         self.determine_signature(is_decorator=False, is_context_manager=True)
 
         _key = ""
-        _args = self.arg_string(args, kwargs)
+        _args = self.arg_string(_frame)
         if self.signature == context.blank:
             _key = "{}{}".format(self.key, _args)
         elif self.signature == context.basic:
-            _key = "{}/{}/{}".format(_func, self.key, _args)
+            _key = "{}{}/{}".format(_func, _args, self.key)
         elif self.signature == context.full:
-            _key = "{}/{}:{}/{}{}".format(_func, _file, _line, self.key, _args)
+            _key = "{}{}@{}:{}/{}".format(_func, _args, _file, _line, self.key)
         _key = _key.strip("/")
 
         self._self_obj = timer(_key)
@@ -358,7 +351,6 @@ class timer(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self._self_obj.stop()
         self._self_obj.report()
@@ -398,7 +390,6 @@ class rss_usage(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __call__(self, func):
         """
         Decorator
@@ -413,16 +404,17 @@ class rss_usage(base_decorator):
                 is_decorator=True, is_context_manager=False
             )
 
+            _frame = FRAME(1)
             _func = func.__name__
             _key = ""
-            _args = self.arg_string(args, kwargs)
+            _args = self.arg_string(_frame)
             if self.signature == context.blank:
                 _key = "{}{}".format(self.key, _args)
             elif self.signature == context.basic:
-                _key = "{}/{}/{}".format(_func, self.key, _args)
+                _key = "{}{}/{}".format(_func, _args, self.key)
             elif self.signature == context.full:
-                _key = "{}/{}:{}/{}{}".format(
-                    _func, _file, _line, self.key, _args
+                _key = "{}{}@{}:{}/{}".format(
+                    _func, _args, _file, _line, self.key
                 )
             _key = _key.strip("/")
 
@@ -442,7 +434,6 @@ class rss_usage(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __enter__(self, *args, **kwargs):
         """
         Context manager entrance
@@ -450,16 +441,17 @@ class rss_usage(base_decorator):
         _file = FILE(3)
         _line = LINE(2)
         _func = FUNC(2)
+        _frame = FRAME(2)
         self.determine_signature(is_decorator=False, is_context_manager=True)
 
         _key = ""
-        _args = self.arg_string(args, kwargs)
+        _args = self.arg_string(_frame)
         if self.signature == context.blank:
             _key = "{}{}".format(self.key, _args)
         elif self.signature == context.basic:
-            _key = "{}/{}/{}".format(_func, self.key, _args)
+            _key = "{}{}/{}".format(_func, _args, self.key)
         elif self.signature == context.full:
-            _key = "{}/{}:{}/{}{}".format(_func, _file, _line, self.key, _args)
+            _key = "{}{}@{}:{}/{}".format(_func, _args, _file, _line, self.key)
         _key = _key.strip("/")
 
         self._self_obj = rss_usage(_key)
@@ -468,7 +460,6 @@ class rss_usage(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """
         Context manager exit
@@ -536,7 +527,6 @@ class marker(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __call__(self, func):
         """
         Decorator
@@ -551,16 +541,17 @@ class marker(base_decorator):
                 is_decorator=True, is_context_manager=False
             )
 
+            _frame = FRAME(1)
             _func = func.__name__
             _key = ""
-            _args = self.arg_string(args, kwargs)
+            _args = self.arg_string(_frame)
             if self.signature == context.blank:
                 _key = "{}{}".format(self.key, _args)
             elif self.signature == context.basic:
-                _key = "{}/{}/{}".format(_func, self.key, _args)
+                _key = "{}{}/{}".format(_func, _args, self.key)
             elif self.signature == context.full:
-                _key = "{}/{}:{}/{}{}".format(
-                    _func, _file, _line, self.key, _args
+                _key = "{}{}@{}:{}/{}".format(
+                    _func, _args, _file, _line, self.key
                 )
             _key = _key.strip("/")
 
@@ -573,7 +564,6 @@ class marker(base_decorator):
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __enter__(self, *args, **kwargs):
         """
         Context manager
@@ -581,23 +571,23 @@ class marker(base_decorator):
         _file = FILE(3)
         _line = LINE(2)
         _func = FUNC(2)
+        _frame = FRAME(2)
         self.determine_signature(is_decorator=False, is_context_manager=True)
 
         _key = ""
-        _args = self.arg_string(args, kwargs)
+        _args = self.arg_string(_frame)
         if self.signature == context.blank:
             _key = "{}{}".format(self.key, _args)
         elif self.signature == context.basic:
-            _key = "{}/{}/{}".format(_func, self.key, _args)
+            _key = "{}{}/{}".format(_func, _args, self.key)
         elif self.signature == context.full:
-            _key = "{}/{}:{}/{}{}".format(_func, _file, _line, self.key, _args)
+            _key = "{}{}@{}:{}/{}".format(_func, _args, _file, _line, self.key)
         _key = _key.strip("/")
 
         self._self_obj = component_decorator(self.components, _key)
 
     # ------------------------------------------------------------------------------------#
     #
-
     def __exit__(self, exc_type, exc_value, exc_traceback):
         del self._self_obj
 

@@ -1091,7 +1091,7 @@ def run_pyctest():
                 pyct.test(
                     construct_name("ex-python-caliper"),
                     construct_command(
-                        [sys.executable, "./ex_python_caliper"], args
+                        [sys.executable, "./ex_python_caliper", "10"], args
                     ),
                     {
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,

@@ -2,6 +2,7 @@
 
 import timemory
 from timemory.bundle import auto_tuple
+from timemory.component import CaliperConfig
 import sys
 import json
 
@@ -27,8 +28,14 @@ if __name__ == "__main__":
 
     nfib = int(sys.argv[1]) if len(sys.argv) > 1 else 34
 
+    cfg = CaliperConfig()
+    cfg.configure("runtime-report")
+    cfg.start()
+
     with auto_tuple(get_tools(), "%s(%i)" % (sys.argv[0], nfib)):
         ans = fib(nfib)
         ans += run_fib(nfib + 1)
 
-    print("fibonacci(34) = {}".format(ans))
+    cfg.stop()
+    print("fibonacci({}) = {}".format(nfib, ans))
+    timemory.finalize()

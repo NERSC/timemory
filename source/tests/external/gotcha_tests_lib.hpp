@@ -36,6 +36,8 @@ namespace ext
 std::tuple<float, double>
 do_work(int64_t, const std::pair<float, double>&);
 
+void
+do_puts(const char*);
 }  // namespace ext
 
 class DoWork

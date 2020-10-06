@@ -131,7 +131,7 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
             ssr << " " << std::get<1>(_disp);
 
         ss << ssv.str() << ", " << ssr.str();
-        ss << " read";
+        ss << " rchar";
         return ss.str();
     }
 
@@ -233,7 +233,7 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
               enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
     static value_type record(const CacheT& _cache)
     {
-        return value_type(_cache.get_char_read(), get_timestamp());
+        return value_type{ _cache.get_char_read(), get_timestamp() };
     }
 
     template <typename CacheT                                    = cache_type,
@@ -247,6 +247,7 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
               enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
     void stop(const CacheT& _cache)
     {
+        using namespace tim::component::operators;
         auto diff         = (record(_cache) - value);
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += (value = diff);
@@ -341,7 +342,7 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
             ssr << " " << std::get<1>(_disp);
 
         ss << ssv.str() << ", " << ssr.str();
-        ss << " written";
+        ss << " wchar";
         return ss.str();
     }
 
@@ -443,7 +444,7 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
               enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
     static value_type record(const CacheT& _cache)
     {
-        return value_type(_cache.get_char_written(), get_timestamp());
+        return value_type{ { _cache.get_char_written(), get_timestamp() } };
     }
 
     template <typename CacheT                                    = cache_type,
@@ -457,6 +458,7 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
               enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
     void stop(const CacheT& _cache)
     {
+        using namespace tim::component::operators;
         auto diff         = (record(_cache) - value);
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += (value = diff);
@@ -548,7 +550,7 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
             ssr << " " << std::get<1>(_disp);
 
         ss << ssv.str() << ", " << ssr.str();
-        ss << " read";
+        ss << " read_bytes";
         return ss.str();
     }
 
@@ -650,7 +652,7 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
               enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
     static value_type record(const CacheT& _cache)
     {
-        return value_type(_cache.get_bytes_read(), get_timestamp());
+        return value_type{ _cache.get_bytes_read(), get_timestamp() };
     }
 
     template <typename CacheT                                    = cache_type,
@@ -664,6 +666,7 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
               enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
     void stop(const CacheT& _cache)
     {
+        using namespace tim::component::operators;
         auto diff         = (record(_cache) - value);
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += (value = diff);
@@ -756,7 +759,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
             ssr << " " << std::get<1>(_disp);
 
         ss << ssv.str() << ", " << ssr.str();
-        ss << " written";
+        ss << " write_bytes";
         return ss.str();
     }
 
@@ -858,7 +861,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
               enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
     static value_type record(const CacheT& _cache)
     {
-        return value_type(_cache.get_bytes_written(), get_timestamp());
+        return value_type{ { _cache.get_bytes_written(), get_timestamp() } };
     }
 
     template <typename CacheT                                    = cache_type,
@@ -872,6 +875,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
               enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
     void stop(const CacheT& _cache)
     {
+        using namespace tim::component::operators;
         auto diff         = (record(_cache) - value);
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += (value = diff);
