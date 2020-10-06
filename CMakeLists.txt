@@ -231,7 +231,12 @@ message(STATUS "Configuring external packages and interface libraries...")
 include(Packages)
 
 # only after submodules have been added
-set(CMAKE_UNITY_BUILD ${TIMEMORY_UNITY_BUILD})
+if(TIMEMORY_USE_COVERAGE)
+    set(CMAKE_UNITY_BUILD OFF)
+    set(TIMEMORY_UNITY_BUILD OFF CACHE BOOL "" FORCE)
+else()
+    set(CMAKE_UNITY_BUILD ${TIMEMORY_UNITY_BUILD})
+endif()
 
 set(_HIDE_INLINES ON)
 if(CMAKE_CXX_COMPILER_IS_CLANG AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6)

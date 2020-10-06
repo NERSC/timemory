@@ -98,7 +98,8 @@ if(TARGET custom-record-functions)
     add_timemory_google_test(library_tests
         DISCOVER_TESTS
         SOURCES         library_tests.cpp
-        LINK_LIBRARIES  custom-record-functions)
+        LINK_LIBRARIES  custom-record-functions
+                        timemory::timemory-core)
 endif()
 
 if(_LIBRARY_TARGET)
@@ -124,7 +125,8 @@ add_timemory_google_test(type_trait_tests
 add_timemory_google_test(warning_tests
     SOURCES         warning_tests.cpp
     LINK_LIBRARIES  test-werror-flags
-                    test-debug-flags)
+                    test-debug-flags
+                    timemory::timemory-core)
 
 add_timemory_google_test(socket_tests
     SOURCES         socket_tests.cpp
