@@ -306,11 +306,11 @@ load_env(const std::string& env_id, bool _default)
             _match = std::regex_match(val, std::regex(pattern, regex_constants));
         } catch(std::bad_cast&)
         {
-            for(auto& itr : val)
-                itr = tolower(itr);
-            for(const auto& itr : { "off", "false", "no", "n", "f", "0" })
+            for(auto& vitr : val)
+                vitr = tolower(vitr);
+            for(const auto& vitr : { "off", "false", "no", "n", "f", "0" })
             {
-                if(val == itr)
+                if(val == vitr)
                 {
                     _match = true;
                     break;

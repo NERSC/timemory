@@ -186,7 +186,8 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     # list of arguments taking multiple values
     set(multival_args SOURCES PROPERTIES LINK_LIBRARIES COMMAND OPTIONS ENVIRONMENT)
     # parse args
-    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS" "" "${multival_args}" ${ARGN})
+    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS;MPI" "NPROCS"
+        "${multival_args}" ${ARGN})
 
     if(NOT TARGET google-test-debug-options)
         add_library(google-test-debug-options INTERFACE)
@@ -203,7 +204,15 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         PROPERTIES      "${TEST_PROPERTIES}")
 
     if("${TEST_COMMAND}" STREQUAL "")
-        set(TEST_COMMAND $<TARGET_FILE:${TEST_NAME}>)
+        if(TIMEMORY_USE_MPI AND TEST_MPI AND MPIEXEC_EXECUTABLE)
+            if(NOT TEST_NPROCS)
+                set(TEST_NPROCS 2)
+            endif()
+            set(TEST_COMMAND ${MPIEXEC_EXECUTABLE} -n ${TEST_NPROCS}
+                $<TARGET_FILE:${TEST_NAME}>)
+        else()
+            set(TEST_COMMAND $<TARGET_FILE:${TEST_NAME}>)
+        endif()
     endif()
 
     if(TEST_DISCOVER_TESTS)

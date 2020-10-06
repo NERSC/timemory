@@ -816,7 +816,7 @@ private:
 
             // component_type is always: component_{tuple,list,hybrid}
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-            component_type _obj(_data.tool_id, true);
+            component_type _obj{ _data.tool_id };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
@@ -908,7 +908,7 @@ private:
 
         if(_orig)
         {
-            component_type _obj(_data.tool_id, true);
+            component_type _obj{ _data.tool_id };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);

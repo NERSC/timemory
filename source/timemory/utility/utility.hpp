@@ -39,8 +39,10 @@
 
 // C library
 #include <cctype>
+#include <cerrno>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 // I/O
@@ -63,10 +65,7 @@
 
 #if defined(_UNIX)
 #    include <cxxabi.h>
-#    include <errno.h>
 #    include <execinfo.h>
-#    include <stdio.h>
-#    include <string.h>
 #    include <sys/stat.h>
 #    include <sys/types.h>
 #elif defined(_WINDOWS)
@@ -100,6 +99,11 @@ using pid_t = int;
 
 namespace tim
 {
+//--------------------------------------------------------------------------------------//
+// definition in popen.hpp
+bool
+launch_process(const char* cmd, const std::string& extra = "");
+
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp>
@@ -235,54 +239,6 @@ dirname(std::string _fname)
 
 //--------------------------------------------------------------------------------------//
 
-inline bool
-launch_process(const char* cmd, const std::string& extra = "")
-{
-#if defined(TIMEMORY_USE_POPEN)
-    FILE* fp = popen(cmd, "w");
-    if(fp == nullptr)
-    {
-        std::stringstream ss;
-        ss << "[timemory]> Error launching command: '" << cmd << "'... " << extra;
-        perror(ss.str().c_str());
-        return false;
-    }
-
-    auto ec = pclose(fp);
-    if(ec != 0)
-    {
-        std::stringstream ss;
-        ss << "[timemory]> Command: '" << cmd << "' returned a non-zero exit code: " << ec
-           << "... " << extra;
-        perror(ss.str().c_str());
-        return false;
-    }
-#else
-    if(std::system(nullptr) != 0)
-    {
-        int ec = std::system(cmd);
-
-        if(ec != 0)
-        {
-            fprintf(stderr,
-                    "[timemory]> Command: '%s' returned a non-zero exit code: %i... %s\n",
-                    cmd, ec, extra.c_str());
-            return false;
-        }
-    }
-    else
-    {
-        fprintf(stderr, "std::system unavailable for command: '%s'... %s\n", cmd,
-                extra.c_str());
-        return false;
-    }
-#endif
-
-    return true;
-}
-
-//--------------------------------------------------------------------------------------//
-
 inline int
 makedir(std::string _dir, int umask = DEFAULT_UMASK)
 {
@@ -295,11 +251,18 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
     if(_dir.length() == 0)
         return 0;
 
-    if(mkdir(_dir.c_str(), umask) != 0)
+    int ret = mkdir(_dir.c_str(), umask);
+    if(ret != 0)
     {
-        std::stringstream _sdir;
-        _sdir << "mkdir -p " << _dir;
-        return (launch_process(_sdir.str().c_str())) ? 0 : 1;
+        int err = errno;
+        if(err != EEXIST)
+        {
+            std::cerr << "mkdir(" << _dir.c_str() << ", " << umask
+                      << ") returned: " << ret << std::endl;
+            std::stringstream _sdir;
+            _sdir << "/bin/mkdir -p " << _dir;
+            return (launch_process(_sdir.str().c_str())) ? 0 : 1;
+        }
     }
 #elif defined(_WINDOWS)
     consume_parameters(umask);

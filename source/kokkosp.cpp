@@ -180,7 +180,7 @@ extern "C"
     {
         *secid = kokkosp::get_unique_id();
         auto pname =
-            TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "section", secid), name);
+            TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "section", *secid), name);
         kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *secid);
     }
 

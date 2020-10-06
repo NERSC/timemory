@@ -28,6 +28,7 @@
 #include "timemory/plotting/macros.hpp"
 #include "timemory/plotting/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/popen.hpp"
 
 #if defined(TIMEMORY_USE_PYTHON)
 #    include "pybind11/embed.h"

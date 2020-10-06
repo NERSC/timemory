@@ -158,7 +158,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     };
 
     static size_t _maxw      = 0;
-    auto _get_lines = [&](const auto& _fullpath) -> strvec_t& {
+    auto          _get_lines = [&](const auto& _fullpath) -> strvec_t& {
         auto litr = _file_lines.find(_fullpath);
         if(litr != _file_lines.end())
             return litr->second;

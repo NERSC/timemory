@@ -79,4 +79,6 @@ def run_all_tests():
 
 # run all tests
 if __name__ == "__main__":
+    man = tim.manager()
     run_all_tests()
+    man.write_ctest_notes("./python-testing")

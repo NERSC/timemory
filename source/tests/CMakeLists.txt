@@ -139,10 +139,31 @@ add_timemory_google_test(argparse_tests
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core)
 
+list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
+list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_THREADS=OFF")
+list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
+
 add_timemory_google_test(component_bundle_tests
+    MPI
+    NPROCS          2
     SOURCES         component_bundle_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-core)
+                    timemory::timemory-core
+    ENVIRONMENT     ${component_bundle_tests_env})
+
+list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
+list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
+list(APPEND kokkosp_tests_env "TIMEMORY_NODE_COUNT=1")
+list(APPEND kokkosp_tests_env "TIMEMORY_MPI_THREAD=OFF")
+
+add_timemory_google_test(kokkosp_tests
+    MPI
+    NPROCS          2
+    SOURCES         kokkosp_tests.cpp
+    LINK_LIBRARIES  common-test-libs
+                    timemory::timemory-core
+                    ${_LIBRARY}
+    ENVIRONMENT     ${kokkosp_tests_env})
 
 add_timemory_google_test(flat_tests
     DISCOVER_TESTS
@@ -415,13 +436,15 @@ add_timemory_google_test(priority_tests
 
 if(TIMEMORY_USE_MPI)
     add_timemory_google_test(mpi_tests
-        DISCOVER_TESTS
+        MPI
+        NPROC           2
         SOURCES         mpi_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         timemory::timemory-plotting
                         timemory::timemory-dmp
                         timemory::timemory-core
-                        ${_LIBRARY})
+                        ${_LIBRARY}
+        ENVIRONMENT     "TIMEMORY_MPI_THREAD_TYPE=serialized")
 endif()
 
 if(TIMEMORY_USE_UPCXX)

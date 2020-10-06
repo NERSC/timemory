@@ -338,5 +338,18 @@ lightweight_tuple<Types...>::set_scope(scope::config val)
 }
 
 //--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+void
+lightweight_tuple<Types...>::init_storage()
+{
+    static thread_local bool _once = []() {
+        apply_v::type_access<operation::init_storage, data_type>();
+        return true;
+    }();
+    consume_parameters(_once);
+}
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim

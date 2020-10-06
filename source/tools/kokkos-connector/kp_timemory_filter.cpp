@@ -347,7 +347,7 @@ kokkosp_create_profile_section(const char* name, uint32_t* secid)
     }
 
     *secid     = get_unique_id();
-    auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "section", secid), name);
+    auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "section", *secid), name);
     create_profiler(pname, *secid);
 }
 
