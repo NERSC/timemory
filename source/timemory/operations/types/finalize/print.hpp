@@ -196,8 +196,9 @@ print<Tp, true>::setup()
         auto dext     = std::string(".diff") + fext;
         json_diffname = settings::compose_output_filename(label, dext);
         text_diffname = settings::compose_output_filename(label, ".diff.txt");
-        printf("difference filenames: '%s' and '%s'\n", json_diffname.c_str(),
-               text_diffname.c_str());
+        if(settings::debug())
+            printf("difference filenames: '%s' and '%s'\n", json_diffname.c_str(),
+                   text_diffname.c_str());
     }
 
     if(!(file_output && text_output) && !cout_output)
@@ -567,7 +568,7 @@ print<Tp, true>::read_json()
             printf("[%s]|%i> Reading '%s'...\n", label.c_str(), node_rank,
                    json_inpfname.c_str());
 
-            size_t num_ranks = 0;
+            cereal::size_type num_ranks = 0;
             // ensure write final block during destruction before the file is closed
             auto ia = policy_type::get(ifs);
 
@@ -577,21 +578,33 @@ print<Tp, true>::read_json()
             // node
             try
             {
-                (*ia)(cereal::make_nvp("num_ranks", num_ranks));
+                cereal::size_type _nranks = 0;
+                (*ia)(cereal::make_nvp("num_ranks", _nranks));
                 ia->setNextName("ranks");
                 ia->startNode();
+                ia->loadSize(num_ranks);
+
+                if(_nranks > num_ranks)
+                    num_ranks = _nranks;
 
                 node_input.resize(num_ranks);
                 for(uint64_t i = 0; i < node_input.size(); ++i)
                 {
-                    if(node_results.at(i).empty())
-                        continue;
+                    // if(node_results.at(i).empty())
+                    //    continue;
 
                     ia->startNode();
 
                     (*ia)(cereal::make_nvp("rank", i));
                     (*ia)(cereal::make_nvp("concurrency", input_concurrency));
-                    load(*ia, node_input.at(i));
+                    try
+                    {
+                        load(*ia, node_input.at(i));
+                    } catch(std::exception& e)
+                    {
+                        fprintf(stderr, "[%s]> Error reading node '%s': %s\n",
+                                label.c_str(), json_inpfname.c_str(), e.what());
+                    }
 
                     ia->finishNode();
                 }
