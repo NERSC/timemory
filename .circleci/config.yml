@@ -29,7 +29,10 @@ jobs:
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
-            python ./pyctest-runner.py -j4 --coverage --pyctest-build-type=Debug --build-libs shared --mpi --papi --caliper --mpip --python --gotcha --stats --cxx-standard=17 -- -V --output-on-failure -- -DTIMEMORY_BUILD_CALIPER=OFF -DTIMEMORY_BUILD_GOTCHA=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
+            python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Debug -j4
+            --build-libs shared --coverage --mpi --papi --caliper --mpip --python --gotcha --stats --cxx-standard=17
+            -- -V --output-on-failure
+            -- -DTIMEMORY_BUILD_CALIPER=OFF -DTIMEMORY_BUILD_GOTCHA=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:
           name: install
           command: >
