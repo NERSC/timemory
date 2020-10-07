@@ -8,6 +8,11 @@ jobs:
     docker:
       - image: jrmadsen/timemory:dev-cpu
     steps:
+      - run:
+          name: apt-fixes
+          command: >
+            apt-get update
+            apt-get install -y git ssh
       - checkout
       - run:
           name: conda-installation
@@ -20,7 +25,11 @@ jobs:
             source activate pyctest
       - run:
           name: build
-          command: python ./pyctest-runner.py --coverage --pyctest-build-type=Debug --build-libs shared --mpi --papi --caliper --mpip --python --gotcha --stats --cxx-standard=17 -- -V --output-on-failure -- -DTIMEMORY_BUILD_CALIPER=OFF -DTIMEMORY_BUILD_GOTCHA=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
+          command: >
+            export PATH="${HOME}/miniconda/bin:${PATH}" &&
+            source activate &&
+            conda activate pyctest &&
+            python ./pyctest-runner.py --coverage --pyctest-build-type=Debug --build-libs shared --mpi --papi --caliper --mpip --python --gotcha --stats --cxx-standard=17 -- -V --output-on-failure -- -DTIMEMORY_BUILD_CALIPER=OFF -DTIMEMORY_BUILD_GOTCHA=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:
           name: install
           command: >
