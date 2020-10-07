@@ -22,30 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "gtest/gtest.h"
+#include "test_macros.hpp"
 
-#include <chrono>
-#include <condition_variable>
-#include <iostream>
-#include <mutex>
-#include <random>
-#include <thread>
-#include <vector>
+TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/timemory.hpp"
 
 using namespace tim::component;
 
-static int    _argc = 0;
-static char** _argv = nullptr;
-
-using mutex_t        = std::mutex;
-using lock_t         = std::unique_lock<mutex_t>;
-using string_t       = std::string;
-using stringstream_t = std::stringstream;
-using floating_t     = double;
-using cache_ptr_t    = std::shared_ptr<tim::rusage_cache>;
-using bundle_t = tim::component_bundle<TIMEMORY_API, wall_clock, peak_rss, num_io_in,
+using floating_t  = double;
+using cache_ptr_t = std::shared_ptr<tim::rusage_cache>;
+using bundle_t    = tim::component_bundle<TIMEMORY_API, wall_clock, peak_rss, num_io_in,
                                        num_io_out, num_major_page_faults,
                                        num_minor_page_faults, priority_context_switch,
                                        voluntary_context_switch, current_peak_rss>;
@@ -197,31 +184,22 @@ allocate()
 class cache_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
-    {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                   = true;
-            tim::settings::verbose()     = 0;
-            tim::settings::debug()       = false;
-            tim::settings::json_output() = true;
-            tim::settings::mpi_thread()  = false;
-            tim::dmp::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
+    TIMEMORY_TEST_DEFAULT_SETUP
+    TIMEMORY_TEST_DEFAULT_TEARDOWN
 
-            // preform allocation only once here
-            details::allocate();
-        }
-        puts("");
-        printf("##### Executing %s ... #####\n", details::get_test_name().c_str());
-        puts("");
+    // preform allocation only once here
+    static void extra_setup() { details::allocate(); }
+
+    static void extra_teardown()
+    {
+        for(auto& itr : cache)
+            itr.reset();
+        bundle.reset();
+        cache_bundle.reset();
     }
 
-    void TearDown() override { puts(""); }
+    TIMEMORY_TEST_SUITE_SETUP(extra_setup();)
+    TIMEMORY_TEST_SUITE_TEARDOWN(extra_teardown();)
 };
 
 //--------------------------------------------------------------------------------------//
@@ -397,9 +375,6 @@ TEST_F(cache_tests, io)
     std::array<double, 4> _tot;
     _tot.fill(0.0);
 
-    std::array<std::string, 4> _labels = { { "read_bytes", "read_char", "written_bytes",
-                                             "written_char" } };
-
     for(int i = 0; i < n; ++i)
     {
         io_bundle_t _bundle{ details::get_test_name() };
@@ -417,11 +392,6 @@ TEST_F(cache_tests, io)
             details::allocate_basic(true);
             _bundle.stop(cache_type{});
         }
-        // for checks
-        _tot.at(0) += get_value<read_bytes>(_bundle);
-        _tot.at(1) += get_value<read_char>(_bundle);
-        _tot.at(2) += get_value<written_bytes>(_bundle);
-        _tot.at(3) += get_value<written_char>(_bundle);
 
         std::cout << _bundle << std::endl;
         if(i + 1 == n)
@@ -430,15 +400,26 @@ TEST_F(cache_tests, io)
             std::stringstream cmd;
             cmd << "cat /proc/" << tim::process::get_id() << "/io";
             std::cout << "[system]\n";
-            std::system(cmd.str().c_str());
+            auto ret = std::system(cmd.str().c_str());
+            if(ret != 0)
+                printf("[std::system]> cmd: '%s' failed\n", cmd.str().c_str());
         }
+
+        // for checks
+        _tot.at(0) += get_value<read_bytes>(_bundle);
+        _tot.at(1) += get_value<written_bytes>(_bundle);
+        _tot.at(2) += get_value<read_char>(_bundle);
+        _tot.at(3) += get_value<written_char>(_bundle);
     }
+
+    std::array<std::string, 4> _labels = { { "read_bytes", "written_bytes", "read_char",
+                                             "written_char" } };
 
     for(int i = 0; i < 4; ++i)
     {
         if(_tot.at(i) == -1.0 * n)
             continue;
-        else if(_labels.at(i) == "written_bytes")
+        else if(_labels.at(i).find("bytes") != std::string::npos)
             EXPECT_GE(_tot.at(i), 0.0) << " " << _labels.at(i) << " = " << _tot.at(i);
         else
             EXPECT_GT(_tot.at(i), 0.0) << " " << _labels.at(i) << " = " << _tot.at(i);
@@ -463,22 +444,6 @@ TEST_F(cache_tests, validation)
                 cache.at(0)->get_peak_rss() / memory_unit.first, peak_tolerance);
     EXPECT_NEAR(std::get<1>(bundle->get<current_peak_rss>()->get()),
                 cache.at(1)->get_peak_rss() / memory_unit.first, peak_tolerance);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

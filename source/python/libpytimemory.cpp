@@ -27,6 +27,7 @@
 #include "libpytimemory-components.hpp"
 #include "timemory/components.hpp"
 #include "timemory/components/extern.hpp"
+#include "timemory/components/ompt/backends.hpp"
 #include "timemory/enum.h"
 #include "timemory/library.h"
 #include "timemory/settings/extern.hpp"
@@ -37,33 +38,26 @@
 
 //======================================================================================//
 
-#if defined(TIMEMORY_USE_MPIP_LIBRARY)
 extern "C"
 {
+#if defined(TIMEMORY_USE_MPIP_LIBRARY)
     extern uint64_t timemory_start_mpip();
     extern uint64_t timemory_stop_mpip(uint64_t);
-}
 #endif
-
-//======================================================================================//
-
-#if defined(TIMEMORY_USE_OMPT_LIBRARY)
-extern "C"
-{
-    extern uint64_t timemory_start_ompt();
-    extern uint64_t timemory_stop_ompt(uint64_t);
-}
-#endif
-
-//======================================================================================//
 
 #if defined(TIMEMORY_USE_NCCLP_LIBRARY)
-extern "C"
-{
     extern uint64_t timemory_start_ncclp();
     extern uint64_t timemory_stop_ncclp(uint64_t);
-}
 #endif
+
+#if defined(TIMEMORY_USE_OMPT_LIBRARY)
+    extern uint64_t timemory_start_ompt();
+    extern uint64_t timemory_stop_ompt(uint64_t);
+#endif
+
+    extern ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_ver,
+                                                     const char*  run_ver);
+}
 
 //======================================================================================//
 

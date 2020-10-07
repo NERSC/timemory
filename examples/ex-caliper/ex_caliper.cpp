@@ -81,7 +81,7 @@ main(int argc, char** argv)
         printf("caliper: scope = '%s', attributes = %i\n", scope_tag.c_str(),
                caliper::get_attributes());
         print_info("execute_test", scope_tag);
-        intmax_t ret = 0;
+        intmax_t     ret = 0;
         loop_tuple_t _loop{ "execute_test" };
         for(auto n : fibvalues)
         {

@@ -1,4 +1,7 @@
 
+# include the current directory
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 set(CMAKE_UNITY_BUILD OFF)
 
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY )
@@ -103,6 +106,22 @@ if(TARGET custom-record-functions)
 endif()
 
 if(_LIBRARY_TARGET)
+    list(APPEND trace_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
+    list(APPEND trace_tests_env "TIMEMORY_NODE_COUNT=2")
+    list(APPEND trace_tests_env "TIMEMORY_MPI_THREAD=ON")
+    list(APPEND trace_tests_env "TIMEMORY_MPI_THREAD_TYPE=funneled")
+
+    add_timemory_google_test(trace_tests
+        MPI
+        NPROC           4
+        SOURCES         trace_tests.cpp
+        LINK_LIBRARIES  ${_LIBRARY_TARGET}
+                        timemory::timemory-dmp
+                        timemory::timemory-plotting
+                        timemory::timemory-mpip-library
+                        timemory::timemory-ompt-library
+        ENVIRONMENT     ${trace_tests_env})
+
     add_timemory_google_test(throttle_tests
         DISCOVER_TESTS
         SOURCES         throttle_tests.cpp
@@ -151,7 +170,6 @@ add_timemory_google_test(component_bundle_tests
                     timemory::timemory-core
     ENVIRONMENT     ${component_bundle_tests_env})
 
-list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
 list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
 list(APPEND kokkosp_tests_env "TIMEMORY_NODE_COUNT=1")
 list(APPEND kokkosp_tests_env "TIMEMORY_MPI_THREAD=OFF")

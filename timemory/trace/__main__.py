@@ -36,6 +36,7 @@ import argparse
 import warnings
 import traceback
 import multiprocessing as mp
+import timemory
 
 PY3 = sys.version_info[0] == 3
 
@@ -258,7 +259,7 @@ def main():
         ns = locals()
         execfile(setup_file, ns, ns)
 
-    from ..libpytimemory import settings, finalize
+    from ..libpytimemory import settings
     from .tracer import Tracer, FakeTracer
 
     output_path = get_value(
@@ -304,16 +305,16 @@ def main():
                 tracer.stop()
         except (KeyboardInterrupt, SystemExit):
             pass
+        finally:
+            del tracer
+            del fake
+            timemory.finalize()
     except Exception as e:
         import traceback
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=10)
         print("Exception - {}".format(e))
-    finally:
-        del tracer
-        del fake
-        finalize()
 
 
 if __name__ == "__main__":

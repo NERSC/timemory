@@ -137,15 +137,15 @@ tim::launch_process(const char* cmd, const std::string& extra)
     else
     {
         static std::string   _c = "-c";
-        std::array<char*, 4> _argv;
-        _argv.fill(nullptr);
+        std::array<char*, 4> _args;
+        _args.fill(nullptr);
         char*       _cshell = getenv("SHELL");
         char*       _ushell = getusershell();
         std::string _shell = (_cshell) ? _cshell : (_ushell) ? getusershell() : "/bin/sh";
-        _argv.at(0)        = (char*) _shell.c_str();
-        _argv.at(1)        = (char*) _c.c_str();
-        _argv.at(2)        = (char*) cmd;
-        fp                 = tim::popen::popen(_argv.at(0), _argv.data());
+        _args.at(0)        = (char*) _shell.c_str();
+        _args.at(1)        = (char*) _c.c_str();
+        _args.at(2)        = (char*) cmd;
+        fp                 = tim::popen::popen(_args.at(0), _args.data());
     }
     if(fp == nullptr)
     {

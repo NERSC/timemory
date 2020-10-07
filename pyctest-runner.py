@@ -359,7 +359,7 @@ def run_pyctest():
     cn = os.environ["CXX"]
     try:
         cn = compiler_version.split()[0]
-        cv = re.search(r"(\b)\d.\d.\d$", compiler_version)
+        cv = re.search(r"(\b)\d.\d.\d", compiler_version)
         compiler_version = "{}-{}".format(cn, cv.group()[0])
     except Exception as e:
         print("Exception! {}".format(e))
@@ -822,7 +822,7 @@ def run_pyctest():
             [
                 sys.executable,
                 "-m",
-                "timemory.profiler",
+                "timemory.line_profiler",
                 "-v",
                 "-l",
                 "-c",
@@ -844,7 +844,7 @@ def run_pyctest():
             [
                 sys.executable,
                 "-m",
-                "timemory.profiler",
+                "timemory.line_profiler",
                 "-v",
                 "-l",
                 "-b",
