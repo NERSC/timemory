@@ -491,7 +491,7 @@ def run_pyctest():
 
     pyct.set(
         "CTEST_CUSTOM_COVERAGE_EXCLUDE",
-        "/usr/.*;.*external/.*;.*examples/.*;.*source/tests/.*",
+        "/usr/.*;.*external/.*;.*examples/.*;.*source/tests/.*;.*source/tools/.*;.*source/python/.*",
     )
     pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_ERRORS", "100")
     pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS", "100")
