@@ -455,6 +455,10 @@ add_timemory_google_test(priority_tests
                     ${_LIBRARY})
 
 if(TIMEMORY_USE_MPI)
+    #
+    list(APPEND mpi_tests_env "TIMEMORY_MPI_THREAD_TYPE=serialized")
+    list(APPEND mpi_tests_env "TIMEMORY_SEPARATOR_FREQ=0")
+    #
     add_timemory_google_test(mpi_tests
         MPI
         NPROC           2
@@ -464,7 +468,25 @@ if(TIMEMORY_USE_MPI)
                         timemory::timemory-dmp
                         timemory::timemory-core
                         ${_LIBRARY}
-        ENVIRONMENT     "TIMEMORY_MPI_THREAD_TYPE=serialized")
+        ENVIRONMENT     "${mpi_tests_env}")
+    #
+    list(APPEND mpi_tests_env "TIMEMORY_DIFF_OUTPUT=ON")
+    list(APPEND mpi_tests_env "TIMEMORY_OUTPUT_PATH=timemory-mpi-tests-diff-output")
+    list(APPEND mpi_tests_env
+        "TIMEMORY_INPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/timemory-mpi-tests-output")
+    #
+    add_timemory_google_test(mpi_tests_diff
+        MPI
+        NPROC           2
+        DEPENDS         mpi_tests
+        COMMAND         $<TARGET_FILE:mpi_tests>
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-plotting
+                        timemory::timemory-dmp
+                        timemory::timemory-core
+                        ${_LIBRARY}
+        ENVIRONMENT     "${mpi_tests_env}")
+
 endif()
 
 if(TIMEMORY_USE_UPCXX)

@@ -124,8 +124,8 @@ protected:
 //--------------------------------------------------------------------------------------//
 
 static std::vector<std::string> cxx_hash_ids = { "foo", "bar", "baz", "spam" };
-static std::vector<const char*> _hash_ids    = {};
-static std::vector<size_t>      _hash_nos    = {};
+static std::vector<char*>       _hash_ids    = {};
+static std::vector<uint64_t>    _hash_nos    = {};
 
 //--------------------------------------------------------------------------------------//
 
@@ -163,12 +163,12 @@ TEST_F(trace_tests, add_hash_ids)
 
     for(auto& itr : cxx_hash_ids)
     {
-        _hash_ids.push_back(itr.c_str());
+        _hash_ids.push_back((char*) itr.c_str());
         _hash_nos.push_back(std::hash<std::string>{}(itr));
     }
 
-    const char** _ids = _hash_ids.data();
-    timemory_add_hash_ids(cxx_hash_ids.size(), _hash_nos.data(), _ids);
+    char** _ids = _hash_ids.data();
+    timemory_add_hash_ids(cxx_hash_ids.size(), _hash_nos.data(), (const char**) _ids);
 
     auto d                 = tim::settings::debug();
     tim::settings::debug() = true;

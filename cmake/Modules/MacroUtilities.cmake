@@ -184,7 +184,7 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
     include(GoogleTest)
     # list of arguments taking multiple values
-    set(multival_args SOURCES PROPERTIES LINK_LIBRARIES COMMAND OPTIONS ENVIRONMENT)
+    set(multival_args SOURCES DEPENDS PROPERTIES LINK_LIBRARIES COMMAND OPTIONS ENVIRONMENT)
     # parse args
     cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS;MPI" "NPROCS"
         "${multival_args}" ${ARGN})
@@ -196,23 +196,27 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
     list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
 
-    CREATE_EXECUTABLE(${_OPTS}
-        TARGET_NAME     ${TEST_NAME}
-        OUTPUT_NAME     ${TEST_NAME}
-        SOURCES         ${TEST_SOURCES}
-        LINK_LIBRARIES  timemory-google-test ${TEST_LINK_LIBRARIES}
-        PROPERTIES      "${TEST_PROPERTIES}")
+    if(TEST_SOURCES)
+        CREATE_EXECUTABLE(${_OPTS}
+            TARGET_NAME     ${TEST_NAME}
+            OUTPUT_NAME     ${TEST_NAME}
+            SOURCES         ${TEST_SOURCES}
+            LINK_LIBRARIES  timemory-google-test ${TEST_LINK_LIBRARIES}
+            PROPERTIES      "${TEST_PROPERTIES}")
+    endif()
+
+    set(TEST_LAUNCHER)
+    if(TIMEMORY_USE_MPI AND TEST_MPI AND MPIEXEC_EXECUTABLE)
+        if(NOT TEST_NPROCS)
+            set(TEST_NPROCS 2)
+        endif()
+        set(TEST_LAUNCHER ${MPIEXEC_EXECUTABLE} -n ${TEST_NPROCS})
+    endif()
 
     if("${TEST_COMMAND}" STREQUAL "")
-        if(TIMEMORY_USE_MPI AND TEST_MPI AND MPIEXEC_EXECUTABLE)
-            if(NOT TEST_NPROCS)
-                set(TEST_NPROCS 2)
-            endif()
-            set(TEST_COMMAND ${MPIEXEC_EXECUTABLE} -n ${TEST_NPROCS}
-                $<TARGET_FILE:${TEST_NAME}>)
-        else()
-            set(TEST_COMMAND $<TARGET_FILE:${TEST_NAME}>)
-        endif()
+        set(TEST_COMMAND ${TEST_LAUNCHER} $<TARGET_FILE:${TEST_NAME}>)
+    elseif(TEST_LAUNCHER)
+        set(TEST_COMMAND ${TEST_LAUNCHER} ${TEST_COMMAND})
     endif()
 
     if(TEST_DISCOVER_TESTS)
@@ -230,6 +234,9 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
     endif()
 
+    if(TEST_DEPENDS)
+        set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${TEST_DEPENDS})
+    endif()
 ENDFUNCTION()
 
 #----------------------------------------------------------------------------------------#

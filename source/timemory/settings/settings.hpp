@@ -229,6 +229,8 @@ struct settings
     TIMEMORY_SETTINGS_MEMBER_DECL(int32_t, node_count, "TIMEMORY_NODE_COUNT")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPORT")
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, python_exe, "TIMEMORY_PYTHON_EXE")
+    // stream
+    TIMEMORY_SETTINGS_MEMBER_DECL(int64_t, separator_frequency, "TIMEMORY_SEPARATOR_FREQ")
     // signals
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, enable_signal_handler,
                                   "TIMEMORY_ENABLE_SIGNAL_HANDLER")
