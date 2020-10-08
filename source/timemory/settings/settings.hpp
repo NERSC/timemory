@@ -34,6 +34,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/compat/macros.h"
 #include "timemory/environment/declaration.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/tsettings.hpp"
 #include "timemory/settings/types.hpp"
@@ -682,4 +683,6 @@ settings::set(const std::string& _key, Tp&& _val)
 
 // TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
 
+#if !defined(_TIMEMORY_INTEL)
 CEREAL_CLASS_VERSION(tim::settings, 2)
+#endif

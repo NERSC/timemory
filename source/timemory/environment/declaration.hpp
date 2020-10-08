@@ -26,6 +26,7 @@
 
 #include "timemory/environment/macros.hpp"
 #include "timemory/environment/types.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
@@ -230,4 +231,6 @@ set_env(const std::string& env_var, const Tp& _val, int override)
 //
 }  // namespace tim
 
+#if !defined(_TIMEMORY_INTEL)
 CEREAL_CLASS_VERSION(tim::env_settings, 0)
+#endif

@@ -33,6 +33,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
 #include "timemory/mpl/available.hpp"
@@ -568,4 +569,6 @@ manager::filtered_get_storage<Types...>::size(pointer_t _manager)
 //--------------------------------------------------------------------------------------//
 //
 
+#if !defined(_TIMEMORY_INTEL)
 CEREAL_CLASS_VERSION(tim::manager, 0)
+#endif

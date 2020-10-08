@@ -1131,7 +1131,7 @@ protected:
     using shared_atomic_u64_t = std::shared_ptr<atomic_u64_t>;
 
     mutable bool        m_external_hold       = false;
-    uint64_t            m_elapsed             = 0;
+    intmax_t            m_elapsed             = 0;
     shared_atomic_u64_t m_named_index_counter = shared_atomic_u64_t(new atomic_u64_t);
     mutable mutex_type  m_mutex;
     data_type           m_data;
