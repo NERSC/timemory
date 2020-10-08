@@ -15,7 +15,7 @@ if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")
 endif()
 
-foreach(_TYPE sample profiler general builtin external)
+foreach(_TYPE sample tracer profiler general builtin external)
     set(FILENAME ex_python_${_TYPE})
     configure_file(
         ${PROJECT_SOURCE_DIR}/ex_${_TYPE}.py

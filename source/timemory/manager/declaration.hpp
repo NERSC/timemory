@@ -33,6 +33,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
 #include "timemory/mpl/available.hpp"
@@ -105,6 +106,7 @@ public:
     void cleanup();
     void finalize();
     void read_command_line();
+    bool is_finalized() { return m_is_finalized; }
 
     void add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file);
@@ -240,6 +242,7 @@ protected:
 private:
     /// notifies that it is finalizing
     bool            m_is_finalizing   = false;
+    bool            m_is_finalized    = false;
     short           m_write_metadata  = 0;
     int32_t         m_instance_count  = 0;
     int32_t         m_rank            = 0;
@@ -566,4 +569,6 @@ manager::filtered_get_storage<Types...>::size(pointer_t _manager)
 //--------------------------------------------------------------------------------------//
 //
 
+#if !defined(_TIMEMORY_INTEL)
 CEREAL_CLASS_VERSION(tim::manager, 0)
+#endif

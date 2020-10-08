@@ -58,9 +58,21 @@ struct stop
     explicit stop(type& obj) { impl(obj); }
 
     template <typename Arg, typename... Args>
-    stop(type& obj, Arg& arg, Args&&... args)
+    stop(type& obj, Arg&& arg, Args&&... args)
     {
         impl(obj, std::forward<Arg>(arg), std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    auto operator()(type& obj, Args&&... args)
+    {
+        using RetT = decltype(do_sfinae(obj, 0, 0, std::forward<Args>(args)...));
+        if(trait::runtime_enabled<type>::get() && is_sfinae(obj, 0))
+        {
+            set_sfinae(obj, 0);
+            return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
+        }
+        return RetT{};
     }
 
 private:
@@ -70,16 +82,16 @@ private:
     // resolution #1 (best)
     template <typename Up, typename... Args>
     auto do_sfinae(Up& obj, int, int, Args&&... args)
-        -> decltype(obj.stop(std::forward<Args>(args)...), void())
+        -> decltype(obj.stop(std::forward<Args>(args)...))
     {
-        obj.stop(std::forward<Args>(args)...);
+        return obj.stop(std::forward<Args>(args)...);
     }
 
     // resolution #2
     template <typename Up, typename... Args>
-    auto do_sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.stop(), void())
+    auto do_sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.stop())
     {
-        obj.stop();
+        return obj.stop();
     }
 
     // resolution #3 (worst) - no member function
@@ -92,9 +104,9 @@ private:
 private:
     // set_stopped
     template <typename Up>
-    auto set_sfinae(Up& obj, int) -> decltype(obj.set_stopped(), void())
+    auto set_sfinae(Up& obj, int) -> decltype(obj.set_stopped())
     {
-        obj.set_stopped();
+        return obj.set_stopped();
     }
 
     template <typename Up>

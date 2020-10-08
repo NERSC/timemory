@@ -181,6 +181,8 @@ extern "C"
     TIMEMORY_DECL bool timemory_trace_is_initialized(void) TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL bool timemory_is_throttled(const char* name)
         TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_reset_throttle(const char* name)
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_add_hash_id(uint64_t id, const char* name)
         TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_add_hash_ids(uint64_t nentries, uint64_t* ids,

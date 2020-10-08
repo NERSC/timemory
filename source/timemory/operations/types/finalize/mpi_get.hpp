@@ -201,7 +201,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
     }
 
     // collapse into a single result
-    if(settings::collapse_processes() && comm_rank == 0)
+    if(comm_rank == 0 && settings::collapse_processes() && settings::node_count() <= 1)
     {
         auto init_size = get_num_records(results);
         if(settings::debug() || settings::verbose() > 3)
@@ -236,12 +236,13 @@ mpi_get<Type, true>::operator()(distrib_type& results)
                        comm_rank, init_size, fini_size, comm_size);
         }
     }
-    else if(settings::node_count() > 0 && comm_rank == 0)
+    else if(comm_rank == 0 && settings::collapse_processes() &&
+            settings::node_count() > 1)
     {
         // calculate some size parameters
         int32_t nmod  = comm_size % settings::node_count();
-        int32_t bins  = comm_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
-        int32_t bsize = comm_size / bins;
+        int32_t bsize = comm_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
+        int32_t bins  = comm_size / bsize;
 
         if(settings::debug() || settings::verbose() > 3)
             PRINT_HERE("[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "

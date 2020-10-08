@@ -394,6 +394,16 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
+    void timemory_reset_throttle(const char* name)
+    {
+        size_t _id = tim::get_hash_id(name);
+        auto   itr = get_throttle()->find(_id);
+        if(itr != get_throttle()->end())
+            get_throttle()->erase(itr);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
     void timemory_add_hash_id(uint64_t id, const char* name)
     {
         tim::trace::lock<tim::trace::library> lk{};
@@ -455,6 +465,7 @@ extern "C"
             return;
 
         auto& _trace_map = get_trace_map();
+        auto& _overh_map = *get_overhead();
 
         if(_trace_map.empty())
             timemory_copy_hash_ids();
@@ -474,8 +485,7 @@ extern "C"
 
         _trace_map[id].emplace_back(traceset_t(id));
         _trace_map[id].back().start();
-        if(get_overhead())
-            (*get_overhead())[id].first.start();
+        _overh_map[id].first.start();
     }
     //
     //----------------------------------------------------------------------------------//
@@ -505,12 +515,11 @@ extern "C"
                     (int) tim::threading::get_id());
         }
 
+        (*get_overhead())[id].first.stop();
+
         // if there were no entries, return (pop called without a push)
         if(offset < 0)
             return;
-
-        if(get_overhead())
-            (*get_overhead())[id].first.stop();
 
         if(offset >= 0 && ntotal > 0)
         {
@@ -519,9 +528,6 @@ extern "C"
         }
 
         if(get_throttle() && get_throttle()->count(id) > 0)
-            return;
-
-        if(!get_overhead())
             return;
 
         auto _count = ++(get_overhead()->at(id).second);
@@ -629,7 +635,7 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-    void timemory_trace_init(const char* args, bool read_command_line, const char* cmd)
+    void timemory_trace_init(const char* comps, bool read_command_line, const char* cmd)
     {
         tim::trace::lock<tim::trace::library> lk{};
         if(get_library_state()[0])
@@ -639,7 +645,7 @@ extern "C"
         {
             PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
                        (int) tim::process::get_id(), (int) tim::threading::get_id(),
-                       args);
+                       comps);
 
             tim::manager::use_exit_hook(false);
 
@@ -651,7 +657,7 @@ extern "C"
             else
             {
                 get_library_state()[0] = true;
-                std::string exe_name   = cmd;
+                std::string exe_name   = (cmd) ? cmd : "";
                 while(exe_name.find('\\') != std::string::npos)
                     exe_name = exe_name.substr(exe_name.find_last_of('\\') + 1);
                 while(exe_name.find('/') != std::string::npos)
@@ -674,10 +680,10 @@ extern "C"
                 tim::settings::output_path() = exe_name;
             }
 
-            tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
+            tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", comps, 0);
 
             // configure bundle
-            tim::env::configure<user_trace_bundle>("TIMEMORY_TRACE_COMPONENTS", args);
+            tim::env::configure<user_trace_bundle>("TIMEMORY_TRACE_COMPONENTS", comps);
 
             tim::settings::parse();
 
@@ -695,9 +701,9 @@ extern "C"
             {
                 mpi_gotcha_handle =
                     std::make_shared<mpi_trace_bundle_t>("timemory_trace_mpi_gotcha");
-                mpi_trace_gotcha::get_trace_components() = args;
+                mpi_trace_gotcha::get_trace_components() = comps;
                 mpi_trace_gotcha::read_command_line()    = read_command_line;
-                mpi_trace_gotcha::get_command()          = cmd;
+                mpi_trace_gotcha::get_command()          = (cmd) ? cmd : "";
                 if(mpi_is_attached)
                     mpi_trace_gotcha::set_attr();
                 mpi_gotcha_handle->start();

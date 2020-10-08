@@ -222,6 +222,11 @@ else() # build tree
         import_lib(${_LIB} IMPORTED_LOCATION)
     endforeach()
 
+    # if TIMEMORY_USE_COVERAGE, always link to library
+    if(@TIMEMORY_USE_COVERAGE@)
+        list(APPEND @PROJECT_NAME@_FIND_COMPONENTS cxx)
+    endif()
+
 endif()
 
 

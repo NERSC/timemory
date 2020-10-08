@@ -230,9 +230,26 @@ get_env(const std::string& env_id, bool _default)
             val = (bool) atoi(var.c_str());
         else
         {
-            const auto regex_constants = regex_const::ECMAScript | regex_const::icase;
-            const std::string pattern  = "^(off|false|no|n|f|0)$";
-            if(std::regex_match(var, std::regex(pattern, regex_constants)))
+            const auto        regex_constants = regex_const::egrep | regex_const::icase;
+            const std::string pattern         = "^(off|false|no|n|f|0)$";
+            bool              _match          = false;
+            try
+            {
+                _match = std::regex_match(var, std::regex(pattern, regex_constants));
+            } catch(std::bad_cast&)
+            {
+                for(auto& itr : var)
+                    itr = tolower(itr);
+                for(const auto& itr : { "off", "false", "no", "n", "f", "0" })
+                {
+                    if(var == itr)
+                    {
+                        _match = true;
+                        break;
+                    }
+                }
+            }
+            if(_match)
                 val = false;
         }
         env_settings::instance()->insert<bool>(env_id, val);
@@ -280,11 +297,27 @@ load_env(const std::string& env_id, bool _default)
     auto itr           = _env_settings->get(env_id);
     if(itr != _env_settings->end())
     {
-        const auto        regex_constants = regex_const::ECMAScript | regex_const::icase;
-        const std::string pattern         = "^(on|true|yes|y|t|[1-9]+)$";
-        return (std::regex_match(itr->second, std::regex(pattern, regex_constants)))
-                   ? true
-                   : false;
+        auto              val             = itr->second;
+        const auto        regex_constants = regex_const::egrep | regex_const::icase;
+        const std::string pattern         = "^(off|false|no|n|f|0)$";
+        bool              _match          = false;
+        try
+        {
+            _match = std::regex_match(val, std::regex(pattern, regex_constants));
+        } catch(std::bad_cast&)
+        {
+            for(auto& vitr : val)
+                vitr = tolower(vitr);
+            for(const auto& vitr : { "off", "false", "no", "n", "f", "0" })
+            {
+                if(val == vitr)
+                {
+                    _match = true;
+                    break;
+                }
+            }
+        }
+        return (_match) ? false : true;
     }
 
     // return default if not specified in environment

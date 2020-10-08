@@ -98,16 +98,6 @@ protected:
 
 //======================================================================================//
 
-#if _PYTHON_MAJOR_VERSION > 2
-#    define PYOBJECT_SELF
-#    define PYOBJECT_SELF_PARAM
-#else
-#    define PYOBJECT_SELF py::object,
-#    define PYOBJECT_SELF_PARAM py::object
-#endif
-
-//======================================================================================//
-
 namespace pytim
 {
 using string_t = std::string;
@@ -152,7 +142,7 @@ write_ctest_notes(py::object man, std::string directory, bool append)
     ss << std::endl;
 
     // loop over ASCII report filenames
-    for(const auto& itr : filenames)
+    for(auto itr : filenames)
     {
         std::string fname = itr.cast<std::string>();
 #if defined(_WIN32) || defined(_WIN64)

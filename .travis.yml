@@ -32,25 +32,25 @@ matrix:
     # GCC 7
     - os: linux
       dist: bionic
-      python: "3.6"
+      python: "3.7"
       addons:
         apt:
+          sources:
+            - ubuntu-toolchain-r-test
           packages:
-            - gcc
-            - g++
+            - gcc-7
+            - g++-7
             - build-essential
-            - libopenmpi-dev
-            - openmpi-bin
-            - openmpi-common
-            - libfabric-dev
+            - libmpich-dev
+            - mpich
             - libpapi-dev
             - papi-tools
-            - lcov
             - graphviz
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
       env:
-        - MATRIX_EVAL="CC=$(which gcc) && CXX=$(which g++) && BUILD_TYPE=Debug && BUILD_ARGS='--quick --build-libs static --papi --mpi --ompt --kokkos --tools --cxx-standard=14'"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && COVERAGE=1 && BUILD_ARGS='--build-libs shared --mpi --papi --caliper --mpip --python --gotcha --stats --cxx-standard=17'"
     #
     # GCC 8
     - os: linux
@@ -75,18 +75,18 @@ matrix:
             - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --cxx-standard=17'"
-    # Clang 5.0
+    # Clang 6.0
     - os: linux
       dist: xenial
       python: "3.6"
       addons:
         apt:
           sources:
-            - llvm-toolchain-xenial-5.0
+            - llvm-toolchain-xenial-6.0
             - ubuntu-toolchain-r-test
           packages:
-            - clang-5.0
-            - clang++-5.0
+            - clang-6.0
+            - clang++-6.0
             - build-essential
             - libpapi-dev
             - papi-tools
@@ -94,7 +94,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--quick --build-libs static --ompt --kokkos --stats --tools --cxx-standard=14'"
+        - MATRIX_EVAL="CC=$(which clang-6.0) && CXX=$(which clang++-6.0) && BUILD_ARGS='--quick --build-libs static --ompt --kokkos --stats --tools --cxx-standard=14'"
     # Clang 7
     - os: linux
       dist: bionic
@@ -145,25 +145,25 @@ matrix:
     # GCC 7
     - os: linux
       dist: bionic
-      python: "3.7"
+      python: "3.6"
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
-            - gcc-7
-            - g++-7
+            - gcc
+            - g++
             - build-essential
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
+            - openmpi-common
+            - libfabric-dev
             - libpapi-dev
             - papi-tools
+            - lcov
             - graphviz
             - libgoogle-perftools-dev
             - google-perftools
-            - lcov
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && COVERAGE=1 && BUILD_ARGS='--build-libs shared --mpi --papi --caliper --mpip --python --ompt --stats --cxx-standard=17'"
+        - MATRIX_EVAL="CC=$(which gcc) && CXX=$(which g++) && BUILD_TYPE=Debug && BUILD_ARGS='--quick --build-libs static --papi --mpi --ompt --kokkos --tools --cxx-standard=14'"
     #
     # GCC 8
     - os: linux
@@ -182,18 +182,18 @@ matrix:
             - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_TYPE=Release && BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17 --ipo --extra-optimizations'"
-    # Clang 5.0
+    # Clang 6.0
     - os: linux
       dist: xenial
       python: "3.7"
       addons:
         apt:
           sources:
-            - llvm-toolchain-xenial-5.0
+            - llvm-toolchain-xenial-6.0
             - ubuntu-toolchain-r-test
           packages:
-            - clang-5.0
-            - clang++-5.0
+            - clang-6.0
+            - clang++-6.0
             - build-essential
             - libmpich-dev
             - mpich
@@ -203,7 +203,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14' && CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'"
+        - MATRIX_EVAL="CC=$(which clang-6.0) && CXX=$(which clang++-6.0) && PROFILE=1 && BUILD_ARGS='--build-libs shared --gperftools --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14' && CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'"
     # Clang 7
     - os: linux
       dist: bionic
@@ -246,7 +246,8 @@ script:
   - eval "${MATRIX_EVAL}"
   - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
-  - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
+  - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; fi
+  - if [ -n "${PROFILE}" ]; then ARGS="${ARGS} --profile=cpu"; fi
   - travis_wait 85 python ./pyctest-runner.py -cc ${CC} -cxx ${CXX} ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure -- ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
   - cd build-timemory/Linux
   - make install -j
@@ -257,6 +258,6 @@ after_success:
   - eval "${MATRIX_EVAL}"
   # Create lcov report: capture coverage info, filter, debugging, and upload
   - if [ -n "${COVERAGE}" ]; then echo "Capturing coverage..."; lcov --directory . --capture --output-file coverage.info ; fi
-  - if [ -n "${COVERAGE}" ]; then echo "Removing some coverage..."; lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/external/*' --output-file coverage.info; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Removing some coverage..."; lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/external/*' '*/examples/*' '*/source/tests/*' '*/source/tools/*' --output-file coverage.info; fi
   - if [ -n "${COVERAGE}" ]; then echo "Listing coverage..."; lcov --list coverage.info; fi
   - if [ -n "${COVERAGE}" ]; then echo "Submitting coverage..."; bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"; fi

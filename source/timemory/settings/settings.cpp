@@ -844,6 +844,9 @@ settings::initialize()
                                       TIMEMORY_PYTHON_PLOTTER,
                                       strvector_t({ "--timemory-python-exe" }))
 
+    TIMEMORY_SETTINGS_MEMBER_IMPL(int64_t, separator_frequency, "TIMEMORY_SEPARATOR_FREQ",
+                                  "Frequency of dashed separator lines in text output", 0)
+
     TIMEMORY_SETTINGS_MEMBER_IMPL(bool, suppress_parsing, "TIMEMORY_SUPPRESS_PARSING",
                                   "Disable parsing environment", false)
 }
@@ -854,7 +857,7 @@ TIMEMORY_SETTINGS_INLINE
 bool
 settings::read(const string_t& inp)
 {
-    std::ifstream ifs(inp.c_str());
+    std::ifstream ifs(inp);
     if(!ifs)
         throw std::runtime_error(
             TIMEMORY_JOIN(" ", "Error reading configuration file:", inp));

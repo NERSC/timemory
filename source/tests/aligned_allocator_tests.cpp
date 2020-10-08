@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/environment/definition.hpp"
+#include "timemory/ert/aligned_allocator.hpp"
+#include "timemory/settings.hpp"
+
 #include "gtest/gtest.h"
 
 #include <chrono>
@@ -32,10 +36,6 @@
 #include <thread>
 #include <vector>
 #include <x86intrin.h>
-
-#include "timemory/environment/definition.hpp"
-#include "timemory/ert/aligned_allocator.hpp"
-#include "timemory/settings/definition.hpp"
 
 template <typename Tp>
 using aligned_vector_t = std::vector<Tp, tim::ert::aligned_allocator<Tp>>;

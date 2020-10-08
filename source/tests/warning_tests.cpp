@@ -76,6 +76,37 @@ TEST_F(warning_tests, enabled)
     EXPECT_EQ(tim::settings::verbose(), _settings->get_verbose());
     EXPECT_EQ(tim::settings::global_components(), _settings->get_global_components());
 
+    {
+        std::ofstream ofs(".settings-test.json");
+        if(ofs)
+        {
+            cereal::JSONOutputArchive oa(ofs);
+            tim::settings::serialize_settings(oa);
+        }
+        if(ofs)
+            ofs << '\n';
+        ofs.close();
+    }
+
+    // reverse some variables
+    auto orig_proc                      = tim::settings::collapse_processes();
+    auto orig_thrd                      = tim::settings::collapse_threads();
+    tim::settings::collapse_processes() = !orig_proc;
+    tim::settings::collapse_threads()   = !orig_thrd;
+
+    {
+        std::ifstream ifs(".settings-test.json");
+        if(ifs)
+        {
+            cereal::JSONInputArchive ia(ifs);
+            tim::settings::serialize_settings(ia);
+        }
+        ifs.close();
+    }
+
+    EXPECT_EQ(tim::settings::collapse_processes(), orig_proc);
+    EXPECT_EQ(tim::settings::collapse_threads(), orig_thrd);
+
     tim::timemory_finalize();
 }
 

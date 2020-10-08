@@ -150,6 +150,8 @@ public:
     // public static functions
     //
     static constexpr std::size_t size() { return std::tuple_size<tuple_type>::value; }
+    /// requests the component initialize their storage
+    static void init_storage();
 
     //----------------------------------------------------------------------------------//
     // public member functions

@@ -26,7 +26,7 @@
 #
 
 """ @file __main__.py
-Command line execution for profiler
+Command line execution for tracer
 """
 
 import os
@@ -80,7 +80,7 @@ def parse_args(args=None):
     if args is None:
         args = sys.argv
 
-    from ..libpytimemory.profiler import config as _profiler_config
+    from ..libpytimemory.trace import config as _tracer_config
 
     def str2bool(v):
         if isinstance(v, bool):
@@ -113,24 +113,16 @@ def parse_args(args=None):
         "-b",
         "--builtin",
         action="store_true",
-        help="Put 'profile' in the builtins. Use 'profile.enable()' and "
-        "'profile.disable()' in your code to turn it on and off, or "
-        "'@profile' to decorate a single function, or 'with profile:' "
-        "to profile a single section of code.",
+        help="Put 'trace' in the builtins. Use 'trace.enable()' and "
+        "'trace.disable()' in your code to turn it on and off, or "
+        "'@trace' to decorate a single function, or 'with trace:' "
+        "to trace a single section of code.",
     )
     parser.add_argument(
         "-s",
         "--setup",
         default=None,
-        help="Code to execute before the code to profile",
-    )
-    parser.add_argument(
-        "--trace-c",
-        type=str2bool,
-        nargs="?",
-        const=True,
-        default=_profiler_config.trace_c,
-        help="Enable profiling C functions",
+        help="Code to execute before the code to trace",
     )
     parser.add_argument(
         "-a",
@@ -138,7 +130,7 @@ def parse_args(args=None):
         type=str2bool,
         nargs="?",
         const=True,
-        default=_profiler_config.include_args,
+        default=_tracer_config.include_args,
         help="Encode the argument values",
     )
     parser.add_argument(
@@ -147,7 +139,7 @@ def parse_args(args=None):
         type=str2bool,
         nargs="?",
         const=True,
-        default=_profiler_config.include_line,
+        default=_tracer_config.include_line,
         help="Encode the function line number",
     )
     parser.add_argument(
@@ -156,7 +148,7 @@ def parse_args(args=None):
         type=str2bool,
         nargs="?",
         const=True,
-        default=_profiler_config.include_filename,
+        default=_tracer_config.include_filename,
         help="Encode the function filename",
     )
     parser.add_argument(
@@ -165,28 +157,21 @@ def parse_args(args=None):
         type=str2bool,
         nargs="?",
         const=True,
-        default=_profiler_config.full_filepath,
+        default=_tracer_config.full_filepath,
         help="Encode the full function filename (instead of basename)",
-    )
-    parser.add_argument(
-        "-m",
-        "--max-stack-depth",
-        type=int,
-        default=_profiler_config.max_stack_depth,
-        help="Maximum stack depth",
     )
     parser.add_argument(
         "--skip-funcs",
         type=str,
         nargs="?",
-        default=_profiler_config.skip_functions,
+        default=_tracer_config.skip_functions,
         help="Filter out any entries with these function names",
     )
     parser.add_argument(
         "--skip-files",
         type=str,
         nargs="?",
-        default=_profiler_config.skip_filenames,
+        default=_tracer_config.skip_filenames,
         help="Filter out any entries from these files",
     )
 
@@ -205,7 +190,7 @@ def get_value(env_var, default_value, dtype, arg=None):
             return dtype(val)
 
 
-def run(prof, cmd):
+def run(tracer, cmd):
     if len(cmd) == 0:
         return
 
@@ -226,7 +211,7 @@ def run(prof, cmd):
         **dict,
     }
 
-    prof.runctx(code, globs, None)
+    tracer.runctx(code, globs, None)
 
 
 def main():
@@ -236,7 +221,7 @@ def main():
     argv = None
     if "--" in sys.argv:
         _idx = sys.argv.index("--")
-        _argv = sys.argv[(_idx + 1) :]
+        _argv = sys.argv[_idx + 1 :]
         opts, argv = parse_args(sys.argv[:_idx])
         argv = _argv
     else:
@@ -249,35 +234,33 @@ def main():
 
     initialize(argv)
 
-    from ..libpytimemory.profiler import config as _profiler_config
+    from ..libpytimemory.trace import config as _tracer_config
 
-    _profiler_config.trace_c = opts.trace_c
-    _profiler_config.include_args = opts.include_args
-    _profiler_config.include_line = opts.include_line
-    _profiler_config.include_filename = opts.include_file
-    _profiler_config.full_filepath = opts.full_filepath
-    _profiler_config.max_stack_depth = opts.max_stack_depth
-    _profiler_config.skip_functions = opts.skip_funcs
-    _profiler_config.skip_filenames = opts.skip_files
+    _tracer_config.include_args = opts.include_args
+    _tracer_config.include_line = opts.include_line
+    _tracer_config.include_filename = opts.include_file
+    _tracer_config.full_filepath = opts.full_filepath
+    _tracer_config.skip_functions = opts.skip_funcs
+    _tracer_config.skip_filenames = opts.skip_files
 
     # print("opts: {}".format(opts))
-    print("[timemory]> profiling: {}".format(argv))
+    print("[timemory]> tracing: {}".format(argv))
 
     sys.argv[:] = argv
     if opts.setup is not None:
-        # Run some setup code outside of the profiler. This is good for large
+        # Run some setup code outside of the tracer. This is good for large
         # imports.
         setup_file = find_script(opts.setup)
         __file__ = setup_file
         __name__ = "__main__"
         # Make sure the script's directory is on sys.path instead of just
-        # kernprof.py's.
+        # kerntracer.py's.
         sys.path.insert(0, os.path.dirname(setup_file))
         ns = locals()
         execfile(setup_file, ns, ns)
 
     from ..libpytimemory import settings
-    from . import Profiler, FakeProfiler
+    from .tracer import Tracer, FakeTracer
 
     output_path = get_value(
         "TIMEMORY_OUTPUT_PATH", settings.output_path, str, opts.output_dir
@@ -290,39 +273,45 @@ def main():
     __file__ = script_file
     __name__ = "__main__"
     # Make sure the script's directory is on sys.path instead of just
-    # kernprof.py's.
+    # kerntracer.py's.
     sys.path.insert(0, os.path.dirname(script_file))
 
-    prof = Profiler(opts.components)
-    fake = FakeProfiler()
+    tracer = Tracer(opts.components)
+    fake = FakeTracer()
 
     if PY3:
         import builtins
     else:
         import __builtin__ as builtins
 
-    builtins.__dict__["profile"] = prof
+    builtins.__dict__["trace"] = tracer
+    builtins.__dict__["notrace"] = fake
+    builtins.__dict__["profile"] = tracer
     builtins.__dict__["noprofile"] = fake
 
     try:
         try:
             if not opts.builtin:
-                prof.start()
+                tracer.start()
             execfile_ = execfile
             ns = locals()
             if opts.builtin:
                 execfile(script_file, ns, ns)
             else:
-                prof.runctx("execfile_(%r, globals())" % (script_file,), ns, ns)
+                tracer.runctx(
+                    "execfile_(%r, globals())" % (script_file,), ns, ns
+                )
             if not opts.builtin:
-                prof.stop()
+                tracer.stop()
         except (KeyboardInterrupt, SystemExit):
             pass
         finally:
-            del prof
+            del tracer
             del fake
             timemory.finalize()
     except Exception as e:
+        import traceback
+
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=10)
         print("Exception - {}".format(e))

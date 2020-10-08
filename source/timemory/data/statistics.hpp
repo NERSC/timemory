@@ -35,6 +35,7 @@
 
 #include "timemory/data/functional.hpp"
 #include "timemory/data/stream.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/stl.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
@@ -306,6 +307,8 @@ operator+=(::tim::statistics<tuple<>>& _lhs, const Tp&)
 //--------------------------------------------------------------------------------------//
 }  // namespace std
 
+#if !defined(_TIMEMORY_INTEL)
 CEREAL_CLASS_VERSION(tim::statistics<int64_t>, 0)
 CEREAL_CLASS_VERSION(tim::statistics<float>, 0)
 CEREAL_CLASS_VERSION(tim::statistics<double>, 0)
+#endif

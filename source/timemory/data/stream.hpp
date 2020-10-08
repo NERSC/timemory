@@ -296,6 +296,9 @@ struct stream
     using break_set_t  = set_t<int>;
 
 public:
+    static int64_t& separator_frequency() { return settings::separator_frequency(); }
+
+public:
     explicit stream(char _delim = '|', char _fill = '-', format_flags _fmt = {},
                     int _width = 0, int _prec = 0, bool _center = false)
     : m_center(_center)
@@ -315,12 +318,14 @@ public:
     int          width() const { return m_width; }
     char         delim() const { return m_delim; }
     format_flags flags() const { return m_format; }
+    int64_t      freq() const { return m_separator_freq; }
 
     void center(bool v) { m_center = v; }
     void precision(int v) { m_precision = v; }
     void width(int v) { m_width = v; }
     void delim(char v) { m_delim = v; }
     void setf(format_flags v) { m_format = v; }
+    void setfreq(int64_t v) { m_separator_freq = v; }
 
     // NOLINTNEXTLINE
     void set_name(string_t v) { m_name = v; }
@@ -533,8 +538,12 @@ public:
             if(!just_broke)
                 ss << obj.m_delim << '\n';
 
-            if((i + 1) < obj.m_rows && (i % 10) == 9)
-                obj.write_separator(ss, obj.m_delim);
+            if(obj.m_separator_freq > 0)
+            {
+                if((i + 1) < obj.m_rows &&
+                   (i % obj.m_separator_freq) == (obj.m_separator_freq - 1))
+                    obj.write_separator(ss, obj.m_delim);
+            }
         }
 
         obj.write_separator(ss, '-');
@@ -583,7 +592,6 @@ public:
         write_separator(os, '-');
 
         map_t<string_t, int> offset;
-        stringstream_t       ss;
 
         int64_t tot_w      = 0;
         int64_t norder_col = 0;
@@ -601,13 +609,47 @@ public:
                 break;
         }
 
-        auto obeg = tot_w / 2;
-        obeg -= m_banner.length() / 2;
-        obeg += m_banner.length();
-        auto oend = tot_w - obeg;
+        auto _trim = [&](string_t _banner) {
+            // trim the banner
+            if(_banner.length() > static_cast<size_t>(tot_w))
+            {
+                auto _hlen = (tot_w / 2) - 4;  // half-length
+                auto _beg  = _banner.substr(0, _hlen);
+                auto _end  = _banner.substr(_banner.length() - _hlen);
+                _banner    = _beg + "..." + _end;
+            }
+            return _banner;
+        };
 
-        ss << m_delim << std::setw(obeg) << std::right << m_banner << std::setw(oend)
-           << std::right << m_delim << '\n';
+        auto                     _delim = delimit(m_banner, " \t");
+        std::vector<std::string> r_banner(1, "");
+        for(auto itr : _delim)
+        {
+            itr       = _trim(itr);
+            auto nlen = r_banner.back().length() + itr.length() + 1;
+            if(nlen > static_cast<size_t>(tot_w))
+                r_banner.push_back("");
+            if(r_banner.back().empty())
+                r_banner.back() += itr;
+            else
+                r_banner.back() += " " + itr;
+        }
+
+        stringstream_t ss;
+
+        auto _write_row = [&](const string_t& _banner) {
+            auto obeg = tot_w / 2;
+            obeg -= _banner.length() / 2;
+            obeg += _banner.length();
+            auto oend = tot_w - obeg;
+
+            ss << m_delim << std::setw(obeg) << std::right << _banner << std::setw(oend)
+               << std::right << m_delim << '\n';
+        };
+
+        for(const auto& itr : r_banner)
+            _write_row(itr);
+
         os << ss.str();
     }
 
@@ -701,22 +743,23 @@ public:
     }
 
 private:
-    bool         m_center       = false;
-    char         m_fill         = '-';
-    char         m_delim        = '|';
-    int          m_width        = 0;
-    int          m_precision    = 0;
-    int          m_rows         = 0;
-    int          m_cols         = 0;
-    int64_t      m_prefix_begin = 0;
-    int64_t      m_prefix_end   = 0;
-    format_flags m_format       = {};
-    string_t     m_name         = "";
-    string_t     m_banner       = "";
-    header_map_t m_headers      = {};
-    entry_map_t  m_entries      = {};
-    order_map_t  m_order        = {};
-    break_set_t  m_break        = {};
+    bool         m_center         = false;
+    char         m_fill           = '-';
+    char         m_delim          = '|';
+    int          m_width          = 0;
+    int          m_precision      = 0;
+    int          m_rows           = 0;
+    int          m_cols           = 0;
+    int64_t      m_prefix_begin   = 0;
+    int64_t      m_prefix_end     = 0;
+    int64_t      m_separator_freq = separator_frequency();
+    format_flags m_format         = {};
+    string_t     m_name           = "";
+    string_t     m_banner         = "";
+    header_map_t m_headers        = {};
+    entry_map_t  m_entries        = {};
+    order_map_t  m_order          = {};
+    break_set_t  m_break          = {};
 };
 
 //--------------------------------------------------------------------------------------//

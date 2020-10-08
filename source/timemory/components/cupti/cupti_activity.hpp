@@ -55,10 +55,10 @@ namespace component
 /// \brief CUPTI activity tracing component for high-precision kernel timing. For
 /// low-precision kernel timing, use \ref cuda_event component.
 ///
-struct cupti_activity : public base<cupti_activity, uint64_t>
+struct cupti_activity : public base<cupti_activity, intmax_t>
 {
     // required aliases
-    using value_type = uint64_t;
+    using value_type = intmax_t;
     using this_type  = cupti_activity;
     using base_type  = base<cupti_activity, value_type>;
 
@@ -106,17 +106,13 @@ struct cupti_activity : public base<cupti_activity, uint64_t>
             else if(lvl == 0)
             {
                 // general settings for kernels, runtime, overhead
-                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                             CUPTI_ACTIVITY_KIND_RUNTIME,
-                             CUPTI_ACTIVITY_KIND_OVERHEAD } };
+                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL } };
             }
             else if(lvl == 1)
             {
                 // general settings for kernels, runtime, memory, overhead
                 _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                             CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
-                             CUPTI_ACTIVITY_KIND_RUNTIME,
-                             CUPTI_ACTIVITY_KIND_OVERHEAD } };
+                             CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET } };
             }
             else if(lvl == 2)
             {

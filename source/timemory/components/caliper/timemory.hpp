@@ -36,6 +36,9 @@
 #    include "pybind11/stl.h"
 #endif
 
+#include <map>
+#include <vector>
+
 //======================================================================================//
 //
 namespace tim
@@ -149,6 +152,8 @@ struct caliper_config
 {
     using value_type         = void;
     using instance_tracker_t = policy::instance_tracker<caliper_config, false>;
+    using arg_map_t          = std::map<std::string, std::string>;
+    using arg_vec_t          = std::vector<std::string>;
 
     static std::string label() { return "caliper_config"; }
     static std::string description() { return "Caliper configuration manager"; }
@@ -157,6 +162,51 @@ struct caliper_config
     {
         static cali::ConfigManager _instance;
         return _instance;
+    }
+
+    void configure(const arg_vec_t& _args, const arg_map_t& _kwargs = {})
+    {
+        std::string cmd = "";
+        {
+            std::stringstream ss;
+            for(auto& itr : _args)
+                ss << "," << itr;
+            if(!ss.str().empty())
+                cmd = ss.str().substr(1);
+        }
+        {
+            std::stringstream ss;
+            for(auto& itr : _kwargs)
+            {
+                auto _arg = itr.second;
+                if(_arg.empty())
+                    ss << "," << itr.first;
+                else
+                {
+                    ss << "," << itr.first << "=(" << _arg << ")";
+                }
+            }
+            if(!ss.str().empty())
+            {
+                if(!cmd.empty())
+                    cmd += ",";
+                cmd += ss.str().substr(1);
+            }
+        }
+        if(!cmd.empty())
+        {
+            if(tim::settings::debug() || tim::settings::verbose() > -1)
+                std::cerr << "Configuring caliper with :: " << cmd << std::endl;
+            get_manager().add(cmd.c_str());
+            if(get_manager().error())
+                std::cerr << "Caliper config error: " << get_manager().error_msg()
+                          << std::endl;
+        }
+        else
+        {
+            if(tim::settings::debug() || tim::settings::verbose() > -1)
+                std::cerr << "Caliper was not configured" << std::endl;
+        }
     }
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
@@ -203,6 +253,11 @@ struct caliper_config
             if(get_manager().error())
                 std::cerr << "Caliper config error: " << get_manager().error_msg()
                           << std::endl;
+        }
+        else
+        {
+            if(tim::settings::debug() || tim::settings::verbose() > -1)
+                std::cerr << "Caliper was not configured" << std::endl;
         }
     }
 #endif

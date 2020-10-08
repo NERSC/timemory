@@ -63,6 +63,16 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
         if(_settings->get_debug() || _settings->get_verbose() > 3)
             PRINT_HERE("%s", "");
 
+        if(_settings->get_enable_signal_handler())
+        {
+            auto default_signals = signal_settings::get_default();
+            for(auto& itr : default_signals)
+                signal_settings::enable(itr);
+            // should return default and any modifications from environment
+            auto enabled_signals = signal_settings::get_enabled();
+            enable_signal_detection(enabled_signals);
+        }
+
         auto _ncfg = _settings->get_suppress_config();
         if(!_ncfg)
         {
@@ -74,8 +84,9 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
                 get_env<string_t>("HOME") + std::string("/.config/timemory.json")
             };
 
-            auto _cfg = _settings->get_config_file();
-            for(auto&& citr : tim::delimit(_cfg, ",;"))
+            auto _cfg   = _settings->get_config_file();
+            auto _files = tim::delimit(_cfg, ",;");
+            for(const auto& citr : _files)
             {
                 try
                 {
@@ -129,13 +140,6 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
 
         if(_settings->get_enable_signal_handler())
         {
-            auto default_signals = signal_settings::get_default();
-            for(auto& itr : default_signals)
-                signal_settings::enable(itr);
-            // should return default and any modifications from environment
-            auto enabled_signals = signal_settings::get_enabled();
-            enable_signal_detection(enabled_signals);
-
             auto _exit_action = [](int nsig) {
                 auto _manager = manager::instance();
                 if(_manager)

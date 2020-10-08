@@ -3,6 +3,7 @@
 """Example
 @PYTHON_EXECUTABLE@ -m timemory.profiler -b -m 10 -- ./@FILENAME@
 @PYTHON_EXECUTABLE@ -m timemory.line_profiler -b -v -- ./@FILENAME@
+@PYTHON_EXECUTABLE@ -m timemory.trace -b -- ./@FILENAME@
 """
 
 import sys
@@ -28,7 +29,7 @@ def inefficient(n):
 def run(nfib):
     ret = 0
     ret += fib(nfib)
-    ret += fib(10)
+    ret += fib(nfib % 5 + 1)
     ret += inefficient(nfib)
     return ret
 

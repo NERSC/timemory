@@ -30,7 +30,9 @@
 using namespace tim::component;
 
 using auto_tuple_t =
-    tim::auto_tuple_t<wall_clock, caliper, user_clock, system_clock, cpu_util>;
+    tim::auto_tuple_t<wall_clock, caliper_marker, user_clock, system_clock, cpu_util>;
+
+using loop_tuple_t = tim::auto_tuple_t<caliper_loop_marker>;
 
 intmax_t time_fibonacci(intmax_t);
 intmax_t
@@ -55,7 +57,13 @@ main(int argc, char** argv)
     tim::settings::memory_precision()  = 3;
     tim::settings::memory_scientific() = false;
     tim::timemory_init(argc, argv);
-    cali_init();
+
+    caliper_config cfg{};
+    cfg.configure({ "mem.highwatermark" },
+                  { { "runtime-report", "output=stdout" },
+                    { "event-trace", "output=trace.cali,trace.io" } });
+
+    cfg.start();
 
     std::vector<long> fibvalues;
     for(int i = 1; i < argc; ++i)
@@ -73,9 +81,14 @@ main(int argc, char** argv)
         printf("caliper: scope = '%s', attributes = %i\n", scope_tag.c_str(),
                caliper::get_attributes());
         print_info("execute_test", scope_tag);
-        intmax_t ret = 0;
+        intmax_t     ret = 0;
+        loop_tuple_t _loop{ "execute_test" };
         for(auto n : fibvalues)
+        {
+            _loop.mark_begin();
             ret += ex_caliper(n, scope_tag);
+            _loop.mark_end();
+        }
         std::cout << "fibonacci " << scope_tag << " : " << ret << std::endl;
     };
 
@@ -101,6 +114,8 @@ main(int argc, char** argv)
         throw std::runtime_error(
             "Error!! CALIPER_SCOPE must be one of: 'process', 'thread', 'task'");
     }
+
+    cfg.stop();
 
     tim::timemory_finalize();
 }

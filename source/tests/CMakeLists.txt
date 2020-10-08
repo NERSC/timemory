@@ -1,4 +1,7 @@
 
+# include the current directory
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 set(CMAKE_UNITY_BUILD OFF)
 
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY )
@@ -98,10 +101,27 @@ if(TARGET custom-record-functions)
     add_timemory_google_test(library_tests
         DISCOVER_TESTS
         SOURCES         library_tests.cpp
-        LINK_LIBRARIES  custom-record-functions)
+        LINK_LIBRARIES  custom-record-functions
+                        timemory::timemory-core)
 endif()
 
 if(_LIBRARY_TARGET)
+    list(APPEND trace_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
+    list(APPEND trace_tests_env "TIMEMORY_NODE_COUNT=2")
+    list(APPEND trace_tests_env "TIMEMORY_MPI_THREAD=ON")
+    list(APPEND trace_tests_env "TIMEMORY_MPI_THREAD_TYPE=funneled")
+
+    add_timemory_google_test(trace_tests
+        MPI
+        NPROC           4
+        SOURCES         trace_tests.cpp
+        LINK_LIBRARIES  ${_LIBRARY_TARGET}
+                        timemory::timemory-dmp
+                        timemory::timemory-plotting
+                        timemory::timemory-mpip-library
+                        timemory::timemory-ompt-library
+        ENVIRONMENT     ${trace_tests_env})
+
     add_timemory_google_test(throttle_tests
         DISCOVER_TESTS
         SOURCES         throttle_tests.cpp
@@ -124,7 +144,8 @@ add_timemory_google_test(type_trait_tests
 add_timemory_google_test(warning_tests
     SOURCES         warning_tests.cpp
     LINK_LIBRARIES  test-werror-flags
-                    test-debug-flags)
+                    test-debug-flags
+                    timemory::timemory-core)
 
 add_timemory_google_test(socket_tests
     SOURCES         socket_tests.cpp
@@ -137,10 +158,30 @@ add_timemory_google_test(argparse_tests
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core)
 
+list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
+list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_THREADS=OFF")
+list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
+
 add_timemory_google_test(component_bundle_tests
+    MPI
+    NPROCS          2
     SOURCES         component_bundle_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-core)
+                    timemory::timemory-core
+    ENVIRONMENT     ${component_bundle_tests_env})
+
+list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
+list(APPEND kokkosp_tests_env "TIMEMORY_NODE_COUNT=1")
+list(APPEND kokkosp_tests_env "TIMEMORY_MPI_THREAD=OFF")
+
+add_timemory_google_test(kokkosp_tests
+    MPI
+    NPROCS          2
+    SOURCES         kokkosp_tests.cpp
+    LINK_LIBRARIES  common-test-libs
+                    timemory::timemory-core
+                    ${_LIBRARY}
+    ENVIRONMENT     ${kokkosp_tests_env})
 
 add_timemory_google_test(flat_tests
     DISCOVER_TESTS
@@ -167,7 +208,10 @@ add_timemory_google_test(data_tracker_tests
 
 add_timemory_google_test(cache_tests
     SOURCES         cache_tests.cpp
-    LINK_LIBRARIES  common-test-libs)
+    LINK_LIBRARIES  common-test-libs
+                    timemory::timemory-core
+                    timemory::timemory-timing-component
+                    timemory::timemory-rusage-component)
 
 add_timemory_google_test(archive_storage_tests
     SOURCES         archive_storage_tests.cpp
@@ -263,6 +307,16 @@ if(TIMEMORY_USE_PAPI)
                         timemory::timemory-roofline-options
                         test-opt-flags
                         ${_LIBRARY})
+
+    # roofline
+    add_timemory_google_test(cpu_roofline_tests
+        DISCOVER_TESTS
+        SOURCES         cpu_roofline_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-papi
+                        timemory::timemory-plotting
+                        timemory::timemory-arch
+                        ${_LIBRARY})
 endif()
 
 add_timemory_google_test(apply_tests
@@ -273,7 +327,7 @@ add_timemory_google_test(apply_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
-if(TIMEMORY_USE_ARCH AND OFF)
+if(TIMEMORY_USE_ARCH)
     add_timemory_google_test(aligned_allocator_tests
         DISCOVER_TESTS
         SOURCES         aligned_allocator_tests.cpp
@@ -385,7 +439,6 @@ if(TIMEMORY_USE_GOTCHA)
                         gotcha-tests-lib
                         timemory::timemory-gotcha
                         timemory::timemory-dmp
-                        timemory::timemory-papi
                         timemory::timemory-vector
                         timemory::timemory-arch
                         timemory::timemory-plotting
@@ -402,14 +455,38 @@ add_timemory_google_test(priority_tests
                     ${_LIBRARY})
 
 if(TIMEMORY_USE_MPI)
+    #
+    list(APPEND mpi_tests_env "TIMEMORY_MPI_THREAD_TYPE=serialized")
+    list(APPEND mpi_tests_env "TIMEMORY_SEPARATOR_FREQ=0")
+    #
     add_timemory_google_test(mpi_tests
-        DISCOVER_TESTS
+        MPI
+        NPROC           2
         SOURCES         mpi_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         timemory::timemory-plotting
                         timemory::timemory-dmp
                         timemory::timemory-core
-                        ${_LIBRARY})
+                        ${_LIBRARY}
+        ENVIRONMENT     "${mpi_tests_env}")
+    #
+    list(APPEND mpi_tests_env "TIMEMORY_DIFF_OUTPUT=ON")
+    list(APPEND mpi_tests_env "TIMEMORY_OUTPUT_PATH=timemory-mpi-tests-diff-output")
+    list(APPEND mpi_tests_env
+        "TIMEMORY_INPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/timemory-mpi-tests-output")
+    #
+    add_timemory_google_test(mpi_tests_diff
+        MPI
+        NPROC           2
+        DEPENDS         mpi_tests
+        COMMAND         $<TARGET_FILE:mpi_tests>
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-plotting
+                        timemory::timemory-dmp
+                        timemory::timemory-core
+                        ${_LIBRARY}
+        ENVIRONMENT     "${mpi_tests_env}")
+
 endif()
 
 if(TIMEMORY_USE_UPCXX)

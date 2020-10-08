@@ -38,5 +38,5 @@
 #    include "timemory/backends/cupti.hpp"
 #endif
 
-TIMEMORY_EXTERN_COMPONENT(cupti_activity, true, uint64_t)
+TIMEMORY_EXTERN_COMPONENT(cupti_activity, true, intmax_t)
 TIMEMORY_EXTERN_COMPONENT(cupti_counters, true, ::tim::cupti::profiler::results_t)

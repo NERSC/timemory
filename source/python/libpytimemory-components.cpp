@@ -226,10 +226,14 @@ static inline auto
 configure(py::class_<pytuple_t<T>>& _pyclass, int, int, Args&&... args)
     -> decltype(T::configure(tim::project::python{}, std::forward<Args>(args)...), void())
 {
-    auto _configure = [](Args&&... _args) {
+    auto _configure = [](py::object, Args&&... _args) {
         T::configure(tim::project::python{}, std::forward<Args>(_args)...);
     };
-    _pyclass.def_static("configure", _configure, "Configure the tool");
+
+    std::stringstream ss;
+    ss << "Configure " << tim::demangle<T>() << " globally. Args: ("
+       << TIMEMORY_JOIN(", ", tim::demangle<Args>()...) << ")";
+    _pyclass.def_static("configure", _configure, ss.str().c_str());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -243,11 +247,14 @@ configure(py::class_<pytuple_t<T>>& _pyclass, int, long, Args&&... args)
 {
     using bundle_t  = pytuple_t<T>;
     auto _configure = [](bundle_t* obj, Args&&... _args) {
-        if(obj->template get<T>())
-            obj->template get<T>()->configure(tim::project::python{},
-                                              std::forward<Args>(_args)...);
+        obj->template get<T>()->configure(tim::project::python{},
+                                          std::forward<Args>(_args)...);
     };
-    _pyclass.def("configure", _configure, "Configure the tool");
+
+    std::stringstream ss;
+    ss << "Configure " << tim::demangle<T>() << " instance. Args: ("
+       << TIMEMORY_JOIN(", ", tim::demangle<Args>()...) << ")";
+    _pyclass.def("configure", _configure, ss.str().c_str());
 }
 //
 //--------------------------------------------------------------------------------------//

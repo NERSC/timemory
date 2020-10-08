@@ -62,17 +62,40 @@ struct config
     std::string base_module_path         = "";
     strset_t    always_skipped_functions = { "FILE",      "FUNC",     "LINE",
                                           "get_fcode", "__exit__", "_handle_fromlist",
-                                          "<module>" };
-    strset_t    always_skipped_filenames = { "__init__.py", "__main__.py", "functools.py",
-                                          "<frozen importlib._bootstrap>" };
-    profiler_index_map_t records         = {};
+                                          "<module>",  "_shutdown" };
+    strset_t    always_skipped_filenames = {
+        "__init__.py",       "__main__.py",
+        "functools.py",      "<frozen importlib._bootstrap>",
+        "_pylab_helpers.py", "threading.py"
+    };
+    profiler_index_map_t records = {};
 };
 //
 inline config&
 get_config()
 {
-    static auto* _instance = new config{};
-    return *_instance;
+    static auto*              _instance    = new config{};
+    static thread_local auto* _tl_instance = [&]() {
+        static std::atomic<uint32_t> _count{ 0 };
+        auto                         _cnt = _count++;
+        if(_cnt == 0)
+            return _instance;
+
+        auto* _tmp                     = new config{};
+        _tmp->is_running               = _instance->is_running;
+        _tmp->trace_c                  = _instance->trace_c;
+        _tmp->include_internal         = _instance->include_internal;
+        _tmp->include_args             = _instance->include_args;
+        _tmp->include_line             = _instance->include_line;
+        _tmp->include_filename         = _instance->include_filename;
+        _tmp->full_filepath            = _instance->full_filepath;
+        _tmp->max_stack_depth          = _instance->max_stack_depth;
+        _tmp->base_module_path         = _instance->base_module_path;
+        _tmp->always_skipped_functions = _instance->always_skipped_functions;
+        _tmp->always_skipped_filenames = _instance->always_skipped_filenames;
+        return _tmp;
+    }();
+    return *_tl_instance;
 }
 //
 int32_t
@@ -91,7 +114,8 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
         return;
     }
 
-    static auto _timemory_path = get_config().base_module_path;
+    static thread_local auto& _config        = get_config();
+    static auto               _timemory_path = _config.base_module_path;
 
     auto* frame = reinterpret_cast<PyFrameObject*>(pframe.ptr());
 
@@ -107,32 +131,32 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     if(what < 0)
     {
         if(tim::settings::debug())
-            PRINT_HERE("%s", "Ignoring what != {CALL,C_CALL,RETURN,C_RETURN}");
+            PRINT_HERE("%s :: %s", "Ignoring what != {CALL,C_CALL,RETURN,C_RETURN}",
+                       swhat);
         return;
     }
 
     // if PyTrace_C_{CALL,RETURN} is not enabled
-    if(!get_config().trace_c && (what == PyTrace_C_CALL || what == PyTrace_C_RETURN))
+    if(!_config.trace_c && (what == PyTrace_C_CALL || what == PyTrace_C_RETURN))
     {
         if(tim::settings::debug())
-            PRINT_HERE("%s", "Ignoring C call/return");
+            PRINT_HERE("%s :: %s", "Ignoring C call/return", swhat);
         return;
     }
 
     // get the depth of the frame
     auto _fdepth = get_depth(frame);
 
-    if(get_config().base_stack_depth < 0)
-        get_config().base_stack_depth = _fdepth;
+    if(_config.base_stack_depth < 0)
+        _config.base_stack_depth = _fdepth;
 
     bool    _iscall = (what == PyTrace_CALL || what == PyTrace_C_CALL);
-    int32_t _sdepth = _fdepth - get_config().base_stack_depth - 3;
+    int32_t _sdepth = _fdepth - _config.base_stack_depth - 3;
     // if frame exceeds max stack-depth
-    if(_iscall && _sdepth > get_config().max_stack_depth)
+    if(_iscall && _sdepth > _config.max_stack_depth)
     {
         if(tim::settings::debug())
-            PRINT_HERE("skipping %i > %i", (int) _sdepth,
-                       (int) get_config().max_stack_depth);
+            PRINT_HERE("skipping %i > %i", (int) _sdepth, (int) _config.max_stack_depth);
         return;
     }
 
@@ -163,117 +187,74 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     // get the final filename
     auto _get_label = [&](auto& _func, auto& _filename, auto& _fullpath) {
         // append the arguments
-        if(get_config().include_args)
+        if(_config.include_args)
             _func = TIMEMORY_JOIN("", _func, _get_args());
         // append the filename
-        if(get_config().include_filename)
+        if(_config.include_filename)
         {
-            if(get_config().full_filepath)
+            if(_config.full_filepath)
                 _func = TIMEMORY_JOIN('/', _func, std::move(_fullpath));
             else
                 _func = TIMEMORY_JOIN('/', _func, std::move(_filename));
         }
         // append the line number
-        if(get_config().include_line)
+        if(_config.include_line)
             _func = TIMEMORY_JOIN(':', _func, frame->f_lineno);
         return _func;
     };
 
-    // get the iterator at the stack depth
-    auto _profiler_index = [&](bool _insert) {
-        auto _itr = get_config().records.find(_fdepth);
-        if(_insert && _itr == get_config().records.end())
-            _itr = get_config().records.insert({ _fdepth, profiler_label_map_t{} }).first;
-        return _itr;
-    };
+    auto& _skip_funcs = _config.always_skipped_functions;
+    auto  _func       = _get_funcname();
 
-    // get the stack-depth iterator for a label
-    auto _profiler_label = [&](bool _insert, auto itr, const auto& label) {
-        auto _itr = itr->second.find(label);
-        if(_insert)
+    if(_skip_funcs.find(_func) != _skip_funcs.end())
+    {
+        auto _manager = tim::manager::instance();
+        if(!_manager || _manager->is_finalized() || _func == "_shutdown")
         {
-            if(_itr == itr->second.end())
-                _itr = itr->second.insert({ label, profiler_vec_t{} }).first;
-            _itr->second.emplace_back(profiler_t{ label });
+            auto sys       = py::module::import("sys");
+            auto threading = py::module::import("threading");
+            sys.attr("setprofile")(py::none{});
+            threading.attr("setprofile")(py::none{});
         }
-        return _itr;
-    };
+        return;
+    }
+
+    auto& _skip_files = _config.always_skipped_filenames;
+    auto  _full       = _get_filename();
+    auto  _file       = _get_basename(_full);
+
+    if(!_config.include_internal &&
+       strncmp(_full.c_str(), _timemory_path.c_str(), _timemory_path.length()) == 0)
+        return;
+
+    if(_skip_files.find(_file) != _skip_files.end() ||
+       _skip_files.find(_full) != _skip_files.end())
+        return;
+
+    DEBUG_PRINT_HERE("%8s | %s%s | %s | %s", swhat, _func.c_str(), _get_args().c_str(),
+                     _file.c_str(), _full.c_str());
+
+    auto _label = _get_label(_func, _file, _full);
 
     // start function
     auto _profiler_call = [&]() {
-        auto& _skip_funcs = get_config().always_skipped_functions;
-        auto  _func       = _get_funcname();
-        if(_skip_funcs.find(_func) != _skip_funcs.end())
-            return;
-
-        auto& _skip_files = get_config().always_skipped_filenames;
-        auto  _full       = _get_filename();
-        auto  _file       = _get_basename(_full);
-
-        if(!get_config().include_internal &&
-           strncmp(_full.c_str(), _timemory_path.c_str(), _timemory_path.length()) == 0)
-        {
-            //++get_config().ignore_stack_depth;
-            return;
-        }
-
-        if(_skip_files.find(_file) != _skip_files.end() ||
-           _skip_files.find(_full) != _skip_files.end())
-            return;
-
-        DEBUG_PRINT_HERE("%8s | %s%s | %s | %s", swhat, _func.c_str(),
-                         _get_args().c_str(), _file.c_str(), _full.c_str());
-
-        auto itr_idx = _profiler_index(true);
-        auto itr_lbl = _profiler_label(true, itr_idx, _get_label(_func, _file, _full));
-        itr_lbl->second.back().start();
+        auto& _entry = _config.records[_fdepth][_label];
+        _entry.emplace_back(profiler_t{ _label });
+        _entry.back().start();
     };
 
     // stop function
     auto _profiler_return = [&]() {
-        // if(get_config().ignore_stack_depth > 0)
-        //{
-        //    --get_config().ignore_stack_depth;
-        //    return;
-        //}
-
-        auto& _skip_funcs = get_config().always_skipped_functions;
-        auto  _func       = _get_funcname();
-        if(_skip_funcs.find(_func) != _skip_funcs.end())
+        auto fitr = _config.records.find(_fdepth);
+        if(fitr == _config.records.end())
             return;
-
-        auto& _skip_files = get_config().always_skipped_filenames;
-        auto  _full       = _get_filename();
-        auto  _file       = _get_basename(_full);
-
-        if(strncmp(_full.c_str(), _timemory_path.c_str(), _timemory_path.length()) == 0)
+        auto litr = fitr->second.find(_label);
+        if(litr == fitr->second.end())
             return;
-
-        if(_skip_files.find(_file) != _skip_files.end() ||
-           _skip_files.find(_full) != _skip_files.end())
+        if(litr->second.empty())
             return;
-
-        DEBUG_PRINT_HERE("%8s | %s%s | %s | %s", swhat, _func.c_str(),
-                         _get_args().c_str(), _file.c_str(), _full.c_str());
-
-        auto itr_idx = _profiler_index(false);
-        if(itr_idx == get_config().records.end())
-            return;
-        auto itr_lbl = _profiler_label(false, itr_idx, _get_label(_func, _file, _full));
-        if(itr_lbl == itr_idx->second.end())
-            return;
-        itr_lbl->second.back().stop();
-        itr_lbl->second.pop_back();
-        if(itr_lbl->second.empty())
-        {
-            itr_idx->second.erase(itr_lbl->first);
-            if(itr_idx->second.empty())
-            {
-                get_config().records.erase(itr_idx->first);
-                if(get_config().records.empty())
-                    get_config().base_stack_depth = -1;
-            }
-        }
+        litr->second.back().stop();
+        litr->second.pop_back();
     };
 
     // process what
@@ -283,9 +264,6 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
         case PyTrace_C_CALL: _profiler_call(); break;
         case PyTrace_RETURN:
         case PyTrace_C_RETURN: _profiler_return(); break;
-        case PyTrace_C_EXCEPTION:
-        case PyTrace_EXCEPTION:
-        case PyTrace_LINE:
         default: break;
     }
 
@@ -323,8 +301,8 @@ generate(py::module& _pymod)
     };
 
     _prof.def("profiler_function", &profiler_function, "Profiling function");
-    _prof.def("initialize", _init, "Initialize the profiler");
-    _prof.def("finalize", _fini, "Finalize the profiler");
+    _prof.def("profiler_init", _init, "Initialize the profiler");
+    _prof.def("profiler_finalize", _fini, "Finalize the profiler");
 
     py::class_<config> _pyconfig(_prof, "config", "Profiler configuration");
 

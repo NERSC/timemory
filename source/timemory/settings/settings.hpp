@@ -34,6 +34,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/compat/macros.h"
 #include "timemory/environment/declaration.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/tsettings.hpp"
 #include "timemory/settings/types.hpp"
@@ -229,6 +230,8 @@ struct settings
     TIMEMORY_SETTINGS_MEMBER_DECL(int32_t, node_count, "TIMEMORY_NODE_COUNT")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPORT")
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, python_exe, "TIMEMORY_PYTHON_EXE")
+    // stream
+    TIMEMORY_SETTINGS_MEMBER_DECL(int64_t, separator_frequency, "TIMEMORY_SEPARATOR_FREQ")
     // signals
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, enable_signal_handler,
                                   "TIMEMORY_ENABLE_SIGNAL_HANDLER")
@@ -680,4 +683,6 @@ settings::set(const std::string& _key, Tp&& _val)
 
 // TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
 
+#if !defined(_TIMEMORY_INTEL)
 CEREAL_CLASS_VERSION(tim::settings, 2)
+#endif

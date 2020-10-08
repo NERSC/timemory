@@ -35,6 +35,14 @@ namespace ext
 {
 //--------------------------------------------------------------------------------------//
 
+void
+do_puts(const char* msg)
+{
+    puts(msg);
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp, typename _Func, typename _Incr>
 _Tp
 work(int64_t nitr, _Func&& func, _Incr&& incr)

@@ -356,6 +356,7 @@ def run_pyctest():
     cmd.SetOutputStripTrailingWhitespace(True)
     cmd.Execute()
     compiler_version = cmd.Output()
+    cn = os.environ["CXX"]
     try:
         cn = compiler_version.split()[0]
         cv = re.search(r"(\b)\d.\d.\d", compiler_version)
@@ -365,7 +366,7 @@ def run_pyctest():
         cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
         cmd.SetOutputStripTrailingWhitespace(True)
         cmd.Execute()
-        compiler_version = cmd.Output()
+        compiler_version = "{}-{}".format(cn, cmd.Output())
 
     # Set the build name
     #
@@ -490,7 +491,7 @@ def run_pyctest():
 
     pyct.set(
         "CTEST_CUSTOM_COVERAGE_EXCLUDE",
-        "/usr/.*;.*external/.*;.*examples/.*;.*source/tests/.*",
+        "/usr/.*;.*external/.*;.*examples/.*;.*source/tests/.*;.*source/tools/.*;.*source/python/.*",
     )
     pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_ERRORS", "100")
     pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS", "100")
@@ -690,6 +691,21 @@ def run_pyctest():
             "timemory-python-profiler",
             [
                 sys.executable,
+                "./ex_python_profiler",
+                "10",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-profiler-main",
+            [
+                sys.executable,
                 "-m",
                 "timemory.profiler",
                 "--max-stack-depth=10",
@@ -701,7 +717,7 @@ def run_pyctest():
                 "peak_rss",
                 "--",
                 "./ex_python_external",
-                "20",
+                "12",
             ],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -738,18 +754,82 @@ def run_pyctest():
         )
 
         pyct.test(
+            "timemory-python-trace",
+            [
+                sys.executable,
+                "./ex_python_tracer",
+                "10",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-trace-main",
+            [
+                sys.executable,
+                "-m",
+                "timemory.trace",
+                "-l",
+                "-f",
+                "-F",
+                "-c",
+                "wall_clock",
+                "peak_rss",
+                "--",
+                "./ex_python_external",
+                "12",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-trace-builtin",
+            [
+                sys.executable,
+                "-m",
+                "timemory.trace",
+                "-b",
+                "-l",
+                "-f",
+                "-F",
+                "-c",
+                "wall_clock",
+                "peak_rss",
+                "--",
+                "./ex_python_builtin",
+                "10",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
             "timemory-python-line-profiler",
             [
                 sys.executable,
                 "-m",
-                "timemory.profiler",
+                "timemory.line_profiler",
                 "-v",
                 "-l",
                 "-c",
                 "peak_rss",
                 "--",
                 "./ex_python_external",
-                "20",
+                "12",
             ],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -764,7 +844,7 @@ def run_pyctest():
             [
                 sys.executable,
                 "-m",
-                "timemory.profiler",
+                "timemory.line_profiler",
                 "-v",
                 "-l",
                 "-b",
@@ -1011,7 +1091,7 @@ def run_pyctest():
                 pyct.test(
                     construct_name("ex-python-caliper"),
                     construct_command(
-                        [sys.executable, "./ex_python_caliper"], args
+                        [sys.executable, "./ex_python_caliper", "10"], args
                     ),
                     {
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -1207,7 +1287,7 @@ def run_pyctest():
         pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
         if args.coverage:
             script = os.path.join(
-                pyct.SOURCE_DIRECTORY, "cmake", "Scripts", "submit-coverage.sh"
+                pyct.SOURCE_DIRECTORY, "scripts", "submit-coverage.sh"
             )
             cov = pyct.command([script, pyct.BINARY_DIRECTORY])
             cov.SetWorkingDirectory(pyct.SOURCE_DIRECTORY)

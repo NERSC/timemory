@@ -101,7 +101,7 @@ read_fork(TIMEMORY_PIPE* ldd)
         auto loc  = string_t::npos;
         while((loc = line.find_first_of("\n\t")) != string_t::npos)
             line.erase(loc, 1);
-        auto delim = tim::delimit(line, " \n\t=>");
+        auto delim = delimit(line, " \n\t=>");
         for(const auto& itr : delim)
         {
             if(itr.find('/') == 0)
@@ -122,3 +122,68 @@ read_fork(TIMEMORY_PIPE* ldd)
 #    endif
 
 #endif
+
+//
+//--------------------------------------------------------------------------------------//
+//
+inline bool
+tim::launch_process(const char* cmd, const std::string& extra)
+{
+#if !defined(_WINDOWS)
+    auto                       delim = tim::delimit(cmd, " \t");
+    tim::popen::TIMEMORY_PIPE* fp    = nullptr;
+    if(delim.size() < 2)
+        fp = tim::popen::popen(cmd, nullptr, nullptr);
+    else
+    {
+        static std::string   _c = "-c";
+        std::array<char*, 4> _args;
+        _args.fill(nullptr);
+        char*       _cshell = getenv("SHELL");
+        char*       _ushell = getusershell();
+        std::string _shell = (_cshell) ? _cshell : (_ushell) ? getusershell() : "/bin/sh";
+        _args.at(0)        = (char*) _shell.c_str();
+        _args.at(1)        = (char*) _c.c_str();
+        _args.at(2)        = (char*) cmd;
+        fp                 = tim::popen::popen(_args.at(0), _args.data());
+    }
+    if(fp == nullptr)
+    {
+        std::stringstream ss;
+        ss << "[timemory]> Error launching command: '" << cmd << "'... " << extra;
+        perror(ss.str().c_str());
+        return false;
+    }
+
+    auto ec = tim::popen::pclose(fp);
+    if(ec != 0)
+    {
+        std::stringstream ss;
+        ss << "[timemory]> Command: '" << cmd << "' returned a non-zero exit code: " << ec
+           << "... " << extra;
+        perror(ss.str().c_str());
+        return false;
+    }
+#else
+    if(std::system(nullptr) != 0)
+    {
+        int ec = std::system(cmd);
+
+        if(ec != 0)
+        {
+            fprintf(stderr,
+                    "[timemory]> Command: '%s' returned a non-zero exit code: %i... %s\n",
+                    cmd, ec, extra.c_str());
+            return false;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "std::system unavailable for command: '%s'... %s\n", cmd,
+                extra.c_str());
+        return false;
+    }
+#endif
+
+    return true;
+}

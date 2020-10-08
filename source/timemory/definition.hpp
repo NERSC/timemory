@@ -27,14 +27,24 @@
 #include "timemory/components.hpp"
 #include "timemory/config/definition.hpp"
 #include "timemory/containers/definition.hpp"
-#include "timemory/environment/definition.hpp"
 #include "timemory/ert/definition.hpp"
-#include "timemory/hash/definition.hpp"
-#include "timemory/manager/definition.hpp"
 #include "timemory/operations/definition.hpp"
-#include "timemory/plotting/definition.hpp"
-#include "timemory/settings/definition.hpp"
 #include "timemory/storage/definition.hpp"
 #include "timemory/variadic/definition.hpp"
 //
 #include "timemory/components/opaque/definition.hpp"
+
+#if !defined(TIMEMORY_USE_EXTERN)
+//
+#    if !defined(TIMEMORY_USE_MANAGER_EXTERN)
+#        include "timemory/manager/definition.hpp"
+#    endif
+
+#    if !defined(TIMEMORY_USE_CORE_EXTERN)
+#        include "timemory/environment/definition.hpp"
+#        include "timemory/hash/definition.hpp"
+#        include "timemory/plotting/definition.hpp"
+#        include "timemory/settings/definition.hpp"
+#    endif
+//
+#endif
