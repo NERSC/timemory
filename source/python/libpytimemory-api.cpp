@@ -192,7 +192,7 @@ generate_cupti(py::module& _pymod)
         auto     ret = tim::cupti::available_metrics(cu_device);
         py::list l;
         for(const auto& itr : ret)
-            l.append(py::cast<std::string>(itr));
+            l.append(itr);
         return l;
 #else
         tim::consume_parameters(device);

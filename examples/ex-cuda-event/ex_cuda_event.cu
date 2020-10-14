@@ -51,7 +51,7 @@ using auto_tuple_t = tim::auto_tuple_t<wall_clock, system_clock, cpu_clock, cpu_
                                        nvtx_marker, papi_array_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using cuda_tuple_t = tim::auto_tuple_t<cuda_event, nvtx_marker>;
-using counter_t    = wall_clock;
+using counter_t    = ert_timer;
 using ert_data_t   = tim::ert::exec_data<counter_t>;
 
 //======================================================================================//
