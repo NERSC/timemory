@@ -31,12 +31,11 @@ jobs:
             source activate &&
             conda activate pyctest &&
             python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j1
-            --build-libs shared --mpi --mpip --papi --python --caliper --gotcha --stats --cxx-standard=17
+            --build-libs shared --mpi --mpip --papi --caliper --gotcha --stats --cxx-standard=17
             -- -V --output-on-failure
             -- -DTIMEMORY_BUILD_CALIPER=OFF -DTIMEMORY_BUILD_GOTCHA=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:
           name: install
           command: >
             cd build-timemory/Linux &&
-            make install -j &&
-            cmake -P tests/test-python-install-import.cmake
+            make install -j
