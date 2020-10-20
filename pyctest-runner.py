@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-PyCTest driver for TiMemory
+PyCTest driver for timemory
 """
 
 import os
@@ -44,7 +44,7 @@ def configure():
 
     # Get pyctest argument parser that include PyCTest arguments
     parser = helpers.ArgumentParser(
-        project_name="TiMemory",
+        project_name="timemory",
         source_dir=os.getcwd(),
         binary_dir=os.path.join(
             os.getcwd(), "build-timemory", platform.system()
@@ -310,9 +310,10 @@ def configure():
         args.papi = False
 
     os.environ["PYCTEST_TESTING"] = "ON"
-    os.environ["TIMEMORY_PLOT_OUTPUT"] = "OFF"
     os.environ["TIMEMORY_BANNER"] = "OFF"
+    os.environ["TIMEMORY_CTEST_NOTES"] = "ON"
     os.environ["TIMEMORY_ENABLE_SIGNAL_HANDLER"] = "ON"
+    # os.environ["TIMEMORY_PLOT_OUTPUT"] = "OFF"
 
     # update PYTHONPATH for the unit tests
     pypath = os.environ.get("PYTHONPATH", "").split(":")

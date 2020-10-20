@@ -22,10 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
 #include "timemory/api/kokkosp.hpp"
 #include "timemory/timemory.hpp"
-
-#include "gtest/gtest.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -35,8 +35,7 @@
 #include <thread>
 #include <vector>
 
-static int    _argc = 0;
-static char** _argv = nullptr;
+TIMEMORY_TEST_DEFAULT_MAIN
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
@@ -208,22 +207,6 @@ TEST_F(kokkosp_tests, data_routines)
         delete[] _dst;
         delete[] _src;
     }
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

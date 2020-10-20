@@ -105,6 +105,7 @@ int
 main(int argc, char** argv)
 {
     tim::mpi::initialize(argc, argv);
+    tim::timemory_init(argc, argv);
 
     tim::component::wall_clock wc;
     wc.start();
@@ -184,6 +185,7 @@ main(int argc, char** argv)
 
     printf("\nTotal time: %f seconds\n", wc.get());
 
+    tim::timemory_finalize();
     tim::mpi::finalize();
 }
 

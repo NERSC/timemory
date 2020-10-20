@@ -408,6 +408,10 @@ settings::initialize()
         "Write a json output for flamegraph visualization (use chrome://tracing)", true,
         strvector_t({ "--timemory-flamegraph-output" }))
 
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(bool, ctest_notes, "TIMEMORY_CTEST_NOTES",
+                                      "Write a CTestNotes.txt for each text output",
+                                      false, strvector_t({ "--timemory-ctest-notes" }))
+
     TIMEMORY_SETTINGS_MEMBER_IMPL(bool, banner, "TIMEMORY_BANNER",
                                   "Notify about tim::manager creation and destruction",
                                   (get_env<bool>("TIMEMORY_LIBRARY_CTOR", false)))

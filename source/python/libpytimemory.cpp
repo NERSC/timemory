@@ -242,8 +242,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
     py::module opts = tim.def_submodule("options", "I/O options submodule");
     //----------------------------------------------------------------------------------//
-    opts.attr("echo_dart")          = false;
-    opts.attr("ctest_notes")        = false;
+    opts.attr("echo_dart")          = tim::settings::dart_output();
+    opts.attr("ctest_notes")        = tim::settings::ctest_notes();
     opts.attr("matplotlib_backend") = std::string("default");
 
     //==================================================================================//

@@ -456,13 +456,34 @@ extern "C"
         tim::trace::lock<tim::trace::library> lk{};
 
         if(!lk)
+        {
+#if defined(DEBUG) || !defined(NDEBUG)
+            if(tim::settings::debug())
+                PRINT_HERE("Tracing is locked: %s", (lk) ? "Y" : "N");
+#endif
             return;
+        }
 
         if(!get_library_state()[0] || get_library_state()[1] || !tim::settings::enabled())
+        {
+#if defined(DEBUG) || !defined(NDEBUG)
+            if(tim::settings::debug())
+                PRINT_HERE("Invalid library state: init = %s, fini = %s, enabled = %s",
+                           (get_library_state()[0]) ? "Y" : "N",
+                           (get_library_state()[1]) ? "Y" : "N",
+                           (tim::settings::enabled()) ? "Y" : "N");
+#endif
             return;
+        }
 
         if(get_throttle()->count(id) > 0)
+        {
+#if defined(DEBUG) || !defined(NDEBUG)
+            if(tim::settings::debug())
+                PRINT_HERE("trace %llu is throttled", (unsigned long long) id);
+#endif
             return;
+        }
 
         auto& _trace_map = get_trace_map();
         auto& _overh_map = *get_overhead();
@@ -639,7 +660,11 @@ extern "C"
     {
         tim::trace::lock<tim::trace::library> lk{};
         if(get_library_state()[0])
+        {
+            PRINT_HERE("trace already initialized: %s",
+                       (get_library_state()[0]) ? "Y" : "N");
             return;
+        }
 
         if(library_trace_count++ == 0)
         {
@@ -648,6 +673,7 @@ extern "C"
                        comps);
 
             tim::manager::use_exit_hook(false);
+            get_library_state()[0] = true;
 
             if(read_command_line)
             {
@@ -656,7 +682,6 @@ extern "C"
             }
             else
             {
-                get_library_state()[0] = true;
                 std::string exe_name   = (cmd) ? cmd : "";
                 while(exe_name.find('\\') != std::string::npos)
                     exe_name = exe_name.substr(exe_name.find_last_of('\\') + 1);

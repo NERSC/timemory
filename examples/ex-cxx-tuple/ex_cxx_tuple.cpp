@@ -94,6 +94,7 @@ main(int argc, char** argv)
     tim::settings::json_output() = true;
     tim::enable_signal_detection();
     tim::dmp::initialize(argc, argv);
+    tim::timemory_init(argc, argv);
 
     tim::component_tuple_t<papi_tuple_t> m("PAPI measurements");
     m.start();

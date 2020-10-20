@@ -22,11 +22,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_ARGS
+TIMEMORY_TEST_MAIN
+
+#include "timemory/backends.hpp"
+#include "timemory/config.hpp"
 #include "timemory/environment/definition.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/settings.hpp"
-
-#include "gtest/gtest.h"
 
 #include <chrono>
 #include <iostream>
@@ -83,6 +88,14 @@ struct is_intrinsic<__m256d> : std::true_type
 
 namespace details
 {
+//--------------------------------------------------------------------------------------//
+//  Get the current tests name
+//
+inline std::string
+get_test_name()
+{
+    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+}
 //--------------------------------------------------------------------------------------//
 // shorthand for check if type is an intrinsic type
 //
@@ -150,7 +163,10 @@ print(std::ostream& os, const std::string& label, const _Vec<Tp, _ImplicitArgs..
 //--------------------------------------------------------------------------------------//
 
 class aligned_allocator_tests : public ::testing::Test
-{};
+{
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -288,19 +304,6 @@ TEST_F(aligned_allocator_tests, m128d)
         rhs.erase(rhs.begin());
     }
     std::cout << std::endl;
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

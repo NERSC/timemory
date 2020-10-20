@@ -454,7 +454,7 @@ struct priority_context_switch : public base<priority_context_switch>
     static std::string description()
     {
         return "Number of context switch due to higher priority process becoming runnable"
-               " or because the current process exceeded its time slice)";
+               " or because the current process exceeded its time slice";
     }
     static value_type record() { return get_num_priority_context_switch(); }
     value_type        get_display() const

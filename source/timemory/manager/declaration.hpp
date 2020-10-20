@@ -110,14 +110,8 @@ public:
 
     void add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file);
-    void add_text_output(const string_t& _label, const string_t& _file)
-    {
-        add_file_output("text", _label, _file);
-    }
-    void add_json_output(const string_t& _label, const string_t& _file)
-    {
-        add_file_output("json", _label, _file);
-    }
+    void add_text_output(const string_t& _label, const string_t& _file);
+    void add_json_output(const string_t& _label, const string_t& _file);
 
     /// \fn set_write_metadata
     /// \brief Set to 0 for yes if other output, -1 for never, or 1 for yes
