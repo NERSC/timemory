@@ -57,6 +57,7 @@ using stringstream_t = std::stringstream;
     TIMEMORY_TEST_MAIN
 
 #define TIMEMORY_TEST_SUITE_SETUP(...)                                                   \
+protected:                                                                               \
     static void SetUpTestSuite()                                                         \
     {                                                                                    \
         tim::settings::verbose()     = 0;                                                \
@@ -74,6 +75,7 @@ using stringstream_t = std::stringstream;
 #define TIMEMORY_TEST_DEFAULT_SUITE_SETUP TIMEMORY_TEST_SUITE_SETUP({})
 
 #define TIMEMORY_TEST_SUITE_TEARDOWN(...)                                                \
+protected:                                                                               \
     static void TearDownTestSuite()                                                      \
     {                                                                                    \
         __VA_ARGS__;                                                                     \
@@ -84,6 +86,7 @@ using stringstream_t = std::stringstream;
 #define TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN TIMEMORY_TEST_SUITE_TEARDOWN({})
 
 #define TIMEMORY_TEST_SETUP(...)                                                         \
+protected:                                                                               \
     void SetUp() override                                                                \
     {                                                                                    \
         puts("");                                                                        \
@@ -95,6 +98,7 @@ using stringstream_t = std::stringstream;
 #define TIMEMORY_TEST_DEFAULT_SETUP TIMEMORY_TEST_SETUP({})
 
 #define TIMEMORY_TEST_TEARDOWN(...)                                                      \
+protected:                                                                               \
     void TearDown() override                                                             \
     {                                                                                    \
         __VA_ARGS__;                                                                     \

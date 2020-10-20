@@ -106,7 +106,7 @@ struct cupti_activity : public base<cupti_activity, intmax_t>
             else if(lvl == 0)
             {
                 // general settings for kernels, runtime, overhead
-                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL } };
+                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL };
             }
             else if(lvl == 1)
             {

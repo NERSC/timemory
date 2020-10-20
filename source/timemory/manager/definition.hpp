@@ -52,6 +52,7 @@
 #    include "timemory/config.hpp"
 #    include "timemory/mpl/policy.hpp"
 #    include "timemory/mpl/type_traits.hpp"
+#    include "timemory/operations/types/finalize/ctest_notes.hpp"
 #    include "timemory/settings/declaration.hpp"
 #    include "timemory/utility/macros.hpp"
 //
@@ -270,7 +271,10 @@ manager::finalize()
                    (int) m_pointer_fini.size());
 
     if(m_instance_count == 0 && m_rank == 0)
+    {
+        operation::finalize::ctest_notes<manager>::get_notes().reset();
         write_metadata("manager::finalize");
+    }
 
     m_is_finalized = true;
 }
@@ -472,6 +476,25 @@ manager::add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file)
 {
     m_output_files[_category][_label].insert(_file);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_MANAGER_LINKAGE(void)
+manager::add_text_output(const string_t& _label, const string_t& _file)
+{
+    add_file_output("text", _label, _file);
+    auto _settings = f_settings();
+    if(_settings && _settings->get_ctest_notes())
+        operation::finalize::ctest_notes<manager>::get_notes()->insert(_file);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_MANAGER_LINKAGE(void)
+manager::add_json_output(const string_t& _label, const string_t& _file)
+{
+    add_file_output("json", _label, _file);
 }
 //
 //----------------------------------------------------------------------------------//

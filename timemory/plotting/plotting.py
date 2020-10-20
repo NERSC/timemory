@@ -83,7 +83,7 @@ try:
 
     if timemory.options.matplotlib_backend != "default":
         _matplotlib_backend = timemory.options.matplotlib_backend
-except:
+except ImportError:
     pass
 
 
@@ -101,7 +101,7 @@ if (
 #
 try:
     import tornado
-except:
+except ImportError:
     pass
 
 
@@ -112,7 +112,7 @@ try:
     import matplotlib.pyplot as plt
 
     _matplotlib_backend = matplotlib.get_backend()
-except:
+except ImportError:
     try:
         import matplotlib
 
@@ -120,7 +120,7 @@ except:
         import matplotlib.pyplot as plt
 
         _matplotlib_backend = matplotlib.get_backend()
-    except:
+    except ImportError:
         pass
 
 
@@ -576,7 +576,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     if _matplotlib_backend is None:
         try:
             import matplotlib
-        except:
+        except ImportError:
             warnings.warn(
                 "Matplotlib could not find a suitable backend. Skipping plotting..."
             )
@@ -690,12 +690,13 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
     if _matplotlib_backend is None:
         try:
             import matplotlib
-            import matplotlib.pyplot as plt
-        except:
+        except ImportError:
             warnings.warn(
                 "Matplotlib could not find a suitable backend. Skipping plotting..."
             )
             return
+
+    import matplotlib.pyplot as plt
 
     def get_obj_idx(_obj, _idx):
         if isinstance(_obj, list):
@@ -765,7 +766,6 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
                 print("Closed '{}'...".format(imgfname))
 
 
-# ==============================================================================#
 def plot_maximums(
     output_name,
     title,
@@ -798,7 +798,7 @@ def plot_maximums(
             echo_dart = True
         elif echo_dart is None:
             echo_dart = False
-    except:
+    except ImportError:
         pass
 
     _combined = None
@@ -831,7 +831,6 @@ def plot_maximums(
         print('Error! Unable to plot "{}"...'.format(_combined.filename))
 
 
-# ==============================================================================#
 def plot(
     data=[],
     files=[],
@@ -864,7 +863,7 @@ def plot(
             echo_dart = True
         elif echo_dart is None:
             echo_dart = False
-    except:
+    except ImportError:
         pass
 
     if len(files) > 0:
@@ -899,4 +898,3 @@ def plot(
             )
             print("Exception - {}".format(e))
             print('Error! Unable to plot "{}"...'.format(_data.filename))
-    # print('Done')

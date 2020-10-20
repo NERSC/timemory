@@ -96,7 +96,7 @@ timemory_trace_set_mpi(bool use, bool attached);
 class trace_tests : public ::testing::Test
 {
 protected:
-    static void SetUpTestCase()
+    static void SetUpTestSuite()
     {
 #if defined(TIMEMORY_MPI_GOTCHA)
         timemory_trace_set_mpi(true, false);
@@ -160,6 +160,8 @@ TEST_F(trace_tests, add_hash_ids)
     auto wc_beg = tim::storage<wall_clock>::instance()->get();
     tim::component::user_trace_bundle::reset();
     tim::component::user_trace_bundle::configure<wall_clock>();
+
+    EXPECT_EQ(tim::component::user_trace_bundle::bundle_size(), 1);
 
     for(auto& itr : cxx_hash_ids)
     {

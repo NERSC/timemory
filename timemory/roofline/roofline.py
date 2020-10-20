@@ -40,11 +40,19 @@ import numpy
 
 
 GIGABYTE = 1.0e9
-VERBOSE = int(os.environ.get("TIMEMORY_VERBOSE", "0"))
 FONT_SIZE = 16
 FONT_COLOR = "black"
 FONT_WEIGHT = "bold"
 WARP_SIZE = 32
+DEBUG = (
+    True
+    if re.search(
+        "^(t|y|on|[0-9])", os.environ.get("TIMEMORY_DEBUG", "off").lower()
+    )
+    is not None
+    else False
+)
+VERBOSE = int(os.environ.get("TIMEMORY_VERBOSE", "0")) if not DEBUG else 255
 
 __all__ = [
     "echo_dart_tag",
@@ -65,6 +73,7 @@ __all__ = [
     "plot_roofline",
     "FONT_SIZE",
     "VERBOSE",
+    "DEBUG",
 ]
 
 #   labels_type m_labels = {{"label", "working-set", "trials", "total-bytes",
@@ -168,8 +177,9 @@ class ert_counter:
             self.data = [_data]
         else:
             self.data = _data
-        for i in range(len(self.data)):
-            self.data[i] /= self.units
+        if self.units is not None:
+            for i in range(len(self.data)):
+                self.data[i] /= self.units
 
     def __str__(self):
         ret = []
@@ -186,10 +196,10 @@ class ert_counter:
 
     def get_warp_ops(
         self, total
-    ):  ## for int ops, scale the peak ops by 32 for warp-based measurements
+    ):  # for int ops, scale the peak ops by 32 for warp-based measurements
         _data = (
             self.data
-        )  ## we can use the same function for transaction bandwidth
+        )  # we can use the same function for transaction bandwidth
         _list = []
         for i in range(len(_data)):
             _list.append((total / _data[i]) / WARP_SIZE)
@@ -265,7 +275,7 @@ def read_ert(inp):
     data = inp
 
     def _read_ert(_data):
-        if not "ert" in _data:
+        if "ert" not in _data:
             return None
         else:
             inst = []
@@ -280,8 +290,9 @@ def read_ert(inp):
             data = data["roofline"]
         inst = _read_ert(data)
 
-    # for entry in inst:
-    #    print("{}\n".format(entry))
+    if VERBOSE > 2:
+        for entry in inst:
+            print("{}\n".format(entry))
 
     return inst
 
@@ -299,7 +310,7 @@ def get_peak_ops(roof_data, flop_info=None):
         _label = element.label
         _data = element.counter.get(
             total_ops
-        )  ## this gives total_ops/repr_data (time) ops/sec
+        )  # this gives total_ops/repr_data (time) ops/sec
         if VERBOSE > 2:
             print("LABEL: {}, DATA: {}".format(_label, _data))
         if not _label in peak:
@@ -318,7 +329,7 @@ def get_peak_ops(roof_data, flop_info=None):
             info_list = re.sub(r"[^\w]", " ", flop_info).split()
             if len(info_list) > 0:
                 info = info_list[0] + " GFLOPs/sec"
-        except:
+        except Exception:
             pass
 
     print("PEAK: {}".format(peak))
@@ -369,7 +380,7 @@ def get_peak_bandwidth(roof_data, band_labels):
 
     work_set = work_set[begin:]
     bandwidth_data = bandwidth_data[begin:]
-    min_bandwidth = min(bandwidth_data)
+    # min_bandwidth = min(bandwidth_data)
 
     dband = max_bandwidth / float(samples - 1)
 
@@ -644,9 +655,9 @@ def get_hotspots_integer(op_data, ai_data):
     ai_graph_data = ai_data["graph"]
     hotspots = []
 
-    avg_runtime = 1.0
-    max_runtime = 0.0
-    max_length = min([len(op_graph_data), len(ai_graph_data)])
+    # avg_runtime = 1.0
+    # max_runtime = 0.0
+    # max_length = min([len(op_graph_data), len(ai_graph_data)])
     all_runtime = []
 
     def get_runtime(_data, extra=[]):
@@ -1010,7 +1021,7 @@ def plot_roofline(
         # ensure bandwidth labels are not duplicated
         _nitr += 1
 
-    from random import random
+    # from random import random
     import pylab
 
     labels = []
@@ -1022,7 +1033,7 @@ def plot_roofline(
         c = get_color(element[2])
         myScatter = plt.scatter(element[0], element[1], c=c, marker=element[3])
         plotted_spots.append(myScatter)
-        factor = 10.0 * random() - 5.0
+        # factor = 10.0 * random() - 5.0
         label = "{}".format(element[4]).replace(">>>", "")
 
         # plt.annotate(label, (element[0], element[1] + factor), **get_font())
