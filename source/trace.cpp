@@ -682,7 +682,7 @@ extern "C"
             }
             else
             {
-                std::string exe_name   = (cmd) ? cmd : "";
+                std::string exe_name = (cmd) ? cmd : "";
                 while(exe_name.find('\\') != std::string::npos)
                     exe_name = exe_name.substr(exe_name.find_last_of('\\') + 1);
                 while(exe_name.find('/') != std::string::npos)

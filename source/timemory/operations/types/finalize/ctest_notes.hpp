@@ -29,7 +29,9 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
 
+#include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 
 namespace tim
@@ -54,14 +56,16 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
     void operator()(strset_t* data)
     {
         std::stringstream ss;
-        // loop over ASCII report filenames
+        // loop over filenames
         for(auto&& itr : *data)
         {
-#if defined(_WIN32) || defined(_WIN64)
-            while(itr.find("\\") != std::string::npos)
-                itr = itr.replace(itr.find("\\"), 1, "/");
-#endif
-            ss << "LIST(APPEND CTEST_NOTES_FILES \"" << itr << "\")\n";
+            std::string str = itr;
+            size_t      pos = std::string::npos;
+            while((pos = str.find('\\')) != std::string::npos)
+                str = str.replace(pos, 1, "/");
+            while((pos = str.find("//")) != std::string::npos)
+                str = str.replace(pos, 1, "/");
+            ss << "LIST(APPEND CTEST_NOTES_FILES \"" << str << "\")\n";
         }
 
         if(data->size() > 0)
