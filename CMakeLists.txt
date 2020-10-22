@@ -227,8 +227,19 @@ include(Compilers)
 message(STATUS "Configuring build settings...")
 include(BuildSettings)
 
+if (MSVC)
+    set(TIMEMORY_BUILD_CEREAL 1)
+else()
+    set(TIMEMORY_BUILD_CEREAL 0)
+endf()
 message(STATUS "Configuring external packages and interface libraries...")
 include(Packages)
+
+if (NOT TIMEMORY_BUILD_CEREAL)
+    message(STATUS "2. including TIMEMORY_CEREAL_INCLUDE=${TIMEMORY_CEREAL_INCLUDE}")
+    # TODO: this should be a target_include_directories but I cannot find the target for timemory-core-object
+    include_directories(${TIMEMORY_CEREAL_INCLUDE})
+endif()
 
 # only after submodules have been added
 if(TIMEMORY_USE_COVERAGE)

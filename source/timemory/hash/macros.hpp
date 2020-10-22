@@ -41,3 +41,8 @@
 #else
 #    define TIMEMORY_HASH_LINKAGE(...) inline __VA_ARGS__
 #endif
+
+#if defined(_MSC_VER) && !defined(NDEBUG) && !defined(DEBUG)
+#    define DEBUG
+#endif
+

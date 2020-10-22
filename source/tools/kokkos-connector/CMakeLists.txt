@@ -65,6 +65,10 @@ message(STATUS "")
 #
 #   Configure common target
 #
+if (MSVC)
+    add_compile_options(/bigobj)
+endif()
+
 set(timemory_INTERFACE_LIBRARY)
 foreach(_COMP headers vector dmp cxx-shared mpip-library ompt-library ncclp-library
         ${TIMEMORY_KOKKOS_COMPONENTS})
@@ -115,6 +119,7 @@ configure_library(kp_timemory_filter)
 #
 if(TIMEMORY_KOKKOS_BUILD_SAMPLE)
     add_executable(sample sample/sample.cpp)
+    set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
     target_link_libraries(sample PRIVATE kp_timemory)
 endif()
 

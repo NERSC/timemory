@@ -450,17 +450,26 @@ endif()
 
 #set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
 
-checkout_git_submodule(RECURSIVE
-    RELATIVE_PATH external/cereal
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    REPO_URL https://github.com/jrmadsen/cereal.git
-    REPO_BRANCH timemory)
+if (TIMEMORY_BUILD_CEREAL)
+    checkout_git_submodule(RECURSIVE
+        RELATIVE_PATH external/cereal
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/cereal.git
+        REPO_BRANCH timemory)
 
-# add cereal
-add_subdirectory(${PROJECT_SOURCE_DIR}/external/cereal)
+    # add cereal
+    add_subdirectory(${PROJECT_SOURCE_DIR}/external/cereal)
 
-target_include_directories(timemory-cereal SYSTEM INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/cereal/include>)
+    target_include_directories(timemory-cereal SYSTEM INTERFACE
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/cereal/include>)
+else()
+    find_package(cereal CONFIG REQUIRED)
+    get_target_property(TIMEMORY_CEREAL_INCLUDE cereal INTERFACE_INCLUDE_DIRECTORIES)
+
+    message(STATUS "1. including TIMEMORY_CEREAL_INCLUDE=${TIMEMORY_CEREAL_INCLUDE}")
+    # TODO: this should be a target_include_directories but I cannot find the target for timemory-core-object
+    include_directories(${TIMEMORY_CEREAL_INCLUDE})
+endif()
 
 # timemory-headers always provides timemory-cereal
 target_link_libraries(timemory-headers INTERFACE timemory-cereal)
