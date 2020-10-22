@@ -315,7 +315,8 @@ template <typename Type, typename Pointer>
 singleton<Type, Pointer>::~singleton()
 {
     auto& del = get_deleter();
-    del(_master_instance());
+    if(del)
+        del(_master_instance());
 }
 
 //--------------------------------------------------------------------------------------//
