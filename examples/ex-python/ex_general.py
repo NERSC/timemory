@@ -2,6 +2,7 @@
 
 import sys
 import json
+import argparse
 import timemory
 from timemory.profiler import profile
 from timemory.bundle import auto_timer, auto_tuple, marker
@@ -38,7 +39,32 @@ def run_marker(n):
 
 
 if __name__ == "__main__":
-    n = int(sys.argv[1] if len(sys.argv) > 1 else 10)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-n", "--nfib", type=int, default=10, help="Fibonacci depth"
+    )
+
+    # demonstrate how to add command-line support
+    # The subparser stuff is not strictly necessary: if a
+    # subparser is not provided, the default behavior is
+    # to do this internally. If you want to disable the
+    # subparser behavior, pass 'subparser=None' or
+    # subparser=False
+    subparser = parser.add_subparsers()
+    timemory.settings.add_arguments(
+        parser,
+        subparser=subparser.add_parser(
+            "timemory-config",
+            parents=[parser],
+            conflict_handler="resolve",
+            description="Configure settings for timemory",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        ),
+    )
+
+    args = parser.parse_args()
+    n = args.nfib
 
     run_profile(n)
     run_auto_timer(n)

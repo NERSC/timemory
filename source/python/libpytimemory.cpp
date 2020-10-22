@@ -88,8 +88,10 @@ manager_wrapper::get()
 }
 
 //--------------------------------------------------------------------------------------//
+//
 namespace impl
 {
+//
 template <typename Tp, typename Archive,
           tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
@@ -97,14 +99,49 @@ get_json(Archive& ar, int) -> decltype(tim::storage<Tp>::instance()->dmp_get(ar)
 {
     tim::storage<Tp>::instance()->dmp_get(ar);
 }
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 template <typename Tp, typename Archive>
 auto
 get_json(Archive&, long)
 {}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename ValueT = typename Tp::value_type, typename StreamT,
+          tim::enable_if_t<tim::trait::is_available<Tp>::value &&
+                           !tim::concepts::is_null_type<ValueT>::value> = 0>
+auto
+get_stream(StreamT& strm, int)
+    -> decltype(tim::storage<Tp>::instance()->dmp_get(), void())
+{
+    using printer_t = tim::operation::finalize::print<Tp, true>;
+    using element_t = typename StreamT::element_type;
+
+    // strm.set_banner(Tp::get_description());
+    auto _storage = tim::storage<Tp>::instance();
+    auto _printer = printer_t{ _storage };
+    auto _data    = _printer.get_node_results();
+
+    if(_data.empty() || _data.front().empty() || tim::dmp::rank() > 0)
+        return;
+
+    if(!strm)
+        strm = std::make_shared<element_t>();
+
+    _printer.write_stream(strm, _data);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename StreamT>
+auto
+get_stream(StreamT&, long)
+{}
+//
 }  // namespace impl
+
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename Archive,
@@ -130,6 +167,39 @@ auto
 get_json(Archive& ar, std::index_sequence<Idx...>)
 {
     TIMEMORY_FOLD_EXPRESSION(get_json<tim::decay_t<enumerator_t<Idx>>>(ar, 0));
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp, typename StreamT,
+          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+auto
+get_stream(StreamT& strm, int)
+{
+    return impl::get_stream<Tp>(strm, 0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp, typename StreamT,
+          tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
+auto
+get_stream(StreamT&, ...)
+{}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t... Idx, size_t N = sizeof...(Idx)>
+auto
+get_stream(std::index_sequence<Idx...>)
+{
+    using stream_t       = std::shared_ptr<tim::utility::stream>;
+    using stream_array_t = std::array<stream_t, N>;
+
+    auto strms = stream_array_t{};
+    TIMEMORY_FOLD_EXPRESSION(
+        get_stream<tim::decay_t<enumerator_t<Idx>>>(std::get<Idx>(strms), 0));
+    return strms;
 }
 
 //======================================================================================//
@@ -319,6 +389,17 @@ PYBIND11_MODULE(libpytimemory, tim)
         auto json_str    = (hierarchy) ? _as_json_hierarchy() : _as_json_classic();
         auto json_module = py::module::import("json");
         return json_module.attr("loads")(json_str);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _as_text = []() {
+        std::stringstream ss;
+        auto strms = get_stream(std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+        for(auto& itr : strms)
+        {
+            if(itr)
+                ss << *itr << std::flush;
+        }
+        return ss.str();
     };
     //----------------------------------------------------------------------------------//
     auto set_rusage_child = []() {
@@ -569,6 +650,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data", py::arg("hierarchy") = false);
     //----------------------------------------------------------------------------------//
+    tim.def("get_text", _as_text, "Get the storage data");
+    //----------------------------------------------------------------------------------//
     tim.def(
         "init_mpip", _start_mpip,
         "Activate MPIP profiling (function name deprecated -- use start_mpip instead)");
@@ -625,28 +708,59 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    // ---------------------------------------------------------------------- //
     opts.def("safe_mkdir", &pytim::opt::safe_mkdir,
              "if [ ! -d <directory> ]; then mkdir -p <directory> ; fi");
-    // ---------------------------------------------------------------------- //
+
     opts.def("ensure_directory_exists", &pytim::opt::ensure_directory_exists,
              "mkdir -p $(basename file_path)");
-    // ---------------------------------------------------------------------- //
-    opts.def("add_arguments", &pytim::opt::add_arguments,
-             "Function to add default output arguments", py::arg("parser") = py::none(),
-             py::arg("fpath") = ".");
-    // ---------------------------------------------------------------------- //
+
     opts.def("parse_args", &pytim::opt::parse_args,
-             "Function to handle the output arguments");
-    // ---------------------------------------------------------------------- //
-    opts.def("add_arguments_and_parse", &pytim::opt::add_arguments_and_parse,
+             "Parse the command-line arguments via ArgumentParser.parse_args()",
+             py::arg("parser") = py::none{});
+
+    opts.def("parse_known_args", &pytim::opt::parse_known_args,
+             "Parse the command-line arguments via ArgumentParser.parse_known_args()",
+             py::arg("parser") = py::none{});
+
+    auto _add_arguments = [](py::object parser, py::object subparser) {
+        auto locals = py::dict("parser"_a = parser, "subparser"_a = subparser);
+        py::exec(R"(
+        import argparse
+        from timemory import settings
+
+        if parser is None:
+            parser = argparse.ArgumentParser()
+
+        settings.add_argparse(parser, subparser=subparser)            
+        parser.add_argument('--timemory-echo-dart', required=False,
+                            action='store_true', help="Echo dart tags for CDash")
+        parser.add_argument('--timemory-mpl-backend', required=False,
+                            default="default", type=str, help="Matplotlib backend")
+        )",
+                 py::globals(), locals);
+        return locals["parser"].cast<py::object>();
+    };
+
+    auto _add_args_and_parse = [&](py::object parser, py::object subparser) {
+        _add_arguments(parser, subparser);
+        return pytim::opt::parse_args(parser);
+    };
+
+    auto _add_args_and_parse_known = [&](py::object parser, py::object subparser) {
+        _add_arguments(parser, subparser);
+        return pytim::opt::parse_known_args(parser);
+    };
+
+    opts.def("add_arguments", _add_arguments, "Function to add command-line arguments",
+             py::arg("parser") = py::none{}, py::arg("subparser") = true);
+
+    opts.def("add_args_and_parse", _add_args_and_parse,
              "Combination of timing.add_arguments and timing.parse_args but returns",
-             py::arg("parser") = py::none(), py::arg("fpath") = ".");
-    // ---------------------------------------------------------------------- //
-    opts.def("add_args_and_parse_known", &pytim::opt::add_args_and_parse_known,
-             "Combination of timing.add_arguments and timing.parse_args. Returns "
+             py::arg("parser") = py::none{}, py::arg("subparser") = true);
+
+    opts.def("add_args_and_parse_known", _add_args_and_parse_known,
+             "Combination of add_arguments and parse_args. Returns "
              "timemory args and replaces sys.argv with the unknown args (used to "
              "fix issue with unittest module)",
-             py::arg("parser") = py::none(), py::arg("fpath") = ".");
-    // ---------------------------------------------------------------------- //
+             py::arg("parser") = py::none{}, py::arg("subparser") = true);
 }

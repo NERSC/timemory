@@ -27,34 +27,51 @@
 #include "timemory/utility/signals.hpp"
 
 #include <chrono>
+#include <random>
 #include <thread>
+#include <vector>
 
 using namespace tim::component;
 
-using real_tuple_t = tim::auto_tuple_t<wall_clock, papi_vector, caliper, tau_marker>;
+// a bundle of components which starts via ctor and stops via dtor
 using auto_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, peak_rss,
                                        papi_vector, caliper, tau_marker>;
+// the component_tuple equivalent (requires explicit start/stop)
 using comp_tuple_t = typename auto_tuple_t::component_type;
-using auto_list_t =
-    tim::auto_list_t<wall_clock, cpu_clock, cpu_util, peak_rss, caliper, tau_marker>;
+// a bundle of components which are optional at runtime
+using auto_list_t = tim::auto_list_t<wall_clock, cpu_clock, cpu_util, peak_rss, caliper,
+                                     tau_marker, papi_vector>;
+// a pre-configured auto_bundle
 using auto_timer_t = tim::auto_timer;
 
+// forward declaration
 void
-some_func();
+foo();
 void
-another_func();
+bar();
+void
+raz();
 intmax_t
 fibonacci(intmax_t n);
 
-//======================================================================================//
-
+//
+// Usage example:
+//
+//  ./ex_cxx_basic 10 15 20
+//  ./ex_cxx_basic --timemory-enabled=no -- 10 15
+//  ./ex_cxx_basic --timemory-enabled=no 10 15
+//  ./ex_cxx_basic --timemory-option components="wall_clock,page_rss" precision=12 -- 10
+//
 int
 main(int argc, char** argv)
 {
+    // default settings for PAPI
     if(tim::settings::papi_events().empty())
         tim::settings::papi_events() = "PAPI_TOT_CYC,PAPI_TOT_INS,PAPI_LST_INS";
 
-    const std::string default_env = "wall_clock,cpu_clock,cpu_util,caliper";
+    // it is recommended to do this outside of the initializer (or make variables static).
+    // If done inside the initializer, this will result in unnecessary overhead
+    const std::string default_env = "wall_clock,cpu_clock,cpu_util,caliper,papi_vector";
     auto              env         = tim::get_env("TIMEMORY_COMPONENTS", default_env);
     auto              env_enum    = tim::enumerate_components(tim::delimit(env));
 
@@ -64,17 +81,37 @@ main(int argc, char** argv)
         al.report_at_exit(true);
     };
 
+    // default settings which can be overridden by environment
+    tim::settings::width()                 = 16;
     tim::settings::timing_units()          = "sec";
-    tim::settings::timing_width()          = 12;
+    tim::settings::timing_width()          = 16;
     tim::settings::timing_precision()      = 6;
     tim::settings::timing_scientific()     = false;
     tim::settings::memory_units()          = "KB";
-    tim::settings::memory_width()          = 12;
+    tim::settings::memory_width()          = 16;
     tim::settings::memory_precision()      = 3;
     tim::settings::memory_scientific()     = false;
     tim::settings::enable_signal_handler() = true;
+
+    // initialize timemory
     tim::timemory_init(argc, argv);
 
+    // parse the timemory-specific command line options (if any)
+    // to distinguish timemory arguments from user arguments, use the syntax:
+    //    ./<exe> <timemory-options> -- <user-options>
+    // after the function before, argc and argv will result in:
+    //    ./<exe> <user-options>
+    // Using the syntaxes:
+    //    ./<exe> <user-options>
+    //    ./<exe> <timemory-options>
+    //    ./<exe> <timemory-options> <user-options> (intermixed)
+    // will not remove any timemory options.
+    // In other words, only timemory_argparse will remove all arguments after
+    // <exe> until the first "--" if reached and everything after the "--"
+    // will be placed in argv[1:]
+    tim::timemory_argparse(&argc, &argv);
+
+    // print out the signal handler settings
     std::cout << tim::signal_settings::str() << std::endl;
 
     //
@@ -82,11 +119,14 @@ main(int argc, char** argv)
     //
     std::vector<long> fibvalues;
     for(int i = 1; i < argc; ++i)
-        fibvalues.push_back(atol(argv[i]));
+    {
+        if(std::string(argv[i]).find_first_not_of("0123456789") == std::string::npos)
+            fibvalues.push_back(atol(argv[i]));
+    }
     if(fibvalues.empty())
-        fibvalues = { 15, 20, 25 };
+        fibvalues = { 10, 15, 20 };
 
-    // create a component tuple (does not auto-start)
+    // use the auto-timer
     auto_timer_t main(argv[0]);
     for(auto n : fibvalues)
     {
@@ -97,20 +137,40 @@ main(int argc, char** argv)
         auto ret = fibonacci(n);
         // manually stop the auto_tuple_t
         TIMEMORY_CALIPER_APPLY(fib, stop);
+        // this is necessary to avoid optimizing away the fibonacci call
         printf("\nfibonacci(%li) = %li\n", n, (long int) ret);
     }
     // stop and print
     main.stop();
     std::cout << "\n" << main << std::endl;
 
-    some_func();
-    another_func();
+    foo();
+    bar();
+    raz();
 
+    // finalize timemory (produces output)
     tim::timemory_finalize();
+
+    std::stringstream cmd;
+    std::stringstream filler;
+    std::stringstream breaker;
+
+    cmd << "#  Command executed: \"";
+    for(int i = 0; i < argc; ++i)
+        cmd << argv[i] << ((i + 1 < argc) ? " " : "");
+    cmd << "\"  #" << std::flush;
+    breaker << "#" << std::setw(cmd.str().length() - 2) << ""
+            << "#";
+    filler.fill('#');
+    filler << std::setw(cmd.str().length()) << "";
+    std::cout << "\n\t" << filler.str() << "\n\t" << breaker.str() << "\n\t" << cmd.str()
+              << "\n\t" << breaker.str() << "\n\t" << filler.str() << "\n\n"
+              << std::flush;
+
+    return 0;
 }
 
-//======================================================================================//
-
+// recursive instrumentation
 intmax_t
 fibonacci(intmax_t n)
 {
@@ -119,15 +179,51 @@ fibonacci(intmax_t n)
 }
 
 void
-some_func()
+foo()
 {
-    auto_tuple_t at("some_func");
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    // use the component tuple (does not auto-start/stop)
+    comp_tuple_t ct("foo");
+    ct.start();
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    ct.stop();
 }
 
 void
-another_func()
+bar()
 {
-    auto_list_t al("another_func");
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    auto_list_t al("bar");
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+}
+
+void
+raz()
+{
+    using int_dist_t = std::uniform_int_distribution<std::mt19937::result_type>;
+
+    // convert the component tuple into a lightweight_tuple
+    // the lightweight tuple is designed to provide as little implicit overhead
+    // as possible. For example, it does not automatically, push and pop from
+    // storage, thus start/stop will not show up in the report unless push/pop are called
+    using lw_tuple_t = tim::convert_t<comp_tuple_t, tim::lightweight_tuple<>>;
+
+    lw_tuple_t lw("raz");
+    lw.push();
+    lw.start();
+
+    // consume some memory
+    auto v   = std::vector<double>(100000);
+    auto rng = std::mt19937{};
+    rng.seed(std::random_device()());
+    // consume some cpu-time
+    std::generate(v.begin(), v.end(),
+                  [&]() { return (std::generate_canonical<double, 10>(rng)); });
+    // get a random index
+    auto idx = v.at(int_dist_t(0, v.size() - 1)(rng));
+    // scale up the random value to [100, 600) milliseconds
+    auto val = static_cast<size_t>(v.at(idx) * 500 + 100);
+    // consume some wall-time
+    std::this_thread::sleep_for(std::chrono::milliseconds(val));
+
+    lw.stop();
+    lw.pop();
 }

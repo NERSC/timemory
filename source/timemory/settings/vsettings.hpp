@@ -26,10 +26,10 @@
 
 #include "timemory/api.hpp"
 #include "timemory/settings/types.hpp"
-#include "timemory/utility/argparse.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cstdint>
+#include <iomanip>
 #include <map>
 #include <memory>
 #include <sstream>
@@ -40,11 +40,18 @@
 
 namespace tim
 {
+//
+namespace argparse
+{
+struct argument_parser;
+}
+//
 /// \struct tim::base::vsettings
 /// \brief Base class for storing settings
 struct vsettings
 {
     using parser_t      = argparse::argument_parser;
+    using parser_func_t = std::function<void(parser_t&)>;
     using display_map_t = std::map<std::string, std::string>;
 
     vsettings(const std::string& _name = "", const std::string& _env_name = "",
@@ -60,6 +67,7 @@ struct vsettings
 
     virtual ~vsettings() = default;
 
+    virtual std::string                as_string() const                        = 0;
     virtual void                       parse()                                  = 0;
     virtual void                       parse(const std::string&)                = 0;
     virtual void                       add_argument(argparse::argument_parser&) = 0;
@@ -81,11 +89,21 @@ struct vsettings
             return _ss.str();
         };
 
-        _data["name"]        = _as_str(m_name);
-        _data["count"]       = _as_str(m_count);
-        _data["max_count"]   = _as_str(m_max_count);
-        _data["env_name"]    = _as_str(m_env_name);
-        _data["description"] = _as_str(m_description);
+        auto _arr_as_str = [&](auto _val) -> std::string {
+            if(_val.empty())
+                return "";
+            std::stringstream _ss;
+            for(size_t i = 0; i < _val.size(); ++i)
+                _ss << ", " << _as_str(_val.at(i));
+            return _ss.str().substr(2);
+        };
+
+        _data["name"]         = _as_str(m_name);
+        _data["count"]        = _as_str(m_count);
+        _data["max_count"]    = _as_str(m_max_count);
+        _data["env_name"]     = _as_str(m_env_name);
+        _data["description"]  = _as_str(m_description);
+        _data["command_line"] = _arr_as_str(m_cmdline);
         return _data;
     }
 
@@ -102,7 +120,7 @@ struct vsettings
     auto get_type_index() const { return m_type_index; }
     auto get_value_index() const { return m_value_index; }
 
-    virtual bool matches(const std::string&) const;
+    virtual bool matches(const std::string&, bool exact = true) const;
 
     template <typename Tp>
     std::pair<bool, Tp> get() const
@@ -127,6 +145,31 @@ struct vsettings
             _val = _ret.second;
         return _ret.first;
     }
+
+    template <typename Tp, enable_if_t<std::is_fundamental<decay_t<Tp>>::value> = 0>
+    bool set(const Tp& _val)
+    {
+        auto _ref = dynamic_cast<tsettings<Tp, Tp&>*>(this);
+        if(_ref)
+        {
+            _ref->set(_val);
+            return true;
+        }
+        else
+        {
+            auto _nref = dynamic_cast<tsettings<Tp, Tp>*>(this);
+            if(_nref)
+            {
+                _nref->set(_val);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void set(const std::string& _val) { parse(_val); }
+
+    virtual parser_func_t get_action(project::timemory) = 0;
 
 protected:
     std::type_index          m_type_index  = std::type_index(typeid(void));

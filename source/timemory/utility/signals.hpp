@@ -38,13 +38,18 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/backends/process.hpp"
 #include "timemory/backends/signals.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/utility/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
 #include <cfenv>
 #include <csignal>
+#include <initializer_list>
+#include <set>
+#include <type_traits>
 
 #if defined(SIGNAL_AVAILABLE)
 #    include <dlfcn.h>
@@ -59,6 +64,11 @@ namespace tim
 //
 bool enable_signal_detection(
     signal_settings::signal_set_t = signal_settings::get_default());
+//
+template <typename Tp,
+          enable_if_t<!std::is_enum<Tp>::value && std::is_integral<Tp>::value> = 0>
+bool
+enable_signal_detection(std::initializer_list<Tp>&&);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -113,7 +123,7 @@ timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context 
     tim::disable_signal_detection();
 
     std::stringstream message;
-    message << "\n\n";
+    message << "\n";
 
 #    if defined(PSIGINFO_AVAILABLE)
     if(sinfo)
@@ -224,25 +234,26 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
         std::cerr << e.what() << std::endl;
     }
 
-    auto              bt = tim::get_demangled_backtrace<32>();
-    std::stringstream prefix;
-    prefix << "[PID=" << getpid() << "]";
-    int sz = 0;
-    for(const auto& itr : bt)
+    std::stringstream        prefix;
+    std::stringstream        serr;
+    std::vector<std::string> bt;
+
+    prefix << "[PID=" << process::get_id() << "][TID=" << threading::get_id() << "]";
+
+    for(auto&& itr : tim::get_demangled_backtrace<32>())
     {
         if(itr.length() > 0)
-            ++sz;
+            bt.push_back(itr);
     }
-    std::stringstream serr;
+
     serr << "\nBacktrace:\n";
     for(size_t i = 0; i < bt.size(); ++i)
     {
         auto& itr = bt.at(i);
-        if(itr.length() > 0)
-            serr << prefix.str() << "[" << i << '/' << sz << "]> " << itr << "\n";
+        serr << prefix.str() << "[" << i << '/' << bt.size() << "]> " << itr << "\n";
     }
-    std::cerr << serr.str().c_str() << std::flush;
 
+    message << serr.str().c_str() << std::flush;
     os << message.str() << std::flush;
 }
 
@@ -296,6 +307,19 @@ enable_signal_detection(signal_settings::signal_set_t operations)
 
 //--------------------------------------------------------------------------------------//
 
+template <typename Tp,
+          enable_if_t<!std::is_enum<Tp>::value && std::is_integral<Tp>::value>>
+inline bool
+enable_signal_detection(std::initializer_list<Tp>&& _signals)
+{
+    auto operations = signal_settings::signal_set_t{};
+    for(const auto& itr : _signals)
+        operations.insert(static_cast<sys_signal>(itr));
+    return enable_signal_detection(operations);
+}
+
+//--------------------------------------------------------------------------------------//
+
 inline void
 disable_signal_detection()
 {
@@ -333,6 +357,14 @@ disable_signal_detection()
 namespace tim
 {
 inline bool enable_signal_detection(signal_settings::signal_set_t) { return false; }
+
+template <typename Tp,
+          enable_if_t<!std::is_enum<Tp>::value && std::is_integral<Tp>::value>>
+inline bool
+enable_signal_detection(std::initializer_list<Tp>&&)
+{
+    return false;
+}
 
 inline void
 disable_signal_detection()

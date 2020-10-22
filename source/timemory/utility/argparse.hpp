@@ -202,7 +202,7 @@ find_punct(const std::string& s)
     size_t i;
     for(i = 0; i < s.length(); ++i)
     {
-        if(std::ispunct(static_cast<int>(s[i])))
+        if(std::ispunct(static_cast<int>(s[i])) && s[i] != '-')
         {
             break;
         }
@@ -379,6 +379,9 @@ struct argument_parser
     using action_func_t = std::function<void(this_type&)>;
     using action_pair_t = std::pair<bool_func_t, action_func_t>;
     using error_func_t  = std::function<void(this_type&, arg_result&)>;
+    using known_args_t  = std::tuple<arg_result, int, char**>;
+    using strvec_t      = std::vector<std::string>;
+    using strset_t      = std::set<std::string>;
     //
     //----------------------------------------------------------------------------------//
     //
@@ -577,7 +580,7 @@ struct argument_parser
                     return arg_result(ss.str());
                 }
             }
-            return arg_result();
+            return arg_result{};
         }
 
         void execute_actions(argument_parser& p)
@@ -676,7 +679,7 @@ struct argument_parser
         std::cerr << "Usage: " << m_bin;
         if(m_positional_arguments.empty())
         {
-            std::cerr << " [options...]"
+            std::cerr << " [" << demangle<this_type>() << " arguments...]"
                       << " " << _extra << std::endl;
         }
         else
@@ -707,7 +710,7 @@ struct argument_parser
             }
             if(m_positional_arguments.find(argument::Position::LastArgument) ==
                m_positional_arguments.end())
-                std::cerr << " [options...]";
+                std::cerr << " [" << demangle<this_type>() << " arguments...]";
             std::cerr << " " << _extra << std::endl;
         }
         std::cerr << "\nOptions:" << std::endl;
@@ -739,15 +742,134 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
-    using known_args_t = std::tuple<arg_result, int, char**>;
+    /// \fn arg_result parse_known_args(int argc, char** argv, const std::string& delim,
+    ///                                 int verb)
+    /// \param[in,out] argc Number of arguments (i.e. # of command-line args)
+    /// \param[in,out] argv Array of strings (i.e. command-line)
+    /// \param[in] delim Delimiter which separates this argparser's opts from user's
+    /// arguments
+    /// \param[in] verb verbosity
+    ///
+    /// \brief Basic variant of \ref parse_known_args which does not replace argc/argv
+    /// and does not provide an array of strings that it processed
+    ///
     known_args_t parse_known_args(int argc, char** argv, const std::string& _delim = "--",
                                   int verbose_level = 0)
     {
-        std::vector<std::string> _args;
+        strvec_t _args{};
+        return parse_known_args(argc, argv, _args, _delim, verbose_level);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    arg_result parse_known_args(int* argc, char*** argv, const std::string& _delim = "--",
+                                int verbose_level = 0)
+    {
+        strvec_t args{};
+        return parse_known_args(argc, argv, args, _delim, verbose_level);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    /// \fn arg_result parse_known_args(int* argc, char*** argv, const std::string& delim,
+    ///                                 int verb)
+    /// \param[in,out] argc Pointer to number of arguments (i.e. # of command-line args)
+    /// \param[in,out] argv Pointer to array of strings (i.e. command-line)
+    /// \param[in] delim Delimiter which separates this argparser's opts from user's
+    /// arguments
+    /// \param[in] verb verbosity
+    ///
+    /// \brief This variant calls \ref parse_known_args and replaces argc and argv with
+    /// the argv[0] + anything after delimiter (if the delimiter is provided). If the
+    /// delimiter does not exist, argc and argv are unchanged.
+    ///
+    arg_result parse_known_args(int* argc, char*** argv, strvec_t& _args,
+                                const std::string& _delim = "--", int verbose_level = 0)
+    {
+        // check for help flag
+        auto help_check = [&](int _argc, char** _argv) {
+            strset_t help_args = { "-h", "--help", "-?" };
+            auto     _help_req = (exists("help") ||
+                              (_argc > 1 && help_args.find(_argv[1]) != help_args.end()));
+            if(_help_req && !exists("help"))
+            {
+                for(auto hitr : help_args)
+                {
+                    auto hstr = hitr.substr(hitr.find_first_not_of('-'));
+                    auto itr  = m_name_map.find(hstr);
+                    if(itr != m_name_map.end())
+                        m_arguments[static_cast<size_t>(itr->second)].m_found = true;
+                }
+            }
+            return _help_req;
+        };
 
-        bool   _found = false;  // track whether delimiter was found
-        int    _cmdc  = argc;   // the argc after known args removed
-        char** _cmdv  = argv;   // the argv after known args removed
+        // check for a dash in th command line
+        bool _pdash = false;
+        for(int i = 1; i < *argc; ++i)
+        {
+            if((*argv)[i] == std::string("--"))
+                _pdash = true;
+        }
+
+        // parse the known args and get the remaining argc/argv
+        auto _pargs = parse_known_args(*argc, *argv, _args, _delim, verbose_level);
+        auto _perrc = std::get<0>(_pargs);
+        auto _pargc = std::get<1>(_pargs);
+        auto _pargv = std::get<2>(_pargs);
+
+        // check if help was requested before the dash (if dash exists)
+        if(help_check((_pdash) ? 0 : _pargc, _pargv))
+            return arg_result{ "help requested" };
+
+        // assign the argc and argv
+        *argc = _pargc;
+        *argv = _pargv;
+
+        return _perrc;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    /// \fn arg_result parse_known_args(int argc, char** argv, strvec_t& args, const
+    ///                                 std::string& delim, int verb)
+    /// \param[in,out] argc Number of arguments (i.e. # of command-line args)
+    /// \param[in,out] argv Array of strings (i.e. command-line)
+    /// \param[in,out] args Array of strings processed by this parser
+    /// \param[in] delim Delimiter which separates this argparser's opts from user's
+    /// arguments
+    /// \param[in] verb verbosity
+    ///
+    /// \brief Parses all options until argv[argc-1] or delimiter is found.
+    /// Returns a tuple containing an argument error object (operator bool will return
+    /// true if there was an error) and the new argc and argv after the known arguments
+    /// have been processed. This is slightly different from the Python
+    /// argparse.ArgumentParser.parse_known_args: if the delimiter is not found, it will
+    /// not remove the arguments that it recognizes.
+    /// To distinguish this parsers options from user arguments, use the syntax:
+    ///
+    ///    ./<CMD> <PARSER_OPTIONS> -- <USER_ARGS>
+    ///
+    /// And std::get<1>(...) on the return value will be the new argc.
+    /// and std::get<2>(...) on the return value will be the new argv.
+    /// Other valid usages:
+    ///
+    ///    ./<CMD> --help       (will report this parser's help message)
+    ///    ./<CMD> -- --help    (will report the applications help message, if supported)
+    ///    ./<CMD> <USER_ARGS>
+    ///    ./<CMD> <PARSER_OPTIONS>
+    ///    ./<CMD> <PARSER_OPTIONS> <USER_ARGS> (intermixed)
+    ///
+    /// will not remove any of the known options.
+    /// In other words, this will remove all arguments after <CMD> until the first "--" if
+    /// reached and everything after the "--" will be placed in argv[1:]
+    ///
+    known_args_t parse_known_args(int argc, char** argv, strvec_t& _args,
+                                  const std::string& _delim = "--", int verbose_level = 0)
+    {
+        int    _cmdc = argc;  // the argc after known args removed
+        char** _cmdv = argv;  // the argv after known args removed
+        // _cmdv and argv are same pointer unless delimiter is found
 
         if(argc > 0)
         {
@@ -760,7 +882,6 @@ struct argument_parser
             std::string _arg = argv[i];
             if(_arg == _delim)
             {
-                _found       = true;
                 _cmdc        = argc - i;
                 _cmdv        = new char*[_cmdc + 1];
                 _cmdv[_cmdc] = nullptr;
@@ -798,9 +919,6 @@ struct argument_parser
         if(_cmdc > 0 && verbose_level > 0)
             std::cerr << "[command]>  " << cmd_string(_cmdc, _cmdv) << "\n\n";
 
-        if(!_found)
-            return known_args_t{ arg_result(), _cmdc, _cmdv };
-
         return known_args_t{ parse(_args, verbose_level), _cmdc, _cmdv };
     }
     //
@@ -824,6 +942,13 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    /// \fn arg_result parse(const std::vector<std::string>& args, int verb)
+    /// \param[in] args Array of strings (i.e. command-line arguments)
+    /// \param[in] verb Verbosity
+    ///
+    /// \brief This is the primary function for parsing the command line arguments.
+    /// This is where the map of the options is built and the loop over the
+    /// arguments is performed.
     arg_result parse(const std::vector<std::string>& _args, int verbose_level = 0)
     {
         if(verbose_level > 0)
@@ -831,7 +956,7 @@ struct argument_parser
             std::cerr << "[argparse::parse]> parsing '";
             for(const auto& itr : _args)
                 std::cerr << itr << " ";
-            std::cerr << '\n';
+            std::cerr << "'" << '\n';
         }
 
         using argmap_t = std::map<std::string, argument*>;
@@ -952,19 +1077,54 @@ struct argument_parser
                 itr.second->execute_actions(*this);
         }
 
-        return arg_result();
+        return arg_result{};
     }
     //
     //----------------------------------------------------------------------------------//
     //
+    /// \fn argument& enable_help()
+    /// \brief Add a help command
     argument& enable_help()
     {
         m_help_enabled = true;
-        return add_argument().names({ "-h", "--help" }).description("Shows this page");
+        return add_argument()
+            .names({ "-h", "--help" })
+            .description("Shows this page")
+            .count(0);
     }
     //
     //----------------------------------------------------------------------------------//
     //
+    /// \fn bool exists(const std::string& name) const
+    /// \brief Returns whether or not an option was found in the arguments. Only
+    /// useful after a call to \ref parse or \ref parse_known_args.
+    ///
+    /// \code[.cpp]
+    ///
+    /// int main(int argc, char** argv)
+    /// {
+    ///     argument_parser p{ argv[0] };
+    ///     p.add_argument()
+    ///         .names({ "-h", "--help"})
+    ///         .description("Help message")
+    ///         .count(0);
+    ///
+    ///     auto ec = p.parse(argc, argv);
+    ///     if(ec)
+    ///     {
+    ///         std::cerr << "Error: " << ec << std::endl;
+    ///         exit(EXIT_FAILURE);
+    ///     }
+    ///
+    ///     if(p.exists("help"))
+    ///     {
+    ///         p.print_help();
+    ///         exit(EXIT_FAILURE);
+    ///     }
+    ///
+    ///     // ...
+    /// }
+    /// \endcode
     bool exists(const std::string& name) const
     {
         std::string n = helpers::ltrim(
@@ -977,6 +1137,31 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    /// \fn T get(const std::string& name)
+    /// \tparam T Data type to convert the argument into
+    /// \param[in] name An identifier of the option
+    ///
+    /// \brief Get the value(s) associated with an argument. If option, it should
+    /// be used in conjunction with \ref exists(name). Only useful after a call to \ref
+    /// parse or \ref parse_known_args.
+    ///
+    /// \code[.cpp]
+    ///
+    /// int main(int argc, char** argv)
+    /// {
+    ///     argument_parser p{ argv[0] };
+    ///     p.add_argument()
+    ///         .names({ "-n", "--iterations"})
+    ///         .description("Number of iterations")
+    ///         .count(1);
+    ///
+    ///     // ... etc.
+    ///
+    ///     auto nitr = p.get<size_t>("iteration");
+    ///
+    ///     // ... etc.
+    /// }
+    /// \endcode
     template <typename T>
     T get(const std::string& name)
     {
@@ -1001,10 +1186,30 @@ struct argument_parser
     template <typename ErrorFuncT>
     void on_error(ErrorFuncT&& _func)
     {
-        m_error_func = std::forward<ErrorFuncT>(_func);
+        on_error_sfinae(std::forward<ErrorFuncT>(_func), 0);
     }
 
 private:
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename ErrorFuncT>
+    auto on_error_sfinae(ErrorFuncT&& _func, int)
+        -> decltype(_func(std::declval<this_type&>(), std::declval<result_type>()),
+                    void())
+    {
+        m_error_func = std::forward<ErrorFuncT>(_func);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename ErrorFuncT>
+    auto on_error_sfinae(ErrorFuncT&& _func, long)
+        -> decltype(_func(std::declval<result_type>()), void())
+    {
+        auto _wrap_func = [=](this_type&, result_type ret) { _func(ret); };
+        m_error_func    = _wrap_func;
+    }
     //
     //----------------------------------------------------------------------------------//
     //
@@ -1075,7 +1280,7 @@ private:
                 }
             }
         }
-        return arg_result();
+        return arg_result{};
     }
     //
     //----------------------------------------------------------------------------------//
@@ -1103,7 +1308,10 @@ private:
             if(err)
                 return err;
 
-            if(a.m_count >= 0 && static_cast<int>(a.m_values.size()) >= a.m_count)
+            auto num_values = [&]() { return static_cast<int>(a.m_values.size()); };
+
+            if((a.m_count >= 0 && num_values() >= a.m_count) ||
+               (a.m_max_count >= 0 && num_values() >= a.m_max_count))
             {
                 err = end_argument();
                 if(err)
@@ -1112,19 +1320,21 @@ private:
             }
 
             a.m_values.push_back(value);
-            if(a.m_count >= 0 && static_cast<int>(a.m_values.size()) >= a.m_count)
+
+            if((a.m_count >= 0 && num_values() >= a.m_count) ||
+               (a.m_max_count >= 0 && num_values() >= a.m_max_count))
             {
                 err = end_argument();
                 if(err)
                     return err;
             }
-            return arg_result();
+            return arg_result{};
         }
         else
         {
             unnamed();
             // TODO
-            return arg_result();
+            return arg_result{};
         }
     }
     //
@@ -1149,7 +1359,7 @@ private:
                     return arg_result("Too many arguments given for " + a.m_names[0]);
             }
         }
-        return arg_result();
+        return arg_result{};
     }
     //
     //----------------------------------------------------------------------------------//

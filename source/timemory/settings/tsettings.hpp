@@ -51,9 +51,11 @@ namespace tim
 template <typename Tp, typename Vp>
 struct tsettings : public vsettings
 {
-    using type       = Tp;
-    using value_type = Vp;
-    using base_type  = vsettings;
+    using type          = Tp;
+    using value_type    = Vp;
+    using base_type     = vsettings;
+    using parser_t      = base_type::parser_t;
+    using parser_func_t = base_type::parser_func_t;
 
     template <typename Up = Vp, enable_if_t<!std::is_reference<Up>::value> = 0>
     tsettings()
@@ -75,6 +77,13 @@ struct tsettings : public vsettings
     void      set(const Tp& _value) { m_value = _value; }
     // void      set(Tp&& _value) { m_value = std::forward<Tp>(_value); }
 
+    virtual std::string as_string() const override
+    {
+        std::stringstream ss;
+        ss << std::boolalpha;
+        ss << m_value;
+        return ss.str();
+    }
     virtual void parse() final { m_value = get_env<decay_t<Tp>>(m_env_name, m_value); }
     virtual void parse(const std::string& v) final
     {
@@ -210,13 +219,17 @@ struct tsettings : public vsettings
         return val;
     }
 
+    virtual parser_func_t get_action(project::timemory) override { return get_action(); }
+
 private:
     template <typename Up = decay_t<Tp>, enable_if_t<std::is_same<Up, bool>::value> = 0>
     auto get_action()
     {
         return [&](parser_t& p) {
-            std::string id = argparse::helpers::ltrim(
-                m_cmdline.back(), [](int c) { return static_cast<char>(c) == '-'; });
+            std::string id  = m_cmdline.back();
+            auto        pos = m_cmdline.back().find_first_not_of('-');
+            if(pos != std::string::npos)
+                id = id.substr(pos);
             auto val = p.get<std::string>(id);
             if(val.empty())
                 m_value = true;
@@ -256,8 +269,10 @@ private:
     auto get_action()
     {
         return [&](parser_t& p) {
-            std::string id = argparse::helpers::ltrim(
-                m_cmdline.back(), [](int c) { return static_cast<char>(c) == '-'; });
+            std::string id  = m_cmdline.back();
+            auto        pos = m_cmdline.back().find_first_not_of('-');
+            if(pos != std::string::npos)
+                id = id.substr(pos);
             m_value = p.get<Up>(id);
         };
     }
@@ -267,8 +282,10 @@ private:
     auto get_action()
     {
         return [&](parser_t& p) {
-            std::string id = argparse::helpers::ltrim(
-                m_cmdline.back(), [](int c) { return static_cast<char>(c) == '-'; });
+            std::string id  = m_cmdline.back();
+            auto        pos = m_cmdline.back().find_first_not_of('-');
+            if(pos != std::string::npos)
+                id = id.substr(pos);
             auto _vec = p.get<std::vector<std::string>>(id);
             if(_vec.empty())
                 m_value = "";

@@ -35,6 +35,7 @@
 #include "timemory/compat/macros.h"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/macros/compiler.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/tsettings.hpp"
 #include "timemory/settings/types.hpp"
@@ -59,6 +60,7 @@ extern "C"
 
 namespace tim
 {
+//
 class manager;
 //
 //--------------------------------------------------------------------------------------//
@@ -81,6 +83,9 @@ struct settings
     using iterator       = typename data_type::iterator;
     using const_iterator = typename data_type::const_iterator;
     using pointer_t      = std::shared_ptr<settings>;
+
+    template <typename Tp, typename Vp>
+    using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
 
     template <typename Tag = api::native_tag>
     static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
@@ -324,6 +329,22 @@ public:
     template <typename Tp>
     bool set(const std::string& _key, Tp&& _val);
 
+    /// \fn bool update(const std::string& key, const std::string& val, bool exact)
+    /// \param key Identifier for the setting. Either name, env-name, or command-line opt
+    /// \param val Update value
+    /// \param exact If true, match only options
+    ///
+    /// \brief Update a setting via a string. Returns whether a matching setting
+    /// for the identifier was found (NOT whether the value was actually updated)
+    bool update(const std::string& _key, const std::string& _val, bool _exact = false);
+
+    template <typename Tp, typename Vp = Tp, typename... Args>
+    auto insert(const std::string& _env, const std::string& _name,
+                const std::string& _desc, Vp _init, Args&&... _args);
+
+    template <typename Tp, typename Vp>
+    auto insert(tsetting_pointer_t<Tp, Vp> _ptr, std::string _env = {});
+
 protected:
     template <typename Tp>
     using serialize_func_t = std::function<void(Tp&, value_type)>;
@@ -357,6 +378,18 @@ protected:
     strvector_t m_order        = {};
     strvector_t m_command_line = {};
     strvector_t m_environment  = get_global_environment();
+
+private:
+    void initialize_core() TIMEMORY_VISIBILITY("hidden");
+    void initialize_components() TIMEMORY_VISIBILITY("hidden");
+    void initialize_io() TIMEMORY_VISIBILITY("hidden");
+    void initialize_format() TIMEMORY_VISIBILITY("hidden");
+    void initialize_parallel() TIMEMORY_VISIBILITY("hidden");
+    void initialize_tpls() TIMEMORY_VISIBILITY("hidden");
+    void initialize_roofline() TIMEMORY_VISIBILITY("hidden");
+    void initialize_miscellaneous() TIMEMORY_VISIBILITY("hidden");
+    void initialize_ert() TIMEMORY_VISIBILITY("hidden");
+    void initialize_dart() TIMEMORY_VISIBILITY("hidden");
 };
 //
 //----------------------------------------------------------------------------------//
@@ -676,6 +709,66 @@ settings::set(const std::string& _key, Tp&& _val)
         }
     }
     return false;
+}
+//
+//----------------------------------------------------------------------------------//
+//
+inline bool
+settings::update(const std::string& _key, const std::string& _val, bool _exact)
+{
+    auto itr = m_data.find(_key);
+    // loop until itr is valid or the end
+    for(auto ditr = m_data.begin(); (itr == m_data.end() && ditr != m_data.end()); ++ditr)
+    {
+        if(ditr->second->matches(_key, _exact))
+            itr = ditr;
+    }
+
+    if(itr == m_data.end())
+    {
+        if(get_verbose() > 0 || get_debug())
+            PRINT_HERE("Key: \"%s\" did not match any known setting", _key.c_str());
+        return false;
+    }
+
+    itr->second->parse(_val);
+    return true;
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Vp, typename... Args>
+auto
+settings::insert(const std::string& _env, const std::string& _name,
+                 const std::string& _desc, Vp _init, Args&&... _args)
+{
+    static_assert(is_one_of<Tp, data_type_list_t>::value,
+                  "Error! Data type is not supported. See settings::data_type_list_t");
+    set_env(_env, _init, 0);
+    m_order.push_back(_env);
+    return m_data.insert(
+        { _env, std::make_shared<tsettings<Tp, Vp>>(_init, _name, _env, _desc,
+                                                    std::forward<Args>(_args)...) });
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Vp>
+auto
+settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, std::string _env)
+{
+    static_assert(is_one_of<Tp, data_type_list_t>::value,
+                  "Error! Data type is not supported. See settings::data_type_list_t");
+    if(_ptr)
+    {
+        if(_env.empty())
+            _env = _ptr->get_env_name();
+        set_env(_env, _ptr->as_string(), 0);
+        m_order.push_back(_env);
+        return m_data.insert({ _env, _ptr });
+    }
+
+    return std::make_pair(m_data.end(), false);
 }
 //
 //----------------------------------------------------------------------------------//
