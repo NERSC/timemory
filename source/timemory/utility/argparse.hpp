@@ -29,6 +29,7 @@
 #include <cctype>
 #include <cstring>
 #include <deque>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <list>
@@ -54,13 +55,6 @@ namespace argparse
 {
 namespace helpers
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Args>
-static inline void
-consume_parameters(Args&&...)
-{}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -161,12 +155,6 @@ is_numeric(const std::string& arg)
 
     // numbers + possible scientific notation
     return true;
-
-    /*std::stringstream ss;
-    ss << arg;
-    float              f;
-    ss >> std::noskipws >> f;
-    return ss.eof() && !ss.fail();*/
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -488,6 +476,12 @@ struct argument_parser
             return *this;
         }
 
+        argument& min_count(int count)
+        {
+            m_min_count = count;
+            return *this;
+        }
+
         argument& count(int count)
         {
             m_count = count;
@@ -544,7 +538,7 @@ struct argument_parser
         bool found() const { return m_found; }
 
         template <typename T>
-        std::enable_if_t<(helpers::is_container<T>::value), T> get()
+        std::enable_if_t<helpers::is_container<T>::value, T> get()
         {
             T                      t = T{};
             typename T::value_type vt;
@@ -559,7 +553,7 @@ struct argument_parser
 
         template <typename T>
         std::enable_if_t<
-            (!helpers::is_container<T>::value && !std::is_same<T, bool>::value), T>
+            !helpers::is_container<T>::value && !std::is_same<T, bool>::value, T>
         get()
         {
             auto               inp = get<std::string>();
@@ -570,12 +564,14 @@ struct argument_parser
         }
 
         template <typename T>
-        std::enable_if_t<(std::is_same<T, bool>::value), T> get()
+        std::enable_if_t<std::is_same<T, bool>::value, T> get()
         {
-            // std::cout << *this << std::endl;
+            if(m_count == 0)
+                return found();
+
             auto inp = get<std::string>();
-            if(inp.empty() && found())
-                return true;
+            if(inp.empty())
+                return found();
 
             namespace regex_const             = std::regex_constants;
             const auto        regex_constants = regex_const::egrep | regex_const::icase;
@@ -592,6 +588,14 @@ struct argument_parser
 
         size_t size() const { return m_values.size(); }
 
+        std::string get_name() const
+        {
+            std::stringstream ss;
+            for(auto& itr : m_names)
+                ss << "/" << itr;
+            return ss.str().substr(1);
+        }
+
     private:
         argument(const std::string& name, const std::string& desc, bool required = false)
         : m_desc(desc)
@@ -602,7 +606,7 @@ struct argument_parser
 
         argument() {}
 
-        arg_result check(const std::string& value)
+        arg_result check_choice(const std::string& value)
         {
             if(m_choices.size() > 0)
             {
@@ -631,8 +635,9 @@ struct argument_parser
             for(auto itr : arg.m_names)
                 ss << itr << " ";
             ss << ", index: " << arg.m_index << ", count: " << arg.m_count
-               << ", max count: " << arg.m_max_count << ", found: " << std::boolalpha
-               << arg.m_found << ", required: " << std::boolalpha << arg.m_required
+               << ", min count: " << arg.m_min_count << ", max count: " << arg.m_max_count
+               << ", found: " << std::boolalpha << arg.m_found
+               << ", required: " << std::boolalpha << arg.m_required
                << ", position: " << arg.m_position << ", values: ";
             for(auto itr : arg.m_values)
                 ss << itr << " ";
@@ -643,6 +648,7 @@ struct argument_parser
         friend struct argument_parser;
         int                        m_position  = Position::IgnoreArgument;
         int                        m_count     = Count::ANY;
+        int                        m_min_count = Count::ANY;
         int                        m_max_count = Count::ANY;
         std::vector<std::string>   m_names     = {};
         std::string                m_desc      = {};
@@ -1045,6 +1051,7 @@ struct argument_parser
                     err = add_value(current_arg, argument::Position::LastArgument);
                     if(b)
                         return b;
+                    // return (m_error_func(*this, b), b);
                     if(err)
                         return (m_error_func(*this, err), err);
                     continue;
@@ -1080,13 +1087,16 @@ struct argument_parser
                 }
             }
         }
+
+        // return the help
         if(m_help_enabled && exists("help"))
-        {
-            return arg_result("");
-        }
+            return arg_result("help requested");
+
         err = end_argument();
         if(err)
             return (m_error_func(*this, err), err);
+
+        // check requirements
         for(auto& a : m_arguments)
         {
             if(a.m_required && !a.m_found)
@@ -1100,12 +1110,25 @@ struct argument_parser
             }
         }
 
+        // check all the counts have been satisfied
+        for(auto& a : m_arguments)
+        {
+            if(a.m_found)
+            {
+                auto cnt_err = check_count(a);
+                if(cnt_err)
+                    return cnt_err;
+            }
+        }
+
+        // execute the global actions
         for(auto& itr : m_actions)
         {
             if(itr.first(*this))
                 itr.second(*this);
         }
 
+        // execute the argument-specific actions
         for(auto& itr : m_arg_map)
         {
             if(exists(itr.first))
@@ -1123,7 +1146,7 @@ struct argument_parser
     {
         m_help_enabled = true;
         return add_argument()
-            .names({ "-h", "--help" })
+            .names({ "-h", "-?", "--help" })
             .description("Shows this page")
             .count(0);
     }
@@ -1218,6 +1241,10 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    int64_t get_count(argument& a) { return a.m_values.size(); }
+    //
+    //----------------------------------------------------------------------------------//
+    //
     template <typename ErrorFuncT>
     void on_error(ErrorFuncT&& _func)
     {
@@ -1225,6 +1252,59 @@ struct argument_parser
     }
 
 private:
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename FuncT = std::function<bool(int, int)>>
+    arg_result check_count(argument& a, const std::string& _do_str = "111",
+                           const FuncT& _func = std::not_equal_to<int>{})
+    {
+        int _sz  = static_cast<int>(a.m_values.size());
+        int _cnt = a.m_count;
+        int _max = a.m_max_count;
+        int _min = a.m_min_count;
+
+        std::bitset<3> _do{ _do_str };
+        std::bitset<3> _checks;
+        _checks.reset();  // set all to false
+        // if <val> > ANY AND <val does not satisfies condition> -> true
+        _checks.set(0, _do.test(0) && _cnt > argument::Count::ANY && _func(_sz, _cnt));
+        _checks.set(1, _do.test(1) && _max > argument::Count::ANY && _sz > _max);
+        _checks.set(2, _do.test(2) && _min > argument::Count::ANY && _sz < _min);
+        // if no checks failed, return non-error
+        if(_checks.none())
+            return arg_result{};
+        // otherwise, compose an error message
+        std::stringstream msg;
+        msg << "Argument: " << a.get_name() << " failed to satisfy its argument count "
+            << "requirements. Number of arguments: " << _sz << ".";
+        if(_checks.test(0))
+        {
+            msg << "\n[" << a.get_name() << "]> Requires exactly " << _cnt << " values.";
+        }
+        else
+        {
+            if(_checks.test(1))
+                msg << "\n[" << a.get_name() << "]> Requires less than " << _max + 1
+                    << " values.";
+            if(_checks.test(2))
+                msg << "\n[" << a.get_name() << "]> Requires more than " << _min - 1
+                    << " values.";
+        }
+        return arg_result(msg.str());
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename FuncT = std::function<bool(int, int)>>
+    arg_result check_count(const std::string& name, const std::string& _do = "111",
+                           const FuncT& _func = std::not_equal_to<int>{})
+    {
+        auto itr = m_name_map.find(name);
+        if(itr != m_name_map.end())
+            return check_count(m_arguments[static_cast<size_t>(itr->second)], _do, _func);
+        return arg_result{};
+    }
     //
     //----------------------------------------------------------------------------------//
     //
@@ -1336,15 +1416,16 @@ private:
         {
             arg_result err;
             size_t     c = static_cast<size_t>(m_current);
-            helpers::consume_parameters(c);
+            consume_parameters(c);
             argument& a = m_arguments[static_cast<size_t>(m_current)];
 
-            err = a.check(value);
+            err = a.check_choice(value);
             if(err)
                 return err;
 
             auto num_values = [&]() { return static_cast<int>(a.m_values.size()); };
 
+            // check {m_count, m_max_count} > COUNT::ANY && m_values.size() >= {value}
             if((a.m_count >= 0 && num_values() >= a.m_count) ||
                (a.m_max_count >= 0 && num_values() >= a.m_max_count))
             {
@@ -1352,10 +1433,12 @@ private:
                 if(err)
                     return err;
                 unnamed();
+                return arg_result{};
             }
 
             a.m_values.push_back(value);
 
+            // check {m_count, m_max_count} > COUNT::ANY && m_values.size() >= {value}
             if((a.m_count >= 0 && num_values() >= a.m_count) ||
                (a.m_max_count >= 0 && num_values() >= a.m_max_count))
             {

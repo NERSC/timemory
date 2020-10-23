@@ -165,7 +165,7 @@ parse(argparse_t& parser, Args&&... args)
         .names({ "-S", "--stdlib" })
         .description("Enable instrumentation of C++ standard library functions. Use with "
                      "caution because timemory uses the STL internally!")
-        .count(0);
+        .max_count(1);
     parser.add_argument()
         .names({ "-p", "--pid" })
         .description("Connect to running process")
