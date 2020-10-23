@@ -56,13 +56,15 @@ struct vsettings
 
     vsettings(const std::string& _name = "", const std::string& _env_name = "",
               const std::string& _descript = "", std::vector<std::string> _cmdline = {},
-              int32_t _count = -1, int32_t _max_count = -1)
+              int32_t _count = -1, int32_t _max_count = -1,
+              std::vector<std::string> _choices = {})
     : m_count(_count)
     , m_max_count(_max_count)
     , m_name(_name)
     , m_env_name(_env_name)
     , m_description(_descript)
     , m_cmdline(_cmdline)
+    , m_choices(_choices)
     {}
 
     virtual ~vsettings() = default;
@@ -104,6 +106,7 @@ struct vsettings
         _data["env_name"]     = _as_str(m_env_name);
         _data["description"]  = _as_str(m_description);
         _data["command_line"] = _arr_as_str(m_cmdline);
+        _data["choices"]      = _arr_as_str(m_choices);
         return _data;
     }
 
@@ -111,11 +114,14 @@ struct vsettings
     const auto& get_env_name() const { return m_env_name; }
     const auto& get_description() const { return m_description; }
     const auto& get_command_line() const { return m_cmdline; }
+    const auto& get_choices() const { return m_choices; }
     const auto& get_count() const { return m_count; }
     const auto& get_max_count() const { return m_max_count; }
 
     void set_count(int32_t v) { m_count = v; }
     void set_max_count(int32_t v) { m_max_count = v; }
+    void set_choices(const std::vector<std::string>& v) { m_choices = v; }
+    void set_command_line(const std::vector<std::string>& v) { m_cmdline = v; }
 
     auto get_type_index() const { return m_type_index; }
     auto get_value_index() const { return m_value_index; }
@@ -180,6 +186,7 @@ protected:
     std::string              m_env_name    = "";
     std::string              m_description = "";
     std::vector<std::string> m_cmdline     = {};
+    std::vector<std::string> m_choices     = {};
 };
 //
 }  // namespace tim

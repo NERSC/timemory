@@ -45,6 +45,7 @@
 #include <vector>
 
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
 
 namespace tim
@@ -214,9 +215,11 @@ find_punct(const std::string& s)
 //
 namespace is_container_impl
 {
+//
 template <typename T>
 struct is_container : std::false_type
 {};
+//
 template <typename... Args>
 struct is_container<std::vector<Args...>> : std::true_type
 {};
@@ -229,6 +232,14 @@ struct is_container<std::deque<Args...>> : std::true_type
 template <typename... Args>
 struct is_container<std::list<Args...>> : std::true_type
 {};
+//
+template <typename T>
+struct is_initializing_container : is_container<T>::type
+{};
+//
+template <typename... Args>
+struct is_initializing_container<std::initializer_list<Args...>> : std::true_type
+{};
 }  // namespace is_container_impl
 //
 //--------------------------------------------------------------------------------------//
@@ -238,7 +249,17 @@ template <typename T>
 struct is_container
 {
     static constexpr bool const value =
-        is_container_impl::is_container<typename std::decay<T>::type>::value;
+        is_container_impl::is_container<decay_t<T>>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+// type trait to utilize the implementation type traits as well as decay the type
+template <typename T>
+struct is_initializing_container
+{
+    static constexpr bool const value =
+        is_container_impl::is_initializing_container<decay_t<T>>::value;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -489,6 +510,20 @@ struct argument_parser
 
         template <typename T>
         argument& choices(const std::initializer_list<T>& _choices)
+        {
+            for(auto&& itr : _choices)
+            {
+                std::stringstream ss;
+                ss << itr;
+                m_choices.insert(ss.str());
+            }
+            return *this;
+        }
+
+        template <template <typename...> class ContainerT, typename T, typename... ExtraT,
+                  typename ContT = ContainerT<T, ExtraT...>,
+                  enable_if_t<helpers::is_container<ContT>::value> = 0>
+        argument& choices(const ContainerT<T, ExtraT...>& _choices)
         {
             for(auto&& itr : _choices)
             {

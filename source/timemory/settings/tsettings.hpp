@@ -99,7 +99,8 @@ struct tsettings : public vsettings
             p.add_argument(m_cmdline, m_description)
                 .action(get_action())
                 .count(m_count)
-                .max_count(m_max_count);
+                .max_count(m_max_count)
+                .choices(m_choices);
         }
     }
 

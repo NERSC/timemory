@@ -315,7 +315,7 @@ public:
 
 public:
     auto           ordering() const { return m_order; }
-    auto           find(const std::string& _key) { return m_data.find(_key); }
+    auto           find(const std::string& _key, bool _exact = true);
     iterator       begin() { return m_data.begin(); }
     iterator       end() { return m_data.end(); }
     const_iterator begin() const { return m_data.cbegin(); }
@@ -324,10 +324,10 @@ public:
     const_iterator cend() const { return m_data.cend(); }
 
     template <typename Tp>
-    Tp get(const std::string& _key);
+    Tp get(const std::string& _key, bool _exact = true);
 
     template <typename Tp>
-    bool set(const std::string& _key, Tp&& _val);
+    bool set(const std::string& _key, Tp&& _val, bool _exact = true);
 
     /// \fn bool update(const std::string& key, const std::string& val, bool exact)
     /// \param key Identifier for the setting. Either name, env-name, or command-line opt
@@ -628,38 +628,42 @@ settings::save(Archive& ar, const unsigned int) const
 //
 //----------------------------------------------------------------------------------//
 //
+inline auto
+settings::find(const std::string& _key, bool _exact)
+{
+    // exact match to map key
+    auto itr = m_data.find(_key);
+    if(itr != m_data.end())
+        return itr;
+
+    // match against env_name, name, command-line options
+    for(auto ditr = begin(); ditr != end(); ++ditr)
+    {
+        if(ditr->second && ditr->second->matches(_key, _exact))
+            return ditr;
+    }
+
+    // not found
+    return m_data.end();
+}
+//
+//----------------------------------------------------------------------------------//
+//
 template <typename Tp>
 Tp
-settings::get(const std::string& _key)
+settings::get(const std::string& _key, bool _exact)
 {
-    auto _tidx = std::type_index(typeid(Tp));
-    auto _vidx = std::type_index(typeid(Tp&));
-    auto itr   = m_data.find(_key);
-    if(itr != m_data.end())
+    auto itr = find(_key, _exact);
+    if(itr != m_data.end() && itr->second)
     {
-        if(itr->second)
-        {
-            if(itr->second->get_type_index() == _tidx &&
-               itr->second->get_value_index() == _tidx)
-                return static_cast<tsettings<Tp>*>(itr->second.get())->get();
-            if(itr->second->get_type_index() == _tidx &&
-               itr->second->get_value_index() == _vidx)
-                return static_cast<tsettings<Tp, Tp&>*>(itr->second.get())->get();
-        }
+        auto _vptr = itr->second;
+        auto _tidx = std::type_index(typeid(Tp));
+        auto _vidx = std::type_index(typeid(Tp&));
+        if(_vptr->get_type_index() == _tidx && _vptr->get_value_index() == _tidx)
+            return static_cast<tsettings<Tp, Tp>*>(_vptr.get())->get();
+        if(_vptr->get_type_index() == _tidx && _vptr->get_value_index() == _vidx)
+            return static_cast<tsettings<Tp, Tp&>*>(_vptr.get())->get();
     }
-    else
-        for(auto& ditr : m_data)
-        {
-            if(ditr.second)
-            {
-                if(ditr.second->get_type_index() == _tidx &&
-                   ditr.second->get_value_index() == _tidx)
-                    return static_cast<tsettings<Tp>*>(ditr.second.get())->get();
-                if(ditr.second->get_type_index() == _tidx &&
-                   ditr.second->get_value_index() == _vidx)
-                    return static_cast<tsettings<Tp, Tp&>*>(ditr.second.get())->get();
-            }
-        }
     return Tp{};
 }
 //
@@ -667,46 +671,24 @@ settings::get(const std::string& _key)
 //
 template <typename Tp>
 bool
-settings::set(const std::string& _key, Tp&& _val)
+settings::set(const std::string& _key, Tp&& _val, bool _exact)
 {
-    using Up   = decay_t<Tp>;
-    auto _tidx = std::type_index(typeid(Up));
-    auto _vidx = std::type_index(typeid(Up&));
-    auto itr   = m_data.find(_key);
-    if(itr != m_data.end())
+    auto itr = find(_key, _exact);
+    if(itr != m_data.end() && itr->second)
     {
-        if(itr->second)
-        {
-            if(itr->second->get_type_index() == _tidx &&
-               itr->second->get_value_index() == _tidx)
-                return (static_cast<tsettings<Tp>*>(itr->second.get())->get() =
-                            std::forward<Tp>(_val),
-                        true);
-            if(itr->second->get_type_index() == _tidx &&
-               itr->second->get_value_index() == _vidx)
-                return (static_cast<tsettings<Tp, Tp&>*>(itr->second.get())->get() =
-                            std::forward<Tp>(_val),
-                        true);
-        }
-    }
-    else
-    {
-        for(auto& ditr : m_data)
-        {
-            if(ditr.second)
-            {
-                if(ditr.second->get_type_index() == _tidx &&
-                   ditr.second->get_value_index() == _tidx)
-                    return (static_cast<tsettings<Tp>*>(ditr.second.get())->get() =
-                                std::forward<Tp>(_val),
-                            true);
-                if(ditr.second->get_type_index() == _tidx &&
-                   ditr.second->get_value_index() == _vidx)
-                    return (static_cast<tsettings<Tp, Tp&>*>(ditr.second.get())->get() =
-                                std::forward<Tp>(_val),
-                            true);
-            }
-        }
+        using Up   = decay_t<Tp>;
+        auto _tidx = std::type_index(typeid(Up));
+        auto _vidx = std::type_index(typeid(Up&));
+        if(itr->second->get_type_index() == _tidx &&
+           itr->second->get_value_index() == _tidx)
+            return (static_cast<tsettings<Tp>*>(itr->second.get())->get() =
+                        std::forward<Tp>(_val),
+                    true);
+        if(itr->second->get_type_index() == _tidx &&
+           itr->second->get_value_index() == _vidx)
+            return (static_cast<tsettings<Tp, Tp&>*>(itr->second.get())->get() =
+                        std::forward<Tp>(_val),
+                    true);
     }
     return false;
 }
@@ -716,14 +698,7 @@ settings::set(const std::string& _key, Tp&& _val)
 inline bool
 settings::update(const std::string& _key, const std::string& _val, bool _exact)
 {
-    auto itr = m_data.find(_key);
-    // loop until itr is valid or the end
-    for(auto ditr = m_data.begin(); (itr == m_data.end() && ditr != m_data.end()); ++ditr)
-    {
-        if(ditr->second->matches(_key, _exact))
-            itr = ditr;
-    }
-
+    auto itr = find(_key, _exact);
     if(itr == m_data.end())
     {
         if(get_verbose() > 0 || get_debug())

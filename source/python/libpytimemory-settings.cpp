@@ -229,17 +229,17 @@ generate(py::module& _pymod)
                 _use_subparser = _use;
                 if(_use_subparser)
                 {
-                    auto _parents         = py::list{};
+                    // auto _parents         = py::list{};
                     auto _subcommand_args = py::kwargs{};
                     auto _subparser_args  = py::kwargs{};
 
                     _subcommand_args["help"] = "sub-command help";
                     auto _subparser = parser.attr("add_subparsers")(**_subcommand_args);
 
-                    _parents.append(parser);
+                    // _parents.append(parser);
                     _subparser_args["description"] = "Configure settings for timemory";
                     _subparser_args["conflict_handler"] = "resolve";
-                    _subparser_args["parents"]          = _parents;
+                    // _subparser_args["parents"]          = _parents;
                     _subparser_args["formatter_class"] =
                         pyargparse.attr("ArgumentDefaultsHelpFormatter");
                     _parser = _subparser.attr("add_parser")("timemory-config",
