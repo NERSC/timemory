@@ -200,7 +200,8 @@ TEST_F(api_tests, category)
 
 TEST_F(api_tests, os)
 {
-    trait::apply<trait::runtime_enabled>::set<os::unix, os::windows, wall_clock>(false);
+    trait::apply<trait::runtime_enabled>::set<os::supports_unix, os::supports_windows,
+                                              wall_clock>(false);
 
     os_bundle_t _obj(details::get_test_name());
     _obj.start();
@@ -209,7 +210,8 @@ TEST_F(api_tests, os)
     EXPECT_NEAR(_obj.get<wall_clock>()->get(), 0.0, 1.0e-6);
     EXPECT_NEAR(_obj.get<cpu_clock>()->get(), 1.0, 0.1);
 
-    trait::apply<trait::runtime_enabled>::set<os::unix, os::windows, wall_clock>(true);
+    trait::apply<trait::runtime_enabled>::set<os::supports_unix, os::supports_windows,
+                                              wall_clock>(true);
 }
 
 //--------------------------------------------------------------------------------------//
