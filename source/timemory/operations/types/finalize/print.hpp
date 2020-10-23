@@ -122,6 +122,50 @@ base::print::print_tree(const std::string&) {}
 //
 #endif  // !defined(TIMEMORY_OPERATIONS_SOURCE)
 //
+template <typename Tp>
+print<Tp, true>::print(storage_type* _data)
+: base_type(trait::requires_json<Tp>::value)
+, data(_data)
+{
+    dmp::barrier();
+    node_init        = dmp::is_initialized();
+    node_rank        = dmp::rank();
+    node_size        = dmp::size();
+    node_results     = data->dmp_get();
+    data_concurrency = data->instance_count().load();
+    dmp::barrier();
+
+    settings::indent_width<Tp, 0>(Tp::get_width());
+    settings::indent_width<Tp, 1>(4);
+    settings::indent_width<Tp, 2>(4);
+
+    description = Tp::get_description();
+    for(auto& itr : description)
+        itr = toupper(itr);
+
+    // find the max width
+    for(const auto& mitr : node_results)
+    {
+        for(const auto& itr : mitr)
+        {
+            const auto& itr_obj    = itr.data();
+            const auto& itr_prefix = itr.prefix();
+            const auto& itr_depth  = itr.depth();
+
+            if(itr_depth < 0 || itr_depth > settings::max_depth() ||
+               itr_depth > max_call_stack)
+                continue;
+
+            max_depth = std::max<int64_t>(max_depth, itr_depth);
+
+            // find global max
+            settings::indent_width<Tp, 0>(itr_prefix.length());
+            settings::indent_width<Tp, 1>(std::log10(itr_obj.get_laps()) + 1);
+            settings::indent_width<Tp, 2>(std::log10(itr_depth) + 1);
+        }
+    }
+}
+//
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>

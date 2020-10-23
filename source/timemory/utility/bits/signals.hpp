@@ -76,6 +76,8 @@ insert_and_remove(const sys_signal&              _type,  // signal type
                   signal_settings::signal_set_t* _rem)   // set to remove from
 
 {
+    if(!_ins || !_rem)
+        return;
     _ins->insert(_type);
     auto itr = _rem->find(_type);
     if(itr != _rem->end())

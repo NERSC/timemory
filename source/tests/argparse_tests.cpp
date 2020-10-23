@@ -32,12 +32,16 @@
 #include <thread>
 #include <vector>
 
+#include "timemory/config.hpp"
+#include "timemory/manager.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/argparse.hpp"
 #include "timemory/variadic/macros.hpp"
 
 static int         _argc     = 0;
 static char**      _argv     = nullptr;
+static int         _margc    = 0;
+static char**      _margv    = nullptr;
 static int         _log_once = 0;
 static const char* _arg0     = "./test";
 
@@ -161,7 +165,7 @@ parse(argparse_t& parser, Args&&... args)
         .names({ "-S", "--stdlib" })
         .description("Enable instrumentation of C++ standard library functions. Use with "
                      "caution because timemory uses the STL internally!")
-        .count(0);
+        .max_count(1);
     parser.add_argument()
         .names({ "-p", "--pid" })
         .description("Connect to running process")
@@ -228,6 +232,9 @@ class argparse_tests : public ::testing::Test
 protected:
     void        SetUp() override {}
     std::string extra_help = "-- <CMD> <ARGS>";
+
+    static void SetUpTestSuite() { tim::timemory_init(_margc, _margv); }
+    static void TearDownTestSuite() { tim::timemory_finalize(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -616,9 +623,97 @@ TEST_F(argparse_tests, parse_known_options_without_options)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(argparse_tests, timemory_argparse_vec)
+{
+    auto _enabled = tim::settings::enabled();
+    auto _verbose = tim::settings::verbose();
+    auto _debug   = tim::settings::debug();
+    auto _python  = tim::settings::python_exe();
+
+    std::vector<std::string> args = {
+        _margv[0], "--timemory-enabled=false", "--timemory-verbose",
+        "10",      "--timemory-debug",         "--timemory-python-exe",
+        "python",
+    };
+
+    std::cout << "Argument: ";
+    for(size_t i = 0; i < args.size(); ++i)
+        std::cout << args[i] << " ";
+    std::cout << std::endl;
+
+    tim::timemory_argparse(args);
+
+    EXPECT_EQ(tim::settings::verbose(), 10);
+    EXPECT_NE(_enabled, tim::settings::enabled());
+    EXPECT_NE(_verbose, tim::settings::verbose());
+    EXPECT_NE(_debug, tim::settings::debug());
+    EXPECT_NE(_python, tim::settings::python_exe());
+
+    tim::settings::enabled()    = _enabled;
+    tim::settings::verbose()    = _verbose;
+    tim::settings::debug()      = _debug;
+    tim::settings::python_exe() = _python;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(argparse_tests, timemory_argparse_ptr)
+{
+    auto _enabled = tim::settings::enabled();
+    auto _verbose = tim::settings::verbose();
+    auto _debug   = tim::settings::debug();
+    auto _python  = tim::settings::python_exe();
+
+    std::vector<std::string> args = { _margv[0],
+                                      "--timemory-enabled=false",
+                                      "--timemory-verbose",
+                                      "10",
+                                      "--timemory-debug",
+                                      "--timemory-python-exe",
+                                      "python",
+                                      "--",
+                                      "some-argument" };
+
+    int    argc = args.size();
+    char** argv = new char*[argc];
+
+    for(int i = 0; i < argc; ++i)
+    {
+        argv[i] = new char[args.at(i).length() + 1];
+        strcpy(argv[i], args.at(i).c_str());
+        argv[i][args.at(i).length()] = '\0';
+    }
+
+    std::cout << "Argument: ";
+    for(int i = 0; i < argc; ++i)
+        std::cout << argv[i] << " ";
+    std::cout << std::endl;
+
+    tim::timemory_argparse(&argc, &argv);
+
+    EXPECT_EQ(argc, 2);
+    EXPECT_EQ(std::string(argv[0]), args.front());
+    EXPECT_EQ(std::string(argv[1]), args.back());
+    EXPECT_EQ(tim::settings::python_exe(), std::string("python"));
+
+    EXPECT_NE(_enabled, tim::settings::enabled());
+    EXPECT_NE(_verbose, tim::settings::verbose());
+    EXPECT_NE(_debug, tim::settings::debug());
+    EXPECT_NE(_python, tim::settings::python_exe());
+
+    tim::settings::enabled()    = _enabled;
+    tim::settings::verbose()    = _verbose;
+    tim::settings::debug()      = _debug;
+    tim::settings::python_exe() = _python;
+}
+
+//--------------------------------------------------------------------------------------//
+
 int
 main(int argc, char** argv)
 {
+    _margc = argc;
+    _margv = argv;
     ::testing::InitGoogleTest(&argc, argv);
     auto ret = RUN_ALL_TESTS();
     return ret;

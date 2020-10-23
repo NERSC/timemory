@@ -65,6 +65,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -101,7 +102,27 @@ protected:
 namespace pytim
 {
 using string_t = std::string;
+//
+//--------------------------------------------------------------------------------------//
+//
+inline auto
+get_ostream_handle(py::object file_handle)
+{
+    using pystream_t  = py::detail::pythonbuf;
+    using cxxstream_t = std::ostream;
 
+    if(!(py::hasattr(file_handle, "write") && py::hasattr(file_handle, "flush")))
+    {
+        throw py::type_error(
+            "get_ostream_handle(file_handle): incompatible function argument:  "
+            "`file` must be a file-like object, but `" +
+            (std::string)(py::repr(file_handle)) + "` provided");
+    }
+    auto buf    = std::make_shared<pystream_t>(file_handle);
+    auto stream = std::make_shared<cxxstream_t>(buf.get());
+    return std::make_pair(stream, buf);
+}
+//
 //======================================================================================//
 //
 //                              INITITALIZATION
@@ -229,107 +250,17 @@ ensure_directory_exists(string_t file_path)
 //--------------------------------------------------------------------------------------//
 
 py::object
-add_arguments(py::object parser = py::none(), std::string fpath = ".")
+parse_args(py::object parser)
 {
-    if(fpath == ".")
-        fpath = tim::settings::output_path();
-
-    auto locals = py::dict("parser"_a = parser, "fpath"_a = fpath);
-    py::exec(R"(
-             import sys
-             import os
-             from os.path import join
-             import argparse
-             import timemory
-
-             if parser is None:
-                parser = argparse.ArgumentParser()
-
-             parser.add_argument('--output-path', required=False,
-                                 default=fpath, type=str, help="Output directory")
-
-             parser.add_argument('--output-prefix', required=False,
-                                 default="", type=str,
-                                 help="Filename prefix without path")
-
-             parser.add_argument('--disable', required=False,
-                                 action='store_false',
-                                 dest='enabled',
-                                 help="Disable timemory for script")
-
-             parser.add_argument('--enable', required=False,
-                                 action='store_true',
-                                 dest='enabled', help="Enable timemory for script")
-
-             parser.add_argument('--disable-serialization',
-                                 required=False, action='store_false',
-                                 dest='serialize',
-                                 help="Disable serialization for timers")
-
-             parser.add_argument('--enable-serialization',
-                                 required=False, action='store_true',
-                                 dest='serialize',
-                                 help="Enable serialization for timers")
-
-             parser.add_argument('--max-depth',
-                                 help="Maximum depth",
-                                 type=int,
-                                 default=timemory.settings.max_depth)
-
-             parser.add_argument('--enable-dart',
-                                 help="Print DartMeasurementFile tag for plots",
-                                 required=False, action='store_true')
-
-             parser.add_argument('--write-ctest-notes',
-                                 help="Write a CTestNotes.cmake file for timemory ASCII output",
-                                 required=False, action='store_true')
-
-             parser.set_defaults(enabled=True)
-             parser.set_defaults(serialize=True)
-             parser.set_defaults(enable_dart=False)
-             parser.set_defaults(write_ctest_notes=False)
-             )",
-             py::globals(), locals);
-    return locals["parser"].cast<py::object>();
-}
-
-//--------------------------------------------------------------------------------------//
-
-void
-parse_args(py::object args)
-{
-    auto locals = py::dict("args"_a = args);
-    py::exec(R"(
-             import sys
-             import os
-             import timemory
-
-             # Function to add default output arguments
-             timemory.settings.enabled = args.enabled
-             timemory.settings.output_path = args.output_path
-             timemory.settings.output_prefix = args.output_prefix
-             timemory.settings.max_depth = args.max_depth
-             timemory.settings.json_output = args.serialize
-             timemory.options.echo_dart = args.enable_dart
-             timemory.options.ctest_notes = args.write_ctest_notes
-             _enable_serial = args.serialize
-             )",
-             py::globals(), locals);
-}
-
-//--------------------------------------------------------------------------------------//
-
-py::object
-add_arguments_and_parse(py::object parser = py::none(), std::string fpath = "")
-{
-    auto locals = py::dict("parser"_a = parser, "fpath"_a = fpath);
+    auto locals = py::dict("parser"_a = parser);
     py::exec(R"(
              import timemory
 
-             # Combination of timemory.add_arguments and timemory.parse_args but returns
-             parser = timemory.options.add_arguments(parser, fpath)
              args = parser.parse_args()
-             timemory.options.parse_args(args)
+
+             # copy over values
+             timemory.settings.dart_output = args.timemory_echo_dart
+             timemory.options.matplotlib_backend = args.timemory_mpl_backend
              )",
              py::globals(), locals);
     return locals["args"].cast<py::object>();
@@ -338,18 +269,20 @@ add_arguments_and_parse(py::object parser = py::none(), std::string fpath = "")
 //--------------------------------------------------------------------------------------//
 
 py::object
-add_args_and_parse_known(py::object parser = py::none(), std::string fpath = "")
+parse_known_args(py::object parser)
 {
-    auto locals = py::dict("parser"_a = parser, "fpath"_a = fpath);
+    auto locals = py::dict("parser"_a = parser);
     py::exec(R"(
              import timemory
 
-             # Combination of timing.add_arguments and timing.parse_args but returns
-             parser = timemory.options.add_arguments(parser, fpath)
              args, left = parser.parse_known_args()
-             timemory.options.parse_args(args)
+
              # replace sys.argv with unknown args only
              sys.argv = sys.argv[:1]+left
+
+             # copy over values
+             timemory.settings.dart_output = args.timemory_echo_dart
+             timemory.options.matplotlib_backend = args.timemory_mpl_backend
              )",
              py::globals(), locals);
     return locals["args"].cast<py::object>();

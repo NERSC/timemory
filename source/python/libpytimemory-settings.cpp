@@ -128,10 +128,65 @@ add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> 
 py::class_<tim::settings>
 generate(py::module& _pymod)
 {
-    // auto pyargparse = py::module::import("argparse");
     py::class_<tim::settings> settings(_pymod, "settings",
                                        "Global configuration settings for timemory");
 
+    auto _argparse = [](std::shared_ptr<tim::vsettings> obj, py::object argp,
+                        bool _strip) {
+        if(!obj || obj->get_command_line().empty())
+            return;
+        py::cpp_function parse = [=](std::string val) { obj->parse(val); };
+        std::string      tidx  = tim::demangle(obj->get_type_index().name());
+        if(tidx.find("basic_string") != std::string::npos)
+            tidx = "std::string";
+        auto locals =
+            py::dict("parser"_a = argp, "args"_a = obj->get_command_line(),
+                     "desc"_a = obj->get_description(), "cnt"_a = obj->get_count(),
+                     "max_cnt"_a = obj->get_max_count(), "name"_a = obj->get_name(),
+                     "env_name"_a = obj->get_env_name(), "type_index"_a = tidx,
+                     "value"_a = obj->as_string(), "parse_action"_a = parse,
+                     "strip_timemory_prefix"_a = _strip);
+        py::exec(R"(
+             def make_action(func):
+                 class customAction(argparse.Action):
+                     def __call__(self, parser, args, values, option_string=None):
+                         if type(values) is list:
+                             func(",".join(values))
+                         else:
+                             func("{}".format(values))
+                         setattr(args, self.dest, values)
+                 return customAction
+
+             _args = []
+             _kwargs = {}
+             for itr in args:
+                if strip_timemory_prefix:
+                    _args.append(itr.replace("--timemory-", "--"))
+                else:
+                    _args.append(itr)
+
+             _kwargs["help"] = "{}\n\n[env: {}, type: {}]".format(desc, env_name.upper(),
+                                                                  type_index)
+             _kwargs["required"] = False
+
+             if cnt > 1:
+                _kwargs["nargs"] = cnt
+ 
+             if (max_cnt == 0):
+                 if value == "true":
+                     _kwargs["action"] = "store_true"
+                 else:
+                     _kwargs["action"] = "store_false"
+             else:
+                 _kwargs["action"] = make_action(parse_action)
+                 _kwargs["metavar"] = "VALUE"
+                 _kwargs["default"] = value
+                 _kwargs["type"] = str
+
+             parser.add_argument(*_args, **_kwargs)
+             )",
+                 py::globals(), locals);
+    };
     auto _init = []() {
         auto ret = new tim::settings{};
         *ret     = *tim::settings::instance<tim::api::native_tag>();
@@ -151,6 +206,63 @@ generate(py::module& _pymod)
         else
             _obj->read(inp);
     };
+    auto _args = [&](py::object parser, py::object _instance, py::object subparser) {
+        auto pyargparse = py::module::import("argparse");
+
+        if(parser.is_none())
+            parser = pyargparse.attr("ArgumentParser")();
+
+        using settings_t = tim::settings;
+        auto* _obj       = (_instance.is_none()) ? settings_t::instance()
+                                           : _instance.cast<settings_t*>();
+        if(_obj == nullptr)
+            return;
+
+        py::object _parser        = parser;
+        bool       _use_subparser = !subparser.is_none();
+
+        if(_use_subparser)
+        {
+            try
+            {
+                auto _use      = subparser.cast<bool>();
+                _use_subparser = _use;
+                if(_use_subparser)
+                {
+                    // auto _parents         = py::list{};
+                    auto _subcommand_args = py::kwargs{};
+                    auto _subparser_args  = py::kwargs{};
+
+                    _subcommand_args["help"] = "sub-command help";
+                    auto _subparser = parser.attr("add_subparsers")(**_subcommand_args);
+
+                    // _parents.append(parser);
+                    _subparser_args["description"] = "Configure settings for timemory";
+                    _subparser_args["conflict_handler"] = "resolve";
+                    // _subparser_args["parents"]          = _parents;
+                    _subparser_args["formatter_class"] =
+                        pyargparse.attr("ArgumentDefaultsHelpFormatter");
+                    _parser = _subparser.attr("add_parser")("timemory-config",
+                                                            **_subparser_args);
+                }
+            } catch(py::cast_error&)
+            {
+                _parser = subparser;
+            }
+        }
+
+        DEBUG_PRINT_HERE("%s", "starting loop");
+        for(const auto& itr : _obj->ordering())
+        {
+            DEBUG_PRINT_HERE("searching for %s", itr.c_str());
+            auto sitr = _obj->find(itr);
+            if(sitr != _obj->end() && sitr->second)
+            {
+                DEBUG_PRINT_HERE("adding args for %s", sitr->first.c_str());
+                _argparse(sitr->second, _parser, _use_subparser);
+            }
+        }
+    };
 
     // create an instance
     settings.def(py::init(_init), "Create a copy of the global settings");
@@ -159,6 +271,12 @@ generate(py::module& _pymod)
                         "Update the values of the settings from the current environment",
                         py::arg("instance") = py::none{});
     settings.def_static("read", _read, "Read the settings from JSON or text file");
+    settings.def_static("add_argparse", _args, "Add command-line argument support",
+                        py::arg("parser"), py::arg("instance") = py::none{},
+                        py::arg("subparser") = true);
+    settings.def_static("add_arguments", _args, "Add command-line argument support",
+                        py::arg("parser"), py::arg("instance") = py::none{},
+                        py::arg("subparser") = true);
 
     std::set<std::string> names;
     auto                  _settings = tim::settings::instance<tim::api::native_tag>();

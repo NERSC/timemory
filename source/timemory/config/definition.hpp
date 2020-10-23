@@ -32,6 +32,7 @@
 #include "timemory/config/declaration.hpp"
 #include "timemory/config/macros.hpp"
 #include "timemory/config/types.hpp"
+#include "timemory/utility/argparse.hpp"
 
 #if defined(TIMEMORY_CONFIG_SOURCE) || !defined(TIMEMORY_USE_CONFIG_EXTERN)
 //
@@ -194,6 +195,195 @@ timemory_init(int* argc, char*** argv, const std::string& _prefix,
     }
 
     timemory_init(*argc, *argv, _prefix, _suffix);
+    timemory_argparse(argc, argv);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_CONFIG_LINKAGE(void)
+timemory_init(int* argc, char*** argv, argparse::argument_parser& parser,
+              const std::string& _prefix, const std::string& _suffix)
+{
+    if(settings::mpi_init())
+    {
+        if(settings::debug())
+            PRINT_HERE("%s", "initializing mpi");
+
+        mpi::initialize(argc, argv);
+    }
+
+    if(settings::upcxx_init())
+    {
+        if(settings::debug())
+            PRINT_HERE("%s", "initializing upcxx");
+
+        upc::initialize();
+    }
+
+    timemory_init(*argc, *argv, _prefix, _suffix);
+    timemory_argparse(argc, argv, &parser);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_CONFIG_LINKAGE(void)
+timemory_init(std::vector<std::string>& args, argparse::argument_parser& parser,
+              const std::string& _prefix, const std::string& _suffix)
+{
+    int    argc = args.size();
+    char** argv = new char*[argc];
+    for(int i = 0; i < argc; ++i)
+    {
+        auto len = args.at(i).length();
+        argv[i]  = new char[len + 1];
+        strcpy(argv[i], args.at(i).c_str());
+        argv[i][len] = '\0';
+    }
+
+    if(settings::mpi_init())
+    {
+        if(settings::debug())
+            PRINT_HERE("%s", "initializing mpi");
+
+        mpi::initialize(argc, argv);
+    }
+
+    if(settings::upcxx_init())
+    {
+        if(settings::debug())
+            PRINT_HERE("%s", "initializing upcxx");
+
+        upc::initialize();
+    }
+
+    timemory_init(argc, argv, _prefix, _suffix);
+    timemory_argparse(args, &parser);
+
+    for(int i = 0; i < argc; ++i)
+        delete[] argv[i];
+    delete[] argv;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_CONFIG_LINKAGE(void)
+timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
+                  tim::settings* _settings)
+{
+    // if pointers are null, return
+    if(!argc || !argv)
+        return;
+
+    // if only one argument, return
+    if(*argc < 2)
+        return;
+
+    using parser_t     = argparse::argument_parser;
+    using parser_err_t = typename parser_t::result_type;
+
+    // print help
+    auto help_action = [](parser_t& p) {
+        if(dmp::rank() == 0)
+            p.print_help("-- <NON_TIMEMORY_ARGS>");
+        exit(EXIT_FAILURE);
+    };
+
+    auto err_action = [=](const parser_err_t& _err) {
+        if(dmp::rank() == 0 && _err)
+            std::cerr << "[timemory_argparse]> Error! " << _err << std::endl;
+    };
+
+    // if argument parser was not provided
+    bool _cleanup_parser = !parser;
+    if(_cleanup_parser)
+        parser = new parser_t{ (*argv)[0] };
+
+    // if settings instance was not provided
+    bool        _cleanup_settings = !_settings;
+    static auto _shared_settings  = tim::settings::shared_instance();
+    if(_cleanup_settings && !_shared_settings)
+        return;
+    if(_cleanup_settings)
+        _settings = _shared_settings.get();
+
+    // enable help
+    parser->enable_help();
+    parser->on_error([=](parser_t& p, const parser_err_t& _err) {
+        err_action(_err);
+        if(dmp::rank() == 0 && _settings->verbose() > 0)
+            p.print_help("-- <NON_TIMEMORY_ARGS>");
+    });
+
+    // add the arguments in the order they were appended to the settings
+    for(const auto& itr : _settings->ordering())
+    {
+        auto sitr = _settings->find(itr);
+        if(sitr != _settings->end() && sitr->second)
+        {
+            sitr->second->add_argument(*parser);
+        }
+    }
+
+    parser->add_argument()
+        .names({ "--timemory-args" })
+        .description("A generic option for any setting. Each argument MUST be passed in "
+                     "form: 'NAME=VALUE'. E.g. --timemory-args "
+                     "\"papi_events=PAPI_TOT_INS,PAPI_TOT_CYC\" text_output=off")
+        .action([&](parser_t& p) {
+            // get the options
+            auto vopt = p.get<std::vector<std::string>>("timemory-args");
+            for(auto& str : vopt)
+            {
+                // get the args
+                auto vec = tim::delimit(str, " \t;:");
+                for(auto itr : vec)
+                {
+                    auto _pos = itr.find('=');
+                    auto _key = itr.substr(0, _pos);
+                    auto _val = (_pos == std::string::npos) ? "" : itr.substr(_pos + 1);
+                    if(!_settings->update(_key, _val, false))
+                    {
+                        std::cerr << "[timemory_argparse]> Warning! For "
+                                     "--timemory-args, key \""
+                                  << _key << "\" is not a recognized setting. \"" << _val
+                                  << "\" was not applied." << std::endl;
+                    }
+                }
+            }
+        });
+
+    err_action(parser->parse_known_args(argc, argv, "--", settings::verbose()));
+    if(parser->exists("help"))
+        help_action(*parser);
+
+    // cleanup if argparse was not provided
+    if(_cleanup_parser)
+        delete parser;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_CONFIG_LINKAGE(void)
+timemory_argparse(std::vector<std::string>& args, argparse::argument_parser* parser,
+                  tim::settings* _settings)
+{
+    int    argc = args.size();
+    char** argv = new char*[argc];
+    for(int i = 0; i < argc; ++i)
+    {
+        // intentional memory leak
+        auto len = args.at(i).length();
+        argv[i]  = new char[len + 1];
+        strcpy(argv[i], args.at(i).c_str());
+        argv[i][len] = '\0';
+    }
+
+    timemory_argparse(&argc, &argv, parser, _settings);
+
+    // updates args
+    args.clear();
+    for(int i = 0; i < argc; ++i)
+        args.emplace_back(argv[i]);
 }
 //
 //--------------------------------------------------------------------------------------//

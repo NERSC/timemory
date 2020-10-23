@@ -38,6 +38,13 @@
 namespace tim
 {
 //
+struct settings;
+//
+namespace argparse
+{
+struct argument_parser;
+}
+//
 //--------------------------------------------------------------------------------------//
 //
 //                              config
@@ -66,9 +73,35 @@ timemory_init(int* argc, char*** argv, const std::string& _prefix = "timemory-",
 //
 //--------------------------------------------------------------------------------------//
 //
+void
+timemory_init(int* argc, char*** argv, argparse::argument_parser& parser,
+              const std::string& _prefix = "timemory-",
+              const std::string& _suffix = "-output");
+//
+//--------------------------------------------------------------------------------------//
+//
+void
+timemory_init(std::vector<std::string>&, argparse::argument_parser& parser,
+              const std::string& _prefix = "timemory-",
+              const std::string& _suffix = "-output");
+//
+//--------------------------------------------------------------------------------------//
+//
 /// finalization of the specified types
 void
 timemory_finalize();
+//
+//--------------------------------------------------------------------------------------//
+//
+void
+timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser = nullptr,
+                  settings* _settings = nullptr);
+//
+//--------------------------------------------------------------------------------------//
+//
+void
+timemory_argparse(std::vector<std::string>&, argparse::argument_parser* parser = nullptr,
+                  settings* _settings = nullptr);
 //
 //--------------------------------------------------------------------------------------//
 //

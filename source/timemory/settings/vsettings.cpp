@@ -31,12 +31,45 @@ namespace tim
 {
 //
 TIMEMORY_SETTINGS_LINKAGE(bool)
-vsettings::matches(const std::string& inp) const
+vsettings::matches(const std::string& inp, bool exact) const
 {
+    // an exact match to name or env-name should always be checked
     if(inp == m_env_name || inp == m_name)
         return true;
-    return std::any_of(m_cmdline.begin(), m_cmdline.end(),
-                       [&](auto itr) { return (itr == inp); });
+
+    if(exact)
+    {
+        // match the command-line option w/ or w/o leading dashes
+        auto _cmd_line_exact = [&](const std::string& itr) {
+            // don't match short-options
+            if(itr.length() == 2)
+                return false;
+            auto _with_dash = (itr == inp);
+            auto _pos       = itr.find_first_not_of('-');
+            if(_with_dash || _pos == std::string::npos)
+                return _with_dash;
+            return (itr.substr(_pos) == inp);
+        };
+
+        return std::any_of(m_cmdline.begin(), m_cmdline.end(), _cmd_line_exact);
+    }
+    else
+    {
+        const auto cre = std::regex_constants::icase | std::regex_constants::optimize;
+        const std::regex re(inp, cre);
+
+        if(std::regex_search(m_env_name, re) || std::regex_search(m_name, re))
+            return true;
+
+        auto _cmd_line_regex = [&](const std::string& itr) {
+            // don't match short-options
+            if(itr.length() == 2)
+                return false;
+            return std::regex_search(itr, re);
+        };
+
+        return std::any_of(m_cmdline.begin(), m_cmdline.end(), _cmd_line_regex);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//

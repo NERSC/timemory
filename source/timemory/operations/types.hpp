@@ -80,11 +80,15 @@ struct basic_tree;
 //
 //--------------------------------------------------------------------------------------//
 //
-namespace utility
+namespace data
 {
 struct stream;
 }
 //
+namespace utility
+{
+using stream = data::stream;
+}
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
@@ -575,6 +579,10 @@ struct print
     using this_type   = print;
     using stream_type = std::shared_ptr<utility::stream>;
 
+    explicit print(bool _forced_json = false)
+    : json_forced(_forced_json)
+    {}
+
     print(const std::string& _label, bool _forced_json)
     : json_forced(_forced_json)
     , label(_label)
@@ -679,6 +687,8 @@ struct print<Tp, true> : public base::print
         static callback_type _instance = [](this_type*) {};
         return _instance;
     }
+
+    explicit print(storage_type* _data);
 
     print(const std::string& _label, storage_type* _data)
     : base_type(_label, trait::requires_json<Tp>::value)
@@ -803,11 +813,9 @@ protected:
 template <typename Tp>
 struct print<Tp, false> : base::print
 {
-    static constexpr bool has_data = false;
-    using this_type                = print<Tp, has_data>;
-    using storage_type             = impl::storage<Tp, has_data>;
-
-    print(storage_type&);
+    template <typename... Args>
+    print(Args&&...)
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//

@@ -107,6 +107,9 @@ get_depth(PyFrameObject* frame)
 void
 profiler_function(py::object pframe, const char* swhat, py::object arg)
 {
+    if(!tim::settings::enabled())
+        return;
+
     if(user_profiler_bundle::bundle_size() == 0)
     {
         if(tim::settings::debug())

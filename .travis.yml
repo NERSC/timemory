@@ -50,7 +50,7 @@ matrix:
             - google-perftools
             - lcov
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && COVERAGE=1 && BUILD_ARGS='--build-libs shared --mpi --papi --caliper --mpip --python --gotcha --stats --cxx-standard=17'"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && COVERAGE=1 && BUILD_ARGS='--build-libs shared --mpi --papi --caliper --mpip --gotcha --stats --cxx-standard=17'"
     #
     # GCC 8
     - os: linux
