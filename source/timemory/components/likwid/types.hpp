@@ -70,10 +70,10 @@ TIMEMORY_DECLARE_COMPONENT(likwid_nvmarker)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SET_COMPONENT_API(component::likwid_marker, tpls::likwid, category::external,
-                           category::decorator, category::hardware_counter, os::linux)
+                           category::decorator, category::hardware_counter, os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::likwid_nvmarker, tpls::likwid, device::gpu,
                            category::external, category::decorator,
-                           category::hardware_counter, os::linux)
+                           category::hardware_counter, os::supports_linux)
 
 namespace tim
 {

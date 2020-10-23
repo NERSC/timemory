@@ -39,7 +39,7 @@
 TIMEMORY_DECLARE_COMPONENT(allinea_map)
 //
 TIMEMORY_SET_COMPONENT_API(component::allinea_map, tpls::allinea, category::external,
-                           os::linux)
+                           os::supports_linux)
 //
 //--------------------------------------------------------------------------------------//
 //

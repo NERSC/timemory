@@ -49,9 +49,9 @@ TIMEMORY_COMPONENT_ALIAS(gperf_heap_profiler, gperftools_heap_profiler)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SET_COMPONENT_API(component::gperftools_cpu_profiler, tpls::gperftools,
-                           category::external, category::timing, os::unix)
+                           category::external, category::timing, os::supports_unix)
 TIMEMORY_SET_COMPONENT_API(component::gperftools_heap_profiler, tpls::gperftools,
-                           category::external, category::memory, os::unix)
+                           category::external, category::memory, os::supports_unix)
 //
 //--------------------------------------------------------------------------------------//
 //

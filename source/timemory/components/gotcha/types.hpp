@@ -58,13 +58,13 @@ namespace trait
 template <size_t Nt, typename ComponentsT, typename DiffT>
 struct component_apis<component::gotcha<Nt, ComponentsT, DiffT>>
 {
-    using type = type_list<tpls::gotcha, category::external, os::linux>;
+    using type = type_list<tpls::gotcha, category::external, os::supports_linux>;
 };
 }  // namespace trait
 }  // namespace tim
 //
 TIMEMORY_SET_COMPONENT_API(component::malloc_gotcha, tpls::gotcha, category::external,
-                           category::memory, os::linux)
+                           category::memory, os::supports_linux)
 //
 //--------------------------------------------------------------------------------------//
 //

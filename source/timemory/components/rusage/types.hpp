@@ -84,28 +84,28 @@ TIMEMORY_SET_COMPONENT_API(component::page_rss, project::timemory, category::mem
                            category::resource_usage, os::agnostic)
 
 TIMEMORY_SET_COMPONENT_API(component::virtual_memory, project::timemory, category::memory,
-                           category::resource_usage, os::linux)
+                           category::resource_usage, os::supports_linux)
 
 TIMEMORY_SET_COMPONENT_API(component::num_io_in, project::timemory, category::io,
-                           category::resource_usage, os::unix)
+                           category::resource_usage, os::supports_unix)
 
 TIMEMORY_SET_COMPONENT_API(component::num_io_out, project::timemory, category::io,
-                           category::resource_usage, os::unix)
+                           category::resource_usage, os::supports_unix)
 
 TIMEMORY_SET_COMPONENT_API(component::num_minor_page_faults, project::timemory,
-                           category::resource_usage, os::unix)
+                           category::resource_usage, os::supports_unix)
 
 TIMEMORY_SET_COMPONENT_API(component::voluntary_context_switch, project::timemory,
-                           category::resource_usage, os::unix)
+                           category::resource_usage, os::supports_unix)
 
 TIMEMORY_SET_COMPONENT_API(component::priority_context_switch, project::timemory,
-                           category::resource_usage, os::unix)
+                           category::resource_usage, os::supports_unix)
 
 TIMEMORY_SET_COMPONENT_API(component::user_mode_time, project::timemory, category::timing,
-                           os::unix)
+                           os::supports_unix)
 
 TIMEMORY_SET_COMPONENT_API(component::kernel_mode_time, project::timemory,
-                           category::timing, os::unix)
+                           category::timing, os::supports_unix)
 
 //--------------------------------------------------------------------------------------//
 //
