@@ -60,13 +60,13 @@ using pair_dd_t = std::pair<double, double>;
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SET_COMPONENT_API(component::read_char, project::timemory, category::io,
-                           os::linux)
+                           os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::written_char, project::timemory, category::io,
-                           os::linux)
+                           os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::read_bytes, project::timemory, category::io,
-                           os::linux)
+                           os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::written_bytes, project::timemory, category::io,
-                           os::linux)
+                           os::supports_linux)
 //
 //--------------------------------------------------------------------------------------//
 //

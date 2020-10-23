@@ -48,15 +48,15 @@ TIMEMORY_DECLARE_COMPONENT(craypat_flush_buffer)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SET_COMPONENT_API(component::craypat_record, tpls::craypat, category::external,
-                           os::linux)
+                           os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::craypat_region, tpls::craypat, category::external,
-                           category::decorator, os::linux)
+                           category::decorator, os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::craypat_counters, tpls::craypat, category::external,
-                           os::linux)
+                           os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::craypat_heap_stats, tpls::craypat,
-                           category::external, os::linux)
+                           category::external, os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::craypat_flush_buffer, tpls::craypat,
-                           category::external, os::linux)
+                           category::external, os::supports_linux)
 //
 //--------------------------------------------------------------------------------------//
 //

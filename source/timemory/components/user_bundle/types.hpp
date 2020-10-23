@@ -97,8 +97,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ncclp_bundle, false
 TIMEMORY_SET_COMPONENT_API(component::user_global_bundle, project::timemory, os::agnostic)
 TIMEMORY_SET_COMPONENT_API(component::user_list_bundle, project::timemory, os::agnostic)
 TIMEMORY_SET_COMPONENT_API(component::user_tuple_bundle, project::timemory, os::agnostic)
-TIMEMORY_SET_COMPONENT_API(component::user_mpip_bundle, project::timemory, os::linux)
-TIMEMORY_SET_COMPONENT_API(component::user_ncclp_bundle, project::timemory, os::linux)
+TIMEMORY_SET_COMPONENT_API(component::user_mpip_bundle, project::timemory, os::supports_linux)
+TIMEMORY_SET_COMPONENT_API(component::user_ncclp_bundle, project::timemory, os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::user_trace_bundle, project::timemory, os::agnostic)
 TIMEMORY_SET_COMPONENT_API(component::user_profiler_bundle, project::timemory,
                            os::agnostic)
