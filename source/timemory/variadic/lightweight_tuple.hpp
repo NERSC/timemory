@@ -177,9 +177,13 @@ public:
     data_type&       data();
     const data_type& data() const;
 
+    using bundle_type::get_prefix;
+    using bundle_type::get_scope;
+    using bundle_type::get_store;
     using bundle_type::hash;
     using bundle_type::key;
     using bundle_type::laps;
+    using bundle_type::prefix;
     using bundle_type::rekey;
     using bundle_type::store;
 
@@ -509,7 +513,9 @@ protected:
 
 protected:
     // objects
+    using bundle_type::m_config;
     using bundle_type::m_hash;
+    using bundle_type::m_is_active;
     using bundle_type::m_is_pushed;
     using bundle_type::m_laps;
     using bundle_type::m_scope;

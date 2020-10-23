@@ -62,9 +62,6 @@ extern "C"
 //======================================================================================//
 
 template <size_t Idx>
-using enumerator_t = typename tim::component::enumerator<Idx>::type;
-
-template <size_t Idx>
 using enumerator_vt =
     tim::conditional_t<tim::trait::is_available<enumerator_t<Idx>>::value, std::true_type,
                        std::false_type>;
@@ -95,16 +92,22 @@ namespace impl
 template <typename Tp, typename Archive,
           tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive& ar, int) -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
+get_json(Archive& ar, const pytim::pyenum_set_t& _types, int)
+    -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
 {
-    tim::storage<Tp>::instance()->dmp_get(ar);
+    constexpr auto eid = tim::component::properties<Tp>::value;
+    if(_types.empty() || _types.count(eid) > 0)
+    {
+        if(!tim::storage<Tp>::instance()->empty())
+            tim::storage<Tp>::instance()->dmp_get(ar);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Archive>
 auto
-get_json(Archive&, long)
+get_json(Archive&, const pytim::pyenum_set_t&, long)
 {}
 //
 //--------------------------------------------------------------------------------------//
@@ -113,31 +116,39 @@ template <typename Tp, typename ValueT = typename Tp::value_type, typename Strea
           tim::enable_if_t<tim::trait::is_available<Tp>::value &&
                            !tim::concepts::is_null_type<ValueT>::value> = 0>
 auto
-get_stream(StreamT& strm, int)
+get_stream(StreamT& strm, const pytim::pyenum_set_t& _types, int)
     -> decltype(tim::storage<Tp>::instance()->dmp_get(), void())
 {
     using printer_t = tim::operation::finalize::print<Tp, true>;
     using element_t = typename StreamT::element_type;
 
-    // strm.set_banner(Tp::get_description());
-    auto _storage = tim::storage<Tp>::instance();
-    auto _printer = printer_t{ _storage };
-    auto _data    = _printer.get_node_results();
+    constexpr auto eid = tim::component::properties<Tp>::value;
+    if(_types.empty() || _types.count(eid) > 0)
+    {
+        // strm.set_banner(Tp::get_description());
+        auto _storage = tim::storage<Tp>::instance();
 
-    if(_data.empty() || _data.front().empty() || tim::dmp::rank() > 0)
-        return;
+        if(_storage->empty())
+            return;
 
-    if(!strm)
-        strm = std::make_shared<element_t>();
+        auto _printer = printer_t{ _storage };
+        auto _data    = _printer.get_node_results();
 
-    _printer.write_stream(strm, _data);
+        if(_data.empty() || _data.front().empty() || tim::dmp::rank() > 0)
+            return;
+
+        if(!strm)
+            strm = std::make_shared<element_t>();
+
+        _printer.write_stream(strm, _data);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename StreamT>
 auto
-get_stream(StreamT&, long)
+get_stream(StreamT&, const pytim::pyenum_set_t&, long)
 {}
 //
 }  // namespace impl
@@ -147,9 +158,9 @@ get_stream(StreamT&, long)
 template <typename Tp, typename Archive,
           tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive& ar, int)
+get_json(Archive& ar, const pytim::pyenum_set_t& _types, int)
 {
-    impl::get_json<Tp>(ar, 0);
+    impl::get_json<Tp>(ar, _types, 0);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -157,16 +168,16 @@ get_json(Archive& ar, int)
 template <typename Tp, typename Archive,
           tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive&, ...)
+get_json(Archive&, const pytim::pyenum_set_t&, ...)
 {}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename Archive, size_t... Idx>
 auto
-get_json(Archive& ar, std::index_sequence<Idx...>)
+get_json(Archive& ar, const pytim::pyenum_set_t& _types, std::index_sequence<Idx...>)
 {
-    TIMEMORY_FOLD_EXPRESSION(get_json<tim::decay_t<enumerator_t<Idx>>>(ar, 0));
+    TIMEMORY_FOLD_EXPRESSION(get_json<tim::decay_t<enumerator_t<Idx>>>(ar, _types, 0));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -174,9 +185,9 @@ get_json(Archive& ar, std::index_sequence<Idx...>)
 template <typename Tp, typename StreamT,
           tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
-get_stream(StreamT& strm, int)
+get_stream(StreamT& strm, const pytim::pyenum_set_t& _types, int)
 {
-    return impl::get_stream<Tp>(strm, 0);
+    return impl::get_stream<Tp>(strm, _types, 0);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -184,21 +195,21 @@ get_stream(StreamT& strm, int)
 template <typename Tp, typename StreamT,
           tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
 auto
-get_stream(StreamT&, ...)
+get_stream(StreamT&, const pytim::pyenum_set_t&, ...)
 {}
 
 //--------------------------------------------------------------------------------------//
 
 template <size_t... Idx, size_t N = sizeof...(Idx)>
 auto
-get_stream(std::index_sequence<Idx...>)
+get_stream(const pytim::pyenum_set_t& _types, std::index_sequence<Idx...>)
 {
     using stream_t       = std::shared_ptr<tim::utility::stream>;
     using stream_array_t = std::array<stream_t, N>;
 
     auto strms = stream_array_t{};
     TIMEMORY_FOLD_EXPRESSION(
-        get_stream<tim::decay_t<enumerator_t<Idx>>>(std::get<Idx>(strms), 0));
+        get_stream<tim::decay_t<enumerator_t<Idx>>>(std::get<Idx>(strms), _types, 0));
     return strms;
 }
 
@@ -235,7 +246,7 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     pyapi::generate(tim);
     pysignals::generate(tim);
-    pysettings::generate(tim);
+    auto pysettings = pysettings::generate(tim);
     pyauto_timer::generate(tim);
     pycomponent_list::generate(tim);
     pycomponent_bundle::generate(tim);
@@ -352,7 +363,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         auto _path   = tim::settings::output_path();
         auto _prefix = tim::settings::output_prefix();
 
-        using tuple_type = typename auto_list_t::tuple_type;
+        using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
         tim::manager::get_storage<tuple_type>::print();
 
         if(fname.length() > 0)
@@ -362,22 +373,27 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json_classic = []() {
-        using tuple_type = typename auto_list_t::tuple_type;
-        auto json_str    = manager_t::get_storage<tuple_type>::serialize();
+    auto _do_clear = [](const pytim::pyenum_set_t& _types) {
+        using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
+        manager_t::get_storage<tuple_type>::clear(_types);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _as_json_classic = [](const pytim::pyenum_set_t& _types) {
+        using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
+        auto json_str    = manager_t::get_storage<tuple_type>::serialize(_types);
         if(tim::settings::debug())
             std::cout << "JSON CLASSIC:\n" << json_str << std::endl;
         return json_str;
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json_hierarchy = []() {
+    auto _as_json_hierarchy = [](const pytim::pyenum_set_t& _types) {
         std::stringstream ss;
         {
             using policy_type = tim::policy::output_archive_t<tim::manager>;
             auto oa           = policy_type::get(ss);
             oa->setNextName("timemory");
             oa->startNode();
-            get_json(*oa, std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+            get_json(*oa, _types, std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
             oa->finishNode();
         }
         if(tim::settings::debug())
@@ -385,15 +401,18 @@ PYBIND11_MODULE(libpytimemory, tim)
         return ss.str();
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json = [_as_json_classic, _as_json_hierarchy](bool hierarchy) {
-        auto json_str    = (hierarchy) ? _as_json_hierarchy() : _as_json_classic();
+    auto _as_json = [_as_json_classic, _as_json_hierarchy](bool     hierarchy,
+                                                           py::list pytypes) {
+        auto types    = pytim::get_enum_set(pytypes);
+        auto json_str = (hierarchy) ? _as_json_hierarchy(types) : _as_json_classic(types);
         auto json_module = py::module::import("json");
         return json_module.attr("loads")(json_str);
     };
     //----------------------------------------------------------------------------------//
-    auto _as_text = []() {
+    auto _as_text = [](py::list _pytypes) {
         std::stringstream ss;
-        auto strms = get_stream(std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+        auto              strms = get_stream(pytim::get_enum_set(_pytypes),
+                                std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
         for(auto& itr : strms)
         {
             if(itr)
@@ -549,6 +568,16 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
+    auto _argparse = [pysettings](py::object parser, py::object subparser) {
+        try
+        {
+            pysettings.attr("add_arguments")(parser, py::none{}, subparser);
+        } catch(std::exception& e)
+        {
+            std::cerr << "[timemory_argparse]> Warning! " << e.what() << std::endl;
+        }
+    };
+    //----------------------------------------------------------------------------------//
     auto _init_mpi = [_get_argv]() {
         try
         {
@@ -612,6 +641,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //                  MAIN libpytimemory MODULE (part 1)
     //
     //==================================================================================//
+    //
     tim.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
     tim.def("toggle", [](bool on) { tim::settings::enabled() = on; },
@@ -636,21 +666,32 @@ PYBIND11_MODULE(libpytimemory, tim)
     tim.def("set_rusage_self", set_rusage_self,
             "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_init", _init, "Initialize timemory", py::arg("argv") = py::list(),
+    tim.def("timemory_init", _init, "Initialize timemory", py::arg("argv") = py::list{},
             py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
     tim.def("timemory_finalize", _finalize,
             "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("initialize", _init, "Initialize timemory", py::arg("argv") = py::list(),
+    tim.def("initialize", _init, "Initialize timemory", py::arg("argv") = py::list{},
             py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
     tim.def("finalize", _finalize,
             "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("get", _as_json, "Get the storage data", py::arg("hierarchy") = false);
+    tim.def("timemory_argparse", _argparse, "Add argparse support for settings",
+            py::arg("parser"), py::arg("subparser") = true);
     //----------------------------------------------------------------------------------//
-    tim.def("get_text", _as_text, "Get the storage data");
+    tim.def("add_arguments", _argparse, "Add argparse support for settings",
+            py::arg("parser"), py::arg("subparser") = true);
+    //----------------------------------------------------------------------------------//
+    tim.def("get", _as_json, "Get the storage data in JSON format",
+            py::arg("hierarchy") = false, py::arg("components") = py::list{});
+    //----------------------------------------------------------------------------------//
+    tim.def("get_text", _as_text, "Get the storage data in text format",
+            py::arg("components") = py::list{});
+    //----------------------------------------------------------------------------------//
+    tim.def("clear", _do_clear, "Clear the storage data",
+            py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
     tim.def(
         "init_mpip", _start_mpip,
@@ -690,9 +731,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //                          TIMING MANAGER
     //
     //==================================================================================//
-    man.attr("text_files") = py::list();
+    man.attr("text_files") = py::list{};
     //----------------------------------------------------------------------------------//
-    man.attr("json_files") = py::list();
+    man.attr("json_files") = py::list{};
     //----------------------------------------------------------------------------------//
     man.def(py::init<>(&pytim::init::manager), "Initialization",
             py::return_value_policy::take_ownership);

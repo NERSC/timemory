@@ -114,13 +114,16 @@ enum TIMEMORY_NATIVE_COMPONENT
     THREAD_CPU_UTIL,
     TRIP_COUNT,
     USER_CLOCK,
-    USER_GLOBAL_BUNDLE,
-    USER_LIST_BUNDLE,
     USER_MODE_TIME,
-    USER_MPIP_BUNDLE,
-    USER_NCCLP_BUNDLE,
-    USER_OMPT_BUNDLE,
-    USER_TUPLE_BUNDLE,
+    USER_GLOBAL_BUNDLE,
+    USER_KOKKOSP_BUNDLE,   // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_LIST_BUNDLE,      // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_MPIP_BUNDLE,      // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_NCCLP_BUNDLE,     // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_OMPT_BUNDLE,      // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_TUPLE_BUNDLE,     // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_PROFILER_BUNDLE,  // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_TRACE_BUNDLE,     // excluded from TIMEMORY_COMPONENT_TYPES
     VIRTUAL_MEMORY,
     VOLUNTARY_CONTEXT_SWITCH,
     VTUNE_EVENT,
@@ -139,6 +142,15 @@ enum TIMEMORY_NATIVE_COMPONENT
 //
 #if !defined(TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE)
 #    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE TIMEMORY_NATIVE_COMPONENTS_END
+#endif
+//
+/// \macro TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE
+/// \brief The number of enumerated components which are private to
+/// TIMEMORY_COMPONENT_TYPES. This is mainly just used by the validation checks
+/// between the number of enumerations and the types specified in TIMEMORY_COMPONENT_TYPES
+//
+#if !defined(TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE)
+#    define TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE 8
 #endif
 //
 //--------------------------------------------------------------------------------------//

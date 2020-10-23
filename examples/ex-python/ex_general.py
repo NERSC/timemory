@@ -27,7 +27,7 @@ from timemory.profiler import profile
 from timemory.bundle import auto_timer, auto_tuple, marker
 
 
-def get_config(items=["wall_clock", "cpu_clock"]):
+def get_config(items=["wall_clock", "cpu_clock", "user_global_bundle"]):
     return [getattr(timemory.component, x) for x in items]
 
 
@@ -35,7 +35,7 @@ def fib(n):
     return n if n < 2 else (fib(n - 1) + fib(n - 2))
 
 
-@profile(["wall_clock", "peak_rss"])
+@profile(["wall_clock", "peak_rss", "global_bundle"])
 def run_profile(n):
     """ Run full profiler """
     return fib(int(n))
@@ -49,7 +49,7 @@ def run_auto_timer(n):
         fib(n)
 
 
-@marker(["wall_clock", "peak_rss"])
+@marker(["wall_clock", "peak_rss", "global_bundle"])
 def run_marker(n):
     """ Decorator and context manager for high-level custom collection """
     fib(n)
@@ -65,6 +65,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-o", "--output-name", type=str, default=None, help="Output filename"
+    )
+    parser.add_argument(
+        "-t", "--types", type=str, nargs="*", default=[],
+        help="Component types to report",
     )
     parser.add_argument(
         "-f",
@@ -84,6 +88,8 @@ if __name__ == "__main__":
     # can override with command-line:
     #   '... timemory-config --auto-output=y ...'
     timemory.settings.auto_output = False
+    # disable console output by default
+    timemory.settings.cout_output = False
 
     # demonstrate how to add command-line support
     # The subparser stuff is not strictly necessary: if a
@@ -92,12 +98,10 @@ if __name__ == "__main__":
     # subparser behavior, pass 'subparser=None' or
     # subparser=False
     subparser = parser.add_subparsers()
-    timemory.settings.add_arguments(
+    timemory.add_arguments(
         parser,
         subparser=subparser.add_parser(
             "timemory-config",
-            parents=[],
-            conflict_handler="resolve",
             description="Configure settings for timemory",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         ),
@@ -115,8 +119,10 @@ if __name__ == "__main__":
         if not data:
             return
         if output_name is not None:
-            fname = os.path.join(timemory.settings.output_path, "{}.{}".format(output_name, ext))
-            with open(fname, 'w') as f:
+            fname = os.path.join(
+                timemory.settings.output_path, "{}.{}".format(output_name, ext)
+            )
+            with open(fname, "w") as f:
                 print("[timemory]> Outputting {}...".format(fname))
                 f.write(data)
         else:
@@ -124,23 +130,31 @@ if __name__ == "__main__":
 
     # Get the results as text table
     if "text" in args.formats:
-        data = timemory.get_text()
+        data = timemory.get_text(components=args.types)
         write(args.output_name, data, "txt")
 
     # Get the results as a JSON where all entries are
     # in a 1D JSON array and the labels (i.e. prefix)
     # are modified with indentation to reflect hierarchy
     if "json_flat" in args.formats:
-        data = timemory.get(hierarchy=False)
-        write(args.output_name, "{}".format(json.dumps(data, indent=2, sort_keys=True)), "json")
+        data = timemory.get(hierarchy=False, components=args.types)
+        write(
+            args.output_name,
+            "{}".format(json.dumps(data, indent=2, sort_keys=True)),
+            "json",
+        )
 
     # Get the results as a JSON where all entries are
     # in a hierarchical JSON and the labels (i.e. prefix)
     # are unmodified. This data layout includes inclusive
     # and exclusive values
     if "json_tree" in args.formats:
-        data = timemory.get(hierarchy=True)
-        write(args.output_name, "{}".format(json.dumps(data, indent=2, sort_keys=False)), "tree.json")
+        data = timemory.get(hierarchy=True, components=args.types)
+        write(
+            args.output_name,
+            "{}".format(json.dumps(data, indent=2, sort_keys=False)),
+            "tree.json",
+        )
 
     print("")
 

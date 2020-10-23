@@ -42,6 +42,7 @@
 #include <vector>
 
 using namespace tim;
+
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 using str_vec_t      = std::vector<string_t>;
@@ -416,9 +417,6 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-template <int Idx>
-using enumerator_t = typename tim::component::enumerator<Idx>::type;
-
 template <int I>
 using make_int_sequence = std::make_integer_sequence<int, I>;
 
@@ -440,7 +438,7 @@ using tim::component::placeholder;
 template <template <typename...> class TupT, int I, typename... T, int... Idx>
 struct enumerated_list<TupT<T...>, int_sequence<I, Idx...>>
 {
-    using Tp                         = enumerator_t<I>;
+    using Tp                         = component::enumerator_t<I>;
     static constexpr bool is_nothing = std::is_same<Tp, placeholder<nothing>>::value;
     using type                       = typename enumerated_list<
         tim::conditional_t<(is_nothing), tim::component_list<T...>,

@@ -120,6 +120,18 @@ using os_bundle_t   = tim::component_bundle<os::agnostic, wall_clock, cpu_clock>
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(api_tests, enum_vs_macro)
+{
+    namespace component = tim::component;
+    auto macro_sz = std::tuple_size<tim::type_list<TIMEMORY_COMPONENT_TYPES>>::value;
+    auto enum_sz =
+        TIMEMORY_NATIVE_COMPONENTS_END - TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE;
+
+    EXPECT_EQ(macro_sz, enum_sz);
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(api_tests, timemory)
 {
     using test_t  = project::timemory;

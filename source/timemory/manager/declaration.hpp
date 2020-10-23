@@ -81,6 +81,7 @@ public:
     using finalizer_void_t = std::multimap<void*, finalizer_func_t>;
     using settings_ptr_t   = std::shared_ptr<settings>;
     using filemap_t        = std::map<string_t, std::map<string_t, std::set<string_t>>>;
+    using enum_set_t       = std::set<TIMEMORY_COMPONENT>;
 
 public:
     // Constructor and Destructors
@@ -137,13 +138,13 @@ private:
     void do_init_storage();
 
     template <typename Tp>
-    void do_print_storage();
+    void do_print_storage(const enum_set_t& = {});
 
     template <typename Tp>
-    void do_clear();
+    void do_clear(const enum_set_t& = {});
 
     template <typename Arch, typename Tp>
-    void do_serialize(Arch& ar);
+    void do_serialize(Arch& ar, const enum_set_t& = {});
 
     template <typename Tp>
     void do_size(uint64_t& _sz);
@@ -154,11 +155,26 @@ private:
     template <typename... Types>
     struct filtered_get_storage
     {
-        static std::string serialize(pointer_t _manager = pointer_t(nullptr));
-        static void        initialize(pointer_t _manager = pointer_t(nullptr));
-        static void        clear(pointer_t _manager = pointer_t(nullptr));
-        static void        print(pointer_t _manager = pointer_t(nullptr));
-        static uint64_t    size(pointer_t _manager = pointer_t(nullptr));
+        static void        initialize(pointer_t _manager = {});
+        static std::string serialize(pointer_t _manager = {}, const enum_set_t& = {});
+        static void        clear(pointer_t _manager = {}, const enum_set_t& = {});
+        static void        print(pointer_t _manager = {}, const enum_set_t& = {});
+        static uint64_t    size(pointer_t _manager = {});
+
+        static std::string serialize(const enum_set_t& _types)
+        {
+            return serialize(pointer_t{ nullptr }, _types);
+        }
+
+        static void clear(const enum_set_t& _types)
+        {
+            clear(pointer_t{ nullptr }, _types);
+        }
+
+        static void print(const enum_set_t& _types)
+        {
+            print(pointer_t{ nullptr }, _types);
+        }
     };
 
     //----------------------------------------------------------------------------------//
@@ -399,9 +415,12 @@ manager::do_init_storage()
 //
 template <typename Tp>
 void
-manager::do_print_storage()
+manager::do_print_storage(const enum_set_t& _types)
 {
     using storage_type = typename Tp::storage_type;
+
+    if(!_types.empty() && _types.count(component::properties<Tp>::value) == 0)
+        return;
 
     auto ret = storage_type::noninit_instance();
     if(ret && !ret->empty())
@@ -418,9 +437,12 @@ manager::do_print_storage()
 //
 template <typename Tp>
 void
-manager::do_clear()
+manager::do_clear(const enum_set_t& _types)
 {
     using storage_type = typename Tp::storage_type;
+
+    if(!_types.empty() && _types.count(component::properties<Tp>::value) == 0)
+        return;
 
     auto ret = storage_type::noninit_instance();
     if(ret)
@@ -437,9 +459,12 @@ manager::do_clear()
 //
 template <typename Archive, typename Tp>
 void
-manager::do_serialize(Archive& ar)
+manager::do_serialize(Archive& ar, const enum_set_t& _types)
 {
     using storage_type = typename Tp::storage_type;
+
+    if(!_types.empty() && _types.count(component::properties<Tp>::value) == 0)
+        return;
 
     auto ret = storage_type::noninit_instance();
     if(ret && !ret->empty())
@@ -476,8 +501,22 @@ manager::do_size(uint64_t& _sz)
 //----------------------------------------------------------------------------------//
 //
 template <typename... Types>
+void
+manager::filtered_get_storage<Types...>::initialize(pointer_t _manager)
+{
+    if(_manager.get() == nullptr)
+        _manager = manager::instance();
+    if(!_manager)
+        return;
+    TIMEMORY_FOLD_EXPRESSION(_manager->do_init_storage<Types>());
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename... Types>
 std::string
-manager::filtered_get_storage<Types...>::serialize(pointer_t _manager)
+manager::filtered_get_storage<Types...>::serialize(pointer_t         _manager,
+                                                   const enum_set_t& _types)
 {
     if(_manager.get() == nullptr)
         _manager = manager::instance();
@@ -494,7 +533,8 @@ manager::filtered_get_storage<Types...>::serialize(pointer_t _manager)
             oa->setNextName("ranks");
             oa->startNode();
             oa->makeArray();
-            TIMEMORY_FOLD_EXPRESSION(_manager->do_serialize<archive_type, Types>(*oa));
+            TIMEMORY_FOLD_EXPRESSION(
+                _manager->do_serialize<archive_type, Types>(*oa, _types));
             oa->finishNode();
         }
         oa->finishNode();
@@ -506,39 +546,28 @@ manager::filtered_get_storage<Types...>::serialize(pointer_t _manager)
 //
 template <typename... Types>
 void
-manager::filtered_get_storage<Types...>::initialize(pointer_t _manager)
+manager::filtered_get_storage<Types...>::clear(pointer_t         _manager,
+                                               const enum_set_t& _types)
 {
     if(_manager.get() == nullptr)
         _manager = manager::instance();
     if(!_manager)
         return;
-    TIMEMORY_FOLD_EXPRESSION(_manager->do_init_storage<Types>());
+    TIMEMORY_FOLD_EXPRESSION(_manager->do_clear<Types>(_types));
 }
 //
 //----------------------------------------------------------------------------------//
 //
 template <typename... Types>
 void
-manager::filtered_get_storage<Types...>::clear(pointer_t _manager)
+manager::filtered_get_storage<Types...>::print(pointer_t         _manager,
+                                               const enum_set_t& _types)
 {
     if(_manager.get() == nullptr)
         _manager = manager::instance();
     if(!_manager)
         return;
-    TIMEMORY_FOLD_EXPRESSION(_manager->do_clear<Types>());
-}
-//
-//----------------------------------------------------------------------------------//
-//
-template <typename... Types>
-void
-manager::filtered_get_storage<Types...>::print(pointer_t _manager)
-{
-    if(_manager.get() == nullptr)
-        _manager = manager::instance();
-    if(!_manager)
-        return;
-    TIMEMORY_FOLD_EXPRESSION(_manager->do_print_storage<Types>());
+    TIMEMORY_FOLD_EXPRESSION(_manager->do_print_storage<Types>(_types));
 }
 //
 //----------------------------------------------------------------------------------//

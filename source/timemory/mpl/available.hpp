@@ -314,6 +314,9 @@ using implemented_t =
 template <typename T>
 using available_t = impl::filter_false<trait::is_available, T>;
 
+template <typename T>
+using non_placeholder_t = impl::filter_true<concepts::is_placeholder, T>;
+
 //--------------------------------------------------------------------------------------//
 
 template <typename... T>

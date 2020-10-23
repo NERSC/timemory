@@ -56,13 +56,15 @@ struct config
     bool        include_filename         = true;
     bool        full_filepath            = false;
     std::string base_module_path         = "";
-    strset_t    always_skipped_functions = { "FILE",      "FUNC",     "LINE",
-                                          "get_fcode", "__exit__", "_handle_fromlist",
-                                          "<module>",  "_shutdown" };
+    strset_t    always_skipped_functions = { "FILE",       "FUNC",      "LINE",
+                                          "get_fcode",  "__exit__",  "_handle_fromlist",
+                                          "<module>",   "_shutdown", "isclass",
+                                          "isfunction", "basename",  "_get_sep" };
     strset_t    always_skipped_filenames = {
         "__init__.py",       "__main__.py",
         "functools.py",      "<frozen importlib._bootstrap>",
-        "_pylab_helpers.py", "threading.py"
+        "_pylab_helpers.py", "threading.py",
+        "encoder.py",        "decoder.py"
     };
     tracer_code_map_t records = {};
 };

@@ -220,9 +220,13 @@ public:
     template <typename... Args>
     void stop(mpl::lightweight, Args&&...);
 
+    using bundle_type::get_prefix;
+    using bundle_type::get_scope;
+    using bundle_type::get_store;
     using bundle_type::hash;
     using bundle_type::key;
     using bundle_type::laps;
+    using bundle_type::prefix;
     using bundle_type::rekey;
     using bundle_type::store;
 
@@ -534,22 +538,8 @@ public:
         ar(cereal::make_nvp("data", m_data));
     }
 
-public:
-    /// returns the number of caliper measurements for the bundle
-    int64_t laps() const { return bundle_type::laps(); }
-    /// returns the key for the bundle
-    std::string key() const { return bundle_type::key(); }
-    /// return the hash value of the key
-    uint64_t hash() const { return bundle_type::hash(); }
-    /// changes the key/hash for the bundle
-    void rekey(const string_t& _key) { bundle_type::rekey(_key); }
-    /// whether the components update their call-stack storage
-    bool&           store() { return bundle_type::store(); }
-    const bool&     store() const { return bundle_type::store(); }
-    const string_t& prefix() const { return bundle_type::prefix(); }
-    const string_t& get_prefix() const { return bundle_type::get_prefix(); }
-    void            set_prefix(const string_t&) const;
-    void            set_scope(scope::config);
+    void set_prefix(const string_t&) const;
+    void set_scope(scope::config);
 
 protected:
     static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }
@@ -564,7 +554,9 @@ protected:
 
 protected:
     // objects
+    using bundle_type::m_config;
     using bundle_type::m_hash;
+    using bundle_type::m_is_active;
     using bundle_type::m_is_pushed;
     using bundle_type::m_laps;
     using bundle_type::m_scope;

@@ -56,6 +56,7 @@ TIMEMORY_BUNDLE_INDEX(mpip_bundle_idx, 11111)
 TIMEMORY_BUNDLE_INDEX(ncclp_bundle_idx, 11112)
 TIMEMORY_BUNDLE_INDEX(trace_bundle_idx, 20000)
 TIMEMORY_BUNDLE_INDEX(profiler_bundle_idx, 22000)
+TIMEMORY_BUNDLE_INDEX(kokkosp_bundle_idx, 0)
 //
 TIMEMORY_COMPONENT_ALIAS(user_global_bundle,
                          user_bundle<global_bundle_idx, project::timemory>)
@@ -71,9 +72,10 @@ TIMEMORY_COMPONENT_ALIAS(user_ncclp_bundle,
                          user_bundle<ncclp_bundle_idx, project::timemory>)
 TIMEMORY_COMPONENT_ALIAS(user_trace_bundle,
                          user_bundle<trace_bundle_idx, project::timemory>)
-//
 TIMEMORY_COMPONENT_ALIAS(user_profiler_bundle,
                          user_bundle<profiler_bundle_idx, project::timemory>)
+TIMEMORY_COMPONENT_ALIAS(user_kokkosp_bundle,
+                         user_bundle<kokkosp_bundle_idx, project::kokkosp>)
 //
 #if !defined(TIMEMORY_USE_OMPT)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ompt_bundle, false_type)
@@ -184,3 +186,13 @@ TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE, "user_mpip_
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_ncclp_bundle, USER_NCCLP_BUNDLE,
                                  "user_ncclp_bundle", "ncclp", "nccl_tools", "nccl")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_trace_bundle, USER_TRACE_BUNDLE,
+                                 "user_trace_bundle", "trace_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_profiler_bundle, USER_PROFILER_BUNDLE,
+                                 "user_profiler_bundle", "profiler_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_kokkosp_bundle, USER_KOKKOSP_BUNDLE,
+                                 "user_kokkos_bundle", "kokkos_bundle",
+                                 "user_kokkosp_bundle", "kokkosp_bundle")

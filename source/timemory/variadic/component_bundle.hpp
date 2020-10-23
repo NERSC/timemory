@@ -199,9 +199,13 @@ public:
     template <typename... Tp, typename... Args>
     void stop(mpl::piecewise_select<Tp...>, Args&&...);
 
+    using bundle_type::get_prefix;
+    using bundle_type::get_scope;
+    using bundle_type::get_store;
     using bundle_type::hash;
     using bundle_type::key;
     using bundle_type::laps;
+    using bundle_type::prefix;
     using bundle_type::rekey;
     using bundle_type::store;
 
@@ -690,16 +694,6 @@ public:
         ar(cereal::make_nvp("data", m_data));
     }
 
-public:
-    int64_t         laps() const { return bundle_type::laps(); }
-    std::string     key() const { return bundle_type::key(); }
-    uint64_t        hash() const { return bundle_type::hash(); }
-    void            rekey(const string_t& _key) { bundle_type::rekey(_key); }
-    bool&           store() { return bundle_type::store(); }
-    const bool&     store() const { return bundle_type::store(); }
-    const string_t& prefix() const { return bundle_type::prefix(); }
-    const string_t& get_prefix() const { return bundle_type::get_prefix(); }
-
 protected:
     static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }
     void           update_width() const { bundle_type::update_width(); }
@@ -718,7 +712,9 @@ protected:
 
 protected:
     // objects
+    using bundle_type::m_config;
     using bundle_type::m_hash;
+    using bundle_type::m_is_active;
     using bundle_type::m_is_pushed;
     using bundle_type::m_laps;
     using bundle_type::m_scope;

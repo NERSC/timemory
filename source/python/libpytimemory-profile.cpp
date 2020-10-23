@@ -60,13 +60,15 @@ struct config
     int32_t     ignore_stack_depth       = 0;
     int32_t     base_stack_depth         = -1;
     std::string base_module_path         = "";
-    strset_t    always_skipped_functions = { "FILE",      "FUNC",     "LINE",
-                                          "get_fcode", "__exit__", "_handle_fromlist",
-                                          "<module>",  "_shutdown" };
+    strset_t    always_skipped_functions = { "FILE",       "FUNC",      "LINE",
+                                          "get_fcode",  "__exit__",  "_handle_fromlist",
+                                          "<module>",   "_shutdown", "isclass",
+                                          "isfunction", "basename",  "_get_sep" };
     strset_t    always_skipped_filenames = {
         "__init__.py",       "__main__.py",
         "functools.py",      "<frozen importlib._bootstrap>",
-        "_pylab_helpers.py", "threading.py"
+        "_pylab_helpers.py", "threading.py",
+        "encoder.py",        "decoder.py"
     };
     profiler_index_map_t records = {};
 };

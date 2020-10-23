@@ -18,10 +18,7 @@ using namespace tim::component;
 static std::string spacer =
     "#---------------------------------------------------------------------------#";
 
-// this just differentiates Kokkos from other user_bundles
-struct KokkosProfiler
-{};
-using KokkosUserBundle = tim::component::user_bundle<0, KokkosProfiler>;
+using KokkosUserBundle = tim::component::user_kokkosp_bundle;
 
 using external_profilers_t =
     tim::component_tuple<vtune_profiler, cuda_profiler, craypat_record, allinea_map>;
@@ -196,11 +193,13 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     else if(tim::trait::is_available<papi_vector>::value)
         default_components = TIMEMORY_JOIN(",", default_components, "papi_vector");
 
-    // check environment variables "KOKKOS_TIMEMORY_COMPONENTS" and
-    // "TIMEMORY_KOKKOS_COMPONENTS"
-    tim::env::configure<KokkosUserBundle>(
-        "TIMEMORY_KOKKOS_COMPONENTS",
-        tim::get_env("KOKKOS_TIMEMORY_COMPONENTS", default_components));
+    // search unique and fallback environment variables
+    KokkosUserBundle::global_init();
+
+    // add defaults
+    if(KokkosUserBundle::bundle_size() == 0)
+        tim::configure<KokkosUserBundle>(
+            tim::enumerate_components(tim::delimit(default_components)));
 
     std::cout << "USING: " << tim::demangle<profile_entry_t>() << "\n" << std::endl;
     kernel_regex_expr =

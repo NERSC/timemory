@@ -93,6 +93,12 @@ struct user_bundle;
 //
 template <size_t Nt, typename ComponentsT, typename DifferentiatorT = anonymous_t<void>>
 struct gotcha;
+//
+template <typename... Types>
+struct placeholder;
+//
+struct nothing;
+//
 }  // namespace component
 //
 namespace concepts
@@ -128,6 +134,21 @@ struct is_null_type<false_type> : true_type
 
 template <>
 struct is_null_type<::tim::null_type> : true_type
+{};
+
+//----------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_placeholder
+/// \brief concept that specifies that a type is not necessarily marked as not available
+/// but is still a dummy type
+///
+TIMEMORY_IMPL_IS_CONCEPT(placeholder)
+
+template <typename... Types>
+struct is_placeholder<component::placeholder<Types...>> : true_type
+{};
+
+template <>
+struct is_placeholder<component::placeholder<component::nothing>> : true_type
 {};
 
 //----------------------------------------------------------------------------------//

@@ -35,6 +35,7 @@
 #include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/available.hpp"
+#include "timemory/runtime/enumerate.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include "pybind11/cast.h"
@@ -62,6 +63,54 @@ using namespace py::literals;
 //
 namespace pytim
 {
+//
+using pyenum_set_t = std::set<TIMEMORY_COMPONENT>;
+//
+/// \fn auto get_enum_set(py::list args)
+/// \param[in] args Python list of strings or component enumerations
+/// \param[out] components Return a set of TIMEMORY_COMPONENT enums
+///
+/// \brief Converts a python specification of components into a C++ type
+inline auto
+get_enum_set(py::list _args)
+{
+    auto components = pyenum_set_t{};
+
+    for(auto itr : _args)
+    {
+        std::string        _sitr = "";
+        TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
+
+        try
+        {
+            _sitr = itr.cast<std::string>();
+            if(_sitr.length() > 0)
+                _citr = tim::runtime::enumerate(_sitr);
+            else
+                continue;
+        } catch(py::cast_error&)
+        {}
+
+        if(_citr == TIMEMORY_COMPONENTS_END)
+        {
+            try
+            {
+                _citr = itr.cast<TIMEMORY_COMPONENT>();
+            } catch(py::cast_error&)
+            {}
+        }
+
+        if(_citr != TIMEMORY_COMPONENTS_END)
+            components.insert(_citr);
+        else
+        {
+            PRINT_HERE("%s", "ignoring argument that failed casting to either "
+                             "'timemory.component' and string");
+        }
+    }
+    return components;
+}
+//
 template <typename TupleT>
 struct construct_dict
 {

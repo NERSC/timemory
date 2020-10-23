@@ -884,7 +884,7 @@ storage<Type, true>::internal_print()
         singleton_t::master_instance()->merge(this);
         finalize();
     }
-    else if(settings::auto_output())
+    else
     {
         merge();
         finalize();
@@ -909,22 +909,19 @@ storage<Type, true>::internal_print()
             return;
         }
 
-        if(!m_printer)
-            m_printer.reset(new printer_t(Type::get_label(), this));
+        // generate output
+        if(settings::auto_output())
+        {
+            if(!m_printer)
+                m_printer.reset(new printer_t(Type::get_label(), this));
 
-        if(m_manager)
-            m_manager->add_entries(this->size());
+            if(m_manager)
+                m_manager->add_entries(this->size());
 
-        m_printer->execute();
+            m_printer->execute();
+        }
 
         instance_count().store(0);
-    }
-    else
-    {
-        if(singleton_t::is_master(this))
-        {
-            instance_count().store(0);
-        }
     }
 }
 //

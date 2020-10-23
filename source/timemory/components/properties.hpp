@@ -163,5 +163,8 @@ static_properties<Tp>::static_properties()
 //
 //--------------------------------------------------------------------------------------//
 //
+template <int Idx>
+using enumerator_t = typename enumerator<Idx>::type;
+//
 }  // namespace component
 }  // namespace tim

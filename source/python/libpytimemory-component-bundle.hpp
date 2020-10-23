@@ -145,42 +145,9 @@ generate(py::module& _pymod, const char* _name, const char* _doc)
 
     auto configure_pybundle = [](py::list _args, bool flat_profile,
                                  bool timeline_profile) {
-        std::set<TIMEMORY_COMPONENT> components;
+        auto components = pytim::get_enum_set(_args);
         if(_args.size() == 0)
             components.insert(WALL_CLOCK);
-
-        for(auto itr : _args)
-        {
-            std::string        _sitr = "";
-            TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
-
-            try
-            {
-                _sitr = itr.cast<std::string>();
-                if(_sitr.length() > 0)
-                    _citr = tim::runtime::enumerate(_sitr);
-                else
-                    continue;
-            } catch(...)
-            {}
-
-            if(_citr == TIMEMORY_COMPONENTS_END)
-            {
-                try
-                {
-                    _citr = itr.cast<TIMEMORY_COMPONENT>();
-                } catch(...)
-                {}
-            }
-
-            if(_citr != TIMEMORY_COMPONENTS_END)
-                components.insert(_citr);
-            else
-            {
-                PRINT_HERE("%s", "ignoring argument that failed casting to either "
-                                 "'timemory.component' and string");
-            }
-        }
 
         size_t isize = bundle_t::size();
         if(tim::settings::debug() || tim::settings::verbose() > 3)

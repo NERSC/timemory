@@ -127,7 +127,8 @@ component_list<Types...>::component_list(size_t _hash, const bool& store,
 template <typename... Types>
 component_list<Types...>::~component_list()
 {
-    stop();
+    if(m_is_active())
+        stop();
     // DEBUG_PRINT_HERE("%s", "deleting components");
     apply_v::access<operation_t<operation::generic_deleter>>(m_data);
 }
@@ -164,7 +165,7 @@ component_list<Types...>
 component_list<Types...>::clone(bool store, scope::config _scope)
 {
     component_list tmp(*this);
-    tmp.m_store = store;
+    tmp.m_store(store);
     tmp.m_scope = _scope;
     return tmp;
 }
@@ -178,12 +179,12 @@ component_list<Types...>::push()
 {
     uint64_t count = 0;
     invoke::invoke<operation::generic_counter>(m_data, std::ref(count));
-    if(!m_is_pushed && count > 0)
+    if(!m_is_pushed() && count > 0)
     {
         // reset data
         invoke::reset(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = true;
+        m_is_pushed(true);
         // insert node or find existing node
         invoke::push(m_data, m_scope, m_hash);
     }
@@ -196,12 +197,12 @@ template <typename... Types>
 void
 component_list<Types...>::pop()
 {
-    if(m_is_pushed)
+    if(m_is_pushed())
     {
         // set the current node to the parent node
         invoke::pop(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = false;
+        m_is_pushed(false);
     }
 }
 
@@ -238,10 +239,11 @@ void
 component_list<Types...>::start(Args&&... args)
 {
     // push components into the call-stack
-    if(m_store)
+    if(m_store())
         push();
     assemble(*this);
     invoke::start(m_data, std::forward<Args>(args)...);
+    m_is_active(true);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -254,8 +256,9 @@ component_list<Types...>::stop(Args&&... args)
     invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
     derive(*this);
-    if(m_store)
+    if(m_store())
         pop();
+    m_is_active(false);
 }
 
 //--------------------------------------------------------------------------------------//

@@ -63,10 +63,10 @@ using user_bundle_spec_t = std::function<std::string()>;
 using user_bundle_variables_t =
     std::unordered_map<size_t, std::vector<user_bundle_spec_t>>;
 //
-template <typename ApiT = TIMEMORY_API>
+template <typename ApiT>
 static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
                                user_bundle_variables_t&>
-    get_user_bundle_variables(ApiT = ApiT{})
+    get_user_bundle_variables(ApiT)
 {
     static user_bundle_variables_t _instance = {
         { component::global_bundle_idx,
@@ -107,12 +107,29 @@ static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename ApiT = TIMEMORY_API>
+template <typename ApiT>
 static inline std::enable_if_t<!std::is_same<ApiT, TIMEMORY_API>::value,
                                user_bundle_variables_t&>
-    get_user_bundle_variables(ApiT = ApiT{})
+    get_user_bundle_variables(ApiT)
 {
     static user_bundle_variables_t _instance{};
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+static inline user_bundle_variables_t& get_user_bundle_variables(project::kokkosp)
+{
+    static user_bundle_variables_t _instance = {
+        { component::kokkosp_bundle_idx,
+          { []() { return settings::kokkos_components(); },
+            []() { return get_env<std::string>("TIMEMORY_KOKKOSP_COMPONENTS", ""); },
+            []() { return get_env<std::string>("KOKKOS_TIMEMORY_COMPONENTS", ""); },
+            []() { return settings::trace_components(); },
+            []() { return settings::profiler_components(); },
+            []() { return settings::components(); },
+            []() { return settings::global_components(); } } }
+    };
     return _instance;
 }
 //
@@ -124,14 +141,14 @@ get_bundle_components(const VecT& _priority)
 {
     using string_t = std::string;
     const auto regex_constants =
-        std::regex_constants::ECMAScript | std::regex_constants::icase;
+        std::regex_constants::optimize | std::regex_constants::icase;
     string_t _custom{};
     for(const auto& itr : _priority)
     {
         auto _spec = itr();
         if(_spec.length() > 0)
         {
-            if(!std::regex_match(_spec, std::regex("none", regex_constants)))
+            if(!std::regex_match(_spec, std::regex("^none$", regex_constants)))
                 _custom = _spec;
             break;
         }
@@ -146,8 +163,9 @@ void
 initialize_bundle(AltApi _api = AltApi{})
 {
     using user_bundle_type = component::user_bundle<Idx, Api>;
-    auto itr               = env::get_user_bundle_variables(_api).find(Idx);
-    if(itr != env::get_user_bundle_variables(_api).end())
+    auto& variables        = env::get_user_bundle_variables(_api);
+    auto  itr              = variables.find(Idx);
+    if(itr != variables.end())
     {
         auto _enum = env::get_bundle_components(itr->second);
         tim::configure<user_bundle_type>(_enum);

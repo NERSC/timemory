@@ -169,6 +169,8 @@ struct settings
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, trace_components, "TIMEMORY_TRACE_COMPONENTS")
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, profiler_components,
                                   "TIMEMORY_PROFILER_COMPONENTS")
+    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, kokkos_components,
+                                  "TIMEMORY_KOKKOS_COMPONENTS")
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, components, "TIMEMORY_COMPONENTS")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_init, "TIMEMORY_MPI_INIT")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_finalize, "TIMEMORY_MPI_FINALIZE")

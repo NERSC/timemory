@@ -102,7 +102,8 @@ lightweight_tuple<Types...>::lightweight_tuple(size_t _hash, quirk::config<T...>
 template <typename... Types>
 lightweight_tuple<Types...>::~lightweight_tuple()
 {
-    stop();
+    if(m_is_active())
+        stop();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -112,7 +113,7 @@ lightweight_tuple<Types...>
 lightweight_tuple<Types...>::clone(bool _store, scope::config _scope)
 {
     lightweight_tuple tmp(*this);
-    tmp.m_store = _store;
+    tmp.m_store(_store);
     tmp.m_scope = _scope;
     return tmp;
 }
@@ -124,12 +125,12 @@ template <typename... Types>
 void
 lightweight_tuple<Types...>::push()
 {
-    if(!m_is_pushed)
+    if(!m_is_pushed())
     {
         // reset the data
         invoke::reset(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = true;
+        m_is_pushed(true);
         // insert node or find existing node
         invoke::push(m_data, m_scope, m_hash);
     }
@@ -142,12 +143,12 @@ template <typename... Types>
 void
 lightweight_tuple<Types...>::pop()
 {
-    if(m_is_pushed)
+    if(m_is_pushed())
     {
         // set the current node to the parent node
         invoke::pop(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = false;
+        m_is_pushed(false);
     }
 }
 
@@ -184,6 +185,7 @@ void
 lightweight_tuple<Types...>::start(Args&&... args)
 {
     invoke::start(m_data, std::forward<Args>(args)...);
+    m_is_active(true);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -195,6 +197,7 @@ lightweight_tuple<Types...>::stop(Args&&... args)
 {
     invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
+    m_is_active(false);
 }
 
 //--------------------------------------------------------------------------------------//

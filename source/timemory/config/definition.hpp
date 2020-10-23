@@ -338,6 +338,7 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
                 auto vec = tim::delimit(str, " \t;:");
                 for(auto itr : vec)
                 {
+                    DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
                     auto _pos = itr.find('=');
                     auto _key = itr.substr(0, _pos);
                     auto _val = (_pos == std::string::npos) ? "" : itr.substr(_pos + 1);
