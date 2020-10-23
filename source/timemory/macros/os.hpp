@@ -76,6 +76,31 @@
 #endif
 
 //--------------------------------------------------------------------------------------//
+// Work-around below fixes anonymous structs compiler errors in namespace tim::os
+//
+//      struct unix  : public concepts::api {};
+//      struct linux : public concepts::api {};
+//
+// resolving to:
+//
+//      struct       : public concepts::api {};
+//      struct       : public concepts::api {};
+//
+// This work-around just re-defines the macros to perform a text-substitution of the
+// name of the macro. Thus, the text-substitution does not change anything but
+// all "#ifdef unix" and "#ifdef linux" pre-processor checks are still valid.
+//
+#if defined(unix)
+#    undef unix
+#    define unix unix
+#endif
+
+#if defined(linux)
+#    undef linux
+#    define linux linux
+#endif
+
+//--------------------------------------------------------------------------------------//
 // this ensures that winnt.h never causes a 64-bit build to fail
 // also solves issue with ws2def.h and winsock2.h:
 //  https://www.zachburlingame.com/2011/05/
