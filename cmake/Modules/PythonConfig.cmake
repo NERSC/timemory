@@ -17,34 +17,37 @@ endif()
 
 # if python version was specifed, do exact match
 if(_PYVERSION)
-    find_package(PythonInterp "${_PYVERSION}" ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(Python3 "${_PYVERSION}" ${TIMEMORY_FIND_REQUIREMENT}
+        COMPONENTS Interpreter Development)
 else()
-    find_package(PythonInterp ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(Python3 COMPONENTS Interpreter Development)
 endif()
 
-# set TIMEMORY_PYTHON_VERSION if we have the python version
-if(PYTHON_VERSION_STRING)
-    set(TIMEMORY_PYTHON_VERSION "${PYTHON_VERSION_STRING}" CACHE STRING
-        "Python version for timemory")
+if(NOT Python3_FOUND)
+    set(TIMEMORY_USE_PYTHON OFF)
+    set(TIMEMORY_BUILD_PYTHON OFF)
+    inform_empty_interface(timemory-plotting "Python plotting from C++")
+    return()
 endif()
+
+# backwards-compat
+set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH "Python executable" FORCE)
+
+# set TIMEMORY_PYTHON_VERSION if we have the python version
+set(TIMEMORY_PYTHON_VERSION ${Python3_VERSION} CACHE STRING
+    "Python version for timemory")
 
 # make sure the library version is an exact match for the Python executable
 find_package(PythonLibs ${TIMEMORY_PYTHON_VERSION} ${TIMEMORY_FIND_REQUIREMENT})
 
 # if either not found, disable
-if(NOT PythonInterp_FOUND OR NOT PythonLibs_FOUND)
-    set(TIMEMORY_USE_PYTHON OFF)
-    set(TIMEMORY_BUILD_PYTHON OFF)
-    inform_empty_interface(timemory-plotting "Python plotting from C++")
-else()
-    add_feature(PYTHON_EXECUTABLE "Python executable")
-    add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE)
-    set(TIMEMORY_PYTHON_PLOTTER "${PYTHON_EXECUTABLE}")
-    timemory_target_compile_definitions(timemory-plotting INTERFACE
-        TIMEMORY_USE_PLOTTING
-        TIMEMORY_PYTHON_PLOTTER="${PYTHON_EXECUTABLE}")
-    target_link_libraries(timemory-headers INTERFACE timemory-plotting)
-endif()
+add_feature(Python3_EXECUTABLE "Python executable")
+add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE)
+set(TIMEMORY_PYTHON_PLOTTER "${Python3_EXECUTABLE}")
+timemory_target_compile_definitions(timemory-plotting INTERFACE
+    TIMEMORY_USE_PLOTTING
+    TIMEMORY_PYTHON_PLOTTER="${Python3_EXECUTABLE}")
+target_link_libraries(timemory-headers INTERFACE timemory-plotting)
 
 # C++ standard
 if(NOT MSVC)
@@ -73,14 +76,8 @@ if(TIMEMORY_BUILD_PYTHON AND NOT TARGET pybind11)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/pybind11)
 endif()
 
-if(NOT PYBIND11_PYTHON_VERSION)
-    unset(PYBIND11_PYTHON_VERSION CACHE)
-    execute_process(COMMAND ${PYTHON_EXECUTABLE}
-        -c "import sys; print('{}.{}'.format(sys.version_info[0], sys.version_info[1]))"
-        OUTPUT_VARIABLE PYTHON_VERSION
-        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-    set(PYBIND11_PYTHON_VERSION "${PYTHON_VERSION}" CACHE STRING "Python version")
-endif()
+set(PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
+set(PYBIND11_PYTHON_VERSION "${PYTHON_VERSION}" CACHE STRING "Python version" FORCE)
 
 add_feature(PYBIND11_CPP_STANDARD "PyBind11 C++ standard")
 add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
@@ -91,7 +88,7 @@ if(NOT "${TIMEMORY_PYTHON_VERSION}" MATCHES "${PYBIND11_PYTHON_VERSION}*")
     message(FATAL_ERROR "Mismatched 'TIMEMORY_PYTHON_VERSION' and 'PYBIND11_PYTHON_VERSION'")
 endif()
 
-execute_process(COMMAND ${PYTHON_EXECUTABLE}
+execute_process(COMMAND ${Python3_EXECUTABLE}
     -c "import time ; print('{} {}'.format(time.ctime(), time.tzname[0]))"
     OUTPUT_VARIABLE TIMEMORY_INSTALL_DATE
     OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
@@ -106,60 +103,49 @@ elseif(SPACK_BUILD)
         lib/python${PYBIND11_PYTHON_VERSION}/site-packages
         CACHE PATH "Installation directory for python")
 else()
-    # make sure Python3 finds the same exe and library
-    SET(Python3_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE FILEPATH "Path to Python3 interpreter" FORCE)
-    SET(Python3_LIBRARY ${PYTHON_LIBRARY} CACHE FILEPATH "Path to Python3 library" FORCE)
-
-    # basically just used to get Python3_SITEARCH for installation
-    FIND_PACKAGE(Python3 COMPONENTS Interpreter Development)
-
-    IF(Python3_FOUND)
-        SET(CMAKE_INSTALL_PYTHONDIR ${Python3_SITEARCH})
-        ADD_FEATURE(Python3_SITEARCH "site-packages directory of python installation")
-        SET(_REMOVE OFF)
-        # make the directory if it doesn't exist
-        IF(NOT EXISTS ${Python3_SITEARCH}/timemory)
-            SET(_REMOVE ON)
-            EXECUTE_PROCESS(
-                COMMAND ${CMAKE_COMMAND} -E make_directory ${Python3_SITEARCH}/timemory
-                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-        ENDIF()
-        # figure out if we can install to Python3_SITEARCH
+    SET(CMAKE_INSTALL_PYTHONDIR ${Python3_SITEARCH})
+    ADD_FEATURE(Python3_SITEARCH "site-packages directory of python installation")
+    SET(_REMOVE OFF)
+    # make the directory if it doesn't exist
+    IF(NOT EXISTS ${Python3_SITEARCH}/timemory)
+        SET(_REMOVE ON)
         EXECUTE_PROCESS(
-            COMMAND ${CMAKE_COMMAND} -E touch ${Python3_SITEARCH}/timemory/__init__.py
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-            ERROR_VARIABLE ERR_MSG
-            RESULT_VARIABLE ERR_CODE)
-        # remove the directory if we created it
-        IF(_REMOVE)
-            EXECUTE_PROCESS(
-                COMMAND ${CMAKE_COMMAND} -E remove_directory ${Python3_SITEARCH}/timemory
-                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-        ENDIF()
-        # check the error code of the touch command
-        IF(ERR_CODE)
-            # get the python directory name, e.g. 'python3.6' from
-            # '/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6'
-            get_filename_component(PYDIR "${Python3_STDLIB}" NAME)
-            ADD_FEATURE(Python3_STDLIB "standard-library directory of python installation")
-            # Should not be CMAKE_INSTALL_LIBDIR! Python won't look in a lib64 folder
-            set(CMAKE_INSTALL_PYTHONDIR lib/${PYDIR}/site-packages)
-        ENDIF()
-    ELSE()
-        SET(CMAKE_INSTALL_PYTHONDIR
-            lib/python${PYBIND11_PYTHON_VERSION}/site-packages
-            CACHE PATH "Installation directory for python")
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${Python3_SITEARCH}/timemory
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    ENDIF()
+    # figure out if we can install to Python3_SITEARCH
+    EXECUTE_PROCESS(
+        COMMAND ${CMAKE_COMMAND} -E touch ${Python3_SITEARCH}/timemory/__init__.py
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        ERROR_VARIABLE ERR_MSG
+        RESULT_VARIABLE ERR_CODE)
+    # remove the directory if we created it
+    IF(_REMOVE)
+        EXECUTE_PROCESS(
+            COMMAND ${CMAKE_COMMAND} -E remove_directory ${Python3_SITEARCH}/timemory
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    ENDIF()
+    # check the error code of the touch command
+    IF(ERR_CODE)
+        # get the python directory name, e.g. 'python3.6' from
+        # '/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6'
+        get_filename_component(PYDIR "${Python3_STDLIB}" NAME)
+        ADD_FEATURE(Python3_STDLIB "standard-library directory of python installation")
+        # Should not be CMAKE_INSTALL_LIBDIR! Python won't look in a lib64 folder
+        set(CMAKE_INSTALL_PYTHONDIR lib/${PYDIR}/site-packages)
     ENDIF()
 endif()
 
 if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
     timemory_target_compile_definitions(timemory-python INTERFACE
         TIMEMORY_USE_PYTHON)
-    target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
+    target_link_libraries(timemory-python INTERFACE ${Python3_LIBRARIES})
     target_include_directories(timemory-python SYSTEM INTERFACE
-        ${PYTHON_INCLUDE_DIRS}
+        ${Python3_INCLUDE_DIRS}
         ${PYBIND11_INCLUDE_DIRS}
         $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
+    set_target_properties(timemory-python PROPERTIES
+        INTERFACE_LINK_OPTIONS "${Python3_LINK_OPTIONS}")
 endif()
 
 if(APPLE)
