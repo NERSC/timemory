@@ -55,7 +55,7 @@ using comp_bundle_t = typename auto_bundle_t::component_type;
 using bundle0_t     = tim::auto_tuple<wall_clock, cpu_util>;
 using bundle1_t     = tim::auto_list<cpu_clock, peak_rss>;
 
-using custom_bundle_t      = user_bundle<0, bundle_testing>;
+using custom_bundle_t      = user_global_bundle;
 using auto_custom_bundle_t = tim::auto_tuple<custom_bundle_t>;
 using comp_custom_bundle_t = typename auto_custom_bundle_t::component_type;
 
@@ -69,7 +69,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 // this function consumes approximately "n" milliseconds of real time
@@ -203,13 +204,13 @@ TEST_F(user_bundle_tests, bundle_0)
 
     auto wc_n = wc_size_orig + 1;
     auto cu_n = cu_size_orig + 1;
-    auto cc_n = cc_size_orig + 0;
-    auto pr_n = pr_size_orig + 0;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 1;
 
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -228,10 +229,10 @@ TEST_F(user_bundle_tests, bundle_1)
     auto cc_n = cc_size_orig + 1;
     auto pr_n = pr_size_orig + 1;
 
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -260,10 +261,10 @@ TEST_F(user_bundle_tests, comp_bundle)
     auto cc_n = cc_size_orig + 1;
     auto pr_n = pr_size_orig + 1;
 
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -328,10 +329,10 @@ TEST_F(user_bundle_tests, bundle_init_func)
     auto cc_n = cc_size_orig + 1;
     auto pr_n = pr_size_orig + 0;
 
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -340,9 +341,9 @@ TEST_F(user_bundle_tests, bundle_insert)
 {
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 
-    auto init_func = [](auto_custom_bundle_t& al) {
+    auto init_func = [](auto& al) {
         std::vector<std::string> _init   = { "wall_clock", "cpu_clock" };
-        auto&                    _bundle = *al.get<custom_bundle_t>();
+        auto&                    _bundle = *al.template get<custom_bundle_t>();
         tim::insert(_bundle, _init);
         tim::insert(_bundle, { CPU_UTIL, PEAK_RSS });
     };
@@ -354,9 +355,11 @@ TEST_F(user_bundle_tests, bundle_insert)
     }
 
     {
-        auto_custom_bundle_t _two(details::get_test_name(), tim::scope::tree{}, false,
+        comp_custom_bundle_t _two(details::get_test_name(), true, tim::scope::tree{},
                                   init_func);
+        _two.start();
         ret += details::fibonacci(35);
+        _two.stop();
     }
 
     printf("fibonacci(35) = %li\n", ret);
@@ -366,10 +369,19 @@ TEST_F(user_bundle_tests, bundle_insert)
     auto cc_n = cc_size_orig + 1;
     auto pr_n = pr_size_orig + 1;
 
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+
+    auto wc_data = tim::storage<wall_clock>::instance()->get();
+    auto cc_data = tim::storage<cpu_clock>::instance()->get();
+
+    ASSERT_GE(wc_data.back().prefix().length(), 4);
+    EXPECT_FALSE(wc_data.back().prefix().substr(4).empty());
+
+    ASSERT_GE(cc_data.back().prefix().length(), 4);
+    EXPECT_FALSE(cc_data.back().prefix().substr(4).empty());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -396,10 +408,10 @@ TEST_F(user_bundle_tests, bundle_configure)
     auto cc_n = cc_size_orig + 2;
     auto pr_n = pr_size_orig + 2;
 
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -454,10 +466,19 @@ TEST_F(user_bundle_tests, bundle_configure_ext)
     auto cc_n = cc_size_orig + 2;
     auto pr_n = pr_size_orig + 2;
 
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+
+    auto wc_data = tim::storage<wall_clock>::instance()->get();
+    auto cc_data = tim::storage<cpu_clock>::instance()->get();
+
+    ASSERT_GE(wc_data.back().prefix().length(), 4);
+    EXPECT_FALSE(wc_data.back().prefix().substr(4).empty());
+
+    ASSERT_GE(cc_data.back().prefix().length(), 4);
+    EXPECT_FALSE(cc_data.back().prefix().substr(4).empty());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -522,10 +543,61 @@ TEST_F(user_bundle_tests, bundle_insert_ext)
     auto cc_n = cc_size_orig + 1;
     auto pr_n = pr_size_orig + 1;
 
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+
+    auto wc_data = tim::storage<wall_clock>::instance()->get();
+    auto cc_data = tim::storage<cpu_clock>::instance()->get();
+
+    ASSERT_GE(wc_data.back().prefix().length(), 4);
+    EXPECT_FALSE(wc_data.back().prefix().substr(4).empty());
+
+    ASSERT_GE(cc_data.back().prefix().length(), 4);
+    EXPECT_FALSE(cc_data.back().prefix().substr(4).empty());
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(user_bundle_tests, laps)
+{
+    printf("TEST_NAME: %s\n", details::get_test_name().c_str());
+
+    using lw_bundle_t = tim::lightweight_tuple<custom_bundle_t>;
+
+    custom_bundle_t::configure<wall_clock, cpu_clock>();
+
+    size_t      n = 10;
+    lw_bundle_t obj{ details::get_test_name() };
+    // auto cfg = tim::scope::config{} + tim::scope::flat{} + tim::scope::timeline{};
+    obj.set_scope(tim::scope::config(true, true));
+    obj.push();
+    for(size_t i = 0; i < n; ++i)
+    {
+        obj.start();
+        ret += details::fibonacci(35);
+        obj.stop();
+    }
+    obj.pop();
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 0;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 0;
+
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+
+    auto wc_data = tim::storage<wall_clock>::instance()->get();
+    auto cc_data = tim::storage<cpu_clock>::instance()->get();
+
+    EXPECT_EQ(wc_data.back().data().get_laps(), 10) << "data: " << wc_data.back().data();
+    EXPECT_EQ(cc_data.back().data().get_laps(), 10) << "data: " << cc_data.back().data();
 }
 
 //--------------------------------------------------------------------------------------//

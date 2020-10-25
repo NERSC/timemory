@@ -36,7 +36,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 // this function consumes approximately "n" milliseconds of real time
@@ -128,6 +129,22 @@ TEST_F(api_tests, enum_vs_macro)
         TIMEMORY_NATIVE_COMPONENTS_END - TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE;
 
     EXPECT_EQ(macro_sz, enum_sz);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(api_tests, placeholder)
+{
+    using nothing_placeholder = placeholder<nothing>;
+
+    auto in_complete = tim::is_one_of<nothing_placeholder, tim::complete_types_t>::value;
+    auto in_avail    = tim::is_one_of<nothing_placeholder, tim::available_types_t>::value;
+
+    EXPECT_FALSE(in_complete) << "complete_types_t: "
+                              << tim::demangle<tim::complete_types_t>() << std::endl;
+
+    EXPECT_FALSE(in_avail) << "available_types_t: "
+                           << tim::demangle<tim::available_types_t>() << std::endl;
 }
 
 //--------------------------------------------------------------------------------------//
