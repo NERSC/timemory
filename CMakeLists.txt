@@ -228,10 +228,37 @@ message(STATUS "Configuring build settings...")
 include(BuildSettings)
 
 if (MSVC)
+    # TODO: These msvc specific settings probably belong in BuildSettings. 
+    # But I am not sure where to put them, so I will leave them in the obvious
+    # place for now.
+
+    # set debug postfix so debug library and executable artifact names do not
+    # conflict with release artifacts
+    set(CMAKE_DEBUG_POSTFIX "_d")
+
+    # VTune is much more helpful when debug information is included in the 
+    # generated release code. 
+    add_definitions(/Zi)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /debug")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /debug")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /debug")
+    foreach(flag_var
+        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+        if(${flag_var} MATCHES "/RTC1")
+            string(REGEX REPLACE "/RTC1" "" ${flag_var} "${${flag_var}}")
+        endif()
+    endforeach()
+else()
+    # with gcc, this is usually done be adding -g, but I do not have a linux
+    # system to test
+endif()
+
+if (MSVC)
     set(TIMEMORY_BUILD_CEREAL 1)
 else()
     set(TIMEMORY_BUILD_CEREAL 0)
-endf()
+endif()
 message(STATUS "Configuring external packages and interface libraries...")
 include(Packages)
 
