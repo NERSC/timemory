@@ -25,12 +25,9 @@
 
 #include "libpytimemory.hpp"
 #include "libpytimemory-components.hpp"
-#include "timemory/components.hpp"
-#include "timemory/components/extern.hpp"
-#include "timemory/components/ompt/backends.hpp"
 #include "timemory/enum.h"
 #include "timemory/library.h"
-#include "timemory/settings/extern.hpp"
+#include "timemory/timemory.hpp"
 
 #if defined(TIMEMORY_USE_OMPT)
 #    include "timemory/components/ompt.hpp"

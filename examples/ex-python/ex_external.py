@@ -15,19 +15,21 @@ def fib(n):
 
 
 def inefficient(n):
+    print(f"inefficient: {n}")
     a = 0
     for i in range(n):
         a += i
         for j in range(n):
             a += j
-    arr = np.arange(a * n * n * n, dtype=np.double)
-    return arr.sum()
+    arr = np.random.rand(a * n * n * n)
+    sum = arr.sum()
+    print(f"sum: {sum}")
+    return sum
 
 
 def run(nfib):
     ret = 0
     ret += fib(nfib)
-    ret += fib(10)
     ret += inefficient(nfib)
     return ret
 

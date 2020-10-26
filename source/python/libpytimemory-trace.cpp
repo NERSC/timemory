@@ -64,16 +64,17 @@ struct config
     string_t            base_module_path  = "";
     strset_t            include_functions = {};
     strset_t            include_filenames = {};
-    strset_t            exclude_functions = { "FILE",       "FUNC",      "LINE",
-                                   "get_fcode",  "__exit__",  "_handle_fromlist",
-                                   "<module>",   "_shutdown", "isclass",
-                                   "isfunction", "basename",  "_get_sep" };
+    strset_t            exclude_functions = { "FILE",      "FUNC",     "LINE",
+                                   "get_fcode", "__exit__", "_handle_fromlist",
+                                   "_shutdown", "isclass",  "isfunction",
+                                   "basename",  "_get_sep" };
     strset_t            exclude_filenames = { "__init__.py",       "__main__.py",
                                    "functools.py",      "<frozen importlib._bootstrap>",
                                    "_pylab_helpers.py", "threading.py",
                                    "encoder.py",        "decoder.py" };
     tracer_code_map_t   records           = {};
     function_code_map_t functions         = {};
+    int32_t verbose = tim::settings::verbose() + ((tim::settings::debug()) ? 16 : 0);
 };
 //
 inline config&
@@ -99,6 +100,7 @@ get_config()
         _tmp->include_filenames = _instance->include_filenames;
         _tmp->exclude_functions = _instance->exclude_functions;
         _tmp->exclude_filenames = _instance->exclude_filenames;
+        _tmp->verbose           = _instance->verbose;
         return _tmp;
     }();
     return *_tl_instance;
@@ -113,12 +115,14 @@ get_depth(PyFrameObject* frame)
 py::function
 tracer_function(py::object pframe, const char* swhat, py::object arg)
 {
+    static thread_local auto& _config = get_config();
+
     if(!tim::settings::enabled())
         return py::none{};
 
     if(user_trace_bundle::bundle_size() == 0)
     {
-        if(tim::settings::debug())
+        if(_config.verbose > 1)
             PRINT_HERE("%s", "Tracer bundle is empty");
         return py::none{};
     }
@@ -132,7 +136,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     // only support PyTrace_{LINE,CALL,RETURN}
     if(what < 0)
     {
-        if(tim::settings::debug())
+        if(_config.verbose > 2)
             PRINT_HERE("%s :: %s", "Ignoring what != {LINE,CALL,RETURN}", swhat);
         return py::none{};
     }
@@ -147,7 +151,6 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     static thread_local auto              _decor_lines  = decor_line_map_t{};
     static thread_local auto              _file_lskip   = strset_t{};
     static thread_local auto              _pushed_funcs = pushed_funcs_t{};
-    static thread_local auto&             _config       = get_config();
     auto&                                 _mpath        = _config.base_module_path;
     auto&                                 _only_funcs   = _config.include_functions;
     auto&                                 _only_files   = _config.include_filenames;
@@ -173,7 +176,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     // if frame exceeds max stack-depth
     if(_iscall && _sdepth > _config.max_stack_depth)
     {
-        if(tim::settings::debug())
+        if(_config.verbose > 1)
             PRINT_HERE("skipping %i > %i", (int) _sdepth, (int) _config.max_stack_depth);
         return py::none{};
     }
@@ -267,13 +270,21 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     auto _func = _get_funcname();
 
     if(!_only_funcs.empty() && _only_funcs.find(_func) == _only_funcs.end())
+    {
+        if(_config.verbose > 1)
+            PRINT_HERE("Skipping non-included function: %s", _func.c_str());
         return py::none{};
+    }
 
     if(_skip_funcs.find(_func) != _skip_funcs.end())
     {
+        if(_config.verbose > 1)
+            PRINT_HERE("Skipping designated function: '%s'", _func.c_str());
         auto _manager = tim::manager::instance();
         if(!_manager || _manager->is_finalized() || _func == "_shutdown")
         {
+            if(_config.verbose > 1)
+                PRINT_HERE("Shutdown detected: %s", _func.c_str());
             auto sys       = py::module::import("sys");
             auto threading = py::module::import("threading");
             sys.attr("settrace")(py::none{});
@@ -286,7 +297,11 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
 
     if(!_config.include_internal &&
        strncmp(_full.c_str(), _mpath.c_str(), _mpath.length()) == 0)
+    {
+        if(_config.verbose > 2)
+            PRINT_HERE("Skipping internal function: %s", _func.c_str());
         return py::none{};
+    }
 
     if(!_only_files.empty() && (_only_files.find(_base) == _only_files.end() &&
                                 _only_files.find(_full) == _only_files.end()))
@@ -300,27 +315,42 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
             PRINT_HERE("Skipping: [%s | %s | %s] due to [%s]", _func.c_str(),
                        _base.c_str(), _full.c_str(), _opts.str().substr(2).c_str());
         }
+#else
+        if(_config.verbose > 2)
+            PRINT_HERE("Skipping non-included file: %s", _base.c_str());
 #endif
         return py::none{};
     }
 
     if(_skip_files.find(_base) != _skip_files.end() ||
        _skip_files.find(_full) != _skip_files.end())
+    {
+        if(_config.verbose > 1)
+            PRINT_HERE("Skipping designated file: '%s'", _base.c_str());
         return py::none{};
+    }
 
     strvec_t* _plines = nullptr;
     try
     {
         if(_file_lskip.count(_full) == 0)
             _plines = &_get_lines(_full);
-    } catch(std::exception&)
+    } catch(std::exception& e)
     {
+        if(_config.verbose > -1)
+            PRINT_HERE("Exception thrown when retrieving lines for file '%s'. Functions "
+                       "in this file will not be traced:\n%s",
+                       _full.c_str(), e.what());
         _file_lskip.insert(_full);
         return py::none{};
     }
 
     if(!_plines)
+    {
+        if(_config.verbose > 3)
+            PRINT_HERE("No source code lines for '%s'. Returning", _full.c_str());
         return py::none{};
+    }
 
     auto& _flines = *_plines;
 
@@ -340,10 +370,15 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
             std::stringstream _slabel;
             _slabel << std::setw(_maxw) << std::left << itr;
             int64_t _rem = tim::settings::max_width();
-            _rem -= _maxw + _prefix.length() + 1 + 5 + 2 + 4;
+            // three spaces for '>>>'
+            _rem -= _maxw + _prefix.length() + 3;
+            // space for 'XY|' for thread
+            _rem -= (tim::settings::collapse_threads()) ? 3 : 0;
+            // space for 'XY|' for process
+            _rem -= (tim::settings::collapse_processes()) ? 3 : 0;
+            // make sure not less than zero
             _rem = std::max<int64_t>(_rem, 0);
-            _slabel << std::setw(_rem) << std::right << "";
-            _slabel << ' ' << _prefix;
+            _slabel << std::setw(_rem) << std::right << "" << ' ' << _prefix;
             auto _label = _slabel.str();
             DEBUG_PRINT_HERE("%8s | %s%s | %s", swhat, _func.c_str(), _get_args().c_str(),
                              _label.c_str());
@@ -538,9 +573,10 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     // don't do anything with arg
     tim::consume_parameters(arg);
 
-    if(what == PyTrace_CALL)
-        return py::cpp_function{ &tracer_function };
-    return py::none{};
+    if(_config.verbose > 3)
+        PRINT_HERE("Returning trace function for %s of '%s'", swhat, _func.c_str());
+
+    return py::cpp_function{ &tracer_function };
 }
 //
 py::module
@@ -568,27 +604,50 @@ generate(py::module& _pymod)
     _trace.def("pop", &timemory_pop_trace, "Pop Trace", py::arg("key"));
 
     auto _init = []() {
+        if(get_config().verbose > 1)
+            PRINT_HERE("%s", "Initializing trace");
         user_trace_bundle::global_init();
         auto _file = py::module::import("timemory").attr("__file__").cast<string_t>();
         if(_file.find('/') != string_t::npos)
             _file = _file.substr(0, _file.find_last_of('/'));
         get_config().base_module_path = _file;
         if(get_config().is_running)
+        {
+            if(get_config().verbose > 1)
+                PRINT_HERE("%s", "Trace already running");
             return;
+        }
+        if(get_config().verbose < 2 && get_config().verbose > -1)
+            PRINT_HERE("%s", "Initializing trace");
+        else if(get_config().verbose > 0)
+            PRINT_HERE("%s", "Resetting trace state for initialization");
         get_config().records.clear();
         get_config().functions.clear();
         get_config().is_running = true;
     };
 
     auto _fini = []() {
+        auto _verbose = get_config().verbose;
+        if(_verbose > 2)
+            PRINT_HERE("%s", "Finalizing trace");
         if(!get_config().is_running)
+        {
+            if(_verbose > 2)
+                PRINT_HERE("%s", "Trace already finalized");
             return;
+        }
+        if(_verbose > 0 && _verbose < 3)
+            PRINT_HERE("%s", "Finalizing trace");
         get_config().is_running = false;
+        if(_verbose > 1)
+            PRINT_HERE("%s", "Popping records from call-stack");
         for(auto& ritr : get_config().records)
         {
             for(auto& itr : ritr.second)
                 itr.second.pop();
         }
+        if(_verbose > 1)
+            PRINT_HERE("%s", "Destroying records");
         get_config().records.clear();
         get_config().functions.clear();
     };
@@ -617,6 +676,8 @@ generate(py::module& _pymod)
     CONFIGURATION_PROPERTY("full_filepath", bool,
                            "Display the full filepath (instead of file basename)",
                            get_config().full_filepath)
+    CONFIGURATION_PROPERTY("verbosity", int32_t, "Verbosity of the logging",
+                           get_config().verbose)
 
     auto _get_strset = [](const strset_t& _targ) {
         auto _out = py::list{};

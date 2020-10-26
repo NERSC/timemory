@@ -36,8 +36,13 @@ if(TIMEMORY_BUILD_PYTHON)
     target_include_directories(libpytimemory SYSTEM PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/pybind11/include>)
 
+    set(pybind_libs pybind11::module)
+    if(TIMEMORY_BUILD_LTO)
+        list(APPEND pybind_libs pybind11::thin_lto)
+    endif()
+
     target_link_libraries(libpytimemory PRIVATE
-        pybind11::module
+        ${pybind_libs}
         timemory::timemory-python
         timemory::timemory-headers
         timemory::timemory-cxx-shared

@@ -67,6 +67,7 @@ struct config
                                    "_pylab_helpers.py", "threading.py",
                                    "encoder.py",        "decoder.py" };
     profiler_index_map_t records            = {};
+    int32_t verbose = tim::settings::verbose() + ((tim::settings::debug()) ? 16 : 0);
 };
 //
 inline config&
@@ -93,6 +94,7 @@ get_config()
         _tmp->include_filenames = _instance->include_filenames;
         _tmp->exclude_functions = _instance->exclude_functions;
         _tmp->exclude_filenames = _instance->exclude_filenames;
+        _tmp->verbose           = _instance->verbose;
         return _tmp;
     }();
     return *_tl_instance;
@@ -352,6 +354,8 @@ generate(py::module& _pymod)
                            get_config().full_filepath)
     CONFIGURATION_PROPERTY("max_stack_depth", int32_t, "Maximum stack depth to profile",
                            get_config().max_stack_depth)
+    CONFIGURATION_PROPERTY("verbosity", int32_t, "Verbosity of the logging",
+                           get_config().verbose)
 
     auto _get_strset = [](const strset_t& _targ) {
         auto _out = py::list{};

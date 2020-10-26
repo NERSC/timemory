@@ -117,7 +117,7 @@ class Profiler:
         _profl = settings.profiler_components
         _components = _profl if _trace is None else _trace
 
-        self._original_profiler_function = sys.getprofile()
+        self._original_function = sys.getprofile()
         self._use = (
             not _profiler_config._is_running and Profiler.is_enabled() is True
         )
@@ -131,11 +131,13 @@ class Profiler:
         if _trace is None:
             settings.trace_components = ",".join(self.components)
         settings.profiler_components = ",".join(self.components)
+        self._unset = 0
 
     # ---------------------------------------------------------------------------------- #
     #
     def __del__(self):
         """Make sure the profiler stops"""
+
 
         self.stop()
 
@@ -148,7 +150,7 @@ class Profiler:
         _profiler_bundle.configure(
             self.components, self._flat_profile, self._timeline_profile
         )
-        self._original_profiler_function = sys.getprofile()
+        self._original_function = sys.getprofile()
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -160,7 +162,7 @@ class Profiler:
         self._use = (
             not _profiler_config._is_running
             and Profiler.is_enabled() is True
-            and sys.getprofile() == self._original_profiler_function
+            and sys.getprofile() == self._original_function
         )
 
     # ---------------------------------------------------------------------------------- #
@@ -173,19 +175,22 @@ class Profiler:
             self.configure()
             sys.setprofile(_profiler_function)
             threading.setprofile(_profiler_function)
-            return True
-        return False
+
+        self._unset = self._unset + 1
+        return self._unset
 
     # ---------------------------------------------------------------------------------- #
     #
     def stop(self):
         """Stop the profiler explicitly"""
 
-        if self._use and _profiler_config._is_running:
-            sys.setprofile(self._original_profiler_function)
+        self._unset = self._unset - 1
+        if self._unset == 0:
+            sys.setprofile(self._original_function)
             _profiler_fini()
-            return True
-        return False
+
+        return self._unset
+
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -195,12 +200,11 @@ class Profiler:
         @wraps(func)
         def function_wrapper(*args, **kwargs):
             # store whether this tracer started
-            _unset = self.start()
+            self.start()
             # execute the wrapped function
             result = func(*args, **kwargs)
             # unset the profiler if this wrapper set it
-            if _unset:
-                self.stop()
+            self.stop()
             # return the result of the wrapped function
             return result
 
@@ -210,6 +214,7 @@ class Profiler:
     #
     def __enter__(self, *args, **kwargs):
         """Context manager start function"""
+
         self.start()
 
     # ---------------------------------------------------------------------------------- #
@@ -217,9 +222,8 @@ class Profiler:
     def __exit__(self, exec_type, exec_value, exec_tb):
         """Context manager stop function"""
 
-        if self._use and _profiler_config._is_running:
-            sys.setprofile(self._original_profiler_function)
-            _profiler_fini()
+        self.stop()
+
         if (
             exec_type is not None
             and exec_value is not None
@@ -299,9 +303,7 @@ class FakeProfiler:
     # ---------------------------------------------------------------------------------- #
     #
     def __call__(self, func):
-        """
-        Decorator
-        """
+        """Decorator"""
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):

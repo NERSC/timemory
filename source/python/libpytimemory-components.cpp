@@ -27,6 +27,7 @@
 #endif
 
 #include "libpytimemory-components.hpp"
+#include "timemory/enum.h"
 #include "timemory/timemory.hpp"
 
 //======================================================================================//
@@ -451,13 +452,11 @@ operations(py::class_<TupleT<T>>& _pyclass, std::index_sequence<Idx...>)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename T>
+template <size_t Idx, typename T>
 static void
 generate_properties(py::class_<pytuple_t<T>>& _pycomp)
 {
-    using property_t           = tim::component::properties<T>;
-    static constexpr auto Idx  = property_t::value;
-    static constexpr auto nIdx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
+    using property_t = tim::component::properties<T>;
 
     //----------------------------------------------------------------------------------//
     //
@@ -465,8 +464,9 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
     //
     //----------------------------------------------------------------------------------//
 
-    _pycomp.def_static(
-        "index", []() { return nIdx; }, "Enumeration ID for the component");
+    _pycomp.def_static("index",
+                       []() { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
+                       "Enumeration ID for the component");
 
     _pycomp.def_static("id", []() { return property_t::id(); },
                        "(Primary) String ID for the component");
@@ -479,10 +479,6 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
 
     py::class_<property_t> _pyprop(_pycomp, "Properties", "Static properties class");
 
-    _pyprop.def_property_readonly_static(
-        "available", [](py::object) { return tim::component::enumerator<Idx>::value; },
-        "Whether the component is available");
-
     _pyprop.def_property_readonly_static("enum_string",
                                          [](py::object) {
                                              static std::string _val =
@@ -492,7 +488,8 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
                                          "Get the string version of the enumeration ID");
 
     _pyprop.def_property_readonly_static(
-        "enum_value", [](py::object) { return nIdx; },
+        "enum_value",
+        [](py::object) { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
         "Get the enumeration ID for the component");
 
     _pyprop.def_property_readonly_static("id",
@@ -515,6 +512,7 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
         },
         "Get the secondary string IDs for the component");
 
+    /*
     auto _match_int = [](TIMEMORY_NATIVE_COMPONENT eid) {
         return property_t::matches(static_cast<int>(eid));
     };
@@ -542,6 +540,7 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
     };
 
     _pyprop.def_static("as_json", _as_json, "Get the properties as a JSON dictionary");
+    */
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -634,7 +633,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _boolgen[Idx] = true;
     _keygen[Idx]  = { _keys, []() { return py::cast(new bundle_t{}); } };
 
-    generate_properties(_pycomp);
+    generate_properties<Idx, T>(_pycomp);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -713,7 +712,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _boolgen[Idx] = false;
     _keygen[Idx]  = { {}, []() { return py::none{}; } };
 
-    generate_properties(_pycomp);
+    generate_properties<Idx, T>(_pycomp);
 }
 //
 //--------------------------------------------------------------------------------------//

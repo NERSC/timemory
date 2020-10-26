@@ -155,7 +155,7 @@ allreduce(const vector_t<Tp>& sendbuf, vector_t<Tp>& recvbuf)
 class gotcha_tests : public ::testing::Test
 {
 protected:
-    static SetUpTestSuite()
+    static void SetUpTestSuite()
     {
         tim::settings::banner()       = false;
         tim::settings::width()        = 16;
@@ -167,7 +167,7 @@ protected:
         tim::settings::json_output()  = true;
         tim::settings::mpi_thread()   = false;
         tim::dmp::initialize(_argc, _argv);
-        tim::timemory_init(&argc, &argv);
+        tim::timemory_init(&_argc, &_argv);
         tim::settings::dart_output() = true;
         tim::settings::dart_count()  = 1;
         tim::settings::dart_type()   = "peak_rss";
@@ -177,7 +177,7 @@ protected:
 #endif
     }
 
-    static TearDownTestSuite()
+    static void TearDownTestSuite()
     {
         tim::timemory_finalize();
         tim::dmp::finalize();

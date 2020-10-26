@@ -116,7 +116,7 @@ class Tracer:
         _profl = settings.profiler_components
         _components = _profl if _trace is None else _trace
 
-        self._original_tracer_function = sys.gettrace()
+        self._original_function = sys.gettrace()
         self._use = (
             not _tracer_config._is_running and Tracer.is_enabled() is True
         )
@@ -130,7 +130,7 @@ class Tracer:
         if _trace is None:
             settings.trace_components = ",".join(self.components)
         settings.trace_components = ",".join(self.components)
-        self._unset = False
+        self._unset = 0
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -148,7 +148,7 @@ class Tracer:
         _tracer_bundle.configure(
             self.components, self._flat_profile, self._timeline_profile
         )
-        self._original_tracer_function = sys.gettrace()
+        self._original_function = sys.gettrace()
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -160,7 +160,7 @@ class Tracer:
         self._use = (
             not _tracer_config._is_running
             and Tracer.is_enabled() is True
-            and sys.gettrace() == self._original_tracer_function
+            and sys.gettrace() == self._original_function
         )
 
     # ---------------------------------------------------------------------------------- #
@@ -169,13 +169,12 @@ class Tracer:
         """Start the tracer"""
 
         self.update()
-        self._unset = False
         if self._use:
             self.configure()
             sys.settrace(_tracer_function)
             threading.settrace(_tracer_function)
-            self._unset = True
 
+        self._unset = self._unset + 1
         return self._unset
 
     # ---------------------------------------------------------------------------------- #
@@ -183,14 +182,13 @@ class Tracer:
     def stop(self):
         """Stop the tracer"""
 
-        if self._unset:
-            sys.settrace(self._original_tracer_function)
-            threading.settrace(self._original_tracer_function)
+        self._unset = self._unset - 1
+        if self._unset == 0:
+            sys.settrace(self._original_function)
+            threading.settrace(self._original_function)
             _tracer_fini()
-            self._unset = False
-            return True
 
-        return False
+        return self._unset
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -248,12 +246,13 @@ class Tracer:
 
     # ---------------------------------------------------------------------------------- #
     #
-    def runctx(self, cmd, globals, locals):
+    def runctx(self, cmd, _globals, _locals):
         """Trace a context"""
 
+        print("cmd: {}".format(cmd))
         try:
             self.start()
-            exec_(cmd, globals, locals)
+            exec_(cmd, _globals, _locals)
         finally:
             self.stop()
 
