@@ -413,8 +413,10 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
                                 if(_dend == std::string::npos)
                                     _skip_docstring = true;
                                 else
+                                {
                                     DEBUG_PRINT_HERE("Doc-string terminated in: %s",
                                                      sline.c_str());
+                                }
                                 // skip this line bc there is a doc-string
                                 continue;
                             }
