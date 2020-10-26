@@ -2,7 +2,7 @@
 [tool.black]
 line-length = 80
 target-version = ['py37']
-include = '\.pyi?$'
+include = '\.pyi?'
 exclude = '''
 
 (
