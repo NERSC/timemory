@@ -464,9 +464,9 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
     //
     //----------------------------------------------------------------------------------//
 
-    _pycomp.def_static("index",
-                       []() { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
-                       "Enumeration ID for the component");
+    _pycomp.def_static(
+        "index", [&Idx]() { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
+        "Enumeration ID for the component");
 
     _pycomp.def_static("id", []() { return property_t::id(); },
                        "(Primary) String ID for the component");
@@ -480,7 +480,8 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
     py::class_<property_t> _pyprop(_pycomp, "Properties", "Static properties class");
 
     _pyprop.def_property_readonly_static(
-        "available", [](py::object) { return tim::component::enumerator<Idx>::value; },
+        "available",
+        [&Idx](py::object) { return tim::component::enumerator<Idx>::value; },
         "Whether the component is available");
 
     _pyprop.def_property_readonly_static("enum_string",
@@ -493,7 +494,7 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
 
     _pyprop.def_property_readonly_static(
         "enum_value",
-        [](py::object) { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
+        [&Idx](py::object) { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
         "Get the enumeration ID for the component");
 
     _pyprop.def_property_readonly_static("id",
