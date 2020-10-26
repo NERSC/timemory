@@ -12,7 +12,7 @@ jobs:
     # ------------------------------------------------------------------------ #
     - os: osx
       osx_image: xcode12.2
-      python: "3.7"
+      language: shell
       env:
         - MATRIX_EVAL="CC=$(which clang) && CONDA_OS=MacOSX && && CXX=$(which clang++) && BUILD_ARGS='--build-libs shared --caliper --python --stats --tools --cxx-standard=14'"
 
@@ -214,7 +214,7 @@ jobs:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-6.0) && CXX=$(which clang++-6.0) && PROFILE=1 && BUILD_ARGS='--build-libs shared --gperftools --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14' && CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'"
+        - MATRIX_EVAL="CC=$(which clang-6.0) && CXX=$(which clang++-6.0) && TRAVIS_PYTHON_VERSION=3.8 && PROFILE=1 && BUILD_ARGS='--build-libs shared --gperftools --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14' && CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'"
     # Clang 7
     - os: linux
       dist: bionic

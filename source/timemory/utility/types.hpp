@@ -89,7 +89,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_ALWAYS_INLINE) && !defined(_WINDOWS)
-#    define TIMEMORY_ALWAYS_INLINE [[gnu::always_inline]]
+#    define TIMEMORY_ALWAYS_INLINE [[gnu::always_inline]] inline
 #else
 #    define TIMEMORY_ALWAYS_INLINE inline
 #endif

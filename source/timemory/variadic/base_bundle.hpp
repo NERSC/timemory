@@ -278,23 +278,17 @@ protected:
     };
 
 protected:
-    TIMEMORY_ALWAYS_INLINE inline bool m_store() const { return m_config.test(StoreIdx); }
+    TIMEMORY_ALWAYS_INLINE bool m_store() const { return m_config.test(StoreIdx); }
 
-    TIMEMORY_ALWAYS_INLINE inline bool m_is_pushed() const
-    {
-        return m_config.test(PushedIdx);
-    }
+    TIMEMORY_ALWAYS_INLINE bool m_is_pushed() const { return m_config.test(PushedIdx); }
 
-    TIMEMORY_ALWAYS_INLINE inline bool m_is_active() const
-    {
-        return m_config.test(ActiveIdx);
-    }
+    TIMEMORY_ALWAYS_INLINE bool m_is_active() const { return m_config.test(ActiveIdx); }
 
-    TIMEMORY_ALWAYS_INLINE inline void m_store(bool v) { m_config.set(StoreIdx, v); }
+    TIMEMORY_ALWAYS_INLINE void m_store(bool v) { m_config.set(StoreIdx, v); }
 
-    TIMEMORY_ALWAYS_INLINE inline void m_is_pushed(bool v) { m_config.set(PushedIdx, v); }
+    TIMEMORY_ALWAYS_INLINE void m_is_pushed(bool v) { m_config.set(PushedIdx, v); }
 
-    TIMEMORY_ALWAYS_INLINE inline void m_is_active(bool v) { m_config.set(ActiveIdx, v); }
+    TIMEMORY_ALWAYS_INLINE void m_is_active(bool v) { m_config.set(ActiveIdx, v); }
 
 protected:
     struct persistent_data
