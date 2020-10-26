@@ -53,15 +53,15 @@ struct cache
 
     TIMEMORY_DEFAULT_OBJECT(cache)
 
-    template <typename RetT                                               = cache_type,
-              enable_if_t<(!concepts::is_null_type<RetT>::value &&
-                           std::is_trivially_constructible<RetT>::value)> = 0>
+    template <typename RetT                                             = cache_type,
+              enable_if_t<!concepts::is_null_type<RetT>::value &&
+                          std::is_trivially_constructible<RetT>::value> = 0>
     RetT operator()()
     {
         return RetT{};
     }
 
-    template <typename RetT, enable_if_t<(std::is_same<RetT, cache_type>::value)> = 0>
+    template <typename RetT, enable_if_t<std::is_same<RetT, cache_type>::value> = 0>
     auto operator()(RetT&& val)
     {
         return std::forward<RetT>(val);
@@ -72,16 +72,16 @@ struct cache
     void operator()()
     {}
 
-    template <typename RetT, enable_if_t<(!std::is_same<RetT, cache_type>::value ||
-                                          concepts::is_null_type<RetT>::value)> = 0>
+    template <typename RetT, enable_if_t<!std::is_same<RetT, cache_type>::value ||
+                                         concepts::is_null_type<RetT>::value> = 0>
     void operator()(RetT&& val)
     {
         return std::forward<RetT>(val);
     }
 
     template <typename Func, typename RetT,
-              enable_if_t<(std::is_same<RetT, cache_type>::value &&
-                           !concepts::is_null_type<RetT>::value)> = 0>
+              enable_if_t<std::is_same<RetT, cache_type>::value &&
+                          !concepts::is_null_type<RetT>::value> = 0>
     auto operator()(type& _obj, Func&& _func, RetT&& _arg)
     {
         return ((_obj).*(_func))(std::forward<RetT>(_arg));

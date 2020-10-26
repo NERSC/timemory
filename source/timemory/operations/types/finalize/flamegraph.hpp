@@ -56,19 +56,19 @@ struct flamegraph
     using graph_node               = typename storage_type::graph_node;
     using hierarchy_type           = typename storage_type::uintvector_t;
 
-    template <typename Up                                               = Type,
-              enable_if_t<(trait::supports_flamegraph<Up>::value), int> = 0>
+    template <typename Up                                             = Type,
+              enable_if_t<trait::supports_flamegraph<Up>::value, int> = 0>
     flamegraph(storage_type*, std::string);
 
-    template <typename Up                                                = Type,
-              enable_if_t<!(trait::supports_flamegraph<Up>::value), int> = 0>
+    template <typename Up                                              = Type,
+              enable_if_t<!trait::supports_flamegraph<Up>::value, int> = 0>
     flamegraph(storage_type*, std::string);
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Up, enable_if_t<(trait::supports_flamegraph<Up>::value), int>>
+template <typename Up, enable_if_t<trait::supports_flamegraph<Up>::value, int>>
 flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)  // NOLINT
 {
     // auto node_init        = dmp::is_initialized();
@@ -218,7 +218,7 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)  // NOLINT
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Up, enable_if_t<!(trait::supports_flamegraph<Up>::value), int>>
+template <typename Up, enable_if_t<!trait::supports_flamegraph<Up>::value, int>>
 flamegraph<Type>::flamegraph(storage_type*, std::string)  // NOLINT
 {}
 //

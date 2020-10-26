@@ -322,13 +322,13 @@ public:
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
-    template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+    template <typename T, enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     const T* get() const
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
-    template <typename T, enable_if_t<!(is_one_of<T, data_type>::value), int> = 0>
+    template <typename T, enable_if_t<!is_one_of<T, data_type>::value, int> = 0>
     T* get() const
     {
         void*       ptr   = nullptr;
@@ -374,7 +374,7 @@ public:
 
     template <
         typename T, typename... Args,
-        enable_if_t<(is_one_of<T, reference_type>::value == false && !has_user_bundle_v),
+        enable_if_t<is_one_of<T, reference_type>::value == false && !has_user_bundle_v,
                     int> = 0>
     void init(Args&&...)
     {}
@@ -382,7 +382,7 @@ public:
     //----------------------------------------------------------------------------------//
     //  variadic initialization
     //
-    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
+    template <typename T, typename... Tail, enable_if_t<sizeof...(Tail) == 0, int> = 0>
     void initialize()
     {
         this->init<T>();
@@ -398,7 +398,7 @@ public:
     //----------------------------------------------------------------------------------//
     // apply a member function to a type that is in variadic list AND is available
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, data_type>::value == true), int> = 0>
+              enable_if_t<is_one_of<T, data_type>::value == true, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
         auto* _obj = get<T>();
@@ -406,7 +406,7 @@ public:
     }
 
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, data_type>::value == false), int> = 0>
+              enable_if_t<is_one_of<T, data_type>::value == false, int> = 0>
     void type_apply(Func&&, Args&&...)
     {}
 

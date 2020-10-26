@@ -62,7 +62,7 @@ struct print
     using widths_t   = std::vector<int64_t>;
 
     // only if components are available
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(const type& _obj, std::ostream& _os, bool _endline = false)
     {
         if(!trait::runtime_enabled<Tp>::get())
@@ -75,7 +75,7 @@ struct print
         _os << ss.str();
     }
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(std::size_t N, std::size_t Ntot, const type& _obj, std::ostream& _os,
           bool _endline)
     {
@@ -92,7 +92,7 @@ struct print
     }
 
     template <typename Vp, typename Statp, typename Up = Tp,
-              enable_if_t<(is_enabled<Up>::value), char> = 0>
+              enable_if_t<is_enabled<Up>::value, char> = 0>
     print(const type& _obj, utility::stream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, const Vp& _self, const Statp& _stats)
     {
@@ -161,7 +161,7 @@ struct print
     //----------------------------------------------------------------------------------//
     // only if components are available -- pointers
     //
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(const type* _obj, std::ostream& _os, bool _endline = false)
     {
         if(!trait::runtime_enabled<Tp>::get())
@@ -171,7 +171,7 @@ struct print
             print(*_obj, _os, _endline);
     }
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(std::size_t N, std::size_t Ntot, const type* _obj, std::ostream& _os,
           bool _endline)
     {
@@ -182,7 +182,7 @@ struct print
             print(N, Ntot, *_obj, _os, _endline);
     }
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(const type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, const widths_t& _output_widths, bool _endline,
           const string_t& _suffix = "")
@@ -197,15 +197,15 @@ struct print
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value == false, char> = 0>
     print(const type&, std::ostream&, bool = false)
     {}
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value == false, char> = 0>
     print(std::size_t, std::size_t, const type&, std::ostream&, bool)
     {}
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value == false, char> = 0>
     print(const type&, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
           bool, const string_t& = "")
     {}
@@ -213,15 +213,15 @@ struct print
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available -- pointers
     //
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value == false, char> = 0>
     print(const type*, std::ostream&, bool = false)
     {}
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value == false, char> = 0>
     print(std::size_t, std::size_t, const type*, std::ostream&, bool)
     {}
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value == false, char> = 0>
     print(const type*, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
           bool, const string_t& = "")
     {}

@@ -52,7 +52,7 @@ namespace factory
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Label, typename... Args,
-          enable_if_t<(concepts::is_comp_wrapper<Tp>::value), int> = 0>
+          enable_if_t<concepts::is_comp_wrapper<Tp>::value, int> = 0>
 static auto
 create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 {
@@ -62,7 +62,7 @@ create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Label, typename... Args,
-          enable_if_t<(concepts::is_auto_wrapper<Tp>::value), int> = 0>
+          enable_if_t<concepts::is_auto_wrapper<Tp>::value, int> = 0>
 static auto
 create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 {
@@ -185,7 +185,7 @@ get_opaque(scope::config _scope)
 //  Configure the tool for a specific set of tools
 //
 template <typename Toolset, typename... Args,
-          enable_if_t<(concepts::is_wrapper<Toolset>::value), int> = 0>
+          enable_if_t<concepts::is_wrapper<Toolset>::value, int> = 0>
 auto
 get_opaque(scope::config _scope, Args&&... args)
 {
@@ -270,7 +270,7 @@ get_opaque(scope::config _scope, Args&&... args)
 //  If a tool is not avail or has no contents return empty opaque
 //
 template <typename Toolset, typename... Args,
-          enable_if_t<(!trait::is_available<Toolset>::value), int> = 0>
+          enable_if_t<!trait::is_available<Toolset>::value, int> = 0>
 auto
 get_opaque(scope::config, Args&&...)
 {
@@ -284,25 +284,25 @@ struct opaque_typeids
 {
     using result_type = std::set<size_t>;
 
-    template <typename U = T, enable_if_t<(trait::is_available<U>::value), int> = 0>
+    template <typename U = T, enable_if_t<trait::is_available<U>::value, int> = 0>
     static auto get()
     {
         return result_type({ get_opaque_hash(demangle<T>()) });
     }
 
-    template <typename U = T, enable_if_t<(trait::is_available<U>::value), int> = 0>
+    template <typename U = T, enable_if_t<trait::is_available<U>::value, int> = 0>
     static auto hash()
     {
         return get_opaque_hash(demangle<T>());
     }
 
-    template <typename U = T, enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    template <typename U = T, enable_if_t<!trait::is_available<U>::value, int> = 0>
     static auto get()
     {
         return result_type({ 0 });
     }
 
-    template <typename U = T, enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    template <typename U = T, enable_if_t<!trait::is_available<U>::value, int> = 0>
     static auto hash() -> size_t
     {
         return 0;
@@ -347,13 +347,13 @@ struct opaque_typeids<TupleT<T...>>
         return ret;
     }
 #else
-    template <typename U, enable_if_t<(trait::is_available<U>::value), int> = 0>
+    template <typename U, enable_if_t<trait::is_available<U>::value, int> = 0>
     static void get(result_type& ret)
     {
         ret.insert(get_opaque_hash(demangle<U>()));
     }
 
-    template <typename U, enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    template <typename U, enable_if_t<!trait::is_available<U>::value, int> = 0>
     static void get(result_type&)
     {}
 
@@ -365,8 +365,8 @@ struct opaque_typeids<TupleT<T...>>
     }
 #endif
 
-    template <typename U                                         = TupleT<T...>,
-              enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    template <typename U                                       = TupleT<T...>,
+              enable_if_t<!trait::is_available<U>::value, int> = 0>
     static result_type get()
     {
         return result_type({ 0 });

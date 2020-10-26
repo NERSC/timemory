@@ -180,11 +180,11 @@ public:
     dynamic_type* create() const;
 
     template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<(trait::implements_storage<Up, Vp>::value), int> = 0>
+              enable_if_t<trait::implements_storage<Up, Vp>::value, int> = 0>
     void print(std::ostream&) const;
 
     template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<!(trait::implements_storage<Up, Vp>::value), int> = 0>
+              enable_if_t<!trait::implements_storage<Up, Vp>::value, int> = 0>
     void print(std::ostream&) const;
 
     bool operator<(const base_type& rhs) const { return (load() < rhs.load()); }
@@ -215,12 +215,12 @@ public:
 
     // serialization load (input)
     template <typename Archive, typename Up = Type,
-              enable_if_t<!(trait::custom_serialization<Up>::value), int> = 0>
+              enable_if_t<!trait::custom_serialization<Up>::value, int> = 0>
     void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int);
 
     // serialization store (output)
     template <typename Archive, typename Up = Type,
-              enable_if_t<!(trait::custom_serialization<Up>::value), int> = 0>
+              enable_if_t<!trait::custom_serialization<Up>::value, int> = 0>
     void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int version) const;
 
     int64_t           get_laps() const { return laps; }
@@ -240,7 +240,7 @@ public:
     void set_is_transient(bool v) { is_transient = v; }
 
     template <typename Vp, typename Up = Tp,
-              enable_if_t<(trait::sampler<Up>::value), int> = 0>
+              enable_if_t<trait::sampler<Up>::value, int> = 0>
     static void add_sample(Vp&&);  /// add a sample
 
     void set_iterator(graph_iterator itr) { graph_itr = itr; }
@@ -249,14 +249,14 @@ public:
 protected:
     static base_storage_type* get_storage();
 
-    template <typename Up = Tp, enable_if_t<(trait::base_has_accum<Up>::value), int> = 0>
+    template <typename Up = Tp, enable_if_t<trait::base_has_accum<Up>::value, int> = 0>
     value_type& load();
-    template <typename Up = Tp, enable_if_t<(trait::base_has_accum<Up>::value), int> = 0>
+    template <typename Up = Tp, enable_if_t<trait::base_has_accum<Up>::value, int> = 0>
     const value_type& load() const;
 
-    template <typename Up = Tp, enable_if_t<!(trait::base_has_accum<Up>::value), int> = 0>
+    template <typename Up = Tp, enable_if_t<!trait::base_has_accum<Up>::value, int> = 0>
     value_type& load();
-    template <typename Up = Tp, enable_if_t<!(trait::base_has_accum<Up>::value), int> = 0>
+    template <typename Up = Tp, enable_if_t<!trait::base_has_accum<Up>::value, int> = 0>
     const value_type& load() const;
 
     Type& plus_oper(const base_type& rhs);
@@ -320,19 +320,19 @@ public:
     static const fmtflags format_flags      = ios_fixed | ios_decimal | ios_showpoint;
 
     template <typename Up = Type, typename UnitT = typename trait::units<Up>::type,
-              enable_if_t<(std::is_same<UnitT, int64_t>::value), int> = 0>
+              enable_if_t<std::is_same<UnitT, int64_t>::value, int> = 0>
     static int64_t unit();
 
     template <typename Up = Type, typename UnitT = typename Up::display_unit_type,
-              enable_if_t<(std::is_same<UnitT, std::string>::value), int> = 0>
+              enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
     static std::string display_unit();
 
     template <typename Up = Type, typename UnitT = typename trait::units<Up>::type,
-              enable_if_t<(std::is_same<UnitT, int64_t>::value), int> = 0>
+              enable_if_t<std::is_same<UnitT, int64_t>::value, int> = 0>
     static int64_t get_unit();
 
     template <typename Up = Type, typename UnitT = typename Up::display_unit_type,
-              enable_if_t<(std::is_same<UnitT, std::string>::value), int> = 0>
+              enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
     static std::string get_display_unit();
 
     static short                   get_width();

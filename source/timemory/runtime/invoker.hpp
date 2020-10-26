@@ -34,7 +34,7 @@ namespace runtime
 //
 template <typename Tools, typename Func, typename... Args,
           typename Ret = std::result_of_t<Func(Args...)>,
-          std::enable_if_t<(!std::is_same<Ret, void>::value), int> = 0>
+          std::enable_if_t<!std::is_same<Ret, void>::value, int> = 0>
 Ret
 invoke(std::string&& label, Func&& func, Args&&... args)
 {
@@ -49,7 +49,7 @@ invoke(std::string&& label, Func&& func, Args&&... args)
 //
 template <typename Tools, typename Func, typename... Args,
           typename Ret = std::result_of_t<Func(Args...)>,
-          std::enable_if_t<(std::is_same<Ret, void>::value), int> = 0>
+          std::enable_if_t<std::is_same<Ret, void>::value, int> = 0>
 Ret
 invoke(std::string&& label, Func&& func, Args&&... args)
 {

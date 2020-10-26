@@ -99,7 +99,7 @@ struct echo_measurement<Tp, true> : public common_utils
     struct impl
     {
         template <typename Tuple, typename... Args, size_t... Nt,
-                  enable_if_t<(sizeof...(Nt) == 0), char> = 0>
+                  enable_if_t<sizeof...(Nt) == 0, char> = 0>
         static std::string name_generator(const string_t&, Tuple, Args&&...,
                                           index_sequence<Nt...>)
         {
@@ -107,7 +107,7 @@ struct echo_measurement<Tp, true> : public common_utils
         }
 
         template <typename Tuple, typename... Args, size_t Idx, size_t... Nt,
-                  enable_if_t<(sizeof...(Nt) == 0), char> = 0>
+                  enable_if_t<sizeof...(Nt) == 0, char> = 0>
         static std::string name_generator(const string_t& _prefix, Tuple _units,
                                           Args&&... _args, index_sequence<Idx, Nt...>)
         {
@@ -250,10 +250,10 @@ struct echo_measurement<Tp, true> : public common_utils
     /// assumes type is not a iterable
     ///
     template <typename Up = Tp, typename Vt = value_type,
-              enable_if_t<(is_enabled<Up>::value), char> = 0,
+              enable_if_t<is_enabled<Up>::value, char> = 0,
               enable_if_t<!(trait::array_serialization<Up>::value ||
                             trait::iterable_measurement<Up>::value),
-                          int>                           = 0>
+                          int>                         = 0>
     echo_measurement(Up& obj, const strvec_t& hierarchy)
     {
         auto prefix = generate_prefix(hierarchy);
@@ -271,10 +271,10 @@ struct echo_measurement<Tp, true> : public common_utils
     /// assumes type is iterable
     ///
     template <typename Up = Tp, typename Vt = value_type,
-              enable_if_t<(is_enabled<Up>::value), char> = 0,
+              enable_if_t<is_enabled<Up>::value, char> = 0,
               enable_if_t<(trait::array_serialization<Up>::value ||
                            trait::iterable_measurement<Up>::value),
-                          int>                           = 0>
+                          int>                         = 0>
     echo_measurement(Up& obj, const strvec_t& hierarchy)
     {
         auto prefix = generate_prefix(hierarchy);
@@ -298,7 +298,7 @@ struct echo_measurement<Tp, true> : public common_utils
     }
 
     template <typename... Args, typename Up = Tp, typename Vt = value_type,
-              enable_if_t<!(is_enabled<Up>::value), char> = 0>
+              enable_if_t<!is_enabled<Up>::value, char> = 0>
     echo_measurement(Up&, Args&&...)
     {}
 };

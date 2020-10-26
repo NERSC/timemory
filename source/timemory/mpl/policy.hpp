@@ -284,7 +284,7 @@ protected:
     //----------------------------------------------------------------------------------//
     // increment/decrement global and thread counts and return global count
     template <size_t Idx>
-    enable_if_t<(Idx == global_count), int_type> start()
+    enable_if_t<Idx == global_count, int_type> start()
     {
         m_tot = get_started()++;
         m_thr = get_thread_started()++;
@@ -292,7 +292,7 @@ protected:
     }
 
     template <size_t Idx>
-    enable_if_t<(Idx == global_count), int_type> stop()
+    enable_if_t<Idx == global_count, int_type> stop()
     {
         m_tot = --get_started();
         m_thr = --get_thread_started();
@@ -302,7 +302,7 @@ protected:
     //----------------------------------------------------------------------------------//
     // increment/decrement global and thread counts and return thread count
     template <size_t Idx>
-    enable_if_t<(Idx == thread_count), int_type> start()
+    enable_if_t<Idx == thread_count, int_type> start()
     {
         m_tot = get_started()++;
         m_thr = get_thread_started()++;
@@ -310,7 +310,7 @@ protected:
     }
 
     template <size_t Idx>
-    enable_if_t<(Idx == thread_count), int_type> stop()
+    enable_if_t<Idx == thread_count, int_type> stop()
     {
         m_tot = --get_started();
         m_thr = --get_thread_started();

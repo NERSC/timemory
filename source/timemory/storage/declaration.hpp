@@ -234,12 +234,11 @@ public:
     iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id);
 
     // append a value to the the graph
-    template <typename Vp,
-              enable_if_t<!(std::is_same<decay_t<Vp>, Type>::value), int> = 0>
+    template <typename Vp, enable_if_t<!std::is_same<decay_t<Vp>, Type>::value, int> = 0>
     iterator append(const secondary_data_t<Vp>& _secondary);
 
     // append an instance to the graph
-    template <typename Vp, enable_if_t<(std::is_same<decay_t<Vp>, Type>::value), int> = 0>
+    template <typename Vp, enable_if_t<std::is_same<decay_t<Vp>, Type>::value, int> = 0>
     iterator append(const secondary_data_t<Vp>& _secondary);
 
     template <typename Archive>
@@ -352,7 +351,7 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Vp, enable_if_t<!(std::is_same<decay_t<Vp>, Type>::value), int>>
+template <typename Vp, enable_if_t<!std::is_same<decay_t<Vp>, Type>::value, int>>
 typename storage<Type, true>::iterator
 storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {
@@ -404,7 +403,7 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Vp, enable_if_t<(std::is_same<decay_t<Vp>, Type>::value), int>>
+template <typename Vp, enable_if_t<std::is_same<decay_t<Vp>, Type>::value, int>>
 typename storage<Type, true>::iterator
 storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {

@@ -631,7 +631,7 @@ private:
 
     // random integer
     template <typename T, typename R = std::mt19937_64,
-              std::enable_if_t<(std::is_integral<T>::value), int> = 0>
+              std::enable_if_t<std::is_integral<T>::value, int> = 0>
     static inline T get_random_value(T beg = 0, T end = std::numeric_limits<T>::max())
     {
         std::uniform_int_distribution<T> dist(beg, end);

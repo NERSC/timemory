@@ -67,8 +67,7 @@ get_hash(std::string&& key)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename... Args,
-          enable_if_t<(component::enumerator<I>::value), int> = 0>
+template <int I, typename... Args, enable_if_t<component::enumerator<I>::value, int> = 0>
 void
 do_enumerator_generate(std::vector<opaque_pair_t>& opaque_array, int idx, Args&&... args)
 {
@@ -86,8 +85,7 @@ do_enumerator_generate(std::vector<opaque_pair_t>& opaque_array, int idx, Args&&
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename... Args,
-          enable_if_t<!(component::enumerator<I>::value), int> = 0>
+template <int I, typename... Args, enable_if_t<!component::enumerator<I>::value, int> = 0>
 void
 do_enumerator_generate(std::vector<opaque_pair_t>&, int, Args&&...)
 {}
@@ -99,7 +97,7 @@ do_enumerator_generate(std::vector<opaque_pair_t>&, int, Args&&...)
 //--------------------------------------------------------------------------------------//
 //
 template <int I, typename Tp, typename... Args,
-          enable_if_t<(component::enumerator<I>::value), int> = 0>
+          enable_if_t<component::enumerator<I>::value, int> = 0>
 void
 do_enumerator_init(Tp& obj, int idx, Args&&... args)
 {
@@ -114,7 +112,7 @@ do_enumerator_init(Tp& obj, int idx, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <int I, typename Tp, typename... Args,
-          enable_if_t<!(component::enumerator<I>::value), int> = 0>
+          enable_if_t<!component::enumerator<I>::value, int> = 0>
 void
 do_enumerator_init(Tp&, int, Args&&...)
 {}

@@ -814,7 +814,7 @@ assign(Tp& _targ, const Tp& _val, index_sequence<Idx...>)
 }
 
 template <typename Tp, typename Vp, size_t... Idx,
-          enable_if_t<!(std::is_same<Tp, Vp>::value), int> = 0>
+          enable_if_t<!std::is_same<Tp, Vp>::value, int> = 0>
 auto
 assign(Tp& _targ, const Vp& _val, index_sequence<Idx...>)
     -> decltype(std::get<0>(_targ) = *std::begin(_val), void())

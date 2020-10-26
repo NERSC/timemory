@@ -117,7 +117,7 @@ public:
             return *this;
         }
 
-        template <typename... ArgsT, enable_if_t<(sizeof...(ArgsT) == 0), int> = 0>
+        template <typename... ArgsT, enable_if_t<sizeof...(ArgsT) == 0, int> = 0>
         captured& set(const source_location& obj, ArgsT&&...)
         {
             m_result = result_type(obj.m_prefix, add_hash_id(obj.m_prefix));

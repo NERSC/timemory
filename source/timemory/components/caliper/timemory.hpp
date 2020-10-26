@@ -394,7 +394,7 @@ struct caliper_loop_marker
         cali_end(m_id);
     }
 
-    template <typename T, enable_if_t<(std::is_integral<T>::value), int> = 0>
+    template <typename T, enable_if_t<std::is_integral<T>::value, int> = 0>
     void mark_begin(T itr)
     {
         DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) itr);
@@ -402,14 +402,14 @@ struct caliper_loop_marker
         cali_begin_int(m_id, m_itr++);
     }
 
-    template <typename T, enable_if_t<(std::is_integral<T>::value), int> = 0>
+    template <typename T, enable_if_t<std::is_integral<T>::value, int> = 0>
     void mark_end(T)
     {
         DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) m_itr);
         cali_end(m_id);
     }
 
-    template <typename T, enable_if_t<(std::is_integral<T>::value), int> = 0>
+    template <typename T, enable_if_t<std::is_integral<T>::value, int> = 0>
     tim::scope::destructor record(T itr)
     {
         DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) itr);

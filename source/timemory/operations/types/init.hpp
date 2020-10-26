@@ -54,20 +54,20 @@ struct init
     TIMEMORY_DELETED_OBJECT(init)
 
     template <typename Up = Tp, int StateT, typename StorageT,
-              enable_if_t<(trait::is_available<Up>::value), char> = 0>
+              enable_if_t<trait::is_available<Up>::value, char> = 0>
     explicit init(StorageT _storage, mode_constant<StateT>)
     {
         sfinae<type, StateT>(_storage, 0, 0);
     }
 
     template <typename Up = Tp, int StateT, typename StorageT,
-              enable_if_t<!(trait::is_available<Up>::value), char> = 0>
+              enable_if_t<!trait::is_available<Up>::value, char> = 0>
     explicit init(StorageT, mode_constant<StateT>)
     {}
 
 private:
     template <typename Up, int StateT, typename StorageT,
-              enable_if_t<(StateT == init_mode::global), char> = 0>
+              enable_if_t<StateT == init_mode::global, char> = 0>
     auto sfinae(StorageT _storage, int, int)
         -> decltype(std::declval<Up>().global_init(_storage), void())
     {
@@ -78,7 +78,7 @@ private:
     }
 
     template <typename Up, int StateT, typename StorageT,
-              enable_if_t<(StateT == init_mode::global), int> = 0>
+              enable_if_t<StateT == init_mode::global, int> = 0>
     auto sfinae(StorageT, int, long) -> decltype(std::declval<Up>().global_init(), void())
     {
         if(was_executed<StateT>())
@@ -88,7 +88,7 @@ private:
     }
 
     template <typename Up, int StateT, typename StorageT,
-              enable_if_t<(StateT == init_mode::thread), char> = 0>
+              enable_if_t<StateT == init_mode::thread, char> = 0>
     auto sfinae(StorageT _storage, int, int)
         -> decltype(std::declval<Up>().thread_init(_storage), void())
     {
@@ -99,7 +99,7 @@ private:
     }
 
     template <typename Up, int StateT, typename StorageT,
-              enable_if_t<(StateT == init_mode::thread), int> = 0>
+              enable_if_t<StateT == init_mode::thread, int> = 0>
     auto sfinae(StorageT, int, long) -> decltype(std::declval<Up>().thread_init(), void())
     {
         if(was_executed<StateT>())
@@ -113,14 +113,14 @@ private:
     {}
 
 private:
-    template <int StateT, enable_if_t<(StateT == init_mode::global), char> = 0>
+    template <int StateT, enable_if_t<StateT == init_mode::global, char> = 0>
     static bool& was_executed()
     {
         static bool _instance = false;
         return _instance;
     }
 
-    template <int StateT, enable_if_t<(StateT == init_mode::thread), char> = 0>
+    template <int StateT, enable_if_t<StateT == init_mode::thread, char> = 0>
     static bool& was_executed()
     {
         static thread_local bool _instance = false;

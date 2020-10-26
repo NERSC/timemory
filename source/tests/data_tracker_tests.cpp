@@ -101,7 +101,7 @@ get_rng(size_t initial_seed = 0)
 }
 
 // random integer
-template <typename T, std::enable_if_t<(std::is_integral<T>::value), int> = 0>
+template <typename T, std::enable_if_t<std::is_integral<T>::value, int> = 0>
 T
 get_random_value(T beg, T end)
 {
@@ -118,7 +118,7 @@ struct identity
 template <typename T>
 using identity_t = typename identity<T>::type;
 
-template <typename T, std::enable_if_t<(std::is_floating_point<T>::value), int> = 0>
+template <typename T, std::enable_if_t<std::is_floating_point<T>::value, int> = 0>
 T
 get_random_value(identity_t<T> beg, T end)
 {

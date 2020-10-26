@@ -396,7 +396,7 @@ struct apply<std::string>
 
     template <typename Tp, bool _Val = true, typename Up = int,
               typename Dt = typename std::remove_const<decay_t<Tp>>::type>
-    using if_string_t = enable_if_t<(std::is_same<Dt, char*>::value) == _Val, Up>;
+    using if_string_t = enable_if_t<std::is_same<Dt, char*>::value == _Val, Up>;
 
     //----------------------------------------------------------------------------------//
 
@@ -530,8 +530,8 @@ struct apply<std::tuple<std::string>>
     //  join a tuple of labels with entries
     //
     template <typename LabelSep, typename EntrySep, typename LabelTup, typename EntryTup,
-              size_t N                   = std::tuple_size<decay_t<LabelTup>>::value,
-              enable_if_t<(N == 0), int> = 0>
+              size_t N                 = std::tuple_size<decay_t<LabelTup>>::value,
+              enable_if_t<N == 0, int> = 0>
     static Ret join(LabelSep&&, EntrySep&&, LabelTup&&, EntryTup&&) noexcept
     {
         return "";
@@ -767,7 +767,7 @@ struct apply<void>
     template <typename Access, typename Mapper, size_t R, typename Tuple,
               typename... Args, size_t N = std::tuple_size<decay_t<Access>>::value,
               size_t Nt = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N == 0 || Nt == 0), int> = 0>
+              enable_if_t<N == 0 || Nt == 0, int> = 0>
     static void out_of_order(Tuple&&, Args&&...) noexcept
     {}
 

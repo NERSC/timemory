@@ -56,7 +56,7 @@ struct print_header : public common_utils
     // only if components are available
     //
     template <typename Statp, typename Up = Tp,
-              enable_if_t<(is_enabled<Up>::value), char> = 0>
+              enable_if_t<is_enabled<Up>::value, char> = 0>
     print_header(const type& _obj, utility::stream& _os, const Statp& _stats)
     {
         if(!trait::runtime_enabled<Tp>::get())
@@ -127,7 +127,7 @@ struct print_header : public common_utils
     }
 
     template <typename... Args, typename Up = Tp,
-              enable_if_t<!(is_enabled<Up>::value), char> = 0>
+              enable_if_t<!is_enabled<Up>::value, char> = 0>
     print_header(const type&, utility::stream&, Args&&...)
     {}
 };

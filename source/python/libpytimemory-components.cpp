@@ -456,7 +456,6 @@ static void
 generate_properties(py::class_<pytuple_t<T>>& _pycomp)
 {
     using property_t   = tim::component::properties<T>;
-    using bundle_t     = py::class_<pytuple_t<T>>;
     constexpr auto Idx = property_t::value;
 
     //----------------------------------------------------------------------------------//

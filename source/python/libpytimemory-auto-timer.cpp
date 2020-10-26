@@ -217,6 +217,6 @@ generate(py::module& _pymod)
                             "Call operator");
                             */
 }
-};  // namespace pyauto_timer
+}  // namespace pyauto_timer
 //
 //======================================================================================//

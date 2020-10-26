@@ -161,12 +161,12 @@ struct is_cpu
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename U = int, bool B = true>
-using enable_if_gpu_t = enable_if_t<(is_gpu<T>::value == B), U>;
+using enable_if_gpu_t = enable_if_t<is_gpu<T>::value == B, U>;
 
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename U = int, bool B = true>
-using enable_if_cpu_t = enable_if_t<(is_cpu<T>::value == B), U>;
+using enable_if_cpu_t = enable_if_t<is_cpu<T>::value == B, U>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -174,11 +174,11 @@ namespace impl
 {
 template <typename Tp, typename Intp, bool Valv = true>
 using enable_if_gpu_int_t =
-    enable_if_t<(is_gpu<Tp>::value == Valv && std::is_integral<Intp>::value)>;
+    enable_if_t<is_gpu<Tp>::value == Valv && std::is_integral<Intp>::value>;
 
 template <typename Tp, typename Intp, bool Valv = true>
 using enable_if_cpu_int_t =
-    enable_if_t<(is_cpu<Tp>::value == Valv && std::is_integral<Intp>::value)>;
+    enable_if_t<is_cpu<Tp>::value == Valv && std::is_integral<Intp>::value>;
 
 //--------------------------------------------------------------------------------------//
 //

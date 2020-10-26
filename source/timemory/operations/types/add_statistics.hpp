@@ -93,7 +93,7 @@ struct add_statistics
     // if statistics is enabled
     //
     template <typename StatsT, typename U = type,
-              enable_if_t<(enabled_statistics<U, StatsT>::value), int> = 0>
+              enable_if_t<enabled_statistics<U, StatsT>::value, int> = 0>
     add_statistics(const U& rhs, StatsT& stats)
     {
         // for type comparison
@@ -116,7 +116,7 @@ struct add_statistics
     // if statistics is not enabled
     //
     template <typename StatsT, typename U,
-              enable_if_t<!(enabled_statistics<U, StatsT>::value), int> = 0>
+              enable_if_t<!enabled_statistics<U, StatsT>::value, int> = 0>
     add_statistics(const U&, StatsT&)
     {}
 };
