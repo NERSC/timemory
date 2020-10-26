@@ -14,7 +14,10 @@ jobs:
       osx_image: xcode12.2
       language: shell
       env:
-        - MATRIX_EVAL="CC=$(which clang) && CONDA_OS=MacOSX && && CXX=$(which clang++) && BUILD_ARGS='--build-libs shared --caliper --python --stats --tools --cxx-standard=14'"
+        - CONDA_OS=MacOSX
+        - CC=$(which clang)
+        - CXX=$(which clang++)
+        - BUILD_ARGS='--build-libs shared --caliper --python --stats --tools --cxx-standard=14'
 
     # ------------------------------------------------------------------------ #
     #
