@@ -260,6 +260,59 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     //==================================================================================//
     //
+    //      Scope submodule
+    //
+    //==================================================================================//
+
+    py::module _scope = tim.def_submodule(
+        "scope", "Scoping controls how the values are updated in the call-graph");
+    {
+        namespace scope   = tim::scope;
+        auto _config_init = [](py::object _flat, py::object _time) {
+            auto _val = new scope::config{};
+            if(!_flat.is_none())
+            {
+                try
+                {
+                    _val->set<scope::flat>(_flat.cast<bool>());
+                } catch(py::cast_error&)
+                {
+                    auto _f = [&](auto v) { _val->set(v); };
+                    pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
+                                                                                   _flat);
+                }
+            }
+            if(!_time.is_none())
+            {
+                try
+                {
+                    _val->set<scope::timeline>(_time.cast<bool>());
+                } catch(py::cast_error&)
+                {
+                    auto _f = [&](auto v) { _val->set(v); };
+                    pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
+                                                                                   _time);
+                }
+            }
+            return _val;
+        };
+
+        py::class_<scope::config>   _cfg(_scope, "config", "Scope configuration object");
+        py::class_<scope::tree>     _tree(_scope, "_tree", "Hierarchy is maintained");
+        py::class_<scope::flat>     _flat(_scope, "_flat", "Every entry at 0th level");
+        py::class_<scope::timeline> _time(_scope, "_timeline", "Every entry is unique");
+
+        _scope.attr("tree")     = scope::tree{};
+        _scope.attr("flat")     = scope::flat{};
+        _scope.attr("timeline") = scope::timeline{};
+
+        _cfg.def(py::init(_config_init), "Create a scope", py::arg("flat") = py::none{},
+                 py::arg("time") = py::none{});
+
+        tim::consume_parameters(_tree, _flat, _time);
+    }
+    //==================================================================================//
+    //
     //      Region submodule
     //
     //==================================================================================//
@@ -373,9 +426,18 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _do_clear = [](const pytim::pyenum_set_t& _types) {
-        using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
-        manager_t::get_storage<tuple_type>::clear(_types);
+    auto _do_clear = [](py::list _list) {
+        auto _types = pytim::get_enum_set(_list);
+        if(_types.empty())
+            _types = pytim::get_type_enums<tim::available_types_t>();
+        manager_t::get_storage<tim::available_types_t>::clear(_types);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _get_size = [](py::list _list) {
+        auto _types = pytim::get_enum_set(_list);
+        if(_types.empty())
+            _types = pytim::get_type_enums<tim::available_types_t>();
+        return manager_t::get_storage<tim::available_types_t>::size(_types);
     };
     //----------------------------------------------------------------------------------//
     auto _as_json_classic = [](const pytim::pyenum_set_t& _types) {
@@ -691,6 +753,11 @@ PYBIND11_MODULE(libpytimemory, tim)
             py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
     tim.def("clear", _do_clear, "Clear the storage data",
+            py::arg("components") = py::list{});
+    //----------------------------------------------------------------------------------//
+    tim.def("size", _get_size,
+            "Get the current storage size of component types. An empty list as the first "
+            "argument will return the size for all available types",
             py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
     tim.def(

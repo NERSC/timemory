@@ -176,6 +176,7 @@ public:
     auto             get_labeled(Args&&...) const;
     data_type&       data();
     const data_type& data() const;
+    void             set_scope(scope::config);
 
     using bundle_type::get_prefix;
     using bundle_type::get_scope;
@@ -509,7 +510,6 @@ protected:
     const data_type& get_data() const;
     void             set_prefix(const string_t&) const;
     void             set_prefix(size_t) const;
-    void             set_scope(scope::config);
 
 protected:
     // objects

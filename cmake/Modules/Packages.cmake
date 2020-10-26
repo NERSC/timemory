@@ -684,6 +684,8 @@ if(PAPI_FOUND)
     target_include_directories(timemory-papi-static SYSTEM INTERFACE ${PAPI_INCLUDE_DIRS})
     timemory_target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
     timemory_target_compile_definitions(timemory-papi-static INTERFACE TIMEMORY_USE_PAPI)
+    install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/FindPAPI.cmake
+        DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules)
 else()
     set(TIMEMORY_USE_PAPI OFF)
     inform_empty_interface(timemory-papi "PAPI (shared libraries)")

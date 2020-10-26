@@ -119,26 +119,22 @@ def __load_component_libs():
         ext = 'dll'
 
     def __load(name):
-        p = os.path.realpath(os.path.join(
-            this_path, relative_lib_path, name))
-        if not os.path.exists(p):
-            p = os.path.realpath(
-                os.path.join(this_path, relative_lib_path,
-                             'timemory', name))
+        p = os.path.realpath(os.path.join(this_path, name))
         ctypes.cdll.LoadLibrary(p)
 
-    extrapath = os.path.realpath(os.path.join(
-        this_path, relative_lib_path, 'timemory'))
-    extra = glob.glob('{}/*timemory*.{}'.format(extrapath, ext))
+    libs = glob.glob('{}/libtimemory*.*'.format(this_path))
+    libs = list(set(libs))
+    # print(f"Libraries: {libs}")
     loaded = []
     ntries = 0
-    while len(loaded) < len(extra) and ntries < len(extra):
+    while len(loaded) < len(libs) and ntries < 5 * len(libs):
         ntries = ntries + 1
-        for entry in extra:
+        for entry in libs:
             if entry in loaded:
                 continue
             try:
                 __load(os.path.basename(entry))
+                print("Loaded {}".format(os.path.basename(entry)))
                 loaded.append(entry)
             except Exception as e:
                 pass

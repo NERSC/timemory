@@ -115,8 +115,8 @@ add_subdirectory(variadic)
 # components
 add_subdirectory(components)
 
-add_subdirectory(containers)
 add_subdirectory(runtime)
+add_subdirectory(containers)
 
 # add_subdirectory(compat)
 # add_subdirectory(data)

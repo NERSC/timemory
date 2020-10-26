@@ -86,16 +86,19 @@ public:
     graph_data& operator=(const this_type&) = delete;
 
     bool has_head() const { return m_has_head; }
+    auto dummy_count() const { return m_dummies.size(); }
+    bool at_sea_level() const { return (m_depth == m_sea_level); }
 
-    const int64_t& depth() const { return m_depth; }
+    int64_t& depth() { return m_depth; }
+    int64_t  depth() const { return m_depth; }
+    int64_t& sea_level() { return m_sea_level; }
+    int64_t  sea_level() const { return m_sea_level; }
+
+    graph_t&       graph() { return m_graph; }
     const graph_t& graph() const { return m_graph; }
-    const int64_t& sea_level() const { return m_sea_level; }
 
-    int64_t&  depth() { return m_depth; }
-    graph_t&  graph() { return m_graph; }
-    iterator& current() { return m_current; }
     iterator& head() { return m_head; }
-    int64_t&  sea_level() { return m_sea_level; }
+    iterator& current() { return m_current; }
 
     iterator       begin() { return m_graph.begin(); }
     iterator       end() { return m_graph.end(); }
@@ -117,8 +120,6 @@ public:
         if(_master != this)
             m_master = _master;
     }
-
-    inline auto dummy_count() { return m_dummies.size(); }
 
     inline void add_dummy()
     {
@@ -166,7 +167,7 @@ public:
         return m_current;
     }
 
-    inline iterator find(iterator itr)
+    inline iterator find(iterator itr) const
     {
         if(!itr)
             return end();
@@ -186,7 +187,7 @@ public:
         return end();
     }
 
-    inline int64_t get_rolling_hash(iterator itr)
+    inline int64_t get_rolling_hash(iterator itr) const
     {
         int64_t _accum = 0;
         if(itr)
@@ -218,8 +219,6 @@ public:
     {
         return m_graph.append_child(_itr, node);
     }
-
-    bool at_sea_level() const { return (m_depth == m_sea_level); }
 
     inverse_insert_t get_inverse_insert() const
     {

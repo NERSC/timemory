@@ -69,43 +69,38 @@ else:
         exec("""exec _code_ in _globs_, _locs_""")
 
 
-#
 config = _tracer_config
 Config = _tracer_config
 
 
-#
 class Tracer:
-    """
-    Provides decorators and context-manager for the timemory tracers
-    """
+    """Provides decorators and context-manager for the timemory tracers"""
 
     global _default_functor
 
     # static variable
     _conditional_functor = _default_functor
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     @staticmethod
     def condition(functor):
+        """Assign a function evaluating whether to enable the tracer"""
         Tracer._conditional_functor = functor
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     @staticmethod
     def is_enabled():
-        ret = Tracer._conditional_functor()
+        """Checks whether the tracer is enabled"""
+
         try:
-            if ret is True:
-                return True
-            elif ret is False:
-                return False
-        except Exception as e:
+            return Tracer._conditional_functor()
+        except Exception:
             pass
         return False
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __init__(
         self, components=[], flat=True, timeline=False, *args, **kwargs
@@ -135,89 +130,100 @@ class Tracer:
         if _trace is None:
             settings.trace_components = ",".join(self.components)
         settings.trace_components = ",".join(self.components)
+        self._unset = False
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
+    #
+    def __del__(self):
+        """Make sure the tracer stops"""
+
+        self.stop()
+
+    # ---------------------------------------------------------------------------------- #
     #
     def configure(self):
+        """Initialize, configure the bundle, store original tracer function"""
+
         _tracer_init()
         _tracer_bundle.configure(
             self.components, self._flat_profile, self._timeline_profile
         )
         self._original_tracer_function = sys.gettrace()
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
-    def start(self):
-        """
-        Start the tracer explicitly
+    def update(self):
+        """Updates whether the profiler is already running based on whether the tracer
+        is not already running, is enabled, and the function is not already set
         """
 
         self._use = (
-            not _tracer_config._is_running and Tracer.is_enabled() is True
+            not _tracer_config._is_running
+            and Tracer.is_enabled() is True
+            and sys.gettrace() == self._original_tracer_function
         )
-        if self._use and not _tracer_config._is_running:
+
+    # ---------------------------------------------------------------------------------- #
+    #
+    def start(self):
+        """Start the tracer"""
+
+        self.update()
+        self._unset = False
+        if self._use:
             self.configure()
             sys.settrace(_tracer_function)
             threading.settrace(_tracer_function)
+            self._unset = True
 
-    # ------------------------------------------------------------------------------------#
+        return self._unset
+
+    # ---------------------------------------------------------------------------------- #
     #
     def stop(self):
-        """
-        Stop the tracer explicitly
-        """
+        """Stop the tracer"""
 
-        if self._use and _tracer_config._is_running:
+        if self._unset:
             sys.settrace(self._original_tracer_function)
             threading.settrace(self._original_tracer_function)
             _tracer_fini()
+            self._unset = False
+            return True
 
-    # ------------------------------------------------------------------------------------#
+        return False
+
+    # ---------------------------------------------------------------------------------- #
     #
     def __call__(self, func):
-        """
-        Decorator
-        """
-
-        self._use = (
-            not _tracer_config._is_running and Tracer.is_enabled() is True
-        )
-
-        if self._use and not _tracer_config._is_running:
-            self.configure()
+        """Decorator"""
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
-            if self._use and sys.gettrace() != _tracer_function:
-                sys.settrace(_tracer_function)
-                threading.settrace(_tracer_function)
-            return func(*args, **kwargs)
+            # store whether this tracer started
+            self.start()
+            # execute the wrapped function
+            result = func(*args, **kwargs)
+            # unset the tracer if this wrapper set it
+            self.stop()
+            # return the result of the wrapped function
+            return result
 
-        ret = function_wrapper
+        return function_wrapper
+
+    # ---------------------------------------------------------------------------------- #
+    #
+    def __enter__(self, *args, **kwargs):
+        """Context manager start function"""
+
+        self.start()
+
+    # ---------------------------------------------------------------------------------- #
+    #
+    def __exit__(self, exec_type, exec_value, exec_tb):
+        """Context manager stop function"""
 
         self.stop()
 
-        return ret
-
-    # ------------------------------------------------------------------------------------#
-    #
-    def __enter__(self, *args, **kwargs):
-        """
-        Context manager start function
-        """
-        self.start()
-
-    # ------------------------------------------------------------------------------------#
-    #
-    def __exit__(self, exec_type, exec_value, exec_tb):
-        """
-        Context manager stop function
-        """
-
-        if self._use and _tracer_config._is_running:
-            sys.settrace(self._original_tracer_function)
-            threading.settrace(self._original_tracer_function)
-            _tracer_fini()
         if (
             exec_type is not None
             and exec_value is not None
@@ -227,12 +233,10 @@ class Tracer:
 
             traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def run(self, cmd):
-        """
-        Execute and trace a command
-        """
+        """Execute and trace a command"""
 
         import __main__
 
@@ -242,93 +246,50 @@ class Tracer:
         else:
             return self.runctx(" ".join(cmd), dict, dict)
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def runctx(self, cmd, globals, locals):
-        """
-        Trace a context
-        """
-
-        if self._use:
-            self.configure()
-            sys.settrace(_tracer_function)
-            threading.settrace(_tracer_function)
+        """Trace a context"""
 
         try:
+            self.start()
             exec_(cmd, globals, locals)
         finally:
-            if self._use:
-                sys.settrace(self._original_tracer_function)
-                threading.settrace(self._original_tracer_function)
-                _tracer_fini()
+            self.stop()
 
         return self
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def runcall(self, func, *args, **kw):
-        """
-        Trace a single function call.
-        """
-
-        ret = None
-
-        if self._use:
-            self.configure()
-            sys.settrace(_tracer_function)
-            threading.settrace(_tracer_function)
+        """Trace a single function call"""
 
         try:
-            ret = func(*args, **kw)
+            self.start()
+            return func(*args, **kw)
         finally:
-            if self._use:
-                sys.settrace(self._original_tracer_function)
-                threading.settrace(self._original_tracer_function)
-                _tracer_fini()
-
-        return ret
-
-    # ------------------------------------------------------------------------------------#
-    #
-    def add_module(self, mod):
-        """Add all the functions in a module and its classes."""
-        from inspect import isclass, isfunction
-
-        nfuncsadded = 0
-        for item in mod.__dict__.values():
-            if isclass(item):
-                for k, v in item.__dict__.items():
-                    if isfunction(v):
-                        self.add_function(v)
-                        nfuncsadded += 1
-            elif isfunction(item):
-                self.add_function(item)
-                nfuncsadded += 1
-
-        return nfuncsadded
+            self.stop()
 
 
 trace = Tracer
 
 
 class FakeTracer:
-    """
-    Provides decorators and context-manager for the timemory traces which do nothing
-    """
+    """Provides dummy decorators and context-manager for the timemory tracer"""
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     @staticmethod
     def condition(functor):
         pass
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     @staticmethod
     def is_enabled():
         return False
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __init__(self, *args, **kwargs):
         """
@@ -339,12 +300,10 @@ class FakeTracer:
         """
         pass
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __call__(self, func):
-        """
-        Decorator
-        """
+        """Decorator"""
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
@@ -352,20 +311,17 @@ class FakeTracer:
 
         return function_wrapper
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __enter__(self, *args, **kwargs):
-        """
-        Context manager
-        """
+        """Context manager begin"""
         pass
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __exit__(self, exec_type, exec_value, exec_tb):
-        """
-        Context manager
-        """
+        """Context manager end"""
+
         import traceback
 
         if (

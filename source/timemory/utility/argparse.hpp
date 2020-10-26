@@ -1493,7 +1493,7 @@ protected:
     std::map<int, int>         m_positional_arguments = {};
     std::map<std::string, int> m_name_map             = {};
     std::vector<action_pair_t> m_actions              = {};
-};  // namespace argparse
+};
 //
 //--------------------------------------------------------------------------------------//
 //

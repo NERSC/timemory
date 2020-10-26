@@ -103,22 +103,59 @@ struct print
         auto _units  = common_utils::get_display_units(_obj);
 
         utility::write_entry(_os, "LABEL", _prefix);
-        if(!trait::custom_laps_printing<type>::value)
-            utility::write_entry(_os, "COUNT", _laps);
-        if(!trait::flat_storage<type>::value)
-            utility::write_entry(_os, "DEPTH", _depth);
-        if(trait::report_metric_name<type>::value)
-            utility::write_entry(_os, "METRIC", _labels, true);
-        if(trait::report_units<type>::value)
-            utility::write_entry(_os, "UNITS", _units, true);
-        if(trait::report_sum<type>::value && trait::report_values<type>::sum())
-            utility::write_entry(_os, "SUM", _obj.get());
-        if(trait::report_mean<type>::value && trait::report_values<type>::mean())
-            utility::write_entry(_os, "MEAN", _obj.get() / _obj.get_laps());
-        if(trait::report_statistics<type>::value)
-            print_statistics<Tp>(_obj, _os, _self, _stats, _laps);
-        if(trait::report_self<type>::value)
-            utility::write_entry(_os, "% SELF", _self);
+
+        if(_laps > 0)
+        {
+            if(!trait::custom_laps_printing<type>::value)
+                utility::write_entry(_os, "COUNT", _laps);
+            if(!trait::flat_storage<type>::value)
+                utility::write_entry(_os, "DEPTH", _depth);
+            if(trait::report_metric_name<type>::value)
+                utility::write_entry(_os, "METRIC", _labels, true);
+            if(trait::report_units<type>::value)
+                utility::write_entry(_os, "UNITS", _units, true);
+            if(trait::report_sum<type>::value && trait::report_values<type>::sum())
+                utility::write_entry(_os, "SUM", _obj.get());
+            if(trait::report_mean<type>::value && trait::report_values<type>::mean())
+                utility::write_entry(_os, "MEAN", _obj.get() / _obj.get_laps());
+            if(trait::report_statistics<type>::value)
+                print_statistics<Tp>(_obj, _os, _self, _stats, _laps);
+            if(trait::report_self<type>::value)
+                utility::write_entry(_os, "% SELF", _self);
+        }
+        else
+        {
+            if(!trait::custom_laps_printing<type>::value)
+                utility::write_entry(_os, "COUNT", " ");
+            if(!trait::flat_storage<type>::value)
+                utility::write_entry(_os, "DEPTH", " ");
+            if(trait::report_metric_name<type>::value)
+                utility::write_entry(_os, "METRIC", " ");
+            if(trait::report_units<type>::value)
+                utility::write_entry(_os, "UNITS", " ");
+            if(trait::report_sum<type>::value && trait::report_values<type>::sum())
+                utility::write_entry(_os, "SUM", " ");
+            if(trait::report_mean<type>::value && trait::report_values<type>::mean())
+                utility::write_entry(_os, "MEAN", " ");
+            if(trait::report_statistics<type>::value)
+            {
+                bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+                bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+                bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
+                bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
+
+                if(use_min)
+                    utility::write_entry(_os, "MIN", " ");
+                if(use_max)
+                    utility::write_entry(_os, "MAX", " ");
+                if(use_var)
+                    utility::write_entry(_os, "VAR", " ");
+                if(use_stddev)
+                    utility::write_entry(_os, "STDDEV", " ");
+            }
+            if(trait::report_self<type>::value)
+                utility::write_entry(_os, "% SELF", " ");
+        }
     }
 
     //----------------------------------------------------------------------------------//

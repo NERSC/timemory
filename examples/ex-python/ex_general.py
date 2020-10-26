@@ -67,7 +67,11 @@ if __name__ == "__main__":
         "-o", "--output-name", type=str, default=None, help="Output filename"
     )
     parser.add_argument(
-        "-t", "--types", type=str, nargs="*", default=[],
+        "-t",
+        "--types",
+        type=str,
+        nargs="*",
+        default=[],
         help="Component types to report",
     )
     parser.add_argument(

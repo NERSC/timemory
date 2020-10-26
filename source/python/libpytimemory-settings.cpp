@@ -44,8 +44,7 @@ namespace pysettings
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Up, typename... Tail,
-          tim::enable_if_t<(sizeof...(Tail) == 0), int> = 0>
+template <typename Up, typename... Tail, tim::enable_if_t<sizeof...(Tail) == 0> = 0>
 auto
 add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> _obj)
 {

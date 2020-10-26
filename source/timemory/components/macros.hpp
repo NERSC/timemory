@@ -498,6 +498,10 @@
         extern template struct pop_node<COMPONENT_NAME>;                                 \
         extern template struct set_prefix<COMPONENT_NAME>;                               \
         extern template struct set_scope<COMPONENT_NAME>;                                \
+        extern template struct set_started<COMPONENT_NAME>;                              \
+        extern template struct set_stopped<COMPONENT_NAME>;                              \
+        extern template struct is_running<COMPONENT_NAME, true>;                         \
+        extern template struct is_running<COMPONENT_NAME, false>;                        \
         extern template struct record<COMPONENT_NAME>;                                   \
         extern template struct reset<COMPONENT_NAME>;                                    \
         extern template struct cleanup<COMPONENT_NAME>;                                  \
@@ -515,17 +519,17 @@
         extern template struct echo_measurement<                                         \
             COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                 \
         extern template struct finalize::get<                                            \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::mpi_get<                                        \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::upc_get<                                        \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::dmp_get<                                        \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::print<                                          \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::merge<                                          \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         }                                                                                \
         }
 #endif
@@ -552,6 +556,10 @@
         template struct pop_node<COMPONENT_NAME>;                                        \
         template struct set_prefix<COMPONENT_NAME>;                                      \
         template struct set_scope<COMPONENT_NAME>;                                       \
+        template struct set_started<COMPONENT_NAME>;                                     \
+        template struct set_stopped<COMPONENT_NAME>;                                     \
+        template struct is_running<COMPONENT_NAME, true>;                                \
+        template struct is_running<COMPONENT_NAME, false>;                               \
         template struct record<COMPONENT_NAME>;                                          \
         template struct reset<COMPONENT_NAME>;                                           \
         template struct cleanup<COMPONENT_NAME>;                                         \
@@ -569,17 +577,17 @@
         template struct echo_measurement<COMPONENT_NAME,                                 \
                                          trait::echo_enabled<COMPONENT_NAME>::value>;    \
         template struct finalize::get<                                                   \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::mpi_get<                                               \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::upc_get<                                               \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::dmp_get<                                               \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::print<                                                 \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::merge<                                                 \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         }                                                                                \
         }
 #endif

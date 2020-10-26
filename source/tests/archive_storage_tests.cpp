@@ -56,8 +56,7 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
-           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 // this function consumes approximately "n" milliseconds of real time

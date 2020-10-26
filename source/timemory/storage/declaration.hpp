@@ -199,6 +199,14 @@ public:
     {
         return (m_graph_data_instance) ? (_data().graph().size() - 1) : 0;
     }
+    inline size_t true_size() const
+    {
+        if(!m_graph_data_instance)
+            return 0;
+        size_t _sz = _data().graph().size();
+        size_t _dc = _data().dummy_count();
+        return (_dc < _sz) ? (_sz - _dc) : 0;
+    }
     iterator       pop();
     result_array_t get();
     dmp_result_t   mpi_get();
@@ -716,6 +724,7 @@ public:
     void          reset() {}
     bool          empty() const { return true; }
     inline size_t size() const { return 0; }
+    inline size_t true_size() const { return 0; }
     inline size_t depth() const { return 0; }
 
     iterator pop() { return nullptr; }

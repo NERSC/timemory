@@ -89,7 +89,7 @@ get_class_name(std::string id)
 //--------------------------------------------------------------------------------------//
 //
 template <typename T, typename V = typename T::value_type,
-          std::enable_if_t<!(std::is_same<V, void>::value), int> = 0>
+          std::enable_if_t<!std::is_same<V, void>::value, int> = 0>
 static inline auto
 get(py::class_<pytuple_t<T>>& _pyclass)
     -> decltype(std::get<0>(std::declval<pytuple_t<T>>().get()), void())
@@ -105,7 +105,7 @@ get(py::class_<pytuple_t<T>>& _pyclass)
 //--------------------------------------------------------------------------------------//
 //
 template <typename T, typename V = typename T::value_type,
-          std::enable_if_t<(std::is_same<V, void>::value), int> = 0>
+          std::enable_if_t<std::is_same<V, void>::value, int> = 0>
 static inline void
 get(py::class_<pytuple_t<T>>& _pyclass)
 {
@@ -148,6 +148,39 @@ record(py::class_<pytuple_t<T>>& _pyclass, int, long) -> decltype(
 template <typename T, typename... Args>
 static inline void
 record(py::class_<pytuple_t<T>>&, long, long)
+{}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename... Args>
+static inline auto
+sample(py::class_<pytuple_t<T>>& _pyclass, int, int)
+    -> decltype(T::sample(std::declval<Args>()...), void())
+{
+    auto _sample = [](Args... _args) { return T::sample(_args...); };
+    _pyclass.def_static("sample", _sample, "Get the sample of a measurement");
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename... Args>
+static inline auto
+sample(py::class_<pytuple_t<T>>& _pyclass, int, long) -> decltype(
+    std::declval<pytuple_t<T>>().template get<T>()->sample(std::declval<Args>()...),
+    void())
+{
+    using bundle_t = pytuple_t<T>;
+    auto _sample   = [](bundle_t* obj, Args... args) {
+        return obj->template get<T>()->sample(args...);
+    };
+    _pyclass.def("sample", _sample, "Get the sample of a measurement");
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename... Args>
+static inline void
+sample(py::class_<pytuple_t<T>>&, long, long)
 {}
 //
 //--------------------------------------------------------------------------------------//
@@ -226,7 +259,7 @@ static inline auto
 configure(py::class_<pytuple_t<T>>& _pyclass, int, int, Args&&... args)
     -> decltype(T::configure(tim::project::python{}, std::forward<Args>(args)...), void())
 {
-    auto _configure = [](py::object, Args&&... _args) {
+    auto _configure = [](Args&&... _args) {
         T::configure(tim::project::python{}, std::forward<Args>(_args)...);
     };
 
@@ -298,7 +331,7 @@ template <int OpT, typename Arg, typename... Args>
 struct process_args<OpT, Arg, Args...>
 {
     template <typename U, int Op = OpT,
-              std::enable_if_t<(Op == TIMEMORY_CONSTRUCT), int> = 0>
+              std::enable_if_t<Op == TIMEMORY_CONSTRUCT, int> = 0>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _init = [](Arg arg, Args... args) {
@@ -309,7 +342,23 @@ struct process_args<OpT, Arg, Args...>
         _pycomp.def(py::init(_init), "Construct");
     }
 
-    template <typename U, int Op = OpT, std::enable_if_t<(Op == TIMEMORY_START), int> = 0>
+    template <typename U, int Op = OpT, std::enable_if_t<Op == TIMEMORY_GET, int> = 0>
+    static void generate(py::class_<U>& _pycomp)
+    {
+        auto _func = [](U* obj, Arg arg, Args... args) { return obj->get(arg, args...); };
+        _pycomp.def("get", _func, "Get some value from the component");
+    }
+
+    template <typename U, int Op = OpT, std::enable_if_t<Op == TIMEMORY_AUDIT, int> = 0>
+    static void generate(py::class_<U>& _pycomp)
+    {
+        auto _func = [](U* obj, Arg arg, Args... args) {
+            return obj->audit(arg, args...);
+        };
+        _pycomp.def("audit", _func, "Audit incoming or outgoing values");
+    }
+
+    template <typename U, int Op = OpT, std::enable_if_t<Op == TIMEMORY_START, int> = 0>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
@@ -318,7 +367,7 @@ struct process_args<OpT, Arg, Args...>
         _pycomp.def("start", _func, "Start measurement");
     }
 
-    template <typename U, int Op = OpT, std::enable_if_t<(Op == TIMEMORY_STOP), int> = 0>
+    template <typename U, int Op = OpT, std::enable_if_t<Op == TIMEMORY_STOP, int> = 0>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
@@ -327,7 +376,7 @@ struct process_args<OpT, Arg, Args...>
         _pycomp.def("stop", _func, "Stop measurement");
     }
 
-    template <typename U, int Op = OpT, std::enable_if_t<(Op == TIMEMORY_STORE), int> = 0>
+    template <typename U, int Op = OpT, std::enable_if_t<Op == TIMEMORY_STORE, int> = 0>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
@@ -336,15 +385,19 @@ struct process_args<OpT, Arg, Args...>
         _pycomp.def("store", _func, "Store measurement");
     }
 
-    template <typename U, int Op = OpT,
-              std::enable_if_t<(Op == TIMEMORY_RECORD), int> = 0>
+    template <typename U, int Op = OpT, std::enable_if_t<Op == TIMEMORY_RECORD, int> = 0>
     static void generate(py::class_<pytuple_t<U>>& _pycomp)
     {
         pyinternal::record<U, Arg, Args...>(_pycomp, 0, 0);
     }
 
-    template <typename U, int Op = OpT,
-              std::enable_if_t<(Op == TIMEMORY_MEASURE), int> = 0>
+    template <typename U, int Op = OpT, std::enable_if_t<Op == TIMEMORY_SAMPLE, int> = 0>
+    static void generate(py::class_<pytuple_t<U>>& _pycomp)
+    {
+        pyinternal::sample<U, Arg, Args...>(_pycomp, 0, 0);
+    }
+
+    template <typename U, int Op = OpT, std::enable_if_t<Op == TIMEMORY_MEASURE, int> = 0>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
@@ -354,7 +407,7 @@ struct process_args<OpT, Arg, Args...>
     }
 
     template <typename U, int Op = OpT,
-              std::enable_if_t<(Op == TIMEMORY_MARK_BEGIN), int> = 0>
+              std::enable_if_t<Op == TIMEMORY_MARK_BEGIN, int> = 0>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
@@ -364,7 +417,7 @@ struct process_args<OpT, Arg, Args...>
     }
 
     template <typename U, int Op = OpT,
-              std::enable_if_t<(Op == TIMEMORY_MARK_END), int> = 0>
+              std::enable_if_t<Op == TIMEMORY_MARK_END, int> = 0>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
@@ -398,8 +451,109 @@ operations(py::class_<TupleT<T>>& _pyclass, std::index_sequence<Idx...>)
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename T>
+static void
+generate_properties(py::class_<pytuple_t<T>>& _pycomp)
+{
+    using property_t   = tim::component::properties<T>;
+    using bundle_t     = py::class_<pytuple_t<T>>;
+    constexpr auto Idx = property_t::value;
+
+    //----------------------------------------------------------------------------------//
+    //
+    //      Component
+    //
+    //----------------------------------------------------------------------------------//
+
+    _pycomp.def_static("available",
+                       []() { return tim::component::enumerator<Idx>::value; },
+                       "Whether the component is available");
+
+    _pycomp.def_static("index",
+                       []() { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
+                       "Enumeration ID for the component");
+
+    _pycomp.def_static("id", []() { return property_t::id(); },
+                       "(Primary) String ID for the component");
+
+    //----------------------------------------------------------------------------------//
+    //
+    //      Properties
+    //
+    //----------------------------------------------------------------------------------//
+
+    py::class_<property_t> _pyprop(_pycomp, "Properties", "Static properties class");
+
+    _pyprop.def_property_readonly_static(
+        "available", [](py::object) { return tim::component::enumerator<Idx>::value; },
+        "Whether the component is available");
+
+    _pyprop.def_property_readonly_static("enum_string",
+                                         [](py::object) {
+                                             static std::string _val =
+                                                 property_t::enum_string();
+                                             return _val;
+                                         },
+                                         "Get the string version of the enumeration ID");
+
+    _pyprop.def_property_readonly_static(
+        "enum_value",
+        [](py::object) { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
+        "Get the enumeration ID for the component");
+
+    _pyprop.def_property_readonly_static("id",
+                                         [](py::object) {
+                                             static std::string _val = property_t::id();
+                                             return _val;
+                                         },
+                                         "Get the primary string ID for the component");
+
+    _pyprop.def_property_readonly_static(
+        "ids",
+        [](py::object) {
+            static auto _val = []() {
+                py::list _ret{};
+                for(const auto& itr : property_t::ids())
+                    _ret.append(itr);
+                return _ret;
+            }();
+            return _val;
+        },
+        "Get the secondary string IDs for the component");
+
+    auto _match_int = [](TIMEMORY_NATIVE_COMPONENT eid) {
+        return property_t::matches(static_cast<int>(eid));
+    };
+    auto _match_str = [](const std::string& str) { return property_t::matches(str); };
+
+    _pyprop.def_static(
+        "matches", _match_int,
+        "Returns whether the provided enum is a matching identifier for the type");
+    _pyprop.def_static(
+        "matches", _match_str,
+        "Returns whether the provided string is a matching identifier for the type");
+
+    auto _as_json = []() {
+        using archive_t   = cereal::MinimalJSONOutputArchive;
+        using api_t       = tim::project::python;
+        using policy_type = tim::policy::output_archive<archive_t, api_t>;
+        std::stringstream ss;
+        property_t        prop{};
+        {
+            auto oa = policy_type::get(ss);
+            (*oa)(cereal::make_nvp("properties", prop));
+        }
+        auto json_module = py::module::import("json");
+        return json_module.attr("loads")(ss.str());
+    };
+
+    _pyprop.def_static("as_json", _as_json, "Get the properties as a JSON dictionary");
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 template <size_t Idx, size_t N,
-          std::enable_if_t<(tim::component::enumerator<Idx>::value), int> = 0>
+          std::enable_if_t<tim::component::enumerator<Idx>::value, int> = 0>
 static void
 generate(py::module& _pymod, std::array<bool, N>& _boolgen,
          std::array<keyset_t, N>& _keygen)
@@ -455,6 +609,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     // these require further evaluation
     pyinternal::get(_pycomp);
     pyinternal::record(_pycomp, 0, 0);
+    pyinternal::sample(_pycomp, 0, 0);
     pyinternal::get_unit(_pycomp, 0, 0);
     pyinternal::get_display_unit(_pycomp, 0, 0);
     pyinternal::configure(_pycomp, 0);
@@ -484,12 +639,14 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _keys.insert(id);
     _boolgen[Idx] = true;
     _keygen[Idx]  = { _keys, []() { return py::cast(new bundle_t{}); } };
+
+    generate_properties(_pycomp);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <size_t Idx, size_t N,
-          std::enable_if_t<!(tim::component::enumerator<Idx>::value), int> = 0>
+          std::enable_if_t<!tim::component::enumerator<Idx>::value, int> = 0>
 static void
 generate(py::module& _pymod, std::array<bool, N>& _boolgen,
          std::array<keyset_t, N>& _keygen)
@@ -561,6 +718,8 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
 
     _boolgen[Idx] = false;
     _keygen[Idx]  = { {}, []() { return py::none{}; } };
+
+    generate_properties(_pycomp);
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -564,38 +564,8 @@ FUNCTION(BUILD_LIBRARY)
     endif()
     unset(COMPILED_TYPES)
 
-    if(TIMEMORY_USE_PYTHON AND "${LIBRARY_TYPE}" STREQUAL "SHARED")
-        set(_PREFIX ${CMAKE_${LIBRARY_TYPE}_LIBRARY_PREFIX})
-        set(_SUFFIX ${CMAKE_${LIBRARY_TYPE}_LIBRARY_SUFFIX})
-        set(_FILENAME ${_PREFIX}${LIBRARY_OUTPUT_NAME}${_SUFFIX})
-        set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
-        if(NOT IS_ABSOLUTE "${_PYLIB}")
-            set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
-        endif()
-
-        file(RELATIVE_PATH INSTALL_RELPATH "${_PYLIB}"
-            "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-        file(RELATIVE_PATH BINARY_RELPATH "${PROJECT_BINARY_DIR}/timemory"
-            "${PROJECT_BINARY_DIR}")
-
-        # build tree
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                ${BINARY_RELPATH}${_FILENAME}
-                ${_FILENAME}
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
-
-        # install tree
-        install(CODE
-"
-IF(EXISTS \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${_FILENAME}\")
-    EXECUTE_PROCESS(
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
-            ${INSTALL_RELPATH}${_FILENAME} ${_PYLIB}/${_FILENAME}
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-ENDIF()
-")
-    endif()
+    set_property(GLOBAL APPEND PROPERTY TIMEMORY_${LIBRARY_TYPE}_LIBRARIES
+        ${LIBRARY_TARGET_NAME})
 
 ENDFUNCTION()
 
@@ -681,7 +651,104 @@ macro(TIMEMORY_INSTALL_HEADER_FILES)
         get_filename_component(_destpath ${_relative} DIRECTORY)
         install(FILES ${_header} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_destpath})
     endforeach()
-endmacro()
+ENDFUNCTION()
+
+
+#-----------------------------------------------------------------------
+# Library installation
+#
+FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
+    cmake_parse_arguments(
+        LIB "LINK_VERSION;LINK_SOVERSION" "DESTINATION;EXPORT" "TARGETS" ${ARGN})
+
+    if(NOT LIB_DESTINATION)
+        set(LIB_DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
+
+    if(NOT LIB_EXPORT)
+        set(LIB_EXPORT ${PROJECT_NAME}-library-depends)
+    endif()
+
+    set(_ECHO)
+    if(NOT CMAKE_VERSION VERSION_LESS 3.15)
+        set(_ECHO COMMAND_ECHO STDOUT)
+    endif()
+
+    get_property(SHARED_LIBS GLOBAL PROPERTY TIMEMORY_SHARED_LIBRARIES)
+
+    if(TIMEMORY_USE_PYTHON)
+        set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+        if(NOT IS_ABSOLUTE "${_PYLIB}")
+            set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
+        endif()
+    endif()
+
+    foreach(_LIB ${LIB_TARGETS})
+        install(
+            TARGETS ${_LIB}
+            DESTINATION ${LIB_DESTINATION}
+            EXPORT ${PROJECT_NAME}-library-depends)
+
+        if(TIMEMORY_USE_PYTHON AND ${_LIB} IN_LIST SHARED_LIBS)
+            set(_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
+            set(_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+
+            get_target_property(_OUTNAME    ${_LIB} OUTPUT_NAME)
+            get_target_property(_VERSION    ${_LIB} VERSION)
+            get_target_property(_SOVERSION  ${_LIB} SOVERSION)
+
+            set(_FILENAME ${_PREFIX}${_OUTNAME}${_SUFFIX})
+            set(_VERSION_FILENAME )
+            set(_SOVERSION_FILENAME )
+            set(_FILE_TYPES _FILENAME)
+            #
+            if(_VERSION AND LIB_LINK_VERSION)
+                if(APPLE)
+                    set(_VERSION_FILENAME ${_PREFIX}${_OUTNAME}.${_VERSION}${_SUFFIX})
+                else()
+                    set(_VERSION_FILENAME ${_PREFIX}${_OUTNAME}${_SUFFIX}.${_VERSION})
+                endif()
+                list(APPEND _FILE_TYPES _VERSION_FILENAME)
+            endif()
+            #
+            if(_SOVERSION AND LIB_LINK_SOVERSION)
+                if(APPLE)
+                    set(_SOVERSION_FILENAME ${_PREFIX}${_OUTNAME}.${_SOVERSION}${_SUFFIX})
+                else()
+                    set(_SOVERSION_FILENAME ${_PREFIX}${_OUTNAME}${_SUFFIX}.${_SOVERSION})
+                endif()
+                list(APPEND _FILE_TYPES _SOVERSION_FILENAME)
+            endif()
+
+            file(RELATIVE_PATH INSTALL_RELPATH "${_PYLIB}"
+                "${CMAKE_INSTALL_PREFIX}/${LIB_DESTINATION}")
+            file(RELATIVE_PATH BINARY_RELPATH "${PROJECT_BINARY_DIR}/timemory"
+                "${PROJECT_BINARY_DIR}")
+
+            # build tree
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E create_symlink
+                    ${BINARY_RELPATH}${_FILENAME}
+                    ${_FILENAME}
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
+
+            # install tree
+            foreach(_FNAME ${_FILE_TYPES})
+                if(NOT ${_FNAME})
+                    continue()
+                endif()
+                install(CODE
+                    "
+                    EXECUTE_PROCESS(
+                        COMMAND ${CMAKE_COMMAND} -E create_symlink
+                        ${INSTALL_RELPATH}/${${_FNAME}} ${_PYLIB}/${${_FNAME}}
+                        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+                        ${_ECHO})
+                    ")
+            endforeach()
+        endif()
+    endforeach()
+ENDFUNCTION()
 
 
 #-----------------------------------------------------------------------
@@ -755,7 +822,7 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
     if(NOT "${COMP_VISIBILITY}" IN_LIST VIS_OPTS)
         message(FATAL_ERROR "${COMP_TARGET} available visibility options: ${VIS_OPTS}")
     endif()
-    
+
     string(TOUPPER "${COMP_NAME}" UPP_COMP)
     string(REPLACE "-" "_" UPP_COMP "${UPP_COMP}")
     string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)
@@ -781,6 +848,10 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
     endif()
 
     set(_SOURCES ${COMP_SOURCES} ${COMP_HEADERS})
+
+    if(COMP_INSTALL_SOURCE)
+        install_header_files(${COMP_SOURCES})
+    endif()
 
     foreach(LINK ${_LIB_TYPES})
 
@@ -855,7 +926,7 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
             timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
                 TIMEMORY_USE_${COMP_CATEGORY}_EXTERN)
         endif()
-        
+
         if("${LINK}" STREQUAL "OBJECT")
             if(NOT TARGET timemory-${LC_CATEGORY}-${LINK})
                 add_interface_library(timemory-${LC_CATEGORY}-${LINK})
@@ -873,8 +944,9 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
                 target_link_libraries(timemory-${LC_CATEGORY}-${LINK} INTERFACE ${TARGET_NAME})
             endif()
 
-            install(TARGETS ${TARGET_NAME}
-                DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
+            timemory_install_libraries(
+                TARGETS     ${TARGET_NAME}
+                DESTINATION ${CMAKE_INSTALL_LIBDIR}
                 EXPORT      ${PROJECT_NAME}-library-depends)
 
             set_property(GLOBAL APPEND PROPERTY TIMEMORY_INTERMEDIATE_TARGETS ${TARGET_NAME})

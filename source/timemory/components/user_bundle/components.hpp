@@ -235,15 +235,6 @@ public:
     //
     user_bundle()
     : m_scope(scope::get_default())
-    , m_prefix("")
-    , m_typeids(get_typeids())
-    , m_bundle(get_data())
-    {}
-
-    explicit user_bundle(const string_t& _prefix,
-                         scope::config   _scope = scope::get_default())
-    : m_scope(_scope)
-    , m_prefix(_prefix)
     , m_typeids(get_typeids())
     , m_bundle(get_data())
     {}
@@ -259,7 +250,14 @@ public:
             itr.set_copy(true);
     }
 
-    user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
+    explicit user_bundle(const char* _prefix, scope::config _scope = scope::get_default())
+    : m_scope(_scope)
+    , m_prefix(_prefix)
+    , m_typeids(get_typeids())
+    , m_bundle(get_data())
+    {}
+
+    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
                 const typeid_vec_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
@@ -267,7 +265,7 @@ public:
     , m_bundle(_bundle_vec)
     {}
 
-    user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
+    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
                 const typeid_set_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
@@ -281,7 +279,6 @@ public:
 
     ~user_bundle()
     {
-        // gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
         for(auto& itr : m_bundle)
             itr.cleanup();
     }
@@ -379,10 +376,28 @@ public:
     //----------------------------------------------------------------------------------//
     //  Member functions
     //
+    void setup()
+    {
+        if(!m_setup)
+        {
+            m_setup = true;
+            for(auto& itr : m_bundle)
+                itr.setup(m_prefix, m_scope);
+        }
+    }
+
+    void push()
+    {
+        setup();
+        for(auto& itr : m_bundle)
+            itr.push(m_prefix, m_scope);
+    }
+
     void start()
     {
+        setup();
         for(auto& itr : m_bundle)
-            itr.start(m_prefix, m_scope);
+            itr.start();
     }
 
     void stop()
@@ -391,12 +406,19 @@ public:
             itr.stop();
     }
 
+    void pop()
+    {
+        for(auto& itr : m_bundle)
+            itr.pop();
+    }
+
     void clear()
     {
         if(base_type::is_running)
             stop();
         m_typeids.clear();
         m_bundle.clear();
+        m_setup = false;
     }
 
     template <typename T>
@@ -425,18 +447,24 @@ public:
 
     void get() {}
 
-    void set_prefix(const string_t& _prefix)
+    void set_prefix(const char* _prefix)
     {
         // skip unnecessary copies
-        if(!m_bundle.empty())
+        // if(!m_bundle.empty())
+        {
             m_prefix = _prefix;
+            m_setup  = false;
+        }
     }
 
     void set_scope(const scope::config& val)
     {
         // skip unnecessary copies
-        if(!m_bundle.empty())
+        // if(!m_bundle.empty())
+        {
             m_scope = val;
+            m_setup = false;
+        }
     }
 
     size_t size() const { return m_bundle.size(); }
@@ -472,8 +500,9 @@ public:
     }
 
 protected:
-    scope::config  m_scope   = scope::get_default();
-    string_t       m_prefix  = "";
+    bool           m_setup   = false;
+    scope::config  m_scope   = {};
+    const char*    m_prefix  = nullptr;
     typeid_vec_t   m_typeids = get_typeids();
     opaque_array_t m_bundle  = get_data();
 
