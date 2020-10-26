@@ -632,9 +632,8 @@ TEST_F(argparse_tests, timemory_argparse_vec)
     auto _python  = tim::settings::python_exe();
 
     std::vector<std::string> args = {
-        _margv[0], "--timemory-enabled=false", "--timemory-verbose",
-        "10",      "--timemory-debug",         "--timemory-python-exe",
-        "python",
+        _margv[0],          "--timemory-enabled=false", "--timemory-verbose", "10",
+        "--timemory-debug", "--timemory-python-exe",    "/fake/python",
     };
 
     std::cout << "Argument: ";

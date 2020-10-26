@@ -155,29 +155,32 @@ allreduce(const vector_t<Tp>& sendbuf, vector_t<Tp>& recvbuf)
 class gotcha_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
+    static SetUpTestSuite()
     {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                    = true;
-            tim::settings::width()        = 16;
-            tim::settings::precision()    = 6;
-            tim::settings::timing_units() = "sec";
-            tim::settings::memory_units() = "kB";
-            tim::settings::verbose()      = 0;
-            tim::settings::debug()        = false;
-            tim::settings::json_output()  = true;
-            tim::settings::mpi_thread()   = false;
-            tim::dmp::initialize(_argc, _argv);
+        tim::settings::banner()       = false;
+        tim::settings::width()        = 16;
+        tim::settings::precision()    = 6;
+        tim::settings::timing_units() = "sec";
+        tim::settings::memory_units() = "kB";
+        tim::settings::verbose()      = 0;
+        tim::settings::debug()        = false;
+        tim::settings::json_output()  = true;
+        tim::settings::mpi_thread()   = false;
+        tim::dmp::initialize(_argc, _argv);
+        tim::timemory_init(&argc, &argv);
+        tim::settings::dart_output() = true;
+        tim::settings::dart_count()  = 1;
+        tim::settings::dart_type()   = "peak_rss";
 #if defined(TIMEMORY_USE_PAPI)
-            cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
-            cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
+        cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
+        cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
 #endif
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
-        }
+    }
+
+    static TearDownTestSuite()
+    {
+        tim::timemory_finalize();
+        tim::dmp::finalize();
     }
 };
 
@@ -761,21 +764,7 @@ main(int argc, char** argv)
     ::testing::InitGoogleTest(&argc, argv);
     _argc = argc;
     _argv = argv;
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    return ret;
+    return RUN_ALL_TESTS();
 }
 
 //======================================================================================//
