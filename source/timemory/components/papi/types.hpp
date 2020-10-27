@@ -51,23 +51,23 @@ TIMEMORY_COMPONENT_ALIAS(papi_array32_t, papi_array<32>)
 TIMEMORY_COMPONENT_ALIAS(papi_array_t, papi_array<TIMEMORY_PAPI_ARRAY_SIZE>)
 //
 TIMEMORY_SET_COMPONENT_API(component::papi_vector, tpls::papi, category::external,
-                           category::hardware_counter, os::linux)
+                           category::hardware_counter, os::supports_linux)
 //
 TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(size_t MaxNumEvents),
                                     TIMEMORY_ESC(component::papi_array<MaxNumEvents>),
                                     tpls::papi, category::external,
-                                    category::hardware_counter, os::linux)
+                                    category::hardware_counter, os::supports_linux)
 //
 TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(int... Evts),
                                     TIMEMORY_ESC(component::papi_tuple<Evts...>),
                                     tpls::papi, category::external,
-                                    category::hardware_counter, os::linux)
+                                    category::hardware_counter, os::supports_linux)
 //
 TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(int... Evts),
                                     TIMEMORY_ESC(component::papi_rate_tuple<Evts...>),
                                     tpls::papi, category::external,
                                     category::hardware_counter, category::timing,
-                                    os::linux)
+                                    os::supports_linux)
 //
 //======================================================================================//
 //

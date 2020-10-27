@@ -153,6 +153,13 @@ add_timemory_google_test(socket_tests
                     timemory::timemory-core
                     test-werror-flags)
 
+add_timemory_google_test(settings_tests
+    DISCOVER_TESTS
+    SOURCES         settings_tests.cpp
+    LINK_LIBRARIES  common-test-libs
+                    timemory::timemory-core
+                    timemory::timemory-config)
+
 add_timemory_google_test(argparse_tests
     SOURCES         argparse_tests.cpp
     LINK_LIBRARIES  common-test-libs

@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file utility/stream.hpp
- * \headerfile utility/stream.hpp "timemory/utility/stream.hpp"
+/** \file data/stream.hpp
+ * \headerfile data/stream.hpp "timemory/data/stream.hpp"
  * Provides a simple stream type that generates a vector of strings for column alignment
  *
  */
@@ -46,7 +46,7 @@
 
 namespace tim
 {
-namespace utility
+namespace data
 {
 namespace base
 {
@@ -959,6 +959,35 @@ write_entry(stream& _os, const std::vector<std::string>& _labels,
 
 //--------------------------------------------------------------------------------------//
 
+}  // namespace data
+
+//--------------------------------------------------------------------------------------//
+namespace utility
+{
+//
+// backwards-compatibility
+//
+using entry  = data::entry;
+using header = data::header;
+using stream = data::stream;
+//
+template <typename Tp>
+using header_stream = data::header_stream<Tp>;
+//
+template <typename... Args>
+auto
+write_header(Args&&... args)
+{
+    return data::write_header(std::forward<Args>(args)...);
+}
+//
+template <typename... Args>
+auto
+write_entry(Args&&... args)
+{
+    return data::write_entry(std::forward<Args>(args)...);
+}
+//
 }  // namespace utility
 
 //--------------------------------------------------------------------------------------//

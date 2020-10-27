@@ -122,10 +122,10 @@ TIMEMORY_DEFINE_NS_API(tpls, tau)
 // OS-specific APIs
 //
 TIMEMORY_DEFINE_NS_API(os, agnostic)
-TIMEMORY_DEFINE_NS_API(os, unix)
-TIMEMORY_DEFINE_NS_API(os, linux)
-TIMEMORY_DEFINE_NS_API(os, darwin)
-TIMEMORY_DEFINE_NS_API(os, windows)
+TIMEMORY_DEFINE_NS_API(os, supports_unix)
+TIMEMORY_DEFINE_NS_API(os, supports_linux)
+TIMEMORY_DEFINE_NS_API(os, supports_darwin)
+TIMEMORY_DEFINE_NS_API(os, supports_windows)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -169,25 +169,25 @@ namespace trait
 //
 #if !defined(_UNIX)
 template <>
-struct is_available<os::unix> : false_type
+struct is_available<os::supports_unix> : false_type
 {};
 #endif
 //
 #if !defined(_LINUX)
 template <>
-struct is_available<os::linux> : false_type
+struct is_available<os::supports_linux> : false_type
 {};
 #endif
 //
 #if !defined(_MACOS)
 template <>
-struct is_available<os::darwin> : false_type
+struct is_available<os::supports_darwin> : false_type
 {};
 #endif
 //
 #if !defined(_WINDOWS)
 template <>
-struct is_available<os::windows> : false_type
+struct is_available<os::supports_windows> : false_type
 {};
 #endif
 //

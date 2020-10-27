@@ -120,17 +120,17 @@ TIMEMORY_SET_COMPONENT_API(component::cpu_util, project::timemory, category::tim
                            os::agnostic)
 // Available on Unix
 TIMEMORY_SET_COMPONENT_API(component::monotonic_clock, project::timemory,
-                           category::timing, os::unix)
+                           category::timing, os::supports_unix)
 TIMEMORY_SET_COMPONENT_API(component::monotonic_raw_clock, project::timemory,
-                           category::timing, os::unix)
+                           category::timing, os::supports_unix)
 TIMEMORY_SET_COMPONENT_API(component::thread_cpu_clock, project::timemory,
-                           category::timing, os::unix)
+                           category::timing, os::supports_unix)
 TIMEMORY_SET_COMPONENT_API(component::process_cpu_clock, project::timemory,
-                           category::timing, os::unix)
+                           category::timing, os::supports_unix)
 TIMEMORY_SET_COMPONENT_API(component::process_cpu_util, project::timemory,
-                           category::timing, os::unix)
+                           category::timing, os::supports_unix)
 TIMEMORY_SET_COMPONENT_API(component::thread_cpu_util, project::timemory,
-                           category::timing, os::unix)
+                           category::timing, os::supports_unix)
 //
 //--------------------------------------------------------------------------------------//
 //

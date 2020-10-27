@@ -45,11 +45,11 @@ TIMEMORY_DECLARE_COMPONENT(caliper_loop_marker)
 TIMEMORY_COMPONENT_ALIAS(caliper, caliper_marker)
 //
 TIMEMORY_SET_COMPONENT_API(component::caliper_config, tpls::caliper, category::external,
-                           os::unix)
+                           os::supports_unix)
 TIMEMORY_SET_COMPONENT_API(component::caliper_marker, tpls::caliper, category::external,
-                           os::unix)
+                           os::supports_unix)
 TIMEMORY_SET_COMPONENT_API(component::caliper_loop_marker, tpls::caliper,
-                           category::external, os::unix)
+                           category::external, os::supports_unix)
 //
 //--------------------------------------------------------------------------------------//
 //

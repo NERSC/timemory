@@ -341,14 +341,50 @@ static inline auto
 get_demangled_backtrace()
 {
     auto demangle_bt = [](const char* cstr) {
+        auto _trim = [](std::string& _sub, size_t& _len) {
+            size_t _pos = 0;
+            while((_pos = _sub.find_first_of(' ')) == 0)
+            {
+                _sub = _sub.erase(_pos, 1);
+                --_len;
+            }
+            while((_pos = _sub.find_last_of(' ')) == _sub.length() - 1)
+            {
+                _sub = _sub.substr(0, _sub.length() - 1);
+                --_len;
+            }
+            return _sub;
+        };
+
         auto str = demangle(std::string(cstr));
-        auto beg = str.find("(_Z");
-        auto end = str.find("+0x", beg);
+        auto beg = str.find("(");
+        if(beg == std::string::npos)
+        {
+            beg = str.find("_Z");
+            if(beg != std::string::npos)
+                beg -= 1;
+        }
+        auto end = str.find("+", beg);
         if(beg != std::string::npos && end != std::string::npos)
         {
             auto len = end - (beg + 1);
-            auto dem = demangle(str.substr(beg + 1, len));
+            auto sub = str.substr(beg + 1, len);
+            auto dem = demangle(_trim(sub, len));
             str      = str.replace(beg + 1, len, dem);
+        }
+        else if(beg != std::string::npos)
+        {
+            auto len = str.length() - (beg + 1);
+            auto sub = str.substr(beg + 1, len);
+            auto dem = demangle(_trim(sub, len));
+            str      = str.replace(beg + 1, len, dem);
+        }
+        else if(end != std::string::npos)
+        {
+            auto len = end;
+            auto sub = str.substr(beg, len);
+            auto dem = demangle(_trim(sub, len));
+            str      = str.replace(beg, len, dem);
         }
         return str;
     };

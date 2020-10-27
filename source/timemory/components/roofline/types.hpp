@@ -64,7 +64,7 @@ TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(typename... Types),
                                     TIMEMORY_ESC(component::cpu_roofline<Types...>),
                                     tpls::papi, category::external,
                                     category::hardware_counter, category::timing,
-                                    os::linux)
+                                    os::supports_linux)
 
 TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(typename... Types),
                                     TIMEMORY_ESC(component::gpu_roofline<Types...>),

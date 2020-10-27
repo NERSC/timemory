@@ -43,15 +43,34 @@ from os.path import dirname
 from os.path import basename
 from os.path import join
 
-__all__ = ["FILE", "FUNC", "LINE", "FRAME"]
+__all__ = [
+    "file",
+    "func",
+    "line",
+    "frame",
+    "is_generator",
+    "is_coroutine",
+    "execute_",
+    "PY3",
+    "PY35",
+    "FILE",
+    "FUNC",
+    "LINE",
+    "FRAME",
+]
+
+CO_GENERATOR = 0x0020
+# Python 2/3 compatibility utils
+PY3 = sys.version_info[0] == 3
+PY35 = PY3 and sys.version_info[1] >= 5
 
 
-def FRAME(back=2):
+def frame(back=2):
     """Returns a frame"""
     return sys._getframe(back)
 
 
-def FILE(back=2, only_basename=True, use_dirname=False, noquotes=True):
+def file(back=2, only_basename=True, use_dirname=False, noquotes=True):
     """
     Returns the file name
     """
@@ -85,15 +104,61 @@ def FILE(back=2, only_basename=True, use_dirname=False, noquotes=True):
     return result
 
 
-def FUNC(back=2):
+def func(back=2):
     """
     Returns the function name
     """
     return "{}".format(sys._getframe(back).f_code.co_name)
 
 
-def LINE(back=1):
+def line(back=1):
     """
     Returns the line number
     """
     return int(sys._getframe(back).f_lineno)
+
+
+FRAME = frame
+FILE = file
+FUNC = func
+LINE = line
+
+
+def is_generator(f):
+    """Return True if a function is a generator."""
+    isgen = (f.__code__.co_flags & CO_GENERATOR) != 0
+    return isgen
+
+
+# exec (from https://bitbucket.org/gutworth/six/):
+if PY3:
+    import builtins
+
+    execute_ = getattr(builtins, "exec")
+    del builtins
+else:
+
+    def execute_(_code_, _globs_=None, _locs_=None):
+        """Execute code in a namespace."""
+        if _globs_ is None:
+            frame = sys._getframe(1)
+            _globs_ = frame.f_globals
+            if _locs_ is None:
+                _locs_ = frame.f_locals
+            del frame
+        elif _locs_ is None:
+            _locs_ = _globs_
+        exec("""exec _code_ in _globs_, _locs_""")
+
+
+if PY35:
+    import inspect
+
+    def is_coroutine(f):
+        return inspect.iscoroutinefunction(f)
+
+
+else:
+
+    def is_coroutine(f):
+        return False

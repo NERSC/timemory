@@ -29,6 +29,7 @@
 #include <cctype>
 #include <cstring>
 #include <deque>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <list>
@@ -45,6 +46,7 @@
 #include <vector>
 
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
 
 namespace tim
@@ -53,13 +55,6 @@ namespace argparse
 {
 namespace helpers
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Args>
-static inline void
-consume_parameters(Args&&...)
-{}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -160,12 +155,6 @@ is_numeric(const std::string& arg)
 
     // numbers + possible scientific notation
     return true;
-
-    /*std::stringstream ss;
-    ss << arg;
-    float              f;
-    ss >> std::noskipws >> f;
-    return ss.eof() && !ss.fail();*/
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -202,7 +191,7 @@ find_punct(const std::string& s)
     size_t i;
     for(i = 0; i < s.length(); ++i)
     {
-        if(std::ispunct(static_cast<int>(s[i])))
+        if(std::ispunct(static_cast<int>(s[i])) && s[i] != '-')
         {
             break;
         }
@@ -214,9 +203,11 @@ find_punct(const std::string& s)
 //
 namespace is_container_impl
 {
+//
 template <typename T>
 struct is_container : std::false_type
 {};
+//
 template <typename... Args>
 struct is_container<std::vector<Args...>> : std::true_type
 {};
@@ -229,6 +220,14 @@ struct is_container<std::deque<Args...>> : std::true_type
 template <typename... Args>
 struct is_container<std::list<Args...>> : std::true_type
 {};
+//
+template <typename T>
+struct is_initializing_container : is_container<T>::type
+{};
+//
+template <typename... Args>
+struct is_initializing_container<std::initializer_list<Args...>> : std::true_type
+{};
 }  // namespace is_container_impl
 //
 //--------------------------------------------------------------------------------------//
@@ -238,7 +237,17 @@ template <typename T>
 struct is_container
 {
     static constexpr bool const value =
-        is_container_impl::is_container<typename std::decay<T>::type>::value;
+        is_container_impl::is_container<decay_t<T>>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+// type trait to utilize the implementation type traits as well as decay the type
+template <typename T>
+struct is_initializing_container
+{
+    static constexpr bool const value =
+        is_container_impl::is_initializing_container<decay_t<T>>::value;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -379,6 +388,9 @@ struct argument_parser
     using action_func_t = std::function<void(this_type&)>;
     using action_pair_t = std::pair<bool_func_t, action_func_t>;
     using error_func_t  = std::function<void(this_type&, arg_result&)>;
+    using known_args_t  = std::tuple<arg_result, int, char**>;
+    using strvec_t      = std::vector<std::string>;
+    using strset_t      = std::set<std::string>;
     //
     //----------------------------------------------------------------------------------//
     //
@@ -464,6 +476,12 @@ struct argument_parser
             return *this;
         }
 
+        argument& min_count(int count)
+        {
+            m_min_count = count;
+            return *this;
+        }
+
         argument& count(int count)
         {
             m_count = count;
@@ -496,6 +514,20 @@ struct argument_parser
             return *this;
         }
 
+        template <template <typename...> class ContainerT, typename T, typename... ExtraT,
+                  typename ContT = ContainerT<T, ExtraT...>,
+                  enable_if_t<helpers::is_container<ContT>::value> = 0>
+        argument& choices(const ContainerT<T, ExtraT...>& _choices)
+        {
+            for(auto&& itr : _choices)
+            {
+                std::stringstream ss;
+                ss << itr;
+                m_choices.insert(ss.str());
+            }
+            return *this;
+        }
+
         template <typename ActionFuncT>
         argument& action(ActionFuncT&& _func)
         {
@@ -506,7 +538,7 @@ struct argument_parser
         bool found() const { return m_found; }
 
         template <typename T>
-        std::enable_if_t<(helpers::is_container<T>::value), T> get()
+        std::enable_if_t<helpers::is_container<T>::value, T> get()
         {
             T                      t = T{};
             typename T::value_type vt;
@@ -521,7 +553,7 @@ struct argument_parser
 
         template <typename T>
         std::enable_if_t<
-            (!helpers::is_container<T>::value && !std::is_same<T, bool>::value), T>
+            !helpers::is_container<T>::value && !std::is_same<T, bool>::value, T>
         get()
         {
             auto               inp = get<std::string>();
@@ -532,12 +564,14 @@ struct argument_parser
         }
 
         template <typename T>
-        std::enable_if_t<(std::is_same<T, bool>::value), T> get()
+        std::enable_if_t<std::is_same<T, bool>::value, T> get()
         {
-            // std::cout << *this << std::endl;
+            if(m_count == 0)
+                return found();
+
             auto inp = get<std::string>();
-            if(inp.empty() && found())
-                return true;
+            if(inp.empty())
+                return found();
 
             namespace regex_const             = std::regex_constants;
             const auto        regex_constants = regex_const::egrep | regex_const::icase;
@@ -554,6 +588,14 @@ struct argument_parser
 
         size_t size() const { return m_values.size(); }
 
+        std::string get_name() const
+        {
+            std::stringstream ss;
+            for(auto& itr : m_names)
+                ss << "/" << itr;
+            return ss.str().substr(1);
+        }
+
     private:
         argument(const std::string& name, const std::string& desc, bool required = false)
         : m_desc(desc)
@@ -564,7 +606,7 @@ struct argument_parser
 
         argument() {}
 
-        arg_result check(const std::string& value)
+        arg_result check_choice(const std::string& value)
         {
             if(m_choices.size() > 0)
             {
@@ -577,7 +619,7 @@ struct argument_parser
                     return arg_result(ss.str());
                 }
             }
-            return arg_result();
+            return arg_result{};
         }
 
         void execute_actions(argument_parser& p)
@@ -593,8 +635,9 @@ struct argument_parser
             for(auto itr : arg.m_names)
                 ss << itr << " ";
             ss << ", index: " << arg.m_index << ", count: " << arg.m_count
-               << ", max count: " << arg.m_max_count << ", found: " << std::boolalpha
-               << arg.m_found << ", required: " << std::boolalpha << arg.m_required
+               << ", min count: " << arg.m_min_count << ", max count: " << arg.m_max_count
+               << ", found: " << std::boolalpha << arg.m_found
+               << ", required: " << std::boolalpha << arg.m_required
                << ", position: " << arg.m_position << ", values: ";
             for(auto itr : arg.m_values)
                 ss << itr << " ";
@@ -605,6 +648,7 @@ struct argument_parser
         friend struct argument_parser;
         int                        m_position  = Position::IgnoreArgument;
         int                        m_count     = Count::ANY;
+        int                        m_min_count = Count::ANY;
         int                        m_max_count = Count::ANY;
         std::vector<std::string>   m_names     = {};
         std::string                m_desc      = {};
@@ -676,7 +720,7 @@ struct argument_parser
         std::cerr << "Usage: " << m_bin;
         if(m_positional_arguments.empty())
         {
-            std::cerr << " [options...]"
+            std::cerr << " [" << demangle<this_type>() << " arguments...]"
                       << " " << _extra << std::endl;
         }
         else
@@ -707,7 +751,7 @@ struct argument_parser
             }
             if(m_positional_arguments.find(argument::Position::LastArgument) ==
                m_positional_arguments.end())
-                std::cerr << " [options...]";
+                std::cerr << " [" << demangle<this_type>() << " arguments...]";
             std::cerr << " " << _extra << std::endl;
         }
         std::cerr << "\nOptions:" << std::endl;
@@ -739,15 +783,134 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
-    using known_args_t = std::tuple<arg_result, int, char**>;
+    /// \fn arg_result parse_known_args(int argc, char** argv, const std::string& delim,
+    ///                                 int verb)
+    /// \param[in,out] argc Number of arguments (i.e. # of command-line args)
+    /// \param[in,out] argv Array of strings (i.e. command-line)
+    /// \param[in] delim Delimiter which separates this argparser's opts from user's
+    /// arguments
+    /// \param[in] verb verbosity
+    ///
+    /// \brief Basic variant of \ref parse_known_args which does not replace argc/argv
+    /// and does not provide an array of strings that it processed
+    ///
     known_args_t parse_known_args(int argc, char** argv, const std::string& _delim = "--",
                                   int verbose_level = 0)
     {
-        std::vector<std::string> _args;
+        strvec_t _args{};
+        return parse_known_args(argc, argv, _args, _delim, verbose_level);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    arg_result parse_known_args(int* argc, char*** argv, const std::string& _delim = "--",
+                                int verbose_level = 0)
+    {
+        strvec_t args{};
+        return parse_known_args(argc, argv, args, _delim, verbose_level);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    /// \fn arg_result parse_known_args(int* argc, char*** argv, const std::string& delim,
+    ///                                 int verb)
+    /// \param[in,out] argc Pointer to number of arguments (i.e. # of command-line args)
+    /// \param[in,out] argv Pointer to array of strings (i.e. command-line)
+    /// \param[in] delim Delimiter which separates this argparser's opts from user's
+    /// arguments
+    /// \param[in] verb verbosity
+    ///
+    /// \brief This variant calls \ref parse_known_args and replaces argc and argv with
+    /// the argv[0] + anything after delimiter (if the delimiter is provided). If the
+    /// delimiter does not exist, argc and argv are unchanged.
+    ///
+    arg_result parse_known_args(int* argc, char*** argv, strvec_t& _args,
+                                const std::string& _delim = "--", int verbose_level = 0)
+    {
+        // check for help flag
+        auto help_check = [&](int _argc, char** _argv) {
+            strset_t help_args = { "-h", "--help", "-?" };
+            auto     _help_req = (exists("help") ||
+                              (_argc > 1 && help_args.find(_argv[1]) != help_args.end()));
+            if(_help_req && !exists("help"))
+            {
+                for(auto hitr : help_args)
+                {
+                    auto hstr = hitr.substr(hitr.find_first_not_of('-'));
+                    auto itr  = m_name_map.find(hstr);
+                    if(itr != m_name_map.end())
+                        m_arguments[static_cast<size_t>(itr->second)].m_found = true;
+                }
+            }
+            return _help_req;
+        };
 
-        bool   _found = false;  // track whether delimiter was found
-        int    _cmdc  = argc;   // the argc after known args removed
-        char** _cmdv  = argv;   // the argv after known args removed
+        // check for a dash in th command line
+        bool _pdash = false;
+        for(int i = 1; i < *argc; ++i)
+        {
+            if((*argv)[i] == std::string("--"))
+                _pdash = true;
+        }
+
+        // parse the known args and get the remaining argc/argv
+        auto _pargs = parse_known_args(*argc, *argv, _args, _delim, verbose_level);
+        auto _perrc = std::get<0>(_pargs);
+        auto _pargc = std::get<1>(_pargs);
+        auto _pargv = std::get<2>(_pargs);
+
+        // check if help was requested before the dash (if dash exists)
+        if(help_check((_pdash) ? 0 : _pargc, _pargv))
+            return arg_result{ "help requested" };
+
+        // assign the argc and argv
+        *argc = _pargc;
+        *argv = _pargv;
+
+        return _perrc;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    /// \fn arg_result parse_known_args(int argc, char** argv, strvec_t& args, const
+    ///                                 std::string& delim, int verb)
+    /// \param[in,out] argc Number of arguments (i.e. # of command-line args)
+    /// \param[in,out] argv Array of strings (i.e. command-line)
+    /// \param[in,out] args Array of strings processed by this parser
+    /// \param[in] delim Delimiter which separates this argparser's opts from user's
+    /// arguments
+    /// \param[in] verb verbosity
+    ///
+    /// \brief Parses all options until argv[argc-1] or delimiter is found.
+    /// Returns a tuple containing an argument error object (operator bool will return
+    /// true if there was an error) and the new argc and argv after the known arguments
+    /// have been processed. This is slightly different from the Python
+    /// argparse.ArgumentParser.parse_known_args: if the delimiter is not found, it will
+    /// not remove the arguments that it recognizes.
+    /// To distinguish this parsers options from user arguments, use the syntax:
+    ///
+    ///    ./<CMD> <PARSER_OPTIONS> -- <USER_ARGS>
+    ///
+    /// And std::get<1>(...) on the return value will be the new argc.
+    /// and std::get<2>(...) on the return value will be the new argv.
+    /// Other valid usages:
+    ///
+    ///    ./<CMD> --help       (will report this parser's help message)
+    ///    ./<CMD> -- --help    (will report the applications help message, if supported)
+    ///    ./<CMD> <USER_ARGS>
+    ///    ./<CMD> <PARSER_OPTIONS>
+    ///    ./<CMD> <PARSER_OPTIONS> <USER_ARGS> (intermixed)
+    ///
+    /// will not remove any of the known options.
+    /// In other words, this will remove all arguments after <CMD> until the first "--" if
+    /// reached and everything after the "--" will be placed in argv[1:]
+    ///
+    known_args_t parse_known_args(int argc, char** argv, strvec_t& _args,
+                                  const std::string& _delim = "--", int verbose_level = 0)
+    {
+        int    _cmdc = argc;  // the argc after known args removed
+        char** _cmdv = argv;  // the argv after known args removed
+        // _cmdv and argv are same pointer unless delimiter is found
 
         if(argc > 0)
         {
@@ -760,7 +923,6 @@ struct argument_parser
             std::string _arg = argv[i];
             if(_arg == _delim)
             {
-                _found       = true;
                 _cmdc        = argc - i;
                 _cmdv        = new char*[_cmdc + 1];
                 _cmdv[_cmdc] = nullptr;
@@ -798,9 +960,6 @@ struct argument_parser
         if(_cmdc > 0 && verbose_level > 0)
             std::cerr << "[command]>  " << cmd_string(_cmdc, _cmdv) << "\n\n";
 
-        if(!_found)
-            return known_args_t{ arg_result(), _cmdc, _cmdv };
-
         return known_args_t{ parse(_args, verbose_level), _cmdc, _cmdv };
     }
     //
@@ -824,6 +983,13 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    /// \fn arg_result parse(const std::vector<std::string>& args, int verb)
+    /// \param[in] args Array of strings (i.e. command-line arguments)
+    /// \param[in] verb Verbosity
+    ///
+    /// \brief This is the primary function for parsing the command line arguments.
+    /// This is where the map of the options is built and the loop over the
+    /// arguments is performed.
     arg_result parse(const std::vector<std::string>& _args, int verbose_level = 0)
     {
         if(verbose_level > 0)
@@ -831,7 +997,7 @@ struct argument_parser
             std::cerr << "[argparse::parse]> parsing '";
             for(const auto& itr : _args)
                 std::cerr << itr << " ";
-            std::cerr << '\n';
+            std::cerr << "'" << '\n';
         }
 
         using argmap_t = std::map<std::string, argument*>;
@@ -885,6 +1051,7 @@ struct argument_parser
                     err = add_value(current_arg, argument::Position::LastArgument);
                     if(b)
                         return b;
+                    // return (m_error_func(*this, b), b);
                     if(err)
                         return (m_error_func(*this, err), err);
                     continue;
@@ -920,13 +1087,16 @@ struct argument_parser
                 }
             }
         }
+
+        // return the help
         if(m_help_enabled && exists("help"))
-        {
-            return arg_result("");
-        }
+            return arg_result("help requested");
+
         err = end_argument();
         if(err)
             return (m_error_func(*this, err), err);
+
+        // check requirements
         for(auto& a : m_arguments)
         {
             if(a.m_required && !a.m_found)
@@ -940,31 +1110,79 @@ struct argument_parser
             }
         }
 
+        // check all the counts have been satisfied
+        for(auto& a : m_arguments)
+        {
+            if(a.m_found)
+            {
+                auto cnt_err = check_count(a);
+                if(cnt_err)
+                    return cnt_err;
+            }
+        }
+
+        // execute the global actions
         for(auto& itr : m_actions)
         {
             if(itr.first(*this))
                 itr.second(*this);
         }
 
+        // execute the argument-specific actions
         for(auto& itr : m_arg_map)
         {
             if(exists(itr.first))
                 itr.second->execute_actions(*this);
         }
 
-        return arg_result();
+        return arg_result{};
     }
     //
     //----------------------------------------------------------------------------------//
     //
+    /// \fn argument& enable_help()
+    /// \brief Add a help command
     argument& enable_help()
     {
         m_help_enabled = true;
-        return add_argument().names({ "-h", "--help" }).description("Shows this page");
+        return add_argument()
+            .names({ "-h", "-?", "--help" })
+            .description("Shows this page")
+            .count(0);
     }
     //
     //----------------------------------------------------------------------------------//
     //
+    /// \fn bool exists(const std::string& name) const
+    /// \brief Returns whether or not an option was found in the arguments. Only
+    /// useful after a call to \ref parse or \ref parse_known_args.
+    ///
+    /// \code[.cpp]
+    ///
+    /// int main(int argc, char** argv)
+    /// {
+    ///     argument_parser p{ argv[0] };
+    ///     p.add_argument()
+    ///         .names({ "-h", "--help"})
+    ///         .description("Help message")
+    ///         .count(0);
+    ///
+    ///     auto ec = p.parse(argc, argv);
+    ///     if(ec)
+    ///     {
+    ///         std::cerr << "Error: " << ec << std::endl;
+    ///         exit(EXIT_FAILURE);
+    ///     }
+    ///
+    ///     if(p.exists("help"))
+    ///     {
+    ///         p.print_help();
+    ///         exit(EXIT_FAILURE);
+    ///     }
+    ///
+    ///     // ...
+    /// }
+    /// \endcode
     bool exists(const std::string& name) const
     {
         std::string n = helpers::ltrim(
@@ -977,6 +1195,31 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    /// \fn T get(const std::string& name)
+    /// \tparam T Data type to convert the argument into
+    /// \param[in] name An identifier of the option
+    ///
+    /// \brief Get the value(s) associated with an argument. If option, it should
+    /// be used in conjunction with \ref exists(name). Only useful after a call to \ref
+    /// parse or \ref parse_known_args.
+    ///
+    /// \code[.cpp]
+    ///
+    /// int main(int argc, char** argv)
+    /// {
+    ///     argument_parser p{ argv[0] };
+    ///     p.add_argument()
+    ///         .names({ "-n", "--iterations"})
+    ///         .description("Number of iterations")
+    ///         .count(1);
+    ///
+    ///     // ... etc.
+    ///
+    ///     auto nitr = p.get<size_t>("iteration");
+    ///
+    ///     // ... etc.
+    /// }
+    /// \endcode
     template <typename T>
     T get(const std::string& name)
     {
@@ -998,13 +1241,90 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    int64_t get_count(argument& a) { return a.m_values.size(); }
+    //
+    //----------------------------------------------------------------------------------//
+    //
     template <typename ErrorFuncT>
     void on_error(ErrorFuncT&& _func)
     {
-        m_error_func = std::forward<ErrorFuncT>(_func);
+        on_error_sfinae(std::forward<ErrorFuncT>(_func), 0);
     }
 
 private:
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename FuncT = std::function<bool(int, int)>>
+    arg_result check_count(argument& a, const std::string& _do_str = "111",
+                           const FuncT& _func = std::not_equal_to<int>{})
+    {
+        int _sz  = static_cast<int>(a.m_values.size());
+        int _cnt = a.m_count;
+        int _max = a.m_max_count;
+        int _min = a.m_min_count;
+
+        std::bitset<3> _do{ _do_str };
+        std::bitset<3> _checks;
+        _checks.reset();  // set all to false
+        // if <val> > ANY AND <val does not satisfies condition> -> true
+        _checks.set(0, _do.test(0) && _cnt > argument::Count::ANY && _func(_sz, _cnt));
+        _checks.set(1, _do.test(1) && _max > argument::Count::ANY && _sz > _max);
+        _checks.set(2, _do.test(2) && _min > argument::Count::ANY && _sz < _min);
+        // if no checks failed, return non-error
+        if(_checks.none())
+            return arg_result{};
+        // otherwise, compose an error message
+        std::stringstream msg;
+        msg << "Argument: " << a.get_name() << " failed to satisfy its argument count "
+            << "requirements. Number of arguments: " << _sz << ".";
+        if(_checks.test(0))
+        {
+            msg << "\n[" << a.get_name() << "]> Requires exactly " << _cnt << " values.";
+        }
+        else
+        {
+            if(_checks.test(1))
+                msg << "\n[" << a.get_name() << "]> Requires less than " << _max + 1
+                    << " values.";
+            if(_checks.test(2))
+                msg << "\n[" << a.get_name() << "]> Requires more than " << _min - 1
+                    << " values.";
+        }
+        return arg_result(msg.str());
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename FuncT = std::function<bool(int, int)>>
+    arg_result check_count(const std::string& name, const std::string& _do = "111",
+                           const FuncT& _func = std::not_equal_to<int>{})
+    {
+        auto itr = m_name_map.find(name);
+        if(itr != m_name_map.end())
+            return check_count(m_arguments[static_cast<size_t>(itr->second)], _do, _func);
+        return arg_result{};
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename ErrorFuncT>
+    auto on_error_sfinae(ErrorFuncT&& _func, int)
+        -> decltype(_func(std::declval<this_type&>(), std::declval<result_type>()),
+                    void())
+    {
+        m_error_func = std::forward<ErrorFuncT>(_func);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename ErrorFuncT>
+    auto on_error_sfinae(ErrorFuncT&& _func, long)
+        -> decltype(_func(std::declval<result_type>()), void())
+    {
+        auto _wrap_func = [=](this_type&, result_type ret) { _func(ret); };
+        m_error_func    = _wrap_func;
+    }
     //
     //----------------------------------------------------------------------------------//
     //
@@ -1075,7 +1395,7 @@ private:
                 }
             }
         }
-        return arg_result();
+        return arg_result{};
     }
     //
     //----------------------------------------------------------------------------------//
@@ -1096,35 +1416,43 @@ private:
         {
             arg_result err;
             size_t     c = static_cast<size_t>(m_current);
-            helpers::consume_parameters(c);
+            consume_parameters(c);
             argument& a = m_arguments[static_cast<size_t>(m_current)];
 
-            err = a.check(value);
+            err = a.check_choice(value);
             if(err)
                 return err;
 
-            if(a.m_count >= 0 && static_cast<int>(a.m_values.size()) >= a.m_count)
+            auto num_values = [&]() { return static_cast<int>(a.m_values.size()); };
+
+            // check {m_count, m_max_count} > COUNT::ANY && m_values.size() >= {value}
+            if((a.m_count >= 0 && num_values() >= a.m_count) ||
+               (a.m_max_count >= 0 && num_values() >= a.m_max_count))
             {
                 err = end_argument();
                 if(err)
                     return err;
                 unnamed();
+                return arg_result{};
             }
 
             a.m_values.push_back(value);
-            if(a.m_count >= 0 && static_cast<int>(a.m_values.size()) >= a.m_count)
+
+            // check {m_count, m_max_count} > COUNT::ANY && m_values.size() >= {value}
+            if((a.m_count >= 0 && num_values() >= a.m_count) ||
+               (a.m_max_count >= 0 && num_values() >= a.m_max_count))
             {
                 err = end_argument();
                 if(err)
                     return err;
             }
-            return arg_result();
+            return arg_result{};
         }
         else
         {
             unnamed();
             // TODO
-            return arg_result();
+            return arg_result{};
         }
     }
     //
@@ -1149,7 +1477,7 @@ private:
                     return arg_result("Too many arguments given for " + a.m_names[0]);
             }
         }
-        return arg_result();
+        return arg_result{};
     }
     //
     //----------------------------------------------------------------------------------//

@@ -35,6 +35,7 @@
 #include "timemory/compat/macros.h"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/macros/compiler.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/tsettings.hpp"
 #include "timemory/settings/types.hpp"
@@ -59,6 +60,7 @@ extern "C"
 
 namespace tim
 {
+//
 class manager;
 //
 //--------------------------------------------------------------------------------------//
@@ -81,6 +83,9 @@ struct settings
     using iterator       = typename data_type::iterator;
     using const_iterator = typename data_type::const_iterator;
     using pointer_t      = std::shared_ptr<settings>;
+
+    template <typename Tp, typename Vp>
+    using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
 
     template <typename Tag = api::native_tag>
     static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
@@ -310,7 +315,7 @@ public:
 
 public:
     auto           ordering() const { return m_order; }
-    auto           find(const std::string& _key) { return m_data.find(_key); }
+    auto           find(const std::string& _key, bool _exact = true);
     iterator       begin() { return m_data.begin(); }
     iterator       end() { return m_data.end(); }
     const_iterator begin() const { return m_data.cbegin(); }
@@ -319,10 +324,26 @@ public:
     const_iterator cend() const { return m_data.cend(); }
 
     template <typename Tp>
-    Tp get(const std::string& _key);
+    Tp get(const std::string& _key, bool _exact = true);
 
     template <typename Tp>
-    bool set(const std::string& _key, Tp&& _val);
+    bool set(const std::string& _key, Tp&& _val, bool _exact = true);
+
+    /// \fn bool update(const std::string& key, const std::string& val, bool exact)
+    /// \param key Identifier for the setting. Either name, env-name, or command-line opt
+    /// \param val Update value
+    /// \param exact If true, match only options
+    ///
+    /// \brief Update a setting via a string. Returns whether a matching setting
+    /// for the identifier was found (NOT whether the value was actually updated)
+    bool update(const std::string& _key, const std::string& _val, bool _exact = false);
+
+    template <typename Tp, typename Vp = Tp, typename... Args>
+    auto insert(const std::string& _env, const std::string& _name,
+                const std::string& _desc, Vp _init, Args&&... _args);
+
+    template <typename Tp, typename Vp>
+    auto insert(tsetting_pointer_t<Tp, Vp> _ptr, std::string _env = {});
 
 protected:
     template <typename Tp>
@@ -357,6 +378,18 @@ protected:
     strvector_t m_order        = {};
     strvector_t m_command_line = {};
     strvector_t m_environment  = get_global_environment();
+
+private:
+    void initialize_core() TIMEMORY_VISIBILITY("hidden");
+    void initialize_components() TIMEMORY_VISIBILITY("hidden");
+    void initialize_io() TIMEMORY_VISIBILITY("hidden");
+    void initialize_format() TIMEMORY_VISIBILITY("hidden");
+    void initialize_parallel() TIMEMORY_VISIBILITY("hidden");
+    void initialize_tpls() TIMEMORY_VISIBILITY("hidden");
+    void initialize_roofline() TIMEMORY_VISIBILITY("hidden");
+    void initialize_miscellaneous() TIMEMORY_VISIBILITY("hidden");
+    void initialize_ert() TIMEMORY_VISIBILITY("hidden");
+    void initialize_dart() TIMEMORY_VISIBILITY("hidden");
 };
 //
 //----------------------------------------------------------------------------------//
@@ -595,38 +628,42 @@ settings::save(Archive& ar, const unsigned int) const
 //
 //----------------------------------------------------------------------------------//
 //
+inline auto
+settings::find(const std::string& _key, bool _exact)
+{
+    // exact match to map key
+    auto itr = m_data.find(_key);
+    if(itr != m_data.end())
+        return itr;
+
+    // match against env_name, name, command-line options
+    for(auto ditr = begin(); ditr != end(); ++ditr)
+    {
+        if(ditr->second && ditr->second->matches(_key, _exact))
+            return ditr;
+    }
+
+    // not found
+    return m_data.end();
+}
+//
+//----------------------------------------------------------------------------------//
+//
 template <typename Tp>
 Tp
-settings::get(const std::string& _key)
+settings::get(const std::string& _key, bool _exact)
 {
-    auto _tidx = std::type_index(typeid(Tp));
-    auto _vidx = std::type_index(typeid(Tp&));
-    auto itr   = m_data.find(_key);
-    if(itr != m_data.end())
+    auto itr = find(_key, _exact);
+    if(itr != m_data.end() && itr->second)
     {
-        if(itr->second)
-        {
-            if(itr->second->get_type_index() == _tidx &&
-               itr->second->get_value_index() == _tidx)
-                return static_cast<tsettings<Tp>*>(itr->second.get())->get();
-            if(itr->second->get_type_index() == _tidx &&
-               itr->second->get_value_index() == _vidx)
-                return static_cast<tsettings<Tp, Tp&>*>(itr->second.get())->get();
-        }
+        auto _vptr = itr->second;
+        auto _tidx = std::type_index(typeid(Tp));
+        auto _vidx = std::type_index(typeid(Tp&));
+        if(_vptr->get_type_index() == _tidx && _vptr->get_value_index() == _tidx)
+            return static_cast<tsettings<Tp, Tp>*>(_vptr.get())->get();
+        if(_vptr->get_type_index() == _tidx && _vptr->get_value_index() == _vidx)
+            return static_cast<tsettings<Tp, Tp&>*>(_vptr.get())->get();
     }
-    else
-        for(auto& ditr : m_data)
-        {
-            if(ditr.second)
-            {
-                if(ditr.second->get_type_index() == _tidx &&
-                   ditr.second->get_value_index() == _tidx)
-                    return static_cast<tsettings<Tp>*>(ditr.second.get())->get();
-                if(ditr.second->get_type_index() == _tidx &&
-                   ditr.second->get_value_index() == _vidx)
-                    return static_cast<tsettings<Tp, Tp&>*>(ditr.second.get())->get();
-            }
-        }
     return Tp{};
 }
 //
@@ -634,48 +671,79 @@ settings::get(const std::string& _key)
 //
 template <typename Tp>
 bool
-settings::set(const std::string& _key, Tp&& _val)
+settings::set(const std::string& _key, Tp&& _val, bool _exact)
 {
-    using Up   = decay_t<Tp>;
-    auto _tidx = std::type_index(typeid(Up));
-    auto _vidx = std::type_index(typeid(Up&));
-    auto itr   = m_data.find(_key);
-    if(itr != m_data.end())
+    auto itr = find(_key, _exact);
+    if(itr != m_data.end() && itr->second)
     {
-        if(itr->second)
-        {
-            if(itr->second->get_type_index() == _tidx &&
-               itr->second->get_value_index() == _tidx)
-                return (static_cast<tsettings<Tp>*>(itr->second.get())->get() =
-                            std::forward<Tp>(_val),
-                        true);
-            if(itr->second->get_type_index() == _tidx &&
-               itr->second->get_value_index() == _vidx)
-                return (static_cast<tsettings<Tp, Tp&>*>(itr->second.get())->get() =
-                            std::forward<Tp>(_val),
-                        true);
-        }
-    }
-    else
-    {
-        for(auto& ditr : m_data)
-        {
-            if(ditr.second)
-            {
-                if(ditr.second->get_type_index() == _tidx &&
-                   ditr.second->get_value_index() == _tidx)
-                    return (static_cast<tsettings<Tp>*>(ditr.second.get())->get() =
-                                std::forward<Tp>(_val),
-                            true);
-                if(ditr.second->get_type_index() == _tidx &&
-                   ditr.second->get_value_index() == _vidx)
-                    return (static_cast<tsettings<Tp, Tp&>*>(ditr.second.get())->get() =
-                                std::forward<Tp>(_val),
-                            true);
-            }
-        }
+        using Up   = decay_t<Tp>;
+        auto _tidx = std::type_index(typeid(Up));
+        auto _vidx = std::type_index(typeid(Up&));
+        if(itr->second->get_type_index() == _tidx &&
+           itr->second->get_value_index() == _tidx)
+            return (static_cast<tsettings<Tp>*>(itr->second.get())->get() =
+                        std::forward<Tp>(_val),
+                    true);
+        if(itr->second->get_type_index() == _tidx &&
+           itr->second->get_value_index() == _vidx)
+            return (static_cast<tsettings<Tp, Tp&>*>(itr->second.get())->get() =
+                        std::forward<Tp>(_val),
+                    true);
     }
     return false;
+}
+//
+//----------------------------------------------------------------------------------//
+//
+inline bool
+settings::update(const std::string& _key, const std::string& _val, bool _exact)
+{
+    auto itr = find(_key, _exact);
+    if(itr == m_data.end())
+    {
+        if(get_verbose() > 0 || get_debug())
+            PRINT_HERE("Key: \"%s\" did not match any known setting", _key.c_str());
+        return false;
+    }
+
+    itr->second->parse(_val);
+    return true;
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Vp, typename... Args>
+auto
+settings::insert(const std::string& _env, const std::string& _name,
+                 const std::string& _desc, Vp _init, Args&&... _args)
+{
+    static_assert(is_one_of<Tp, data_type_list_t>::value,
+                  "Error! Data type is not supported. See settings::data_type_list_t");
+    set_env(_env, _init, 0);
+    m_order.push_back(_env);
+    return m_data.insert(
+        { _env, std::make_shared<tsettings<Tp, Vp>>(_init, _name, _env, _desc,
+                                                    std::forward<Args>(_args)...) });
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Vp>
+auto
+settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, std::string _env)
+{
+    static_assert(is_one_of<Tp, data_type_list_t>::value,
+                  "Error! Data type is not supported. See settings::data_type_list_t");
+    if(_ptr)
+    {
+        if(_env.empty())
+            _env = _ptr->get_env_name();
+        set_env(_env, _ptr->as_string(), 0);
+        m_order.push_back(_env);
+        return m_data.insert({ _env, _ptr });
+    }
+
+    return std::make_pair(m_data.end(), false);
 }
 //
 //----------------------------------------------------------------------------------//
