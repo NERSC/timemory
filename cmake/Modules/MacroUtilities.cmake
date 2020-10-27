@@ -722,13 +722,21 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
 
             file(RELATIVE_PATH INSTALL_RELPATH "${_PYLIB}"
                 "${CMAKE_INSTALL_PREFIX}/${LIB_DESTINATION}")
-            file(RELATIVE_PATH BINARY_RELPATH "${PROJECT_BINARY_DIR}/timemory"
-                "${PROJECT_BINARY_DIR}")
+
+            get_target_property(_OUTDIR ${_LIB} LIBRARY_OUTPUT_DIRECTORY)
+            if(NOT IS_ABSOLUTE "${_OUTDIR}")
+                set(_OUTDIR "${PROJECT_BINARY_DIR}/${_OUTDIR}")
+            endif()
+            file(RELATIVE_PATH BINARY_RELPATH
+                "${PROJECT_BINARY_DIR}/timemory" "${_OUTDIR}")
+
+            string(REGEX REPLACE "/$" "" INSTALL_RELPATH "${INSTALL_RELPATH}")
+            string(REGEX REPLACE "/$" "" BINARY_RELPATH "${BINARY_RELPATH}")
 
             # build tree
             execute_process(
                 COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    ${BINARY_RELPATH}${_FILENAME}
+                    ${BINARY_RELPATH}/${_FILENAME}
                     ${_FILENAME}
                 WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
 
