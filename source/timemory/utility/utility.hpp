@@ -36,6 +36,7 @@
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
+#include "timemory/utility/popen.hpp"
 
 // C library
 #include <cctype>
