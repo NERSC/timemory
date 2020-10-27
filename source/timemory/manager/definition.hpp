@@ -49,7 +49,7 @@
 //
 #    include "timemory/api.hpp"
 #    include "timemory/backends/threading.hpp"
-#    include "timemory/config.hpp"
+// #    include "timemory/config.hpp"
 #    include "timemory/mpl/policy.hpp"
 #    include "timemory/mpl/type_traits.hpp"
 #    include "timemory/operations/types/finalize/ctest_notes.hpp"
@@ -675,7 +675,7 @@ timemory_library_constructor()
 
     if(_worker == _master)
     {
-        std::atexit(tim::timemory_finalize);
+        // std::atexit(tim::timemory_finalize);
     }
     else
     {
