@@ -430,7 +430,7 @@ manager::do_print_storage(const enum_set_t& _types)
 {
     using storage_type = typename Tp::storage_type;
 
-    if(!_types.empty() && _types.count(component::properties<Tp>::value) == 0)
+    if(!_types.empty() && _types.count(component::properties<Tp>{}()) == 0)
         return;
 
     auto ret = storage_type::noninit_instance();
@@ -452,7 +452,7 @@ manager::do_clear(const enum_set_t& _types)
 {
     using storage_type = typename Tp::storage_type;
 
-    if(!_types.empty() && _types.count(component::properties<Tp>::value) == 0)
+    if(!_types.empty() && _types.count(component::properties<Tp>{}()) == 0)
         return;
 
     auto ret = storage_type::noninit_instance();
@@ -474,7 +474,7 @@ manager::do_serialize(Archive& ar, const enum_set_t& _types)
 {
     using storage_type = typename Tp::storage_type;
 
-    if(!_types.empty() && _types.count(component::properties<Tp>::value) == 0)
+    if(!_types.empty() && _types.count(component::properties<Tp>{}()) == 0)
         return;
 
     auto ret = storage_type::noninit_instance();
@@ -516,9 +516,8 @@ void
 manager::do_size(enum_map_t<uint64_t>& _sz)
 {
     using storage_type = typename Tp::storage_type;
-    constexpr auto eid = component::properties<Tp>::value;
 
-    auto itr = _sz.find(eid);
+    auto itr = _sz.find(component::properties<Tp>{}());
     if(itr == _sz.end())
         return;
 

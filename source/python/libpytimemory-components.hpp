@@ -75,7 +75,7 @@ try_cast_seq(FuncT&& f, ValT&& v)
 {
     try
     {
-        std::forward<FuncT>(f)(std::forward<ValT>(v).template cast<Tp>());
+        std::forward<FuncT>(f)(*(std::forward<ValT>(v).template cast<Tp*>()));
     } catch(py::cast_error&)
     {
         try_cast_seq<Tail...>(std::forward<FuncT>(f), std::forward<ValT>(v));
@@ -148,7 +148,7 @@ struct get_type_enums<tim::type_list<Types...>>
     auto operator()(enum_value_set) const
     {
         static auto _instance = []() {
-            return pytim::pyenum_set_t{ tim::component::properties<Types>::value... };
+            return pytim::pyenum_set_t{ tim::component::properties<Types>{}()... };
         }();
         return _instance;
     }
@@ -157,7 +157,7 @@ struct get_type_enums<tim::type_list<Types...>>
     {
         using type            = std::map<TIMEMORY_COMPONENT, std::string>;
         static auto _instance = []() {
-            return type{ { tim::component::properties<Types>::value,
+            return type{ { tim::component::properties<Types>{}(),
                            tim::component::properties<Types>::enum_string() }... };
         }();
         return _instance;

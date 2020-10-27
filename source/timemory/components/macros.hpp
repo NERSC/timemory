@@ -205,11 +205,17 @@
             using type                                = TYPE;                            \
             using value_type                          = TIMEMORY_COMPONENT;              \
             static constexpr TIMEMORY_COMPONENT value = ENUM;                            \
-            static constexpr const char*        enum_string() { return #ENUM; }          \
-            static constexpr const char*        id() { return ID; }                      \
-            static const idset_t&               ids()                                    \
+                                                                                         \
+            static constexpr const char* enum_string() { return #ENUM; }                 \
+            static constexpr const char* id() { return ID; }                             \
+            static const idset_t&        ids()                                           \
             {                                                                            \
-                static idset_t _instance{ ID, __VA_ARGS__ };                             \
+                static auto _instance = []() {                                           \
+                    auto _val = idset_t{ ID, __VA_ARGS__ };                              \
+                    if(_val.find("") != _val.end())                                      \
+                        _val.erase("");                                                  \
+                    return _val;                                                         \
+                }();                                                                     \
                 return _instance;                                                        \
             }                                                                            \
             template <typename Archive>                                                  \
@@ -224,6 +230,9 @@
             template <typename Archive>                                                  \
             void load(Archive&, const unsigned int)                                      \
             {}                                                                           \
+            TIMEMORY_COMPONENT operator()() { return ENUM; }                             \
+                                                                                         \
+            constexpr operator TIMEMORY_COMPONENT() const { return ENUM; }               \
         };                                                                               \
         template <>                                                                      \
         struct enumerator<ENUM> : properties<TYPE>                                       \

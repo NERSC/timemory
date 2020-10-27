@@ -58,7 +58,7 @@ TIMEMORY_CONFIG_LINKAGE(void)
 timemory_init(int argc, char** argv, const std::string& _prefix,
               const std::string& _suffix)
 {
-    static auto _settings = settings::instance();
+    static auto _settings = settings::shared_instance();
     if(_settings)
     {
         if(_settings->get_debug() || _settings->get_verbose() > 3)

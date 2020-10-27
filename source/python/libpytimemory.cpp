@@ -64,23 +64,30 @@ using enumerator_vt =
                        std::false_type>;
 
 //======================================================================================//
+//
+class manager_wrapper
+{
+public:
+    manager_wrapper();
+    ~manager_wrapper();
+    manager_t* get();
 
+protected:
+    manager_t* m_manager;
+};
+//
 manager_wrapper::manager_wrapper()
 : m_manager(manager_t::instance().get())
 {}
-
-//--------------------------------------------------------------------------------------//
-
+//
 manager_wrapper::~manager_wrapper() {}
-
-//--------------------------------------------------------------------------------------//
-
+//
 manager_t*
 manager_wrapper::get()
 {
     return manager_t::instance().get();
 }
-
+//
 //--------------------------------------------------------------------------------------//
 //
 namespace impl
@@ -92,8 +99,7 @@ auto
 get_json(Archive& ar, const pytim::pyenum_set_t& _types, int)
     -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
 {
-    constexpr auto eid = tim::component::properties<Tp>::value;
-    if(_types.empty() || _types.count(eid) > 0)
+    if(_types.empty() || _types.count(tim::component::properties<Tp>{}()) > 0)
     {
         if(!tim::storage<Tp>::instance()->empty())
             tim::storage<Tp>::instance()->dmp_get(ar);
@@ -119,8 +125,7 @@ get_stream(StreamT& strm, const pytim::pyenum_set_t& _types, int)
     using printer_t = tim::operation::finalize::print<Tp, true>;
     using element_t = typename StreamT::element_type;
 
-    constexpr auto eid = tim::component::properties<Tp>::value;
-    if(_types.empty() || _types.count(eid) > 0)
+    if(_types.empty() || _types.count(tim::component::properties<Tp>{}()) > 0)
     {
         // strm.set_banner(Tp::get_description());
         auto _storage = tim::storage<Tp>::instance();
@@ -218,6 +223,7 @@ PYBIND11_MODULE(libpytimemory, tim)
 {
     //----------------------------------------------------------------------------------//
     //
+    static auto              _settings       = tim::settings::shared_instance();
     static auto              _master_manager = manager_t::master_instance();
     static thread_local auto _worker_manager = manager_t::instance();
     if(_worker_manager != _master_manager)
@@ -225,13 +231,40 @@ PYBIND11_MODULE(libpytimemory, tim)
         printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
                (void*) _master_manager.get(), (void*) _worker_manager.get());
     }
+    //
+    if(_settings)
+    {
+        if(_settings->get_debug() || _settings->get_verbose() > 3)
+            PRINT_HERE("%s", "");
+        //
+        if(_settings->get_enable_signal_handler())
+        {
+            auto default_signals = tim::signal_settings::get_default();
+            for(auto& itr : default_signals)
+                tim::signal_settings::enable(itr);
+            // should return default and any modifications from environment
+            auto enabled_signals = tim::signal_settings::get_enabled();
+            tim::enable_signal_detection(enabled_signals);
+            // executes after the signal has been caught
+            auto _exit_action = [](int nsig) {
+                auto _manager = manager_t::instance();
+                if(_manager)
+                {
+                    std::cout << "Finalizing after signal: " << nsig << std::endl;
+                    _manager->finalize();
+                }
+            };
+            //
+            tim::signal_settings::set_exit_action(_exit_action);
+        }
+    }
 
     //----------------------------------------------------------------------------------//
     //
     using pytim::string_t;
     try
     {
-        py::add_ostream_redirect(tim, "ostream_redirect");
+        // py::add_ostream_redirect(tim, "ostream_redirect");
     } catch(std::exception&)
     {}
 
@@ -243,12 +276,12 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     pyapi::generate(tim);
     pysignals::generate(tim);
-    auto pysettings = pysettings::generate(tim);
     pyauto_timer::generate(tim);
     pycomponent_list::generate(tim);
     pycomponent_bundle::generate(tim);
     pyhardware_counters::generate(tim);
-    auto pyunit = pyunits::generate(tim);
+    auto pysettings = pysettings::generate(tim);
+    auto pyunit     = pyunits::generate(tim);
     auto pycomp = pycomponents::generate(tim);
     pyrss_usage::generate(tim, pyunit);
     pyenumeration::generate(pycomp);
@@ -261,7 +294,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    py::module _scope = tim.def_submodule(
+    py::module pyscope = tim.def_submodule(
         "scope", "Scoping controls how the values are updated in the call-graph");
     {
         namespace scope   = tim::scope;
@@ -294,14 +327,14 @@ PYBIND11_MODULE(libpytimemory, tim)
             return _val;
         };
 
-        py::class_<scope::config>   _cfg(_scope, "config", "Scope configuration object");
-        py::class_<scope::tree>     _tree(_scope, "_tree", "Hierarchy is maintained");
-        py::class_<scope::flat>     _flat(_scope, "_flat", "Every entry at 0th level");
-        py::class_<scope::timeline> _time(_scope, "_timeline", "Every entry is unique");
+        py::class_<scope::config>   _cfg(pyscope, "config", "Scope configuration object");
+        py::class_<scope::tree>     _tree(pyscope, "_tree", "Hierarchy is maintained");
+        py::class_<scope::flat>     _flat(pyscope, "_flat", "Every entry at 0th level");
+        py::class_<scope::timeline> _time(pyscope, "_timeline", "Every entry is unique");
 
-        _scope.attr("tree")     = scope::tree{};
-        _scope.attr("flat")     = scope::flat{};
-        _scope.attr("timeline") = scope::timeline{};
+        pyscope.attr("TREE")     = new scope::tree{};
+        pyscope.attr("FLAT")     = new scope::flat{};
+        pyscope.attr("TIMELINE") = new scope::timeline{};
 
         _cfg.def(py::init(_config_init), "Create a scope", py::arg("flat") = py::none{},
                  py::arg("time") = py::none{});
@@ -627,7 +660,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _argparse = [pysettings](py::object parser, py::object subparser) {
+    auto _argparse = [&pysettings](py::object parser, py::object subparser) {
         try
         {
             pysettings.attr("add_arguments")(parser, py::none{}, subparser);
@@ -799,7 +832,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     man.attr("json_files") = py::list{};
     //----------------------------------------------------------------------------------//
-    man.def(py::init<>(&pytim::init::manager), "Initialization",
+    man.def(py::init([]() { return new manager_wrapper{}; }), "Initialization",
             py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     man.def("write_ctest_notes", &pytim::manager::write_ctest_notes,

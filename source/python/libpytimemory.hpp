@@ -28,15 +28,9 @@
 #    define TIMEMORY_PYBIND11_SOURCE
 #endif
 
-//======================================================================================//
-// disables a bunch of warnings
-//
 #include "timemory/utility/macros.hpp"
-
-//======================================================================================//
-
-#include "timemory/timemory.hpp"
 //
+#include "timemory/timemory.hpp"
 #include "timemory/enum.h"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/enumerate.hpp"
@@ -71,8 +65,6 @@
 #include <thread>
 #include <vector>
 
-//======================================================================================//
-
 namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
@@ -83,21 +75,6 @@ using auto_timer_t = tim::auto_timer;
 using tim_timer_t  = typename auto_timer_t::component_type;
 using manager_t    = tim::manager;
 using farray_t     = py::array_t<double, py::array::c_style | py::array::forcecast>;
-
-//======================================================================================//
-
-class manager_wrapper
-{
-public:
-    manager_wrapper();
-    ~manager_wrapper();
-    manager_t* get();
-
-protected:
-    manager_t* m_manager;
-};
-
-//======================================================================================//
 
 namespace pytim
 {
@@ -125,31 +102,15 @@ get_ostream_handle(py::object file_handle)
 //
 //======================================================================================//
 //
-//                              INITITALIZATION
-//
-//======================================================================================//
-
-namespace init
-{
-//
-manager_wrapper*
-manager()
-{
-    return new manager_wrapper();
-}
-//
-}  // namespace init
-
-//======================================================================================//
-//
 //                              MANAGER
 //
 //======================================================================================//
-
+//
 namespace manager
 {
+//
 //--------------------------------------------------------------------------------------//
-
+//
 string_t
 write_ctest_notes(py::object man, std::string directory, bool append)
 {
@@ -204,21 +165,22 @@ write_ctest_notes(py::object man, std::string directory, bool append)
 
     return file_path;
 }
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 }  // namespace manager
-
+//
 //======================================================================================//
 //
 //                          OPTIONS
 //
 //======================================================================================//
-
+//
 namespace opt
 {
+//
 //--------------------------------------------------------------------------------------//
-
+//
 void
 safe_mkdir(string_t directory)
 {
@@ -230,9 +192,9 @@ safe_mkdir(string_t directory)
              )",
              py::globals(), locals);
 }
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 void
 ensure_directory_exists(string_t file_path)
 {
@@ -246,9 +208,9 @@ ensure_directory_exists(string_t file_path)
              )",
              py::globals(), locals);
 }
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 py::object
 parse_args(py::object parser)
 {
@@ -265,9 +227,9 @@ parse_args(py::object parser)
              py::globals(), locals);
     return locals["args"].cast<py::object>();
 }
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 py::object
 parse_known_args(py::object parser)
 {
@@ -287,13 +249,8 @@ parse_known_args(py::object parser)
              py::globals(), locals);
     return locals["args"].cast<py::object>();
 }
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 }  // namespace opt
-
-//======================================================================================//
-
 }  // namespace pytim
-
-//======================================================================================//

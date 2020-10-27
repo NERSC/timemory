@@ -204,7 +204,8 @@ def parse_args(args=None):
         help="Select only entries from these files",
     )
     parser.add_argument(
-        "-v", "--verbosity",
+        "-v",
+        "--verbosity",
         type=int,
         default=_profiler_config.verbosity,
         help="Logging verbosity",
@@ -351,4 +352,3 @@ def main():
 if __name__ == "__main__":
     main()
     timemory.finalize()
-

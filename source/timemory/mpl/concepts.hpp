@@ -151,6 +151,10 @@ template <>
 struct is_placeholder<component::placeholder<component::nothing>> : true_type
 {};
 
+template <>
+struct is_placeholder<component::nothing> : true_type
+{};
+
 //----------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_api
 /// \brief concept that specifies that a type is an API. APIs are used to designate

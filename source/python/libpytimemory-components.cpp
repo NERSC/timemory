@@ -512,7 +512,6 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
         },
         "Get the secondary string IDs for the component");
 
-    /*
     auto _match_int = [](TIMEMORY_NATIVE_COMPONENT eid) {
         return property_t::matches(static_cast<int>(eid));
     };
@@ -540,19 +539,21 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
     };
 
     _pyprop.def_static("as_json", _as_json, "Get the properties as a JSON dictionary");
-    */
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <size_t Idx, size_t N,
-          std::enable_if_t<tim::component::enumerator<Idx>::value, int> = 0>
+          std::enable_if_t<tim::component::enumerator<Idx>::value &&
+                               !tim::concepts::is_placeholder<
+                                   tim::component::enumerator_t<Idx>>::value,
+                           int> = 0>
 static void
 generate(py::module& _pymod, std::array<bool, N>& _boolgen,
          std::array<keyset_t, N>& _keygen)
 {
     using T = typename tim::component::enumerator<Idx>::type;
-    if(std::is_same<T, tim::component::placeholder<tim::component::nothing>>::value)
+    if(tim::concepts::is_placeholder<T>::value)
         return;
     using property_t = tim::component::properties<T>;
     using bundle_t   = pytuple_t<T>;
@@ -639,13 +640,16 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
 //--------------------------------------------------------------------------------------//
 //
 template <size_t Idx, size_t N,
-          std::enable_if_t<!tim::component::enumerator<Idx>::value, int> = 0>
+          std::enable_if_t<!tim::component::enumerator<Idx>::value &&
+                               !tim::concepts::is_placeholder<
+                                   tim::component::enumerator_t<Idx>>::value,
+                           int> = 0>
 static void
 generate(py::module& _pymod, std::array<bool, N>& _boolgen,
          std::array<keyset_t, N>& _keygen)
 {
     using T = typename tim::component::enumerator<Idx>::type;
-    if(std::is_same<T, tim::component::placeholder<tim::component::nothing>>::value)
+    if(tim::concepts::is_placeholder<T>::value)
         return;
     using property_t  = tim::component::properties<T>;
     using bundle_t    = pytuple_t<T>;
@@ -714,6 +718,16 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
 
     generate_properties<Idx, T>(_pycomp);
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+template <
+    size_t Idx, size_t N,
+    std::enable_if_t<
+        tim::concepts::is_placeholder<tim::component::enumerator_t<Idx>>::value, int> = 0>
+static void
+generate(py::module&, std::array<bool, N>&, std::array<keyset_t, N>&)
+{}
 //
 //--------------------------------------------------------------------------------------//
 //

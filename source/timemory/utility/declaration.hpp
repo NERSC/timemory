@@ -138,10 +138,9 @@ protected:
         signal_set_t      signals_disabled  = {};
         signal_function_t signals_exit_func = [](int) {};
         signal_set_t      signals_default   = {
-            sys_signal::Quit,     sys_signal::Illegal,   sys_signal::Trap,
-            sys_signal::Abort,    sys_signal::Kill,      sys_signal::Bus,
-            sys_signal::SegFault, sys_signal::Terminate, sys_signal::Urgent,
-            sys_signal::Stop,
+            // default signals to catch
+            sys_signal::Quit,  sys_signal::Illegal, sys_signal::Trap,
+            sys_signal::Abort, sys_signal::Bus,     sys_signal::SegFault
         };
     };
 
