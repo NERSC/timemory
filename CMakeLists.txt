@@ -254,11 +254,6 @@ else()
     # system to test
 endif()
 
-if (MSVC)
-    set(TIMEMORY_BUILD_CEREAL 1)
-else()
-    set(TIMEMORY_BUILD_CEREAL 0)
-endif()
 message(STATUS "Configuring external packages and interface libraries...")
 include(Packages)
 
