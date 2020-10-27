@@ -47,7 +47,7 @@
 
 #if defined(_WINDOWS)
 // without this, windows will define macros for min and max
-#    if !defined(NOMINMIX)
+#    if !defined(NOMINMAX)
 #        define NOMINMAX
 #    endif
 #    if !defined(WIN32_LEAN_AND_MEAN)

@@ -80,7 +80,7 @@ if(TIMEMORY_USE_COVERAGE)
         timemory-analysis-tools)
 else()
     build_intermediate_library(
-        FORCE_OBJECT
+        # FORCE_OBJECT
         USE_INTERFACE
         INSTALL_SOURCE
         NAME                core

@@ -249,6 +249,8 @@ if (MSVC)
             string(REGEX REPLACE "/RTC1" "" ${flag_var} "${${flag_var}}")
         endif()
     endforeach()
+
+    option(TIMEMORY_USE_WINSOCK "Include winsock.h with the windows build" OFF)
 else()
     # with gcc, this is usually done be adding -g, but I do not have a linux
     # system to test
