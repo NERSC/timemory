@@ -132,6 +132,18 @@ public:
     explicit lightweight_tuple(size_t _hash, quirk::config<T...> = {},
                                const Func& = get_initializer());
 
+    template <typename Func = initializer_type>
+    explicit lightweight_tuple(size_t _hash, scope::config _scope,
+                               const Func& = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit lightweight_tuple(const string_t& key, scope::config _scope,
+                               const Func& = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit lightweight_tuple(const captured_location_t& loc, scope::config _scope,
+                               const Func& = get_initializer());
+
     ~lightweight_tuple();
 
     //------------------------------------------------------------------------//

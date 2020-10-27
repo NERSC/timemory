@@ -74,6 +74,7 @@ struct config
                                    "encoder.py",        "decoder.py" };
     tracer_code_map_t   records           = {};
     function_code_map_t functions         = {};
+    tim::scope::config  tracer_scope      = tim::scope::config{ true, false, false };
     int32_t verbose = tim::settings::verbose() + ((tim::settings::debug()) ? 16 : 0);
 };
 //
@@ -383,12 +384,9 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
             DEBUG_PRINT_HERE("%8s | %s%s | %s", swhat, _func.c_str(), _get_args().c_str(),
                              _label.c_str());
             // create a tracer for the line
-            _tvec.insert({ i, tracer_t{ _label } });
+            _tvec.insert({ i, tracer_t{ _label, _config.tracer_scope } });
         }
         titr        = _config.records.insert({ _full, _tvec }).first;
-        auto _scope = tim::scope::config(true);
-        for(auto& itr : titr->second)
-            itr.second.set_scope(_scope);
         return titr->second;
     };
 
@@ -527,6 +525,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         {
             if(_decor_lines[_full].count(_line - 1) > 0)
                 ++itr;
+            itr->second.push();
             itr->second.start();
         }
         _entry.emplace_back(itr);
@@ -554,8 +553,9 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         auto itr = _tlines.find(_line - 1);
         if(itr == _tlines.end())
             return;
-        _last = itr;
-        _last->second.start();
+        itr->second.push();
+        itr->second.start();
+        _last     = itr;
         _has_last = true;
     };
 
@@ -591,8 +591,12 @@ generate(py::module& _pymod)
 
     tim::consume_parameters(_code_object, _frame_object);
 
+    static auto _set_scope = [](bool _flat, bool _timeline) {
+        get_config().tracer_scope = tim::scope::config{ _flat, _timeline };
+    };
+
     pycomponent_bundle::generate<user_trace_bundle>(
-        _trace, "trace_bundle", "User-bundle for Python tracing interface");
+        _trace, "trace_bundle", "User-bundle for Python tracing interface", _set_scope);
 
     _trace.def("init", &timemory_trace_init, "Initialize Tracing",
                py::arg("args") = "wall_clock", py::arg("read_command_line") = false,
@@ -604,8 +608,8 @@ generate(py::module& _pymod)
     _trace.def("pop", &timemory_pop_trace, "Pop Trace", py::arg("key"));
 
     auto _init = []() {
-        if(get_config().verbose > 1)
-            PRINT_HERE("%s", "Initializing trace");
+        auto _verbose = get_config().verbose;
+        CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Initializing trace");
         user_trace_bundle::global_init();
         auto _file = py::module::import("timemory").attr("__file__").cast<string_t>();
         if(_file.find('/') != string_t::npos)
@@ -613,14 +617,12 @@ generate(py::module& _pymod)
         get_config().base_module_path = _file;
         if(get_config().is_running)
         {
-            if(get_config().verbose > 1)
-                PRINT_HERE("%s", "Trace already running");
+            CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Trace already running");
             return;
         }
-        if(get_config().verbose < 2 && get_config().verbose > -1)
-            PRINT_HERE("%s", "Initializing trace");
-        else if(get_config().verbose > 0)
-            PRINT_HERE("%s", "Resetting trace state for initialization");
+        CONDITIONAL_PRINT_HERE(_verbose < 2 && _verbose > -1, "%s", "Initializing trace");
+        CONDITIONAL_PRINT_HERE(_verbose > 0, "%s",
+                               "Resetting trace state for initialization");
         get_config().records.clear();
         get_config().functions.clear();
         get_config().is_running = true;
@@ -628,26 +630,21 @@ generate(py::module& _pymod)
 
     auto _fini = []() {
         auto _verbose = get_config().verbose;
-        if(_verbose > 2)
-            PRINT_HERE("%s", "Finalizing trace");
+        CONDITIONAL_PRINT_HERE(_verbose > 2, "%s", "Finalizing trace");
         if(!get_config().is_running)
         {
-            if(_verbose > 2)
-                PRINT_HERE("%s", "Trace already finalized");
+            CONDITIONAL_PRINT_HERE(_verbose > 2, "%s", "Trace already finalized");
             return;
         }
-        if(_verbose > 0 && _verbose < 3)
-            PRINT_HERE("%s", "Finalizing trace");
+        CONDITIONAL_PRINT_HERE(_verbose > 0 && _verbose < 3, "%s", "Finalizing trace");
         get_config().is_running = false;
-        if(_verbose > 1)
-            PRINT_HERE("%s", "Popping records from call-stack");
+        CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Popping records from call-stack");
         for(auto& ritr : get_config().records)
         {
             for(auto& itr : ritr.second)
                 itr.second.pop();
         }
-        if(_verbose > 1)
-            PRINT_HERE("%s", "Destroying records");
+        CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Destroying records");
         get_config().records.clear();
         get_config().functions.clear();
     };

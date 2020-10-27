@@ -58,6 +58,7 @@ struct config
     std::string          base_module_path   = "";
     strset_t             include_functions  = {};
     strset_t             include_filenames  = {};
+    tim::scope::config   profiler_scope     = tim::scope::get_default();
     strset_t             exclude_functions  = { "FILE",       "FUNC",      "LINE",
                                    "get_fcode",  "__exit__",  "_handle_fromlist",
                                    "<module>",   "_shutdown", "isclass",
@@ -265,7 +266,7 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     // start function
     auto _profiler_call = [&]() {
         auto& _entry = _config.records[_fdepth][_label];
-        _entry.emplace_back(profiler_t{ _label });
+        _entry.emplace_back(profiler_t{ _label, _config.profiler_scope });
         _entry.back().start();
     };
 
@@ -302,8 +303,13 @@ generate(py::module& _pymod)
 {
     py::module _prof = _pymod.def_submodule("profiler", "Profiling functions");
 
+    static auto _scope_set = [](bool _flat, bool _timeline) {
+        get_config().profiler_scope = tim::scope::config{ _flat, _timeline };
+    };
+
     pycomponent_bundle::generate<user_profiler_bundle>(
-        _prof, "profiler_bundle", "User-bundle for Python profiling interface");
+        _prof, "profiler_bundle", "User-bundle for Python profiling interface",
+        _scope_set);
 
     auto _init = []() {
         user_profiler_bundle::global_init();

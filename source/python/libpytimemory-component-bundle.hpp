@@ -135,16 +135,17 @@ component_bundle(const std::string& func, const std::string& file, const int lin
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename UserBundleT>
+template <typename UserBundleT, typename ScopeFunc = std::function<void(bool, bool)>>
 void
-generate(py::module& _pymod, const char* _name, const char* _doc)
+generate(py::module& _pymod, const char* _name, const char* _doc,
+         const ScopeFunc& _scope_set = [](bool, bool) {})
 {
     using bundle_t = pycomponent_bundle<UserBundleT>;
 
     py::class_<bundle_t> comp_bundle(_pymod, _name, _doc);
 
-    auto configure_pybundle = [](py::list _args, bool flat_profile,
-                                 bool timeline_profile) {
+    auto configure_pybundle = [_scope_set](py::list _args, bool flat_profile,
+                                           bool timeline_profile) {
         auto components = pytim::get_enum_set(_args);
         if(_args.size() == 0)
             components.insert(WALL_CLOCK);
@@ -154,6 +155,8 @@ generate(py::module& _pymod, const char* _name, const char* _doc)
         {
             PRINT_HERE("%s", "configuring pybundle");
         }
+
+        _scope_set(flat_profile, timeline_profile);
 
         tim::configure<UserBundleT>(components,
                                     tim::scope::config{ flat_profile, timeline_profile });
@@ -176,14 +179,14 @@ generate(py::module& _pymod, const char* _name, const char* _doc)
     //==================================================================================//
     comp_bundle.def(py::init(&init::component_bundle<UserBundleT>), "Initialization",
                     py::arg("func"), py::arg("file"), py::arg("line"),
-                    py::arg("extra") = py::list());
+                    py::arg("extra") = py::list{});
     //----------------------------------------------------------------------------------//
     comp_bundle.def("start", &bundle_t::start, "Start the bundle");
     //----------------------------------------------------------------------------------//
     comp_bundle.def("stop", &bundle_t::stop, "Stop the bundle");
     //----------------------------------------------------------------------------------//
     comp_bundle.def_static(
-        "configure", configure_pybundle, py::arg("components") = py::list(),
+        "configure", configure_pybundle, py::arg("components") = py::list{},
         py::arg("flat_profile") = false, py::arg("timeline_profile") = false,
         "Configure the profiler types (default: 'wall_clock')");
     //----------------------------------------------------------------------------------//

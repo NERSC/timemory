@@ -30,7 +30,6 @@
 
 #include "timemory/utility/macros.hpp"
 //
-#include "timemory/timemory.hpp"
 #include "timemory/enum.h"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/enumerate.hpp"
@@ -38,6 +37,7 @@
 #include "timemory/runtime/insert.hpp"
 #include "timemory/runtime/invoker.hpp"
 #include "timemory/runtime/properties.hpp"
+#include "timemory/timemory.hpp"
 
 #include "pybind11/cast.h"
 #include "pybind11/embed.h"

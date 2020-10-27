@@ -129,19 +129,31 @@ public:
                               const Func& = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_bundle(const string_t& key, const bool& store = true,
+    explicit component_bundle(size_t _hash, bool store = true,
                               scope::config _scope = scope::get_default(),
                               const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_bundle(const captured_location_t& loc, const bool& store = true,
+    explicit component_bundle(const string_t& key, bool store = true,
                               scope::config _scope = scope::get_default(),
                               const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_bundle(size_t _hash, const bool& store = true,
+    explicit component_bundle(const captured_location_t& loc, bool store = true,
                               scope::config _scope = scope::get_default(),
                               const Func&          = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit component_bundle(size_t _hash, scope::config _scope,
+                              const Func& = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit component_bundle(const string_t& key, scope::config _scope,
+                              const Func& = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit component_bundle(const captured_location_t& loc, scope::config _scope,
+                              const Func& = get_initializer());
 
     ~component_bundle();
 
