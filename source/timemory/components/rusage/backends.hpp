@@ -57,10 +57,9 @@
 #    if !defined(WIN32_LEAN_AND_MEAN)
 #        define WIN32_LEAN_AND_MEAN
 #    endif
-// currently, this is causing a bunch of errors, need to disable
-// #    include <psapi.h>
-#    include <stdio.h>
 #    include <windows.h>
+#    include <psapi.h>
+#    include <stdio.h>
 #else
 #    error "Cannot define get_peak_rss() or get_page_rss() for an unknown OS."
 #endif
@@ -327,7 +326,6 @@ tim::get_peak_rss()
     return static_cast<int64_t>(_units * _usage.ru_maxrss);
 
 #elif defined(_WINDOWS)
-    /*
     DWORD                   processID = GetCurrentProcessId();
     HANDLE                  hProcess;
     PROCESS_MEMORY_COUNTERS pmc;
@@ -342,8 +340,6 @@ tim::get_peak_rss()
 
     CloseHandle(hProcess);
     return nsize;
-    */
-    return static_cast<int64_t>(0);
 #else
     return static_cast<int64_t>(0);
 #endif
@@ -394,7 +390,6 @@ tim::get_page_rss()
 
 #    endif
 #elif defined(_WINDOWS)
-    /*
     DWORD                   processID = GetCurrentProcessId();
     HANDLE                  hProcess;
     PROCESS_MEMORY_COUNTERS pmc;
@@ -409,8 +404,6 @@ tim::get_page_rss()
 
     CloseHandle(hProcess);
     return nsize;
-    */
-    return static_cast<int64_t>(0);
 #else
     return static_cast<int64_t>(0);
 #endif
