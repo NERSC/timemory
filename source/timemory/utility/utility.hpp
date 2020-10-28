@@ -43,7 +43,7 @@
 // delimit not being defined before it is used in popen.hpp. I think including
 // popen.hpp at the end of this header would be portable and not need the ifdef,
 // but that would be too weird, so we may have to live with the ifdef. (At
-// least until makedir is implemented using std::filesystem.) 
+// least until makedir is implemented using std::filesystem.)
 #    include "timemory/utility/popen.hpp"
 #endif
 

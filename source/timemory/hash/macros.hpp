@@ -45,4 +45,3 @@
 #if defined(_MSC_VER) && !defined(NDEBUG) && !defined(DEBUG)
 #    define DEBUG
 #endif
-

@@ -2,7 +2,7 @@
 #include <cassert>
 #include <cstdlib>
 #if !_MSC_VER
-#include <execinfo.h>
+#    include <execinfo.h>
 #endif
 #include <iostream>
 #include <regex>
