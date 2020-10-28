@@ -7,7 +7,7 @@ endif()
 add_executable(timemory-avail ${_EXCLUDE}
     ${CMAKE_CURRENT_LIST_DIR}/timemory-avail.cpp
     ${CMAKE_CURRENT_LIST_DIR}/timemory-avail.hpp)
-set_target_properties(timemory-avail PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
+set_target_properties(timemory-avail PROPERTIES DEBUG_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
 target_include_directories(timemory-avail PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(timemory-avail PRIVATE timemory-extensions timemory-headers)
 

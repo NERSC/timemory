@@ -266,7 +266,9 @@ if (MSVC)
     target_compile_definitions(timemory-compile-options INTERFACE /Zi)
     target_compile_definitions(timemory-compile-options INTERFACE /debug)
 else()
-    # with gcc, this is usually done be adding -g
+    # uncomment to use a debug postfix in non-msvc builds
+    # set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Build type" FORCE)
+    target_compile_definitions(timemory-compile-options INTERFACE -g)
 endif()
 
 #----------------------------------------------------------------------------------------#
