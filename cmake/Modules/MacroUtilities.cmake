@@ -834,10 +834,6 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
             timemory-${COMP_VISIBILITY}-visibility
             ${COMP_PRIVATE_LINK})
 
-        if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-            target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG)
-        endif()
-
         timemory_target_compile_definitions(${TARGET_NAME} PRIVATE
             TIMEMORY_SOURCE
             TIMEMORY_${COMP_CATEGORY}_SOURCE

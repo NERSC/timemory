@@ -11,6 +11,7 @@ include_guard(DIRECTORY)
 include(GNUInstallDirs)
 include(Compilers)
 
+target_compile_definitions(timemory-compile-options INTERFACE $<$<CONFIG:DEBUG>:DEBUG>)
 
 if(CMAKE_DL_LIBS)
     set(dl_LIBRARY ${CMAKE_DL_LIBS})
