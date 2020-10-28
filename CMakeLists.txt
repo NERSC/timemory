@@ -227,43 +227,8 @@ include(Compilers)
 message(STATUS "Configuring build settings...")
 include(BuildSettings)
 
-if (MSVC)
-    # TODO: These msvc specific settings probably belong in BuildSettings. 
-    # But I am not sure where to put them, so I will leave them in the obvious
-    # place for now.
-
-    # set debug postfix so debug library and executable artifact names do not
-    # conflict with release artifacts
-    set(CMAKE_DEBUG_POSTFIX "_d")
-
-    # VTune is much more helpful when debug information is included in the 
-    # generated release code. 
-    add_definitions(/Zi)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /debug")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /debug")
-    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /debug")
-    foreach(flag_var
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-        if(${flag_var} MATCHES "/RTC1")
-            string(REGEX REPLACE "/RTC1" "" ${flag_var} "${${flag_var}}")
-        endif()
-    endforeach()
-
-    option(TIMEMORY_USE_WINSOCK "Include winsock.h with the windows build" OFF)
-else()
-    # with gcc, this is usually done be adding -g, but I do not have a linux
-    # system to test
-endif()
-
 message(STATUS "Configuring external packages and interface libraries...")
 include(Packages)
-
-if (NOT TIMEMORY_BUILD_CEREAL)
-    message(STATUS "2. including TIMEMORY_CEREAL_INCLUDE=${TIMEMORY_CEREAL_INCLUDE}")
-    # TODO: this should be a target_include_directories but I cannot find the target for timemory-core-object
-    include_directories(${TIMEMORY_CEREAL_INCLUDE})
-endif()
 
 # only after submodules have been added
 if(TIMEMORY_USE_COVERAGE)

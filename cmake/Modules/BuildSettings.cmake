@@ -256,6 +256,18 @@ else()
     inform_empty_interface(timemory-sanitizer "${SANITIZER_TYPE} sanitizer")
 endif()
 
+if (MSVC)
+    # set debug postfix so debug library and executable artifact names do not
+    # conflict with release artifacts
+    set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Build type" FORCE)
+
+    # VTune is much more helpful when debug information is included in the 
+    # generated release code. 
+    target_compile_definitions(timemory-compile-options INTERFACE /Zi)
+    target_compile_definitions(timemory-compile-options INTERFACE /debug)
+else()
+    # with gcc, this is usually done be adding -g
+endif()
 
 #----------------------------------------------------------------------------------------#
 # user customization

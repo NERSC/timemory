@@ -466,9 +466,8 @@ else()
     find_package(cereal CONFIG REQUIRED)
     get_target_property(TIMEMORY_CEREAL_INCLUDE cereal INTERFACE_INCLUDE_DIRECTORIES)
 
-    message(STATUS "1. including TIMEMORY_CEREAL_INCLUDE=${TIMEMORY_CEREAL_INCLUDE}")
-    # TODO: this should be a target_include_directories but I cannot find the target for timemory-core-object
-    include_directories(${TIMEMORY_CEREAL_INCLUDE})
+    message(STATUS "including TIMEMORY_CEREAL_INCLUDE=${TIMEMORY_CEREAL_INCLUDE}")
+    target_include_directories(timemory-compile-options INTERFACE ${TIMEMORY_CEREAL_INCLUDE})
 endif()
 
 # timemory-headers always provides timemory-cereal

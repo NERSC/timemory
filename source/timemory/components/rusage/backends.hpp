@@ -57,9 +57,10 @@
 #    if !defined(WIN32_LEAN_AND_MEAN)
 #        define WIN32_LEAN_AND_MEAN
 #    endif
-#    include <windows.h>
-#    include <psapi.h>
 #    include <stdio.h>
+#    include <windows.h>
+//
+#    include <psapi.h>
 #else
 #    error "Cannot define get_peak_rss() or get_page_rss() for an unknown OS."
 #endif
