@@ -16,6 +16,8 @@
 
 [timemory Tutorials](https://github.com/NERSC/timemory-tutorials)
 
+[timemory Wiki](https://github.com/NERSC/timemory/wiki)
+
 |        |                                                   |
 | ------ | ------------------------------------------------- |
 | GitHub | `git clone https://github.com/NERSC/timemory.git` |
