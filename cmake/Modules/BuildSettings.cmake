@@ -268,7 +268,9 @@ if (MSVC)
 else()
     # uncomment to use a debug postfix in non-msvc builds
     # set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Build type" FORCE)
-    target_compile_definitions(timemory-compile-options INTERFACE -g)
+
+    # uncomment to add symbols even for release builds
+    # target_compile_options(timemory-compile-options INTERFACE -g)
 endif()
 
 #----------------------------------------------------------------------------------------#
