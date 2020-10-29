@@ -11,10 +11,10 @@
 A scope configuration handles how the component instances within a bundle
 get inserted into the call-graph. The default behavior is `scope::tree`.
 This can be combined with `scope::timeline` to form a hierarchical call-graph
-where each entry is unique (lots of data): `scope::config = scope::tree{} + scope::timeline{}`.
+where each entry is unique (lots of data): `scope::config cfg = scope::tree{} + scope::timeline{}`.
 When the `scope::flat` is used, all component instances become a child
 of the root node (i.e. the depth in call-stack is always zero). Similar
-to `scope::tree`, `scope::flat` can be combined with `scope::timeline.
+to `scope::tree`, `scope::flat` can be combined with `scope::timeline`.
 
 
 ```cpp
