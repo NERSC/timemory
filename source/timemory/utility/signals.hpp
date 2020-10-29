@@ -271,8 +271,12 @@ enable_signal_detection(signal_settings::signal_set_t operations)
         operations = signal_settings::enabled();
     else
     {
-        for(auto& itr : signal_settings::get_enabled())
-            signal_settings::disable(itr);
+        auto _enabled = signal_settings::get_enabled();
+        if(!_enabled.empty())
+        {
+            for(const auto& itr : _enabled)
+                signal_settings::disable(itr);
+        }
         signal_settings::check_environment();
         for(auto& itr : operations)
             signal_settings::enable(itr);

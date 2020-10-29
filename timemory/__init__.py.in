@@ -46,6 +46,11 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 # get the path to this directory
 this_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -310,3 +315,12 @@ build_info = sys.modules[__name__].__getattribute__("build_info")
 
 version = sys.modules[__name__].__getattribute__("version")
 '''Version string'''
+
+# this is required for correct pickling
+try:
+    if 'line_profiler' not in sys.modules:
+        from . import line_profiler as lineprof
+        sys.modules['line_profiler'] = lineprof
+        sys.modules['line_profiler._line_profiler'] = lineprof._line_profiler
+except ImportError:
+    pass

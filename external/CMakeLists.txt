@@ -8,4 +8,8 @@ if(TIMEMORY_BUILD_PYTHON)
 
     message(STATUS "Adding external/line-profiler")
     add_subdirectory(line-profiler)
+
+    if(TARGET libpytimemory AND TARGET _line_profiler)
+        add_dependencies(libpytimemory _line_profiler)
+    endif()
 endif()

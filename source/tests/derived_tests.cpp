@@ -38,7 +38,6 @@ using namespace tim::component;
 
 static int    _argc       = 0;
 static char** _argv       = nullptr;
-static bool   _configured = false;
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
@@ -105,21 +104,24 @@ random_entry(const std::vector<Tp>& v)
 class derived_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
+    static void SetUpTestSuite()
     {
-        if(!_configured)
-        {
-            _configured                  = true;
-            tim::settings::verbose()     = 0;
-            tim::settings::debug()       = false;
-            tim::settings::json_output() = true;
-            tim::settings::mpi_thread()  = false;
-            tim::dmp::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
-        }
+        tim::settings::verbose()     = 0;
+        tim::settings::debug()       = false;
+        tim::settings::json_output() = true;
+        tim::settings::mpi_thread()  = false;
+        tim::dmp::initialize(_argc, _argv);
+        tim::timemory_init(_argc, _argv);
+        tim::settings::dart_output() = true;
+        tim::settings::dart_count()  = 1;
+        tim::settings::banner()      = false;
+        tim::enable_signal_detection();
+    }
+
+    static void TearDownTestSuite()
+    {
+        tim::timemory_finalize();
+        tim::dmp::finalize();
     }
 };
 
@@ -334,16 +336,7 @@ main(int argc, char** argv)
     ::testing::InitGoogleTest(&argc, argv);
     _argc = argc;
     _argv = argv;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::enable_signal_detection();
-    if(_configured)
-    {
-        tim::timemory_finalize();
-        tim::dmp::finalize();
-    }
-    return ret;
+    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//
