@@ -45,8 +45,7 @@
 #define CEREAL_VERSION_PATCH 0
 
 //! The full version as a single number
-#define CEREAL_VERSION (CEREAL_VERSION_MAJOR * 10000 \
-                        + CEREAL_VERSION_MINOR * 100 \
-                        + CEREAL_VERSION_PATCH)
+#define CEREAL_VERSION                                                                   \
+    (CEREAL_VERSION_MAJOR * 10000 + CEREAL_VERSION_MINOR * 100 + CEREAL_VERSION_PATCH)
 
-#endif // CEREAL_VERSION_HPP_
+#endif  // CEREAL_VERSION_HPP_

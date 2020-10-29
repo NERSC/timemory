@@ -35,129 +35,135 @@
 
 namespace cereal
 {
-  #ifdef CEREAL_FUTURE_EXPERIMENTAL
+#ifdef CEREAL_FUTURE_EXPERIMENTAL
 
-  // Forward declaration for friend access
-  template <class U, class A> U & get_user_data( A & );
+// Forward declaration for friend access
+template <class U, class A>
+U&
+get_user_data(A&);
 
-  //! Wraps an archive and gives access to user data
-  /*! This adapter is useful if you require access to
-      either raw pointers or references within your
-      serialization functions.
+//! Wraps an archive and gives access to user data
+/*! This adapter is useful if you require access to
+    either raw pointers or references within your
+    serialization functions.
 
-      While cereal does not directly support serialization
-      raw pointers or references, it is sometimes the case
-      that you may want to supply something such as a raw
-      pointer or global reference to some constructor.
-      In this situation this adapter would likely be used
-      with the construct class to allow for non-default
-      constructors.
+    While cereal does not directly support serialization
+    raw pointers or references, it is sometimes the case
+    that you may want to supply something such as a raw
+    pointer or global reference to some constructor.
+    In this situation this adapter would likely be used
+    with the construct class to allow for non-default
+    constructors.
 
-      @note This feature is experimental and may be altered or removed in a future release. See issue #46.
+    @note This feature is experimental and may be altered or removed in a future release.
+   See issue #46.
 
-      @code{.cpp}
-      struct MyUserData
+    @code{.cpp}
+    struct MyUserData
+    {
+      int * myRawPointer;
+      std::reference_wrapper<MyOtherType> myReference;
+    };
+
+    struct MyClass
+    {
+      // Note the raw pointer parameter
+      MyClass( int xx, int * rawP );
+
+      int x;
+
+      template <class Archive>
+      void serialize( Archive & ar )
+      { ar( x ); }
+
+      template <class Archive>
+      static void load_and_construct( Archive & ar, cereal::construct<MyClass> & construct
+   )
       {
-        int * myRawPointer;
-        std::reference_wrapper<MyOtherType> myReference;
-      };
-
-      struct MyClass
-      {
-        // Note the raw pointer parameter
-        MyClass( int xx, int * rawP );
-
-        int x;
-
-        template <class Archive>
-        void serialize( Archive & ar )
-        { ar( x ); }
-
-        template <class Archive>
-        static void load_and_construct( Archive & ar, cereal::construct<MyClass> & construct )
-        {
-          int xx;
-          ar( xx );
-          // note the need to use get_user_data to retrieve user data from the archive
-          construct( xx, cereal::get_user_data<MyUserData>( ar ).myRawPointer );
-        }
-      };
-
-      int main()
-      {
-        {
-          MyUserData md;
-          md.myRawPointer = &something;
-          md.myReference = someInstanceOfType;
-
-          std::ifstream is( "data.xml" );
-          cereal::UserDataAdapter<MyUserData, cereal::XMLInputArchive> ar( md, is );
-
-          std::unique_ptr<MyClass> sc;
-          ar( sc ); // use as normal
-        }
-
-        return 0;
+        int xx;
+        ar( xx );
+        // note the need to use get_user_data to retrieve user data from the archive
+        construct( xx, cereal::get_user_data<MyUserData>( ar ).myRawPointer );
       }
-      @endcode
+    };
 
-      @relates get_user_data
+    int main()
+    {
+      {
+        MyUserData md;
+        md.myRawPointer = &something;
+        md.myReference = someInstanceOfType;
 
-      @tparam UserData The type to give the archive access to
-      @tparam Archive The archive to wrap */
-  template <class UserData, class Archive>
-  class UserDataAdapter : public Archive
-  {
-    public:
-      //! Construct the archive with some user data struct
-      /*! This will forward all arguments (other than the user
-          data) to the wrapped archive type.  The UserDataAdapter
-          can then be used identically to the wrapped archive type
+        std::ifstream is( "data.xml" );
+        cereal::UserDataAdapter<MyUserData, cereal::XMLInputArchive> ar( md, is );
 
-          @tparam Args The arguments to pass to the constructor of
-                       the archive. */
-      template <class ... Args>
-      UserDataAdapter( UserData & ud, Args && ... args ) :
-        Archive( std::forward<Args>( args )... ),
-        userdata( ud )
-      { }
+        std::unique_ptr<MyClass> sc;
+        ar( sc ); // use as normal
+      }
 
-    private:
-      //! Overload the rtti function to enable dynamic_cast
-      void rtti() {}
-      friend UserData & get_user_data<UserData>( Archive & ar );
-      UserData & userdata; //!< The actual user data
-  };
+      return 0;
+    }
+    @endcode
 
-  //! Retrieves user data from an archive wrapped by UserDataAdapter
-  /*! This will attempt to retrieve the user data associated with
-      some archive wrapped by UserDataAdapter.  If this is used on
-      an archive that is not wrapped, a run-time exception will occur.
+    @relates get_user_data
 
-      @note This feature is experimental and may be altered or removed in a future release. See issue #46.
+    @tparam UserData The type to give the archive access to
+    @tparam Archive The archive to wrap */
+template <class UserData, class Archive>
+class UserDataAdapter : public Archive
+{
+public:
+    //! Construct the archive with some user data struct
+    /*! This will forward all arguments (other than the user
+        data) to the wrapped archive type.  The UserDataAdapter
+        can then be used identically to the wrapped archive type
 
-      @note The correct use of this function cannot be enforced at compile
-            time.
+        @tparam Args The arguments to pass to the constructor of
+                     the archive. */
+    template <class... Args>
+    UserDataAdapter(UserData& ud, Args&&... args)
+    : Archive(std::forward<Args>(args)...)
+    , userdata(ud)
+    {}
 
-      @relates UserDataAdapter
-      @tparam UserData The data struct contained in the archive
-      @tparam Archive The archive, which should be wrapped by UserDataAdapter
-      @param ar The archive
-      @throws Exception if the archive this is used upon is not wrapped with
-                        UserDataAdapter. */
-  template <class UserData, class Archive>
-  UserData & get_user_data( Archive & ar )
-  {
+private:
+    //! Overload the rtti function to enable dynamic_cast
+    void             rtti() {}
+    friend UserData& get_user_data<UserData>(Archive& ar);
+    UserData&        userdata;  //!< The actual user data
+};
+
+//! Retrieves user data from an archive wrapped by UserDataAdapter
+/*! This will attempt to retrieve the user data associated with
+    some archive wrapped by UserDataAdapter.  If this is used on
+    an archive that is not wrapped, a run-time exception will occur.
+
+    @note This feature is experimental and may be altered or removed in a future release.
+   See issue #46.
+
+    @note The correct use of this function cannot be enforced at compile
+          time.
+
+    @relates UserDataAdapter
+    @tparam UserData The data struct contained in the archive
+    @tparam Archive The archive, which should be wrapped by UserDataAdapter
+    @param ar The archive
+    @throws Exception if the archive this is used upon is not wrapped with
+                      UserDataAdapter. */
+template <class UserData, class Archive>
+UserData&
+get_user_data(Archive& ar)
+{
     try
     {
-      return dynamic_cast<UserDataAdapter<UserData, Archive> &>( ar ).userdata;
-    }
-    catch( std::bad_cast const & )
+        return dynamic_cast<UserDataAdapter<UserData, Archive>&>(ar).userdata;
+    } catch(std::bad_cast const&)
     {
-      throw ::cereal::Exception("Attempting to get user data from archive not wrapped in UserDataAdapter");
+        throw ::cereal::Exception(
+            "Attempting to get user data from archive not wrapped in UserDataAdapter");
     }
-  }
-  #endif // CEREAL_FUTURE_EXPERIMENTAL
-} // namespace cereal
+}
+#endif  // CEREAL_FUTURE_EXPERIMENTAL
+}  // namespace cereal
 
-#endif // CEREAL_ARCHIVES_ADAPTERS_HPP_
+#endif  // CEREAL_ARCHIVES_ADAPTERS_HPP_

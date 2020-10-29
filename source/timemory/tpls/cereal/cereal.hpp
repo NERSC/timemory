@@ -36,6 +36,10 @@
         {}
 #endif
 
+#if !defined(CEREAL_THREAD_SAFE)
+#    define CEREAL_THREAD_SAFE 1
+#endif
+
 // general
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/tpls/cereal/cereal/macros.hpp"

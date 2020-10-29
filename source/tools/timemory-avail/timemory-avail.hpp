@@ -33,8 +33,8 @@
 #define TIMEMORY_DISABLE_BANNER
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
 
-#include "timemory/tpls/cereal/cereal/external/base64.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/tpls/cereal/cereal/external/base64.hpp"
 #include "timemory/utility/utility.hpp"
 
 #include <algorithm>

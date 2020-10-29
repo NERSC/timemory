@@ -33,34 +33,42 @@
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <optional>
 
-namespace cereal {
-  //! Saving for std::optional
-  template <class Archive, typename T> inline
-  void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const std::optional<T>& optional)
-  {
-    if(!optional) {
-      ar(CEREAL_NVP_("nullopt", true));
-    } else {
-      ar(CEREAL_NVP_("nullopt", false),
-         CEREAL_NVP_("data", *optional));
+namespace cereal
+{
+//! Saving for std::optional
+template <class Archive, typename T>
+inline void
+CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const std::optional<T>& optional)
+{
+    if(!optional)
+    {
+        ar(CEREAL_NVP_("nullopt", true));
     }
-  }
+    else
+    {
+        ar(CEREAL_NVP_("nullopt", false), CEREAL_NVP_("data", *optional));
+    }
+}
 
-  //! Loading for std::optional
-  template <class Archive, typename T> inline
-  void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::optional<T>& optional)
-  {
+//! Loading for std::optional
+template <class Archive, typename T>
+inline void
+CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::optional<T>& optional)
+{
     bool nullopt;
     ar(CEREAL_NVP_("nullopt", nullopt));
 
-    if (nullopt) {
-      optional = std::nullopt;
-    } else {
-      T value;
-      ar(CEREAL_NVP_("data", value));
-      optional = std::move(value);
+    if(nullopt)
+    {
+        optional = std::nullopt;
     }
-  }
-} // namespace cereal
+    else
+    {
+        T value;
+        ar(CEREAL_NVP_("data", value));
+        optional = std::move(value);
+    }
+}
+}  // namespace cereal
 
-#endif // CEREAL_TYPES_STD_OPTIONAL_
+#endif  // CEREAL_TYPES_STD_OPTIONAL_

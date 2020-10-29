@@ -33,6 +33,10 @@
 #    pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
 
+#if !defined(CEREAL_THREAD_SAFE)
+#    define CEREAL_THREAD_SAFE 1
+#endif
+
 // archives
 #include "timemory/tpls/cereal/cereal/archives/json.hpp"
 #if defined(TIMEMORY_USE_XML_ARCHIVE)

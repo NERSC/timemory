@@ -33,4 +33,4 @@
 #include "timemory/tpls/cereal/cereal/types/concepts/pair_associative_container.hpp"
 #include <unordered_map>
 
-#endif // CEREAL_TYPES_UNORDERED_MAP_HPP_
+#endif  // CEREAL_TYPES_UNORDERED_MAP_HPP_

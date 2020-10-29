@@ -49,7 +49,6 @@ target_link_libraries(timem PRIVATE
     timemory-compile-options
     timemory-threading
     timemory-headers
-    timemory-cereal
     timemory-arch
     timemory-papi
     timem-libexplain)

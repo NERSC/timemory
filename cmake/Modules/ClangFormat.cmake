@@ -29,7 +29,7 @@ find_program(CLANG_FORMATTER
         clang-format)
 
 if(CLANG_FORMATTER)
-    file(GLOB_RECURSE headers
+    file(GLOB_RECURSE _headers
         ${PROJECT_SOURCE_DIR}/source/tools/*.hpp
         ${PROJECT_SOURCE_DIR}/source/python/*.hpp
         ${PROJECT_SOURCE_DIR}/source/timemory/*.h
@@ -59,6 +59,24 @@ if(CLANG_FORMATTER)
         set(examples)
     endif()
 
+    # remove rapidjson and rapidxml
+    set(_tpl_base "${PROJECT_SOURCE_DIR}/source/timemory/tpls")
+    file(GLOB_RECURSE _tpl_headers "${_tpl_base}/*")
+    file(GLOB_RECURSE _ext_headers "${_tpl_base}/cereal/cereal/external/*")
+    set(headers)
+    set(tpl_headers)
+    foreach(_h ${_headers})
+        if(NOT "${_h}" IN_LIST _tpl_headers)
+	        list(APPEND headers ${_h})
+        elseif(NOT "${_h}" IN_LIST _ext_headers)
+	        list(APPEND tpl_headers ${_h})
+    	endif()
+    endforeach()
+    unset(_tpl_headers)
+    unset(_ext_headers)
+    unset(_headers)
+
+    # name of the format target
     set(FORMAT_NAME format)
     if(TARGET format)
         set(FORMAT_NAME format-timemory)
@@ -68,6 +86,12 @@ if(CLANG_FORMATTER)
     set(_COMMAND
         COMMAND ${CLANG_FORMATTER} -i ${headers}
         COMMAND ${CLANG_FORMATTER} -i ${sources})
+
+    # might have many files
+    if(tpl_headers)
+        set(_COMMAND ${_COMMAND}
+            COMMAND ${CLANG_FORMATTER} -i ${tpl_headers})
+    endif()
 
     # might be empty
     if(TIMEMORY_BUILD_EXAMPLES)
