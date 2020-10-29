@@ -22,11 +22,6 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \headerfile "timemory/storage/graph.hpp"
- * \brief Arbitrary Graph / Tree (i.e. binary-tree but not binary)
- *
- */
-
 #pragma once
 
 #include <cassert>

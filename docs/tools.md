@@ -11,6 +11,7 @@
    tools/timemory-stubs/README
    tools/timemory-jump/README
    tools/timemory-mpip/README
+   tools/timemory-ncclp/README
    tools/timemory-ompt/README
    tools/kokkos-connector/README
 ```
@@ -32,6 +33,8 @@ This section covers the executables and libraries that are distributed as part o
         - Provides timemory instrumentation via `dlopen` and `dlsym`
     - [timemory-mpip](tools/timemory-mpip/README.md)
         - Provide MPI profiling via GOTCHA
+    - [timemory-ncclp](tools/timemory-ncclp/README.md)
+        - Provide NCCL profiling via GOTCHA
     - [timemory-ompt](tools/timemory-ompt/README.md)
         - Provide OpenMP profiling via OMPT (OpenMP Tools)
     - [Kokkos Connectors](tools/kokkos-connector/README.md)

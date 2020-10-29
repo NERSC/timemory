@@ -23,16 +23,6 @@
 // SOFTWARE.
 //
 
-/**
- * \headerfile "timemory/containers/auto_timer.hpp"
- * Automatic timers. Exist for backwards compatibility. In C++, use auto_tuple.
- * Usage with macros (recommended):
- *    \param TIMEMORY_AUTO_TIMER("")
- *    \param TIMEMORY_BASIC_AUTO_TIMER("")
- *    auto t = \param TIMEMORY_AUTO_TIMER_HANDLE("")
- *    auto t = \param TIMEMORY_BASIC_AUTO_TIMER_HANDLE("")
- */
-
 #pragma once
 
 #include "timemory/components/types.hpp"

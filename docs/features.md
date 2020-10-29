@@ -13,7 +13,7 @@ every application in existence. However, nearly all these tools hide the vast ma
 and only provide a very limited API for users to build upon. Worse still, some of these tools only provide APIs
 which are generally useless outside of the context of their tool, e.g. the
 [Instrumentation and Tracing Technology API (ittnotify)](https://software.intel.com/content/www/us/en/develop/documentation/vtune-help/top/api-support/instrumentation-and-tracing-technology-apis/instrumentation-and-tracing-technology-api-reference/memory-allocation-apis.html)
-provided by Intel is an egregious misnomer for an API which essentially provides the same functionality as the appropriately named
+provided by Intel is a misnomer for an API which essentially provides the same functionality as the appropriately named
 [NVIDIA Tools Extension SDK (NVTX)](https://github.com/NVIDIA/NVTX).
 
 Every measurement capability provided by timemory is provided as a stand-alone encapsulation

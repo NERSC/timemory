@@ -3,7 +3,7 @@
 The timemory python interface is generated via the PyBind11 library. The combination of these two template-based
 libraries provides a feature-rich interface which combines the flexibility of python with the performance of C++.
 
-## Desciption
+## Description
 
 The python interface provides several pre-configured scoped components in bundles and profiler sub-packages which can be used as decorators or context-managers. The timemory settings be controlled either directly via the `settings` sub-package or by using environment variables. The `component` subpackage contains the individual components that can be used for custom instrumentation. Further, the `hardware_counters` sub-package provides API interface to accessing hardware counters (requires PAPI and/or CUDA support). The `mpi` subpackage provides bindings to timemory's MPI support. The generic data `plotting` (such as plotting instrumentation graphs) and `roofline` plotting are available in subsequent sub-packages.
 
@@ -11,6 +11,11 @@ The python interface provides several pre-configured scoped components in bundle
 
 ```bash
 $ python -c "import timemory; help(timemory)"
+
+Help on package timemory:
+
+NAME
+    timemory
 
 PACKAGE CONTENTS
     api (package)
@@ -20,8 +25,10 @@ PACKAGE CONTENTS
     ert (package)
     hardware_counters (package)
     libpytimemory
+    line_profiler (package)
     mpi (package)
     mpi_support (package)
+    notebook (package)
     options
     plotting (package)
     profiler (package)
@@ -29,10 +36,13 @@ PACKAGE CONTENTS
     roofline (package)
     settings (package)
     signals
-    trace (package)
     test (package)
+    trace (package)
     units
     util (package)
+
+SUBMODULES
+    scope
 
 CLASSES
     pybind11_builtins.pybind11_object(builtins.object)
@@ -40,16 +50,146 @@ CLASSES
         timemory.libpytimemory.component_bundle
         timemory.libpytimemory.manager
         timemory.libpytimemory.rss_usage
+        timemory.libpytimemory.settings
         timemory.libpytimemory.timer
+
+    class auto_timer(...)
+    class component_bundle(...)
+    class manager(...)
+    class rss_usage(...)
+    class settings(...)
+    class timer(...)
+
+FUNCTIONS
+    FILE = file(back=2, only_basename=True, use_dirname=False, noquotes=True)
+        Returns the file name
+
+    FUNC = func(back=2)
+        Returns the function name
+
+    LINE = line(back=1)
+        Returns the line number
+
+    disable(...)
+        disable() -> None
+
+        Disable timemory
+
+    disable_signal_detection(...)
+        disable_signal_detection() -> None
+
+        Enable signal detection
+
+    enable(...)
+        enable() -> None
+
+        Enable timemory
+
+    enable_signal_detection(...)
+        enable_signal_detection(signal_list: list = []) -> None
+
+        Enable signal detection
+
+    enabled(...)
+        enabled() -> bool
+
+        Return if timemory is enabled or disabled
+
+    finalize(...)
+        finalize() -> None
+
+        Finalize timemory (generate output) -- important to call if using MPI
+
+    has_mpi_support(...)
+        has_mpi_support() -> bool
+
+        Return if the timemory library has MPI support
+
+    init = initialize(...)
+        initialize(argv: list = [], prefix: str = 'timemory-', suffix: str = '-output') -> None
+
+        Initialize timemory
+
+    initialize(...)
+        initialize(argv: list = [], prefix: str = 'timemory-', suffix: str = '-output') -> None
+
+        Initialize timemory
+
+    is_enabled(...)
+        is_enabled() -> bool
+
+        Return if timemory is enabled or disabled
+
+    report(...)
+        report(filename: str = '') -> None
+
+        Print the data
+
+    set_rusage_children(...)
+        set_rusage_children() -> None
+
+        Set the rusage to record child processes
+
+    set_rusage_self(...)
+        set_rusage_self() -> None
+
+        Set the rusage to record child processes
+
+    timemory_finalize(...)
+        timemory_finalize() -> None
+
+        Finalize timemory (generate output) -- important to call if using MPI
+
+    timemory_init(...)
+        timemory_init(argv: list = [], prefix: str = 'timemory-', suffix: str = '-output') -> None
+
+        Initialize timemory
+
+    toggle(...)
+        toggle(on: bool = True) -> None
+
+        Enable/disable timemory
+
+DATA
+    __all__ = ['version_info', 'build_info', 'version', 'libpytimemory', '...
+    __copyright__ = 'Copyright 2020, The Regents of the University of Cali...
+    __email__ = 'jrmadsen@lbl.gov'
+    __license__ = 'MIT'
+    __maintainer__ = 'Jonathan Madsen'
+    __status__ = 'Development'
+    __warningregistry__ = {'version': 0, ("the imp module is deprecated in...
+    build_info = {'build_type': 'RelWithDebInfo', 'compiler': '/opt/local/...
+    version = '3.2.0'
+    version_info = (3, 2, 0)
+
+VERSION
+    3.2.0
+
+AUTHOR
+    Jonathan Madsen
+
+CREDITS
+    ['Jonathan Madsen']
+
+FILE
+    /.../timemory/__init__.py
 ```
 
 ## Usage
 
+- `timemory.init(...)` is called when the package is imported
+- It is highly recommended to call `timemory.finalize()` explicitly before the application terminates
+
 ```python
 import timemory
-# timemory components, decorators, bundles, roofline
-# instrumented or profiled user code
-timemory.finalize()
+
+# ... use timemory components, decorators, bundles, etc. ...
+
+if __name__ == "__main__":
+
+    # ... etc. ...
+
+    timemory.finalize()
 ```
 
 ## Examples
@@ -113,6 +253,171 @@ from timemory.profiler import profile
 def main():
     with profile(["wall_clock", "peak_rss"], flat=False, timeline=False):
         ans = fibonacci(n=3)
+```
+
+### Function Profiler
+
+#### Profiler Example
+
+```python
+#!/usr/bin/env python
+
+import numpy as np
+import timemory
+
+from timemory.profiler import Profiler
+from timemory.profiler import Config as ProfilerConfig
+
+def eval_func(arr, tol):
+    """Dummy tolerance-checking function"""
+    max = np.max(arr)
+    avg = np.mean(arr)
+    return True if avg < tol and max < tol else False
+
+@Profiler(["wall_clock", "cpu_clock"])
+def profile_func(arr, tol):
+    """Dummy function for profiling"""
+    while not eval_func(arr, tol):
+        arr = arr - np.power(arr, 3)
+
+if __name__ == "__main__":
+
+    ProfilerConfig.only_filenames = [__file__, "_methods.py"]
+    profile_func(np.random.rand(100, 100), 1.0e-2)
+
+    timemory.finalize()
+```
+
+#### Profiler Output
+
+```console
+$ python ./doc-profiler.py
+
+[cpu]|0> Outputting 'timemory-doc-profiler-output/cpu.flamegraph.json'...
+[cpu]|0> Outputting 'timemory-doc-profiler-output/cpu.tree.json'...
+[cpu]|0> Outputting 'timemory-doc-profiler-output/cpu.json'...
+[cpu]|0> Outputting 'timemory-doc-profiler-output/cpu.txt'...
+
+# ... report for cpu-clock ...
+
+[wall]|0> Outputting 'timemory-doc-profiler-output/wall.flamegraph.json'...
+[wall]|0> Outputting 'timemory-doc-profiler-output/wall.tree.json'...
+[wall]|0> Outputting 'timemory-doc-profiler-output/wall.json'...
+[wall]|0> Outputting 'timemory-doc-profiler-output/wall.txt'...
+
+|------------------------------------------------------------------------------------------------------------------------------------------|
+| REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------ |
+| LABEL                                                                                                                                      | COUNT                               | DEPTH    | METRIC   | UNITS    | SUM      | MEAN     | MIN      | MAX      | STDDEV   | % SELF   |
+| ------------------------------------------------                                                                                           | --------                            | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| >>> profile_func/doc-profiler.py:14                                                                                                        | 1                                   | 0        | wall     | sec      | 1.655    | 1.655    | 1.655    | 1.655    | 0.000    | 53.5     |
+| >>>                                                                                                                                        | _eval_func/doc-profiler.py:8        | 4994     | 1        | wall     | sec      | 0.770    | 0.000    | 0.000    | 0.001    | 0.000    | 32.6  |
+| >>>                                                                                                                                        | __mean/_methods.py:143              | 4994     | 2        | wall     | sec      | 0.519    | 0.000    | 0.000    | 0.000    | 0.000    | 42.9  |
+| >>>                                                                                                                                        | __count_reduce_items/_methods.py:59 | 4994     | 3        | wall     | sec      | 0.181    | 0.000    | 0.000    | 0.000    | 0.000    | 69.3  |
+| >>>                                                                                                                                        | __count_reduce_items/_methods.py:59 | 14982    | 4        | wall     | sec      | 0.056    | 0.000    | 0.000    | 0.000    | 0.000    | 100.0 |
+| >>>                                                                                                                                        | __mean/_methods.py:143              | 24970    | 3        | wall     | sec      | 0.115    | 0.000    | 0.000    | 0.000    | 0.000    | 100.0 |
+| ------------------------------------------------------------------------------------------------------------------------------------------ |
+```
+
+### Tracing Profiler
+
+#### Tracer Example
+
+```python
+#!/usr/bin/env python
+
+import numpy as np
+import timemory
+
+from timemory.trace import Tracer
+from timemory.trace import Config as TracerConfig
+
+def eval_func(arr, tol):
+    """Dummy tolerance-checking function"""
+    max = np.max(arr)
+    avg = np.mean(arr)
+    return True if avg < tol and max < tol else False
+
+@Tracer(["wall_clock", "cpu_clock"])
+def trace_func(arr, tol):
+    """Dummy function for tracing"""
+    while not eval_func(arr, tol):
+        arr = arr - np.power(arr, 3)
+
+if __name__ == "__main__":
+
+    TracerConfig.only_filenames = [__file__, "_methods.py"]
+    trace_func(np.random.rand(100, 100), 1.0e-2)
+
+    timemory.finalize()
+```
+
+#### Tracer Output
+
+```console
+$ python ./doc-tracer.py
+
+[cpu]|0> Outputting 'timemory-doc-tracer-output/cpu.flamegraph.json'...
+[cpu]|0> Outputting 'timemory-doc-tracer-output/cpu.tree.json'...
+[cpu]|0> Outputting 'timemory-doc-tracer-output/cpu.json'...
+[cpu]|0> Outputting 'timemory-doc-tracer-output/cpu.txt'...
+
+# ... report for cpu-clock ...
+
+[wall]|0> Outputting 'timemory-doc-tracer-output/wall.flamegraph.json'...
+[wall]|0> Outputting 'timemory-doc-tracer-output/wall.tree.json'...
+[wall]|0> Outputting 'timemory-doc-tracer-output/wall.json'...
+[wall]|0> Outputting 'timemory-doc-tracer-output/wall.txt'...
+
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| LABEL                                                                                                                                                                                                            | COUNT    | DEPTH    | METRIC   | UNITS    | SUM      | MEAN     | MIN      | MAX      | STDDEV   | % SELF   |
+| ----------------------------------------------------------------------------------------------------------------------                                                                                           | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| >>> @Tracer(["wall_clock", "cpu_clock"])                                               [trace_func/doc-tracer.py:14]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>> def trace_func(arr, tol):                                                          [trace_func/doc-tracer.py:15]                                                                                             | 1        | 0        | wall     | sec      | 2.048    | 2.048    | 2.048    | 2.048    | 0.000    | 100.0    |
+| >>>     while not eval_func(arr, tol):                                                 [trace_func/doc-tracer.py:17]                                                                                             | 4994     | 0        | wall     | sec      | 0.027    | 0.000    | 0.027    | 0.027    | 0.000    | 100.0    |
+| >>>         arr = arr - np.power(arr, 3)                                               [trace_func/doc-tracer.py:18]                                                                                             | 4993     | 0        | wall     | sec      | 0.895    | 0.000    | 0.895    | 0.895    | 0.000    | 100.0    |
+| >>> def eval_func(arr, tol):                                                           [trace_func/doc-tracer.py:08]                                                                                             | 4994     | 0        | wall     | sec      | 1.084    | 0.000    | 1.084    | 1.084    | 0.000    | 100.0    |
+| >>>     max = np.max(arr)                                                              [trace_func/doc-tracer.py:10]                                                                                             | 4994     | 0        | wall     | sec      | 0.023    | 0.000    | 0.023    | 0.023    | 0.000    | 100.0    |
+| >>>     avg = np.mean(arr)                                                             [trace_func/doc-tracer.py:11]                                                                                             | 4994     | 0        | wall     | sec      | 0.027    | 0.000    | 0.027    | 0.027    | 0.000    | 100.0    |
+| >>>     return True if avg < tol and max < tol else False                              [trace_func/doc-tracer.py:12]                                                                                             | 4994     | 0        | wall     | sec      | 0.022    | 0.000    | 0.022    | 0.022    | 0.000    | 100.0    |
+| >>> def _mean(a, axis=None, dtype=None, out=None, keepdims=False):                           [_mean/_methods.py:143]                                                                                             | 4994     | 0        | wall     | sec      | 0.806    | 0.000    | 0.806    | 0.806    | 0.000    | 100.0    |
+| >>>     arr = asanyarray(a)                                                                  [_mean/_methods.py:144]                                                                                             | 4994     | 0        | wall     | sec      | 0.022    | 0.000    | 0.022    | 0.022    | 0.000    | 100.0    |
+| >>>     is_float16_result = False                                                            [_mean/_methods.py:146]                                                                                             | 4994     | 0        | wall     | sec      | 0.022    | 0.000    | 0.022    | 0.022    | 0.000    | 100.0    |
+| >>>     rcount = _count_reduce_items(arr, axis)                                              [_mean/_methods.py:147]                                                                                             | 4994     | 0        | wall     | sec      | 0.022    | 0.000    | 0.022    | 0.022    | 0.000    | 100.0    |
+| >>>     if rcount == 0:                                                                      [_mean/_methods.py:149]                                                                                             | 4994     | 0        | wall     | sec      | 0.022    | 0.000    | 0.022    | 0.022    | 0.000    | 100.0    |
+| >>>         warnings.warn("Mean of empty slice.", RuntimeWarning, stacklevel=2)              [_mean/_methods.py:150]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>     if dtype is None:                                                                    [_mean/_methods.py:153]                                                                                             | 4994     | 0        | wall     | sec      | 0.021    | 0.000    | 0.021    | 0.021    | 0.000    | 100.0    |
+| >>>         if issubclass(arr.dtype.type, (nt.integer, nt.bool_)):                           [_mean/_methods.py:154]                                                                                             | 4994     | 0        | wall     | sec      | 0.025    | 0.000    | 0.025    | 0.025    | 0.000    | 100.0    |
+| >>>             dtype = mu.dtype('f8')                                                       [_mean/_methods.py:155]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>         elif issubclass(arr.dtype.type, nt.float16):                                     [_mean/_methods.py:156]                                                                                             | 4994     | 0        | wall     | sec      | 0.023    | 0.000    | 0.023    | 0.023    | 0.000    | 100.0    |
+| >>>             dtype = mu.dtype('f4')                                                       [_mean/_methods.py:157]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>             is_float16_result = True                                                     [_mean/_methods.py:158]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>     ret = umr_sum(arr, axis, dtype, out, keepdims)                                       [_mean/_methods.py:160]                                                                                             | 4994     | 0        | wall     | sec      | 0.054    | 0.000    | 0.054    | 0.054    | 0.000    | 100.0    |
+| >>>     if isinstance(ret, mu.ndarray):                                                      [_mean/_methods.py:161]                                                                                             | 4994     | 0        | wall     | sec      | 0.026    | 0.000    | 0.026    | 0.026    | 0.000    | 100.0    |
+| >>>         ret = um.true_divide(                                                            [_mean/_methods.py:162]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>                 ret, rcount, out=ret, casting='unsafe', subok=False)                     [_mean/_methods.py:163]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>         if is_float16_result and out is None:                                            [_mean/_methods.py:164]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>             ret = arr.dtype.type(ret)                                                    [_mean/_methods.py:165]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>     elif hasattr(ret, 'dtype'):                                                          [_mean/_methods.py:166]                                                                                             | 4994     | 0        | wall     | sec      | 0.023    | 0.000    | 0.023    | 0.023    | 0.000    | 100.0    |
+| >>>         if is_float16_result:                                                            [_mean/_methods.py:167]                                                                                             | 4994     | 0        | wall     | sec      | 0.021    | 0.000    | 0.021    | 0.021    | 0.000    | 100.0    |
+| >>>             ret = arr.dtype.type(ret / rcount)                                           [_mean/_methods.py:168]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>         else:                                                                            [_mean/_methods.py:169]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>             ret = ret.dtype.type(ret / rcount)                                           [_mean/_methods.py:170]                                                                                             | 4994     | 0        | wall     | sec      | 0.029    | 0.000    | 0.029    | 0.029    | 0.000    | 100.0    |
+| >>>     else:                                                                                [_mean/_methods.py:171]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>         ret = ret / rcount                                                               [_mean/_methods.py:172]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>     return ret                                                                           [_mean/_methods.py:174]                                                                                             | 4994     | 0        | wall     | sec      | 0.021    | 0.000    | 0.021    | 0.021    | 0.000    | 100.0    |
+| >>> def _count_reduce_items(arr, axis):                                                      [_mean/_methods.py:059]                                                                                             | 4994     | 0        | wall     | sec      | 0.311    | 0.000    | 0.311    | 0.311    | 0.000    | 100.0    |
+| >>>     if axis is None:                                                                     [_mean/_methods.py:060]                                                                                             | 4994     | 0        | wall     | sec      | 0.021    | 0.000    | 0.021    | 0.021    | 0.000    | 100.0    |
+| >>>         axis = tuple(range(arr.ndim))                                                    [_mean/_methods.py:061]                                                                                             | 4994     | 0        | wall     | sec      | 0.028    | 0.000    | 0.028    | 0.028    | 0.000    | 100.0    |
+| >>>     if not isinstance(axis, tuple):                                                      [_mean/_methods.py:062]                                                                                             | 4994     | 0        | wall     | sec      | 0.022    | 0.000    | 0.022    | 0.022    | 0.000    | 100.0    |
+| >>>         axis = (axis,)                                                                   [_mean/_methods.py:063]                                                                                             |          |          |          |          |          |          |          |          |          |          |
+| >>>     items = 1                                                                            [_mean/_methods.py:064]                                                                                             | 4994     | 0        | wall     | sec      | 0.020    | 0.000    | 0.020    | 0.020    | 0.000    | 100.0    |
+| >>>     for ax in axis:                                                                      [_mean/_methods.py:065]                                                                                             | 14982    | 0        | wall     | sec      | 0.059    | 0.000    | 0.059    | 0.059    | 0.000    | 100.0    |
+| >>>         items *= arr.shape[mu.normalize_axis_index(ax, arr.ndim)]                        [_mean/_methods.py:066]                                                                                             | 9988     | 0        | wall     | sec      | 0.046    | 0.000    | 0.046    | 0.046    | 0.000    | 100.0    |
+| >>>     return items                                                                         [_mean/_methods.py:067]                                                                                             | 4994     | 0        | wall     | sec      | 0.019    | 0.000    | 0.019    | 0.019    | 0.000    | 100.0    |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 ```
 
 ### Library Bindings

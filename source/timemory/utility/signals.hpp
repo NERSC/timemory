@@ -23,16 +23,10 @@
 // SOFTWARE.
 //
 
-/** \file timemory/utility/signals.hpp
- * \headerfile utility/signals.hpp "timemory/utility/signals.hpp"
- * Handles signals emitted by application
- *
- */
-
 //======================================================================================//
-/// This global method should be used on LINUX or MacOSX platforms with gcc,
-/// clang, or intel compilers for activating signal detection and forcing
-/// exception being thrown that can be handled when detected.
+// This global method should be used on LINUX or MacOSX platforms with gcc,
+// clang, or intel compilers for activating signal detection and forcing
+// exception being thrown that can be handled when detected.
 //======================================================================================//
 
 #pragma once

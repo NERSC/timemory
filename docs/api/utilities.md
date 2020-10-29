@@ -1,9 +1,44 @@
-# Utilities
+# C++ Utilities
 
 ```eval_rst
 .. toctree::
    :glob:
    :maxdepth: 2
+```
+
+## Scope
+
+A scope configuration handles how the component instances within a bundle
+get inserted into the call-graph. The default behavior is `scope::tree`.
+This can be combined with `scope::timeline` to form a hierarchical call-graph
+where each entry is unique (lots of data): `scope::config = scope::tree{} + scope::timeline{}`.
+When the `scope::flat` is used, all component instances become a child
+of the root node (i.e. the depth in call-stack is always zero). Similar
+to `scope::tree`, `scope::flat` can be combined with `scope::timeline.
+
+
+```cpp
+using bundle_t  = tim::component_tuple<wall_clock>;
+namespace scope = tim::scope;
+
+void foo()
+{
+    // always tree-scoped
+    auto a = bundle_t("foo", scope::tree{});
+    // always flat-scoped
+	auto b = bundle_t("foo", scope::flat{});
+	// always timeline-scoped
+	auto c = bundle_t("foo", scope::timeline{});	
+	// subject to global settings for flat and timeline
+	auto c = bundle_t("foo", scope::config{});
+}
+```
+
+```eval_rst
+.. doxygenstruct:: tim::scope::config
+.. doxygenstruct:: tim::scope::tree
+.. doxygenstruct:: tim::scope::flat
+.. doxygenstruct:: tim::scope::timeline
 ```
 
 ## Quirks
@@ -24,12 +59,12 @@ that initialization can be performed before manually invoking `start()`.
 ```cpp
 namespace quirk = tim::quirk;
 
-using foo_t   = tim::auto_list<wall_clock, cpu_clock>;
-using quirk_t = quirk::config<quirk::explicit_start>;
+using bundle_t = tim::auto_list<wall_clock, cpu_clock>;
+using quirk_t  = quirk::config<quirk::explicit_start>;
 
-void Func1(bool condition)
+void foo(bool condition)
 {
-    auto f = foo_t("Func1", quirk_t{});
+    auto f = bundle_t("foo", quirk_t{});
     if(condition)
     {
         f.initialize<wall_clock>();
@@ -39,9 +74,9 @@ void Func1(bool condition)
     // ...
 }
 
-void Func2()
+void bar()
 {
-    auto f = foo_t("Func2");
+    auto f = bundle_t("bar");
     // ...
 }
 ```
@@ -58,4 +93,16 @@ void Func2()
 .. doxygenstruct:: tim::quirk::tree_scope
 .. doxygenstruct:: tim::quirk::flat_scope
 .. doxygenstruct:: tim::quirk::timeline_scope
+```
+
+## Sampling
+
+```eval_rst
+.. doxygenfile:: timemory/sampling/sampler.hpp
+```
+
+## Conditional
+
+```eval_rst
+.. doxygenfile:: timemory/utility/conditional.hpp
 ```

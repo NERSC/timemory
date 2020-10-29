@@ -26,7 +26,9 @@
 .. doxygenstruct:: tim::component::thread_cpu_util
 .. doxygenstruct:: tim::component::user_mode_time
 .. doxygenstruct:: tim::component::kernel_mode_time
+.. doxygenstruct:: tim::component::read_char
 .. doxygenstruct:: tim::component::read_bytes
+.. doxygenstruct:: tim::component::written_char
 .. doxygenstruct:: tim::component::written_bytes
 .. doxygenstruct:: tim::component::num_io_in
 .. doxygenstruct:: tim::component::num_io_out

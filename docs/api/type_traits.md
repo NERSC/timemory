@@ -1,4 +1,4 @@
-# Type-Traits
+# C++ Type-Traits
 
 ```eval_rst
 .. toctree::
@@ -14,58 +14,207 @@ output routines like `tim::operation::print<T>` where the value of the specializ
 is used at runtime and the body of the output routine is not actually instantiated in the
 user code.
 
+## Component Implementation
+
 ```eval_rst
-.. doxygenstruct:: tim::trait::api_components
-.. doxygenstruct:: tim::trait::api_input_archive
-.. doxygenstruct:: tim::trait::api_output_archive
-.. doxygenstruct:: tim::trait::array_serialization
-.. doxygenstruct:: tim::trait::base_has_accum
-.. doxygenstruct:: tim::trait::base_has_last
-.. doxygenstruct:: tim::trait::cache
-.. doxygenstruct:: tim::trait::collects_data
-.. doxygenstruct:: tim::trait::custom_label_printing
-.. doxygenstruct:: tim::trait::custom_laps_printing
-.. doxygenstruct:: tim::trait::custom_serialization
-.. doxygenstruct:: tim::trait::custom_unit_printing
-.. doxygenstruct:: tim::trait::data
-.. doxygenstruct:: tim::trait::derivation_types
-.. doxygenstruct:: tim::trait::echo_enabled
-.. doxygenstruct:: tim::trait::file_sampler
-.. doxygenstruct:: tim::trait::flat_storage
-.. doxygenstruct:: tim::trait::generates_output
-.. doxygenstruct:: tim::trait::implements_storage
-.. doxygenstruct:: tim::trait::input_archive
 .. doxygenstruct:: tim::trait::is_available
-.. doxygenstruct:: tim::trait::is_component
-.. doxygenstruct:: tim::trait::is_gotcha
-.. doxygenstruct:: tim::trait::is_memory_category
-.. doxygenstruct:: tim::trait::is_timing_category
-.. doxygenstruct:: tim::trait::is_user_bundle
-.. doxygenstruct:: tim::trait::iterable_measurement
-.. doxygenstruct:: tim::trait::output_archive
-.. doxygenstruct:: tim::trait::permissive_statistics
-.. doxygenstruct:: tim::trait::pretty_json
+   :members:
+   :undoc-members:
 .. doxygenstruct:: tim::trait::python_args
-.. doxygenstruct:: tim::trait::record_statistics
-.. doxygenstruct:: tim::trait::report_mean
-.. doxygenstruct:: tim::trait::report_metric_name
-.. doxygenstruct:: tim::trait::report_self
-.. doxygenstruct:: tim::trait::report_statistics
-.. doxygenstruct:: tim::trait::report_sum
-.. doxygenstruct:: tim::trait::report_units
-.. doxygenstruct:: tim::trait::report_values
-.. doxygenstruct:: tim::trait::requires_json
-.. doxygenstruct:: tim::trait::requires_prefix
+   :members:
+   :undoc-members:
 .. doxygenstruct:: tim::trait::runtime_enabled
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::api_components
+   :members:
+   :undoc-members:
+```
+
+## Type Identification
+
+```eval_rst
+.. doxygenstruct:: tim::trait::is_component
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::is_gotcha
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::is_user_bundle
+   :members:
+   :undoc-members:
+```
+
+## Base Class Modifications
+
+```eval_rst
+.. doxygenstruct:: tim::trait::base_has_accum
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::base_has_last
+   :members:
+   :undoc-members:
+```
+
+## Data Sharing
+
+```eval_rst
+.. doxygenstruct:: tim::trait::cache
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::derivation_types
+   :members:
+   :undoc-members:
+```
+
+## Data Collection
+
+```eval_rst
 .. doxygenstruct:: tim::trait::sampler
-.. doxygenstruct:: tim::trait::secondary_data
-.. doxygenstruct:: tim::trait::statistics
-.. doxygenstruct:: tim::trait::supports_args
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::file_sampler
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::requires_prefix
+   :members:
+   :undoc-members:
+```
+
+## Feature Support
+
+```eval_rst
 .. doxygenstruct:: tim::trait::supports_custom_record
+   :members:
+   :undoc-members:
 .. doxygenstruct:: tim::trait::supports_flamegraph
-.. doxygenstruct:: tim::trait::thread_scope_only
-.. doxygenstruct:: tim::trait::units
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::supports_args
+   :members:
+   :undoc-members:
+```
+
+## Archive Serialization
+
+```eval_rst
+.. doxygenstruct:: tim::trait::api_input_archive
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::api_output_archive
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::input_archive
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::output_archive
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::pretty_json
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::requires_json
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::array_serialization
+   :members:
+   :undoc-members:
+```
+
+## Units and Formatting
+
+```eval_rst
+.. doxygenstruct:: tim::trait::is_memory_category
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::is_timing_category
+   :members:
+   :undoc-members:
 .. doxygenstruct:: tim::trait::uses_memory_units
-.. doxygenstruct:: tim::trait::uses_percent_units
+   :members:
+   :undoc-members:
 .. doxygenstruct:: tim::trait::uses_timing_units
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::uses_percent_units
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::units
+   :members:
+   :undoc-members:
+```
+
+## Output Reporting
+
+```eval_rst
+.. doxygenstruct:: tim::trait::report_metric_name
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::report_units
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::report_sum
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::report_mean
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::report_statistics
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::report_self
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::custom_label_printing
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::custom_serialization
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::custom_unit_printing
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::echo_enabled
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::iterable_measurement
+   :members:
+   :undoc-members:
+```
+
+## Statistics
+
+```eval_rst
+.. doxygenstruct:: tim::trait::statistics
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::record_statistics
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::permissive_statistics
+   :members:
+   :undoc-members:
+```
+
+## Storage
+
+```eval_rst
+.. doxygenstruct:: tim::trait::thread_scope_only
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::data
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::secondary_data
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::flat_storage
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::collects_data
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::generates_output
+   :members:
+   :undoc-members:
 ```

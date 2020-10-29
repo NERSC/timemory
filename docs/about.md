@@ -9,10 +9,10 @@ in C, C++, Fortran, CUDA, and Python codes.
 The design goal of timemory is to create an easy-to-use framework for generating
 performance measurements and analysis methods which are extremely flexible
 with respect to both how the data is stored/accumulated and which methods the measurement
-or analysis supports. 
+or analysis supports.
 
 For a more extensive introduction and more information about the long-term goals, visit the
-[README](https://github.com/NERSC/timemory/blob/develop/README.md) on GitHub.
+[README.md](https://github.com/NERSC/timemory/blob/develop/README.md) on GitHub.
 
 ## Credits
 
@@ -22,11 +22,11 @@ Timemory is actively developed by NERSC at Lawrence Berkeley National Laboratory
 | ------------------ | :---------------------------------------------------------------------------------------: | :-------------------------------------------: |
 | Jonathan R. Madsen | [NERSC](https://www.nersc.gov/about/nersc-staff/application-performance/jonathan-madsen/) |    [jrmadsen](https://github.com/jrmadsen)    |
 | Yunsong Wang       |       [NERSC](https://www.nersc.gov/about/nersc-staff/nesap-postdocs/yunsong-wang/)       | [PointKernel](https://github.com/PointKernel) |
-| Muhammad Haseeb       |       [NERSC](https://sites.google.com/a/fiu.edu/mhaseeb/)       | [mhaseeb123](https://github.com/mhaseeb123) |
+| Muhammad Haseeb    |                   [NERSC](https://sites.google.com/a/fiu.edu/mhaseeb/)                    |  [mhaseeb123](https://github.com/mhaseeb123)  |
 
 ## Contributions
 
-Timemory encourages contributions via GitHub pull-requests. 
+Timemory encourages contributions via GitHub pull-requests.
 For more information about contributing new components, please read the
-[CONTRIBUTING](https://github.com/NERSC/timemory/blob/develop/CONTRIBUTING.md) 
+[CONTRIBUTING](https://github.com/NERSC/timemory/blob/develop/CONTRIBUTING.md)
 document on GitHub.

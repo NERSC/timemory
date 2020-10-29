@@ -161,9 +161,11 @@ struct sampler<CompT<Types...>, N, SigIds...>
     using base_type    = component::base<this_type, void>;
     using components_t = CompT<Types...>;
     using signal_set_t = std::set<int>;
-    using array_t    = conditional_t<fixed_size_t<N>::value, std::array<components_t, N>,
+    using pid_cb_t     = std::function<bool(pid_t, int, int)>;
+    using array_t = conditional_t<fixed_size_t<N>::value, std::array<components_t, N>,
                                   std::vector<components_t>>;
-    using array_type = array_t;
+
+    using array_type   = array_t;
     using tracker_type = policy::instance_tracker<this_type, false>;
 
     static void  execute(int signum);
@@ -232,7 +234,10 @@ public:
     const array_t& get_data() const { return m_data; }
 
 public:
-    /// \fn configure
+    /// \fn void configure(std::set<int> _signals, int _verb)
+    /// \param[in] _signals A set of signals to catch
+    /// \param[in] _verb Logging Verbosity
+    ///
     /// \brief Set up the sampler
     static void configure(std::set<int> _signals, int _verbose = 1);
     static void configure(int _signal = SIGALRM, int _verbose = 1)
@@ -240,16 +245,18 @@ public:
         configure({ _signal }, _verbose);
     }
 
-    /// \fn ignore
+    /// \fn void ignore(std::set<int> _signals)
+    /// \param[in] _signals Set of signals
+    ///
     /// \brief Ignore the signals
     static void ignore(std::set<int> _signals = {});
 
-    /// \fn clear
+    /// \fn void clear()
     /// \brief Clear all signals. Recommended to call ignore() prior to clearing all the
     /// signals
     static void clear() { get_persistent_data().m_signals.clear(); }
 
-    /// \fn pause
+    /// \fn void pause()
     /// \brief Pause until a signal is delivered
     static void pause()
     {
@@ -257,24 +264,25 @@ public:
             ::pause();
     }
 
-    /// \fn wait
+    /// \fn int wait(pid_t _pid, int _verb, bool _debug, Func&& _cb)
+    /// \param[in] _pid Process id to wait on
+    /// \param[in] _verb Logging verbosity
+    /// \param[in] _debug Enable debug logging
+    /// \param[in] _cb Callback for checking whether to exit
+    ///
     /// \brief Wait function with an optional user callback of type:
     /// \code{.cpp}
     ///     bool (*)(int a, int b)
     /// \endcode
     /// where 'a' is the status, 'b' is the error value, and returns true if waiting
     /// should continue
-    template <typename Func = std::function<bool(pid_t, int, int)>>
+    template <typename Func = pid_cb_t>
     static int wait(pid_t _pid, int _verbose, bool _debug,
-                    Func&& _callback = [](pid_t _id, int, int) {
-                        return (_id != process::get_id());
-                    });
+                    Func&& _callback = pid_callback());
 
-    template <typename Func = std::function<bool(pid_t, int, int)>>
+    template <typename Func = pid_cb_t>
     static int wait(int _verbose = settings::verbose(), bool _debug = settings::debug(),
-                    Func&& _callback = [](pid_t _id, int, int) {
-                        return _id != process::get_id();
-                    })
+                    Func&& _callback = pid_callback())
     {
         return wait(process::get_target_id(), _verbose, _debug,
                     std::forward<Func>(_callback));
@@ -295,38 +303,38 @@ public:
                     std::forward<Func>(_callback));
     }
 
-    /// \fn set_flags
+    /// \fn void set_flags(int)
     /// \brief Set the sigaction flags, e.g. SA_RESTART | SA_SIGINFO
     static void set_flags(int _flags) { get_persistent_data().m_flags = _flags; }
 
-    /// \fn set_delay
+    /// \fn void set_delay(const double&)
     /// \brief Value, expressed in seconds, that sets the length of time the sampler
     /// waits before starting sampling of the relevant measurements
     static void set_delay(const double& fdelay);
 
-    /// \fn set_freq
+    /// \fn void set_freq(const double&)
     /// \brief Value, expressed in 1/seconds, expressed in 1/seconds, that sets the
     /// frequency that the sampler samples the relevant measurements
     static void set_frequency(const double& ffreq);
 
-    /// \fn set_rate
+    /// \fn void set_rate(const double&)
     /// \brief Value, expressed in number of interupts per second, that configures the
     /// frequency that the sampler samples the relevant measurements
     static void set_rate(const double& frate) { set_frequency(1.0 / frate); }
 
-    /// \fn get_delay
+    /// \fn int64_t get_delay(int64_t)
     /// \brief Get the delay of the sampler
     static int64_t get_delay(int64_t units = units::usec);
 
-    /// \fn get_frequency
+    /// \fn int64_t get_frequency(int64_t)
     /// \brief Get the frequency of the sampler
     static int64_t get_frequency(int64_t units = units::usec);
 
-    /// \fn get_itimer
+    /// \fn int get_itimer(int)
     /// \brief Returns the itimer value associated with the given signal
     static int get_itimer(int _signal);
 
-    /// \fn check_itimer
+    /// \fn bool check_itimer(int. bool)
     /// \brief Checks to see if there was an error setting or getting itimer val
     static bool check_itimer(int _stat, bool _throw_exception = false);
 
@@ -359,6 +367,13 @@ private:
     {
         static persistent_data _instance;
         return _instance;
+    }
+
+    /// \fn pid_cb_t& pid_callback()
+    /// \brief Default callback when configuring sampler
+    static pid_cb_t pid_callback()
+    {
+        return [](pid_t _id, int, int) { return _id != process::get_id(); };
     }
 };
 //

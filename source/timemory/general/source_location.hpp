@@ -22,13 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \headerfile "timemory/general/source_location.hpp"
- * \brief Provides source location information and variadic joining of source location
- * tags
- *
- */
-
 #pragma once
 
 #include "timemory/general/types.hpp"

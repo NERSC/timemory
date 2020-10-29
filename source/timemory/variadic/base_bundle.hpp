@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \headerfile "timemory/variadic/base_bundle.hpp"
- * This is the generic base class for a variadic bundle of components
- *
- */
-
 #pragma once
 
 #include "timemory/components/base/types.hpp"

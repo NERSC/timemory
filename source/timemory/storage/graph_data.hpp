@@ -22,13 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \headerfile "timemory/storage/graph_data.hpp"
- * \brief tim::graph instance + current node + head note + sea-level. Sea-level is
- * defined as the node depth after a fork from another graph instance and is only
- * relevant for worker-threads)
- *
- */
-
 #pragma once
 
 //--------------------------------------------------------------------------------------//

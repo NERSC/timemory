@@ -22,12 +22,6 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/**
- * \headerfile "timemory/components/base/declaration.hpp"
- * \brief Declares the static polymorphic base for the components
- *
- */
-
 #pragma once
 
 #include "timemory/components/base/types.hpp"
