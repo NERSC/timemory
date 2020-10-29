@@ -26,11 +26,11 @@ void foo()
     // always tree-scoped
     auto a = bundle_t("foo", scope::tree{});
     // always flat-scoped
-	auto b = bundle_t("foo", scope::flat{});
-	// always timeline-scoped
-	auto c = bundle_t("foo", scope::timeline{});	
-	// subject to global settings for flat and timeline
-	auto c = bundle_t("foo", scope::config{});
+    auto b = bundle_t("foo", scope::flat{});
+    // always timeline-scoped
+    auto c = bundle_t("foo", scope::timeline{});
+    // subject to global settings for flat and timeline
+    auto c = bundle_t("foo", scope::config{});
 }
 ```
 
