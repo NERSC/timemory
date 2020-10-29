@@ -1,4 +1,4 @@
-# Policies
+# C++ Policies
 
 ```eval_rst
 .. toctree::

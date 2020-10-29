@@ -1,10 +1,12 @@
 # timemory jump library
 
-The timemory jump library implements the **jump** instrumentation mode for `timemory-run` tool. Additionally, this library can be linked to in lieu of the traditional timemory library and provide instrumentation via setting the environment variable `TIMEMORY_JUMP_LIBRARY` on libraries which provide `dlsym` and `dlopen`.
+The timemory jump library implements the **jump** instrumentation mode for `timemory-run` tool. Additionally, this library can
+be linked to in lieu of the traditional timemory library and provide instrumentation via setting the environment variable
+`TIMEMORY_JUMP_LIBRARY` on libraries which provide `dlsym` and `dlopen`.
 
 ## Description
 
-The **jump** mode is used to insert instrumentation using **function pointers**. The inserted function pointers dereference to the instrumentation code at runtime alleviating the risk of self instrumentation loop in case a library that is being used by instrumentation code is instrumented. For example, dynamic instrumentation of `libm` may lead to a self instrumentation loop.
+The **jump** mode is used to insert dynamic instrumentation code in an application binary using **function pointers**. The inserted function pointers dereference to the instrumentation code at runtime alleviating the risk of self instrumentation loop in case a library that is being used by instrumentation code is instrumented. For example, dynamic instrumentation of `libm` may lead to a self instrumentation loop. The **jump** instrumentation mode can be used by using the `--jump` option with `timemory-run` tool.
 
 ## About timemory-run tool
 

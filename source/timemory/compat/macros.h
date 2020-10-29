@@ -127,10 +127,12 @@
 //
 //======================================================================================//
 
-#if defined(TIMEMORY_USE_VISIBILITY)
-#    define TIMEMORY_VISIBILITY(mode) __attribute__((visibility(mode)))
-#else
-#    define TIMEMORY_VISIBILITY(mode)
+#if !defined(TIMEMORY_VISIBILITY)
+#    if defined(TIMEMORY_USE_VISIBILITY)
+#        define TIMEMORY_VISIBILITY(mode) __attribute__((visibility(mode)))
+#    else
+#        define TIMEMORY_VISIBILITY(mode)
+#    endif
 #endif
 
 //======================================================================================//
@@ -146,6 +148,11 @@
 #        define declare_attribute(attr) __declspec(attr)
 #    endif
 #endif
+
+#define TIMEMORY_NEVER_INSTRUMENT                                                        \
+    __attribute__((no_instrument_function)) __attribute__((xray_never_instrument))
+
+#define TIMEMORY_INSTRUMENT __attribute__((xray_always_instrument))
 
 //======================================================================================//
 //
