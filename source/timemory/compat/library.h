@@ -285,6 +285,7 @@ extern "C"
                                           const char*) TIMEMORY_VISIBLE;
 
     extern bool timemory_trace_is_initialized(void) TIMEMORY_VISIBLE;
+    extern void timemory_reset_throttle(const char* name) TIMEMORY_VISIBLE;
     extern bool timemory_is_throttled(const char* name) TIMEMORY_VISIBLE;
     extern void timemory_add_hash_id(uint64_t id, const char* name) TIMEMORY_VISIBLE;
     extern void timemory_add_hash_ids(uint64_t nentries, uint64_t* ids,
@@ -298,7 +299,10 @@ extern "C"
     extern void timemory_trace_set_env(const char*, const char*) TIMEMORY_VISIBLE;
 
 #if defined(TIMEMORY_MPI_GOTCHA)
-    /// \fn timemory_trace_set_mpi
+    /// \fn void timemory_trace_set_mpi(bool use, bool attached)
+    /// \param[in] use Use MPI gotcha
+    /// \param[in] attached Tracing application has attached to a running program
+    ///
     /// This function is only declared and defined if timemory was built
     /// with support for MPI and GOTCHA.
     extern void timemory_trace_set_mpi(bool use, bool attached) TIMEMORY_VISIBLE;
