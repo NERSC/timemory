@@ -155,6 +155,8 @@ for file in glob.glob("*.xml"):
             " TIMEMORY_VISIBLE",
             "TIMEMORY_ALWAYS_INLINE",
             "TIMEMORY_HOT",
+            "TIMEMORY_DLL ",
+            "TIMEMORY_CDLL ",
         ]:
             if key in line:
                 line = line.replace(key, "")

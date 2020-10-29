@@ -93,31 +93,31 @@
 //
 //======================================================================================//
 
-#if !defined(tim_cdll)
+#if !defined(TIMEMORY_CDLL)
 #    if defined(_WINDOWS)
 #        if defined(TIMEMORY_CDLL_EXPORT)
-#            define tim_cdll __declspec(dllexport)
+#            define TIMEMORY_CDLL __declspec(dllexport)
 #        elif defined(TIMEMORY_CDLL_IMPORT)
-#            define tim_cdll __declspec(dllimport)
+#            define TIMEMORY_CDLL __declspec(dllimport)
 #        else
-#            define tim_cdll
+#            define TIMEMORY_CDLL
 #        endif
 #    else
-#        define tim_cdll
+#        define TIMEMORY_CDLL
 #    endif
 #endif
 
-#if !defined(tim_dll)
+#if !defined(TIMEMORY_DLL)
 #    if defined(_WINDOWS)
 #        if defined(TIMEMORY_DLL_EXPORT)
-#            define tim_dll __declspec(dllexport)
+#            define TIMEMORY_DLL __declspec(dllexport)
 #        elif defined(TIMEMORY_DLL_IMPORT)
-#            define tim_dll __declspec(dllimport)
+#            define TIMEMORY_DLL __declspec(dllimport)
 #        else
-#            define tim_dll
+#            define TIMEMORY_DLL
 #        endif
 #    else
-#        define tim_dll
+#        define TIMEMORY_DLL
 #    endif
 #endif
 

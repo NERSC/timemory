@@ -355,7 +355,7 @@ extern "C"
     ///
     /// }
     /// \endcode
-    extern timemory_create_func_t timemory_create_function TIMEMORY_VISIBLE;
+    extern TIMEMORY_DLL timemory_create_func_t timemory_create_function TIMEMORY_VISIBLE;
 
     /// \var timemory_delete_func_t timemory_delete_function
     /// The function pointer to set which deletes an entry created by \ref
@@ -392,7 +392,7 @@ extern "C"
     ///
     /// }
     /// \endcode
-    extern timemory_delete_func_t timemory_delete_function TIMEMORY_VISIBLE;
+    extern TIMEMORY_DLL timemory_delete_func_t timemory_delete_function TIMEMORY_VISIBLE;
 
 #if defined(__cplusplus)
 }
