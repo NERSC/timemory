@@ -34,9 +34,9 @@
 #endif
 
 // archives
-#include "cereal/archives/json.hpp"
+#include "timemory/tpls/cereal/cereal/archives/json.hpp"
 #if defined(TIMEMORY_USE_XML_ARCHIVE)
-#    include "cereal/archives/xml.hpp"
+#    include "timemory/tpls/cereal/cereal/archives/xml.hpp"
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ > 7)

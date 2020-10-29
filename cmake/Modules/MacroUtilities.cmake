@@ -385,6 +385,11 @@ MACRO(ADD_INTERFACE_LIBRARY _TARGET)
     add_library(${_TARGET} INTERFACE)
     add_library(${PROJECT_NAME}::${_TARGET} ALIAS ${_TARGET})
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
+    # message(STATUS "Exporting interface libraries...")
+    install(
+        TARGETS     ${_TARGET}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        EXPORT      ${PROJECT_NAME}-library-depends)
     add_enabled_interface(${_TARGET})
     if(NOT "${ARGN}" STREQUAL "")
         set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_INTERFACE_DOC
@@ -671,7 +676,7 @@ endfunction()
 #-----------------------------------------------------------------------
 # C/C++ development headers
 #
-macro(INSTALL_HEADER_FILES)
+macro(TIMEMORY_INSTALL_HEADER_FILES)
     foreach(_header ${ARGN})
         file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/source ${_header})
         get_filename_component(_destpath ${_relative} DIRECTORY)
@@ -880,8 +885,9 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
 
     endforeach()
 
+    timemory_install_header_files(${COMP_HEADERS})
     if(COMP_INSTALL_SOURCE)
-        install_header_files(${COMP_SOURCES})
+        timemory_install_header_files(${COMP_SOURCES})
     endif()
 
     if(NOT TARGET timemory-${COMP_TARGET})

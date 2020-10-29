@@ -11,7 +11,6 @@ file(GLOB cxx_headers                    ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hp
 file(GLOB cxx_headers_variadic           ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
 file(GLOB_RECURSE cxx_headers_backends   ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB_RECURSE cxx_headers_components ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
-file(GLOB_RECURSE cxx_headers_tpls       ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.hpp)
 file(GLOB cxx_headers_macros        ${CMAKE_CURRENT_LIST_DIR}/timemory/macros/*.hpp)
 file(GLOB cxx_headers_api           ${CMAKE_CURRENT_LIST_DIR}/timemory/api/*.hpp)
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
@@ -23,11 +22,11 @@ file(GLOB cxx_headers_bits          ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hp
                                     ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.icpp)
 file(GLOB compat_headers            ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.hpp)
-file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
-                                    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/*.c)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+file(GLOB_RECURSE tpl_headers       ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.hpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.h)
+file(GLOB_RECURSE tpl_licenses      ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*license*)
 
 set(_CATEGORIES backends mpl utility variadic)
 # bits folder
@@ -44,9 +43,9 @@ endforeach()
 set(timemory_glob_headers
     ${c_headers} ${cxx_headers} ${cxx_headers_variadic} ${cxx_headers_api}
     ${cxx_headers_backends} ${cxx_headers_components} ${cxx_headers_mpl}
-    ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data} ${cxx_headers_tpls}
+    ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
     ${cxx_headers_category_bits} ${cxx_headers_general} ${cxx_headers_macros}
-    ${compat_headers})
+    ${tpl_headers} ${compat_headers})
 
 if(TIMEMORY_SOURCE_GROUP)
     source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_glob_headers})
@@ -61,7 +60,7 @@ file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
 #
 # directly compile sources
 set(C_LIBRARY_SOURCES       ${c_sources}   ${c_headers})
-set(CXX_LIBRARY_SOURCES     ${cxx_sources} ${timemory_glob_headers} ${cereal_headers})
+set(CXX_LIBRARY_SOURCES     ${cxx_sources} ${timemory_glob_headers})
 
 #----------------------------------------------------------------------------------------#
 # build the C++ libraries
@@ -356,7 +355,9 @@ get_property(timemory_sources GLOBAL PROPERTY TIMEMORY_SOURCES)
 list(APPEND timemory_headers ${timemory_sources} ${timemory_glob_headers})
 list(REMOVE_DUPLICATES timemory_headers)
 
-install_header_files(${timemory_headers})
+set(_installed_headers ${timemory_headers} ${tpl_headers} ${tpl_licenses})
+list(REMOVE_DUPLICATES _installed_headers)
+timemory_install_header_files(${_installed_headers})
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}-library-depends

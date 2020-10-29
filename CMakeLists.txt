@@ -30,6 +30,7 @@ endif()
 cmake_policy(SET CMP0022 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
+#cmake_policy(SET CMP0063 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
     cmake_policy(SET CMP0079 NEW)
 endif()
@@ -254,10 +255,10 @@ endif()
 #   timemory exports
 #----------------------------------------------------------------------------------------#
 
-message(STATUS "Exporting interface libraries...")
-install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    EXPORT ${PROJECT_NAME}-library-depends)
+#message(STATUS "Exporting interface libraries...")
+#install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
+#    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#    EXPORT ${PROJECT_NAME}-library-depends)
 
 #----------------------------------------------------------------------------------------#
 #   timemory source

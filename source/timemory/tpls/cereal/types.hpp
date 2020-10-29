@@ -33,15 +33,15 @@
 #endif
 
 // types
-#include "cereal/types/array.hpp"
-#include "cereal/types/common.hpp"
-#include "cereal/types/map.hpp"
-#include "cereal/types/memory.hpp"
-#include "cereal/types/set.hpp"
-#include "cereal/types/string.hpp"
-#include "cereal/types/tuple.hpp"
-#include "cereal/types/utility.hpp"
-#include "cereal/types/vector.hpp"
+#include "timemory/tpls/cereal/cereal/types/array.hpp"
+#include "timemory/tpls/cereal/cereal/types/common.hpp"
+#include "timemory/tpls/cereal/cereal/types/map.hpp"
+#include "timemory/tpls/cereal/cereal/types/memory.hpp"
+#include "timemory/tpls/cereal/cereal/types/set.hpp"
+#include "timemory/tpls/cereal/cereal/types/string.hpp"
+#include "timemory/tpls/cereal/cereal/types/tuple.hpp"
+#include "timemory/tpls/cereal/cereal/types/utility.hpp"
+#include "timemory/tpls/cereal/cereal/types/vector.hpp"
 
 #if defined(__GNUC__) && (__GNUC__ > 7)
 #    pragma GCC diagnostic pop
