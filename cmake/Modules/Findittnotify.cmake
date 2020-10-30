@@ -31,7 +31,7 @@ find_path(ITTNOTIFY_INCLUDE_DIR
 #------------------------------------------------------------------------------#
 
 find_library(ITTNOTIFY_LIBRARY
-    NAMES ittnotify
+    NAMES ittnotify libittnotify
     PATH_SUFFIXES lib lib64 lib32
     HINTS ${_ITTNOTIFY_PATH_HINTS}
     PATHS ${_ITTNOTIFY_PATH_HINTS}

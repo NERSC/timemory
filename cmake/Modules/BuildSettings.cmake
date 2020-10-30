@@ -11,6 +11,7 @@ include_guard(DIRECTORY)
 include(GNUInstallDirs)
 include(Compilers)
 
+target_compile_definitions(timemory-compile-options INTERFACE $<$<CONFIG:DEBUG>:DEBUG>)
 
 if(CMAKE_DL_LIBS)
     set(dl_LIBRARY ${CMAKE_DL_LIBS})
@@ -256,6 +257,22 @@ else()
     inform_empty_interface(timemory-sanitizer "${SANITIZER_TYPE} sanitizer")
 endif()
 
+if (MSVC)
+    # set debug postfix so debug library and executable artifact names do not
+    # conflict with release artifacts
+    set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Build type" FORCE)
+
+    # VTune is much more helpful when debug information is included in the 
+    # generated release code. 
+    target_compile_definitions(timemory-compile-options INTERFACE /Zi)
+    target_compile_definitions(timemory-compile-options INTERFACE /debug)
+else()
+    # uncomment to use a debug postfix in non-msvc builds
+    # set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Build type" FORCE)
+
+    # uncomment to add symbols even for release builds
+    # target_compile_options(timemory-compile-options INTERFACE -g)
+endif()
 
 #----------------------------------------------------------------------------------------#
 # user customization

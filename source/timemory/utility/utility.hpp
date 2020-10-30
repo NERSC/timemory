@@ -37,6 +37,16 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
+#if defined(_WINDOWS)
+// Without this include on windows launch_process is needed by makedir but is
+// missing at link time. With this include on linux there is a problem with
+// delimit not being defined before it is used in popen.hpp. I think including
+// popen.hpp at the end of this header would be portable and not need the ifdef,
+// but that would be too weird, so we may have to live with the ifdef. (At
+// least until makedir is implemented using std::filesystem.)
+#    include "timemory/utility/popen.hpp"
+#endif
+
 // C library
 #include <cctype>
 #include <cerrno>

@@ -1,7 +1,11 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <execinfo.h>
+
+#if !_MSC_VER
+#    include <execinfo.h>
+#endif
+
 #include <iostream>
 #include <string>
 #include <vector>

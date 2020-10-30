@@ -81,7 +81,7 @@
 //  https://www.zachburlingame.com/2011/05/
 //      resolving-redefinition-errors-betwen-ws2def-h-and-winsock-h/
 #if defined(_WINDOWS)
-#    if !defined(NOMINMIX)
+#    if !defined(NOMINMAX)
 #        define NOMINMAX
 #    endif
 #    if !defined(WIN32_LEAN_AND_MEAN)
@@ -90,7 +90,9 @@
 #    if !defined(WIN32)
 #        define WIN32
 #    endif
-#    include <WinSock2.h>
+#    if defined(TIMEMORY_USE_WINSOCK)
+#        include <WinSock2.h>
+#    endif
 #    include <Windows.h>
 #endif
 

@@ -79,8 +79,13 @@ if(TIMEMORY_USE_COVERAGE)
     target_link_libraries(timemory-core-shared PUBLIC
         timemory-analysis-tools)
 else()
+    set(_FORCE_OBJECT FORCE_OBJECT)
+    if(MSVC OR XCODE)
+        set(_FORCE_OBJECT)
+    endif()
+    
     build_intermediate_library(
-        FORCE_OBJECT
+        ${_FORCE_OBJECT}
         USE_INTERFACE
         INSTALL_SOURCE
         NAME                core

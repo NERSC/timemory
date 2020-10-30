@@ -1,7 +1,9 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <execinfo.h>
+#if !_MSC_VER
+#    include <execinfo.h>
+#endif
 #include <iostream>
 #include <regex>
 #include <string>

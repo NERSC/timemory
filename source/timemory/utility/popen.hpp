@@ -123,11 +123,13 @@ read_fork(TIMEMORY_PIPE* ldd)
 
 #endif
 
+namespace tim
+{
 //
 //--------------------------------------------------------------------------------------//
 //
 inline bool
-tim::launch_process(const char* cmd, const std::string& extra)
+launch_process(const char* cmd, const std::string& extra)
 {
 #if !defined(_WINDOWS)
     auto                       delim = tim::delimit(cmd, " \t");
@@ -187,3 +189,4 @@ tim::launch_process(const char* cmd, const std::string& extra)
 
     return true;
 }
+}  // namespace tim

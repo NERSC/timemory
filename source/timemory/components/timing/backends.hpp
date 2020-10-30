@@ -63,21 +63,24 @@
 // without this, windows will define macros for min and max
 #    include <sys/timeb.h>
 #    include <sys/types.h>
-#    include <winsock.h>
+
+#    if defined(TIMEMORY_USE_WINSOCK)
+#        include <winsock.h>
 
 EXTERN_C inline int
 gettimeofday(struct timeval* t, void* timezone) noexcept
 {
     struct _timeb timebuffer;
-#    if defined(_WIN64)
+#        if defined(_WIN64)
     _ftime64(&timebuffer);
-#    elif defined(_WIN32)
+#        elif defined(_WIN32)
     _ftime(&timebuffer);
-#    endif
+#        endif
     t->tv_sec  = timebuffer.time;
     t->tv_usec = 1000 * timebuffer.millitm;
     return 0;
 }
+#    endif
 
 #    define __need_clock_t
 
