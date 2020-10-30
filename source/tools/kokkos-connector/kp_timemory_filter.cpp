@@ -1,16 +1,17 @@
 
+#include "timemory/runtime/configure.hpp"
+#include "timemory/timemory.hpp"
+
 #include <cassert>
 #include <cstdlib>
-#if !_MSC_VER
-#    include <execinfo.h>
-#endif
 #include <iostream>
 #include <regex>
 #include <string>
 #include <vector>
 
-#include "timemory/runtime/configure.hpp"
-#include "timemory/timemory.hpp"
+#if !_MSC_VER
+#    include <execinfo.h>
+#endif
 
 using namespace tim::component;
 

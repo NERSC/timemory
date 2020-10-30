@@ -36,8 +36,8 @@
 
 using namespace tim::component;
 
-static int    _argc       = 0;
-static char** _argv       = nullptr;
+static int    _argc = 0;
+static char** _argv = nullptr;
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
