@@ -1,19 +1,18 @@
 
-#include <cassert>
-#include <cstdlib>
-
-#if !_MSC_VER
-#    include <execinfo.h>
-#endif
-
-#include <iostream>
-#include <string>
-#include <vector>
-
 #include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
 
 #include "kp_timemory.hpp"
+
+#include <cassert>
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#if !_MSC_VER
+#    include <execinfo.h>
+#endif
 
 #if __cplusplus > 201402L  // C++17
 #    define if_constexpr if constexpr

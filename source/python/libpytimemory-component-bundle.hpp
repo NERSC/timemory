@@ -70,16 +70,12 @@ public:
 
     void start()
     {
-        DEBUG_PRINT_HERE("%p, global size = %lu, instance size = %lu", m_ptr, size(),
-                         (m_ptr) ? m_ptr->get<type>()->size() : 0);
         if(m_ptr)
             m_ptr->start();
     }
 
     void stop()
     {
-        DEBUG_PRINT_HERE("%p, global size = %lu, instance size = %lu", m_ptr, size(),
-                         (m_ptr) ? m_ptr->get<type>()->size() : 0);
         if(m_ptr)
             m_ptr->stop();
     }

@@ -16,8 +16,6 @@ add_interface_library(timemory-headers
     "Provides minimal set of include flags to compile with timemory")
 add_interface_library(timemory-precompiled-headers
     "Provides timemory-headers + precompiles headers if CMAKE_VERSION >= 3.16")
-add_interface_library(timemory-cereal
-    "Provides include flags for serialization library")
 add_interface_library(timemory-cereal-xml
     "Enables XML serialization output")
 add_interface_library(timemory-extern
@@ -26,8 +24,7 @@ add_interface_library(timemory-statistics
     "Enables statistics for all components which define TIMEMORY_STATISTICS_TYPE(...)")
 
 set(TIMEMORY_REQUIRED_INTERFACES
-    timemory-headers
-    timemory-cereal)
+    timemory-headers)
 
 add_interface_library(timemory-dmp
     "Enables the default distributed memory parallelism library (e.g. MPI, UPC++)")
@@ -448,31 +445,6 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-#set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
-
-if (TIMEMORY_BUILD_CEREAL)
-    checkout_git_submodule(RECURSIVE
-        RELATIVE_PATH external/cereal
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        REPO_URL https://github.com/jrmadsen/cereal.git
-        REPO_BRANCH timemory)
-
-    # add cereal
-    add_subdirectory(${PROJECT_SOURCE_DIR}/external/cereal)
-
-    target_include_directories(timemory-cereal SYSTEM INTERFACE
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/cereal/include>)
-else()
-    find_package(cereal CONFIG REQUIRED)
-    get_target_property(TIMEMORY_CEREAL_INCLUDE cereal INTERFACE_INCLUDE_DIRECTORIES)
-
-    message(STATUS "including TIMEMORY_CEREAL_INCLUDE=${TIMEMORY_CEREAL_INCLUDE}")
-    target_include_directories(timemory-compile-options INTERFACE ${TIMEMORY_CEREAL_INCLUDE})
-endif()
-
-# timemory-headers always provides timemory-cereal
-target_link_libraries(timemory-headers INTERFACE timemory-cereal)
-target_link_libraries(timemory-cereal-xml INTERFACE timemory-cereal)
 timemory_target_compile_definitions(timemory-cereal-xml INTERFACE TIMEMORY_USE_XML_ARCHIVE)
 
 #----------------------------------------------------------------------------------------#

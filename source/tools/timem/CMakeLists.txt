@@ -15,8 +15,8 @@ endif()
 
 set(_STATIC_LIB)
 foreach(_TARG core timing-component rusage-component)
-    if(TARGET timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
-        list(APPEND _STATIC_LIB timemory-${_TARG}-static)
+    if(TARGET timemory::timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
+        list(APPEND _STATIC_LIB timemory::timemory-${_TARG}-static)
     endif()
 endforeach()
 
@@ -46,12 +46,11 @@ endif()
 add_executable(timem ${_EXCLUDE} timem.cpp timem.hpp)
 
 target_link_libraries(timem PRIVATE
-    timemory-compile-options
-    timemory-threading
-    timemory-headers
-    timemory-cereal
-    timemory-arch
-    timemory-papi
+    timemory::timemory-compile-options
+    timemory::timemory-threading
+    timemory::timemory-headers
+    timemory::timemory-arch
+    timemory::timemory-papi
     timem-libexplain)
 
 add_target_flag_if_avail(timem "-g")
@@ -73,13 +72,12 @@ endif()
 add_executable(timem-mpi ${_EXCLUDE} timem.cpp timem.hpp)
 
 target_link_libraries(timem-mpi PRIVATE
-    timemory-compile-options
-    timemory-threading
-    timemory-headers
-    timemory-cereal
-    timemory-arch
-    timemory-papi
-    timemory-mpi
+    timemory::timemory-compile-options
+    timemory::timemory-threading
+    timemory::timemory-headers
+    timemory::timemory-arch
+    timemory::timemory-papi
+    timemory::timemory-mpi
     timem-libexplain
     ${_STATIC_LIB})
 

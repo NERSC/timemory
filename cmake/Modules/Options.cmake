@@ -476,10 +476,6 @@ endif()
 option(SPACK_BUILD "Tweak some installation directories when building via spack" OFF)
 mark_as_advanced(SPACK_BUILD)
 
-if (WIN32)
+if(WIN32)
     option(TIMEMORY_USE_WINSOCK "Include winsock.h with the windows build" OFF)
 endif()
-
-option(TIMEMORY_BUILD_CEREAL 
-    "When ON, build and use the jrmadsen fork of cereal; when OFF just use what cmake finds" ON)
-mark_as_advanced(TIMEMORY_BUILD_CEREAL)
