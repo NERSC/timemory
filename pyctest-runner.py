@@ -398,7 +398,7 @@ def run_pyctest():
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_BUILD_DEVELOPER": "ON" if args.developer else "OFF",
         "TIMEMORY_BUILD_TESTING": "ON" if not args.quick else "OFF",
-        "TIMEMORY_BUILD_EXAMPLES": "OFF" if args.quick else "ON",
+        "TIMEMORY_BUILD_EXAMPLES": "OFF" if args.quick or args.coverage else "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON"
         if args.extra_optimizations
         else "OFF",
@@ -425,7 +425,7 @@ def run_pyctest():
         "PYTHON_EXECUTABLE": "{}".format(sys.executable),
     }
 
-    if args.quick and args.python:
+    if args.coverage or (args.quick and args.python):
         build_opts["TIMEMORY_BUILD_MINIMAL_TESTING"] = "ON"
 
     if args.papi:
@@ -875,19 +875,20 @@ def run_pyctest():
                     "ENVIRONMENT": test_env,
                 },
             )
+            
+    if args.tools:
+        pyct.test(
+            "timem-timemory-avail",
+            ["./timem", "./timemory-avail"],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": test_env,
+            },
+        )
 
-    if not args.quick:
-        if args.tools:
-            pyct.test(
-                "timem-timemory-avail",
-                ["./timem", "./timemory-avail"],
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
-                    "ENVIRONMENT": test_env,
-                },
-            )
+    if not args.quick and not args.coverage:
 
         pyct.test(
             construct_name("ex-derived"),
