@@ -35,6 +35,8 @@
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/macros.hpp"
 
+#include <fstream>
+
 namespace tim
 {
 //
