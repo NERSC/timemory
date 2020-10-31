@@ -208,6 +208,8 @@ add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
     "Enable building tools" ON)
+add_option(TIMEMORY_BUILD_COMPILER_INSTRUMENTATION
+    "Enable building compiler instrumentation libraries" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_CALIPER

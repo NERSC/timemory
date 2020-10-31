@@ -33,7 +33,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"
-#include "timemory/components/opaque.hpp"
+#include "timemory/components/opaque/declaration.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/components/user_bundle/components.hpp"
 #include "timemory/components/user_bundle/types.hpp"

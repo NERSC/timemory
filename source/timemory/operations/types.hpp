@@ -730,6 +730,16 @@ struct print
         }
         return m_settings->get_cout_output();
     }
+    bool tree_output()
+    {
+        if(!m_settings)
+        {
+            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            return false;
+        }
+        return (m_settings->get_json_output() || json_forced) &&
+               m_settings->get_file_output();
+    }
     bool json_output()
     {
         if(!m_settings)
@@ -774,14 +784,6 @@ protected:
     bool    debug          = settings::debug();
     bool    update         = true;
     bool    json_forced    = false;
-    bool    file_output    = settings::file_output();
-    bool    cout_output    = settings::cout_output();
-    bool    tree_output    = (settings::json_output() || json_forced) && file_output;
-    bool    json_output    = (settings::json_output() || json_forced) && file_output;
-    bool    text_output    = settings::text_output() && file_output;
-    bool    dart_output    = settings::dart_output();
-    bool    plot_output    = settings::plot_output() && json_output;
-    bool    flame_output   = settings::flamegraph_output() && file_output;
     bool    node_init      = dmp::is_initialized();
     int32_t node_rank      = dmp::rank();
     int32_t node_size      = dmp::size();
@@ -802,6 +804,7 @@ protected:
     std::string json_diffname     = "";
     stream_type data_stream       = stream_type{};
     stream_type diff_stream       = stream_type{};
+    settings*   m_settings        = settings::instance();
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -851,7 +854,7 @@ struct print<Tp, true> : public base::print
         else
             setup();
 
-        if(file_output && tree_output)
+        if(file_output() && tree_output())
             print_tree(tree_outfname);
 
         if(node_init && node_rank > 0)

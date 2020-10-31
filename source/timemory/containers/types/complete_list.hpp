@@ -41,6 +41,7 @@
 #include "timemory/runtime/initialize.hpp"
 #include "timemory/runtime/properties.hpp"
 #include "timemory/storage/definition.hpp"
+#include "timemory/types.hpp"
 #include "timemory/variadic/definition.hpp"
 #include "timemory/variadic/types.hpp"
 

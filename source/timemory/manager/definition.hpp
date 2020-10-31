@@ -704,9 +704,6 @@ timemory_library_constructor()
         return;
     _once = true;
 
-    auto _debug   = tim::settings::debug();
-    auto _verbose = tim::settings::verbose();
-
     auto        _inst        = timemory_manager_master_instance();
     static auto _dir         = tim::settings::output_path();
     static auto _prefix      = tim::settings::output_prefix();
@@ -717,7 +714,6 @@ timemory_library_constructor()
     if(_debug || _verbose > 3)
         printf("[%s]> initializing manager...\n", __FUNCTION__);
 
-    auto                     _inst   = timemory_manager_master_instance();
     static auto              _master = manager::master_instance();
     static thread_local auto _worker = manager::instance();
 

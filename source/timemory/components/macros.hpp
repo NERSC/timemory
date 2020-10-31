@@ -383,7 +383,7 @@
         template <typename T>                                                            \
         using storage_t = storage<T, typename T::value_type>;                            \
         template <typename T>                                                            \
-        using storage_impl_t = impl::storage<T, trait::implements_storage<T>::value>;    \
+        using storage_impl_t = impl::storage<T, trait::uses_value_storage<T>::value>;    \
         template <typename T>                                                            \
         using storage_deleter_t = impl::storage_deleter<storage_impl_t<T>>;              \
         template <typename T>                                                            \
@@ -401,7 +401,7 @@
         namespace tim                                                                        \
         {                                                                                    \
         extern template class impl::storage<TYPE,                                            \
-                                            trait::implements_storage<TYPE>::value>;         \
+                                            trait::uses_value_storage<TYPE>::value>;         \
         extern template class storage<TYPE, typename TYPE::value_type>;                      \
         extern template class singleton<alias::storage_impl_t<TYPE>,                         \
                                         alias::storage_pointer_t<TYPE>>;                     \
@@ -418,7 +418,7 @@
         TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
         namespace tim                                                                    \
         {                                                                                \
-        template class impl::storage<TYPE, trait::implements_storage<TYPE>::value>;      \
+        template class impl::storage<TYPE, trait::uses_value_storage<TYPE>::value>;      \
         template class storage<TYPE, typename TYPE::value_type>;                         \
         template class singleton<alias::storage_impl_t<TYPE>,                            \
                                  alias::storage_pointer_t<TYPE>>;                        \

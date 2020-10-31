@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#define TIMEMORY_VISIBILITY(mode)
+
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
 #include <cstdint>
@@ -32,9 +34,9 @@
 extern "C"
 {
     void __cyg_profile_func_enter(void* this_fn, void* call_site)
-        TIMEMORY_VISIBILITY("default") TIMEMORY_NEVER_INSTRUMENT;
+        TIMEMORY_ATTRIBUTE(visibility("default")) TIMEMORY_NEVER_INSTRUMENT;
     void __cyg_profile_func_exit(void* this_fn, void* call_site)
-        TIMEMORY_VISIBILITY("default") TIMEMORY_NEVER_INSTRUMENT;
+        TIMEMORY_ATTRIBUTE(visibility("default")) TIMEMORY_NEVER_INSTRUMENT;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -67,12 +69,12 @@ using namespace tim::component;
 template <typename Tp>
 using uomap_t = std::unordered_map<void*, std::unordered_map<void*, Tp>>;
 
-//using trace_set_t =
+// using trace_set_t =
 //    tim::component_bundle<TIMEMORY_API, wall_clock, cpu_clock, peak_rss, page_rss,
 //                          virtual_memory, read_char, written_char, read_bytes,
-//                          written_bytes, voluntary_context_switch, num_minor_page_faults>;
-using trace_set_t =
-    tim::component_bundle<TIMEMORY_API, monotonic_clock>;
+//                          written_bytes, voluntary_context_switch,
+//                          num_minor_page_faults>;
+using trace_set_t    = tim::component_bundle<TIMEMORY_API, user_trace_bundle>;
 using trace_vec_t    = std::vector<trace_set_t>;
 using throttle_map_t = uomap_t<bool>;
 using overhead_map_t = uomap_t<std::pair<monotonic_clock, size_t>>;
@@ -174,11 +176,13 @@ static void
 initialize()
 {
     tim::set_env("TIMEMORY_COUT_OUTPUT", "OFF", 0);
+    tim::set_env("TIMEMORY_GLOBAL_COMPONENTS", "wall_clock", 0);
     char* argv = new char[128];
     strcpy(argv, "compiler-instrumentation");
     tim::timemory_init(1, &argv);
     delete[] argv;
     tim::settings::parse();
+    user_trace_bundle::global_init();
 }
 
 //--------------------------------------------------------------------------------------//

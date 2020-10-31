@@ -25,7 +25,7 @@
 #pragma once
 
 #include "timemory/components.hpp"
-#include "timemory/components/opaque.hpp"
+#include "timemory/components/opaque/declaration.hpp"
 #include "timemory/components/placeholder.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/components/types.hpp"

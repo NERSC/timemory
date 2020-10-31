@@ -88,21 +88,15 @@ struct storage_initializer
     TIMEMORY_DEFAULT_OBJECT(storage_initializer)
 
     template <typename T>
-    static enable_if_t<trait::uses_storage<T>::value, storage_initializer> get()
-        TIMEMORY_VISIBILITY("default");
+    static enable_if_t<trait::uses_storage<T>::value, storage_initializer> get(
+        std::true_type) TIMEMORY_VISIBILITY("default");
 
     template <typename T>
-    static enable_if_t<!trait::uses_storage<T>::value, storage_initializer> get()
-        TIMEMORY_VISIBILITY("default");
+    static enable_if_t<!trait::uses_storage<T>::value, storage_initializer> get(
+        std::false_type) TIMEMORY_VISIBILITY("default");
 
-    template <size_t Idx>
+    template <typename T>
     static storage_initializer get() TIMEMORY_VISIBILITY("default");
-
-    template <typename T>
-    static storage_initializer get(std::true_type) TIMEMORY_VISIBILITY("default");
-
-    template <typename T>
-    static storage_initializer get(std::false_type) TIMEMORY_VISIBILITY("default");
 
     template <size_t Idx, enable_if_t<Idx != TIMEMORY_COMPONENTS_END> = 0>
     static storage_initializer get() TIMEMORY_VISIBILITY("default");

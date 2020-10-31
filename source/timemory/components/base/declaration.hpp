@@ -106,6 +106,7 @@ public:
     using this_type         = Tp;
     using base_type         = base<Tp, Value>;
     using storage_type      = storage<Tp, Value>;
+    using base_storage_type = tim::base::storage;
     using graph_iterator    = typename storage_type::iterator;
     using state_t           = state<this_type>;
     using statistics_policy = policy::record_statistics<Tp, Value>;
@@ -503,7 +504,7 @@ private:
     friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
-    friend struct operation::insert_node<Tp>;
+    friend struct operation::push_node<Tp>;
     friend struct operation::pop_node<Tp>;
     friend struct operation::record<Tp>;
     friend struct operation::reset<Tp>;
