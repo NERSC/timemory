@@ -104,10 +104,10 @@ initialize(T* obj, Args&&... args)
 //
 ///  usage:
 ///      using namespace tim::component;
-///      using optional_t = tim::auto_tuple<user_list_bundle>;
+///      using optional_t = tim::auto_tuple<user_global_bundle>;
 //
 ///      auto obj = new optional_t(__FUNCTION__, __LINE__);
-///      tim::insert(obj.get<user_list_bundle>(), { CPU_CLOCK, CPU_UTIL });
+///      tim::insert(obj.get<user_global_bundle>(), { CPU_CLOCK, CPU_UTIL });
 //
 ///  typename... ExtraArgs
 ///      required because of extra "hidden" template parameters in STL containers
@@ -136,9 +136,9 @@ insert(T* obj, Args&&... args)
 //
 ///  usage:
 ///      using namespace tim::component;
-///      using optional_t = tim::auto_tuple<user_list_bundle>;
+///      using optional_t = tim::auto_tuple<user_global_bundle>;
 ///
-///      tim::configure<user_list_bundle>({ CPU_CLOCK, CPU_UTIL });
+///      tim::configure<user_global_bundle>({ CPU_CLOCK, CPU_UTIL });
 ///
 ///      auto obj = new optional_t(__FUNCTION__, __LINE__);
 //

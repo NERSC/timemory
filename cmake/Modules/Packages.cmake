@@ -1286,6 +1286,10 @@ else()
     inform_empty_interface(timemory-dyninst "dyninst")
 endif()
 
+if(TIMEMORY_USE_DYNINST)
+    set(TIMEMORY_BUILD_DYNINST_TOOLS ${TIMEMORY_USE_DYNINST})
+endif()
+
 add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
 
 

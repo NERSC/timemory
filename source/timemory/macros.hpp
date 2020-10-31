@@ -178,11 +178,11 @@
 ///    via `nm --dynamic <EXE>`
 ///
 #    if !defined(TIMEMORY_DERIVED_GOTCHA)
-#        define TIMEMORY_DERIVED_GOTCHA(type, idx, func, deriv_name)                     \
+#        define TIMEMORY_DERIVED_GOTCHA(type, idx, func, ...)                            \
             type::template instrument<                                                   \
                 idx, typename ::tim::function_traits<decltype(func)>::result_type,       \
                 typename ::tim::function_traits<decltype(func)>::call_type>::            \
-                generate(deriv_name)
+                generate(__VA_ARGS__)
 #    endif
 //
 #else

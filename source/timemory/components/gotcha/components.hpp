@@ -150,7 +150,7 @@ struct gotcha
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args>
-    static void construct(const std::string& _func, int _priority = 0,
+    static bool construct(const std::string& _func, int _priority = 0,
                           const std::string& _tool = "")
     {
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
@@ -161,7 +161,7 @@ struct gotcha
         auto& _data = get_data()[N];
 
         if(!is_permitted<N, Ret, Args...>(_func))
-            return;
+            return false;
 
         if(!_data.filled)
         {
@@ -207,21 +207,38 @@ struct gotcha
 
         if(!_data.ready)
             revert<N>();
+
+        return _data.filled;
     }
 
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args>
-    static void configure(const std::string& _func, int _priority = 0,
+    static auto configure(const std::string& _func, int _priority = 0,
                           const std::string& _tool = "")
     {
-        construct<N, Ret, Args...>(_func, _priority, _tool);
+        return construct<N, Ret, Args...>(_func, _priority, _tool);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t N, typename Ret, typename... Args>
+    static auto configure(const std::vector<std::string>& _funcs, int _priority = 0,
+                          const std::string& _tool = "")
+    {
+        auto itr = _funcs.begin();
+        auto ret = false;
+        while(!ret && itr != _funcs.end())
+        {
+            ret = construct<N, Ret, Args...>(*itr, _priority, _tool);
+            ++itr;
+        }
     }
 
     //----------------------------------------------------------------------------------//
 
     template <size_t N>
-    static void revert()
+    static bool revert()
     {
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
 
@@ -240,6 +257,8 @@ struct gotcha
             else
                 _data.ready = get_default_ready();
         }
+
+        return _data.filled;
     }
 
     //----------------------------------------------------------------------------------//
@@ -249,6 +268,23 @@ struct gotcha
     //----------------------------------------------------------------------------------//
 
     static std::mutex& get_mutex() { return get_persistent_data().m_mutex; }
+
+    //----------------------------------------------------------------------------------//
+
+    static auto get_info()
+    {
+        std::array<size_t, 5> _info{};
+        _info.fill(0);
+        for(auto& itr : get_data())
+        {
+            _info.at(0) += (itr.ready) ? 1 : 0;
+            _info.at(1) += (itr.filled) ? 1 : 0;
+            _info.at(2) += (itr.is_active) ? 1 : 0;
+            _info.at(3) += (itr.is_finalized) ? 1 : 0;
+            _info.at(4) += (itr.suppression && !(*itr.suppression)) ? 1 : 0;
+        }
+        return _info;
+    }
 
     //----------------------------------------------------------------------------------//
 
@@ -345,7 +381,7 @@ public:
         if(_t == 0 && !is_configured())
             configure();
 
-        if(_n == 0 && !storage_type::is_finalizing())
+        if(_n == 0)
         {
             configure();
             for(auto& itr : get_data())
@@ -454,6 +490,7 @@ private:
         constructor_t constructor  = []() {};  /// wrap the function
         destructor_t  destructor   = []() {};  /// unwrap the function
         bool*         suppression  = nullptr;  /// turn on/off some suppression variable
+        bool*         debug        = &settings::debug();
     };
 
     //----------------------------------------------------------------------------------//
@@ -681,7 +718,6 @@ private:
               enable_if_t<!(std::is_same<Ret, void>::value), int>    = 0>
     static Ret invoke(Comp&, bool&, Ret (*_func)(Args...), Args&&... _args)
     {
-        // gotcha_suppression::auto_toggle suppress_lock(_ready);
         Ret _ret = _func(std::forward<Args>(_args)...);
         return _ret;
     }
@@ -759,11 +795,13 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args>
-    static Ret wrap(Args... _args)
+    static TIMEMORY_NOINLINE Ret wrap(Args... _args)
     {
         static_assert(N < Nt, "Error! N must be less than Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
         auto& _data = get_data()[N];
+
+        // PRINT_HERE("%s", _data.tool_id.c_str());
 
         static constexpr bool void_operator = std::is_same<operator_type, void>::value;
         static_assert(void_operator, "operator_type should be void!");
@@ -771,19 +809,24 @@ private:
         typedef Ret (*func_t)(Args...);
         func_t _orig = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
-        auto& _global_suppress = gotcha_suppression::get();
-        if(!_data.ready || _global_suppress || !settings::enabled())
+        if(_data.is_finalized)
+            return (_orig) ? (*_orig)(_args...) : Ret{};
+
+        auto _suppress =
+            gotcha_suppression::get() || (_data.suppression && *_data.suppression);
+        if(!_data.ready || _suppress)
         {
-            if(settings::debug())
+            static thread_local bool _recursive = false;
+            if(!_recursive && _data.debug && *_data.debug)
             {
-                static std::atomic<int64_t> _tcount(0);
-                static thread_local int64_t _tid = _tcount++;
-                std::stringstream           ss;
+                _recursive             = true;
+                auto              _tid = threading::get_id();
+                std::stringstream ss;
                 ss << "[T" << _tid << "]> " << _data.tool_id << " is either not ready ("
-                   << std::boolalpha << !_data.ready << "), is globally suppressed ("
-                   << _global_suppress << "), or timemory is disabled ("
-                   << settings::enabled() << "...\n";
+                   << std::boolalpha << !_data.ready << ") or is globally suppressed ("
+                   << _suppress << ")...\n";
                 std::cout << ss.str() << std::flush;
+                _recursive = false;
             }
             return (_orig) ? (*_orig)(_args...) : Ret{};
         }
@@ -816,7 +859,16 @@ private:
 
             // component_type is always: component_{tuple,list,hybrid}
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-            component_type _obj{ _data.tool_id };
+            //
+            static const char* _tool_id   = _data.tool_id.c_str();
+            static auto        _tool_hash = get_hash_id(_data.tool_id);
+            if(_tool_id != _data.tool_id.data())
+            {
+                _tool_id   = _data.tool_id.c_str();
+                _tool_hash = get_hash_id(_data.tool_id);
+            }
+            //
+            component_type _obj{ _tool_hash };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
@@ -839,7 +891,7 @@ private:
             return _ret;
         }
 
-        if(settings::debug())
+        if(_data.debug && *_data.debug)
             PRINT_HERE("%s", "nullptr to original function!");
 #else
         consume_parameters(_args...);
@@ -851,30 +903,41 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename... Args>
-    static void wrap_void(Args... _args)
+    static TIMEMORY_NOINLINE void wrap_void(Args... _args)
     {
         static_assert(N < Nt, "Error! N must be less than Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
         auto& _data = get_data()[N];
+
+        // PRINT_HERE("%s", _data.tool_id.c_str());
 
         static constexpr bool void_operator = std::is_same<operator_type, void>::value;
         static_assert(void_operator, "operator_type should be void!");
 
         auto _orig = (void (*)(Args...)) gotcha_get_wrappee(_data.wrappee);
 
-        auto& _global_suppress = gotcha_suppression::get();
-        if(!_data.ready || _global_suppress || !settings::enabled())
+        if(_data.is_finalized)
         {
-            if(settings::debug())
+            if(_orig)
+                (*_orig)(_args...);
+            return;
+        }
+
+        auto _suppress =
+            gotcha_suppression::get() || (_data.suppression && *_data.suppression);
+        if(!_data.ready || _suppress)
+        {
+            static thread_local bool _recursive = false;
+            if(!_recursive && _data.debug && *_data.debug)
             {
-                static std::atomic<int64_t> _tcount(0);
-                static thread_local int64_t _tid = _tcount++;
-                std::stringstream           ss;
+                _recursive             = true;
+                auto              _tid = threading::get_id();
+                std::stringstream ss;
                 ss << "[T" << _tid << "]> " << _data.tool_id << " is either not ready ("
                    << std::boolalpha << !_data.ready << ") or is globally suppressed ("
-                   << _global_suppress << "), or timemory is disabled ("
-                   << settings::enabled() << "...\n";
+                   << _suppress << ")...\n";
                 std::cout << ss.str() << std::flush;
+                _recursive = false;
             }
             if(_orig)
                 (*_orig)(_args...);
@@ -908,7 +971,15 @@ private:
 
         if(_orig)
         {
-            component_type _obj{ _data.tool_id };
+            static const char* _tool_id   = _data.tool_id.c_str();
+            static auto        _tool_hash = get_hash_id(_data.tool_id);
+            if(_tool_id != _data.tool_id.data())
+            {
+                _tool_id   = _data.tool_id.c_str();
+                _tool_hash = get_hash_id(_data.tool_id);
+            }
+            //
+            component_type _obj{ _tool_hash };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
@@ -923,7 +994,7 @@ private:
             _obj.audit(_data.tool_id);
             _obj.stop();
         }
-        else if(settings::debug())
+        else if(_data.debug && *_data.debug)
         {
             PRINT_HERE("%s", "nullptr to original function!");
         }
@@ -942,13 +1013,15 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args>
-    static Ret replace_func(Args... _args)
+    static TIMEMORY_NOINLINE Ret replace_func(Args... _args)
     {
         static_assert(N < Nt, "Error! N must be less than Nt!");
         static_assert(components_size == 0, "Error! Number of components must be zero!");
 
 #if defined(TIMEMORY_USE_GOTCHA)
         static auto& _data = get_data()[N];
+
+        // PRINT_HERE("%s", _data.tool_id.c_str());
 
         typedef Ret (*func_t)(Args...);
         using wrap_type = tim::component_tuple<operator_type>;
@@ -957,11 +1030,11 @@ private:
         static_assert(!void_operator, "operator_type cannot be void!");
 
         auto _orig = (func_t) gotcha_get_wrappee(_data.wrappee);
-        if(!_data.ready || !settings::enabled())
+        if(!_data.ready)
             return (*_orig)(_args...);
 
         _data.ready = false;
-        static thread_local wrap_type _obj(_data.tool_id, false);
+        static wrap_type _obj{ _data.tool_id };
         Ret _ret    = invoke(_obj, _orig, std::forward<Args>(_args)...);
         _data.ready = true;
         return _ret;
@@ -975,11 +1048,13 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename... Args>
-    static void replace_void_func(Args... _args)
+    static TIMEMORY_NOINLINE void replace_void_func(Args... _args)
     {
         static_assert(N < Nt, "Error! N must be less than Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
         static auto& _data = get_data()[N];
+
+        // PRINT_HERE("%s", _data.tool_id.c_str());
 
         typedef void (*func_t)(Args...);
         using wrap_type = tim::component_tuple<operator_type>;
@@ -988,12 +1063,12 @@ private:
         static_assert(!void_operator, "operator_type cannot be void!");
 
         auto _orig = (func_t) gotcha_get_wrappee(_data.wrappee);
-        if(!_data.ready || !settings::enabled())
+        if(!_data.ready)
             (*_orig)(_args...);
         else
         {
             _data.ready = false;
-            static thread_local wrap_type _obj(_data.tool_id, false);
+            static wrap_type _obj{ _data.tool_id };
             invoke(_obj, _orig, std::forward<Args>(_args)...);
             _data.ready = true;
         }
@@ -1020,7 +1095,6 @@ namespace tim
 {
 namespace component
 {
-//======================================================================================//
 //
 struct malloc_gotcha
 : base<malloc_gotcha, double>
@@ -1064,16 +1138,27 @@ struct malloc_gotcha
     using gotcha_component_type = push_back_t<Tp, this_type>;
 
     template <typename Tp>
-    using gotcha_type = gotcha<data_size, push_back_t<Tp, this_type>, type_list<>>;
+    using gotcha_type =
+        gotcha<data_size, push_back_t<Tp, this_type>, type_list<this_type>>;
 
     template <typename Tp>
     using component_type = push_back_t<Tp, gotcha_type<Tp>>;
 
+    static void global_finalize()
+    {
+        for(auto& itr : get_cleanup_list())
+            itr();
+        get_cleanup_list().clear();
+    }
+
 public:
     //----------------------------------------------------------------------------------//
 
-    template <typename Tp, typename... Types>
+    template <typename Tp>
     static void configure();
+
+    template <typename Tp>
+    static void tear_down();
 
     //----------------------------------------------------------------------------------//
 
@@ -1089,7 +1174,7 @@ public:
     }
 
 public:
-    //----------------------------------------------------------------------------------//
+    TIMEMORY_DEFAULT_OBJECT(malloc_gotcha)
 
     malloc_gotcha(const std::string& _prefix)
     : prefix_hash(string_hash()(_prefix))
@@ -1099,13 +1184,6 @@ public:
         value = 0.0;
         accum = 0.0;
     }
-
-    malloc_gotcha()                     = default;
-    ~malloc_gotcha()                    = default;
-    malloc_gotcha(const this_type&)     = default;
-    malloc_gotcha(this_type&&) noexcept = default;
-    malloc_gotcha& operator=(const this_type&) = default;
-    malloc_gotcha& operator=(this_type&&) noexcept = default;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -1356,6 +1434,13 @@ private:
     using alloc_map_t  = std::unordered_map<void*, size_t>;
     using vaddr_map_t  = std::unordered_map<void**, size_t>;
     using hash_array_t = std::array<uintmax_t, data_size>;
+    using clean_list_t = std::vector<std::function<void()>>;
+
+    static clean_list_t& get_cleanup_list()
+    {
+        static clean_list_t _instance;
+        return _instance;
+    }
 
     static alloc_map_t& get_allocation_map()
     {
@@ -1403,15 +1488,15 @@ private:
 //
 #if defined(TIMEMORY_USE_GOTCHA)
 //
-template <typename Type, typename... Types>
+template <typename Tp>
 inline void
 malloc_gotcha::configure()
 {
     // static_assert(!std::is_same<Type, malloc_gotcha>::value,
     //              "Error! Cannot configure with self as the type!");
 
-    using tuple_t           = component_tuple<Type, Types..., malloc_gotcha>;
-    using local_gotcha_type = gotcha<data_size, tuple_t, type_list<>>;
+    using tuple_t           = push_back_t<Tp, this_type>;
+    using local_gotcha_type = gotcha<data_size, tuple_t, type_list<this_type>>;
 
     local_gotcha_type::get_default_ready() = false;
     local_gotcha_type::get_initializer()   = []() {
@@ -1431,6 +1516,23 @@ malloc_gotcha::configure()
 #    endif
         //
     };
+
+    get_cleanup_list().emplace_back([]() { malloc_gotcha::tear_down<Tp>(); });
+}
+//
+template <typename Tp>
+inline void
+malloc_gotcha::tear_down()
+{
+    // static_assert(!std::is_same<Type, malloc_gotcha>::value,
+    //              "Error! Cannot configure with self as the type!");
+
+    using tuple_t           = push_back_t<Tp, this_type>;
+    using local_gotcha_type = gotcha<data_size, tuple_t, type_list<this_type>>;
+
+    local_gotcha_type::get_default_ready() = false;
+    local_gotcha_type::get_initializer()   = []() {};
+    local_gotcha_type::disable();
 }
 //
 #endif

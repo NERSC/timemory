@@ -26,6 +26,8 @@
 
 #include "timemory/compat/macros.h"
 
+#include <cassert>
+
 #if defined(TIMEMORY_CORE_SOURCE)
 #    define TIMEMORY_SETTINGS_SOURCE
 #elif defined(TIMEMORY_USE_CORE_EXTERN)
@@ -71,7 +73,9 @@
     public:                                                                              \
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            return static_cast<tsettings<TYPE>*>(m_data[ENV_VAR].get())->get();          \
+            assert(m_data.find(ENV_VAR) != m_data.end());                                \
+            return static_cast<tsettings<TYPE>*>(m_data.find(ENV_VAR)->second.get())     \
+                ->get();                                                                 \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
@@ -97,7 +101,10 @@
     public:                                                                              \
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            return static_cast<tsettings<TYPE, TYPE&>*>(m_data[ENV_VAR].get())->get();   \
+            assert(m_data.find(ENV_VAR) != m_data.end());                                \
+            return static_cast<tsettings<TYPE, TYPE&>*>(                                 \
+                       m_data.find(ENV_VAR)->second.get())                               \
+                ->get();                                                                 \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \

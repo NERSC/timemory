@@ -90,7 +90,7 @@ enum TIMEMORY_NATIVE_COMPONENT
     KERNEL_MODE_TIME,
     LIKWID_MARKER,
     LIKWID_NVMARKER,
-    MALLOC_GOTCHA,
+    MEMORY_ALLOCATIONS,
     MONOTONIC_CLOCK,
     MONOTONIC_RAW_CLOCK,
     NUM_IO_IN,
@@ -115,12 +115,10 @@ enum TIMEMORY_NATIVE_COMPONENT
     TRIP_COUNT,
     USER_CLOCK,
     USER_GLOBAL_BUNDLE,
-    USER_LIST_BUNDLE,
     USER_MODE_TIME,
     USER_MPIP_BUNDLE,
     USER_NCCLP_BUNDLE,
     USER_OMPT_BUNDLE,
-    USER_TUPLE_BUNDLE,
     VIRTUAL_MEMORY,
     VOLUNTARY_CONTEXT_SWITCH,
     VTUNE_EVENT,
@@ -147,6 +145,18 @@ typedef int TIMEMORY_COMPONENT;
 //
 #if !defined(CALIPER)
 #    define CALIPER CALIPER_MARKER
+#endif
+//
+#if !defined(USER_TUPLE_BUNDLE)
+#    define USER_TUPLE_BUNDLE USER_GLOBAL_BUNDLE
+#endif
+//
+#if !defined(USER_LIST_BUNDLE)
+#    define USER_LIST_BUNDLE USER_GLOBAL_BUNDLE
+#endif
+//
+#if !defined(MALLOC_GOTCHA)
+#    define MALLOC_GOTCHA MEMORY_ALLOCATIONS
 #endif
 //
 //--------------------------------------------------------------------------------------//

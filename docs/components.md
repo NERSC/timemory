@@ -37,6 +37,7 @@
 .. doxygenstruct:: tim::component::voluntary_context_switch
 .. doxygenstruct:: tim::component::priority_context_switch
 .. doxygenstruct:: tim::component::gotcha
+.. doxygenstruct:: tim::component::memory_allocations
 .. doxygenstruct:: tim::component::allinea_map
 .. doxygenstruct:: tim::component::caliper_config
 .. doxygenstruct:: tim::component::caliper_marker
@@ -51,7 +52,6 @@
 .. doxygenstruct:: tim::component::nvtx_marker
 .. doxygenstruct:: tim::component::cupti_activity
 .. doxygenstruct:: tim::component::cupti_counters
-.. doxygenstruct:: tim::component::gotcha
 .. doxygenstruct:: tim::component::gperftools_cpu_profiler
 .. doxygenstruct:: tim::component::gperftools_heap_profiler
 .. doxygenstruct:: tim::component::likwid_marker

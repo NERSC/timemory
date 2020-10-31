@@ -110,8 +110,6 @@
     component::trip_count,                      \
     component::user_clock,                      \
     component::user_global_bundle,              \
-    component::user_list_bundle,                \
-    component::user_tuple_bundle,               \
     component::user_mode_time,                  \
     component::virtual_memory,                  \
     component::voluntary_context_switch,        \

@@ -123,67 +123,70 @@ struct gotcha_invoker
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename... Args>
-    static Ret invoke(Tp& _obj, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
+    template <typename FuncT, typename... Args>
+    static decltype(auto) invoke(Tp& _obj, bool& _ready, FuncT&& _func, Args&&... _args)
     {
-        return invoke_sfinae(_obj, _ready, _func, std::forward<Args>(_args)...);
+        return invoke_sfinae(_obj, _ready, std::forward<FuncT>(_func),
+                             std::forward<Args>(_args)...);
     }
 
 private:
     //----------------------------------------------------------------------------------//
     //  Call:
     //
-    //      Ret Type::operator()(Args...)
+    //      Ret Type::operator{}(Args...)
     //
     //  instead of gotcha_wrappee
     //
-    template <typename... Args>
-    static auto invoke_sfinae_impl(Tp& _obj, int, bool&, Ret (*)(Args...),
-                                   Args&&... _args)
-        -> decltype(_obj(std::forward<Args>(_args)...), Ret())
+    template <typename FuncT, typename... Args>
+    static decltype(auto) invoke_sfinae_impl(Tp& _obj, int, bool&, FuncT&&,
+                                             Args&&... _args)
+        -> decltype(_obj(std::forward<Args>(_args)...))
     {
-        // gotcha_suppression::auto_toggle suppress_lock(_ready);
         return _obj(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  Call the original gotcha_wrappee
     //
-    template <typename... Args>
-    static auto invoke_sfinae_impl(Tp&, long, bool&, Ret (*_func)(Args...),
-                                   Args&&... _args)
-        -> decltype(_func(std::forward<Args>(_args)...), Ret())
+    template <typename FuncT, typename... Args>
+    static decltype(auto) invoke_sfinae_impl(Tp&, long, bool&, FuncT&& _func,
+                                             Args&&... _args)
+        -> decltype(std::forward<FuncT>(_func)(std::forward<Args>(_args)...))
     {
-        // gotcha_suppression::auto_toggle suppress_lock(_ready);
-        return _func(std::forward<Args>(_args)...);
+        return std::forward<FuncT>(_func)(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
-    template <typename... Args>
-    static auto invoke_sfinae(Tp& _obj, bool& _ready, Ret (*_func)(Args...),
-                              Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _ready, _func,
-                                       std::forward<Args>(_args)...),
-                    Ret())
+    template <typename FuncT, typename... Args>
+    static decltype(auto) invoke_sfinae(Tp& _obj, bool& _ready, FuncT&& _func,
+                                        Args&&... _args)
+        -> decltype(invoke_sfinae_impl(_obj, 0, _ready, std::forward<FuncT>(_func),
+                                       std::forward<Args>(_args)...))
     {
-        return invoke_sfinae_impl(_obj, 0, _ready, _func, std::forward<Args>(_args)...);
+        return invoke_sfinae_impl(_obj, 0, _ready, std::forward<FuncT>(_func),
+                                  std::forward<Args>(_args)...);
     }
 
+public:
     //==================================================================================//
-public:
-    template <typename... Args>
-    static Ret invoke(Tp& _obj, Ret (*_func)(Args...), Args&&... _args)
+    //
+    template <typename FuncT, typename... Args>
+    static decltype(auto) invoke(Tp& _obj, FuncT&& _func, Args&&... _args)
     {
-        return invoke_sfinae(_obj, _func, std::forward<Args>(_args)...);
+        return invoke_sfinae(_obj, std::forward<FuncT>(_func),
+                             std::forward<Args>(_args)...);
     }
 
-    //----------------------------------------------------------------------------------//
 private:
-    template <typename... Args>
-    static auto invoke_sfinae_impl(Tp& _obj, int, Ret (*)(Args...), Args&&... _args)
-        -> decltype(_obj(std::forward<Args>(_args)...), Ret())
+    //----------------------------------------------------------------------------------//
+    //  Call the operator of the instance
+    //
+    template <typename FuncT, typename... Args>
+    static decltype(auto) invoke_sfinae_impl(Tp& _obj, int, FuncT&&, Args&&... _args)
+        -> decltype(_obj(std::forward<Args>(_args)...))
     {
         return _obj(std::forward<Args>(_args)...);
     }
@@ -191,123 +194,22 @@ private:
     //----------------------------------------------------------------------------------//
     //  Call the original gotcha_wrappee
     //
-    template <typename... Args>
-    static auto invoke_sfinae_impl(Tp&, long, Ret (*_func)(Args...), Args&&... _args)
-        -> decltype(_func(std::forward<Args>(_args)...), Ret())
+    template <typename FuncT, typename... Args>
+    static decltype(auto) invoke_sfinae_impl(Tp&, long, FuncT&& _func, Args&&... _args)
+        -> decltype(std::forward<FuncT>(_func)(std::forward<Args>(_args)...))
     {
-        return _func(std::forward<Args>(_args)...);
+        return std::forward<FuncT>(_func)(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
-    template <typename... Args>
-    static auto invoke_sfinae(Tp& _obj, Ret (*_func)(Args...), Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _func, std::forward<Args>(_args)...),
-                    Ret())
+    template <typename FuncT, typename... Args>
+    static decltype(auto) invoke_sfinae(Tp& _obj, FuncT&& _func, Args&&... _args)
+        -> decltype(invoke_sfinae_impl(_obj, 0, _func, std::forward<Args>(_args)...))
     {
-        return invoke_sfinae_impl(_obj, 0, _func, std::forward<Args>(_args)...);
-    }
-    //
-    //----------------------------------------------------------------------------------//
-};
-//
-//======================================================================================//
-//
-template <typename Tp>
-struct gotcha_invoker<Tp, void>
-{
-    using Type        = Tp;
-    using Ret         = void;
-    using return_type = void;
-    using value_type  = typename Type::value_type;
-    using base_type   = typename Type::base_type;
-
-    template <typename... Args>
-    static Ret invoke(Tp& _obj, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
-    {
-        invoke_sfinae(_obj, _ready, _func, std::forward<Args>(_args)...);
-    }
-
-private:
-    //----------------------------------------------------------------------------------//
-    //  Call:
-    //
-    //      Ret Type::operator()(Args...)
-    //
-    //  instead of gotcha_wrappee
-    //
-    template <typename... Args>
-    static auto invoke_sfinae_impl(Tp& _obj, int, bool&, Ret (*)(Args...),
-                                   Args&&... _args)
-        -> decltype(_obj(std::forward<Args>(_args)...), Ret())
-    {
-        // gotcha_suppression::auto_toggle suppress_lock(_ready);
-        _obj(std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Call the original gotcha_wrappee
-    //
-    template <typename... Args>
-    static auto invoke_sfinae_impl(Tp&, long, bool&, Ret (*_func)(Args...),
-                                   Args&&... _args)
-        -> decltype(_func(std::forward<Args>(_args)...), Ret())
-    {
-        // gotcha_suppression::auto_toggle suppress_lock(_ready);
-        _func(std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Wrapper that calls one of two above
-    //
-    template <typename... Args>
-    static auto invoke_sfinae(Tp& _obj, bool& _ready, Ret (*_func)(Args...),
-                              Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _ready, _func,
-                                       std::forward<Args>(_args)...),
-                    Ret())
-    {
-        invoke_sfinae_impl(_obj, 0, _ready, _func, std::forward<Args>(_args)...);
-    }
-    //
-    //----------------------------------------------------------------------------------//
-
-public:
-    template <typename... Args>
-    static Ret invoke(Tp& _obj, Ret (*_func)(Args...), Args&&... _args)
-    {
-        invoke_sfinae(_obj, _func, std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-private:
-    template <typename... Args>
-    static auto invoke_sfinae_impl(Tp& _obj, int, Ret (*)(Args...), Args&&... _args)
-        -> decltype(_obj(std::forward<Args>(_args)...), Ret())
-    {
-        _obj(std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Call the original gotcha_wrappee
-    //
-    template <typename... Args>
-    static auto invoke_sfinae_impl(Tp&, long, Ret (*_func)(Args...), Args&&... _args)
-        -> decltype(_func(std::forward<Args>(_args)...), Ret())
-    {
-        _func(std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Wrapper that calls one of two above
-    //
-    template <typename... Args>
-    static auto invoke_sfinae(Tp& _obj, Ret (*_func)(Args...), Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _func, std::forward<Args>(_args)...),
-                    Ret())
-    {
-        invoke_sfinae_impl(_obj, 0, _func, std::forward<Args>(_args)...);
+        return invoke_sfinae_impl(_obj, 0, std::forward<FuncT>(_func),
+                                  std::forward<Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//

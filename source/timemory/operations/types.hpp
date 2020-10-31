@@ -632,7 +632,7 @@ protected:
     bool    json_forced    = false;
     bool    file_output    = settings::file_output();
     bool    cout_output    = settings::cout_output();
-    bool    tree_output    = (settings::json_output() || json_forced) && file_output;
+    bool    tree_output    = (settings::tree_output() || json_forced) && file_output;
     bool    json_output    = (settings::json_output() || json_forced) && file_output;
     bool    text_output    = settings::text_output() && file_output;
     bool    dart_output    = settings::dart_output();

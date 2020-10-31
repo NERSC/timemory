@@ -405,20 +405,6 @@ settings::initialize_components()
         "", strvector_t({ "--timemory-global-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, tuple_components, "TIMEMORY_TUPLE_COMPONENTS",
-        "A specification of components which will be added to component_tuple structures "
-        "containing the 'user_tuple_bundle'. These components will automatically be "
-        "activated",
-        "", strvector_t({ "--timemory-tuple-components" }));
-
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, list_components, "TIMEMORY_LIST_COMPONENTS",
-        "A specification of components which will be added to component_list structures "
-        "containing the 'user_list_bundle'. These components will only be activated if "
-        "the 'user_list_bundle' is activated.",
-        "", strvector_t({ "--timemory-list-components" }));
-
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, ompt_components, "TIMEMORY_OMPT_COMPONENTS",
         "A specification of components which will be added "
         "to structures containing the 'user_ompt_bundle'. Priority: TRACE_COMPONENTS -> "
@@ -485,6 +471,10 @@ settings::initialize_io()
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(bool, json_output, "TIMEMORY_JSON_OUTPUT",
                                       "Write json output files", true,
                                       strvector_t({ "--timemory-json-output" }), -1, 1);
+
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(bool, tree_output, "TIMEMORY_TREE_OUTPUT",
+                                      "Write hierarchical json output files", true,
+                                      strvector_t({ "--timemory-tree-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(bool, dart_output, "TIMEMORY_DART_OUTPUT",
                                       "Write dart measurements for CDash", false,

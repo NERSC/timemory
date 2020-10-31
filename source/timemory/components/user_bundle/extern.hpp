@@ -118,8 +118,6 @@
 #endif
 
 TIMEMORY_EXTERN_USER_BUNDLE(user_global_bundle)
-TIMEMORY_EXTERN_USER_BUNDLE(user_tuple_bundle)
-TIMEMORY_EXTERN_USER_BUNDLE(user_list_bundle)
 TIMEMORY_EXTERN_USER_BUNDLE(user_ompt_bundle)
 TIMEMORY_EXTERN_USER_BUNDLE(user_mpip_bundle)
 TIMEMORY_EXTERN_USER_BUNDLE(user_ncclp_bundle)

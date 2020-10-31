@@ -631,9 +631,8 @@ TEST_F(argparse_tests, timemory_argparse_vec)
     auto _python  = tim::settings::python_exe();
 
     std::vector<std::string> args = {
-        _margv[0], "--timemory-enabled=false", "--timemory-verbose",
-        "10",      "--timemory-debug",         "--timemory-python-exe",
-        "python",
+        _margv[0],          "--timemory-enabled=false", "--timemory-verbose", "10",
+        "--timemory-debug", "--timemory-python-exe",    "/fake/python",
     };
 
     std::cout << "Argument: ";
@@ -644,10 +643,11 @@ TEST_F(argparse_tests, timemory_argparse_vec)
     tim::timemory_argparse(args);
 
     EXPECT_EQ(tim::settings::verbose(), 10);
-    EXPECT_NE(_enabled, tim::settings::enabled());
-    EXPECT_NE(_verbose, tim::settings::verbose());
-    EXPECT_NE(_debug, tim::settings::debug());
-    EXPECT_NE(_python, tim::settings::python_exe());
+    EXPECT_NE(tim::settings::enabled(), _enabled);
+    EXPECT_NE(tim::settings::verbose(), _verbose);
+    EXPECT_NE(tim::settings::debug(), _debug);
+    EXPECT_NE(tim::settings::python_exe(), _python);
+    EXPECT_EQ(tim::settings::python_exe(), std::string("/fake/python"));
 
     tim::settings::enabled()    = _enabled;
     tim::settings::verbose()    = _verbose;
@@ -664,15 +664,11 @@ TEST_F(argparse_tests, timemory_argparse_ptr)
     auto _debug   = tim::settings::debug();
     auto _python  = tim::settings::python_exe();
 
-    std::vector<std::string> args = { _margv[0],
-                                      "--timemory-enabled=false",
-                                      "--timemory-verbose",
-                                      "10",
-                                      "--timemory-debug",
-                                      "--timemory-python-exe",
-                                      "python",
-                                      "--",
-                                      "some-argument" };
+    std::vector<std::string> args = {
+        _margv[0],          "--timemory-enabled=false", "--timemory-verbose", "10",
+        "--timemory-debug", "--timemory-python-exe",    "/fake/python",       "--",
+        "some-argument"
+    };
 
     int    argc = args.size();
     char** argv = new char*[argc];
@@ -694,12 +690,13 @@ TEST_F(argparse_tests, timemory_argparse_ptr)
     EXPECT_EQ(argc, 2);
     EXPECT_EQ(std::string(argv[0]), args.front());
     EXPECT_EQ(std::string(argv[1]), args.back());
-    EXPECT_EQ(tim::settings::python_exe(), std::string("python"));
 
-    EXPECT_NE(_enabled, tim::settings::enabled());
-    EXPECT_NE(_verbose, tim::settings::verbose());
-    EXPECT_NE(_debug, tim::settings::debug());
-    EXPECT_NE(_python, tim::settings::python_exe());
+    EXPECT_EQ(tim::settings::verbose(), 10);
+    EXPECT_NE(tim::settings::enabled(), _enabled);
+    EXPECT_NE(tim::settings::verbose(), _verbose);
+    EXPECT_NE(tim::settings::debug(), _debug);
+    EXPECT_NE(tim::settings::python_exe(), _python);
+    EXPECT_EQ(tim::settings::python_exe(), std::string("/fake/python"));
 
     tim::settings::enabled()    = _enabled;
     tim::settings::verbose()    = _verbose;

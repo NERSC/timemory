@@ -50,7 +50,7 @@ using stringstream_t = std::stringstream;
 struct bundle_testing
 {};
 
-using auto_bundle_t = tim::auto_tuple<user_tuple_bundle, user_list_bundle>;
+using auto_bundle_t = tim::auto_tuple<user_global_bundle, user_profiler_bundle>;
 using comp_bundle_t = typename auto_bundle_t::component_type;
 using bundle0_t     = tim::auto_tuple<wall_clock, cpu_util>;
 using bundle1_t     = tim::auto_list<cpu_clock, peak_rss>;
@@ -127,8 +127,8 @@ protected:
         ret = 0;
 
         custom_bundle_t::reset();
-        user_list_bundle::reset();
-        user_tuple_bundle::reset();
+        user_global_bundle::reset();
+        user_profiler_bundle::reset();
 
         auto bundle1_init = [](bundle1_t& _bundle) {
             PRINT_HERE("%s", "bundle1_init");
@@ -170,11 +170,12 @@ protected:
             }
         };
 
-        user_tuple_bundle::configure<bundle0_t, wall_clock, cpu_util>();
-        user_list_bundle::configure<bundle1_t>(tim::scope::tree{}, false, bundle1_init);
+        user_global_bundle::configure<bundle0_t, wall_clock, cpu_util>();
+        user_profiler_bundle::configure<bundle1_t>(tim::scope::tree{}, false,
+                                                   bundle1_init);
 
-        EXPECT_EQ(user_tuple_bundle::bundle_size(), 1);
-        EXPECT_EQ(user_list_bundle::bundle_size(), 1);
+        EXPECT_EQ(user_global_bundle::bundle_size(), 1);
+        EXPECT_EQ(user_profiler_bundle::bundle_size(), 1);
     }
 
 protected:
@@ -242,7 +243,7 @@ TEST_F(user_bundle_tests, comp_bundle)
 
     {
         comp_bundle_t _instance(details::get_test_name(), true);
-        _instance.get<user_tuple_bundle>()->clear();
+        _instance.get<user_global_bundle>()->clear();
 
         _instance.start();
         ret += details::fibonacci(35);

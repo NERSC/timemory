@@ -25,11 +25,16 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
 #include <ostream>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <deque>
+
+extern "C"
+{
+    extern double test_exp(double);
+}
 
 namespace ext
 {

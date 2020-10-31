@@ -140,30 +140,32 @@ generate_history(int n, int m)
 class archive_storage_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
+    static void SetUpTestSuite()
     {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                         = true;
-            tim::settings::verbose()           = 0;
-            tim::settings::debug()             = false;
-            tim::settings::mpi_thread()        = false;
-            tim::settings::cout_output()       = false;
-            tim::settings::text_output()       = true;
-            tim::settings::flamegraph_output() = false;
-            tim::dmp::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
-            std::vector<std::thread> threads;
-            for(uint64_t i = 0; i < 2; ++i)
-                threads.emplace_back(std::thread(details::generate_history, 5, 2));
-            for(auto& itr : threads)
-                itr.join();
-            std::cout << "Configured" << std::endl;
-        }
+        tim::settings::verbose()           = 0;
+        tim::settings::debug()             = false;
+        tim::settings::mpi_thread()        = false;
+        tim::settings::cout_output()       = false;
+        tim::settings::text_output()       = true;
+        tim::settings::flamegraph_output() = false;
+        tim::dmp::initialize(_argc, _argv);
+        tim::timemory_init(_argc, _argv);
+        tim::settings::dart_output() = true;
+        tim::settings::dart_count()  = 1;
+        tim::settings::banner()      = false;
+        std::vector<std::thread> threads;
+        for(uint64_t i = 0; i < 2; ++i)
+            threads.emplace_back(std::thread(details::generate_history, 5, 2));
+        for(auto& itr : threads)
+            itr.join();
+        std::cout << "Configured" << std::endl;
+    }
+
+    static void TearDownTestSuite()
+    {
+        tim::timemory_finalize();
+        tim::dmp::finalize();
+        std::cout << "Finalized" << std::endl;
     }
 
     static std::map<std::string, std::string> f_results;
@@ -345,12 +347,7 @@ main(int argc, char** argv)
     ::testing::InitGoogleTest(&argc, argv);
     _argc = argc;
     _argv = argv;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
+    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

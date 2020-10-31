@@ -49,8 +49,6 @@
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx, typename Tag)
 //
 TIMEMORY_BUNDLE_INDEX(global_bundle_idx, 10000)
-TIMEMORY_BUNDLE_INDEX(tuple_bundle_idx, 11000)
-TIMEMORY_BUNDLE_INDEX(list_bundle_idx, 11100)
 // TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)
 TIMEMORY_BUNDLE_INDEX(mpip_bundle_idx, 11111)
 TIMEMORY_BUNDLE_INDEX(ncclp_bundle_idx, 11112)
@@ -59,10 +57,9 @@ TIMEMORY_BUNDLE_INDEX(profiler_bundle_idx, 22000)
 //
 TIMEMORY_COMPONENT_ALIAS(user_global_bundle,
                          user_bundle<global_bundle_idx, project::timemory>)
-TIMEMORY_COMPONENT_ALIAS(user_tuple_bundle,
-                         user_bundle<tuple_bundle_idx, project::timemory>)
-TIMEMORY_COMPONENT_ALIAS(user_list_bundle,
-                         user_bundle<list_bundle_idx, project::timemory>)
+// no longer provide tuple and list bundles -- aliases to user_global_bundle
+TIMEMORY_COMPONENT_ALIAS(user_tuple_bundle, user_global_bundle)
+TIMEMORY_COMPONENT_ALIAS(user_list_bundle, user_global_bundle)
 TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle,
                          user_bundle<ompt_bundle_idx, project::timemory>)
 TIMEMORY_COMPONENT_ALIAS(user_mpip_bundle,
@@ -95,8 +92,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ncclp_bundle, false
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SET_COMPONENT_API(component::user_global_bundle, project::timemory, os::agnostic)
-TIMEMORY_SET_COMPONENT_API(component::user_list_bundle, project::timemory, os::agnostic)
-TIMEMORY_SET_COMPONENT_API(component::user_tuple_bundle, project::timemory, os::agnostic)
 TIMEMORY_SET_COMPONENT_API(component::user_mpip_bundle, project::timemory,
                            os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::user_ncclp_bundle, project::timemory,
@@ -169,12 +164,6 @@ struct reset<component::user_bundle<Idx, Type>>
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_global_bundle, USER_GLOBAL_BUNDLE,
                                  "user_global_bundle", "global_bundle")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
-                                 "user_tuple_bundle", "tuple_bundle")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(user_list_bundle, USER_LIST_BUNDLE, "user_list_bundle",
-                                 "list_bundle")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
                                  "ompt_bundle")

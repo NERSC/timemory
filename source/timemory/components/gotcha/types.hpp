@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/gotcha/types.hpp
- * \brief Declare the gotcha component types
- */
-
 #pragma once
 
 #include "timemory/components/macros.hpp"
@@ -42,6 +37,7 @@
 //                                    typename Differentiator = anonymous_t<void>)
 //
 TIMEMORY_DECLARE_COMPONENT(malloc_gotcha)
+TIMEMORY_DECLARE_COMPONENT(memory_allocations)
 //
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(mpip_handle, typename Toolset, typename Tag)
 
@@ -65,6 +61,8 @@ struct component_apis<component::gotcha<Nt, ComponentsT, DiffT>>
 //
 TIMEMORY_SET_COMPONENT_API(component::malloc_gotcha, tpls::gotcha, category::external,
                            category::memory, os::supports_linux)
+TIMEMORY_SET_COMPONENT_API(component::memory_allocations, tpls::gotcha,
+                           category::external, category::memory, os::supports_linux)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -80,10 +78,13 @@ TIMEMORY_STATISTICS_TYPE(component::malloc_gotcha, double)
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::memory_allocations, false_type)
+//
 #if !defined(TIMEMORY_USE_GOTCHA)
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::gotcha, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::malloc_gotcha, false_type)
+// TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::memory_allocations, false_type)
 //
 namespace tim
 {
@@ -176,7 +177,8 @@ struct has_gotcha<Tuple<T...>>
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(malloc_gotcha, MALLOC_GOTCHA, "malloc_gotcha", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(memory_allocations, MEMORY_ALLOCATIONS,
+                                 "memory_allocations", "malloc_gotcha")
 //
 //======================================================================================//
 //

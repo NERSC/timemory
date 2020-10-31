@@ -55,8 +55,6 @@
 #include "timemory/types.hpp"
 //
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_global_bundle, scope::config)
-TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_tuple_bundle, scope::config)
-TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_list_bundle, scope::config)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ompt_bundle, scope::config)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_mpip_bundle, scope::config)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ncclp_bundle, scope::config)

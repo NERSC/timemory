@@ -225,8 +225,7 @@ add_timemory_google_test(archive_storage_tests
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-mpi
                     timemory::timemory-upcxx
-                    timemory::timemory-core
-                    timemory::timemory-timing-component)
+                    timemory::timemory-core)
 
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
@@ -544,4 +543,11 @@ if(TARGET timemory::timemory-ncclp-library AND TARGET nccl_test_interface)
         SOURCES         nccl_tests.cpp
         LINK_LIBRARIES  nccl_test_interface
                         timemory::timemory-ncclp-library)
+endif()
+
+if(TIMEMORY_BUILD_ERT)
+    add_timemory_google_test(ert_tests
+        SOURCES         ert_tests.cpp
+        LINK_LIBRARIES  timemory::timemory-ert
+			${_LIBRARY})
 endif()

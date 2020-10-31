@@ -51,7 +51,7 @@ using tool_tuple_t     = tim::component_tuple<general_bundle_t>;
 using put_gotcha_t     = tim::component::gotcha<N, tool_tuple_t, char>;
 using mpi_gotcha_t     = tim::component::gotcha<N, tool_tuple_t, double>;
 using fake_gotcha_t    = tim::component::gotcha<N, tim::component_tuple<>, float>;
-using gotcha_tuple_t   = tim::auto_tuple_t<tool_tuple_t, user_tuple_bundle>;
+using gotcha_tuple_t   = tim::auto_tuple_t<tool_tuple_t, user_global_bundle>;
 
 #if !defined(TIMEMORY_USE_MPI)
 namespace tim
@@ -97,9 +97,9 @@ init()
 
     // configure the bundles
     general_bundle_t::configure<wall_clock, cpu_clock, peak_rss>();
-    user_tuple_bundle::configure<fake_gotcha_t>();
-    if(tim::get_env("MPI_INTERCEPT", true)) user_tuple_bundle::configure<mpi_gotcha_t>();
-    if(tim::get_env("PUT_INTERCEPT", true)) user_tuple_bundle::configure<put_gotcha_t>();
+    user_global_bundle::configure<fake_gotcha_t>();
+    if(tim::get_env("MPI_INTERCEPT", true)) user_global_bundle::configure<mpi_gotcha_t>();
+    if(tim::get_env("PUT_INTERCEPT", true)) user_global_bundle::configure<put_gotcha_t>();
 }
 
 //======================================================================================//
