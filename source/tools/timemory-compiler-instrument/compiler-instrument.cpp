@@ -67,14 +67,8 @@ get_label(void*, void*) TIMEMORY_NEVER_INSTRUMENT;
 using namespace tim::component;
 
 template <typename Tp>
-using uomap_t = std::unordered_map<void*, std::unordered_map<void*, Tp>>;
-
-// using trace_set_t =
-//    tim::component_bundle<TIMEMORY_API, wall_clock, cpu_clock, peak_rss, page_rss,
-//                          virtual_memory, read_char, written_char, read_bytes,
-//                          written_bytes, voluntary_context_switch,
-//                          num_minor_page_faults>;
-using trace_set_t    = tim::component_bundle<TIMEMORY_API, user_trace_bundle>;
+using uomap_t        = std::unordered_map<void*, std::unordered_map<void*, Tp>>;
+using trace_set_t    = tim::component_bundle<TIMEMORY_API, user_compiler_bundle>;
 using trace_vec_t    = std::vector<trace_set_t>;
 using throttle_map_t = uomap_t<bool>;
 using overhead_map_t = uomap_t<std::pair<monotonic_clock, size_t>>;

@@ -5,11 +5,11 @@ if(WIN32 OR NOT TIMEMORY_BUILD_TOOLS OR NOT TIMEMORY_BUILD_COMPILER_INSTRUMENTAT
 endif()
 
 cmake_policy(PUSH)
-cmake_policy(SET CMP0063 OLD)
+cmake_policy(SET CMP0063 NEW)
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
-set(CMAKE_C_VISIBILITY_PRESET "hidden")
-set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
+unset(CMAKE_C_VISIBILITY_PRESET)
+unset(CMAKE_CXX_VISIBILITY_PRESET)
 
 foreach(LIB_TYPE shared static)
 
@@ -29,17 +29,22 @@ foreach(LIB_TYPE shared static)
 
     # don't allow in-source instrumentation
     target_compile_definitions(${LIB_TARGET} INTERFACE
-        DISABLE_TIMEMORY TIMEMORY_COMPILER_INSTRUMENTATION)
+        DISABLE_TIMEMORY
+        TIMEMORY_COMPILER_INSTRUMENTATION)
 
-    target_link_libraries(${LIB_TARGET} PUBLIC ${dl_LIBRARY})
+    target_compile_definitions(${LIB_TARGET} PRIVATE
+        TIMEMORY_COMPILER_INSTRUMENTATION_IMPL)
+
+    target_link_libraries(${LIB_TARGET} PUBLIC
+        ${dl_LIBRARY})
 
     target_link_libraries(${LIB_TARGET} PRIVATE
-        # ${_LIBS}
         timemory::timemory-headers
         timemory::timemory-compile-options
         timemory::timemory-hidden-visibility)
 
     if(WIN32)
+        # not yet implemented
         target_compile_options(${LIB_TARGET} INTERFACE
             $<$<COMPILE_LANGUAGE:C>:/Z7>
             $<$<COMPILE_LANGUAGE:CXX>:/Z7>

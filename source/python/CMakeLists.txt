@@ -21,6 +21,8 @@ if(TIMEMORY_BUILD_PYTHON)
     add_library(${PROJECT_NAME}::timemory-python-compile-options ALIAS
         timemory-python-compile-options)
     add_cxx_flag_if_avail("-frtti" timemory-python-compile-options)
+    add_cxx_flag_if_avail("-Wno-unused-value" timemory-python-compile-options)
+    add_cxx_flag_if_avail("-Wno-range-loop-analysis" timemory-python-compile-options)
     add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-compile-options)
     add_cxx_flag_if_avail("-Wno-deprecated-declarations" timemory-python-compile-options)
     add_cxx_flag_if_avail("-Wno-unused-but-set-parameter" timemory-python-compile-options)

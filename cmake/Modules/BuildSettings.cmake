@@ -149,8 +149,29 @@ endif()
 #
 add_interface_library(timemory-instrument-functions
     "Adds compiler flags to enable compile-time instrumentation")
-add_target_flag_if_avail(timemory-instrument-functions "-finstrument-functions")
-if(NOT cxx_timemory_instrument_finstrument_functions)
+
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/compiler-instr.cpp.in
+    ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.c COPYONLY)
+
+try_compile(c_timemory_instrument_finstrument_functions
+    ${PROJECT_BINARY_DIR}/compile-tests
+    SOURCES ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.c
+    CMAKE_FLAGS -finstrument-functions)
+
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/compiler-instr.cpp.in
+    ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.cpp COPYONLY)
+
+try_compile(cxx_timemory_instrument_finstrument_functions
+    ${PROJECT_BINARY_DIR}/compile-tests
+    SOURCES ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.cpp
+    CMAKE_FLAGS -finstrument-functions)
+
+if(c_timemory_instrument_finstrument_functions AND
+   cxx_timemory_instrument_finstrument_functions)
+     target_compile_options(timemory-instrument-functions INTERFACE
+         $<$<COMPILE_LANGUAGE:C>:-finstrument-functions>
+         $<$<COMPILE_LANGUAGE:CXX>:-finstrument-functions>)
+else()
     add_disabled_interface(timemory-instrument-functions)
 endif()
 

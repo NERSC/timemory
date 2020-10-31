@@ -104,6 +104,12 @@ static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
         { component::profiler_bundle_idx,
           { []() { return settings::profiler_components(); },
             []() { return settings::components(); },
+            []() { return settings::global_components(); } } },
+        { component::compiler_bundle_idx,
+          { []() { return settings::compiler_components(); },
+            []() { return settings::trace_components(); },
+            []() { return settings::profiler_components(); },
+            []() { return settings::components(); },
             []() { return settings::global_components(); } } }
     };
     return _instance;

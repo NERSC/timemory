@@ -56,6 +56,7 @@ TIMEMORY_BUNDLE_INDEX(mpip_bundle_idx, 11111)
 TIMEMORY_BUNDLE_INDEX(ncclp_bundle_idx, 11112)
 TIMEMORY_BUNDLE_INDEX(trace_bundle_idx, 20000)
 TIMEMORY_BUNDLE_INDEX(profiler_bundle_idx, 22000)
+TIMEMORY_BUNDLE_INDEX(compiler_bundle_idx, 22200)
 TIMEMORY_BUNDLE_INDEX(kokkosp_bundle_idx, 0)
 //
 TIMEMORY_COMPONENT_ALIAS(user_global_bundle,
@@ -74,19 +75,43 @@ TIMEMORY_COMPONENT_ALIAS(user_trace_bundle,
                          user_bundle<trace_bundle_idx, project::timemory>)
 TIMEMORY_COMPONENT_ALIAS(user_profiler_bundle,
                          user_bundle<profiler_bundle_idx, project::timemory>)
+TIMEMORY_COMPONENT_ALIAS(user_compiler_bundle,
+                         user_bundle<compiler_bundle_idx, project::timemory>)
 TIMEMORY_COMPONENT_ALIAS(user_kokkosp_bundle,
                          user_bundle<kokkosp_bundle_idx, project::kokkosp>)
 //
-#if !defined(TIMEMORY_USE_OMPT)
+#if defined(TIMEMORY_COMPILER_INSTRUMENTATION_IMPL)
+//
+namespace tim
+{
+namespace trait
+{
+//
+template <size_t Idx, typename Tag>
+struct is_available<component::user_bundle<Idx, Tag>> : std::false_type
+{};
+//
+template <>
+struct is_available<component::user_compiler_bundle> : std::true_type
+{};
+//
+}  // namespace trait
+}  // namespace tim
+//
+#else
+//
+#    if !defined(TIMEMORY_USE_OMPT)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ompt_bundle, false_type)
-#endif
+#    endif
 //
-#if !defined(TIMEMORY_USE_MPI) || !defined(TIMEMORY_USE_GOTCHA)
+#    if !defined(TIMEMORY_USE_MPI) || !defined(TIMEMORY_USE_GOTCHA)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mpip_bundle, false_type)
-#endif
+#    endif
 //
-#if !defined(TIMEMORY_USE_NCCL) || !defined(TIMEMORY_USE_GOTCHA)
+#    if !defined(TIMEMORY_USE_NCCL) || !defined(TIMEMORY_USE_GOTCHA)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ncclp_bundle, false_type)
+#    endif
+//
 #endif
 //
 //--------------------------------------------------------------------------------------//
