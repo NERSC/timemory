@@ -248,7 +248,7 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
             for(const auto& itr : _only_files)
                 _opts << "| " << itr;
             PRINT_HERE("Skipping: [%s | %s | %s] due to [%s]", _func.c_str(),
-                       _base.c_str(), _full.c_str(), _opts.str().substr(2).c_str());
+                       _file.c_str(), _full.c_str(), _opts.str().substr(2).c_str());
         }
 #endif
         return;

@@ -386,7 +386,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
             // create a tracer for the line
             _tvec.insert({ i, tracer_t{ _label, _config.tracer_scope } });
         }
-        titr        = _config.records.insert({ _full, _tvec }).first;
+        titr = _config.records.insert({ _full, _tvec }).first;
         return titr->second;
     };
 
