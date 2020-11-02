@@ -31,21 +31,22 @@ foreach(LIB_TYPE shared static)
     endif()
 
     install(TARGETS timemory-stubs-${LIB_TYPE}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/stubs)
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/stubs
+      EXPORT timemory-library-depends)
 
     # build tree
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E create_symlink
-            stubs/libtimemory.${CMAKE_SHARED_LIBRARY_SUFFIX}
-            libtimemory-stubs.${CMAKE_SHARED_LIBRARY_SUFFIX}
+            stubs/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+            libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
     # install tree
     install(CODE "
 EXECUTE_PROCESS(
     COMMAND ${CMAKE_COMMAND} -E create_symlink
-        timemory/stubs/libtimemory.${CMAKE_SHARED_LIBRARY_SUFFIX}
-        libtimemory-stubs.${CMAKE_SHARED_LIBRARY_SUFFIX}
+        timemory/stubs/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+        libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
     ")
 

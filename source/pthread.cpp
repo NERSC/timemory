@@ -45,7 +45,9 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
     template <size_t... Idx>
     static auto init_storage(tim::index_sequence<Idx...>)
     {
-        return TIMEMORY_RETURN_FOLD_EXPRESSION(tim::storage_initializer::get<Idx>());
+        std::array<tim::storage_initializer, sizeof...(Idx)> _data;
+        TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
+        return _data;
     }
 
     struct wrapper
