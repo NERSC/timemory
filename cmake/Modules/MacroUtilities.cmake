@@ -209,9 +209,9 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             SOURCES         ${TEST_SOURCES}
             LINK_LIBRARIES  timemory-google-test ${TEST_LINK_LIBRARIES}
             PROPERTIES      "${TEST_PROPERTIES}")
-        if(TEST_DEPENDS)
-            set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${TEST_DEPENDS})
-        endif()
+
+        # always add as a dependency if target is built
+        add_dependencies(timemory-test ${TEST_NAME})
     endif()
 
     set(TEST_LAUNCHER)
@@ -221,9 +221,6 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         endif()
         set(TEST_LAUNCHER ${MPIEXEC_EXECUTABLE} -n ${TEST_NPROCS})
     endif()
-
-    # always add as a dependency
-    add_dependencies(timemory-test ${TEST_NAME})
 
     if("${TEST_COMMAND}" STREQUAL "")
         set(TEST_COMMAND ${TEST_LAUNCHER} $<TARGET_FILE:${TEST_NAME}>)
@@ -245,6 +242,11 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             ${TEST_OPTIONS})
         SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
     endif()
+
+    if(TEST_DEPENDS)
+        set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${TEST_DEPENDS})
+    endif()
+
 ENDFUNCTION()
 
 #----------------------------------------------------------------------------------------#
