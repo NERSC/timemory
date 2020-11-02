@@ -26,10 +26,14 @@
 
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
+
 #include <cstdint>
 #include <cstring>
 #include <dlfcn.h>
 #include <limits>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 extern "C"
 {
@@ -244,7 +248,7 @@ extern "C"
 
         static auto _initialized = (initialize(), true);
 
-        auto& _trace_map = get_trace_map();
+        const auto& _trace_map = get_trace_map();
         if(!_trace_map)
             return;
 
@@ -254,7 +258,7 @@ extern "C"
 
         static auto _allocated = (allocate(), true);
 
-        auto&       _overhead = get_overhead();
+        const auto& _overhead = get_overhead();
         const auto& _throttle = get_throttle();
         if((*_throttle)[call_site][this_fn])
             return;
@@ -271,7 +275,9 @@ extern "C"
     //
     void __cyg_profile_func_exit(void* this_fn, void* call_site)
     {
-        // tim::trace::lock<tim::trace::compiler> lk{};
+        tim::trace::lock<tim::trace::compiler> lk{};
+        if(!lk)
+            return;
         // if(!get_enabled() || !get_first().first)
         //    return;
 
@@ -282,12 +288,12 @@ extern "C"
             return;
         }
 
-        auto& _trace_map = get_trace_map();
+        const auto& _trace_map = get_trace_map();
         if(!_trace_map)
             return;
 
-        auto& _overhead = get_overhead();
-        auto& _throttle = get_throttle();
+        const auto& _overhead = get_overhead();
+        const auto& _throttle = get_throttle();
 
         if((*_throttle)[call_site][this_fn])
             return;
