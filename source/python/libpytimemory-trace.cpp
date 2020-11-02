@@ -620,7 +620,7 @@ generate(py::module& _pymod)
             CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Trace already running");
             return;
         }
-        CONDITIONAL_PRINT_HERE(_verbose < 2 && _verbose > -1, "%s", "Initializing trace");
+        CONDITIONAL_PRINT_HERE(_verbose < 2 && _verbose > 0, "%s", "Initializing trace");
         CONDITIONAL_PRINT_HERE(_verbose > 0, "%s",
                                "Resetting trace state for initialization");
         get_config().records.clear();

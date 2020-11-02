@@ -91,8 +91,8 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)  // NOLINT
     if(results.empty())
         return;
 
-    // using Archive = cereal::MinimalJSONOutputArchive;
-    using Archive     = cereal::PrettyJSONOutputArchive;
+    using Archive = cereal::MinimalJSONOutputArchive;
+    // using Archive     = cereal::PrettyJSONOutputArchive;
     using policy_type = policy::output_archive<Archive, api::native_tag>;
 
     auto outfname =
@@ -161,13 +161,13 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)  // NOLINT
 
                 oa->startNode();
 
-                oa->setNextName("args");
-                oa->startNode();
-                (*oa)(cereal::make_nvp("detail", _prefix));
+                // oa->setNextName("args");
+                // oa->startNode();
+                // (*oa)(cereal::make_nvp("detail", _prefix));
                 // (*oa)(cereal::make_nvp("count", itr.data().get_laps()));
                 // (*oa)(cereal::make_nvp("depth", itr.depth()));
                 // (*oa)(cereal::make_nvp("units", itr.data().get_display_unit()));
-                oa->finishNode();
+                // oa->finishNode();
 
                 string_t _ph = "X";
                 if(_prefix.find(">>>") != std::string::npos)

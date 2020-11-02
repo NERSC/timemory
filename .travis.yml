@@ -18,6 +18,7 @@ jobs:
         - CONDA_OS=MacOSX
         - CC=$(which clang)
         - CXX=$(which clang++)
+        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_HIDDEN=ON'
         - BUILD_ARGS='--build-libs shared --caliper --python --stats --tools --cxx-standard=14'
 
     # ------------------------------------------------------------------------ #

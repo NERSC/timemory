@@ -160,7 +160,7 @@ struct output_archive<cereal::PrettyJSONOutputArchive, Api>
 
     static unsigned int& indent_length()
     {
-        static unsigned int value = 2;
+        static unsigned int value = 1;
         return value;
     }
 

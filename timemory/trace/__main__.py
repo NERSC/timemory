@@ -36,7 +36,6 @@ import argparse
 import warnings
 import traceback
 import multiprocessing as mp
-import timemory
 
 PY3 = sys.version_info[0] == 3
 
@@ -249,10 +248,14 @@ def main():
         opts, argv = parse_args()
 
     from ..libpytimemory import initialize
+    from ..libpytimemory import settings
 
     if os.path.isfile(argv[0]):
         argv[0] = os.path.realpath(argv[0])
 
+    settings.output_path = "timemory-{}-trace-output".format(
+        os.path.basename(argv[0]).strip().replace("_", "-").replace("--", "-")
+    )
     initialize(argv)
 
     from ..libpytimemory.trace import config as _tracer_config
@@ -281,7 +284,6 @@ def main():
         ns = locals()
         execfile(setup_file, ns, ns)
 
-    from ..libpytimemory import settings
     from .tracer import Tracer, FakeTracer
 
     output_path = get_value(
@@ -337,4 +339,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-    timemory.finalize()
+    from ..libpytimemory import finalize
+
+    finalize()

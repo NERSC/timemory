@@ -329,9 +329,10 @@ version = sys.modules[__name__].__getattribute__("version")
 
 # this is required for correct pickling
 try:
-    if 'line_profiler' not in sys.modules:
+    if "line_profiler" not in sys.modules:
         from . import line_profiler as lineprof
-        sys.modules['line_profiler'] = lineprof
-        sys.modules['line_profiler._line_profiler'] = lineprof._line_profiler
+
+        sys.modules["line_profiler"] = lineprof
+        sys.modules["line_profiler._line_profiler"] = lineprof._line_profiler
 except ImportError:
     pass
