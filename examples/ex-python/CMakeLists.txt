@@ -15,21 +15,25 @@ if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")
 endif()
 
-foreach(_TYPE sample tracer profiler general builtin external)
-    set(FILENAME ex_python_${_TYPE})
-    configure_file(
-        ${PROJECT_SOURCE_DIR}/ex_${_TYPE}.py
-        ${TARGET_BINARY_DIR}/ex_python_${_TYPE}
-        @ONLY)
-    install(FILES   ${TARGET_BINARY_DIR}/ex_python_${_TYPE}
-        DESTINATION bin
-        PERMISSIONS
-            OWNER_EXECUTE OWNER_READ OWNER_WRITE
-            GROUP_EXECUTE GROUP_READ
-            WORLD_EXECUTE WORLD_READ
-        COMPONENT examples
-        OPTIONAL)
-endforeach()
+function(CONFIGURE_PYTHON_SCRIPT)
+    foreach(_TYPE ${ARGN})
+        set(FILENAME ex_python_${_TYPE})
+        configure_file(
+            ${PROJECT_SOURCE_DIR}/ex_${_TYPE}.py
+            ${TARGET_BINARY_DIR}/ex_python_${_TYPE}
+            @ONLY)
+        install(FILES   ${TARGET_BINARY_DIR}/ex_python_${_TYPE}
+            DESTINATION bin
+            PERMISSIONS
+                OWNER_EXECUTE OWNER_READ OWNER_WRITE
+                GROUP_EXECUTE GROUP_READ
+                WORLD_EXECUTE WORLD_READ
+            COMPONENT examples
+            OPTIONAL)
+    endforeach()
+endfunction()
+
+configure_python_script(sample tracer profiler general builtin external)
 
 if(TIMEMORY_BUILD_MINIMAL_TESTING)
     return()
@@ -53,6 +57,8 @@ find_package(OpenMP QUIET)
 if(OpenMP_FOUND)
     set(_OMP OpenMP::OpenMP_CXX)
 endif()
+
+configure_python_script(bindings)
 
 set(TIMEMORY_INTERFACE_LIBRARY timemory-ex-python-bindings)
 find_package(timemory COMPONENTS headers OPTIONAL_COMPONENTS mpi cxx shared)
