@@ -44,7 +44,10 @@ jobs:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--quick --build-libs static shared --python --papi --ompt --gotcha --caliper --kokkos --stats --tools --cxx-standard=14'"
+        - CC=$(which gcc-6)
+        - CXX=$(which g++-6)
+        - BUILD_TYPE=MinSizeRel
+        - BUILD_ARGS='--quick --build-libs static shared --python --papi --ompt --gotcha --caliper --kokkos --stats --tools --cxx-standard=14'
     # GCC 7
     - os: linux
       dist: bionic
@@ -66,7 +69,10 @@ jobs:
             - google-perftools
             - lcov
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && COVERAGE=1 && BUILD_ARGS='--build-libs shared --mpi --papi --caliper --mpip --gotcha --stats --cxx-standard=17'"
+        - CC=$(which gcc-7)
+        - CXX=$(which g++-7)
+        - COVERAGE=1
+        - BUILD_ARGS='--build-libs shared --mpi --papi --caliper --mpip --gotcha --stats --cxx-standard=17'
     #
     # GCC 8
     - os: linux
@@ -90,7 +96,9 @@ jobs:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --cxx-standard=17'"
+        - CC=$(which gcc-8)
+        - CXX=$(which g++-8)
+        - BUILD_ARGS='--build-libs static --mpi --cxx-standard=17'
     # Clang 6.0
     - os: linux
       dist: xenial
@@ -110,7 +118,9 @@ jobs:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-6.0) && CXX=$(which clang++-6.0) && BUILD_ARGS='--quick --build-libs static --ompt --kokkos --stats --tools --cxx-standard=14'"
+        - CC=$(which clang-6.0)
+        - CXX=$(which clang++-6.0)
+        - BUILD_ARGS='--quick --build-libs static --ompt --kokkos --stats --tools --cxx-standard=14'
     # Clang 7
     - os: linux
       dist: bionic
@@ -131,7 +141,9 @@ jobs:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--quick --build-libs static --caliper --mpi --papi --ompt --stats --tools --cxx-standard=14'"
+        - CC=$(which clang-7)
+        - CXX=$(which clang++-7)
+        - BUILD_ARGS='--quick --build-libs static --caliper --mpi --papi --ompt --stats --tools --cxx-standard=14'
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7 / Linux
@@ -157,7 +169,10 @@ jobs:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared --papi --gotcha --python --kokkos --stats --ipo --cxx-standard=14'"
+        - CC=$(which gcc-6)
+        - CXX=$(which g++-6)
+        - BUILD_TYPE=MinSizeRel
+        - BUILD_ARGS='--build-libs shared --papi --gotcha --python --kokkos --stats --ipo --cxx-standard=14'
     # GCC 7
     - os: linux
       dist: bionic
@@ -179,7 +194,10 @@ jobs:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc) && CXX=$(which g++) && BUILD_TYPE=Debug && BUILD_ARGS='--quick --build-libs static --papi --mpi --ompt --kokkos --tools --cxx-standard=14'"
+        - CC=$(which gcc)
+        - CXX=$(which g++)
+        - BUILD_TYPE=Debug
+        - BUILD_ARGS='--quick --build-libs static --papi --mpi --ompt --kokkos --tools --cxx-standard=14'
     #
     # GCC 8
     - os: linux
@@ -197,7 +215,10 @@ jobs:
             - mpich
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_TYPE=Release && BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17 --ipo --extra-optimizations'"
+        - CC=$(which gcc-8)
+        - CXX=$(which g++-8)
+        - BUILD_TYPE=Release
+        - BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17 --ipo --extra-optimizations'
     # Clang 6.0
     - os: linux
       dist: xenial
@@ -219,7 +240,11 @@ jobs:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-6.0) && CXX=$(which clang++-6.0) && PROFILE=1 && BUILD_ARGS='--build-libs shared --gperftools --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14' && CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'"
+        - CC=$(which clang-6.0)
+        - CXX=$(which clang++-6.0)
+        - PROFILE=1
+        - BUILD_ARGS='--build-libs shared --gperftools --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14'
+        - CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'
     # Clang 7
     - os: linux
       dist: bionic
@@ -238,14 +263,13 @@ jobs:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--quick --build-libs shared --gotcha --caliper --mpi --papi --python --stats --tools --cxx-standard=14'"
+        - CC=$(which clang-7)
+        - CXX=$(which clang++-7)
+        - BUILD_ARGS='--quick --build-libs shared --gotcha --caliper --mpi --papi --python --stats --tools --cxx-standard=14'
 
     # ------------------------------------------------------------------------ #
 
 before_install:
-  - eval "${MATRIX_EVAL}"
-  - export CC=${CC}
-  - export CXX=${CXX}
   - if [ -z "${CONDA_OS}" ]; then CONDA_OS=Linux; fi
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p ${HOME}/miniconda
@@ -253,14 +277,12 @@ before_install:
   - conda config --set always_yes yes --set changeps1 no
 
 install:
-  - eval "${MATRIX_EVAL}"
   - env
   - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip cython
   - source activate pyctest
   - if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
 
 script:
-  - eval "${MATRIX_EVAL}"
   - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; fi
