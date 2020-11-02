@@ -265,8 +265,8 @@ TEST_F(gotcha_tests, mpi_explicit)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
-    ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+    EXPECT_NEAR(fsum, 49892284.00 * size, tolerance);
+    EXPECT_NEAR(dsum, 49868704.48 * size, tolerance);
 }
 
 //======================================================================================//
@@ -313,8 +313,8 @@ TEST_F(gotcha_tests, mpi_macro)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
-    ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+    EXPECT_NEAR(fsum, 49892284.00 * size, tolerance);
+    EXPECT_NEAR(dsum, 49868704.48 * size, tolerance);
 }
 
 //======================================================================================//
@@ -359,8 +359,8 @@ TEST_F(gotcha_tests, work_explicit)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, -2416347.50, tolerance);
-    ASSERT_NEAR(dsum, -1829370.79, tolerance);
+    EXPECT_NEAR(fsum, -2416347.50, tolerance);
+    EXPECT_NEAR(dsum, -1829370.79, tolerance);
 }
 
 //======================================================================================//
@@ -403,8 +403,8 @@ TEST_F(gotcha_tests, work_macro)
         if(rank == 0)
             printf("\n");
 
-        ASSERT_NEAR(fsum, -2416347.50, tolerance);
-        ASSERT_NEAR(dsum, -1829370.79, tolerance);
+        EXPECT_NEAR(fsum, -2416347.50, tolerance);
+        EXPECT_NEAR(dsum, -1829370.79, tolerance);
     };
 
     for(auto i = 0; i < 4; ++i)
@@ -487,8 +487,8 @@ TEST_F(gotcha_tests, malloc_gotcha)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, 4986708.50 * size, tolerance);
-    ASSERT_NEAR(dsum, 4986870.45 * size, tolerance);
+    EXPECT_NEAR(fsum, 4986708.50 * size, tolerance);
+    EXPECT_NEAR(dsum, 4986870.45 * size, tolerance);
 
     malloc_gotcha::tear_down<component_tuple_t<>>();
 }
@@ -664,6 +664,7 @@ TEST_F(gotcha_tests, replacement)
 TEST_F(gotcha_tests, member_functions)
 {
     using pair_type     = std::pair<float, double>;
+    using bundle_type   = tim::auto_tuple<memfun_gotcha_t>;
     auto real_storage   = tim::storage<wall_clock>::instance();
     auto real_init_size = real_storage->size();
     printf("[initial]> wall-clock storage size: %li\n", (long int) real_init_size);
@@ -701,21 +702,23 @@ TEST_F(gotcha_tests, member_functions)
     float  fsum = 0.0;
     double dsum = 0.0;
     {
-        TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
+        TIMEMORY_BLANK_POINTER(gotcha_tuple_t, details::get_test_name());
 
         DoWork dw(pair_type(0.25, 0.5));
 
-        auto    _nitr = nitr / 10;
+        decltype(nitr) _ndiv = 1000;
+        auto           _nitr = nitr / _ndiv;
         int64_t ntot  = 0;
-        for(int i = 0; i < _nitr; i += 10)
+        for(int i = 0; i < _nitr; i += _ndiv)
         {
-            ntot += 10;
-            if(i >= (_nitr - 10))
+            TIMEMORY_BLANK_POINTER(bundle_type, details::get_test_name());
+            ntot += _ndiv;
+            if(i >= (_nitr - _ndiv))
             {
-                for(int j = 0; j < 10; ++j)
+                for(int j = 0; j < _ndiv; ++j)
                 {
-                    dw.execute_fp4(1000);
-                    dw.execute_fp8(1000);
+                    dw.execute_fp4(10);
+                    dw.execute_fp8(10);
                     auto ret = dw.get();
                     fsum += std::get<0>(ret);
                     dsum += std::get<1>(ret);
@@ -724,18 +727,18 @@ TEST_F(gotcha_tests, member_functions)
             else
             {
                 auto _fp4 = [&]() {
-                    for(int j = 0; j < 10; ++j)
+                    for(int j = 0; j < _ndiv; ++j)
                     {
-                        dw.execute_fp4(1000);
+                        dw.execute_fp4(10);
                         auto ret = dw.get();
                         fsum += std::get<0>(ret);
                     }
                 };
 
                 auto _fp8 = [&]() {
-                    for(int j = 0; j < 10; ++j)
+                    for(int j = 0; j < _ndiv; ++j)
                     {
-                        dw.execute_fp8(1000);
+                        dw.execute_fp8(10);
                         auto ret = dw.get();
                         dsum += std::get<1>(ret);
                     }
@@ -761,7 +764,7 @@ TEST_F(gotcha_tests, member_functions)
         double dsum2 = 0.0;
         for(int64_t i = 0; i < ntot; ++i)
         {
-            dw.execute_fp(1000, { 0.25 }, { 0.5 });
+            dw.execute_fp(10, { 0.25 }, { 0.5 });
             auto ret = dw.get();
             fsum2 += std::get<0>(ret);
             dsum2 += std::get<1>(ret);
@@ -774,8 +777,8 @@ TEST_F(gotcha_tests, member_functions)
             printf("[%i]> double-precision sum2 = %8.2f\n", rank, dsum2);
         }
 
-        ASSERT_NEAR(fsum2, fsum, tolerance);
-        ASSERT_NEAR(dsum2, dsum, tolerance);
+        EXPECT_NEAR(fsum2, fsum, tolerance);
+        EXPECT_NEAR(dsum2, dsum, tolerance);
     }
 
     auto rank = tim::mpi::rank();
@@ -795,12 +798,40 @@ TEST_F(gotcha_tests, member_functions)
     if(rank == 0)
         printf("\n");
 
-    auto real_final_size = real_storage->get().size();
+    auto real_data       = real_storage->get();
+    auto real_final_size = real_storage->size();
     printf("[final]> wall-clock storage size: %li\n", (long int) real_final_size);
 
-    ASSERT_NEAR(fsum, -241718.61, tolerance);
-    ASSERT_NEAR(dsum, +88155.09, tolerance);
-    ASSERT_EQ(real_final_size, 5 + real_init_size);
+    EXPECT_NEAR(fsum, -1818.20, tolerance);
+    EXPECT_NEAR(dsum, -858.72, tolerance);
+    EXPECT_EQ(real_final_size, 5 + real_init_size);
+    {
+        auto itr = real_data.begin();
+        std::advance(itr, real_init_size);
+        EXPECT_EQ(itr->data().get_laps(), 1) << itr->prefix();
+    }
+    {
+        auto itr = real_data.begin();
+        std::advance(itr, real_init_size + 1);
+        EXPECT_GE(itr->data().get_laps(), 1000) << itr->prefix();
+        ++itr;
+        EXPECT_GE(itr->data().get_laps(), 1000) << itr->prefix();
+        ++itr;
+        EXPECT_GE(itr->data().get_laps(), 1000) << itr->prefix();
+        ++itr;
+        EXPECT_GE(itr->data().get_laps(), 1000) << itr->prefix();
+    }
+    {
+        auto itr = real_data.begin();
+        std::advance(itr, real_init_size + 1);
+        EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
+        ++itr;
+        EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
+        ++itr;
+        EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
+        ++itr;
+        EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
+    }
 }
 
 //======================================================================================//
@@ -854,8 +885,8 @@ TEST_F(gotcha_tests, mpip)
         if(rank == 0)
             printf("\n");
 
-        ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
-        ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+        EXPECT_NEAR(fsum, 49892284.00 * size, tolerance);
+        EXPECT_NEAR(dsum, 49868704.48 * size, tolerance);
     }
 
     deactivate_mpip<mpi_toolset_t, api_t>(ret);
