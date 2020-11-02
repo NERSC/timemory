@@ -76,8 +76,8 @@ foreach(LIB_TYPE shared static)
     endif()
 
     install(TARGETS ${LIB_TARGET}
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler
-      EXPORT timemory-library-depends)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler
+        EXPORT timemory-library-depends)
 
     # build tree
     execute_process(

@@ -31,8 +31,8 @@ foreach(LIB_TYPE shared static)
     endif()
 
     install(TARGETS timemory-jump-${LIB_TYPE}
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/jump
-      EXPORT timemory-library-depends)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/jump
+        EXPORT timemory-library-depends)
 
     # build tree
     execute_process(

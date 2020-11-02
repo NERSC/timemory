@@ -41,8 +41,8 @@ add_subdirectory(timemory-pid)
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #
-message(STATUS "Adding source/tools/timem...")
-add_subdirectory(timem)
+message(STATUS "Adding source/tools/timemory-timem...")
+add_subdirectory(timemory-timem)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-run
