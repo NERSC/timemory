@@ -37,9 +37,7 @@
 #include "timemory/mpl/types.hpp"
 
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(data_tracker, typename InpT,
-                                    typename Tag     = api::native_tag,
-                                    typename Handler = data::handler<InpT, Tag>,
-                                    typename StoreT  = InpT)
+                                    typename Tag = project::timemory)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -51,20 +49,30 @@ namespace tim
 {
 namespace component
 {
-using data_tracker_integer  = data_tracker<intmax_t, api::native_tag>;
-using data_tracker_unsigned = data_tracker<size_t, api::native_tag>;
-using data_tracker_floating = data_tracker<double, api::native_tag>;
+using data_tracker_integer  = data_tracker<intmax_t, project::timemory>;
+using data_tracker_unsigned = data_tracker<size_t, project::timemory>;
+using data_tracker_floating = data_tracker<double, project::timemory>;
 }  // namespace component
 //
 namespace trait
 {
-template <typename InpT, typename Tag, typename Handler, typename StoreT>
-struct component_apis<component::data_tracker<InpT, Tag, Handler, StoreT>>
+template <typename InpT, typename Tag>
+struct component_apis<component::data_tracker<InpT, Tag>>
 {
     using type = type_list<project::timemory, category::logger, os::agnostic>;
 };
 }  // namespace trait
 }  // namespace tim
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              STATISTICS
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STATISTICS_TYPE(component::data_tracker_integer, intmax_t)
+TIMEMORY_STATISTICS_TYPE(component::data_tracker_unsigned, size_t)
+TIMEMORY_STATISTICS_TYPE(component::data_tracker_floating, double)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -76,12 +84,13 @@ namespace tim
 {
 namespace trait
 {
-template <typename InpT, typename Tag, typename Handler, typename StoreT>
-struct base_has_accum<component::data_tracker<InpT, Tag, Handler, StoreT>> : false_type
+//
+template <typename InpT, typename Tag>
+struct base_has_accum<component::data_tracker<InpT, Tag>> : false_type
 {};
 //
-template <typename InpT, typename Tag, typename Handler, typename StoreT>
-struct is_component<component::data_tracker<InpT, Tag, Handler, StoreT>> : true_type
+template <typename InpT, typename Tag>
+struct is_component<component::data_tracker<InpT, Tag>> : true_type
 {};
 //
 template <>

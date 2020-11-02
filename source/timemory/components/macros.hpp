@@ -290,6 +290,7 @@
             using type                        = TYPE;                                    \
             using value_type                  = TIMEMORY_COMPONENT;                      \
             static constexpr value_type value = properties<TYPE>::value;                 \
+            static std::string          name() { return LABEL; }                         \
             static std::string          label() { return LABEL; }                        \
             static std::string          description() { return BASIC_DESC; }             \
             static std::string          extra_description()                              \

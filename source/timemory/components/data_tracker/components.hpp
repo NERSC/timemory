@@ -64,7 +64,7 @@ namespace component
 ///         struct iteration_count_tag;
 ///
 ///         using tracker_type = data_tracker<uint64_t, iteration_count_tag>;
-///         using tuple_t = tim::auto_tuple<wall_clock, data_tracker<uint64_t>>;
+///         using tuple_t      = tim::auto_tuple<wall_clock, tracker_type>;
 ///
 ///         double err             = std::numeric_limits<double>::max();
 ///         const double tolerance = 1.0e-6;
@@ -77,13 +77,15 @@ namespace component
 ///             // ... do something ...
 ///         }
 ///
-template <typename InpT, typename Tag, typename Handler, typename StoreT>
-struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, StoreT>
+template <typename InpT, typename Tag>
+struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
 {
-    using value_type      = StoreT;
-    using this_type       = data_tracker<InpT, Tag, Handler, StoreT>;
+    friend struct data::handler<InpT, Tag>;
+
+    using value_type      = InpT;
+    using this_type       = data_tracker<InpT, Tag>;
     using base_type       = base<this_type, value_type>;
-    using handler_type    = Handler;
+    using handler_type    = data::handler<InpT, Tag>;
     using secondary_map_t = std::unordered_map<std::string, this_type>;
     using secondary_ptr_t = std::shared_ptr<secondary_map_t>;
     using string_t        = std::string;
@@ -99,9 +101,24 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     static std::string& label()
     {
         static std::string _instance = []() {
+            if(metadata<this_type>::value != TIMEMORY_COMPONENTS_END)
+                return metadata<this_type>::label();
             std::stringstream ss;
             ss << demangle<Tag>() << "_" << demangle<InpT>();
-            return ss.str();
+            auto _lbl = ss.str();
+            for(auto&& itr : { "tim::component::", "tim::" })
+            {
+                auto _pos = std::string::npos;
+                while((_pos = _lbl.find(itr)) != std::string::npos)
+                    _lbl = _lbl.erase(_pos, std::string(itr).length());
+            }
+            for(auto&& itr : { "::", " ", "_" })
+            {
+                auto _pos = std::string::npos;
+                while((_pos = _lbl.find(itr)) != std::string::npos)
+                    _lbl = _lbl.replace(_pos, std::string(itr).length(), "-");
+            }
+            return _lbl;
         }();
         return _instance;
     }
@@ -109,6 +126,17 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     static std::string& description()
     {
         static std::string _instance = []() {
+            if(metadata<this_type>::value != TIMEMORY_COMPONENTS_END)
+            {
+                auto meta_desc = metadata<this_type>::description();
+                if(settings::verbose() > 0 || settings::debug())
+                {
+                    auto meta_extra_desc = metadata<this_type>::extra_description();
+                    meta_desc += ". ";
+                    meta_desc += meta_extra_desc;
+                }
+                return meta_desc;
+            }
             std::stringstream ss;
             ss << "Data tracker for data of type " << demangle<InpT>() << " for "
                << demangle<Tag>();
@@ -134,22 +162,24 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
         handler_type::store(*this, val / get_unit());
     }
 
-    template <typename Func, typename T,
+    template <typename FuncT, typename T,
               enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
-    auto store(Func&& f, const T& val)
-        -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
+    auto store(FuncT&& f, const T& val)
+        -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f),
+                                                       val),
                     void())
     {
-        handler_type::store(*this, std::forward<Func>(f), val / get_unit());
+        handler_type::store(*this, std::forward<FuncT>(f), val / get_unit());
     }
 
-    template <typename Func, typename T,
+    template <typename FuncT, typename T,
               enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
-    auto store(handler_type&&, Func&& f, const T& val)
-        -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
+    auto store(handler_type&&, FuncT&& f, const T& val)
+        -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f),
+                                                       val),
                     void())
     {
-        handler_type::store(*this, std::forward<Func>(f), val / get_unit());
+        handler_type::store(*this, std::forward<FuncT>(f), val / get_unit());
     }
 
     template <typename T,
@@ -211,27 +241,31 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
         return &(_map[_key]);
     }
 
-    template <typename Func, typename T,
-              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
-    this_type* add_secondary(const string_t& _key, Func&& f, const T& val)
+    template <typename FuncT, typename T,
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value &&
+                              std::is_function<FuncT>::value,
+                          int> = 0>
+    this_type* add_secondary(const string_t& _key, FuncT&& f, const T& val)
     {
         this_type _tmp;
         start_t   _start(_tmp);
-        _tmp.store(std::forward<Func>(f), val);
+        _tmp.store(std::forward<FuncT>(f), val);
         stop_t _stop(_tmp);
         auto&  _map = *get_secondary_map();
         _map.insert({ _key, _tmp });
         return &(_map[_key]);
     }
 
-    template <typename Func, typename T,
-              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
-    this_type* add_secondary(const string_t& _key, handler_type&& h, Func&& f,
+    template <typename FuncT, typename T,
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value &&
+                              std::is_function<FuncT>::value,
+                          int> = 0>
+    this_type* add_secondary(const string_t& _key, handler_type&& h, FuncT&& f,
                              const T& val)
     {
         this_type _tmp;
         start_t   _start(_tmp);
-        _tmp.store(std::forward<handler_type>(h), std::forward<Func>(f), val);
+        _tmp.store(std::forward<handler_type>(h), std::forward<FuncT>(f), val);
         stop_t _stop(_tmp);
         auto&  _map = *get_secondary_map();
         _map.insert({ _key, _tmp });

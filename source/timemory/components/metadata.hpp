@@ -46,10 +46,20 @@ struct metadata
     using type                                = Tp;
     using value_type                          = TIMEMORY_COMPONENT;
     static constexpr TIMEMORY_COMPONENT value = TIMEMORY_COMPONENTS_END;
+    static std::string                  name();
     static std::string                  label();
     static std::string                  description();
     static std::string                  extra_description() { return ""; }
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+std::string
+metadata<Tp>::name()
+{
+    return try_demangle<Tp>();
+}
 //
 //--------------------------------------------------------------------------------------//
 //

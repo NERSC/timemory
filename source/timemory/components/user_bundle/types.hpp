@@ -221,3 +221,27 @@ TIMEMORY_PROPERTY_SPECIALIZATION(user_profiler_bundle, USER_PROFILER_BUNDLE,
 TIMEMORY_PROPERTY_SPECIALIZATION(user_kokkosp_bundle, USER_KOKKOSP_BUNDLE,
                                  "user_kokkos_bundle", "kokkos_bundle",
                                  "user_kokkosp_bundle", "kokkosp_bundle")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_global_bundle, "user_global_bundle",
+    "Generic bundle for inserting components at runtime",
+    "Configure via TIMEMORY_GLOBAL_COMPONENTS [environment], "
+    "settings::global_components() [string], or direct insertion")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_ompt_bundle, "user_ompt_bundle",
+    "Generic bundle for inserting components at runtime into OMPT call-back system",
+    "Configure via TIMEMORY_OMPT_COMPONENTS [environment], "
+    "settings::ompt_components() [string], or direct insertion")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_mpip_bundle, "user_mpip_bundle",
+    "Generic bundle for inserting components at runtime around MPI calls",
+    "Configure via TIMEMORY_MPIP_COMPONENTS [environment], "
+    "settings::mpip_components() [string], or direct insertion")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_ncclp_bundle, "user_ncclp_bundle",
+    "Generic bundle for inserting components at runtime around NCCL calls",
+    "Configure via TIMEMORY_NCCLP_COMPONENTS [environment], "
+    "settings::ncclp_components() [string], or direct insertion")

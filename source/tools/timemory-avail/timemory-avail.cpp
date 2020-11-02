@@ -92,14 +92,19 @@ struct get_availability
 {
     using this_type  = get_availability<Type>;
     using value_type = component_value_type_t<Type>;
+    using metadata_t = component::metadata<Type>;
 
     static info_type get_info()
     {
+        bool     has_metadata = metadata_t::value != TIMEMORY_COMPONENTS_END;
         bool     is_available = trait::is_available<Type>::value;
         bool     file_output  = trait::generates_output<Type>::value;
-        auto     name         = demangle<Type>();
-        auto     label        = (file_output) ? Type::get_label() : std::string("");
-        auto     description  = Type::get_description();
+        auto     name         = component::metadata<Type>::name();
+        auto     label        = (file_output)
+                         ? ((has_metadata) ? metadata_t::label() : Type::get_label())
+                         : std::string("");
+        auto description =
+            (has_metadata) ? metadata_t::description() : Type::get_description();
         auto     data_type    = demangle<value_type>();
         string_t enum_type    = component::properties<Type>::enum_string();
         string_t id_type      = component::properties<Type>::id();
@@ -107,6 +112,8 @@ struct get_availability
         auto     itr          = ids_set.begin();
         string_t db           = (markdown) ? "`\"" : "\"";
         string_t de           = (markdown) ? "\"`" : "\"";
+        if(has_metadata)
+            description += ". " + metadata_t::extra_description();
         while(itr->empty())
             ++itr;
         string_t ids_str = "";

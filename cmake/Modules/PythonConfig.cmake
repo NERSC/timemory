@@ -7,6 +7,18 @@ include_guard(DIRECTORY)
 # display version
 add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory" DOC)
 
+# unset the version strings
+if(TIMEMORY_PYTHON_VERSION VERSION_LESS 3.6)
+    unset(TIMEMORY_PYTHON_VERSION CACHE)
+    unset(PYBIND11_PYTHON_VERSION CACHE)
+    unset(timemory_PYTHON_VERSION_MAJOR CACHE)
+    unset(timemory_PYTHON_VERSION_MINOR CACHE)
+    unset(PYTHON_VERSION_MAJOR CACHE)
+    unset(PYTHON_VERSION_MINOR CACHE)
+    unset(PYTHON_VERSION CACHE)
+    unset(CMAKE_INSTALL_PYTHONDIR CACHE)
+endif()
+
 # if TIMEMORY_PYTHON_VERSION specified, set to desired python version
 set(_PYVERSION ${TIMEMORY_PYTHON_VERSION})
 
@@ -19,7 +31,8 @@ endif()
 if(_PYVERSION)
     find_package(PythonInterp "${_PYVERSION}" ${TIMEMORY_FIND_REQUIREMENT})
 else()
-    find_package(PythonInterp ${TIMEMORY_FIND_REQUIREMENT})
+    set(Python_ADDITIONAL_VERSIONS 3.9 3.8 3.7 3.6)
+    find_package(PythonInterp 3.6 ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 # set TIMEMORY_PYTHON_VERSION if we have the python version
