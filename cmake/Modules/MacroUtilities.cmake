@@ -858,7 +858,7 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
     set(_SOURCES ${COMP_SOURCES} ${COMP_HEADERS})
 
     if(COMP_INSTALL_SOURCE)
-        install_header_files(${COMP_SOURCES})
+        timemory_install_header_files(${COMP_SOURCES})
     endif()
 
     foreach(LINK ${_LIB_TYPES})
