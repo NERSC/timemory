@@ -645,7 +645,7 @@ endfunction()
 #-----------------------------------------------------------------------
 # C/C++ development headers
 #
-macro(TIMEMORY_INSTALL_HEADER_FILES)
+FUNCTION(TIMEMORY_INSTALL_HEADER_FILES)
     foreach(_header ${ARGN})
         file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/source ${_header})
         get_filename_component(_destpath ${_relative} DIRECTORY)
