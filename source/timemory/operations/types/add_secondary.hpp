@@ -65,7 +65,7 @@ struct add_secondary
     // if secondary data explicitly specified
     //
     template <typename Storage, typename Iterator, typename Up = type,
-              enable_if_t<(trait::secondary_data<Up>::value), int> = 0>
+              enable_if_t<trait::secondary_data<Up>::value, int> = 0>
     add_secondary(Storage* _storage, Iterator _itr, const Up& _rhs)
     {
         if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr ||
@@ -81,7 +81,7 @@ struct add_secondary
     // check if secondary data implicitly specified
     //
     template <typename Storage, typename Iterator, typename Up = type,
-              enable_if_t<!(trait::secondary_data<Up>::value), int> = 0>
+              enable_if_t<!trait::secondary_data<Up>::value, int> = 0>
     add_secondary(Storage* _storage, Iterator _itr, const Up& _rhs)
     {
         add_secondary_sfinae(_storage, _itr, _rhs, 0);

@@ -398,7 +398,9 @@ def run_pyctest():
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_BUILD_DEVELOPER": "ON" if args.developer else "OFF",
         "TIMEMORY_BUILD_TESTING": "ON" if not args.quick else "OFF",
-        "TIMEMORY_BUILD_EXAMPLES": "OFF" if args.quick or args.coverage else "ON",
+        "TIMEMORY_BUILD_EXAMPLES": "OFF"
+        if args.quick or args.coverage
+        else "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON"
         if args.extra_optimizations
         else "OFF",
@@ -875,7 +877,7 @@ def run_pyctest():
                     "ENVIRONMENT": test_env,
                 },
             )
-            
+
     if args.tools:
         pyct.test(
             "timem-timemory-avail",

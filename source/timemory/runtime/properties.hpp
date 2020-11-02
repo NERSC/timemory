@@ -48,8 +48,6 @@ namespace runtime
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int Idx>
-using enumerator_t = typename component::enumerator<Idx>::type;
 template <int I>
 using make_int_sequence = std::make_integer_sequence<int, I>;
 template <int... Ints>
@@ -69,14 +67,13 @@ get_hash(std::string&& key)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename... Args,
-          enable_if_t<(component::enumerator<I>::value), int> = 0>
+template <int I, typename... Args, enable_if_t<component::enumerator<I>::value, int> = 0>
 void
 do_enumerator_generate(std::vector<opaque_pair_t>& opaque_array, int idx, Args&&... args)
 {
     if(idx == I)
     {
-        using type = enumerator_t<I>;
+        using type = component::enumerator_t<I>;
         if(!std::is_same<type, component::placeholder<component::nothing>>::value)
         {
             opaque_array.push_back(
@@ -88,8 +85,7 @@ do_enumerator_generate(std::vector<opaque_pair_t>& opaque_array, int idx, Args&&
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename... Args,
-          enable_if_t<!(component::enumerator<I>::value), int> = 0>
+template <int I, typename... Args, enable_if_t<!component::enumerator<I>::value, int> = 0>
 void
 do_enumerator_generate(std::vector<opaque_pair_t>&, int, Args&&...)
 {}
@@ -101,13 +97,13 @@ do_enumerator_generate(std::vector<opaque_pair_t>&, int, Args&&...)
 //--------------------------------------------------------------------------------------//
 //
 template <int I, typename Tp, typename... Args,
-          enable_if_t<(component::enumerator<I>::value), int> = 0>
+          enable_if_t<component::enumerator<I>::value, int> = 0>
 void
 do_enumerator_init(Tp& obj, int idx, Args&&... args)
 {
     if(idx == I)
     {
-        using type = enumerator_t<I>;
+        using type = component::enumerator_t<I>;
         if(!std::is_same<type, component::placeholder<component::nothing>>::value)
             obj.template initialize<type>(std::forward<Args>(args)...);
     }
@@ -116,7 +112,7 @@ do_enumerator_init(Tp& obj, int idx, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <int I, typename Tp, typename... Args,
-          enable_if_t<!(component::enumerator<I>::value), int> = 0>
+          enable_if_t<!component::enumerator<I>::value, int> = 0>
 void
 do_enumerator_init(Tp&, int, Args&&...)
 {}
@@ -127,7 +123,7 @@ template <int I>
 void
 do_enumerator_enumerate(component_hash_map_t& _map, component_key_set_t& _set)
 {
-    using type = enumerator_t<I>;
+    using type = component::enumerator_t<I>;
     if(!std::is_same<type, component::placeholder<component::nothing>>::value)
     {
         std::string _id = component::properties<type>::id();

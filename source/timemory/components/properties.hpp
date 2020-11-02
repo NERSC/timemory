@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/enum.h"
+#include "timemory/mpl/concepts.hpp"
 
 #include <cstring>
 #include <regex>
@@ -48,7 +49,7 @@ namespace component
 template <typename... Types>
 struct placeholder;
 //
-using idset_t = std::initializer_list<std::string>;
+using idset_t = std::set<std::string>;
 //
 struct nothing;
 //
@@ -77,7 +78,7 @@ get_typeids();
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp>
+template <typename Tp, bool PlaceHolder = concepts::is_placeholder<Tp>::value>
 struct static_properties;
 //
 template <typename Tp>
@@ -97,33 +98,48 @@ struct state
 //
 //--------------------------------------------------------------------------------------//
 //
+//  non-placeholder types
+//
 template <typename Tp>
-struct static_properties
+struct static_properties<Tp, false>
 {
-    static_properties();
+    using ptype = properties<Tp>;
 
-    static constexpr bool matches(int _idx) { return (_idx == properties<Tp>::value); }
-
+    static bool matches(int _idx) { return (_idx == ptype{}()); }
+    static bool matches(const std::string& _key) { return matches(_key.c_str()); }
     static bool matches(const char* _key)
     {
+        // don't allow checks for placeholder types
+        static_assert(!concepts::is_placeholder<Tp>::value,
+                      "static_properties is instantiating a placeholder type");
+
         const auto regex_consts = std::regex_constants::ECMAScript |
                                   std::regex_constants::icase |
                                   std::regex_constants::optimize;
+
         auto get_pattern = [](const std::string& _option) {
             return std::string("^(.*[,;: \t\n\r]+|)") + _option + "([,;: \t\n\r]+.*|$)";
         };
-        if(std::regex_match(_key, std::regex(get_pattern(properties<Tp>::enum_string()),
-                                             regex_consts)))
+        if(std::regex_match(_key,
+                            std::regex(get_pattern(ptype::enum_string()), regex_consts)))
             return true;
-        for(const auto& itr : properties<Tp>::ids())
+        for(const auto& itr : ptype::ids())
         {
             if(std::regex_match(_key, std::regex(get_pattern(itr), regex_consts)))
                 return true;
         }
         return false;
     }
-
-    static bool matches(const std::string& _key) { return matches(_key.c_str()); }
+};
+//
+//  placeholder types
+//
+template <typename Tp>
+struct static_properties<Tp, true>
+{
+    static bool matches(int) { return false; }
+    static bool matches(const char*) { return false; }
+    static bool matches(const std::string&) { return false; }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -134,12 +150,16 @@ struct properties : static_properties<Tp>
     using type                                = Tp;
     using value_type                          = TIMEMORY_COMPONENT;
     static constexpr TIMEMORY_COMPONENT value = TIMEMORY_COMPONENTS_END;
+
     static constexpr const char* enum_string() { return "TIMEMORY_COMPONENTS_END"; }
     static constexpr const char* id() { return ""; }
     static idset_t               ids() { return idset_t{}; }
     template <typename Archive>
     void serialize(Archive&, const unsigned int)
     {}
+    TIMEMORY_COMPONENT operator()() { return TIMEMORY_COMPONENTS_END; }
+    //
+    constexpr operator TIMEMORY_COMPONENT() const { return TIMEMORY_COMPONENTS_END; }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -157,11 +177,8 @@ struct enumerator : properties<placeholder<nothing>>
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp>
-static_properties<Tp>::static_properties()
-{}
-//
-//--------------------------------------------------------------------------------------//
+template <int Idx>
+using enumerator_t = typename enumerator<Idx>::type;
 //
 }  // namespace component
 }  // namespace tim

@@ -52,7 +52,7 @@ namespace factory
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Label, typename... Args,
-          enable_if_t<(concepts::is_comp_wrapper<Tp>::value), int> = 0>
+          enable_if_t<concepts::is_comp_wrapper<Tp>::value, int> = 0>
 static auto
 create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 {
@@ -62,7 +62,7 @@ create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Label, typename... Args,
-          enable_if_t<(concepts::is_auto_wrapper<Tp>::value), int> = 0>
+          enable_if_t<concepts::is_auto_wrapper<Tp>::value, int> = 0>
 static auto
 create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 {
@@ -113,24 +113,50 @@ get_opaque(scope::config _scope)
 
     auto _init = []() { operation::init_storage<Toolset>(); };
 
-    auto _start = [=](const string_t& _prefix, scope::config arg_scope) {
-        auto                           _hash   = add_hash_id(_prefix);
-        Toolset*                       _result = new Toolset{};
+    auto _setup = [=](void* v_result, const string_t& _prefix, scope::config arg_scope) {
+        Toolset* _result = static_cast<Toolset*>(v_result);
+        if(!_result)
+            _result = new Toolset{};
         operation::set_prefix<Toolset> _opprefix(*_result, _prefix);
-        operation::reset<Toolset>      _opreset(*_result);
-        operation::push_node<Toolset>  _opinsert(*_result, _scope + arg_scope, _hash);
-        operation::start<Toolset>      _opstart(*_result);
-        consume_parameters(_opprefix, _opreset, _opinsert, _opstart);
+        operation::set_scope<Toolset>  _opscope(*_result, arg_scope);
+        consume_parameters(_opprefix, _opscope);
         return (void*) _result;
+    };
+
+    auto _push = [=](void*& v_result, const string_t& _prefix, scope::config arg_scope) {
+        if(v_result)
+        {
+            auto                          _hash   = add_hash_id(_prefix);
+            Toolset*                      _result = static_cast<Toolset*>(v_result);
+            operation::push_node<Toolset> _opinsert(*_result, _scope + arg_scope, _hash);
+            consume_parameters(_opinsert);
+        }
+    };
+
+    auto _start = [=](void* v_result) {
+        if(v_result)
+        {
+            Toolset*                  _result = static_cast<Toolset*>(v_result);
+            operation::start<Toolset> _opstart(*_result);
+            consume_parameters(_opstart);
+        }
     };
 
     auto _stop = [=](void* v_result) {
         if(v_result)
         {
+            Toolset*                 _result = static_cast<Toolset*>(v_result);
+            operation::stop<Toolset> _opstop(*_result);
+            consume_parameters(_opstop);
+        }
+    };
+
+    auto _pop = [=](void* v_result) {
+        if(v_result)
+        {
             Toolset*                     _result = static_cast<Toolset*>(v_result);
-            operation::stop<Toolset>     _opstop(*_result);
             operation::pop_node<Toolset> _oppop(*_result);
-            consume_parameters(_opstop, _oppop);
+            consume_parameters(_oppop);
         }
     };
 
@@ -150,7 +176,8 @@ get_opaque(scope::config _scope)
         }
     };
 
-    return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del);
+    return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del, _setup, _push,
+                  _pop);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -158,7 +185,7 @@ get_opaque(scope::config _scope)
 //  Configure the tool for a specific set of tools
 //
 template <typename Toolset, typename... Args,
-          enable_if_t<(concepts::is_wrapper<Toolset>::value), int> = 0>
+          enable_if_t<concepts::is_wrapper<Toolset>::value, int> = 0>
 auto
 get_opaque(scope::config _scope, Args&&... args)
 {
@@ -174,11 +201,32 @@ get_opaque(scope::config _scope, Args&&... args)
 
     auto _init = []() {};
 
-    auto _start = [=, &args...](const string_t& _prefix, scope::config arg_scope) {
-        Toolset_t* _result = create_heap_variadic<Toolset_t>(_prefix, _scope + arg_scope,
-                                                             std::forward<Args>(args)...);
-        _result->start();
+    auto _setup = [=, &args...](void* v_result, const string_t& _prefix,
+                                scope::config arg_scope) {
+        Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+        if(!_result)
+            _result = create_heap_variadic<Toolset_t>(_prefix, _scope + arg_scope,
+                                                      std::forward<Args>(args)...);
+        else
+            _result->rekey(_prefix);
         return (void*) _result;
+    };
+
+    auto _push = [=](void*& v_result, const string_t& _prefix, scope::config arg_scope) {
+        v_result = _setup(v_result, _prefix, arg_scope);
+        if(v_result)
+        {
+            Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+            _result->push();
+        }
+    };
+
+    auto _start = [=](void* v_result) {
+        if(v_result)
+        {
+            Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+            _result->start();
+        }
     };
 
     auto _stop = [=](void* v_result) {
@@ -186,6 +234,14 @@ get_opaque(scope::config _scope, Args&&... args)
         {
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->stop();
+        }
+    };
+
+    auto _pop = [=](void* v_result) {
+        if(v_result)
+        {
+            Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+            _result->pop();
         }
     };
 
@@ -205,7 +261,8 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del);
+    return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del, _setup, _push,
+                  _pop);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -213,7 +270,7 @@ get_opaque(scope::config _scope, Args&&... args)
 //  If a tool is not avail or has no contents return empty opaque
 //
 template <typename Toolset, typename... Args,
-          enable_if_t<(!trait::is_available<Toolset>::value), int> = 0>
+          enable_if_t<!trait::is_available<Toolset>::value, int> = 0>
 auto
 get_opaque(scope::config, Args&&...)
 {
@@ -227,25 +284,25 @@ struct opaque_typeids
 {
     using result_type = std::set<size_t>;
 
-    template <typename U = T, enable_if_t<(trait::is_available<U>::value), int> = 0>
+    template <typename U = T, enable_if_t<trait::is_available<U>::value, int> = 0>
     static auto get()
     {
         return result_type({ get_opaque_hash(demangle<T>()) });
     }
 
-    template <typename U = T, enable_if_t<(trait::is_available<U>::value), int> = 0>
+    template <typename U = T, enable_if_t<trait::is_available<U>::value, int> = 0>
     static auto hash()
     {
         return get_opaque_hash(demangle<T>());
     }
 
-    template <typename U = T, enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    template <typename U = T, enable_if_t<!trait::is_available<U>::value, int> = 0>
     static auto get()
     {
         return result_type({ 0 });
     }
 
-    template <typename U = T, enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    template <typename U = T, enable_if_t<!trait::is_available<U>::value, int> = 0>
     static auto hash() -> size_t
     {
         return 0;
@@ -290,13 +347,13 @@ struct opaque_typeids<TupleT<T...>>
         return ret;
     }
 #else
-    template <typename U, enable_if_t<(trait::is_available<U>::value), int> = 0>
+    template <typename U, enable_if_t<trait::is_available<U>::value, int> = 0>
     static void get(result_type& ret)
     {
         ret.insert(get_opaque_hash(demangle<U>()));
     }
 
-    template <typename U, enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    template <typename U, enable_if_t<!trait::is_available<U>::value, int> = 0>
     static void get(result_type&)
     {}
 
@@ -308,8 +365,8 @@ struct opaque_typeids<TupleT<T...>>
     }
 #endif
 
-    template <typename U                                         = TupleT<T...>,
-              enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    template <typename U                                       = TupleT<T...>,
+              enable_if_t<!trait::is_available<U>::value, int> = 0>
     static result_type get()
     {
         return result_type({ 0 });

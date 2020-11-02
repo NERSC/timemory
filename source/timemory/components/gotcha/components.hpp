@@ -664,8 +664,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<(This::differentiator_is_component), int> = 0,
-              enable_if_t<!(std::is_same<Ret, void>::value), int>   = 0>
+              enable_if_t<This::differentiator_is_component, int> = 0,
+              enable_if_t<!std::is_same<Ret, void>::value, int>   = 0>
     static Ret invoke(Comp& _comp, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
     {
         using Type    = Differentiator;
@@ -677,8 +677,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!(This::differentiator_is_component), int> = 0,
-              enable_if_t<!(std::is_same<Ret, void>::value), int>    = 0>
+              enable_if_t<!This::differentiator_is_component, int> = 0,
+              enable_if_t<!std::is_same<Ret, void>::value, int>    = 0>
     static Ret invoke(Comp&, bool&, Ret (*_func)(Args...), Args&&... _args)
     {
         // gotcha_suppression::auto_toggle suppress_lock(_ready);
@@ -689,8 +689,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<(This::differentiator_is_component), int> = 0,
-              enable_if_t<(std::is_same<Ret, void>::value), int>    = 0>
+              enable_if_t<This::differentiator_is_component, int> = 0,
+              enable_if_t<std::is_same<Ret, void>::value, int>    = 0>
     static void invoke(Comp& _comp, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
     {
         using Type    = Differentiator;
@@ -702,8 +702,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!(This::differentiator_is_component), int> = 0,
-              enable_if_t<(std::is_same<Ret, void>::value), int>     = 0>
+              enable_if_t<!This::differentiator_is_component, int> = 0,
+              enable_if_t<std::is_same<Ret, void>::value, int>     = 0>
     static void invoke(Comp&, bool&, Ret (*_func)(Args...), Args&&... _args)
     {
         // gotcha_suppression::auto_toggle suppress_lock(_ready);
@@ -713,8 +713,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<(This::differentiator_is_component), int> = 0,
-              enable_if_t<!(std::is_same<Ret, void>::value), int>   = 0>
+              enable_if_t<This::differentiator_is_component, int> = 0,
+              enable_if_t<!std::is_same<Ret, void>::value, int>   = 0>
     static Ret invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
         using Tp      = Differentiator;
@@ -726,8 +726,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!(This::differentiator_is_component), int> = 0,
-              enable_if_t<!(std::is_same<Ret, void>::value), int>    = 0>
+              enable_if_t<!This::differentiator_is_component, int> = 0,
+              enable_if_t<!std::is_same<Ret, void>::value, int>    = 0>
     static Ret invoke(Comp&, Ret (*_func)(Args...), Args&&... _args)
     {
         return _func(std::forward<Args>(_args)...);
@@ -736,8 +736,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<(This::differentiator_is_component), int> = 0,
-              enable_if_t<(std::is_same<Ret, void>::value), int>    = 0>
+              enable_if_t<This::differentiator_is_component, int> = 0,
+              enable_if_t<std::is_same<Ret, void>::value, int>    = 0>
     static void invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
         using Tp      = Differentiator;
@@ -749,8 +749,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!(This::differentiator_is_component), int> = 0,
-              enable_if_t<(std::is_same<Ret, void>::value), int>     = 0>
+              enable_if_t<!This::differentiator_is_component, int> = 0,
+              enable_if_t<std::is_same<Ret, void>::value, int>     = 0>
     static void invoke(Comp&, Ret (*_func)(Args...), Args&&... _args)
     {
         _func(std::forward<Args>(_args)...);

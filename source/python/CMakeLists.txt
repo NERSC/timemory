@@ -6,10 +6,16 @@
 ##########################################################################################
 
 if(TIMEMORY_BUILD_PYTHON)
+    set(_visibility timemory::timemory-default-visibility)
     set(CMAKE_CXX_CLANG_TIDY)
     set(CMAKE_UNITY_BUILD OFF)
     set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF)
     set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
+
+    if(TIMEMORY_BUILD_PYTHON_HIDDEN)
+        set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+        set(_visibility timemory::timemory-hidden-visibility)
+    endif()
 
     add_library(timemory-python-compile-options INTERFACE)
     add_library(${PROJECT_NAME}::timemory-python-compile-options ALIAS
@@ -36,8 +42,13 @@ if(TIMEMORY_BUILD_PYTHON)
     target_include_directories(libpytimemory SYSTEM PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/pybind11/include>)
 
+    set(pybind_libs pybind11::module)
+    if(TIMEMORY_BUILD_LTO)
+        list(APPEND pybind_libs pybind11::thin_lto)
+    endif()
+
     target_link_libraries(libpytimemory PRIVATE
-        pybind11::module
+        ${pybind_libs}
         timemory::timemory-python
         timemory::timemory-headers
         timemory::timemory-cxx-shared
@@ -47,7 +58,7 @@ if(TIMEMORY_BUILD_PYTHON)
         timemory::timemory-ompt-library
         timemory::timemory-ncclp-library
         timemory::timemory-python-compile-options
-        timemory::timemory-default-visibility)
+        ${_visibility})
 
     if(TIMEMORY_USE_CUDA)
         set(EXTRA_PROPERTIES LINKER_LANGUAGE CUDA)

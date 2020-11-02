@@ -56,12 +56,12 @@ struct sample
 
     TIMEMORY_DELETED_OBJECT(sample)
 
-    template <typename Up                                   = Tp, typename... Args,
-              enable_if_t<(trait::sampler<Up>::value), int> = 0>
+    template <typename Up                                 = Tp, typename... Args,
+              enable_if_t<trait::sampler<Up>::value, int> = 0>
     explicit sample(Up& obj, Args&&... args);
 
-    template <typename Up                                    = Tp, typename... Args,
-              enable_if_t<!(trait::sampler<Up>::value), int> = 0>
+    template <typename Up                                  = Tp, typename... Args,
+              enable_if_t<!trait::sampler<Up>::value, int> = 0>
     explicit sample(Up&, Args&&...);
 
 private:
@@ -96,7 +96,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Up, typename... Args, enable_if_t<(trait::sampler<Up>::value), int>>
+template <typename Up, typename... Args, enable_if_t<trait::sampler<Up>::value, int>>
 sample<Tp>::sample(Up& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
@@ -111,7 +111,7 @@ sample<Tp>::sample(Up& obj, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Up, typename... Args, enable_if_t<!(trait::sampler<Up>::value), int>>
+template <typename Up, typename... Args, enable_if_t<!trait::sampler<Up>::value, int>>
 sample<Tp>::sample(Up&, Args&&...)
 {}
 //

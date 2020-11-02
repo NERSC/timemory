@@ -197,7 +197,7 @@ private:
     void  operator delete[](void*) noexcept {}
 
     template <typename Tp = Type, typename PtrT = Pointer,
-              enable_if_t<(std::is_same<PtrT, std::shared_ptr<Tp>>::value)> = 0>
+              enable_if_t<std::is_same<PtrT, std::shared_ptr<Tp>>::value> = 0>
     deleter_t& get_deleter()
     {
         static deleter_t _instance = [](Pointer&) {};
@@ -205,7 +205,7 @@ private:
     }
 
     template <typename Tp = Type, typename PtrT = Pointer,
-              enable_if_t<!(std::is_same<PtrT, std::shared_ptr<Tp>>::value)> = 0>
+              enable_if_t<!std::is_same<PtrT, std::shared_ptr<Tp>>::value> = 0>
     deleter_t& get_deleter()
     {
         static deleter_t _instance = [](Pointer& _master) {

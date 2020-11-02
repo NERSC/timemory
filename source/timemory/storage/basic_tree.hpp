@@ -29,6 +29,7 @@
 #include "timemory/utility/types.hpp"
 
 #include <iterator>
+#include <set>
 #include <vector>
 
 namespace tim
@@ -99,22 +100,8 @@ struct basic_tree
         {
             m_value += rhs.m_value;
         }
-
         for(auto& ritr : rhs.m_children)
-        {
-            bool found = false;
-            for(auto& itr : m_children)
-            {
-                if(itr == ritr)
-                {
-                    found = true;
-                    itr += ritr;
-                    break;
-                }
-            }
-            if(!found)
-                m_children.insert(m_children.end(), ritr);
-        }
+            m_children.insert(m_children.end(), ritr);
         return *this;
     }
 
@@ -125,20 +112,38 @@ struct basic_tree
             m_value -= rhs.m_value;
         }
 
-        for(auto& ritr : rhs.m_children)
+        std::set<size_t> found{};
+        auto nitr = std::min<size_t>(m_children.size(), rhs.m_children.size());
+        // add identical entries
+        for(size_t i = 0; i < nitr; ++i)
         {
-            bool found = false;
-            for(auto& itr : m_children)
+            if(m_children.at(i) == rhs.m_children.at(i))
             {
-                if(itr == ritr)
+                found.insert(i);
+                m_children.at(i) -= rhs.m_children.at(i);
+            }
+        }
+        // add to first matching entry
+        for(size_t i = 0; i < rhs.m_children.size(); ++i)
+        {
+            if(found.find(i) != found.end())
+                continue;
+            for(size_t j = 0; j < m_children.size(); ++j)
+            {
+                if(m_children.at(j) == rhs.m_children.at(i))
                 {
-                    found = true;
-                    itr -= ritr;
+                    found.insert(i);
+                    m_children.at(j) -= rhs.m_children.at(i);
                 }
             }
-            if(!found)
-                m_children.insert(m_children.end(), ritr);
         }
+        // append to end if not found anywhere
+        // for(size_t i = 0; i < rhs.m_children.size(); ++i)
+        // {
+        //     if(found.find(i) != found.end())
+        //         continue;
+        //     m_children.insert(m_children.end(), rhs.m_children.at(i));
+        // }
         return *this;
     }
 

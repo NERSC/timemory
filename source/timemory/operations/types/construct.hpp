@@ -58,7 +58,7 @@ struct construct
     template <typename Arg, typename... Args>
     construct(type& obj, Arg&& arg, Args&&... args);
 
-    template <typename... Args, enable_if_t<(sizeof...(Args) == 0), int> = 0>
+    template <typename... Args, enable_if_t<sizeof...(Args) == 0, int> = 0>
     construct(type&, Args&&...);
 
     template <typename... Args,
@@ -141,7 +141,7 @@ construct<Tp>::construct(type& obj, Arg&& arg, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename... Args, enable_if_t<(sizeof...(Args) == 0), int>>
+template <typename... Args, enable_if_t<sizeof...(Args) == 0, int>>
 construct<Tp>::construct(type&, Args&&...)
 {}
 //

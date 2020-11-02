@@ -35,6 +35,8 @@
 #include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/available.hpp"
+#include "timemory/runtime/enumerate.hpp"
+#include "timemory/types.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include "pybind11/cast.h"
@@ -49,8 +51,6 @@
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
 
-//======================================================================================//
-
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -62,6 +62,143 @@ using namespace py::literals;
 //
 namespace pytim
 {
+//
+template <typename... Tail, typename FuncT, typename ValT,
+          tim::enable_if_t<sizeof...(Tail) == 0> = 0>
+void
+try_cast_seq(FuncT&&, ValT&&)
+{}
+//
+template <typename Tp, typename... Tail, typename FuncT, typename ValT>
+void
+try_cast_seq(FuncT&& f, ValT&& v)
+{
+    try
+    {
+        std::forward<FuncT>(f)(*(std::forward<ValT>(v).template cast<Tp*>()));
+    } catch(py::cast_error&)
+    {
+        try_cast_seq<Tail...>(std::forward<FuncT>(f), std::forward<ValT>(v));
+    }
+}
+//
+using pyenum_set_t = std::set<TIMEMORY_COMPONENT>;
+//
+/// \fn auto get_enum_set(py::list args)
+/// \param[in] args Python list of strings or component enumerations
+/// \param[out] components Return a set of TIMEMORY_COMPONENT enums
+///
+/// \brief Converts a python specification of components into a C++ type
+inline auto
+get_enum_set(py::list _args)
+{
+    auto components = pyenum_set_t{};
+
+    for(auto itr : _args)
+    {
+        std::string        _sitr = "";
+        TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
+
+        try
+        {
+            _sitr = itr.cast<std::string>();
+            if(_sitr.length() > 0)
+                _citr = tim::runtime::enumerate(_sitr);
+            else
+                continue;
+        } catch(py::cast_error&)
+        {}
+
+        if(_citr == TIMEMORY_COMPONENTS_END)
+        {
+            try
+            {
+                _citr = itr.cast<TIMEMORY_COMPONENT>();
+            } catch(py::cast_error&)
+            {}
+        }
+
+        if(_citr != TIMEMORY_COMPONENTS_END)
+            components.insert(_citr);
+        else
+        {
+            PRINT_HERE("%s", "ignoring argument that failed casting to either "
+                             "'timemory.component' and string");
+        }
+    }
+    return components;
+}
+//
+namespace impl
+{
+//
+template <typename Tp>
+struct get_type_enums;
+//
+struct enum_value_set
+{};
+struct enum_string_map
+{};
+struct string_enum_map
+{};
+//
+template <typename... Types>
+struct get_type_enums<tim::type_list<Types...>>
+{
+    auto operator()(enum_value_set) const
+    {
+        static auto _instance = []() {
+            return pytim::pyenum_set_t{ tim::component::properties<Types>{}()... };
+        }();
+        return _instance;
+    }
+    //
+    auto operator()(enum_string_map) const
+    {
+        using type            = std::map<TIMEMORY_COMPONENT, std::string>;
+        static auto _instance = []() {
+            return type{ { tim::component::properties<Types>{}(),
+                           tim::component::properties<Types>::enum_string() }... };
+        }();
+        return _instance;
+    }
+    //
+    auto operator()(string_enum_map) const
+    {
+        using type            = std::map<std::string, TIMEMORY_COMPONENT>;
+        static auto _instance = [](const auto& rev) {
+            auto ret = type{};
+            for(auto& itr : rev)
+                ret.insert({ itr.second, itr.first });
+        }((*this)(enum_string_map{}));
+        return _instance;
+    }
+    //
+};
+//
+}  // namespace impl
+//
+template <typename Tp = tim::complete_types_t>
+auto
+get_type_enums()
+{
+    return impl::get_type_enums<Tp>{}(impl::enum_value_set{});
+}
+//
+template <typename Tp = tim::complete_types_t>
+auto
+get_enum_string_map()
+{
+    return impl::get_type_enums<Tp>{}(impl::enum_string_map{});
+}
+//
+template <typename Tp = tim::complete_types_t>
+auto
+get_string_enum_map()
+{
+    return impl::get_type_enums<Tp>{}(impl::string_enum_map{});
+}
+//
 template <typename TupleT>
 struct construct_dict
 {

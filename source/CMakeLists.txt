@@ -344,7 +344,7 @@ endif()
 list(REMOVE_DUPLICATES TIMEMORY_COMPILED_LIBRARIES)
 
 # C/C++ compiled libraries
-install(
+timemory_install_libraries(
     TARGETS ${TIMEMORY_COMPILED_LIBRARIES} ${TIMEMORY_TOOL_LIBRARIES}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}-library-depends)

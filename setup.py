@@ -74,6 +74,8 @@ add_arg_bool_option("caliper", "TIMEMORY_USE_CALIPER")
 add_arg_bool_option("likwid", "TIMEMORY_USE_LIKWID")
 add_arg_bool_option("gperftools", "TIMEMORY_USE_GPERFTOOLS")
 add_arg_bool_option("vtune", "TIMEMORY_USE_VTUNE")
+add_arg_bool_option("build-caliper", "TIMEMORY_BUILD_CALIPER")
+add_arg_bool_option("build-gotcha", "TIMEMORY_BUILD_GOTCHA")
 add_arg_bool_option("pybind-install", "PYBIND11_INSTALL")
 add_arg_bool_option("build-testing", "TIMEMORY_BUILD_TESTING")
 parser.add_argument(
@@ -82,6 +84,16 @@ parser.add_argument(
     type=int,
     choices=[14, 17, 20],
     help="Set C++ language standard",
+)
+parser.add_argument(
+    "--cmake-args",
+    default=[],
+    type=str,
+    nargs="*",
+    help="{}{}".format(
+        "Pass arguments to cmake. Use w/ pip installations and --install-option, e.g. ",
+        '--install-option=--cmake-args="-DTIMEMORY_BUILD_LTO=ON -DCMAKE_UNITY_BUILD=OFF"',
+    ),
 )
 
 args, left = parser.parse_known_args()
@@ -155,6 +167,14 @@ set_cmake_bool_option(
     "TIMEMORY_USE_GPERFTOOLS", args.enable_gperftools, args.disable_gperftools
 )
 set_cmake_bool_option(
+    "TIMEMORY_BUILD_CALIPER",
+    args.enable_build_caliper,
+    args.disable_build_caliper,
+)
+set_cmake_bool_option(
+    "TIMEMORY_BUILD_GOTCHA", args.enable_build_gotcha, args.disable_build_gotcha
+)
+set_cmake_bool_option(
     "PYBIND11_INSTALL", args.enable_pybind_install, args.disable_pybind_install
 )
 set_cmake_bool_option(
@@ -164,9 +184,13 @@ set_cmake_bool_option(
 )
 cmake_args.append("-DCMAKE_CXX_STANDARD={}".format(args.cxx_standard))
 
+for itr in args.cmake_args:
+    cmake_args += itr.split()
 
 # --------------------------------------------------------------------------- #
 #
+
+
 def get_project_version():
     # open "VERSION"
     with open(os.path.join(os.getcwd(), "VERSION"), "r") as f:

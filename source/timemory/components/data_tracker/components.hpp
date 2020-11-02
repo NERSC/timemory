@@ -116,21 +116,21 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     void stop() {}
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void store(const T& val)
     {
         handler_type::store(*this, val / get_unit());
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void store(handler_type&&, const T& val)
     {
         handler_type::store(*this, val / get_unit());
     }
 
     template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     auto store(Func&& f, const T& val)
         -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
                     void())
@@ -139,7 +139,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     }
 
     template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     auto store(handler_type&&, Func&& f, const T& val)
         -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
                     void())
@@ -148,28 +148,28 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_begin(const T& val)
     {
         handler_type::begin(*this, val / get_unit());
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_end(const T& val)
     {
         handler_type::end(*this, val / get_unit());
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_begin(handler_type&&, const T& val)
     {
         handler_type::begin(*this, val / get_unit());
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_end(handler_type&&, const T& val)
     {
         handler_type::end(*this, val / get_unit());
@@ -181,7 +181,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     void set_value(const value_type& v) { value = v; }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     this_type* add_secondary(const string_t& _key, const T& val)
     {
         this_type _tmp;
@@ -194,7 +194,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     this_type* add_secondary(const string_t& _key, handler_type&& h, const T& val)
     {
         this_type _tmp;
@@ -207,7 +207,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     }
 
     template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     this_type* add_secondary(const string_t& _key, Func&& f, const T& val)
     {
         PRINT_HERE("%s :: adding secondary", demangle<this_type>().c_str());
@@ -221,7 +221,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     }
 
     template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     this_type* add_secondary(const string_t& _key, handler_type&& h, Func&& f,
                              const T& val)
     {

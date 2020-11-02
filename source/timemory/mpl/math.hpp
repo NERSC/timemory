@@ -357,7 +357,7 @@ sqr(Tp _val)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, enable_if_t<(std::is_arithmetic<Tp>::value), int> = 0>
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value, int> = 0>
 Tp
 min(Tp _lhs, Tp _rhs, std::tuple<>)
 {
@@ -439,7 +439,7 @@ min(const Tp& _lhs, const Tp& _rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, enable_if_t<(std::is_arithmetic<Tp>::value), int> = 0>
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value, int> = 0>
 Tp
 max(Tp _lhs, Tp _rhs, std::tuple<>)
 {
@@ -708,7 +708,7 @@ multiply(Tp& _lhs, const Up& _rhs, std::tuple<>, long)
 }
 
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
-          enable_if_t<(std::is_arithmetic<Up>::value), int> = 0>
+          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, std::tuple<>, long)
     -> decltype(std::begin(_lhs), void())
@@ -723,8 +723,8 @@ multiply(Tp& _lhs, const Up& _rhs, std::tuple<>, long)
 }
 
 template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
-          typename Mp                                        = typename Tp::mapped_type,
-          enable_if_t<!(std::is_arithmetic<Up>::value), int> = 0>
+          typename Mp                                      = typename Tp::mapped_type,
+          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, std::tuple<>, int)
     -> decltype(std::begin(_lhs), void())
@@ -742,8 +742,8 @@ multiply(Tp& _lhs, const Up& _rhs, std::tuple<>, int)
 }
 
 template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
-          typename Mp                                       = typename Tp::mapped_type,
-          enable_if_t<(std::is_arithmetic<Up>::value), int> = 0>
+          typename Mp                                     = typename Tp::mapped_type,
+          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, std::tuple<>, int)
     -> decltype(std::begin(_lhs), void())
@@ -763,7 +763,7 @@ multiply(Tp&, const Up&, index_sequence<>, int)
 {}
 
 template <typename Tp, typename Up, size_t... Idx,
-          enable_if_t<!(std::is_arithmetic<Up>::value), int> = 0>
+          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
@@ -775,7 +775,7 @@ multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
 }
 
 template <typename Tp, typename Up, size_t... Idx,
-          enable_if_t<(std::is_arithmetic<Up>::value), int> = 0>
+          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
@@ -804,7 +804,7 @@ divide(Tp& _lhs, Up _rhs, std::tuple<>, ...) -> decltype(_lhs /= _rhs, void())
 }
 
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
-          enable_if_t<!(std::is_arithmetic<Up>::value), int> = 0>
+          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, std::tuple<>, long) -> decltype(std::begin(_lhs), void())
 {
@@ -822,7 +822,7 @@ divide(Tp& _lhs, const Up& _rhs, std::tuple<>, long) -> decltype(std::begin(_lhs
 }
 
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
-          enable_if_t<(std::is_arithmetic<Up>::value), int> = 0>
+          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, std::tuple<>, long) -> decltype(std::begin(_lhs), void())
 {
@@ -836,8 +836,8 @@ divide(Tp& _lhs, const Up& _rhs, std::tuple<>, long) -> decltype(std::begin(_lhs
 }
 
 template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
-          typename Mp                                        = typename Tp::mapped_type,
-          enable_if_t<!(std::is_arithmetic<Up>::value), int> = 0>
+          typename Mp                                      = typename Tp::mapped_type,
+          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs), void())
 {
@@ -854,8 +854,8 @@ divide(Tp& _lhs, const Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs)
 }
 
 template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
-          typename Mp                                       = typename Tp::mapped_type,
-          enable_if_t<(std::is_arithmetic<Up>::value), int> = 0>
+          typename Mp                                     = typename Tp::mapped_type,
+          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs), void())
 {
@@ -874,7 +874,7 @@ divide(Tp&, const Up&, index_sequence<>, int)
 {}
 
 template <typename Tp, typename Up, size_t... Idx,
-          enable_if_t<!(std::is_arithmetic<Up>::value), int> = 0>
+          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
@@ -886,7 +886,7 @@ divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
 }
 
 template <typename Tp, typename Up, size_t... Idx,
-          enable_if_t<(std::is_arithmetic<Up>::value), int> = 0>
+          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
@@ -906,7 +906,7 @@ divide(Tp& _lhs, const Up& _rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, enable_if_t<(std::is_arithmetic<Tp>::value), int> = 0>
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value, int> = 0>
 Tp
 percent_diff(Tp _lhs, Tp _rhs, std::tuple<>, ...)
 {

@@ -36,7 +36,6 @@ import argparse
 import warnings
 import traceback
 import multiprocessing as mp
-import timemory
 
 PY3 = sys.version_info[0] == 3
 
@@ -174,6 +173,27 @@ def parse_args(args=None):
         default=_tracer_config.skip_filenames,
         help="Filter out any entries from these files",
     )
+    parser.add_argument(
+        "--only-funcs",
+        type=str,
+        nargs="?",
+        default=_tracer_config.only_functions,
+        help="Select only entries with these function names",
+    )
+    parser.add_argument(
+        "--only-files",
+        type=str,
+        nargs="?",
+        default=_tracer_config.only_filenames,
+        help="Select only entries from these files",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbosity",
+        type=int,
+        default=_tracer_config.verbosity,
+        help="Logging verbosity",
+    )
 
     return parser.parse_known_args(args)
 
@@ -228,10 +248,14 @@ def main():
         opts, argv = parse_args()
 
     from ..libpytimemory import initialize
+    from ..libpytimemory import settings
 
     if os.path.isfile(argv[0]):
         argv[0] = os.path.realpath(argv[0])
 
+    settings.output_path = "timemory-{}-trace-output".format(
+        os.path.basename(argv[0]).strip().replace("_", "-").replace("--", "-")
+    )
     initialize(argv)
 
     from ..libpytimemory.trace import config as _tracer_config
@@ -242,8 +266,10 @@ def main():
     _tracer_config.full_filepath = opts.full_filepath
     _tracer_config.skip_functions = opts.skip_funcs
     _tracer_config.skip_filenames = opts.skip_files
+    _tracer_config.only_functions = opts.only_funcs
+    _tracer_config.only_filenames = opts.only_files
+    _tracer_config.verbosity = opts.verbosity
 
-    # print("opts: {}".format(opts))
     print("[timemory]> tracing: {}".format(argv))
 
     sys.argv[:] = argv
@@ -253,13 +279,11 @@ def main():
         setup_file = find_script(opts.setup)
         __file__ = setup_file
         __name__ = "__main__"
-        # Make sure the script's directory is on sys.path instead of just
-        # kerntracer.py's.
+        # Make sure the script's directory is on sys.path
         sys.path.insert(0, os.path.dirname(setup_file))
         ns = locals()
         execfile(setup_file, ns, ns)
 
-    from ..libpytimemory import settings
     from .tracer import Tracer, FakeTracer
 
     output_path = get_value(
@@ -272,8 +296,7 @@ def main():
     script_file = find_script(sys.argv[0])
     __file__ = script_file
     __name__ = "__main__"
-    # Make sure the script's directory is on sys.path instead of just
-    # kerntracer.py's.
+    # Make sure the script's directory is on sys.path
     sys.path.insert(0, os.path.dirname(script_file))
 
     tracer = Tracer(opts.components)
@@ -301,17 +324,14 @@ def main():
                 tracer.runctx(
                     "execfile_(%r, globals())" % (script_file,), ns, ns
                 )
-            if not opts.builtin:
-                tracer.stop()
         except (KeyboardInterrupt, SystemExit):
             pass
         finally:
+            if not opts.builtin:
+                tracer.stop()
             del tracer
             del fake
-            timemory.finalize()
     except Exception as e:
-        import traceback
-
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=10)
         print("Exception - {}".format(e))
@@ -319,3 +339,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    from ..libpytimemory import finalize
+
+    finalize()

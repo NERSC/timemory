@@ -55,13 +55,13 @@ struct copy
 
     TIMEMORY_DELETED_OBJECT(copy)
 
-    template <typename Up = Tp, enable_if_t<(trait::is_available<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<trait::is_available<Up>::value, char> = 0>
     copy(Up& obj, const Up& rhs)
     {
         obj = Up(rhs);
     }
 
-    template <typename Up = Tp, enable_if_t<(trait::is_available<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<trait::is_available<Up>::value, char> = 0>
     copy(Up*& obj, const Up* rhs)
     {
         if(rhs)
@@ -73,11 +73,11 @@ struct copy
         }
     }
 
-    template <typename Up = Tp, enable_if_t<!(trait::is_available<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<!trait::is_available<Up>::value, char> = 0>
     copy(Up&, const Up&)
     {}
 
-    template <typename Up = Tp, enable_if_t<!(trait::is_available<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<!trait::is_available<Up>::value, char> = 0>
     copy(Up*&, const Up*)
     {}
 };

@@ -119,7 +119,7 @@ private:
     // only if components are available
     //
     template <typename Up, typename Dp, typename... Args,
-              enable_if_t<(has_data<Up>::value), char> = 0>
+              enable_if_t<has_data<Up>::value, char> = 0>
     auto sfinae(const Up& obj, int, int, Dp& dst, Args&&... args)
         -> decltype(obj.get(std::forward<Args>(args)...), void())
     {
@@ -130,7 +130,7 @@ private:
     // only if components are available
     //
     template <typename Up, typename Dp, typename... Args,
-              enable_if_t<(has_data<Up>::value), char> = 0>
+              enable_if_t<has_data<Up>::value, char> = 0>
     auto sfinae(const Up& obj, int, long, Dp& dst, Args&&...)
         -> decltype(obj.get(), void())
     {
@@ -141,7 +141,7 @@ private:
     // component is available but no "get" function
     //
     template <typename Up, typename Dp, typename... Args,
-              enable_if_t<(has_data<Up>::value), char> = 0>
+              enable_if_t<has_data<Up>::value, char> = 0>
     void sfinae(const Up&, long, long, Dp&, Args&&...)
     {}
 
@@ -149,7 +149,7 @@ private:
     // nothing if component is not available
     //
     template <typename Up, typename Dp, typename... Args,
-              enable_if_t<!(has_data<Up>::value), char> = 0>
+              enable_if_t<!has_data<Up>::value, char> = 0>
     void sfinae(const Up&, long, long, Dp&, Args&&...)
     {}
 };
@@ -191,7 +191,7 @@ private:
     // only if components are available
     //
     template <typename Up, typename Dp, typename... Args,
-              enable_if_t<(has_data<Up>::value), char> = 0>
+              enable_if_t<has_data<Up>::value, char> = 0>
     auto sfinae(const Up& obj, int, int, Dp& dst, Args&&... args)
         -> decltype(obj.get(std::forward<Args>(args)...), void())
     {
@@ -202,7 +202,7 @@ private:
     // only if components are available
     //
     template <typename Up, typename Dp, typename... Args,
-              enable_if_t<(has_data<Up>::value), char> = 0>
+              enable_if_t<has_data<Up>::value, char> = 0>
     auto sfinae(const Up& obj, int, long, Dp& dst, Args&&...)
         -> decltype(obj.get(), void())
     {
@@ -213,7 +213,7 @@ private:
     // component is available but no "get" function
     //
     template <typename Up, typename Dp, typename... Args,
-              enable_if_t<(has_data<Up>::value), char> = 0>
+              enable_if_t<has_data<Up>::value, char> = 0>
     void sfinae(const Up&, long, long, Dp&, Args&&...)
     {}
 
@@ -221,7 +221,7 @@ private:
     // nothing if component is not available
     //
     template <typename Up, typename Dp, typename... Args,
-              enable_if_t<!(has_data<Up>::value), char> = 0>
+              enable_if_t<!has_data<Up>::value, char> = 0>
     void sfinae(const Up&, long, long, Dp&, Args&&...)
     {}
 };

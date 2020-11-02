@@ -1,5 +1,5 @@
 
-if(TIMEMORY_USE_MPI)
+if(TIMEMORY_USE_MPI_INIT)
 
     file(GLOB_RECURSE mpi_header_files ${CMAKE_CURRENT_SOURCE_DIR}/types/mpi/*.hpp)
     file(GLOB_RECURSE mpi_source_files ${CMAKE_CURRENT_SOURCE_DIR}/types/mpi/*.cpp)
@@ -11,7 +11,7 @@ if(TIMEMORY_USE_MPI)
         FOLDER              components
         HEADERS             ${mpi_header_files}
         SOURCES             ${mpi_source_files}
-        DEPENDS             timemory-mpi timemory-mpi-init timemory-core
-        PROPERTY_DEPENDS    GLOBAL COMPONENT USER_BUNDLE)
+        DEPENDS             timemory-mpi timemory-core
+        PROPERTY_DEPENDS    GLOBAL)
 
 endif()

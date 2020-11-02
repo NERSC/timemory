@@ -29,16 +29,7 @@
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/config/macros.hpp"
-//
-#include "timemory/config/types.hpp"
-//
 #include "timemory/config/declaration.hpp"
-//
-#if defined(TIMEMORY_CONFIG_SOURCE)
-#    include "timemory/config/definition.hpp"
-#endif
-//
-//======================================================================================//
+#include "timemory/config/definition.hpp"
+#include "timemory/config/macros.hpp"
+#include "timemory/config/types.hpp"

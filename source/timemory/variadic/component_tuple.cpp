@@ -162,8 +162,8 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
 template <typename... Types>
 component_tuple<Types...>::~component_tuple()
 {
-    // IF_CONSTEXPR(quirk_config<quirk::auto_stop>::value) { stop(); }
-    stop();
+    if(m_is_active())
+        stop();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -173,7 +173,7 @@ component_tuple<Types...>
 component_tuple<Types...>::clone(bool _store, scope::config _scope)
 {
     component_tuple tmp(*this);
-    tmp.m_store = _store;
+    tmp.m_store(_store);
     tmp.m_scope = _scope;
     return tmp;
 }
@@ -185,12 +185,12 @@ template <typename... Types>
 void
 component_tuple<Types...>::push()
 {
-    if(!m_is_pushed)
+    if(!m_is_pushed())
     {
         // reset the data
         invoke::reset(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = true;
+        m_is_pushed(true);
         // insert node or find existing node
         invoke::push(m_data, m_scope, m_hash);
     }
@@ -203,12 +203,12 @@ template <typename... Types>
 void
 component_tuple<Types...>::pop()
 {
-    if(m_is_pushed)
+    if(m_is_pushed())
     {
         // set the current node to the parent node
         invoke::pop(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = false;
+        m_is_pushed(false);
     }
 }
 
@@ -246,6 +246,7 @@ component_tuple<Types...>::start(mpl::lightweight, Args&&... args)
 {
     assemble(*this);
     invoke::start(m_data, std::forward<Args>(args)...);
+    m_is_active(true);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -258,6 +259,7 @@ component_tuple<Types...>::stop(mpl::lightweight, Args&&... args)
     invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
     derive(*this);
+    m_is_active(false);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -269,7 +271,7 @@ void
 component_tuple<Types...>::start(Args&&... args)
 {
     // push components into the call-stack
-    if(m_store)
+    if(m_store())
         push();
 
     // start components
@@ -287,7 +289,7 @@ component_tuple<Types...>::stop(Args&&... args)
     stop(mpl::lightweight{}, std::forward<Args>(args)...);
 
     // pop components off of the call-stack stack
-    if(m_store)
+    if(m_store())
         pop();
 }
 

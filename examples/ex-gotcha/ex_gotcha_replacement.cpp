@@ -80,7 +80,7 @@ struct exp_intercept : public base<exp_intercept, void>
 using wc_t         = tim::component_bundle<TIMEMORY_API, wall_clock>;
 using exptime_t    = gotcha<2, wc_t>;
 using exp2expf_t   = gotcha<1, std::tuple<>, exp_intercept>;
-using exp_bundle_t = tim::component_bundle<TIMEMORY_API, exp2expf_t, exptime_t>;
+using exp_bundle_t = tim::component_bundle<TIMEMORY_API, exp2expf_t*, exptime_t*>;
 
 using exp2expf_ot = typename exp2expf_t::operator_type;
 static_assert(std::is_same<exp2expf_ot, exp_intercept>::value,
@@ -107,10 +107,8 @@ sum_exp(const vector<double>&);
 
 //======================================================================================//
 
-namespace
-{
-auto use_intercept = tim::get_env("EXP_INTERCEPT", true);
-auto use_timers    = tim::get_env("EXP_TIMERS", true);
+static auto use_intercept = tim::get_env("EXP_INTERCEPT", true);
+static auto use_timers    = tim::get_env("EXP_TIMERS", true);
 
 bool
 init()
@@ -119,7 +117,6 @@ init()
     // configure the initializer for the gotcha component which replaces exp with expf
     //
     exp2expf_t::get_initializer() = []() {
-        if(!use_intercept) return;
         puts("Generating exp intercept...");
         TIMEMORY_C_GOTCHA(exp2expf_t, 0, exp);
     };
@@ -129,10 +126,14 @@ init()
     // timers around exp and sum_exp
     //
     exptime_t::get_initializer() = []() {
-        if(!use_timers) return;
         puts("Generating exp timers...");
         TIMEMORY_C_GOTCHA(exptime_t, 0, exp);
         TIMEMORY_CXX_GOTCHA(exptime_t, 1, sum_exp);
+    };
+
+    exp_bundle_t::get_initializer() = [=](exp_bundle_t& obj) {
+        if(use_intercept) obj.initialize<exp2expf_t>();
+        if(use_timers) obj.initialize<exptime_t>();
     };
 
     return true;
@@ -141,7 +142,6 @@ init()
 //  static initialization will run the init function
 //
 static auto did_init = init();
-}  // namespace
 
 //======================================================================================//
 

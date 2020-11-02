@@ -34,6 +34,7 @@
 #include "timemory/components/types.hpp"
 #include "timemory/config/types.hpp"
 #include "timemory/containers/types.hpp"
+#include "timemory/enum.h"
 #include "timemory/environment/types.hpp"
 #include "timemory/ert/types.hpp"
 #include "timemory/hash/types.hpp"
@@ -59,18 +60,24 @@
 #if !defined(TIMEMORY_COMPONENT_TYPES)
 #   define TIMEMORY_COMPONENT_TYPES             \
     component::allinea_map,                     \
-    component::caliper,                         \
+    component::caliper_marker,                  \
+    component::caliper_config,                  \
+    component::caliper_loop_marker,             \
     component::cpu_clock,                       \
     component::cpu_roofline_dp_flops,           \
     component::cpu_roofline_flops,              \
     component::cpu_roofline_sp_flops,           \
     component::cpu_util,                        \
+    component::craypat_counters,                \
+    component::craypat_flush_buffer,            \
+    component::craypat_heap_stats,              \
+    component::craypat_record,                  \
+    component::craypat_region,                  \
     component::cuda_event,                      \
     component::cuda_profiler,                   \
     component::cupti_activity,                  \
     component::cupti_counters,                  \
     component::current_peak_rss,                \
-    component::data_rss,                        \
     component::gperftools_cpu_profiler,         \
     component::gperftools_heap_profiler,        \
     component::gpu_roofline_dp_flops,           \
@@ -87,10 +94,6 @@
     component::num_io_out,                      \
     component::num_major_page_faults,           \
     component::num_minor_page_faults,           \
-    component::num_msg_recv,                    \
-    component::num_msg_sent,                    \
-    component::num_signals,                     \
-    component::num_swap,                        \
     component::nvtx_marker,                     \
     component::ompt_native_handle,              \
     component::page_rss,                        \
@@ -102,7 +105,6 @@
     component::process_cpu_util,                \
     component::read_bytes,                      \
     component::read_char,                       \
-    component::stack_rss,                       \
     component::system_clock,                    \
     component::tau_marker,                      \
     component::thread_cpu_clock,                \
@@ -110,8 +112,6 @@
     component::trip_count,                      \
     component::user_clock,                      \
     component::user_global_bundle,              \
-    component::user_list_bundle,                \
-    component::user_tuple_bundle,               \
     component::user_mode_time,                  \
     component::virtual_memory,                  \
     component::voluntary_context_switch,        \
@@ -165,21 +165,70 @@
 namespace tim
 {
 //
+#if defined(DEBUG) && !defined(TIMEMORY_IGNORE_NATIVE_SIZE_MISMATCH)
+//
+static_assert((TIMEMORY_NATIVE_COMPONENTS_END -
+               TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE) ==
+                  std::tuple_size<std::tuple<TIMEMORY_COMPONENT_TYPES>>::value,
+              "Error! Number of components defined in macro TIMEMORY_COMPONENT_TYPES "
+              "does not equal the enumeration value of TIMEMORY_NATIVE_COMPONENTS_END "
+              "minus TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE. It is likely that one of "
+              "these was updated and the other was not");
+//
+#endif
+//
 //--------------------------------------------------------------------------------------//
 //
-using complete_types_t = type_list<TIMEMORY_COMPONENT_TYPES>;
+// using complete_types_t = type_list<TIMEMORY_COMPONENT_TYPES>;
 //
 //--------------------------------------------------------------------------------------//
 //
-using complete_tuple_t           = std::tuple<TIMEMORY_COMPONENT_TYPES>;
-using complete_component_list_t  = component_list<TIMEMORY_COMPONENT_TYPES>;
-using complete_component_tuple_t = component_tuple<TIMEMORY_COMPONENT_TYPES>;
-using complete_auto_list_t       = auto_list<TIMEMORY_COMPONENT_TYPES>;
-using complete_auto_tuple_t      = auto_tuple<TIMEMORY_COMPONENT_TYPES>;
+// using complete_tuple_t           = std::tuple<TIMEMORY_COMPONENT_TYPES>;
+// using complete_component_list_t  = component_list<TIMEMORY_COMPONENT_TYPES>;
+// using complete_component_tuple_t = component_tuple<TIMEMORY_COMPONENT_TYPES>;
+// using complete_auto_list_t       = auto_list<TIMEMORY_COMPONENT_TYPES>;
+// using complete_auto_tuple_t      = auto_tuple<TIMEMORY_COMPONENT_TYPES>;
 //
 //--------------------------------------------------------------------------------------//
 //
-using available_types_t = convert_t<available_t<complete_types_t>, type_list<>>;
+template <typename Tp>
+struct complete_types;
+//
+template <size_t... Idx>
+struct complete_types<std::index_sequence<Idx...>>
+{
+    using type = convert_t<non_placeholder_t<type_list<component::enumerator_t<Idx>...>>,
+                           type_list<>>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct available_types;
+//
+template <size_t... Idx>
+struct available_types<std::index_sequence<Idx...>>
+{
+    using type = convert_t<
+        available_t<non_placeholder_t<type_list<component::enumerator_t<Idx>...>>>,
+        type_list<>>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+using complete_types_t =
+    typename complete_types<std::make_index_sequence<TIMEMORY_COMPONENTS_END>>::type;
+//
+using available_types_t =
+    typename available_types<std::make_index_sequence<TIMEMORY_COMPONENTS_END>>::type;
+//
+//--------------------------------------------------------------------------------------//
+//
+using complete_tuple_t           = convert_t<complete_types_t, std::tuple<>>;
+using complete_component_list_t  = convert_t<complete_types_t, component_list<>>;
+using complete_component_tuple_t = convert_t<complete_types_t, component_tuple<>>;
+using complete_auto_list_t       = convert_t<complete_types_t, auto_list<>>;
+using complete_auto_tuple_t      = convert_t<complete_types_t, auto_tuple<>>;
 //
 //--------------------------------------------------------------------------------------//
 //

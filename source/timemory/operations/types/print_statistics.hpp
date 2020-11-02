@@ -63,7 +63,7 @@ public:
 
 public:
     template <typename Self, template <typename> class Sp, typename Vp, typename Up = Tp,
-              enable_if_t<(stats_enabled<Up, Vp>::value), int> = 0>
+              enable_if_t<stats_enabled<Up, Vp>::value, int> = 0>
     print_statistics(const type&, utility::stream& _os, const Self&, const Sp<Vp>& _stats,
                      uint64_t)
     {
@@ -86,7 +86,7 @@ public:
     }
 
     template <typename Self, typename Vp, typename Up = Tp,
-              enable_if_t<!(stats_enabled<Up, Vp>::value), int> = 0>
+              enable_if_t<!stats_enabled<Up, Vp>::value, int> = 0>
     print_statistics(const type&, utility::stream&, const Self&, const Vp&, uint64_t)
     {}
 
@@ -97,7 +97,7 @@ public:
 
 public:
     template <template <typename> class Sp, typename Vp, typename Up = Tp,
-              enable_if_t<(stats_enabled<Up, Vp>::value), int> = 0>
+              enable_if_t<stats_enabled<Up, Vp>::value, int> = 0>
     static void get_header(utility::stream& _os, const Sp<Vp>&)
     {
         if(!trait::runtime_enabled<Tp>::get())
@@ -123,7 +123,7 @@ public:
     }
 
     template <typename Vp, typename Up = Tp,
-              enable_if_t<!(stats_enabled<Up, Vp>::value), int> = 0>
+              enable_if_t<!stats_enabled<Up, Vp>::value, int> = 0>
     static void get_header(utility::stream&, Vp&)
     {}
 

@@ -37,38 +37,38 @@ using namespace tim::component;
 namespace pyprofile
 {
 //
-using profiler_t = tim::component_bundle<TIMEMORY_API, user_profiler_bundle>;
-//
-using profiler_vec_t = std::vector<profiler_t>;
-//
+using profiler_t           = tim::component_bundle<TIMEMORY_API, user_profiler_bundle>;
+using profiler_vec_t       = std::vector<profiler_t>;
 using profiler_label_map_t = std::unordered_map<std::string, profiler_vec_t>;
-//
 using profiler_index_map_t = std::unordered_map<uint32_t, profiler_label_map_t>;
-//
-using strset_t = std::unordered_set<std::string>;
+using strset_t             = std::unordered_set<std::string>;
 //
 struct config
 {
-    bool        is_running               = false;
-    bool        trace_c                  = true;
-    bool        include_internal         = false;
-    bool        include_args             = false;
-    bool        include_line             = true;
-    bool        include_filename         = true;
-    bool        full_filepath            = false;
-    int32_t     max_stack_depth          = std::numeric_limits<uint16_t>::max();
-    int32_t     ignore_stack_depth       = 0;
-    int32_t     base_stack_depth         = -1;
-    std::string base_module_path         = "";
-    strset_t    always_skipped_functions = { "FILE",      "FUNC",     "LINE",
-                                          "get_fcode", "__exit__", "_handle_fromlist",
-                                          "<module>",  "_shutdown" };
-    strset_t    always_skipped_filenames = {
-        "__init__.py",       "__main__.py",
-        "functools.py",      "<frozen importlib._bootstrap>",
-        "_pylab_helpers.py", "threading.py"
-    };
-    profiler_index_map_t records = {};
+    bool                 is_running         = false;
+    bool                 trace_c            = true;
+    bool                 include_internal   = false;
+    bool                 include_args       = false;
+    bool                 include_line       = true;
+    bool                 include_filename   = true;
+    bool                 full_filepath      = false;
+    int32_t              max_stack_depth    = std::numeric_limits<uint16_t>::max();
+    int32_t              ignore_stack_depth = 0;
+    int32_t              base_stack_depth   = -1;
+    std::string          base_module_path   = "";
+    strset_t             include_functions  = {};
+    strset_t             include_filenames  = {};
+    tim::scope::config   profiler_scope     = tim::scope::get_default();
+    strset_t             exclude_functions  = { "FILE",       "FUNC",      "LINE",
+                                   "get_fcode",  "__exit__",  "_handle_fromlist",
+                                   "<module>",   "_shutdown", "isclass",
+                                   "isfunction", "basename",  "_get_sep" };
+    strset_t             exclude_filenames  = { "__init__.py",       "__main__.py",
+                                   "functools.py",      "<frozen importlib._bootstrap>",
+                                   "_pylab_helpers.py", "threading.py",
+                                   "encoder.py",        "decoder.py" };
+    profiler_index_map_t records            = {};
+    int32_t verbose = tim::settings::verbose() + ((tim::settings::debug()) ? 16 : 0);
 };
 //
 inline config&
@@ -81,18 +81,21 @@ get_config()
         if(_cnt == 0)
             return _instance;
 
-        auto* _tmp                     = new config{};
-        _tmp->is_running               = _instance->is_running;
-        _tmp->trace_c                  = _instance->trace_c;
-        _tmp->include_internal         = _instance->include_internal;
-        _tmp->include_args             = _instance->include_args;
-        _tmp->include_line             = _instance->include_line;
-        _tmp->include_filename         = _instance->include_filename;
-        _tmp->full_filepath            = _instance->full_filepath;
-        _tmp->max_stack_depth          = _instance->max_stack_depth;
-        _tmp->base_module_path         = _instance->base_module_path;
-        _tmp->always_skipped_functions = _instance->always_skipped_functions;
-        _tmp->always_skipped_filenames = _instance->always_skipped_filenames;
+        auto* _tmp              = new config{};
+        _tmp->is_running        = _instance->is_running;
+        _tmp->trace_c           = _instance->trace_c;
+        _tmp->include_internal  = _instance->include_internal;
+        _tmp->include_args      = _instance->include_args;
+        _tmp->include_line      = _instance->include_line;
+        _tmp->include_filename  = _instance->include_filename;
+        _tmp->full_filepath     = _instance->full_filepath;
+        _tmp->max_stack_depth   = _instance->max_stack_depth;
+        _tmp->base_module_path  = _instance->base_module_path;
+        _tmp->include_functions = _instance->include_functions;
+        _tmp->include_filenames = _instance->include_filenames;
+        _tmp->exclude_functions = _instance->exclude_functions;
+        _tmp->exclude_filenames = _instance->exclude_filenames;
+        _tmp->verbose           = _instance->verbose;
         return _tmp;
     }();
     return *_tl_instance;
@@ -187,7 +190,7 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
             inspect.attr("formatargvalues")(*inspect.attr("getargvalues")(pframe)));
     };
 
-    // get the final filename
+    // get the final label
     auto _get_label = [&](auto& _func, auto& _filename, auto& _fullpath) {
         // append the arguments
         if(_config.include_args)
@@ -206,8 +209,12 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
         return _func;
     };
 
-    auto& _skip_funcs = _config.always_skipped_functions;
+    auto& _only_funcs = _config.include_functions;
+    auto& _skip_funcs = _config.exclude_functions;
     auto  _func       = _get_funcname();
+
+    if(!_only_funcs.empty() && _only_funcs.find(_func) == _only_funcs.end())
+        return;
 
     if(_skip_funcs.find(_func) != _skip_funcs.end())
     {
@@ -222,13 +229,30 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
         return;
     }
 
-    auto& _skip_files = _config.always_skipped_filenames;
+    auto& _only_files = _config.include_filenames;
+    auto& _skip_files = _config.exclude_filenames;
     auto  _full       = _get_filename();
     auto  _file       = _get_basename(_full);
 
     if(!_config.include_internal &&
        strncmp(_full.c_str(), _timemory_path.c_str(), _timemory_path.length()) == 0)
         return;
+
+    if(!_only_files.empty() && (_only_files.find(_file) == _only_files.end() &&
+                                _only_files.find(_full) == _only_files.end()))
+    {
+#if defined(DEBUG)
+        if(tim::settings::debug())
+        {
+            std::stringstream _opts;
+            for(const auto& itr : _only_files)
+                _opts << "| " << itr;
+            PRINT_HERE("Skipping: [%s | %s | %s] due to [%s]", _func.c_str(),
+                       _file.c_str(), _full.c_str(), _opts.str().substr(2).c_str());
+        }
+#endif
+        return;
+    }
 
     if(_skip_files.find(_file) != _skip_files.end() ||
        _skip_files.find(_full) != _skip_files.end())
@@ -242,7 +266,7 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     // start function
     auto _profiler_call = [&]() {
         auto& _entry = _config.records[_fdepth][_label];
-        _entry.emplace_back(profiler_t{ _label });
+        _entry.emplace_back(profiler_t{ _label, _config.profiler_scope });
         _entry.back().start();
     };
 
@@ -279,8 +303,13 @@ generate(py::module& _pymod)
 {
     py::module _prof = _pymod.def_submodule("profiler", "Profiling functions");
 
+    static auto _scope_set = [](bool _flat, bool _timeline) {
+        get_config().profiler_scope = tim::scope::config{ _flat, _timeline };
+    };
+
     pycomponent_bundle::generate<user_profiler_bundle>(
-        _prof, "profiler_bundle", "User-bundle for Python profiling interface");
+        _prof, "profiler_bundle", "User-bundle for Python profiling interface",
+        _scope_set);
 
     auto _init = []() {
         user_profiler_bundle::global_init();
@@ -331,12 +360,38 @@ generate(py::module& _pymod)
                            get_config().full_filepath)
     CONFIGURATION_PROPERTY("max_stack_depth", int32_t, "Maximum stack depth to profile",
                            get_config().max_stack_depth)
-    CONFIGURATION_PROPERTY("skip_functions", strset_t,
-                           "Function names to filter out of collection",
-                           get_config().always_skipped_functions)
-    CONFIGURATION_PROPERTY("skip_filenames", strset_t,
-                           "Filenames to filter out of collection",
-                           get_config().always_skipped_filenames)
+    CONFIGURATION_PROPERTY("verbosity", int32_t, "Verbosity of the logging",
+                           get_config().verbose)
+
+    auto _get_strset = [](const strset_t& _targ) {
+        auto _out = py::list{};
+        for(auto itr : _targ)
+            _out.append(itr);
+        return _out;
+    };
+
+    auto _set_strset = [](py::list _inp, strset_t& _targ) {
+        for(auto itr : _inp)
+            _targ.insert(itr.cast<std::string>());
+    };
+
+#define CONFIGURATION_PROPERTY_LAMBDA(NAME, DOC, GET, SET)                               \
+    _pyconfig.def_property_static(NAME, GET, SET, DOC);
+#define CONFIGURATION_STRSET(NAME, DOC, ...)                                             \
+    {                                                                                    \
+        auto GET = [=](py::object) { return _get_strset(__VA_ARGS__); };                 \
+        auto SET = [=](py::object, py::list val) { _set_strset(val, __VA_ARGS__); };     \
+        CONFIGURATION_PROPERTY_LAMBDA(NAME, DOC, GET, SET)                               \
+    }
+
+    CONFIGURATION_STRSET("only_functions", "Function names to collect exclusively",
+                         get_config().include_functions)
+    CONFIGURATION_STRSET("only_filenames", "File names to collect exclusively",
+                         get_config().include_filenames)
+    CONFIGURATION_STRSET("skip_functions", "Function names to filter out of collection",
+                         get_config().exclude_functions)
+    CONFIGURATION_STRSET("skip_filenames", "Filenames to filter out of collection",
+                         get_config().exclude_filenames)
 
     return _prof;
 }

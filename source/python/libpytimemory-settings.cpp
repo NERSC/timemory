@@ -44,8 +44,7 @@ namespace pysettings
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Up, typename... Tail,
-          tim::enable_if_t<(sizeof...(Tail) == 0), int> = 0>
+template <typename Up, typename... Tail, tim::enable_if_t<sizeof...(Tail) == 0> = 0>
 auto
 add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> _obj)
 {
@@ -165,7 +164,7 @@ generate(py::module& _pymod)
                 else:
                     _args.append(itr)
 
-             _kwargs["help"] = "{}\n\n[env: {}, type: {}]".format(desc, env_name.upper(),
+             _kwargs["help"] = "{} [env: {}, type: {}]".format(desc, env_name.upper(),
                                                                   type_index)
              _kwargs["required"] = False
 
@@ -262,6 +261,78 @@ generate(py::module& _pymod)
                 _argparse(sitr->second, _parser, _use_subparser);
             }
         }
+
+        std::string cmdline = (_use_subparser) ? "--args" : "--timemory-args";
+        auto        args    = std::vector<std::string>({ cmdline });
+
+        py::cpp_function _timemory_args = [cmdline, _obj](py::list val) {
+            auto vopt = std::vector<std::string>{};
+            for(auto itr : val)
+            {
+                try
+                {
+                    vopt.emplace_back(itr.cast<std::string>());
+                } catch(py::cast_error& e)
+                {
+                    std::cerr << "[timemory_argparse]> Warning! " << e.what()
+                              << std::endl;
+                }
+            }
+            for(auto& str : vopt)
+            {
+                // get the args
+                auto vec = tim::delimit(str, " \t;:");
+                for(auto itr : vec)
+                {
+                    DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
+                    auto _pos = itr.find('=');
+                    auto _key = itr.substr(0, _pos);
+                    auto _val = (_pos == std::string::npos) ? "" : itr.substr(_pos + 1);
+                    if(!_obj->update(_key, _val, false))
+                    {
+                        std::cerr << "[timemory_argparse]> Warning! For " << cmdline
+                                  << ", key \"" << _key
+                                  << "\" is not a recognized setting. \"" << _val
+                                  << "\" was not applied." << std::endl;
+                    }
+                }
+            }
+        };
+
+        auto descript = TIMEMORY_JOIN(
+            " ",
+            "A generic option for any setting. Each argument MUST be passed in form: "
+            "'NAME=VALUE'. E.g.",
+            cmdline, "\"papi_events=PAPI_TOT_INS,PAPI_TOT_CYC\" text_output=off");
+
+        auto locals = py::dict("parser"_a = _parser, "args"_a = args, "desc"_a = descript,
+                               "parse_action"_a = _timemory_args);
+        py::exec(R"(
+             def make_action(func):
+                 class customAction(argparse.Action):
+                     def __call__(self, parser, args, values, option_string=None):
+                         if type(values) is list:
+                             func(values)
+                         else:
+                             func(["{}".format(values)])
+                         setattr(args, self.dest, values)
+                 return customAction
+
+             _args = []
+             _kwargs = {}
+             for itr in args:
+                _args.append(itr)
+
+             _kwargs["help"] = "{} [type: str]".format(desc)
+             _kwargs["required"] = False
+             _kwargs["action"] = make_action(parse_action)
+             _kwargs["metavar"] = "OPTION=VALUE"
+             _kwargs["type"] = str
+             _kwargs["nargs"] = "*"
+
+             parser.add_argument(*_args, **_kwargs)
+             )",
+                 py::globals(), locals);
     };
 
     // create an instance

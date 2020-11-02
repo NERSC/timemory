@@ -36,7 +36,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 // this function consumes approximately "n" milliseconds of real time
@@ -117,6 +118,34 @@ using tim_bundle_t  = tim::component_bundle<project::timemory, wall_clock, cpu_c
 using cali_bundle_t = tim::component_bundle<tpls::caliper, caliper_marker, wall_clock>;
 using time_bundle_t = tim::component_tuple<wall_clock, cpu_clock, num_minor_page_faults>;
 using os_bundle_t   = tim::component_bundle<os::agnostic, wall_clock, cpu_clock>;
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(api_tests, enum_vs_macro)
+{
+    namespace component = tim::component;
+    auto macro_sz = std::tuple_size<tim::type_list<TIMEMORY_COMPONENT_TYPES>>::value;
+    auto enum_sz =
+        TIMEMORY_NATIVE_COMPONENTS_END - TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE;
+
+    EXPECT_EQ(macro_sz, enum_sz);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(api_tests, placeholder)
+{
+    using nothing_placeholder = placeholder<nothing>;
+
+    auto in_complete = tim::is_one_of<nothing_placeholder, tim::complete_types_t>::value;
+    auto in_avail    = tim::is_one_of<nothing_placeholder, tim::available_types_t>::value;
+
+    EXPECT_FALSE(in_complete) << "complete_types_t: "
+                              << tim::demangle<tim::complete_types_t>() << std::endl;
+
+    EXPECT_FALSE(in_avail) << "available_types_t: "
+                           << tim::demangle<tim::available_types_t>() << std::endl;
+}
 
 //--------------------------------------------------------------------------------------//
 

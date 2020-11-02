@@ -87,7 +87,3 @@ read_command_line(Func&& _func)
 //
 }  // namespace config
 }  // namespace tim
-
-#if !defined(TIMEMORY_CONFIG_SOURCE) && !defined(TIMEMORY_USE_CONFIG_EXTERN)
-#    include "timemory/config/definition.hpp"
-#endif

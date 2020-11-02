@@ -281,6 +281,89 @@ struct compose;
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
+struct set_started
+{
+    TIMEMORY_DEFAULT_OBJECT(set_started)
+
+    template <typename Up>
+    auto operator()(Up& obj) const
+    {
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(Up& obj, int) -> decltype(obj.set_started())
+    {
+        return obj.set_started();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&, long) -> void
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct set_stopped
+{
+    TIMEMORY_DEFAULT_OBJECT(set_stopped)
+
+    template <typename Up>
+    auto operator()(Up& obj) const
+    {
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(Up& obj, int) -> decltype(obj.set_stopped())
+    {
+        return obj.set_stopped();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&, long) -> void
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, bool DefaultValue>
+struct is_running
+{
+    TIMEMORY_DEFAULT_OBJECT(is_running)
+
+    template <typename Up>
+    auto operator()(Up& obj) const
+    {
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(Up& obj, int) -> decltype(obj.get_is_running())
+    {
+        return obj.get_is_running();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up& obj, long) -> decltype(obj.is_running())
+    {
+        return obj.is_running();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&, ...) -> bool
+    {
+        return DefaultValue;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
 struct start;
 //
 //--------------------------------------------------------------------------------------//

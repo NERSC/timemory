@@ -48,22 +48,28 @@ struct opaque
     using string_t = std::string;
 
     using init_func_t   = std::function<void()>;
-    using start_func_t  = std::function<void*(const string_t&, scope::config)>;
+    using setup_func_t  = std::function<void*(void*, const string_t&, scope::config)>;
+    using push_func_t   = std::function<void(void*&, const string_t&, scope::config)>;
+    using start_func_t  = std::function<void(void*)>;
     using stop_func_t   = std::function<void(void*)>;
+    using pop_func_t    = std::function<void(void*)>;
     using get_func_t    = std::function<void(void*, void*&, size_t)>;
     using delete_func_t = std::function<void(void*)>;
 
     template <typename InitF, typename StartF, typename StopF, typename GetF,
-              typename DelF>
+              typename DelF, typename SetupF, typename PushF, typename PopF>
     opaque(bool _valid, size_t _typeid, InitF&& _init, StartF&& _start, StopF&& _stop,
-           GetF&& _get, DelF&& _del)
+           GetF&& _get, DelF&& _del, SetupF&& _setup, PushF&& _push, PopF&& _pop)
     : m_valid(_valid)
     , m_copy(false)
     , m_typeid(_typeid)
     , m_data(nullptr)
     , m_init(std::move(_init))
+    , m_setup(std::move(_setup))
+    , m_push(std::move(_push))
     , m_start(std::move(_start))
     , m_stop(std::move(_stop))
+    , m_pop(std::move(_pop))
     , m_get(std::move(_get))
     , m_del(std::move(_del))
     {}
@@ -87,15 +93,27 @@ struct opaque
 
     void init() { m_init(); }
 
-    void start(const string_t& _prefix, scope::config _scope)
+    void setup(const string_t& _prefix, scope::config _scope)
     {
         if(m_data)
         {
             stop();
             cleanup();
         }
-        m_data  = m_start(_prefix, _scope);
+        m_data  = m_setup(m_data, _prefix, _scope);
         m_valid = (m_data != nullptr);
+    }
+
+    void push(const string_t& _prefix, scope::config _scope)
+    {
+        if(m_data)
+            m_push(m_data, _prefix, _scope);
+    }
+
+    void start()
+    {
+        if(m_data)
+            m_start(m_data);
     }
 
     void stop()
@@ -104,12 +122,16 @@ struct opaque
             m_stop(m_data);
     }
 
+    void pop()
+    {
+        if(m_data)
+            m_pop(m_data);
+    }
+
     void cleanup()
     {
         if(m_data && !m_copy)
-        {
             m_del(m_data);
-        }
         m_data = nullptr;
     }
 
@@ -126,10 +148,13 @@ struct opaque
     size_t        m_typeid = 0;
     void*         m_data   = nullptr;
     init_func_t   m_init   = []() {};
-    start_func_t  m_start  = [](const string_t&, scope::config) { return nullptr; };
-    stop_func_t   m_stop   = [](void*) {};
-    get_func_t    m_get    = [](void*, void*&, size_t) {};
-    delete_func_t m_del    = [](void*) {};
+    setup_func_t  m_setup = [](void*, const string_t&, scope::config) { return nullptr; };
+    push_func_t   m_push  = [](void*&, const string_t&, scope::config) {};
+    start_func_t  m_start = [](void*) {};
+    stop_func_t   m_stop  = [](void*) {};
+    pop_func_t    m_pop   = [](void*) {};
+    get_func_t    m_get   = [](void*, void*&, size_t) {};
+    delete_func_t m_del   = [](void*) {};
 };
 //
 //--------------------------------------------------------------------------------------//

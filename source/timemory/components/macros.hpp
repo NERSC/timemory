@@ -205,11 +205,17 @@
             using type                                = TYPE;                            \
             using value_type                          = TIMEMORY_COMPONENT;              \
             static constexpr TIMEMORY_COMPONENT value = ENUM;                            \
-            static constexpr const char*        enum_string() { return #ENUM; }          \
-            static constexpr const char*        id() { return ID; }                      \
-            static const idset_t&               ids()                                    \
+                                                                                         \
+            static constexpr const char* enum_string() { return #ENUM; }                 \
+            static constexpr const char* id() { return ID; }                             \
+            static const idset_t&        ids()                                           \
             {                                                                            \
-                static idset_t _instance{ ID, __VA_ARGS__ };                             \
+                static auto _instance = []() {                                           \
+                    auto _val = idset_t{ ID, __VA_ARGS__ };                              \
+                    if(_val.find("") != _val.end())                                      \
+                        _val.erase("");                                                  \
+                    return _val;                                                         \
+                }();                                                                     \
                 return _instance;                                                        \
             }                                                                            \
             template <typename Archive>                                                  \
@@ -224,6 +230,9 @@
             template <typename Archive>                                                  \
             void load(Archive&, const unsigned int)                                      \
             {}                                                                           \
+            TIMEMORY_COMPONENT operator()() { return ENUM; }                             \
+                                                                                         \
+            constexpr operator TIMEMORY_COMPONENT() const { return ENUM; }               \
         };                                                                               \
         template <>                                                                      \
         struct enumerator<ENUM> : properties<TYPE>                                       \
@@ -498,6 +507,10 @@
         extern template struct pop_node<COMPONENT_NAME>;                                 \
         extern template struct set_prefix<COMPONENT_NAME>;                               \
         extern template struct set_scope<COMPONENT_NAME>;                                \
+        extern template struct set_started<COMPONENT_NAME>;                              \
+        extern template struct set_stopped<COMPONENT_NAME>;                              \
+        extern template struct is_running<COMPONENT_NAME, true>;                         \
+        extern template struct is_running<COMPONENT_NAME, false>;                        \
         extern template struct record<COMPONENT_NAME>;                                   \
         extern template struct reset<COMPONENT_NAME>;                                    \
         extern template struct cleanup<COMPONENT_NAME>;                                  \
@@ -515,17 +528,17 @@
         extern template struct echo_measurement<                                         \
             COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                 \
         extern template struct finalize::get<                                            \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::mpi_get<                                        \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::upc_get<                                        \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::dmp_get<                                        \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::print<                                          \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::merge<                                          \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         }                                                                                \
         }
 #endif
@@ -552,6 +565,10 @@
         template struct pop_node<COMPONENT_NAME>;                                        \
         template struct set_prefix<COMPONENT_NAME>;                                      \
         template struct set_scope<COMPONENT_NAME>;                                       \
+        template struct set_started<COMPONENT_NAME>;                                     \
+        template struct set_stopped<COMPONENT_NAME>;                                     \
+        template struct is_running<COMPONENT_NAME, true>;                                \
+        template struct is_running<COMPONENT_NAME, false>;                               \
         template struct record<COMPONENT_NAME>;                                          \
         template struct reset<COMPONENT_NAME>;                                           \
         template struct cleanup<COMPONENT_NAME>;                                         \
@@ -569,17 +586,17 @@
         template struct echo_measurement<COMPONENT_NAME,                                 \
                                          trait::echo_enabled<COMPONENT_NAME>::value>;    \
         template struct finalize::get<                                                   \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::mpi_get<                                               \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::upc_get<                                               \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::dmp_get<                                               \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::print<                                                 \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::merge<                                                 \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         }                                                                                \
         }
 #endif

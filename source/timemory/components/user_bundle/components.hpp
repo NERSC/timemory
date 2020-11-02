@@ -63,10 +63,10 @@ using user_bundle_spec_t = std::function<std::string()>;
 using user_bundle_variables_t =
     std::unordered_map<size_t, std::vector<user_bundle_spec_t>>;
 //
-template <typename ApiT = TIMEMORY_API>
+template <typename ApiT>
 static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
                                user_bundle_variables_t&>
-    get_user_bundle_variables(ApiT = ApiT{})
+    get_user_bundle_variables(ApiT)
 {
     static user_bundle_variables_t _instance = {
         { component::global_bundle_idx,
@@ -107,12 +107,29 @@ static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename ApiT = TIMEMORY_API>
+template <typename ApiT>
 static inline std::enable_if_t<!std::is_same<ApiT, TIMEMORY_API>::value,
                                user_bundle_variables_t&>
-    get_user_bundle_variables(ApiT = ApiT{})
+    get_user_bundle_variables(ApiT)
 {
     static user_bundle_variables_t _instance{};
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+static inline user_bundle_variables_t& get_user_bundle_variables(project::kokkosp)
+{
+    static user_bundle_variables_t _instance = {
+        { component::kokkosp_bundle_idx,
+          { []() { return settings::kokkos_components(); },
+            []() { return get_env<std::string>("TIMEMORY_KOKKOSP_COMPONENTS", ""); },
+            []() { return get_env<std::string>("KOKKOS_TIMEMORY_COMPONENTS", ""); },
+            []() { return settings::trace_components(); },
+            []() { return settings::profiler_components(); },
+            []() { return settings::components(); },
+            []() { return settings::global_components(); } } }
+    };
     return _instance;
 }
 //
@@ -124,14 +141,14 @@ get_bundle_components(const VecT& _priority)
 {
     using string_t = std::string;
     const auto regex_constants =
-        std::regex_constants::ECMAScript | std::regex_constants::icase;
+        std::regex_constants::optimize | std::regex_constants::icase;
     string_t _custom{};
     for(const auto& itr : _priority)
     {
         auto _spec = itr();
         if(_spec.length() > 0)
         {
-            if(!std::regex_match(_spec, std::regex("none", regex_constants)))
+            if(!std::regex_match(_spec, std::regex("^none$", regex_constants)))
                 _custom = _spec;
             break;
         }
@@ -146,8 +163,9 @@ void
 initialize_bundle(AltApi _api = AltApi{})
 {
     using user_bundle_type = component::user_bundle<Idx, Api>;
-    auto itr               = env::get_user_bundle_variables(_api).find(Idx);
-    if(itr != env::get_user_bundle_variables(_api).end())
+    auto& variables        = env::get_user_bundle_variables(_api);
+    auto  itr              = variables.find(Idx);
+    if(itr != variables.end())
     {
         auto _enum = env::get_bundle_components(itr->second);
         tim::configure<user_bundle_type>(_enum);
@@ -217,15 +235,6 @@ public:
     //
     user_bundle()
     : m_scope(scope::get_default())
-    , m_prefix("")
-    , m_typeids(get_typeids())
-    , m_bundle(get_data())
-    {}
-
-    explicit user_bundle(const string_t& _prefix,
-                         scope::config   _scope = scope::get_default())
-    : m_scope(_scope)
-    , m_prefix(_prefix)
     , m_typeids(get_typeids())
     , m_bundle(get_data())
     {}
@@ -241,7 +250,14 @@ public:
             itr.set_copy(true);
     }
 
-    user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
+    explicit user_bundle(const char* _prefix, scope::config _scope = scope::get_default())
+    : m_scope(_scope)
+    , m_prefix(_prefix)
+    , m_typeids(get_typeids())
+    , m_bundle(get_data())
+    {}
+
+    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
                 const typeid_vec_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
@@ -249,7 +265,7 @@ public:
     , m_bundle(_bundle_vec)
     {}
 
-    user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
+    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
                 const typeid_set_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
@@ -263,7 +279,6 @@ public:
 
     ~user_bundle()
     {
-        // gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
         for(auto& itr : m_bundle)
             itr.cleanup();
     }
@@ -361,10 +376,28 @@ public:
     //----------------------------------------------------------------------------------//
     //  Member functions
     //
+    void setup()
+    {
+        if(!m_setup)
+        {
+            m_setup = true;
+            for(auto& itr : m_bundle)
+                itr.setup(m_prefix, m_scope);
+        }
+    }
+
+    void push()
+    {
+        setup();
+        for(auto& itr : m_bundle)
+            itr.push(m_prefix, m_scope);
+    }
+
     void start()
     {
+        setup();
         for(auto& itr : m_bundle)
-            itr.start(m_prefix, m_scope);
+            itr.start();
     }
 
     void stop()
@@ -373,12 +406,19 @@ public:
             itr.stop();
     }
 
+    void pop()
+    {
+        for(auto& itr : m_bundle)
+            itr.pop();
+    }
+
     void clear()
     {
         if(base_type::is_running)
             stop();
         m_typeids.clear();
         m_bundle.clear();
+        m_setup = false;
     }
 
     template <typename T>
@@ -407,18 +447,24 @@ public:
 
     void get() {}
 
-    void set_prefix(const string_t& _prefix)
+    void set_prefix(const char* _prefix)
     {
         // skip unnecessary copies
-        if(!m_bundle.empty())
+        // if(!m_bundle.empty())
+        {
             m_prefix = _prefix;
+            m_setup  = false;
+        }
     }
 
     void set_scope(const scope::config& val)
     {
         // skip unnecessary copies
-        if(!m_bundle.empty())
+        // if(!m_bundle.empty())
+        {
             m_scope = val;
+            m_setup = false;
+        }
     }
 
     size_t size() const { return m_bundle.size(); }
@@ -454,8 +500,9 @@ public:
     }
 
 protected:
-    scope::config  m_scope   = scope::get_default();
-    string_t       m_prefix  = "";
+    bool           m_setup   = false;
+    scope::config  m_scope   = {};
+    const char*    m_prefix  = nullptr;
     typeid_vec_t   m_typeids = get_typeids();
     opaque_array_t m_bundle  = get_data();
 

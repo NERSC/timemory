@@ -215,13 +215,13 @@ private:
     }
 
 public:
-    template <typename Tp, enable_if_t<(std::is_arithmetic<Tp>::value), int> = 0>
+    template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value, int> = 0>
     static Tp get_entry(const Tp& _data, size_t)
     {
         return _data;
     }
 
-    template <typename Tp, enable_if_t<!(std::is_arithmetic<Tp>::value), int> = 0>
+    template <typename Tp, enable_if_t<!std::is_arithmetic<Tp>::value, int> = 0>
     static auto get_entry(const Tp& _data, size_t _idx)
         -> decltype(get_entry_sfinae_(_data, _idx))
     {
@@ -530,7 +530,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <bool EnabledV, typename Arg, enable_if_t<(EnabledV == true), int> = 0>
+    template <bool EnabledV, typename Arg, enable_if_t<EnabledV, int> = 0>
     static void print_tag(std::ostream& os, const Arg& _arg)
     {
         if(!is_empty(_arg))
@@ -539,7 +539,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <bool EnabledV, typename Arg, enable_if_t<(EnabledV == false), int> = 0>
+    template <bool EnabledV, typename Arg, enable_if_t<!EnabledV, int> = 0>
     static void print_tag(std::ostream&, const Arg&)
     {}
 };

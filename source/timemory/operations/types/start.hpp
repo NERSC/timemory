@@ -67,9 +67,9 @@ struct start
     auto operator()(type& obj, Args&&... args)
     {
         using RetT = decltype(do_sfinae(obj, 0, 0, std::forward<Args>(args)...));
-        if(trait::runtime_enabled<type>::get() && is_sfinae(obj, 0))
+        if(trait::runtime_enabled<type>::get() && !is_running<Tp, false>{}(obj))
         {
-            set_sfinae(obj, 0);
+            set_started<Tp>{}(obj);
             return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
         }
         return RetT{};
@@ -99,32 +99,6 @@ private:
     void do_sfinae(Up&, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
-    }
-
-private:
-    // set_started
-    template <typename Up>
-    auto set_sfinae(Up& obj, int) -> decltype(obj.set_started())
-    {
-        return obj.set_started();
-    }
-
-    template <typename Up>
-    auto set_sfinae(Up&, long) -> void
-    {}
-
-private:
-    // is_running
-    template <typename Up>
-    auto is_sfinae(Up& obj, int) -> decltype(obj.get_is_running())
-    {
-        return obj.get_is_running();
-    }
-
-    template <typename Up>
-    auto is_sfinae(Up&, long) -> bool
-    {
-        return false;
     }
 };
 //
@@ -232,9 +206,9 @@ start<Tp>::impl(type& obj, Args&&... args)
         return;
 
     // init_storage<Tp>::init();
-    if(!is_sfinae(obj, 0))
+    if(!is_running<Tp, false>{}(obj))
     {
-        set_sfinae(obj, 0);
+        set_started<Tp>{}(obj);
         do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
 }

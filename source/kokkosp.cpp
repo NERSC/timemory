@@ -91,11 +91,12 @@ extern "C"
         }
         assert(env_configured);
 
-        // check environment variables "KOKKOS_TIMEMORY_COMPONENTS" and
-        // "TIMEMORY_KOKKOS_COMPONENTS"
-        tim::env::configure<kokkosp::kokkos_bundle>(
-            "TIMEMORY_KOKKOS_COMPONENTS",
-            tim::get_env<std::string>("KOKKOS_TIMEMORY_COMPONENTS", "wall_clock"));
+        // search unique and fallback environment variables
+        kokkosp::kokkos_bundle::global_init();
+
+        // add at least one
+        if(kokkosp::kokkos_bundle::bundle_size() == 0)
+            kokkosp::kokkos_bundle::configure<tim::component::wall_clock>();
     }
 
     void kokkosp_finalize_library()

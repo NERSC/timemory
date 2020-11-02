@@ -132,6 +132,18 @@ public:
     explicit lightweight_tuple(size_t _hash, quirk::config<T...> = {},
                                const Func& = get_initializer());
 
+    template <typename Func = initializer_type>
+    explicit lightweight_tuple(size_t _hash, scope::config _scope,
+                               const Func& = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit lightweight_tuple(const string_t& key, scope::config _scope,
+                               const Func& = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit lightweight_tuple(const captured_location_t& loc, scope::config _scope,
+                               const Func& = get_initializer());
+
     ~lightweight_tuple();
 
     //------------------------------------------------------------------------//
@@ -176,10 +188,15 @@ public:
     auto             get_labeled(Args&&...) const;
     data_type&       data();
     const data_type& data() const;
+    void             set_scope(scope::config);
 
+    using bundle_type::get_prefix;
+    using bundle_type::get_scope;
+    using bundle_type::get_store;
     using bundle_type::hash;
     using bundle_type::key;
     using bundle_type::laps;
+    using bundle_type::prefix;
     using bundle_type::rekey;
     using bundle_type::store;
 
@@ -505,11 +522,12 @@ protected:
     const data_type& get_data() const;
     void             set_prefix(const string_t&) const;
     void             set_prefix(size_t) const;
-    void             set_scope(scope::config);
 
 protected:
     // objects
+    using bundle_type::m_config;
     using bundle_type::m_hash;
+    using bundle_type::m_is_active;
     using bundle_type::m_is_pushed;
     using bundle_type::m_laps;
     using bundle_type::m_scope;

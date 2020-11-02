@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/manager/definition.hpp
- * \brief The definitions for the types in manager
- */
-
 #pragma once
 
 #include "timemory/backends/process.hpp"
@@ -49,13 +44,11 @@
 //
 #    include "timemory/api.hpp"
 #    include "timemory/backends/threading.hpp"
-// #    include "timemory/config.hpp"
 #    include "timemory/mpl/policy.hpp"
 #    include "timemory/mpl/type_traits.hpp"
 #    include "timemory/operations/types/finalize/ctest_notes.hpp"
 #    include "timemory/settings/declaration.hpp"
 #    include "timemory/utility/macros.hpp"
-//
 
 #    include <algorithm>
 #    include <atomic>
@@ -675,6 +668,8 @@ timemory_library_constructor()
 
     if(_worker == _master)
     {
+        // this will create a recursive-dynamic-library load situation
+        // since the timemory-config library depends on the manager library
         // std::atexit(tim::timemory_finalize);
     }
     else

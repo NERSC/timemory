@@ -547,14 +547,14 @@ public:
     //  get access to a type
     //
     template <typename Tp,
-              enable_if_t<(is_one_of<Tp, tuple_type_list>::value == true), int> = 0>
+              enable_if_t<is_one_of<Tp, tuple_type_list>::value == true, int> = 0>
     auto get() -> decltype(std::declval<tuple_t>().template get<Tp>())
     {
         return m_tuple.template get<Tp>();
     }
 
     template <typename Tp,
-              enable_if_t<(is_one_of<Tp, list_type_list>::value == true), int> = 0>
+              enable_if_t<is_one_of<Tp, list_type_list>::value == true, int> = 0>
     auto get() -> decltype(std::declval<list_t>().template get<Tp>())
     {
         return m_list.template get<Tp>();
@@ -571,13 +571,13 @@ public:
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
     /// with older compilers
-    template <typename T, enable_if_t<(is_one_of<T, tuple_type_list>::value), int> = 0>
+    template <typename T, enable_if_t<is_one_of<T, tuple_type_list>::value, int> = 0>
     auto get_component()
     {
         return m_tuple.template get_component<T>();
     }
 
-    template <typename T, enable_if_t<(is_one_of<T, list_type_list>::value), long> = 0>
+    template <typename T, enable_if_t<is_one_of<T, list_type_list>::value, long> = 0>
     auto get_component()
     {
         return m_list.template get_component<T>();
@@ -600,24 +600,24 @@ public:
     //  apply a member function to a type
     //
     template <typename Tp, typename Func, typename... Args,
-              enable_if_t<(is_one_of<Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<!(is_one_of<Tp, list_type_list>::value), int> = 0>
+              enable_if_t<is_one_of<Tp, tuple_type_list>::value, int> = 0,
+              enable_if_t<!is_one_of<Tp, list_type_list>::value, int> = 0>
     void type_apply(Func&& _func, Args&&... args)
     {
         m_tuple.template type_apply<Tp>(_func, std::forward<Args>(args)...);
     }
 
     template <typename Tp, typename Func, typename... Args,
-              enable_if_t<!(is_one_of<Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<(is_one_of<Tp, list_type_list>::value), int>   = 0>
+              enable_if_t<!is_one_of<Tp, tuple_type_list>::value, int> = 0,
+              enable_if_t<is_one_of<Tp, list_type_list>::value, int>   = 0>
     void type_apply(Func&& _func, Args&&... args)
     {
         m_list.template type_apply<Tp>(_func, std::forward<Args>(args)...);
     }
 
     template <typename Tp, typename Func, typename... Args,
-              enable_if_t<!(is_one_of<Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<!(is_one_of<Tp, list_type_list>::value), int>  = 0>
+              enable_if_t<!is_one_of<Tp, tuple_type_list>::value, int> = 0,
+              enable_if_t<!is_one_of<Tp, list_type_list>::value, int>  = 0>
     void type_apply(Func&&, Args&&...)
     {}
 
