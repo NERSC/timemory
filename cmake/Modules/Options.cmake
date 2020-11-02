@@ -56,7 +56,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(_BUILD_OPT ON)
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_TESTING)
     set(_USE_COVERAGE ON)
 endif()
 
