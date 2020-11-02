@@ -66,8 +66,8 @@ base::print::print_plot(const std::string& outfname, const std::string suffix)  
         if(!suffix.empty())
             plot_label += std::string(" ") + suffix;
 
-        plotting::plot(label, plot_label, settings::output_path(), dart_output(),
-                       outfname);
+        plotting::plot(label, plot_label, settings::output_path(),
+                       settings::dart_output(), outfname);
     }
 }
 //
