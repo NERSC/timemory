@@ -78,6 +78,9 @@
     component::cupti_activity,                  \
     component::cupti_counters,                  \
     component::current_peak_rss,                \
+    component::data_tracker_integer,            \
+    component::data_tracker_unsigned,           \
+    component::data_tracker_floating,           \
     component::gperftools_cpu_profiler,         \
     component::gperftools_heap_profiler,        \
     component::gpu_roofline_dp_flops,           \

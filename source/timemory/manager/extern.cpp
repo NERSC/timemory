@@ -23,18 +23,11 @@
 // SOFTWARE.
 
 #include "timemory/manager/extern.hpp"
-#include "timemory/environment/declaration.hpp"
-#include "timemory/hash/declaration.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/manager/definition.hpp"
 #include "timemory/manager/types.hpp"
-#include "timemory/settings/declaration.hpp"
-
 //
-using manager_pointer_t = std::shared_ptr<tim::manager>;
-namespace
-{
-static manager_pointer_t timemory_master_manager_instance =
-    tim::manager::master_instance();
-}
-//
+#include "timemory/environment.hpp"
+#include "timemory/hash.hpp"
+#include "timemory/plotting.hpp"
+#include "timemory/settings.hpp"

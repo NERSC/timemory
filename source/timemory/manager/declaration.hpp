@@ -290,7 +290,12 @@ private:
     struct persistent_data
     {
         persistent_data()  = default;
-        ~persistent_data() = default;
+        ~persistent_data()
+        {
+            // make sure the manager is deleted before the settings
+            master_instance.reset();
+            config.reset();
+        }
 
         persistent_data(const persistent_data&) = delete;
         persistent_data(persistent_data&&)      = delete;

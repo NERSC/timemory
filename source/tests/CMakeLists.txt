@@ -248,10 +248,8 @@ add_timemory_google_test(cache_tests
 add_timemory_google_test(archive_storage_tests
     SOURCES         archive_storage_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-mpi
-                    timemory::timemory-upcxx
-                    timemory::timemory-core
-                    timemory::timemory-timing-component)
+                    timemory::timemory-dmp
+                    ${_LIBRARY})
 
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
@@ -265,8 +263,8 @@ add_timemory_google_test(threading_tests
 if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
     add_timemory_google_test(ptl_tests
         SOURCES         ptl_tests.cpp
-        LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                        timemory-plotting timemory-analysis-tools timemory-ompt
+        LINK_LIBRARIES  common-test-libs
+                        timemory-ompt
                         PTL::ptl)
 endif()
 

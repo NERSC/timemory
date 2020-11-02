@@ -180,10 +180,7 @@ struct enumerator : properties<placeholder<nothing>>
 template <int Idx>
 using enumerator_t = typename enumerator<Idx>::type;
 //
-template <size_t Idx>
-using enumerator_t = typename enumerator<Idx>::type;
-//
-template <size_t Idx>
+template <int Idx>
 using properties_t = typename enumerator<Idx>::type;
 //
 //--------------------------------------------------------------------------------------//
