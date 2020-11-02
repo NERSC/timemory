@@ -311,3 +311,14 @@ private:
 };
 //
 }  // namespace tim
+
+namespace cereal
+{
+template <typename Archive, typename Tp>
+void
+save(Archive& ar, std::shared_ptr<tim::tsettings<Tp, Tp&>> obj)
+{
+    auto _obj = obj->clone();
+    ar(_obj);
+}
+}  // namespace cereal
