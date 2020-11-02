@@ -561,7 +561,7 @@ using cmath_intercept_t = gotcha<4, std::tuple<>, cmath_intercept>;
 
 TEST_F(gotcha_tests, replacement)
 {
-    auto _dbg              = tim::settings::debug();
+    auto _dbg = tim::settings::debug();
     // tim::settings::debug() = true;
 
     using exp_bundle_t = tim::component_bundle<TIMEMORY_API, cmath_intercept_t>;

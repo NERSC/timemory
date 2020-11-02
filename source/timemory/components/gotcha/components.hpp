@@ -1035,8 +1035,8 @@ private:
 
         _data.ready = false;
         static wrap_type _obj{ _data.tool_id };
-        Ret _ret    = invoke(_obj, _orig, std::forward<Args>(_args)...);
-        _data.ready = true;
+        Ret              _ret = invoke(_obj, _orig, std::forward<Args>(_args)...);
+        _data.ready           = true;
         return _ret;
 #else
         consume_parameters(_args...);

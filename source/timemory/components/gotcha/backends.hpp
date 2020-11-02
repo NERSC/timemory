@@ -139,8 +139,7 @@ private:
     //  instead of gotcha_wrappee
     //
     template <typename FuncT, typename... Args>
-    static decltype(auto) invoke_sfinae_impl(Tp& _obj, int, bool&, FuncT&&,
-                                             Args&&... _args)
+    static auto invoke_sfinae_impl(Tp& _obj, int, bool&, FuncT&&, Args&&... _args)
         -> decltype(_obj(std::forward<Args>(_args)...))
     {
         return _obj(std::forward<Args>(_args)...);
@@ -150,8 +149,7 @@ private:
     //  Call the original gotcha_wrappee
     //
     template <typename FuncT, typename... Args>
-    static decltype(auto) invoke_sfinae_impl(Tp&, long, bool&, FuncT&& _func,
-                                             Args&&... _args)
+    static auto invoke_sfinae_impl(Tp&, long, bool&, FuncT&& _func, Args&&... _args)
         -> decltype(std::forward<FuncT>(_func)(std::forward<Args>(_args)...))
     {
         return std::forward<FuncT>(_func)(std::forward<Args>(_args)...);
@@ -161,8 +159,7 @@ private:
     //  Wrapper that calls one of two above
     //
     template <typename FuncT, typename... Args>
-    static decltype(auto) invoke_sfinae(Tp& _obj, bool& _ready, FuncT&& _func,
-                                        Args&&... _args)
+    static auto invoke_sfinae(Tp& _obj, bool& _ready, FuncT&& _func, Args&&... _args)
         -> decltype(invoke_sfinae_impl(_obj, 0, _ready, std::forward<FuncT>(_func),
                                        std::forward<Args>(_args)...))
     {
@@ -185,7 +182,7 @@ private:
     //  Call the operator of the instance
     //
     template <typename FuncT, typename... Args>
-    static decltype(auto) invoke_sfinae_impl(Tp& _obj, int, FuncT&&, Args&&... _args)
+    static auto invoke_sfinae_impl(Tp& _obj, int, FuncT&&, Args&&... _args)
         -> decltype(_obj(std::forward<Args>(_args)...))
     {
         return _obj(std::forward<Args>(_args)...);
@@ -195,7 +192,7 @@ private:
     //  Call the original gotcha_wrappee
     //
     template <typename FuncT, typename... Args>
-    static decltype(auto) invoke_sfinae_impl(Tp&, long, FuncT&& _func, Args&&... _args)
+    static auto invoke_sfinae_impl(Tp&, long, FuncT&& _func, Args&&... _args)
         -> decltype(std::forward<FuncT>(_func)(std::forward<Args>(_args)...))
     {
         return std::forward<FuncT>(_func)(std::forward<Args>(_args)...);
@@ -205,7 +202,7 @@ private:
     //  Wrapper that calls one of two above
     //
     template <typename FuncT, typename... Args>
-    static decltype(auto) invoke_sfinae(Tp& _obj, FuncT&& _func, Args&&... _args)
+    static auto invoke_sfinae(Tp& _obj, FuncT&& _func, Args&&... _args)
         -> decltype(invoke_sfinae_impl(_obj, 0, _func, std::forward<Args>(_args)...))
     {
         return invoke_sfinae_impl(_obj, 0, std::forward<FuncT>(_func),

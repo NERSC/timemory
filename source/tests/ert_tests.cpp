@@ -32,8 +32,11 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include <cstdint>
 #include <set>
 
-namespace dmp        = tim::dmp;
-namespace cuda       = tim::cuda;
+namespace dmp    = tim::dmp;
+namespace cuda   = tim::cuda;
+namespace ert    = tim::ert;
+namespace device = tim::device;
+
 using settings       = tim::settings;
 using counter_type   = tim::component::wall_clock;
 using fp16_t         = tim::cuda::fp16_t;
@@ -127,11 +130,6 @@ TEST_F(ert_tests, run)
     init_list_t cpu_num_threads;
 
     auto default_thread_init_list = init_list_t({ 1 });
-
-    if(argc > 3)
-    {
-        default_thread_init_list.clear();
-    }
 
     for(auto itr : default_thread_init_list)
     {
