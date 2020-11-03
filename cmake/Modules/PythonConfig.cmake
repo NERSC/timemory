@@ -7,6 +7,9 @@ include_guard(DIRECTORY)
 # display version
 add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory" DOC)
 
+set(Python_ADDITIONAL_VERSIONS "3.9;3.8;3.7;3.6" CACHE STRING 
+    "Python versions supported by timemory")
+
 # unset the version strings
 if(TIMEMORY_PYTHON_VERSION VERSION_LESS 3.6)
     unset(TIMEMORY_PYTHON_VERSION CACHE)
@@ -31,7 +34,6 @@ endif()
 if(_PYVERSION)
     find_package(PythonInterp "${_PYVERSION}" ${TIMEMORY_FIND_REQUIREMENT})
 else()
-    set(Python_ADDITIONAL_VERSIONS 3.9 3.8 3.7 3.6)
     find_package(PythonInterp 3.6 ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
@@ -72,7 +74,7 @@ else()
     endif()
 endif()
 
-set(PYBIND11_INSTALL ON CACHE BOOL "Enable Pybind11 installation")
+set(PYBIND11_INSTALL OFF CACHE BOOL "Enable Pybind11 installation")
 
 if(TIMEMORY_BUILD_PYTHON AND NOT TARGET pybind11)
     # checkout PyBind11 if not checked out
