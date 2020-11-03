@@ -40,8 +40,10 @@ add_flag_if_avail(
     "-Wno-attributes"
     "-Wno-missing-field-initializers")
 
-add_cxx_flag_if_avail(
-    "-Wno-mismatched-tags")
+if(NOT CMAKE_CXX_COMPILER_IS_GNU)
+    add_cxx_flag_if_avail(
+        "-Wno-mismatched-tags")
+endif()
 
 if(CMAKE_CXX_COMPILER_IS_GNU)
     add_target_cxx_flag_if_avail(

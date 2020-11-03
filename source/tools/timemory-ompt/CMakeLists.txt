@@ -30,9 +30,9 @@ foreach(_TYPE ${LIB_TYPES})
 
     # public link targets
     target_link_libraries(${TARGET_NAME} PUBLIC
-        timemory-headers
-        timemory-ompt
-        timemory-cxx-${_LC_TYPE})
+        timemory::timemory-headers
+        timemory::timemory-ompt
+        timemory::timemory-cxx-${_LC_TYPE})
 
     # private link targets
     target_link_libraries(${TARGET_NAME} PRIVATE
@@ -47,6 +47,7 @@ foreach(_TYPE ${LIB_TYPES})
         SOVERSION       ${timemory_VERSION_MAJOR}.${timemory_VERSION_MINOR})
 
     # installation
-    install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(TARGETS ${TARGET_NAME}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 endforeach()

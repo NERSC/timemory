@@ -63,11 +63,11 @@ if(TIMEMORY_USE_DYNINST)
     endif()
 
     target_link_libraries(timemory-run-interface INTERFACE
-        timemory-headers
-        timemory-dyninst
-        timemory-dmp
-        timemory-compile-options
-        timemory-roofline-options
+        timemory::timemory-headers
+        timemory::timemory-dyninst
+        timemory::timemory-dmp
+        timemory::timemory-compile-options
+        timemory::timemory-roofline-options
         ${_LIBRARY})
 
     add_executable(timemory-run

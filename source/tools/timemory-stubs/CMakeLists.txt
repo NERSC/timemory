@@ -22,8 +22,8 @@ foreach(LIB_TYPE shared static)
     target_compile_definitions(timemory-stubs-${LIB_TYPE} INTERFACE TIMEMORY_USE_EXTERN)
 
     target_link_libraries(timemory-stubs-${LIB_TYPE} PRIVATE
-        timemory-headers
-        timemory-compile-options)
+        timemory::timemory-headers
+        timemory::timemory-compile-options)
 
     if(TARGET timemory-environment-${LIB_TYPE})
         target_link_libraries(timemory-stubs-${LIB_TYPE} PRIVATE
