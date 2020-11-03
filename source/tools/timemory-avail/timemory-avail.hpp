@@ -69,6 +69,7 @@ public:
     using entry_type = std::map<std::string, value_type>;
     using array_type = std::vector<entry_type>;
     using unique_set = std::set<std::string>;
+    using int_stack  = std::stack<uint32_t>;
 
 public:
     //! Construct, outputting to the provided stream
@@ -101,26 +102,19 @@ public:
     void setNextName(const char* name)
     {
         if(exclude_stream.count(name) > 0)
-        {
-            // fprintf(stderr, "Warning! Excluding '%s'\n", name);
             return;
-        }
 
         if(current_entry && value_keys.count(name) > 0)
         {
-            // fprintf(stderr, "Message! Using '%s'\n", name);
             current_entry->insert({ name, "" });
             current_value = &((*current_entry)[name]);
             return;
         }
         else if(value_keys.count(name) > 0)
         {
-            // fprintf(stderr, "Warning! '%s' is special and does not have an entry\n",
-            //        name);
             return;
         }
 
-        // fprintf(stderr, "Message! Saving '%s'\n", name);
         current_value = nullptr;
         output_stream->push_back(entry_type{});
         current_entry = &(output_stream->back());
@@ -136,15 +130,7 @@ public:
         current_entry->insert({ "accessor", ss.str() });
     }
 
-    void setNextType(const char* name)
-    {
-        /*if(current_entry && !current_value)
-        {
-            std::stringstream ss;
-            ss << std::boolalpha << name;
-            current_entry->insert({ "data_type", ss.str() });
-        }*/
-    }
+    void setNextType(const char*) {}
 
 public:
     template <typename Tp>
@@ -154,15 +140,12 @@ public:
         ssval << std::boolalpha << _val;
         if(current_value)
         {
+            using Dp = std::decay_t<Tp>;
             std::string dtype =
-                (std::is_same<Tp, std::string>::value) ? "string" : tim::demangle<Tp>();
+                (std::is_same<Dp, std::string>::value) ? "string" : tim::demangle<Tp>();
 
             current_entry->insert({ "data_type", dtype });
             *current_value = ssval.str();
-        }
-        else
-        {
-            // fprintf(stderr, "Warning! missed '%s'\n", ssval.str().c_str());
         }
     }
 
@@ -171,13 +154,14 @@ public:
     void makeArray() {}
 
 private:
-    value_type*          current_value = nullptr;
-    entry_type*          current_entry = nullptr;
-    array_type*          output_stream;
-    unique_set           exclude_stream;
-    std::stack<uint32_t> name_counter;  //!< Counter for creating unique names
-    unique_set           value_keys = { "name",      "environ", "description", "count",
-                              "max_count", "cmdline", "value" };
+    value_type* current_value  = nullptr;
+    entry_type* current_entry  = nullptr;
+    array_type* output_stream  = nullptr;
+    unique_set  exclude_stream = {};
+    int_stack   name_counter   = {};
+    unique_set  value_keys     = {
+        "name", "value", "description", "count", "environ", "max_count", "cmdline",
+    };
 };
 
 //======================================================================================//
@@ -260,7 +244,7 @@ CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const T&)
 //--------------------------------------------------------------------------------------//
 //! Prologue for arithmetic types for settings archive
 inline void
-CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const std::nullptr_t&)
+CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const std::nullptr_t&)
 {}
 
 //--------------------------------------------------------------------------------------//

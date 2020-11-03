@@ -325,12 +325,13 @@ public:
     template <
         typename T, typename... Args,
         enable_if_t<!is_one_of<T, reference_type>::value && has_user_bundle_v, int> = 0>
-    void init(Args&&...)
+    bool init(Args&&...)
     {
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
         this->init<bundle_t>();
         this->get<bundle_t>()->insert(component::factory::get_opaque<T>(m_scope),
                                       component::factory::get_typeids<T>());
+        return true;
     }
 
     //----------------------------------------------------------------------------------//
@@ -338,23 +339,18 @@ public:
     template <
         typename T, typename... Args,
         enable_if_t<!is_one_of<T, reference_type>::value && !has_user_bundle_v, int> = 0>
-    void init(Args&&...)
-    {}
+    bool init(Args&&...)
+    {
+        return is_one_of<T, reference_type>::value;
+    }
 
     //----------------------------------------------------------------------------------//
     //  variadic initialization
     //
-    template <typename T, typename... Tail, enable_if_t<sizeof...(Tail) == 0, int> = 0>
-    void initialize()
+    template <typename... T, typename... Args>
+    auto initialize(Args&&... args)
     {
-        this->init<T>();
-    }
-
-    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
-    void initialize()
-    {
-        this->init<T>();
-        this->initialize<Tail...>();
+        return TIMEMORY_FOLD_EXPANSION(bool, this->init<T>(std::forward<Args>(args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -450,11 +446,11 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using print_t = typename bundle_type::print_t;
+        using printer_t = typename bundle_type::print_t;
         if(size() == 0 || m_hash == 0)
             return;
         std::stringstream ss_data;
-        apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);
+        apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(PrintPrefix)
         {
             update_width();

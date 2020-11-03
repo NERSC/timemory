@@ -19,7 +19,7 @@ jobs:
         - CC=clang
         - CXX=clang++
         - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_HIDDEN=ON'
-        - BUILD_ARGS='--build-libs shared --caliper --python --stats --tools --cxx-standard=14'
+        - BUILD_ARGS='--build-libs shared --python --cxx-standard=14'
 
     # ------------------------------------------------------------------------ #
     #

@@ -155,25 +155,25 @@ public:
     component_tuple();
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_tuple(const string_t& key, quirk::config<T...>,
+    explicit component_tuple(const string_t& _key, quirk::config<T...>,
                              const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_tuple(const captured_location_t& loc, quirk::config<T...>,
+    explicit component_tuple(const captured_location_t& _loc, quirk::config<T...>,
                              const Func& = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_tuple(const string_t& key, const bool& store = true,
+    explicit component_tuple(const string_t& _key, const bool& _store = true,
                              scope::config _scope = scope::get_default(),
                              const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_tuple(const captured_location_t& loc, const bool& store = true,
+    explicit component_tuple(const captured_location_t& _loc, const bool& _store = true,
                              scope::config _scope = scope::get_default(),
                              const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_tuple(size_t _hash, const bool& store = true,
+    explicit component_tuple(size_t _hash, const bool& _store = true,
                              scope::config _scope = scope::get_default(),
                              const Func&          = get_initializer());
 

@@ -141,25 +141,25 @@ public:
     component_bundle();
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_bundle(const string_t& key, quirk::config<T...>,
+    explicit component_bundle(const string_t& _key, quirk::config<T...>,
                               const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_bundle(const captured_location_t& loc, quirk::config<T...>,
+    explicit component_bundle(const captured_location_t& _loc, quirk::config<T...>,
                               const Func& = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_bundle(size_t _hash, bool store = true,
+    explicit component_bundle(size_t _hash, bool _store = true,
                               scope::config _scope = scope::get_default(),
                               const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_bundle(const string_t& key, bool store = true,
+    explicit component_bundle(const string_t& _key, bool _store = true,
                               scope::config _scope = scope::get_default(),
                               const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_bundle(const captured_location_t& loc, bool store = true,
+    explicit component_bundle(const captured_location_t& _loc, bool _store = true,
                               scope::config _scope = scope::get_default(),
                               const Func&          = get_initializer());
 
@@ -168,11 +168,11 @@ public:
                               const Func& = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_bundle(const string_t& key, scope::config _scope,
+    explicit component_bundle(const string_t& _key, scope::config _scope,
                               const Func& = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_bundle(const captured_location_t& loc, scope::config _scope,
+    explicit component_bundle(const captured_location_t& _loc, scope::config _scope,
                               const Func& = get_initializer());
 
     ~component_bundle();
@@ -483,7 +483,7 @@ public:
                               is_one_of<T*, data_type>::value == true &&
                               is_one_of<T, data_type>::value == false,
                           char> = 0>
-    void init(Args&&... _args)
+    bool init(Args&&... _args)
     {
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
@@ -495,6 +495,7 @@ public:
             }
             _obj = new T(std::forward<Args>(_args)...);
             set_prefix(_obj);
+            return true;
         }
         else
         {
@@ -507,6 +508,7 @@ public:
                        _id.c_str());
             }
         }
+        return false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -517,10 +519,11 @@ public:
                               is_one_of<T*, data_type>::value == false &&
                               is_one_of<T, data_type>::value == true,
                           char> = 0>
-    void init(Args&&... _args)
+    bool init(Args&&... _args)
     {
         T&                      _obj = std::get<index_of<T, data_type>::value>(m_data);
         operation::construct<T> _tmp(_obj, std::forward<Args>(_args)...);
+        return true;
     }
 
     //----------------------------------------------------------------------------------//
@@ -532,7 +535,7 @@ public:
                               is_one_of<T*, data_type>::value == false &&
                               has_user_bundle_v == true,
                           int> = 0>
-    void init(Args&&...)
+    bool init(Args&&...)
     {
         using bundle_t =
             decay_t<decltype(std::get<0>(std::declval<user_bundle_types>()))>;
@@ -540,8 +543,12 @@ public:
         this->init<bundle_t>();
         auto* _bundle = this->get<bundle_t>();
         if(_bundle)
+        {
             _bundle->insert(component::factory::get_opaque<T>(m_scope),
                             component::factory::get_typeids<T>());
+            return true;
+        }
+        return false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -552,16 +559,18 @@ public:
                                is_one_of<T, data_type>::value == false &&
                                has_user_bundle_v == false),
                           int> = 0>
-    void init(Args&&...)
-    {}
+    bool init(Args&&...)
+    {
+        return false;
+    }
 
     //----------------------------------------------------------------------------------//
     //  variadic initialization
     //
     template <typename... T, typename... Args>
-    void initialize(Args&&... args)
+    auto initialize(Args&&... args)
     {
-        TIMEMORY_FOLD_EXPRESSION(this->init<T>(std::forward<Args>(args)...));
+        return TIMEMORY_FOLD_EXPANSION(bool, this->init<T>(std::forward<Args>(args)...));
     }
 
     template <typename... Tail>

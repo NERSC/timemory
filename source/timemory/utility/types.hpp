@@ -53,6 +53,13 @@
 
 //======================================================================================//
 
+#if !defined(TIMEMORY_FOLD_EXPANSION)
+#    define TIMEMORY_FOLD_EXPANSION(TYPE, ...)                                           \
+        ::std::initializer_list<TYPE> { (::tim::consume_parameters(), __VA_ARGS__)... }
+#endif
+
+//======================================================================================//
+
 #if !defined(TIMEMORY_RETURN_FOLD_EXPRESSION)
 #    define TIMEMORY_RETURN_FOLD_EXPRESSION(...)                                         \
         ::std::make_tuple((::tim::consume_parameters(), __VA_ARGS__)...)

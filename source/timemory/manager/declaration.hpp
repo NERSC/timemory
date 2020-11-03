@@ -289,7 +289,7 @@ private:
 private:
     struct persistent_data
     {
-        persistent_data()  = default;
+        persistent_data() = default;
         ~persistent_data()
         {
             // make sure the manager is deleted before the settings

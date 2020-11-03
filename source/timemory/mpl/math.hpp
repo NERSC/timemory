@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -89,19 +90,23 @@ template <typename Tp, typename Up = Tp>
 inline void
 assign(Tp&, Up&&);
 
-template <typename Tp, typename Up = Tp>
+template <typename Tp, typename Up = Tp,
+          enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
 inline Tp&
 plus(Tp&, const Up&);
 
-template <typename Tp, typename Up = Tp>
+template <typename Tp, typename Up = Tp,
+          enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
 inline Tp&
 minus(Tp&, const Up&);
 
-template <typename Tp, typename Up = Tp>
+template <typename Tp, typename Up = Tp,
+          enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
 inline void
 multiply(Tp&, const Up&);
 
-template <typename Tp, typename Up = Tp>
+template <typename Tp, typename Up = Tp,
+          enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
 inline void
 divide(Tp&, const Up&);
 
@@ -603,7 +608,7 @@ plus(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
              get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
 }
 
-template <typename Tp, typename Up>
+template <typename Tp, typename Up, enable_if_t<!concepts::is_null_type<Tp>::value>>
 Tp&
 plus(Tp& _lhs, const Up& _rhs)
 {
@@ -671,7 +676,7 @@ minus(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
               get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
 }
 
-template <typename Tp, typename Up>
+template <typename Tp, typename Up, enable_if_t<!concepts::is_null_type<Tp>::value>>
 Tp&
 minus(Tp& _lhs, const Up& _rhs)
 {
@@ -786,7 +791,7 @@ multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
                  get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
 }
 
-template <typename Tp, typename Up>
+template <typename Tp, typename Up, enable_if_t<!concepts::is_null_type<Tp>::value>>
 void
 multiply(Tp& _lhs, const Up& _rhs)
 {
@@ -897,7 +902,7 @@ divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
                get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
 }
 
-template <typename Tp, typename Up>
+template <typename Tp, typename Up, enable_if_t<!concepts::is_null_type<Tp>::value>>
 void
 divide(Tp& _lhs, const Up& _rhs)
 {

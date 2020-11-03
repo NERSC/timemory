@@ -39,9 +39,10 @@ using namespace tim::component;
 using tuple_t =
     tim::auto_tuple_t<wall_clock, cpu_util, thread_cpu_clock, thread_cpu_util>;
 
-static const long   nfib       = 39;
-static const long   noff       = 4;
-static const double pi_epsilon = std::numeric_limits<float>::epsilon();
+static const long   nfib = 39;
+static const long   noff = 4;
+static const double pi_epsilon =
+    static_cast<double>(std::numeric_limits<float>::epsilon());
 
 //--------------------------------------------------------------------------------------//
 
@@ -53,7 +54,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 // this function consumes approximately "n" milliseconds of real time
@@ -132,7 +134,7 @@ TEST_F(ptl_tests, regions)
         auto func = [&]() {
             std::string region = "AAAAA";
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/", region,
-                                  "/", PTL::ThreadPool::GetThisThreadID());
+                                  "/", PTL::ThreadPool::get_this_thread_id());
             sum += details::fibonacci(nfib);
             details::do_sleep(500);
         };
@@ -147,7 +149,7 @@ TEST_F(ptl_tests, regions)
         TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/master/1");
         auto func = [&]() {
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/", region,
-                                  "/", PTL::ThreadPool::GetThisThreadID());
+                                  "/", PTL::ThreadPool::get_this_thread_id());
             sum += details::fibonacci(nfib + noff);
             details::do_sleep(500);
         };

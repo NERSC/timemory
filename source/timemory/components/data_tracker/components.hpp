@@ -145,6 +145,8 @@ struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
         return _instance;
     }
 
+    TIMEMORY_DEFAULT_OBJECT(data_tracker)
+
     void start() {}
     void stop() {}
 
