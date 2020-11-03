@@ -51,10 +51,8 @@ py::module
 generate_cuda(py::module& _pymod);
 //
 py::module
-generate(py::module& _pymod)
+generate(py::module& _api)
 {
-    py::module _api =
-        _pymod.def_submodule("api", "Direct python interfaces to various APIs");
     generate_papi(_api);
     generate_cuda(_api);
     generate_cupti(_api);

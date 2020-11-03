@@ -556,6 +556,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     if(tim::concepts::is_placeholder<T>::value)
         return;
     using property_t = tim::component::properties<T>;
+    using metadata_t = tim::component::metadata<T>;
     using bundle_t   = pytuple_t<T>;
     std::string id   = get_class_name(property_t::enum_string());
 
@@ -623,9 +624,21 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
     _pycomp.def("__repr__", _repr, "String representation");
 
-    _pycomp.def_static("label", &T::label, "Get the label for the type");
-    _pycomp.def_static("description", &T::description,
-                       "Get the description for the type");
+    auto _label = []() {
+        if(metadata_t::value != TIMEMORY_COMPONENTS_END)
+            return metadata_t::label();
+        return T::label();
+    };
+
+    auto _desc = []() {
+        if(metadata_t::value != TIMEMORY_COMPONENTS_END)
+            return TIMEMORY_JOIN("", metadata_t::description(), ". ",
+                                 metadata_t::extra_description());
+        return T::description();
+    };
+
+    _pycomp.def_static("label", _label, "Get the label for the type");
+    _pycomp.def_static("description", _desc, "Get the description for the type");
     _pycomp.def_property_readonly_static("available", [](py::object) { return true; },
                                          "Whether the component is available");
 

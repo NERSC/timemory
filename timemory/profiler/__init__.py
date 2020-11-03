@@ -39,11 +39,30 @@ __status__ = "Development"
 This submodule imports the timemory Python function profiler
 """
 
-__all__ = ["profiler"]
-
 try:
-    from ..libpytimemory.profiler import *
-    from . import profiler
-    from .profiler import *
+    from .profiler import Profiler, FakeProfiler
+    from ..libpytimemory.profiler import (
+        profiler_function,
+        profiler_init,
+        profiler_finalize,
+    )
+    from ..libpytimemory.profiler import config as Config
+    from ..libpytimemory.profiler import profiler_bundle as ProfilerBundle
+
+    profile = Profiler
+    noprofile = FakeProfiler
+
+    __all__ = [
+        "Profiler",
+        "Config",
+        "ProfilerBundle",
+        "FakeProfiler",
+        "profiler_function",
+        "profiler_init",
+        "profiler_finalize",
+        "profile",
+        "noprofile",
+    ]
+
 except Exception as e:
     print("{}".format(e))

@@ -54,15 +54,18 @@ add_property(py::class_<tim::settings>& _class, std::shared_ptr<tim::vsettings> 
     if(_obj && _obj->get_type_index() == _tidx)
     {
         bool _is_ref = dynamic_cast<tim::tsettings<Tp, Tp&>*>(_obj.get()) != nullptr;
-        /*
-        auto _env    = _obj->get_env_name();
+
+        auto _env      = _obj->get_env_name();
+        auto _mem_name = TIMEMORY_JOIN("_", "get", _obj->get_name());
+        auto _mem_desc = TIMEMORY_JOIN("", "[Member variant of global property \"",
+                                       _obj->get_name(), "\"] ", _obj->get_description());
         // member property
         _class.def_property(
-            _obj->get_name().c_str(),
+            _mem_name.c_str(),
             [_env](tim::settings* _object) { return _object->get<Tp>(_env); },
             [_env](tim::settings* _object, Tp v) { return _object->set(_env, v); },
-            _obj->get_description().c_str());
-        */
+            _mem_desc.c_str());
+
         // static property
         if(!_is_ref)
         {

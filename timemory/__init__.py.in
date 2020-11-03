@@ -27,15 +27,10 @@
 from __future__ import absolute_import
 import sys
 import os
-import imp
 import copy
 import atexit
-import ctypes
 import platform
-import warnings
-import importlib
 import traceback
-from ctypes.util import find_library
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
@@ -92,24 +87,10 @@ before BEFORE running Python
 
 
 def __load_component_libs():
-    """Loads the component libraries"""
-    import glob
-
+    """Loads the timemory library"""
     relative_lib_path = "@LIB_RELPATH@"
-
-    def __valid_relpath(p):
-        global this_path
-        cp = os.path.join(this_path, relative_lib_path)
-        return os.path.exists(cp)
-
-    for i in range(5):
-        valid = __valid_relpath(relative_lib_path)
-        if valid:
-            break
-        else:
-            relative_lib_path = os.path.join("..", relative_lib_path)
-
     ext = None
+
     if platform.system().lower().startswith("darwin"):
         ext = "dylib"
     elif platform.system().lower().startswith("linux"):
@@ -124,22 +105,10 @@ def __load_component_libs():
                 os.path.join(this_path, relative_lib_path, "timemory", name)
             )
 
-    libs = glob.glob(
-        "{}/libtimemory*.*".format(os.path.join(this_path, relative_lib_path))
-    )
-    loaded = []
-    ntries = 0
-    while len(loaded) < len(libs) and ntries < 5 * len(libs):
-        ntries = ntries + 1
-        for entry in libs:
-            if entry in loaded:
-                continue
-            try:
-                __load(os.path.basename(entry))
-                loaded.append(entry)
-            except Exception:
-                pass
-    __load("libtimemory.{}".format(ext))
+    try:
+        __load("libtimemory.{}".format(ext))
+    except Exception as e:
+        print(f"Error loading libtimemory: {e}")
 
 
 if os.environ.get("TIMEMORY_CXX_PLOT_MODE", None) is not None:
@@ -147,105 +116,119 @@ if os.environ.get("TIMEMORY_CXX_PLOT_MODE", None) is not None:
     from . import mpi_support
     from . import mpi
     from . import roofline
-    from .common import *
+    from .common import LINE, FUNC, FILE, line, func, file, frame
 
     __all__ = [
         "version_info",
         "build_info",
         "version",
-        # --------------- modules ---------------#
         "mpi_support",
         "roofline",
         "mpi",
-        # --------------- functions -------------#
         "LINE",
         "FUNC",
         "FILE",
+        "line",
+        "func",
+        "file",
+        "frame",
     ]
-else:
-    try:
-        try:
-            from . import libpytimemory
-        except Exception as e:
-            if not platform.system().lower().startswith("win"):
-                try:
-                    __load_component_libs()
-                    from . import libpytimemory
-                except Exception as e2:
-                    print("Exception: {}".format(e2))
-            else:
-                print("Exception: {}".format(e))
 
-        from . import plotting
-        from . import roofline
-        from . import mpi_support
-        from . import mpi
-        from . import util
-        from . import bundle
-        from . import options
-        from . import units
-        from . import signals
-        from . import component
-        from . import api
-        from . import hardware_counters
-        from .common import *
-        from .libpytimemory import *
-        from .libpytimemory import settings as settings
-        from .libpytimemory import initialize, finalize
+else:
+    _loaded_bindings = True
+    try:
+        from . import libpytimemory
+    except Exception:
+        _loaded_bindings = False
+        __load_component_libs()
+
+    try:
+        if not _loaded_bindings:
+            from . import libpytimemory
+
+        from .libpytimemory import (
+            report,
+            toggle,
+            enable,
+            disable,
+            is_enabled,
+            enabled,
+            has_mpi_support,
+            set_rusage_children,
+            set_rusage_self,
+            timemory_init,
+            timemory_finalize,
+            initialize,
+            finalize,
+            timemory_argparse,
+            add_arguments,
+            get,
+            get_text,
+            clear,
+            size,
+            mpi_init,
+            mpi_finalize,
+            upcxx_init,
+            upcxx_finalize,
+            dmp_init,
+            dmp_finalize,
+            start_mpip,
+            stop_mpip,
+            start_ompt,
+            stop_ompt,
+            start_ncclp,
+            stop_ncclp,
+            # api,
+            # papi,
+            # cupti,
+            # cuda,
+            component,
+            # hardware_counters,
+            # profiler,
+            # trace,
+            # units,
+            scope,
+            settings,
+            # region,
+            # options,
+        )
+
+        from . import plotting as plotting
+        from . import roofline as roofline
+        from . import mpi_support as mpi_support
+        from . import mpi as mpi
+        from . import util as util
+        from . import bundle as bundle
+        from . import options as options
+        from . import units as units
+        from . import signals as signals
+        from . import region as region
+        from . import profiler as profiler
+        from . import trace as trace
+        from . import api as api
+        from . import hardware_counters as hardware_counters
+
+        from .common import LINE, FUNC, FILE, line, func, file, frame
+
+        sys.modules["timemory.libpytimemory"] = libpytimemory
+        sys.modules["timemory.plotting"] = plotting
+        sys.modules["timemory.roofline"] = roofline
+        sys.modules["timemory.mpi_support"] = mpi_support
+        sys.modules["timemory.mpi"] = mpi
+        sys.modules["timemory.util"] = util
+        sys.modules["timemory.bundle"] = bundle
+        sys.modules["timemory.options"] = options
+        sys.modules["timemory.units"] = units
+        sys.modules["timemory.signals"] = signals
+        sys.modules["timemory.component"] = component
+        sys.modules["timemory.region"] = region
+        sys.modules["timemory.profiler"] = profiler
+        sys.modules["timemory.trace"] = trace
+        sys.modules["timemory.api"] = api
+        sys.modules["timemory.hardware_counters"] = hardware_counters
+        sys.modules["timemory.settings"] = settings
 
         init = initialize
-        __all__ = [
-            "version_info",
-            "build_info",
-            "version",
-            # --------------- modules ---------------#
-            "libpytimemory",
-            "hardware_counters",
-            "mpi_support",
-            "component",
-            "settings",
-            "plotting",
-            "roofline",
-            "bundle",
-            "region",
-            "trace",
-            "test",
-            "util",
-            "api",
-            "ert",
-            "mpi",
-            # --------------- classes ---------------#
-            "manager",
-            "timer",
-            "rss_usage",
-            "auto_timer",
-            "component_list",
-            "component_bundle",
-            # ------------ lib submodules -----------#
-            "units",
-            "options",
-            "signals",
-            # --------------- functions -------------#
-            "report",
-            "LINE",
-            "FUNC",
-            "FILE",
-            "toggle",
-            "enable",
-            "disable",
-            "is_enabled",
-            "enabled",
-            "enable_signal_detection",
-            "disable_signal_detection",
-            "has_mpi_support",
-            "set_rusage_children",
-            "set_rusage_self",
-            "timemory_init",
-            "timemory_finalize",
-            "initialize",
-            "finalize",
-            "init",
-        ]
 
         args = copy.copy(sys.argv)
         try:
@@ -267,6 +250,51 @@ else:
         settings.python_exe = "{}".format(sys.executable)
         settings.command_line = sys.argv
 
+        __all__ = [
+            "version_info",
+            "build_info",
+            "version",
+            "LINE",
+            "FUNC",
+            "FILE",
+            "line",
+            "func",
+            "file",
+            "frame",
+            "report",
+            "toggle",
+            "enable",
+            "disable",
+            "is_enabled",
+            "enabled",
+            "has_mpi_support",
+            "set_rusage_children",
+            "set_rusage_self",
+            "timemory_init",
+            "timemory_finalize",
+            "init",
+            "initialize",
+            "finalize",
+            "timemory_argparse",
+            "add_arguments",
+            "get",
+            "get_text",
+            "clear",
+            "size",
+            "mpi_init",
+            "mpi_finalize",
+            "upcxx_init",
+            "upcxx_finalize",
+            "dmp_init",
+            "dmp_finalize",
+            "start_mpip",
+            "stop_mpip",
+            "start_ompt",
+            "stop_ompt",
+            "start_ncclp",
+            "stop_ncclp",
+        ]
+
     except Exception as e:
         print("Exception: {}".format(e))
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -281,11 +309,9 @@ else:
             "version_info",
             "build_info",
             "version",
-            # --------------- modules ---------------#
             "mpi_support",
             "roofline",
             "mpi",
-            # --------------- functions -------------#
             "LINE",
             "FUNC",
             "FILE",

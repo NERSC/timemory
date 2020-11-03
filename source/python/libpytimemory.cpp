@@ -274,7 +274,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    pyapi::generate(tim);
+    py::module _api =
+        tim.def_submodule("api", "Direct python interfaces to various APIs");
+    pyapi::generate(_api);
     pysignals::generate(tim);
     pyauto_timer::generate(tim);
     pycomponent_list::generate(tim);
