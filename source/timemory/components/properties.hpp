@@ -167,7 +167,7 @@ struct static_properties<Tp, true>
 /// \code
 /// TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
 ///                                 "virtual_clock")
-/// \code
+/// \endcode
 ///
 /// In the above, the first parameter is the C++ type, the second is the enumeration
 /// id, the enum string is automatically generated via preprocessor `#` on the second

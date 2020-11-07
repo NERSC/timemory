@@ -50,26 +50,26 @@ namespace component
 //
 // template params:
 //      Nt             ==  max number of GOTCHA wrappers
-//      Components     ==  {auto,component}_{tuple,list,hybrid}
-//      Differentiator ==  extra param to differentiate when Nt and Components are same
+//      BundleT     ==  {auto,component}_{tuple,list,bundle}
+//      DiffT ==  extra param to differentiate when Nt and BundleT are same
 //
-//  TODO: filter any gotcha components out of Components
+//  TODO: filter any gotcha components out of BundleT
 //
-template <size_t Nt, typename Components, typename Differentiator>
+template <size_t Nt, typename BundleT, typename DiffT>
 struct gotcha
-: public base<gotcha<Nt, Components, Differentiator>, void>
+: public base<gotcha<Nt, BundleT, DiffT>, void>
 , public concepts::external_function_wrapper
 {
-    static_assert(concepts::has_gotcha<Components>::value == false,
-                  "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
+    static_assert(concepts::has_gotcha<BundleT>::value == false,
+                  "Error! {auto,component}_{list,tuple,bundle} in a GOTCHA specification "
                   "cannot include another gotcha_component");
 
-    using value_type     = void;
-    using this_type      = gotcha<Nt, Components, Differentiator>;
-    using base_type      = base<this_type, value_type>;
-    using storage_type   = typename base_type::storage_type;
-    using tuple_type     = concepts::tuple_type_t<Components>;
-    using component_type = concepts::component_type_t<Components>;
+    using value_type   = void;
+    using this_type    = gotcha<Nt, BundleT, DiffT>;
+    using base_type    = base<this_type, value_type>;
+    using storage_type = typename base_type::storage_type;
+    using tuple_type   = concepts::tuple_type_t<BundleT>;
+    using bundle_type  = concepts::component_type_t<BundleT>;
 
     friend struct operation::record<this_type>;
     friend struct operation::start<this_type>;
@@ -88,20 +88,17 @@ struct gotcha
 
     using select_list_t = std::set<std::string>;
 
-    // using config_t = std::tuple<binding_t, wrappee_t, wrappid_t>;
     using config_t          = void;
     using get_initializer_t = std::function<config_t()>;
     using get_select_list_t = std::function<select_list_t()>;
 
-    // static constexpr size_t components_size = component_type::size();
-    static constexpr size_t components_size = std::tuple_size<tuple_type>::value;
-    static constexpr bool   differentiator_is_component =
-        (is_one_of<Differentiator, tuple_type>::value ||
-         (components_size == 0 && (trait::is_component<Differentiator>::value ||
-                                   gotcha_differentiator<Differentiator>::is_component)));
+    static constexpr size_t components_size = mpl::get_tuple_size<tuple_type>::value;
+    static constexpr bool   differ_is_component =
+        (is_one_of<DiffT, tuple_type>::value ||
+         (components_size == 0 && concepts::is_component<DiffT>::value));
 
-    using operator_type = typename std::conditional<(differentiator_is_component),
-                                                    Differentiator, void>::type;
+    using operator_type =
+        typename std::conditional<(differ_is_component), DiffT, void>::type;
 
     static std::string label() { return "gotcha"; }
     static std::string description()
@@ -155,7 +152,7 @@ struct gotcha
     {
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
 
-        component_type::init_storage();
+        bundle_type::init_storage();
 
         static_assert(N < Nt, "Error! N must be less than Nt!");
         auto& _data = get_data()[N];
@@ -295,12 +292,6 @@ struct gotcha
     }
 
     //----------------------------------------------------------------------------------//
-
-    static void global_init()
-    {
-        // if(get_default_ready())
-        //     configure();
-    }
 
     static void global_finalize()
     {
@@ -616,8 +607,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args, typename This = this_type,
-              typename std::enable_if<(This::components_size != 0), int>::type      = 0,
-              typename std::enable_if<!(std::is_same<Ret, void>::value), int>::type = 0>
+              typename std::enable_if<(This::components_size != 0), int>::type    = 0,
+              typename std::enable_if<!std::is_same<Ret, void>::value, int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
         auto& _data   = get_data()[N];
@@ -628,8 +619,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args, typename This = this_type,
-              typename std::enable_if<(This::components_size != 0), int>::type     = 0,
-              typename std::enable_if<(std::is_same<Ret, void>::value), int>::type = 0>
+              typename std::enable_if<(This::components_size != 0), int>::type   = 0,
+              typename std::enable_if<std::is_same<Ret, void>::value, int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
         auto& _data   = get_data()[N];
@@ -640,8 +631,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args, typename This = this_type,
-              typename std::enable_if<(This::components_size == 0), int>::type      = 0,
-              typename std::enable_if<!(std::is_same<Ret, void>::value), int>::type = 0>
+              typename std::enable_if<This::components_size == 0, int>::type      = 0,
+              typename std::enable_if<!std::is_same<Ret, void>::value, int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
         auto& _data   = get_data()[N];
@@ -652,8 +643,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args, typename This = this_type,
-              typename std::enable_if<(This::components_size == 0), int>::type     = 0,
-              typename std::enable_if<(std::is_same<Ret, void>::value), int>::type = 0>
+              typename std::enable_if<This::components_size == 0, int>::type     = 0,
+              typename std::enable_if<std::is_same<Ret, void>::value, int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
         auto& _data   = get_data()[N];
@@ -664,11 +655,11 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<This::differentiator_is_component, int> = 0,
-              enable_if_t<!std::is_same<Ret, void>::value, int>   = 0>
+              enable_if_t<This::differ_is_component, int>       = 0,
+              enable_if_t<!std::is_same<Ret, void>::value, int> = 0>
     static Ret invoke(Comp& _comp, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Type    = Differentiator;
+        using Type    = DiffT;
         using Invoker = gotcha_invoker<Type, Ret>;
         Type& _obj    = *_comp.template get<Type>();
         return Invoker::invoke(_obj, _ready, _func, std::forward<Args>(_args)...);
@@ -677,8 +668,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!This::differentiator_is_component, int> = 0,
-              enable_if_t<!std::is_same<Ret, void>::value, int>    = 0>
+              enable_if_t<!This::differ_is_component, int>      = 0,
+              enable_if_t<!std::is_same<Ret, void>::value, int> = 0>
     static Ret invoke(Comp&, bool&, Ret (*_func)(Args...), Args&&... _args)
     {
         // gotcha_suppression::auto_toggle suppress_lock(_ready);
@@ -689,11 +680,11 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<This::differentiator_is_component, int> = 0,
-              enable_if_t<std::is_same<Ret, void>::value, int>    = 0>
+              enable_if_t<This::differ_is_component, int>      = 0,
+              enable_if_t<std::is_same<Ret, void>::value, int> = 0>
     static void invoke(Comp& _comp, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Type    = Differentiator;
+        using Type    = DiffT;
         using Invoker = gotcha_invoker<Type, Ret>;
         Type& _obj    = *_comp.template get<Type>();
         Invoker::invoke(_obj, _ready, _func, std::forward<Args>(_args)...);
@@ -702,8 +693,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!This::differentiator_is_component, int> = 0,
-              enable_if_t<std::is_same<Ret, void>::value, int>     = 0>
+              enable_if_t<!This::differ_is_component, int>     = 0,
+              enable_if_t<std::is_same<Ret, void>::value, int> = 0>
     static void invoke(Comp&, bool&, Ret (*_func)(Args...), Args&&... _args)
     {
         // gotcha_suppression::auto_toggle suppress_lock(_ready);
@@ -713,11 +704,11 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<This::differentiator_is_component, int> = 0,
-              enable_if_t<!std::is_same<Ret, void>::value, int>   = 0>
+              enable_if_t<This::differ_is_component, int>       = 0,
+              enable_if_t<!std::is_same<Ret, void>::value, int> = 0>
     static Ret invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Tp      = Differentiator;
+        using Tp      = DiffT;
         using Invoker = gotcha_invoker<Tp, Ret>;
         Tp& _obj      = *_comp.template get<Tp>();
         return Invoker::invoke(_obj, _func, std::forward<Args>(_args)...);
@@ -726,8 +717,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!This::differentiator_is_component, int> = 0,
-              enable_if_t<!std::is_same<Ret, void>::value, int>    = 0>
+              enable_if_t<!This::differ_is_component, int>      = 0,
+              enable_if_t<!std::is_same<Ret, void>::value, int> = 0>
     static Ret invoke(Comp&, Ret (*_func)(Args...), Args&&... _args)
     {
         return _func(std::forward<Args>(_args)...);
@@ -736,11 +727,11 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<This::differentiator_is_component, int> = 0,
-              enable_if_t<std::is_same<Ret, void>::value, int>    = 0>
+              enable_if_t<This::differ_is_component, int>      = 0,
+              enable_if_t<std::is_same<Ret, void>::value, int> = 0>
     static void invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Tp      = Differentiator;
+        using Tp      = DiffT;
         using Invoker = gotcha_invoker<Tp, Ret>;
         Tp& _obj      = *_comp.template get<Tp>();
         Invoker::invoke(_obj, _func, std::forward<Args>(_args)...);
@@ -749,8 +740,8 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!This::differentiator_is_component, int> = 0,
-              enable_if_t<std::is_same<Ret, void>::value, int>     = 0>
+              enable_if_t<!This::differ_is_component, int>     = 0,
+              enable_if_t<std::is_same<Ret, void>::value, int> = 0>
     static void invoke(Comp&, Ret (*_func)(Args...), Args&&... _args)
     {
         _func(std::forward<Args>(_args)...);
@@ -814,17 +805,17 @@ private:
             _data.ready = false;
             toggle_suppress_on(_data.suppression, did_data_toggle);
 
-            // component_type is always: component_{tuple,list,hybrid}
+            // bundle_type is always: component_{tuple,list,bundle}
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-            component_type _obj{ _data.tool_id };
+            bundle_type _obj{ _data.tool_id };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
             toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
             _data.ready = true;
-            Ret _ret    = invoke<component_type>(_obj, _data.ready, _orig,
-                                              std::forward<Args>(_args)...);
+            Ret _ret    = invoke<bundle_type>(_obj, _data.ready, _orig,
+                                           std::forward<Args>(_args)...);
             _data.ready = false;
 
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
@@ -908,15 +899,14 @@ private:
 
         if(_orig)
         {
-            component_type _obj{ _data.tool_id };
+            bundle_type _obj{ _data.tool_id };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
             toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
             _data.ready = true;
-            invoke<component_type>(_obj, _data.ready, _orig,
-                                   std::forward<Args>(_args)...);
+            invoke<bundle_type>(_obj, _data.ready, _orig, std::forward<Args>(_args)...);
             _data.ready = false;
 
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
