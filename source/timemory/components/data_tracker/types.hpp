@@ -49,8 +49,17 @@ namespace tim
 {
 namespace component
 {
-using data_tracker_integer  = data_tracker<intmax_t, project::timemory>;
+/// \typedef data_tracker_integer
+/// \brief Specialization of \ref tim::component::data_tracker for storing signed integer
+/// data
+using data_tracker_integer = data_tracker<intmax_t, project::timemory>;
+/// \typedef data_tracker_unsigned
+/// \brief Specialization of \ref tim::component::data_tracker for storing unsigned
+/// integer data
 using data_tracker_unsigned = data_tracker<size_t, project::timemory>;
+/// \typedef data_tracker_double
+/// \brief Specialization of \ref tim::component::data_tracker for storing floating point
+/// data
 using data_tracker_floating = data_tracker<double, project::timemory>;
 }  // namespace component
 //
@@ -61,6 +70,13 @@ struct component_apis<component::data_tracker<InpT, Tag>>
 {
     using type = type_list<project::timemory, category::logger, os::agnostic>;
 };
+//
+#if defined(TIMEMORY_COMPILER_INSTRUMENTATION)
+template <typename InpT, typename Tag>
+struct is_available<component::data_tracker<InpT, Tag>> : std::false_type
+{};
+#endif
+//
 }  // namespace trait
 }  // namespace tim
 //

@@ -551,7 +551,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <typename Archive>
-    void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
+    void load(Archive& ar, const unsigned int)
     {
         auto _disp  = get_display();
         auto labels = label_array();
@@ -566,7 +566,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <typename Archive>
-    void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int) const
+    void save(Archive& ar, const unsigned int) const
     {
         auto _disp  = get_display();
         auto labels = label_array();

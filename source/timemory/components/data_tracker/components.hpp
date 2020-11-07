@@ -55,27 +55,28 @@ namespace tim
 {
 namespace component
 {
-/// \struct component::data_tracker
+/// \struct tim::component::data_tracker
 /// \brief This component is provided to facilitate data tracking. The first
 /// template parameter is the type of data to be tracked, the second is a custom
 /// tag, the third is the implementation for how to track the data.
 /// Usage:
+/// \code
+/// struct iteration_count_tag;
 ///
-///         struct iteration_count_tag;
+/// using tracker_type = data_tracker<uint64_t, iteration_count_tag>;
+/// using tuple_t      = tim::auto_tuple<wall_clock, tracker_type>;
 ///
-///         using tracker_type = data_tracker<uint64_t, iteration_count_tag>;
-///         using tuple_t      = tim::auto_tuple<wall_clock, tracker_type>;
+/// double err             = std::numeric_limits<double>::max();
+/// const double tolerance = 1.0e-6;
 ///
-///         double err             = std::numeric_limits<double>::max();
-///         const double tolerance = 1.0e-6;
+/// tuple_t t("iteration_time");
 ///
-///         tuple_t t("iteration_time");
-///
-///         while(err > tolerance)
-///         {
-///             t.store(std::plus<uint64_t>{}, 1);
-///             // ... do something ...
-///         }
+/// while(err > tolerance)
+/// {
+///     t.store(std::plus<uint64_t>{}, 1);
+///     // ... do something ...
+/// }
+/// \endcode
 ///
 template <typename InpT, typename Tag>
 struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>

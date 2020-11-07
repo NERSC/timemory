@@ -120,7 +120,10 @@ struct config
 //
 namespace trait
 {
-//
+/// \struct tim::trait::dynamic_base
+/// \brief trait that designates the type the static polymorphic base class
+/// (\ref tim::component::base) inherit from.
+///
 template <typename Tp>
 struct dynamic_base : std::false_type
 {

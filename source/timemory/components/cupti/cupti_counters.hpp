@@ -53,7 +53,18 @@ namespace component
 //          CUPTI hardware counters component
 //
 //--------------------------------------------------------------------------------------//
-
+/// \struct tim::component::cupti_counters
+/// \brief NVprof-style hardware counters via the CUpti callback API. Collecting these
+/// hardware counters has a higher overhead than the new CUpti Profiling API (\ref
+/// tim::component::cupti_profiler). However, there are currently some issues with nesting
+/// the Profiling API and it is currently recommended to use this component for NVIDIA
+/// hardware counters in timemory. The callback API / NVprof is quite specific about
+/// the distinction between an "event" and a "metric". For your convenience, timemory
+/// removes this distinction and events can be specified arbitrarily as metrics and
+/// vice-versa and this component will sort them into their appropriate category.
+/// For the full list of the available events/metrics, use `timemory-avail -H` from the
+/// command-line.
+///
 struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
 {
     // required aliases
@@ -72,13 +83,13 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     // short-hand for vectors
     using strvec_t  = std::vector<string_t>;
     using profptr_t = std::shared_ptr<cupti::profiler>;
-    /// a tuple of the <devices, events, metrics>
+    // a tuple of the <devices, events, metrics>
     using tuple_type = std::tuple<int, strvec_t, strvec_t>;
-    /// function for setting device, metrics, and events to record
+    // function for setting device, metrics, and events to record
     using event_func_t  = std::function<strvec_t()>;
     using metric_func_t = std::function<strvec_t()>;
     using device_func_t = std::function<int()>;
-    /// function for setting all of device, metrics, and events
+    // function for setting all of device, metrics, and events
     using get_initializer_t = std::function<tuple_type()>;
 
     static const short precision = 3;
@@ -125,7 +136,9 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
             init();
     }
 
-    static void configure(int device, const strvec_t& events, const strvec_t& metrics)
+    /// explicitly configure for a device and set of events/metrics.
+    static void configure(int device, const strvec_t& events,
+                          const strvec_t& metrics = {})
     {
         get_initializer() = [=]() -> tuple_type {
             return tuple_type(device, events, metrics);

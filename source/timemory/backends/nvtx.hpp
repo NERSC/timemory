@@ -64,7 +64,10 @@ consume_parameters(ArgsT&&...)
 namespace color
 {
 //--------------------------------------------------------------------------------------//
-
+/// \enum tim::nvtx::color::color_idx
+/// \brief Color codes for NVTX in hexadecimal ARGB (Alpha, Red, Green, Blue).
+/// Aliased via `tim::nvtx::color::color_t`.
+///
 enum color_idx
 {
     red_idx         = 0xffff0000,

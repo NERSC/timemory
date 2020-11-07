@@ -43,6 +43,13 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::craypat_record
+/// \brief Provides scoping the CrayPAT profiler. Global initialization stops
+/// the profiler, the first call to `start()` starts the profiler again on the
+/// calling thread. Instance counting is enabled per-thread and each call to start
+/// increments the counter. All calls to `stop()` have no effect until the counter reaches
+/// zero, at which point the compiler is turned off again.
+///
 struct craypat_record
 : base<craypat_record, void>
 , policy::instance_tracker<craypat_record>
@@ -79,6 +86,9 @@ struct craypat_record
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::craypat_region
+/// \brief Adds a region label to the CrayPAT profiling output
+///
 struct craypat_region
 : base<craypat_region, void>
 , policy::instance_tracker<craypat_region, false>
@@ -108,6 +118,10 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::craypat_region
+/// \brief Retrieves the names and value of any counter events that have been set to count
+/// on the hardware category
+///
 struct craypat_counters : base<craypat_counters, std::vector<unsigned long>>
 {
     using value_type   = std::vector<unsigned long>;
@@ -247,6 +261,9 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::craypat_heap_stats
+/// \brief Dumps the craypat heap statistics
+///
 struct craypat_heap_stats : base<craypat_heap_stats, void>
 {
     static std::string label() { return "craypat_heap_stats"; }
@@ -258,6 +275,10 @@ struct craypat_heap_stats : base<craypat_heap_stats, void>
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::craypat_flush_buffer
+/// \brief Writes all the recorded contents in the data buffer. Returns the number of
+/// bytes flushed
+///
 struct craypat_flush_buffer : base<craypat_flush_buffer, unsigned long>
 {
     using value_type = unsigned long;

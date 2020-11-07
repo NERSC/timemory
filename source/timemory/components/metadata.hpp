@@ -39,7 +39,12 @@ namespace tim
 {
 namespace component
 {
-//
+/// \struct tim::component::metadata
+/// \brief Provides forward declaration support for assigning static metadata properties.
+/// This is most useful for specialization of template components. If this class
+/// is specialized for component, then the component does not need to provide
+/// the static member functions `label()` and `description()`.
+///
 template <typename Tp>
 struct metadata
 {
