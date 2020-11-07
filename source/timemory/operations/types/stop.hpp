@@ -69,7 +69,6 @@ struct stop
         using RetT = decltype(do_sfinae(obj, 0, 0, std::forward<Args>(args)...));
         if(trait::runtime_enabled<type>::get() && is_running<Tp, true>{}(obj))
         {
-            set_stopped<Tp>{}(obj);
             return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
         }
         return RetT{};
@@ -84,6 +83,7 @@ private:
     auto do_sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(obj.stop(std::forward<Args>(args)...))
     {
+        set_stopped<Tp>{}(obj);
         return obj.stop(std::forward<Args>(args)...);
     }
 
@@ -91,6 +91,7 @@ private:
     template <typename Up, typename... Args>
     auto do_sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.stop())
     {
+        set_stopped<Tp>{}(obj);
         return obj.stop();
     }
 

@@ -69,7 +69,6 @@ struct start
         using RetT = decltype(do_sfinae(obj, 0, 0, std::forward<Args>(args)...));
         if(trait::runtime_enabled<type>::get() && !is_running<Tp, false>{}(obj))
         {
-            set_started<Tp>{}(obj);
             return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
         }
         return RetT{};
@@ -84,6 +83,7 @@ private:
     auto do_sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(obj.start(std::forward<Args>(args)...))
     {
+        set_started<Tp>{}(obj);
         return obj.start(std::forward<Args>(args)...);
     }
 
@@ -91,6 +91,7 @@ private:
     template <typename Up, typename... Args>
     auto do_sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.start())
     {
+        set_started<Tp>{}(obj);
         return obj.start();
     }
 
@@ -99,6 +100,8 @@ private:
     void do_sfinae(Up&, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
+        PRINT_HERE("No support for arguments: start(%s)",
+                   tim::apply<std::string>::join(", ", demangle<Args>()...).c_str());
     }
 };
 //

@@ -44,12 +44,20 @@
     License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
     http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifdef _MSC_VER
-#    define CEREAL_DLL_EXPORT __declspec(dllexport)
-#    define CEREAL_USED
-#else  // clang or gcc
-#    define CEREAL_DLL_EXPORT __attribute__((visibility("default")))
-#    define CEREAL_USED __attribute__((__used__))
+#if !defined(CEREAL_DLL_EXPORT)
+#    ifdef _MSC_VER
+#        define CEREAL_DLL_EXPORT __declspec(dllexport)
+#    else  // clang or gcc
+#        define CEREAL_DLL_EXPORT __attribute__((visibility("default")))
+#    endif
+#endif
+
+#if !defined(CEREAL_USED)
+#    ifdef _MSC_VER
+#        define CEREAL_USED
+#    else  // clang or gcc
+#        define CEREAL_USED __attribute__((__used__))
+#    endif
 #endif
 
 namespace cereal
