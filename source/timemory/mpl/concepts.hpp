@@ -59,7 +59,17 @@
 // constexpr operator bool() const noexcept { return value; }
 
 //--------------------------------------------------------------------------------------//
-
+namespace cereal
+{
+namespace detail
+{
+//
+class OutputArchiveBase;
+class InputArchiveBase;
+//
+}  // namespace detail
+}  // namespace cereal
+//
 namespace tim
 {
 //
@@ -68,11 +78,16 @@ using false_type = std::false_type;
 //
 struct null_type;
 //
+struct quirk_type;
+//
 namespace trait
 {
 template <typename Tp>
 struct is_available;
-}
+//
+template <typename Tp>
+struct is_component;
+}  // namespace trait
 //
 namespace
 {
@@ -104,7 +119,10 @@ struct nothing;
 namespace concepts
 {
 //
-//----------------------------------------------------------------------------------//
+using input_archive_base  = cereal::detail::InputArchiveBase;
+using output_archive_base = cereal::detail::OutputArchiveBase;
+//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_empty
 /// \brief concept that specifies that a variadic type is empty
 ///
@@ -114,7 +132,7 @@ template <template <typename...> class Tuple>
 struct is_empty<Tuple<>> : true_type
 {};
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_null_type
 /// \brief concept that specifies that a type is not a useful type
 ///
@@ -136,7 +154,7 @@ template <>
 struct is_null_type<::tim::null_type> : true_type
 {};
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_placeholder
 /// \brief concept that specifies that a type is not necessarily marked as not available
 /// but is still a dummy type
@@ -155,88 +173,137 @@ template <>
 struct is_placeholder<component::nothing> : true_type
 {};
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_component
+/// \brief concept that specifies that a type is a component. Components are used to
+/// perform some measurement, capability, or logging implementation. Adding this
+/// concept can be performs through inheriting from \ref tim::component::base,
+/// inheriting from tim::concepts::component, or specializing either \ref
+/// tim::concepts::is_component or \ref tim::trait::is_component (with the latter
+/// being deprecated).
+///
+struct component
+{};
+//
+template <typename Tp>
+struct is_component
+{
+private:
+    /// did not inherit
+    template <typename, typename = std::true_type>
+    struct have : std::false_type
+    {};
+
+    /// did inherit
+    template <typename U>
+    struct have<U, typename std::is_base_of<typename U::component, U>::type>
+    : std::true_type
+    {};
+
+    /// this uses sfinae to see if U::is_component is provided within the type
+    template <typename U>
+    static constexpr decltype(U::is_component, bool{}) test(int)
+    {
+        return U::is_component;
+    }
+
+    /// this checks for the (deprecated) `tim::trait::is_component` specialization
+    /// and checks for inheritance
+    template <typename Up>
+    static constexpr bool test(long)
+    {
+        return trait::is_component<Up>::value ||
+               is_component::template have<std::remove_cv_t<Tp>>::value;
+    }
+
+public:
+    static constexpr bool value = test<Tp>(int{});
+    using type                  = std::conditional_t<value, true_type, false_type>;
+};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_quirk_type
+/// \brief concept that specifies that a type is a quirk. Quirks are used to modify
+/// the traditional behavior of component bundles slightly. E.g. disable calling
+/// start in the constructor of an auto_tuple.
+///
+TIMEMORY_IMPL_IS_CONCEPT(quirk_type)
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_api
 /// \brief concept that specifies that a type is an API. APIs are used to designate
 /// different project implementations, different external library tools, etc.
 ///
 TIMEMORY_IMPL_IS_CONCEPT(api)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_variadic
 /// \brief concept that specifies that a type is a generic variadic wrapper
 ///
 TIMEMORY_IMPL_IS_CONCEPT(variadic)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 ///
 TIMEMORY_IMPL_IS_CONCEPT(wrapper)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_stack_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// and components are stack-allocated
 ///
 TIMEMORY_IMPL_IS_CONCEPT(stack_wrapper)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_heap_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// and components are heap-allocated
 ///
 TIMEMORY_IMPL_IS_CONCEPT(heap_wrapper)
 
-//----------------------------------------------------------------------------------//
-/// \struct tim::concepts::is_hybrid_wrapper
-/// \brief concept that specifies that a type is a timemory variadic wrapper
-/// and components are stack- and heap- allocated
-///
-TIMEMORY_IMPL_IS_CONCEPT(hybrid_wrapper)
-
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_mixed_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// and variadic types are mix of stack- and heap- allocated
 ///
 TIMEMORY_IMPL_IS_CONCEPT(mixed_wrapper)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_tagged
 /// \brief concept that specifies that a type's template parameters include
 /// a API specific tag as one of the template parameters (usually first)
 ///
 TIMEMORY_IMPL_IS_CONCEPT(tagged)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_comp_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// that does not perform auto start/stop, e.g. component_{tuple,list,hybrid}
 ///
 TIMEMORY_IMPL_IS_CONCEPT(comp_wrapper)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_auto_wrapper
 /// \brief concept that specifies that a type is a timemory variadic wrapper
 /// that performs auto start/stop, e.g. auto_{tuple,list,hybrid}
 ///
 TIMEMORY_IMPL_IS_CONCEPT(auto_wrapper)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_runtime_configurable
 /// \brief concept that specifies that a component type supports configurating the
 /// set of components that it collects at runtime (e.g. user_bundle)
 ///
 TIMEMORY_IMPL_IS_CONCEPT(runtime_configurable)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_external_function_wrapper
 /// \brief concept that specifies that a component type wraps external functions
 ///
 TIMEMORY_IMPL_IS_CONCEPT(external_function_wrapper)
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::has_gotcha
 /// \brief determines if a variadic wrapper contains a gotcha component
 ///
@@ -244,7 +311,7 @@ template <typename T>
 struct has_gotcha : std::false_type
 {};
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::has_user_bundle
 /// \brief concept that specifies that a type is a user_bundle type
 ///
@@ -252,101 +319,77 @@ template <typename T>
 struct has_user_bundle : false_type
 {};
 
-//----------------------------------------------------------------------------------//
-/// \struct tim::concepts::bool_int
-/// \brief converts a boolean to an integer
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_output_archive
+/// \brief concept that specifies that a type is an output serialization archive
 ///
-template <bool B, typename T = int>
-struct bool_int
+template <typename Tp>
+struct is_output_archive
 {
-    static constexpr T value = (B) ? 1 : 0;
+private:
+    /// did not inherit
+    template <typename, typename = std::true_type>
+    struct have : std::false_type
+    {};
+
+    /// did inherit
+    template <typename U>
+    struct have<U, typename std::is_base_of<output_archive_base, U>::type>
+    : std::true_type
+    {};
+
+public:
+    static constexpr bool value =
+        is_output_archive::template have<std::remove_cv_t<Tp>>::value;
+    using type = std::conditional_t<value, true_type, false_type>;
 };
 
-//----------------------------------------------------------------------------------//
-/// \struct tim::concepts::sum_bool_int
-/// \brief counts a series of booleans
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_input_archive
+/// \brief concept that specifies that a type is an input serialization archive
 ///
-template <bool... B>
-struct sum_bool_int;
-
-template <>
-struct sum_bool_int<>
+template <typename Tp>
+struct is_input_archive
 {
-    using value_type                  = int;
-    static constexpr value_type value = 0;
+private:
+    /// did not inherit
+    template <typename, typename = std::true_type>
+    struct have : std::false_type
+    {};
+
+    /// did inherit
+    template <typename U>
+    struct have<U, typename std::is_base_of<input_archive_base, U>::type> : std::true_type
+    {};
+
+public:
+    static constexpr bool value =
+        is_input_archive::template have<std::remove_cv_t<Tp>>::value;
+    using type = std::conditional_t<value, true_type, false_type>;
 };
 
-template <bool B>
-struct sum_bool_int<B>
-{
-    using value_type                  = int;
-    static constexpr value_type value = bool_int<B>::value;
-};
-
-template <bool B, bool... BoolTail>
-struct sum_bool_int<B, BoolTail...>
-{
-    using value_type = int;
-    static constexpr value_type value =
-        bool_int<B>::value + sum_bool_int<BoolTail...>::value;
-};
-
-//----------------------------------------------------------------------------------//
-/// \struct tim::concepts::compatible_wrappers
-/// \brief determines whether variadic structures are compatible
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_archive
+/// \brief concept that specifies that a type is a serialization archive (input or output)
 ///
-template <typename Lhs, typename Rhs>
-struct compatible_wrappers
+template <typename Tp>
+struct is_archive
 {
-    static constexpr int variadic_count = (bool_int<is_variadic<Lhs>::value>::value +
-                                           bool_int<is_variadic<Rhs>::value>::value);
-    static constexpr int wrapper_count  = (bool_int<is_wrapper<Lhs>::value>::value +
-                                          bool_int<is_wrapper<Rhs>::value>::value);
-    static constexpr int heap_count     = (bool_int<is_heap_wrapper<Lhs>::value>::value +
-                                       bool_int<is_heap_wrapper<Rhs>::value>::value);
-    static constexpr int stack_count    = (bool_int<is_stack_wrapper<Lhs>::value>::value +
-                                        bool_int<is_stack_wrapper<Rhs>::value>::value);
-    static constexpr int hybrid_count = (bool_int<is_hybrid_wrapper<Lhs>::value>::value +
-                                         bool_int<is_hybrid_wrapper<Rhs>::value>::value);
-
-    //  valid configs:
-    //
-    //      1. both heap/stack/hybrid
-    //      2. hybrid + stack or heap wrapper
-    //      3. wrapper + variadic
-    //
-    //  invalid configs:
-    //
-    //      1. hybrid + non-wrapper variadic
-    //      2. one stack + one heap
-    //      3. zero variadic
-    //      4. variadic and zero wrappers
-    //
-
-    static constexpr bool valid_1 =
-        (hybrid_count == 2 || stack_count == 2 || heap_count == 2);
-    static constexpr bool valid_2 =
-        (hybrid_count == 1 && (stack_count + heap_count) == 1);
-    static constexpr bool valid_3 = (wrapper_count == 1 && variadic_count == 2);
-
-    static constexpr bool invalid_1 = (hybrid_count == 1 && wrapper_count == 1);
-    static constexpr bool invalid_2 =
-        (hybrid_count == 1 && (stack_count + heap_count) == 1);
-    static constexpr bool invalid_3 = (variadic_count == 0);
-    static constexpr bool invalid_4 = (variadic_count == 2 && wrapper_count == 0);
-
-    using value_type = bool;
-
-    static constexpr bool value = (!invalid_1 && !invalid_2 && !invalid_3 && !invalid_4 &&
-                                   (valid_1 || valid_2 || valid_3))
-                                      ? true
-                                      : false;
-
-    using type = std::conditional_t<(value), true_type, false_type>;
+    static constexpr bool value =
+        is_input_archive<Tp>::value || is_output_archive<Tp>::value;
+    using type = std::conditional_t<value, true_type, false_type>;
 };
 
-//----------------------------------------------------------------------------------//
-
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_acceptable_conversion
+/// \tparam Lhs the provided type
+/// \tparam Rhs the target type
+///
+/// \brief This concept designates that is safe to perform a `static_cast<Lhs>(rhs)`
+/// where needed. This is primarily used in the \ref tim::component::data_tracker
+/// where `data_tracker<unsigned int, ...>` might be provided another integral type,
+/// such as `int`.
+///
 template <typename Lhs, typename Rhs>
 struct is_acceptable_conversion
 {
@@ -356,27 +399,41 @@ struct is_acceptable_conversion
          (std::is_floating_point<Lhs>::value && std::is_floating_point<Rhs>::value));
 };
 
-//----------------------------------------------------------------------------------//
-
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::tuple_type
+/// \brief This concept is used to express how to convert a given type into a
+/// `std::tuple`, e.g. `tim::component_tuple<T...>` to `std::tuple<T...>`. It
+/// is necessary for types like \ref tim::component_bundle where certain template
+/// parameters are tags.
+///
 template <typename T>
 struct tuple_type
 {
     using type = typename T::tuple_type;
 };
 
+/// \struct tim::concepts::auto_type
+/// \brief This concept is used to express how to convert a component bundler into
+/// another component bundler which performs automatic starting upon construction.
+///
 template <typename T>
 struct auto_type
 {
     using type = typename T::auto_type;
 };
 
+/// \struct tim::concepts::component_type
+/// \brief This concept is used to express how to convert a component bundler which
+/// automatically starts upon construction into a type that requires an explicit
+/// call to start.
+///
 template <typename T>
 struct component_type
 {
     using type = typename T::component_type;
 };
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace concepts
 
@@ -395,7 +452,7 @@ using is_stack_wrapper_t = typename concepts::is_stack_wrapper<T>::type;
 template <typename T>
 using is_heap_wrapper_t = typename concepts::is_heap_wrapper<T>::type;
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 

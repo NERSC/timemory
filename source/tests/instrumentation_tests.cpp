@@ -22,29 +22,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "gtest/gtest.h"
+#include "test_macros.hpp"
 
-#include <algorithm>
-#include <chrono>
-#include <condition_variable>
-#include <iostream>
-#include <mutex>
-#include <random>
-#include <thread>
-#include <vector>
+TIMEMORY_TEST_DEFAULT_MAIN
 
-static int    _argc = 0;
-static char** _argv = nullptr;
+#include "timemory/timemory.hpp"
 
-using mutex_t = std::mutex;
-using lock_t  = std::unique_lock<mutex_t>;
-
-static std::mt19937 rng;
+using bundle_t = tim::component_tuple<tim::component::wall_clock>;
 
 //--------------------------------------------------------------------------------------//
 
+auto&
+get_rng()
+{
+    static std::mt19937 rng;
+    return rng;
+}
+//
 namespace details
 {
+//
+void
+setup_rng()
+{
+    get_rng().seed(std::random_device()());
+}
 //--------------------------------------------------------------------------------------//
 //  Get the current tests name
 //
@@ -59,6 +61,7 @@ get_test_name()
 inline auto
 do_sleep(long n)
 {
+    TIMEMORY_BASIC_MARKER(bundle_t, "");
     std::this_thread::sleep_for(std::chrono::milliseconds(n));
     return n;
 }
@@ -67,6 +70,7 @@ do_sleep(long n)
 auto
 consume(long n)
 {
+    TIMEMORY_BASIC_MARKER(bundle_t, "");
     // a mutex held by one lock
     mutex_t mutex;
     // acquire lock
@@ -87,7 +91,7 @@ auto
 random_entry(const std::vector<Tp>& v)
 {
     std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
-    return v.at(dist(rng));
+    return v.at(dist(get_rng()));
 }
 
 }  // namespace details
@@ -97,7 +101,7 @@ random_entry(const std::vector<Tp>& v)
 class instrumentation_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override {}
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
 };
 
 //--------------------------------------------------------------------------------------//
@@ -116,7 +120,7 @@ TEST_F(instrumentation_tests, random_entry)
 TEST_F(instrumentation_tests, consume)
 {
     std::uniform_int_distribution<std::mt19937::result_type> dist(100, 1000);
-    auto _ret = details::consume(dist(rng));
+    auto _ret = details::consume(dist(get_rng()));
     EXPECT_TRUE(_ret >= 100);
     EXPECT_TRUE(_ret <= 1000);
 }
@@ -126,21 +130,13 @@ TEST_F(instrumentation_tests, consume)
 TEST_F(instrumentation_tests, sleep)
 {
     std::uniform_int_distribution<std::mt19937::result_type> dist(100, 1000);
-    auto _ret = details::do_sleep(dist(rng));
+    auto _ret = details::do_sleep(dist(get_rng()));
     EXPECT_TRUE(_ret >= 100);
     EXPECT_TRUE(_ret <= 1000);
 }
 
 //--------------------------------------------------------------------------------------//
 
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-    rng.seed(std::random_device()());
-    return RUN_ALL_TESTS();
-}
+static bool _setup = (details::setup_rng(), true);
 
 //--------------------------------------------------------------------------------------//

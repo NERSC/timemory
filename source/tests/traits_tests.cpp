@@ -22,7 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "gtest/gtest.h"
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
 
 #include <chrono>
 #include <condition_variable>
@@ -33,12 +35,11 @@
 #include <vector>
 
 #include "timemory/timemory.hpp"
-
-static int    _argc = 0;
-static char** _argv = nullptr;
-
-using mutex_t = std::mutex;
-using lock_t  = std::unique_lock<mutex_t>;
+#include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/tpls/cereal/cereal/archives/binary.hpp"
+#include "timemory/tpls/cereal/cereal/archives/json.hpp"
+#include "timemory/tpls/cereal/cereal/archives/portable_binary.hpp"
+#include "timemory/tpls/cereal/cereal/archives/xml.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -103,23 +104,7 @@ random_entry(const std::vector<Tp>& v)
 class traits_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
-    {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                   = true;
-            tim::settings::verbose()     = 0;
-            tim::settings::debug()       = false;
-            tim::settings::file_output() = false;
-            tim::settings::mpi_thread()  = false;
-            tim::mpi::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
-        }
-    }
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
 };
 
 //--------------------------------------------------------------------------------------//
@@ -395,30 +380,143 @@ TEST_F(traits_tests, sizeof)
     auto temp_u64_test = TYPE_TEST(template_component<uint64_t>);
     auto var_test      = TYPE_TEST(variadic_component<double, 1, 3>);
 
-    EXPECT_EQ(void_test, 16);
-    EXPECT_EQ(int_test, 64);
-    EXPECT_EQ(temp_i32_test, 56);
-    EXPECT_EQ(temp_i64_test, 72);
-    EXPECT_EQ(temp_u64_test, 80);
-    EXPECT_EQ(array_test, 80);
-    EXPECT_EQ(var_test, 112);
+    EXPECT_EQ(void_test, 3);
+    EXPECT_EQ(int_test, 56);
+    EXPECT_EQ(temp_i32_test, 48);
+    EXPECT_EQ(temp_i64_test, 64);
+    EXPECT_EQ(temp_u64_test, 72);
+    EXPECT_EQ(array_test, 72);
+    EXPECT_EQ(var_test, 104);
 #undef TYPE_TEST
 }
 
 //--------------------------------------------------------------------------------------//
 
-int
-main(int argc, char** argv)
+template <template <typename> class Predicate, typename... Types>
+struct validate
 {
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
+    using tuple_type = std::tuple<Types...>;
 
-    auto ret = RUN_ALL_TESTS();
+    explicit validate(bool val) { (*this)(val, std::index_sequence_for<Types...>{}); }
 
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
+    template <size_t Idx, size_t... Tail, enable_if_t<sizeof...(Tail) == 0> = 0>
+    auto operator()(bool expected, std::index_sequence<Idx, Tail...>)
+    {
+        using type  = typename std::tuple_element<Idx, tuple_type>::type;
+        bool result = Predicate<type>::value;
+        EXPECT_TRUE(result == expected) << "    " << tim::demangle<Predicate<type>>()
+                                        << " != " << std::boolalpha << expected;
+        if(tim::settings::verbose() > 0 && result == expected)
+        {
+            std::cout << "[" << details::get_test_name() << "]> "
+                      << tim::demangle<Predicate<type>>()
+                      << "::value == " << std::boolalpha << expected << '\n';
+        }
+    }
+
+    template <size_t Idx, size_t... Tail, enable_if_t<(sizeof...(Tail) > 0)> = 0>
+    auto operator()(bool val, std::index_sequence<Idx, Tail...>)
+    {
+        (*this)(val, std::index_sequence<Idx>{});
+        (*this)(val, std::index_sequence<Tail...>{});
+    }
+};
+
+template <template <typename> class Predicate, template <typename...> class TupleT,
+          typename... Types>
+struct validate<Predicate, TupleT<Types...>> : validate<Predicate, Types...>
+{
+    explicit validate(bool val)
+    : validate<Predicate, Types...>(val)
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(traits_tests, concepts)
+{
+    using namespace tim;
+
+    auto _verbose = 1;
+    std::swap(settings::verbose(), _verbose);
+
+    using bundles =
+        type_list<component_tuple<>, component_list<>,
+                  component_bundle<project::timemory>, auto_tuple<>, auto_list<>,
+                  auto_bundle<project::timemory>, lightweight_tuple<>>;
+
+    using comp_bundles =
+        type_list<component_tuple<>, component_list<>,
+                  component_bundle<project::timemory>, lightweight_tuple<>>;
+
+    using auto_bundles =
+        type_list<auto_tuple<>, auto_list<>, auto_bundle<project::timemory>>;
+
+    using stack_bundles = type_list<component_tuple<>, auto_tuple<>, lightweight_tuple<>>;
+
+    using heap_bundles = type_list<component_list<>, auto_list<>>;
+
+    using mixed_bundles =
+        type_list<component_bundle<project::timemory>, auto_bundle<project::timemory>>;
+
+    using input_archives =
+        type_list<cereal::JSONInputArchive, cereal::XMLInputArchive,
+                  cereal::PortableBinaryInputArchive, cereal::BinaryInputArchive>;
+
+    using output_archives =
+        type_list<cereal::PrettyJSONOutputArchive, cereal::MinimalJSONOutputArchive,
+                  cereal::XMLOutputArchive, cereal::PortableBinaryOutputArchive,
+                  cereal::BinaryOutputArchive>;
+
+    using archives = tim::convert_t<output_archives, input_archives>;
+
+    static_assert((std::tuple_size<input_archives>::value +
+                   std::tuple_size<output_archives>::value) ==
+                      std::tuple_size<archives>::value,
+                  "size<input_archives> + size<output_archives> != size<archives>");
+
+    validate<trait::is_available, available_types_t>{ true };
+    puts("");
+    validate<concepts::is_component, available_types_t>{ true };
+    validate<concepts::is_component, bundles>{ false };
+    puts("");
+    validate<concepts::is_variadic, bundles>{ true };
+    puts("");
+    validate<concepts::is_wrapper, bundles>{ true };
+    validate<concepts::is_wrapper, available_types_t>{ false };
+    puts("");
+    validate<concepts::is_comp_wrapper, comp_bundles>{ true };
+    validate<concepts::is_comp_wrapper, auto_bundles>{ false };
+    puts("");
+    validate<concepts::is_auto_wrapper, comp_bundles>{ false };
+    validate<concepts::is_auto_wrapper, auto_bundles>{ true };
+    puts("");
+    validate<concepts::is_stack_wrapper, stack_bundles>{ true };
+    validate<concepts::is_stack_wrapper, heap_bundles>{ false };
+    validate<concepts::is_stack_wrapper, mixed_bundles>{ false };
+    puts("");
+    validate<concepts::is_heap_wrapper, stack_bundles>{ false };
+    validate<concepts::is_heap_wrapper, heap_bundles>{ true };
+    validate<concepts::is_heap_wrapper, mixed_bundles>{ false };
+    puts("");
+    validate<concepts::is_mixed_wrapper, stack_bundles>{ false };
+    validate<concepts::is_mixed_wrapper, heap_bundles>{ false };
+    validate<concepts::is_mixed_wrapper, mixed_bundles>{ true };
+    puts("");
+    validate<concepts::is_archive, bundles>{ false };
+    validate<concepts::is_archive, stack_bundles>{ false };
+    validate<concepts::is_archive, heap_bundles>{ false };
+    validate<concepts::is_archive, mixed_bundles>{ false };
+    validate<concepts::is_archive, available_types_t>{ false };
+    validate<concepts::is_archive, archives>{ true };
+    puts("");
+    validate<concepts::is_input_archive, input_archives>{ true };
+    validate<concepts::is_input_archive, output_archives>{ false };
+    puts("");
+    validate<concepts::is_output_archive, input_archives>{ false };
+    validate<concepts::is_output_archive, output_archives>{ true };
+
+    std::swap(settings::verbose(), _verbose);
 }
 
 //--------------------------------------------------------------------------------------//

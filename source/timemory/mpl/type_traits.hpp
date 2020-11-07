@@ -226,39 +226,6 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
-/// \struct tim::trait::record_max
-/// \brief trait that signifies that updating w.r.t. another instance should
-/// be a max of the two instances
-/// \deprecated This is no longer used. Overload the operators for +=, -=, etc. to obtain
-/// previous functionality.
-//
-template <typename T>
-struct record_max : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::array_serialization
-/// \brief trait that signifies that data is an array type
-/// \deprecated { This trait is no longer used as array types are determined by other
-/// means }
-///
-template <typename T>
-struct array_serialization : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::requires_prefix
-/// \brief trait that signifies that a component requires the prefix to be set right after
-/// construction. Types with this trait must contain a member string variable named
-/// prefix
-/// \deprecated { This trait is no longer used as this property is determined by other
-/// means }
-///
-template <typename T>
-struct requires_prefix : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::custom_label_printing
 /// \brief trait that signifies that a component will handle printing the label(s)
 ///
@@ -345,14 +312,6 @@ struct requires_json : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
-/// \struct tim::trait::is_component
-/// \brief trait that designates the type is a timemory component
-///
-template <typename T>
-struct is_component : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::api_components
 /// \brief trait that designates components in an API (tim::api)
 ///
@@ -361,24 +320,6 @@ struct api_components
 {
     using type = type_list<>;
 };
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::is_gotcha
-/// \brief trait that designates the type is a gotcha
-/// \deprecated{ This is being migrated to a concept }
-///
-template <typename T>
-struct is_gotcha : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::is_user_bundle
-/// \brief trait that designates the type is a user-bundle
-/// \deprecated{ This is being migrated to a concept }
-///
-template <typename T>
-struct is_user_bundle : false_type
-{};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::component_value_type
@@ -429,17 +370,6 @@ struct collects_data
     using type                  = component_value_type_t<T>;
     static constexpr bool value = (!concepts::is_null_type<type>::value);
 };
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::supports_args
-/// \brief trait that designates the type supports calling a function with a certain
-/// set of argument types (passed via a tuple).
-/// \deprecated This is legacy code and support for calling a function with given
-/// arguments is automatically determined.
-///
-template <typename T, typename Tuple>
-struct supports_args : false_type
-{};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::supports_custom_record
@@ -822,7 +752,8 @@ struct derivation_types : false_type
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::python_args
 /// \brief trait that designates the type supports these arguments from python.
-/// Specializations MUST be structured as a tim::type_list<...> of tim::type_list<...>.
+/// Specializations MUST be structured as either one `tim::type_list<...>` or
+/// a `tim::type_list<...>` of `tim::type_list<...>`.
 /// The first argument is a \ref TIMEMORY_OPERATION enumerated type and for each
 /// inner \ref tim::type_list, a python member function for the stand-alone component
 /// will be generated with those arguments. E.g. to create a custom store member function
@@ -992,6 +923,77 @@ struct uses_value_storage<T, null_type, A>
 template <typename T, typename A>
 struct uses_value_storage<T, type_list<>, A>
 : uses_value_storage<T, type_list<>, conditional_t<A::value, true_type, false_type>>
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::is_component
+/// \brief trait that designates the type is a timemory component
+/// \deprecated{ This has been migrated to `tim::concepts` }
+///
+template <typename T>
+struct is_component : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::is_gotcha
+/// \brief trait that designates the type is a gotcha
+/// \deprecated{ This has been migrated to `tim::concepts` }
+///
+template <typename T>
+struct is_gotcha : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::is_user_bundle
+/// \brief trait that designates the type is a user-bundle
+/// \deprecated{ This has been migrated to `tim::concepts` }
+///
+template <typename T>
+struct is_user_bundle : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::record_max
+/// \brief trait that signifies that updating w.r.t. another instance should
+/// be a max of the two instances
+/// \deprecated This is no longer used. Overload the operators for +=, -=, etc. to obtain
+/// previous functionality.
+//
+template <typename T>
+struct record_max : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::array_serialization
+/// \brief trait that signifies that data is an array type
+/// \deprecated { This trait is no longer used as array types are determined by other
+/// means }
+///
+template <typename T>
+struct array_serialization : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::requires_prefix
+/// \brief trait that signifies that a component requires the prefix to be set right after
+/// construction. Types with this trait must contain a member string variable named
+/// prefix
+/// \deprecated { This trait is no longer used as this property is determined by other
+/// means }
+///
+template <typename T>
+struct requires_prefix : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::supports_args
+/// \brief trait that designates the type supports calling a function with a certain
+/// set of argument types (passed via a tuple).
+/// \deprecated This is legacy code and support for calling a function with given
+/// arguments is automatically determined.
+///
+template <typename T, typename Tuple>
+struct supports_args : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
