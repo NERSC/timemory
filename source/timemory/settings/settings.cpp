@@ -487,13 +487,6 @@ settings::initialize_components()
         "trace_components specification. Priority: COMPONENTS -> GLOBAL_COMPONENTS",
         "", strvector_t({ "--timemory-profiler-components" }));
 
-    TIMEMORY_SETTINGS_MEMBER_IMPL(
-        string_t, compiler_components, "TIMEMORY_COMPILER_COMPONENTS",
-        "A specification of components which will be used by the compiler "
-        "instrumentation. Priority: TRACE_COMPONENTS -> PROFILER_COMPONENTS -> "
-        "COMPONENTS -> GLOBAL_COMPONENTS",
-        "");
-
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, kokkos_components, "TIMEMORY_KOKKOS_COMPONENTS",
         "A specification of components which will be used by the interfaces which are "
