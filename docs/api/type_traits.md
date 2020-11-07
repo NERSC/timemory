@@ -34,15 +34,6 @@ user code.
 ## Type Identification
 
 ```eval_rst
-.. doxygenstruct:: tim::trait::is_component
-   :members:
-   :undoc-members:
-.. doxygenstruct:: tim::trait::is_gotcha
-   :members:
-   :undoc-members:
-.. doxygenstruct:: tim::trait::is_user_bundle
-   :members:
-   :undoc-members:
 ```
 
 ## Base Class Modifications
@@ -52,6 +43,9 @@ user code.
    :members:
    :undoc-members:
 .. doxygenstruct:: tim::trait::base_has_last
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::dynamic_base
    :members:
    :undoc-members:
 ```
@@ -76,9 +70,6 @@ user code.
 .. doxygenstruct:: tim::trait::file_sampler
    :members:
    :undoc-members:
-.. doxygenstruct:: tim::trait::requires_prefix
-   :members:
-   :undoc-members:
 ```
 
 ## Feature Support
@@ -88,9 +79,6 @@ user code.
    :members:
    :undoc-members:
 .. doxygenstruct:: tim::trait::supports_flamegraph
-   :members:
-   :undoc-members:
-.. doxygenstruct:: tim::trait::supports_args
    :members:
    :undoc-members:
 ```
@@ -114,9 +102,6 @@ user code.
    :members:
    :undoc-members:
 .. doxygenstruct:: tim::trait::requires_json
-   :members:
-   :undoc-members:
-.. doxygenstruct:: tim::trait::array_serialization
    :members:
    :undoc-members:
 ```
@@ -147,6 +132,15 @@ user code.
 ## Output Reporting
 
 ```eval_rst
+.. doxygenstruct:: tim::trait::report
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::report_count
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::report_depth
+   :members:
+   :undoc-members:
 .. doxygenstruct:: tim::trait::report_metric_name
    :members:
    :undoc-members:
@@ -199,6 +193,21 @@ user code.
 ## Storage
 
 ```eval_rst
+.. doxygenstruct:: tim::trait::uses_storage
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::uses_value_storage
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::tree_storage
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::flat_storage
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::timeline_storage
+   :members:
+   :undoc-members:
 .. doxygenstruct:: tim::trait::thread_scope_only
    :members:
    :undoc-members:
@@ -208,13 +217,42 @@ user code.
 .. doxygenstruct:: tim::trait::secondary_data
    :members:
    :undoc-members:
-.. doxygenstruct:: tim::trait::flat_storage
-   :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::collects_data
    :members:
    :undoc-members:
 .. doxygenstruct:: tim::trait::generates_output
+   :members:
+   :undoc-members:
+```
+
+## Deprecated
+
+These type-traits are either:
+
+- Removed from the source code entirely
+- Automatically detected
+- Migrated to concepts
+
+```eval_rst
+.. doxygenstruct:: tim::trait::is_component
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::is_gotcha
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::is_user_bundle
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::record_max
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::array_serialization
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::requires_prefix
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::trait::supports_args
    :members:
    :undoc-members:
 ```

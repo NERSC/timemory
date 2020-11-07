@@ -59,6 +59,13 @@ namespace component
 //              gpu_roofline<double>
 //
 //
+/// \struct tim::component::gpu_roofline
+/// \tparam Types Variadic list of data types for roofline analysis
+///
+/// \brief Combines hardware counters and timers and executes the empirical roofline
+/// toolkit during application termination to estimate the peak possible performance for
+/// the machine
+///
 template <typename... Types>
 struct gpu_roofline
 : public base<gpu_roofline<Types...>, std::tuple<typename cupti_activity::value_type,

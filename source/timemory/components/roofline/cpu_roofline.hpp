@@ -61,6 +61,13 @@ namespace component
 //  generic:
 //              cpu_roofline<T, ...>
 //
+/// \struct tim::component::cpu_roofline
+/// \tparam Types Variadic list of data types for roofline analysis
+///
+/// \brief Combines hardware counters and timers and executes the empirical roofline
+/// toolkit during application termination to estimate the peak possible performance for
+/// the machine
+///
 template <typename... Types>
 struct cpu_roofline
 : public base<cpu_roofline<Types...>, std::pair<std::vector<long long>, double>>
