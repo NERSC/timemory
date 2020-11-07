@@ -27,12 +27,18 @@
 
 #pragma once
 
+#include <cstddef>
+
 namespace tim
 {
 //
 //--------------------------------------------------------------------------------------//
 //
 class source_location;
+//
+template <size_t, size_t, typename... Args>
+static inline auto&
+get_static_source_location(Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -51,8 +57,9 @@ class source_location;
 #    define TIMEMORY_CAPTURE_ARGS(...) _AUTO_LOCATION(__LINE__).get_captured(__VA_ARGS__)
 
 #    define TIMEMORY_INLINE_SOURCE_LOCATION(MODE, ...)                                   \
-        ::tim::source_location::get_captured_inline(                                     \
-            TIMEMORY_CAPTURE_MODE(MODE), __FUNCTION__, __LINE__, __FILE__, __VA_ARGS__)
+        ::tim::get_static_source_location<__LINE__, __COUNTER__>(                        \
+            TIMEMORY_CAPTURE_MODE(MODE), __FUNCTION__, __LINE__, __FILE__, __VA_ARGS__)  \
+            .get_captured(__VA_ARGS__)
 
 #    define _TIM_STATIC_SRC_LOCATION(MODE, ...)                                          \
         static thread_local auto _AUTO_LOCATION(__LINE__) =                              \
