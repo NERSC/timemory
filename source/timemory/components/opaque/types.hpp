@@ -24,5 +24,115 @@
 
 #pragma once
 
-#include "timemory/components/opaque/declaration.hpp"
-#include "timemory/components/opaque/definition.hpp"
+#include <cstdint>
+#include <functional>
+#include <set>
+#include <string>
+
+namespace tim
+{
+//
+namespace scope
+{
+struct config;
+}
+//
+namespace component
+{
+//
+struct opaque
+{
+    using string_t = std::string;
+
+    using init_func_t   = std::function<void()>;
+    using setup_func_t  = std::function<void*(void*, const string_t&, scope::config)>;
+    using push_func_t   = std::function<void(void*&, const string_t&, scope::config)>;
+    using start_func_t  = std::function<void(void*)>;
+    using stop_func_t   = std::function<void(void*)>;
+    using pop_func_t    = std::function<void(void*)>;
+    using get_func_t    = std::function<void(void*, void*&, size_t)>;
+    using delete_func_t = std::function<void(void*)>;
+
+    template <typename InitF, typename StartF, typename StopF, typename GetF,
+              typename DelF, typename SetupF, typename PushF, typename PopF>
+    opaque(bool _valid, size_t _typeid, InitF&& _init, StartF&& _start, StopF&& _stop,
+           GetF&& _get, DelF&& _del, SetupF&& _setup, PushF&& _push, PopF&& _pop);
+    ~opaque();
+    opaque()              = default;
+    opaque(const opaque&) = default;
+    opaque(opaque&&)      = default;
+    opaque& operator=(const opaque&) = default;
+    opaque& operator=(opaque&&) = default;
+
+    operator bool() const { return m_valid; }
+
+    void init();
+    void setup(const string_t& _prefix, scope::config _scope);
+    void push(const string_t& _prefix, scope::config _scope);
+    void start();
+    void stop();
+    void pop();
+    void cleanup();
+    void get(void*& ptr, size_t _hash) const;
+    void set_copy(bool val);
+
+    bool          m_valid  = false;
+    bool          m_copy   = false;
+    size_t        m_typeid = 0;
+    void*         m_data   = nullptr;
+    init_func_t   m_init   = []() {};
+    setup_func_t  m_setup = [](void*, const string_t&, scope::config) { return nullptr; };
+    push_func_t   m_push  = [](void*&, const string_t&, scope::config) {};
+    start_func_t  m_start = [](void*) {};
+    stop_func_t   m_stop  = [](void*) {};
+    pop_func_t    m_pop   = [](void*) {};
+    get_func_t    m_get   = [](void*, void*&, size_t) {};
+    delete_func_t m_del   = [](void*) {};
+};
+//
+template <typename Toolset>
+opaque
+get_opaque();
+//
+template <typename Toolset>
+opaque
+get_opaque(bool _flat);  // DEPRECATED
+//
+template <typename Toolset>
+opaque
+get_opaque(scope::config _scope);
+//
+template <typename Toolset, typename Arg, typename... Args>
+opaque
+get_opaque(Arg&& arg, Args&&... args);
+//
+template <typename Toolset>
+std::set<size_t>
+get_typeids();
+//
+namespace factory
+{
+//
+template <typename Toolset, typename Arg, typename... Args>
+opaque
+get_opaque(Arg&& arg, Args&&... args);
+//
+template <typename Toolset>
+opaque
+get_opaque();
+//
+template <typename Toolset>
+opaque
+get_opaque(scope::config _scope);
+//
+template <typename Toolset>
+opaque
+get_opaque(bool _flat);
+//
+template <typename Toolset>
+std::set<size_t>
+get_typeids();
+//
+}  // namespace factory
+}  // namespace component
+}  // namespace tim

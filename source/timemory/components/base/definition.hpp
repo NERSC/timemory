@@ -30,6 +30,7 @@
 #include "timemory/components/metadata.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/operations/types/record.hpp"
 #include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"
@@ -76,39 +77,26 @@ base<Tp, Value>::measure()
 {
     is_transient                = false;
     Type*                   obj = static_cast<Type*>(this);
-    operation::record<Type> m(*obj);
+    operation::record<Type> m{ *obj };
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
 void
-base<Tp, Value>::get(void*& ptr, size_t typeid_hash) const
+base<Tp, Value>::get(void*& ptr, size_t _typeid_hash) const
 {
-    static size_t this_typeid_hash = std::hash<std::string>()(demangle<Type>());
-    if(!ptr && typeid_hash == this_typeid_hash)
+    if(!ptr && _typeid_hash == typeid_hash<Tp>())
         ptr = reinterpret_cast<void*>(const_cast<base_type*>(this));
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-/*template <typename Tp, typename Value>
-bool
-base<Tp, Value>::get(void*& ptr, std::type_index type_idx) const
-{
-    if(!ptr && type_idx == std::type_index(typeid(Tp)))
-        return ((ptr = reinterpret_cast<void*>(const_cast<base_type*>(this))), true);
-    return false;
-}*/
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename Tp, typename Value>
 void
-base<Tp, Value>::get_opaque_data(void*& ptr, size_t typeid_hash) const
+base<Tp, Value>::get_opaque_data(void*& ptr, size_t _typeid_hash) const
 {
-    static size_t this_typeid_hash = std::hash<std::string>()(demangle<Type>());
-    if(!ptr && typeid_hash == this_typeid_hash)
+    if(!ptr && _typeid_hash == typeid_hash<Tp>())
     {
         auto _data      = static_cast<const Tp*>(this)->get();
         using data_type = decay_t<decltype(_data)>;
@@ -204,7 +192,7 @@ base<Tp, Value>::get_format_flags()
 {
     static std::ios_base::fmtflags _instance = Type::format_flags;
 
-    auto _set_scientific = [&]() {
+    auto _set_scientific = []() {
         _instance &= (std::ios_base::fixed & std::ios_base::scientific);
         _instance |= (std::ios_base::scientific);
     };
@@ -253,15 +241,6 @@ base<Tp, Value>::get_description()
 {
     static std::string _instance = Type::description();
     return _instance;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-typename base<Tp, Value>::dynamic_type*
-base<Tp, Value>::create() const
-{
-    return static_cast<dynamic_type*>(new Type{});
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -496,10 +475,9 @@ base<Tp, void>::set_stopped()
 //
 template <typename Tp>
 void
-base<Tp, void>::get(void*& ptr, size_t typeid_hash) const
+base<Tp, void>::get(void*& ptr, size_t _typeid_hash) const
 {
-    static size_t this_typeid_hash = std::hash<std::string>()(demangle<Type>());
-    if(!ptr && typeid_hash == this_typeid_hash)
+    if(!ptr && _typeid_hash == typeid_hash<Tp>())
         ptr = reinterpret_cast<void*>(const_cast<base_type*>(this));
 }
 //
@@ -546,15 +524,6 @@ base<Tp, void>::get_description()
 {
     static std::string _instance = Type::description();
     return _instance;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-typename base<Tp, void>::dynamic_type*
-base<Tp, void>::create() const
-{
-    return static_cast<dynamic_type*>(new Type{});
 }
 //
 //--------------------------------------------------------------------------------------//

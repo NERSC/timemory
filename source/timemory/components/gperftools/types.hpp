@@ -59,23 +59,33 @@ TIMEMORY_SET_COMPONENT_API(component::gperftools_heap_profiler, tpls::gperftools
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_USE_GPERFTOOLS)
+#if defined(TIMEMORY_COMPILER_INSTRUMENTATION)
+//
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::gperftools, false_type)
-#endif
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperftools_heap_profiler,
+                               false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperftools_cpu_profiler,
+                               false_type)
+//
+#else
+#    if !defined(TIMEMORY_USE_GPERFTOOLS)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::gperftools, false_type)
+#    endif
 //
 //      GPERF and gperftools_heap_profiler
 //
-#if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
+#    if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperftools_heap_profiler,
                                false_type)
-#endif
+#    endif
 //
 //
 //      GPERF AND gperftools_cpu_profiler
 //
-#if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
+#    if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperftools_cpu_profiler,
                                false_type)
+#    endif
 #endif
 //
 //--------------------------------------------------------------------------------------//
