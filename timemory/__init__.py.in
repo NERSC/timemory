@@ -184,6 +184,7 @@ else:
             # cuda,
             component,
             # hardware_counters,
+            manager,
             # profiler,
             # trace,
             # units,
@@ -226,6 +227,7 @@ else:
         sys.modules["timemory.trace"] = trace
         sys.modules["timemory.api"] = api
         sys.modules["timemory.hardware_counters"] = hardware_counters
+        sys.modules["timemory.manager"] = manager
         sys.modules["timemory.settings"] = settings
 
         init = initialize

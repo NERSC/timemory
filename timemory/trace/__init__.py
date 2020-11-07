@@ -44,6 +44,11 @@ throttling. Also, provides the timemory Python tracer
 try:
     from .tracer import Tracer, FakeTracer
     from ..libpytimemory.trace import (
+        init,
+        finalize,
+        is_throttled,
+        push,
+        pop,
         tracer_function,
         tracer_init,
         tracer_finalize,
@@ -51,6 +56,7 @@ try:
     from ..libpytimemory.trace import config as Config
     from ..libpytimemory.trace import trace_bundle as TraceBundle
 
+    config = Config
     trace = Tracer
     notrace = FakeTracer
 
@@ -59,9 +65,15 @@ try:
         "Config",
         "TraceBundle",
         "FakeTracer",
+        "init",
+        "finalize",
+        "is_throttled",
+        "push",
+        "pop",
         "tracer_function",
         "tracer_init",
         "tracer_finalize",
+        "config",
         "trace",
         "notrace",
     ]

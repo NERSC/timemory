@@ -49,6 +49,7 @@ try:
     from ..libpytimemory.profiler import config as Config
     from ..libpytimemory.profiler import profiler_bundle as ProfilerBundle
 
+    config = Config
     profile = Profiler
     noprofile = FakeProfiler
 
@@ -60,6 +61,7 @@ try:
         "profiler_function",
         "profiler_init",
         "profiler_finalize",
+        "config",
         "profile",
         "noprofile",
     ]
