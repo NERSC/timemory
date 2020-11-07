@@ -4,21 +4,48 @@
 # include guard
 include_guard(DIRECTORY)
 
+# Stops lookup as soon as a version satisfying version constraints is founded.
+set(Python3_FIND_STRATEGY "LOCATION")
+
+# virtual environment is used before any other standard paths to look-up for the interpreter
+set(Python3_FIND_VIRTUALENV "FIRST")
+
+# PyPy does not support embedding the interpreter
+set(Python3_FIND_IMPLEMENTATIONS "CPython")
+
 # display version
 add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory" DOC)
 
+# search hint
+if(PYTHON_ROOT_DIR AND NOT Python3_ROOT_DIR)
+    set(Python3_ROOT_DIR ${PYTHON_ROOT_DIR})
+endif()
+
+# legacy specification of interpreter
+if(PYTHON_EXECUTABLE AND NOT Python3_EXECUTABLE)
+    set(Python3_EXECUTABLE "${PYTHON_EXECUTABLE}" CACHE FILEPATH
+        "Path to Python3 interpreter")
+endif()
+
+# default python types to search for
 set(Python_ADDITIONAL_VERSIONS "3.9;3.8;3.7;3.6" CACHE STRING 
     "Python versions supported by timemory")
 
+# override types to search for
+if(TIMEMORY_PYTHON_VERSION)
+    set(Python_ADDITIONAL_VERSIONS ${TIMEMORY_PYTHON_VERSION} CACHE STRING
+        "Python versions supported by timemory" FORCE)
+elseif(PYBIND11_PYTHON_VERSION)
+    set(Python_ADDITIONAL_VERSIONS ${PYBIND11_PYTHON_VERSION} CACHE STRING
+        "Python versions supported by timemory")
+endif()
+
 # unset the version strings
-if(TIMEMORY_PYTHON_VERSION VERSION_LESS 3.6)
+if(_PYVERSION_LAST
+        AND (TIMEMORY_PYTHON_VERSION VERSION_LESS _PYVERSION_LAST
+            OR TIMEMORY_PYTHON_VERSION VERSION_GREATER _PYVERSION_LAST))
     unset(TIMEMORY_PYTHON_VERSION CACHE)
     unset(PYBIND11_PYTHON_VERSION CACHE)
-    unset(timemory_PYTHON_VERSION_MAJOR CACHE)
-    unset(timemory_PYTHON_VERSION_MINOR CACHE)
-    unset(PYTHON_VERSION_MAJOR CACHE)
-    unset(PYTHON_VERSION_MINOR CACHE)
-    unset(PYTHON_VERSION CACHE)
     unset(CMAKE_INSTALL_PYTHONDIR CACHE)
 endif()
 
@@ -30,12 +57,9 @@ if("${_PYVERSION}" STREQUAL "" AND PYBIND11_PYTHON_VERSION)
     set(_PYVERSION ${PYBIND11_PYTHON_VERSION})
 endif()
 
-# if python version was specifed, do exact match
-if(_PYVERSION)
-    find_package(PythonInterp "${_PYVERSION}" ${TIMEMORY_FIND_REQUIREMENT})
-else()
-    find_package(PythonInterp 3.6 ${TIMEMORY_FIND_REQUIREMENT})
-endif()
+# basically just used to get Python3_SITEARCH for installation
+find_package(Python3 ${_PYVERSION} ${TIMEMORY_FIND_REQUIREMENT}
+    COMPONENTS Interpreter Development)
 
 # set TIMEMORY_PYTHON_VERSION if we have the python version
 if(PYTHON_VERSION_STRING)
@@ -43,15 +67,14 @@ if(PYTHON_VERSION_STRING)
         "Python version for timemory")
 endif()
 
-# make sure the library version is an exact match for the Python executable
-find_package(PythonLibs ${TIMEMORY_PYTHON_VERSION} ${TIMEMORY_FIND_REQUIREMENT})
-
 # if either not found, disable
-if(NOT PythonInterp_FOUND OR NOT PythonLibs_FOUND)
+if(NOT Python3_FOUND)
     set(TIMEMORY_USE_PYTHON OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
     inform_empty_interface(timemory-plotting "Python plotting from C++")
 else()
+    set(TIMEMORY_PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
+        CACHE STRING "Python version for timemory")
     add_feature(PYTHON_EXECUTABLE "Python executable")
     add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE)
     set(TIMEMORY_PYTHON_PLOTTER "${PYTHON_EXECUTABLE}")
@@ -74,7 +97,7 @@ else()
     endif()
 endif()
 
-set(PYBIND11_INSTALL OFF CACHE BOOL "Enable Pybind11 installation")
+option(PYBIND11_INSTALL "Enable Pybind11 installation" OFF)
 
 if(TIMEMORY_BUILD_PYTHON AND NOT TARGET pybind11)
     # checkout PyBind11 if not checked out
@@ -121,50 +144,38 @@ elseif(SPACK_BUILD)
         lib/python${PYBIND11_PYTHON_VERSION}/site-packages
         CACHE PATH "Installation directory for python")
 else()
-    # make sure Python3 finds the same exe and library
-    SET(Python3_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE FILEPATH "Path to Python3 interpreter" FORCE)
-    SET(Python3_LIBRARY ${PYTHON_LIBRARY} CACHE FILEPATH "Path to Python3 library" FORCE)
 
-    # basically just used to get Python3_SITEARCH for installation
-    FIND_PACKAGE(Python3 COMPONENTS Interpreter Development)
-
-    IF(Python3_FOUND)
-        SET(CMAKE_INSTALL_PYTHONDIR ${Python3_SITEARCH})
-        ADD_FEATURE(Python3_SITEARCH "site-packages directory of python installation")
-        SET(_REMOVE OFF)
-        # make the directory if it doesn't exist
-        IF(NOT EXISTS ${Python3_SITEARCH}/timemory)
-            SET(_REMOVE ON)
-            EXECUTE_PROCESS(
-                COMMAND ${CMAKE_COMMAND} -E make_directory ${Python3_SITEARCH}/timemory
-                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-        ENDIF()
-        # figure out if we can install to Python3_SITEARCH
-        EXECUTE_PROCESS(
-            COMMAND ${CMAKE_COMMAND} -E touch ${Python3_SITEARCH}/timemory/__init__.py
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-            ERROR_VARIABLE ERR_MSG
-            RESULT_VARIABLE ERR_CODE)
-        # remove the directory if we created it
-        IF(_REMOVE)
-            EXECUTE_PROCESS(
-                COMMAND ${CMAKE_COMMAND} -E remove_directory ${Python3_SITEARCH}/timemory
-                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-        ENDIF()
-        # check the error code of the touch command
-        IF(ERR_CODE)
-            # get the python directory name, e.g. 'python3.6' from
-            # '/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6'
-            get_filename_component(PYDIR "${Python3_STDLIB}" NAME)
-            ADD_FEATURE(Python3_STDLIB "standard-library directory of python installation")
-            # Should not be CMAKE_INSTALL_LIBDIR! Python won't look in a lib64 folder
-            set(CMAKE_INSTALL_PYTHONDIR lib/${PYDIR}/site-packages)
-        ENDIF()
-    ELSE()
-        SET(CMAKE_INSTALL_PYTHONDIR
-            lib/python${PYBIND11_PYTHON_VERSION}/site-packages
-            CACHE PATH "Installation directory for python")
-    ENDIF()
+    set(CMAKE_INSTALL_PYTHONDIR ${Python3_SITEARCH})
+    add_feature(Python3_SITEARCH "site-packages directory of python installation")
+    set(_REMOVE OFF)
+    # make the directory if it doesn't exist
+    if(NOT EXISTS ${Python3_SITEARCH}/timemory)
+        set(_REMOVE ON)
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${Python3_SITEARCH}/timemory
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    endif()
+    # figure out if we can install to Python3_SITEARCH
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E touch ${Python3_SITEARCH}/timemory/__init__.py
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        ERROR_VARIABLE ERR_MSG
+        RESULT_VARIABLE ERR_CODE)
+    # remove the directory if we created it
+    if(_REMOVE)
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E remove_directory ${Python3_SITEARCH}/timemory
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    endif()
+    # check the error code of the touch command
+    if(ERR_CODE)
+        # get the python directory name, e.g. 'python3.6' from
+        # '/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6'
+        get_filename_component(PYDIR "${Python3_STDLIB}" NAME)
+        ADD_FEATURE(Python3_STDLIB "standard-library directory of python installation")
+        # Should not be CMAKE_INSTALL_LIBDIR! Python won't look in a lib64 folder
+        set(CMAKE_INSTALL_PYTHONDIR lib/${PYDIR}/site-packages)
+    endif()
 endif()
 
 if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
@@ -201,3 +212,5 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/test-python-install-import.
 unset(INSTALL_PYTHONDIR)
 
 add_feature(CMAKE_INSTALL_PYTHONDIR "Installation prefix of the python bindings")
+
+set(_PYVERSION_LAST "${TIMEMORY_PYTHON_VERSION}" CACHE INTERNAL "Last version" FORCE)

@@ -166,7 +166,7 @@ if(_BUILD_SHARED_CXX)
 
     if(WIN32)
         target_compile_definitions(timemory-cxx-shared
-            PRIVATE     TIMEMORY_DLL_EXPORT 
+            PRIVATE     TIMEMORY_DLL_EXPORT
             INTERFACE   TIMEMORY_DLL_IMPORT)
     endif()
 
@@ -253,7 +253,7 @@ if(TIMEMORY_BUILD_C)
 
         if(WIN32)
             target_compile_definitions(timemory-c-shared
-                PRIVATE     TIMEMORY_CDLL_EXPORT 
+                PRIVATE     TIMEMORY_CDLL_EXPORT
                 INTERFACE   TIMEMORY_CDLL_IMPORT)
         endif()
     endif()
@@ -333,6 +333,17 @@ if(TARGET timemory-ncclp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ncclp-shared)
 else()
     inform_empty_interface(timemory-ncclp-library "NCCLP standalone instrumentation library")
+endif()
+
+if(TARGET timemory-compiler-instrument-shared)
+    target_link_libraries(timemory-compiler-instrument INTERFACE timemory-compiler-instrument-shared)
+    list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-shared)
+    if(TARGET timemory-compiler-instrument-static)
+        list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-static)
+    endif()
+elseif(TARGET timemory-compiler-instrument-static)
+    target_link_libraries(timemory-compiler-instrument INTERFACE timemory-compiler-instrument-static)
+    list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-static)
 endif()
 
 #----------------------------------------------------------------------------------------#

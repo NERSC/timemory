@@ -108,13 +108,17 @@ add_subdirectory(external)
 if(TARGET timemory-compiler-instrument-shared)
     add_timemory_google_test(instrumentation_shared_tests
         SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  timemory-compiler-instrument-shared)
+        LINK_LIBRARIES  timemory-compiler-instrument-shared
+                        timemory::timemory-headers
+                        test-opt-flags)
 endif()
 
 if(TARGET timemory-compiler-instrument-static)
     add_timemory_google_test(instrumentation_static_tests
         SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  timemory-compiler-instrument-static)
+        LINK_LIBRARIES  timemory-compiler-instrument-static
+                        timemory::timemory-headers
+                        test-opt-flags)
 endif()
 
 if(TARGET custom-record-functions)
@@ -575,4 +579,11 @@ if(TARGET timemory::timemory-ncclp-library AND TARGET nccl_test_interface)
         SOURCES         nccl_tests.cpp
         LINK_LIBRARIES  nccl_test_interface
                         timemory::timemory-ncclp-library)
+endif()
+
+if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
+    add_test(
+        NAME                python_tests
+        COMMAND             ${PYTHON_EXECUTABLE} -m timemory.test
+        WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
 endif()

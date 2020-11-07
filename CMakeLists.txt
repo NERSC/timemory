@@ -103,8 +103,10 @@ endif()
 # set these as the defaults
 if(timemory_MASTER_PROJECT)
     set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL
+        "Append directories in the linker search path")
     set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
+    mark_as_advanced(CMAKE_ENABLE_EXPORTS)
 else()
     set(CMAKE_ENABLE_EXPORTS ON)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)

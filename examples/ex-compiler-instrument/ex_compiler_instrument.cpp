@@ -22,33 +22,44 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-extern "C"
+#include <chrono>
+#include <iostream>
+#include <mutex>
+
+inline long
+fibonacci(long n)
 {
-    extern void timemory_profile_func_enter(void* this_fn, void* call_site)
-        __attribute__((visibility("hidden")));
-    extern void timemory_profile_func_exit(void* this_fn, void* call_site)
-        __attribute__((visibility("hidden")));
-    void __cyg_profile_func_enter(void* this_fn, void* call_site)
-        __attribute__((visibility("default"))) __attribute__((no_instrument_function));
-    void __cyg_profile_func_exit(void* this_fn, void* call_site)
-        __attribute__((visibility("default"))) __attribute__((no_instrument_function));
+    return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
 }
 
-//--------------------------------------------------------------------------------------//
-//
-//      timemory symbols
-//
-//--------------------------------------------------------------------------------------//
-
-extern "C"
+inline void
+consume(long n)
 {
-    void __cyg_profile_func_enter(void* this_fn, void* call_site)
+    using mutex_t = std::mutex;
+    using lock_t  = std::unique_lock<mutex_t>;
+    // a mutex held by one lock
+    mutex_t mutex;
+    // acquire lock
+    lock_t hold_lk(mutex);
+    // associate but defer
+    lock_t try_lk(mutex, std::defer_lock);
+    // get current time
+    auto now = std::chrono::steady_clock::now();
+    // try until time point
+    while(std::chrono::steady_clock::now() < (now + std::chrono::milliseconds(n)))
+        try_lk.try_lock();
+}
+
+int
+main(int argc, char** argv)
+{
+    long nwait = (argc > 1) ? atol(argv[1]) : 12;
+    int  nitr  = (argc > 2) ? atoi(argv[2]) : 10;
+
+    for(int i = 0; i < nitr; ++i)
     {
-        timemory_profile_func_enter(this_fn, call_site);
+        consume(fibonacci(nwait));
     }
-    //
-    void __cyg_profile_func_exit(void* this_fn, void* call_site)
-    {
-        timemory_profile_func_exit(this_fn, call_site);
-    }
-}  // extern "C"
+
+    return 0;
+}

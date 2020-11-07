@@ -219,7 +219,7 @@ if(dl_LIBRARY)
     # This instructs the linker to add all symbols, not only used ones, to the dynamic
     # symbol table. This option is needed for some uses of dlopen or to allow obtaining
     # backtraces from within a program.
-    if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
+    if(NOT (CMAKE_CXX_COMPILER_IS_CLANG AND APPLE))
         add_flag_if_avail("-rdynamic")
     endif()
 endif()
