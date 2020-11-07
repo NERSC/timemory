@@ -40,12 +40,6 @@
 #include "timemory/units.hpp"
 #include "timemory/utility/utility.hpp"
 
-#include "timemory/components/user_bundle/backends.hpp"
-#include "timemory/components/user_bundle/types.hpp"
-
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/types.hpp"
-
 #include <functional>
 #include <regex>
 #include <string>
@@ -67,6 +61,7 @@ using user_bundle_spec_t = std::function<std::string()>;
 using user_bundle_variables_t =
     std::unordered_map<size_t, std::vector<user_bundle_spec_t>>;
 //
+/// static so that projects cannot globally change this
 template <typename ApiT>
 static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
                                user_bundle_variables_t&>
@@ -105,21 +100,15 @@ static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
           { []() { return settings::profiler_components(); },
             []() { return settings::components(); },
             []() { return settings::global_components(); } } },
-        { component::compiler_bundle_idx,
-          { []() { return settings::compiler_components(); },
-            []() { return settings::trace_components(); },
-            []() { return settings::profiler_components(); },
-            []() { return settings::components(); },
-            []() { return settings::global_components(); } } }
     };
     return _instance;
 }
 //
 //--------------------------------------------------------------------------------------//
-//
+/// non-static so that projects can globally change this for their project/API
 template <typename ApiT>
-static inline std::enable_if_t<!std::is_same<ApiT, TIMEMORY_API>::value,
-                               user_bundle_variables_t&>
+inline std::enable_if_t<!std::is_same<ApiT, TIMEMORY_API>::value,
+                        user_bundle_variables_t&>
     get_user_bundle_variables(ApiT)
 {
     static user_bundle_variables_t _instance{};
@@ -127,7 +116,7 @@ static inline std::enable_if_t<!std::is_same<ApiT, TIMEMORY_API>::value,
 }
 //
 //--------------------------------------------------------------------------------------//
-//
+/// static so that projects cannot globally change this
 static inline user_bundle_variables_t& get_user_bundle_variables(project::kokkosp)
 {
     static user_bundle_variables_t _instance = {
@@ -153,14 +142,29 @@ get_bundle_components(const VecT& _priority)
     const auto regex_constants =
         std::regex_constants::optimize | std::regex_constants::icase;
     string_t _custom{};
+    bool     fallthrough = false;
+    auto     _replace    = [&fallthrough](const std::string& _key) {
+        const auto pattern = std::string("^(.*)[,;: \t]*fallthrough[,;: \t]*(.*)$");
+        if(std::regex_match(_key, std::regex(pattern, regex_constants)))
+        {
+            fallthrough = true;
+            return std::regex_replace(_key, std::regex(pattern, regex_constants),
+                                      ",$1,$2");
+        }
+        return _key;
+    };
+
     for(const auto& itr : _priority)
     {
         auto _spec = itr();
         if(_spec.length() > 0)
         {
             if(!std::regex_match(_spec, std::regex("^none$", regex_constants)))
-                _custom = _spec;
-            break;
+                _custom += _replace(_spec);
+            else
+                fallthrough = false;
+            if(!fallthrough)
+                break;
         }
     }
     return tim::enumerate_components(tim::delimit(_custom));
@@ -256,9 +260,8 @@ public:
     , m_typeids(rhs.m_typeids)
     , m_bundle(rhs.m_bundle)
     {
-        if(m_typeids.size() > 0 && m_bundle.size() > 0)
-            for(auto& itr : m_bundle)
-                itr.set_copy(true);
+        for(auto& itr : m_bundle)
+            itr.set_copy(true);
     }
 
     explicit user_bundle(const char* _prefix, scope::config _scope = scope::get_default())
@@ -346,7 +349,7 @@ public:
             {
                 if(itr > 0 && contains(itr, get_typeids()))
                 {
-                    if(settings::verbose() > 1)
+                    if(settings::verbose() > 1 || settings::debug())
                         PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
                     return;
                 }
@@ -359,7 +362,7 @@ public:
                 PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
                 return;
             }
-            get_data().push_back(obj);
+            get_data().emplace_back(std::move(obj));
         }
     }
 
@@ -379,6 +382,8 @@ public:
     //
     static void reset()
     {
+        if(settings::verbose() > 3 || settings::debug())
+            PRINT_HERE("Resetting %s", demangle<this_type>().c_str());
         lock_t lk(get_lock());
         get_data().clear();
         get_typeids().clear();
@@ -414,9 +419,8 @@ public:
 
     void stop()
     {
-        if(m_typeids.size() > 0 && m_bundle.size() > 0)
-            for(size_t i = 0; i < m_bundle.size(); ++i)
-                m_bundle.at(i).stop();
+        for(auto& itr : m_bundle)
+            itr.stop();
     }
 
     void pop()
@@ -437,21 +441,20 @@ public:
     template <typename T>
     T* get()
     {
-        auto  _typeid_hash = get_hash(demangle<T>());
+        auto  _typeid_hash = typeid_hash<T>();
         void* void_ptr     = nullptr;
-        if(m_typeids.size() > 0 && m_bundle.size() > 0)
-            for(auto& itr : m_bundle)
-            {
-                itr.get(void_ptr, _typeid_hash);
-                if(void_ptr)
-                    return void_ptr;
-            }
+        for(auto& itr : m_bundle)
+        {
+            itr.get(void_ptr, _typeid_hash);
+            if(void_ptr)
+                return void_ptr;
+        }
         return static_cast<T*>(void_ptr);
     }
 
     void get(void*& ptr, size_t _hash) const
     {
-        if(m_typeids.size() > 0 && m_bundle.size() > 0)
+        if(ptr == nullptr)
             for(const auto& itr : m_bundle)
             {
                 itr.get(ptr, _hash);
@@ -464,22 +467,14 @@ public:
 
     void set_prefix(const char* _prefix)
     {
-        // skip unnecessary copies
-        // if(!m_bundle.empty())
-        {
-            m_prefix = _prefix;
-            m_setup  = false;
-        }
+        m_prefix = _prefix;
+        m_setup  = false;
     }
 
     void set_scope(const scope::config& val)
     {
-        // skip unnecessary copies
-        // if(!m_bundle.empty())
-        {
-            m_scope = val;
-            m_setup = false;
-        }
+        m_scope = val;
+        m_setup = false;
     }
 
     size_t size() const { return m_bundle.size(); }
@@ -494,13 +489,21 @@ public:
             for(auto&& itr : _typeids)
             {
                 if(itr > 0 && contains(itr, m_typeids))
+                {
+                    if(settings::verbose() > 1 || settings::debug())
+                        PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
                     return;
+                }
                 sum += itr;
-                m_typeids.emplace_back(itr);
+                if(itr > 0)
+                    m_typeids.emplace_back(itr);
             }
             if(sum == 0)
+            {
+                PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
                 return;
-            m_bundle.push_back(obj);
+            }
+            m_bundle.emplace_back(std::move(obj));
         }
     }
 
@@ -531,9 +534,9 @@ protected:
 private:
     struct persistent_data
     {
-        mutex_t         m_lock;
-        opaque_array_t* m_data    = new opaque_array_t{};
-        typeid_vec_t    m_typeids = {};
+        mutex_t        m_lock;
+        opaque_array_t m_data    = {};
+        typeid_vec_t   m_typeids = {};
     };
 
     //----------------------------------------------------------------------------------//
@@ -545,7 +548,7 @@ public:
     //----------------------------------------------------------------------------------//
     //  Bundle data
     //
-    static opaque_array_t& get_data() { return *get_persistent_data().m_data; }
+    static opaque_array_t& get_data() { return get_persistent_data().m_data; }
 
     //----------------------------------------------------------------------------------//
     //  The configuration strings
@@ -564,6 +567,8 @@ template <size_t Idx, typename Tag>
 void
 user_bundle<Idx, Tag>::global_init()
 {
+    if(settings::verbose() > 2 || settings::debug())
+        PRINT_HERE("Global initialization of %s", demangle<this_type>().c_str());
     env::initialize_bundle<Idx, Tag>();
 }
 //

@@ -30,7 +30,8 @@
 
 #pragma once
 
-#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
+#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED) ||                           \
+    (defined(TIMEMORY_ENABLED) && TIMEMORY_ENABLED == 0)
 
 #    include <ostream>
 #    include <string>
@@ -162,17 +163,12 @@ struct dummy
 
 #else
 
-#    if defined(TIMEMORY_COMPILER_INSTRUMENTATION)
-#        error                                                                           \
-            "Error! Attempting to include timemory headers with compiler instrumentation enabled. Due to instability which arises from instrumenting internal routines in the API, this is currently not permitted. Please disable compiler instrumentation or disable the API."
-#    endif
-
 #    if !defined(TIMEMORY_MASTER_HEADER)
 #        define TIMEMORY_MASTER_HEADER
 #    endif
 
 #    if !defined(TIMEMORY_ENABLED)
-#        define TIMEMORY_ENABLED
+#        define TIMEMORY_ENABLED 1
 #    endif
 
 //

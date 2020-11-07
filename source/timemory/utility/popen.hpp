@@ -81,6 +81,9 @@ open_devnull(int fd);
 TIMEMORY_UTILITY_LINKAGE(void)
 drop_privileges(int permanent);
 //
+TIMEMORY_UTILITY_LINKAGE(void)
+restore_privileges();
+//
 inline strvec_t
 read_fork(TIMEMORY_PIPE* ldd)
 {

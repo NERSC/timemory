@@ -56,7 +56,6 @@ TIMEMORY_BUNDLE_INDEX(mpip_bundle_idx, 11111)
 TIMEMORY_BUNDLE_INDEX(ncclp_bundle_idx, 11112)
 TIMEMORY_BUNDLE_INDEX(trace_bundle_idx, 20000)
 TIMEMORY_BUNDLE_INDEX(profiler_bundle_idx, 22000)
-TIMEMORY_BUNDLE_INDEX(compiler_bundle_idx, 22200)
 TIMEMORY_BUNDLE_INDEX(kokkosp_bundle_idx, 0)
 //
 TIMEMORY_COMPONENT_ALIAS(user_global_bundle,
@@ -75,12 +74,10 @@ TIMEMORY_COMPONENT_ALIAS(user_trace_bundle,
                          user_bundle<trace_bundle_idx, project::timemory>)
 TIMEMORY_COMPONENT_ALIAS(user_profiler_bundle,
                          user_bundle<profiler_bundle_idx, project::timemory>)
-TIMEMORY_COMPONENT_ALIAS(user_compiler_bundle,
-                         user_bundle<compiler_bundle_idx, project::timemory>)
 TIMEMORY_COMPONENT_ALIAS(user_kokkosp_bundle,
                          user_bundle<kokkosp_bundle_idx, project::kokkosp>)
 //
-#if defined(TIMEMORY_COMPILER_INSTRUMENTATION_IMPL)
+#if defined(TIMEMORY_COMPILER_INSTRUMENTATION)
 //
 namespace tim
 {
@@ -89,10 +86,6 @@ namespace trait
 //
 template <size_t Idx, typename Tag>
 struct is_available<component::user_bundle<Idx, Tag>> : std::false_type
-{};
-//
-template <>
-struct is_available<component::user_compiler_bundle> : std::true_type
 {};
 //
 }  // namespace trait
