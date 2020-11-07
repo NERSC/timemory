@@ -133,11 +133,11 @@ generate(py::module& _pymod)
     py::class_<tim::settings> settings(_pymod, "settings",
                                        "Global configuration settings for timemory");
 
-    auto _argparse = [](std::shared_ptr<tim::vsettings> obj, py::object argp,
-                        bool _strip) {
+    static auto _argparse = [](std::shared_ptr<tim::vsettings> obj, py::object argp,
+                               bool _strip) {
         if(!obj || obj->get_command_line().empty())
             return;
-        py::cpp_function parse = [=](std::string val) { obj->parse(val); };
+        py::cpp_function parse = [obj](std::string val) { obj->parse(val); };
         std::string      tidx  = tim::demangle(obj->get_type_index().name());
         if(tidx.find("basic_string") != std::string::npos)
             tidx = "std::string";
@@ -208,7 +208,8 @@ generate(py::module& _pymod)
         else
             _obj->read(inp);
     };
-    auto _args = [&](py::object parser, py::object _instance, py::object subparser) {
+    static auto _args = [](py::object parser, py::object _instance,
+                           py::object subparser) {
         auto pyargparse = py::module::import("argparse");
 
         if(parser.is_none())

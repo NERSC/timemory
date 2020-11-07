@@ -92,7 +92,7 @@ generate(py::module& _pymod)
     py::class_<hwcounter_presets> _preset(_hw, "preset",
                                           "Known hardware counter identifiers and info");
 
-    auto _generate_presets = [&]() {
+    auto _generate_presets = [&_preset]() {
     // tim::cupti::device_t device;
 #if defined(TIMEMORY_USE_CUPTI)
     // TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
@@ -129,7 +129,8 @@ generate(py::module& _pymod)
             if(tim::settings::debug() && tim::settings::verbose() > 1)
                 PRINT_HERE("%s", itr.python_symbol().c_str());
             _preset.def_property_readonly_static(
-                itr.python_symbol().c_str(), [=](py::object) { return new info_t(itr); });
+                itr.python_symbol().c_str(),
+                [itr](py::object) { return new info_t(itr); });
         }
     };
 

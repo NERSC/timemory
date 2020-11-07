@@ -309,7 +309,7 @@ PYBIND11_MODULE(libpytimemory, tim)
                     _val->set<scope::flat>(_flat.cast<bool>());
                 } catch(py::cast_error&)
                 {
-                    auto _f = [&](auto v) { _val->set(v); };
+                    auto _f = [_val](auto v) { _val->set(v); };
                     pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
                                                                                    _flat);
                 }
@@ -321,7 +321,7 @@ PYBIND11_MODULE(libpytimemory, tim)
                     _val->set<scope::timeline>(_time.cast<bool>());
                 } catch(py::cast_error&)
                 {
-                    auto _f = [&](auto v) { _val->set(v); };
+                    auto _f = [_val](auto v) { _val->set(v); };
                     pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
                                                                                    _time);
                 }
@@ -427,7 +427,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     destructor.def(py::init([]() { return new tim::scope::destructor([]() {}); }),
                    "Destructor", py::return_value_policy::move);
     destructor.def(py::init([](py::function pyfunc) {
-                       return new tim::scope::destructor([=]() { pyfunc(); });
+                       return new tim::scope::destructor([pyfunc]() { pyfunc(); });
                    }),
                    "Destructor", py::return_value_policy::take_ownership);
 
@@ -862,7 +862,7 @@ PYBIND11_MODULE(libpytimemory, tim)
              "Parse the command-line arguments via ArgumentParser.parse_known_args()",
              py::arg("parser") = py::none{});
 
-    auto _add_arguments = [](py::object parser, py::object subparser) {
+    static auto _add_arguments = [](py::object parser, py::object subparser) {
         auto locals = py::dict("parser"_a = parser, "subparser"_a = subparser);
         py::exec(R"(
         import argparse
@@ -871,7 +871,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         if parser is None:
             parser = argparse.ArgumentParser()
 
-        settings.add_argparse(parser, subparser=subparser)            
+        settings.add_argparse(parser, subparser=subparser)
         parser.add_argument('--timemory-echo-dart', required=False,
                             action='store_true', help="Echo dart tags for CDash")
         parser.add_argument('--timemory-mpl-backend', required=False,
@@ -881,12 +881,12 @@ PYBIND11_MODULE(libpytimemory, tim)
         return locals["parser"].cast<py::object>();
     };
 
-    auto _add_args_and_parse = [&](py::object parser, py::object subparser) {
+    auto _add_args_and_parse = [](py::object parser, py::object subparser) {
         _add_arguments(parser, subparser);
         return pytim::opt::parse_args(parser);
     };
 
-    auto _add_args_and_parse_known = [&](py::object parser, py::object subparser) {
+    auto _add_args_and_parse_known = [](py::object parser, py::object subparser) {
         _add_arguments(parser, subparser);
         return pytim::opt::parse_known_args(parser);
     };

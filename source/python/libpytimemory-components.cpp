@@ -775,7 +775,7 @@ generate(py::module& _pymod)
     pyinternal::components(_pycomp, _boolgen, _keygen,
                            std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
 
-    auto _keygenerator = [=](std::string _key) {
+    auto _keygenerator = [_keygen, _boolgen](std::string _key) {
         DEBUG_PRINT_HERE("pycomponents::get_generator :: looking for %s", _key.c_str());
         size_t i = 0;
         for(const auto& itr : _keygen)
@@ -789,7 +789,7 @@ generate(py::module& _pymod)
         return _nogen;
     };
 
-    auto _indexgenerator = [=](TIMEMORY_NATIVE_COMPONENT _id) {
+    auto _indexgenerator = [_keygen, _boolgen](TIMEMORY_NATIVE_COMPONENT _id) {
         DEBUG_PRINT_HERE("pycomponents::get_generator :: looking for %i", (int) _id);
         size_t i = static_cast<size_t>(_id);
         if(!_boolgen[i])

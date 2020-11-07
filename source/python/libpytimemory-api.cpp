@@ -170,7 +170,7 @@ generate_cupti(py::module& _pymod)
 {
     py::module _cupti = _pymod.def_submodule("cupti", "cupti query");
 
-    auto get_available_events = [=](int device) {
+    auto get_available_events = [](int device) {
 #if defined(TIMEMORY_USE_CUPTI)
         CUdevice cu_device;
         TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
@@ -178,11 +178,11 @@ generate_cupti(py::module& _pymod)
         return tim::cupti::available_events(cu_device);
 #else
         tim::consume_parameters(device);
-        return py::list();
+        return py::list{};
 #endif
     };
 
-    auto get_available_metrics = [=](int device) {
+    auto get_available_metrics = [](int device) {
 #if defined(TIMEMORY_USE_CUPTI)
         CUdevice cu_device;
         TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
@@ -194,7 +194,7 @@ generate_cupti(py::module& _pymod)
         return l;
 #else
         tim::consume_parameters(device);
-        return py::list();
+        return py::list{};
 #endif
     };
 
