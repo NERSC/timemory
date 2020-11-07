@@ -77,17 +77,17 @@ namespace tim
 {
 //
 template <typename Tag, typename... Types>
-class component_bundle
+class component_bundle<Tag, Types...>
 : public api_bundle<Tag, implemented_t<Types...>>
 , public concepts::tagged
 , public concepts::comp_wrapper
-, public concepts::hybrid_wrapper
+, public concepts::mixed_wrapper
 {
     static_assert(concepts::is_api<Tag>::value,
                   "Error! The first template parameter of a 'component_bundle' must "
                   "statisfy the 'is_api' concept");
 
-    template <typename TagT, typename... Tp>
+    template <typename... Tp>
     friend class auto_bundle;
 
 public:
@@ -121,7 +121,6 @@ public:
     using type             = convert_t<tuple_type, component_bundle<Tag>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
@@ -133,6 +132,7 @@ public:
     struct quirk_config
     {
         static constexpr bool value =
+            is_one_of<T, type_list<Types..., U...>>::value ||
             is_one_of<T,
                       contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
@@ -424,8 +424,8 @@ public:
     }
     //
     //----------------------------------------------------------------------------------//
-    //  type is not explicitly listed
-    //
+    ///  type is not explicitly listed so redirect to opaque search
+    ///
     template <
         typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
         enable_if_t<!is_one_of<T, data_type>::value && !is_one_of<T*, data_type>::value &&
@@ -433,12 +433,38 @@ public:
                     int> = 0>
     T* get() const
     {
-        void*       ptr   = nullptr;
-        static auto _hash = std::hash<std::string>()(demangle<T>());
-        get(ptr, _hash);
+        void* ptr = nullptr;
+        get(ptr, typeid_hash<T>());
         return static_cast<T*>(ptr);
     }
 
+    /// performs an opaque search. Opaque searches are generally provided by user_bundles
+    /// with a functor such as this:
+    ///
+    /// \code
+    /// auto _get = [=](void* v_this, void*& ptr, size_t _hash) {
+    /// {
+    ///     if(!ptr && v_this && _hash == typeid_hash<Tp>())
+    ///     {
+    ///         Tp* _this = static_cast<Tp*>(v_this);
+    ///         _this->get(ptr, _hash);
+    ///     }
+    ///     return ptr;
+    /// };
+    /// \endcode
+    ///
+    /// And the component provides this function:
+    ///
+    /// \code
+    /// template <typename Tp, typename Value>
+    /// void
+    /// base<Tp, Value>::get(void*& ptr, size_t _hash) const
+    /// {
+    ///     if(!ptr && _hash == typeid_hash<Tp>())
+    ///         ptr = reinterpret_cast<void*>(const_cast<base_type*>(this));
+    /// }
+    /// \endcode
+    ///
     void get(void*& ptr, size_t _hash) const
     {
         using get_t = operation_t<operation::get>;
@@ -457,6 +483,7 @@ public:
         return get<T>();
     }
 
+    /// returns a reference from a stack component instead of a pointer
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               enable_if_t<trait::is_available<T>::value && is_one_of<T, data_type>::value,
                           int> = 0>
@@ -465,6 +492,7 @@ public:
         return std::get<index_of<T, data_type>::value>(m_data);
     }
 
+    /// returns a reference from a heap component instead of a pointer
     template <
         typename U, typename T = std::remove_pointer_t<decay_t<U>>,
         enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value,
@@ -475,13 +503,15 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    ///  initialize a type that is in variadic list AND is available
+    /// create an optional type that is in variadic list AND is available AND
+    /// accepts arguments
     ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               typename... Args,
               enable_if_t<trait::is_available<T>::value == true &&
                               is_one_of<T*, data_type>::value == true &&
-                              is_one_of<T, data_type>::value == false,
+                              is_one_of<T, data_type>::value == false &&
+                              std::is_constructible<T, Args...>::value == true,
                           char> = 0>
     bool init(Args&&... _args)
     {
@@ -495,6 +525,7 @@ public:
             }
             _obj = new T(std::forward<Args>(_args)...);
             set_prefix(_obj);
+            set_scope(_obj);
             return true;
         }
         else
@@ -512,7 +543,49 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    //
+    /// create an optional type that is in variadic list AND is available but is not
+    /// constructible with provided arguments
+    ///
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              typename... Args,
+              enable_if_t<trait::is_available<T>::value == true &&
+                              is_one_of<T*, data_type>::value == true &&
+                              is_one_of<T, data_type>::value == false &&
+                              std::is_constructible<T, Args...>::value == false &&
+                              std::is_default_constructible<T>::value == true,
+                          char> = 0>
+    bool init(Args&&...)
+    {
+        T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
+        if(!_obj)
+        {
+            if(settings::debug())
+            {
+                printf("[component_bundle::init]> initializing type '%s'...\n",
+                       demangle(typeid(T).name()).c_str());
+            }
+            _obj = new T{};
+            set_prefix(_obj);
+            set_scope(_obj);
+            return true;
+        }
+        else
+        {
+            static std::atomic<int> _count(0);
+            if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
+            {
+                std::string _id = demangle(typeid(T).name());
+                printf("[component_bundle::init]> skipping re-initialization of type"
+                       " \"%s\"...\n",
+                       _id.c_str());
+            }
+        }
+        return false;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// try to re-create a stack object with provided arguments
+    ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               typename... Args,
               enable_if_t<trait::is_available<T>::value == true &&
@@ -527,7 +600,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-
+    /// if a type is not in variadic list but a \ref tim::component::user_bundle is
+    /// available, add it in there
+    ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               typename... Args,
               enable_if_t<trait::is_available<T>::value == true &&
@@ -552,7 +627,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-
+    /// do nothing if type not available, not one of the variadic types, and there
+    /// is no user bundle available
+    ///
     template <typename T, typename... Args,
               enable_if_t<trait::is_available<T>::value == false ||
                               (is_one_of<T*, data_type>::value == false &&
@@ -565,7 +642,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    //  variadic initialization
+    /// \brief variadic initialization
+    /// \tparam T components to initialize
+    /// \tparam Args arguments to pass to the construction of the component
     //
     template <typename... T, typename... Args>
     auto initialize(Args&&... args)
@@ -573,6 +652,7 @@ public:
         return TIMEMORY_FOLD_EXPANSION(bool, this->init<T>(std::forward<Args>(args)...));
     }
 
+    /// delete any optional types currently allocated
     template <typename... Tail>
     void disable()
     {
@@ -581,7 +661,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    /// apply a member function to a type that is in variadic list AND is available
+    /// apply a member function to a stack type that is in variadic list AND is available
     ///
     template <typename T, typename Func, typename... Args,
               enable_if_t<is_one_of<T, data_type>::value == true, int> = 0>
@@ -591,19 +671,19 @@ public:
         ((*_obj).*(_func))(std::forward<Args>(_args)...);
     }
 
+    /// apply a member function to either a heap type or a type that is in a user_bundle
     template <typename T, typename Func, typename... Args,
-              enable_if_t<is_one_of<T*, data_type>::value == true, int> = 0>
+              enable_if_t<trait::is_available<T>::value == true, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
-        auto* _obj = get<T*>();
+        auto* _obj = get<T>();
         if(_obj)
             ((*_obj).*(_func))(std::forward<Args>(_args)...);
     }
 
+    /// ignore applying a member function because the type is not present
     template <typename T, typename Func, typename... Args,
-              enable_if_t<is_one_of<T, data_type>::value == false &&
-                              is_one_of<T*, data_type>::value == false,
-                          int> = 0>
+              enable_if_t<trait::is_available<T>::value == false, int> = 0>
     void type_apply(Func&&, Args&&...)
     {}
 
@@ -744,7 +824,10 @@ protected:
     // protected member functions
     data_type&       get_data();
     const data_type& get_data() const;
-    void             set_scope(scope::config);
+
+    template <typename T>
+    void set_scope(T* obj) const;
+    void set_scope(scope::config);
 
     template <typename T>
     void set_prefix(T* obj) const;

@@ -157,9 +157,9 @@ private:
     struct quirk_config
     {
         static constexpr bool value =
-            (is_one_of<T, contains_one_of_t<quirk::is_config,
-                                            type_concat_t<Types..., U...>>>::value ||
-             is_one_of<T, type_concat_t<Types..., U...>>::value);
+            is_one_of<T, type_list<Types..., U...>>::value ||
+            is_one_of<T,
+                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
 
 public:
@@ -334,7 +334,10 @@ template <typename Tag, typename... Types>
 class base_bundle<Tag, std::tuple<Types...>> : public base_bundle<Tag, Types...>
 {
 public:
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     base_bundle(Args&&... args)
@@ -346,7 +349,10 @@ template <typename Tag, typename... Types>
 class base_bundle<Tag, type_list<Types...>> : public base_bundle<Tag, Types...>
 {
 public:
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     base_bundle(Args&&... args)
@@ -361,7 +367,10 @@ struct stack_bundle
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
@@ -374,7 +383,10 @@ struct stack_bundle<std::tuple<Types...>>
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
@@ -387,7 +399,10 @@ struct stack_bundle<type_list<Types...>>
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
@@ -402,7 +417,10 @@ struct heap_bundle
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::heap_wrapper
 {
-    using data_type = std::tuple<Types*...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types*...>;
 
     template <typename... Args>
     heap_bundle(Args&&... args)
@@ -415,7 +433,10 @@ struct heap_bundle<std::tuple<Types...>>
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::heap_wrapper
 {
-    using data_type = std::tuple<Types*...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types*...>;
 
     template <typename... Args>
     heap_bundle(Args&&... args)
@@ -428,7 +449,10 @@ struct heap_bundle<type_list<Types...>>
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::heap_wrapper
 {
-    using data_type = std::tuple<Types*...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types*...>;
 
     template <typename... Args>
     heap_bundle(Args&&... args)
@@ -440,15 +464,18 @@ struct heap_bundle<type_list<Types...>>
 //
 template <typename ApiT, typename... Types>
 struct api_bundle
-: public conditional_t<(trait::is_available<ApiT>::value),
+: public conditional_t<trait::is_available<ApiT>::value,
                        base_bundle<ApiT, remove_pointer_t<Types>...>,
                        base_bundle<ApiT, std::tuple<>>>
 {
-    using base_bundle_type = conditional_t<(trait::is_available<ApiT>::value),
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using base_bundle_type = conditional_t<trait::is_available<ApiT>::value,
                                            base_bundle<ApiT, remove_pointer_t<Types>...>,
                                            base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<(trait::is_available<ApiT>::value),
-                                    std::tuple<Types...>, std::tuple<>>;
+    using data_type        = conditional_t<trait::is_available<ApiT>::value,
+                                    data_tuple_t<Types...>, std::tuple<>>;
     using tuple_type       = data_type;
     using impl_type        = data_type;
 
@@ -460,15 +487,18 @@ struct api_bundle
 
 template <typename ApiT, typename... Types>
 struct api_bundle<ApiT, std::tuple<Types...>>
-: public conditional_t<(trait::is_available<ApiT>::value),
+: public conditional_t<trait::is_available<ApiT>::value,
                        base_bundle<ApiT, remove_pointer_t<Types>...>,
                        base_bundle<ApiT, std::tuple<>>>
 {
-    using base_bundle_type = conditional_t<(trait::is_available<ApiT>::value),
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using base_bundle_type = conditional_t<trait::is_available<ApiT>::value,
                                            base_bundle<ApiT, remove_pointer_t<Types>...>,
                                            base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<(trait::is_available<ApiT>::value),
-                                    std::tuple<Types...>, std::tuple<>>;
+    using data_type        = conditional_t<trait::is_available<ApiT>::value,
+                                    data_tuple_t<Types...>, std::tuple<>>;
     using tuple_type       = data_type;
     using impl_type        = data_type;
 
@@ -480,15 +510,18 @@ struct api_bundle<ApiT, std::tuple<Types...>>
 
 template <typename ApiT, typename... Types>
 struct api_bundle<ApiT, type_list<Types...>>
-: public conditional_t<(trait::is_available<ApiT>::value),
+: public conditional_t<trait::is_available<ApiT>::value,
                        base_bundle<ApiT, remove_pointer_t<Types>...>,
                        base_bundle<ApiT, std::tuple<>>>
 {
-    using base_bundle_type = conditional_t<(trait::is_available<ApiT>::value),
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using base_bundle_type = conditional_t<trait::is_available<ApiT>::value,
                                            base_bundle<ApiT, remove_pointer_t<Types>...>,
                                            base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<(trait::is_available<ApiT>::value),
-                                    std::tuple<Types...>, std::tuple<>>;
+    using data_type        = conditional_t<trait::is_available<ApiT>::value,
+                                    data_tuple_t<Types...>, std::tuple<>>;
     using tuple_type       = data_type;
     using impl_type        = data_type;
 

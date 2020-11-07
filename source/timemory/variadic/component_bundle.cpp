@@ -78,7 +78,7 @@ component_bundle<Tag, Types...>::get_initializer()
             for(auto& itr : _tag)
                 itr = toupper(itr);
             auto env_var = string_t("TIMEMORY_") + _tag + "_COMPONENTS";
-            if(settings::debug() || settings::verbose() > 0)
+            if(settings::debug() || settings::verbose() > 1)
                 PRINT_HERE("%s is using environment variable: '%s'",
                            demangle<this_type>().c_str(), env_var.c_str());
 
@@ -150,9 +150,9 @@ component_bundle<Tag, Types...>::component_bundle(size_t _hash, bool _store,
               _scope + scope::config(quirk_config<quirk::flat_scope>::value,
                                      quirk_config<quirk::timeline_scope>::value,
                                      quirk_config<quirk::tree_scope>::value))
-, m_data(invoke::construct<data_type, Tag>(_hash, _store, m_scope))
+, m_data(invoke::construct<data_type, Tag>(_hash, m_scope))
 {
-    apply_v::set_value(m_data, nullptr);
+    // apply_v::set_value(m_data, nullptr);
     if(m_store() && trait::runtime_enabled<Tag>::get())
     {
         IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
@@ -553,6 +553,17 @@ component_bundle<Tag, Types...>::data() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
+template <typename T>
+void
+component_bundle<Tag, Types...>::set_scope(T* obj) const
+{
+    using PrefixOpT = operation::generic_operator<T, operation::set_scope<T>, Tag>;
+    PrefixOpT(obj, m_scope);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
 void
 component_bundle<Tag, Types...>::set_scope(scope::config val)
 {
@@ -569,9 +580,8 @@ template <typename T>
 void
 component_bundle<Tag, Types...>::set_prefix(T* obj) const
 {
-    using PrefixOpT =
-        operation::generic_operator<T, operation::set_prefix<T>, TIMEMORY_API>;
-    auto _key = get_hash_ids()->find(m_hash)->second;
+    using PrefixOpT = operation::generic_operator<T, operation::set_prefix<T>, Tag>;
+    auto _key       = get_hash_ids()->find(m_hash)->second;
     PrefixOpT(obj, m_hash, _key);
 }
 

@@ -111,7 +111,6 @@ public:
     using string_t            = std::string;
     using captured_location_t = typename component_type::captured_location_t;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = component_type::has_user_bundle_v;
 

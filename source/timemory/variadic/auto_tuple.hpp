@@ -86,7 +86,6 @@ public:
     using captured_location_t = typename component_type::captured_location_t;
     using value_type          = component_type;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = component_type::has_user_bundle_v;
 
@@ -95,6 +94,7 @@ public:
     struct quirk_config
     {
         static constexpr bool value =
+            is_one_of<T, type_list<Types..., U...>>::value ||
             is_one_of<T,
                       contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };

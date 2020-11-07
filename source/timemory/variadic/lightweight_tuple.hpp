@@ -92,12 +92,11 @@ public:
     using custom_operation_t =
         typename bundle_type::template custom_operation<Op, Tuple>::type;
 
-    // used by gotcha
-    using component_type   = lightweight_tuple<Types...>;
+    using auto_type        = append_type_t<quirk::auto_start, this_type>;
+    using component_type   = remove_type_t<quirk::auto_start, this_type>;
     using type             = convert_t<tuple_type, lightweight_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
@@ -113,6 +112,7 @@ public:
     struct quirk_config
     {
         static constexpr bool value =
+            is_one_of<T, type_list<Types..., U...>>::value ||
             is_one_of<T,
                       contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
@@ -296,9 +296,8 @@ public:
     template <typename T, enable_if_t<!is_one_of<T, data_type>::value, int> = 0>
     T* get() const
     {
-        void*       ptr   = nullptr;
-        static auto _hash = std::hash<std::string>()(demangle<T>());
-        get(ptr, _hash);
+        void* ptr = nullptr;
+        get(ptr, typeid_hash<T>());
         return static_cast<T*>(ptr);
     }
 

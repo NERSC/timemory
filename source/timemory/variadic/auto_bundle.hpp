@@ -102,12 +102,11 @@ namespace tim
 ///
 
 template <typename Tag, typename... Types>
-class auto_bundle
+class auto_bundle<Tag, Types...>
 : public concepts::wrapper
 , public concepts::variadic
 , public concepts::auto_wrapper
 , public concepts::mixed_wrapper
-, public concepts::hybrid_wrapper
 , public concepts::tagged
 {
     static_assert(concepts::is_api<Tag>::value,
@@ -129,7 +128,6 @@ public:
     using type       = convert_t<typename component_type::type, auto_bundle<Tag>>;
     using value_type = component_type;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = component_type::has_user_bundle_v;
 
@@ -137,10 +135,10 @@ public:
     template <typename T, typename... U>
     struct quirk_config
     {
-        using var_config_t = contains_one_of_t<quirk::is_config, concat<Types...>>;
-        using inp_config_t = contains_one_of_t<quirk::is_config, concat<U...>>;
         static constexpr bool value =
-            (is_one_of<T, var_config_t>::value || is_one_of<T, inp_config_t>::value);
+            is_one_of<T, type_list<Types..., U...>>::value ||
+            is_one_of<T,
+                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
 
 public:
