@@ -230,7 +230,7 @@ merge<Type, true>::operator()(const basic_tree<Tp>& _bt)
     auto _ret = _bt;
     // recursively apply
     for(auto& itr : _ret.get_children())
-        itr = (*this)(itr);
+        *itr = (*this)(*itr);
 
     // aggregate children
     children_type _children{};
@@ -239,10 +239,10 @@ merge<Type, true>::operator()(const basic_tree<Tp>& _bt)
         bool found = false;
         for(auto& citr : _children)
         {
-            if(citr == itr)
+            if(*citr == *itr)
             {
                 found = true;
-                citr += itr;
+                *citr += *itr;
             }
         }
         if(!found)

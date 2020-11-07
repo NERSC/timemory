@@ -78,6 +78,12 @@ using remove_pointers_t = typename remove_pointers<Tp>::type;
 template <typename Tp>
 struct basic_tree;
 //
+namespace node
+{
+template <typename Tp>
+struct tree;
+}
+//
 //--------------------------------------------------------------------------------------//
 //
 namespace data
@@ -681,7 +687,6 @@ struct print
     virtual void write(std::ostream& os, stream_type stream);
     virtual void print_cout(stream_type stream);
     virtual void print_text(const std::string& fname, stream_type stream);
-    virtual void print_tree(const std::string& fname);
     virtual void print_plot(const std::string& fname, const std::string suffix);
 
     auto get_label() const { return label; }
@@ -828,6 +833,9 @@ struct print<Tp, true> : public base::print
     using hierarchy_type           = typename storage_type::uintvector_t;
     using callback_type            = std::function<void(this_type*)>;
     using stream_type              = std::shared_ptr<utility::stream>;
+    using basic_tree_type          = basic_tree<node::tree<Tp>>;
+    using basic_tree_vector_type   = std::vector<basic_tree_type>;
+    using result_tree = std::map<std::string, std::vector<basic_tree_vector_type>>;
 
     static callback_type& get_default_callback()
     {
@@ -854,9 +862,6 @@ struct print<Tp, true> : public base::print
         else
             setup();
 
-        if(file_output() && tree_output())
-            print_tree(tree_outfname);
-
         if(node_init && node_rank > 0)
             return;
 
@@ -864,6 +869,8 @@ struct print<Tp, true> : public base::print
         {
             if(json_output())
                 print_json(json_outfname, node_results, data_concurrency);
+            if(tree_output())
+                print_tree(tree_outfname, node_tree);
             if(text_output())
                 print_text(text_outfname, data_stream);
             if(plot_output())
@@ -924,7 +931,7 @@ struct print<Tp, true> : public base::print
             fprintf(stderr, "Exception: %s\n", e.what());
         }
     }
-    virtual void print_tree(const std::string& fname);
+    virtual void print_tree(const std::string& fname, result_tree& rt);
 
     void write_stream(stream_type& stream, result_type& results);
     void print_json(const std::string& fname, result_type& results, int64_t concurrency);
@@ -953,6 +960,7 @@ protected:
     result_type   node_results = {};
     result_type   node_input   = {};
     result_type   node_delta   = {};
+    result_tree   node_tree    = {};
 };
 //
 //--------------------------------------------------------------------------------------//
