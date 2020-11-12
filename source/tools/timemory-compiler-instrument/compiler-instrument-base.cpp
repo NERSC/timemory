@@ -28,10 +28,13 @@
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
 
+#include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <dlfcn.h>
 #include <limits>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -147,14 +150,6 @@ get_trace_size()
 {
     using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
     return tim::manager::get_storage<tuple_type>::size();
-    /*
-    return (!get_trace_map())
-               ? 0
-               : std::accumulate(get_trace_map()->begin(), get_trace_map()->end(), 0,
-                                 [](auto tot, auto itr) {
-                                     return std::move(tot) + itr.second.size();
-                                 });
-    */
 }
 
 //--------------------------------------------------------------------------------------//
@@ -290,7 +285,19 @@ finalize()
     delete get_throttle();
     get_throttle() = nullptr;
 
-    tim::timemory_finalize();
+    auto _manager = tim::manager::instance();
+    if(_manager && !_manager->is_finalized())
+        tim::timemory_finalize();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t... Idx>
+static auto init_storage(tim::index_sequence<Idx...>)
+{
+    std::array<tim::storage_initializer, sizeof...(Idx)> _data;
+    TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
+    return _data;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -309,10 +316,8 @@ extern "C"
 {
     void timemory_profile_func_enter(void* this_fn, void* call_site)
     {
-        // tim::trace::lock<tim::trace::compiler> lk{};
-        // if(!lk || !get_enabled())
-
-        if(!get_enabled())
+        tim::trace::lock<tim::trace::compiler> lk{};
+        if(!lk || !get_enabled())
             return;
 
         static auto _initialized = (initialize(), true);
@@ -344,10 +349,8 @@ extern "C"
     //
     void timemory_profile_func_exit(void* this_fn, void* call_site)
     {
-        // tim::trace::lock<tim::trace::compiler> lk{};
-        // if(!lk || !get_enabled())
-
-        if(!get_enabled())
+        tim::trace::lock<tim::trace::compiler> lk{};
+        if(!lk || !get_enabled())
             return;
 
         // puts(tim::get_hash_identifier(get_label(this_fn, call_site)).c_str());
@@ -396,4 +399,141 @@ extern "C"
 
         tim::consume_parameters(call_site, null_site);
     }
+
+    /*
+    extern int __real_pthread_create(pthread_t* thread, const pthread_attr_t* attr,
+                                     void* (*start_routine)(void*), void*     arg);
+    extern int __real_pthread_join(pthread_t thread, void** retval);
+
+    // pthread_create
+    int __wrap_pthread_create(pthread_t* thread, const pthread_attr_t* attr,
+                              void* (*start_routine)(void*), void*     arg)
+    {
+        PRINT_HERE("%s", "wrapping pthread_create");
+        auto _ini = init_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+        tim::consume_parameters(_ini);
+        return __real_pthread_create(thread, attr, start_routine, arg);
+    }
+
+    // pthread_join
+    int __wrap_pthread_join(pthread_t thread, void** retval)
+    {
+        PRINT_HERE("%s", "wrapping pthread_join");
+        tim::manager::instance()->finalize();
+        return __real_pthread_join(thread, retval);
+    }
+    */
 }  // extern "C"
+
+struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
+{
+    template <size_t... Idx>
+    static auto init_storage(tim::index_sequence<Idx...>)
+    {
+        std::array<tim::storage_initializer, sizeof...(Idx)> _data;
+        TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
+        return _data;
+    }
+
+    struct wrapper
+    {
+        typedef void* (*routine_t)(void*);
+
+        TIMEMORY_DEFAULT_OBJECT(wrapper)
+
+        wrapper(routine_t _routine, void* _arg, bool _debug)
+        : m_routine(_routine)
+        , m_arg(_arg)
+        , m_debug(_debug)
+        {}
+
+        void* operator()() const { return m_routine(m_arg); }
+
+        bool debug() const { return m_debug; }
+
+        static void* wrap(void* _arg)
+        {
+            if(!_arg)
+                return nullptr;
+
+            // convert the argument
+            wrapper* _wrapper = static_cast<wrapper*>(_arg);
+            if(_wrapper->debug())
+                PRINT_HERE("%s", "Creating timemory manager");
+            // create the manager and initialize the storage
+            auto _tlm = tim::manager::instance();
+            assert(_tlm.get() != nullptr);
+            if(_wrapper->debug())
+                PRINT_HERE("%s", "Initializing timemory component storage");
+            auto _ini = init_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+            tim::consume_parameters(_tlm, _ini);
+            if(_wrapper->debug())
+                PRINT_HERE("%s", "Executing original function");
+            // execute the original function
+            return (*_wrapper)();
+        }
+
+    private:
+        routine_t m_routine = nullptr;
+        void*     m_arg     = nullptr;
+        bool      m_debug   = false;
+    };
+
+    // pthread_create
+    int operator()(pthread_t* thread, const pthread_attr_t* attr,
+                   void* (*start_routine)(void*), void*     arg)
+    {
+        if(m_debug)
+            PRINT_HERE("%s", "wrapping pthread_create");
+        auto* _obj = new wrapper(start_routine, arg, m_debug);
+        if(m_debug)
+            PRINT_HERE("%s", "executing pthread_create");
+        return pthread_create(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
+    }
+
+    // pthread_join
+    int operator()(pthread_t thread, void** retval)
+    {
+        tim::trace::lock<tim::trace::threading> lk{};
+        lk.acquire();  // ensure the lock was acquired
+        if(m_debug)
+            PRINT_HERE("%s", "wrapping pthread_join");
+        if(m_debug)
+            PRINT_HERE("%s", "finalizing timemory manager");
+        tim::manager::instance()->finalize();
+        if(m_debug)
+            PRINT_HERE("%s", "executing pthread_join");
+        return pthread_join(thread, retval);
+    }
+
+private:
+    bool m_debug =
+        (tim::settings::instance()) ? tim::settings::instance()->get_debug() : false;
+};
+
+//--------------------------------------------------------------------------------------//
+
+using empty_tuple_t    = tim::component_tuple<>;
+using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
+using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
+
+//--------------------------------------------------------------------------------------//
+
+auto
+setup_pthread_gotcha()
+{
+#if defined(TIMEMORY_USE_GOTCHA)
+    pthread_gotcha_t::get_initializer() = []() {
+        TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
+        TIMEMORY_C_GOTCHA(pthread_gotcha_t, 1, pthread_join);
+    };
+#endif
+    return std::make_shared<pthread_bundle_t>("pthread");
+}
+
+//--------------------------------------------------------------------------------------//
+
+namespace
+{
+static auto pthread_gotcha_handle = setup_pthread_gotcha();
+}

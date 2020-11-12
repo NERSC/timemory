@@ -44,7 +44,7 @@ using namespace tim::component;
 using string_t       = std::string;
 using overhead_map_t = std::unordered_map<size_t, std::pair<wall_clock, size_t>>;
 using throttle_set_t = std::set<size_t>;
-using traceset_t     = tim::component_tuple<user_trace_bundle>;
+using traceset_t     = tim::component_bundle<TIMEMORY_API, user_trace_bundle>;
 using trace_map_t    = std::unordered_map<size_t, std::deque<traceset_t>>;
 
 //======================================================================================//
@@ -407,6 +407,13 @@ extern "C"
     void timemory_add_hash_id(uint64_t id, const char* name)
     {
         tim::trace::lock<tim::trace::library> lk{};
+        if(!lk)
+        {
+            if(tim::settings::debug())
+                fprintf(stderr,
+                        "[timemory-trace]> timemory_add_hash_id failed: locked...\n");
+            return;
+        }
         if(tim::settings::debug())
             fprintf(stderr, "[timemory-trace]> adding '%s' with hash %lu...\n", name,
                     (unsigned long) id);
@@ -427,6 +434,9 @@ extern "C"
     //
     void timemory_add_hash_ids(uint64_t nentries, uint64_t* ids, const char** names)
     {
+        if(tim::settings::debug())
+            fprintf(stderr, "[timemory-trace]> adding %lu hash ids...\n",
+                    (unsigned long) nentries);
         for(uint64_t i = 0; i < nentries; ++i)
             timemory_add_hash_id(ids[i], names[i]);
     }
@@ -439,6 +449,8 @@ extern "C"
         static thread_local bool              once_per_thread = false;
         if(!once_per_thread && tim::threading::get_id() > 0)
         {
+            if(tim::settings::debug())
+                fprintf(stderr, "[timemory-trace]> copying hash ids...\n");
             once_per_thread  = true;
             auto _master_ids = master_hash_ids;
             for(const auto& itr : _master_ids)
@@ -452,6 +464,9 @@ extern "C"
     {
         if(!timemory_trace_is_initialized())
             timemory_trace_init("", true, "");
+
+        static thread_local auto _copied = (timemory_copy_hash_ids(), true);
+        tim::consume_parameters(_copied);
 
         tim::trace::lock<tim::trace::library> lk{};
 
@@ -488,8 +503,8 @@ extern "C"
         auto& _trace_map = get_trace_map();
         auto& _overh_map = *get_overhead();
 
-        if(_trace_map.empty())
-            timemory_copy_hash_ids();
+        if(tim::get_hash_ids()->find(id) == tim::get_hash_ids()->end())
+            return;
 
         if(tim::settings::debug())
         {
@@ -504,7 +519,7 @@ extern "C"
                     (int) tim::threading::get_id());
         }
 
-        _trace_map[id].emplace_back(traceset_t(id));
+        _trace_map[id].emplace_back(traceset_t{ id });
         _trace_map[id].back().start();
         _overh_map[id].first.start();
     }
@@ -519,7 +534,14 @@ extern "C"
 
         auto& _trace_map = get_trace_map();
         if(!tim::settings::enabled() && _trace_map.empty())
+        {
+            if(tim::settings::debug() && _trace_map.empty())
+                fprintf(stderr,
+                        "[timemory-trace]> timemory_pop_trace_hash(%lu) failed. "
+                        "trace_map empty...\n",
+                        (unsigned long) id);
             return;
+        }
 
         int64_t ntotal = _trace_map[id].size();
         int64_t offset = ntotal - 1;
@@ -652,6 +674,11 @@ extern "C"
     {
         tim::trace::lock<tim::trace::library> lk{};
         tim::set_env<std::string>(env_var, env_val, 0);
+        if(get_library_state()[0])
+        {
+            tim::settings::parse();
+            user_trace_bundle::global_init();
+        }
     }
     //
     //----------------------------------------------------------------------------------//
@@ -659,10 +686,14 @@ extern "C"
     void timemory_trace_init(const char* comps, bool read_command_line, const char* cmd)
     {
         tim::trace::lock<tim::trace::library> lk{};
+        if(!tim::manager::instance() || tim::manager::instance()->is_finalized())
+            return;
+
         if(get_library_state()[0])
         {
-            PRINT_HERE("trace already initialized: %s",
-                       (get_library_state()[0]) ? "Y" : "N");
+            if(tim::settings::debug())
+                PRINT_HERE("trace already initialized: %s",
+                           (get_library_state()[0]) ? "Y" : "N");
             return;
         }
 
@@ -705,12 +736,17 @@ extern "C"
                 tim::settings::output_path() = exe_name;
             }
 
-            tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", comps, 0);
-
-            // configure bundle
-            tim::env::configure<user_trace_bundle>("TIMEMORY_TRACE_COMPONENTS", comps);
+            if(comps && strlen(comps) > 0)
+            {
+                tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", comps, 0);
+                if(tim::settings::trace_components().empty())
+                    tim::settings::trace_components() = comps;
+            }
 
             tim::settings::parse();
+
+            // configure bundle
+            user_trace_bundle::global_init();
 
             std::function<void(int)> exit_func = [](int) { tim::timemory_finalize(); };
             tim::signal_settings::set_exit_action(exit_func);

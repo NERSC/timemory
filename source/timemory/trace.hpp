@@ -160,16 +160,17 @@ struct lock<Tp, true>
 
     bool& get_local() { return m_value; }
 
-    void release()
+    bool release()
     {
-        if(m_value)
-        {
-            get_global() = false;
-            m_value      = false;
-        }
+        if(!m_value)
+            return false;
+
+        get_global() = false;
+        m_value      = false;
+        return true;
     }
 
-    void acquire()
+    bool acquire()
     {
         int64_t itr = 0;
         while(!m_value)
@@ -179,6 +180,7 @@ struct lock<Tp, true>
             if(itr++ == std::numeric_limits<int32_t>::max())
                 break;
         }
+        return m_value;
     }
 
 public:
@@ -217,13 +219,16 @@ struct lock<Tp, false>
 
     bool& get_local() { return m_value; }
 
-    void release()
+    bool release()
     {
-        if(m_value)
-            m_value = exchange(false);
+        if(!m_value)
+            return false;
+
+        m_value = exchange(false);
+        return true;
     }
 
-    void acquire()
+    bool acquire()
     {
         int64_t itr = 0;
         if(!m_value)
@@ -234,6 +239,7 @@ struct lock<Tp, false>
                     break;
             }
         }
+        return m_value;
     }
 
 public:

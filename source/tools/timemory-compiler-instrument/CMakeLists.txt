@@ -40,10 +40,11 @@ function(strip_target LIB_TARGET LIB_TYPE LIB_FUNC)
         endif()
         set(_FILE ${CMAKE_CURRENT_BINARY_DIR}/${LIB_TARGET}-symbols.txt)
         file(WRITE ${_FILE} "_${LIB_FUNC}_enter\n_${LIB_FUNC}_exit\n")
+        set(_STRIP_ARGS -i -S -x -X -N)
         add_custom_command(TARGET ${LIB_TARGET}
             POST_BUILD
             COMMAND ${CMAKE_STRIP}
-                -s ${_FILE} -i -S -x -X -N
+                -s ${_FILE} ${_STRIP_ARGS}
                 $<TARGET_FILE:${LIB_TARGET}>
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     else()
@@ -61,6 +62,14 @@ function(strip_target LIB_TARGET LIB_TYPE LIB_FUNC)
 endfunction()
 
 #----------------------------------------------------------------------------------------#
+
+add_interface_library(timemory-compiler-instrument-compile-options)
+add_cxx_flag_if_avail("-ftls-model=local-dynamic"
+    timemory-compiler-instrument-compile-options)
+
+# target_link_options(timemory-compiler-instrument-compile-options INTERFACE
+#    -Wl,--wrap,pthread_create
+#    -Wl,--wrap,pthread_join)
 
 set(LIB_TARGET timemory-compiler-instrument-base)
 
@@ -86,14 +95,16 @@ target_link_libraries(${LIB_TARGET} PRIVATE
     timemory::timemory-headers
     timemory::timemory-extensions
     timemory::timemory-compile-options
-    # timemory::timemory-hidden-visibility
+    timemory::timemory-hidden-visibility
+    timemory::timemory-compiler-instrument-compile-options
     )
+
+add_cxx_flag_if_avail("-ftls-model=local-exec" ${LIB_TARGET})
 
 # strip_target(${LIB_TARGET} STATIC "timemory_profile_func")
 
 install(TARGETS ${LIB_TARGET}
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler
-    EXPORT timemory-library-depends)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler)
 
 # build tree
 execute_process(
@@ -156,16 +167,11 @@ foreach(LIB_TYPE ${_LIB_TYPES})
         set_target_properties(${LIB_TARGET} PROPERTIES
             INTERFACE_LINK_OPTIONS "/DEBUG")
     else()
-        set(_rdynamic)
-        if(NOT (CMAKE_CXX_COMPILER_IS_CLANG AND APPLE))
-            set(_rdynamic
-                $<$<COMPILE_LANGUAGE:C>:-rdynamic>
-                $<$<COMPILE_LANGUAGE:CXX>:-rdynamic>)
-        endif()
         target_compile_options(${LIB_TARGET} INTERFACE
             $<$<COMPILE_LANGUAGE:C>:-g>
             $<$<COMPILE_LANGUAGE:CXX>:-g>
-            ${_rdynamic}
+            $<$<COMPILE_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU>:-rdynamic>>
+            $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-rdynamic>>
             $<$<COMPILE_LANGUAGE:C>:-fno-omit-frame-pointer>
             $<$<COMPILE_LANGUAGE:CXX>:-fno-omit-frame-pointer>
             $<$<COMPILE_LANGUAGE:C>:-fno-optimize-sibling-calls>
@@ -180,7 +186,9 @@ foreach(LIB_TYPE ${_LIB_TYPES})
             $<$<COMPILE_LANGUAGE:CXX>:-fvisibility-inlines-hidden>)
     endif()
 
-    strip_target(${LIB_TARGET} ${LIB_TYPE} "__cyg_profile_func")
+    if(NOT LINUX AND NOT "${LIB_TYPE}" STREQUAL "static")
+        strip_target(${LIB_TARGET} ${LIB_TYPE} "__cyg_profile_func")
+    endif()
 
     install(TARGETS ${LIB_TARGET}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler)
