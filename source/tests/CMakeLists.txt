@@ -105,16 +105,16 @@ set(ENV{TIMEMORY_ENABLED} OFF)
 
 add_subdirectory(external)
 
-if(TARGET timemory-compiler-instrument-shared)
-    add_timemory_google_test(instrumentation_shared_tests
+if(TARGET timemory::timemory-compiler-instrument-shared)
+    add_timemory_google_test(compiler_instrument_shared_tests
         SOURCES         instrumentation_tests.cpp
         LINK_LIBRARIES  timemory-compiler-instrument-shared
                         timemory::timemory-headers
                         test-opt-flags)
 endif()
 
-if(TARGET timemory-compiler-instrument-static)
-    add_timemory_google_test(instrumentation_static_tests
+if(TARGET timemory::timemory-compiler-instrument-static)
+    add_timemory_google_test(compiler_instrument_static_tests
         SOURCES         instrumentation_tests.cpp
         LINK_LIBRARIES  timemory-compiler-instrument-static
                         timemory::timemory-headers
@@ -586,4 +586,57 @@ if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
         NAME                python_tests
         COMMAND             ${PYTHON_EXECUTABLE} -m timemory.test
         WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+endif()
+
+if(TIMEMORY_USE_DYNINST)
+    if(NOT TARGET timemory-run)
+        message(FATAL_ERROR "TIMEMORY_USE_DYNINST is ON but no target 'timemory-run'")
+    endif()
+
+    add_executable(dynamic_instrument_tests instrumentation_tests.cpp)
+    target_link_libraries(dynamic_instrument_tests
+        ${_LIBRARY_TARGET}
+        timemory-google-test
+        google-test-debug-options)
+    set_target_properties(dynamic_instrument_tests PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    add_dependencies(timemory-test dynamic_instrument_tests)
+
+    if(TIMEMORY_USE_MPI)
+        set(LAUNCHER "${MPIEXEC_EXECUTABLE} -n 2")
+    endif()
+
+    set(TEST_ENVIRON)
+    list(APPEND TEST_ENVIRON "TIMEMORY_TRACE_COMPONENTS='wall_clock'")
+    list(APPEND TEST_ENVIRON "TIMEMORY_GLOBAL_COMPONENTS='wall_clock,cpu_clock'")
+
+    set(_scripts
+        # attach-process
+        # binary-rewrite-mpip
+        binary-rewrite-regex
+        binary-rewrite-stubs
+        binary-rewrite
+        # custom-components
+        # launch-process
+        region-sync)
+
+    set(COMMAND
+        ${CMAKE_CURRENT_BINARY_DIR}/dynamic_instrument_tests)
+
+    foreach(_file ${_scripts})
+        set(TEST_NAME dynamic_instrument_tests-${_file})
+        configure_file(
+            ${CMAKE_CURRENT_LIST_DIR}/scripts/${_file}.sh.in
+            ${CMAKE_CURRENT_BINARY_DIR}/${_file}.sh @ONLY)
+        add_test(
+            NAME                dynamic_instrument_tests-${_file}
+            COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/${_file}.sh
+            WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR})
+        set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRON}")
+        add_dependencies(timemory-test dynamic_instrument_tests)
+        set_property(TEST dynamic_instrument_tests-${_file} APPEND PROPERTY
+            DEPENDS dynamic_instrument_tests timemory-run)
+    endforeach()
 endif()

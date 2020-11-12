@@ -219,9 +219,7 @@ if(dl_LIBRARY)
     # This instructs the linker to add all symbols, not only used ones, to the dynamic
     # symbol table. This option is needed for some uses of dlopen or to allow obtaining
     # backtraces from within a program.
-    if(NOT (CMAKE_CXX_COMPILER_IS_CLANG AND APPLE))
-        add_flag_if_avail("-rdynamic")
-    endif()
+    add_flag_if_avail("-rdynamic")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -287,14 +285,8 @@ if (MSVC)
 
     # VTune is much more helpful when debug information is included in the 
     # generated release code. 
-    target_compile_definitions(timemory-compile-options INTERFACE /Zi)
-    target_compile_definitions(timemory-compile-options INTERFACE /debug)
-else()
-    # uncomment to use a debug postfix in non-msvc builds
-    # set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Build type" FORCE)
-
-    # uncomment to add symbols even for release builds
-    # target_compile_options(timemory-compile-options INTERFACE -g)
+    add_flag_if_avail("/Zi")
+    add_flag_if_avail("/debug")
 endif()
 
 #----------------------------------------------------------------------------------------#

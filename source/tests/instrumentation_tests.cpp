@@ -137,6 +137,28 @@ TEST_F(instrumentation_tests, sleep)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(instrumentation_tests, mt_consume)
+{
+    auto _consume = []() {
+        std::uniform_int_distribution<std::mt19937::result_type> dist(100, 1000);
+        auto _tid = tim::threading::get_id() + 1;
+        auto _rng = get_rng();
+        _rng.seed(std::random_device()() * _tid * _tid);
+        auto _ret = details::consume(dist(_rng));
+        EXPECT_TRUE(_ret >= 100);
+        EXPECT_TRUE(_ret <= 1000);
+    };
+
+    std::vector<std::thread> _threads;
+    for(int i = 0; i < 4; ++i)
+        _threads.emplace_back(std::move(std::thread(_consume)));
+    for(auto& itr : _threads)
+        itr.join();
+    _threads.clear();
+}
+
+//--------------------------------------------------------------------------------------//
+
 static bool _setup = (details::setup_rng(), true);
 
 //--------------------------------------------------------------------------------------//

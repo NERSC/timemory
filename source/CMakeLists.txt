@@ -335,14 +335,20 @@ else()
     inform_empty_interface(timemory-ncclp-library "NCCLP standalone instrumentation library")
 endif()
 
+if(TARGET timemory-compiler-instrument-base)
+    list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-base)
+endif()
+
 if(TARGET timemory-compiler-instrument-shared)
-    target_link_libraries(timemory-compiler-instrument INTERFACE timemory-compiler-instrument-shared)
+    target_link_libraries(timemory-compiler-instrument INTERFACE
+        timemory-compiler-instrument-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-shared)
     if(TARGET timemory-compiler-instrument-static)
         list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-static)
     endif()
 elseif(TARGET timemory-compiler-instrument-static)
-    target_link_libraries(timemory-compiler-instrument INTERFACE timemory-compiler-instrument-static)
+    target_link_libraries(timemory-compiler-instrument INTERFACE
+        timemory-compiler-instrument-static)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-static)
 endif()
 

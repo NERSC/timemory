@@ -480,7 +480,7 @@ if(TIMEMORY_BUILD_GOOGLE_TEST)
         mark_as_advanced(CMAKE_MACOSX_RPATH)
     endif()
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/google-test)
-    target_link_libraries(timemory-google-test INTERFACE gtest gmock gtest_main)
+    target_link_libraries(timemory-google-test INTERFACE gtest gmock)
     target_include_directories(timemory-google-test SYSTEM INTERFACE
         ${PROJECT_SOURCE_DIR}/google-test/googletest/include
         ${PROJECT_SOURCE_DIR}/google-test/googlemock/include)
@@ -872,11 +872,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     #
     # general set of compiler flags when using gperftools
     #
-    if(NOT (CMAKE_CXX_COMPILER_IS_CLANG AND APPLE))
-        add_target_flag_if_avail(timemory-gperftools "-g" "-rdynamic")
-    else()
-        add_target_flag_if_avail(timemory-gperftools"-g")
-    endif()
+    add_target_flag_if_avail(timemory-gperftools "-g" "-rdynamic")
 
     # NOTE:
     #   When compiling with programs with gcc, that you plan to link

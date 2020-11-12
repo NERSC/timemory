@@ -536,7 +536,7 @@ TEST_F(gotcha_tests, replacement)
 
     static_assert(exp_intercept_t::components_size == 0,
                   "exp_intercept_t should have no components");
-    static_assert(exp_intercept_t::differentiator_is_component,
+    static_assert(exp_intercept_t::differ_is_component,
                   "exp_intercept_t won't replace exp");
 
     //

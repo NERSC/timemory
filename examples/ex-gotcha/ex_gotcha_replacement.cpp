@@ -86,16 +86,16 @@ using exp2expf_ot = typename exp2expf_t::operator_type;
 static_assert(std::is_same<exp2expf_ot, exp_intercept>::value,
               "exp2expf_t operator_type is not exp_intercept");
 static_assert(exp2expf_t::components_size == 0, "exp2expf_t should have no components");
-static_assert(exp2expf_t::differentiator_is_component, "exp2expf_t won't replace exp");
+static_assert(exp2expf_t::differ_is_component, "exp2expf_t won't replace exp");
 
 using exptime_ot = typename exptime_t::operator_type;
-using exptime_ct = typename exptime_t::component_type;
+using exptime_ct = typename exptime_t::bundle_type;
 static_assert(std::is_same<exptime_ot, void>::value,
               "exptime_t operator_type is not exp_intercept");
 static_assert(exptime_t::components_size == 1, "exptime_t should have no components");
 static_assert(std::is_same<exptime_ct, wc_t>::value,
               "exptime_t has incorrect components");
-static_assert(!exptime_t::differentiator_is_component, "exp2expf_t won't replace exp");
+static_assert(!exptime_t::differ_is_component, "exp2expf_t won't replace exp");
 
 //======================================================================================//
 
