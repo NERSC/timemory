@@ -250,7 +250,10 @@ PYBIND11_MODULE(libpytimemory, tim)
                 auto _manager = manager_t::instance();
                 if(_manager)
                 {
-                    std::cout << "Finalizing after signal: " << nsig << std::endl;
+                    std::cout << "Finalizing after signal: " << nsig << " :: "
+                              << tim::signal_settings::str(
+                                     static_cast<tim::sys_signal>(nsig))
+                              << std::endl;
                     _manager->finalize();
                 }
             };

@@ -740,7 +740,9 @@ timemory_library_constructor()
                 auto _manager = manager::instance();
                 if(_manager)
                 {
-                    std::cout << "Finalizing after signal: " << nsig << std::endl;
+                    std::cout << "Finalizing after signal: " << nsig << " :: "
+                              << signal_settings::str(static_cast<sys_signal>(nsig))
+                              << std::endl;
                     _manager->finalize();
                 }
             };
