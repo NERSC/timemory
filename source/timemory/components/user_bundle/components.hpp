@@ -139,7 +139,7 @@ auto
 get_bundle_components(const VecT& _priority)
 {
     using string_t = std::string;
-    const auto regex_constants =
+    static const auto regex_constants =
         std::regex_constants::optimize | std::regex_constants::icase;
     string_t _custom{};
     bool     fallthrough = false;

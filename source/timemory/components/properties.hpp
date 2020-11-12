@@ -164,7 +164,7 @@ struct static_properties<Tp, true>
 ///
 /// A macro is provides to simplify this specialization:
 ///
-/// \code
+/// \code{.cpp}
 /// TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
 ///                                 "virtual_clock")
 /// \endcode
@@ -203,7 +203,7 @@ struct properties : static_properties<Tp>
 /// tim::component::properties) and it is also critical for performing template
 /// metaprogramming "loops" over all the components. E.g.:
 ///
-/// \code
+/// \code{.cpp}
 /// template <size_t Idx>
 /// using Enumerator_t = typename tim::component::enumerator<Idx>::type;
 ///

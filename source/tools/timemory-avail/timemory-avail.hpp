@@ -158,8 +158,8 @@ private:
     entry_type* current_entry  = nullptr;
     array_type* output_stream  = nullptr;
     unique_set  exclude_stream = {};
-    int_stack   name_counter   = {};
-    unique_set  value_keys     = {
+    int_stack   name_counter;
+    unique_set  value_keys = {
         "name", "value", "description", "count", "environ", "max_count", "cmdline",
     };
 };

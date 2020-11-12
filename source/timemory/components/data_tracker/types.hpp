@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/data_tracker/types.hpp
- * \brief Declare the data_tracker component types
- */
-
 #pragma once
 
 #include "timemory/components/macros.hpp"
@@ -49,20 +44,25 @@ namespace tim
 {
 namespace component
 {
-/// \typedef data_tracker_integer
+/// \typedef tim::component::data_tracker_integer
 /// \brief Specialization of \ref tim::component::data_tracker for storing signed integer
 /// data
 using data_tracker_integer = data_tracker<intmax_t, project::timemory>;
-/// \typedef data_tracker_unsigned
+
+/// \typedef tim::component::data_tracker_unsigned
 /// \brief Specialization of \ref tim::component::data_tracker for storing unsigned
 /// integer data
 using data_tracker_unsigned = data_tracker<size_t, project::timemory>;
-/// \typedef data_tracker_double
+
+/// \typedef tim::component::data_tracker_floating
 /// \brief Specialization of \ref tim::component::data_tracker for storing floating point
 /// data
 using data_tracker_floating = data_tracker<double, project::timemory>;
 }  // namespace component
+}  // namespace tim
 //
+namespace tim
+{
 namespace trait
 {
 template <typename InpT, typename Tag>

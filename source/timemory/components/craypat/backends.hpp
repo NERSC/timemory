@@ -244,8 +244,7 @@ get_category(const std::string& key)
     using regex_array_t              = std::vector<std::pair<std::regex, int>>;
     static regex_array_t regex_array = []() {
         regex_array_t tmp;
-        auto          regex_constants =
-            std::regex_constants::ECMAScript | std::regex_constants::icase;
+        auto regex_constants = std::regex_constants::egrep | std::regex_constants::icase;
         auto add_regex = [&](const std::string& regex_expr, int val) {
             tmp.push_back({ std::regex(regex_expr, regex_constants), val });
         };

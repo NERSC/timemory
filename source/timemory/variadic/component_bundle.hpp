@@ -441,7 +441,7 @@ public:
     /// performs an opaque search. Opaque searches are generally provided by user_bundles
     /// with a functor such as this:
     ///
-    /// \code
+    /// \code{.cpp}
     /// auto _get = [=](void* v_this, void*& ptr, size_t _hash) {
     /// {
     ///     if(!ptr && v_this && _hash == typeid_hash<Tp>())
@@ -455,7 +455,7 @@ public:
     ///
     /// And the component provides this function:
     ///
-    /// \code
+    /// \code{.cpp}
     /// template <typename Tp, typename Value>
     /// void
     /// base<Tp, Value>::get(void*& ptr, size_t _hash) const

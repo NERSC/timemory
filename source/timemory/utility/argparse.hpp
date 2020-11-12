@@ -1157,7 +1157,7 @@ struct argument_parser
     /// \brief Returns whether or not an option was found in the arguments. Only
     /// useful after a call to \ref parse or \ref parse_known_args.
     ///
-    /// \code[.cpp]
+    /// \code{.cpp}
     ///
     /// int main(int argc, char** argv)
     /// {
@@ -1203,7 +1203,7 @@ struct argument_parser
     /// be used in conjunction with \ref exists(name). Only useful after a call to \ref
     /// parse or \ref parse_known_args.
     ///
-    /// \code[.cpp]
+    /// \code{.cpp}
     ///
     /// int main(int argc, char** argv)
     /// {

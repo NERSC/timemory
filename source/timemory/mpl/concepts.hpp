@@ -116,6 +116,9 @@ struct nothing;
 //
 }  // namespace component
 //
+template <typename... Types>
+class lightweight_tuple;
+//
 namespace concepts
 {
 //
@@ -431,6 +434,12 @@ template <typename T>
 struct component_type
 {
     using type = typename T::component_type;
+};
+
+template <>
+struct component_type<std::tuple<>>
+{
+    using type = lightweight_tuple<>;
 };
 
 //--------------------------------------------------------------------------------------//

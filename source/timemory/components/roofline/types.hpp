@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/roofline/types.hpp
- * \brief Declare the roofline component types
- */
-
 #pragma once
 
 #include "timemory/components/cuda/backends.hpp"
@@ -39,44 +34,50 @@ TIMEMORY_DECLARE_TEMPLATE_COMPONENT(cpu_roofline, typename... Types)
 
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(gpu_roofline, typename... Types)
 
+namespace tim
+{
+namespace component
+{
 /// \typedef tim::component::cpu_roofline_sp_flops
 /// \brief A specialization of \ref tim::component::cpu_roofline for 32-bit floating point
 /// operations
-TIMEMORY_COMPONENT_ALIAS(cpu_roofline_sp_flops, cpu_roofline<float>)
+using cpu_roofline_sp_flops = cpu_roofline<float>;
 
 /// \typedef tim::component::cpu_roofline_dp_flops
 /// \brief A specialization of \ref tim::component::cpu_roofline for 64-bit floating point
 /// operations
-TIMEMORY_COMPONENT_ALIAS(cpu_roofline_dp_flops, cpu_roofline<double>)
+using cpu_roofline_dp_flops = cpu_roofline<double>;
 
 /// \typedef tim::component::cpu_roofline_flops
 /// \brief A specialization of \ref tim::component::cpu_roofline for 32-bit and 64-bit
 /// floating point operations
-TIMEMORY_COMPONENT_ALIAS(cpu_roofline_flops, cpu_roofline<float, double>)
+using cpu_roofline_flops = cpu_roofline<float, double>;
 
 /// \typedef tim::component::gpu_roofline_hp_flops
 /// \brief A specialization of \ref tim::component::gpu_roofline for 16-bit floating point
 /// operations (depending on availability).
-TIMEMORY_COMPONENT_ALIAS(gpu_roofline_hp_flops, gpu_roofline<cuda::fp16_t>)
+using gpu_roofline_hp_flops = gpu_roofline<cuda::fp16_t>;
 
 /// \typedef tim::component::gpu_roofline_sp_flops
 /// \brief A specialization of \ref tim::component::gpu_roofline for 32-bit floating point
 /// operations
-TIMEMORY_COMPONENT_ALIAS(gpu_roofline_sp_flops, gpu_roofline<float>)
+using gpu_roofline_sp_flops = gpu_roofline<float>;
 
 /// \typedef tim::component::gpu_roofline_dp_flops
 /// \brief A specialization of \ref tim::component::gpu_roofline for 64-bit floating point
 /// operations
-TIMEMORY_COMPONENT_ALIAS(gpu_roofline_dp_flops, gpu_roofline<double>)
+using gpu_roofline_dp_flops = gpu_roofline<double>;
 
 /// \typedef tim::component::gpu_roofline_flops
 /// \brief A specialization of \ref tim::component::gpu_roofline for 16-bit (possibly),
 /// 32-bit, and 64-bit floating point operations
 #if defined(TIMEMORY_USE_CUDA_HALF)
-TIMEMORY_COMPONENT_ALIAS(gpu_roofline_flops, gpu_roofline<cuda::fp16_t, float, double>)
+using gpu_roofline_flops = gpu_roofline<cuda::fp16_t, float, double>;
 #else
-TIMEMORY_COMPONENT_ALIAS(gpu_roofline_flops, gpu_roofline<float, double>)
+using gpu_roofline_flops = gpu_roofline<float, double>;
 #endif
+}  // namespace component
+}  // namespace tim
 
 //--------------------------------------------------------------------------------------//
 //

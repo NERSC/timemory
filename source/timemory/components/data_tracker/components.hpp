@@ -60,7 +60,7 @@ namespace component
 /// template parameter is the type of data to be tracked, the second is a custom
 /// tag, the third is the implementation for how to track the data.
 /// Usage:
-/// \code
+/// \code{.cpp}
 /// struct iteration_count_tag;
 ///
 /// using tracker_type = data_tracker<uint64_t, iteration_count_tag>;
@@ -292,14 +292,25 @@ private:
     secondary_ptr_t m_secondary{ nullptr };
 };
 //
-//--------------------------------------------------------------------------------------//
-//
-/// \typedef data_handler_t
+/// \typedef tim::component::data_handler_t
 /// \brief an alias for getting the handle_type of a data tracker
 template <typename T>
 using data_handler_t = typename T::handler_type;
 //
-//--------------------------------------------------------------------------------------//
+/// \typedef tim::component::data_tracker_integer
+/// \brief Specialization of \ref tim::component::data_tracker for storing signed integer
+/// data
+using data_tracker_integer = data_tracker<intmax_t, project::timemory>;
+//
+/// \typedef tim::component::data_tracker_unsigned
+/// \brief Specialization of \ref tim::component::data_tracker for storing unsigned
+/// integer data
+using data_tracker_unsigned = data_tracker<size_t, project::timemory>;
+//
+/// \typedef tim::component::data_tracker_floating
+/// \brief Specialization of \ref tim::component::data_tracker for storing floating point
+/// data
+using data_tracker_floating = data_tracker<double, project::timemory>;
 //
 }  // namespace component
 }  // namespace tim

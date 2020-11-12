@@ -52,31 +52,19 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_STATIC_ACCESSOR)
-#    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
-    public:                                                                              \
-        static TYPE& FUNC() TIMEMORY_VISIBILITY("default")                               \
-        {                                                                                \
-            return instance()->m__##FUNC;                                                \
-        }                                                                                \
-                                                                                         \
-    private:                                                                             \
-        TYPE m__##FUNC = INIT;
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
 #if !defined(TIMEMORY_SETTINGS_MEMBER_DECL)
 #    define TIMEMORY_SETTINGS_MEMBER_DECL(TYPE, FUNC, ENV_VAR)                           \
     public:                                                                              \
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            return static_cast<tsettings<TYPE>*>(m_data[ENV_VAR].get())->get();          \
+            static std::string _key = ENV_VAR;                                           \
+            return static_cast<tsettings<TYPE>*>(m_data[_key].get())->get();             \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
         {                                                                                \
-            auto ret = m_data.find(ENV_VAR);                                             \
+            static std::string _key = ENV_VAR;                                           \
+            auto               ret  = m_data.find(_key);                                 \
             if(ret == m_data.end())                                                      \
                 return TYPE{};                                                           \
             if(!ret->second)                                                             \
@@ -97,12 +85,14 @@
     public:                                                                              \
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            return static_cast<tsettings<TYPE, TYPE&>*>(m_data[ENV_VAR].get())->get();   \
+            static std::string _key = ENV_VAR;                                           \
+            return static_cast<tsettings<TYPE, TYPE&>*>(m_data[_key].get())->get();      \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
         {                                                                                \
-            auto ret = m_data.find(ENV_VAR);                                             \
+            static std::string _key = ENV_VAR;                                           \
+            auto               ret  = m_data.find(_key);                                 \
             if(ret == m_data.end())                                                      \
                 return TYPE{};                                                           \
             if(!ret->second)                                                             \
@@ -171,23 +161,6 @@
             ar(cereal::make_nvp(ENV_VAR, FUNC()));                                       \
         } catch(...)                                                                     \
         {}
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_SETTINGS_CEREAL_REGISTER)
-#    define TIMEMORY_SETTINGS_CEREAL_REGISTER(TYPE, LABEL)                               \
-        TIMEMORY_SET_CLASS_VERSION(TIMEMORY_GET_CLASS_VERSION(::tim::vsettings), TYPE)   \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace alias                                                                  \
-        {                                                                                \
-        using tsettings_##LABEL = tsettings<TYPE, TYPE>;                                 \
-        }                                                                                \
-        }                                                                                \
-        CEREAL_REGISTER_TYPE(tim::alias::tsettings_##LABEL)                              \
-        CEREAL_REGISTER_POLYMORPHIC_RELATION(::tim::vsettings,                           \
-                                             tim::alias::tsettings_##LABEL)
 #endif
 //
 //--------------------------------------------------------------------------------------//

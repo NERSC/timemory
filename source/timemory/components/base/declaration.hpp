@@ -150,16 +150,16 @@ public:
     {}
 
 public:
-    void    set_started();  /// store that start has been called
-    void    set_stopped();  /// store that stop has been called
-    void    reset();        /// reset the values
-    void    measure();      /// record a measurment
-    bool    get_is_transient() const { return (laps > 0 || is_transient); }
-    bool    get_is_running() const { return is_running; }
-    bool    get_is_on_stack() const { return is_on_stack; }
-    bool    get_is_flat() const { return is_flat; }
-    bool    get_depth_change() const { return depth_change; }
-    int64_t get_laps() const { return laps; }
+    void set_started();  /// store that start has been called
+    void set_stopped();  /// store that stop has been called
+    void reset();        /// reset the values
+    void measure();      /// record a measurment
+    bool get_is_transient() const { return (laps > 0 || is_transient); }  /// phase
+    bool get_is_running() const { return is_running; }      /// currently collecting
+    bool get_is_on_stack() const { return is_on_stack; }    /// currently on call-stack
+    bool get_is_flat() const { return is_flat; }            /// flat call-stack
+    bool get_depth_change() const { return depth_change; }  /// changed call-stack depth
+    int64_t get_laps() const { return laps; }               /// get number of invocations
     void    get_opaque_data(void*& ptr, size_t _hash) const;  /// assign to pointer
 
     void get(void*& ptr, size_t _typeid_hash) const;   /// assign type to a pointer
@@ -297,8 +297,8 @@ public:
     static constexpr auto ios_fixed         = std::ios_base::fixed;
     static constexpr auto ios_decimal       = std::ios_base::dec;
     static constexpr auto ios_showpoint     = std::ios_base::showpoint;
-    static const short    precision         = (percent_units_v) ? 1 : 3;
-    static const short    width             = (percent_units_v) ? 6 : 8;
+    static const short    precision         = percent_units_v ? 1 : 3;
+    static const short    width             = percent_units_v ? 6 : 8;
     static const fmtflags format_flags      = ios_fixed | ios_decimal | ios_showpoint;
 
     template <typename Up = Type, typename UnitT = typename trait::units<Up>::type,

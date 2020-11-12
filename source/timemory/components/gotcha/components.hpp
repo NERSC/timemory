@@ -55,6 +55,120 @@ namespace component
 //
 //  TODO: filter any gotcha components out of BundleT
 //
+/// \struct tim::component::gotcha
+/// \tparam Nt Max number of functions which will wrapped by this component
+/// \tparam BundleT Component bundle to wrap around the function(s)
+/// \tparam DiffT Differentiator type to distinguish different sets of wrappers with
+/// identical values of `Nt` and `BundleT` (or provide function call operator if replacing
+/// functions instead of wrapping functions)
+///
+/// \brief The gotcha component rewrites the global offset table such that calling the
+/// wrapped function actually invokes either a function which is wrapped by timemory
+/// instrumentation or is replaced by a timemory component with an function call operator
+/// (`operator()`) whose return value and arguments exactly match the original function.
+/// This component is only available on Linux and can only by applied to external,
+/// dynamically-linked functions (i.e. functions defined in a shared library).
+/// If the `BundleT` template parameter is a non-empty component bundle, this component
+/// will surround the original function call with:
+///
+/// \code{.cpp}
+/// bundle_type _obj{ "<NAME-OF-ORIGINAL-FUNCTION>" };
+/// _obj.construct(_args...);
+/// _obj.start();
+/// _obj.audit("<NAME-OF-ORIGINAL-FUNCTION>", _args...);
+///
+/// Ret _ret = <CALL-ORIGINAL-FUNCTION>
+///
+/// _obj.audit("<NAME-OF-ORIGINAL-FUNCTION>", _ret);
+/// _obj.stop();
+/// \endcode
+///
+/// If the `BundleT` template parameter is an empty variadic class, e.g. `std::tuple<>`,
+/// `tim::component_tuple<>`, etc., and the `DiffT` template parameter is a timemory
+/// component, the assumption is that the `DiffT` component has a function call operator
+/// which should replace the original function call, e.g. `void* malloc(size_t)` can be
+/// replaced with a component with `void* operator()(size_t)`, e.g.:
+///
+/// \code{.cpp}
+/// // replace 'double exp(double)'
+/// struct exp_replace : base<exp_replace, void>
+/// {
+///     double operator()(double value)
+///     {
+///         float result = expf(static_cast<float>(value));
+///         return static_cast<double>(result);
+///     }
+/// };
+/// \endcode
+///
+/// Example usage:
+///
+/// \code{.cpp}
+/// #include <timemory/timemory.hpp>
+///
+/// #include <cassert>
+/// #include <cmath>
+/// #include <tuple>
+///
+/// using empty_tuple_t = std::tuple<>;
+/// using base_bundle_t = tim::component_tuple<wall_clock, cpu_clock>;
+/// using gotcha_wrap_t = tim::component::gotcha<2, base_bundle_t, void>;
+/// using gotcha_repl_t = tim::component::gotcha<2, empty_tuple_t, exp_replace>;
+/// using impl_bundle_t = tim::append_type_t<base_bundle_t,
+///                                     tim::type_list<gotcha_wrap_t, gotcha_repl_t>>;
+///
+/// void init_wrappers()
+/// {
+///     // wraps the sin and cos math functions
+///     gotcha_wrap_t::get_initializer() = []()
+///     {
+///         TIMEMORY_C_GOTCHA(gotcha_wrap_t, 0, sin);   // index 0 replaces sin
+///         TIMEMORY_C_GOTCHA(gotcha_wrap_t, 1, cos);   // index 1 replace cos
+///     };
+///
+///     // replaces the 'exp' function which may be 'exp' in symbols table
+///     // or '__exp_finite' in symbols table (use `nm <bindary>` to determine)
+///     gotcha_repl_t::get_initializer() = []()
+///     {
+///         TIMEMORY_C_GOTCHA(gotcha_repl_t, 0, exp);
+///         TIMEMORY_DERIVED_GOTCHA(gotcha_repl_t, 1, exp, "__exp_finite");
+///     };
+/// }
+///
+/// // the following is useful to avoid having to call 'init_wrappers()' explicitly:
+/// // use comma operator to call 'init_wrappers' and return true
+/// static auto called_init_at_load = (init_wrappers(), true);
+///
+/// int main()
+/// {
+///     assert(called_init_at_load == true);
+///
+///     double angle = 45.0 * (M_PI / 180.0);
+///
+///     impl_bundle_t _obj{ "main" };
+///
+///     // gotcha wrappers not activated yet
+///     printf("cos(%f) = %f\n", angle, cos(angle));
+///     printf("sin(%f) = %f\n", angle, sin(angle));
+///     printf("exp(%f) = %f\n", angle, exp(angle));
+///
+///     // gotcha wrappers are reference counted according to start/stop
+///     _obj.start();
+///
+///     printf("cos(%f) = %f\n", angle, cos(angle));
+///     printf("sin(%f) = %f\n", angle, sin(angle));
+///     printf("exp(%f) = %f\n", angle, exp(angle));
+///
+///     _obj.stop();
+///
+///     // gotcha wrappers will be deactivated
+///     printf("cos(%f) = %f\n", angle, cos(angle));
+///     printf("sin(%f) = %f\n", angle, sin(angle));
+///     printf("exp(%f) = %f\n", angle, exp(angle));
+///
+///     return 0;
+/// }
+/// \endcode
 template <size_t Nt, typename BundleT, typename DiffT>
 struct gotcha
 : public base<gotcha<Nt, BundleT, DiffT>, void>
@@ -96,9 +210,11 @@ struct gotcha
     static constexpr bool   differ_is_component =
         (is_one_of<DiffT, tuple_type>::value ||
          (components_size == 0 && concepts::is_component<DiffT>::value));
+    // backwards-compat
+    static constexpr bool differentiator_is_component = differ_is_component;
 
     using operator_type =
-        typename std::conditional<(differ_is_component), DiffT, void>::type;
+        typename std::conditional<differ_is_component, DiffT, void>::type;
 
     static std::string label() { return "gotcha"; }
     static std::string description()
@@ -138,7 +254,7 @@ struct gotcha
     }
 
     //----------------------------------------------------------------------------------//
-
+    /// add function names at runtime to suppress wrappers
     static void add_global_suppression(const std::string& func)
     {
         get_suppresses().insert(func);
@@ -152,7 +268,7 @@ struct gotcha
     {
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
 
-        bundle_type::init_storage();
+        init_storage<bundle_type>(0);
 
         static_assert(N < Nt, "Error! N must be less than Nt!");
         auto& _data = get_data()[N];
@@ -993,7 +1109,16 @@ private:
 #endif
     }
 
-    //----------------------------------------------------------------------------------//
+private:
+    template <typename Tp>
+    static auto init_storage(int) -> decltype(Tp::init_storage())
+    {
+        return Tp::init_storage();
+    }
+
+    template <typename Tp>
+    static auto init_storage(long)
+    {}
 };
 //
 }  // namespace component

@@ -440,9 +440,9 @@ struct statistics
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::permissive_statistics
 /// \brief trait that will suppress compilation error in
-/// \code{.cpp} operation::add_statistics<Component> \endcode if the data type passed is
-/// implicitly convertible to the data type in \code{.cpp} statistics<Component>::type
-/// \endcode but avoids converting integers to floating points and vice-versa.
+/// `operation::add_statistics<Component>` if the data type passed is
+/// implicitly convertible to the data type in `statistics<Component>::type`
+/// but avoids converting integers to floating points and vice-versa.
 ///
 template <typename T>
 struct permissive_statistics : false_type
@@ -500,9 +500,9 @@ struct pretty_json : std::false_type
 
 /// \struct tim::trait::api_input_archive
 /// \brief trait that configures the default input archive type for an entire API
-/// specification, e.g. TIMEMORY_API (which is \code struct tim::api::native_tag
-/// \endcode). The input archive format of individual components is determined from the
-/// derived \ref tim::trait::input_archive
+/// specification, e.g. TIMEMORY_API (which is `struct tim::project::timemory`). The input
+/// archive format of individual components is determined from the derived \ref
+/// tim::trait::input_archive
 ///
 template <typename Api>
 struct api_input_archive
@@ -512,9 +512,9 @@ struct api_input_archive
 
 /// \struct tim::trait::api_output_archive
 /// \brief trait that configures the default output archive type for an entire API
-/// specification, e.g. TIMEMORY_API (which is \code struct tim::api::native_tag
-/// \endcode). The output archive format of individual components is determined from the
-/// derived \ref tim::trait::output_archive
+/// specification, e.g. TIMEMORY_API (which is `struct tim::project::timemory`). The
+/// output archive format of individual components is determined from the derived \ref
+/// tim::trait::output_archive
 ///
 template <typename Api>
 struct api_output_archive
