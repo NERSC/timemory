@@ -1359,6 +1359,7 @@ if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
         REPO_BRANCH timemory)
 
     message(STATUS "Adding external/ptl")
+    option(PTL_USE_TBB "Enable TBB backend support in PTL" OFF)
     add_subdirectory(external/ptl)
 endif()
 

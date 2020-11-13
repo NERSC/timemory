@@ -108,7 +108,7 @@ add_subdirectory(external)
 if(TARGET timemory::timemory-compiler-instrument-shared)
     add_timemory_google_test(compiler_instrument_shared_tests
         SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  timemory-compiler-instrument-shared
+        LINK_LIBRARIES  timemory::timemory-compiler-instrument-shared
                         timemory::timemory-headers
                         test-opt-flags)
 endif()
@@ -116,7 +116,7 @@ endif()
 if(TARGET timemory::timemory-compiler-instrument-static)
     add_timemory_google_test(compiler_instrument_static_tests
         SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  timemory-compiler-instrument-static
+        LINK_LIBRARIES  timemory::timemory-compiler-instrument-static
                         timemory::timemory-headers
                         test-opt-flags)
 endif()
@@ -195,8 +195,7 @@ list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
 
 add_timemory_google_test(traits_tests
     SOURCES         traits_tests.cpp
-    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-analysis-tools)
+    LINK_LIBRARIES  common-test-libs)
 
 add_timemory_google_test(component_bundle_tests
     MPI
@@ -269,7 +268,7 @@ if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
     add_timemory_google_test(ptl_tests
         SOURCES         ptl_tests.cpp
         LINK_LIBRARIES  common-test-libs
-                        timemory-ompt
+                        ${_LIBRARY}
                         PTL::ptl)
 endif()
 
