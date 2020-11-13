@@ -751,6 +751,7 @@ components(py::module& _pymod, std::array<bool, N>& _boolgen,
 {
     TIMEMORY_FOLD_EXPRESSION(pyinternal::generate<Idx>(_pymod, _boolgen, _keygen));
 }
+//
 }  // namespace pyinternal
 //
 //======================================================================================//

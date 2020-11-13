@@ -24,11 +24,6 @@
 // SOFTWARE.
 //
 
-/** \file timemory/variadic/component_list.hpp
- * \headerfile variadic/component_list.hpp "timemory/variadic/component_list.hpp"
- *
- */
-
 #pragma once
 
 #include "timemory/backends/dmp.hpp"

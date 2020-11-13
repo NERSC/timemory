@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/containers/types/complete_list.hpp
- * \brief Include the extern declarations for complete_list in containers
- */
-
 #pragma once
 
 #include "timemory/api.hpp"

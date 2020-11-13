@@ -67,14 +67,16 @@ get_hash(std::string&& key)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename... Args, enable_if_t<component::enumerator<I>::value, int> = 0>
-void
+template <int I, typename... Args, typename Ip = component::enumerator_t<I>>
+enable_if_t<component::enumerator<I>::value &&
+                !concepts::is_runtime_configurable<Ip>::value,
+            void>
 do_enumerator_generate(std::vector<opaque_pair_t>& opaque_array, int idx, Args&&... args)
 {
-    if(idx == I)
+    using type = component::enumerator_t<I>;
+    IF_CONSTEXPR(!concepts::is_placeholder<type>::value)
     {
-        using type = component::enumerator_t<I>;
-        if(!std::is_same<type, component::placeholder<component::nothing>>::value)
+        if(idx == I)
         {
             opaque_array.push_back(
                 { component::factory::get_opaque<type>(std::forward<Args>(args)...),
@@ -85,8 +87,10 @@ do_enumerator_generate(std::vector<opaque_pair_t>& opaque_array, int idx, Args&&
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename... Args, enable_if_t<!component::enumerator<I>::value, int> = 0>
-void
+template <int I, typename... Args, typename Ip = component::enumerator_t<I>>
+enable_if_t<!component::enumerator<I>::value ||
+                concepts::is_runtime_configurable<Ip>::value,
+            void>
 do_enumerator_generate(std::vector<opaque_pair_t>&, int, Args&&...)
 {}
 //
@@ -96,24 +100,26 @@ do_enumerator_generate(std::vector<opaque_pair_t>&, int, Args&&...)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename Tp, typename... Args,
-          enable_if_t<component::enumerator<I>::value, int> = 0>
-void
+template <int I, typename Tp, typename... Args, typename Ip = component::enumerator_t<I>>
+enable_if_t<component::enumerator<I>::value &&
+                !concepts::is_runtime_configurable<Ip>::value,
+            void>
 do_enumerator_init(Tp& obj, int idx, Args&&... args)
 {
-    if(idx == I)
+    using type = component::enumerator_t<I>;
+    IF_CONSTEXPR(!concepts::is_placeholder<type>::value)
     {
-        using type = component::enumerator_t<I>;
-        if(!std::is_same<type, component::placeholder<component::nothing>>::value)
+        if(idx == I)
             obj.template initialize<type>(std::forward<Args>(args)...);
     }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename Tp, typename... Args,
-          enable_if_t<!component::enumerator<I>::value, int> = 0>
-void
+template <int I, typename Tp, typename... Args, typename Ip = component::enumerator_t<I>>
+enable_if_t<!component::enumerator<I>::value ||
+                concepts::is_runtime_configurable<Ip>::value,
+            void>
 do_enumerator_init(Tp&, int, Args&&...)
 {}
 //
@@ -123,8 +129,10 @@ template <int I>
 void
 do_enumerator_enumerate(component_hash_map_t& _map, component_key_set_t& _set)
 {
-    using type = component::enumerator_t<I>;
-    if(!std::is_same<type, component::placeholder<component::nothing>>::value)
+    using type            = component::enumerator_t<I>;
+    constexpr auto _is_ph = concepts::is_placeholder<type>::value;
+    constexpr auto _is_rt = concepts::is_runtime_configurable<type>::value;
+    IF_CONSTEXPR(!_is_ph && !_is_rt)
     {
         std::string _id = component::properties<type>::id();
         if(_id != "TIMEMORY_COMPONENTS_END")

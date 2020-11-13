@@ -295,8 +295,18 @@ TIMEMORY_IMPL_IS_CONCEPT(auto_wrapper)
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_runtime_configurable
-/// \brief concept that specifies that a component type supports configurating the
-/// set of components that it collects at runtime (e.g. user_bundle)
+/// \brief concept that specifies that a type is used to modify behavior at runtime.
+/// For example, the \ref tim::component::user_bundle component is runtime configurable bc
+/// it allows you insert components at runtime. The timing category
+/// (`tim::category::timing`) is another example of a type that is runtime configurable --
+/// setting `tim::trait::runtime_enabled<tim::category::timing>::set(false);` will disable
+/// (at runtime) all the types which are part of the timing API. It should be noted that
+/// types which satisfy `is_runtime_configurable<Tp>::value == true` (e.g. \ref
+/// tim::component::user_bundle) are not eligible to be inserted into other runtime
+/// configurable components; i.e. you cannot insert/add \ref
+/// tim::component::user_trace_bundle into \ref tim::component::user_global_bundle, etc.
+/// This restriction is primarily due to the significant increase in compile-time that
+/// arises from allowing this behavior.
 ///
 TIMEMORY_IMPL_IS_CONCEPT(runtime_configurable)
 

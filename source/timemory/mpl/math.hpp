@@ -102,12 +102,12 @@ minus(Tp&, const Up&);
 
 template <typename Tp, typename Up = Tp,
           enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
-inline void
+inline Tp&
 multiply(Tp&, const Up&);
 
 template <typename Tp, typename Up = Tp,
           enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
-inline void
+inline Tp&
 divide(Tp&, const Up&);
 
 template <typename Tp>
@@ -207,26 +207,26 @@ divide(std::tuple<>&, const int64_t&)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename std::enable_if<(std::is_integral<Tp>::value &&
-                                                std::is_unsigned<Tp>::value),
-                                               int>::type = 0>
+template <typename Tp,
+          enable_if_t<std::is_integral<Tp>::value && std::is_unsigned<Tp>::value> = 0>
 auto
-abs(Tp _val, type_list<>) -> decltype(Tp())
+abs(Tp _val, type_list<>) -> decltype(Tp{})
 {
     return _val;
 }
 
 template <typename Tp,
-          typename std::enable_if<(std::is_arithmetic<Tp>::value), int>::type = 0>
+          enable_if_t<std::is_arithmetic<Tp>::value &&
+                      !(std::is_integral<Tp>::value && std::is_unsigned<Tp>::value)> = 0>
 auto
-abs(Tp _val, type_list<>) -> decltype(std::abs(_val), Tp())
+abs(Tp _val, type_list<>) -> decltype(std::abs(_val), Tp{})
 {
     return std::abs(_val);
 }
 
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
-abs(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp())
+abs(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
         itr = abs(itr, get_index_sequence<decay_t<decltype(itr)>>::value);
@@ -236,7 +236,7 @@ abs(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp())
 template <typename Tp, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
-abs(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp())
+abs(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
         itr.second =
@@ -262,17 +262,16 @@ abs(Tp _val)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp,
-          typename std::enable_if<(std::is_arithmetic<Tp>::value), int>::type = 0>
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 auto
-sqrt(Tp _val, type_list<>) -> decltype(std::sqrt(_val), Tp())
+sqrt(Tp _val, type_list<>) -> decltype(std::sqrt(_val), Tp{})
 {
     return std::sqrt(_val);
 }
 
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
-sqrt(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp())
+sqrt(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
         itr = sqrt(itr, get_index_sequence<decay_t<decltype(itr)>>::value);
@@ -282,7 +281,7 @@ sqrt(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp())
 template <typename Tp, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
-sqrt(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp())
+sqrt(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
         itr.second =
@@ -308,17 +307,16 @@ sqrt(Tp _val)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp,
-          typename std::enable_if<(std::is_arithmetic<Tp>::value), int>::type = 0>
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 auto
-pow(Tp _val, double _m, type_list<>) -> decltype(std::pow(_val, _m), Tp())
+pow(Tp _val, double _m, type_list<>) -> decltype(std::pow(_val, _m), Tp{})
 {
     return std::pow(_val, _m);
 }
 
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
-pow(Tp _val, double _m, type_list<>, ...) -> decltype(std::begin(_val), Tp())
+pow(Tp _val, double _m, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
         itr = pow(itr, _m, get_index_sequence<decay_t<decltype(itr)>>::value);
@@ -328,7 +326,7 @@ pow(Tp _val, double _m, type_list<>, ...) -> decltype(std::begin(_val), Tp())
 template <typename Tp, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
-pow(Tp _val, double _m, type_list<>) -> decltype(std::begin(_val), Tp())
+pow(Tp _val, double _m, type_list<>) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
         itr.second =
@@ -362,7 +360,7 @@ sqr(Tp _val)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value, int> = 0>
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 Tp
 min(Tp _lhs, Tp _rhs, type_list<>)
 {
@@ -372,7 +370,7 @@ min(Tp _lhs, Tp _rhs, type_list<>)
 
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
-min(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lhs), Tp())
+min(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lhs), Tp{})
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
     auto _nl    = mpl::get_size(_lhs);
@@ -397,7 +395,7 @@ min(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lh
 template <typename Tp, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
-min(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), Tp())
+min(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), Tp{})
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
     auto _nl    = mpl::get_size(_lhs);
@@ -423,7 +421,7 @@ min(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), T
 template <typename Tp, size_t... Idx>
 auto
 min(const Tp& _lhs, const Tp& _rhs, index_sequence<Idx...>)
-    -> decltype(std::get<0>(_lhs), Tp())
+    -> decltype(std::get<0>(_lhs), Tp{})
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
     Tp _ret{};
@@ -444,7 +442,7 @@ min(const Tp& _lhs, const Tp& _rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value, int> = 0>
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 Tp
 max(Tp _lhs, Tp _rhs, type_list<>)
 {
@@ -454,7 +452,7 @@ max(Tp _lhs, Tp _rhs, type_list<>)
 
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
-max(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lhs), Tp())
+max(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lhs), Tp{})
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
     auto _nl    = mpl::get_size(_lhs);
@@ -479,7 +477,7 @@ max(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lh
 template <typename Tp, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
-max(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), Tp())
+max(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), Tp{})
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
     auto _nl    = mpl::get_size(_lhs);
@@ -505,7 +503,7 @@ max(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), T
 template <typename Tp, size_t... Idx>
 auto
 max(const Tp& _lhs, const Tp& _rhs, index_sequence<Idx...>)
-    -> decltype(std::get<0>(_lhs), Tp())
+    -> decltype(std::get<0>(_lhs), Tp{})
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
     Tp _ret{};
@@ -713,7 +711,7 @@ multiply(Tp& _lhs, const Up& _rhs, type_list<>, long)
 }
 
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
-          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
+          enable_if_t<std::is_arithmetic<Up>::value> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, type_list<>, long)
     -> decltype(std::begin(_lhs), void())
@@ -728,8 +726,8 @@ multiply(Tp& _lhs, const Up& _rhs, type_list<>, long)
 }
 
 template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
-          typename Mp                                      = typename Tp::mapped_type,
-          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
+          typename Mp                                 = typename Tp::mapped_type,
+          enable_if_t<!std::is_arithmetic<Up>::value> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
@@ -746,8 +744,8 @@ multiply(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs
 }
 
 template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
-          typename Mp                                     = typename Tp::mapped_type,
-          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
+          typename Mp                                = typename Tp::mapped_type,
+          enable_if_t<std::is_arithmetic<Up>::value> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
@@ -766,7 +764,7 @@ multiply(Tp&, const Up&, index_sequence<>, int)
 {}
 
 template <typename Tp, typename Up, size_t... Idx,
-          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
+          enable_if_t<!std::is_arithmetic<Up>::value> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
@@ -778,7 +776,7 @@ multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
 }
 
 template <typename Tp, typename Up, size_t... Idx,
-          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
+          enable_if_t<std::is_arithmetic<Up>::value> = 0>
 auto
 multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
@@ -790,10 +788,11 @@ multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
 }
 
 template <typename Tp, typename Up, enable_if_t<!concepts::is_null_type<Tp>::value>>
-void
+Tp&
 multiply(Tp& _lhs, const Up& _rhs)
 {
     multiply(_lhs, _rhs, get_index_sequence<Tp>::value, 0);
+    return _lhs;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -807,7 +806,7 @@ divide(Tp& _lhs, Up _rhs, type_list<>, ...) -> decltype(_lhs /= _rhs, void())
 }
 
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
-          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
+          enable_if_t<!std::is_arithmetic<Up>::value> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs), void())
 {
@@ -825,7 +824,7 @@ divide(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs)
 }
 
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
-          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
+          enable_if_t<std::is_arithmetic<Up>::value> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs), void())
 {
@@ -839,8 +838,8 @@ divide(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs)
 }
 
 template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
-          typename Mp                                      = typename Tp::mapped_type,
-          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
+          typename Mp                                 = typename Tp::mapped_type,
+          enable_if_t<!std::is_arithmetic<Up>::value> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
@@ -857,8 +856,8 @@ divide(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs),
 }
 
 template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
-          typename Mp                                     = typename Tp::mapped_type,
-          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
+          typename Mp                                = typename Tp::mapped_type,
+          enable_if_t<std::is_arithmetic<Up>::value> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
@@ -877,7 +876,7 @@ divide(Tp&, const Up&, index_sequence<>, int)
 {}
 
 template <typename Tp, typename Up, size_t... Idx,
-          enable_if_t<!std::is_arithmetic<Up>::value, int> = 0>
+          enable_if_t<!std::is_arithmetic<Up>::value> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
@@ -889,7 +888,7 @@ divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
 }
 
 template <typename Tp, typename Up, size_t... Idx,
-          enable_if_t<std::is_arithmetic<Up>::value, int> = 0>
+          enable_if_t<std::is_arithmetic<Up>::value> = 0>
 auto
 divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
@@ -901,15 +900,16 @@ divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
 }
 
 template <typename Tp, typename Up, enable_if_t<!concepts::is_null_type<Tp>::value>>
-void
+Tp&
 divide(Tp& _lhs, const Up& _rhs)
 {
     divide(_lhs, _rhs, get_index_sequence<Tp>::value, 0);
+    return _lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value, int> = 0>
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 Tp
 percent_diff(Tp _lhs, Tp _rhs, type_list<>, ...)
 {
@@ -923,7 +923,7 @@ percent_diff(Tp _lhs, Tp _rhs, type_list<>, ...)
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
 percent_diff(const Tp& _lhs, const Tp& _rhs, type_list<>, long)
-    -> decltype(std::begin(_lhs), Tp())
+    -> decltype(std::begin(_lhs), Tp{})
 {
     auto _nl    = mpl::get_size(_lhs);
     auto _nr    = mpl::get_size(_rhs);
@@ -953,7 +953,7 @@ template <typename Tp, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
 percent_diff(const Tp& _lhs, const Tp& _rhs, type_list<>, int)
-    -> decltype(std::begin(_lhs), Tp())
+    -> decltype(std::begin(_lhs), Tp{})
 {
     assert(_lhs.size() == _rhs.size());
     Tp _ret{};
@@ -977,7 +977,7 @@ percent_diff(const Tp& _lhs, const Tp& _rhs, type_list<>, int)
 template <typename Tp, size_t... Idx>
 auto
 percent_diff(const Tp& _lhs, const Tp& _rhs, index_sequence<Idx...>, ...)
-    -> decltype(std::get<0>(_lhs), Tp())
+    -> decltype(std::get<0>(_lhs), Tp{})
 {
     Tp _ret{};
     TIMEMORY_FOLD_EXPRESSION(
@@ -1013,27 +1013,27 @@ struct compute
     }
 
     template <typename V = value_type>
-    static void plus(type& _l, const V& _r)
+    static decltype(auto) plus(type& _l, const V& _r)
     {
-        ::tim::math::plus(_l, _r);
+        return ::tim::math::plus(_l, _r);
     }
 
     template <typename V = value_type>
-    static void minus(type& _l, const V& _r)
+    static decltype(auto) minus(type& _l, const V& _r)
     {
-        ::tim::math::minus(_l, _r);
+        return ::tim::math::minus(_l, _r);
     }
 
     template <typename V = value_type>
-    static void multiply(type& _l, const V& _r)
+    static decltype(auto) multiply(type& _l, const V& _r)
     {
-        ::tim::math::multiply(_l, _r);
+        return ::tim::math::multiply(_l, _r);
     }
 
     template <typename V = value_type>
-    static void divide(type& _l, const V& _r)
+    static decltype(auto) divide(type& _l, const V& _r)
     {
-        ::tim::math::divide(_l, _r);
+        return ::tim::math::divide(_l, _r);
     }
 };
 
@@ -1054,10 +1054,10 @@ struct compute<std::tuple<>>
     static type min(const type&, const type&) { return type{}; }
     static type percent_diff(const type&, const type&) { return type{}; }
 
-    static void plus(type&, const type&) {}
-    static void minus(type&, const type&) {}
-    static void multiply(type&, const type&) {}
-    static void divide(type&, const type&) {}
+    static decltype(auto) plus(type& lhs, const type&) { return lhs; }
+    static decltype(auto) minus(type& lhs, const type&) { return lhs; }
+    static decltype(auto) multiply(type& lhs, const type&) { return lhs; }
+    static decltype(auto) divide(type& lhs, const type&) { return lhs; }
 };
 
 //--------------------------------------------------------------------------------------//

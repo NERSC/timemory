@@ -77,66 +77,23 @@
 //
 #if defined(TIMEMORY_CONTAINERS_SOURCE)
 //
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_TUPLE)
-#        define TIMEMORY_EXTERN_TUPLE(_ALIAS, ...)                                       \
-            TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, __VA_ARGS__)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_LIST)
-#        define TIMEMORY_EXTERN_LIST(_ALIAS, ...)                                        \
-            TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, __VA_ARGS__)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_HYBRID)
-#        define TIMEMORY_EXTERN_HYBRID(_ALIAS) TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
 #    if !defined(TIMEMORY_EXTERN_BUNDLE)
 #        define TIMEMORY_EXTERN_BUNDLE(...)                                              \
             TIMEMORY_INSTANTIATE_EXTERN_BUNDLE(__VA_ARGS__)
 #    endif
 //
-//--------------------------------------------------------------------------------------//
-//
 #elif defined(TIMEMORY_USE_CONTAINERS_EXTERN)
-//
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_TUPLE)
-#        define TIMEMORY_EXTERN_TUPLE(_ALIAS, ...)                                       \
-            TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, __VA_ARGS__)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_LIST)
-#        define TIMEMORY_EXTERN_LIST(_ALIAS, ...)                                        \
-            TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, __VA_ARGS__)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TIMEMORY_EXTERN_HYBRID)
-#        define TIMEMORY_EXTERN_HYBRID(_ALIAS) TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)
-#    endif
-//
-//--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_BUNDLE)
 #        define TIMEMORY_EXTERN_BUNDLE(...) TIMEMORY_DECLARE_EXTERN_BUNDLE(__VA_ARGS__)
-#    else
+#    endif
+//
+#else
+//
+#    if !defined(TIMEMORY_EXTERN_BUNDLE)
 #        define TIMEMORY_EXTERN_BUNDLE(...)
 #    endif
-#elif !defined(TIMEMORY_EXTERN_BUNDLE) && defined(_WINDOWS)
-#    define TIMEMORY_EXTERN_BUNDLE(...)
+//
 #endif
 //
 //--------------------------------------------------------------------------------------//

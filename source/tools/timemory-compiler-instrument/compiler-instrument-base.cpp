@@ -293,7 +293,8 @@ finalize()
 //--------------------------------------------------------------------------------------//
 
 template <size_t... Idx>
-static auto init_storage(tim::index_sequence<Idx...>)
+static auto
+init_storage(tim::index_sequence<Idx...>)
 {
     std::array<tim::storage_initializer, sizeof...(Idx)> _data;
     TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());

@@ -75,6 +75,8 @@ storage::storage(bool _is_master, int64_t _instance_id, const std::string& _labe
 , m_label(_label)
 , m_hash_ids(::tim::get_hash_ids())
 , m_hash_aliases(::tim::get_hash_aliases())
+, m_manager(::tim::manager::instance())
+, m_settings(::tim::settings::shared_instance())
 {
     if(m_is_master && m_instance_id > 0)
     {
@@ -97,7 +99,7 @@ storage::storage(bool _is_master, int64_t _instance_id, const std::string& _labe
                    m_label.c_str());
     }
 
-    if(settings::debug())
+    if(m_settings->get_debug())
         PRINT_HERE("%s: %i (%s)", "base::storage instance created", (int) m_instance_id,
                    m_label.c_str());
 }
@@ -106,7 +108,7 @@ storage::storage(bool _is_master, int64_t _instance_id, const std::string& _labe
 //
 TIMEMORY_STORAGE_LINKAGE storage::~storage()
 {
-    if(settings::debug())
+    if(m_settings->get_debug())
         PRINT_HERE("%s: %i (%s)", "base::storage instance deleted", (int) m_instance_id,
                    m_label.c_str());
 }
@@ -162,7 +164,6 @@ TIMEMORY_STORAGE_LINKAGE void
 storage::add_file_output(const std::string& _category, const std::string& _label,
                          const std::string& _file)
 {
-    m_manager = manager::instance();
     if(m_manager)
         m_manager->add_file_output(_category, _label, _file);
 }
@@ -324,7 +325,7 @@ template <typename Type>
 storage<Type, true>::storage()
 : base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
 {
-    if(settings::debug())
+    if(m_settings->get_debug())
         printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
 
     component::state<Type>::has_storage() = true;
@@ -359,7 +360,7 @@ storage<Type, true>::~storage()
 {
     component::state<Type>::has_storage() = false;
 
-    if(settings::debug())
+    if(m_settings->get_debug())
         printf("[%s]> destructing @ %i...\n", m_label.c_str(), __LINE__);
 
     if(!m_is_master)
@@ -377,7 +378,7 @@ storage<Type, true>::initialize()
 {
     if(m_initialized)
         return;
-    if(settings::debug())
+    if(m_settings->get_debug())
         printf("[%s]> initializing...\n", m_label.c_str());
     m_initialized = true;
 }
@@ -394,7 +395,7 @@ storage<Type, true>::finalize()
     if(!m_initialized)
         return;
 
-    if(settings::debug())
+    if(m_settings->get_debug())
         PRINT_HERE("[%s]> finalizing...", m_label.c_str());
 
     m_finalized            = true;
@@ -411,7 +412,7 @@ storage<Type, true>::finalize()
     if(m_is_master && m_global_init)
         fini_t(upcast, operation::mode_constant<operation::fini_mode::global>{});
 
-    if(settings::debug())
+    if(m_settings->get_debug())
         PRINT_HERE("[%s]> finalizing...", m_label.c_str());
 }
 //
@@ -421,7 +422,7 @@ template <typename Type>
 void
 storage<Type, true>::stack_clear()
 {
-    if(settings::stack_clearing())
+    if(m_stack.size() > 0 && m_settings->get_stack_clearing())
     {
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
@@ -910,7 +911,7 @@ storage<Type, true>::internal_print()
         }
 
         // generate output
-        if(settings::auto_output())
+        if(m_settings->get_auto_output())
         {
             if(!m_printer)
                 m_printer.reset(new printer_t(Type::get_label(), this));
@@ -936,7 +937,6 @@ storage<Type, true>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
-        m_manager = tim::manager::instance();
         if(!m_manager)
             return;
 
@@ -972,8 +972,8 @@ storage<Type, true>::get_shared_manager()
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                auto _debug_v = settings::debug();
-                auto _verb_v  = settings::verbose();
+                auto _debug_v = m_settings->get_debug();
+                auto _verb_v  = m_settings->get_verbose();
                 if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
@@ -1013,7 +1013,7 @@ template <typename Type>
 storage<Type, false>::storage()
 : base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
 {
-    if(settings::debug())
+    if(m_settings->get_debug())
         printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
     get_shared_manager();
     component::state<Type>::has_storage() = true;
@@ -1026,7 +1026,7 @@ template <typename Type>
 storage<Type, false>::~storage()
 {
     component::state<Type>::has_storage() = false;
-    if(settings::debug())
+    if(m_settings->get_debug())
         printf("[%s]> destructing @ %i...\n", m_label.c_str(), __LINE__);
 }
 //
@@ -1036,7 +1036,7 @@ template <typename Type>
 void
 storage<Type, false>::stack_clear()
 {
-    if(settings::stack_clearing())
+    if(m_stack.size() > 0 && m_settings->get_stack_clearing())
     {
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
@@ -1054,7 +1054,7 @@ storage<Type, false>::initialize()
     if(m_initialized)
         return;
 
-    if(settings::debug())
+    if(m_settings->get_debug())
         printf("[%s]> initializing...\n", m_label.c_str());
 
     m_initialized = true;
@@ -1085,7 +1085,7 @@ storage<Type, false>::finalize()
     if(!m_initialized)
         return;
 
-    if(settings::debug())
+    if(m_settings->get_debug())
         printf("[%s]> finalizing...\n", m_label.c_str());
 
     using fini_t = operation::fini<Type>;
@@ -1130,7 +1130,7 @@ storage<Type, false>::merge()
     if(m_children.size() == 0)
         return;
 
-    if(settings::stack_clearing())
+    if(m_settings->get_stack_clearing())
         for(auto& itr : m_children)
             merge(itr);
 
@@ -1158,7 +1158,6 @@ storage<Type, false>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
-        m_manager = tim::manager::instance();
         if(!m_manager)
             return;
         if(m_manager->is_finalizing())
@@ -1178,8 +1177,8 @@ storage<Type, false>::get_shared_manager()
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                auto _debug_v = settings::debug();
-                auto _verb_v  = settings::verbose();
+                auto _debug_v = m_settings->get_debug();
+                auto _verb_v  = m_settings->get_verbose();
                 if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");

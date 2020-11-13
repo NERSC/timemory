@@ -330,7 +330,7 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
     // Be aware, this changes 'm_current' inside the data graph
     //
     if(!m_is_master && _data().at_sea_level() &&
-       _data().dummy_count() < settings::max_thread_bookmarks())
+       _data().dummy_count() < m_settings->get_max_thread_bookmarks())
         _data().add_dummy();
 
     // compute the insertion depth

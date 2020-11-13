@@ -53,18 +53,20 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_SETTINGS_MEMBER_DECL)
+// memory leak w/ _key is intentional due to potential calls during _cxa_finalize
+// which may have already deleted a non-heap allocation
 #    define TIMEMORY_SETTINGS_MEMBER_DECL(TYPE, FUNC, ENV_VAR)                           \
     public:                                                                              \
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            static std::string _key = ENV_VAR;                                           \
-            return static_cast<tsettings<TYPE>*>(m_data[_key].get())->get();             \
+            static auto _key = new std::string(ENV_VAR);                                 \
+            return static_cast<tsettings<TYPE>*>(m_data[*_key].get())->get();            \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
         {                                                                                \
-            static std::string _key = ENV_VAR;                                           \
-            auto               ret  = m_data.find(_key);                                 \
+            static auto _key = new std::string(ENV_VAR);                                 \
+            auto        ret  = m_data.find(*_key);                                       \
             if(ret == m_data.end())                                                      \
                 return TYPE{};                                                           \
             if(!ret->second)                                                             \
@@ -81,18 +83,20 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_SETTINGS_REFERENCE_DECL)
+// memory leak w/ _key is intentional due to potential calls during _cxa_finalize
+// which may have already deleted a non-heap allocation
 #    define TIMEMORY_SETTINGS_REFERENCE_DECL(TYPE, FUNC, ENV_VAR)                        \
     public:                                                                              \
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            static std::string _key = ENV_VAR;                                           \
-            return static_cast<tsettings<TYPE, TYPE&>*>(m_data[_key].get())->get();      \
+            static auto _key = new std::string(ENV_VAR);                                 \
+            return static_cast<tsettings<TYPE, TYPE&>*>(m_data[*_key].get())->get();     \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
         {                                                                                \
-            static std::string _key = ENV_VAR;                                           \
-            auto               ret  = m_data.find(_key);                                 \
+            static auto _key = new std::string(ENV_VAR);                                 \
+            auto        ret  = m_data.find(*_key);                                       \
             if(ret == m_data.end())                                                      \
                 return TYPE{};                                                           \
             if(!ret->second)                                                             \
