@@ -75,23 +75,34 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_CONTAINERS_SOURCE)
+#if defined(_WINDOWS)
 //
 #    if !defined(TIMEMORY_EXTERN_BUNDLE)
-#        define TIMEMORY_EXTERN_BUNDLE(...)                                              \
-            TIMEMORY_INSTANTIATE_EXTERN_BUNDLE(__VA_ARGS__)
-#    endif
-//
-#elif defined(TIMEMORY_USE_CONTAINERS_EXTERN)
-//
-#    if !defined(TIMEMORY_EXTERN_BUNDLE)
-#        define TIMEMORY_EXTERN_BUNDLE(...) TIMEMORY_DECLARE_EXTERN_BUNDLE(__VA_ARGS__)
+#        define TIMEMORY_EXTERN_BUNDLE(...)
 #    endif
 //
 #else
 //
-#    if !defined(TIMEMORY_EXTERN_BUNDLE)
-#        define TIMEMORY_EXTERN_BUNDLE(...)
+#    if defined(TIMEMORY_CONTAINERS_SOURCE)
+//
+#        if !defined(TIMEMORY_EXTERN_BUNDLE)
+#            define TIMEMORY_EXTERN_BUNDLE(...)                                          \
+                TIMEMORY_INSTANTIATE_EXTERN_BUNDLE(__VA_ARGS__)
+#        endif
+//
+#    elif defined(TIMEMORY_USE_CONTAINERS_EXTERN)
+//
+#        if !defined(TIMEMORY_EXTERN_BUNDLE)
+#            define TIMEMORY_EXTERN_BUNDLE(...)                                          \
+                TIMEMORY_DECLARE_EXTERN_BUNDLE(__VA_ARGS__)
+#        endif
+//
+#    else
+//
+#        if !defined(TIMEMORY_EXTERN_BUNDLE)
+#            define TIMEMORY_EXTERN_BUNDLE(...)
+#        endif
+//
 #    endif
 //
 #endif

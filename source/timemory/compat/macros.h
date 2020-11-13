@@ -35,6 +35,8 @@
 
 #if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
 #    define _TIM_FUNC __PRETTY_FUNCTION__
+#elif defined(TIMEMORY_PRETTY_FUNCTION) && defined(_WINDOWS)
+#    define _TIM_FUNC __FUNCSIG__
 #else
 #    define _TIM_FUNC __FUNCTION__
 #endif

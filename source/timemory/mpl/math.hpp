@@ -115,99 +115,51 @@ inline Tp
 percent_diff(const Tp&, const Tp&);
 
 //--------------------------------------------------------------------------------------//
-//              dummy overloads for std::tuple<>
+//              dummy overloads for std::tuple<>, type_list<>, null_type
 //
-inline std::tuple<> abs(std::tuple<>) { return std::tuple<>{}; }
+#define TIMEMORY_MATH_NULL_TYPE_OVERLOAD(TYPE)                                           \
+    inline TYPE  abs(TYPE) { return TYPE{}; }                                            \
+    inline TYPE  sqrt(TYPE) { return TYPE{}; }                                           \
+    inline TYPE  pow(TYPE, double) { return TYPE{}; }                                    \
+    inline TYPE  sqr(TYPE) { return TYPE{}; }                                            \
+    inline TYPE  min(const TYPE&, const TYPE&) { return TYPE{}; }                        \
+    inline TYPE  max(const TYPE&, const TYPE&) { return TYPE{}; }                        \
+    inline void  assign(TYPE&, TYPE&&) {}                                                \
+    inline TYPE& plus(TYPE& lhs, const TYPE&) { return lhs; }                            \
+    inline TYPE& minus(TYPE& lhs, const TYPE&) { return lhs; }                           \
+    inline TYPE& multiply(TYPE& lhs, const TYPE&) { return lhs; }                        \
+    inline TYPE& divide(TYPE& lhs, const TYPE&) { return lhs; }                          \
+    inline TYPE  percent_diff(const TYPE&, const TYPE&) { return TYPE{}; }               \
+    template <typename Up>                                                               \
+    inline TYPE& plus(TYPE& lhs, Up&&)                                                   \
+    {                                                                                    \
+        return lhs;                                                                      \
+    }                                                                                    \
+    template <typename Up>                                                               \
+    inline TYPE& minus(TYPE& lhs, Up&&)                                                  \
+    {                                                                                    \
+        return lhs;                                                                      \
+    }                                                                                    \
+    template <typename Up>                                                               \
+    inline TYPE& multiply(TYPE& lhs, Up&&)                                               \
+    {                                                                                    \
+        return lhs;                                                                      \
+    }                                                                                    \
+    template <typename Up>                                                               \
+    inline TYPE& divide(TYPE& lhs, Up&&)                                                 \
+    {                                                                                    \
+        return lhs;                                                                      \
+    }                                                                                    \
+    inline TYPE& divide(TYPE& lhs, const uint64_t&) { return lhs; }                      \
+    inline TYPE& divide(TYPE& lhs, const int64_t&) { return lhs; }
 
-inline std::tuple<> sqrt(std::tuple<>) { return std::tuple<>{}; }
-
-inline std::tuple<>
-pow(std::tuple<>, double)
-{
-    return std::tuple<>{};
-}
-
-inline std::tuple<> sqr(std::tuple<>) { return std::tuple<>{}; }
-
-inline std::tuple<>
-min(const std::tuple<>&, const std::tuple<>&)
-{
-    return std::tuple<>{};
-}
-
-inline std::tuple<>
-max(const std::tuple<>&, const std::tuple<>&)
-{
-    return std::tuple<>{};
-}
-
-inline void
-assign(std::tuple<>&, std::tuple<>&&)
-{}
-
-inline std::tuple<>&
-plus(std::tuple<>& lhs, const std::tuple<>&)
-{
-    return lhs;
-}
-
-inline std::tuple<>&
-minus(std::tuple<>& lhs, const std::tuple<>&)
-{
-    return lhs;
-}
-
-inline std::tuple<>&
-multiply(std::tuple<>& lhs, const std::tuple<>&)
-{
-    return lhs;
-}
-
-inline std::tuple<>&
-divide(std::tuple<>& lhs, const std::tuple<>&)
-{
-    return lhs;
-}
-
-inline std::tuple<>
-percent_diff(const std::tuple<>&, const std::tuple<>&)
-{
-    return std::tuple<>{};
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Up>
-inline void
-plus(std::tuple<>&, Up&&)
-{}
-
-template <typename Up>
-inline void
-minus(std::tuple<>&, Up&&)
-{}
-
-template <typename Up>
-inline void
-multiply(std::tuple<>&, Up&&)
-{}
-
-template <typename Up>
-inline void
-divide(std::tuple<>&, Up&&)
-{}
-
-inline void
-divide(std::tuple<>&, const uint64_t&)
-{}
-
-inline void
-divide(std::tuple<>&, const int64_t&)
-{}
+TIMEMORY_MATH_NULL_TYPE_OVERLOAD(std::tuple<>)
+TIMEMORY_MATH_NULL_TYPE_OVERLOAD(null_type)
+TIMEMORY_MATH_NULL_TYPE_OVERLOAD(type_list<>)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp,
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0,
           enable_if_t<std::is_integral<Tp>::value && std::is_unsigned<Tp>::value> = 0>
 auto
 abs(Tp _val, type_list<>) -> decltype(Tp{})
@@ -215,9 +167,8 @@ abs(Tp _val, type_list<>) -> decltype(Tp{})
     return _val;
 }
 
-template <typename Tp,
-          enable_if_t<std::is_arithmetic<Tp>::value &&
-                      !(std::is_integral<Tp>::value && std::is_unsigned<Tp>::value)> = 0>
+template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0,
+          enable_if_t<!(std::is_integral<Tp>::value && std::is_unsigned<Tp>::value)> = 0>
 auto
 abs(Tp _val, type_list<>) -> decltype(std::abs(_val), Tp{})
 {
@@ -229,7 +180,7 @@ auto
 abs(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
-        itr = abs(itr, get_index_sequence<decay_t<decltype(itr)>>::value);
+        itr = ::tim::math::abs(itr, get_index_sequence<decay_t<decltype(itr)>>::value);
     return _val;
 }
 
@@ -239,8 +190,8 @@ auto
 abs(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
-        itr.second =
-            abs(itr.second, get_index_sequence<decay_t<decltype(itr.second)>>::value);
+        itr.second = ::tim::math::abs(
+            itr.second, get_index_sequence<decay_t<decltype(itr.second)>>::value);
     return _val;
 }
 
@@ -249,7 +200,7 @@ auto
 abs(Tuple<Types...> _val, index_sequence<Idx...>)
     -> decltype(std::get<0>(_val), Tuple<Types...>())
 {
-    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_val) = abs(std::get<Idx>(_val)));
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_val) = ::tim::math::abs(std::get<Idx>(_val)));
     return _val;
 }
 
@@ -257,7 +208,7 @@ template <typename Tp>
 Tp
 abs(Tp _val)
 {
-    return abs(_val, get_index_sequence<Tp>::value);
+    return ::tim::math::abs(_val, get_index_sequence<Tp>::value);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -274,7 +225,7 @@ auto
 sqrt(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
-        itr = sqrt(itr, get_index_sequence<decay_t<decltype(itr)>>::value);
+        itr = ::tim::math::sqrt(itr, get_index_sequence<decay_t<decltype(itr)>>::value);
     return _val;
 }
 
@@ -284,8 +235,8 @@ auto
 sqrt(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
-        itr.second =
-            sqrt(itr.second, get_index_sequence<decay_t<decltype(itr.second)>>::value);
+        itr.second = ::tim::math::sqrt(
+            itr.second, get_index_sequence<decay_t<decltype(itr.second)>>::value);
     return _val;
 }
 
@@ -294,7 +245,8 @@ auto
 sqrt(Tuple<Types...> _val, index_sequence<Idx...>)
     -> decltype(std::get<0>(_val), Tuple<Types...>())
 {
-    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_val) = sqrt(std::get<Idx>(_val)));
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_val) =
+                                 ::tim::math::sqrt(std::get<Idx>(_val)));
     return _val;
 }
 
@@ -302,7 +254,7 @@ template <typename Tp>
 Tp
 sqrt(Tp _val)
 {
-    return sqrt(_val, get_index_sequence<Tp>::value);
+    return ::tim::math::sqrt(_val, get_index_sequence<Tp>::value);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -319,7 +271,8 @@ auto
 pow(Tp _val, double _m, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
-        itr = pow(itr, _m, get_index_sequence<decay_t<decltype(itr)>>::value);
+        itr =
+            ::tim::math::pow(itr, _m, get_index_sequence<decay_t<decltype(itr)>>::value);
     return _val;
 }
 
@@ -329,8 +282,8 @@ auto
 pow(Tp _val, double _m, type_list<>) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
-        itr.second =
-            pow(itr.second, _m, get_index_sequence<decay_t<decltype(itr.second)>>::value);
+        itr.second = ::tim::math::pow(
+            itr.second, _m, get_index_sequence<decay_t<decltype(itr.second)>>::value);
     return _val;
 }
 
@@ -339,7 +292,8 @@ auto
 pow(Tuple<Types...> _val, double _m, index_sequence<Idx...>)
     -> decltype(std::get<0>(_val), Tuple<Types...>())
 {
-    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_val) = pow(std::get<Idx>(_val), _m));
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_val) =
+                                 ::tim::math::pow(std::get<Idx>(_val), _m));
     return _val;
 }
 
@@ -347,15 +301,17 @@ template <typename Tp>
 Tp
 pow(Tp _val, double _m)
 {
-    return pow(_val, _m, get_index_sequence<Tp>::value);
+    return ::tim::math::pow(_val, _m, get_index_sequence<Tp>::value);
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename Tp>
 Tp
 sqr(Tp _val)
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
-    return pow(_val, 2.0);
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
+    return ::tim::math::pow(_val, 2.0);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -364,7 +320,7 @@ template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 Tp
 min(Tp _lhs, Tp _rhs, type_list<>)
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     return (_rhs > _lhs) ? _lhs : _rhs;
 }
 
@@ -372,7 +328,7 @@ template <typename Tp, typename Vp = typename Tp::value_type>
 auto
 min(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lhs), Tp{})
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _nl    = mpl::get_size(_lhs);
     auto _nr    = mpl::get_size(_rhs);
     using Int_t = decltype(_nl);
@@ -397,7 +353,7 @@ template <typename Tp, typename Kp = typename Tp::key_type,
 auto
 min(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), Tp{})
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _nl    = mpl::get_size(_lhs);
     auto _nr    = mpl::get_size(_rhs);
     using Int_t = decltype(_nl);
@@ -423,7 +379,7 @@ auto
 min(const Tp& _lhs, const Tp& _rhs, index_sequence<Idx...>)
     -> decltype(std::get<0>(_lhs), Tp{})
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     Tp _ret{};
     TIMEMORY_FOLD_EXPRESSION(
         std::get<Idx>(_ret) =
@@ -436,7 +392,7 @@ template <typename Tp>
 Tp
 min(const Tp& _lhs, const Tp& _rhs)
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     return min(_lhs, _rhs, get_index_sequence<Tp>::value);
 }
 
@@ -446,7 +402,7 @@ template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 Tp
 max(Tp _lhs, Tp _rhs, type_list<>)
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     return (_rhs < _lhs) ? _lhs : _rhs;
 }
 
@@ -454,7 +410,7 @@ template <typename Tp, typename Vp = typename Tp::value_type>
 auto
 max(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lhs), Tp{})
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _nl    = mpl::get_size(_lhs);
     auto _nr    = mpl::get_size(_rhs);
     using Int_t = decltype(_nl);
@@ -479,7 +435,7 @@ template <typename Tp, typename Kp = typename Tp::key_type,
 auto
 max(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), Tp{})
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _nl    = mpl::get_size(_lhs);
     auto _nr    = mpl::get_size(_rhs);
     using Int_t = decltype(_nl);
@@ -505,7 +461,7 @@ auto
 max(const Tp& _lhs, const Tp& _rhs, index_sequence<Idx...>)
     -> decltype(std::get<0>(_lhs), Tp{})
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     Tp _ret{};
     TIMEMORY_FOLD_EXPRESSION(
         std::get<Idx>(_ret) =
@@ -518,7 +474,7 @@ template <typename Tp>
 Tp
 max(const Tp& _lhs, const Tp& _rhs)
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     return max(_lhs, _rhs, get_index_sequence<Tp>::value);
 }
 
@@ -544,7 +500,7 @@ template <typename Tp, typename Up>
 auto
 plus(Tp& _lhs, const Up& _rhs, type_list<>, ...) -> decltype(_lhs += _rhs, void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     _lhs += _rhs;
 }
 
@@ -552,7 +508,7 @@ template <typename Tp, typename Up, typename Vp = typename Tp::value_type>
 auto
 plus(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _n = mpl::get_size(_rhs);
     if(mpl::get_size(_lhs) < _n)
         mpl::resize(_lhs, _n);
@@ -570,7 +526,7 @@ template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
 auto
 plus(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
@@ -600,7 +556,7 @@ auto
 plus(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     TIMEMORY_FOLD_EXPRESSION(
         plus(std::get<Idx>(_lhs), std::get<Idx>(_rhs),
              get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
@@ -620,7 +576,7 @@ template <typename Tp, typename Up>
 auto
 minus(Tp& _lhs, const Up& _rhs, type_list<>, ...) -> decltype(_lhs -= _rhs, void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     _lhs -= _rhs;
 }
 
@@ -628,7 +584,7 @@ template <typename Tp, typename Up, typename Vp = typename Tp::value_type>
 auto
 minus(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _n = mpl::get_size(_rhs);
     if(mpl::get_size(_lhs) < _n)
         mpl::resize(_lhs, _n);
@@ -646,7 +602,7 @@ template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
 auto
 minus(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
@@ -668,7 +624,7 @@ auto
 minus(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     TIMEMORY_FOLD_EXPRESSION(
         minus(std::get<Idx>(_lhs), std::get<Idx>(_rhs),
               get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
@@ -688,7 +644,7 @@ template <typename Tp, typename Up>
 auto
 multiply(Tp& _lhs, Up _rhs, type_list<>, ...) -> decltype(_lhs *= _rhs, void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     _lhs *= _rhs;
 }
 
@@ -697,7 +653,7 @@ auto
 multiply(Tp& _lhs, const Up& _rhs, type_list<>, long)
     -> decltype((std::begin(_lhs), std::begin(_rhs)), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _n = mpl::get_size(_rhs);
     if(mpl::get_size(_lhs) < _n)
         mpl::resize(_lhs, _n);
@@ -716,7 +672,7 @@ auto
 multiply(Tp& _lhs, const Up& _rhs, type_list<>, long)
     -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _n = mpl::get_size(_lhs);
     for(decltype(_n) i = 0; i < _n; ++i)
     {
@@ -731,7 +687,7 @@ template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
 auto
 multiply(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
@@ -749,7 +705,7 @@ template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
 auto
 multiply(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
@@ -769,7 +725,7 @@ auto
 multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     TIMEMORY_FOLD_EXPRESSION(
         multiply(std::get<Idx>(_lhs), std::get<Idx>(_rhs),
                  get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
@@ -781,7 +737,7 @@ auto
 multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     TIMEMORY_FOLD_EXPRESSION(
         multiply(std::get<Idx>(_lhs), _rhs,
                  get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
@@ -801,7 +757,7 @@ template <typename Tp, typename Up>
 auto
 divide(Tp& _lhs, Up _rhs, type_list<>, ...) -> decltype(_lhs /= _rhs, void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     _lhs /= _rhs;
 }
 
@@ -810,7 +766,7 @@ template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
 auto
 divide(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _n = mpl::get_size(_rhs);
     if(mpl::get_size(_lhs) < _n)
         mpl::resize(_lhs, _n);
@@ -828,7 +784,7 @@ template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
 auto
 divide(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _n = mpl::get_size(_lhs);
     for(decltype(_n) i = 0; i < _n; ++i)
     {
@@ -843,7 +799,7 @@ template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
 auto
 divide(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
@@ -861,7 +817,7 @@ template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
 auto
 divide(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
@@ -881,7 +837,7 @@ auto
 divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     TIMEMORY_FOLD_EXPRESSION(
         divide(std::get<Idx>(_lhs), std::get<Idx>(_rhs),
                get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
@@ -893,7 +849,7 @@ auto
 divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
-    static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
+    static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     TIMEMORY_FOLD_EXPRESSION(
         divide(std::get<Idx>(_lhs), _rhs,
                get_index_sequence<decay_t<decltype(std::get<Idx>(_lhs))>>::value, 0));
@@ -995,7 +951,11 @@ percent_diff(const Tp& _lhs, const Tp& _rhs)
 }
 
 //--------------------------------------------------------------------------------------//
-
+/// \struct tim::math::compute
+/// \brief Struct for performing math operations on complex data structures without using
+/// globally overload operators (e.g. `lhs += rhs`) and generic functions (`lhs =
+/// abs(rhs)`)
+///
 template <typename Tp, typename Up = Tp>
 struct compute
 {
@@ -1038,27 +998,28 @@ struct compute
 };
 
 //--------------------------------------------------------------------------------------//
-/// \struct tim::math::compute<std::tuple<>>
-/// \brief this specialization exists for statistics<tuple<>> which is the default
-/// type when statistics have not been enabled
-///
-template <>
-struct compute<std::tuple<>>
-{
-    using type = std::tuple<>;
 
-    static type abs(const type&) { return type{}; }
-    static type sqr(const type&) { return type{}; }
-    static type sqrt(const type&) { return type{}; }
-    static type max(const type&, const type&) { return type{}; }
-    static type min(const type&, const type&) { return type{}; }
-    static type percent_diff(const type&, const type&) { return type{}; }
+#define TIMEMORY_MATH_NULL_TYPE_COMPUTE(TYPE)                                            \
+    template <>                                                                          \
+    struct compute<TYPE, TYPE>                                                           \
+    {                                                                                    \
+        using type = TYPE;                                                               \
+        static type abs(const type&) { return type{}; }                                  \
+        static type sqr(const type&) { return type{}; }                                  \
+        static type sqrt(const type&) { return type{}; }                                 \
+        static type max(const type&, const type&) { return type{}; }                     \
+        static type min(const type&, const type&) { return type{}; }                     \
+        static type percent_diff(const type&, const type&) { return type{}; }            \
+                                                                                         \
+        static decltype(auto) plus(type& lhs, const type&) { return lhs; }               \
+        static decltype(auto) minus(type& lhs, const type&) { return lhs; }              \
+        static decltype(auto) multiply(type& lhs, const type&) { return lhs; }           \
+        static decltype(auto) divide(type& lhs, const type&) { return lhs; }             \
+    };
 
-    static decltype(auto) plus(type& lhs, const type&) { return lhs; }
-    static decltype(auto) minus(type& lhs, const type&) { return lhs; }
-    static decltype(auto) multiply(type& lhs, const type&) { return lhs; }
-    static decltype(auto) divide(type& lhs, const type&) { return lhs; }
-};
+TIMEMORY_MATH_NULL_TYPE_COMPUTE(std::tuple<>)
+TIMEMORY_MATH_NULL_TYPE_COMPUTE(null_type)
+TIMEMORY_MATH_NULL_TYPE_COMPUTE(type_list<>)
 
 //--------------------------------------------------------------------------------------//
 
