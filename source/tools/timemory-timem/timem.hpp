@@ -24,9 +24,17 @@
 
 #pragma once
 
+#if defined(TIMEMORY_USE_STATISTICS)
+#    undef TIMEMORY_USE_STATISTICS
+#endif
+
 #define TIMEM_DEBUG
 #define TIMEMORY_DISABLE_BANNER
+#define TIMEMORY_DISABLE_STORE_ENVIRONMENT
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
+
+// disables unnecessary instantiations
+#define TIMEMORY_COMPILER_INSTRUMENTATION
 
 #include "timemory/macros.hpp"
 #include "timemory/mpl/types.hpp"

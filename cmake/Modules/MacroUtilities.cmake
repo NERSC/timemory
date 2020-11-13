@@ -524,6 +524,18 @@ FUNCTION(BUILD_LIBRARY)
         $<$<COMPILE_LANGUAGE:C>:${LIBRARY_C_COMPILE_OPTIONS}>
         $<$<COMPILE_LANGUAGE:CXX>:${LIBRARY_CXX_COMPILE_OPTIONS}>)
 
+    # windows
+    # docs.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library
+    # if(MSVC AND NOT "${LIBRARY_TYPE}" STREQUAL "OBJECT")
+    #    set(_MSVC_FLAGS /MD)
+    #    if("${LIBRARY_TYPE}" STREQUAL "STATIC")
+    #        set(_MSVC_FLAGS /MT)
+    #    endif()
+    #    target_compile_options(${LIBRARY_TARGET_NAME} PUBLIC
+    #        $<$<COMPILE_LANGUAGE:C>:${_MSVC_FLAGS}>
+    #        $<$<COMPILE_LANGUAGE:CXX>:${_MSVC_FLAGS}>)
+    # endif()
+
     # cuda flags
     if(_CUDA)
         target_compile_options(${LIBRARY_TARGET_NAME} PRIVATE
@@ -749,10 +761,14 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
                 if(NOT ${_FNAME})
                     continue()
                 endif()
+                set(_CMAKE_CMD "${CMAKE_COMMAND}")
+                if(WIN32)
+                    get_filename_component(_CMAKE_CMD "${CMAKE_COMMAND}" NAME)
+                endif()
                 install(CODE
                     "
                     EXECUTE_PROCESS(
-                        COMMAND ${CMAKE_COMMAND} -E create_symlink
+                        COMMAND ${_CMAKE_CMD} -E create_symlink
                         ${INSTALL_RELPATH}/${${_FNAME}} ${_PYLIB}/${${_FNAME}}
                         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
                         ${_ECHO})
