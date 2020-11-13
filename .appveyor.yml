@@ -74,8 +74,8 @@ environment:
       USE_PYTHON: "ON"
       BUILD_C: "OFF"
       BUILD_STATIC: "OFF"
-      BUILD_TESTING: "ON"
-      
+      BUILD_TESTING: "OFF"
+
 install:
   # Configure environment
   - ps: |
