@@ -144,7 +144,7 @@ elseif(SPACK_BUILD)
         lib/python${PYBIND11_PYTHON_VERSION}/site-packages
         CACHE PATH "Installation directory for python")
 else()
-
+    string(REPLACE "\\" "/" Python3_SITEARCH "${Python3_SITEARCH}")
     set(CMAKE_INSTALL_PYTHONDIR ${Python3_SITEARCH})
     add_feature(Python3_SITEARCH "site-packages directory of python installation")
     set(_REMOVE OFF)

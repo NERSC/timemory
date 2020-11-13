@@ -22,8 +22,5 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/plotting/extern.hpp"
-#include "timemory/plotting/definition.hpp"
-
-#if defined(TIMEMORY_USE_PYTHON)
-#endif
+#include "timemory/hash/definition.hpp"
+#include "timemory/hash/extern.hpp"

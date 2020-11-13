@@ -47,7 +47,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     # parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-    #                    help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
+    #  help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
     parser.add_argument(
         "-e",
         "--echo-dart",
