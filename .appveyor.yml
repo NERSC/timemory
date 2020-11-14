@@ -17,9 +17,9 @@ environment:
   matrix:
     - PYTHON: 36
       CPP: 14
-      CONFIG: MinSizeRel
+      CONFIG: Debug
       EXAMPLES: "ON"
-      TOOLS: "ON"
+      TOOLS: "OFF"
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "ON"
@@ -27,6 +27,16 @@ environment:
       BUILD_TESTING: "OFF"
     - PYTHON: 37
       CPP: 17
+      CONFIG: MinSizeRel
+      EXAMPLES: "OFF"
+      TOOLS: "ON"
+      USE_ARCH: "OFF"
+      USE_PYTHON: "ON"
+      BUILD_C: "OFF"
+      BUILD_STATIC: "ON"
+      BUILD_TESTING: "OFF"
+    - CONDA: 37
+      CPP: 14
       CONFIG: RelWithDebInfo
       EXAMPLES: "OFF"
       TOOLS: "OFF"
@@ -35,44 +45,14 @@ environment:
       BUILD_C: "OFF"
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
-    - CONDA: 36
-      CPP: 14
-      CONFIG: MinSizeRel
-      EXAMPLES: "OFF"
-      TOOLS: "OFF"
-      USE_ARCH: "OFF"
-      USE_PYTHON: "ON"
-      BUILD_C: "OFF"
-      BUILD_STATIC: "ON"
-      BUILD_TESTING: "OFF"
-    - CONDA: 37
+    - CONDA: 38
       CPP: 17
       CONFIG: Release
-      EXAMPLES: "OFF"
-      TOOLS: "OFF"
-      USE_ARCH: "OFF"
-      USE_PYTHON: "ON"
-      BUILD_C: "OFF"
-      BUILD_STATIC: "ON"
-      BUILD_TESTING: "OFF"
-    - PYTHON: 38
-      CPP: 17
-      CONFIG: MinSizeRel
       EXAMPLES: "ON"
       TOOLS: "OFF"
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
-      BUILD_C: "OFF"
-      BUILD_STATIC: "OFF"
-      BUILD_TESTING: "OFF"
-    - CONDA: 38
-      CPP: 14
-      CONFIG: MinSizeRel
-      EXAMPLES: "ON"
-      TOOLS: "OFF"
-      USE_ARCH: "ON"
-      USE_PYTHON: "ON"
-      BUILD_C: "OFF"
+      BUILD_C: "ON"
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "OFF"
 
