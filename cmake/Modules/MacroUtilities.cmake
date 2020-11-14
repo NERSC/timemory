@@ -750,29 +750,42 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
             string(REGEX REPLACE "/$" "" BINARY_RELPATH "${BINARY_RELPATH}")
 
             # build tree
-            execute_process(
-                COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    ${BINARY_RELPATH}/${_FILENAME}
-                    ${_FILENAME}
-                WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
+            if(WIN32)
+                # copy if on windows
+                add_custom_command(TARGET ${_LIB}
+                    POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        $<TARGET_FILE:${_LIB}>
+                        ${PROJECT_BINARY_DIR}/timemory/
+                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+            else()
+                # symlink if not windows
+                execute_process(
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink
+                        ${BINARY_RELPATH}/${_FILENAME}
+                        ${_FILENAME}
+                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
+            endif()
 
             # install tree
             foreach(_FNAME ${_FILE_TYPES})
                 if(NOT ${_FNAME})
                     continue()
                 endif()
-                set(_CMAKE_CMD "${CMAKE_COMMAND}")
                 if(WIN32)
-                    get_filename_component(_CMAKE_CMD "${CMAKE_COMMAND}" NAME)
+                    # install a second time if windows
+                    install(TARGETS ${_LIB} DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+                else()
+                    # symlink if not windows
+                    install(CODE
+                        "
+                        EXECUTE_PROCESS(
+                            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                            ${INSTALL_RELPATH}/${${_FNAME}} ${_PYLIB}/${${_FNAME}}
+                            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+                            ${_ECHO})
+                        ")
                 endif()
-                install(CODE
-                    "
-                    EXECUTE_PROCESS(
-                        COMMAND ${_CMAKE_CMD} -E create_symlink
-                        ${INSTALL_RELPATH}/${${_FNAME}} ${_PYLIB}/${${_FNAME}}
-                        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-                        ${_ECHO})
-                    ")
             endforeach()
         endif()
     endforeach()

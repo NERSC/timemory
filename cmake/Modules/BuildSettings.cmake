@@ -279,12 +279,13 @@ else()
 endif()
 
 if (MSVC)
-    # set debug postfix so debug library and executable artifact names do not
-    # conflict with release artifacts
-    set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Build type" FORCE)
+    # this breaks finding the python libraries. Moved to source/CMakeLists.txt
+    if("${CMAKE_DEBUG_POSTFIX}" STREQUAL "_d")
+        unset(CMAKE_DEBUG_POSTFIX CACHE)
+    endif()
 
-    # VTune is much more helpful when debug information is included in the 
-    # generated release code. 
+    # VTune is much more helpful when debug information is included in the
+    # generated release code.
     add_flag_if_avail("/Zi")
     add_flag_if_avail("/debug")
 endif()

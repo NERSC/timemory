@@ -1,6 +1,13 @@
+
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 include_directories(BEFORE ${CMAKE_CURRENT_LIST_DIR})
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME library)
+
+if (MSVC)
+    # set debug postfix so debug library and executable artifact names do not
+    # conflict with release artifacts
+    set(CMAKE_DEBUG_POSTFIX "_d")
+endif()
 
 #----------------------------------------------------------------------------------------#
 # Locate sources and headers for this project
