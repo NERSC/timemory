@@ -25,8 +25,6 @@
 
 /** \file timemory/variadic/component_tuple.hpp
  * \headerfile variadic/component_tuple.hpp "timemory/variadic/component_tuple.hpp"
- * This is the C++ class that bundles together components and enables
- * operation on the components as a single entity
  *
  */
 
@@ -61,6 +59,31 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
+/// \class tim::component_tuple<Types...>
+/// \tparam Types... Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper where all components are allocated
+/// on the stack and cannot be disabled at runtime. This bundler has the lowest
+/// overhead. Accepts unlimited number of template parameters. This bundler
+/// is used by \ref tim::auto_tuple whose constructor and destructor invoke the
+/// start() and stop() member functions respectively.
+///
+/// \code{.cpp}
+/// using bundle_t = tim::component_tuple<wall_clock, cpu_clock, peak_rss>;
+///
+/// void foo()
+/// {
+///     auto bar = bundle_t("foo");
+///     bar.start();
+///     // ...
+///     bar.stop();
+/// }
+/// \endcode
+///
+/// The above code will record wall-clock, cpu-clock, and peak-rss. The intermediate
+/// storage will happen on the stack and when the destructor is called, it will add itself
+/// to the call-graph
+///
 template <typename... Types>
 class component_tuple
 : public stack_bundle<available_t<concat<Types...>>>
@@ -105,7 +128,6 @@ public:
     using type             = convert_t<tuple_type, component_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
@@ -124,6 +146,7 @@ public:
     struct quirk_config
     {
         static constexpr bool value =
+            is_one_of<T, type_list<Types..., U...>>::value ||
             is_one_of<T,
                       contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
@@ -132,25 +155,25 @@ public:
     component_tuple();
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_tuple(const string_t& key, quirk::config<T...>,
+    explicit component_tuple(const string_t& _key, quirk::config<T...>,
                              const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_tuple(const captured_location_t& loc, quirk::config<T...>,
+    explicit component_tuple(const captured_location_t& _loc, quirk::config<T...>,
                              const Func& = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_tuple(const string_t& key, const bool& store = true,
+    explicit component_tuple(const string_t& _key, const bool& _store = true,
                              scope::config _scope = scope::get_default(),
                              const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_tuple(const captured_location_t& loc, const bool& store = true,
+    explicit component_tuple(const captured_location_t& _loc, const bool& _store = true,
                              scope::config _scope = scope::get_default(),
                              const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_tuple(size_t _hash, const bool& store = true,
+    explicit component_tuple(size_t _hash, const bool& _store = true,
                              scope::config _scope = scope::get_default(),
                              const Func&          = get_initializer());
 
@@ -220,9 +243,13 @@ public:
     template <typename... Args>
     void stop(mpl::lightweight, Args&&...);
 
+    using bundle_type::get_prefix;
+    using bundle_type::get_scope;
+    using bundle_type::get_store;
     using bundle_type::hash;
     using bundle_type::key;
     using bundle_type::laps;
+    using bundle_type::prefix;
     using bundle_type::rekey;
     using bundle_type::store;
 
@@ -318,18 +345,17 @@ public:
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
-    template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+    template <typename T, enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     const T* get() const
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
-    template <typename T, enable_if_t<!(is_one_of<T, data_type>::value), int> = 0>
+    template <typename T, enable_if_t<!is_one_of<T, data_type>::value, int> = 0>
     T* get() const
     {
-        void*       ptr   = nullptr;
-        static auto _hash = std::hash<std::string>()(demangle<T>());
-        get(ptr, _hash);
+        void* ptr = nullptr;
+        get(ptr, typeid_hash<T>());
         return static_cast<T*>(ptr);
     }
 
@@ -370,7 +396,7 @@ public:
 
     template <
         typename T, typename... Args,
-        enable_if_t<(is_one_of<T, reference_type>::value == false && !has_user_bundle_v),
+        enable_if_t<is_one_of<T, reference_type>::value == false && !has_user_bundle_v,
                     int> = 0>
     void init(Args&&...)
     {}
@@ -378,7 +404,7 @@ public:
     //----------------------------------------------------------------------------------//
     //  variadic initialization
     //
-    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
+    template <typename T, typename... Tail, enable_if_t<sizeof...(Tail) == 0, int> = 0>
     void initialize()
     {
         this->init<T>();
@@ -394,7 +420,7 @@ public:
     //----------------------------------------------------------------------------------//
     // apply a member function to a type that is in variadic list AND is available
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, data_type>::value == true), int> = 0>
+              enable_if_t<is_one_of<T, data_type>::value == true, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
         auto* _obj = get<T>();
@@ -402,7 +428,7 @@ public:
     }
 
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, data_type>::value == false), int> = 0>
+              enable_if_t<is_one_of<T, data_type>::value == false, int> = 0>
     void type_apply(Func&&, Args&&...)
     {}
 
@@ -534,22 +560,8 @@ public:
         ar(cereal::make_nvp("data", m_data));
     }
 
-public:
-    /// returns the number of caliper measurements for the bundle
-    int64_t laps() const { return bundle_type::laps(); }
-    /// returns the key for the bundle
-    std::string key() const { return bundle_type::key(); }
-    /// return the hash value of the key
-    uint64_t hash() const { return bundle_type::hash(); }
-    /// changes the key/hash for the bundle
-    void rekey(const string_t& _key) { bundle_type::rekey(_key); }
-    /// whether the components update their call-stack storage
-    bool&           store() { return bundle_type::store(); }
-    const bool&     store() const { return bundle_type::store(); }
-    const string_t& prefix() const { return bundle_type::prefix(); }
-    const string_t& get_prefix() const { return bundle_type::get_prefix(); }
-    void            set_prefix(const string_t&) const;
-    void            set_scope(scope::config);
+    void set_prefix(const string_t&) const;
+    void set_scope(scope::config);
 
 protected:
     static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }
@@ -564,7 +576,9 @@ protected:
 
 protected:
     // objects
+    using bundle_type::m_config;
     using bundle_type::m_hash;
+    using bundle_type::m_is_active;
     using bundle_type::m_is_pushed;
     using bundle_type::m_laps;
     using bundle_type::m_scope;

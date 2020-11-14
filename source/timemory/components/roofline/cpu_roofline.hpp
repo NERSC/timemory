@@ -61,6 +61,13 @@ namespace component
 //  generic:
 //              cpu_roofline<T, ...>
 //
+/// \struct tim::component::cpu_roofline
+/// \tparam Types Variadic list of data types for roofline analysis
+///
+/// \brief Combines hardware counters and timers and executes the empirical roofline
+/// toolkit during application termination to estimate the peak possible performance for
+/// the machine
+///
 template <typename... Types>
 struct cpu_roofline
 : public base<cpu_roofline<Types...>, std::pair<std::vector<long long>, double>>
@@ -474,7 +481,7 @@ protected:
 
     friend struct base<this_type, value_type>;
     friend class impl::storage<this_type,
-                               trait::implements_storage<this_type, value_type>::value>;
+                               trait::uses_value_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//
@@ -551,7 +558,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <typename Archive>
-    void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
+    void load(Archive& ar, const unsigned int)
     {
         auto _disp  = get_display();
         auto labels = label_array();
@@ -566,7 +573,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <typename Archive>
-    void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int) const
+    void save(Archive& ar, const unsigned int) const
     {
         auto _disp  = get_display();
         auto labels = label_array();

@@ -54,33 +54,21 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_STATIC_ACCESSOR)
-#    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
-    public:                                                                              \
-        static TYPE& FUNC() TIMEMORY_VISIBILITY("default")                               \
-        {                                                                                \
-            return instance()->m__##FUNC;                                                \
-        }                                                                                \
-                                                                                         \
-    private:                                                                             \
-        TYPE m__##FUNC = INIT;
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
 #if !defined(TIMEMORY_SETTINGS_MEMBER_DECL)
+// memory leak w/ _key is intentional due to potential calls during _cxa_finalize
+// which may have already deleted a non-heap allocation
 #    define TIMEMORY_SETTINGS_MEMBER_DECL(TYPE, FUNC, ENV_VAR)                           \
     public:                                                                              \
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            assert(m_data.find(ENV_VAR) != m_data.end());                                \
-            return static_cast<tsettings<TYPE>*>(m_data.find(ENV_VAR)->second.get())     \
-                ->get();                                                                 \
+            static auto _key = new std::string(ENV_VAR);                                 \
+            return static_cast<tsettings<TYPE>*>(m_data[*_key].get())->get();            \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
         {                                                                                \
-            auto ret = m_data.find(ENV_VAR);                                             \
+            static auto _key = new std::string(ENV_VAR);                                 \
+            auto        ret  = m_data.find(*_key);                                       \
             if(ret == m_data.end())                                                      \
                 return TYPE{};                                                           \
             if(!ret->second)                                                             \
@@ -97,19 +85,20 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_SETTINGS_REFERENCE_DECL)
+// memory leak w/ _key is intentional due to potential calls during _cxa_finalize
+// which may have already deleted a non-heap allocation
 #    define TIMEMORY_SETTINGS_REFERENCE_DECL(TYPE, FUNC, ENV_VAR)                        \
     public:                                                                              \
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
-            assert(m_data.find(ENV_VAR) != m_data.end());                                \
-            return static_cast<tsettings<TYPE, TYPE&>*>(                                 \
-                       m_data.find(ENV_VAR)->second.get())                               \
-                ->get();                                                                 \
+            static auto _key = new std::string(ENV_VAR);                                 \
+            return static_cast<tsettings<TYPE, TYPE&>*>(m_data[*_key].get())->get();     \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
         {                                                                                \
-            auto ret = m_data.find(ENV_VAR);                                             \
+            static auto _key = new std::string(ENV_VAR);                                 \
+            auto        ret  = m_data.find(*_key);                                       \
             if(ret == m_data.end())                                                      \
                 return TYPE{};                                                           \
             if(!ret->second)                                                             \
@@ -175,8 +164,7 @@
 #    define TIMEMORY_SETTINGS_TRY_CATCH_NVP(ENV_VAR, FUNC)                               \
         try                                                                              \
         {                                                                                \
-            auto& _VAL = FUNC();                                                         \
-            ar(cereal::make_nvp(ENV_VAR, _VAL));                                         \
+            ar(cereal::make_nvp(ENV_VAR, FUNC()));                                       \
         } catch(...)                                                                     \
         {}
 #endif

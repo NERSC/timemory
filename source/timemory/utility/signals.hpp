@@ -108,11 +108,8 @@ timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context 
         ss << "signal " << sig << " not caught";
         throw std::runtime_error(ss.str());
     }
-    {
-        std::stringstream message;
-        tim::termination_signal_message(sig, sinfo, message);
-        std::cerr << message.str() << std::flush;
-    }
+
+    tim::termination_signal_message(sig, sinfo, std::cerr);
 
     tim::disable_signal_detection();
 
@@ -217,16 +214,8 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     }
 
     message << std::endl;
-    try
-    {
-        signal_settings::disable(_sig);
-        signal_settings::exit_action(sig);
-    } catch(std::exception& e)
-    {
-        std::cerr << "signal_settings::exit_action(" << sig << ") threw an exception"
-                  << std::endl;
-        std::cerr << e.what() << std::endl;
-    }
+
+    signal_settings::disable(_sig);
 
     std::stringstream        prefix;
     std::stringstream        serr;
@@ -249,6 +238,16 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 
     message << serr.str().c_str() << std::flush;
     os << message.str() << std::flush;
+
+    try
+    {
+        signal_settings::exit_action(sig);
+    } catch(std::exception& e)
+    {
+        std::cerr << "signal_settings::exit_action(" << sig << ") threw an exception"
+                  << std::endl;
+        std::cerr << e.what() << std::endl;
+    }
 }
 
 //--------------------------------------------------------------------------------------//

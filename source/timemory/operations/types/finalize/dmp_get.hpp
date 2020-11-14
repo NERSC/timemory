@@ -34,6 +34,9 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/operations/types/finalize/get.hpp"
 
+#include <map>
+#include <vector>
+
 namespace tim
 {
 namespace operation
@@ -57,6 +60,7 @@ struct dmp_get<Type, true>
     using get_type               = get<Type, value>;
     using basic_tree_type        = typename get_type::basic_tree_vector_type;
     using basic_tree_vector_type = std::vector<basic_tree_type>;
+    using basic_tree_map_type    = std::map<std::string, basic_tree_vector_type>;
 
     explicit dmp_get(storage_type& _storage)
     : m_storage(&_storage)
@@ -64,9 +68,11 @@ struct dmp_get<Type, true>
 
     distrib_type&           operator()(distrib_type&);
     basic_tree_vector_type& operator()(basic_tree_vector_type&);
+    basic_tree_map_type&    operator()(basic_tree_map_type&);
 
     template <typename Archive>
-    Archive& operator()(Archive&);
+    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
+        Archive&);
 
 private:
     storage_type* m_storage = nullptr;
@@ -128,8 +134,83 @@ dmp_get<Type, true>::operator()(distrib_type& results)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
+typename dmp_get<Type, true>::basic_tree_vector_type&
+dmp_get<Type, true>::operator()(basic_tree_vector_type& bt)
+{
+    if(!m_storage)
+        return bt;
+
+    auto& data  = *m_storage;
+    bool  empty = true;
+
+#if defined(TIMEMORY_USE_UPCXX)
+    if(upc::is_initialized())
+    {
+        empty = false;
+        data.upc_get(bt);
+    }
+#endif
+
+#if defined(TIMEMORY_USE_MPI)
+    if(mpi::is_initialized())
+    {
+        empty = false;
+        data.mpi_get(bt);
+    }
+#endif
+
+    // if none of the above added any data, add the serial results
+    if(empty)
+        data.get(bt);
+
+    return bt;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename dmp_get<Type, true>::basic_tree_map_type&
+dmp_get<Type, true>::operator()(basic_tree_map_type& bt)
+{
+    if(!m_storage)
+        return bt;
+
+    auto& data  = *m_storage;
+    bool  empty = true;
+
+#if defined(TIMEMORY_USE_UPCXX)
+    if(upc::is_initialized())
+    {
+        empty                        = false;
+        basic_tree_vector_type& _val = bt["upcxx"];
+        data.upc_get(_val);
+    }
+#endif
+
+#if defined(TIMEMORY_USE_MPI)
+    if(mpi::is_initialized())
+    {
+        empty                        = false;
+        basic_tree_vector_type& _val = bt["mpi"];
+        data.mpi_get(_val);
+    }
+#endif
+
+    // if none of the above added any data, add the serial results
+    if(empty)
+    {
+        basic_tree_vector_type& _val = bt["process"];
+        data.get(_val);
+    }
+
+    return bt;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
 template <typename Archive>
-Archive&
+enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
 dmp_get<Type, true>::operator()(Archive& ar)
 {
     if(!m_storage)

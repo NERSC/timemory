@@ -67,7 +67,8 @@ struct upc_get<Type, true>
     basic_tree_vector_type& operator()(basic_tree_vector_type&);
 
     template <typename Archive>
-    Archive& operator()(Archive&);
+    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
+        Archive&);
 
 private:
     storage_type* m_storage = nullptr;
@@ -400,7 +401,7 @@ upc_get<Type, true>::operator()(basic_tree_vector_type& bt)
 //
 template <typename Type>
 template <typename Archive>
-Archive&
+enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
 upc_get<Type, true>::operator()(Archive& ar)
 {
     if(!m_storage)

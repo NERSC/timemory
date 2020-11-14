@@ -22,25 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/manager/extern.hpp
- * \brief Include the extern declarations for manager
- */
-
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/manager/macros.hpp"
-//
-#include "timemory/manager/types.hpp"
-//
 #include "timemory/manager/declaration.hpp"
-//
-#include "timemory/config.hpp"
-//
-//======================================================================================//
-//
+#include "timemory/manager/macros.hpp"
+#include "timemory/manager/types.hpp"
+
 #if defined(TIMEMORY_MANAGER_SOURCE)
 // source requirements
 #    include "timemory/settings/definition.hpp"

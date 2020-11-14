@@ -77,26 +77,11 @@ TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(int... Evts),
 //
 TIMEMORY_STATISTICS_TYPE(component::papi_vector, std::vector<double>)
 TIMEMORY_TEMPLATE_STATISTICS_TYPE(component::papi_array, std::vector<double>, size_t)
-// TIMEMORY_VARIADIC_STATISTICS_TYPE(component::papi_tuple, std::vector<double>, int)
-namespace tim
-{
-namespace trait
-{
-//
-template <int... Idx>
-struct statistics<component::papi_tuple<Idx...>>
-{
-    using type = std::array<double, sizeof...(Idx)>;
-};
-//
-template <int... Idx>
-struct statistics<component::papi_rate_tuple<Idx...>>
-{
-    using type = std::array<double, sizeof...(Idx)>;
-};
-//
-}  // namespace trait
-}  // namespace tim
+TIMEMORY_VARIADIC_TRAIT_TYPE(statistics, component::papi_tuple, TIMEMORY_ESC(int... Idx),
+                             TIMEMORY_ESC(Idx...), std::array<double, sizeof...(Idx)>)
+TIMEMORY_VARIADIC_TRAIT_TYPE(statistics, component::papi_rate_tuple,
+                             TIMEMORY_ESC(int... Idx), TIMEMORY_ESC(Idx...),
+                             std::array<double, sizeof...(Idx)>)
 //
 //--------------------------------------------------------------------------------------//
 //

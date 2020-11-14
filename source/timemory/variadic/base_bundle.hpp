@@ -33,6 +33,7 @@
 #include "timemory/settings/declaration.hpp"
 #include "timemory/variadic/types.hpp"
 
+#include <bitset>
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
@@ -156,32 +157,35 @@ private:
     struct quirk_config
     {
         static constexpr bool value =
-            (is_one_of<T, contains_one_of_t<quirk::is_config,
-                                            type_concat_t<Types..., U...>>>::value ||
-             is_one_of<T, type_concat_t<Types..., U...>>::value);
+            is_one_of<T, type_list<Types..., U...>>::value ||
+            is_one_of<T,
+                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
 
 public:
     explicit base_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),
                          scope::config _scope = scope::get_default())
-    : m_store(_store && settings::enabled() && get_store_config())
-    , m_scope(_scope + get_scope_config())
+    : m_scope(_scope + get_scope_config())
     , m_hash(_hash)
-    {}
+    {
+        m_store(_store && settings::enabled() && get_store_config());
+    }
 
     template <typename... T>
     explicit base_bundle(uint64_t hash, bool store, quirk::config<T...>)
-    : m_store(store && settings::enabled() && get_store_config<T...>())
-    , m_scope(get_scope_config<T...>())
+    : m_scope(get_scope_config<T...>())
     , m_hash(hash)
-    {}
+    {
+        m_store(store && settings::enabled() && get_store_config<T...>());
+    }
 
     template <typename... T>
     explicit base_bundle(uint64_t hash, quirk::config<T...>)
-    : m_store(settings::enabled() && get_store_config<T...>())
-    , m_scope(get_scope_config<T...>())
+    : m_scope(get_scope_config<T...>())
     , m_hash(hash)
-    {}
+    {
+        m_store(settings::enabled() && get_store_config<T...>());
+    }
 
     ~base_bundle()                      = default;
     base_bundle(const base_bundle&)     = default;
@@ -211,15 +215,14 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    bool&           store() { return m_store; }
-    const bool&     store() const { return m_store; }
+    void            store(bool v) { m_store(v); }
+    bool            store() const { return m_store(); }
     const string_t& prefix() const { return get_persistent_data().prefix; }
 
     //----------------------------------------------------------------------------------//
     //
-    bool&           get_store() { return m_store; }
     auto&           get_scope() { return m_scope; }
-    const bool&     get_store() const { return m_store; }
+    bool            get_store() const { return m_store(); }
     const string_t& get_prefix() const { return prefix(); }
     const auto&     get_scope() const { return m_scope; }
 
@@ -262,11 +265,30 @@ protected:
 
 protected:
     // objects
-    bool          m_store     = false;
-    bool          m_is_pushed = false;
-    scope::config m_scope     = scope::get_default();
-    int64_t       m_laps      = 0;
-    uint64_t      m_hash      = 0;
+    std::bitset<3> m_config = {};
+    scope::config  m_scope  = scope::get_default();
+    int64_t        m_laps   = 0;
+    uint64_t       m_hash   = 0;
+
+    enum ConfigIdx
+    {
+        StoreIdx  = 0,
+        PushedIdx = 1,
+        ActiveIdx = 2
+    };
+
+protected:
+    TIMEMORY_ALWAYS_INLINE bool m_store() const { return m_config.test(StoreIdx); }
+
+    TIMEMORY_ALWAYS_INLINE bool m_is_pushed() const { return m_config.test(PushedIdx); }
+
+    TIMEMORY_ALWAYS_INLINE bool m_is_active() const { return m_config.test(ActiveIdx); }
+
+    TIMEMORY_ALWAYS_INLINE void m_store(bool v) { m_config.set(StoreIdx, v); }
+
+    TIMEMORY_ALWAYS_INLINE void m_is_pushed(bool v) { m_config.set(PushedIdx, v); }
+
+    TIMEMORY_ALWAYS_INLINE void m_is_active(bool v) { m_config.set(ActiveIdx, v); }
 
 protected:
     struct persistent_data
@@ -312,7 +334,10 @@ template <typename Tag, typename... Types>
 class base_bundle<Tag, std::tuple<Types...>> : public base_bundle<Tag, Types...>
 {
 public:
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     base_bundle(Args&&... args)
@@ -324,7 +349,10 @@ template <typename Tag, typename... Types>
 class base_bundle<Tag, type_list<Types...>> : public base_bundle<Tag, Types...>
 {
 public:
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     base_bundle(Args&&... args)
@@ -339,7 +367,10 @@ struct stack_bundle
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
@@ -352,7 +383,10 @@ struct stack_bundle<std::tuple<Types...>>
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
@@ -365,7 +399,10 @@ struct stack_bundle<type_list<Types...>>
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
-    using data_type = std::tuple<Types...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types...>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
@@ -380,7 +417,10 @@ struct heap_bundle
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::heap_wrapper
 {
-    using data_type = std::tuple<Types*...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types*...>;
 
     template <typename... Args>
     heap_bundle(Args&&... args)
@@ -393,7 +433,10 @@ struct heap_bundle<std::tuple<Types...>>
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::heap_wrapper
 {
-    using data_type = std::tuple<Types*...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types*...>;
 
     template <typename... Args>
     heap_bundle(Args&&... args)
@@ -406,7 +449,10 @@ struct heap_bundle<type_list<Types...>>
 : public base_bundle<TIMEMORY_API, Types...>
 , public concepts::heap_wrapper
 {
-    using data_type = std::tuple<Types*...>;
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using data_type = data_tuple_t<Types*...>;
 
     template <typename... Args>
     heap_bundle(Args&&... args)
@@ -418,15 +464,18 @@ struct heap_bundle<type_list<Types...>>
 //
 template <typename ApiT, typename... Types>
 struct api_bundle
-: public conditional_t<(trait::is_available<ApiT>::value),
+: public conditional_t<trait::is_available<ApiT>::value,
                        base_bundle<ApiT, remove_pointer_t<Types>...>,
                        base_bundle<ApiT, std::tuple<>>>
 {
-    using base_bundle_type = conditional_t<(trait::is_available<ApiT>::value),
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using base_bundle_type = conditional_t<trait::is_available<ApiT>::value,
                                            base_bundle<ApiT, remove_pointer_t<Types>...>,
                                            base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<(trait::is_available<ApiT>::value),
-                                    std::tuple<Types...>, std::tuple<>>;
+    using data_type        = conditional_t<trait::is_available<ApiT>::value,
+                                    data_tuple_t<Types...>, std::tuple<>>;
     using tuple_type       = data_type;
     using impl_type        = data_type;
 
@@ -438,15 +487,18 @@ struct api_bundle
 
 template <typename ApiT, typename... Types>
 struct api_bundle<ApiT, std::tuple<Types...>>
-: public conditional_t<(trait::is_available<ApiT>::value),
+: public conditional_t<trait::is_available<ApiT>::value,
                        base_bundle<ApiT, remove_pointer_t<Types>...>,
                        base_bundle<ApiT, std::tuple<>>>
 {
-    using base_bundle_type = conditional_t<(trait::is_available<ApiT>::value),
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using base_bundle_type = conditional_t<trait::is_available<ApiT>::value,
                                            base_bundle<ApiT, remove_pointer_t<Types>...>,
                                            base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<(trait::is_available<ApiT>::value),
-                                    std::tuple<Types...>, std::tuple<>>;
+    using data_type        = conditional_t<trait::is_available<ApiT>::value,
+                                    data_tuple_t<Types...>, std::tuple<>>;
     using tuple_type       = data_type;
     using impl_type        = data_type;
 
@@ -458,15 +510,18 @@ struct api_bundle<ApiT, std::tuple<Types...>>
 
 template <typename ApiT, typename... Types>
 struct api_bundle<ApiT, type_list<Types...>>
-: public conditional_t<(trait::is_available<ApiT>::value),
+: public conditional_t<trait::is_available<ApiT>::value,
                        base_bundle<ApiT, remove_pointer_t<Types>...>,
                        base_bundle<ApiT, std::tuple<>>>
 {
-    using base_bundle_type = conditional_t<(trait::is_available<ApiT>::value),
+    template <typename... T>
+    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+
+    using base_bundle_type = conditional_t<trait::is_available<ApiT>::value,
                                            base_bundle<ApiT, remove_pointer_t<Types>...>,
                                            base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<(trait::is_available<ApiT>::value),
-                                    std::tuple<Types...>, std::tuple<>>;
+    using data_type        = conditional_t<trait::is_available<ApiT>::value,
+                                    data_tuple_t<Types...>, std::tuple<>>;
     using tuple_type       = data_type;
     using impl_type        = data_type;
 

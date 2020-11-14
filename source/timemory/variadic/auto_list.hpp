@@ -25,21 +25,12 @@
 
 /** \file timemory/variadic/auto_list.hpp
  * \headerfile timemory/variadic/auto_list.hpp "timemory/variadic/auto_list.hpp"
- * Automatic starting and stopping of components. Accept unlimited number of
- * parameters. The constructor starts the components, the destructor stops the
- * components
- *
- * Usage with macros (recommended):
- *    \param TIMEMORY_AUTO_LIST()
- *    \param TIMEMORY_BASIC_AUTO_LIST()
- *    \param auto t = TIMEMORY_AUTO_LIST_OBJ()
- *    \param auto t = TIMEMORY_BASIC_AUTO_LIST_OBJ()
  */
 
 #pragma once
 
 #include "timemory/mpl/filters.hpp"
-#include "timemory/runtime/initialize.hpp"
+#include "timemory/runtime/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_list.hpp"
@@ -52,7 +43,54 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-
+/// \class tim::auto_list<Types...>
+/// \tparam Types... Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper where all components are optional
+/// at runtime. Accept unlimited number of parameters. The constructor starts the
+/// components, the destructor stops the components. The default behavior is
+/// to query the TIMEMORY_AUTO_LIST_INIT environment variable once (the first
+/// time the bundle is used) and use that list of components (if any) to
+/// initialize the components which are part of it's template parameters.
+/// This behavior can be modified by assigning a new lambda/functor to the
+/// reference which is returned from \ref tim::auto_list<Types...>::get_initializer().
+/// Assignment is not thread-safe since this is relatively unnecessary... if a different
+/// set of components are required on a particular thread, just create a different
+/// type with those particular components or pass the initialization functor to the
+/// constructor.
+///
+/// \code{.cpp}
+/// using bundle_t = tim::auto_list<wall_clock, cpu_clock, peak_rss>;
+///
+/// void foo()
+/// {
+///     setenv("TIMEMORY_AUTO_LIST_COMPONENTS", "wall_clock", 0);
+///
+///     auto bar = bundle_t("bar");
+///
+///     bundle_t::get_initializer() = [](bundle_t& b)
+///     {
+///         b.initialize<cpu_clock, peak_rss>();
+///     };
+///
+///     auto qix = bundle_t("qix");
+///
+///     auto local_init = [](bundle_t& b)
+///     {
+///         b.initialize<thread_cpu_clock, peak_rss>();
+///     };
+///
+///     auto spam = bundle_t("spam", ..., local_init);
+///
+/// }
+/// \endcode
+///
+/// The above code will record wall-clock timer on first use of "bar", and
+/// will record cpu-clock, peak-rss at "qix", and peak-rss at "spam". If foo()
+/// is called a second time, "bar" will record cpu-clock and peak-rss. "spam" will
+/// always use the local initialized. If none of these initializers are set, wall-clock
+/// will be recorded for all of them. The intermediate storage will happen on the heap and
+/// when the destructor is called, it will add itself to the call-graph
 template <typename... Types>
 class auto_list
 : public concepts::wrapper
@@ -73,7 +111,6 @@ public:
     using string_t            = std::string;
     using captured_location_t = typename component_type::captured_location_t;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = component_type::has_user_bundle_v;
 
@@ -84,6 +121,8 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
+    /// \fn auto& get_initializer()
+    /// \brief
     static auto& get_initializer()
     {
         static auto env_enum = enumerate_components(

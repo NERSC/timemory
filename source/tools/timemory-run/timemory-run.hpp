@@ -25,8 +25,6 @@
 
 #pragma once
 
-#include "timemory-run-fork.hpp"
-
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/environment.hpp"
@@ -34,6 +32,7 @@
 #include "timemory/settings.hpp"
 #include "timemory/utility/argparse.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/popen.hpp"
 #include "timemory/variadic/macros.hpp"
 
 #include "BPatch.h"
@@ -135,10 +134,10 @@ static bool use_line_info    = false;
 //
 //  integral settings
 //
-static int expect_error  = NO_ERROR;
-static int debug_print   = 0;
-static int error_print   = 0;  // external "dyninst" tracing
-static int verbose_level = tim::get_env<int>("TIMEMORY_RUN_VERBOSE", 0);
+static bool debug_print   = false;
+static int  expect_error  = NO_ERROR;
+static int  error_print   = 0;
+static int  verbose_level = tim::get_env<int>("TIMEMORY_RUN_VERBOSE", 0);
 //
 //  string settings
 //
@@ -165,20 +164,21 @@ static strset_t        collection_includes;
 static strset_t        collection_excludes;
 static strvec_t        collection_paths = { "collections", "timemory/collections",
                                      "../share/timemory/collections" };
-static auto            regex_opts =
-    std::regex_constants::ECMAScript | std::regex_constants::optimize;
+static auto regex_opts = std::regex_constants::egrep | std::regex_constants::optimize;
 //
 //======================================================================================//
 
 // control debug printf statements
 #define dprintf(...)                                                                     \
     if(tim::dmp::rank() == 0 && (debug_print || verbose_level > 0))                      \
-        fprintf(stderr, __VA_ARGS__);
+        fprintf(stderr, __VA_ARGS__);                                                    \
+    fflush(stderr);
 
 // control verbose printf statements
 #define verbprintf(LEVEL, ...)                                                           \
     if(tim::dmp::rank() == 0 && verbose_level >= LEVEL)                                  \
-        fprintf(stderr, __VA_ARGS__);
+        fprintf(stdout, __VA_ARGS__);                                                    \
+    fflush(stdout);
 
 //======================================================================================//
 
@@ -209,10 +209,11 @@ function_signature
 get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* cfGraph,
                         basic_loop_t* loopToInstrument);
 
+template <typename Tp>
 void
-insert_instr(address_space_t* mutatee, procedure_t* funcToInstr,
-             call_expr_pointer_t traceFunc, procedure_loc_t traceLoc,
-             flow_graph_t* cfGraph = nullptr, basic_loop_t* loopToInstrument = nullptr);
+insert_instr(address_space_t* mutatee, procedure_t* funcToInstr, Tp traceFunc,
+             procedure_loc_t traceLoc, flow_graph_t* cfGraph = nullptr,
+             basic_loop_t* loopToInstrument = nullptr);
 
 void
 errorFunc(error_level_t level, int num, const char** params);
@@ -455,7 +456,7 @@ struct module_function
 static inline void
 dump_info(const string_t& _oname, const fmodset_t& _data, int level)
 {
-    if(!debug_print && verbose_level > level)
+    if(!debug_print && verbose_level < level)
         return;
 
     module_function::reset_width();
@@ -465,9 +466,10 @@ dump_info(const string_t& _oname, const fmodset_t& _data, int level)
     std::ofstream ofs(_oname);
     if(ofs)
     {
-        verbprintf(level, "Dumping '%s'...\n", _oname.c_str());
+        verbprintf(level, "Dumping '%s'... ", _oname.c_str());
         for(const auto& itr : _data)
             ofs << itr << '\n';
+        verbprintf(level, "Done\n");
     }
     ofs.close();
 
@@ -488,7 +490,8 @@ get_snippet(Tp arg)
 inline snippet_pointer_t
 get_snippet(string_t arg)
 {
-    return snippet_pointer_t(new const_expr_t(arg.c_str()));
+    auto _arg = strdup(arg.c_str());
+    return snippet_pointer_t(new const_expr_t(_arg));
 }
 //
 //======================================================================================//
@@ -572,7 +575,8 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
 
     if(_rewrite)
     {
-        verbprintf(1, "Opening '%s' for binary rewrite...\n", _name.c_str());
+        verbprintf(1, "Opening '%s' for binary rewrite... ", _name.c_str());
+        fflush(stderr);
         if(!_name.empty())
             mutatee = bpatch->openBinary(_name.c_str(), false);
         if(!mutatee)
@@ -581,10 +585,12 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
                     _name.c_str());
             throw std::runtime_error("Failed to open binary");
         }
+        verbprintf(1, "Done\n");
     }
     else if(_pid >= 0)
     {
-        verbprintf(1, "Attaching to process %i...\n", _pid);
+        verbprintf(1, "Attaching to process %i... ", _pid);
+        fflush(stderr);
         char* _cmdv0 = (_cmdc > 0) ? _cmdv[0] : nullptr;
         mutatee      = bpatch->processAttach(_cmdv0, _pid);
         if(!mutatee)
@@ -593,10 +599,12 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
                     (int) _pid);
             throw std::runtime_error("Failed to attach to process");
         }
+        verbprintf(1, "Done\n");
     }
     else
     {
-        verbprintf(1, "Creating process '%s'...\n", _cmdv[0]);
+        verbprintf(1, "Creating process '%s'... ", _cmdv[0]);
+        fflush(stderr);
         mutatee = bpatch->processCreate(_cmdv[0], (const char**) _cmdv, nullptr);
         if(!mutatee)
         {
@@ -611,6 +619,7 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
                     ss.str().c_str());
             throw std::runtime_error("Failed to create process");
         }
+        verbprintf(1, "Done\n");
     }
 
     return mutatee;
@@ -618,7 +627,7 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
 //
 //======================================================================================//
 //
-static void
+TIMEMORY_NOINLINE inline void
 timemory_thread_exit(thread_t* thread, BPatch_exitType exit_type)
 {
     if(!thread)
@@ -628,6 +637,7 @@ timemory_thread_exit(thread_t* thread, BPatch_exitType exit_type)
 
     if(!terminate_expr)
     {
+        fprintf(stderr, "[timemory-run]> continuing execution\n");
         app->continueExecution();
         return;
     }
@@ -655,12 +665,13 @@ timemory_thread_exit(thread_t* thread, BPatch_exitType exit_type)
     // terminate_expr = nullptr;
     thread->oneTimeCode(*terminate_expr);
 
+    fprintf(stderr, "[timemory-run]> continuing execution\n");
     app->continueExecution();
 }
 //
 //======================================================================================//
 //
-static void
+TIMEMORY_NOINLINE inline void
 timemory_fork_callback(thread_t* parent, thread_t* child)
 {
     if(child)

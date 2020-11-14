@@ -86,6 +86,7 @@
 TIMEMORY_DEFINE_NS_API(project, none)      // dummy type
 TIMEMORY_DEFINE_NS_API(project, timemory)  // provided by timemory API exclusively
 TIMEMORY_DEFINE_NS_API(project, python)    // provided by timemory python interface
+TIMEMORY_DEFINE_NS_API(project, kokkosp)   // kokkos profiling API
 //
 // Device APIs
 //

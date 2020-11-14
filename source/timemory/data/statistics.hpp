@@ -50,8 +50,24 @@
 
 namespace tim
 {
-//======================================================================================//
+template <typename Tp>
+struct statistics;
+}
 
+namespace cereal
+{
+namespace detail
+{
+template <typename Tp>
+struct StaticVersion<::tim::statistics<Tp>>
+{
+    static constexpr int32_t value = 0;
+};
+}  // namespace detail
+}  // namespace cereal
+
+namespace tim
+{
 template <typename Tp>
 struct statistics
 {

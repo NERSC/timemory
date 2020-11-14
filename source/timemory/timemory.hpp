@@ -30,7 +30,8 @@
 
 #pragma once
 
-#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
+#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED) ||                           \
+    (defined(TIMEMORY_ENABLED) && TIMEMORY_ENABLED == 0)
 
 #    include <ostream>
 #    include <string>
@@ -167,7 +168,7 @@ struct dummy
 #    endif
 
 #    if !defined(TIMEMORY_ENABLED)
-#        define TIMEMORY_ENABLED
+#        define TIMEMORY_ENABLED 1
 #    endif
 
 //

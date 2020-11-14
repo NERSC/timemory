@@ -24,6 +24,10 @@
 
 #include "gtest/gtest.h"
 
+#include "timemory/timemory.hpp"
+
+using namespace tim::component;
+
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
@@ -31,10 +35,6 @@
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/timemory.hpp"
-
-using namespace tim::component;
 
 static int    _argc = 0;
 static char** _argv = nullptr;
@@ -44,10 +44,17 @@ using lock_t  = std::unique_lock<mutex_t>;
 
 using toolset_t = tim::auto_tuple<wall_clock>;
 
-extern template struct tim::component_tuple<wall_clock>;
-extern template struct tim::auto_tuple<wall_clock>;
-TIMEMORY_DECLARE_EXTERN_STORAGE(component::wall_clock, wc)
-TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::wall_clock, true)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(flat_storage, monotonic_clock, true_type)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(class tim::auto_tuple<wall_clock>)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(class tim::component_tuple<wall_clock>)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(class tim::component_bundle<TIMEMORY_API, wall_clock>)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(
+    class tim::component_bundle<TIMEMORY_API, monotonic_clock>)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(
+    class tim::component_bundle<TIMEMORY_API, monotonic_raw_clock>)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(wall_clock, true, int64_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(monotonic_clock, true, int64_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(monotonic_raw_clock, true, int64_t)
 
 //--------------------------------------------------------------------------------------//
 
@@ -59,7 +66,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 // this function consumes approximately "n" milliseconds of real time
@@ -195,9 +203,10 @@ TEST_F(flat_tests, flat)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(flat_tests, flat_quirk)
+TEST_F(flat_tests, quirk)
 {
-    using bundle_t = tim::component_bundle<TIMEMORY_API, wall_clock>;
+    tim::settings::flat_profile() = false;
+    using bundle_t                = tim::component_bundle<TIMEMORY_API, wall_clock>;
     bundle_t _bundle(details::get_test_name(),
                      tim::quirk::config<tim::quirk::flat_scope>{});
     auto     _scope = _bundle.get_scope();
@@ -211,9 +220,48 @@ TEST_F(flat_tests, flat_quirk)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(flat_tests, type_trait)
+{
+    tim::settings::flat_profile()     = false;
+    tim::settings::timeline_profile() = false;
+    tim::trait::report<monotonic_clock>::depth(true);
+    using bundle_t = tim::component_bundle<TIMEMORY_API, monotonic_clock>;
+    bundle_t _outer(details::get_test_name());
+    bundle_t _inner(details::get_test_name());
+    _outer.start();
+    _inner.start();
+    details::consume(1000);
+    _inner.stop();
+    _outer.stop();
+
+    monotonic_clock* _outer_mc = _outer.get<monotonic_clock>();
+    monotonic_clock* _inner_mc = _inner.get<monotonic_clock>();
+
+    EXPECT_TRUE(_outer_mc->get_is_flat());
+    EXPECT_FALSE(_outer_mc->get_depth_change());
+    EXPECT_TRUE(_inner_mc->get_is_flat());
+    EXPECT_FALSE(_inner_mc->get_depth_change());
+
+    EXPECT_EQ(_outer_mc->get_iterator()->data().get_laps(), 2);
+    EXPECT_EQ(_inner_mc->get_iterator()->depth(), 1);
+    EXPECT_TRUE(_outer_mc->get_iterator() == _inner_mc->get_iterator());
+
+    auto _scope = _outer.get_scope();
+    std::cout << "\nscope: " << _scope << '\n' << std::endl;
+    EXPECT_TRUE(_scope.is_tree());
+    EXPECT_FALSE(_scope.is_flat());
+    EXPECT_FALSE(_scope.is_timeline());
+    EXPECT_FALSE(_scope.is_flat_timeline());
+    EXPECT_FALSE(_scope.is_tree_timeline());
+    EXPECT_TRUE(_scope == _inner.get_scope());
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(flat_tests, general_quirk)
 {
-    using bundle_t = tim::component_bundle<TIMEMORY_API, wall_clock>;
+    tim::settings::flat_profile() = false;
+    using bundle_t                = tim::component_bundle<TIMEMORY_API, wall_clock>;
     bundle_t _bundle(details::get_test_name(),
                      tim::quirk::config<tim::quirk::flat_scope, tim::quirk::no_store>{});
     auto     _scope1 = _bundle.get_scope();

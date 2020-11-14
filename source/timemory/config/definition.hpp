@@ -58,7 +58,7 @@ TIMEMORY_CONFIG_LINKAGE(void)
 timemory_init(int argc, char** argv, const std::string& _prefix,
               const std::string& _suffix)
 {
-    static auto _settings = settings::instance();
+    static auto _settings = settings::shared_instance();
     if(_settings)
     {
         if(_settings->get_debug() || _settings->get_verbose() > 3)
@@ -145,7 +145,9 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
                 auto _manager = manager::instance();
                 if(_manager)
                 {
-                    std::cout << "Finalizing after signal: " << nsig << std::endl;
+                    std::cout << "Finalizing after signal: " << nsig << " :: "
+                              << signal_settings::str(static_cast<sys_signal>(nsig))
+                              << std::endl;
                     _manager->finalize();
                 }
             };
@@ -338,6 +340,7 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
                 auto vec = tim::delimit(str, " \t;:");
                 for(auto itr : vec)
                 {
+                    DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
                     auto _pos = itr.find('=');
                     auto _key = itr.substr(0, _pos);
                     auto _val = (_pos == std::string::npos) ? "" : itr.substr(_pos + 1);

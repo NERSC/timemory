@@ -25,12 +25,9 @@
 
 #include "libpytimemory.hpp"
 #include "libpytimemory-components.hpp"
-#include "timemory/components.hpp"
-#include "timemory/components/extern.hpp"
-#include "timemory/components/ompt/backends.hpp"
 #include "timemory/enum.h"
 #include "timemory/library.h"
-#include "timemory/settings/extern.hpp"
+#include "timemory/timemory.hpp"
 
 #if defined(TIMEMORY_USE_OMPT)
 #    include "timemory/components/ompt.hpp"
@@ -62,31 +59,35 @@ extern "C"
 //======================================================================================//
 
 template <size_t Idx>
-using enumerator_t = typename tim::component::enumerator<Idx>::type;
-
-template <size_t Idx>
 using enumerator_vt =
     tim::conditional_t<tim::trait::is_available<enumerator_t<Idx>>::value, std::true_type,
                        std::false_type>;
 
 //======================================================================================//
+//
+class manager_wrapper
+{
+public:
+    manager_wrapper();
+    ~manager_wrapper();
+    std::shared_ptr<manager_t> get();
 
+protected:
+    std::shared_ptr<manager_t> m_manager = { nullptr };
+};
+//
 manager_wrapper::manager_wrapper()
-: m_manager(manager_t::instance().get())
+: m_manager(manager_t::instance())
 {}
-
-//--------------------------------------------------------------------------------------//
-
+//
 manager_wrapper::~manager_wrapper() {}
-
-//--------------------------------------------------------------------------------------//
-
-manager_t*
+//
+std::shared_ptr<manager_t>
 manager_wrapper::get()
 {
-    return manager_t::instance().get();
+    return manager_t::instance();
 }
-
+//
 //--------------------------------------------------------------------------------------//
 //
 namespace impl
@@ -95,16 +96,21 @@ namespace impl
 template <typename Tp, typename Archive,
           tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive& ar, int) -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
+get_json(Archive& ar, const pytim::pyenum_set_t& _types, int)
+    -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
 {
-    tim::storage<Tp>::instance()->dmp_get(ar);
+    if(_types.empty() || _types.count(tim::component::properties<Tp>{}()) > 0)
+    {
+        if(!tim::storage<Tp>::instance()->empty())
+            tim::storage<Tp>::instance()->dmp_get(ar);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Archive>
 auto
-get_json(Archive&, long)
+get_json(Archive&, const pytim::pyenum_set_t&, long)
 {}
 //
 //--------------------------------------------------------------------------------------//
@@ -113,31 +119,38 @@ template <typename Tp, typename ValueT = typename Tp::value_type, typename Strea
           tim::enable_if_t<tim::trait::is_available<Tp>::value &&
                            !tim::concepts::is_null_type<ValueT>::value> = 0>
 auto
-get_stream(StreamT& strm, int)
+get_stream(StreamT& strm, const pytim::pyenum_set_t& _types, int)
     -> decltype(tim::storage<Tp>::instance()->dmp_get(), void())
 {
     using printer_t = tim::operation::finalize::print<Tp, true>;
     using element_t = typename StreamT::element_type;
 
-    // strm.set_banner(Tp::get_description());
-    auto _storage = tim::storage<Tp>::instance();
-    auto _printer = printer_t{ _storage };
-    auto _data    = _printer.get_node_results();
+    if(_types.empty() || _types.count(tim::component::properties<Tp>{}()) > 0)
+    {
+        // strm.set_banner(Tp::get_description());
+        auto _storage = tim::storage<Tp>::instance();
 
-    if(_data.empty() || _data.front().empty() || tim::dmp::rank() > 0)
-        return;
+        if(_storage->empty())
+            return;
 
-    if(!strm)
-        strm = std::make_shared<element_t>();
+        auto _printer = printer_t{ _storage };
+        auto _data    = _printer.get_node_results();
 
-    _printer.write_stream(strm, _data);
+        if(_data.empty() || _data.front().empty() || tim::dmp::rank() > 0)
+            return;
+
+        if(!strm)
+            strm = std::make_shared<element_t>();
+
+        _printer.write_stream(strm, _data);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename StreamT>
 auto
-get_stream(StreamT&, long)
+get_stream(StreamT&, const pytim::pyenum_set_t&, long)
 {}
 //
 }  // namespace impl
@@ -147,9 +160,9 @@ get_stream(StreamT&, long)
 template <typename Tp, typename Archive,
           tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive& ar, int)
+get_json(Archive& ar, const pytim::pyenum_set_t& _types, int)
 {
-    impl::get_json<Tp>(ar, 0);
+    impl::get_json<Tp>(ar, _types, 0);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -157,16 +170,16 @@ get_json(Archive& ar, int)
 template <typename Tp, typename Archive,
           tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
 auto
-get_json(Archive&, ...)
+get_json(Archive&, const pytim::pyenum_set_t&, ...)
 {}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename Archive, size_t... Idx>
 auto
-get_json(Archive& ar, std::index_sequence<Idx...>)
+get_json(Archive& ar, const pytim::pyenum_set_t& _types, std::index_sequence<Idx...>)
 {
-    TIMEMORY_FOLD_EXPRESSION(get_json<tim::decay_t<enumerator_t<Idx>>>(ar, 0));
+    TIMEMORY_FOLD_EXPRESSION(get_json<tim::decay_t<enumerator_t<Idx>>>(ar, _types, 0));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -174,9 +187,9 @@ get_json(Archive& ar, std::index_sequence<Idx...>)
 template <typename Tp, typename StreamT,
           tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
 auto
-get_stream(StreamT& strm, int)
+get_stream(StreamT& strm, const pytim::pyenum_set_t& _types, int)
 {
-    return impl::get_stream<Tp>(strm, 0);
+    return impl::get_stream<Tp>(strm, _types, 0);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -184,21 +197,21 @@ get_stream(StreamT& strm, int)
 template <typename Tp, typename StreamT,
           tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
 auto
-get_stream(StreamT&, ...)
+get_stream(StreamT&, const pytim::pyenum_set_t&, ...)
 {}
 
 //--------------------------------------------------------------------------------------//
 
 template <size_t... Idx, size_t N = sizeof...(Idx)>
 auto
-get_stream(std::index_sequence<Idx...>)
+get_stream(const pytim::pyenum_set_t& _types, std::index_sequence<Idx...>)
 {
     using stream_t       = std::shared_ptr<tim::utility::stream>;
     using stream_array_t = std::array<stream_t, N>;
 
     auto strms = stream_array_t{};
     TIMEMORY_FOLD_EXPRESSION(
-        get_stream<tim::decay_t<enumerator_t<Idx>>>(std::get<Idx>(strms), 0));
+        get_stream<tim::decay_t<enumerator_t<Idx>>>(std::get<Idx>(strms), _types, 0));
     return strms;
 }
 
@@ -210,12 +223,43 @@ PYBIND11_MODULE(libpytimemory, tim)
 {
     //----------------------------------------------------------------------------------//
     //
-    static auto              _master_manager = manager_t::master_instance();
-    static thread_local auto _worker_manager = manager_t::instance();
+    auto _settings       = tim::settings::shared_instance();
+    auto _master_manager = manager_t::master_instance();
+    auto _worker_manager = manager_t::instance();
     if(_worker_manager != _master_manager)
     {
         printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
                (void*) _master_manager.get(), (void*) _worker_manager.get());
+    }
+    //
+    if(_settings)
+    {
+        if(_settings->get_debug() || _settings->get_verbose() > 3)
+            PRINT_HERE("%s", "");
+        //
+        if(_settings->get_enable_signal_handler())
+        {
+            auto default_signals = tim::signal_settings::get_default();
+            for(auto& itr : default_signals)
+                tim::signal_settings::enable(itr);
+            // should return default and any modifications from environment
+            auto enabled_signals = tim::signal_settings::get_enabled();
+            tim::enable_signal_detection(enabled_signals);
+            // executes after the signal has been caught
+            auto _exit_action = [](int nsig) {
+                auto _manager = manager_t::instance();
+                if(_manager)
+                {
+                    std::cout << "Finalizing after signal: " << nsig << " :: "
+                              << tim::signal_settings::str(
+                                     static_cast<tim::sys_signal>(nsig))
+                              << std::endl;
+                    _manager->finalize();
+                }
+            };
+            //
+            tim::signal_settings::set_exit_action(_exit_action);
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -223,7 +267,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     using pytim::string_t;
     try
     {
-        py::add_ostream_redirect(tim, "ostream_redirect");
+        // py::add_ostream_redirect(tim, "ostream_redirect");
     } catch(std::exception&)
     {}
 
@@ -233,20 +277,75 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    pyapi::generate(tim);
+    py::module _api =
+        tim.def_submodule("api", "Direct python interfaces to various APIs");
+    pyapi::generate(_api);
     pysignals::generate(tim);
-    pysettings::generate(tim);
     pyauto_timer::generate(tim);
     pycomponent_list::generate(tim);
     pycomponent_bundle::generate(tim);
     pyhardware_counters::generate(tim);
-    auto pyunit = pyunits::generate(tim);
-    auto pycomp = pycomponents::generate(tim);
+    auto pysettings = pysettings::generate(tim);
+    auto pyunit     = pyunits::generate(tim);
+    auto pycomp     = pycomponents::generate(tim);
     pyrss_usage::generate(tim, pyunit);
     pyenumeration::generate(pycomp);
     pyprofile::generate(tim);
     pytrace::generate(tim);
 
+    //==================================================================================//
+    //
+    //      Scope submodule
+    //
+    //==================================================================================//
+
+    py::module pyscope = tim.def_submodule(
+        "scope", "Scoping controls how the values are updated in the call-graph");
+    {
+        namespace scope   = tim::scope;
+        auto _config_init = [](py::object _flat, py::object _time) {
+            auto _val = new scope::config{};
+            if(!_flat.is_none())
+            {
+                try
+                {
+                    _val->set<scope::flat>(_flat.cast<bool>());
+                } catch(py::cast_error&)
+                {
+                    auto _f = [_val](auto v) { _val->set(v); };
+                    pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
+                                                                                   _flat);
+                }
+            }
+            if(!_time.is_none())
+            {
+                try
+                {
+                    _val->set<scope::timeline>(_time.cast<bool>());
+                } catch(py::cast_error&)
+                {
+                    auto _f = [_val](auto v) { _val->set(v); };
+                    pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
+                                                                                   _time);
+                }
+            }
+            return _val;
+        };
+
+        py::class_<scope::config>   _cfg(pyscope, "config", "Scope configuration object");
+        py::class_<scope::tree>     _tree(pyscope, "_tree", "Hierarchy is maintained");
+        py::class_<scope::flat>     _flat(pyscope, "_flat", "Every entry at 0th level");
+        py::class_<scope::timeline> _time(pyscope, "_timeline", "Every entry is unique");
+
+        pyscope.attr("TREE")     = new scope::tree{};
+        pyscope.attr("FLAT")     = new scope::flat{};
+        pyscope.attr("TIMELINE") = new scope::timeline{};
+
+        _cfg.def(py::init(_config_init), "Create a scope", py::arg("flat") = py::none{},
+                 py::arg("time") = py::none{});
+
+        tim::consume_parameters(_tree, _flat, _time);
+    }
     //==================================================================================//
     //
     //      Region submodule
@@ -331,7 +430,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     destructor.def(py::init([]() { return new tim::scope::destructor([]() {}); }),
                    "Destructor", py::return_value_policy::move);
     destructor.def(py::init([](py::function pyfunc) {
-                       return new tim::scope::destructor([=]() { pyfunc(); });
+                       return new tim::scope::destructor([pyfunc]() { pyfunc(); });
                    }),
                    "Destructor", py::return_value_policy::take_ownership);
 
@@ -352,7 +451,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         auto _path   = tim::settings::output_path();
         auto _prefix = tim::settings::output_prefix();
 
-        using tuple_type = typename auto_list_t::tuple_type;
+        using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
         tim::manager::get_storage<tuple_type>::print();
 
         if(fname.length() > 0)
@@ -362,22 +461,36 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json_classic = []() {
-        using tuple_type = typename auto_list_t::tuple_type;
-        auto json_str    = manager_t::get_storage<tuple_type>::serialize();
+    auto _do_clear = [](py::list _list) {
+        auto _types = pytim::get_enum_set(_list);
+        if(_types.empty())
+            _types = pytim::get_type_enums<tim::available_types_t>();
+        manager_t::get_storage<tim::available_types_t>::clear(_types);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _get_size = [](py::list _list) {
+        auto _types = pytim::get_enum_set(_list);
+        if(_types.empty())
+            _types = pytim::get_type_enums<tim::available_types_t>();
+        return manager_t::get_storage<tim::available_types_t>::size(_types);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _as_json_classic = [](const pytim::pyenum_set_t& _types) {
+        using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
+        auto json_str    = manager_t::get_storage<tuple_type>::serialize(_types);
         if(tim::settings::debug())
             std::cout << "JSON CLASSIC:\n" << json_str << std::endl;
         return json_str;
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json_hierarchy = []() {
+    auto _as_json_hierarchy = [](const pytim::pyenum_set_t& _types) {
         std::stringstream ss;
         {
             using policy_type = tim::policy::output_archive_t<tim::manager>;
             auto oa           = policy_type::get(ss);
             oa->setNextName("timemory");
             oa->startNode();
-            get_json(*oa, std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+            get_json(*oa, _types, std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
             oa->finishNode();
         }
         if(tim::settings::debug())
@@ -385,15 +498,18 @@ PYBIND11_MODULE(libpytimemory, tim)
         return ss.str();
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json = [_as_json_classic, _as_json_hierarchy](bool hierarchy) {
-        auto json_str    = (hierarchy) ? _as_json_hierarchy() : _as_json_classic();
+    auto _as_json = [_as_json_classic, _as_json_hierarchy](bool     hierarchy,
+                                                           py::list pytypes) {
+        auto types    = pytim::get_enum_set(pytypes);
+        auto json_str = (hierarchy) ? _as_json_hierarchy(types) : _as_json_classic(types);
         auto json_module = py::module::import("json");
         return json_module.attr("loads")(json_str);
     };
     //----------------------------------------------------------------------------------//
-    auto _as_text = []() {
+    auto _as_text = [](py::list _pytypes) {
         std::stringstream ss;
-        auto strms = get_stream(std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+        auto              strms = get_stream(pytim::get_enum_set(_pytypes),
+                                std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
         for(auto& itr : strms)
         {
             if(itr)
@@ -485,8 +601,9 @@ PYBIND11_MODULE(libpytimemory, tim)
         for(int i = 0; i < _argc; ++i)
         {
             auto  _str    = argv[i].cast<std::string>();
-            char* _argv_i = new char[_str.size()];
+            char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
+            _argv_i[_str.size()] = '\0';
             _argv[i] = _argv_i;
         }
         auto _argv_deleter = [](int fargc, char** fargv) {
@@ -505,47 +622,74 @@ PYBIND11_MODULE(libpytimemory, tim)
         for(int i = 0; i < _argc; ++i)
         {
             auto  _str    = argv[i].cast<std::string>();
-            char* _argv_i = new char[_str.size()];
+            char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
+            _argv_i[_str.size()] = '\0';
             _argv[i] = _argv_i;
         }
         tim::timemory_init(_argc, _argv, _prefix, _suffix);
+        auto _manager = tim::manager::instance();
+        if(_manager)
+            _manager->update_metadata_prefix();
         for(int i = 0; i < _argc; ++i)
             delete[] _argv[i];
         delete[] _argv;
     };
     //----------------------------------------------------------------------------------//
     auto _finalize = []() {
+        auto _manager = tim::manager::instance();
+        if(!_manager || _manager->is_finalized() || _manager->is_finalizing())
+            return;
+        _manager->update_metadata_prefix();
+        if(!tim::get_env("TIMEMORY_SKIP_FINALIZE", false))
+        {
+            try
+            {
+                py::module gc = py::module::import("gc");
+                gc.attr("collect")();
+            } catch(std::exception& e)
+            {
+                std::cerr << e.what() << std::endl;
+                // w/o GC, may cause problems
+                tim::settings::stack_clearing() = false;
+            }
+            //
+            try
+            {
+                tim::timemory_finalize();
+            } catch(std::exception& e)
+            {
+#if defined(_UNIX)
+                auto             bt    = tim::get_demangled_backtrace<32>();
+                std::set<size_t> valid = {};
+                size_t           idx   = 0;
+                for(const auto& itr : bt)
+                {
+                    if(itr.length() > 0)
+                        valid.insert(idx);
+                    ++idx;
+                }
+                if(!valid.empty())
+                {
+                    std::cerr << "\nBacktrace:\n";
+                    for(auto itr : valid)
+                        std::cerr << "[" << std::setw(2) << itr << " / " << std::setw(2)
+                                  << valid.size() << "] " << bt.at(itr) << '\n';
+                }
+                std::cerr << "\n" << std::flush;
+#endif
+                PRINT_HERE("ERROR: %s", e.what());
+            }
+        }
+    };
+    //----------------------------------------------------------------------------------//
+    auto _argparse = [&pysettings](py::object parser, py::object subparser) {
         try
         {
-            if(!tim::get_env("TIMEMORY_SKIP_FINALIZE", false))
-            {
-                // python GC seems to cause occasional problems
-                tim::settings::stack_clearing() = false;
-                tim::timemory_finalize();
-            }
+            pysettings.attr("add_arguments")(parser, py::none{}, subparser);
         } catch(std::exception& e)
         {
-#if defined(_UNIX)
-            auto             bt    = tim::get_demangled_backtrace<32>();
-            std::set<size_t> valid = {};
-            size_t           idx   = 0;
-            for(const auto& itr : bt)
-            {
-                if(itr.length() > 0)
-                    valid.insert(idx);
-                ++idx;
-            }
-            if(!valid.empty())
-            {
-                std::cerr << "\nBacktrace:\n";
-                for(auto itr : valid)
-                    std::cerr << "[" << std::setw(2) << itr << " / " << std::setw(2)
-                              << valid.size() << "] " << bt.at(itr) << '\n';
-            }
-            std::cerr << "\n" << std::flush;
-#endif
-            PRINT_HERE("ERROR: %s", e.what());
+            std::cerr << "[timemory_argparse]> Warning! " << e.what() << std::endl;
         }
     };
     //----------------------------------------------------------------------------------//
@@ -612,6 +756,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //                  MAIN libpytimemory MODULE (part 1)
     //
     //==================================================================================//
+    //
     tim.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
     tim.def("toggle", [](bool on) { tim::settings::enabled() = on; },
@@ -636,21 +781,37 @@ PYBIND11_MODULE(libpytimemory, tim)
     tim.def("set_rusage_self", set_rusage_self,
             "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_init", _init, "Initialize timemory", py::arg("argv") = py::list(),
+    tim.def("timemory_init", _init, "Initialize timemory", py::arg("argv") = py::list{},
             py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
     tim.def("timemory_finalize", _finalize,
             "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("initialize", _init, "Initialize timemory", py::arg("argv") = py::list(),
+    tim.def("initialize", _init, "Initialize timemory", py::arg("argv") = py::list{},
             py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
     tim.def("finalize", _finalize,
             "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("get", _as_json, "Get the storage data", py::arg("hierarchy") = false);
+    tim.def("timemory_argparse", _argparse, "Add argparse support for settings",
+            py::arg("parser"), py::arg("subparser") = true);
     //----------------------------------------------------------------------------------//
-    tim.def("get_text", _as_text, "Get the storage data");
+    tim.def("add_arguments", _argparse, "Add argparse support for settings",
+            py::arg("parser"), py::arg("subparser") = true);
+    //----------------------------------------------------------------------------------//
+    tim.def("get", _as_json, "Get the storage data in JSON format",
+            py::arg("hierarchy") = false, py::arg("components") = py::list{});
+    //----------------------------------------------------------------------------------//
+    tim.def("get_text", _as_text, "Get the storage data in text format",
+            py::arg("components") = py::list{});
+    //----------------------------------------------------------------------------------//
+    tim.def("clear", _do_clear, "Clear the storage data",
+            py::arg("components") = py::list{});
+    //----------------------------------------------------------------------------------//
+    tim.def("size", _get_size,
+            "Get the current storage size of component types. An empty list as the first "
+            "argument will return the size for all available types",
+            py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
     tim.def(
         "init_mpip", _start_mpip,
@@ -690,11 +851,11 @@ PYBIND11_MODULE(libpytimemory, tim)
     //                          TIMING MANAGER
     //
     //==================================================================================//
-    man.attr("text_files") = py::list();
+    man.attr("text_files") = py::list{};
     //----------------------------------------------------------------------------------//
-    man.attr("json_files") = py::list();
+    man.attr("json_files") = py::list{};
     //----------------------------------------------------------------------------------//
-    man.def(py::init<>(&pytim::init::manager), "Initialization",
+    man.def(py::init([]() { return new manager_wrapper{}; }), "Initialization",
             py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     man.def("write_ctest_notes", &pytim::manager::write_ctest_notes,
@@ -722,7 +883,7 @@ PYBIND11_MODULE(libpytimemory, tim)
              "Parse the command-line arguments via ArgumentParser.parse_known_args()",
              py::arg("parser") = py::none{});
 
-    auto _add_arguments = [](py::object parser, py::object subparser) {
+    static auto _add_arguments = [](py::object parser, py::object subparser) {
         auto locals = py::dict("parser"_a = parser, "subparser"_a = subparser);
         py::exec(R"(
         import argparse
@@ -731,7 +892,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         if parser is None:
             parser = argparse.ArgumentParser()
 
-        settings.add_argparse(parser, subparser=subparser)            
+        settings.add_argparse(parser, subparser=subparser)
         parser.add_argument('--timemory-echo-dart', required=False,
                             action='store_true', help="Echo dart tags for CDash")
         parser.add_argument('--timemory-mpl-backend', required=False,
@@ -741,12 +902,12 @@ PYBIND11_MODULE(libpytimemory, tim)
         return locals["parser"].cast<py::object>();
     };
 
-    auto _add_args_and_parse = [&](py::object parser, py::object subparser) {
+    auto _add_args_and_parse = [](py::object parser, py::object subparser) {
         _add_arguments(parser, subparser);
         return pytim::opt::parse_args(parser);
     };
 
-    auto _add_args_and_parse_known = [&](py::object parser, py::object subparser) {
+    auto _add_args_and_parse_known = [](py::object parser, py::object subparser) {
         _add_arguments(parser, subparser);
         return pytim::opt::parse_known_args(parser);
     };

@@ -100,8 +100,8 @@ generate(py::module& _pymod)
                "Enable signal detection");
     //----------------------------------------------------------------------------------//
     _pymod.def("set_exit_action",
-               [&](py::function func) {
-                   auto _func              = [&](int errcode) -> void { func(errcode); };
+               [](py::function func) {
+                   auto _func = [func](int errcode) -> void { func(errcode); };
                    using signal_function_t = std::function<void(int)>;
                    using std::placeholders::_1;
                    signal_function_t _f = std::bind<void>(_func, _1);

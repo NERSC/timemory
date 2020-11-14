@@ -56,7 +56,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(_BUILD_OPT ON)
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_TESTING)
     set(_USE_COVERAGE ON)
 endif()
 
@@ -209,6 +209,8 @@ add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
     "Enable building tools" ON)
+add_option(TIMEMORY_BUILD_COMPILER_INSTRUMENTATION
+    "Enable building compiler instrumentation libraries" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_CALIPER

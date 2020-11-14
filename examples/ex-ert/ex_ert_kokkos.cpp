@@ -68,16 +68,16 @@ struct kokkos {
 };
 }  // namespace device
 namespace ert {
-template <typename Tp, typename _Counter>
-class counter<device::kokkos, Tp, _Counter> {
+template <typename Tp, typename CounterT>
+class counter<device::kokkos, Tp, CounterT> {
 public:
     using DeviceT       = device::kokkos;
     using string_t      = std::string;
     using mutex_t       = std::recursive_mutex;
     using lock_t        = std::unique_lock<mutex_t>;
-    using counter_type  = _Counter;
+    using counter_type  = CounterT;
     using ert_data_t    = exec_data<_Counter>;
-    using this_type     = counter<DeviceT, Tp, _Counter>;
+    using this_type     = counter<DeviceT, Tp, CounterT>;
     using callback_type = std::function<void(uint64_t, this_type&)>;
     using data_type     = typename ert_data_t::value_type;
     using data_ptr_t    = std::shared_ptr<ert_data_t>;
@@ -235,14 +235,14 @@ public:
     //----------------------------------------------------------------------------------//
     //  Skip the flop counts
     //
-    void add_skip_ops(size_t _Nops) { skip_ops.insert(_Nops); }
+    void add_skip_ops(size_t _nops) { skip_ops.insert(_nops); }
 
     void add_skip_ops(std::initializer_list<size_t> _args)
     {
         for(const auto& itr : _args) skip_ops.insert(itr);
     }
 
-    bool skip(size_t _Nops) { return (skip_ops.count(_Nops) > 0); }
+    bool skip(size_t _nops) { return (skip_ops.count(_nops) > 0); }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -277,18 +277,18 @@ private:
 ///
 ///     This is the "main" function for ERT
 ///
-template <size_t _Nops, size_t... _Nextra, typename Tp, typename _Counter,
-          typename _FuncOps, typename _FuncStore,
-          enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
+template <size_t NopsT, size_t... NextraT, typename Tp, typename CounterT,
+          typename FuncOpsT, typename FuncStoreT,
+          enable_if_t<(sizeof...(NextraT) == 0), int> = 0>
 void
-ops_kokkos(counter<device::kokkos, Tp, _Counter>& _counter, _FuncOps&& ops_func,
-           _FuncStore&& store_func)
+ops_kokkos(counter<device::kokkos, Tp, CounterT>& _counter, FuncOpsT&& ops_func,
+           FuncStoreT&& store_func)
 {
     using ull = long long unsigned;
-    if(_counter.skip(_Nops)) return;
+    if(_counter.skip(NopsT)) return;
 
     if(settings::verbose() > 0 || settings::debug())
-        printf("[%s] Executing %li ops...\n", __FUNCTION__, (long int) _Nops);
+        printf("[%s] Executing %li ops...\n", __FUNCTION__, (long int) NopsT);
 
     if(_counter.bytes_per_element == 0)
         fprintf(stderr, "[%s:%i]> bytes-per-element is not set!\n", __FUNCTION__,
@@ -310,7 +310,7 @@ ops_kokkos(counter<device::kokkos, Tp, _Counter>& _counter, _FuncOps&& ops_func,
     ThreadPolicyType policy(1, _counter.params.nthreads);
     // ThreadPolicyType _policy(1, 1);
 
-    dmp::barrier();  // synchronize MPI processes
+    dmp::barrier();  // synchronize distributed memory processes
     Kokkos::fence();
 
     // printf("Number of thread: %lu\n", (unsigned long) _counter.params.nthreads);
@@ -346,7 +346,7 @@ ops_kokkos(counter<device::kokkos, Tp, _Counter>& _counter, _FuncOps&& ops_func,
             team_member.team_barrier();
 
             // get instance of object measuring something during the calculation
-            _Counter ct = _counter.get_counter();
+            CounterT ct = _counter.get_counter();
             // start the timer or anything else being recorded
             ct.start();
 
@@ -361,8 +361,8 @@ ops_kokkos(counter<device::kokkos, Tp, _Counter>& _counter, _FuncOps&& ops_func,
                     //
                     // divide by two here because macros halve,
                     // e.g. ERT_FLOP == 4 means 2 calls
-                    constexpr size_t NUM_REP = _Nops / 2;
-                    constexpr size_t MOD_REP = _Nops % 2;
+                    constexpr size_t NUM_REP = NopsT / 2;
+                    constexpr size_t MOD_REP = NopsT % 2;
                     Tp               beta    = static_cast<Tp>(0.8);
                     apply<void>::unroll<NUM_REP + MOD_REP, device::gpu>(ops_func, beta,
                                                                         buf[i], alpha);
@@ -378,7 +378,7 @@ ops_kokkos(counter<device::kokkos, Tp, _Counter>& _counter, _FuncOps&& ops_func,
             ct.stop();
 
             // store the result
-            if(tid == 0) _counter.record(ct, n, ntrials, _Nops, itr_params);
+            if(tid == 0) _counter.record(ct, n, ntrials, NopsT, itr_params);
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
@@ -389,7 +389,7 @@ ops_kokkos(counter<device::kokkos, Tp, _Counter>& _counter, _FuncOps&& ops_func,
 
     Kokkos::fence();
 
-    dmp::barrier();  // synchronize MPI processes
+    dmp::barrier();  // synchronize distributed memory processes
 }
 
 //--------------------------------------------------------------------------------------//
@@ -397,15 +397,15 @@ ops_kokkos(counter<device::kokkos, Tp, _Counter>& _counter, _FuncOps&& ops_func,
 ///     This is invokes the "main" function for ERT for all the desired "FLOPs" that
 ///     are unrolled in the kernel
 ///
-template <size_t _Nops, size_t... _Nextra, typename DeviceT, typename Tp,
-          typename _Counter, typename _FuncOps, typename _FuncStore,
-          enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
+template <size_t NopsT, size_t... NextraT, typename DeviceT, typename Tp,
+          typename CounterT, typename FuncOpsT, typename FuncStoreT,
+          enable_if_t<(sizeof...(NextraT) > 0), int> = 0>
 void
-ops_kokkos(counter<DeviceT, Tp, _Counter>& _counter, _FuncOps&& ops_func,
-           _FuncStore&& store_func)
+ops_kokkos(counter<DeviceT, Tp, CounterT>& _counter, FuncOpsT&& ops_func,
+           FuncStoreT&& store_func)
 {
     // execute a single parameter
-    ops_kokkos<_Nops>(std::ref(_counter).get(), ops_func, store_func);
+    ops_kokkos<NopsT>(std::ref(_counter).get(), ops_func, store_func);
     // continue the recursive loop
     ops_kokkos<_Nextra...>(std::ref(_counter).get(), ops_func, store_func);
 }
@@ -414,25 +414,25 @@ ops_kokkos(counter<DeviceT, Tp, _Counter>& _counter, _FuncOps&& ops_func,
 ///
 ///     This is invoked when TIMEMORY_USER_ERT_FLOPS is empty
 ///
-template <size_t... _Nops, typename DeviceT, typename Tp, typename _Counter,
-          typename _FuncOps, typename _FuncStore,
-          enable_if_t<(sizeof...(_Nops) == 0), int> = 0>
+template <size_t... NopsT, typename DeviceT, typename Tp, typename CounterT,
+          typename FuncOpsT, typename FuncStoreT,
+          enable_if_t<(sizeof...(NopsT) == 0), int> = 0>
 void
-ops_kokkos(counter<DeviceT, Tp, _Counter>&, _FuncOps&&, _FuncStore&&)
+ops_kokkos(counter<DeviceT, Tp, CounterT>&, FuncOpsT&&, FuncStoreT&&)
 {}
 
 //======================================================================================//
 
-template <typename Tp, typename _Counter>
-struct executor<device::kokkos, Tp, _Counter> {
+template <typename Tp, typename CounterT>
+struct executor<device::kokkos, Tp, CounterT> {
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
     using device_type        = device::kokkos;
     using value_type         = Tp;
-    using configuration_type = configuration<device::kokkos, value_type, _Counter>;
-    using counter_type       = counter<device::kokkos, value_type, _Counter>;
-    using this_type          = executor<device::kokkos, value_type, _Counter>;
+    using configuration_type = configuration<device::kokkos, value_type, CounterT>;
+    using counter_type       = counter<device::kokkos, value_type, CounterT>;
+    using this_type          = executor<device::kokkos, value_type, CounterT>;
     using callback_type      = std::function<void(counter_type&)>;
     using ert_data_t         = exec_data<_Counter>;
 

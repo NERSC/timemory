@@ -152,7 +152,7 @@ private:
 //
 //======================================================================================//
 //
-/// \fn activate_ncclp
+/// \fn uint64_t tim::component::activate_ncclp()
 /// \brief The thread that first activates ncclp will be the thread that turns it off.
 /// Function returns the number of new ncclp handles
 ///
@@ -187,7 +187,7 @@ tim::component::activate_ncclp()
 //
 //======================================================================================//
 //
-/// \fn deactivate_ncclp
+/// \fn uint64_t tim::component::deactivate_ncclp(uint64_t id)
 /// \brief The thread that created the initial ncclp handle will turn off. Returns
 /// the number of handles active
 ///

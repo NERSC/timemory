@@ -663,23 +663,23 @@ struct callback_connector
     }
 
     template <typename T, typename... Args,
-              enable_if_t<(std::is_same<T, mode::begin_callback>::value), int> = 0>
+              enable_if_t<std::is_same<T, mode::begin_callback>::value, int> = 0>
     callback_connector(T, Args... args);
 
     template <typename T, typename... Args,
-              enable_if_t<(std::is_same<T, mode::end_callback>::value), int> = 0>
+              enable_if_t<std::is_same<T, mode::end_callback>::value, int> = 0>
     callback_connector(T, Args... args);
 
     template <typename T, typename... Args,
-              enable_if_t<(std::is_same<T, mode::store_callback>::value), int> = 0>
+              enable_if_t<std::is_same<T, mode::store_callback>::value, int> = 0>
     callback_connector(T, Args... args);
 
     template <typename T, typename... Args,
-              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+              enable_if_t<std::is_same<T, mode::endpoint_callback>::value, int> = 0>
     callback_connector(T, ompt_scope_endpoint_t endp, Args... args);
 
     template <typename T, typename... Args,
-              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+              enable_if_t<std::is_same<T, mode::endpoint_callback>::value, int> = 0>
     callback_connector(T, ompt_work_t workv, ompt_scope_endpoint_t endp, Args... args)
     {
         if(!is_enabled())
@@ -688,7 +688,7 @@ struct callback_connector
     }
 
     template <typename T, typename... Args,
-              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+              enable_if_t<std::is_same<T, mode::endpoint_callback>::value, int> = 0>
     callback_connector(T, ompt_sync_region_t syncv, ompt_scope_endpoint_t endp,
                        Args... args)
     {
@@ -698,7 +698,7 @@ struct callback_connector
     }
 
     template <typename T, typename... Args,
-              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+              enable_if_t<std::is_same<T, mode::endpoint_callback>::value, int> = 0>
     callback_connector(T, ompt_target_t targv, ompt_scope_endpoint_t endp, Args... args)
     {
         if(!is_enabled())
@@ -708,7 +708,7 @@ struct callback_connector
 
 protected:
     template <typename T, typename Arg, typename... Args,
-              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+              enable_if_t<std::is_same<T, mode::endpoint_callback>::value, int> = 0>
     void generic_endpoint_connector(T, Arg arg, ompt_scope_endpoint_t endp, Args... args);
 
 private:
@@ -723,7 +723,7 @@ private:
 //
 template <typename Components, typename Api>
 template <typename T, typename... Args,
-          enable_if_t<(std::is_same<T, mode::begin_callback>::value), int>>
+          enable_if_t<std::is_same<T, mode::begin_callback>::value, int>>
 callback_connector<Components, Api>::callback_connector(T, Args... args)
 {
     if(!is_enabled())
@@ -743,7 +743,7 @@ callback_connector<Components, Api>::callback_connector(T, Args... args)
 //
 template <typename Components, typename Api>
 template <typename T, typename... Args,
-          enable_if_t<(std::is_same<T, mode::end_callback>::value), int>>
+          enable_if_t<std::is_same<T, mode::end_callback>::value, int>>
 callback_connector<Components, Api>::callback_connector(T, Args... args)
 {
     if(!is_enabled())
@@ -763,7 +763,7 @@ callback_connector<Components, Api>::callback_connector(T, Args... args)
 //
 template <typename Components, typename Api>
 template <typename T, typename... Args,
-          enable_if_t<(std::is_same<T, mode::store_callback>::value), int>>
+          enable_if_t<std::is_same<T, mode::store_callback>::value, int>>
 callback_connector<Components, Api>::callback_connector(T, Args... args)
 {
     if(!is_enabled())
@@ -783,7 +783,7 @@ callback_connector<Components, Api>::callback_connector(T, Args... args)
 //
 template <typename Components, typename Api>
 template <typename T, typename... Args,
-          enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int>>
+          enable_if_t<std::is_same<T, mode::endpoint_callback>::value, int>>
 callback_connector<Components, Api>::callback_connector(T, ompt_scope_endpoint_t endp,
                                                         Args... args)
 {
@@ -804,7 +804,7 @@ callback_connector<Components, Api>::callback_connector(T, ompt_scope_endpoint_t
 //
 template <typename Components, typename Api>
 template <typename T, typename Arg, typename... Args,
-          enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int>>
+          enable_if_t<std::is_same<T, mode::endpoint_callback>::value, int>>
 void
 callback_connector<Components, Api>::generic_endpoint_connector(
     T, Arg arg, ompt_scope_endpoint_t endp, Args... args)

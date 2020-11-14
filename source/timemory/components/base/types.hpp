@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/components/macros.hpp"
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -38,11 +40,22 @@
 //
 namespace tim
 {
+namespace trait
+{
+template <typename Tp>
+struct data;
+
+template <typename Tp>
+using data_t = typename data<Tp>::type;
+}  // namespace trait
+
 namespace component
 {
 //
 // generic static polymorphic base class
-template <typename Tp, typename ValueType = int64_t>
+template <typename Tp,
+          typename ValueType = conditional_t<concepts::is_empty<trait::data_t<Tp>>::value,
+                                             int64_t, trait::data_t<Tp>>>
 struct base;
 //
 //--------------------------------------------------------------------------------------//
@@ -107,7 +120,10 @@ struct config
 //
 namespace trait
 {
-//
+/// \struct tim::trait::dynamic_base
+/// \brief trait that designates the type the static polymorphic base class
+/// (\ref tim::component::base) inherit from.
+///
 template <typename Tp>
 struct dynamic_base : std::false_type
 {
@@ -121,3 +137,15 @@ struct dynamic_base : std::false_type
 }  // namespace tim
 //
 //======================================================================================//
+
+namespace cereal
+{
+namespace detail
+{
+template <typename Tp, typename Vp>
+struct StaticVersion<tim::component::base<Tp, Vp>>
+{
+    static constexpr int32_t value = 0;
+};
+}  // namespace detail
+}  // namespace cereal

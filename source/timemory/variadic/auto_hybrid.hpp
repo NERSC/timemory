@@ -25,8 +25,6 @@
 
 /** \file timemory/variadic/auto_hybrid.hpp
  * \headerfile timemory/variadic/auto_hybrid.hpp "timemory/variadic/auto_hybrid.hpp"
- * Automatic starting and stopping of components. Accept a component_tuple as first
- * type and component_list as second type
  *
  */
 
@@ -45,13 +43,16 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-
+/// \class auto_hybrid<CompT, CompL>
+/// \tparam CompT a component_tuple specification
+/// \tparam CompL a component_list specification
+///
+///  \deprecated See \ref tim::auto_bundle
 template <typename CompTuple, typename CompList>
 class auto_hybrid
 : public concepts::wrapper
 , public concepts::variadic
 , public concepts::auto_wrapper
-, public concepts::hybrid_wrapper
 {
     static_assert((concepts::is_stack_wrapper<CompTuple>::value &&
                    concepts::is_heap_wrapper<CompList>::value),
@@ -75,7 +76,6 @@ public:
         convert_t<typename component_type::type, auto_hybrid<type_list<>, type_list<>>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = component_type::has_user_bundle_v;
 

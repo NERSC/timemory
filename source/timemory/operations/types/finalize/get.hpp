@@ -75,17 +75,27 @@ struct get<Type, true>
     : m_storage(_storage)
     {}
 
-    result_type&            operator()(result_type&);
-    basic_tree_vector_type& operator()(basic_tree_vector_type&);
+    result_type&                         operator()(result_type&);
+    basic_tree_vector_type&              operator()(basic_tree_vector_type&);
+    std::vector<basic_tree_vector_type>& operator()(
+        std::vector<basic_tree_vector_type>& _data)
+    {
+        basic_tree_vector_type _obj{};
+        (*this)(_obj);
+        _data.emplace_back(_obj);
+        return _data;
+    }
 
     template <typename Archive>
-    Archive& operator()(Archive&);
+    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
+        Archive&);
 
     struct metadata
     {};
 
     template <typename Archive>
-    Archive& operator()(Archive&, metadata);
+    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
+        Archive&, metadata);
 
 public:
     static std::string get_identifier(const Type& _obj = Type{})
@@ -454,7 +464,7 @@ get<Type, true>::operator()(basic_tree_vector_type& bt)
 //
 template <typename Type>
 template <typename Archive>
-Archive&
+enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
 get<Type, true>::operator()(Archive& ar, metadata)
 {
     bool _thread_scope_only = trait::thread_scope_only<Type>::value;
@@ -478,7 +488,7 @@ get<Type, true>::operator()(Archive& ar, metadata)
 //
 template <typename Type>
 template <typename Archive>
-Archive&
+enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
 get<Type, true>::operator()(Archive& ar)
 {
     if(!m_storage)

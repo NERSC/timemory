@@ -22,8 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define TIMEMORY_STRICT_VARIADIC_CONCAT
-
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/variadic/functional.hpp"
@@ -44,9 +42,18 @@
 #include <unordered_map>
 #include <vector>
 
-using namespace tim::component;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
+
+TIMEMORY_DECLARE_COMPONENT(tst_roofline_flops)
+TIMEMORY_DECLARE_COMPONENT(tst_roofline_sp_flops)
+TIMEMORY_DECLARE_COMPONENT(tst_roofline_dp_flops)
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::tst_roofline_flops, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::tst_roofline_sp_flops, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::tst_roofline_dp_flops, false_type)
+
+using namespace tim::component;
 
 //--------------------------------------------------------------------------------------//
 
@@ -58,7 +65,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -139,37 +147,37 @@ TEST_F(component_bundle_tests, variadic)
     {
         using bundle_t =
             tim::component_bundle_t<TIMEMORY_API, wall_clock, peak_rss,
-                                    cpu_roofline_dp_flops*, gpu_roofline_flops*>;
+                                    tst_roofline_dp_flops*, tst_roofline_flops*>;
         sizes[2] = bundle_t::size();
     }
 
     {
         using bundle_t =
-            tim::auto_bundle_t<TIMEMORY_API, wall_clock, peak_rss, cpu_roofline_dp_flops*,
-                               gpu_roofline_flops*, cpu_roofline_sp_flops*>;
+            tim::auto_bundle_t<TIMEMORY_API, wall_clock, peak_rss, tst_roofline_dp_flops*,
+                               tst_roofline_flops*, tst_roofline_sp_flops*>;
         sizes[3] = bundle_t::size();
     }
 
     {
         using bundle_t =
             tim::component_bundle_t<TIMEMORY_API, wall_clock, peak_rss,
-                                    gpu_roofline_dp_flops*, cpu_roofline_flops,
-                                    gpu_roofline_sp_flops*>;
+                                    tst_roofline_dp_flops*, tst_roofline_flops,
+                                    tst_roofline_sp_flops*>;
         sizes[4] = bundle_t::size();
     }
 
     {
         using bundle_t =
             tim::component_bundle_t<TIMEMORY_API, wall_clock, peak_rss,
-                                    gpu_roofline_dp_flops*, gpu_roofline_flops*,
-                                    gpu_roofline_sp_flops*>;
+                                    tst_roofline_dp_flops*, tst_roofline_flops*,
+                                    tst_roofline_sp_flops*>;
         sizes[5] = bundle_t::size();
     }
 
     {
         using bundle_t =
-            tim::auto_bundle_t<TIMEMORY_API, wall_clock, peak_rss, cpu_roofline_dp_flops*,
-                               cpu_roofline_flops, cpu_roofline_sp_flops*>;
+            tim::auto_bundle_t<TIMEMORY_API, wall_clock, peak_rss, tst_roofline_dp_flops*,
+                               tst_roofline_flops, tst_roofline_sp_flops*>;
         sizes[6] = bundle_t::size();
     }
 

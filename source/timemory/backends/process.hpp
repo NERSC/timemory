@@ -70,7 +70,7 @@ using id_t = int;
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \fn tim::process::get_id
+/// \fn pid_t tim::process::get_id()
 /// \brief get the process id of this process
 ///
 inline id_t
@@ -88,7 +88,7 @@ get_id()
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \fn tim::process::get_target_id
+/// \fn pid_t& tim::process::get_target_id()
 /// \brief get the target process id of this process (may differ from process::get_id)
 ///
 inline id_t&

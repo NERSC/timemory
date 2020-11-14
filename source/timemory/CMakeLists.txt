@@ -83,7 +83,7 @@ else()
     if(MSVC OR XCODE)
         set(_FORCE_OBJECT)
     endif()
-    
+
     build_intermediate_library(
         ${_FORCE_OBJECT}
         USE_INTERFACE
@@ -115,8 +115,8 @@ add_subdirectory(variadic)
 # components
 add_subdirectory(components)
 
-add_subdirectory(containers)
 add_subdirectory(runtime)
+add_subdirectory(containers)
 
 # add_subdirectory(compat)
 # add_subdirectory(data)

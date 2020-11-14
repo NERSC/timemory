@@ -34,11 +34,17 @@
 #include <vector>
 
 using namespace tim::component;
+using namespace tim::quirk;
+
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
-using auto_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util>;
-using comp_tuple_t = typename auto_tuple_t::component_type;
+using comp_lw_tuple_t = tim::lightweight_tuple<wall_clock, cpu_clock, cpu_util>;
+using auto_lw_tuple_t =
+    tim::lightweight_tuple<wall_clock, cpu_clock, cpu_util, auto_start>;
+
+using auto_tuple_t = typename comp_lw_tuple_t::auto_type;
+using comp_tuple_t = typename auto_lw_tuple_t::component_type;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -50,7 +56,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 // this function consumes approximately "n" milliseconds of real time
 void
@@ -94,24 +101,14 @@ TEST_F(macro_tests, blank_marker)
     TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_94.stop();
-    auto              key = timemory_variable_94.key();
+    timemory_variable_101.stop();
+    auto              key = timemory_variable_101.key();
     std::stringstream expected;
     expected << details::get_test_name();
     if(key != expected.str())
-    {
-        std::cout << std::endl;
-        std::cout << std::setw(12) << "key"
-                  << ": " << key << std::endl;
-        std::cout << std::setw(12) << "expected"
-                  << ": " << expected.str() << std::endl;
-        std::cout << std::endl;
-        FAIL();
-    }
+        FAIL() << "expected key: \"" << expected.str() << "\" vs. actual key: \"" << key;
     else
-    {
         SUCCEED();
-    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -121,24 +118,14 @@ TEST_F(macro_tests, basic_marker)
     TIMEMORY_BASIC_MARKER(auto_tuple_t, details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_121.stop();
-    auto              key = timemory_variable_121.key();
+    timemory_variable_118.stop();
+    auto              key = timemory_variable_118.key();
     std::stringstream expected;
     expected << __FUNCTION__ << "/" << details::get_test_name();
     if(key != expected.str())
-    {
-        std::cout << std::endl;
-        std::cout << std::setw(12) << "key"
-                  << ": " << key << std::endl;
-        std::cout << std::setw(12) << "expected"
-                  << ": " << expected.str() << std::endl;
-        std::cout << std::endl;
-        FAIL();
-    }
+        FAIL() << "expected key: \"" << expected.str() << "\" vs. actual key: \"" << key;
     else
-    {
         SUCCEED();
-    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -149,27 +136,17 @@ TEST_F(macro_tests, marker)
     auto line = __LINE__ - 1;
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_148.stop();
-    auto              key = timemory_variable_148.key();
+    timemory_variable_135.stop();
+    auto              key = timemory_variable_135.key();
     std::stringstream expected;
     std::string       file = __FILE__;
     file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
     expected << __FUNCTION__ << "@" << file << ":" << line << "/"
              << details::get_test_name();
     if(key != expected.str())
-    {
-        std::cout << std::endl;
-        std::cout << std::setw(12) << "key"
-                  << ": " << key << std::endl;
-        std::cout << std::setw(12) << "expected"
-                  << ": " << expected.str() << std::endl;
-        std::cout << std::endl;
-        FAIL();
-    }
+        FAIL() << "expected key: \"" << expected.str() << "\" vs. actual key: \"" << key;
     else
-    {
         SUCCEED();
-    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -179,55 +156,130 @@ TEST_F(macro_tests, marker_auto_type)
     TIMEMORY_BLANK_MARKER(comp_tuple_t, details::get_test_name());
     details::do_sleep(250);
     details::consume(750);
-    timemory_variable_179.stop();
-    auto              key = timemory_variable_179.key();
+    timemory_variable_156.stop();
+    auto              key = timemory_variable_156.key();
     std::stringstream expected;
     expected << details::get_test_name();
 
-    using check_tuple_t = std::decay_t<decltype(timemory_variable_179)>;
+    using check_tuple_t = std::decay_t<decltype(timemory_variable_156)>;
 
-    std::cout << "\n";
-    std::cout << "comp_tuple  :: " << tim::demangle<comp_tuple_t>() << "\n";
-    std::cout << "auto_tuple  :: " << tim::demangle<auto_tuple_t>() << "\n";
-    std::cout << "check_tuple :: " << tim::demangle<check_tuple_t>() << "\n";
-    std::cout << "\n";
-    std::cout << timemory_variable_179 << std::endl;
-    std::cout << "\n";
+    std::stringstream same;
+    same << "\n";
+    same << "comp_tuple  :: " << tim::demangle<comp_tuple_t>() << "\n";
+    same << "auto_tuple  :: " << tim::demangle<auto_tuple_t>() << "\n";
+    same << "check_tuple :: " << tim::demangle<check_tuple_t>() << "\n";
+    same << "\n";
+    same << timemory_variable_156 << std::endl;
+    same << "\n";
 
-    if(!std::is_same<auto_tuple_t, check_tuple_t>::value)
-    {
-        FAIL();
-    }
+    auto auto_check = std::is_same<auto_tuple_t, check_tuple_t>::value;
+    auto comp_check = std::is_same<comp_tuple_t, check_tuple_t>::value;
 
-    if(timemory_variable_179.get<wall_clock>()->get() < 0.9)
-    {
-        FAIL();
-    }
-
-    if(timemory_variable_179.get<cpu_clock>()->get() < 0.7)
-    {
-        FAIL();
-    }
-
-    if(timemory_variable_179.get<cpu_util>()->get() < 70.0)
-    {
-        FAIL();
-    }
+    EXPECT_TRUE(auto_check) << same.str();
+    EXPECT_FALSE(comp_check) << same.str();
+    EXPECT_GE(TIMEMORY_ESC(timemory_variable_156.get<wall_clock>()->get()), 0.9);
+    EXPECT_GE(TIMEMORY_ESC(timemory_variable_156.get<cpu_clock>()->get()), 0.7);
+    EXPECT_GE(TIMEMORY_ESC(timemory_variable_156.get<cpu_util>()->get()), 70.0);
 
     if(key != expected.str())
-    {
-        std::cout << std::endl;
-        std::cout << std::setw(12) << "key"
-                  << ": " << key << std::endl;
-        std::cout << std::setw(12) << "expected"
-                  << ": " << expected.str() << std::endl;
-        std::cout << std::endl;
-        FAIL();
-    }
+        FAIL() << "expected key: \"" << expected.str() << "\" vs. actual key: \"" << key;
     else
-    {
         SUCCEED();
-    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(macro_tests, marker_comp_type)
+{
+    auto _obj = TIMEMORY_BLANK_HANDLE(comp_tuple_t, details::get_test_name());
+    details::do_sleep(250);
+    details::consume(750);
+    _obj.stop();
+    auto              key = _obj.key();
+    std::stringstream expected;
+    expected << details::get_test_name();
+
+    using check_tuple_t = std::decay_t<decltype(_obj)>;
+
+    std::stringstream same;
+    same << "\n";
+    same << "comp_tuple  :: " << tim::demangle<comp_tuple_t>() << "\n";
+    same << "auto_tuple  :: " << tim::demangle<auto_tuple_t>() << "\n";
+    same << "check_tuple :: " << tim::demangle<check_tuple_t>() << "\n";
+    same << "\n";
+    same << _obj << std::endl;
+    same << "\n";
+
+    auto auto_check = std::is_same<auto_tuple_t, check_tuple_t>::value;
+    auto comp_check = std::is_same<comp_tuple_t, check_tuple_t>::value;
+
+    auto tol = 1.0e-6;
+
+    EXPECT_FALSE(auto_check) << same.str();
+    EXPECT_TRUE(comp_check) << same.str();
+    EXPECT_NEAR(TIMEMORY_ESC(_obj.get<wall_clock>()->get()), 0.0, tol);
+    EXPECT_NEAR(TIMEMORY_ESC(_obj.get<cpu_clock>()->get()), 0.0, tol);
+    EXPECT_NEAR(TIMEMORY_ESC(_obj.get<cpu_util>()->get()), 0.0, tol);
+
+    if(key != expected.str())
+        FAIL() << "expected key: \"" << expected.str() << "\" vs. actual key: \"" << key;
+    else
+        SUCCEED();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(macro_tests, blank_handle)
+{
+    auto _obj = TIMEMORY_BLANK_HANDLE(auto_tuple_t, details::get_test_name());
+    details::do_sleep(25);
+    details::consume(75);
+    _obj.stop();
+    auto              key = _obj.key();
+    std::stringstream expected;
+    expected << details::get_test_name();
+    if(key != expected.str())
+        FAIL() << "expected key: \"" << expected.str() << "\" vs. actual key: \"" << key;
+    else
+        SUCCEED();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(macro_tests, basic_handle)
+{
+    auto _obj = TIMEMORY_BASIC_HANDLE(auto_tuple_t, details::get_test_name());
+    details::do_sleep(25);
+    details::consume(75);
+    _obj.stop();
+    auto              key = _obj.key();
+    std::stringstream expected;
+    expected << __FUNCTION__ << "/" << details::get_test_name();
+    if(key != expected.str())
+        FAIL() << "expected key: \"" << expected.str() << "\" vs. actual key: \"" << key;
+    else
+        SUCCEED();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(macro_tests, handle)
+{
+    auto _obj = TIMEMORY_HANDLE(auto_tuple_t, details::get_test_name());
+    auto line = __LINE__ - 1;
+    details::do_sleep(25);
+    details::consume(75);
+    _obj.stop();
+    auto              key = _obj.key();
+    std::stringstream expected;
+    std::string       file = __FILE__;
+    file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
+    expected << __FUNCTION__ << "@" << file << ":" << line << "/"
+             << details::get_test_name();
+    if(key != expected.str())
+        FAIL() << "expected key: \"" << expected.str() << "\" vs. actual key: \"" << key;
+    else
+        SUCCEED();
 }
 
 //--------------------------------------------------------------------------------------//

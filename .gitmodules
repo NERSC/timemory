@@ -19,3 +19,6 @@
 [submodule "source/tests/external/nccl-tests"]
 	path = source/tests/external/nccl-tests
 	url = https://github.com/jrmadsen/nccl-tests.git
+[submodule "external/PTL"]
+	path = external/ptl
+	url = https://github.com/jrmadsen/PTL.git

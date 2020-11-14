@@ -30,17 +30,15 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/user_bundle/backends.hpp"
+#include "timemory/components/user_bundle/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/utility.hpp"
-
-#include "timemory/components/user_bundle/backends.hpp"
-#include "timemory/components/user_bundle/types.hpp"
-
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/types.hpp"
 
 #include <functional>
 #include <regex>
@@ -63,10 +61,11 @@ using user_bundle_spec_t = std::function<std::string()>;
 using user_bundle_variables_t =
     std::unordered_map<size_t, std::vector<user_bundle_spec_t>>;
 //
-template <typename ApiT = TIMEMORY_API>
+/// static so that projects cannot globally change this
+template <typename ApiT>
 static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
                                user_bundle_variables_t&>
-    get_user_bundle_variables(ApiT = ApiT{})
+    get_user_bundle_variables(ApiT)
 {
     static user_bundle_variables_t _instance = {
         { component::global_bundle_idx,
@@ -97,19 +96,36 @@ static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
         { component::profiler_bundle_idx,
           { []() { return settings::profiler_components(); },
             []() { return settings::components(); },
-            []() { return settings::global_components(); } } }
+            []() { return settings::global_components(); } } },
     };
     return _instance;
 }
 //
 //--------------------------------------------------------------------------------------//
-//
-template <typename ApiT = TIMEMORY_API>
-static inline std::enable_if_t<!std::is_same<ApiT, TIMEMORY_API>::value,
-                               user_bundle_variables_t&>
-    get_user_bundle_variables(ApiT = ApiT{})
+/// non-static so that projects can globally change this for their project/API
+template <typename ApiT>
+inline std::enable_if_t<!std::is_same<ApiT, TIMEMORY_API>::value,
+                        user_bundle_variables_t&>
+    get_user_bundle_variables(ApiT)
 {
     static user_bundle_variables_t _instance{};
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+/// static so that projects cannot globally change this
+static inline user_bundle_variables_t& get_user_bundle_variables(project::kokkosp)
+{
+    static user_bundle_variables_t _instance = {
+        { component::kokkosp_bundle_idx,
+          { []() { return settings::kokkos_components(); },
+            []() { return get_env<std::string>("TIMEMORY_KOKKOSP_COMPONENTS", ""); },
+            []() { return get_env<std::string>("KOKKOS_TIMEMORY_COMPONENTS", ""); },
+            []() { return settings::trace_components(); },
+            []() { return settings::profiler_components(); },
+            []() { return settings::components(); },
+            []() { return settings::global_components(); } } }
+    };
     return _instance;
 }
 //
@@ -120,17 +136,32 @@ auto
 get_bundle_components(const VecT& _priority)
 {
     using string_t = std::string;
-    const auto regex_constants =
-        std::regex_constants::ECMAScript | std::regex_constants::icase;
+    static const auto regex_constants =
+        std::regex_constants::optimize | std::regex_constants::icase;
     string_t _custom{};
+    bool     fallthrough = false;
+    auto     _replace    = [&fallthrough](const std::string& _key) {
+        const auto pattern = std::string("^(.*)[,;: \t]*fallthrough[,;: \t]*(.*)$");
+        if(std::regex_match(_key, std::regex(pattern, regex_constants)))
+        {
+            fallthrough = true;
+            return std::regex_replace(_key, std::regex(pattern, regex_constants),
+                                      ",$1,$2");
+        }
+        return _key;
+    };
+
     for(const auto& itr : _priority)
     {
         auto _spec = itr();
         if(_spec.length() > 0)
         {
-            if(!std::regex_match(_spec, std::regex("none", regex_constants)))
-                _custom = _spec;
-            break;
+            if(!std::regex_match(_spec, std::regex("^none$", regex_constants)))
+                _custom += _replace(_spec);
+            else
+                fallthrough = false;
+            if(!fallthrough)
+                break;
         }
     }
     return tim::enumerate_components(tim::delimit(_custom));
@@ -143,8 +174,9 @@ void
 initialize_bundle(AltApi _api = AltApi{})
 {
     using user_bundle_type = component::user_bundle<Idx, Api>;
-    auto itr               = env::get_user_bundle_variables(_api).find(Idx);
-    if(itr != env::get_user_bundle_variables(_api).end())
+    auto& variables        = env::get_user_bundle_variables(_api);
+    auto  itr              = variables.find(Idx);
+    if(itr != variables.end())
     {
         auto _enum = env::get_bundle_components(itr->second);
         tim::configure<user_bundle_type>(_enum);
@@ -214,15 +246,6 @@ public:
     //
     user_bundle()
     : m_scope(scope::get_default())
-    , m_prefix("")
-    , m_typeids(get_typeids())
-    , m_bundle(get_data())
-    {}
-
-    explicit user_bundle(const string_t& _prefix,
-                         scope::config   _scope = scope::get_default())
-    : m_scope(_scope)
-    , m_prefix(_prefix)
     , m_typeids(get_typeids())
     , m_bundle(get_data())
     {}
@@ -238,7 +261,14 @@ public:
             itr.set_copy(true);
     }
 
-    user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
+    explicit user_bundle(const char* _prefix, scope::config _scope = scope::get_default())
+    : m_scope(_scope)
+    , m_prefix(_prefix)
+    , m_typeids(get_typeids())
+    , m_bundle(get_data())
+    {}
+
+    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
                 const typeid_vec_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
@@ -246,7 +276,7 @@ public:
     , m_bundle(_bundle_vec)
     {}
 
-    user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
+    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
                 const typeid_set_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
@@ -260,7 +290,6 @@ public:
 
     ~user_bundle()
     {
-        // gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
         for(auto& itr : m_bundle)
             itr.cleanup();
     }
@@ -287,7 +316,9 @@ public:
     , m_prefix(std::move(rhs.m_prefix))
     , m_typeids(std::move(rhs.m_typeids))
     , m_bundle(std::move(rhs.m_bundle))
-    {}
+    {
+        rhs.m_bundle.clear();
+    }
 
     user_bundle& operator=(user_bundle&& rhs) noexcept
     {
@@ -298,6 +329,7 @@ public:
             m_prefix           = std::move(rhs.m_prefix);
             m_typeids          = std::move(rhs.m_typeids);
             m_bundle           = std::move(rhs.m_bundle);
+            rhs.m_bundle.clear();
         }
         return *this;
     }
@@ -314,7 +346,7 @@ public:
             {
                 if(itr > 0 && contains(itr, get_typeids()))
                 {
-                    if(settings::verbose() > 1)
+                    if(settings::verbose() > 1 || settings::debug())
                         PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
                     return;
                 }
@@ -327,9 +359,7 @@ public:
                 PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
                 return;
             }
-
-            obj.init();
-            get_data().emplace_back(std::forward<opaque>(obj));
+            get_data().emplace_back(std::move(obj));
         }
     }
 
@@ -349,6 +379,8 @@ public:
     //
     static void reset()
     {
+        if(settings::verbose() > 3 || settings::debug())
+            PRINT_HERE("Resetting %s", demangle<this_type>().c_str());
         lock_t lk(get_lock());
         get_data().clear();
         get_typeids().clear();
@@ -358,10 +390,28 @@ public:
     //----------------------------------------------------------------------------------//
     //  Member functions
     //
+    void setup()
+    {
+        if(!m_setup)
+        {
+            m_setup = true;
+            for(auto& itr : m_bundle)
+                itr.setup(m_prefix, m_scope);
+        }
+    }
+
+    void push()
+    {
+        setup();
+        for(auto& itr : m_bundle)
+            itr.push(m_prefix, m_scope);
+    }
+
     void start()
     {
+        setup();
         for(auto& itr : m_bundle)
-            itr.start(m_prefix, m_scope);
+            itr.start();
     }
 
     void stop()
@@ -370,18 +420,25 @@ public:
             itr.stop();
     }
 
+    void pop()
+    {
+        for(auto& itr : m_bundle)
+            itr.pop();
+    }
+
     void clear()
     {
         if(base_type::is_running)
             stop();
         m_typeids.clear();
         m_bundle.clear();
+        m_setup = false;
     }
 
     template <typename T>
     T* get()
     {
-        auto  _typeid_hash = get_hash(demangle<T>());
+        auto  _typeid_hash = typeid_hash<T>();
         void* void_ptr     = nullptr;
         for(auto& itr : m_bundle)
         {
@@ -394,28 +451,27 @@ public:
 
     void get(void*& ptr, size_t _hash) const
     {
-        for(const auto& itr : m_bundle)
-        {
-            itr.get(ptr, _hash);
-            if(ptr)
-                break;
-        }
+        if(ptr == nullptr)
+            for(const auto& itr : m_bundle)
+            {
+                itr.get(ptr, _hash);
+                if(ptr)
+                    break;
+            }
     }
 
     void get() {}
 
-    void set_prefix(const string_t& _prefix)
+    void set_prefix(const char* _prefix)
     {
-        // skip unnecessary copies
-        if(!m_bundle.empty())
-            m_prefix = _prefix;
+        m_prefix = _prefix;
+        m_setup  = false;
     }
 
     void set_scope(const scope::config& val)
     {
-        // skip unnecessary copies
-        if(!m_bundle.empty())
-            m_scope = val;
+        m_scope = val;
+        m_setup = false;
     }
 
     size_t size() const { return m_bundle.size(); }
@@ -430,15 +486,21 @@ public:
             for(auto&& itr : _typeids)
             {
                 if(itr > 0 && contains(itr, m_typeids))
+                {
+                    if(settings::verbose() > 1 || settings::debug())
+                        PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
                     return;
+                }
                 sum += itr;
-                m_typeids.emplace_back(itr);
+                if(itr > 0)
+                    m_typeids.emplace_back(itr);
             }
             if(sum == 0)
+            {
+                PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
                 return;
-
-            obj.init();
-            m_bundle.emplace_back(std::forward<opaque>(obj));
+            }
+            m_bundle.emplace_back(std::move(obj));
         }
     }
 
@@ -451,8 +513,9 @@ public:
     }
 
 protected:
-    scope::config  m_scope   = scope::get_default();
-    string_t       m_prefix  = "";
+    bool           m_setup   = false;
+    scope::config  m_scope   = {};
+    const char*    m_prefix  = nullptr;
     typeid_vec_t   m_typeids = get_typeids();
     opaque_array_t m_bundle  = get_data();
 
@@ -468,9 +531,9 @@ protected:
 private:
     struct persistent_data
     {
-        mutex_t        lock;
-        opaque_array_t data    = {};
-        typeid_vec_t   typeids = {};
+        mutex_t        m_lock;
+        opaque_array_t m_data    = {};
+        typeid_vec_t   m_typeids = {};
     };
 
     //----------------------------------------------------------------------------------//
@@ -482,17 +545,17 @@ public:
     //----------------------------------------------------------------------------------//
     //  Bundle data
     //
-    static opaque_array_t& get_data() { return get_persistent_data().data; }
+    static opaque_array_t& get_data() { return get_persistent_data().m_data; }
 
     //----------------------------------------------------------------------------------//
     //  The configuration strings
     //
-    static typeid_vec_t& get_typeids() { return get_persistent_data().typeids; }
+    static typeid_vec_t& get_typeids() { return get_persistent_data().m_typeids; }
 
     //----------------------------------------------------------------------------------//
     //  Get lock
     //
-    static mutex_t& get_lock() { return get_persistent_data().lock; }
+    static mutex_t& get_lock() { return get_persistent_data().m_lock; }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -501,6 +564,8 @@ template <size_t Idx, typename Tag>
 void
 user_bundle<Idx, Tag>::global_init()
 {
+    if(settings::verbose() > 2 || settings::debug())
+        PRINT_HERE("Global initialization of %s", demangle<this_type>().c_str());
     env::initialize_bundle<Idx, Tag>();
 }
 //

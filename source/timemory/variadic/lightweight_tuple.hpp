@@ -92,12 +92,11 @@ public:
     using custom_operation_t =
         typename bundle_type::template custom_operation<Op, Tuple>::type;
 
-    // used by gotcha
-    using component_type   = lightweight_tuple<Types...>;
+    using auto_type        = append_type_t<quirk::auto_start, this_type>;
+    using component_type   = remove_type_t<quirk::auto_start, this_type>;
     using type             = convert_t<tuple_type, lightweight_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
@@ -113,6 +112,7 @@ public:
     struct quirk_config
     {
         static constexpr bool value =
+            is_one_of<T, type_list<Types..., U...>>::value ||
             is_one_of<T,
                       contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
@@ -130,6 +130,18 @@ public:
 
     template <typename... T, typename Func = initializer_type>
     explicit lightweight_tuple(size_t _hash, quirk::config<T...> = {},
+                               const Func& = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit lightweight_tuple(size_t _hash, scope::config _scope,
+                               const Func& = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit lightweight_tuple(const string_t& key, scope::config _scope,
+                               const Func& = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit lightweight_tuple(const captured_location_t& loc, scope::config _scope,
                                const Func& = get_initializer());
 
     ~lightweight_tuple();
@@ -176,10 +188,15 @@ public:
     auto             get_labeled(Args&&...) const;
     data_type&       data();
     const data_type& data() const;
+    void             set_scope(scope::config);
 
+    using bundle_type::get_prefix;
+    using bundle_type::get_scope;
+    using bundle_type::get_store;
     using bundle_type::hash;
     using bundle_type::key;
     using bundle_type::laps;
+    using bundle_type::prefix;
     using bundle_type::rekey;
     using bundle_type::store;
 
@@ -279,9 +296,8 @@ public:
     template <typename T, enable_if_t<!is_one_of<T, data_type>::value, int> = 0>
     T* get() const
     {
-        void*       ptr   = nullptr;
-        static auto _hash = std::hash<std::string>()(demangle<T>());
-        get(ptr, _hash);
+        void* ptr = nullptr;
+        get(ptr, typeid_hash<T>());
         return static_cast<T*>(ptr);
     }
 
@@ -308,12 +324,13 @@ public:
     template <
         typename T, typename... Args,
         enable_if_t<!is_one_of<T, reference_type>::value && has_user_bundle_v, int> = 0>
-    void init(Args&&...)
+    bool init(Args&&...)
     {
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
         this->init<bundle_t>();
         this->get<bundle_t>()->insert(component::factory::get_opaque<T>(m_scope),
                                       component::factory::get_typeids<T>());
+        return true;
     }
 
     //----------------------------------------------------------------------------------//
@@ -321,23 +338,18 @@ public:
     template <
         typename T, typename... Args,
         enable_if_t<!is_one_of<T, reference_type>::value && !has_user_bundle_v, int> = 0>
-    void init(Args&&...)
-    {}
+    bool init(Args&&...)
+    {
+        return is_one_of<T, reference_type>::value;
+    }
 
     //----------------------------------------------------------------------------------//
     //  variadic initialization
     //
-    template <typename T, typename... Tail, enable_if_t<sizeof...(Tail) == 0, int> = 0>
-    void initialize()
+    template <typename... T, typename... Args>
+    auto initialize(Args&&... args)
     {
-        this->init<T>();
-    }
-
-    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
-    void initialize()
-    {
-        this->init<T>();
-        this->initialize<Tail...>();
+        return TIMEMORY_FOLD_EXPANSION(bool, this->init<T>(std::forward<Args>(args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -433,11 +445,11 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using print_t = typename bundle_type::print_t;
+        using printer_t = typename bundle_type::print_t;
         if(size() == 0 || m_hash == 0)
             return;
         std::stringstream ss_data;
-        apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);
+        apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(PrintPrefix)
         {
             update_width();
@@ -505,11 +517,12 @@ protected:
     const data_type& get_data() const;
     void             set_prefix(const string_t&) const;
     void             set_prefix(size_t) const;
-    void             set_scope(scope::config);
 
 protected:
     // objects
+    using bundle_type::m_config;
     using bundle_type::m_hash;
+    using bundle_type::m_is_active;
     using bundle_type::m_is_pushed;
     using bundle_type::m_laps;
     using bundle_type::m_scope;

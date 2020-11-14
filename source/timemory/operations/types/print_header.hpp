@@ -56,7 +56,7 @@ struct print_header : public common_utils
     // only if components are available
     //
     template <typename Statp, typename Up = Tp,
-              enable_if_t<(is_enabled<Up>::value), char> = 0>
+              enable_if_t<is_enabled<Up>::value, char> = 0>
     print_header(const type& _obj, utility::stream& _os, const Statp& _stats)
     {
         if(!trait::runtime_enabled<Tp>::get())
@@ -71,9 +71,11 @@ struct print_header : public common_utils
 
         _os.set_prefix_begin();
         utility::write_header(_os, "LABEL");
-        if(!trait::custom_laps_printing<type>::value)
+
+        if(trait::report<type>::count())
             utility::write_header(_os, "COUNT");
-        if(!trait::flat_storage<type>::value)
+
+        if(trait::report<type>::depth())
             utility::write_header(_os, "DEPTH");
         _os.set_prefix_end();
 
@@ -91,17 +93,22 @@ struct print_header : public common_utils
         auto w_value   = Tp::get_width();
         auto p_value   = Tp::get_precision();
 
-        if(trait::report_metric_name<type>::value)
+        if(trait::report<type>::metric())
             utility::write_header(_os, "METRIC");
-        if(trait::report_units<type>::value)
+
+        if(trait::report<type>::units())
             utility::write_header(_os, "UNITS");
-        if(trait::report_sum<type>::value && trait::report_values<type>::sum())
+
+        if(trait::report<type>::sum())
             utility::write_header(_os, "SUM", f_value, w_value, p_value);
-        if(trait::report_mean<type>::value && trait::report_values<type>::mean())
+
+        if(trait::report<type>::mean())
             utility::write_header(_os, "MEAN", f_value, w_value, p_value);
-        if(trait::report_statistics<type>::value)
+
+        if(trait::report<type>::stats())
             print_statistics<Tp>::get_header(_os, _stats);
-        if(trait::report_self<type>::value)
+
+        if(trait::report<type>::self())
             utility::write_header(_os, "% SELF", f_self, w_self, p_self);
 
         _os.insert_break();
@@ -109,25 +116,31 @@ struct print_header : public common_utils
         {
             for(size_t i = 0; i < _labels.size() - 1; ++i)
             {
-                if(trait::report_metric_name<type>::value)
+                if(trait::report<type>::metric())
                     utility::write_header(_os, "METRIC");
-                if(trait::report_units<type>::value)
+
+                if(trait::report<type>::units())
                     utility::write_header(_os, "UNITS");
-                if(trait::report_sum<type>::value && trait::report_values<type>::sum())
+
+                if(trait::report<type>::sum())
                     utility::write_header(_os, "SUM", f_value, w_value, p_value);
-                if(trait::report_mean<type>::value && trait::report_values<type>::mean())
+
+                if(trait::report<type>::mean())
                     utility::write_header(_os, "MEAN", f_value, w_value, p_value);
-                if(trait::report_statistics<type>::value)
+
+                if(trait::report<type>::stats())
                     print_statistics<Tp>::get_header(_os, _stats);
-                if(trait::report_self<type>::value)
+
+                if(trait::report<type>::self())
                     utility::write_header(_os, "% SELF", f_self, w_self, p_self);
+
                 _os.insert_break();
             }
         }
     }
 
     template <typename... Args, typename Up = Tp,
-              enable_if_t<!(is_enabled<Up>::value), char> = 0>
+              enable_if_t<!is_enabled<Up>::value, char> = 0>
     print_header(const type&, utility::stream&, Args&&...)
     {}
 };

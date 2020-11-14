@@ -304,7 +304,7 @@ operator/=(std::tuple<Types...>& lhs, const std::tuple<Types...>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, size_t N, typename Rhs,
-          enable_if_t<(std::is_arithmetic<decay_t<Rhs>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int>>
 std::array<Lhs, N>&
 operator*=(std::array<Lhs, N>& lhs, const Rhs& rhs)
 {
@@ -315,7 +315,7 @@ operator*=(std::array<Lhs, N>& lhs, const Rhs& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs, typename ArithT,
-          enable_if_t<(std::is_arithmetic<decay_t<ArithT>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<ArithT>>::value, int>>
 std::pair<Lhs, Rhs>&
 operator*=(std::pair<Lhs, Rhs>& lhs, const ArithT& rhs)
 {
@@ -326,7 +326,7 @@ operator*=(std::pair<Lhs, Rhs>& lhs, const ArithT& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs, typename... ExtraT,
-          enable_if_t<(std::is_arithmetic<decay_t<Rhs>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int>>
 std::vector<Lhs, ExtraT...>&
 operator*=(std::vector<Lhs, ExtraT...>& lhs, const Rhs& rhs)
 {
@@ -337,7 +337,7 @@ operator*=(std::vector<Lhs, ExtraT...>& lhs, const Rhs& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Lhs, typename Rhs,
-          enable_if_t<(std::is_arithmetic<decay_t<Rhs>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int>>
 std::tuple<Lhs...>&
 operator*=(std::tuple<Lhs...>& lhs, const Rhs& rhs)
 {
@@ -352,7 +352,7 @@ operator*=(std::tuple<Lhs...>& lhs, const Rhs& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, size_t N, typename Rhs,
-          enable_if_t<(std::is_arithmetic<decay_t<Rhs>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int>>
 std::array<Lhs, N>&
 operator/=(std::array<Lhs, N>& lhs, const Rhs& rhs)
 {
@@ -363,7 +363,7 @@ operator/=(std::array<Lhs, N>& lhs, const Rhs& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs, typename ArithT,
-          enable_if_t<(std::is_arithmetic<decay_t<ArithT>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<ArithT>>::value, int>>
 std::pair<Lhs, Rhs>&
 operator/=(std::pair<Lhs, Rhs>& lhs, const ArithT& rhs)
 {
@@ -374,7 +374,7 @@ operator/=(std::pair<Lhs, Rhs>& lhs, const ArithT& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs, typename... ExtraT,
-          enable_if_t<(std::is_arithmetic<decay_t<Rhs>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int>>
 std::vector<Lhs, ExtraT...>&
 operator/=(std::vector<Lhs, ExtraT...>& lhs, const Rhs& rhs)
 {
@@ -385,7 +385,7 @@ operator/=(std::vector<Lhs, ExtraT...>& lhs, const Rhs& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Lhs, typename Rhs,
-          enable_if_t<(std::is_arithmetic<decay_t<Rhs>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int>>
 std::tuple<Lhs...>&
 operator/=(std::tuple<Lhs...>& lhs, const Rhs& rhs)
 {
@@ -401,7 +401,7 @@ operator/=(std::tuple<Lhs...>& lhs, const Rhs& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs,
-          enable_if_t<(std::is_arithmetic<decay_t<Rhs>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int>>
 Lhs operator*(Lhs lhs, const Rhs& rhs)
 {
     return (lhs *= rhs);
@@ -410,7 +410,7 @@ Lhs operator*(Lhs lhs, const Rhs& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs,
-          enable_if_t<(std::is_arithmetic<decay_t<Rhs>>::value), int>>
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int>>
 Lhs
 operator/(Lhs lhs, const Rhs& rhs)
 {

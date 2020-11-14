@@ -45,25 +45,21 @@ namespace tim
 //
 template <typename... Types>
 component_tuple<Types...>::component_tuple()
-{
-    if(settings::enabled())
-        init_storage();
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 template <typename... T, typename Func>
-component_tuple<Types...>::component_tuple(const string_t&     key,
-                                           quirk::config<T...> config,
-                                           const Func&         init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), quirk::config<T...>{})
-, m_data(invoke::construct<data_type>(key, config))
+component_tuple<Types...>::component_tuple(const string_t&     _key,
+                                           quirk::config<T...> _config,
+                                           const Func&         _init_func)
+: bundle_type(((settings::enabled()) ? add_hash_id(_key) : 0), quirk::config<T...>{})
+, m_data(invoke::construct<data_type>(_key, _config))
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value) { init_storage(); }
-        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { _init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
@@ -74,17 +70,16 @@ component_tuple<Types...>::component_tuple(const string_t&     key,
 //
 template <typename... Types>
 template <typename... T, typename Func>
-component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                           quirk::config<T...>        config,
-                                           const Func&                init_func)
-: bundle_type(loc.get_hash(), quirk::config<T...>{})
-, m_data(invoke::construct<data_type>(loc, config))
+component_tuple<Types...>::component_tuple(const captured_location_t& _loc,
+                                           quirk::config<T...>        _config,
+                                           const Func&                _init_func)
+: bundle_type(_loc.get_hash(), quirk::config<T...>{})
+, m_data(invoke::construct<data_type>(_loc, _config))
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value) { init_storage(); }
-        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
-        set_prefix(loc.get_id());
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { _init_func(*this); }
+        set_prefix(_loc.get_id());
         invoke::set_scope(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
@@ -94,18 +89,14 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
 //
 template <typename... Types>
 template <typename Func>
-component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
-                                           scope::config _scope, const Func& init_func)
-: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, _scope)
-, m_data(invoke::construct<data_type>(key, store, _scope))
+component_tuple<Types...>::component_tuple(const string_t& _key, const bool& _store,
+                                           scope::config _scope, const Func& _init_func)
+: bundle_type((settings::enabled()) ? add_hash_id(_key) : 0, _store, _scope)
+, m_data(invoke::construct<data_type>(_key, _store, _scope))
 {
     if(settings::enabled())
     {
-        if(store)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
@@ -116,20 +107,16 @@ component_tuple<Types...>::component_tuple(const string_t& key, const bool& stor
 //
 template <typename... Types>
 template <typename Func>
-component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                           const bool& store, scope::config _scope,
-                                           const Func& init_func)
-: bundle_type(loc.get_hash(), store, _scope)
-, m_data(invoke::construct<data_type>(loc, store, _scope))
+component_tuple<Types...>::component_tuple(const captured_location_t& _loc,
+                                           const bool& _store, scope::config _scope,
+                                           const Func& _init_func)
+: bundle_type(_loc.get_hash(), _store, _scope)
+, m_data(invoke::construct<data_type>(_loc, _store, _scope))
 {
     if(settings::enabled())
     {
-        if(store)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
-        set_prefix(loc.get_hash());
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
+        set_prefix(_loc.get_hash());
         invoke::set_scope(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
@@ -139,19 +126,15 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
 //
 template <typename... Types>
 template <typename Func>
-component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
-                                           scope::config _scope, const Func& init_func)
-: bundle_type(hash, store, _scope)
-, m_data(invoke::construct<data_type>(hash, store, _scope))
+component_tuple<Types...>::component_tuple(size_t _hash, const bool& _store,
+                                           scope::config _scope, const Func& _init_func)
+: bundle_type(_hash, _store, _scope)
+, m_data(invoke::construct<data_type>(_hash, _store, _scope))
 {
     if(settings::enabled())
     {
-        if(store)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
-        set_prefix(hash);
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
+        set_prefix(_hash);
         invoke::set_scope(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
@@ -162,8 +145,8 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
 template <typename... Types>
 component_tuple<Types...>::~component_tuple()
 {
-    // IF_CONSTEXPR(quirk_config<quirk::auto_stop>::value) { stop(); }
-    stop();
+    if(m_is_active())
+        stop();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -173,7 +156,7 @@ component_tuple<Types...>
 component_tuple<Types...>::clone(bool _store, scope::config _scope)
 {
     component_tuple tmp(*this);
-    tmp.m_store = _store;
+    tmp.m_store(_store);
     tmp.m_scope = _scope;
     return tmp;
 }
@@ -185,12 +168,12 @@ template <typename... Types>
 void
 component_tuple<Types...>::push()
 {
-    if(!m_is_pushed)
+    if(!m_is_pushed())
     {
         // reset the data
         invoke::reset(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = true;
+        m_is_pushed(true);
         // insert node or find existing node
         invoke::push(m_data, m_scope, m_hash);
     }
@@ -203,12 +186,12 @@ template <typename... Types>
 void
 component_tuple<Types...>::pop()
 {
-    if(m_is_pushed)
+    if(m_is_pushed())
     {
         // set the current node to the parent node
         invoke::pop(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = false;
+        m_is_pushed(false);
     }
 }
 
@@ -246,6 +229,7 @@ component_tuple<Types...>::start(mpl::lightweight, Args&&... args)
 {
     assemble(*this);
     invoke::start(m_data, std::forward<Args>(args)...);
+    m_is_active(true);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -258,6 +242,7 @@ component_tuple<Types...>::stop(mpl::lightweight, Args&&... args)
     invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
     derive(*this);
+    m_is_active(false);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -269,7 +254,7 @@ void
 component_tuple<Types...>::start(Args&&... args)
 {
     // push components into the call-stack
-    if(m_store)
+    if(m_store())
         push();
 
     // start components
@@ -287,7 +272,7 @@ component_tuple<Types...>::stop(Args&&... args)
     stop(mpl::lightweight{}, std::forward<Args>(args)...);
 
     // pop components off of the call-stack stack
-    if(m_store)
+    if(m_store())
         pop();
 }
 

@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/environment/macros.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <iosfwd>
 #include <iostream>
@@ -91,3 +92,5 @@ set_env(const std::string& env_var, const Tp& _val, int override = 0);
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
+
+TIMEMORY_SET_CLASS_VERSION(0, tim::env_settings)

@@ -290,6 +290,8 @@ public:
     //! Saves a uint64 to the current node
     void saveValue(uint64_t u64) { itsWriter.Uint64(u64); }
     //! Saves a double to the current node
+    void saveValue(float d) { itsWriter.Double(static_cast<double>(d)); }
+    //! Saves a double to the current node
     void saveValue(double d) { itsWriter.Double(d); }
     //! Saves a string to the current node
     void saveValue(std::string const& s)

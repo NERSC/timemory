@@ -54,6 +54,11 @@ namespace component
 //--------------------------------------------------------------------------------------//
 // this component extracts the time spent in GPU kernels
 //
+/// \struct tim::component::cuda_event
+/// \brief Records the time interval between two points in a CUDA stream. Less accurate
+/// than 'cupti_activity' for kernel timing but does not require linking to the CUDA
+/// driver.
+///
 struct cuda_event : public base<cuda_event, float>
 {
     struct marker
@@ -264,6 +269,11 @@ public:
 //
 // controls the CUDA profiler
 //
+/// \struct tim::component::cuda_profiler
+/// \brief Control switch for a CUDA profiler running on the application. Only the
+/// first call to `start()` and the last call to `stop()` actually toggle the
+/// state of the external CUDA profiler when component instances are nested.
+///
 struct cuda_profiler
 : public base<cuda_profiler, void>
 , private policy::instance_tracker<cuda_profiler>
@@ -396,6 +406,11 @@ public:
 //======================================================================================//
 // adds NVTX markers
 //
+/// \struct tim::component::nvtx_marker
+/// \brief Inserts NVTX markers with the current timemory prefix. The default color
+/// scheme is a round-robin of red, blue, green, yellow, purple, cyan, pink, and
+/// light_green. These colors
+///
 struct nvtx_marker : public base<nvtx_marker, void>
 {
     using value_type = void;
@@ -423,18 +438,21 @@ struct nvtx_marker : public base<nvtx_marker, void>
     , m_prefix(nullptr)
     {}
 
+    /// construct with an specific color
     explicit nvtx_marker(const nvtx::color::color_t& _color)
     : m_color(_color)
     , m_stream(0)
     , m_prefix(nullptr)
     {}
 
+    /// construct with an specific CUDA stream
     explicit nvtx_marker(cuda::stream_t _stream)
     : m_color(0)
     , m_stream(_stream)
     , m_prefix(nullptr)
     {}
 
+    /// construct with an specific color and CUDA stream
     nvtx_marker(const nvtx::color::color_t& _color, cuda::stream_t _stream)
     : m_color(_color)
     , m_stream(_stream)
@@ -451,7 +469,13 @@ struct nvtx_marker : public base<nvtx_marker, void>
     //{}
 #endif
 
+    /// start an nvtx range. Equivalent to `nvtxRangeStartEx`
     void start() { m_range_id = nvtx::range_start(get_attribute()); }
+
+    /// stop the nvtx range. Equivalent to `nvtxRangeEnd`. Depending on
+    /// `settings::nvtx_marker_device_sync()` this will either call
+    /// `cudaDeviceSynchronize()` or `cudaStreamSynchronize(m_stream)` before stopping the
+    /// range.
     void stop()
     {
         if(use_device_sync())
@@ -461,22 +485,26 @@ struct nvtx_marker : public base<nvtx_marker, void>
         nvtx::range_stop(m_range_id);
     }
 
+    /// asynchronously add a marker. Equivalent to `nvtxMarkA`
     void mark_begin()
     {
         nvtx::mark(TIMEMORY_JOIN("", m_prefix, "_begin_t", threading::get_id()));
     }
 
+    /// asynchronously add a marker. Equivalent to `nvtxMarkA`
     void mark_end()
     {
         nvtx::mark(TIMEMORY_JOIN("", m_prefix, "_end_t", threading::get_id()));
     }
 
+    /// asynchronously add a marker for a specific stream. Equivalent to `nvtxMarkA`
     void mark_begin(cuda::stream_t _stream)
     {
         nvtx::mark(TIMEMORY_JOIN("", m_prefix, "_begin_t", threading::get_id(), "_s",
                                  get_stream_id(_stream)));
     }
 
+    /// asynchronously add a marker for a specific stream. Equivalent to `nvtxMarkA`
     void mark_end(cuda::stream_t _stream)
     {
         nvtx::mark(TIMEMORY_JOIN("", m_prefix, "_end_t", threading::get_id(), "_s",
@@ -488,7 +516,9 @@ struct nvtx_marker : public base<nvtx_marker, void>
     // void mark_end(pybind11::object obj) { mark_begin(obj.cast<cuda::stream_t>()); }
 #endif
 
+    /// set the current CUDA stream
     void set_stream(cuda::stream_t _stream) { m_stream = _stream; }
+    /// set the current color
     void set_color(nvtx::color::color_t _color) { m_color = _color; }
     void set_prefix(const char* _prefix) { m_prefix = _prefix; }
 

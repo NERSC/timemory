@@ -43,6 +43,8 @@ namespace tim
 //
 class manager;
 //
+struct settings;
+//
 //--------------------------------------------------------------------------------------//
 //
 //                              storage
@@ -134,21 +136,22 @@ protected:
     static void              stop_profiler();
 
 protected:
-    bool                     m_initialized  = false;
-    bool                     m_finalized    = false;
-    bool                     m_global_init  = false;
-    bool                     m_thread_init  = false;
-    bool                     m_data_init    = false;
-    bool                     m_is_master    = false;
-    bool                     m_node_init    = dmp::is_initialized();
-    int32_t                  m_node_rank    = dmp::rank();
-    int32_t                  m_node_size    = dmp::size();
-    int64_t                  m_instance_id  = -1;
-    int64_t                  m_thread_idx   = threading::get_id();
-    string_t                 m_label        = "";
-    graph_hash_map_ptr_t     m_hash_ids     = ::tim::get_hash_ids();
-    graph_hash_alias_ptr_t   m_hash_aliases = ::tim::get_hash_aliases();
-    std::shared_ptr<manager> m_manager;
+    bool                      m_initialized  = false;
+    bool                      m_finalized    = false;
+    bool                      m_global_init  = false;
+    bool                      m_thread_init  = false;
+    bool                      m_data_init    = false;
+    bool                      m_is_master    = false;
+    bool                      m_node_init    = dmp::is_initialized();
+    int32_t                   m_node_rank    = dmp::rank();
+    int32_t                   m_node_size    = dmp::size();
+    int64_t                   m_instance_id  = -1;
+    int64_t                   m_thread_idx   = threading::get_id();
+    string_t                  m_label        = "";
+    graph_hash_map_ptr_t      m_hash_ids     = ::tim::get_hash_ids();
+    graph_hash_alias_ptr_t    m_hash_aliases = ::tim::get_hash_aliases();
+    std::shared_ptr<manager>  m_manager      = {};
+    std::shared_ptr<settings> m_settings     = {};
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -177,7 +180,7 @@ class storage
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Vp = typename trait::data<Tp>::value_type>
+template <typename Tp, typename Vp = typename trait::collects_data<Tp>::type>
 class storage;
 //
 //--------------------------------------------------------------------------------------//

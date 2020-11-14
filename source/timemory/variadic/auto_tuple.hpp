@@ -25,15 +25,6 @@
 
 /** \file timemory/variadic/auto_tuple.hpp
  * \headerfile timemory/variadic/auto_tuple.hpp "timemory/variadic/auto_tuple.hpp"
- * Automatic starting and stopping of components. Accept unlimited number of
- * parameters. The constructor starts the components, the destructor stops the
- * components
- *
- * Usage with macros (recommended):
- *    \param TIMEMORY_AUTO_TUPLE()
- *    \param TIMEMORY_BASIC_AUTO_TUPLE()
- *    \param auto t = TIMEMORY_AUTO_TUPLE_OBJ()
- *    \param auto t = TIMEMORY_BASIC_AUTO_TUPLE_OBJ()
  */
 
 #pragma once
@@ -52,7 +43,28 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-
+/// \class tim::auto_tuple<Types...>
+/// \tparam Types... Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper where all components are allocated
+/// on the stack and cannot be disabled at runtime. This bundler has the lowest
+/// overhead. Accepts unlimited number of template parameters. The constructor starts the
+/// components, the destructor stops the components.
+///
+/// \code{.cpp}
+/// using bundle_t = tim::auto_tuple<wall_clock, cpu_clock, peak_rss>;
+///
+/// void foo()
+/// {
+///     auto bar = bundle_t("foo");
+///     // ...
+/// }
+/// \endcode
+///
+/// The above code will record wall-clock, cpu-clock, and peak-rss. The intermediate
+/// storage will happen on the stack and when the destructor is called, it will add itself
+/// to the call-graph
+///
 template <typename... Types>
 class auto_tuple
 : public concepts::wrapper
@@ -74,7 +86,6 @@ public:
     using captured_location_t = typename component_type::captured_location_t;
     using value_type          = component_type;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = component_type::has_user_bundle_v;
 
@@ -83,6 +94,7 @@ public:
     struct quirk_config
     {
         static constexpr bool value =
+            is_one_of<T, type_list<Types..., U...>>::value ||
             is_one_of<T,
                       contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };

@@ -502,7 +502,7 @@ public:
     // load
     //
     template <typename Archive>
-    void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
+    void load(Archive& ar, const unsigned int)
     {
         ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
            cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
@@ -513,7 +513,7 @@ public:
     // save
     //
     template <typename Archive>
-    void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int) const
+    void save(Archive& ar, const unsigned int) const
     {
         auto             sz = events.size();
         vector_t<double> _disp(sz, 0.0);
@@ -796,7 +796,7 @@ protected:
 
     friend struct base<this_type, value_type>;
     friend class impl::storage<this_type,
-                               trait::implements_storage<this_type, value_type>::value>;
+                               trait::uses_value_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//
@@ -824,7 +824,7 @@ public:
     // serialization
     //
     template <typename Archive>
-    void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
+    void load(Archive& ar, const unsigned int)
     {
         ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
            cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
@@ -835,7 +835,7 @@ public:
     // serialization
     //
     template <typename Archive>
-    void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int) const
+    void save(Archive& ar, const unsigned int) const
     {
         array_t<double> _disp;
         for(size_type i = 0; i < events.size(); ++i)
@@ -1056,7 +1056,7 @@ protected:
 
     friend struct base<this_type, value_type>;
     friend class impl::storage<this_type,
-                               trait::implements_storage<this_type, value_type>::value>;
+                               trait::uses_value_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//
@@ -1384,7 +1384,7 @@ protected:
 
     friend struct base<this_type, value_type>;
     friend class impl::storage<this_type,
-                               trait::implements_storage<this_type, value_type>::value>;
+                               trait::uses_value_storage<this_type, value_type>::value>;
 };
 }  // namespace component
 }  // namespace tim

@@ -15,6 +15,7 @@ section.
    api/python
    api/templates
    api/type_traits
+   api/concepts
    api/policies
    api/operations
    api/utilities

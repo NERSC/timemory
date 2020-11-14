@@ -95,7 +95,8 @@ struct is_config<config<Types...>> : true_type
 /// of the component bundle. It will cause non-auto bundlers
 /// to invoke start() during construction. If included as a template parameter of the
 /// bundler, it will have no effect.
-struct auto_start;
+struct auto_start : concepts::quirk_type
+{};
 
 /// \struct tim::quirk::auto_stop
 /// \brief a dummy type intended to be included in a \ref tim::quirk::config object
@@ -103,7 +104,8 @@ struct auto_start;
 /// of the component bundle. It will cause non-auto bundlers
 /// to invoke stop() during destruction. If included as a template parameter of the
 /// bundler, it will have no effect.
-struct auto_stop;
+struct auto_stop : concepts::quirk_type
+{};
 
 /// \struct tim::quirk::explicit_start
 /// \brief a dummy type intended to be included in a \ref tim::quirk::config object
@@ -111,7 +113,8 @@ struct auto_stop;
 /// of the component bundle. It will cause auto bundlers
 /// to suppress calling start during construction. If included as a template parameter of
 /// the bundler, it will have no effect.
-struct explicit_start;
+struct explicit_start : concepts::quirk_type
+{};
 
 /// \struct tim::quirk::explicit_stop
 /// \brief a dummy type intended to be included in a \ref tim::quirk::config object
@@ -119,7 +122,8 @@ struct explicit_start;
 /// of the component bundle. It will cause auto bundlers
 /// to suppress calling stop during destruction. If included as a template parameter of
 /// the bundler, it will have no effect.
-struct explicit_stop;
+struct explicit_stop : concepts::quirk_type
+{};
 
 /// \struct tim::quirk::exit_report
 /// \brief a dummy type intended to be included in a \ref tim::quirk::config object
@@ -127,14 +131,16 @@ struct explicit_stop;
 /// of the component bundle. It will cause bundlers
 /// to write itself to stdout during destruction. If included as a template parameter of
 /// the bundler, it will have no effect.
-struct exit_report;
+struct exit_report : concepts::quirk_type
+{};
 
 /// \struct tim::quirk::no_init
 /// \brief a dummy type intended to be included in a \ref tim::quirk::config object
 /// and passed to the constructor of a component bundler or included as template parameter
 /// of the component bundle. It will cause bundlers
 /// to suppress calling any routines related to initializing storage during construction.
-struct no_init;
+struct no_init : concepts::quirk_type
+{};
 
 /// \struct tim::quirk::no_store
 /// \brief a dummy type intended to be included in a \ref tim::quirk::config object
@@ -143,7 +149,7 @@ struct no_init;
 /// to suppress any implicit entries into the component storage. This
 /// behavior is the default for tim::lightweight_bundle and is meaningless in that
 /// context.
-struct no_store
+struct no_store : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::tree_scope
@@ -151,7 +157,9 @@ struct no_store
 /// and passed to the constructor of a component bundler or included as template parameter
 /// of the component bundle. It will cause bundlers to ignore the global settings and
 /// enforce hierarchical storage.
-struct tree_scope : scope::tree
+struct tree_scope
+: scope::tree
+, concepts::quirk_type
 {};
 
 /// \struct tim::quirk::flat_scope
@@ -159,7 +167,9 @@ struct tree_scope : scope::tree
 /// and passed to the constructor of a component bundler or included as template parameter
 /// of the component bundle. It will cause bundlers to ignore the global settings and
 /// enforce flat storage.
-struct flat_scope : scope::flat
+struct flat_scope
+: scope::flat
+, concepts::quirk_type
 {};
 
 /// \struct tim::quirk::timeline_scope
@@ -167,7 +177,9 @@ struct flat_scope : scope::flat
 /// and passed to the constructor of a component bundler or included as template parameter
 /// of the component bundle. It will cause bundlers to ignore the global settings and
 /// enforce timeline storage.
-struct timeline_scope : scope::timeline
+struct timeline_scope
+: scope::timeline
+, concepts::quirk_type
 {};
 //
 }  // namespace quirk

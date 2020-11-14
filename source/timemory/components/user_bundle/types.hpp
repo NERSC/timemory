@@ -54,34 +54,91 @@ TIMEMORY_BUNDLE_INDEX(mpip_bundle_idx, 11111)
 TIMEMORY_BUNDLE_INDEX(ncclp_bundle_idx, 11112)
 TIMEMORY_BUNDLE_INDEX(trace_bundle_idx, 20000)
 TIMEMORY_BUNDLE_INDEX(profiler_bundle_idx, 22000)
+TIMEMORY_BUNDLE_INDEX(kokkosp_bundle_idx, 0)
+
+namespace tim
+{
+namespace component
+{
+/// \typedef tim::component::user_global_bundle
+/// \brief A specification of components which is used by multiple variadic bundlers and
+/// user_bundles as the fall-back set of components if their specific variable is
+/// not set. E.g. user_mpip_bundle will use this if TIMEMORY_MPIP_COMPONENTS is not
+/// specified
+using user_global_bundle = user_bundle<global_bundle_idx, project::timemory>;
+
+using user_tuple_bundle = user_bundle<tuple_bundle_idx, project::timemory>;
+using user_list_bundle  = user_bundle<list_bundle_idx, project::timemory>;
+
+/// \typedef tim::component::user_ompt_bundle
+/// \brief Generic bundle for inserting components at runtime into OMPT call-back system.
+/// Configure via TIMEMORY_OMPT_COMPONENTS [environment], settings::ompt_components()
+/// [string], or direct insertion
+using user_ompt_bundle = user_bundle<ompt_bundle_idx, project::timemory>;
+
+/// \typedef tim::component::user_mpip_bundle
+/// \brief Generic bundle for inserting components at runtime around MPI calls. Configure
+/// via TIMEMORY_MPIP_COMPONENTS [environment], settings::mpip_components() [string], or
+/// direct insertion
+using user_mpip_bundle = user_bundle<mpip_bundle_idx, project::timemory>;
+
+/// \typedef tim::component::user_ncclp_bundle
+/// \brief Generic bundle for inserting components at runtime around NCCL calls. Configure
+/// via TIMEMORY_NCCLP_COMPONENTS [environment], settings::ncclp_components() [string], or
+/// direct insertion
+using user_ncclp_bundle = user_bundle<ncclp_bundle_idx, project::timemory>;
+
+/// \typedef tim::component::user_trace_bundle
+/// \brief Used by `timemory-run` instrumentation tool for dynamic instrumentation
+/// at runtime and re-writing binaries with instrumentation. See `timemory-run`
+/// documentation for instructions about using this type to insert custom components.
+/// This component is also used by the Python line-tracing profiler (i.e. `python -m
+/// timemory.trace <OPTIONS> -- <CMD>`
+/// Environment variable: `TIMEMORY_TRACE_COMPONENTS`
+using user_trace_bundle = user_bundle<trace_bundle_idx, project::timemory>;
+
+/// \typedef tim::component::user_profiler_bundle
+/// \brief Used by the Python function profiler, e.g. `python -m timemory.profiler
+/// <OPTIONS> -- <CMD>`
+/// Environment variable: `TIMEMORY_PROFILER_COMPONENTS`
+using user_profiler_bundle = user_bundle<profiler_bundle_idx, project::timemory>;
+
+/// \typedef tim::component::user_kokkosp_bundle
+/// \brief Bundle used for Kokkos runtime callbacks that are built into the core library.
+/// Environment variable: `TIMEMORY_KOKKOS_COMPONENTS`
+using user_kokkosp_bundle = user_bundle<kokkosp_bundle_idx, project::kokkosp>;
 //
-TIMEMORY_COMPONENT_ALIAS(user_global_bundle,
-                         user_bundle<global_bundle_idx, project::timemory>)
-// no longer provide tuple and list bundles -- aliases to user_global_bundle
-TIMEMORY_COMPONENT_ALIAS(user_tuple_bundle, user_global_bundle)
-TIMEMORY_COMPONENT_ALIAS(user_list_bundle, user_global_bundle)
-TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle,
-                         user_bundle<ompt_bundle_idx, project::timemory>)
-TIMEMORY_COMPONENT_ALIAS(user_mpip_bundle,
-                         user_bundle<mpip_bundle_idx, project::timemory>)
-TIMEMORY_COMPONENT_ALIAS(user_ncclp_bundle,
-                         user_bundle<ncclp_bundle_idx, project::timemory>)
-TIMEMORY_COMPONENT_ALIAS(user_trace_bundle,
-                         user_bundle<trace_bundle_idx, project::timemory>)
+}  // namespace component
+}  // namespace tim
 //
-TIMEMORY_COMPONENT_ALIAS(user_profiler_bundle,
-                         user_bundle<profiler_bundle_idx, project::timemory>)
+#if defined(TIMEMORY_COMPILER_INSTRUMENTATION)
 //
-#if !defined(TIMEMORY_USE_OMPT)
+namespace tim
+{
+namespace trait
+{
+//
+template <size_t Idx, typename Tag>
+struct is_available<component::user_bundle<Idx, Tag>> : std::false_type
+{};
+//
+}  // namespace trait
+}  // namespace tim
+//
+#else
+//
+#    if !defined(TIMEMORY_USE_OMPT)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ompt_bundle, false_type)
-#endif
+#    endif
 //
-#if !defined(TIMEMORY_USE_MPI) || !defined(TIMEMORY_USE_GOTCHA)
+#    if !defined(TIMEMORY_USE_MPI) || !defined(TIMEMORY_USE_GOTCHA)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mpip_bundle, false_type)
-#endif
+#    endif
 //
-#if !defined(TIMEMORY_USE_NCCL) || !defined(TIMEMORY_USE_GOTCHA)
+#    if !defined(TIMEMORY_USE_NCCL) || !defined(TIMEMORY_USE_GOTCHA)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ncclp_bundle, false_type)
+#    endif
+//
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -173,3 +230,37 @@ TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE, "user_mpip_
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_ncclp_bundle, USER_NCCLP_BUNDLE,
                                  "user_ncclp_bundle", "ncclp", "nccl_tools", "nccl")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_trace_bundle, USER_TRACE_BUNDLE,
+                                 "user_trace_bundle", "trace_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_profiler_bundle, USER_PROFILER_BUNDLE,
+                                 "user_profiler_bundle", "profiler_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_kokkosp_bundle, USER_KOKKOSP_BUNDLE,
+                                 "user_kokkos_bundle", "kokkos_bundle",
+                                 "user_kokkosp_bundle", "kokkosp_bundle")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_global_bundle, "user_global_bundle",
+    "Generic bundle for inserting components at runtime",
+    "Configure via TIMEMORY_GLOBAL_COMPONENTS [environment], "
+    "settings::global_components() [string], or direct insertion")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_ompt_bundle, "user_ompt_bundle",
+    "Generic bundle for inserting components at runtime into OMPT call-back system",
+    "Configure via TIMEMORY_OMPT_COMPONENTS [environment], "
+    "settings::ompt_components() [string], or direct insertion")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_mpip_bundle, "user_mpip_bundle",
+    "Generic bundle for inserting components at runtime around MPI calls",
+    "Configure via TIMEMORY_MPIP_COMPONENTS [environment], "
+    "settings::mpip_components() [string], or direct insertion")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_ncclp_bundle, "user_ncclp_bundle",
+    "Generic bundle for inserting components at runtime around NCCL calls",
+    "Configure via TIMEMORY_NCCLP_COMPONENTS [environment], "
+    "settings::ncclp_components() [string], or direct insertion")

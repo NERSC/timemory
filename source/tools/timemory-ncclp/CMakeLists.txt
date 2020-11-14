@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 if(NOT TIMEMORY_BUILD_NCCLP_LIBRARY OR NOT TIMEMORY_USE_NCCL OR NOT TIMEMORY_USE_GOTCHA OR
-    NOT TARGET timemory-cxx-shared OR TIMEMORY_SKIP_BUILD)
+    NOT TARGET timemory::timemory-cxx-shared OR TIMEMORY_SKIP_BUILD)
     return()
 endif()
 
@@ -30,4 +30,5 @@ set_target_properties(timemory-ncclp-shared PROPERTIES
     SOVERSION       ${timemory_VERSION_MAJOR}.${timemory_VERSION_MINOR})
 
 # installation
-install(TARGETS timemory-ncclp-shared DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS timemory-ncclp-shared
+    DESTINATION ${CMAKE_INSTALL_LIBDIR})

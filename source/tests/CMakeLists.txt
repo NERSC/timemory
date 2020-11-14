@@ -35,7 +35,15 @@ if(TIMEMORY_USE_OMPT)
     endif()
 endif()
 
-# Optimization flags
+if(NOT PTL_DIR)
+    set(PTL_DIR ${PROJECT_BINARY_DIR}/external/ptl)
+endif()
+if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
+    find_package(PTL QUIET)
+endif()
+
+# add_library(no-store-merge INTERFACE)
+# add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
 add_library(test-opt-flags INTERFACE)
 string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
@@ -96,6 +104,22 @@ endif()
 set(ENV{TIMEMORY_ENABLED} OFF)
 
 add_subdirectory(external)
+
+if(TARGET timemory::timemory-compiler-instrument-shared)
+    add_timemory_google_test(compiler_instrument_shared_tests
+        SOURCES         instrumentation_tests.cpp
+        LINK_LIBRARIES  timemory::timemory-compiler-instrument-shared
+                        timemory::timemory-headers
+                        test-opt-flags)
+endif()
+
+if(TARGET timemory::timemory-compiler-instrument-static)
+    add_timemory_google_test(compiler_instrument_static_tests
+        SOURCES         instrumentation_tests.cpp
+        LINK_LIBRARIES  timemory::timemory-compiler-instrument-static
+                        timemory::timemory-headers
+                        test-opt-flags)
+endif()
 
 if(TARGET custom-record-functions)
     add_timemory_google_test(library_tests
@@ -169,12 +193,17 @@ list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_THREADS=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
 
+add_timemory_google_test(traits_tests
+    SOURCES         traits_tests.cpp
+    LINK_LIBRARIES  common-test-libs)
+
 add_timemory_google_test(component_bundle_tests
     MPI
     NPROCS          2
     SOURCES         component_bundle_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
+                    ${_LIBRARY}
     ENVIRONMENT     ${component_bundle_tests_env})
 
 list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
@@ -223,9 +252,8 @@ add_timemory_google_test(cache_tests
 add_timemory_google_test(archive_storage_tests
     SOURCES         archive_storage_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-mpi
-                    timemory::timemory-upcxx
-                    timemory::timemory-core)
+                    timemory::timemory-dmp
+                    ${_LIBRARY})
 
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
@@ -235,6 +263,14 @@ add_timemory_google_test(threading_tests
                     timemory::timemory-core
                     timemory::timemory-ompt
                     ${_LIBRARY} ${_OPENMP})
+
+if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
+    add_timemory_google_test(ptl_tests
+        SOURCES         ptl_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        ${_LIBRARY}
+                        PTL::ptl)
+endif()
 
 add_timemory_google_test(stl_overload_tests
     DISCOVER_TESTS
@@ -549,5 +585,65 @@ if(TIMEMORY_BUILD_ERT)
     add_timemory_google_test(ert_tests
         SOURCES         ert_tests.cpp
         LINK_LIBRARIES  timemory::timemory-ert
-			${_LIBRARY})
+			            ${_LIBRARY})
+endif()
+
+if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
+    add_test(
+        NAME                python_tests
+        COMMAND             ${PYTHON_EXECUTABLE} -m timemory.test
+        WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+endif()
+
+if(TIMEMORY_USE_DYNINST)
+    if(NOT TARGET timemory-run)
+        message(FATAL_ERROR "TIMEMORY_USE_DYNINST is ON but no target 'timemory-run'")
+    endif()
+
+    add_executable(dynamic_instrument_tests instrumentation_tests.cpp)
+    target_link_libraries(dynamic_instrument_tests
+        ${_LIBRARY_TARGET}
+        timemory-google-test
+        google-test-debug-options)
+    set_target_properties(dynamic_instrument_tests PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    add_dependencies(timemory-test dynamic_instrument_tests)
+
+    if(TIMEMORY_USE_MPI)
+        set(LAUNCHER "${MPIEXEC_EXECUTABLE} -n 2")
+    endif()
+
+    set(TEST_ENVIRON)
+    list(APPEND TEST_ENVIRON "TIMEMORY_TRACE_COMPONENTS='wall_clock'")
+    list(APPEND TEST_ENVIRON "TIMEMORY_GLOBAL_COMPONENTS='wall_clock,cpu_clock'")
+
+    set(_scripts
+        # attach-process
+        # binary-rewrite-mpip
+        binary-rewrite-regex
+        binary-rewrite-stubs
+        binary-rewrite
+        # custom-components
+        # launch-process
+        region-sync)
+
+    set(COMMAND
+        ${CMAKE_CURRENT_BINARY_DIR}/dynamic_instrument_tests)
+
+    foreach(_file ${_scripts})
+        set(TEST_NAME dynamic_instrument_tests-${_file})
+        configure_file(
+            ${CMAKE_CURRENT_LIST_DIR}/scripts/${_file}.sh.in
+            ${CMAKE_CURRENT_BINARY_DIR}/${_file}.sh @ONLY)
+        add_test(
+            NAME                dynamic_instrument_tests-${_file}
+            COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/${_file}.sh
+            WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR})
+        set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRON}")
+        add_dependencies(timemory-test dynamic_instrument_tests)
+        set_property(TEST dynamic_instrument_tests-${_file} APPEND PROPERTY
+            DEPENDS dynamic_instrument_tests timemory-run)
+    endforeach()
 endif()

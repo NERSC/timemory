@@ -25,18 +25,16 @@
 # SOFTWARE.
 #
 
+from __future__ import absolute_import
+
 """ @file __main__.py
 Command line execution for profiler
 """
 
 import os
 import sys
-import json
 import argparse
-import warnings
 import traceback
-import multiprocessing as mp
-import timemory
 
 PY3 = sys.version_info[0] == 3
 
@@ -189,6 +187,27 @@ def parse_args(args=None):
         default=_profiler_config.skip_filenames,
         help="Filter out any entries from these files",
     )
+    parser.add_argument(
+        "--only-funcs",
+        type=str,
+        nargs="?",
+        default=_profiler_config.only_functions,
+        help="Select only entries with these function names",
+    )
+    parser.add_argument(
+        "--only-files",
+        type=str,
+        nargs="?",
+        default=_profiler_config.only_filenames,
+        help="Select only entries from these files",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbosity",
+        type=int,
+        default=_profiler_config.verbosity,
+        help="Logging verbosity",
+    )
 
     return parser.parse_known_args(args)
 
@@ -243,10 +262,14 @@ def main():
         opts, argv = parse_args()
 
     from ..libpytimemory import initialize
+    from ..libpytimemory import settings
 
     if os.path.isfile(argv[0]):
         argv[0] = os.path.realpath(argv[0])
 
+    settings.output_path = "timemory-{}-profiler-output".format(
+        os.path.basename(argv[0]).strip().replace("_", "-").replace("--", "-")
+    )
     initialize(argv)
 
     from ..libpytimemory.profiler import config as _profiler_config
@@ -259,6 +282,9 @@ def main():
     _profiler_config.max_stack_depth = opts.max_stack_depth
     _profiler_config.skip_functions = opts.skip_funcs
     _profiler_config.skip_filenames = opts.skip_files
+    _profiler_config.only_functions = opts.only_funcs
+    _profiler_config.only_filenames = opts.only_files
+    _profiler_config.verbosity = opts.verbosity
 
     # print("opts: {}".format(opts))
     print("[timemory]> profiling: {}".format(argv))
@@ -270,13 +296,11 @@ def main():
         setup_file = find_script(opts.setup)
         __file__ = setup_file
         __name__ = "__main__"
-        # Make sure the script's directory is on sys.path instead of just
-        # kernprof.py's.
+        # Make sure the script's directory is on sys.path
         sys.path.insert(0, os.path.dirname(setup_file))
         ns = locals()
         execfile(setup_file, ns, ns)
 
-    from ..libpytimemory import settings
     from . import Profiler, FakeProfiler
 
     output_path = get_value(
@@ -289,8 +313,7 @@ def main():
     script_file = find_script(sys.argv[0])
     __file__ = script_file
     __name__ = "__main__"
-    # Make sure the script's directory is on sys.path instead of just
-    # kernprof.py's.
+    # Make sure the script's directory is on sys.path
     sys.path.insert(0, os.path.dirname(script_file))
 
     prof = Profiler(opts.components)
@@ -314,14 +337,13 @@ def main():
                 execfile(script_file, ns, ns)
             else:
                 prof.runctx("execfile_(%r, globals())" % (script_file,), ns, ns)
-            if not opts.builtin:
-                prof.stop()
         except (KeyboardInterrupt, SystemExit):
             pass
         finally:
+            if not opts.builtin:
+                prof.stop()
             del prof
             del fake
-            timemory.finalize()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=10)
@@ -330,3 +352,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    from ..libpytimemory import finalize
+
+    finalize()

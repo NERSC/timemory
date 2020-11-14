@@ -29,8 +29,10 @@
 
 #pragma once
 
+#include "timemory/components/metadata.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/dll.hpp"
+#include "timemory/macros.hpp"
 
 #include <string>
 #include <unordered_set>
@@ -171,6 +173,30 @@
 //--------------------------------------------------------------------------------------//
 //
 /**
+ * \macro TIMEMORY_TEMPLATE_COMPONENT
+ * \brief Declare a templated component type in the tim::component namespace
+ */
+#if !defined(TIMEMORY_TEMPLATE_COMPONENT)
+#    define TIMEMORY_TEMPLATE_COMPONENT(NAME, TEMPLATE_PARAM, ...)                       \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        template <TEMPLATE_PARAM>                                                        \
+        struct NAME;                                                                     \
+        }                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <TEMPLATE_PARAM>                                                        \
+        struct is_component<component::NAME<__VA_ARGS__>> : true_type                    \
+        {};                                                                              \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+/**
  * \macro TIMEMORY_COMPONENT_ALIAS
  * \brief Declare a non-templated alias to a component in the tim::component namespace
  */
@@ -202,14 +228,19 @@
         template <>                                                                      \
         struct properties<TYPE> : static_properties<TYPE>                                \
         {                                                                                \
-            using type                                = TYPE;                            \
-            using value_type                          = TIMEMORY_COMPONENT;              \
-            static constexpr TIMEMORY_COMPONENT value = ENUM;                            \
-            static constexpr const char*        enum_string() { return #ENUM; }          \
-            static constexpr const char*        id() { return ID; }                      \
-            static const idset_t&               ids()                                    \
+            using type                         = TYPE;                                   \
+            using value_type                   = TIMEMORY_COMPONENT;                     \
+            static constexpr value_type  value = ENUM;                                   \
+            static constexpr const char* enum_string() { return #ENUM; }                 \
+            static constexpr const char* id() { return ID; }                             \
+            static const idset_t&        ids()                                           \
             {                                                                            \
-                static idset_t _instance{ ID, __VA_ARGS__ };                             \
+                static auto _instance = []() {                                           \
+                    auto _val = idset_t{ ID, __VA_ARGS__ };                              \
+                    if(_val.find("") != _val.end())                                      \
+                        _val.erase("");                                                  \
+                    return _val;                                                         \
+                }();                                                                     \
                 return _instance;                                                        \
             }                                                                            \
             template <typename Archive>                                                  \
@@ -224,6 +255,9 @@
             template <typename Archive>                                                  \
             void load(Archive&, const unsigned int)                                      \
             {}                                                                           \
+            TIMEMORY_COMPONENT operator()() { return ENUM; }                             \
+                                                                                         \
+            constexpr operator TIMEMORY_COMPONENT() const { return ENUM; }               \
         };                                                                               \
         template <>                                                                      \
         struct enumerator<ENUM> : properties<TYPE>                                       \
@@ -235,6 +269,39 @@
         }
 #elif !defined(TIMEMORY_PROPERTY_SPECIALIZATION) && defined(TIMEMORY_DISABLE_PROPERTIES)
 #    define TIMEMORY_PROPERTY_SPECIALIZATION(...)
+#endif
+
+//======================================================================================//
+
+/**
+ * \macro TIMEMORY_METADATA_SPECIALIZATION
+ * \brief Specialization of the property specialization
+ */
+
+#if !defined(TIMEMORY_METADATA_SPECIALIZATION) && !defined(TIMEMORY_DISABLE_METADATA)
+#    define TIMEMORY_METADATA_SPECIALIZATION(TYPE, LABEL, BASIC_DESC, ...)               \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        template <>                                                                      \
+        struct metadata<TYPE>                                                            \
+        {                                                                                \
+            using type                        = TYPE;                                    \
+            using value_type                  = TIMEMORY_COMPONENT;                      \
+            static constexpr value_type value = properties<TYPE>::value;                 \
+            static std::string          name() { return LABEL; }                         \
+            static std::string          label() { return LABEL; }                        \
+            static std::string          description() { return BASIC_DESC; }             \
+            static std::string          extra_description()                              \
+            {                                                                            \
+                return TIMEMORY_JOIN(" ", __VA_ARGS__);                                  \
+            }                                                                            \
+        };                                                                               \
+        }                                                                                \
+        }
+#elif !defined(TIMEMORY_METADATA_SPECIALIZATION) && defined(TIMEMORY_DISABLE_METADATA)
+#    define TIMEMORY_METADATA_SPECIALIZATION(...)
 #endif
 
 //======================================================================================//
@@ -257,110 +324,6 @@
         }                                                                                \
         }                                                                                \
         using tim::component::aliases::NAME;
-#endif
-
-//======================================================================================//
-//
-//      GENERIC TYPE-TRAIT SPECIALIZATION (for true_type/false_type traits)
-//
-//======================================================================================//
-
-#if !defined(TIMEMORY_DEFINE_CONCRETE_TRAIT)
-#    define TIMEMORY_DEFINE_CONCRETE_TRAIT(TRAIT, COMPONENT, VALUE)                      \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <>                                                                      \
-        struct TRAIT<COMPONENT> : VALUE                                                  \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_DEFINE_TEMPLATE_TRAIT)
-#    define TIMEMORY_DEFINE_TEMPLATE_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TYPE T>                                                                \
-        struct TRAIT<COMPONENT<T>> : VALUE                                               \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_DEFINE_VARIADIC_TRAIT)
-#    define TIMEMORY_DEFINE_VARIADIC_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TYPE... T>                                                             \
-        struct TRAIT<COMPONENT<T...>> : VALUE                                            \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-
-//======================================================================================//
-//
-//      STATISTICS TYPE-TRAIT SPECIALIZATION
-//
-//======================================================================================//
-
-#if !defined(TIMEMORY_STATISTICS_TYPE)
-#    define TIMEMORY_STATISTICS_TYPE(COMPONENT, TYPE)                                    \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <>                                                                      \
-        struct statistics<COMPONENT>                                                     \
-        {                                                                                \
-            using type = TYPE;                                                           \
-        };                                                                               \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_TEMPLATE_STATISTICS_TYPE)
-#    define TIMEMORY_TEMPLATE_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)            \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TEMPLATE_TYPE T>                                                       \
-        struct statistics<COMPONENT<T>>                                                  \
-        {                                                                                \
-            using type = TYPE;                                                           \
-        };                                                                               \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_VARIADIC_STATISTICS_TYPE)
-#    define TIMEMORY_VARIADIC_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)            \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TEMPLATE_TYPE... T>                                                    \
-        struct statistics<COMPONENT<T...>>                                               \
-        {                                                                                \
-            using type = TYPE;                                                           \
-        };                                                                               \
-        }                                                                                \
-        }
 #endif
 
 //======================================================================================//
@@ -421,7 +384,7 @@
         template <typename T>                                                            \
         using storage_t = storage<T, typename T::value_type>;                            \
         template <typename T>                                                            \
-        using storage_impl_t = impl::storage<T, trait::implements_storage<T>::value>;    \
+        using storage_impl_t = impl::storage<T, trait::uses_value_storage<T>::value>;    \
         template <typename T>                                                            \
         using storage_deleter_t = impl::storage_deleter<storage_impl_t<T>>;              \
         template <typename T>                                                            \
@@ -439,7 +402,7 @@
         namespace tim                                                                        \
         {                                                                                    \
         extern template class impl::storage<TYPE,                                            \
-                                            trait::implements_storage<TYPE>::value>;         \
+                                            trait::uses_value_storage<TYPE>::value>;         \
         extern template class storage<TYPE, typename TYPE::value_type>;                      \
         extern template class singleton<alias::storage_impl_t<TYPE>,                         \
                                         alias::storage_pointer_t<TYPE>>;                     \
@@ -456,7 +419,7 @@
         TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
         namespace tim                                                                    \
         {                                                                                \
-        template class impl::storage<TYPE, trait::implements_storage<TYPE>::value>;      \
+        template class impl::storage<TYPE, trait::uses_value_storage<TYPE>::value>;      \
         template class storage<TYPE, typename TYPE::value_type>;                         \
         template class singleton<alias::storage_impl_t<TYPE>,                            \
                                  alias::storage_pointer_t<TYPE>>;                        \
@@ -498,6 +461,10 @@
         extern template struct pop_node<COMPONENT_NAME>;                                 \
         extern template struct set_prefix<COMPONENT_NAME>;                               \
         extern template struct set_scope<COMPONENT_NAME>;                                \
+        extern template struct set_started<COMPONENT_NAME>;                              \
+        extern template struct set_stopped<COMPONENT_NAME>;                              \
+        extern template struct is_running<COMPONENT_NAME, true>;                         \
+        extern template struct is_running<COMPONENT_NAME, false>;                        \
         extern template struct record<COMPONENT_NAME>;                                   \
         extern template struct reset<COMPONENT_NAME>;                                    \
         extern template struct cleanup<COMPONENT_NAME>;                                  \
@@ -515,17 +482,17 @@
         extern template struct echo_measurement<                                         \
             COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                 \
         extern template struct finalize::get<                                            \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::mpi_get<                                        \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::upc_get<                                        \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::dmp_get<                                        \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::print<                                          \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::merge<                                          \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         }                                                                                \
         }
 #endif
@@ -552,6 +519,10 @@
         template struct pop_node<COMPONENT_NAME>;                                        \
         template struct set_prefix<COMPONENT_NAME>;                                      \
         template struct set_scope<COMPONENT_NAME>;                                       \
+        template struct set_started<COMPONENT_NAME>;                                     \
+        template struct set_stopped<COMPONENT_NAME>;                                     \
+        template struct is_running<COMPONENT_NAME, true>;                                \
+        template struct is_running<COMPONENT_NAME, false>;                               \
         template struct record<COMPONENT_NAME>;                                          \
         template struct reset<COMPONENT_NAME>;                                           \
         template struct cleanup<COMPONENT_NAME>;                                         \
@@ -569,17 +540,17 @@
         template struct echo_measurement<COMPONENT_NAME,                                 \
                                          trait::echo_enabled<COMPONENT_NAME>::value>;    \
         template struct finalize::get<                                                   \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::mpi_get<                                               \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::upc_get<                                               \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::dmp_get<                                               \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::print<                                                 \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::merge<                                                 \
-            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         }                                                                                \
         }
 #endif
@@ -592,14 +563,14 @@
 //
 #    if !defined(TIMEMORY_EXTERN_OPERATIONS)
 #        define TIMEMORY_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                     \
-            TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)
+            TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(TIMEMORY_ESC(COMPONENT_NAME), HAS_DATA)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_STORAGE)
 #        define TIMEMORY_EXTERN_STORAGE(COMPONENT_NAME, VAR)                             \
-            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(COMPONENT_NAME, VAR)
+            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(COMPONENT_NAME), VAR)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -616,14 +587,14 @@
 //
 #    if !defined(TIMEMORY_EXTERN_OPERATIONS)
 #        define TIMEMORY_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                     \
-            TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)
+            TIMEMORY_DECLARE_EXTERN_OPERATIONS(TIMEMORY_ESC(COMPONENT_NAME), HAS_DATA)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_STORAGE)
 #        define TIMEMORY_EXTERN_STORAGE(COMPONENT_NAME, VAR)                             \
-            TIMEMORY_DECLARE_EXTERN_STORAGE(COMPONENT_NAME, VAR)
+            TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(COMPONENT_NAME), VAR)
 #    endif
 //
 //--------------------------------------------------------------------------------------//

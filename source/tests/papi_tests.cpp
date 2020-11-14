@@ -129,7 +129,8 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, ArgsT&&... _args)
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 //--------------------------------------------------------------------------------------//
 template <typename Up, typename Tp>

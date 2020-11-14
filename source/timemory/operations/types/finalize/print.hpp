@@ -115,11 +115,6 @@ base::print::print_text(const std::string& outfname, stream_type stream)  // NOL
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_OPERATIONS_LINKAGE(void)
-base::print::print_tree(const std::string&) {}
-//
-//--------------------------------------------------------------------------------------//
-//
 #endif  // !defined(TIMEMORY_OPERATIONS_SOURCE)
 //
 template <typename Tp>
@@ -128,10 +123,12 @@ print<Tp, true>::print(storage_type* _data)
 , data(_data)
 {
     dmp::barrier();
-    node_init        = dmp::is_initialized();
-    node_rank        = dmp::rank();
-    node_size        = dmp::size();
-    node_results     = data->dmp_get();
+    node_init    = dmp::is_initialized();
+    node_rank    = dmp::rank();
+    node_size    = dmp::size();
+    node_results = data->dmp_get();
+    if(tree_output())
+        node_tree = data->dmp_get(node_tree);
     data_concurrency = data->instance_count().load();
     dmp::barrier();
 
@@ -245,7 +242,7 @@ print<Tp, true>::setup()
                    text_diffname.c_str());
     }
 
-    if(!(file_output && text_output) && !cout_output)
+    if(!(file_output() && text_output()) && !cout_output())
         return;
 
     write_stream(data_stream, node_results);
@@ -362,10 +359,12 @@ void
 print<Tp, true>::update_data()
 {
     dmp::barrier();
-    node_init        = dmp::is_initialized();
-    node_rank        = dmp::rank();
-    node_size        = dmp::size();
-    node_results     = data->dmp_get();
+    node_init    = dmp::is_initialized();
+    node_rank    = dmp::rank();
+    node_size    = dmp::size();
+    node_results = data->dmp_get();
+    if(tree_output())
+        node_tree = data->dmp_get(node_tree);
     data_concurrency = data->instance_count().load();
     dmp::barrier();
 
@@ -439,7 +438,7 @@ print<Tp, true>::update_data()
     }
 #endif
 
-    if(flame_output)
+    if(flame_output())
         operation::finalize::flamegraph<Tp>(data, label);
 }
 //
@@ -519,35 +518,40 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
 //
 template <typename Tp>
 void
-print<Tp, true>::print_tree(const std::string& outfname)
+print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
 {
     using policy_type = policy::output_archive_t<Tp>;
+    using get_type    = get<Tp, true>;
+    using metadata_t  = typename get_type::metadata;
 
     if(outfname.length() > 0)
     {
-        std::stringstream ss;
+        auto fext = outfname.substr(outfname.find_last_of(".") + 1);
+        if(fext.empty())
+            fext = "unknown";
+        manager::instance()->add_file_output(fext, label, outfname);
+        printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
+               outfname.c_str());
+        std::ofstream ofs(outfname.c_str());
         {
             // ensure write final block during destruction before the file is closed
-            auto oa = policy_type::get(ss);
+            auto oa = policy_type::get(ofs);
 
             oa->setNextName("timemory");
             oa->startNode();
-            data->dmp_get(*oa);
+            auto idstr = get_type::get_identifier();
+            oa->setNextName(idstr.c_str());
+            oa->startNode();
+            get_type{}(*oa, metadata_t{});
+            if(rt.find("process") != rt.end())
+                (*oa)(cereal::make_nvp("graph", rt["process"]));
+            else
+                (*oa)(cereal::make_nvp("graph", rt));
+            oa->finishNode();
             oa->finishNode();
         }
-        if(node_rank == 0)
-        {
-            auto fext = outfname.substr(outfname.find_last_of(".") + 1);
-            if(fext.empty())
-                fext = "unknown";
-            manager::instance()->add_file_output(fext, label, outfname);
-            printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
-                   outfname.c_str());
-            std::ofstream ofs(outfname.c_str());
-            if(ofs)
-                ofs << ss.str() << std::endl;
-            ofs.close();
-        }
+        ofs << std::endl;
+        ofs.close();
     }
 }
 //
@@ -566,7 +570,6 @@ print<Tp, true>::print_dart()
         if(operation::echo_measurement<Tp>::lowercase(dtype) !=
            operation::echo_measurement<Tp>::lowercase(label))
         {
-            dart_output = false;
             return;
         }
     }

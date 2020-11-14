@@ -51,7 +51,7 @@ struct serialization
     // TIMEMORY_DELETED_OBJECT(serialization)
 
     template <typename Archive, typename Up = Tp,
-              enable_if_t<(is_enabled<Up>::value), char> = 0>
+              enable_if_t<is_enabled<Up>::value, char> = 0>
     serialization(const Up& obj, Archive& ar, const unsigned int)
     {
         auto try_catch = [&](const char* key, const auto& val) {
@@ -77,7 +77,7 @@ struct serialization
     }
 
     template <typename Archive, typename Up = Tp,
-              enable_if_t<!(is_enabled<Up>::value), char> = 0>
+              enable_if_t<!is_enabled<Up>::value, char> = 0>
     serialization(const Up&, Archive&, const unsigned int)
     {}
 };

@@ -41,11 +41,41 @@ instrumentation (tracing). These library calls are subject to
 throttling. Also, provides the timemory Python tracer
 """
 
-__all__ = ["trace"]
-
 try:
-    from ..libpytimemory.trace import *
-    from . import tracer
-    from .tracer import *
+    from .tracer import Tracer, FakeTracer
+    from ..libpytimemory.trace import (
+        init,
+        finalize,
+        is_throttled,
+        push,
+        pop,
+        tracer_function,
+        tracer_init,
+        tracer_finalize,
+    )
+    from ..libpytimemory.trace import config as Config
+    from ..libpytimemory.trace import trace_bundle as TraceBundle
+
+    config = Config
+    trace = Tracer
+    notrace = FakeTracer
+
+    __all__ = [
+        "Tracer",
+        "Config",
+        "TraceBundle",
+        "FakeTracer",
+        "init",
+        "finalize",
+        "is_throttled",
+        "push",
+        "pop",
+        "tracer_function",
+        "tracer_init",
+        "tracer_finalize",
+        "config",
+        "trace",
+        "notrace",
+    ]
 except Exception as e:
     print("{}".format(e))

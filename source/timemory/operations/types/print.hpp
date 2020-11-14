@@ -62,7 +62,7 @@ struct print
     using widths_t   = std::vector<int64_t>;
 
     // only if components are available
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(const type& _obj, std::ostream& _os, bool _endline = false)
     {
         if(!trait::runtime_enabled<Tp>::get())
@@ -75,7 +75,7 @@ struct print
         _os << ss.str();
     }
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(std::size_t N, std::size_t Ntot, const type& _obj, std::ostream& _os,
           bool _endline)
     {
@@ -92,39 +92,73 @@ struct print
     }
 
     template <typename Vp, typename Statp, typename Up = Tp,
-              enable_if_t<(is_enabled<Up>::value), char> = 0>
+              enable_if_t<is_enabled<Up>::value, char> = 0>
     print(const type& _obj, utility::stream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, const Vp& _self, const Statp& _stats)
     {
-        if(!trait::runtime_enabled<Tp>::get())
-            return;
-
         auto _labels = common_utils::get_labels(_obj);
         auto _units  = common_utils::get_display_units(_obj);
 
         utility::write_entry(_os, "LABEL", _prefix);
-        if(!trait::custom_laps_printing<type>::value)
-            utility::write_entry(_os, "COUNT", _laps);
-        if(!trait::flat_storage<type>::value)
-            utility::write_entry(_os, "DEPTH", _depth);
-        if(trait::report_metric_name<type>::value)
-            utility::write_entry(_os, "METRIC", _labels, true);
-        if(trait::report_units<type>::value)
-            utility::write_entry(_os, "UNITS", _units, true);
-        if(trait::report_sum<type>::value && trait::report_values<type>::sum())
-            utility::write_entry(_os, "SUM", _obj.get());
-        if(trait::report_mean<type>::value && trait::report_values<type>::mean())
-            utility::write_entry(_os, "MEAN", _obj.get() / _obj.get_laps());
-        if(trait::report_statistics<type>::value)
-            print_statistics<Tp>(_obj, _os, _self, _stats, _laps);
-        if(trait::report_self<type>::value)
-            utility::write_entry(_os, "% SELF", _self);
+
+        if(_laps > 0)
+        {
+            if(trait::report<type>::count())
+                utility::write_entry(_os, "COUNT", _laps);
+            if(trait::report<type>::depth())
+                utility::write_entry(_os, "DEPTH", _depth);
+            if(trait::report<type>::metric())
+                utility::write_entry(_os, "METRIC", _labels, true);
+            if(trait::report<type>::units())
+                utility::write_entry(_os, "UNITS", _units, true);
+            if(trait::report<type>::sum())
+                utility::write_entry(_os, "SUM", _obj.get());
+            if(trait::report<type>::mean())
+                utility::write_entry(_os, "MEAN", _obj.get() / _obj.get_laps());
+            if(trait::report<type>::stats())
+                print_statistics<Tp>(_obj, _os, _self, _stats, _laps);
+            if(trait::report<type>::self())
+                utility::write_entry(_os, "% SELF", _self);
+        }
+        else
+        {
+            if(trait::report<type>::count())
+                utility::write_entry(_os, "COUNT", " ");
+            if(trait::report<type>::depth())
+                utility::write_entry(_os, "DEPTH", " ");
+            if(trait::report<type>::metric())
+                utility::write_entry(_os, "METRIC", " ");
+            if(trait::report<type>::units())
+                utility::write_entry(_os, "UNITS", " ");
+            if(trait::report<type>::sum())
+                utility::write_entry(_os, "SUM", " ");
+            if(trait::report<type>::mean())
+                utility::write_entry(_os, "MEAN", " ");
+            if(trait::report<type>::stats())
+            {
+                bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+                bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+                bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
+                bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
+
+                if(use_min)
+                    utility::write_entry(_os, "MIN", " ");
+                if(use_max)
+                    utility::write_entry(_os, "MAX", " ");
+                if(use_var)
+                    utility::write_entry(_os, "VAR", " ");
+                if(use_stddev)
+                    utility::write_entry(_os, "STDDEV", " ");
+            }
+            if(trait::report<type>::self())
+                utility::write_entry(_os, "% SELF", " ");
+        }
     }
 
     //----------------------------------------------------------------------------------//
     // only if components are available -- pointers
     //
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(const type* _obj, std::ostream& _os, bool _endline = false)
     {
         if(!trait::runtime_enabled<Tp>::get())
@@ -134,7 +168,7 @@ struct print
             print(*_obj, _os, _endline);
     }
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(std::size_t N, std::size_t Ntot, const type* _obj, std::ostream& _os,
           bool _endline)
     {
@@ -145,7 +179,7 @@ struct print
             print(N, Ntot, *_obj, _os, _endline);
     }
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     print(const type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, const widths_t& _output_widths, bool _endline,
           const string_t& _suffix = "")
@@ -160,15 +194,15 @@ struct print
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
     print(const type&, std::ostream&, bool = false)
     {}
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
     print(std::size_t, std::size_t, const type&, std::ostream&, bool)
     {}
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
     print(const type&, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
           bool, const string_t& = "")
     {}
@@ -176,15 +210,15 @@ struct print
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available -- pointers
     //
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
     print(const type*, std::ostream&, bool = false)
     {}
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
     print(std::size_t, std::size_t, const type*, std::ostream&, bool)
     {}
 
-    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
     print(const type*, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
           bool, const string_t& = "")
     {}

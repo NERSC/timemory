@@ -29,9 +29,11 @@
 
 #pragma once
 
+// #include "timemory/components/extern.hpp"
 #include "timemory/components/base.hpp"
+#include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"
-#include "timemory/components/opaque.hpp"
+#include "timemory/components/opaque/declaration.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/components/user_bundle/components.hpp"
 #include "timemory/components/user_bundle/types.hpp"
@@ -104,9 +106,6 @@
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
 #        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...)
 #    endif
-//
-//--------------------------------------------------------------------------------------//
-//
 #endif
 
 #if !defined(TIMEMORY_EXTERN_USER_BUNDLE)
@@ -123,3 +122,4 @@ TIMEMORY_EXTERN_USER_BUNDLE(user_mpip_bundle)
 TIMEMORY_EXTERN_USER_BUNDLE(user_ncclp_bundle)
 TIMEMORY_EXTERN_USER_BUNDLE(user_trace_bundle)
 TIMEMORY_EXTERN_USER_BUNDLE(user_profiler_bundle)
+TIMEMORY_EXTERN_USER_BUNDLE(user_kokkosp_bundle)

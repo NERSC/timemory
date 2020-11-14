@@ -58,8 +58,9 @@ struct generic_operator
 
     TIMEMORY_DELETED_OBJECT(generic_operator)
 
+private:
     template <typename Up>
-    TIMEMORY_ALWAYS_INLINE static void check()
+    static void check()
     {
         using U = std::decay_t<std::remove_pointer_t<Up>>;
         static_assert(std::is_same<U, type>::value, "Error! Up != type");

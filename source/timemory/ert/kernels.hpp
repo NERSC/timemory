@@ -91,7 +91,7 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
 
 template <size_t Nrep, typename DeviceT, typename Intp, typename Tp, typename OpsFuncT,
           typename StoreFuncT, device::enable_if_gpu_t<DeviceT> = 0,
-          enable_if_t<!(std::is_same<Tp, cuda::fp16_t>::value)> = 0>
+          enable_if_t<!std::is_same<Tp, cuda::fp16_t>::value> = 0>
 GLOBAL_CALLABLE void
 ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& store_func)
 {
@@ -121,7 +121,7 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
 
 template <size_t Nrep, typename DeviceT, typename Intp, typename Tp, typename OpsFuncT,
           typename StoreFuncT, device::enable_if_gpu_t<DeviceT> = 0,
-          enable_if_t<(std::is_same<Tp, cuda::fp16_t>::value)> = 0>
+          enable_if_t<std::is_same<Tp, cuda::fp16_t>::value> = 0>
 GLOBAL_CALLABLE void
 ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& store_func)
 {
@@ -149,7 +149,7 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
 ///
 template <size_t Nops, size_t... Nextra, typename DeviceT, typename Tp, typename CounterT,
           typename OpsFuncT, typename StoreFuncT,
-          enable_if_t<(sizeof...(Nextra) == 0), int> = 0>
+          enable_if_t<sizeof...(Nextra) == 0, int> = 0>
 void
 ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
          StoreFuncT&& store_func)
@@ -399,7 +399,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
 ///
 template <size_t... Nops, typename DeviceT, typename Tp, typename CounterT,
           typename OpsFuncT, typename StoreFuncT,
-          enable_if_t<(sizeof...(Nops) == 0), int> = 0>
+          enable_if_t<sizeof...(Nops) == 0, int> = 0>
 void
 ops_main(counter<DeviceT, Tp, CounterT>&, OpsFuncT&&, StoreFuncT&&)
 {}

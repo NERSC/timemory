@@ -57,8 +57,7 @@
 #endif
 //
 /// \enum TIMEMORY_NATIVE_COMPONENT
-/// \brief Enumerated identifiers for timemory-provided components. If the user wishes
-/// to add to the enumerated components, use \ref TIMEMORY_USER_COMPONENT_ENUM
+/// \brief Enumerated identifiers for timemory-provided components.
 //
 enum TIMEMORY_NATIVE_COMPONENT
 {
@@ -81,6 +80,9 @@ enum TIMEMORY_NATIVE_COMPONENT
     CUPTI_ACTIVITY,
     CUPTI_COUNTERS,
     CURRENT_PEAK_RSS,
+    DATA_TRACKER_INTEGER,
+    DATA_TRACKER_UNSIGNED,
+    DATA_TRACKER_FLOATING,
     GPERFTOOLS_CPU_PROFILER,
     GPERFTOOLS_HEAP_PROFILER,
     GPU_ROOFLINE_DP_FLOPS,
@@ -114,11 +116,16 @@ enum TIMEMORY_NATIVE_COMPONENT
     THREAD_CPU_UTIL,
     TRIP_COUNT,
     USER_CLOCK,
-    USER_GLOBAL_BUNDLE,
     USER_MODE_TIME,
-    USER_MPIP_BUNDLE,
-    USER_NCCLP_BUNDLE,
-    USER_OMPT_BUNDLE,
+    USER_GLOBAL_BUNDLE,
+    USER_KOKKOSP_BUNDLE,   // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_LIST_BUNDLE,      // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_MPIP_BUNDLE,      // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_NCCLP_BUNDLE,     // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_OMPT_BUNDLE,      // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_TUPLE_BUNDLE,     // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_PROFILER_BUNDLE,  // excluded from TIMEMORY_COMPONENT_TYPES
+    USER_TRACE_BUNDLE,     // excluded from TIMEMORY_COMPONENT_TYPES
     VIRTUAL_MEMORY,
     VOLUNTARY_CONTEXT_SWITCH,
     VTUNE_EVENT,
@@ -137,6 +144,15 @@ enum TIMEMORY_NATIVE_COMPONENT
 //
 #if !defined(TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE)
 #    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE TIMEMORY_NATIVE_COMPONENTS_END
+#endif
+//
+/// \macro TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE
+/// \brief The number of enumerated components which are private to
+/// TIMEMORY_COMPONENT_TYPES. This is mainly just used by the validation checks
+/// between the number of enumerations and the types specified in TIMEMORY_COMPONENT_TYPES
+//
+#if !defined(TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE)
+#    define TIMEMORY_NATIVE_COMPONENT_INTERNAL_SIZE 8
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -167,10 +183,13 @@ typedef int TIMEMORY_COMPONENT;
 enum TIMEMORY_OPERATION
 {
     TIMEMORY_CONSTRUCT = 0,
+    TIMEMORY_GET,
+    TIMEMORY_AUDIT,
     TIMEMORY_START,
     TIMEMORY_STOP,
     TIMEMORY_STORE,
     TIMEMORY_RECORD,
+    TIMEMORY_SAMPLE,
     TIMEMORY_MEASURE,
     TIMEMORY_MARK_BEGIN,
     TIMEMORY_MARK_END,

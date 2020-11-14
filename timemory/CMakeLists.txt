@@ -24,7 +24,7 @@ file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
 #----------------------------------------------------------------------------
 
 set(PYTHON_SUBMODULE_FOLDERS
-    api ert mpi mpi_support plotting profiler roofline settings
+    api ert mpi mpi_support plotting profiler roofline
     util bundle component hardware_counters test trace region)
 
 file(GLOB PYTHON_SUBMODULE_FILES ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/*.py)

@@ -25,16 +25,14 @@
 # SOFTWARE.
 
 """ @file roofline/__init__.py
-Roofline plotting routines for TiMemory module
+Roofline plotting routines for timemory module
 """
 
 from __future__ import absolute_import
 from __future__ import division
-import os
-import imp
+
 import sys
 import warnings
-import importlib
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"

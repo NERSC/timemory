@@ -306,6 +306,12 @@ using get_false_types_t = typename get_false_types<Predicate, Sequence...>::type
 //
 //======================================================================================//
 
+template <typename T>
+using non_quirk_t = impl::filter_true<concepts::is_quirk_type, T>;
+
+template <typename T>
+using non_placeholder_t = impl::filter_true<concepts::is_placeholder, T>;
+
 /// filter out any types that are not available
 template <typename... Types>
 using implemented_t =
@@ -339,6 +345,9 @@ using auto_list_t = convert_t<available_t<concat<T...>>, auto_list<>>;
 
 template <typename Tag, typename... T>
 using auto_bundle_t = convert_t<available_t<type_list<T...>>, auto_bundle<Tag>>;
+
+template <typename... T>
+using lightweight_tuple_t = convert_t<available_t<concat<T...>>, lightweight_tuple<>>;
 
 //--------------------------------------------------------------------------------------//
 

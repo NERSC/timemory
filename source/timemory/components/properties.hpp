@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/enum.h"
+#include "timemory/mpl/concepts.hpp"
 
 #include <cstring>
 #include <regex>
@@ -48,7 +49,7 @@ namespace component
 template <typename... Types>
 struct placeholder;
 //
-using idset_t = std::initializer_list<std::string>;
+using idset_t = std::set<std::string>;
 //
 struct nothing;
 //
@@ -77,7 +78,15 @@ get_typeids();
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp>
+/// \struct tim::component::static_properties
+/// \tparam Tp Component type
+/// \tparam Placeholder Whether or not the component type is a placeholder type that
+/// should be ignored during runtime initialization.
+///
+/// \brief Provides three variants of a `matches` function for determining if a
+/// component is identified by a given string or enumeration value
+///
+template <typename Tp, bool PlaceHolder = concepts::is_placeholder<Tp>::value>
 struct static_properties;
 //
 template <typename Tp>
@@ -97,53 +106,121 @@ struct state
 //
 //--------------------------------------------------------------------------------------//
 //
+//  non-placeholder types
+//
 template <typename Tp>
-struct static_properties
+struct static_properties<Tp, false>
 {
-    static_properties();
+    using ptype = properties<Tp>;
 
-    static constexpr bool matches(int _idx) { return (_idx == properties<Tp>::value); }
-
+    static bool matches(int _idx) { return (_idx == ptype{}()); }
+    static bool matches(const std::string& _key) { return matches(_key.c_str()); }
     static bool matches(const char* _key)
     {
+        // don't allow checks for placeholder types
+        static_assert(!concepts::is_placeholder<Tp>::value,
+                      "static_properties is instantiating a placeholder type");
+
         const auto regex_consts = std::regex_constants::ECMAScript |
                                   std::regex_constants::icase |
                                   std::regex_constants::optimize;
+
         auto get_pattern = [](const std::string& _option) {
             return std::string("^(.*[,;: \t\n\r]+|)") + _option + "([,;: \t\n\r]+.*|$)";
         };
-        if(std::regex_match(_key, std::regex(get_pattern(properties<Tp>::enum_string()),
-                                             regex_consts)))
+        if(std::regex_match(_key,
+                            std::regex(get_pattern(ptype::enum_string()), regex_consts)))
             return true;
-        for(const auto& itr : properties<Tp>::ids())
+        for(const auto& itr : ptype::ids())
         {
             if(std::regex_match(_key, std::regex(get_pattern(itr), regex_consts)))
                 return true;
         }
         return false;
     }
-
-    static bool matches(const std::string& _key) { return matches(_key.c_str()); }
+};
+//
+//  placeholder types
+//
+template <typename Tp>
+struct static_properties<Tp, true>
+{
+    static bool matches(int) { return false; }
+    static bool matches(const char*) { return false; }
+    static bool matches(const std::string&) { return false; }
 };
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::properties
+/// \tparam Tp Component type
+///
+/// \brief This is a critical specialization for mapping string and integers to
+/// component types at runtime. The `enum_string()` function is the enum id as
+/// a string. The `id()` function is (typically) the name of the C++ component
+/// as a string. The `ids()` function returns a set of strings which are alternative
+/// string identifiers to the enum string or the string ID. Additionally, it
+/// provides serializaiton of these values.
+///
+/// A macro is provides to simplify this specialization:
+///
+/// \code{.cpp}
+/// TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
+///                                 "virtual_clock")
+/// \endcode
+///
+/// In the above, the first parameter is the C++ type, the second is the enumeration
+/// id, the enum string is automatically generated via preprocessor `#` on the second
+/// parameter, the third parameter is the string ID, and the remaining values are placed
+/// in the `ids()`. Additionally, this macro specializes the
+/// \ref tim::component::enumerator.
+///
 template <typename Tp>
 struct properties : static_properties<Tp>
 {
     using type                                = Tp;
     using value_type                          = TIMEMORY_COMPONENT;
     static constexpr TIMEMORY_COMPONENT value = TIMEMORY_COMPONENTS_END;
+
     static constexpr const char* enum_string() { return "TIMEMORY_COMPONENTS_END"; }
     static constexpr const char* id() { return ""; }
     static idset_t               ids() { return idset_t{}; }
     template <typename Archive>
     void serialize(Archive&, const unsigned int)
     {}
+    TIMEMORY_COMPONENT operator()() { return TIMEMORY_COMPONENTS_END; }
+    //
+    constexpr operator TIMEMORY_COMPONENT() const { return TIMEMORY_COMPONENTS_END; }
 };
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::enumerator
+/// \tparam Idx Enumeration value
+///
+/// \brief This is a critical specialization for mapping string and integers to
+/// component types at runtime (should always be specialized alongside \ref
+/// tim::component::properties) and it is also critical for performing template
+/// metaprogramming "loops" over all the components. E.g.:
+///
+/// \code{.cpp}
+/// template <size_t Idx>
+/// using Enumerator_t = typename tim::component::enumerator<Idx>::type;
+///
+/// template <size_t... Idx>
+/// auto init(std::index_sequence<Idx...>)
+/// {
+///     // expand for [0, TIMEMORY_COMPONENTS_END)
+///     TIMEMORY_FOLD_EXPRESSION(tim::storage_initializer::get<
+///         Enumerator_t<Idx>>());
+/// }
+///
+/// void init()
+/// {
+///     init(std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+/// }
+/// \endcode
+///
 template <int Idx>
 struct enumerator : properties<placeholder<nothing>>
 {
@@ -157,9 +234,11 @@ struct enumerator : properties<placeholder<nothing>>
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp>
-static_properties<Tp>::static_properties()
-{}
+template <int Idx>
+using enumerator_t = typename enumerator<Idx>::type;
+//
+template <int Idx>
+using properties_t = typename enumerator<Idx>::type;
 //
 //--------------------------------------------------------------------------------------//
 //

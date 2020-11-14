@@ -682,7 +682,7 @@ public:
         return m_headers[idx].second[_n];
     }
 
-    /// \fn stream::add_row()
+    /// \fn int stream::add_row()
     /// \brief indicate that a row of data has been finished
     int add_row()
     {
@@ -690,7 +690,7 @@ public:
         return ++m_rows;
     }
 
-    /// \fn stream::sort(sorter, keys, exclude)
+    /// \fn void stream::sort(sorter, keys, exclude)
     /// \brief Provide a \param sorter functor that operates on all or a specific
     /// set of header keys. If \param keys is empty, all header keys are sorted.
     /// If \param keys is non-empty, the sorted keys are placed at the front of the

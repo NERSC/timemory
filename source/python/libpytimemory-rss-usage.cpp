@@ -73,11 +73,11 @@ generate(py::module& _pymod, py::module& _pyunits)
                   py::arg("key") = "", py::arg("record") = false,
                   py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
-    rss_usage.def("record", [&](py::object self) { self.cast<rss_usage_t*>()->record(); },
+    rss_usage.def("record", [](py::object self) { self.cast<rss_usage_t*>()->record(); },
                   "Record the RSS usage");
     //----------------------------------------------------------------------------------//
     rss_usage.def("__str__",
-                  [&](py::object self) {
+                  [](py::object self) {
                       std::stringstream ss;
                       ss << *(self.cast<rss_usage_t*>());
                       return ss.str();
@@ -85,21 +85,21 @@ generate(py::module& _pymod, py::module& _pyunits)
                   "Stringify the rss usage");
     //----------------------------------------------------------------------------------//
     rss_usage.def("__iadd__",
-                  [&](py::object self, py::object rhs) {
+                  [](py::object self, py::object rhs) {
                       *(self.cast<rss_usage_t*>()) += *(rhs.cast<rss_usage_t*>());
                       return self;
                   },
                   "Add rss usage");
     //----------------------------------------------------------------------------------//
     rss_usage.def("__isub__",
-                  [&](py::object self, py::object rhs) {
+                  [](py::object self, py::object rhs) {
                       *(self.cast<rss_usage_t*>()) -= *(rhs.cast<rss_usage_t*>());
                       return self;
                   },
                   "Subtract rss usage");
     //----------------------------------------------------------------------------------//
     rss_usage.def("__add__",
-                  [&](py::object self, py::object rhs) {
+                  [](py::object self, py::object rhs) {
                       rss_usage_t* _rss = new rss_usage_t(*(self.cast<rss_usage_t*>()));
                       *_rss += *(rhs.cast<rss_usage_t*>());
                       return _rss;
@@ -107,7 +107,7 @@ generate(py::module& _pymod, py::module& _pyunits)
                   "Add rss usage", py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     rss_usage.def("__sub__",
-                  [&](py::object self, py::object rhs) {
+                  [](py::object self, py::object rhs) {
                       rss_usage_t* _rss = new rss_usage_t(*(self.cast<rss_usage_t*>()));
                       *_rss -= *(rhs.cast<rss_usage_t*>());
                       return _rss;
@@ -115,25 +115,25 @@ generate(py::module& _pymod, py::module& _pyunits)
                   "Subtract rss usage", py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     rss_usage.def("current",
-                  [&](py::object self, int64_t /*_units*/) {
+                  [](py::object self, int64_t /*_units*/) {
                       return std::get<0>(*self.cast<rss_usage_t*>()).get_display();
                   },
                   "Return the current rss usage",
                   py::arg("units") = _pyunits.attr("megabyte"));
     //----------------------------------------------------------------------------------//
     rss_usage.def("peak",
-                  [&](py::object self, int64_t /*_units*/) {
+                  [](py::object self, int64_t /*_units*/) {
                       return std::get<1>(*self.cast<rss_usage_t*>()).get_display();
                   },
                   "Return the current rss usage",
                   py::arg("units") = _pyunits.attr("megabyte"));
     //----------------------------------------------------------------------------------//
-    rss_usage.def("get_raw", [&](rss_usage_t* self) { return self->get(); },
+    rss_usage.def("get_raw", [](rss_usage_t* self) { return self->get(); },
                   "Return the rss usage data");
     //----------------------------------------------------------------------------------//
     rss_usage.def(
         "get",
-        [&](rss_usage_t* self) { return pytim::dict::construct(self->get_labeled()); },
+        [](rss_usage_t* self) { return pytim::dict::construct(self->get_labeled()); },
         "Return the rss usage data");
 
     return rss_usage;

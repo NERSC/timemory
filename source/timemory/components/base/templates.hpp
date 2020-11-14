@@ -54,14 +54,14 @@ namespace component
 //
 template <typename Tp, typename Value>
 template <typename Archive, typename Up,
-          enable_if_t<!(trait::custom_serialization<Up>::value), int>>
+          enable_if_t<!trait::custom_serialization<Up>::value, int>>
 void
-base<Tp, Value>::CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
+base<Tp, Value>::load(Archive& ar, const unsigned int)
 {
-    auto try_catch = [&](const char* key, auto& val) {
+    auto try_catch = [](Archive& arch, const char* key, auto& val) {
         try
         {
-            ar(cereal::make_nvp(key, val));
+            arch(cereal::make_nvp(key, val));
         } catch(cereal::Exception& e)
         {
             if(settings::debug() || settings::verbose() > -1)
@@ -69,20 +69,20 @@ base<Tp, Value>::CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
         }
     };
 
-    try_catch("is_transient", is_transient);
-    try_catch("laps", laps);
-    try_catch("value", value);
-    try_catch("accum", accum);
-    try_catch("last", last);
+    try_catch(ar, "is_transient", is_transient);
+    try_catch(ar, "laps", laps);
+    try_catch(ar, "value", value);
+    try_catch(ar, "accum", accum);
+    try_catch(ar, "last", last);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
 template <typename Archive, typename Up,
-          enable_if_t<!(trait::custom_serialization<Up>::value), int>>
+          enable_if_t<!trait::custom_serialization<Up>::value, int>>
 void
-base<Tp, Value>::CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int version) const
+base<Tp, Value>::save(Archive& ar, const unsigned int version) const
 {
     operation::serialization<Type>(static_cast<const Type&>(*this), ar, version);
 }
@@ -90,7 +90,7 @@ base<Tp, Value>::CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int versi
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Vp, typename Up, enable_if_t<(trait::sampler<Up>::value), int>>
+template <typename Vp, typename Up, enable_if_t<trait::sampler<Up>::value, int>>
 void
 base<Tp, Value>::add_sample(Vp&& _obj)
 {
@@ -103,7 +103,7 @@ base<Tp, Value>::add_sample(Vp&& _obj)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, enable_if_t<(trait::base_has_accum<Up>::value), int>>
+template <typename Up, enable_if_t<trait::base_has_accum<Up>::value, int>>
 Value&
 base<Tp, Value>::load()
 {
@@ -113,7 +113,7 @@ base<Tp, Value>::load()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, enable_if_t<(trait::base_has_accum<Up>::value), int>>
+template <typename Up, enable_if_t<trait::base_has_accum<Up>::value, int>>
 const Value&
 base<Tp, Value>::load() const
 {
@@ -123,7 +123,7 @@ base<Tp, Value>::load() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, enable_if_t<!(trait::base_has_accum<Up>::value), int>>
+template <typename Up, enable_if_t<!trait::base_has_accum<Up>::value, int>>
 Value&
 base<Tp, Value>::load()
 {
@@ -133,7 +133,7 @@ base<Tp, Value>::load()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, enable_if_t<!(trait::base_has_accum<Up>::value), int>>
+template <typename Up, enable_if_t<!trait::base_has_accum<Up>::value, int>>
 const Value&
 base<Tp, Value>::load() const
 {
@@ -148,7 +148,7 @@ base<Tp, Value>::load() const
 //
 template <typename Tp, typename Value>
 template <typename Up, typename Unit,
-          enable_if_t<(std::is_same<Unit, int64_t>::value), int>>
+          enable_if_t<std::is_same<Unit, int64_t>::value, int>>
 int64_t
 base<Tp, Value>::unit()
 {
@@ -166,7 +166,7 @@ base<Tp, Value>::unit()
 //
 template <typename Tp, typename Value>
 template <typename Up, typename Unit,
-          enable_if_t<(std::is_same<Unit, std::string>::value), int>>
+          enable_if_t<std::is_same<Unit, std::string>::value, int>>
 std::string
 base<Tp, Value>::display_unit()
 {
@@ -184,7 +184,7 @@ base<Tp, Value>::display_unit()
 //
 template <typename Tp, typename Value>
 template <typename Up, typename Unit,
-          enable_if_t<(std::is_same<Unit, int64_t>::value), int>>
+          enable_if_t<std::is_same<Unit, int64_t>::value, int>>
 int64_t
 base<Tp, Value>::get_unit()
 {
@@ -203,7 +203,7 @@ base<Tp, Value>::get_unit()
 //
 template <typename Tp, typename Value>
 template <typename Up, typename Unit,
-          enable_if_t<(std::is_same<Unit, std::string>::value), int>>
+          enable_if_t<std::is_same<Unit, std::string>::value, int>>
 std::string
 base<Tp, Value>::get_display_unit()
 {
@@ -221,7 +221,7 @@ base<Tp, Value>::get_display_unit()
 //
 template <typename Tp, typename Value>
 template <typename Up, typename Vp,
-          enable_if_t<(trait::implements_storage<Up, Vp>::value), int>>
+          enable_if_t<trait::uses_value_storage<Up, Vp>::value, int>>
 void
 base<Tp, Value>::print(std::ostream& os) const
 {
@@ -232,7 +232,7 @@ base<Tp, Value>::print(std::ostream& os) const
 //
 template <typename Tp, typename Value>
 template <typename Up, typename Vp,
-          enable_if_t<!(trait::implements_storage<Up, Vp>::value), int>>
+          enable_if_t<!trait::uses_value_storage<Up, Vp>::value, int>>
 void
 base<Tp, Value>::print(std::ostream&) const
 {}

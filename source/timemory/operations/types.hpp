@@ -78,6 +78,12 @@ using remove_pointers_t = typename remove_pointers<Tp>::type;
 template <typename Tp>
 struct basic_tree;
 //
+namespace node
+{
+template <typename Tp>
+struct tree;
+}
+//
 //--------------------------------------------------------------------------------------//
 //
 namespace data
@@ -277,6 +283,89 @@ struct sample;
 //
 template <typename Ret, typename Lhs, typename Rhs>
 struct compose;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct set_started
+{
+    TIMEMORY_DEFAULT_OBJECT(set_started)
+
+    template <typename Up>
+    auto operator()(Up& obj) const
+    {
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(Up& obj, int) -> decltype(obj.set_started())
+    {
+        return obj.set_started();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&, long) -> void
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct set_stopped
+{
+    TIMEMORY_DEFAULT_OBJECT(set_stopped)
+
+    template <typename Up>
+    auto operator()(Up& obj) const
+    {
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(Up& obj, int) -> decltype(obj.set_stopped())
+    {
+        return obj.set_stopped();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&, long) -> void
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, bool DefaultValue>
+struct is_running
+{
+    TIMEMORY_DEFAULT_OBJECT(is_running)
+
+    template <typename Up>
+    auto operator()(Up& obj) const
+    {
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(Up& obj, int) -> decltype(obj.get_is_running())
+    {
+        return obj.get_is_running();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up& obj, long) -> decltype(obj.is_running())
+    {
+        return obj.is_running();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&, ...) -> bool
+    {
+        return DefaultValue;
+    }
+};
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -598,7 +687,6 @@ struct print
     virtual void write(std::ostream& os, stream_type stream);
     virtual void print_cout(stream_type stream);
     virtual void print_text(const std::string& fname, stream_type stream);
-    virtual void print_tree(const std::string& fname);
     virtual void print_plot(const std::string& fname, const std::string suffix);
 
     auto get_label() const { return label; }
@@ -611,11 +699,6 @@ struct print
 
     void set_debug(bool v) { debug = v; }
     void set_update(bool v) { update = v; }
-    void set_file_output(bool v) { file_output = v; }
-    void set_text_output(bool v) { text_output = v; }
-    void set_json_output(bool v) { json_output = v; }
-    void set_dart_output(bool v) { dart_output = v; }
-    void set_plot_output(bool v) { plot_output = v; }
     void set_verbose(int32_t v) { verbose = v; }
     void set_max_call_stack(int64_t v) { max_call_stack = v; }
 
@@ -625,19 +708,87 @@ struct print
                                : std::min<int64_t>(max_call_stack, settings::max_depth());
     }
 
+    bool dart_output()
+    {
+        if(!m_settings)
+        {
+            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            return false;
+        }
+        return m_settings->get_dart_output();
+    }
+    bool file_output()
+    {
+        if(!m_settings)
+        {
+            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            return false;
+        }
+        return m_settings->get_file_output();
+    }
+    bool cout_output()
+    {
+        if(!m_settings)
+        {
+            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            return false;
+        }
+        return m_settings->get_cout_output();
+    }
+    bool tree_output()
+    {
+        if(!m_settings)
+        {
+            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            return false;
+        }
+        return (m_settings->get_tree_output() || json_forced) &&
+               m_settings->get_file_output();
+    }
+    bool json_output()
+    {
+        if(!m_settings)
+        {
+            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            return false;
+        }
+        return (m_settings->get_json_output() || json_forced) &&
+               m_settings->get_file_output();
+    }
+    bool text_output()
+    {
+        if(!m_settings)
+        {
+            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            return false;
+        }
+        return m_settings->get_text_output() && m_settings->get_file_output();
+    }
+    bool plot_output()
+    {
+        if(!m_settings)
+        {
+            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            return false;
+        }
+        return m_settings->get_plot_output() && m_settings->get_json_output() &&
+               m_settings->get_file_output();
+    }
+    bool flame_output()
+    {
+        if(!m_settings)
+        {
+            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            return false;
+        }
+        return m_settings->get_flamegraph_output() && m_settings->get_file_output();
+    }
+
 protected:
     // default initialized
     bool    debug          = settings::debug();
     bool    update         = true;
     bool    json_forced    = false;
-    bool    file_output    = settings::file_output();
-    bool    cout_output    = settings::cout_output();
-    bool    tree_output    = (settings::tree_output() || json_forced) && file_output;
-    bool    json_output    = (settings::json_output() || json_forced) && file_output;
-    bool    text_output    = settings::text_output() && file_output;
-    bool    dart_output    = settings::dart_output();
-    bool    plot_output    = settings::plot_output() && json_output;
-    bool    flame_output   = settings::flamegraph_output() && file_output;
     bool    node_init      = dmp::is_initialized();
     int32_t node_rank      = dmp::rank();
     int32_t node_size      = dmp::size();
@@ -658,6 +809,7 @@ protected:
     std::string json_diffname     = "";
     stream_type data_stream       = stream_type{};
     stream_type diff_stream       = stream_type{};
+    settings*   m_settings        = settings::instance();
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -681,6 +833,9 @@ struct print<Tp, true> : public base::print
     using hierarchy_type           = typename storage_type::uintvector_t;
     using callback_type            = std::function<void(this_type*)>;
     using stream_type              = std::shared_ptr<utility::stream>;
+    using basic_tree_type          = basic_tree<node::tree<Tp>>;
+    using basic_tree_vector_type   = std::vector<basic_tree_type>;
+    using result_tree = std::map<std::string, std::vector<basic_tree_vector_type>>;
 
     static callback_type& get_default_callback()
     {
@@ -707,39 +862,38 @@ struct print<Tp, true> : public base::print
         else
             setup();
 
-        if(file_output && tree_output)
-            print_tree(tree_outfname);
-
         if(node_init && node_rank > 0)
             return;
 
-        if(file_output)
+        if(file_output())
         {
-            if(json_output)
+            if(json_output())
                 print_json(json_outfname, node_results, data_concurrency);
-            if(text_output)
+            if(tree_output())
+                print_tree(tree_outfname, node_tree);
+            if(text_output())
                 print_text(text_outfname, data_stream);
-            if(plot_output)
+            if(plot_output())
                 print_plot(json_outfname, "");
         }
 
-        if(cout_output)
+        if(cout_output())
             print_cout(data_stream);
         else
             printf("\n");
 
-        if(dart_output)
+        if(dart_output())
             print_dart();
 
         if(!node_input.empty() && !node_delta.empty() && settings::diff_output())
         {
-            if(file_output)
+            if(file_output())
             {
-                if(json_output)
+                if(json_output())
                     print_json(json_diffname, node_delta, data_concurrency);
-                if(text_output)
+                if(text_output())
                     print_text(text_diffname, diff_stream);
-                if(plot_output)
+                if(plot_output())
                 {
                     std::stringstream ss;
                     ss << "Difference vs. " << json_inpfname;
@@ -753,7 +907,7 @@ struct print<Tp, true> : public base::print
                 }
             }
 
-            if(cout_output)
+            if(cout_output())
                 print_cout(diff_stream);
             else
                 printf("\n");
@@ -777,7 +931,7 @@ struct print<Tp, true> : public base::print
             fprintf(stderr, "Exception: %s\n", e.what());
         }
     }
-    virtual void print_tree(const std::string& fname);
+    virtual void print_tree(const std::string& fname, result_tree& rt);
 
     void write_stream(stream_type& stream, result_type& results);
     void print_json(const std::string& fname, result_type& results, int64_t concurrency);
@@ -806,6 +960,7 @@ protected:
     result_type   node_results = {};
     result_type   node_input   = {};
     result_type   node_delta   = {};
+    result_tree   node_tree    = {};
 };
 //
 //--------------------------------------------------------------------------------------//

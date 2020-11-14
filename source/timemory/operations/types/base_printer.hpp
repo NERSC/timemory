@@ -52,8 +52,8 @@ struct base_printer : public common_utils
     using value_type = typename type::value_type;
     using widths_t   = std::vector<int64_t>;
 
-    template <typename Up                                        = value_type,
-              enable_if_t<!(std::is_same<Up, void>::value), int> = 0>
+    template <typename Up                                      = value_type,
+              enable_if_t<!std::is_same<Up, void>::value, int> = 0>
     explicit base_printer(std::ostream& _os, const type& _obj)
     {
         auto _value = static_cast<const type&>(_obj).get_display();
@@ -63,8 +63,8 @@ struct base_printer : public common_utils
         sfinae(_os, 0, _value, _disp, _label);
     }
 
-    template <typename Up                                       = value_type,
-              enable_if_t<(std::is_same<Up, void>::value), int> = 0>
+    template <typename Up                                     = value_type,
+              enable_if_t<std::is_same<Up, void>::value, int> = 0>
     explicit base_printer(std::ostream&, const type&)
     {}
 
@@ -108,9 +108,9 @@ private:
     //----------------------------------------------------------------------------------//
     //
     template <typename ValueT, typename DispT, typename LabelT,
-              enable_if_t<!(std::is_same<decay_t<ValueT>, std::string>::value), int> = 0,
-              enable_if_t<!(std::is_same<decay_t<LabelT>, std::string>::value), int> = 0,
-              enable_if_t<!(std::is_same<decay_t<DispT>, std::string>::value), int>  = 0>
+              enable_if_t<!std::is_same<decay_t<ValueT>, std::string>::value, int> = 0,
+              enable_if_t<!std::is_same<decay_t<LabelT>, std::string>::value, int> = 0,
+              enable_if_t<!std::is_same<decay_t<DispT>, std::string>::value, int>  = 0>
     auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label)
         -> decltype((_value.size() + _disp.size() + _label.size()), void())
     {
@@ -158,9 +158,9 @@ private:
     //----------------------------------------------------------------------------------//
     //
     template <typename ValueT, typename DispT, typename LabelT,
-              enable_if_t<!(std::is_same<decay_t<ValueT>, std::string>::value), int> = 0,
-              enable_if_t<!(std::is_same<decay_t<LabelT>, std::string>::value), int> = 0,
-              enable_if_t<(std::is_same<decay_t<DispT>, std::string>::value), int>   = 0>
+              enable_if_t<!std::is_same<decay_t<ValueT>, std::string>::value, int> = 0,
+              enable_if_t<!std::is_same<decay_t<LabelT>, std::string>::value, int> = 0,
+              enable_if_t<std::is_same<decay_t<DispT>, std::string>::value, int>   = 0>
     auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label)
         -> decltype((_value.size() + _label.size()), void())
     {
@@ -208,9 +208,9 @@ private:
     //----------------------------------------------------------------------------------//
     //
     template <typename ValueT, typename DispT, typename LabelT,
-              enable_if_t<!(std::is_same<decay_t<ValueT>, std::string>::value), int> = 0,
-              enable_if_t<(std::is_same<decay_t<LabelT>, std::string>::value), int>  = 0,
-              enable_if_t<(std::is_same<decay_t<DispT>, std::string>::value), int>   = 0>
+              enable_if_t<!std::is_same<decay_t<ValueT>, std::string>::value, int> = 0,
+              enable_if_t<std::is_same<decay_t<LabelT>, std::string>::value, int>  = 0,
+              enable_if_t<std::is_same<decay_t<DispT>, std::string>::value, int>   = 0>
     auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label)
         -> decltype((_value.size() + _label.size()), void())
     {

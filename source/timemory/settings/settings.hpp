@@ -87,13 +87,16 @@ struct settings
     template <typename Tp, typename Vp>
     using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
 
-    template <typename Tag = api::native_tag>
+    template <typename Tag>
     static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
 
-    template <typename Tag = api::native_tag>
+    template <typename Tag>
     static settings* instance() TIMEMORY_VISIBILITY("default");
 
-    settings() { initialize(); }
+    static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
+    static settings* instance() TIMEMORY_VISIBILITY("default");
+
+    settings();
     ~settings() = default;
 
     settings(const settings&);
@@ -170,6 +173,8 @@ struct settings
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, trace_components, "TIMEMORY_TRACE_COMPONENTS")
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, profiler_components,
                                   "TIMEMORY_PROFILER_COMPONENTS")
+    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, kokkos_components,
+                                  "TIMEMORY_KOKKOS_COMPONENTS")
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, components, "TIMEMORY_COMPONENTS")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_init, "TIMEMORY_MPI_INIT")
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_finalize, "TIMEMORY_MPI_FINALIZE")

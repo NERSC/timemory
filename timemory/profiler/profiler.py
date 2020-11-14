@@ -25,6 +25,7 @@
 # SOFTWARE.
 
 import sys
+import threading
 from functools import wraps
 
 from ..libpytimemory.profiler import profiler_function as _profiler_function
@@ -68,43 +69,39 @@ else:
         exec("""exec _code_ in _globs_, _locs_""")
 
 
-#
 config = _profiler_config
 Config = _profiler_config
 
 
 #
 class Profiler:
-    """
-    Provides decorators and context-manager for the timemory profilers
-    """
+    """Provides decorators and context-manager for the timemory profilers"""
 
     global _default_functor
 
     # static variable
     _conditional_functor = _default_functor
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     @staticmethod
     def condition(functor):
+        """Assign a function evaluating whether to enable the profiler"""
         Profiler._conditional_functor = functor
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     @staticmethod
     def is_enabled():
-        ret = Profiler._conditional_functor()
+        """Checks whether the profiler is enabled"""
+
         try:
-            if ret is True:
-                return True
-            elif ret is False:
-                return False
-        except:
+            return Profiler._conditional_functor()
+        except Exception:
             pass
         return False
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __init__(
         self, components=[], flat=False, timeline=False, *args, **kwargs
@@ -120,7 +117,7 @@ class Profiler:
         _profl = settings.profiler_components
         _components = _profl if _trace is None else _trace
 
-        self._original_profiler_function = sys.getprofile()
+        self._original_function = sys.getprofile()
         self._use = (
             not _profiler_config._is_running and Profiler.is_enabled() is True
         )
@@ -134,85 +131,97 @@ class Profiler:
         if _trace is None:
             settings.trace_components = ",".join(self.components)
         settings.profiler_components = ",".join(self.components)
+        self._unset = 0
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
+    #
+    def __del__(self):
+        """Make sure the profiler stops"""
+
+        self.stop()
+
+    # ---------------------------------------------------------------------------------- #
     #
     def configure(self):
+        """Initialize, configure the bundle, store original profiler function"""
+
         _profiler_init()
         _profiler_bundle.configure(
             self.components, self._flat_profile, self._timeline_profile
         )
-        self._original_profiler_function = sys.getprofile()
+        self._original_function = sys.getprofile()
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
+    #
+    def update(self):
+        """Updates whether the profiler is already running based on whether the tracer
+        is not already running, is enabled, and the function is not already set
+        """
+
+        self._use = (
+            not _profiler_config._is_running
+            and Profiler.is_enabled() is True
+            and sys.getprofile() == self._original_function
+        )
+
+    # ---------------------------------------------------------------------------------- #
     #
     def start(self):
-        """
-        Start the profiler explicitly
-        """
+        """Start the profiler explicitly"""
 
-        self._use = (
-            not _profiler_config._is_running and Profiler.is_enabled() is True
-        )
-        if self._use and not _profiler_config._is_running:
+        self.update()
+        if self._use:
             self.configure()
             sys.setprofile(_profiler_function)
+            threading.setprofile(_profiler_function)
 
-    # ------------------------------------------------------------------------------------#
+        self._unset = self._unset + 1
+        return self._unset
+
+    # ---------------------------------------------------------------------------------- #
     #
     def stop(self):
-        """
-        Stop the profiler explicitly
-        """
+        """Stop the profiler explicitly"""
 
-        if self._use and _profiler_config._is_running:
-            sys.setprofile(self._original_profiler_function)
+        self._unset = self._unset - 1
+        if self._unset == 0:
+            sys.setprofile(self._original_function)
             _profiler_fini()
 
-    # ------------------------------------------------------------------------------------#
+        return self._unset
+
+    # ---------------------------------------------------------------------------------- #
     #
     def __call__(self, func):
-        """
-        Decorator
-        """
-
-        self._use = (
-            not _profiler_config._is_running and Profiler.is_enabled() is True
-        )
-
-        if self._use and not _profiler_config._is_running:
-            self.configure()
+        """Decorator"""
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
-            if self._use and sys.getprofile() != _profiler_function:
-                sys.setprofile(_profiler_function)
-            return func(*args, **kwargs)
+            # store whether this tracer started
+            self.start()
+            # execute the wrapped function
+            result = func(*args, **kwargs)
+            # unset the profiler if this wrapper set it
+            self.stop()
+            # return the result of the wrapped function
+            return result
 
-        ret = function_wrapper
+        return function_wrapper
+
+    # ---------------------------------------------------------------------------------- #
+    #
+    def __enter__(self, *args, **kwargs):
+        """Context manager start function"""
+
+        self.start()
+
+    # ---------------------------------------------------------------------------------- #
+    #
+    def __exit__(self, exec_type, exec_value, exec_tb):
+        """Context manager stop function"""
 
         self.stop()
 
-        return ret
-
-    # ------------------------------------------------------------------------------------#
-    #
-    def __enter__(self, *args, **kwargs):
-        """
-        Context manager start function
-        """
-        self.start()
-
-    # ------------------------------------------------------------------------------------#
-    #
-    def __exit__(self, exec_type, exec_value, exec_tb):
-        """
-        Context manager stop function
-        """
-
-        if self._use and _profiler_config._is_running:
-            sys.setprofile(self._original_profiler_function)
-            _profiler_fini()
         if (
             exec_type is not None
             and exec_value is not None
@@ -222,12 +231,10 @@ class Profiler:
 
             traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def run(self, cmd):
-        """
-        Execute and profile a command
-        """
+        """Execute and profile a command"""
 
         import __main__
 
@@ -237,89 +244,50 @@ class Profiler:
         else:
             return self.runctx(" ".join(cmd), dict, dict)
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def runctx(self, cmd, globals, locals):
-        """
-        Profile a context
-        """
-
-        if self._use:
-            self.configure()
-            sys.setprofile(_profiler_function)
+        """Profile a context"""
 
         try:
+            self.start()
             exec_(cmd, globals, locals)
         finally:
-            if self._use:
-                sys.setprofile(self._original_profiler_function)
-                _profiler_fini()
+            self.stop()
 
         return self
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def runcall(self, func, *args, **kw):
-        """
-        Profile a single function call.
-        """
-
-        ret = None
-
-        if self._use:
-            self.configure()
-            sys.setprofile(_profiler_function)
+        """Profile a single function call"""
 
         try:
-            ret = func(*args, **kw)
+            self.start()
+            return func(*args, **kw)
         finally:
-            if self._use:
-                sys.setprofile(self._original_profiler_function)
-                _profiler_fini()
-
-        return ret
-
-    # ------------------------------------------------------------------------------------#
-    #
-    def add_module(self, mod):
-        """Add all the functions in a module and its classes."""
-        from inspect import isclass, isfunction
-
-        nfuncsadded = 0
-        for item in mod.__dict__.values():
-            if isclass(item):
-                for k, v in item.__dict__.items():
-                    if isfunction(v):
-                        self.add_function(v)
-                        nfuncsadded += 1
-            elif isfunction(item):
-                self.add_function(item)
-                nfuncsadded += 1
-
-        return nfuncsadded
+            self.stop()
 
 
 profile = Profiler
 
 
 class FakeProfiler:
-    """
-    Provides decorators and context-manager for the timemory profiles which do nothing
-    """
+    """Provides dummy decorators and context-manager for the timemory profiler"""
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     @staticmethod
     def condition(functor):
         pass
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     @staticmethod
     def is_enabled():
         return False
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __init__(self, *args, **kwargs):
         """
@@ -330,12 +298,10 @@ class FakeProfiler:
         """
         pass
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __call__(self, func):
-        """
-        Decorator
-        """
+        """Decorator"""
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
@@ -343,20 +309,17 @@ class FakeProfiler:
 
         return function_wrapper
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __enter__(self, *args, **kwargs):
-        """
-        Context manager
-        """
+        """Context manager begin"""
         pass
 
-    # ------------------------------------------------------------------------------------#
+    # ---------------------------------------------------------------------------------- #
     #
     def __exit__(self, exec_type, exec_value, exec_tb):
-        """
-        Context manager
-        """
+        """Context manager end"""
+
         import traceback
 
         if (

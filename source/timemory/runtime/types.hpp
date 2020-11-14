@@ -35,7 +35,8 @@
 #include "timemory/environment/declaration.hpp"
 #include "timemory/runtime/macros.hpp"
 
-#include <unordered_map>
+#include <initializer_list>
+#include <string>
 
 namespace tim
 {
@@ -80,12 +81,13 @@ enumerate_components(const std::initializer_list<std::string>& component_names);
 ///  typename... ExtraArgs
 ///      required because of extra "hidden" template parameters in STL containers
 //
-template <template <typename...> class CompList, typename... CompTypes,
-          template <typename, typename...> class Container, typename Intp,
-          typename... ExtraArgs,
-          typename std::enable_if<(std::is_integral<Intp>::value ||
-                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
-                                  int>::type = 0>
+template <
+    template <typename...> class CompList, typename... CompTypes,
+    template <typename, typename...> class Container, typename Intp,
+    typename... ExtraArgs,
+    typename std::enable_if<std::is_integral<Intp>::value ||
+                                std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value,
+                            int>::type = 0>
 void
 initialize(CompList<CompTypes...>& obj, const Container<Intp, ExtraArgs...>& components);
 
@@ -112,12 +114,13 @@ initialize(T* obj, Args&&... args)
 ///  typename... ExtraArgs
 ///      required because of extra "hidden" template parameters in STL containers
 //
-template <size_t Idx, typename Type, template <size_t, typename> class Bundle,
-          template <typename, typename...> class Container, typename Intp,
-          typename... ExtraArgs,
-          typename std::enable_if<(std::is_integral<Intp>::value ||
-                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
-                                  int>::type = 0>
+template <
+    size_t Idx, typename Type, template <size_t, typename> class Bundle,
+    template <typename, typename...> class Container, typename Intp,
+    typename... ExtraArgs,
+    typename std::enable_if<std::is_integral<Intp>::value ||
+                                std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value,
+                            int>::type = 0>
 void
 insert(Bundle<Idx, Type>& obj, const Container<Intp, ExtraArgs...>& components);
 
@@ -145,13 +148,40 @@ insert(T* obj, Args&&... args)
 ///  typename... ExtraArgs
 ///      required because of extra "hidden" template parameters in STL containers
 //
-template <typename Bundle_t, template <typename, typename...> class Container,
-          typename Intp, typename... ExtraArgs, typename... Args,
-          typename std::enable_if<(std::is_integral<Intp>::value ||
-                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
-                                  int>::type = 0>
+template <
+    typename Bundle_t, template <typename, typename...> class Container, typename Intp,
+    typename... ExtraArgs, typename... Args,
+    typename std::enable_if<std::is_integral<Intp>::value ||
+                                std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value,
+                            int>::type = 0>
 void
 configure(const Container<Intp, ExtraArgs...>& components, Args&&...);
+
+template <typename Bundle, typename EnumT = int, typename... Args>
+void
+configure(std::initializer_list<EnumT> components, Args&&... args);
+
+template <typename Bundle, typename... Args>
+void
+configure(const std::initializer_list<std::string>& components, Args&&... args);
+
+template <typename Bundle, typename... ExtraArgs,
+          template <typename, typename...> class Container, typename... Args>
+void
+configure(const Container<std::string, ExtraArgs...>& components, Args&&... args);
+
+template <typename Bundle, typename... Args>
+void
+configure(const std::string& components, Args&&... args);
+
+template <typename Bundle, template <typename, typename...> class Container,
+          typename... ExtraArgs, typename... Args>
+void
+configure(const Container<const char*, ExtraArgs...>& components, Args&&... args);
+
+template <typename Bundle, typename... Args>
+void
+configure(const int ncomponents, const int* components, Args&&... args);
 
 //======================================================================================//
 
@@ -189,7 +219,7 @@ namespace env
 //--------------------------------------------------------------------------------------//
 
 template <template <typename...> class CompList, typename... CompTypes,
-          typename std::enable_if<(sizeof...(CompTypes) > 0), int>::type = 0>
+          typename std::enable_if<sizeof...(CompTypes) != 0, int>::type = 0>
 void
 initialize(CompList<CompTypes...>& obj, const std::string& env_var,
            const std::string& default_env)
@@ -201,7 +231,7 @@ initialize(CompList<CompTypes...>& obj, const std::string& env_var,
 //--------------------------------------------------------------------------------------//
 
 template <template <typename...> class CompList, typename... CompTypes,
-          typename std::enable_if<(sizeof...(CompTypes) == 0), int>::type = 0>
+          typename std::enable_if<sizeof...(CompTypes) == 0, int>::type = 0>
 void
 initialize(CompList<CompTypes...>&, const std::string&, const std::string&)
 {}

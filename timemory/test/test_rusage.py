@@ -43,6 +43,7 @@ import unittest
 import threading
 import inspect
 import random
+import tempfile
 import timemory as tim
 from timemory import component as comp
 
@@ -113,7 +114,8 @@ def read_write():
     rb.start()
     wb.start()
 
-    ofs = open("/tmp/file.dat", "wb")
+    ofs = tempfile.NamedTemporaryFile(delete=False)
+    fname = ofs.name
 
     writeArray = np.array(range(int(nelements)))
     writeArray = writeArray.astype(np.float64)
@@ -128,7 +130,7 @@ def read_write():
     ofs.close()
 
     # read the data from file
-    data = np.fromfile("/tmp/file.dat", dtype=np.float64)
+    data = np.fromfile(fname, dtype=np.float64)
 
     rb.stop()
     wb.stop()

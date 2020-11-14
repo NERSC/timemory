@@ -22,9 +22,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file ctimemory.cpp
+/** \file timemory_c.cpp
  * This is the C++ proxy for the C interface. Compilation of this file is not
- * required for C++ codes but is compiled into "libtimemory.*" (timemory-cxx-library)
+ * required for C++ codes but is compiled into "libtimemory.*"
  * so that the "libctimemory.*" can be linked during the timemory build and
  * "libctimemory.*" can be stand-alone linked to C code.
  *

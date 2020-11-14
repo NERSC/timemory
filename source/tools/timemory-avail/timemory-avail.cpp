@@ -42,6 +42,7 @@
 #include <vector>
 
 using namespace tim;
+
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 using str_vec_t      = std::vector<string_t>;
@@ -50,12 +51,13 @@ using info_type      = std::tuple<string_t, bool, str_vec_t>;
 template <typename Tp, size_t N>
 using array_t = std::array<Tp, N>;
 
-char global_delim = '|';
-bool markdown     = false;
-bool alphabetical = false;
-bool all_info     = false;
-bool force_brief  = false;
-int  padding      = 4;
+char     global_delim = '|';
+bool     markdown     = false;
+bool     alphabetical = false;
+bool     all_info     = false;
+bool     force_brief  = false;
+int      padding      = 4;
+string_t regex_key    = "";
 
 //--------------------------------------------------------------------------------------//
 
@@ -90,21 +92,28 @@ struct get_availability
 {
     using this_type  = get_availability<Type>;
     using value_type = component_value_type_t<Type>;
+    using metadata_t = component::metadata<Type>;
 
     static info_type get_info()
     {
-        bool     is_available = trait::is_available<Type>::value;
-        bool     file_output  = trait::generates_output<Type>::value;
-        auto     name         = demangle<Type>();
-        auto     label        = (file_output) ? Type::get_label() : std::string("");
-        auto     description  = Type::get_description();
-        auto     data_type    = demangle<value_type>();
-        string_t enum_type    = component::properties<Type>::enum_string();
-        string_t id_type      = component::properties<Type>::id();
-        auto     ids_set      = component::properties<Type>::ids();
-        auto     itr          = ids_set.begin();
-        string_t db           = (markdown) ? "`\"" : "\"";
-        string_t de           = (markdown) ? "\"`" : "\"";
+        bool has_metadata = metadata_t::value != TIMEMORY_COMPONENTS_END;
+        bool is_available = trait::is_available<Type>::value;
+        bool file_output  = trait::generates_output<Type>::value;
+        auto name         = component::metadata<Type>::name();
+        auto label        = (file_output)
+                         ? ((has_metadata) ? metadata_t::label() : Type::get_label())
+                         : std::string("");
+        auto description =
+            (has_metadata) ? metadata_t::description() : Type::get_description();
+        auto     data_type = demangle<value_type>();
+        string_t enum_type = component::properties<Type>::enum_string();
+        string_t id_type   = component::properties<Type>::id();
+        auto     ids_set   = component::properties<Type>::ids();
+        auto     itr       = ids_set.begin();
+        string_t db        = (markdown) ? "`\"" : "\"";
+        string_t de        = (markdown) ? "\"`" : "\"";
+        if(has_metadata)
+            description += ". " + metadata_t::extra_description();
         while(itr->empty())
             ++itr;
         string_t ids_str = "";
@@ -312,6 +321,10 @@ main(int argc, char** argv)
     parser.add_argument({ "-H", "--hw-counters" },
                         "Write the available hardware counters");
     parser.add_argument({ "-O", "--output" }, "Write results to file").count(1);
+    parser
+        .add_argument({ "-r", "--filter" },
+                      "Filter the output according to provided regex")
+        .count(1);
 
     auto err = parser.parse(argc, argv);
     if(err)
@@ -352,6 +365,9 @@ main(int argc, char** argv)
 
     if(parser.exists("output"))
         file = parser.get<std::string>("output");
+
+    if(parser.exists("filter"))
+        regex_key = parser.get<std::string>("filter");
 
     if(parser.exists("components"))
         include_components = true;
@@ -416,9 +432,6 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-template <int Idx>
-using enumerator_t = typename tim::component::enumerator<Idx>::type;
-
 template <int I>
 using make_int_sequence = std::make_integer_sequence<int, I>;
 
@@ -440,7 +453,7 @@ using tim::component::placeholder;
 template <template <typename...> class TupT, int I, typename... T, int... Idx>
 struct enumerated_list<TupT<T...>, int_sequence<I, Idx...>>
 {
-    using Tp                         = enumerator_t<I>;
+    using Tp                         = component::enumerator_t<I>;
     static constexpr bool is_nothing = std::is_same<Tp, placeholder<nothing>>::value;
     using type                       = typename enumerated_list<
         tim::conditional_t<(is_nothing), tim::component_list<T...>,

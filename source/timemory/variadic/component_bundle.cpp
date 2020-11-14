@@ -78,7 +78,7 @@ component_bundle<Tag, Types...>::get_initializer()
             for(auto& itr : _tag)
                 itr = toupper(itr);
             auto env_var = string_t("TIMEMORY_") + _tag + "_COMPONENTS";
-            if(settings::debug() || settings::verbose() > 0)
+            if(settings::debug() || settings::verbose() > 1)
                 PRINT_HERE("%s is using environment variable: '%s'",
                            demangle<this_type>().c_str(), env_var.c_str());
 
@@ -103,16 +103,16 @@ component_bundle<Tag, Types...>::component_bundle()
 //
 template <typename Tag, typename... Types>
 template <typename... T, typename Func>
-component_bundle<Tag, Types...>::component_bundle(const string_t&     key,
-                                                  quirk::config<T...> config,
-                                                  const Func&         init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), quirk::config<T...>{})
-, m_data(invoke::construct<data_type, Tag>(key, config))
+component_bundle<Tag, Types...>::component_bundle(const string_t&     _key,
+                                                  quirk::config<T...> _config,
+                                                  const Func&         _init_func)
+: bundle_type(((settings::enabled()) ? add_hash_id(_key) : 0), quirk::config<T...>{})
+, m_data(invoke::construct<data_type, Tag>(_key, _config))
 {
     apply_v::set_value(m_data, nullptr);
-    if(m_store)
+    if(m_store())
     {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { _init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope<Tag>(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
@@ -123,17 +123,17 @@ component_bundle<Tag, Types...>::component_bundle(const string_t&     key,
 //
 template <typename Tag, typename... Types>
 template <typename... T, typename Func>
-component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc,
-                                                  quirk::config<T...>        config,
-                                                  const Func&                init_func)
-: bundle_type(loc.get_hash(), quirk::config<T...>{})
-, m_data(invoke::construct<data_type, Tag>(loc, config))
+component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _loc,
+                                                  quirk::config<T...>        _config,
+                                                  const Func&                _init_func)
+: bundle_type(_loc.get_hash(), quirk::config<T...>{})
+, m_data(invoke::construct<data_type, Tag>(_loc, _config))
 {
     apply_v::set_value(m_data, nullptr);
-    if(m_store && trait::runtime_enabled<Tag>::get())
+    if(m_store() && trait::runtime_enabled<Tag>::get())
     {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
-        set_prefix(loc.get_hash());
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { _init_func(*this); }
+        set_prefix(_loc.get_hash());
         invoke::set_scope<Tag>(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
@@ -143,20 +143,20 @@ component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc
 //
 template <typename Tag, typename... Types>
 template <typename Func>
-component_bundle<Tag, Types...>::component_bundle(const string_t& key, const bool& store,
+component_bundle<Tag, Types...>::component_bundle(size_t _hash, bool _store,
                                                   scope::config _scope,
-                                                  const Func&   init_func)
-: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store,
+                                                  const Func&   _init_func)
+: bundle_type(_hash, _store,
               _scope + scope::config(quirk_config<quirk::flat_scope>::value,
                                      quirk_config<quirk::timeline_scope>::value,
                                      quirk_config<quirk::tree_scope>::value))
-, m_data(invoke::construct<data_type, Tag>(key, store, _scope))
+, m_data(invoke::construct<data_type, Tag>(_hash, m_scope))
 {
-    apply_v::set_value(m_data, nullptr);
-    if(m_store && trait::runtime_enabled<Tag>::get())
+    // apply_v::set_value(m_data, nullptr);
+    if(m_store() && trait::runtime_enabled<Tag>::get())
     {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
-        set_prefix(get_hash_ids()->find(m_hash)->second);
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
+        set_prefix(_hash);
         invoke::set_scope<Tag>(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
@@ -166,54 +166,60 @@ component_bundle<Tag, Types...>::component_bundle(const string_t& key, const boo
 //
 template <typename Tag, typename... Types>
 template <typename Func>
-component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc,
-                                                  const bool& store, scope::config _scope,
-                                                  const Func& init_func)
-: bundle_type(loc.get_hash(), store,
-              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
-                                     quirk_config<quirk::timeline_scope>::value,
-                                     quirk_config<quirk::tree_scope>::value))
-, m_data(invoke::construct<data_type, Tag>(loc, store, _scope))
-{
-    apply_v::set_value(m_data, nullptr);
-    if(m_store && trait::runtime_enabled<Tag>::get())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
-        set_prefix(loc.get_hash());
-        invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
-    }
-}
+component_bundle<Tag, Types...>::component_bundle(const string_t& _key, bool _store,
+                                                  scope::config _scope,
+                                                  const Func&   _init_func)
+: component_bundle((settings::enabled()) ? add_hash_id(_key) : 0, _store, _scope,
+                   _init_func)
+{}
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
 template <typename Func>
-component_bundle<Tag, Types...>::component_bundle(size_t hash, const bool& store,
-                                                  scope::config _scope,
-                                                  const Func&   init_func)
-: bundle_type(hash, store,
-              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
-                                     quirk_config<quirk::timeline_scope>::value,
-                                     quirk_config<quirk::tree_scope>::value))
-, m_data(invoke::construct<data_type, Tag>(hash, store, _scope))
-{
-    apply_v::set_value(m_data, nullptr);
-    if(m_store && trait::runtime_enabled<Tag>::get())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
-        set_prefix(hash);
-        invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
-    }
-}
+component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _loc,
+                                                  bool _store, scope::config _scope,
+                                                  const Func& _init_func)
+: component_bundle(_loc.get_hash(), _store, _scope, _init_func)
+{}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
+template <typename Func>
+component_bundle<Tag, Types...>::component_bundle(size_t _hash, scope::config _scope,
+                                                  const Func& _init_func)
+: component_bundle(_hash, true, _scope, _init_func)
+{}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
+template <typename Func>
+component_bundle<Tag, Types...>::component_bundle(const string_t& _key,
+                                                  scope::config   _scope,
+                                                  const Func&     _init_func)
+: component_bundle((settings::enabled()) ? add_hash_id(_key) : 0, true, _scope,
+                   _init_func)
+{}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
+template <typename Func>
+component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _loc,
+                                                  scope::config              _scope,
+                                                  const Func&                _init_func)
+: component_bundle(_loc.get_hash(), true, _scope, _init_func)
+{}
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
 component_bundle<Tag, Types...>::~component_bundle()
 {
-    stop();
+    if(m_is_active())
+        stop();
     DEBUG_PRINT_HERE("%s", "deleting components");
     invoke::destroy<Tag>(m_data);
 }
@@ -250,7 +256,7 @@ component_bundle<Tag, Types...>
 component_bundle<Tag, Types...>::clone(bool _store, scope::config _scope)
 {
     component_bundle tmp(*this);
-    tmp.m_store = _store;
+    tmp.m_store(_store);
     tmp.m_scope = _scope;
     return tmp;
 }
@@ -262,12 +268,12 @@ template <typename Tag, typename... Types>
 void
 component_bundle<Tag, Types...>::push()
 {
-    if(!m_is_pushed)
+    if(!m_is_pushed())
     {
         // reset the data
         invoke::reset<Tag>(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = true;
+        m_is_pushed(true);
         // insert node or find existing node
         invoke::push<Tag>(m_data, m_scope, m_hash);
     }
@@ -280,12 +286,12 @@ template <typename Tag, typename... Types>
 void
 component_bundle<Tag, Types...>::pop()
 {
-    if(m_is_pushed)
+    if(m_is_pushed())
     {
         // set the current node to the parent node
         invoke::pop<Tag>(m_data);
         // avoid pushing/popping when already pushed/popped
-        m_is_pushed = false;
+        m_is_pushed(false);
     }
 }
 
@@ -328,6 +334,7 @@ component_bundle<Tag, Types...>::start(mpl::lightweight, Args&&... args)
         return;
     assemble(*this);
     invoke::start<Tag>(m_data, std::forward<Args>(args)...);
+    m_is_active(true);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -342,6 +349,7 @@ component_bundle<Tag, Types...>::stop(mpl::lightweight, Args&&... args)
     invoke::stop<Tag>(m_data, std::forward<Args>(args)...);
     ++m_laps;
     derive(*this);
+    m_is_active(false);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -395,7 +403,7 @@ component_bundle<Tag, Types...>::start(Args&&... args)
         return;
 
     // push components into the call-stack
-    if(m_store)
+    if(m_store())
         push();
 
     // start components
@@ -416,7 +424,7 @@ component_bundle<Tag, Types...>::stop(Args&&... args)
     stop(mpl::lightweight{}, std::forward<Args>(args)...);
 
     // pop components off of the call-stack stack
-    if(m_store)
+    if(m_store())
         pop();
 }
 
@@ -545,6 +553,17 @@ component_bundle<Tag, Types...>::data() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
+template <typename T>
+void
+component_bundle<Tag, Types...>::set_scope(T* obj) const
+{
+    using PrefixOpT = operation::generic_operator<T, operation::set_scope<T>, Tag>;
+    PrefixOpT(obj, m_scope);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
 void
 component_bundle<Tag, Types...>::set_scope(scope::config val)
 {
@@ -561,9 +580,8 @@ template <typename T>
 void
 component_bundle<Tag, Types...>::set_prefix(T* obj) const
 {
-    using PrefixOpT =
-        operation::generic_operator<T, operation::set_prefix<T>, TIMEMORY_API>;
-    auto _key = get_hash_ids()->find(m_hash)->second;
+    using PrefixOpT = operation::generic_operator<T, operation::set_prefix<T>, Tag>;
+    auto _key       = get_hash_ids()->find(m_hash)->second;
     PrefixOpT(obj, m_hash, _key);
 }
 

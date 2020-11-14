@@ -24,9 +24,17 @@
 
 #pragma once
 
+#if defined(TIMEMORY_USE_STATISTICS)
+#    undef TIMEMORY_USE_STATISTICS
+#endif
+
 #define TIMEM_DEBUG
 #define TIMEMORY_DISABLE_BANNER
+#define TIMEMORY_DISABLE_STORE_ENVIRONMENT
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
+
+// disables unnecessary instantiations
+#define TIMEMORY_COMPILER_INSTRUMENTATION
 
 #include "timemory/macros.hpp"
 #include "timemory/mpl/types.hpp"
@@ -178,8 +186,8 @@ struct custom_base_printer
     using value_type = typename type::value_type;
     using base_type  = typename type::base_type;
 
-    template <typename Up                                        = value_type,
-              enable_if_t<!(std::is_same<Up, void>::value), int> = 0>
+    template <typename Up                                      = value_type,
+              enable_if_t<!std::is_same<Up, void>::value, int> = 0>
     explicit custom_base_printer(std::ostream& _os, const type& _obj, int32_t _rank,
                                  const std::string& _label)
     {
@@ -209,7 +217,7 @@ struct custom_base_printer
     }
 
     template <typename Up = value_type, typename... Args,
-              enable_if_t<(std::is_same<Up, void>::value), int> = 0>
+              enable_if_t<std::is_same<Up, void>::value, int> = 0>
     explicit custom_base_printer(std::ostream&, const type&, Args&&...)
     {}
 };
@@ -246,7 +254,7 @@ struct sample<component::papi_array_t>
     TIMEMORY_DEFAULT_OBJECT(sample)
 
     template <typename Up, typename... Args,
-              enable_if_t<(std::is_same<Up, this_type>::value), int> = 0>
+              enable_if_t<std::is_same<Up, this_type>::value, int> = 0>
     explicit sample(base_type& obj, Up, Args&&...)
     {
         obj.value        = type::record();

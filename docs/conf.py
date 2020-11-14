@@ -112,7 +112,7 @@ def copy_doxy_docs():
         os.path.join(_docdir, "Doxyfile.timemory"),
     )
     for t in [
-        "timem",
+        "timemory-timem",
         "timemory-run",
         "timemory-mpip",
         "timemory-ompt",
@@ -121,6 +121,7 @@ def copy_doxy_docs():
         "timemory-jump",
         "timemory-stubs",
         "kokkos-connector",
+        "timemory-compiler-instrument",
     ]:
         shutil.copyfile(
             os.path.join(_srcdir, "source", "tools", t, "README.md"),

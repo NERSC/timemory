@@ -45,7 +45,7 @@ generate(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum)
     std::string id   = property_t::enum_string();
     for(auto& itr : id)
         itr = tolower(itr);
-    _pyenum.value(id.c_str(), static_cast<TIMEMORY_NATIVE_COMPONENT>(property_t::value),
+    _pyenum.value(id.c_str(), static_cast<TIMEMORY_NATIVE_COMPONENT>(property_t{}()),
                   T::description().c_str());
 }
 //

@@ -79,7 +79,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -140,7 +141,7 @@ generate(const int64_t& nsize, std::vector<Tp>& sendbuf)
     sendbuf = allocate<Tp>(nsize);
 
     for(auto& itr : sendbuf)
-        itr = 0.0;
+        itr = static_cast<Tp>(0.0);
     std::mt19937 rng;
     rng.seed(54561434UL);
     auto dist = [&]() { return std::generate_canonical<Tp, 10>(rng); };
@@ -202,14 +203,14 @@ protected:
         tim::settings::json_output()  = true;
         tim::settings::mpi_thread()   = false;
         tim::dmp::initialize(_argc, _argv);
-        tim::timemory_init(_argc, _argv);
+        tim::timemory_init(&_argc, &_argv);
+        tim::settings::dart_output() = true;
+        tim::settings::dart_count()  = 1;
+        tim::settings::dart_type()   = "peak_rss";
 #if defined(TIMEMORY_USE_PAPI)
         cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
         cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
 #endif
-        tim::settings::dart_output() = true;
-        tim::settings::dart_count()  = 1;
-        tim::settings::banner()      = false;
     }
 
     static void TearDownTestSuite()
@@ -240,7 +241,8 @@ TEST_F(gotcha_tests, mpi_explicit)
     {
         auto fsendbuf = details::generate<float>(1000);
         auto frecvbuf = details::allreduce(fsendbuf);
-        fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
+        fsum +=
+            static_cast<float>(std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0));
 
         auto dsendbuf = details::generate<double>(1000);
         auto drecvbuf = details::allreduce(dsendbuf);
@@ -256,7 +258,8 @@ TEST_F(gotcha_tests, mpi_explicit)
         if(i == rank)
         {
             printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+            printf("[%i]> single-precision sum = %8.2f\n", rank,
+                   static_cast<double>(fsum));
             printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
         }
         tim::mpi::barrier();
@@ -288,7 +291,8 @@ TEST_F(gotcha_tests, mpi_macro)
     {
         auto fsendbuf = details::generate<float>(1000);
         auto frecvbuf = details::allreduce(fsendbuf);
-        fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
+        fsum +=
+            static_cast<float>(std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0));
 
         auto dsendbuf = details::generate<double>(1000);
         auto drecvbuf = details::allreduce(dsendbuf);
@@ -304,7 +308,8 @@ TEST_F(gotcha_tests, mpi_macro)
         if(i == rank)
         {
             printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+            printf("[%i]> single-precision sum = %8.2f\n", rank,
+                   static_cast<double>(fsum));
             printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
         }
         tim::mpi::barrier();
@@ -350,7 +355,8 @@ TEST_F(gotcha_tests, work_explicit)
         if(i == rank)
         {
             printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+            printf("[%i]> single-precision sum = %8.2f\n", rank,
+                   static_cast<double>(fsum));
             printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
         }
         tim::mpi::barrier();
@@ -394,7 +400,8 @@ TEST_F(gotcha_tests, work_macro)
             if(i == rank)
             {
                 printf("\n");
-                printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+                printf("[%i]> single-precision sum = %8.2f\n", rank,
+                       static_cast<double>(fsum));
                 printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
             }
             tim::mpi::barrier();
@@ -454,7 +461,8 @@ TEST_F(gotcha_tests, malloc_gotcha)
 
             details::generate<float>(1000, fsendbuf);
             details::allreduce(fsendbuf, frecvbuf);
-            fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
+            fsum += static_cast<float>(
+                std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0));
 
             details::generate<double>(1000, dsendbuf);
             details::allreduce(dsendbuf, drecvbuf);
@@ -478,7 +486,8 @@ TEST_F(gotcha_tests, malloc_gotcha)
         if(i == rank)
         {
             printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+            printf("[%i]> single-precision sum = %8.2f\n", rank,
+                   static_cast<double>(fsum));
             printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
         }
         tim::mpi::barrier();
@@ -756,7 +765,8 @@ TEST_F(gotcha_tests, member_functions)
         if(rank == 0)
         {
             printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+            printf("[%i]> single-precision sum = %8.2f\n", rank,
+                   static_cast<double>(fsum));
             printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
         }
 
@@ -773,7 +783,8 @@ TEST_F(gotcha_tests, member_functions)
         if(rank == 0)
         {
             printf("\n");
-            printf("[%i]> single-precision sum2 = %8.2f\n", rank, fsum2);
+            printf("[%i]> single-precision sum2 = %8.2f\n", rank,
+                   static_cast<double>(fsum2));
             printf("[%i]> double-precision sum2 = %8.2f\n", rank, dsum2);
         }
 
@@ -789,7 +800,8 @@ TEST_F(gotcha_tests, member_functions)
         if(i == rank)
         {
             printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+            printf("[%i]> single-precision sum = %8.2f\n", rank,
+                   static_cast<double>(fsum));
             printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
         }
         tim::mpi::barrier();
@@ -859,7 +871,8 @@ TEST_F(gotcha_tests, mpip)
         {
             auto fsendbuf = details::generate<float>(1000);
             auto frecvbuf = details::allreduce(fsendbuf);
-            fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
+            fsum += static_cast<float>(
+                std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0));
 
             auto dsendbuf = details::generate<double>(1000);
             auto drecvbuf = details::allreduce(dsendbuf);
@@ -876,7 +889,8 @@ TEST_F(gotcha_tests, mpip)
             if(i == rank)
             {
                 printf("\n");
-                printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+                printf("[%i]> single-precision sum = %8.2f\n", rank,
+                       static_cast<double>(fsum));
                 printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
             }
             tim::mpi::barrier();

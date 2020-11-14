@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/manager/definition.hpp
- * \brief The definitions for the types in manager
- */
-
 #pragma once
 
 #include "timemory/backends/process.hpp"
@@ -49,13 +44,11 @@
 //
 #    include "timemory/api.hpp"
 #    include "timemory/backends/threading.hpp"
-// #    include "timemory/config.hpp"
 #    include "timemory/mpl/policy.hpp"
 #    include "timemory/mpl/type_traits.hpp"
 #    include "timemory/operations/types/finalize/ctest_notes.hpp"
 #    include "timemory/settings/declaration.hpp"
 #    include "timemory/utility/macros.hpp"
-//
 
 #    include <algorithm>
 #    include <atomic>
@@ -113,9 +106,9 @@ manager::manager()
 #    if !defined(TIMEMORY_DISABLE_BANNER)
     if(_first && m_settings->get_banner())
         printf("#------------------------- tim::manager initialized "
-               "[id=%i][pid=%i] "
+               "[pid=%i] "
                "-------------------------#\n",
-               m_instance_count, process::get_id());
+               process::get_id());
 #    endif
 
     if(settings::cpu_affinity())
@@ -140,9 +133,9 @@ manager::~manager()
     if(_last && m_settings && m_settings->get_banner())
     {
         printf("#---------------------- tim::manager destroyed "
-               "[rank=%i][id=%i][pid=%i] "
+               "[rank=%i][pid=%i] "
                "----------------------#\n",
-               m_rank, m_instance_count, process::get_id());
+               m_rank, process::get_id());
     }
 #    endif
 }
@@ -321,7 +314,7 @@ manager::update_metadata_prefix()
     auto _settings = f_settings();
     if(!_settings)
         return;
-    auto _outp_prefix = _settings->get_output_prefix();
+    auto _outp_prefix = _settings->get_global_output_prefix();
     m_metadata_prefix = _outp_prefix;
     if(f_debug())
         PRINT_HERE("[rank=%i][id=%i] metadata prefix: '%s'", m_rank, m_instance_count,
@@ -424,10 +417,12 @@ manager::write_metadata(const char* context)
 
     auto fname = settings::compose_output_filename("metadata", "json", false, -1, false,
                                                    m_metadata_prefix);
-    consume_parameters(fname);
+    auto hname = settings::compose_output_filename("functions", "json", false, -1, false,
+                                                   m_metadata_prefix);
 
     if(f_verbose() > 0 || _banner || f_debug())
-        printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
+        printf("\n[metadata::%s]> Outputting '%s' and '%s'...\n", context, fname.c_str(),
+               hname.c_str());
 
     std::ofstream ofs(fname.c_str());
     if(ofs)
@@ -465,8 +460,53 @@ manager::write_metadata(const char* context)
         ofs << std::endl;
     else
         printf("[manager]> Warning! Error opening '%s'...\n", fname.c_str());
-
     ofs.close();
+
+    std::map<std::string, std::set<size_t>> _hashes;
+    if(m_hash_ids && m_hash_aliases)
+    {
+        for(const auto& itr : (*m_hash_aliases))
+        {
+            auto hitr = m_hash_ids->find(itr.second);
+            if(hitr != m_hash_ids->end())
+            {
+                _hashes[hitr->second].insert(itr.first);
+                _hashes[hitr->second].insert(hitr->first);
+            }
+        }
+        for(const auto& itr : (*m_hash_ids))
+            _hashes[itr.second].insert(itr.first);
+    }
+    if(_hashes.empty())
+        return;
+
+    std::ofstream hfs(hname.c_str());
+    if(hfs)
+    {
+        // ensure json write final block during destruction before the file is closed
+        using policy_type = policy::output_archive_t<manager>;
+        auto oa           = policy_type::get(hfs);
+        oa->setNextName("timemory");
+        oa->startNode();
+        {
+            oa->setNextName("functions");
+            oa->startNode();
+            // hash-keys
+            {
+                for(const auto& itr : _hashes)
+                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
+            }
+            //
+            oa->finishNode();
+        }
+        oa->finishNode();
+    }
+    if(hfs)
+        hfs << std::endl;
+    else
+        printf("[manager]> Warning! Error opening '%s'...\n", hname.c_str());
+
+    hfs.close();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -653,18 +693,27 @@ timemory_library_constructor()
     if(_preloaded)
         return;
 
+    static auto& _versions =
+        cereal::detail::StaticObject<cereal::detail::Versions>::getInstance();
+    static auto _settings = tim::settings::shared_instance<tim::api::native_tag>();
+    auto        _debug    = (_settings) ? _settings->get_debug() : false;
+    auto        _verbose  = (_settings) ? _settings->get_verbose() : 0;
+
     static thread_local bool _once = false;
     if(_once)
         return;
     _once = true;
 
-    auto _debug   = tim::settings::debug();
-    auto _verbose = tim::settings::verbose();
+    auto        _inst        = timemory_manager_master_instance();
+    static auto _dir         = tim::settings::output_path();
+    static auto _prefix      = tim::settings::output_prefix();
+    static auto _time_output = tim::settings::time_output();
+    static auto _time_format = tim::settings::time_format();
+    tim::consume_parameters(_dir, _prefix, _time_output, _time_format, _versions);
 
     if(_debug || _verbose > 3)
         printf("[%s]> initializing manager...\n", __FUNCTION__);
 
-    auto                     _inst   = timemory_manager_master_instance();
     static auto              _master = manager::master_instance();
     static thread_local auto _worker = manager::instance();
 
@@ -675,6 +724,8 @@ timemory_library_constructor()
 
     if(_worker == _master)
     {
+        // this will create a recursive-dynamic-library load situation
+        // since the timemory-config library depends on the manager library
         // std::atexit(tim::timemory_finalize);
     }
     else
@@ -689,7 +740,9 @@ timemory_library_constructor()
                 auto _manager = manager::instance();
                 if(_manager)
                 {
-                    std::cout << "Finalizing after signal: " << nsig << std::endl;
+                    std::cout << "Finalizing after signal: " << nsig << " :: "
+                              << signal_settings::str(static_cast<sys_signal>(nsig))
+                              << std::endl;
                     _manager->finalize();
                 }
             };

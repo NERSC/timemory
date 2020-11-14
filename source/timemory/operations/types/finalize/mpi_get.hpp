@@ -70,7 +70,8 @@ struct mpi_get<Type, true>
     basic_tree_vector_type& operator()(basic_tree_vector_type&);
 
     template <typename Archive>
-    Archive& operator()(Archive&);
+    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
+        Archive&);
 
     // this serializes a type (src) and adds it to dst, if !collapse_processes
     // then it uses the adder to combine the data
@@ -425,7 +426,7 @@ mpi_get<Type, true>::operator()(basic_tree_vector_type& bt)
 //
 template <typename Type>
 template <typename Archive>
-Archive&
+enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
 mpi_get<Type, true>::operator()(Archive& ar)
 {
     if(!m_storage)

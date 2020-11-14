@@ -52,7 +52,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 // this function consumes approximately "n" milliseconds of real time
@@ -100,7 +101,7 @@ get_rng(size_t initial_seed = 0)
 }
 
 // random integer
-template <typename T, std::enable_if_t<(std::is_integral<T>::value), int> = 0>
+template <typename T, std::enable_if_t<std::is_integral<T>::value, int> = 0>
 T
 get_random_value(T beg, T end)
 {
@@ -117,7 +118,7 @@ struct identity
 template <typename T>
 using identity_t = typename identity<T>::type;
 
-template <typename T, std::enable_if_t<(std::is_floating_point<T>::value), int> = 0>
+template <typename T, std::enable_if_t<std::is_floating_point<T>::value, int> = 0>
 T
 get_random_value(identity_t<T> beg, T end)
 {

@@ -94,7 +94,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 //--------------------------------------------------------------------------------------//
 // shorthand for check if type is an intrinsic type
@@ -182,7 +183,7 @@ TEST_F(aligned_allocator_tests, m128)
     float init = 0.0;
     std::generate(factors.begin(), factors.end(), [&] {
         float tmp = init;
-        init += 1.0;
+        init += 1.0f;
         return tmp;
     });
 
@@ -190,7 +191,7 @@ TEST_F(aligned_allocator_tests, m128)
     init = 4.0;
     std::generate(solution.begin(), solution.end(), [&] {
         float tmp = init;
-        init += 2.0;
+        init += 2.0f;
         return tmp;
     });
 
@@ -228,7 +229,7 @@ TEST_F(aligned_allocator_tests, m128)
 
         // add 1.0 to all the factors
         for(auto& itr : factors)
-            itr += 1.0;
+            itr += 1.0f;
 
         // erase the previous data so we can print the whole vector in next iteration
         lhs.erase(lhs.begin());

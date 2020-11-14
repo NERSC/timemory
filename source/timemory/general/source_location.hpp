@@ -40,7 +40,9 @@
 namespace tim
 {
 //======================================================================================//
-
+/// \class tim::source_location
+/// \brief Provides source location information and variadic joining of source location
+/// tags
 class source_location
 {
 public:
@@ -117,7 +119,7 @@ public:
             return *this;
         }
 
-        template <typename... ArgsT, enable_if_t<(sizeof...(ArgsT) == 0), int> = 0>
+        template <typename... ArgsT, enable_if_t<sizeof...(ArgsT) == 0, int> = 0>
         captured& set(const source_location& obj, ArgsT&&...)
         {
             m_result = result_type(obj.m_prefix, add_hash_id(obj.m_prefix));
@@ -300,11 +302,11 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    const captured& get_captured(const char*) { return m_captured; }
+    const captured& get_captured(const char*) const { return m_captured; }
 
     //----------------------------------------------------------------------------------//
     //
-    const captured& get_captured(const char*, const char*) { return m_captured; }
+    const captured& get_captured(const char*, const char*) const { return m_captured; }
 
 private:
     mode        m_mode;
@@ -318,5 +320,33 @@ private:
                                        : join_type::join('/', m_prefix.c_str(), _arg);
     }
 };
-
+//
+namespace internal
+{
+namespace
+{
+// anonymous namespace to make sure the static instance is local to each .cpp
+// making it static also helps ensure this
+template <size_t, size_t, typename... Args>
+static inline auto&
+get_static_source_location(Args&&... args)
+{
+    static source_location _instance(std::forward<Args>(args)...);
+    return _instance;
+}
+}  // namespace
+}  // namespace internal
+//
+// static function should be local to each .cpp
+//
+// LineN should be '__LINE__': this ensures that each use in a source file is unique
+// CountN should be '__COUNTER__': this ensures that each source file has unique integer
+template <size_t LineN, size_t CountN, typename... Args>
+static inline auto&
+get_static_source_location(Args&&... args)
+{
+    return internal::get_static_source_location<LineN, CountN>(
+        std::forward<Args>(args)...);
+}
+//
 }  // namespace tim

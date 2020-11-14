@@ -42,6 +42,9 @@
 #include "timemory/runtime/properties.hpp"
 #include "timemory/storage/definition.hpp"
 #include "timemory/variadic/definition.hpp"
+#include "timemory/variadic/types.hpp"
 
-TIMEMORY_EXTERN_BUNDLE(TIMEMORY_API, TIMEMORY_MINIMAL_TUPLE_TYPES,
+TIMEMORY_EXTERN_BUNDLE(component_bundle, TIMEMORY_API, TIMEMORY_MINIMAL_TUPLE_TYPES,
+                       TIMEMORY_MINIMAL_LIST_TYPES)
+TIMEMORY_EXTERN_BUNDLE(auto_bundle, TIMEMORY_API, TIMEMORY_MINIMAL_TUPLE_TYPES,
                        TIMEMORY_MINIMAL_LIST_TYPES)

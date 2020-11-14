@@ -111,11 +111,11 @@ using string = tim::apply<std::string>;
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_AUTO_TYPE(TYPE) typename TYPE::auto_type
+#    define TIMEMORY_AUTO_TYPE(TYPE) ::tim::concepts::auto_type_t<TYPE>
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_COMP_TYPE(TYPE) typename TYPE::component_type
+#    define TIMEMORY_COMP_TYPE(TYPE) ::tim::concepts::component_type_t<TYPE>
 
 //======================================================================================//
 //
@@ -246,7 +246,7 @@ using string = tim::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER_TYPE_APPLY(ID, TYPE, FUNC, ...)                             \
-        _TIM_VARIABLE(ID).TYPE_apply<TYPE>(FUNC, __VA_ARGS__)
+        _TIM_VARIABLE(ID).type_apply<TYPE>(FUNC, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
@@ -255,7 +255,7 @@ using string = tim::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER_TYPE_APPLY0(ID, TYPE, FUNC)                                 \
-        _TIM_VARIABLE(ID).TYPE_apply<TYPE>(FUNC)
+        _TIM_VARIABLE(ID).type_apply<TYPE>(FUNC)
 
 //--------------------------------------------------------------------------------------//
 

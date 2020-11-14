@@ -36,8 +36,6 @@
 #    define TIMEMORY_KOKKOSP_POSTFIX TIMEMORY_VISIBILITY("default")
 #endif
 
-TIMEMORY_DEFINE_NS_API(project, kokkosp)
-
 struct SpaceHandle
 {
     char name[64];
@@ -177,7 +175,7 @@ cleanup()
 //--------------------------------------------------------------------------------------//
 
 using memory_tracker = component::data_tracker<int64_t, project::kokkosp>;
-using kokkos_bundle  = component::user_bundle<0, project::kokkosp>;
+using kokkos_bundle  = component::user_kokkosp_bundle;
 
 template <typename... Tail>
 using profiler_t = tim::component_bundle_t<project::kokkosp, memory_tracker, Tail...>;

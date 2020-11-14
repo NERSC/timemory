@@ -53,6 +53,13 @@
 
 //======================================================================================//
 
+#if !defined(TIMEMORY_FOLD_EXPANSION)
+#    define TIMEMORY_FOLD_EXPANSION(TYPE, ...)                                           \
+        ::std::initializer_list<TYPE> { (::tim::consume_parameters(), __VA_ARGS__)... }
+#endif
+
+//======================================================================================//
+
 #if !defined(TIMEMORY_RETURN_FOLD_EXPRESSION)
 #    define TIMEMORY_RETURN_FOLD_EXPRESSION(...)                                         \
         ::std::make_tuple((::tim::consume_parameters(), __VA_ARGS__)...)
@@ -89,7 +96,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_ALWAYS_INLINE) && !defined(_WINDOWS)
-#    define TIMEMORY_ALWAYS_INLINE [[gnu::always_inline]]
+#    define TIMEMORY_ALWAYS_INLINE [[gnu::always_inline]] inline
 #else
 #    define TIMEMORY_ALWAYS_INLINE inline
 #endif
@@ -631,7 +638,7 @@ private:
 
     // random integer
     template <typename T, typename R = std::mt19937_64,
-              std::enable_if_t<(std::is_integral<T>::value), int> = 0>
+              std::enable_if_t<std::is_integral<T>::value, int> = 0>
     static inline T get_random_value(T beg = 0, T end = std::numeric_limits<T>::max())
     {
         std::uniform_int_distribution<T> dist(beg, end);
@@ -790,3 +797,36 @@ struct tuple_element<Idx, tim::type_list<Types...>>
     using type = typename tim::type_list_element<Idx, tim::type_list<Types...>>::type;
 };
 }  // namespace std
+
+//--------------------------------------------------------------------------------------//
+
+namespace cereal
+{
+namespace detail
+{
+template <typename Tp>
+struct StaticVersion;
+}  // namespace detail
+}  // namespace cereal
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_SET_CLASS_VERSION)
+#    define TIMEMORY_SET_CLASS_VERSION(VERSION_NUMBER, ...)                              \
+        namespace cereal                                                                 \
+        {                                                                                \
+        namespace detail                                                                 \
+        {                                                                                \
+        template <>                                                                      \
+        struct StaticVersion<__VA_ARGS__>                                                \
+        {                                                                                \
+            static constexpr std::int32_t value = VERSION_NUMBER;                        \
+        };                                                                               \
+        }                                                                                \
+        }
+#endif
+
+#if !defined(TIMEMORY_GET_CLASS_VERSION)
+#    define TIMEMORY_GET_CLASS_VERSION(...)                                              \
+        ::cereal::detail::StaticVersion<__VA_ARGS__>::value
+#endif

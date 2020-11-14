@@ -146,6 +146,9 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::caliper_config
+/// \brief Component which provides Caliper `cali::ConfigManager`.
+///
 struct caliper_config
 : public base<caliper_config, void>
 , public policy::instance_tracker<caliper_config, false>
@@ -281,6 +284,9 @@ struct caliper_config
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::caliper_marker
+/// \brief Standard marker for the Caliper Performance Analysis Toolbox
+///
 struct caliper_marker
 : public base<caliper_marker, void>
 , public caliper_common
@@ -357,6 +363,9 @@ public:
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::caliper_loop_marker
+/// \brief Loop marker for the Caliper Performance Analysis Toolbox
+///
 struct caliper_loop_marker
 : public base<caliper_loop_marker, void>
 , public caliper_common
@@ -394,7 +403,7 @@ struct caliper_loop_marker
         cali_end(m_id);
     }
 
-    template <typename T, enable_if_t<(std::is_integral<T>::value), int> = 0>
+    template <typename T, enable_if_t<std::is_integral<T>::value, int> = 0>
     void mark_begin(T itr)
     {
         DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) itr);
@@ -402,20 +411,20 @@ struct caliper_loop_marker
         cali_begin_int(m_id, m_itr++);
     }
 
-    template <typename T, enable_if_t<(std::is_integral<T>::value), int> = 0>
+    template <typename T, enable_if_t<std::is_integral<T>::value, int> = 0>
     void mark_end(T)
     {
         DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) m_itr);
         cali_end(m_id);
     }
 
-    template <typename T, enable_if_t<(std::is_integral<T>::value), int> = 0>
+    template <typename T, enable_if_t<std::is_integral<T>::value, int> = 0>
     tim::scope::destructor record(T itr)
     {
         DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) itr);
         m_itr = itr;
         cali_begin_int(m_id, m_itr++);
-        return tim::scope::destructor([&]() { cali_end(m_id); });
+        return tim::scope::destructor([=]() { cali_end(m_id); });
     }
 
     void set_prefix(const char* _prefix) { m_prefix = _prefix; }

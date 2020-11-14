@@ -19,8 +19,9 @@ add_subdirectory(ex-derived)
 add_subdirectory(ex-optional)
 add_subdirectory(ex-cxx-basic)
 add_subdirectory(ex-cxx-tuple)
-add_subdirectory(ex-cxx-overhead)
 add_subdirectory(ex-statistics)
+add_subdirectory(ex-cxx-overhead)
+add_subdirectory(ex-compiler-instrument)
 
 # external package related
 add_subdirectory(ex-caliper)

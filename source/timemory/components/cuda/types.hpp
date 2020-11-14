@@ -143,7 +143,7 @@ namespace trait
 template <>
 struct data<component::cuda_event>
 {
-    using value_type = float;
+    using type = float;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -151,7 +151,7 @@ struct data<component::cuda_event>
 template <>
 struct data<component::cuda_profiler>
 {
-    using value_type = void;
+    using type = void;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -159,7 +159,7 @@ struct data<component::cuda_profiler>
 template <>
 struct data<component::nvtx_marker>
 {
-    using value_type = void;
+    using type = void;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -167,8 +167,7 @@ struct data<component::nvtx_marker>
 template <>
 struct collects_data<component::cuda_event>
 {
-    using type                  = component::cuda_event;
-    using value_type            = float;
+    using type                  = float;
     static constexpr bool value = is_available<component::cuda_event>::value;
 };
 //
@@ -177,8 +176,7 @@ struct collects_data<component::cuda_event>
 template <>
 struct collects_data<component::cuda_profiler>
 {
-    using type                  = component::cuda_profiler;
-    using value_type            = void;
+    using type                  = void;
     static constexpr bool value = false;
 };
 //
@@ -187,8 +185,7 @@ struct collects_data<component::cuda_profiler>
 template <>
 struct collects_data<component::nvtx_marker>
 {
-    using type                  = component::nvtx_marker;
-    using value_type            = void;
+    using type                  = void;
     static constexpr bool value = false;
 };
 //

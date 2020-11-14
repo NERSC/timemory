@@ -29,11 +29,9 @@ Plotting routines for gperf
 
 from __future__ import absolute_import
 from __future__ import division
-import os
-import imp
+
 import sys
 import warnings
-import importlib
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
@@ -47,9 +45,9 @@ __status__ = "Development"
 
 try:
     from .utils import *
-    from . import utils
-    from . import cpu_profiler
-    from . import heap_profiler
+    from . import utils as utils
+    from . import cpu_profiler as cpu_profiler
+    from . import heap_profiler as heap_profiler
 
     # __all__ = ['utils', 'cpu_profiler', 'heap_profiler']
 

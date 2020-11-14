@@ -1,0 +1,26 @@
+#!/bin/bash -e
+#
+# NOTE: add '--mpi' after @PROJECT_BINARY_DIR@/timemory-run to applications built with MPI
+#
+TEST_NAME=$(basename ${BASH_SOURCE[0]})
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
+rm -rf ${TIMEMORY_OUTPUT_PATH}
+
+# add path to libtimemory to LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
+
+# simple binary re-write. only uses wall_clock for instrumentation
+@PROJECT_BINARY_DIR@/timemory-run -o @COMMAND@.inst -I 'instrumentation_tests' -- @COMMAND@
+
+# run
+@COMMAND@.inst
+
+# ensure that env doesn't override
+unset TIMEMORY_TRACE_COMPONENTS
+unset TIMEMORY_GLOBAL_COMPONENTS
+
+# binary rewrite but uses wall_clock cpu_util and peak rss for instrumentation
+@PROJECT_BINARY_DIR@/timemory-run -d wall_clock cpu_util peak_rss -I 'instrumentation_tests' -o @COMMAND@.inst -- @COMMAND@
+
+# run
+@COMMAND@.inst

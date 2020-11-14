@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/variadic/functional.hpp"
+
 #include "gtest/gtest.h"
 
 #include <cassert>
@@ -36,12 +40,6 @@
 #include <unordered_map>
 #include <vector>
 
-#define TIMEMORY_STRICT_VARIADIC_CONCAT
-
-#include "timemory/timemory.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/variadic/functional.hpp"
-
 using namespace tim::component;
 
 //--------------------------------------------------------------------------------------//
@@ -54,7 +52,8 @@ namespace details
 inline std::string
 get_test_name()
 {
-    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
 //--------------------------------------------------------------------------------------//

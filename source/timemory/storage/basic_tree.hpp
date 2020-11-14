@@ -29,6 +29,7 @@
 #include "timemory/utility/types.hpp"
 
 #include <iterator>
+#include <set>
 #include <vector>
 
 namespace tim
@@ -42,12 +43,14 @@ struct basic_tree
     using this_type     = basic_tree<Tp>;
     using value_type    = Tp;
     using child_type    = this_type;
-    using children_type = std::vector<child_type>;
+    using child_pointer = std::shared_ptr<child_type>;
+    using children_type = std::vector<child_pointer>;
+    using children_base = std::vector<child_type>;
 
     TIMEMORY_DEFAULT_OBJECT(basic_tree)
 
     template <typename GraphT, typename ItrT>
-    this_type& operator()(GraphT g, ItrT root)
+    this_type& operator()(const GraphT& g, ItrT root)
     {
         using iterator_t = typename GraphT::sibling_iterator;
 
@@ -64,7 +67,8 @@ struct basic_tree
                 {
                     m_value.exclusive().data() -= itr->data();
                     m_value.exclusive().stats() -= itr->stats();
-                    m_children.push_back(child_type{}(g, itr));
+                    m_children.push_back(std::make_shared<child_type>());
+                    m_children.back()->operator()(g, itr);
                 }
                 else
                 {
@@ -73,7 +77,10 @@ struct basic_tree
                     for(auto ditr = _dbegin; ditr != _dend; ++ditr)
                     {
                         if(!ditr->is_dummy())
-                            m_children.push_back(child_type{}(g, ditr));
+                        {
+                            m_children.push_back(std::make_shared<child_type>());
+                            m_children.back()->operator()(g, ditr);
+                        }
                     }
                 }
             }
@@ -99,21 +106,45 @@ struct basic_tree
         {
             m_value += rhs.m_value;
         }
-
-        for(auto& ritr : rhs.m_children)
+        if(false)
         {
-            bool found = false;
-            for(auto& itr : m_children)
+            for(auto& ritr : rhs.m_children)
+                m_children.insert(m_children.end(), ritr);
+        }
+        else
+        {
+            std::set<size_t> found{};
+            auto nitr = std::min<size_t>(m_children.size(), rhs.m_children.size());
+            // add identical entries
+            for(size_t i = 0; i < nitr; ++i)
             {
-                if(itr == ritr)
+                if((*m_children.at(i)) == (*rhs.m_children.at(i)))
                 {
-                    found = true;
-                    itr += ritr;
-                    break;
+                    found.insert(i);
+                    (*m_children.at(i)) += (*rhs.m_children.at(i));
                 }
             }
-            if(!found)
-                m_children.insert(m_children.end(), ritr);
+            // add to first matching entry
+            for(size_t i = 0; i < rhs.m_children.size(); ++i)
+            {
+                if(found.find(i) != found.end())
+                    continue;
+                for(size_t j = 0; j < m_children.size(); ++j)
+                {
+                    if((*m_children.at(j)) == (*rhs.m_children.at(i)))
+                    {
+                        found.insert(i);
+                        (*m_children.at(j)) += (*rhs.m_children.at(i));
+                    }
+                }
+            }
+            // append to end if not found anywhere
+            for(size_t i = 0; i < rhs.m_children.size(); ++i)
+            {
+                if(found.find(i) != found.end())
+                    continue;
+                m_children.insert(m_children.end(), rhs.m_children.at(i));
+            }
         }
         return *this;
     }
@@ -125,19 +156,30 @@ struct basic_tree
             m_value -= rhs.m_value;
         }
 
-        for(auto& ritr : rhs.m_children)
+        std::set<size_t> found{};
+        auto nitr = std::min<size_t>(m_children.size(), rhs.m_children.size());
+        // add identical entries
+        for(size_t i = 0; i < nitr; ++i)
         {
-            bool found = false;
-            for(auto& itr : m_children)
+            if((*m_children.at(i)) == (*rhs.m_children.at(i)))
             {
-                if(itr == ritr)
+                found.insert(i);
+                m_children.at(i) -= rhs.m_children.at(i);
+            }
+        }
+        // add to first matching entry
+        for(size_t i = 0; i < rhs.m_children.size(); ++i)
+        {
+            if(found.find(i) != found.end())
+                continue;
+            for(size_t j = 0; j < m_children.size(); ++j)
+            {
+                if((*m_children.at(j)) == (*rhs.m_children.at(i)))
                 {
-                    found = true;
-                    itr -= ritr;
+                    found.insert(i);
+                    m_children.at(j) -= rhs.m_children.at(i);
                 }
             }
-            if(!found)
-                m_children.insert(m_children.end(), ritr);
         }
         return *this;
     }
@@ -145,13 +187,21 @@ struct basic_tree
     template <typename Archive>
     void save(Archive& ar, const unsigned int) const
     {
-        ar(cereal::make_nvp("node", m_value), cereal::make_nvp("children", m_children));
+        // this is for backward compatiblity
+        children_base _children{};
+        for(const auto& itr : m_children)
+            _children.push_back(*itr.get());
+        ar(cereal::make_nvp("node", m_value), cereal::make_nvp("children", _children));
     }
 
     template <typename Archive>
     void load(Archive& ar, const unsigned int)
     {
-        ar(cereal::make_nvp("node", m_value), cereal::make_nvp("children", m_children));
+        // this is for backward compatiblity
+        children_base _children{};
+        ar(cereal::make_nvp("node", m_value), cereal::make_nvp("children", _children));
+        for(auto&& itr : _children)
+            m_children.emplace_back(std::make_shared<child_type>(std::move(itr)));
     }
 
     auto& get_value() { return m_value; }

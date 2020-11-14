@@ -25,9 +25,6 @@
 
 /** \file timemory/variadic/component_hybrid.hpp
  * \headerfile variadic/component_hybrid.hpp "timemory/variadic/component_hybrid.hpp"
- * This is the C++ class that bundles together components and enables
- * operation on the components as a single entity
- *
  */
 
 #pragma once
@@ -54,8 +51,13 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
+/// \class component_hybrid<CompT, CompL>
+/// \tparam CompT a component_tuple specification
+/// \tparam CompL a component_list specification
+///
+///  \deprecated See \ref tim::component_bundle
 template <typename CompTuple, typename CompList>
-class component_hybrid : public concepts::hybrid_wrapper
+class component_hybrid : public concepts::mixed_wrapper
 {
     static_assert((concepts::is_stack_wrapper<CompTuple>::value &&
                    concepts::is_heap_wrapper<CompList>::value),
@@ -89,7 +91,6 @@ public:
     using auto_type      = auto_hybrid<tuple_t, list_t>;
     using type = component_hybrid<typename tuple_t::type, typename list_t::type>;
 
-    static constexpr bool is_component = false;
     static constexpr bool has_gotcha_v = (tuple_t::has_gotcha_v || list_t::has_gotcha_v);
     static constexpr bool has_user_bundle_v =
         (tuple_t::has_user_bundle_v || list_t::has_user_bundle_v);
@@ -547,14 +548,14 @@ public:
     //  get access to a type
     //
     template <typename Tp,
-              enable_if_t<(is_one_of<Tp, tuple_type_list>::value == true), int> = 0>
+              enable_if_t<is_one_of<Tp, tuple_type_list>::value == true, int> = 0>
     auto get() -> decltype(std::declval<tuple_t>().template get<Tp>())
     {
         return m_tuple.template get<Tp>();
     }
 
     template <typename Tp,
-              enable_if_t<(is_one_of<Tp, list_type_list>::value == true), int> = 0>
+              enable_if_t<is_one_of<Tp, list_type_list>::value == true, int> = 0>
     auto get() -> decltype(std::declval<list_t>().template get<Tp>())
     {
         return m_list.template get<Tp>();
@@ -571,13 +572,13 @@ public:
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
     /// with older compilers
-    template <typename T, enable_if_t<(is_one_of<T, tuple_type_list>::value), int> = 0>
+    template <typename T, enable_if_t<is_one_of<T, tuple_type_list>::value, int> = 0>
     auto get_component()
     {
         return m_tuple.template get_component<T>();
     }
 
-    template <typename T, enable_if_t<(is_one_of<T, list_type_list>::value), long> = 0>
+    template <typename T, enable_if_t<is_one_of<T, list_type_list>::value, long> = 0>
     auto get_component()
     {
         return m_list.template get_component<T>();
@@ -600,24 +601,24 @@ public:
     //  apply a member function to a type
     //
     template <typename Tp, typename Func, typename... Args,
-              enable_if_t<(is_one_of<Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<!(is_one_of<Tp, list_type_list>::value), int> = 0>
+              enable_if_t<is_one_of<Tp, tuple_type_list>::value, int> = 0,
+              enable_if_t<!is_one_of<Tp, list_type_list>::value, int> = 0>
     void type_apply(Func&& _func, Args&&... args)
     {
         m_tuple.template type_apply<Tp>(_func, std::forward<Args>(args)...);
     }
 
     template <typename Tp, typename Func, typename... Args,
-              enable_if_t<!(is_one_of<Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<(is_one_of<Tp, list_type_list>::value), int>   = 0>
+              enable_if_t<!is_one_of<Tp, tuple_type_list>::value, int> = 0,
+              enable_if_t<is_one_of<Tp, list_type_list>::value, int>   = 0>
     void type_apply(Func&& _func, Args&&... args)
     {
         m_list.template type_apply<Tp>(_func, std::forward<Args>(args)...);
     }
 
     template <typename Tp, typename Func, typename... Args,
-              enable_if_t<!(is_one_of<Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<!(is_one_of<Tp, list_type_list>::value), int>  = 0>
+              enable_if_t<!is_one_of<Tp, tuple_type_list>::value, int> = 0,
+              enable_if_t<!is_one_of<Tp, list_type_list>::value, int>  = 0>
     void type_apply(Func&&, Args&&...)
     {}
 

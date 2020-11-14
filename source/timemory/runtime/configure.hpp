@@ -32,17 +32,20 @@
 #pragma once
 
 #include "timemory/enum.h"
+#include "timemory/runtime/enumerate.hpp"
 #include "timemory/runtime/types.hpp"
 
 #include <initializer_list>
 #include <string>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 namespace tim
 {
 //======================================================================================//
 
-template <typename Bundle, typename EnumT = int, typename... Args>
+template <typename Bundle, typename EnumT, typename... Args>
 void
 configure(std::initializer_list<EnumT> components, Args&&... args)
 {
@@ -84,11 +87,12 @@ configure(const std::string& components, Args&&... args)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Bundle, template <typename, typename...> class Container,
-          typename Intp, typename... ExtraArgs, typename... Args,
-          typename std::enable_if<(std::is_integral<Intp>::value ||
-                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
-                                  int>::type>
+template <
+    typename Bundle, template <typename, typename...> class Container, typename Intp,
+    typename... ExtraArgs, typename... Args,
+    typename std::enable_if<std::is_integral<Intp>::value ||
+                                std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value,
+                            int>::type>
 void
 configure(const Container<Intp, ExtraArgs...>& components, Args&&... args)
 {

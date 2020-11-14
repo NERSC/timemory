@@ -1,0 +1,16 @@
+#!/bin/bash -e
+#
+# NOTE: remove '--mpi' after @PROJECT_BINARY_DIR@/timemory-run if applications built without MPI
+#
+TEST_NAME=$(basename ${BASH_SOURCE[0]})
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
+rm -rf ${TIMEMORY_OUTPUT_PATH}
+
+# add path to custom lib in LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
+
+# instrument using custom dynamic instrumentation library
+@PROJECT_BINARY_DIR@/timemory-run --load libcustom_dynamic_instr -o @COMMAND@.inst -- @COMMAND@
+
+# run the instrumented binary
+@LAUNCH@ @COMMAND@.inst

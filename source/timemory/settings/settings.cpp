@@ -59,6 +59,26 @@ settings::serialize_settings(Archive& ar, settings& _obj)
     ar(cereal::make_nvp("settings", _obj));
 }
 //
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_INLINE
+std::shared_ptr<settings>
+settings::shared_instance()
+{
+    static auto _instance = shared_instance<project::timemory>();
+    return _instance;
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_INLINE
+settings*
+settings::instance()
+{
+    static auto _instance = shared_instance();
+    return _instance.get();
+}
+//
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
@@ -141,8 +161,8 @@ TIMEMORY_SETTINGS_INLINE
 std::string
 settings::get_global_input_prefix()
 {
-    static auto& _dir    = input_path();
-    static auto& _prefix = input_prefix();
+    auto _dir    = input_path();
+    auto _prefix = input_prefix();
 
     return filepath::osrepr(_dir + std::string("/") + _prefix);
 }
@@ -153,10 +173,10 @@ TIMEMORY_SETTINGS_INLINE
 std::string
 settings::get_global_output_prefix(bool fake)
 {
-    static auto& _dir         = output_path();
-    static auto& _prefix      = output_prefix();
-    static auto& _time_output = time_output();
-    static auto& _time_format = time_format();
+    auto _dir         = output_path();
+    auto _prefix      = output_prefix();
+    auto _time_output = time_output();
+    auto _time_format = time_format();
 
     if(_time_output)
     {
@@ -310,11 +330,22 @@ settings::parse(settings* _settings)
 //----------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
+settings::settings()
+: m_data(data_type{})
+{
+    // PRINT_HERE("%s", "");
+    initialize();
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_INLINE
 settings::settings(const settings& rhs)
 : m_data(data_type{})
 , m_command_line(rhs.m_command_line)
 , m_environment(rhs.m_environment)
 {
+    // PRINT_HERE("%s", "");
     for(auto& itr : rhs.m_data)
         m_data.insert({ itr.first, itr.second->clone() });
 }
@@ -325,6 +356,7 @@ TIMEMORY_SETTINGS_INLINE
 settings&
 settings::operator=(const settings& rhs)
 {
+    // PRINT_HERE("%s", "");
     if(this == &rhs)
         return *this;
 
@@ -341,6 +373,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_core()
 {
+    // PRINT_HERE("%s", "");
     auto homedir = get_env<string_t>("HOME");
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
@@ -396,6 +429,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_components()
 {
+    // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, global_components, "TIMEMORY_GLOBAL_COMPONENTS",
         "A specification of components which is used by multiple variadic bundlers and "
@@ -440,6 +474,13 @@ settings::initialize_components()
         "", strvector_t({ "--timemory-profiler-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
+        string_t, kokkos_components, "TIMEMORY_KOKKOS_COMPONENTS",
+        "A specification of components which will be used by the interfaces which are "
+        "designed for kokkos profiling. Priority: TRACE_COMPONENTS -> "
+        "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
+        "", strvector_t({ "--timemory-kokkos-components" }));
+
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, components, "TIMEMORY_COMPONENTS",
         "A specification of components which is used by the library interface. This "
         "falls back to TIMEMORY_GLOBAL_COMPONENTS.",
@@ -452,6 +493,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_io()
 {
+    // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(bool, auto_output, "TIMEMORY_AUTO_OUTPUT",
                                       "Generate output at application termination", true,
                                       strvector_t({ "--timemory-auto-output" }), -1, 1);
@@ -541,6 +583,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_format()
 {
+    // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, time_format, "TIMEMORY_TIME_FORMAT",
         "Customize the folder generation when TIMEMORY_TIME_OUTPUT is enabled (see also: "
@@ -611,6 +654,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_parallel()
 {
+    // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         size_t, max_thread_bookmarks, "TIMEMORY_MAX_THREAD_BOOKMARKS",
         "Maximum number of times a worker thread bookmarks the call-graph location w.r.t."
@@ -685,6 +729,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_tpls()
 {
+    // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, papi_multiplexing, "TIMEMORY_PAPI_MULTIPLEXING",
         "Enable multiplexing when using PAPI", true,
@@ -763,6 +808,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_roofline()
 {
+    // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, roofline_mode, "TIMEMORY_ROOFLINE_MODE",
         "Configure the roofline collection mode. Options: 'op' 'ai'.", "op",
@@ -820,6 +866,7 @@ settings::initialize_roofline()
 TIMEMORY_SETTINGS_INLINE void
 settings::initialize_miscellaneous()
 {
+    // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, add_secondary, "TIMEMORY_ADD_SECONDARY",
         "Enable/disable components adding secondary (child) entries when available. E.g. "
@@ -877,6 +924,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_ert()
 {
+    // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_IMPL(uint64_t, ert_num_threads, "TIMEMORY_ERT_NUM_THREADS",
                                   "Number of threads to use when running ERT", 0);
 
@@ -942,6 +990,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_dart()
 {
+    // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, dart_type, "TIMEMORY_DART_TYPE",
         "Only echo this measurement type (see also: TIMEMORY_DART_OUTPUT)", "",
@@ -964,6 +1013,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize()
 {
+    // PRINT_HERE("%s", "");
     initialize_core();
     initialize_components();
     initialize_io();

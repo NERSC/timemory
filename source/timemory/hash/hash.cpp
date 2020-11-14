@@ -22,5 +22,5 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/hash/extern.hpp"
 #include "timemory/hash/definition.hpp"
+#include "timemory/hash/extern.hpp"

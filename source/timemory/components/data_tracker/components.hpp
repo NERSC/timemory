@@ -30,11 +30,16 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/data_tracker/types.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 
-#include "timemory/components/data_tracker/types.hpp"
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+#    include "pybind11/cast.h"
+#    include "pybind11/pybind11.h"
+#    include "pybind11/stl.h"
+#endif
 
 #include <cassert>
 #include <cstdint>
@@ -50,35 +55,38 @@ namespace tim
 {
 namespace component
 {
-/// \struct component::data_tracker
+/// \struct tim::component::data_tracker
 /// \brief This component is provided to facilitate data tracking. The first
 /// template parameter is the type of data to be tracked, the second is a custom
 /// tag, the third is the implementation for how to track the data.
 /// Usage:
+/// \code{.cpp}
+/// struct iteration_count_tag;
 ///
-///         struct iteration_count_tag;
+/// using tracker_type = data_tracker<uint64_t, iteration_count_tag>;
+/// using tuple_t      = tim::auto_tuple<wall_clock, tracker_type>;
 ///
-///         using tracker_type = data_tracker<uint64_t, iteration_count_tag>;
-///         using tuple_t = tim::auto_tuple<wall_clock, data_tracker<uint64_t>>;
+/// double err             = std::numeric_limits<double>::max();
+/// const double tolerance = 1.0e-6;
 ///
-///         double err             = std::numeric_limits<double>::max();
-///         const double tolerance = 1.0e-6;
+/// tuple_t t("iteration_time");
 ///
-///         tuple_t t("iteration_time");
+/// while(err > tolerance)
+/// {
+///     t.store(std::plus<uint64_t>{}, 1);
+///     // ... do something ...
+/// }
+/// \endcode
 ///
-///         while(err > tolerance)
-///         {
-///             t.store(std::plus<uint64_t>{}, 1);
-///             // ... do something ...
-///         }
-///
-template <typename InpT, typename Tag, typename Handler, typename StoreT>
-struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, StoreT>
+template <typename InpT, typename Tag>
+struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
 {
-    using value_type      = StoreT;
-    using this_type       = data_tracker<InpT, Tag, Handler, StoreT>;
+    friend struct data::handler<InpT, Tag>;
+
+    using value_type      = InpT;
+    using this_type       = data_tracker<InpT, Tag>;
     using base_type       = base<this_type, value_type>;
-    using handler_type    = Handler;
+    using handler_type    = data::handler<InpT, Tag>;
     using secondary_map_t = std::unordered_map<std::string, this_type>;
     using secondary_ptr_t = std::shared_ptr<secondary_map_t>;
     using string_t        = std::string;
@@ -94,9 +102,24 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     static std::string& label()
     {
         static std::string _instance = []() {
+            if(metadata<this_type>::value != TIMEMORY_COMPONENTS_END)
+                return metadata<this_type>::label();
             std::stringstream ss;
             ss << demangle<Tag>() << "_" << demangle<InpT>();
-            return ss.str();
+            auto _lbl = ss.str();
+            for(auto&& itr : { "tim::component::", "tim::" })
+            {
+                auto _pos = std::string::npos;
+                while((_pos = _lbl.find(itr)) != std::string::npos)
+                    _lbl = _lbl.erase(_pos, std::string(itr).length());
+            }
+            for(auto&& itr : { "::", " ", "_" })
+            {
+                auto _pos = std::string::npos;
+                while((_pos = _lbl.find(itr)) != std::string::npos)
+                    _lbl = _lbl.replace(_pos, std::string(itr).length(), "-");
+            }
+            return _lbl;
         }();
         return _instance;
     }
@@ -104,6 +127,17 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     static std::string& description()
     {
         static std::string _instance = []() {
+            if(metadata<this_type>::value != TIMEMORY_COMPONENTS_END)
+            {
+                auto meta_desc = metadata<this_type>::description();
+                if(settings::verbose() > 0 || settings::debug())
+                {
+                    auto meta_extra_desc = metadata<this_type>::extra_description();
+                    meta_desc += ". ";
+                    meta_desc += meta_extra_desc;
+                }
+                return meta_desc;
+            }
             std::stringstream ss;
             ss << "Data tracker for data of type " << demangle<InpT>() << " for "
                << demangle<Tag>();
@@ -112,64 +146,68 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
         return _instance;
     }
 
+    TIMEMORY_DEFAULT_OBJECT(data_tracker)
+
     void start() {}
     void stop() {}
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void store(const T& val)
     {
         handler_type::store(*this, val / get_unit());
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void store(handler_type&&, const T& val)
     {
         handler_type::store(*this, val / get_unit());
     }
 
-    template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    auto store(Func&& f, const T& val)
-        -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
+    template <typename FuncT, typename T,
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
+    auto store(FuncT&& f, const T& val)
+        -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f),
+                                                       val),
                     void())
     {
-        handler_type::store(*this, std::forward<Func>(f), val / get_unit());
+        handler_type::store(*this, std::forward<FuncT>(f), val / get_unit());
     }
 
-    template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    auto store(handler_type&&, Func&& f, const T& val)
-        -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
+    template <typename FuncT, typename T,
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
+    auto store(handler_type&&, FuncT&& f, const T& val)
+        -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f),
+                                                       val),
                     void())
     {
-        handler_type::store(*this, std::forward<Func>(f), val / get_unit());
+        handler_type::store(*this, std::forward<FuncT>(f), val / get_unit());
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_begin(const T& val)
     {
         handler_type::begin(*this, val / get_unit());
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_end(const T& val)
     {
         handler_type::end(*this, val / get_unit());
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_begin(handler_type&&, const T& val)
     {
         handler_type::begin(*this, val / get_unit());
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_end(handler_type&&, const T& val)
     {
         handler_type::end(*this, val / get_unit());
@@ -181,7 +219,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     void set_value(const value_type& v) { value = v; }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     this_type* add_secondary(const string_t& _key, const T& val)
     {
         this_type _tmp;
@@ -194,7 +232,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     }
 
     template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     this_type* add_secondary(const string_t& _key, handler_type&& h, const T& val)
     {
         this_type _tmp;
@@ -206,28 +244,31 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
         return &(_map[_key]);
     }
 
-    template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    this_type* add_secondary(const string_t& _key, Func&& f, const T& val)
+    template <typename FuncT, typename T,
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value &&
+                              std::is_function<FuncT>::value,
+                          int> = 0>
+    this_type* add_secondary(const string_t& _key, FuncT&& f, const T& val)
     {
-        PRINT_HERE("%s :: adding secondary", demangle<this_type>().c_str());
         this_type _tmp;
         start_t   _start(_tmp);
-        _tmp.store(std::forward<Func>(f), val);
+        _tmp.store(std::forward<FuncT>(f), val);
         stop_t _stop(_tmp);
         auto&  _map = *get_secondary_map();
         _map.insert({ _key, _tmp });
         return &(_map[_key]);
     }
 
-    template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    this_type* add_secondary(const string_t& _key, handler_type&& h, Func&& f,
+    template <typename FuncT, typename T,
+              enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value &&
+                              std::is_function<FuncT>::value,
+                          int> = 0>
+    this_type* add_secondary(const string_t& _key, handler_type&& h, FuncT&& f,
                              const T& val)
     {
         this_type _tmp;
         start_t   _start(_tmp);
-        _tmp.store(std::forward<handler_type>(h), std::forward<Func>(f), val);
+        _tmp.store(std::forward<handler_type>(h), std::forward<FuncT>(f), val);
         stop_t _stop(_tmp);
         auto&  _map = *get_secondary_map();
         _map.insert({ _key, _tmp });
@@ -251,14 +292,25 @@ private:
     secondary_ptr_t m_secondary{ nullptr };
 };
 //
-//--------------------------------------------------------------------------------------//
-//
-/// \typedef data_handler_t
+/// \typedef tim::component::data_handler_t
 /// \brief an alias for getting the handle_type of a data tracker
 template <typename T>
 using data_handler_t = typename T::handler_type;
 //
-//--------------------------------------------------------------------------------------//
+/// \typedef tim::component::data_tracker_integer
+/// \brief Specialization of \ref tim::component::data_tracker for storing signed integer
+/// data
+using data_tracker_integer = data_tracker<intmax_t, project::timemory>;
+//
+/// \typedef tim::component::data_tracker_unsigned
+/// \brief Specialization of \ref tim::component::data_tracker for storing unsigned
+/// integer data
+using data_tracker_unsigned = data_tracker<size_t, project::timemory>;
+//
+/// \typedef tim::component::data_tracker_floating
+/// \brief Specialization of \ref tim::component::data_tracker for storing floating point
+/// data
+using data_tracker_floating = data_tracker<double, project::timemory>;
 //
 }  // namespace component
 }  // namespace tim
