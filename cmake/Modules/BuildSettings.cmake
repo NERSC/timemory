@@ -279,11 +279,6 @@ else()
 endif()
 
 if (MSVC)
-    # this breaks finding the python libraries. Moved to source/CMakeLists.txt
-    if("${CMAKE_DEBUG_POSTFIX}" STREQUAL "_d")
-        unset(CMAKE_DEBUG_POSTFIX CACHE)
-    endif()
-
     # VTune is much more helpful when debug information is included in the
     # generated release code.
     add_flag_if_avail("/Zi")
