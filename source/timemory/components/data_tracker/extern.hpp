@@ -22,8 +22,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/plotting/extern.hpp"
-#include "timemory/plotting/definition.hpp"
+/**
+ * \file timemory/components/data_tracker/extern.hpp
+ * \brief Include the extern declarations for data_tracker components
+ */
 
-#if defined(TIMEMORY_USE_PYTHON)
-#endif
+#pragma once
+
+#include "timemory/components/base.hpp"
+#include "timemory/components/data_tracker/components.hpp"
+#include "timemory/components/data_tracker/types.hpp"
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(data_tracker_integer, true, intmax_t)
+TIMEMORY_EXTERN_COMPONENT(data_tracker_unsigned, true, size_t)
+TIMEMORY_EXTERN_COMPONENT(data_tracker_floating, true, double)

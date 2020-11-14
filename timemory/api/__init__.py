@@ -25,10 +25,6 @@
 # SOFTWARE.
 
 from __future__ import absolute_import
-import os
-import imp
-import sys
-import importlib
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
@@ -44,6 +40,7 @@ This submodule imports the compiled APIs
 """
 
 try:
-    from ..libpytimemory.api import *
+    from ..libpytimemory.api import papi, cuda, cupti
+    from . import gperftools
 except Exception as e:
     print("{}".format(e))

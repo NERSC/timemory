@@ -25,17 +25,16 @@
 # SOFTWARE.
 #
 
+from __future__ import absolute_import
+
 """ @file __main__.py
 Command line execution for profiler
 """
 
 import os
 import sys
-import json
 import argparse
-import warnings
 import traceback
-import multiprocessing as mp
 
 PY3 = sys.version_info[0] == 3
 

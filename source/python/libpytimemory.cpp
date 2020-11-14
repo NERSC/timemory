@@ -70,22 +70,22 @@ class manager_wrapper
 public:
     manager_wrapper();
     ~manager_wrapper();
-    manager_t* get();
+    std::shared_ptr<manager_t> get();
 
 protected:
-    manager_t* m_manager;
+    std::shared_ptr<manager_t> m_manager = { nullptr };
 };
 //
 manager_wrapper::manager_wrapper()
-: m_manager(manager_t::instance().get())
+: m_manager(manager_t::instance())
 {}
 //
 manager_wrapper::~manager_wrapper() {}
 //
-manager_t*
+std::shared_ptr<manager_t>
 manager_wrapper::get()
 {
-    return manager_t::instance().get();
+    return manager_t::instance();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -223,9 +223,9 @@ PYBIND11_MODULE(libpytimemory, tim)
 {
     //----------------------------------------------------------------------------------//
     //
-    static auto              _settings       = tim::settings::shared_instance();
-    static auto              _master_manager = manager_t::master_instance();
-    static thread_local auto _worker_manager = manager_t::instance();
+    auto _settings       = tim::settings::shared_instance();
+    auto _master_manager = manager_t::master_instance();
+    auto _worker_manager = manager_t::instance();
     if(_worker_manager != _master_manager)
     {
         printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
@@ -250,7 +250,10 @@ PYBIND11_MODULE(libpytimemory, tim)
                 auto _manager = manager_t::instance();
                 if(_manager)
                 {
-                    std::cout << "Finalizing after signal: " << nsig << std::endl;
+                    std::cout << "Finalizing after signal: " << nsig << " :: "
+                              << tim::signal_settings::str(
+                                     static_cast<tim::sys_signal>(nsig))
+                              << std::endl;
                     _manager->finalize();
                 }
             };
@@ -274,7 +277,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    pyapi::generate(tim);
+    py::module _api =
+        tim.def_submodule("api", "Direct python interfaces to various APIs");
+    pyapi::generate(_api);
     pysignals::generate(tim);
     pyauto_timer::generate(tim);
     pycomponent_list::generate(tim);
@@ -307,7 +312,7 @@ PYBIND11_MODULE(libpytimemory, tim)
                     _val->set<scope::flat>(_flat.cast<bool>());
                 } catch(py::cast_error&)
                 {
-                    auto _f = [&](auto v) { _val->set(v); };
+                    auto _f = [_val](auto v) { _val->set(v); };
                     pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
                                                                                    _flat);
                 }
@@ -319,7 +324,7 @@ PYBIND11_MODULE(libpytimemory, tim)
                     _val->set<scope::timeline>(_time.cast<bool>());
                 } catch(py::cast_error&)
                 {
-                    auto _f = [&](auto v) { _val->set(v); };
+                    auto _f = [_val](auto v) { _val->set(v); };
                     pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
                                                                                    _time);
                 }
@@ -425,7 +430,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     destructor.def(py::init([]() { return new tim::scope::destructor([]() {}); }),
                    "Destructor", py::return_value_policy::move);
     destructor.def(py::init([](py::function pyfunc) {
-                       return new tim::scope::destructor([=]() { pyfunc(); });
+                       return new tim::scope::destructor([pyfunc]() { pyfunc(); });
                    }),
                    "Destructor", py::return_value_policy::take_ownership);
 
@@ -596,8 +601,9 @@ PYBIND11_MODULE(libpytimemory, tim)
         for(int i = 0; i < _argc; ++i)
         {
             auto  _str    = argv[i].cast<std::string>();
-            char* _argv_i = new char[_str.size()];
+            char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
+            _argv_i[_str.size()] = '\0';
             _argv[i] = _argv_i;
         }
         auto _argv_deleter = [](int fargc, char** fargv) {
@@ -616,47 +622,64 @@ PYBIND11_MODULE(libpytimemory, tim)
         for(int i = 0; i < _argc; ++i)
         {
             auto  _str    = argv[i].cast<std::string>();
-            char* _argv_i = new char[_str.size()];
+            char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
+            _argv_i[_str.size()] = '\0';
             _argv[i] = _argv_i;
         }
         tim::timemory_init(_argc, _argv, _prefix, _suffix);
+        auto _manager = tim::manager::instance();
+        if(_manager)
+            _manager->update_metadata_prefix();
         for(int i = 0; i < _argc; ++i)
             delete[] _argv[i];
         delete[] _argv;
     };
     //----------------------------------------------------------------------------------//
     auto _finalize = []() {
-        try
+        auto _manager = tim::manager::instance();
+        if(!_manager || _manager->is_finalized() || _manager->is_finalizing())
+            return;
+        _manager->update_metadata_prefix();
+        if(!tim::get_env("TIMEMORY_SKIP_FINALIZE", false))
         {
-            if(!tim::get_env("TIMEMORY_SKIP_FINALIZE", false))
+            try
             {
-                // python GC seems to cause occasional problems
+                py::module gc = py::module::import("gc");
+                gc.attr("collect")();
+            } catch(std::exception& e)
+            {
+                std::cerr << e.what() << std::endl;
+                // w/o GC, may cause problems
                 tim::settings::stack_clearing() = false;
+            }
+            //
+            try
+            {
                 tim::timemory_finalize();
-            }
-        } catch(std::exception& e)
-        {
+            } catch(std::exception& e)
+            {
 #if defined(_UNIX)
-            auto             bt    = tim::get_demangled_backtrace<32>();
-            std::set<size_t> valid = {};
-            size_t           idx   = 0;
-            for(const auto& itr : bt)
-            {
-                if(itr.length() > 0)
-                    valid.insert(idx);
-                ++idx;
-            }
-            if(!valid.empty())
-            {
-                std::cerr << "\nBacktrace:\n";
-                for(auto itr : valid)
-                    std::cerr << "[" << std::setw(2) << itr << " / " << std::setw(2)
-                              << valid.size() << "] " << bt.at(itr) << '\n';
-            }
-            std::cerr << "\n" << std::flush;
+                auto             bt    = tim::get_demangled_backtrace<32>();
+                std::set<size_t> valid = {};
+                size_t           idx   = 0;
+                for(const auto& itr : bt)
+                {
+                    if(itr.length() > 0)
+                        valid.insert(idx);
+                    ++idx;
+                }
+                if(!valid.empty())
+                {
+                    std::cerr << "\nBacktrace:\n";
+                    for(auto itr : valid)
+                        std::cerr << "[" << std::setw(2) << itr << " / " << std::setw(2)
+                                  << valid.size() << "] " << bt.at(itr) << '\n';
+                }
+                std::cerr << "\n" << std::flush;
 #endif
-            PRINT_HERE("ERROR: %s", e.what());
+                PRINT_HERE("ERROR: %s", e.what());
+            }
         }
     };
     //----------------------------------------------------------------------------------//
@@ -860,7 +883,7 @@ PYBIND11_MODULE(libpytimemory, tim)
              "Parse the command-line arguments via ArgumentParser.parse_known_args()",
              py::arg("parser") = py::none{});
 
-    auto _add_arguments = [](py::object parser, py::object subparser) {
+    static auto _add_arguments = [](py::object parser, py::object subparser) {
         auto locals = py::dict("parser"_a = parser, "subparser"_a = subparser);
         py::exec(R"(
         import argparse
@@ -869,7 +892,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         if parser is None:
             parser = argparse.ArgumentParser()
 
-        settings.add_argparse(parser, subparser=subparser)            
+        settings.add_argparse(parser, subparser=subparser)
         parser.add_argument('--timemory-echo-dart', required=False,
                             action='store_true', help="Echo dart tags for CDash")
         parser.add_argument('--timemory-mpl-backend', required=False,
@@ -879,12 +902,12 @@ PYBIND11_MODULE(libpytimemory, tim)
         return locals["parser"].cast<py::object>();
     };
 
-    auto _add_args_and_parse = [&](py::object parser, py::object subparser) {
+    auto _add_args_and_parse = [](py::object parser, py::object subparser) {
         _add_arguments(parser, subparser);
         return pytim::opt::parse_args(parser);
     };
 
-    auto _add_args_and_parse_known = [&](py::object parser, py::object subparser) {
+    auto _add_args_and_parse_known = [](py::object parser, py::object subparser) {
         _add_arguments(parser, subparser);
         return pytim::opt::parse_known_args(parser);
     };

@@ -224,8 +224,8 @@ template <typename In, typename... InTail, typename... Out>
 struct remove_duplicates<type_list<In, InTail...>, type_list<Out...>>
 {
     using type = conditional_t<
-        !(is_one_of<std::remove_pointer_t<In>,
-                    type_list<std::remove_pointer_t<Out>...>>::value),
+        !is_one_of<std::remove_pointer_t<In>,
+                   type_list<std::remove_pointer_t<Out>...>>::value,
         typename remove_duplicates<type_list<InTail...>, type_list<Out..., In>>::type,
         typename remove_duplicates<type_list<InTail...>, type_list<Out...>>::type>;
 };
@@ -347,11 +347,71 @@ struct sortT<PrioT, type_list<In, InT...>, type_list<BegTT...>, type_list<Tp, En
                                      type_list<BegTT..., Tp>, type_list<EndTT...>>::type>;
 };
 
+//--------------------------------------------------------------------------------------//
+//  remove a type from a variadic bundle
+//
+template <typename Tp, typename In, typename Out>
+struct remove_type;
+
+template <typename Tp, template <typename...> class Tuple, typename Out>
+struct remove_type<Tp, Tuple<>, Out>
+{
+    using type = Out;
+};
+
+template <typename Tp, template <typename...> class InTuple,
+          template <typename...> class OutTuple, typename In, typename... InTail,
+          typename... Out>
+struct remove_type<Tp, InTuple<In, InTail...>, OutTuple<Out...>>
+{
+    using type = conditional_t<
+        std::is_same<Tp, In>::value,
+        typename remove_type<Tp, type_list<InTail...>, OutTuple<Out...>>::type,
+        typename remove_type<Tp, type_list<InTail...>, OutTuple<Out..., In>>::type>;
+};
+
 //======================================================================================//
 
 }  // namespace impl
 
-//======================================================================================//
+// add a type if not already present
+//
+template <typename Tp, typename... Types>
+struct append_type;
+
+template <typename Tp, template <typename...> class Tuple, typename... Types>
+struct append_type<Tp, Tuple<Types...>>
+{
+    static constexpr auto value = impl::is_one_of<Tp, type_list<Types...>>::value;
+    using type = conditional_t<value, Tuple<Types...>, Tuple<Types..., Tp>>;
+};
+
+// remove a type if not already present
+//
+template <typename Tp, typename... Types>
+struct remove_type;
+
+template <typename Tp, template <typename...> class Tuple, typename... Types>
+struct remove_type<Tp, Tuple<Types...>>
+{
+    static constexpr auto value = impl::is_one_of<Tp, type_list<Types...>>::value;
+    using type =
+        conditional_t<value,
+                      typename impl::remove_type<Tp, Tuple<Types...>, Tuple<>>::type,
+                      Tuple<Types...>>;
+};
+
+///
+/// append type to a tuple/bundler
+///
+template <typename Tp, typename Types>
+using append_type_t = typename append_type<Tp, Types>::type;
+
+///
+/// remove any instances of a type from a tuple/bundler
+///
+template <typename Tp, typename Types>
+using remove_type_t = typename remove_type<Tp, Types>::type;
 
 ///
 /// check if type is in expansion

@@ -47,28 +47,12 @@ namespace component
 //
 //======================================================================================//
 //
+/// \struct tim::component::empty_base
+///
+/// The default base class for timemory components.
+///
 struct empty_base
 {};
-//
-//======================================================================================//
-//
-//              dynamic polymorphism base class for all components
-//
-//======================================================================================//
-//
-struct dynamic_base
-{
-    TIMEMORY_DEFAULT_OBJECT(dynamic_base)
-
-    virtual void          start()                                         = 0;
-    virtual void          stop()                                          = 0;
-    virtual void          get_opaque_data(void*& ptr, size_t _hash) const = 0;
-    virtual dynamic_base* create() const                                  = 0;
-
-    // virtual void init() {}
-    // virtual void cleanup() {}
-    // virtual void start(const std::string&, bool, bool) { start(); }
-};
 //
 //======================================================================================//
 //
@@ -77,33 +61,34 @@ struct dynamic_base
 //
 //======================================================================================//
 //
+/// \struct tim::component::base<Tp, Value>
+/// \tparam Tp the component type
+/// \tparam Value the value type of the component (overrides tim::data<T>)
+///
+/// A helper static polymorphic base class for components. It is not required to be
+/// used but generally recommended for ease of implementation.
+///
 template <typename Tp, typename Value>
-struct base : public trait::dynamic_base<Tp>::type
+struct base
+: public trait::dynamic_base<Tp>::type
+, public concepts::component
 {
     using EmptyT = std::tuple<>;
     template <typename U>
     using vector_t = std::vector<U>;
 
 public:
-    static constexpr bool has_accum_v        = trait::base_has_accum<Tp>::value;
-    static constexpr bool has_last_v         = trait::base_has_last<Tp>::value;
-    static constexpr bool has_secondary_data = trait::secondary_data<Tp>::value;
-    static constexpr bool is_sampler_v       = trait::sampler<Tp>::value;
-    static constexpr bool is_component_type  = false;
-    static constexpr bool is_auto_type       = false;
-    static constexpr bool is_component       = true;
-
-    using Type         = Tp;
-    using value_type   = Value;
-    using accum_type   = conditional_t<has_accum_v, value_type, EmptyT>;
-    using last_type    = conditional_t<has_last_v, value_type, EmptyT>;
+    static constexpr bool is_component = true;
+    using Type                         = Tp;
+    using value_type                   = Value;
+    using accum_type =
+        conditional_t<trait::base_has_accum<Tp>::value, value_type, EmptyT>;
+    using last_type = conditional_t<trait::base_has_last<Tp>::value, value_type, EmptyT>;
     using dynamic_type = typename trait::dynamic_base<Tp>::type;
     using cache_type   = typename trait::cache<Tp>::type;
 
     using this_type         = Tp;
     using base_type         = base<Tp, Value>;
-    using unit_type         = typename trait::units<Tp>::type;
-    using display_unit_type = typename trait::units<Tp>::display_type;
     using storage_type      = storage<Tp, Value>;
     using base_storage_type = tim::base::storage;
     using graph_iterator    = typename storage_type::iterator;
@@ -112,7 +97,7 @@ public:
     using fmtflags          = std::ios_base::fmtflags;
 
 private:
-    friend class impl::storage<Tp, trait::implements_storage<Tp, Value>::value>;
+    friend class impl::storage<Tp, trait::uses_value_storage<Tp, Value>::value>;
     friend class storage<Tp, Value>;
     friend struct node::graph<Tp>;
 
@@ -151,7 +136,7 @@ private:
 
 public:
     base();
-    virtual ~base() = default;
+    ~base() = default;
 
     explicit base(const base_type&)     = default;
     explicit base(base_type&&) noexcept = default;
@@ -165,26 +150,28 @@ public:
     {}
 
 public:
-    void reset();    /// reset the values
-    void measure();  /// just record a measurment
+    void set_started();  /// store that start has been called
+    void set_stopped();  /// store that stop has been called
+    void reset();        /// reset the values
+    void measure();      /// record a measurment
+    bool get_is_transient() const { return (laps > 0 || is_transient); }  /// phase
+    bool get_is_running() const { return is_running; }      /// currently collecting
+    bool get_is_on_stack() const { return is_on_stack; }    /// currently on call-stack
+    bool get_is_flat() const { return is_flat; }            /// flat call-stack
+    bool get_depth_change() const { return depth_change; }  /// changed call-stack depth
+    int64_t get_laps() const { return laps; }               /// get number of invocations
+    void    get_opaque_data(void*& ptr, size_t _hash) const;  /// assign to pointer
 
-    void set_started();  // store that start has been called
-    void set_stopped();  // store that stop has been called
-
-    void get(void*& ptr, size_t typeid_hash) const;    /// assign type to a pointer
+    void get(void*& ptr, size_t _typeid_hash) const;   /// assign type to a pointer
     auto get() const { return this->load(); }          /// default get routine
     auto get_display() const { return this->load(); }  /// default display routine
 
-    void          get_opaque_data(void*& ptr,
-                                  size_t typeid_hash) const;  /// assign get() to a pointer
-    dynamic_type* create() const;
-
     template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<trait::implements_storage<Up, Vp>::value, int> = 0>
+              enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
     void print(std::ostream&) const;
 
     template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<!trait::implements_storage<Up, Vp>::value, int> = 0>
+              enable_if_t<!trait::uses_value_storage<Up, Vp>::value, int> = 0>
     void print(std::ostream&) const;
 
     bool operator<(const base_type& rhs) const { return (load() < rhs.load()); }
@@ -216,22 +203,16 @@ public:
     // serialization load (input)
     template <typename Archive, typename Up = Type,
               enable_if_t<!trait::custom_serialization<Up>::value, int> = 0>
-    void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int);
+    void load(Archive& ar, const unsigned int);
 
     // serialization store (output)
     template <typename Archive, typename Up = Type,
               enable_if_t<!trait::custom_serialization<Up>::value, int> = 0>
-    void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int version) const;
+    void save(Archive& ar, const unsigned int version) const;
 
-    int64_t           get_laps() const { return laps; }
     const value_type& get_value() const { return value; }
     const accum_type& get_accum() const { return accum; }
     const last_type&  get_last() const { return last; }
-    bool              get_is_transient() const { return (laps > 0 || is_transient); }
-    auto              get_is_running() const { return is_running; }
-    auto              get_is_on_stack() const { return is_on_stack; }
-    auto              get_is_flat() const { return is_flat; }
-    auto              get_depth_change() const { return depth_change; }
 
     void set_laps(int64_t v) { laps = v; }
     void set_value(value_type v) { value = v; }
@@ -248,6 +229,7 @@ public:
 
 protected:
     static base_storage_type* get_storage();
+    static void               cleanup() {}
 
     template <typename Up = Tp, enable_if_t<trait::base_has_accum<Up>::value, int> = 0>
     value_type& load();
@@ -315,15 +297,16 @@ public:
     static constexpr auto ios_fixed         = std::ios_base::fixed;
     static constexpr auto ios_decimal       = std::ios_base::dec;
     static constexpr auto ios_showpoint     = std::ios_base::showpoint;
-    static const short    precision         = (percent_units_v) ? 1 : 3;
-    static const short    width             = (percent_units_v) ? 6 : 8;
+    static const short    precision         = percent_units_v ? 1 : 3;
+    static const short    width             = percent_units_v ? 6 : 8;
     static const fmtflags format_flags      = ios_fixed | ios_decimal | ios_showpoint;
 
     template <typename Up = Type, typename UnitT = typename trait::units<Up>::type,
               enable_if_t<std::is_same<UnitT, int64_t>::value, int> = 0>
     static int64_t unit();
 
-    template <typename Up = Type, typename UnitT = typename Up::display_unit_type,
+    template <typename Up    = Type,
+              typename UnitT = typename trait::units<Up>::display_type,
               enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
     static std::string display_unit();
 
@@ -331,7 +314,8 @@ public:
               enable_if_t<std::is_same<UnitT, int64_t>::value, int> = 0>
     static int64_t get_unit();
 
-    template <typename Up = Type, typename UnitT = typename Up::display_unit_type,
+    template <typename Up    = Type,
+              typename UnitT = typename trait::units<Up>::display_type,
               enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
     static std::string get_display_unit();
 
@@ -352,23 +336,20 @@ public:
 //======================================================================================//
 //
 template <typename Tp>
-struct base<Tp, void> : public trait::dynamic_base<Tp>::type
+struct base<Tp, void>
+: public trait::dynamic_base<Tp>::type
+, public concepts::component
 {
     using EmptyT = std::tuple<>;
 
 public:
-    static constexpr bool has_secondary_data = false;
-    static constexpr bool is_sampler_v       = trait::sampler<Tp>::value;
-    static constexpr bool is_component_type  = false;
-    static constexpr bool is_auto_type       = false;
-    static constexpr bool is_component       = true;
-
-    using Type             = Tp;
-    using value_type       = void;
-    using sample_type      = EmptyT;
-    using sample_list_type = EmptyT;
-    using dynamic_type     = typename trait::dynamic_base<Tp>::type;
-    using cache_type       = typename trait::cache<Tp>::type;
+    static constexpr bool is_component = true;
+    using Type                         = Tp;
+    using value_type                   = void;
+    using accum_type                   = void;
+    using last_type                    = void;
+    using dynamic_type                 = typename trait::dynamic_base<Tp>::type;
+    using cache_type                   = typename trait::cache<Tp>::type;
 
     using this_type    = Tp;
     using base_type    = base<Tp, value_type>;
@@ -404,7 +385,7 @@ private:
 
 public:
     base();
-    virtual ~base()                     = default;
+    ~base()                             = default;
     explicit base(const base_type&)     = default;
     explicit base(base_type&&) noexcept = default;
     base& operator=(const base_type&) = default;
@@ -416,24 +397,20 @@ public:
     {}
 
 public:
-    void reset();    // reset the values
-    void measure();  // just record a measurment
-
-    void set_started();
-    void set_stopped();
+    void    set_started();
+    void    set_stopped();
+    void    reset();
+    void    measure();
+    bool    get_is_running() const { return is_running; }
+    bool    get_is_on_stack() const { return is_on_stack; }
+    bool    get_is_transient() const { return is_transient; }
+    int64_t get_laps() const { return 0; }
+    void    get_opaque_data(void*& ptr, size_t _typeid_hash) const;
 
     friend std::ostream& operator<<(std::ostream& os, const base_type&) { return os; }
 
     void get() {}
-    void get(void*& ptr, size_t typeid_hash) const;
-
-    void          get_opaque_data(void*& ptr, size_t typeid_hash) const;
-    dynamic_type* create() const;
-
-    int64_t get_laps() const { return 0; }
-    auto    get_is_running() const { return is_running; }
-    auto    get_is_on_stack() const { return is_on_stack; }
-    auto    get_is_transient() const { return is_transient; }
+    void get(void*& ptr, size_t _typeid_hash) const;
 
     // used by operation::finalize::print<Type>
     void operator-=(const base_type&) {}
@@ -475,6 +452,142 @@ public:
     static std::string description();
     static std::string get_label();
     static std::string get_description();
+};
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct base<Tp, std::tuple<>>
+: public trait::dynamic_base<Tp>::type
+, public concepts::component
+{
+public:
+    static constexpr bool is_component = true;
+    using Type                         = Tp;
+    using value_type                   = std::tuple<>;
+    using accum_type                   = value_type;
+    using last_type                    = value_type;
+    using dynamic_type                 = typename trait::dynamic_base<Tp>::type;
+    using cache_type                   = typename trait::cache<Tp>::type;
+
+    using this_type      = Tp;
+    using base_type      = base<Tp, value_type>;
+    using storage_type   = storage<Tp, void>;
+    using graph_iterator = void*;
+
+private:
+    friend class impl::storage<Tp, false>;
+    friend class storage<Tp, void>;
+    friend struct node::graph<Tp>;
+
+    friend struct operation::init_storage<Tp>;
+    friend struct operation::cache<Tp>;
+    friend struct operation::construct<Tp>;
+    friend struct operation::set_prefix<Tp>;
+    friend struct operation::push_node<Tp>;
+    friend struct operation::pop_node<Tp>;
+    friend struct operation::record<Tp>;
+    friend struct operation::reset<Tp>;
+    friend struct operation::measure<Tp>;
+    friend struct operation::start<Tp>;
+    friend struct operation::stop<Tp>;
+    friend struct operation::minus<Tp>;
+    friend struct operation::plus<Tp>;
+    friend struct operation::multiply<Tp>;
+    friend struct operation::divide<Tp>;
+    friend struct operation::print<Tp>;
+    friend struct operation::print_storage<Tp>;
+    friend struct operation::copy<Tp>;
+    friend struct operation::serialization<Tp>;
+
+    template <typename Ret, typename Lhs, typename Rhs>
+    friend struct operation::compose;
+
+public:
+    base()                          = default;
+    ~base()                         = default;
+    explicit base(const base_type&) = default;
+    explicit base(base_type&&)      = default;
+    base& operator=(const base_type&) = default;
+    base& operator=(base_type&&) = default;
+
+public:
+    template <typename Archive>
+    static void extra_serialization(Archive&, const unsigned int)
+    {}
+
+public:
+    template <typename... Args>
+    static void configure(Args&&...)
+    {}
+
+public:
+    void reset();    // reset the values
+    void measure();  // just record a measurment
+    void start();
+    void stop();
+
+    auto start(crtp::base) {}
+    auto stop(crtp::base) {}
+
+    template <typename CacheT                                     = cache_type,
+              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
+    void start(const CacheT&)
+    {}
+    template <typename CacheT                                     = cache_type,
+              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
+    void stop(const CacheT&)
+    {}
+
+    void set_started() {}
+    void set_stopped() {}
+
+    friend std::ostream& operator<<(std::ostream& os, const base_type&) { return os; }
+
+    void get() {}
+    void get(void*&, size_t) const {}
+
+    void          get_opaque_data(void*&, size_t) const {}
+    dynamic_type* create() const { return nullptr; }
+
+    int64_t get_laps() const { return 0; }
+    auto    get_is_running() const { return false; }
+    auto    get_is_on_stack() const { return false; }
+    auto    get_is_transient() const { return false; }
+
+    // used by operation::finalize::print<Type>
+    void operator-=(const base_type&) {}
+    void operator-=(const Type&) {}
+
+    auto load() { return Tp{}; }
+
+protected:
+    static void cleanup() {}
+    static Type dummy() { return Tp{}; }
+    void        plus(const base_type&) {}
+    void        minus(const base_type&) {}
+
+public:
+    auto plus(crtp::base, const base_type&) {}
+    auto minus(crtp::base, const base_type&) {}
+
+protected:
+    bool           is_running   = false;
+    bool           is_on_stack  = false;
+    bool           is_transient = false;
+    bool           is_flat      = false;
+    bool           depth_change = false;
+    int64_t        laps         = 0;
+    value_type     value        = value_type{};
+    accum_type     accum        = accum_type{};
+    last_type      last         = last_type{};
+    graph_iterator graph_itr    = nullptr;
+
+public:
+    static std::string label() { return ""; }
+    static std::string description() { return ""; }
+    static std::string get_label() { return ""; }
+    static std::string get_description() { return ""; }
 };
 //
 //----------------------------------------------------------------------------------//

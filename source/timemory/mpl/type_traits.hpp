@@ -47,9 +47,6 @@
 
 namespace tim
 {
-template <typename...>
-class component_tuple;
-
 template <typename T>
 struct statistics;
 
@@ -69,7 +66,14 @@ as_string()
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::base_has_accum
-/// \brief trait that signifies that a component has an accumulation value
+/// \brief trait that signifies that a component has an accumulation value. In general,
+/// most components implement 'value' and 'accum' data members of 'value_type'. Where
+/// 'value' is generally used as intermediate storage between start/stop and after stop
+/// have been called, 'value' is assigned as the difference between start/stop and added
+/// to 'accum'. However, in the case where 'accum' is not a valid metric for the
+/// component, this trait can be used to save memory bc it results in the 'accum' data
+/// member to be implemented as a data-type of std::tuple<>, which only requires 1 byte of
+/// memory.
 ///
 template <typename T>
 struct base_has_accum : true_type
@@ -78,7 +82,13 @@ struct base_has_accum : true_type
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::base_has_last
 /// \brief trait that signifies that a component has an "last" value which may be
-/// different than the "value" value
+/// different than the "value" value. In general, most components implement
+/// 'value' and 'accum' data members of 'value_type'. Where 'value' is generally
+/// used as intermediate storage between start/stop and after stop have been called,
+/// 'value' is assigned as the difference between start/stop and added to 'accum'.
+/// However, in the case where 'value' is valid as an individual measurement, this trait
+/// can be used to store 'value' as the individual measurement and 'last' as the
+/// difference or vice-versa.
 ///
 template <typename T>
 struct base_has_last : false_type
@@ -86,7 +96,30 @@ struct base_has_last : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::is_available
-/// \brief trait that signifies that an implementation (e.g. PAPI) is available
+/// \brief trait that signifies that an implementation for the component is available.
+/// When this is set to false, the variadic component bundlers like \ref component_tuple
+/// will silently filter out this type from the template parameters, e.g.
+///
+/// \code{.cpp}
+/// TIMEMORY_DECLARE_COMPONENT(foo)
+/// TIMEMORY_DECLARE_COMPONENT(bar)
+///
+/// namespace tim {
+/// namespace trait {
+/// template <>
+/// struct is_available<component::bar> : false_type {};
+/// }
+/// }
+/// \endcode
+///
+/// will cause these two template instantiations to become identical:
+///
+/// \code{.cpp}
+/// using A_t = component_tuple<foo>;
+/// using B_t = component_tuple<foo, bar>;
+/// \endcode
+///
+/// and a definition of 'bar' will not be required for compilation.
 ///
 template <typename T>
 struct is_available : TIMEMORY_DEFAULT_AVAILABLE
@@ -107,8 +140,9 @@ using is_available_t = typename is_available<T>::type;
 template <typename T>
 struct data
 {
-    using type       = T;
-    using value_type = type_list<>;
+    // an empty type-list indicates the data type is not currently known
+    // but empty tuple indicates that the type is unavailable
+    using type = type_list<>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -164,21 +198,21 @@ struct runtime_enabled
                 apply<runtime_enabled>{}(api_type_list{}));
     }
 
-    // SET specialization if component is available
+    /// SET specialization if component is available
     template <typename U = T>
     TIMEMORY_HOT static inline enable_if_t<is_available<U>::value, void> set(bool val)
     {
         get_runtime_value() = val;
     }
 
-    // GET specialization if component is NOT available
+    /// GET specialization if component is NOT available
     template <typename U = T>
     static inline enable_if_t<!is_available<U>::value, bool> get()
     {
         return false;
     }
 
-    // SET specialization if component is NOT available
+    /// SET specialization if component is NOT available
     template <typename U = T>
     static inline enable_if_t<!is_available<U>::value, void> set(bool)
     {}
@@ -190,39 +224,6 @@ private:
         return _instance;
     }
 };
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::record_max
-/// \brief trait that signifies that updating w.r.t. another instance should
-/// be a max of the two instances
-/// \deprecated This is no longer used. Overload the operators for +=, -=, etc. to obtain
-/// previous functionality.
-//
-template <typename T>
-struct record_max : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::array_serialization
-/// \brief trait that signifies that data is an array type
-/// \deprecated { This trait is no longer used as array types are determined by other
-/// means }
-///
-template <typename T>
-struct array_serialization : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::requires_prefix
-/// \brief trait that signifies that a component requires the prefix to be set right after
-/// construction. Types with this trait must contain a member string variable named
-/// prefix
-/// \deprecated { This trait is no longer used as this property is determined by other
-/// means }
-///
-template <typename T>
-struct requires_prefix : false_type
-{};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::custom_label_printing
@@ -238,14 +239,6 @@ struct custom_label_printing : false_type
 ///
 template <typename T>
 struct custom_unit_printing : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::custom_laps_printing
-/// \brief trait that signifies that a component will handle printing the laps(s)
-///
-template <typename T>
-struct custom_laps_printing : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -319,14 +312,6 @@ struct requires_json : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
-/// \struct tim::trait::is_component
-/// \brief trait that designates the type is a timemory component
-///
-template <typename T>
-struct is_component : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::api_components
 /// \brief trait that designates components in an API (tim::api)
 ///
@@ -337,75 +322,54 @@ struct api_components
 };
 
 //--------------------------------------------------------------------------------------//
-/// \struct tim::trait::is_gotcha
-/// \brief trait that designates the type is a gotcha
-/// \deprecated{ This is being migrated to a concept }
-///
-template <typename T>
-struct is_gotcha : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::is_user_bundle
-/// \brief trait that designates the type is a user-bundle
-/// \deprecated{ This is being migrated to a concept }
-///
-template <typename T>
-struct is_user_bundle : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::component_value_type
 /// \brief trait that can be used to override the evaluation of the \ref
 /// tim::trait::collects_data trait. It checks to see if \ref tim::trait::data is
-/// specialized and, if not, evaluates to \code{.cpp} typename T::value_type \endcode
+/// specialized and, if not, evaluates to:
 ///
+/// \code{.cpp}
+/// typename T::value_type
+/// \endcode
+///
+/// Unless the component has been marked as not available. If the component is not
+/// available, the 'type' will always be void. When a component is available,
+/// this trait will return the value type for a component regardless of whether
+/// it base specified within the component definition or if it was declared via
+/// a type-trait. Use the \ref tim::trait::collects_data for a constexpr boolean
+/// 'value' for whether this value is a null type.
 template <typename T>
 struct component_value_type<T, true>
 {
-    using type = T;
-    static constexpr bool decl_value_v =
-        !(std::is_same<type_list<>, typename data<T>::value_type>::value);
-    using value_type = std::conditional_t<(decl_value_v), typename data<T>::value_type,
-                                          typename T::value_type>;
+    using type = conditional_t<!std::is_same<type_list<>, typename data<T>::type>::value,
+                               typename data<T>::type, typename T::value_type>;
 };
 
 template <typename T>
 struct component_value_type<T, false>
 {
-    using type       = T;
-    using value_type = void;
+    using type = void;
 };
+
+template <typename T>
+using component_value_type_t =
+    typename component_value_type<T, is_available<T>::value>::type;
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::collects_data
 /// \brief trait that specifies or determines if a component collects any data. Default
 /// behavior is to check if the component is available and extract the type and value
-/// fields from \ref tim::trait::component_value_type
+/// fields from \ref tim::trait::component_value_type. When a component is available,
+/// the 'type' of this trait will return the 'value type' for a component regardless of
+/// whether it was specified within the component definition or if it was declared via a
+/// type-trait. The constexpr 'value' boolean indicates whether the 'type' is not a null
+/// type.
 ///
 template <typename T>
 struct collects_data
 {
-    using type = T;
-    using value_type =
-        typename component_value_type<T, is_available<T>::value>::value_type;
-    static constexpr bool value =
-        (!std::is_same<value_type, void>::value &&
-         !std::is_same<value_type, type_list<>>::value && is_available<T>::value);
-    static_assert(std::is_void<value_type>::value != value,
-                  "Error value_type is void and value is true");
+    using type                  = component_value_type_t<T>;
+    static constexpr bool value = (!concepts::is_null_type<type>::value);
 };
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::supports_args
-/// \brief trait that designates the type supports calling a function with a certain
-/// set of argument types (passed via a tuple).
-/// \deprecated This is legacy code and support for calling a function with given
-/// arguments is automatically determined.
-///
-template <typename T, typename Tuple>
-struct supports_args : false_type
-{};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::supports_custom_record
@@ -476,8 +440,9 @@ struct statistics
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::permissive_statistics
 /// \brief trait that will suppress compilation error in
-/// \code{.cpp} operation::add_statistics<Component> \endcode if the data type passed does
-/// not match \code{.cpp} statistics<Component>::type \endcode
+/// `operation::add_statistics<Component>` if the data type passed is
+/// implicitly convertible to the data type in `statistics<Component>::type`
+/// but avoids converting integers to floating points and vice-versa.
 ///
 template <typename T>
 struct permissive_statistics : false_type
@@ -485,7 +450,7 @@ struct permissive_statistics : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::sampler
-/// \brief trait that signifies the component supports sampling
+/// \brief trait that signifies the component supports sampling.
 ///
 template <typename T>
 struct sampler : false_type
@@ -493,7 +458,13 @@ struct sampler : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::file_sampler
-/// \brief trait that signifies the component samples a measurement from a file
+/// \brief trait that signifies the component samples a measurement from a file. If
+/// multiple components sample from the same file, it is recommended to create a cache
+/// type which performs a single read of the file and caches the values such that when
+/// these components are bundled together, they can just read their data from the cache
+/// structure.
+///
+/// See also: \ref tim::trait::cache
 ///
 template <typename T>
 struct file_sampler : false_type
@@ -501,7 +472,7 @@ struct file_sampler : false_type
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::units
-/// \brief trait the designates the units
+/// \brief trait that specifies the units
 ///
 template <typename T>
 struct units
@@ -529,9 +500,9 @@ struct pretty_json : std::false_type
 
 /// \struct tim::trait::api_input_archive
 /// \brief trait that configures the default input archive type for an entire API
-/// specification, e.g. TIMEMORY_API (which is \code struct tim::api::native_tag
-/// \endcode). The input archive format of individual components is determined from the
-/// derived \ref tim::trait::input_archive
+/// specification, e.g. TIMEMORY_API (which is `struct tim::project::timemory`). The input
+/// archive format of individual components is determined from the derived \ref
+/// tim::trait::input_archive
 ///
 template <typename Api>
 struct api_input_archive
@@ -541,9 +512,9 @@ struct api_input_archive
 
 /// \struct tim::trait::api_output_archive
 /// \brief trait that configures the default output archive type for an entire API
-/// specification, e.g. TIMEMORY_API (which is \code struct tim::api::native_tag
-/// \endcode). The output archive format of individual components is determined from the
-/// derived \ref tim::trait::output_archive
+/// specification, e.g. TIMEMORY_API (which is `struct tim::project::timemory`). The
+/// output archive format of individual components is determined from the derived \ref
+/// tim::trait::output_archive
 ///
 template <typename Api>
 struct api_output_archive
@@ -604,61 +575,88 @@ struct output_archive<manager, Api> : output_archive<manager, api::native_tag>
 {};
 
 //--------------------------------------------------------------------------------------//
-/// \struct tim::trait::flat_storage
-/// \brief trait that configures type to always flat_storage the call-tree
+/// \struct tim::trait::report
+/// \brief trait that allows runtime configuration of reporting certain types of values.
+/// Only applies to text output. This will allows modifying the value set by the
+/// specific "report_*" type-trait.
 ///
 template <typename T>
-struct flat_storage : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::report_sum
-/// \brief trait that configures type to not report the accumulated value (useful if
-/// meaningless). Only applies to text output.
-///
-template <typename T>
-struct report_sum : true_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::report_mean
-/// \brief trait that configures type to not report the mean value (useful if
-/// meaningless). Only applies to text output.
-///
-template <typename T>
-struct report_mean : true_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// \struct tim::trait::report_values
-/// \brief trait that allows runtime configuration of reporting certain types of values
-/// (used in roofline). Only applies to text output.
-///
-template <typename T>
-struct report_values
+struct report
 {
-    using value_type = std::tuple<bool, bool>;
+    enum field : short
+    {
+        COUNT = 0,
+        DEPTH,
+        METRIC,
+        UNITS,
+        SUM,
+        MEAN,
+        STATS,
+        SELF,
+        FIELDS_END
+    };
 
-    static bool sum() { return std::get<0>(get_runtime_value()); }
-    static void sum(bool val) { std::get<0>(get_runtime_value()) = val; }
-    static bool mean() { return std::get<1>(get_runtime_value()); }
-    static void mean(bool val) { std::get<1>(get_runtime_value()) = val; }
+    using value_type = std::array<bool, FIELDS_END>;
+
+    static bool get(short idx) { return get_runtime_value().at(idx % FIELDS_END); }
+
+    static void set(short idx, bool val)
+    {
+        get_runtime_value().at(idx % FIELDS_END) = val;
+    }
+
+    static bool count() { return std::get<COUNT>(get_runtime_value()); }
+    static void count(bool val) { std::get<COUNT>(get_runtime_value()) = val; }
+
+    static bool depth() { return std::get<DEPTH>(get_runtime_value()); }
+    static void depth(bool val) { std::get<DEPTH>(get_runtime_value()) = val; }
+
+    static bool metric() { return std::get<METRIC>(get_runtime_value()); }
+    static void metric(bool val) { std::get<METRIC>(get_runtime_value()) = val; }
+
+    static bool units() { return std::get<UNITS>(get_runtime_value()); }
+    static void units(bool val) { std::get<UNITS>(get_runtime_value()) = val; }
+
+    static bool sum() { return std::get<SUM>(get_runtime_value()); }
+    static void sum(bool val) { std::get<SUM>(get_runtime_value()) = val; }
+
+    static bool mean() { return std::get<MEAN>(get_runtime_value()); }
+    static void mean(bool val) { std::get<MEAN>(get_runtime_value()) = val; }
+
+    static bool stats() { return std::get<STATS>(get_runtime_value()); }
+    static void stats(bool val) { std::get<STATS>(get_runtime_value()) = val; }
+
+    static bool self() { return std::get<SELF>(get_runtime_value()); }
+    static void self(bool val) { std::get<SELF>(get_runtime_value()) = val; }
 
 private:
     static value_type& get_runtime_value()
     {
-        static value_type _instance{ report_sum<T>::value, report_mean<T>::value };
+        static value_type _instance{
+            { report_count<T>::value, (report_depth<T>::value && !flat_storage<T>::value),
+              report_metric_name<T>::value, report_units<T>::value, report_sum<T>::value,
+              report_mean<T>::value, report_statistics<T>::value, report_self<T>::value }
+        };
         return _instance;
     }
 };
 
 //--------------------------------------------------------------------------------------//
-/// \struct tim::trait::report_self
-/// \brief trait that configures type to not report the % self field (useful if
+/// \struct tim::trait::report_count
+/// \brief trait that configures type to not report the number of lap count (useful if
 /// meaningless). Only applies to text output.
 ///
 template <typename T>
-struct report_self : true_type
+struct report_count : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::report_count
+/// \brief trait that configures type to not report the number of lap count (useful if
+/// meaningless). Only applies to text output.
+///
+template <typename T>
+struct report_depth : true_type
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -680,6 +678,24 @@ struct report_units : true_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::report_sum
+/// \brief trait that configures type to not report the accumulated value (useful if
+/// meaningless). Only applies to text output.
+///
+template <typename T>
+struct report_sum : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::report_mean
+/// \brief trait that configures type to not report the mean value (useful if
+/// meaningless). Only applies to text output.
+///
+template <typename T>
+struct report_mean : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::report_statistics
 /// \brief trait that configures type to not report the "UNITS" column (useful if always
 /// empty). Only applies to text output and does NOT affect whether statistics are
@@ -688,6 +704,15 @@ struct report_units : true_type
 ///
 template <typename T>
 struct report_statistics : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::report_self
+/// \brief trait that configures type to not report the % self field (useful if
+/// meaningless). Only applies to text output.
+///
+template <typename T>
+struct report_self : true_type
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -727,7 +752,8 @@ struct derivation_types : false_type
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::python_args
 /// \brief trait that designates the type supports these arguments from python.
-/// Specializations MUST be structured as a tim::type_list<...> of tim::type_list<...>.
+/// Specializations MUST be structured as either one `tim::type_list<...>` or
+/// a `tim::type_list<...>` of `tim::type_list<...>`.
 /// The first argument is a \ref TIMEMORY_OPERATION enumerated type and for each
 /// inner \ref tim::type_list, a python member function for the stand-alone component
 /// will be generated with those arguments. E.g. to create a custom store member function
@@ -784,71 +810,191 @@ struct cache
 template <typename T, typename V>
 struct generates_output
 {
-    using value_type            = V;
-    static constexpr bool value = (!concepts::is_null_type<value_type>::value);
+    using type                  = V;
+    static constexpr bool value = (!concepts::is_null_type<type>::value);
 };
 
 template <typename T>
 struct generates_output<T, void>
 {
-    using value_type            = void;
+    using type                  = void;
     static constexpr bool value = false;
 };
 
 template <typename T>
 struct generates_output<T, null_type>
 {
-    using value_type            = null_type;
+    using type                  = null_type;
     static constexpr bool value = false;
 };
 
 template <typename T>
 struct generates_output<T, type_list<>>
 {
-    // this is default evaluation from trait::data<T>::value_type
-    using value_type            = typename T::value_type;
-    static constexpr bool value = (!concepts::is_null_type<value_type>::value);
+    // this is default evaluation from trait::data<T>::type
+    using type                  = typename T::value_type;
+    static constexpr bool value = (!concepts::is_null_type<type>::value);
 };
+
+template <typename T>
+struct generates_output<T, data<T>> : generates_output<T, typename data<T>::type>
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::uses_storage
+/// \brief trait that designates that a component will instantiate tim::storage
+///
+template <typename T>
+struct uses_storage : is_available<T>
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::tree_storage
+/// \brief trait that configures type to always use hierarchical call-stack storage
+///
+template <typename T>
+struct tree_storage : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::flat_storage
+/// \brief trait that configures type to always use flat call-stack storage
+///
+template <typename T>
+struct flat_storage : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::timeline_storage
+/// \brief trait that configures type to always use timeline call-stack storage
+///
+template <typename T>
+struct timeline_storage : false_type
+{};
 
 //--------------------------------------------------------------------------------------//
 //
 //      determines if storage should be implemented
 //
 //--------------------------------------------------------------------------------------//
-/// \struct tim::trait::implements_storage
+/// \struct tim::trait::uses_value_storage
 /// \brief This trait is used to determine whether the (expensive) instantiation of the
 /// storage class happens
-template <typename T, typename V>
-struct implements_storage
+template <typename T, typename V, typename A>
+struct uses_value_storage
 {
     using value_type               = V;
-    static constexpr bool avail_v  = trait::is_available<T>::value;
+    static constexpr bool avail_v  = (A::value && trait::is_available<T>::value);
     static constexpr bool output_v = trait::generates_output<T, value_type>::value;
     static constexpr bool value    = (avail_v && output_v);
 };
 
+// this specialization is from trait::data<T> when using storage
 template <typename T>
-struct implements_storage<T, type_list<>>
+struct uses_value_storage<T, type_list<>, true_type>
 {
-    using value_type               = typename T::value_type;
-    static constexpr bool avail_v  = trait::is_available<T>::value;
-    static constexpr bool output_v = trait::generates_output<T, value_type>::value;
-    static constexpr bool value    = (avail_v && output_v);
+    using value_type            = typename T::value_type;
+    static constexpr bool value = trait::generates_output<T, value_type>::value;
 };
 
+// this specialization is from trait::data<T> when not using storage
 template <typename T>
-struct implements_storage<T, void>
+struct uses_value_storage<T, type_list<>, false_type>
 {
     using value_type            = void;
     static constexpr bool value = false;
 };
 
-template <typename T>
-struct implements_storage<T, null_type>
+template <typename T, typename A>
+struct uses_value_storage<T, void, A>
+{
+    using value_type            = void;
+    static constexpr bool value = false;
+};
+
+template <typename T, typename A>
+struct uses_value_storage<T, null_type, A>
 {
     using value_type            = null_type;
     static constexpr bool value = false;
 };
+
+// this specialization is from trait::data<T>
+template <typename T, typename A>
+struct uses_value_storage<T, type_list<>, A>
+: uses_value_storage<T, type_list<>, conditional_t<A::value, true_type, false_type>>
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::is_component
+/// \brief trait that designates the type is a timemory component
+/// \deprecated{ This has been migrated to `tim::concepts` }
+///
+template <typename T>
+struct is_component : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::is_gotcha
+/// \brief trait that designates the type is a gotcha
+/// \deprecated{ This has been migrated to `tim::concepts` }
+///
+template <typename T>
+struct is_gotcha : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::is_user_bundle
+/// \brief trait that designates the type is a user-bundle
+/// \deprecated{ This has been migrated to `tim::concepts` }
+///
+template <typename T>
+struct is_user_bundle : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::record_max
+/// \brief trait that signifies that updating w.r.t. another instance should
+/// be a max of the two instances
+/// \deprecated This is no longer used. Overload the operators for +=, -=, etc. to obtain
+/// previous functionality.
+//
+template <typename T>
+struct record_max : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::array_serialization
+/// \brief trait that signifies that data is an array type
+/// \deprecated { This trait is no longer used as array types are determined by other
+/// means }
+///
+template <typename T>
+struct array_serialization : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::requires_prefix
+/// \brief trait that signifies that a component requires the prefix to be set right after
+/// construction. Types with this trait must contain a member string variable named
+/// prefix
+/// \deprecated { This trait is no longer used as this property is determined by other
+/// means }
+///
+template <typename T>
+struct requires_prefix : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::supports_args
+/// \brief trait that designates the type supports calling a function with a certain
+/// set of argument types (passed via a tuple).
+/// \deprecated This is legacy code and support for calling a function with given
+/// arguments is automatically determined.
+///
+template <typename T, typename Tuple>
+struct supports_args : false_type
+{};
 
 //--------------------------------------------------------------------------------------//
 }  // namespace trait

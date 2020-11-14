@@ -24,6 +24,10 @@
 
 #include "gtest/gtest.h"
 
+#include "timemory/timemory.hpp"
+
+using namespace tim::component;
+
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
@@ -31,10 +35,6 @@
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/timemory.hpp"
-
-using namespace tim::component;
 
 static int    _argc = 0;
 static char** _argv = nullptr;
@@ -44,8 +44,17 @@ using lock_t  = std::unique_lock<mutex_t>;
 
 using toolset_t = tim::auto_tuple<wall_clock>;
 
-TIMEMORY_DECLARE_EXTERN_STORAGE(component::wall_clock, wc)
-TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::wall_clock, true)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(timeline_storage, monotonic_raw_clock, true_type)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(class tim::auto_tuple<wall_clock>)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(class tim::component_tuple<wall_clock>)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(class tim::component_bundle<TIMEMORY_API, wall_clock>)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(
+    class tim::component_bundle<TIMEMORY_API, monotonic_clock>)
+TIMEMORY_DECLARE_EXTERN_TEMPLATE(
+    class tim::component_bundle<TIMEMORY_API, monotonic_raw_clock>)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(wall_clock, true, int64_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(monotonic_clock, true, int64_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(monotonic_raw_clock, true, int64_t)
 
 //--------------------------------------------------------------------------------------//
 
@@ -134,7 +143,7 @@ protected:
             configured                   = true;
             tim::settings::verbose()     = 0;
             tim::settings::debug()       = false;
-            tim::settings::json_output() = true;
+            tim::settings::file_output() = false;
             tim::settings::mpi_thread()  = false;
             tim::dmp::initialize(_argc, _argv);
             tim::timemory_init(_argc, _argv);
@@ -184,7 +193,7 @@ TEST_F(timeline_tests, general)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(timeline_tests, timeline_quirk)
+TEST_F(timeline_tests, quirk)
 {
     using bundle_t = tim::component_bundle<TIMEMORY_API, wall_clock>;
     bundle_t _bundle(details::get_test_name(),
@@ -196,6 +205,45 @@ TEST_F(timeline_tests, timeline_quirk)
     EXPECT_FALSE(_scope.is_flat());
     EXPECT_FALSE(_scope.is_flat_timeline());
     EXPECT_FALSE(_scope.is_tree_timeline());
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timeline_tests, type_trait)
+{
+    tim::settings::flat_profile()     = false;
+    tim::settings::timeline_profile() = false;
+    using bundle_t = tim::component_bundle<TIMEMORY_API, monotonic_raw_clock>;
+    bundle_t _outer(details::get_test_name());
+    bundle_t _inner(details::get_test_name());
+    _outer.start();
+    _inner.start();
+    details::consume(1000);
+    _inner.stop();
+    _outer.stop();
+
+    monotonic_raw_clock* _outer_mc = _outer.get<monotonic_raw_clock>();
+    monotonic_raw_clock* _inner_mc = _inner.get<monotonic_raw_clock>();
+
+    EXPECT_FALSE(_outer_mc->get_is_flat());
+    EXPECT_TRUE(_outer_mc->get_depth_change());
+    EXPECT_FALSE(_inner_mc->get_is_flat());
+    EXPECT_TRUE(_inner_mc->get_depth_change());
+
+    EXPECT_EQ(_outer_mc->get_iterator()->data().get_laps(), 1);
+    EXPECT_EQ(_inner_mc->get_iterator()->data().get_laps(), 1);
+    EXPECT_EQ(_outer_mc->get_iterator()->depth(), 1);
+    EXPECT_EQ(_inner_mc->get_iterator()->depth(), 2);
+    EXPECT_TRUE(_outer_mc->get_iterator() != _inner_mc->get_iterator());
+
+    auto _scope = _outer.get_scope();
+    std::cout << "\nscope: " << _scope << '\n' << std::endl;
+    EXPECT_TRUE(_scope.is_tree());
+    EXPECT_FALSE(_scope.is_flat());
+    EXPECT_FALSE(_scope.is_timeline());
+    EXPECT_FALSE(_scope.is_flat_timeline());
+    EXPECT_FALSE(_scope.is_tree_timeline());
+    EXPECT_TRUE(_scope == _inner.get_scope());
 }
 
 //--------------------------------------------------------------------------------------//

@@ -62,14 +62,14 @@ struct construct
     construct(type&, Args&&...);
 
     template <typename... Args,
-              enable_if_t<(std::is_constructible<Tp, Args...>::value), int> = 0>
+              enable_if_t<std::is_constructible<Tp, Args...>::value, int> = 0>
     static auto get(Args&&... args)
     {
         return Tp(std::forward<Args>(args)...);
     }
 
-    template <typename... Args, enable_if_t<(!std::is_constructible<Tp, Args...>::value &&
-                                             std::is_default_constructible<Tp>::value),
+    template <typename... Args, enable_if_t<!std::is_constructible<Tp, Args...>::value &&
+                                                std::is_default_constructible<Tp>::value,
                                             int> = 0>
     static auto get(Args&&...)
     {

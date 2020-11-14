@@ -25,13 +25,13 @@
 
 #pragma once
 
+#include "timemory/components/opaque/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/variadic/types.hpp"
 
-#include <cassert>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -43,146 +43,119 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
-struct opaque
-{
-    using string_t = std::string;
-
-    using init_func_t   = std::function<void()>;
-    using setup_func_t  = std::function<void*(void*, const string_t&, scope::config)>;
-    using push_func_t   = std::function<void(void*&, const string_t&, scope::config)>;
-    using start_func_t  = std::function<void(void*)>;
-    using stop_func_t   = std::function<void(void*)>;
-    using pop_func_t    = std::function<void(void*)>;
-    using get_func_t    = std::function<void(void*, void*&, size_t)>;
-    using delete_func_t = std::function<void(void*)>;
-
-    template <typename InitF, typename StartF, typename StopF, typename GetF,
-              typename DelF, typename SetupF, typename PushF, typename PopF>
-    opaque(bool _valid, size_t _typeid, InitF&& _init, StartF&& _start, StopF&& _stop,
-           GetF&& _get, DelF&& _del, SetupF&& _setup, PushF&& _push, PopF&& _pop)
-    : m_valid(_valid)
-    , m_copy(false)
-    , m_typeid(_typeid)
-    , m_data(nullptr)
-    , m_init(std::move(_init))
-    , m_setup(std::move(_setup))
-    , m_push(std::move(_push))
-    , m_start(std::move(_start))
-    , m_stop(std::move(_stop))
-    , m_pop(std::move(_pop))
-    , m_get(std::move(_get))
-    , m_del(std::move(_del))
-    {}
-
-    ~opaque()
-    {
-        if(m_data)
-        {
-            m_stop(m_data);
-            m_del(m_data);
-        }
-    }
-
-    opaque()              = default;
-    opaque(const opaque&) = default;
-    opaque(opaque&&)      = default;
-    opaque& operator=(const opaque&) = default;
-    opaque& operator=(opaque&&) = default;
-
-    operator bool() const { return m_valid; }
-
-    void init() { m_init(); }
-
-    void setup(const string_t& _prefix, scope::config _scope)
-    {
-        if(m_data)
-        {
-            stop();
-            cleanup();
-        }
-        m_data  = m_setup(m_data, _prefix, _scope);
-        m_valid = (m_data != nullptr);
-    }
-
-    void push(const string_t& _prefix, scope::config _scope)
-    {
-        if(m_data)
-            m_push(m_data, _prefix, _scope);
-    }
-
-    void start()
-    {
-        if(m_data)
-            m_start(m_data);
-    }
-
-    void stop()
-    {
-        if(m_data)
-            m_stop(m_data);
-    }
-
-    void pop()
-    {
-        if(m_data)
-            m_pop(m_data);
-    }
-
-    void cleanup()
-    {
-        if(m_data && !m_copy)
-            m_del(m_data);
-        m_data = nullptr;
-    }
-
-    void get(void*& ptr, size_t _hash) const
-    {
-        if(m_data)
-            m_get(m_data, ptr, _hash);
-    }
-
-    void set_copy(bool val) { m_copy = val; }
-
-    bool          m_valid  = false;
-    bool          m_copy   = false;
-    size_t        m_typeid = 0;
-    void*         m_data   = nullptr;
-    init_func_t   m_init   = []() {};
-    setup_func_t  m_setup = [](void*, const string_t&, scope::config) { return nullptr; };
-    push_func_t   m_push  = [](void*&, const string_t&, scope::config) {};
-    start_func_t  m_start = [](void*) {};
-    stop_func_t   m_stop  = [](void*) {};
-    pop_func_t    m_pop   = [](void*) {};
-    get_func_t    m_get   = [](void*, void*&, size_t) {};
-    delete_func_t m_del   = [](void*) {};
-};
+template <typename InitF, typename StartF, typename StopF, typename GetF, typename DelF,
+          typename SetupF, typename PushF, typename PopF>
+opaque::opaque(bool _valid, size_t _typeid, InitF&& _init, StartF&& _start, StopF&& _stop,
+               GetF&& _get, DelF&& _del, SetupF&& _setup, PushF&& _push, PopF&& _pop)
+: m_valid(_valid)
+, m_copy(false)
+, m_typeid(_typeid)
+, m_data(nullptr)
+, m_init(std::move(_init))
+, m_setup(std::move(_setup))
+, m_push(std::move(_push))
+, m_start(std::move(_start))
+, m_stop(std::move(_stop))
+, m_pop(std::move(_pop))
+, m_get(std::move(_get))
+, m_del(std::move(_del))
+{}
 //
 //--------------------------------------------------------------------------------------//
 //
-namespace factory
+inline opaque::~opaque()
 {
+    if(m_data)
+    {
+        m_stop(m_data);
+        m_del(m_data);
+    }
+}
 //
-template <typename Toolset, typename Arg, typename... Args>
-opaque
-get_opaque(Arg&& arg, Args&&... args);
+//--------------------------------------------------------------------------------------//
 //
-template <typename Toolset>
-opaque
-get_opaque();
+inline void
+opaque::init()
+{
+    m_init();
+}
 //
-template <typename Toolset>
-opaque
-get_opaque(scope::config _scope);
+//--------------------------------------------------------------------------------------//
 //
-template <typename Toolset>
-opaque
-get_opaque(bool _flat);
+inline void
+opaque::setup(const string_t& _prefix, scope::config _scope)
+{
+    if(m_data)
+    {
+        stop();
+        cleanup();
+    }
+    m_data  = m_setup(m_data, _prefix, _scope);
+    m_valid = (m_data != nullptr);
+}
 //
-template <typename Toolset>
-std::set<size_t>
-get_typeids();
+//--------------------------------------------------------------------------------------//
 //
-}  // namespace factory
+inline void
+opaque::push(const string_t& _prefix, scope::config _scope)
+{
+    if(m_data)
+        m_push(m_data, _prefix, _scope);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline void
+opaque::start()
+{
+    if(m_data)
+        m_start(m_data);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline void
+opaque::stop()
+{
+    if(m_data)
+        m_stop(m_data);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline void
+opaque::pop()
+{
+    if(m_data)
+        m_pop(m_data);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline void
+opaque::cleanup()
+{
+    if(m_data && !m_copy)
+        m_del(m_data);
+    m_data = nullptr;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline void
+opaque::get(void*& ptr, size_t _hash) const
+{
+    if(m_data)
+        m_get(m_data, ptr, _hash);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline void
+opaque::set_copy(bool val)
+{
+    m_copy = val;
+}
 //
 //--------------------------------------------------------------------------------------//
 //

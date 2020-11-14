@@ -180,7 +180,7 @@ struct callback_connector;
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \fn openmp::user_context_callback
+/// \fn void openmp::user_context_callback(Handler& h, std::string& key, Args... args)
 /// \brief These functions can be specialized an overloaded for quick access
 /// to the the openmp callbacks. The first function (w/ string) is invoked by every
 /// openmp callback. The other versions (w/ mode) is invoked depending on how
@@ -292,7 +292,7 @@ user_context_callback(Handler& handle, mode::endpoint_callback, Arg arg,
 /// a temporary instance of the connector, e.g. \ref openmp::callback_connector,
 /// whose constructor creates a temporary instance of the context handler
 /// in order to create a unique identifier and a label and then instruments the callback
-/// based on the \param Mode template parameter.
+/// based on the \tparam Mode template parameter.
 ///
 template <typename Components, typename Connector, typename Mode, typename... Args>
 struct ompt_wrapper

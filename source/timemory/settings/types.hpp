@@ -31,10 +31,15 @@
 
 #include "timemory/compat/macros.h"
 #include "timemory/settings/macros.hpp"
+#include "timemory/utility/argparse.hpp"
+#include "timemory/utility/serializer.hpp"
 
 #include <functional>
 #include <map>
+#include <set>
 #include <string>
+#include <typeindex>
+#include <typeinfo>
 #include <vector>
 
 namespace tim
@@ -61,3 +66,7 @@ struct settings;
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
+
+TIMEMORY_SET_CLASS_VERSION(2, ::tim::settings)
+TIMEMORY_SET_CLASS_VERSION(0, ::tim::vsettings)
+// CEREAL_FORCE_DYNAMIC_INIT(timemory_settings_t)

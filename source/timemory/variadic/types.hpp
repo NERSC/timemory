@@ -68,8 +68,12 @@ namespace tim
 template <typename... Types>
 class lightweight_tuple;
 
-template <typename ApiT, typename... Types>
+template <typename... Types>
 class component_bundle;
+
+// actual definition:
+template <typename ApiT, typename... Types>
+class component_bundle<ApiT, Types...>;
 
 template <typename... Types>
 class component_tuple;
@@ -80,8 +84,12 @@ class component_list;
 template <typename TupleT, typename ListT>
 class component_hybrid;
 
-template <typename ApiT, typename... Types>
+template <typename... Types>
 class auto_bundle;
+
+// actual definition:
+template <typename ApiT, typename... Types>
+class auto_bundle<ApiT, Types...>;
 
 template <typename... Types>
 class auto_tuple;
@@ -107,10 +115,6 @@ TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, type_list, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, auto_hybrid, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, component_hybrid, true_type, typename)
 
-// hybrid wrappers (stack- and heap- allocated components)
-TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_hybrid_wrapper, auto_hybrid, true_type, typename)
-TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_hybrid_wrapper, component_hybrid, true_type, typename)
-
 // {auto,component}_bundle are empty if one template is supplied
 TIMEMORY_DEFINE_TEMPLATE_CONCEPT(is_empty, auto_bundle, true_type, typename)
 TIMEMORY_DEFINE_TEMPLATE_CONCEPT(is_empty, component_bundle, true_type, typename)
@@ -118,16 +122,14 @@ TIMEMORY_DEFINE_TEMPLATE_CONCEPT(is_empty, component_bundle, true_type, typename
 //======================================================================================//
 
 TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(tuple_type, std::tuple, typename, std::tuple<T...>)
-TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(auto_type, std::tuple, typename,
-                                      auto_bundle<project::timemory, T...>)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(auto_type, std::tuple, typename, auto_bundle<T...>)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(component_type, std::tuple, typename,
-                                      component_bundle<project::timemory, T...>)
+                                      component_bundle<T...>)
 
 TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(tuple_type, type_list, typename, std::tuple<T...>)
-TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(auto_type, type_list, typename,
-                                      auto_bundle<project::timemory, T...>)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(auto_type, type_list, typename, auto_bundle<T...>)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(component_type, type_list, typename,
-                                      component_bundle<project::timemory, T...>)
+                                      component_bundle<T...>)
 
 //======================================================================================//
 

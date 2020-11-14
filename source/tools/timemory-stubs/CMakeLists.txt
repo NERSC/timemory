@@ -22,8 +22,8 @@ foreach(LIB_TYPE shared static)
     target_compile_definitions(timemory-stubs-${LIB_TYPE} INTERFACE TIMEMORY_USE_EXTERN)
 
     target_link_libraries(timemory-stubs-${LIB_TYPE} PRIVATE
-        timemory-headers
-        timemory-compile-options)
+        timemory::timemory-headers
+        timemory::timemory-compile-options)
 
     if(TARGET timemory-environment-${LIB_TYPE})
         target_link_libraries(timemory-stubs-${LIB_TYPE} PRIVATE
@@ -31,17 +31,22 @@ foreach(LIB_TYPE shared static)
     endif()
 
     install(TARGETS timemory-stubs-${LIB_TYPE}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/stubs)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/stubs
+        EXPORT timemory-library-depends)
 
     # build tree
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E create_symlink stubs/libtimemory.so libtimemory-stubs.so
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            stubs/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+            libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
     # install tree
     install(CODE "
 EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink timemory/stubs/libtimemory.so libtimemory-stubs.so
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+        timemory/stubs/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+        libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
     ")
 

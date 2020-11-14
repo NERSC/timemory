@@ -39,9 +39,9 @@ were not available when timemory was installed.
 | `timemory::timemory-bounds-sanitizer` | Adds compiler flags to enable bounds sanitizer (-fsanitize=bounds) |
 | `timemory::timemory-caliper` | Enables Caliper support |
 | `timemory::timemory-cereal-xml` | Enables XML serialization output |
-| `timemory::timemory-cereal` | Provides include flags for serialization library |
 | `timemory::timemory-compile-options` | Adds the standard set of compiler flags used by timemory |
 | `timemory::timemory-compile-timing` | Adds compiler flags which report compilation timing metrics |
+| `timemory::timemory-compiler-instrument` | Provides library for compiler instrumentation |
 | `timemory::timemory-coverage` | Enables code-coverage flags |
 | `timemory::timemory-cpu-roofline` | Enables flags and libraries for proper CPU roofline generation |
 | `timemory::timemory-craypat` | Enables CrayPAT support |
@@ -51,8 +51,10 @@ were not available when timemory was installed.
 | `timemory::timemory-cudart-static` | Link to CUDA runtime (static library) |
 | `timemory::timemory-cudart` | Link to CUDA runtime (shared library) |
 | `timemory::timemory-cupti` | Enables CUPTI support (requires linking to libcuda) |
+| `timemory::timemory-default-disabled` | Enables pre-processor directive for disabling timemory by default at runtime |
 | `timemory::timemory-default-visibility` | Adds -fvisibility=default compiler flag |
 | `timemory::timemory-develop-options` | Adds developer compiler flags |
+| `timemory::timemory-disable` | Enables pre-processor directive for disabling timemory completely |
 | `timemory::timemory-dmp` | Enables the default distributed memory parallelism library (e.g. MPI, UPC++) |
 | `timemory::timemory-dyninst` | Provides flags and libraries for Dyninst (dynamic instrumentation |
 | `timemory::timemory-extensions` | Provides a single target for all the timemory extensions which were found |

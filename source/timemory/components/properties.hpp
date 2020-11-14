@@ -78,6 +78,14 @@ get_typeids();
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::static_properties
+/// \tparam Tp Component type
+/// \tparam Placeholder Whether or not the component type is a placeholder type that
+/// should be ignored during runtime initialization.
+///
+/// \brief Provides three variants of a `matches` function for determining if a
+/// component is identified by a given string or enumeration value
+///
 template <typename Tp, bool PlaceHolder = concepts::is_placeholder<Tp>::value>
 struct static_properties;
 //
@@ -144,6 +152,29 @@ struct static_properties<Tp, true>
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::properties
+/// \tparam Tp Component type
+///
+/// \brief This is a critical specialization for mapping string and integers to
+/// component types at runtime. The `enum_string()` function is the enum id as
+/// a string. The `id()` function is (typically) the name of the C++ component
+/// as a string. The `ids()` function returns a set of strings which are alternative
+/// string identifiers to the enum string or the string ID. Additionally, it
+/// provides serializaiton of these values.
+///
+/// A macro is provides to simplify this specialization:
+///
+/// \code{.cpp}
+/// TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
+///                                 "virtual_clock")
+/// \endcode
+///
+/// In the above, the first parameter is the C++ type, the second is the enumeration
+/// id, the enum string is automatically generated via preprocessor `#` on the second
+/// parameter, the third parameter is the string ID, and the remaining values are placed
+/// in the `ids()`. Additionally, this macro specializes the
+/// \ref tim::component::enumerator.
+///
 template <typename Tp>
 struct properties : static_properties<Tp>
 {
@@ -164,6 +195,32 @@ struct properties : static_properties<Tp>
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::component::enumerator
+/// \tparam Idx Enumeration value
+///
+/// \brief This is a critical specialization for mapping string and integers to
+/// component types at runtime (should always be specialized alongside \ref
+/// tim::component::properties) and it is also critical for performing template
+/// metaprogramming "loops" over all the components. E.g.:
+///
+/// \code{.cpp}
+/// template <size_t Idx>
+/// using Enumerator_t = typename tim::component::enumerator<Idx>::type;
+///
+/// template <size_t... Idx>
+/// auto init(std::index_sequence<Idx...>)
+/// {
+///     // expand for [0, TIMEMORY_COMPONENTS_END)
+///     TIMEMORY_FOLD_EXPRESSION(tim::storage_initializer::get<
+///         Enumerator_t<Idx>>());
+/// }
+///
+/// void init()
+/// {
+///     init(std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+/// }
+/// \endcode
+///
 template <int Idx>
 struct enumerator : properties<placeholder<nothing>>
 {
@@ -179,6 +236,11 @@ struct enumerator : properties<placeholder<nothing>>
 //
 template <int Idx>
 using enumerator_t = typename enumerator<Idx>::type;
+//
+template <int Idx>
+using properties_t = typename enumerator<Idx>::type;
+//
+//--------------------------------------------------------------------------------------//
 //
 }  // namespace component
 }  // namespace tim

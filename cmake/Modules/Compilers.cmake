@@ -147,7 +147,12 @@ macro(ADD_C_FLAG_IF_AVAIL FLAG)
         string(REPLACE "-" "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE " " "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE "=" "_" FLAG_NAME "${FLAG_NAME}")
-        check_c_compiler_flag("${FLAG}" ${FLAG_NAME})
+        check_c_compiler_flag("-Werror" c_werror)
+        if(c_werror)
+            check_c_compiler_flag("${FLAG} -Werror" ${FLAG_NAME})
+        else()
+            check_c_compiler_flag("${FLAG}" ${FLAG_NAME})
+        endif()
         if(${FLAG_NAME})
             if("${_LTARG}" STREQUAL "")
                 list(APPEND ${PROJECT_NAME}_C_FLAGS "${FLAG}")
@@ -235,7 +240,12 @@ macro(ADD_CXX_FLAG_IF_AVAIL FLAG)
         string(REPLACE " " "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE "=" "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE "/" "_" FLAG_NAME "${FLAG_NAME}")
-        check_cxx_compiler_flag("${FLAG}" ${FLAG_NAME})
+        check_cxx_compiler_flag("-Werror" cxx_werror)
+        if(cxx_werror)
+            check_cxx_compiler_flag("${FLAG} -Werror" ${FLAG_NAME})
+        else()
+            check_cxx_compiler_flag("${FLAG}" ${FLAG_NAME})
+        endif()
         if(${FLAG_NAME})
             if("${_LTARG}" STREQUAL "")
                 list(APPEND ${PROJECT_NAME}_CXX_FLAGS "${FLAG}")
@@ -339,85 +349,86 @@ endfunction()
 #----------------------------------------------------------------------------------------#
 foreach(LANG C CXX)
 
-    macro(SET_COMPILER_VAR VAR _BOOL)
-        set(CMAKE_${LANG}_COMPILER_IS_${VAR} ${_BOOL} CACHE BOOL
-            "CMake ${LANG} compiler identification (${VAR})")
+    function(SET_COMPILER_VAR VAR _BOOL)
+        set(CMAKE_${LANG}_COMPILER_IS_${VAR} ${_BOOL} CACHE INTERNAL
+            "CMake ${LANG} compiler identification (${VAR})" FORCE)
         mark_as_advanced(CMAKE_${LANG}_COMPILER_IS_${VAR})
-    endmacro()
+    endfunction()
 
     if(("${LANG}" STREQUAL "C" AND CMAKE_COMPILER_IS_GNUCC)
         OR
        ("${LANG}" STREQUAL "CXX" AND CMAKE_COMPILER_IS_GNUCXX))
 
         # GNU compiler
-        SET_COMPILER_VAR(       GNU                 ON)
+        SET_COMPILER_VAR(       GNU                 1)
 
     elseif(CMAKE_${LANG}_COMPILER MATCHES "icc.*")
 
         # Intel icc compiler
-        SET_COMPILER_VAR(       INTEL               ON)
-        SET_COMPILER_VAR(       INTEL_ICC           ON)
+        SET_COMPILER_VAR(       INTEL               1)
+        SET_COMPILER_VAR(       INTEL_ICC           1)
 
     elseif(CMAKE_${LANG}_COMPILER MATCHES "icpc.*")
 
         # Intel icpc compiler
-        SET_COMPILER_VAR(       INTEL               ON)
-        SET_COMPILER_VAR(       INTEL_ICPC          ON)
+        SET_COMPILER_VAR(       INTEL               1)
+        SET_COMPILER_VAR(       INTEL_ICPC          1)
 
-    elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "Clang" OR
-           CMAKE_${LANG}_COMPILER_ID MATCHES "AppleClang")
+    elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "AppleClang")
 
         # Clang/LLVM compiler
-        SET_COMPILER_VAR(       CLANG               ON)
+        SET_COMPILER_VAR(       CLANG               1)
+        SET_COMPILER_VAR( APPLE_CLANG               1)
+
+    elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "Clang")
+
+        # Clang/LLVM compiler
+        SET_COMPILER_VAR(       CLANG               1)
 
     elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "PGI")
 
         # PGI compiler
-        SET_COMPILER_VAR(       PGI                 ON)
+        SET_COMPILER_VAR(       PGI                 1)
 
     elseif(CMAKE_${LANG}_COMPILER MATCHES "xlC" AND UNIX)
 
         # IBM xlC compiler
-        SET_COMPILER_VAR(       XLC                 ON)
+        SET_COMPILER_VAR(       XLC                 1)
 
     elseif(CMAKE_${LANG}_COMPILER MATCHES "aCC" AND UNIX)
 
         # HP aC++ compiler
-        SET_COMPILER_VAR(       HP_ACC              ON)
+        SET_COMPILER_VAR(       HP_ACC              1)
 
     elseif(CMAKE_${LANG}_COMPILER MATCHES "CC" AND
            CMAKE_SYSTEM_NAME MATCHES "IRIX" AND UNIX)
 
         # IRIX MIPSpro CC Compiler
-        SET_COMPILER_VAR(       MIPS                ON)
+        SET_COMPILER_VAR(       MIPS                1)
 
     elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "Intel")
 
-        SET_COMPILER_VAR(       INTEL               ON)
+        SET_COMPILER_VAR(       INTEL               1)
 
         set(CTYPE ICC)
         if("${LANG}" STREQUAL "CXX")
             set(CTYPE ICPC)
         endif()
 
-        SET_COMPILER_VAR(       INTEL_${CTYPE}      ON)
+        SET_COMPILER_VAR(       INTEL_${CTYPE}      1)
 
     elseif(CMAKE_${LANG}_COMPILER MATCHES "MSVC")
 
         # Windows Visual Studio compiler
-        SET_COMPILER_VAR(       MSVC                ON)
+        SET_COMPILER_VAR(       MSVC                1)
 
     endif()
 
     # set other to no
-    foreach(TYPE GNU INTEL INTEL_ICC INTEL_ICPC CLANG PGI XLC HP_ACC MIPS MSVC)
-        if(NOT ${CMAKE_${LANG}_COMPILER_IS_${TYPE}})
-            SET_COMPILER_VAR(${TYPE} OFF)
+    foreach(TYPE GNU INTEL INTEL_ICC INTEL_ICPC APPLE_CLANG CLANG PGI XLC HP_ACC MIPS MSVC)
+        if(NOT DEFINED CMAKE_${LANG}_COMPILER_IS_${TYPE})
+            SET_COMPILER_VAR(${TYPE} 0)
         endif()
     endforeach()
-
-    if(APPLE OR ("${CMAKE_INCLUDE_SYSTEM_FLAG_${LANG}}" STREQUAL "-I" AND NOT WIN32))
-        # set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
-    endif()
 
 endforeach()

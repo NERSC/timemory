@@ -22,26 +22,31 @@ foreach(LIB_TYPE shared static)
     target_compile_definitions(timemory-jump-${LIB_TYPE} INTERFACE TIMEMORY_USE_EXTERN)
 
     target_link_libraries(timemory-jump-${LIB_TYPE} PRIVATE
-        timemory-headers
-        timemory-compile-options)
+        timemory::timemory-headers
+        timemory::timemory-compile-options)
 
-    if(TARGET timemory-environment-${LIB_TYPE})
+    if(TARGET timemory::timemory-environment-${LIB_TYPE})
         target_link_libraries(timemory-jump-${LIB_TYPE} PRIVATE
-            timemory-environment-${LIB_TYPE})
+            timemory::timemory-environment-${LIB_TYPE})
     endif()
 
     install(TARGETS timemory-jump-${LIB_TYPE}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/jump)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/jump
+        EXPORT timemory-library-depends)
 
     # build tree
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E create_symlink jump/libtimemory.so libtimemory-jump.so
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            jump/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+            libtimemory-jump${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
     # install tree
     install(CODE "
 EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink timemory/jump/libtimemory.so libtimemory-jump.so
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+        timemory/jump/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+        libtimemory-jump${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
     ")
 

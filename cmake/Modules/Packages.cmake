@@ -22,6 +22,10 @@ add_interface_library(timemory-extern
     "Enables pre-processor directive to ensure all extern templates are used")
 add_interface_library(timemory-statistics
     "Enables statistics for all components which define TIMEMORY_STATISTICS_TYPE(...)")
+add_interface_library(timemory-disable
+    "Enables pre-processor directive for disabling timemory completely")
+add_interface_library(timemory-default-disabled
+    "Enables pre-processor directive for disabling timemory by default at runtime")
 
 set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers)
@@ -99,6 +103,8 @@ add_interface_library(timemory-ompt-library
     "Provides OMPT library for OpenMP performance analysis")
 add_interface_library(timemory-ncclp-library
     "Provides NCCLP library for NCCL performance analysis")
+add_interface_library(timemory-compiler-instrument
+    "Provides library for compiler instrumentation")
 
 target_link_libraries(timemory-mpip-library INTERFACE timemory-mpi timemory-gotcha)
 target_link_libraries(timemory-ncclp-library INTERFACE timemory-nccl timemory-gotcha)
@@ -126,14 +132,12 @@ set(TIMEMORY_EXTENSION_INTERFACES
     #
     timemory-statistics
     #
-    timemory-papi
-    #
     timemory-cuda
-    # timemory-cudart
     timemory-nccl
     timemory-cupti
     timemory-cudart-device
     #
+    timemory-papi
     timemory-gperftools
     #
     timemory-python
@@ -325,8 +329,15 @@ endfunction()
 #
 #----------------------------------------------------------------------------------------#
 
+timemory_target_compile_definitions(timemory-disable INTERFACE
+    TIMEMORY_ENABLED=0)
+
+timemory_target_compile_definitions(timemory-default-disabled INTERFACE
+    TIMEMORY_DEFAULT_ENABLED=false)
+
 # this target is always linked whenever timemory is used via cmake
 timemory_target_compile_definitions(timemory-headers INTERFACE TIMEMORY_CMAKE)
+timemory_target_compile_definitions(timemory-headers INTERFACE CEREAL_THREAD_SAFE=1)
 
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source>
@@ -342,6 +353,7 @@ endif()
 
 find_library(rt_LIBRARY NAMES rt)
 find_library(dl_LIBRARY NAMES dl)
+find_library(dw_LIBRARY NAMES dw)
 
 # dynamic linking library
 if(dl_LIBRARY)
@@ -468,7 +480,7 @@ if(TIMEMORY_BUILD_GOOGLE_TEST)
         mark_as_advanced(CMAKE_MACOSX_RPATH)
     endif()
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/google-test)
-    target_link_libraries(timemory-google-test INTERFACE gtest gmock gtest_main)
+    target_link_libraries(timemory-google-test INTERFACE gtest gmock)
     target_include_directories(timemory-google-test SYSTEM INTERFACE
         ${PROJECT_SOURCE_DIR}/google-test/googletest/include
         ${PROJECT_SOURCE_DIR}/google-test/googlemock/include)
@@ -860,11 +872,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     #
     # general set of compiler flags when using gperftools
     #
-    if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
-        add_target_flag_if_avail(timemory-gperftools "-g" "-rdynamic")
-    else()
-        add_target_flag_if_avail(timemory-gperftools"-g")
-    endif()
+    add_target_flag_if_avail(timemory-gperftools "-g" "-rdynamic")
 
     # NOTE:
     #   When compiling with programs with gcc, that you plan to link
@@ -1037,7 +1045,7 @@ if(gotcha_FOUND)
             target_link_libraries(timemory-gotcha INTERFACE ${_LIB})
         endif()
     endforeach()
-    if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
+    if(NOT (CMAKE_CXX_COMPILER_IS_CLANG AND APPLE))
         add_target_flag_if_avail(timemory-gotcha "-rdynamic")
     endif()
     if(TIMEMORY_BUILD_GOTCHA)
@@ -1337,6 +1345,23 @@ else()
     inform_empty_interface(timemory-craypat "CrayPAT")
 endif()
 
+#----------------------------------------------------------------------------------------#
+#
+#                       PTL (Parallel Tasking Library)
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
+    checkout_git_submodule(RECURSIVE
+        RELATIVE_PATH external/ptl
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/PTL.git
+        REPO_BRANCH timemory)
+
+    message(STATUS "Adding external/ptl")
+    option(PTL_USE_TBB "Enable TBB backend support in PTL" OFF)
+    add_subdirectory(external/ptl)
+endif()
 
 #----------------------------------------------------------------------------------------#
 #

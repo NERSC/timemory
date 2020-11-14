@@ -57,8 +57,7 @@
 #endif
 //
 /// \enum TIMEMORY_NATIVE_COMPONENT
-/// \brief Enumerated identifiers for timemory-provided components. If the user wishes
-/// to add to the enumerated components, use \ref TIMEMORY_USER_COMPONENT_ENUM
+/// \brief Enumerated identifiers for timemory-provided components.
 //
 enum TIMEMORY_NATIVE_COMPONENT
 {
@@ -81,6 +80,9 @@ enum TIMEMORY_NATIVE_COMPONENT
     CUPTI_ACTIVITY,
     CUPTI_COUNTERS,
     CURRENT_PEAK_RSS,
+    DATA_TRACKER_INTEGER,
+    DATA_TRACKER_UNSIGNED,
+    DATA_TRACKER_FLOATING,
     GPERFTOOLS_CPU_PROFILER,
     GPERFTOOLS_HEAP_PROFILER,
     GPU_ROOFLINE_DP_FLOPS,

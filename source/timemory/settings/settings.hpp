@@ -87,13 +87,16 @@ struct settings
     template <typename Tp, typename Vp>
     using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
 
-    template <typename Tag = api::native_tag>
+    template <typename Tag>
     static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
 
-    template <typename Tag = api::native_tag>
+    template <typename Tag>
     static settings* instance() TIMEMORY_VISIBILITY("default");
 
-    settings() { initialize(); }
+    static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
+    static settings* instance() TIMEMORY_VISIBILITY("default");
+
+    settings();
     ~settings() = default;
 
     settings(const settings&);

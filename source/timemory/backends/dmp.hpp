@@ -80,16 +80,35 @@ is_supported()
 
 //--------------------------------------------------------------------------------------//
 
-inline bool&
+inline bool
 is_finalized()
 {
-#if defined(TIMEMORY_USE_UPCXX)
+#if defined(TIMEMORY_USE_UPCXX) && defined(TIMEMORY_USE_MPI)
+    return upc::is_finalized() && mpi::is_finalized();
+#elif defined(TIMEMORY_USE_UPCXX)
     return upc::is_finalized();
 #elif defined(TIMEMORY_USE_MPI)
     return mpi::is_finalized();
 #else
     static bool _instance = true;
     return _instance;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+set_finalized(bool v)
+{
+#if !defined(TIMEMORY_USE_UPCXX) && !defined(TIMEMORY_USE_MPI)
+    consume_parameters(v);
+#else
+#    if defined(TIMEMORY_USE_UPCXX)
+    upc::is_finalized() = v;
+#    endif
+#    if defined(TIMEMORY_USE_MPI)
+    mpi::is_finalized() = v;
+#    endif
 #endif
 }
 

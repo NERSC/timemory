@@ -26,6 +26,7 @@
 #pragma once
 
 #include "timemory/components/opaque/declaration.hpp"
+#include "timemory/components/opaque/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/type_traits.hpp"
@@ -103,13 +104,13 @@ get_opaque_hash(const std::string& key)
 //
 //  Configure the tool for a specific component
 //
-template <typename Toolset, enable_if_t<(trait::is_available<Toolset>::value &&
-                                         !concepts::is_wrapper<Toolset>::value),
+template <typename Toolset, enable_if_t<trait::is_available<Toolset>::value &&
+                                            !concepts::is_wrapper<Toolset>::value,
                                         int> = 0>
 auto
 get_opaque(scope::config _scope)
 {
-    auto _typeid_hash = get_opaque_hash(demangle<Toolset>());
+    auto _typeid_hash = typeid_hash<Toolset>();
 
     auto _init = []() { operation::init_storage<Toolset>(); };
 
@@ -178,6 +179,9 @@ get_opaque(scope::config _scope)
 
     return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del, _setup, _push,
                   _pop);
+    // return opaque(true, _typeid_hash, std::move(_init), std::move(_start),
+    //              std::move(_stop), std::move(_get), std::move(_del), std::move(_setup),
+    //              std::move(_push), std::move(_pop));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -197,7 +201,7 @@ get_opaque(scope::config _scope, Args&&... args)
         return opaque{};
     }
 
-    auto _typeid_hash = get_opaque_hash(demangle<Toolset>());
+    auto _typeid_hash = typeid_hash<Toolset>();
 
     auto _init = []() {};
 
@@ -287,13 +291,13 @@ struct opaque_typeids
     template <typename U = T, enable_if_t<trait::is_available<U>::value, int> = 0>
     static auto get()
     {
-        return result_type({ get_opaque_hash(demangle<T>()) });
+        return result_type({ typeid_hash<U>() });
     }
 
     template <typename U = T, enable_if_t<trait::is_available<U>::value, int> = 0>
     static auto hash()
     {
-        return get_opaque_hash(demangle<T>());
+        return typeid_hash<U>();
     }
 
     template <typename U = T, enable_if_t<!trait::is_available<U>::value, int> = 0>
@@ -321,12 +325,12 @@ struct opaque_typeids<TupleT<T...>>
     template <typename U>
     static void get(result_type& ret)
     {
-        ret.insert(get_opaque_hash(demangle<U>()));
+        ret.insert(typeid_hash<U>());
     }
 
     template <typename U       = TupleT<T...>,
-              enable_if_t<(trait::is_available<U>::value &&
-                           concepts::is_wrapper<TupleT<T...>>::value),
+              enable_if_t<trait::is_available<U>::value &&
+                              concepts::is_wrapper<TupleT<T...>>::value,
                           int> = 0>
     static result_type get()
     {
@@ -337,8 +341,8 @@ struct opaque_typeids<TupleT<T...>>
     }
 
     template <typename U       = TupleT<T...>,
-              enable_if_t<(trait::is_available<U>::value &&
-                           !concepts::is_wrapper<TupleT<T...>>::value),
+              enable_if_t<trait::is_available<U>::value &&
+                              !concepts::is_wrapper<TupleT<T...>>::value,
                           int> = 0>
     static result_type get()
     {
@@ -350,7 +354,7 @@ struct opaque_typeids<TupleT<T...>>
     template <typename U, enable_if_t<trait::is_available<U>::value, int> = 0>
     static void get(result_type& ret)
     {
-        ret.insert(get_opaque_hash(demangle<U>()));
+        ret.insert(typeid_hash<U>());
     }
 
     template <typename U, enable_if_t<!trait::is_available<U>::value, int> = 0>

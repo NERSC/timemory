@@ -98,7 +98,7 @@ public:
     static void serialize_environment(Archive& ar)
     {
         if(instance())
-            ar(*instance(), 0);
+            instance()->serialize(ar, TIMEMORY_GET_CLASS_VERSION(tim::env_settings));
     }
 
 private:
@@ -138,6 +138,8 @@ env_settings::insert(const std::string& env_id, Tp val)
 
     if(m_env->find(env_id) == m_env->end() || m_env->find(env_id)->second != ss.str())
         (*m_env)[env_id] = ss.str();
+#else
+    consume_parameters(env_id, val);
 #endif
 }
 //

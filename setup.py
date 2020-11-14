@@ -5,6 +5,7 @@ import sys
 import argparse
 import warnings
 import platform
+import setuptools
 from skbuild import setup
 from skbuild.command.install import install as skinstall
 

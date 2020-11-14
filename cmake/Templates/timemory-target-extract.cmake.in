@@ -31,7 +31,7 @@ function(TIMEMORY_TARGET_NAME _TARG _VAR)
             set(${_VAR} "${_TARG}" PARENT_SCOPE)
         else()
             foreach(_PREFIX
-                "@PROJECT_NAME@::timemory-" "@PROJECT_NAME@" "timemory-"
+                "timemory::timemory-" "timemory" "timemory-"
                 "caliper::" "gotcha::" "Boost::" "Threads::" "Dyninst::"
                 "Kokkos::" "OpenMP::")
                 if(NOT TARGET "${_TARG}" AND TARGET "${_PREFIX}${_TARG}")
@@ -179,11 +179,11 @@ endmacro()
 
 #----------------------------------------------------------------------------------------#
 
-# timemory_safe_remove_duplicates(@PROJECT_NAME@_INTERFACE_COMPONENTS)
+# timemory_safe_remove_duplicates(timemory_INTERFACE_COMPONENTS)
 
 #----------------------------------------------------------------------------------------#
 
-foreach(_TARG ${@PROJECT_NAME@_INTERFACE_COMPONENTS})
+foreach(_TARG ${timemory_INTERFACE_COMPONENTS})
     timemory_target_name(${_TARG} _TARG)
     timemory_target_extract(${_TARG} INTERFACE)
 endforeach()

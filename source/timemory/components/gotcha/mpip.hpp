@@ -151,7 +151,7 @@ private:
 //
 //======================================================================================//
 //
-/// \fn activate_mpip
+/// \fn uint64_t tim::component::activate_mpip()
 /// \brief The thread that first activates mpip will be the thread that turns it off.
 /// Function returns the number of new mpip handles
 ///
@@ -186,7 +186,7 @@ tim::component::activate_mpip()
 //
 //======================================================================================//
 //
-/// \fn deactivate_mpip
+/// \fn uint64_t tim::component::deactivate_mpip(uint64_t id)
 /// \brief The thread that created the initial mpip handle will turn off. Returns
 /// the number of handles active
 ///

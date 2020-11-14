@@ -64,6 +64,7 @@
 // general
 #include <functional>
 #include <limits>
+#include <typeindex>
 #include <utility>
 // container
 #include <map>
@@ -188,10 +189,62 @@ demangle(const std::string& _str)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp>
-inline std::string
+inline auto
 demangle()
 {
     return demangle(typeid(Tp).name());
+}
+
+//--------------------------------------------------------------------------------------//
+
+namespace internal
+{
+template <typename Tp, typename Up = Tp>
+inline auto
+try_demangle(int) -> decltype(demangle<Tp>(), std::string())
+{
+    return demangle<Tp>();
+}
+//
+template <typename Tp, typename Up = Tp>
+inline auto
+try_demangle(long)
+{
+    return "";
+}
+}  // namespace internal
+
+template <typename Tp>
+inline auto
+try_demangle()
+{
+    return internal::try_demangle<Tp>(0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+namespace internal
+{
+template <typename Tp, typename Up = Tp>
+inline auto
+typeid_hash(int) -> decltype(demangle<Tp>(), size_t{})
+{
+    return std::type_index(typeid(Tp)).hash_code();
+}
+//
+template <typename Tp, typename Up = Tp>
+inline auto
+typeid_hash(long)
+{
+    return 0;
+}
+}  // namespace internal
+
+template <typename Tp>
+inline auto
+typeid_hash()
+{
+    return internal::typeid_hash<Tp>(0);
 }
 
 //--------------------------------------------------------------------------------------//

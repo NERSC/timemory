@@ -83,7 +83,7 @@ else()
     if(MSVC OR XCODE)
         set(_FORCE_OBJECT)
     endif()
-    
+
     build_intermediate_library(
         ${_FORCE_OBJECT}
         USE_INTERFACE

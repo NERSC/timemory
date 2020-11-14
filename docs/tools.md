@@ -5,7 +5,7 @@
    :glob:
    :maxdepth: 1
 
-   tools/timem/README
+   tools/timemory-timem/README
    tools/timemory-avail/README
    tools/timemory-run/README
    tools/timemory-stubs/README
@@ -13,13 +13,14 @@
    tools/timemory-mpip/README
    tools/timemory-ncclp/README
    tools/timemory-ompt/README
+   tools/timemory-compiler-instrument/README
    tools/kokkos-connector/README
 ```
 
 This section covers the executables and libraries that are distributed as part of the library.
 
 - Executables
-    - [timem](tools/timem/README.md)
+    - [timem](tools/timemory-timem/README.md)
         - Drop-in replacement for `time` (UNIX)
         - For MPI applications, use `timem-mpi`
     - [timemory-avail](tools/timemory-avail/README.md)
@@ -37,5 +38,7 @@ This section covers the executables and libraries that are distributed as part o
         - Provide NCCL profiling via GOTCHA
     - [timemory-ompt](tools/timemory-ompt/README.md)
         - Provide OpenMP profiling via OMPT (OpenMP Tools)
+    - [timemory-compiler-instrument](tools/timemory-compiler-instrument/README.md)
+        - Use this library with compilers which support `-finstrument-functions`
     - [Kokkos Connectors](tools/kokkos-connector/README.md)
         - Libraries for Kokkos profiling

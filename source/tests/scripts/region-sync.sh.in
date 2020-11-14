@@ -1,0 +1,52 @@
+#!/bin/bash -e
+#
+# NOTE: remove '--mpi' after @PROJECT_BINARY_DIR@/timemory-run if applications built without MPI
+#
+TEST_NAME=$(basename ${BASH_SOURCE[0]})
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-trace-output
+rm -rf ${TIMEMORY_OUTPUT_PATH}
+
+# add path to libtimemory to LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
+
+# add dynamic instrumentation in trace mode. no synchronization
+@PROJECT_BINARY_DIR@/timemory-run --mode=trace -o @COMMAND@.trace.inst -- @COMMAND@
+
+# run trace mode instrumented binary
+@COMMAND@.trace.inst
+
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-region-output
+rm -rf ${TIMEMORY_OUTPUT_PATH}
+
+# add dynamic instrumentation in region mode. synchronization applied
+@PROJECT_BINARY_DIR@/timemory-run --mode=region -o @COMMAND@.region.inst -- @COMMAND@
+
+# run region mode instrumented binary
+@COMMAND@.region.inst
+
+TRACE_OUTPUT=$(cat @CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-trace-output/*.txt | grep '>>>')
+REGION_OUTPUT=$(cat @CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-region-output/*.txt | grep '>>>')
+
+NTRACE=$(echo ${TRACE_OUTPUT} | wc -l)
+NREGION=$(echo ${REGION_OUTPUT} | wc -l)
+
+if [ "${NTRACE}" -lt 3 ]; then
+    echo -e "Trace output was only ${NTRACE} lines (< 3)\n"
+    echo -e "${TRACE_OUTPUT}"
+    exit -1
+fi
+
+if [ "${NREGION}" -lt 3 ]; then
+    echo -e "Region output was only ${NREGION} lines (< 3)\n"
+    echo -e "${REGION_OUTPUT}"
+    exit -1
+fi
+
+if [ "${NREGION}" -le "${NTRACE}" ]; then
+    echo -e "Region output was <= trace output (${NREGION} <= ${NTRACE})\n"
+    echo -e "Region output:\n"
+    echo -e "${REGION_OUTPUT}"
+    echo -e "Trace output:\n"
+    echo -e "${TRACE_OUTPUT}"
+    exit -1
+fi

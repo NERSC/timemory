@@ -72,7 +72,7 @@ struct print_storage
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value == false, char> = 0>
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
     print_storage()
     {}
 };

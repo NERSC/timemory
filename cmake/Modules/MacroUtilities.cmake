@@ -28,13 +28,6 @@ MACRO(CACHE_LIST _OP _LIST)
     # apply operation on list
     list(${_OP} _TMP_CACHE_LIST ${ARGN})
     # replace list
-    # set(${_LIST} ${_TMP_CACHE_LIST})
-    # if(NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
-    #     set(${_LIST} ${_TMP_CACHE_LIST} PARENT_SCOPE)
-    # endif()
-    # apply operation on list
-    #list(${_OP} ${_LIST} ${ARGN})
-    # replace list
     set(${_LIST} "${_TMP_CACHE_LIST}" CACHE INTERNAL "" FORCE)
 ENDMACRO()
 
@@ -182,6 +175,12 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     if(NOT TIMEMORY_BUILD_TESTING)
         set(_OPTS EXCLUDE_FROM_ALL)
     endif()
+    if(NOT TARGET timemory-test)
+        add_custom_target(timemory-test
+            COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target test
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+            COMMENT "Running tests...")
+    endif()
     include(GoogleTest)
     # list of arguments taking multiple values
     set(multival_args SOURCES DEPENDS PROPERTIES LINK_LIBRARIES COMMAND OPTIONS ENVIRONMENT)
@@ -203,9 +202,9 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             SOURCES         ${TEST_SOURCES}
             LINK_LIBRARIES  timemory-google-test ${TEST_LINK_LIBRARIES}
             PROPERTIES      "${TEST_PROPERTIES}")
-        if(TEST_DEPENDS)
-            set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${TEST_DEPENDS})
-        endif()
+
+        # always add as a dependency if target is built
+        add_dependencies(timemory-test ${TEST_NAME})
     endif()
 
     set(TEST_LAUNCHER)
@@ -236,6 +235,11 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             ${TEST_OPTIONS})
         SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
     endif()
+
+    if(TEST_DEPENDS)
+        set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${TEST_DEPENDS})
+    endif()
+
 ENDFUNCTION()
 
 #----------------------------------------------------------------------------------------#
@@ -520,6 +524,18 @@ FUNCTION(BUILD_LIBRARY)
         $<$<COMPILE_LANGUAGE:C>:${LIBRARY_C_COMPILE_OPTIONS}>
         $<$<COMPILE_LANGUAGE:CXX>:${LIBRARY_CXX_COMPILE_OPTIONS}>)
 
+    # windows
+    # docs.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library
+    # if(MSVC AND NOT "${LIBRARY_TYPE}" STREQUAL "OBJECT")
+    #    set(_MSVC_FLAGS /MD)
+    #    if("${LIBRARY_TYPE}" STREQUAL "STATIC")
+    #        set(_MSVC_FLAGS /MT)
+    #    endif()
+    #    target_compile_options(${LIBRARY_TARGET_NAME} PUBLIC
+    #        $<$<COMPILE_LANGUAGE:C>:${_MSVC_FLAGS}>
+    #        $<$<COMPILE_LANGUAGE:CXX>:${_MSVC_FLAGS}>)
+    # endif()
+
     # cuda flags
     if(_CUDA)
         target_compile_options(${LIBRARY_TARGET_NAME} PRIVATE
@@ -745,10 +761,14 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
                 if(NOT ${_FNAME})
                     continue()
                 endif()
+                set(_CMAKE_CMD "${CMAKE_COMMAND}")
+                if(WIN32)
+                    get_filename_component(_CMAKE_CMD "${CMAKE_COMMAND}" NAME)
+                endif()
                 install(CODE
                     "
                     EXECUTE_PROCESS(
-                        COMMAND ${CMAKE_COMMAND} -E create_symlink
+                        COMMAND ${_CMAKE_CMD} -E create_symlink
                         ${INSTALL_RELPATH}/${${_FNAME}} ${_PYLIB}/${${_FNAME}}
                         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
                         ${_ECHO})

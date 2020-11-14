@@ -40,8 +40,10 @@ add_flag_if_avail(
     "-Wno-attributes"
     "-Wno-missing-field-initializers")
 
-add_cxx_flag_if_avail(
-    "-Wno-mismatched-tags")
+if(NOT CMAKE_CXX_COMPILER_IS_GNU)
+    add_cxx_flag_if_avail(
+        "-Wno-mismatched-tags")
+endif()
 
 if(CMAKE_CXX_COMPILER_IS_GNU)
     add_target_cxx_flag_if_avail(
@@ -149,8 +151,29 @@ endif()
 #
 add_interface_library(timemory-instrument-functions
     "Adds compiler flags to enable compile-time instrumentation")
-add_target_flag_if_avail(timemory-instrument-functions "-finstrument-functions")
-if(NOT cxx_timemory_instrument_finstrument_functions)
+
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/compiler-instr.cpp.in
+    ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.c COPYONLY)
+
+try_compile(c_timemory_instrument_finstrument_functions
+    ${PROJECT_BINARY_DIR}/compile-tests
+    SOURCES ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.c
+    CMAKE_FLAGS -finstrument-functions)
+
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/compiler-instr.cpp.in
+    ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.cpp COPYONLY)
+
+try_compile(cxx_timemory_instrument_finstrument_functions
+    ${PROJECT_BINARY_DIR}/compile-tests
+    SOURCES ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.cpp
+    CMAKE_FLAGS -finstrument-functions)
+
+if(c_timemory_instrument_finstrument_functions AND
+   cxx_timemory_instrument_finstrument_functions)
+     target_compile_options(timemory-instrument-functions INTERFACE
+         $<$<COMPILE_LANGUAGE:C>:-finstrument-functions>
+         $<$<COMPILE_LANGUAGE:CXX>:-finstrument-functions>)
+else()
     add_disabled_interface(timemory-instrument-functions)
 endif()
 
@@ -196,9 +219,7 @@ if(dl_LIBRARY)
     # This instructs the linker to add all symbols, not only used ones, to the dynamic
     # symbol table. This option is needed for some uses of dlopen or to allow obtaining
     # backtraces from within a program.
-    if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
-        add_flag_if_avail("-rdynamic")
-    endif()
+    add_flag_if_avail("-rdynamic")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -264,14 +285,8 @@ if (MSVC)
 
     # VTune is much more helpful when debug information is included in the 
     # generated release code. 
-    target_compile_definitions(timemory-compile-options INTERFACE /Zi)
-    target_compile_definitions(timemory-compile-options INTERFACE /debug)
-else()
-    # uncomment to use a debug postfix in non-msvc builds
-    # set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Build type" FORCE)
-
-    # uncomment to add symbols even for release builds
-    # target_compile_options(timemory-compile-options INTERFACE -g)
+    add_flag_if_avail("/Zi")
+    add_flag_if_avail("/debug")
 endif()
 
 #----------------------------------------------------------------------------------------#

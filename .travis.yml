@@ -19,7 +19,8 @@ jobs:
         - CC=clang
         - CXX=clang++
         - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_HIDDEN=ON'
-        - BUILD_ARGS='--build-libs shared --caliper --python --stats --tools --cxx-standard=14'
+        - CTEST_ARGS='--force-new-ctest-process'
+        - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=14'
 
     # ------------------------------------------------------------------------ #
     #
@@ -40,18 +41,15 @@ jobs:
             - build-essential
             - libpapi-dev
             - papi-tools
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
       env:
         - CC=gcc-6
         - CXX=g++-6
         - BUILD_TYPE=MinSizeRel
-        - BUILD_ARGS='--quick --build-libs static shared --python --papi --ompt --gotcha --caliper --kokkos --stats --tools --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static shared --python --papi --gotcha --caliper --kokkos --stats --cxx-standard=14'
     # GCC 7
     - os: linux
       dist: bionic
-      python: "3.7"
+      python: "3.6"
       addons:
         apt:
           sources:
@@ -64,9 +62,6 @@ jobs:
             - mpich
             - libpapi-dev
             - papi-tools
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
             - lcov
       env:
         - CC=gcc-7
@@ -90,11 +85,6 @@ jobs:
             - openmpi-bin
             - openmpi-common
             - libfabric-dev
-            - libpapi-dev
-            - papi-tools
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
       env:
         - CC=gcc-8
         - CXX=g++-8
@@ -112,15 +102,10 @@ jobs:
             - clang-6.0
             - clang++-6.0
             - build-essential
-            - libpapi-dev
-            - papi-tools
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
       env:
         - CC=clang-6.0
         - CXX=clang++-6.0
-        - BUILD_ARGS='--quick --build-libs static --ompt --kokkos --stats --tools --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static --kokkos --stats --tools --cxx-standard=14'
     # Clang 7
     - os: linux
       dist: bionic
@@ -137,9 +122,6 @@ jobs:
             - libfabric-dev
             - libpapi-dev
             - papi-tools
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
       env:
         - CC=clang-7
         - CXX=clang++-7
@@ -165,9 +147,6 @@ jobs:
             - mpich
             - libpapi-dev
             - papi-tools
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
       env:
         - CC=gcc-6
         - CXX=g++-6
@@ -176,7 +155,7 @@ jobs:
     # GCC 7
     - os: linux
       dist: bionic
-      python: "3.6"
+      python: "3.7"
       addons:
         apt:
           packages:
@@ -189,15 +168,11 @@ jobs:
             - libfabric-dev
             - libpapi-dev
             - papi-tools
-            - lcov
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
       env:
         - CC=gcc
         - CXX=g++
         - BUILD_TYPE=Debug
-        - BUILD_ARGS='--quick --build-libs static --papi --mpi --ompt --kokkos --tools --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static --papi --mpi --ompt --cxx-standard=14'
     #
     # GCC 8
     - os: linux
@@ -214,6 +189,7 @@ jobs:
             - libmpich-dev
             - mpich
             - graphviz
+            - libtbb-dev
       env:
         - CC=gcc-8
         - CXX=g++-8
@@ -243,7 +219,7 @@ jobs:
         - CC=clang-6.0
         - CXX=clang++-6.0
         - PROFILE=1
-        - BUILD_ARGS='--build-libs shared --gperftools --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14'
+        - BUILD_ARGS='--build-libs shared --gperftools --mpi --papi --mpip --stats --tools --cxx-standard=14'
         - CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'
     # Clang 7
     - os: linux
@@ -257,15 +233,10 @@ jobs:
             - build-essential
             - libmpich-dev
             - mpich
-            - libpapi-dev
-            - papi-tools
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
       env:
         - CC=clang-7
         - CXX=clang++-7
-        - BUILD_ARGS='--quick --build-libs shared --gotcha --caliper --mpi --papi --python --stats --tools --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs shared --gotcha --caliper --mpi --python --stats --tools --cxx-standard=14'
 
     # ------------------------------------------------------------------------ #
 
@@ -287,8 +258,11 @@ script:
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; fi
   - if [ -n "${PROFILE}" ]; then ARGS="${ARGS} --profile=cpu"; fi
-  - travis_wait 85 python ./pyctest-runner.py -cc ${CC} -cxx ${CXX} ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure -- ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
-  - cd build-timemory/Linux
+  - export CTEST_ARGS="-V --output-on-failure ${CTEST_ARGS}"
+  - export CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${CMAKE_ARGS}"
+  - export PYCTEST_ARGS="-cc ${CC} -cxx ${CXX} --pyctest-build-type=${BUILD_TYPE} -j 1 ${ARGS}"
+  - travis_wait 85 python ./pyctest-runner.py ${PYCTEST_ARGS} --  ${CTEST_ARGS} -- ${CMAKE_ARGS}
+  - if [ "${CONDA_OS}" = "Linux" ]; then cd build-timemory/Linux; else cd build-timemory/Darwin; fi
   - make install -j
   - if [ -f "tests/test-python-install-import.cmake" ]; then
     cmake -P tests/test-python-install-import.cmake;

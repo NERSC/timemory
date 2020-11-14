@@ -323,6 +323,9 @@ private:
 
 //======================================================================================//
 
+/// \class tim::graph
+/// \brief Arbitrary Graph / Tree (i.e. binary-tree but not binary)
+///
 template <typename T,
           typename AllocatorT =
               std::allocator<tgraph_node<T>>>  // graph_allocator<tgraph_node<T>>>

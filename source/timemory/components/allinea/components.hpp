@@ -48,6 +48,9 @@ namespace component
 //--------------------------------------------------------------------------------------//
 // Control AllineaMap sampler
 //
+/// \struct tim::component::allinea_map
+/// \brief Controls the AllineaMap sampling profiler
+///
 struct allinea_map
 : public base<allinea_map, void>
 , policy::instance_tracker<allinea_map, false>

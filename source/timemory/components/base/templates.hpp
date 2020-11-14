@@ -56,12 +56,12 @@ template <typename Tp, typename Value>
 template <typename Archive, typename Up,
           enable_if_t<!trait::custom_serialization<Up>::value, int>>
 void
-base<Tp, Value>::CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
+base<Tp, Value>::load(Archive& ar, const unsigned int)
 {
-    auto try_catch = [&](const char* key, auto& val) {
+    auto try_catch = [](Archive& arch, const char* key, auto& val) {
         try
         {
-            ar(cereal::make_nvp(key, val));
+            arch(cereal::make_nvp(key, val));
         } catch(cereal::Exception& e)
         {
             if(settings::debug() || settings::verbose() > -1)
@@ -69,11 +69,11 @@ base<Tp, Value>::CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
         }
     };
 
-    try_catch("is_transient", is_transient);
-    try_catch("laps", laps);
-    try_catch("value", value);
-    try_catch("accum", accum);
-    try_catch("last", last);
+    try_catch(ar, "is_transient", is_transient);
+    try_catch(ar, "laps", laps);
+    try_catch(ar, "value", value);
+    try_catch(ar, "accum", accum);
+    try_catch(ar, "last", last);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -82,7 +82,7 @@ template <typename Tp, typename Value>
 template <typename Archive, typename Up,
           enable_if_t<!trait::custom_serialization<Up>::value, int>>
 void
-base<Tp, Value>::CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int version) const
+base<Tp, Value>::save(Archive& ar, const unsigned int version) const
 {
     operation::serialization<Type>(static_cast<const Type&>(*this), ar, version);
 }
@@ -221,7 +221,7 @@ base<Tp, Value>::get_display_unit()
 //
 template <typename Tp, typename Value>
 template <typename Up, typename Vp,
-          enable_if_t<trait::implements_storage<Up, Vp>::value, int>>
+          enable_if_t<trait::uses_value_storage<Up, Vp>::value, int>>
 void
 base<Tp, Value>::print(std::ostream& os) const
 {
@@ -232,7 +232,7 @@ base<Tp, Value>::print(std::ostream& os) const
 //
 template <typename Tp, typename Value>
 template <typename Up, typename Vp,
-          enable_if_t<!trait::implements_storage<Up, Vp>::value, int>>
+          enable_if_t<!trait::uses_value_storage<Up, Vp>::value, int>>
 void
 base<Tp, Value>::print(std::ostream&) const
 {}

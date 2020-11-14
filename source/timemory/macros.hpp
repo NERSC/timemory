@@ -29,9 +29,26 @@
 
 //======================================================================================//
 //
+//      PROTECTS COMMAS FROM BEING DELIMITED
+//
+//          TIMEMORY_STATISTICS_TYPE(foo, std::array<size_t, 10>)
+//
+//      should be
+//
+//          TIMEMORY_STATISTICS_TYPE(foo, TIMEMORY_ESC(std::array<size_t, 10>))
+//
+//======================================================================================//
+
+#if !defined(TIMEMORY_ESC)
+#    define TIMEMORY_ESC(...) __VA_ARGS__
+#endif
+
+//======================================================================================//
+//
 //                              COMPONENTS
 //
 //======================================================================================//
+
 #if !defined(TIMEMORY_FORWARD_DECLARE_COMPONENT)
 /// use this macro for forward declarations. Using \ref TIMEMORY_DECLARE_COMPONENT
 /// on a pre-existing type will fail because of is_component specialization
@@ -47,7 +64,7 @@
 
 //======================================================================================//
 //
-//                              TYPE TRAITS
+//      GENERIC TYPE-TRAIT SPECIALIZATION (for true_type/false_type traits)
 //
 //======================================================================================//
 
@@ -92,6 +109,83 @@
         {};                                                                              \
         }                                                                                \
         }
+#endif
+
+//======================================================================================//
+//
+//      GENERIC TYPE-TRAIT SPECIALIZATION (for defining ::type traits)
+//
+//======================================================================================//
+
+#if !defined(TIMEMORY_TRAIT_TYPE)
+#    define TIMEMORY_TRAIT_TYPE(TRAIT, COMPONENT, ...)                                   \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <>                                                                      \
+        struct TRAIT<COMPONENT>                                                          \
+        {                                                                                \
+            using type = __VA_ARGS__;                                                    \
+        };                                                                               \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_TEMPLATE_TRAIT_TYPE)
+#    define TIMEMORY_TEMPLATE_TRAIT_TYPE(TRAIT, COMPONENT, TEMPLATE_PARAM, TEMPLATE_ARG, \
+                                         ...)                                            \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <TEMPLATE_PARAM>                                                        \
+        struct TRAIT<COMPONENT<TEMPLATE_ARG>>                                            \
+        {                                                                                \
+            using type = __VA_ARGS__;                                                    \
+        };                                                                               \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_VARIADIC_TRAIT_TYPE)
+#    define TIMEMORY_VARIADIC_TRAIT_TYPE(TRAIT, COMPONENT, TEMPLATE_PARAM, TEMPLATE_ARG, \
+                                         ...)                                            \
+        TIMEMORY_TEMPLATE_TRAIT_TYPE(TRAIT, COMPONENT, TIMEMORY_ESC(TEMPLATE_PARAM),     \
+                                     TIMEMORY_ESC(TEMPLATE_ARG), __VA_ARGS__)
+#endif
+
+//======================================================================================//
+//
+//      STATISTICS TYPE-TRAIT SPECIALIZATION
+//
+//======================================================================================//
+
+#if !defined(TIMEMORY_STATISTICS_TYPE)
+#    define TIMEMORY_STATISTICS_TYPE(COMPONENT, TYPE)                                    \
+        TIMEMORY_TRAIT_TYPE(statistics, TIMEMORY_ESC(COMPONENT), TIMEMORY_ESC(TYPE))
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_TEMPLATE_STATISTICS_TYPE)
+#    define TIMEMORY_TEMPLATE_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)            \
+        TIMEMORY_TEMPLATE_TRAIT_TYPE(statistics, TIMEMORY_ESC(COMPONENT),                \
+                                     TIMEMORY_ESC(TEMPLATE_TYPE T), TIMEMORY_ESC(T),     \
+                                     TIMEMORY_ESC(TYPE))
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_VARIADIC_STATISTICS_TYPE)
+#    define TIMEMORY_VARIADIC_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)            \
+        TIMEMORY_VARIADIC_TRAIT_TYPE(statistics, TIMEMORY_ESC(COMPONENT),                \
+                                     TIMEMORY_ESC(TEMPLATE_TYPE... T),                   \
+                                     TIMEMORY_ESC(T...), TIMEMORY_ESC(TYPE))
 #endif
 
 //======================================================================================//

@@ -313,43 +313,6 @@ private:
     //----------------------------------------------------------------------------------//
 };
 //
-//======================================================================================//
-//
-template <typename Tp>
-struct gotcha_differentiator
-{
-    template <typename Up>
-    static constexpr decltype(Up::is_component, bool()) test_is_component(int)
-    {
-        return true;
-    }
-
-    template <typename Up>
-    static constexpr bool test_is_component(long)
-    {
-        return false;
-    }
-
-    static constexpr bool value        = test_is_component<Tp>(int());
-    static constexpr bool is_component = test_is_component<Tp>(int());
-};
-//
-//======================================================================================//
-//
-template <typename... Types>
-struct gotcha_components_size
-{
-    static constexpr size_t value = sizeof...(Types);
-};
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types, template <typename...> class Tuple>
-struct gotcha_components_size<Tuple<Types...>>
-{
-    static constexpr size_t value = sizeof...(Types);
-};
-//
 }  // namespace component
 }  // namespace tim
 //

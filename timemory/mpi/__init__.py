@@ -25,10 +25,6 @@
 # SOFTWARE.
 
 from __future__ import absolute_import
-import os
-import imp
-import sys
-import importlib
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"

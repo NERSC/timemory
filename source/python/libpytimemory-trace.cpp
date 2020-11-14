@@ -676,14 +676,14 @@ generate(py::module& _pymod)
     CONFIGURATION_PROPERTY("verbosity", int32_t, "Verbosity of the logging",
                            get_config().verbose)
 
-    auto _get_strset = [](const strset_t& _targ) {
+    static auto _get_strset = [](const strset_t& _targ) {
         auto _out = py::list{};
         for(auto itr : _targ)
             _out.append(itr);
         return _out;
     };
 
-    auto _set_strset = [](py::list _inp, strset_t& _targ) {
+    static auto _set_strset = [](py::list _inp, strset_t& _targ) {
         for(auto itr : _inp)
             _targ.insert(itr.cast<std::string>());
     };
@@ -692,8 +692,8 @@ generate(py::module& _pymod)
     _pyconfig.def_property_static(NAME, GET, SET, DOC);
 #define CONFIGURATION_STRSET(NAME, DOC, ...)                                             \
     {                                                                                    \
-        auto GET = [=](py::object) { return _get_strset(__VA_ARGS__); };                 \
-        auto SET = [=](py::object, py::list val) { _set_strset(val, __VA_ARGS__); };     \
+        auto GET = [](py::object) { return _get_strset(__VA_ARGS__); };                  \
+        auto SET = [](py::object, py::list val) { _set_strset(val, __VA_ARGS__); };      \
         CONFIGURATION_PROPERTY_LAMBDA(NAME, DOC, GET, SET)                               \
     }
 

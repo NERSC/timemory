@@ -24,14 +24,6 @@
 // SOFTWARE.
 //
 
-/** \file timemory/variadic/component_list.hpp
- * \headerfile variadic/component_list.hpp "timemory/variadic/component_list.hpp"
- * This is similar to component_tuple but not as optimized.
- * This exists so that Python and C, which do not support templates,
- * can implement a subset of the tools
- *
- */
-
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
@@ -62,6 +54,53 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
+/// \class tim::component_list<Types...>
+/// \tparam Types... Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper where all components are optional
+/// at runtime. Accept unlimited number of parameters. The default behavior is
+/// to query the TIMEMORY_COMPONENT_LIST_INIT environment variable once (the first
+/// time the bundle is used) and use that list of components (if any) to
+/// initialize the components which are part of it's template parameters.
+/// This behavior can be modified by assigning a new lambda/functor to the
+/// reference which is returned from \ref
+/// tim::component_list<Types...>::get_initializer(). Assignment is not thread-safe since
+/// this is relatively unnecessary... if a different set of components are required on a
+/// particular thread, just create a different type with those particular components or
+/// pass the initialization functor to the constructor.
+///
+/// \code{.cpp}
+/// using bundle_t = tim::component_list<wall_clock, cpu_clock, peak_rss>;
+///
+/// void foo()
+/// {
+///     setenv("TIMEMORY_COMPONENT_LIST_INIT", "wall_clock", 0);
+///
+///     auto bar = bundle_t("bar");
+///
+///     bundle_t::get_initializer() = [](bundle_t& b)
+///     {
+///         b.initialize<cpu_clock, peak_rss>();
+///     };
+///
+///     auto qix = bundle_t("qix");
+///
+///     auto local_init = [](bundle_t& b)
+///     {
+///         b.initialize<thread_cpu_clock, peak_rss>();
+///     };
+///
+///     auto spam = bundle_t("spam", ..., local_init);
+///
+/// }
+/// \endcode
+///
+/// The above code will record wall-clock timer on first use of "bar", and
+/// will record cpu-clock, peak-rss at "qix", and peak-rss at "spam". If foo()
+/// is called a second time, "bar" will record cpu-clock and peak-rss. "spam" will
+/// always use the local initialized. If none of these initializers are set, wall-clock
+/// will be recorded for all of them. The intermediate storage will happen on the heap and
+/// when the destructor is called, it will add itself to the call-graph
 template <typename... Types>
 class component_list
 : public heap_bundle<available_t<concat<Types...>>>
@@ -108,7 +147,6 @@ public:
     using type             = convert_t<tuple_type, component_list<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
@@ -120,17 +158,17 @@ public:
     component_list();
 
     template <typename Func = initializer_type>
-    explicit component_list(const string_t& key, const bool& store = true,
+    explicit component_list(const string_t& _key, const bool& _store = true,
                             scope::config _scope = scope::get_default(),
                             const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_list(const captured_location_t& loc, const bool& store = true,
+    explicit component_list(const captured_location_t& _loc, const bool& _store = true,
                             scope::config _scope = scope::get_default(),
                             const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_list(size_t _hash, const bool& store = true,
+    explicit component_list(size_t _hash, const bool& _store = true,
                             scope::config _scope = scope::get_default(),
                             const Func&          = get_initializer());
 

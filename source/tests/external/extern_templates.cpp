@@ -22,10 +22,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/timemory.hpp"
+#include "timemory/components/timing/types.hpp"
+#include "timemory/mpl/types.hpp"
 
 using namespace tim::component;
-template struct tim::component_tuple<wall_clock>;
-template struct tim::auto_tuple<wall_clock>;
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(component::wall_clock, wc)
-TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::wall_clock, true)
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(flat_storage, monotonic_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(timeline_storage, monotonic_raw_clock, true_type)
+
+#include "timemory/timemory.hpp"
+
+TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(class tim::auto_tuple<wall_clock>)
+TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(class tim::component_tuple<wall_clock>)
+TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(
+    class tim::component_bundle<TIMEMORY_API, wall_clock>)
+TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(
+    class tim::component_bundle<TIMEMORY_API, monotonic_clock>)
+TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(
+    class tim::component_bundle<TIMEMORY_API, monotonic_raw_clock>)
+TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(wall_clock, true, int64_t)
+TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(monotonic_clock, true, int64_t)
+TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(monotonic_raw_clock, true, int64_t)

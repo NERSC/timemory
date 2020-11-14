@@ -129,8 +129,10 @@ namespace component
 //          CUPTI Profiler component
 //
 //--------------------------------------------------------------------------------------//
-/// \struct cupti_profiler
-/// \brief CUPTI profiler component
+/// \struct tim::component::cupti_profiler
+/// \brief Hardware counters via the CUpti profiling API. The profiling API is only
+/// available with newer NVIDIA hardware and CUDA 10+. This component currently has issues
+/// with nesting.
 ///
 struct cupti_profiler : public base<cupti_profiler, std::map<std::string, double>>
 {

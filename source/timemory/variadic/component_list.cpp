@@ -59,8 +59,6 @@ component_list<Types...>::get_initializer()
 template <typename... Types>
 component_list<Types...>::component_list()
 {
-    if(settings::enabled())
-        init_storage();
     apply_v::set_value(m_data, nullptr);
 }
 //
@@ -68,15 +66,14 @@ component_list<Types...>::component_list()
 //
 template <typename... Types>
 template <typename FuncT>
-component_list<Types...>::component_list(const string_t& key, const bool& store,
+component_list<Types...>::component_list(const string_t& _key, const bool& _store,
                                          scope::config _scope, const FuncT& _func)
-: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, _scope)
+: bundle_type((settings::enabled()) ? add_hash_id(_key) : 0, _store, _scope)
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        init_storage();
         _func(*this);
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope(m_data, m_scope);
@@ -87,18 +84,17 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
 //
 template <typename... Types>
 template <typename FuncT>
-component_list<Types...>::component_list(const captured_location_t& loc,
-                                         const bool& store, scope::config _scope,
+component_list<Types...>::component_list(const captured_location_t& _loc,
+                                         const bool& _store, scope::config _scope,
                                          const FuncT& _func)
-: bundle_type(loc.get_hash(), store, _scope)
+: bundle_type(_loc.get_hash(), _store, _scope)
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        init_storage();
         _func(*this);
-        set_prefix(loc.get_hash());
+        set_prefix(_loc.get_hash());
         invoke::set_scope(m_data, m_scope);
     }
 }
@@ -107,15 +103,14 @@ component_list<Types...>::component_list(const captured_location_t& loc,
 //
 template <typename... Types>
 template <typename FuncT>
-component_list<Types...>::component_list(size_t _hash, const bool& store,
+component_list<Types...>::component_list(size_t _hash, const bool& _store,
                                          scope::config _scope, const FuncT& _func)
-: bundle_type(_hash, store, _scope)
+: bundle_type(_hash, _store, _scope)
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        init_storage();
         _func(*this);
         set_prefix(_hash);
         invoke::set_scope(m_data, m_scope);
@@ -162,10 +157,10 @@ component_list<Types...>::operator=(const this_type& rhs)
 //
 template <typename... Types>
 component_list<Types...>
-component_list<Types...>::clone(bool store, scope::config _scope)
+component_list<Types...>::clone(bool _store, scope::config _scope)
 {
     component_list tmp(*this);
-    tmp.m_store(store);
+    tmp.m_store(_store);
     tmp.m_scope = _scope;
     return tmp;
 }

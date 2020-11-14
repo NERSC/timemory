@@ -235,6 +235,21 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::virtual_memory, tr
 
 //--------------------------------------------------------------------------------------//
 //
+//                                 REPORT UNITS
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::num_minor_page_faults, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::num_major_page_faults, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::voluntary_context_switch,
+                               false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::priority_context_switch,
+                               false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::num_io_in, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::num_io_out, false_type)
+
+//--------------------------------------------------------------------------------------//
+//
 //                              USES TIMING UNITS
 //
 //--------------------------------------------------------------------------------------//

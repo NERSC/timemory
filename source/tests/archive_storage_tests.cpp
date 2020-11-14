@@ -191,12 +191,24 @@ TEST_F(archive_storage_tests, vector_hierarchy)
     wc_storage->get(wc_vec);
     cc_storage->get(cc_vec);
 
+    auto print = [&](const auto& arr) {
+        std::stringstream ss;
+        ss << "  [size: " << arr.size() << "]\n";
+        for(const auto& itr : arr)
+            ss << "  [" << tim::get_hash_identifier(itr->get_value().hash()) << "]["
+               << itr->get_value().inclusive().stats() << "]\n";
+        return ss.str();
+    };
     EXPECT_EQ(wc_vec.size(), 1);
     EXPECT_EQ(cc_vec.size(), 1);
-    EXPECT_EQ(wc_vec.front().get_children().size(), 2);
-    EXPECT_EQ(cc_vec.front().get_children().size(), 2);
-    EXPECT_EQ(wc_vec.front().get_children().front().get_children().size(), 2);
-    EXPECT_EQ(cc_vec.front().get_children().front().get_children().size(), 2);
+    EXPECT_EQ(wc_vec.front().get_children().size(), 2)
+        << print(wc_vec.front().get_children());
+    EXPECT_EQ(cc_vec.front().get_children().size(), 2)
+        << print(cc_vec.front().get_children());
+    EXPECT_EQ(wc_vec.front().get_children().front()->get_children().size(), 2)
+        << print(wc_vec.front().get_children().front()->get_children());
+    EXPECT_EQ(cc_vec.front().get_children().front()->get_children().size(), 2)
+        << print(cc_vec.front().get_children().front()->get_children());
 }
 
 //--------------------------------------------------------------------------------------//

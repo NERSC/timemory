@@ -25,8 +25,6 @@
 
 /** \file timemory/variadic/component_tuple.hpp
  * \headerfile variadic/component_tuple.hpp "timemory/variadic/component_tuple.hpp"
- * This is the C++ class that bundles together components and enables
- * operation on the components as a single entity
  *
  */
 
@@ -61,6 +59,31 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
+/// \class tim::component_tuple<Types...>
+/// \tparam Types... Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper where all components are allocated
+/// on the stack and cannot be disabled at runtime. This bundler has the lowest
+/// overhead. Accepts unlimited number of template parameters. This bundler
+/// is used by \ref tim::auto_tuple whose constructor and destructor invoke the
+/// start() and stop() member functions respectively.
+///
+/// \code{.cpp}
+/// using bundle_t = tim::component_tuple<wall_clock, cpu_clock, peak_rss>;
+///
+/// void foo()
+/// {
+///     auto bar = bundle_t("foo");
+///     bar.start();
+///     // ...
+///     bar.stop();
+/// }
+/// \endcode
+///
+/// The above code will record wall-clock, cpu-clock, and peak-rss. The intermediate
+/// storage will happen on the stack and when the destructor is called, it will add itself
+/// to the call-graph
+///
 template <typename... Types>
 class component_tuple
 : public stack_bundle<available_t<concat<Types...>>>
@@ -105,7 +128,6 @@ public:
     using type             = convert_t<tuple_type, component_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
@@ -124,6 +146,7 @@ public:
     struct quirk_config
     {
         static constexpr bool value =
+            is_one_of<T, type_list<Types..., U...>>::value ||
             is_one_of<T,
                       contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
@@ -132,25 +155,25 @@ public:
     component_tuple();
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_tuple(const string_t& key, quirk::config<T...>,
+    explicit component_tuple(const string_t& _key, quirk::config<T...>,
                              const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_tuple(const captured_location_t& loc, quirk::config<T...>,
+    explicit component_tuple(const captured_location_t& _loc, quirk::config<T...>,
                              const Func& = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_tuple(const string_t& key, const bool& store = true,
+    explicit component_tuple(const string_t& _key, const bool& _store = true,
                              scope::config _scope = scope::get_default(),
                              const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_tuple(const captured_location_t& loc, const bool& store = true,
+    explicit component_tuple(const captured_location_t& _loc, const bool& _store = true,
                              scope::config _scope = scope::get_default(),
                              const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit component_tuple(size_t _hash, const bool& store = true,
+    explicit component_tuple(size_t _hash, const bool& _store = true,
                              scope::config _scope = scope::get_default(),
                              const Func&          = get_initializer());
 
@@ -331,9 +354,8 @@ public:
     template <typename T, enable_if_t<!is_one_of<T, data_type>::value, int> = 0>
     T* get() const
     {
-        void*       ptr   = nullptr;
-        static auto _hash = std::hash<std::string>()(demangle<T>());
-        get(ptr, _hash);
+        void* ptr = nullptr;
+        get(ptr, typeid_hash<T>());
         return static_cast<T*>(ptr);
     }
 

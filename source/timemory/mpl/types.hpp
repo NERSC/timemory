@@ -140,9 +140,6 @@ template <typename T>
 struct custom_unit_printing;
 
 template <typename T>
-struct custom_laps_printing;
-
-template <typename T>
 struct start_priority;
 
 template <typename T>
@@ -236,19 +233,13 @@ template <typename T>
 struct pretty_json;
 
 template <typename T>
-struct flat_storage;
+struct report;
 
 template <typename T>
-struct report_sum;
+struct report_count;
 
 template <typename T>
-struct report_mean;
-
-template <typename T>
-struct report_values;
-
-template <typename T>
-struct report_self;
+struct report_depth;
 
 template <typename T>
 struct report_metric_name;
@@ -257,7 +248,16 @@ template <typename T>
 struct report_units;
 
 template <typename T>
+struct report_sum;
+
+template <typename T>
+struct report_mean;
+
+template <typename T>
 struct report_statistics;
+
+template <typename T>
+struct report_self;
 
 template <typename T>
 struct ompt_handle;
@@ -274,11 +274,23 @@ struct python_args;
 template <typename T>
 struct cache;
 
-template <typename T, typename V = typename trait::data<T>::value_type>
+template <typename T, typename V = trait::data<T>>
 struct generates_output;
 
-template <typename T, typename V = typename trait::data<T>::value_type>
-struct implements_storage;
+template <typename T>
+struct uses_storage;
+
+template <typename T>
+struct tree_storage;
+
+template <typename T>
+struct flat_storage;
+
+template <typename T>
+struct timeline_storage;
+
+template <typename T, typename V = trait::data<T>, typename A = trait::uses_storage<T>>
+struct uses_value_storage;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -342,8 +354,10 @@ struct instance_tracker;
 /// \brief Specification of how to accumulate statistics. This will not be used
 /// unless \ref tim::trait::statistics has been assigned a type and \ref
 /// tim::trait::record_statistics is true. Set \ref tim::trait::permissive_statistics to
-/// allow implicit conversions, e.g. int -> size_t. \code{.cpp} template <typename CompT,
-/// typename Tp> struct record_statistics
+/// allow implicit conversions, e.g. int -> size_t.
+/// \code{.cpp}
+/// template <typename CompT, typename Tp>
+/// struct record_statistics
 /// {
 ///     using type            = Tp;
 ///     using component_type  = CompT;
@@ -642,8 +656,8 @@ template <template <typename...> class Tuple, typename... Types>
 struct nonwrapper_index_sequence<Tuple<Types...>>
 {
     static constexpr auto size  = sizeof...(Types);
-    static constexpr auto value = std::tuple<>{};
-    using type                  = std::tuple<>;
+    static constexpr auto value = type_list<>{};
+    using type                  = type_list<>;
 };
 }  // namespace impl
 
@@ -651,8 +665,8 @@ template <typename Tp>
 struct get_index_sequence
 {
     static constexpr auto size  = 0;
-    static constexpr auto value = std::tuple<>{};
-    using type                  = std::tuple<>;
+    static constexpr auto value = type_list<>{};
+    using type                  = type_list<>;
 };
 
 template <typename Lhs, typename Rhs>
@@ -674,7 +688,7 @@ struct get_index_sequence<std::tuple<Types...>>
 template <template <typename...> class Tuple, typename... Types>
 struct get_index_sequence<Tuple<Types...>>
 {
-    using base_type = conditional_t<(concepts::is_variadic<Tuple<Types...>>::value),
+    using base_type = conditional_t<concepts::is_variadic<Tuple<Types...>>::value,
                                     impl::wrapper_index_sequence<Tuple<Types...>>,
                                     impl::nonwrapper_index_sequence<Tuple<Types...>>>;
     static constexpr auto size  = base_type::size;
@@ -748,6 +762,21 @@ get_size(const Tp& _val, std::tuple<>) -> decltype(_val.size(), size_t())
     return _val.size();
 }
 
+template <typename Tp,
+          typename std::enable_if<(std::is_arithmetic<Tp>::value), int>::type = 0>
+constexpr auto
+get_size(const Tp&, type_list<>) -> size_t
+{
+    return 1;
+}
+
+template <typename Tp>
+auto
+get_size(const Tp& _val, type_list<>) -> decltype(_val.size(), size_t())
+{
+    return _val.size();
+}
+
 template <typename Tp, size_t... Idx>
 constexpr auto
 get_size(const Tp& _val, index_sequence<Idx...>) -> decltype(std::get<0>(_val), size_t())
@@ -794,7 +823,7 @@ assign(Tp& _targ, const Tp& _val, ...)
 
 template <typename Tp, typename Vp, typename ValueType = typename Tp::value_type>
 auto
-assign(Tp& _targ, const Vp& _val, std::tuple<>) -> decltype(_targ[0], void())
+assign(Tp& _targ, const Vp& _val, type_list<>) -> decltype(_targ[0], void())
 {
     auto _n = get_size(_val);
     resize(_targ, _n);

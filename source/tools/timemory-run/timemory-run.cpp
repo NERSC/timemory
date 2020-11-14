@@ -78,14 +78,17 @@ main(int argc, char** argv)
     std::vector<string_t> staticlibname = {};
     tim::process::id_t    _pid          = -1;
 
-    bpatch->setBaseTrampDeletion(false);
     bpatch->setTypeChecking(true);
     bpatch->setSaveFPR(true);
     bpatch->setDelayedParsing(true);
     bpatch->setInstrStackFrames(true);
     bpatch->setLivenessAnalysis(false);
+    bpatch->setBaseTrampDeletion(false);
     bpatch->setTrampRecursive(false);
-    bpatch->setMergeTramp(true);
+    bpatch->setMergeTramp(false);
+
+    std::set<std::string> dyninst_defs = { "TypeChecking", "SaveFPR", "DelayedParsing",
+                                           "InstrStackFrames" };
 
     int _argc = argc;
     int _cmdc = 0;
@@ -151,7 +154,8 @@ main(int argc, char** argv)
     // we have an option.  Check to see if it is one of our options and process it. If
     // it is unrecognized, then set the errflag to report an error.  When we come to a
     // non '-' charcter, then we must be at the application name.
-    tim::argparse::argument_parser parser("timemory-run");
+    using parser_t = tim::argparse::argument_parser;
+    parser_t parser("timemory-run");
 
     parser.enable_help();
     parser.add_argument()
@@ -220,7 +224,22 @@ main(int argc, char** argv)
         .count(1);
     parser.add_argument()
         .names({ "-d", "--default-components" })
-        .description("Default components to instrument");
+        .description("Default components to instrument")
+        .action([](parser_t& p) {
+            auto _components   = p.get<strvec_t>("default-components");
+            default_components = "";
+            for(size_t i = 0; i < _components.size(); ++i)
+            {
+                if(_components.at(i) == "none")
+                {
+                    default_components = "";
+                    break;
+                }
+                default_components += _components.at(i);
+                if(i + 1 < _components.size())
+                    default_components += ",";
+            }
+        });
     parser.add_argument()
         .names({ "-M", "--mode" })
         .description("Instrumentation mode. 'trace' mode is immutable, 'region' mode is "
@@ -300,7 +319,10 @@ main(int argc, char** argv)
     }
 
     if(parser.exists("debug"))
+    {
         verbose_level = 256;
+        debug_print   = true;
+    }
 
     if(parser.exists("m"))
         main_fname = parser.get<string_t>("m");
@@ -374,9 +396,9 @@ main(int argc, char** argv)
     if(parser.exists("p"))
         _pid = parser.get<int>("p");
 
-    if(parser.exists("d"))
+    if(parser.exists("default-components"))
     {
-        auto _components   = parser.get<strvec_t>("d");
+        auto _components   = parser.get<strvec_t>("default-components");
         default_components = "";
         for(size_t i = 0; i < _components.size(); ++i)
         {
@@ -508,10 +530,7 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    std::set<std::string> dyninst_defs = { "TypeChecking",   "SaveFPR",
-                                           "DelayedParsing", "InstrStackFrames",
-                                           "TrampRecursive", "MergeTramp" };
-    int                   dyninst_verb = 1;
+    int dyninst_verb = 1;
     if(parser.exists("dyninst-options"))
     {
         dyninst_defs = parser.get<std::set<std::string>>("dyninst-options");
@@ -601,7 +620,7 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    if(app_modules)
+    if(app_modules && app_modules->size() > 0)
     {
         modules = *app_modules;
         for(auto itr : *app_modules)
@@ -614,8 +633,12 @@ main(int argc, char** argv)
             }
         }
     }
+    else
+    {
+        verbprintf(0, "Warning! No modules in application...\n");
+    }
 
-    if(app_functions)
+    if(app_functions && app_functions->size() > 0)
     {
         functions = *app_functions;
         for(auto itr : *app_functions)
@@ -624,6 +647,10 @@ main(int argc, char** argv)
             if(mod)
                 available_module_functions.insert(module_function(mod, itr));
         }
+    }
+    else
+    {
+        verbprintf(0, "Warning! No functions in application...\n");
     }
 
     verbprintf(1, "Module size before loading instrumentation library: %lu\n",
@@ -645,6 +672,12 @@ main(int argc, char** argv)
         app_thread = static_cast<BPatch_process*>(addr_space);
 
     is_attached = (_pid >= 0 && app_thread);
+
+    if(!app_binary && !app_thread)
+    {
+        fprintf(stderr, "No application thread or binary!...\n");
+        throw std::runtime_error("Nullptr to BPatch_binaryEdit* and BPatch_process*");
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -727,6 +760,8 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
+    verbprintf(0, "Finding functions in image...\n");
+
     auto* main_func     = find_function(app_image, main_fname.c_str());
     auto* entr_trace    = find_function(app_image, instr_push_func.c_str());
     auto* exit_trace    = find_function(app_image, instr_pop_func.c_str());
@@ -740,6 +775,9 @@ main(int argc, char** argv)
     auto* exit_func     = find_function(app_image, "exit", { "_exit" });
     auto* mpi_init_func = find_function(app_image, "MPI_Init", { "MPI_Init_thread" });
     auto* mpi_fini_func = find_function(app_image, "MPI_Finalize");
+
+    if(!main_func && main_fname == "main")
+        main_func = find_function(app_image, "_main");
 
     verbprintf(0, "Instrumenting with '%s' and '%s'...\n", instr_push_func.c_str(),
                instr_pop_func.c_str());
@@ -780,6 +818,11 @@ main(int argc, char** argv)
         add_instr_library("mpip", "timemory_register_mpip", "timemory_deregister_mpip");
     if(use_stubs["ompt"])
         add_instr_library("ompt", "timemory_register_ompt", "timemory_deregister_ompt");
+
+    if(!extra_libs.empty())
+    {
+        verbprintf(2, "Adding extra libraries...\n");
+    }
 
     for(const auto& itr : extra_libs)
     {
@@ -880,6 +923,10 @@ main(int argc, char** argv)
                     "_init", "_fini", main_fname.c_str());
         }
     }
+    else if(!main_func && !is_driver)
+    {
+        verbprintf(0, "Warning! No main function and is not driver!\n");
+    }
 
     using pair_t = std::pair<procedure_t*, string_t>;
 
@@ -951,15 +998,23 @@ main(int argc, char** argv)
 
     if(main_func)
     {
+        verbprintf(2, "Finding main function entry/exit... ");
         main_entr_points = main_func->findPoint(BPatch_entry);
         main_exit_points = main_func->findPoint(BPatch_exit);
+        verbprintf(2, "Done\n");
     }
     else if(is_driver)
     {
         if(_mutatee_init)
+        {
+            verbprintf(2, "Finding init entry...\n");
             main_entr_points = _mutatee_init->findPoint(BPatch_entry);
+        }
         if(_mutatee_fini)
+        {
+            verbprintf(2, "Finding fini exit...\n");
             main_exit_points = _mutatee_fini->findPoint(BPatch_exit);
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -971,15 +1026,21 @@ main(int argc, char** argv)
 
     // begin insertion
     if(binary_rewrite)
+    {
+        verbprintf(2, "Beginning insertion set...\n");
         addr_space->beginInsertionSet();
+    }
 
     function_signature main_sign("int", "main", "", { "int", "char**" });
     if(main_func)
     {
+        verbprintf(2, "Getting main function signature...\n");
         main_sign = get_func_file_line_info(main_func->getModule(), main_func);
         if(main_sign.m_params == "()")
             main_sign.m_params = "(int argc, char** argv)";
     }
+
+    verbprintf(2, "Getting call expressions... ");
 
     auto main_call_args = timemory_call_expr(main_sign.get());
     auto init_call_args = timemory_call_expr(default_components, binary_rewrite, cmdv0);
@@ -988,11 +1049,16 @@ main(int argc, char** argv)
     auto mode_call_args = timemory_call_expr("TIMEMORY_INSTRUMENTATION_MODE", instr_mode);
     auto mpie_init_args = timemory_call_expr("TIMEMORY_MPI_INIT", "OFF");
     auto mpie_fini_args = timemory_call_expr("TIMEMORY_MPI_FINALIZE", "OFF");
+    auto trace_call_args =
+        timemory_call_expr("TIMEMORY_TRACE_COMPONENTS", default_components);
     auto mpip_call_args =
         timemory_call_expr("TIMEMORY_MPIP_COMPONENTS", default_components);
     auto ompt_call_args =
         timemory_call_expr("TIMEMORY_OMPT_COMPONENTS", default_components);
     auto none_call_args = timemory_call_expr();
+
+    verbprintf(2, "Done\n");
+    verbprintf(2, "Getting call snippets... ");
 
     auto init_call = init_call_args.get(init_func);
     auto fini_call = fini_call_args.get(fini_func);
@@ -1002,11 +1068,14 @@ main(int argc, char** argv)
     auto main_beg_call = main_call_args.get(entr_trace);
     auto main_end_call = main_call_args.get(exit_trace);
 
-    auto mode_env_call = mode_call_args.get(env_func);
-    auto mpip_env_call = mpip_call_args.get(env_func);
-    auto ompt_env_call = ompt_call_args.get(env_func);
-    auto mpii_env_call = mpie_init_args.get(env_func);
-    auto mpif_env_call = mpie_fini_args.get(env_func);
+    auto trace_env_call = trace_call_args.get(env_func);
+    auto mode_env_call  = mode_call_args.get(env_func);
+    auto mpip_env_call  = mpip_call_args.get(env_func);
+    auto ompt_env_call  = ompt_call_args.get(env_func);
+    auto mpii_env_call  = mpie_init_args.get(env_func);
+    auto mpif_env_call  = mpie_fini_args.get(env_func);
+
+    verbprintf(2, "Done\n");
 
     for(const auto& itr : use_stubs)
     {
@@ -1036,6 +1105,8 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
+    if(trace_env_call)
+        init_names.push_back(trace_env_call.get());
     if(mode_env_call)
         init_names.push_back(mode_env_call.get());
     if(mpii_env_call)
@@ -1076,6 +1147,7 @@ main(int argc, char** argv)
     {
         if(mpi_init_func && mpi_fini_func)
         {
+            verbprintf(2, "Patching MPI init functions\n");
             insert_instr(addr_space, mpi_init_func, init_call, BPatch_exit, nullptr,
                          nullptr);
             insert_instr(addr_space, mpi_fini_func, fini_call, BPatch_entry, nullptr,
@@ -1083,12 +1155,14 @@ main(int argc, char** argv)
         }
         else
         {
+            verbprintf(2, "Adding main begin and end snippets...\n");
             init_names.push_back(main_beg_call.get());
             fini_names.push_back(main_end_call.get());
         }
     }
     else if(app_thread)
     {
+        verbprintf(2, "Patching main function\n");
         insert_instr(addr_space, main_func, init_call, BPatch_entry, nullptr, nullptr);
         if(!use_mpi)
         {
@@ -1098,6 +1172,10 @@ main(int argc, char** argv)
                          nullptr);
         }
         insert_instr(addr_space, main_func, fini_call, BPatch_exit, nullptr, nullptr);
+    }
+    else
+    {
+        verbprintf(0, "No binary_rewrite and no app_thread!...\n");
     }
 
     if(fini_call)
@@ -1110,7 +1188,10 @@ main(int argc, char** argv)
     }
 
     if(exit_func && exit_call)
+    {
+        verbprintf(0, "Inserting exit instrumentation...\n");
         insert_instr(addr_space, exit_func, exit_call, BPatch_entry, nullptr, nullptr);
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -1121,6 +1202,8 @@ main(int argc, char** argv)
     //----------------------------------------------------------------------------------//
     std::vector<std::function<void()>> instr_procedure_functions;
     auto instr_procedures = [&](const procedure_vec_t& procedures) {
+        verbprintf(2, "Instrumenting %lu procedures...\n",
+                   (unsigned long) procedures.size());
         for(auto itr : procedures)
         {
             if(itr == main_func)
@@ -1186,7 +1269,7 @@ main(int argc, char** argv)
             instrumented_module_functions.insert(module_function(mod, itr));
 
             auto _f = [=]() {
-                verbprintf(0, "Instrumenting |> [ %s ] -> [ %s ]\n", modname,
+                verbprintf(1, "Instrumenting |> [ %s ] -> [ %s ]\n", modname,
                            name.m_name.c_str());
                 auto _name       = name.get();
                 auto _hash       = std::hash<string_t>()(_name);
@@ -1205,7 +1288,7 @@ main(int argc, char** argv)
 
             if(loop_level_instr)
             {
-                verbprintf(0, "Instrumenting at the loop level: %s\n",
+                verbprintf(1, "Instrumenting at the loop level: %s\n",
                            name.m_name.c_str());
 
                 flow_graph_t*    flow = itr->getCFG();
@@ -1277,7 +1360,7 @@ main(int argc, char** argv)
             continue;
         }
 
-        verbprintf(0, "Parsing module: %s\n", modname);
+        verbprintf(1, "Parsing module: %s\n", modname);
         bpvector_t<procedure_t*>* p = m->getProcedures();
         if(!p)
             continue;
@@ -1307,6 +1390,7 @@ main(int argc, char** argv)
 
     if(binary_rewrite)
     {
+        verbprintf(2, "Adding main entry and exit snippets\n");
         if(main_entr_points)
             addr_space->insertSnippet(BPatch_sequence(init_names), *main_entr_points,
                                       BPatch_callBefore, BPatch_firstSnippet);
@@ -1316,8 +1400,11 @@ main(int argc, char** argv)
     }
     else if(app_thread)
     {
+        verbprintf(1, "Executing init_names...\n");
         for(auto itr : init_names)
+        {
             app_thread->oneTimeCode(*itr);
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -1326,16 +1413,9 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    if(!binary_rewrite)
-        addr_space->beginInsertionSet();
-
     verbprintf(2, "Beginning loop over modules [instrumentation pass]\n");
     for(auto& instr_procedure : instr_procedure_functions)
         instr_procedure();
-
-    // finalize insertion
-    // if(binary_rewrite)
-    addr_space->finalizeInsertionSet(false, nullptr);
 
     //----------------------------------------------------------------------------------//
     //
@@ -1355,6 +1435,8 @@ main(int argc, char** argv)
     int code = -1;
     if(binary_rewrite)
     {
+        addr_space->finalizeInsertionSet(false, nullptr);
+
         char cwd[FUNCNAMELEN];
         auto ret = getcwd(cwd, FUNCNAMELEN);
         consume_parameters(ret);
@@ -1378,13 +1460,15 @@ main(int argc, char** argv)
             printf(
                 "[timemory-run]> Consider instrumenting the relevant libraries...\n\n");
 
+            using TIMEMORY_PIPE = tim::popen::TIMEMORY_PIPE;
+
             tim::set_env("LD_TRACE_LOADED_OBJECTS", "1", 1);
-            TIMEMORY_PIPE* ldd = timemory_popen(cmdv0.c_str());
+            TIMEMORY_PIPE* ldd = tim::popen::popen(cmdv0.c_str());
             tim::set_env("LD_TRACE_LOADED_OBJECTS", "0", 1);
 
-            strvec_t linked_libraries = read_timemory_fork(ldd);
+            strvec_t linked_libraries = tim::popen::read_fork(ldd);
 
-            auto err = timemory_pclose(ldd);
+            auto err = tim::popen::pclose(ldd);
             if(err != 0)
                 perror("Error in timemory_fork");
 
@@ -1446,7 +1530,7 @@ main(int argc, char** argv)
             fprintf(stderr, "\nApplication exited with signal: %i\n", int(sign));
         }
 
-        // addr_space->finalizeInsertionSet(false, nullptr);
+        addr_space->finalizeInsertionSet(false, nullptr);
 
         code = app_thread->getExitCode();
         consume_parameters(_prefork, _postfork);
@@ -1727,10 +1811,11 @@ instrument_entity(const string_t& function_name)
 //======================================================================================//
 // insert_instr -- generic insert instrumentation function
 //
+template <typename Tp>
 void
-insert_instr(address_space_t* mutatee, procedure_t* funcToInstr,
-             call_expr_pointer_t traceFunc, procedure_loc_t traceLoc,
-             flow_graph_t* cfGraph, basic_loop_t* loopToInstrument)
+insert_instr(address_space_t* mutatee, procedure_t* funcToInstr, Tp traceFunc,
+             procedure_loc_t traceLoc, flow_graph_t* cfGraph,
+             basic_loop_t* loopToInstrument)
 {
     module_t* module = funcToInstr->getModule();
     if(!module || !traceFunc)
@@ -1917,8 +2002,13 @@ load_dependent_libraries(address_space_t* bedit, char* bindings)
 
 //======================================================================================//
 //
-static inline void
+inline void
 consume()
 {
-    consume_parameters(initialize_expr, error_print, debug_print, expect_error);
+    consume_parameters(initialize_expr, expect_error);
+}
+//
+namespace
+{
+static auto _consumed = (consume(), true);
 }

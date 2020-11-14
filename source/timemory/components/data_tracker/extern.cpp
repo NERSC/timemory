@@ -22,7 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include "timemory/components/opaque/declaration.hpp"
-#include "timemory/components/opaque/definition.hpp"
+#include "timemory/components/data_tracker/extern.hpp"

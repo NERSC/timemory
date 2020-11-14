@@ -24,9 +24,6 @@
 //
 
 /** \file "timemory/variadic/auto_bundle.hpp"
- * Automatic starting and stopping of components. Accept unlimited number of
- * parameters. The constructor starts the components, the destructor stops the
- * components
  */
 
 #pragma once
@@ -44,14 +41,72 @@
 
 namespace tim
 {
-//
+//--------------------------------------------------------------------------------------//
+/// \class tim::auto_bundle<typename Tag, Types...>
+/// \tparam Tag unique identifying type for the bundle which when \ref
+/// tim::trait::is_available<Tag> is false at compile-time or \ref
+/// tim::trait::runtime_enabled<Tag>() is false at runtime, then none of the components
+/// will be collected
+/// \tparam Types... Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper which combines the features of \ref
+/// tim::auto_tuple<T...> and \ref tim::auto_list<U..>. The "T" types (compile-time fixed,
+/// allocated on stack) should be specified as usual, the "U" types (runtime-time
+/// optional, allocated on the heap) should be specified as a pointer. Initialization
+/// of the optional types is similar to \ref tim::auto_list<U...> but no environment
+/// variable is built-in since, ideally, this environment variable should be customized
+/// based on the \ref Tag template parameter.
+///
+/// \code{.cpp}
+///
+/// // dummy type identifying the context
+/// struct FooApi {};
+///
+/// using bundle_t = tim::auto_bundle<FooApi, wall_clock, cpu_clock*>;
+///
+/// void foo_init() // user initialization routine
+/// {
+///     bundle_t::get_initializer() = [](bundle_t& b)
+///     {
+///         static auto env_enum = tim::enumerate_components(
+///             tim::delimit(tim::get_env<string_t>("FOO_COMPONENTS", "wall_clock")));
+///
+///         :im::initialize(b, env_enum);
+///};
+///     };
+/// }
+/// void bar()
+/// {
+///     // will record whichever components are specified by "FOO_COMPONENT" in
+///     // environment, which "wall_clock" as the default
+///
+///     auto bar = bundle_t("foo");
+///     // ...
+/// }
+///
+/// int main(int argc, char** argv)
+/// {
+///     tim::timemory_init(argc, argv);
+///
+///     foo_init();
+///
+///     bar();
+///
+///     tim::timemory_finalize();
+/// }
+/// \endcode
+///
+/// The above code will record wall-clock, cpu-clock, and peak-rss. The intermediate
+/// storage will happen on the stack and when the destructor is called, it will add itself
+/// to the call-graph
+///
+
 template <typename Tag, typename... Types>
-class auto_bundle
+class auto_bundle<Tag, Types...>
 : public concepts::wrapper
 , public concepts::variadic
 , public concepts::auto_wrapper
 , public concepts::mixed_wrapper
-, public concepts::hybrid_wrapper
 , public concepts::tagged
 {
     static_assert(concepts::is_api<Tag>::value,
@@ -73,7 +128,6 @@ public:
     using type       = convert_t<typename component_type::type, auto_bundle<Tag>>;
     using value_type = component_type;
 
-    static constexpr bool is_component      = false;
     static constexpr bool has_gotcha_v      = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = component_type::has_user_bundle_v;
 
@@ -81,10 +135,10 @@ public:
     template <typename T, typename... U>
     struct quirk_config
     {
-        using var_config_t = contains_one_of_t<quirk::is_config, concat<Types...>>;
-        using inp_config_t = contains_one_of_t<quirk::is_config, concat<U...>>;
         static constexpr bool value =
-            (is_one_of<T, var_config_t>::value || is_one_of<T, inp_config_t>::value);
+            is_one_of<T, type_list<Types..., U...>>::value ||
+            is_one_of<T,
+                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
 
 public:

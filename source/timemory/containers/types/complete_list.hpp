@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/containers/types/complete_list.hpp
- * \brief Include the extern declarations for complete_list in containers
- */
-
 #pragma once
 
 #include "timemory/api.hpp"
@@ -41,6 +36,9 @@
 #include "timemory/runtime/initialize.hpp"
 #include "timemory/runtime/properties.hpp"
 #include "timemory/storage/definition.hpp"
+#include "timemory/types.hpp"
 #include "timemory/variadic/definition.hpp"
+#include "timemory/variadic/types.hpp"
 
-TIMEMORY_EXTERN_LIST(complete_list_t, TIMEMORY_COMPONENT_TYPES)
+TIMEMORY_EXTERN_BUNDLE(component_list, TIMEMORY_COMPONENT_TYPES)
+TIMEMORY_EXTERN_BUNDLE(auto_list, TIMEMORY_COMPONENT_TYPES)

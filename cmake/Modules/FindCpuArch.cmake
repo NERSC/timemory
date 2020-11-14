@@ -30,23 +30,29 @@ mark_as_advanced(CpuArch_DEBUG)
 #
 #   For reference -- common cpu architecture flags
 #
-set(CpuArch_AVAILABLE_COMPONENTS
-    3dnowprefetch abm acpi adx aes altivec aperfmperf apic arat arch_perfmon
-    avx avx1.0 avx2 avx512f avx512pf avx512er avx512cd bmi1 bmi2 bts cat_l3 cdp_l3
-    clflush clfsh clfsopt cmov constant_tsc cpuid cpuid_fault cqm cqm_llc cqm_mbm_local
-    cqm_mbm_total cqm_occup_llc cx16 cx8 dca de ds ds_cpl dscpl dtes64 dtherm dts
-    epb ept erms est f16c flexpriority flush_l1d fma fpu fpu_csds
-    fsgsbase fxsr hle ht htt ibpb ibrs ida intel_ppin intel_pt
-    invpcid invpcid_single ipt l1df lahf_lm lm mca mce md_clear mdclear
-    mmx mon monitor movbe mpx msr mtrr nonstop_tsc nopl nx
-    osxsave pae pat pbe pcid pclmulqdq pdcm pdpe1gb pebs pge
-    pln pni popcnt pse pse36 pti pts rdrand rdseed rdt_a
-    rdtscp rdwrfsgs rep_good rtm sdbg seglim64 sep sgx sgxlc smap
-    smep smx ss ssbd sse sse2 sse3 sse4_1 sse4_2 ssse3
-    stibp syscall tm tm2 tpr tpr_shadow tsc tsc_adjust
-    tsc_deadline_timer tsc_thread_offset tsctmr tsxfa vme vmx vnmi vpid
-    x2apic xsave xsaveopt xtopology xtp
-    CACHE STRING "Possible CPU flags (for reference, may be incomplete)")
+if(MSVC)
+    set(CpuArch_AVAILABLE_COMPONENTS
+        sse sse2 avx avx2 avx512
+        CACHE STRING "Possible CPU flags (for reference, may be incomplete)")
+else()
+    set(CpuArch_AVAILABLE_COMPONENTS
+        3dnowprefetch abm acpi adx aes altivec aperfmperf apic arat arch_perfmon
+        avx avx1.0 avx2 avx512f avx512pf avx512er avx512cd bmi1 bmi2 bts cat_l3 cdp_l3
+        clflush clfsh clfsopt cmov constant_tsc cpuid cpuid_fault cqm cqm_llc cqm_mbm_local
+        cqm_mbm_total cqm_occup_llc cx16 cx8 dca de ds ds_cpl dscpl dtes64 dtherm dts
+        epb ept erms est f16c flexpriority flush_l1d fma fpu fpu_csds
+        fsgsbase fxsr hle ht htt ibpb ibrs ida intel_ppin intel_pt
+        invpcid invpcid_single ipt l1df lahf_lm lm mca mce md_clear mdclear
+        mmx mon monitor movbe mpx msr mtrr nonstop_tsc nopl nx
+        osxsave pae pat pbe pcid pclmulqdq pdcm pdpe1gb pebs pge
+        pln pni popcnt pse pse36 pti pts rdrand rdseed rdt_a
+        rdtscp rdwrfsgs rep_good rtm sdbg seglim64 sep sgx sgxlc smap
+        smep smx ss ssbd sse sse2 sse3 sse4_1 sse4_2 ssse3
+        stibp syscall tm tm2 tpr tpr_shadow tsc tsc_adjust
+        tsc_deadline_timer tsc_thread_offset tsctmr tsxfa vme vmx vnmi vpid
+        x2apic xsave xsaveopt xtopology xtp
+        CACHE STRING "Possible CPU flags (for reference, may be incomplete)")
+endif()
 
 mark_as_advanced(CpuArch_AVAILABLE_COMPONENTS)
 
@@ -78,8 +84,12 @@ endif()
 # if no components are specified, configure default set
 if(NOT CpuArch_FIND_COMPONENTS)
     set(CpuArch_FIND_DEFAULT ON)
-    set(CpuArch_FIND_COMPONENTS sse sse2 sse3 ssse3 sse4 sse4_1 sse4_2 fma avx avx2
-        avx512f avx512pf avx512er avx512cd altivec)
+    if(MSVC)
+        set(CpuArch_FIND_COMPONENTS sse sse2 avx avx2 avx512)
+    else()
+        set(CpuArch_FIND_COMPONENTS sse sse2 sse3 ssse3 sse4 sse4_1 sse4_2 fma avx avx2
+            avx512f avx512pf avx512er avx512cd altivec)
+    endif()
     foreach(_COMP ${CpuArch_FIND_COMPONENTS})
         set(CpuArch_FIND_REQUIRED_${_COMP} ${CpuArch_FIND_REQUIRED})
     endforeach()
@@ -102,10 +112,13 @@ function(DETECT_HOST_FEATURES _CPU_FLAGS_VAR)
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         file(READ "${CpuArch_INPUT}" _cpuinfo)
-        string(REGEX REPLACE ".*flags[ \t]*:[ \t]+([^\n]+).*" "\\1" _cpu_flags "${_cpuinfo}")
+        string(REGEX REPLACE ".*flags[ \t]*:[ \t]+([^\n]+).*" "\\1"
+            _cpu_flags "${_cpuinfo}")
         if("${_cpu_flags}" STREQUAL "${_cpuinfo}")
             string(REPLACE "," " " _cpuinfo "${_cpuinfo}")
-            string(REGEX REPLACE ".*cpu[ \t]*:[ \t]+[a-zA-Z0-9_-]+[ \t]+([a-zA-Z0-9_-]+)[ \t]+supported.*" "\\1" _cpu_flags "${_cpuinfo}")
+            string(REGEX REPLACE
+                ".*cpu[ \t]*:[ \t]+[a-zA-Z0-9_-]+[ \t]+([a-zA-Z0-9_-]+)[ \t]+supported.*" "\\1"
+                _cpu_flags "${_cpuinfo}")
         endif()
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         execute_process(
@@ -185,9 +198,8 @@ function(DETECT_HOST_ARCHITECTURE _CPU_ARCH_VAR)
             OUTPUT_VARIABLE _cpu_family
             OUTPUT_STRIP_TRAILING_WHITESPACE)
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        get_filename_component(_vendor_id "[HKEY_LOCAL_MACHINE\\Hardware\\Description\\System\\CentralProcessor\\0;VendorIdentifier]" NAME CACHE)
-        get_filename_component(_cpu_id "[HKEY_LOCAL_MACHINE\\Hardware\\Description\\System\\CentralProcessor\\0;Identifier]" NAME CACHE)
-        mark_as_advanced(_vendor_id _cpu_id)
+        set(_cpu_id "$ENV{PROCESSOR_IDENTIFIER}" CACHE INTERNAL "Cpu info")
+        string(REGEX REPLACE ".*, ([A-Za-z]+)$" "\\1" _vendor_id "${_cpu_id}")
         string(REGEX REPLACE ".* Family ([0-9]+) .*" "\\1" _cpu_family "${_cpu_id}")
         string(REGEX REPLACE ".* Model ([0-9]+) .*" "\\1" _cpu_model "${_cpu_id}")
     endif()

@@ -131,7 +131,7 @@ timemory_init(Args&&... _args);
 //
 namespace config
 {
-/// \fn tim::config::read_command_line()
+/// \fn void tim::config::read_command_line(Func&&)
 /// \brief this only works on Linux where there is a /proc/<PID>/cmdline file
 ///
 template <typename Func>
