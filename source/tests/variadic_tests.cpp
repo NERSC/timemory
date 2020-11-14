@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/variadic/functional.hpp"
+
 #include "gtest/gtest.h"
 
 #include <cassert>
@@ -35,12 +39,6 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#define TIMEMORY_STRICT_VARIADIC_CONCAT
-
-#include "timemory/timemory.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/variadic/functional.hpp"
 
 using namespace tim::component;
 

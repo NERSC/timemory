@@ -1,4 +1,5 @@
 #!@PYTHON_EXECUTABLE@
+# -*- coding: UTF-8 -*-
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California,
@@ -178,6 +179,9 @@ else:
             stop_ompt,
             start_ncclp,
             stop_ncclp,
+            enable_signal_detection,
+            disable_signal_detection,
+            set_exit_action,
             # api,
             # papi,
             # cupti,

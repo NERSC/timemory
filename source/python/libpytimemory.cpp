@@ -70,22 +70,22 @@ class manager_wrapper
 public:
     manager_wrapper();
     ~manager_wrapper();
-    manager_t* get();
+    std::shared_ptr<manager_t> get();
 
 protected:
-    manager_t* m_manager;
+    std::shared_ptr<manager_t> m_manager = { nullptr };
 };
 //
 manager_wrapper::manager_wrapper()
-: m_manager(manager_t::instance().get())
+: m_manager(manager_t::instance())
 {}
 //
 manager_wrapper::~manager_wrapper() {}
 //
-manager_t*
+std::shared_ptr<manager_t>
 manager_wrapper::get()
 {
-    return manager_t::instance().get();
+    return manager_t::instance();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -223,9 +223,9 @@ PYBIND11_MODULE(libpytimemory, tim)
 {
     //----------------------------------------------------------------------------------//
     //
-    static auto              _settings       = tim::settings::shared_instance();
-    static auto              _master_manager = manager_t::master_instance();
-    static thread_local auto _worker_manager = manager_t::instance();
+    auto _settings       = tim::settings::shared_instance();
+    auto _master_manager = manager_t::master_instance();
+    auto _worker_manager = manager_t::instance();
     if(_worker_manager != _master_manager)
     {
         printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
@@ -601,8 +601,9 @@ PYBIND11_MODULE(libpytimemory, tim)
         for(int i = 0; i < _argc; ++i)
         {
             auto  _str    = argv[i].cast<std::string>();
-            char* _argv_i = new char[_str.size()];
+            char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
+            _argv_i[_str.size()] = '\0';
             _argv[i] = _argv_i;
         }
         auto _argv_deleter = [](int fargc, char** fargv) {
@@ -621,47 +622,64 @@ PYBIND11_MODULE(libpytimemory, tim)
         for(int i = 0; i < _argc; ++i)
         {
             auto  _str    = argv[i].cast<std::string>();
-            char* _argv_i = new char[_str.size()];
+            char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
+            _argv_i[_str.size()] = '\0';
             _argv[i] = _argv_i;
         }
         tim::timemory_init(_argc, _argv, _prefix, _suffix);
+        auto _manager = tim::manager::instance();
+        if(_manager)
+            _manager->update_metadata_prefix();
         for(int i = 0; i < _argc; ++i)
             delete[] _argv[i];
         delete[] _argv;
     };
     //----------------------------------------------------------------------------------//
     auto _finalize = []() {
-        try
+        auto _manager = tim::manager::instance();
+        if(!_manager || _manager->is_finalized() || _manager->is_finalizing())
+            return;
+        _manager->update_metadata_prefix();
+        if(!tim::get_env("TIMEMORY_SKIP_FINALIZE", false))
         {
-            if(!tim::get_env("TIMEMORY_SKIP_FINALIZE", false))
+            try
             {
-                // python GC seems to cause occasional problems
+                py::module gc = py::module::import("gc");
+                gc.attr("collect")();
+            } catch(std::exception& e)
+            {
+                std::cerr << e.what() << std::endl;
+                // w/o GC, may cause problems
                 tim::settings::stack_clearing() = false;
+            }
+            //
+            try
+            {
                 tim::timemory_finalize();
-            }
-        } catch(std::exception& e)
-        {
+            } catch(std::exception& e)
+            {
 #if defined(_UNIX)
-            auto             bt    = tim::get_demangled_backtrace<32>();
-            std::set<size_t> valid = {};
-            size_t           idx   = 0;
-            for(const auto& itr : bt)
-            {
-                if(itr.length() > 0)
-                    valid.insert(idx);
-                ++idx;
-            }
-            if(!valid.empty())
-            {
-                std::cerr << "\nBacktrace:\n";
-                for(auto itr : valid)
-                    std::cerr << "[" << std::setw(2) << itr << " / " << std::setw(2)
-                              << valid.size() << "] " << bt.at(itr) << '\n';
-            }
-            std::cerr << "\n" << std::flush;
+                auto             bt    = tim::get_demangled_backtrace<32>();
+                std::set<size_t> valid = {};
+                size_t           idx   = 0;
+                for(const auto& itr : bt)
+                {
+                    if(itr.length() > 0)
+                        valid.insert(idx);
+                    ++idx;
+                }
+                if(!valid.empty())
+                {
+                    std::cerr << "\nBacktrace:\n";
+                    for(auto itr : valid)
+                        std::cerr << "[" << std::setw(2) << itr << " / " << std::setw(2)
+                                  << valid.size() << "] " << bt.at(itr) << '\n';
+                }
+                std::cerr << "\n" << std::flush;
 #endif
-            PRINT_HERE("ERROR: %s", e.what());
+                PRINT_HERE("ERROR: %s", e.what());
+            }
         }
     };
     //----------------------------------------------------------------------------------//
