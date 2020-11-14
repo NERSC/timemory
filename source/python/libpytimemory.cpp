@@ -604,7 +604,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
             _argv_i[_str.size()] = '\0';
-            _argv[i] = _argv_i;
+            _argv[i]             = _argv_i;
         }
         auto _argv_deleter = [](int fargc, char** fargv) {
             for(int i = 0; i < fargc; ++i)
@@ -625,7 +625,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
             _argv_i[_str.size()] = '\0';
-            _argv[i] = _argv_i;
+            _argv[i]             = _argv_i;
         }
         tim::timemory_init(_argc, _argv, _prefix, _suffix);
         auto _manager = tim::manager::instance();

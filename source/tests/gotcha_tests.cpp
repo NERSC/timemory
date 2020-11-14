@@ -717,7 +717,7 @@ TEST_F(gotcha_tests, member_functions)
 
         decltype(nitr) _ndiv = 1000;
         auto           _nitr = nitr / _ndiv;
-        int64_t ntot  = 0;
+        int64_t        ntot  = 0;
         for(int i = 0; i < _nitr; i += _ndiv)
         {
             TIMEMORY_BLANK_POINTER(bundle_type, details::get_test_name());

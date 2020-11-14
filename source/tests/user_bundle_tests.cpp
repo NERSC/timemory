@@ -55,7 +55,7 @@ using comp_bundle_t = typename auto_bundle_t::component_type;
 using bundle0_t     = tim::auto_tuple<wall_clock, cpu_util>;
 using bundle1_t     = tim::auto_list<cpu_clock, peak_rss>;
 
-using custom_bundle_t      = user_global_bundle;
+using custom_bundle_t      = user_kokkosp_bundle;
 using auto_custom_bundle_t = tim::auto_tuple<custom_bundle_t>;
 using comp_custom_bundle_t = typename auto_custom_bundle_t::component_type;
 
@@ -565,22 +565,30 @@ TEST_F(user_bundle_tests, laps)
 {
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 
+    custom_bundle_t::reset();
     using lw_bundle_t = tim::lightweight_tuple<custom_bundle_t>;
 
     custom_bundle_t::configure<wall_clock, cpu_clock>();
 
     size_t      n = 10;
-    lw_bundle_t obj{ details::get_test_name() };
-    // auto cfg = tim::scope::config{} + tim::scope::flat{} + tim::scope::timeline{};
-    obj.set_scope(tim::scope::config(true, true));
+    lw_bundle_t obj{ details::get_test_name(), tim::scope::config(true, true) };
+
+    DEBUG_PRINT_HERE("%s", "Real push begin");
     obj.push();
+    DEBUG_PRINT_HERE("%s", "Real push end");
     for(size_t i = 0; i < n; ++i)
     {
+        DEBUG_PRINT_HERE("%s", "Real start begin");
         obj.start();
+        DEBUG_PRINT_HERE("%s", "Real start end");
         ret += details::fibonacci(35);
+        DEBUG_PRINT_HERE("%s", "Real stop begin");
         obj.stop();
+        DEBUG_PRINT_HERE("%s", "Real stop end");
     }
+    DEBUG_PRINT_HERE("%s", "Real pop start");
     obj.pop();
+    DEBUG_PRINT_HERE("%s", "Real pop end");
 
     printf("fibonacci(35) = %li\n", ret);
 

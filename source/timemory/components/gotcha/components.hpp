@@ -975,7 +975,7 @@ private:
                 _tool_hash = get_hash_id(_data.tool_id);
             }
             //
-            bundle_type    _obj{ _tool_hash };
+            bundle_type _obj{ _tool_hash };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
@@ -1086,7 +1086,7 @@ private:
                 _tool_hash = get_hash_id(_data.tool_id);
             }
             //
-            bundle_type    _obj{ _tool_hash };
+            bundle_type _obj{ _tool_hash };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);

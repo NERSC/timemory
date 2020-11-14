@@ -115,6 +115,7 @@ get_opaque(scope::config _scope)
     auto _init = []() { operation::init_storage<Toolset>(); };
 
     auto _setup = [=](void* v_result, const string_t& _prefix, scope::config arg_scope) {
+        DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset* _result = static_cast<Toolset*>(v_result);
         if(!_result)
             _result = new Toolset{};
@@ -127,6 +128,7 @@ get_opaque(scope::config _scope)
     auto _push = [=](void*& v_result, const string_t& _prefix, scope::config arg_scope) {
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Pushing %s", demangle<Toolset>().c_str());
             auto                          _hash   = add_hash_id(_prefix);
             Toolset*                      _result = static_cast<Toolset*>(v_result);
             operation::push_node<Toolset> _opinsert(*_result, _scope + arg_scope, _hash);
@@ -137,6 +139,7 @@ get_opaque(scope::config _scope)
     auto _start = [=](void* v_result) {
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Starting %s", demangle<Toolset>().c_str());
             Toolset*                  _result = static_cast<Toolset*>(v_result);
             operation::start<Toolset> _opstart(*_result);
             consume_parameters(_opstart);
@@ -146,6 +149,7 @@ get_opaque(scope::config _scope)
     auto _stop = [=](void* v_result) {
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Stopping %s", demangle<Toolset>().c_str());
             Toolset*                 _result = static_cast<Toolset*>(v_result);
             operation::stop<Toolset> _opstop(*_result);
             consume_parameters(_opstop);
@@ -155,6 +159,7 @@ get_opaque(scope::config _scope)
     auto _pop = [=](void* v_result) {
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Popping %s", demangle<Toolset>().c_str());
             Toolset*                     _result = static_cast<Toolset*>(v_result);
             operation::pop_node<Toolset> _oppop(*_result);
             consume_parameters(_oppop);
@@ -164,6 +169,7 @@ get_opaque(scope::config _scope)
     auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
         if(_hash == _typeid_hash && v_result && !ptr)
         {
+            DEBUG_PRINT_HERE("Getting %s", demangle<Toolset>().c_str());
             Toolset* _result = static_cast<Toolset*>(v_result);
             operation::get<Toolset>(*_result, ptr, _hash);
         }
@@ -172,6 +178,7 @@ get_opaque(scope::config _scope)
     auto _del = [=](void* v_result) {
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Deleting %s", demangle<Toolset>().c_str());
             Toolset* _result = static_cast<Toolset*>(v_result);
             delete _result;
         }
@@ -207,6 +214,7 @@ get_opaque(scope::config _scope, Args&&... args)
 
     auto _setup = [=, &args...](void* v_result, const string_t& _prefix,
                                 scope::config arg_scope) {
+        DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset_t* _result = static_cast<Toolset_t*>(v_result);
         if(!_result)
             _result = create_heap_variadic<Toolset_t>(_prefix, _scope + arg_scope,
@@ -220,6 +228,7 @@ get_opaque(scope::config _scope, Args&&... args)
         v_result = _setup(v_result, _prefix, arg_scope);
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Pushing %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->push();
         }
@@ -228,6 +237,7 @@ get_opaque(scope::config _scope, Args&&... args)
     auto _start = [=](void* v_result) {
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Starting %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->start();
         }
@@ -236,6 +246,7 @@ get_opaque(scope::config _scope, Args&&... args)
     auto _stop = [=](void* v_result) {
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Stopping %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->stop();
         }
@@ -244,6 +255,7 @@ get_opaque(scope::config _scope, Args&&... args)
     auto _pop = [=](void* v_result) {
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Popping %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->pop();
         }
@@ -252,6 +264,7 @@ get_opaque(scope::config _scope, Args&&... args)
     auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
         if(v_result && !ptr)
         {
+            DEBUG_PRINT_HERE("Getting %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->get(ptr, _hash);
         }
@@ -260,6 +273,7 @@ get_opaque(scope::config _scope, Args&&... args)
     auto _del = [=](void* v_result) {
         if(v_result)
         {
+            DEBUG_PRINT_HERE("Deleting %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             delete _result;
         }

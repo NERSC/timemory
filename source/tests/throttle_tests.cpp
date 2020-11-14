@@ -78,7 +78,7 @@ consume(long n)
 class throttle_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
+    static void SetUpTestSuite()
     {
         static bool configured = false;
         if(!configured)
@@ -97,6 +97,13 @@ protected:
             timemory_trace_init("wall_clock", false, "throttle_tests");
             tim::settings::verbose() = 1;
         }
+    }
+
+    static void TearDownTestSuite()
+    {
+        timemory_trace_finalize();
+        tim::timemory_finalize();
+        tim::dmp::finalize();
     }
 
     static constexpr uint64_t nthreads = 4;
@@ -289,11 +296,7 @@ main(int argc, char** argv)
     _argc = argc;
     _argv = argv;
 
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
+    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

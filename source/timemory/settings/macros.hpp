@@ -62,7 +62,7 @@
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
             static auto _key = new std::string(ENV_VAR);                                 \
-            return static_cast<tsettings<TYPE>*>(m_data[*_key].get())->get();            \
+            return static_cast<tsettings<TYPE>*>(m_data.at(*_key).get())->get();         \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
@@ -92,7 +92,7 @@
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
             static auto _key = new std::string(ENV_VAR);                                 \
-            return static_cast<tsettings<TYPE, TYPE&>*>(m_data[*_key].get())->get();     \
+            return static_cast<tsettings<TYPE, TYPE&>*>(m_data.at(*_key).get())->get();  \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \

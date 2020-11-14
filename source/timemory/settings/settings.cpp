@@ -1024,6 +1024,8 @@ settings::initialize()
     initialize_miscellaneous();
     initialize_ert();
     initialize_dart();
+
+    m_data.rehash(m_data.size());
 }
 //
 //--------------------------------------------------------------------------------------//

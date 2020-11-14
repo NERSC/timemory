@@ -67,8 +67,9 @@ namespace component
 /// specified
 using user_global_bundle = user_bundle<global_bundle_idx, project::timemory>;
 
-using user_tuple_bundle = user_bundle<tuple_bundle_idx, project::timemory>;
-using user_list_bundle  = user_bundle<list_bundle_idx, project::timemory>;
+// these were deprecated
+using user_tuple_bundle = user_global_bundle;
+using user_list_bundle  = user_global_bundle;
 
 /// \typedef tim::component::user_ompt_bundle
 /// \brief Generic bundle for inserting components at runtime into OMPT call-back system.
@@ -220,7 +221,9 @@ struct reset<component::user_bundle<Idx, Type>>
 //======================================================================================//
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_global_bundle, USER_GLOBAL_BUNDLE,
-                                 "user_global_bundle", "global_bundle")
+                                 "user_global_bundle", "global_bundle",
+                                 "user_tuple_bundle", "tuple_bundle", "user_list_bundle",
+                                 "list_bundle")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
                                  "ompt_bundle")
