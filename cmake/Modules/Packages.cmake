@@ -436,9 +436,11 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
+
 if(NOT WIN32)
     timemory_target_compile_definitions(timemory-extern INTERFACE TIMEMORY_USE_EXTERN)
 endif()
+
 
 #----------------------------------------------------------------------------------------#
 #
@@ -446,10 +448,12 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
+
 timemory_target_compile_definitions(timemory-statistics INTERFACE TIMEMORY_USE_STATISTICS)
 if(TIMEMORY_USE_STATISTICS)
     target_link_libraries(timemory-headers INTERFACE timemory-statistics)
 endif()
+
 
 #----------------------------------------------------------------------------------------#
 #
@@ -457,34 +461,8 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
+
 timemory_target_compile_definitions(timemory-cereal-xml INTERFACE TIMEMORY_USE_XML_ARCHIVE)
-
-#----------------------------------------------------------------------------------------#
-#
-#                           Google Test
-#
-#----------------------------------------------------------------------------------------#
-
-if(TIMEMORY_BUILD_GOOGLE_TEST)
-    checkout_git_submodule(RECURSIVE
-        RELATIVE_PATH external/google-test
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        REPO_URL https://github.com/google/googletest.git
-        REPO_BRANCH master)
-
-    # add google-test
-    set(INSTALL_GTEST OFF CACHE BOOL "Install gtest")
-    set(BUILD_GMOCK ON CACHE BOOL "Build gmock")
-    if(APPLE)
-        set(CMAKE_MACOSX_RPATH ON CACHE BOOL "Enable MACOS_RPATH on targets to suppress warnings")
-        mark_as_advanced(CMAKE_MACOSX_RPATH)
-    endif()
-    add_subdirectory(${PROJECT_SOURCE_DIR}/external/google-test)
-    target_link_libraries(timemory-google-test INTERFACE gtest gmock)
-    target_include_directories(timemory-google-test SYSTEM INTERFACE
-        ${PROJECT_SOURCE_DIR}/google-test/googletest/include
-        ${PROJECT_SOURCE_DIR}/google-test/googlemock/include)
-endif()
 
 
 #----------------------------------------------------------------------------------------#
@@ -675,6 +653,35 @@ else()
     set(TIMEMORY_BUILD_PYTHON OFF)
     inform_empty_interface(timemory-python "Python embedded interpreter")
     inform_empty_interface(timemory-plotting "Python plotting from C++")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                           Google Test
+#
+#----------------------------------------------------------------------------------------#
+
+# MUST BE AFTER PythonConfig is included!
+if(TIMEMORY_BUILD_GOOGLE_TEST)
+    checkout_git_submodule(RECURSIVE
+        RELATIVE_PATH external/google-test
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/google/googletest.git
+        REPO_BRANCH master)
+
+    # add google-test
+    set(INSTALL_GTEST OFF CACHE BOOL "Install gtest")
+    set(BUILD_GMOCK ON CACHE BOOL "Build gmock")
+    if(APPLE)
+        set(CMAKE_MACOSX_RPATH ON CACHE BOOL "Enable MACOS_RPATH on targets to suppress warnings")
+        mark_as_advanced(CMAKE_MACOSX_RPATH)
+    endif()
+    add_subdirectory(${PROJECT_SOURCE_DIR}/external/google-test)
+    target_link_libraries(timemory-google-test INTERFACE gtest gmock)
+    target_include_directories(timemory-google-test SYSTEM INTERFACE
+        ${PROJECT_SOURCE_DIR}/google-test/googletest/include
+        ${PROJECT_SOURCE_DIR}/google-test/googlemock/include)
 endif()
 
 
