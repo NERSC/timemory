@@ -27,10 +27,10 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_MAP_HPP_
-#define CEREAL_TYPES_MAP_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_MAP_HPP_
+#define TIMEMORY_CEREAL_TYPES_MAP_HPP_
 
 #include "timemory/tpls/cereal/cereal/types/concepts/pair_associative_container.hpp"
 #include <map>
 
-#endif  // CEREAL_TYPES_MAP_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_MAP_HPP_

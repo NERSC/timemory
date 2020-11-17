@@ -12,12 +12,12 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_ITOA_
-#define CEREAL_RAPIDJSON_ITOA_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_ITOA_
+#define TIMEMORY_CEREAL_RAPIDJSON_ITOA_
 
 #include "../rapidjson.h"
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 namespace internal {
 
 inline const char* GetDigitsLut() {
@@ -37,7 +37,7 @@ inline const char* GetDigitsLut() {
 }
 
 inline char* u32toa(uint32_t value, char* buffer) {
-    CEREAL_RAPIDJSON_ASSERT(buffer != 0);
+    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(buffer != 0);
 
     const char* cDigitsLut = GetDigitsLut();
 
@@ -113,7 +113,7 @@ inline char* u32toa(uint32_t value, char* buffer) {
 }
 
 inline char* i32toa(int32_t value, char* buffer) {
-    CEREAL_RAPIDJSON_ASSERT(buffer != 0);
+    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(buffer != 0);
     uint32_t u = static_cast<uint32_t>(value);
     if (value < 0) {
         *buffer++ = '-';
@@ -124,7 +124,7 @@ inline char* i32toa(int32_t value, char* buffer) {
 }
 
 inline char* u64toa(uint64_t value, char* buffer) {
-    CEREAL_RAPIDJSON_ASSERT(buffer != 0);
+    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(buffer != 0);
     const char* cDigitsLut = GetDigitsLut();
     const uint64_t  kTen8 = 100000000;
     const uint64_t  kTen9 = kTen8 * 10;
@@ -292,7 +292,7 @@ inline char* u64toa(uint64_t value, char* buffer) {
 }
 
 inline char* i64toa(int64_t value, char* buffer) {
-    CEREAL_RAPIDJSON_ASSERT(buffer != 0);
+    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(buffer != 0);
     uint64_t u = static_cast<uint64_t>(value);
     if (value < 0) {
         *buffer++ = '-';
@@ -303,6 +303,6 @@ inline char* i64toa(int64_t value, char* buffer) {
 }
 
 } // namespace internal
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
-#endif // CEREAL_RAPIDJSON_ITOA_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_ITOA_

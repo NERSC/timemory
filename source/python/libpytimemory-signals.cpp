@@ -59,7 +59,7 @@ get_default_signal_set()
 //--------------------------------------------------------------------------------------//
 //
 void
-enable_signal_detection(py::list signal_list = py::list())
+enable_signal_detection(py::list signal_list = py::list{})
 {
     auto _sig_set = (signal_list.size() == 0) ? get_default_signal_set()
                                               : signal_list_to_set(signal_list);

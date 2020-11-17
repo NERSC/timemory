@@ -12,19 +12,19 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_INTERNAL_STACK_H_
-#define CEREAL_RAPIDJSON_INTERNAL_STACK_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_STACK_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_STACK_H_
 
 #include "../allocators.h"
 #include "swap.h"
 #include <cstddef>
 
 #if defined(__clang__)
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(c++98-compat)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(c++98-compat)
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 namespace internal {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@ public:
     Stack(Allocator* allocator, size_t stackCapacity) : allocator_(allocator), ownAllocator_(0), stack_(0), stackTop_(0), stackEnd_(0), initialCapacity_(stackCapacity) {
     }
 
-#if CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
+#if TIMEMORY_CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
     Stack(Stack&& rhs)
         : allocator_(rhs.allocator_),
           ownAllocator_(rhs.ownAllocator_),
@@ -63,7 +63,7 @@ public:
         Destroy();
     }
 
-#if CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
+#if TIMEMORY_CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
     Stack& operator=(Stack&& rhs) {
         if (&rhs != this)
         {
@@ -87,7 +87,7 @@ public:
     }
 #endif
 
-    void Swap(Stack& rhs) CEREAL_RAPIDJSON_NOEXCEPT {
+    void Swap(Stack& rhs) TIMEMORY_CEREAL_RAPIDJSON_NOEXCEPT {
         internal::Swap(allocator_, rhs.allocator_);
         internal::Swap(ownAllocator_, rhs.ownAllocator_);
         internal::Swap(stack_, rhs.stack_);
@@ -113,22 +113,22 @@ public:
     // Optimization note: try to minimize the size of this function for force inline.
     // Expansion is run very infrequently, so it is moved to another (probably non-inline) function.
     template<typename T>
-    CEREAL_RAPIDJSON_FORCEINLINE void Reserve(size_t count = 1) {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void Reserve(size_t count = 1) {
          // Expand the stack if needed
-        if (CEREAL_RAPIDJSON_UNLIKELY(static_cast<std::ptrdiff_t>(sizeof(T) * count) > (stackEnd_ - stackTop_)))
+        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(static_cast<std::ptrdiff_t>(sizeof(T) * count) > (stackEnd_ - stackTop_)))
             Expand<T>(count);
     }
 
     template<typename T>
-    CEREAL_RAPIDJSON_FORCEINLINE T* Push(size_t count = 1) {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE T* Push(size_t count = 1) {
         Reserve<T>(count);
         return PushUnsafe<T>(count);
     }
 
     template<typename T>
-    CEREAL_RAPIDJSON_FORCEINLINE T* PushUnsafe(size_t count = 1) {
-        CEREAL_RAPIDJSON_ASSERT(stackTop_);
-        CEREAL_RAPIDJSON_ASSERT(static_cast<std::ptrdiff_t>(sizeof(T) * count) <= (stackEnd_ - stackTop_));
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE T* PushUnsafe(size_t count = 1) {
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(stackTop_);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(static_cast<std::ptrdiff_t>(sizeof(T) * count) <= (stackEnd_ - stackTop_));
         T* ret = reinterpret_cast<T*>(stackTop_);
         stackTop_ += sizeof(T) * count;
         return ret;
@@ -136,20 +136,20 @@ public:
 
     template<typename T>
     T* Pop(size_t count) {
-        CEREAL_RAPIDJSON_ASSERT(GetSize() >= count * sizeof(T));
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(GetSize() >= count * sizeof(T));
         stackTop_ -= count * sizeof(T);
         return reinterpret_cast<T*>(stackTop_);
     }
 
     template<typename T>
     T* Top() { 
-        CEREAL_RAPIDJSON_ASSERT(GetSize() >= sizeof(T));
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(GetSize() >= sizeof(T));
         return reinterpret_cast<T*>(stackTop_ - sizeof(T));
     }
 
     template<typename T>
     const T* Top() const {
-        CEREAL_RAPIDJSON_ASSERT(GetSize() >= sizeof(T));
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(GetSize() >= sizeof(T));
         return reinterpret_cast<T*>(stackTop_ - sizeof(T));
     }
 
@@ -170,7 +170,7 @@ public:
     }
 
     Allocator& GetAllocator() {
-        CEREAL_RAPIDJSON_ASSERT(allocator_);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(allocator_);
         return *allocator_;
     }
 
@@ -185,7 +185,7 @@ private:
         size_t newCapacity;
         if (stack_ == 0) {
             if (!allocator_)
-                ownAllocator_ = allocator_ = CEREAL_RAPIDJSON_NEW(Allocator)();
+                ownAllocator_ = allocator_ = TIMEMORY_CEREAL_RAPIDJSON_NEW(Allocator)();
             newCapacity = initialCapacity_;
         } else {
             newCapacity = GetCapacity();
@@ -207,7 +207,7 @@ private:
 
     void Destroy() {
         Allocator::Free(stack_);
-        CEREAL_RAPIDJSON_DELETE(ownAllocator_); // Only delete if it is owned by the stack
+        TIMEMORY_CEREAL_RAPIDJSON_DELETE(ownAllocator_); // Only delete if it is owned by the stack
     }
 
     // Prohibit copy constructor & assignment operator.
@@ -223,10 +223,10 @@ private:
 };
 
 } // namespace internal
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #if defined(__clang__)
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_STACK_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_STACK_H_

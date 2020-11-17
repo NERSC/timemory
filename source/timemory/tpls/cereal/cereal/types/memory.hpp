@@ -27,13 +27,15 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_SHARED_PTR_HPP_
-#define CEREAL_TYPES_SHARED_PTR_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_SHARED_PTR_HPP_
+#define TIMEMORY_CEREAL_TYPES_SHARED_PTR_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <cstring>
 #include <memory>
 
+namespace tim
+{
 namespace cereal
 {
 namespace memory_detail
@@ -79,12 +81,12 @@ struct LoadAndConstructLoadWrapper
     : construct(ptr, sharedFromThisFunc)
     {}
 
-    inline void CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar)
+    inline void TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar)
     {
-        ::cereal::detail::Construct<T, Archive>::load_andor_construct(ar, construct);
+        ::tim::cereal::detail::Construct<T, Archive>::load_andor_construct(ar, construct);
     }
 
-    ::cereal::construct<T> construct;
+    ::tim::cereal::construct<T> construct;
 };
 
 //! A helper struct for saving and restoring the state of types that derive from
@@ -135,10 +137,11 @@ template <class T>
 class EnableSharedStateHelper
 {
     // typedefs for parent type and storage type
-    using BaseType    = typename ::cereal::traits::get_shared_from_this_base<T>::type;
-    using ParentType  = std::enable_shared_from_this<BaseType>;
-    using StorageType = typename std::aligned_storage<sizeof(ParentType),
-                                                      CEREAL_ALIGNOF(ParentType)>::type;
+    using BaseType   = typename ::tim::cereal::traits::get_shared_from_this_base<T>::type;
+    using ParentType = std::enable_shared_from_this<BaseType>;
+    using StorageType =
+        typename std::aligned_storage<sizeof(ParentType),
+                                      TIMEMORY_CEREAL_ALIGNOF(ParentType)>::type;
 
 public:
     //! Saves the state of some type inheriting from enable_shared_from_this
@@ -186,7 +189,7 @@ loadAndConstructSharedPtr(Archive& ar, T* ptr, std::true_type /* has_shared_from
 
     // let the user perform their initialization, shared state will be restored as soon as
     // construct() is called
-    ar(CEREAL_NVP_("data", loadWrapper));
+    ar(TIMEMORY_CEREAL_NVP_("data", loadWrapper));
 }
 
 //! Performs loading and construction for a shared pointer that is NOT derived from
@@ -202,61 +205,61 @@ inline void
 loadAndConstructSharedPtr(Archive& ar, T* ptr, std::false_type /* has_shared_from_this */)
 {
     memory_detail::LoadAndConstructLoadWrapper<Archive, T> loadWrapper(ptr);
-    ar(CEREAL_NVP_("data", loadWrapper));
+    ar(TIMEMORY_CEREAL_NVP_("data", loadWrapper));
 }
 }  // end namespace memory_detail
 
 //! Saving std::shared_ptr for non polymorphic types
 template <class Archive, class T>
 inline typename std::enable_if<!std::is_polymorphic<T>::value, void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::shared_ptr<T> const& ptr)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::shared_ptr<T> const& ptr)
 {
-    ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
+    ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
 }
 
 //! Loading std::shared_ptr, case when no user load and construct for non polymorphic
 //! types
 template <class Archive, class T>
 inline typename std::enable_if<!std::is_polymorphic<T>::value, void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::shared_ptr<T>& ptr)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::shared_ptr<T>& ptr)
 {
-    ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
+    ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
 }
 
 //! Saving std::weak_ptr for non polymorphic types
 template <class Archive, class T>
 inline typename std::enable_if<!std::is_polymorphic<T>::value, void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::weak_ptr<T> const& ptr)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::weak_ptr<T> const& ptr)
 {
     auto const sptr = ptr.lock();
-    ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(sptr)));
+    ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(sptr)));
 }
 
 //! Loading std::weak_ptr for non polymorphic types
 template <class Archive, class T>
 inline typename std::enable_if<!std::is_polymorphic<T>::value, void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::weak_ptr<T>& ptr)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::weak_ptr<T>& ptr)
 {
     std::shared_ptr<T> sptr;
-    ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(sptr)));
+    ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(sptr)));
     ptr = sptr;
 }
 
 //! Saving std::unique_ptr for non polymorphic types
 template <class Archive, class T, class D>
 inline typename std::enable_if<!std::is_polymorphic<T>::value, void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D> const& ptr)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D> const& ptr)
 {
-    ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
+    ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
 }
 
 //! Loading std::unique_ptr, case when user provides load_and_construct for non
 //! polymorphic types
 template <class Archive, class T, class D>
 inline typename std::enable_if<!std::is_polymorphic<T>::value, void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D>& ptr)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D>& ptr)
 {
-    ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
+    ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
 }
 
 // ######################################################################
@@ -266,17 +269,17 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D>& ptr)
 /*! @internal */
 template <class Archive, class T>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(
     Archive& ar, memory_detail::PtrWrapper<std::shared_ptr<T> const&> const& wrapper)
 {
     auto& ptr = wrapper.ptr;
 
     uint32_t id = ar.registerSharedPointer(ptr.get());
-    ar(CEREAL_NVP_("id", id));
+    ar(TIMEMORY_CEREAL_NVP_("id", id));
 
     if(id & detail::msb_32bit)
     {
-        ar(CEREAL_NVP_("data", *ptr));
+        ar(TIMEMORY_CEREAL_NVP_("data", *ptr));
     }
 }
 
@@ -285,18 +288,19 @@ CEREAL_SAVE_FUNCTION_NAME(
 template <class Archive, class T>
 inline
     typename std::enable_if<traits::has_load_and_construct<T, Archive>::value, void>::type
-    CEREAL_LOAD_FUNCTION_NAME(Archive&                                        ar,
-                              memory_detail::PtrWrapper<std::shared_ptr<T>&>& wrapper)
+    TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(
+        Archive& ar, memory_detail::PtrWrapper<std::shared_ptr<T>&>& wrapper)
 {
     uint32_t id;
 
-    ar(CEREAL_NVP_("id", id));
+    ar(TIMEMORY_CEREAL_NVP_("id", id));
 
     if(id & detail::msb_32bit)
     {
         // Storage type for the pointer - since we can't default construct this type,
         // we'll allocate it using std::aligned_storage and use a custom deleter
-        using ST = typename std::aligned_storage<sizeof(T), CEREAL_ALIGNOF(T)>::type;
+        using ST =
+            typename std::aligned_storage<sizeof(T), TIMEMORY_CEREAL_ALIGNOF(T)>::type;
 
         // Valid flag - set to true once construction finishes
         //  This prevents us from calling the destructor on
@@ -320,7 +324,7 @@ inline
         // Perform the actual loading and allocation
         memory_detail::loadAndConstructSharedPtr(
             ar, ptr.get(),
-            typename ::cereal::traits::has_shared_from_this<NonConstT>::type());
+            typename ::tim::cereal::traits::has_shared_from_this<NonConstT>::type());
 
         // Mark pointer as valid (initialized)
         *valid      = true;
@@ -335,12 +339,12 @@ inline
 template <class Archive, class T>
 inline typename std::enable_if<!traits::has_load_and_construct<T, Archive>::value,
                                void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive&                                        ar,
-                          memory_detail::PtrWrapper<std::shared_ptr<T>&>& wrapper)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(
+    Archive& ar, memory_detail::PtrWrapper<std::shared_ptr<T>&>& wrapper)
 {
     uint32_t id;
 
-    ar(CEREAL_NVP_("id", id));
+    ar(TIMEMORY_CEREAL_NVP_("id", id));
 
     if(id & detail::msb_32bit)
     {
@@ -348,7 +352,7 @@ CEREAL_LOAD_FUNCTION_NAME(Archive&                                        ar,
         std::shared_ptr<NonConstT> ptr(
             detail::Construct<NonConstT, Archive>::load_andor_construct());
         ar.registerSharedPointer(id, ptr);
-        ar(CEREAL_NVP_("data", *ptr));
+        ar(TIMEMORY_CEREAL_NVP_("data", *ptr));
         wrapper.ptr = std::move(ptr);
     }
     else
@@ -359,7 +363,7 @@ CEREAL_LOAD_FUNCTION_NAME(Archive&                                        ar,
 /*! @internal */
 template <class Archive, class T, class D>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(
     Archive& ar, memory_detail::PtrWrapper<std::unique_ptr<T, D> const&> const& wrapper)
 {
     auto& ptr = wrapper.ptr;
@@ -369,11 +373,11 @@ CEREAL_SAVE_FUNCTION_NAME(
     // 1 == not null
 
     if(!ptr)
-        ar(CEREAL_NVP_("valid", uint8_t(0)));
+        ar(TIMEMORY_CEREAL_NVP_("valid", uint8_t(0)));
     else
     {
-        ar(CEREAL_NVP_("valid", uint8_t(1)));
-        ar(CEREAL_NVP_("data", *ptr));
+        ar(TIMEMORY_CEREAL_NVP_("valid", uint8_t(1)));
+        ar(TIMEMORY_CEREAL_NVP_("data", *ptr));
     }
 }
 
@@ -383,11 +387,11 @@ CEREAL_SAVE_FUNCTION_NAME(
 template <class Archive, class T, class D>
 inline
     typename std::enable_if<traits::has_load_and_construct<T, Archive>::value, void>::type
-    CEREAL_LOAD_FUNCTION_NAME(Archive&                                           ar,
-                              memory_detail::PtrWrapper<std::unique_ptr<T, D>&>& wrapper)
+    TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(
+        Archive& ar, memory_detail::PtrWrapper<std::unique_ptr<T, D>&>& wrapper)
 {
     uint8_t isValid;
-    ar(CEREAL_NVP_("valid", isValid));
+    ar(TIMEMORY_CEREAL_NVP_("valid", isValid));
 
     auto& ptr = wrapper.ptr;
 
@@ -396,8 +400,9 @@ inline
         using NonConstT = typename std::remove_const<T>::type;
         // Storage type for the pointer - since we can't default construct this type,
         // we'll allocate it using std::aligned_storage
-        using ST = typename std::aligned_storage<sizeof(NonConstT),
-                                                 CEREAL_ALIGNOF(NonConstT)>::type;
+        using ST =
+            typename std::aligned_storage<sizeof(NonConstT),
+                                          TIMEMORY_CEREAL_ALIGNOF(NonConstT)>::type;
 
         // Allocate storage - note the ST type so that deleter is correct if
         //                    an exception is thrown before we are initialized
@@ -408,7 +413,7 @@ inline
             reinterpret_cast<NonConstT*>(stPtr.get()));
 
         // Initialize storage
-        ar(CEREAL_NVP_("data", loadWrapper));
+        ar(TIMEMORY_CEREAL_NVP_("data", loadWrapper));
 
         // Transfer ownership to correct unique_ptr type
         ptr.reset(reinterpret_cast<T*>(stPtr.release()));
@@ -422,18 +427,18 @@ inline
 template <class Archive, class T, class D>
 inline typename std::enable_if<!traits::has_load_and_construct<T, Archive>::value,
                                void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive&                                           ar,
-                          memory_detail::PtrWrapper<std::unique_ptr<T, D>&>& wrapper)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(
+    Archive& ar, memory_detail::PtrWrapper<std::unique_ptr<T, D>&>& wrapper)
 {
     uint8_t isValid;
-    ar(CEREAL_NVP_("valid", isValid));
+    ar(TIMEMORY_CEREAL_NVP_("valid", isValid));
 
     if(isValid)
     {
         using NonConstT = typename std::remove_const<T>::type;
         std::unique_ptr<NonConstT, D> ptr(
             detail::Construct<NonConstT, Archive>::load_andor_construct());
-        ar(CEREAL_NVP_("data", *ptr));
+        ar(TIMEMORY_CEREAL_NVP_("data", *ptr));
         wrapper.ptr = std::move(ptr);
     }
     else
@@ -442,8 +447,9 @@ CEREAL_LOAD_FUNCTION_NAME(Archive&                                           ar,
     }
 }
 }  // namespace cereal
+}  // namespace tim
 
 // automatically include polymorphic support
 #include "timemory/tpls/cereal/cereal/types/polymorphic.hpp"
 
-#endif  // CEREAL_TYPES_SHARED_PTR_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_SHARED_PTR_HPP_

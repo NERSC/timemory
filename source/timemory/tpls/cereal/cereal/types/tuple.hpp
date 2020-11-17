@@ -27,12 +27,14 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_TUPLE_HPP_
-#define CEREAL_TYPES_TUPLE_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_TUPLE_HPP_
+#define TIMEMORY_CEREAL_TYPES_TUPLE_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <tuple>
 
+namespace tim
+{
 namespace cereal
 {
 namespace tuple_detail
@@ -99,8 +101,8 @@ struct serialize
     inline static void apply(Archive& ar, std::tuple<Types...>& tuple)
     {
         serialize<Height - 1>::template apply(ar, tuple);
-        ar(CEREAL_NVP_(tuple_element_name<Height - 1>::c_str(),
-                       std::get<Height - 1>(tuple)));
+        ar(TIMEMORY_CEREAL_NVP_(tuple_element_name<Height - 1>::c_str(),
+                                std::get<Height - 1>(tuple)));
     }
 };
 
@@ -118,11 +120,12 @@ struct serialize<0>
 //! Serializing for std::tuple
 template <class Archive, class... Types>
 inline void
-CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, std::tuple<Types...>& tuple)
+TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, std::tuple<Types...>& tuple)
 {
     tuple_detail::serialize<std::tuple_size<std::tuple<Types...>>::value>::template apply(
         ar, tuple);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_TUPLE_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_TUPLE_HPP_

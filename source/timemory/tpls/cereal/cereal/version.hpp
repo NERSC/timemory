@@ -34,18 +34,19 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef CEREAL_VERSION_HPP_
-#define CEREAL_VERSION_HPP_
+#ifndef TIMEMORY_CEREAL_VERSION_HPP_
+#define TIMEMORY_CEREAL_VERSION_HPP_
 
 //! The major version
-#define CEREAL_VERSION_MAJOR 1
+#define TIMEMORY_CEREAL_VERSION_MAJOR 1
 //! The minor version
-#define CEREAL_VERSION_MINOR 3
+#define TIMEMORY_CEREAL_VERSION_MINOR 3
 //! The patch version
-#define CEREAL_VERSION_PATCH 0
+#define TIMEMORY_CEREAL_VERSION_PATCH 0
 
 //! The full version as a single number
-#define CEREAL_VERSION                                                                   \
-    (CEREAL_VERSION_MAJOR * 10000 + CEREAL_VERSION_MINOR * 100 + CEREAL_VERSION_PATCH)
+#define TIMEMORY_CEREAL_VERSION                                                          \
+    (TIMEMORY_CEREAL_VERSION_MAJOR * 10000 + TIMEMORY_CEREAL_VERSION_MINOR * 100 +       \
+     TIMEMORY_CEREAL_VERSION_PATCH)
 
-#endif  // CEREAL_VERSION_HPP_
+#endif  // TIMEMORY_CEREAL_VERSION_HPP_

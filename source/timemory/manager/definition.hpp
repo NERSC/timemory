@@ -693,29 +693,30 @@ timemory_library_constructor()
     if(_preloaded)
         return;
 
-    static auto& _versions =
-        cereal::detail::StaticObject<cereal::detail::Versions>::getInstance();
-    static auto _settings = tim::settings::shared_instance<tim::api::native_tag>();
-    auto        _debug    = (_settings) ? _settings->get_debug() : false;
-    auto        _verbose  = (_settings) ? _settings->get_verbose() : 0;
+    auto _settings = tim::settings::shared_instance();
+    auto _debug    = (_settings) ? _settings->get_debug() : false;
+    auto _verbose  = (_settings) ? _settings->get_verbose() : 0;
 
     static thread_local bool _once = false;
     if(_once)
         return;
     _once = true;
 
-    auto        _inst        = timemory_manager_master_instance();
-    static auto _dir         = tim::settings::output_path();
-    static auto _prefix      = tim::settings::output_prefix();
-    static auto _time_output = tim::settings::time_output();
-    static auto _time_format = tim::settings::time_format();
-    tim::consume_parameters(_dir, _prefix, _time_output, _time_format, _versions);
+    auto _inst = timemory_manager_master_instance();
+    if(_settings)
+    {
+        static auto _dir         = _settings->get_output_path();
+        static auto _prefix      = _settings->get_output_prefix();
+        static auto _time_output = _settings->get_time_output();
+        static auto _time_format = _settings->get_time_format();
+        tim::consume_parameters(_dir, _prefix, _time_output, _time_format);
+    }
 
     if(_debug || _verbose > 3)
         printf("[%s]> initializing manager...\n", __FUNCTION__);
 
-    static auto              _master = manager::master_instance();
-    static thread_local auto _worker = manager::instance();
+    auto _master = manager::master_instance();
+    auto _worker = manager::instance();
 
     if(!_master && _inst)
         _master.reset(_inst);
@@ -735,15 +736,19 @@ timemory_library_constructor()
                __FUNCTION__, (void*) _master.get(), (void*) _worker.get());
         if(!signal_settings::is_active())
         {
-            enable_signal_detection({ sys_signal::SegFault, sys_signal::Bus });
-            auto _exit_action = [](int nsig) {
-                auto _manager = manager::instance();
-                if(_manager)
+            auto default_signals = signal_settings::get_default();
+            for(auto& itr : default_signals)
+                signal_settings::enable(itr);
+            // should return default and any modifications from environment
+            auto enabled_signals = signal_settings::get_enabled();
+            enable_signal_detection(enabled_signals);
+            auto _exit_action = [=](int nsig) {
+                if(_master)
                 {
                     std::cout << "Finalizing after signal: " << nsig << " :: "
                               << signal_settings::str(static_cast<sys_signal>(nsig))
                               << std::endl;
-                    _manager->finalize();
+                    _master->finalize();
                 }
             };
             signal_settings::set_exit_action(_exit_action);

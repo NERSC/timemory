@@ -12,23 +12,23 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_ENCODEDSTREAM_H_
-#define CEREAL_RAPIDJSON_ENCODEDSTREAM_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_ENCODEDSTREAM_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_ENCODEDSTREAM_H_
 
 #include "stream.h"
 #include "memorystream.h"
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(effc++)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(effc++)
 #endif
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(padded)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(padded)
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 //! Input byte stream wrapper with a statically bound encoding.
 /*!
@@ -37,7 +37,7 @@ CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 */
 template <typename Encoding, typename InputByteStream>
 class EncodedInputStream {
-    CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+    TIMEMORY_CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
 public:
     typedef typename Encoding::Ch Ch;
 
@@ -50,10 +50,10 @@ public:
     size_t Tell() const { return is_.Tell(); }
 
     // Not implemented
-    void Put(Ch) { CEREAL_RAPIDJSON_ASSERT(false); }
-    void Flush() { CEREAL_RAPIDJSON_ASSERT(false); } 
-    Ch* PutBegin() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    size_t PutEnd(Ch*) { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    void Put(Ch) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); }
+    void Flush() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); } 
+    Ch* PutBegin() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    size_t PutEnd(Ch*) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
 
 private:
     EncodedInputStream(const EncodedInputStream&);
@@ -98,7 +98,7 @@ private:
 */
 template <typename Encoding, typename OutputByteStream>
 class EncodedOutputStream {
-    CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+    TIMEMORY_CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
 public:
     typedef typename Encoding::Ch Ch;
 
@@ -111,11 +111,11 @@ public:
     void Flush() { os_.Flush(); }
 
     // Not implemented
-    Ch Peek() const { CEREAL_RAPIDJSON_ASSERT(false); return 0;}
-    Ch Take() { CEREAL_RAPIDJSON_ASSERT(false); return 0;}
-    size_t Tell() const { CEREAL_RAPIDJSON_ASSERT(false);  return 0; }
-    Ch* PutBegin() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    size_t PutEnd(Ch*) { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    Ch Peek() const { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0;}
+    Ch Take() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0;}
+    size_t Tell() const { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false);  return 0; }
+    Ch* PutBegin() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    size_t PutEnd(Ch*) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
 
 private:
     EncodedOutputStream(const EncodedOutputStream&);
@@ -124,7 +124,7 @@ private:
     OutputByteStream& os_;
 };
 
-#define CEREAL_RAPIDJSON_ENCODINGS_FUNC(x) UTF8<Ch>::x, UTF16LE<Ch>::x, UTF16BE<Ch>::x, UTF32LE<Ch>::x, UTF32BE<Ch>::x
+#define TIMEMORY_CEREAL_RAPIDJSON_ENCODINGS_FUNC(x) UTF8<Ch>::x, UTF16LE<Ch>::x, UTF16BE<Ch>::x, UTF32LE<Ch>::x, UTF32BE<Ch>::x
 
 //! Input stream wrapper with dynamically bound encoding and automatic encoding detection.
 /*!
@@ -133,7 +133,7 @@ private:
 */
 template <typename CharType, typename InputByteStream>
 class AutoUTFInputStream {
-    CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+    TIMEMORY_CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
 public:
     typedef CharType Ch;
 
@@ -143,9 +143,9 @@ public:
         \param type UTF encoding type if it is not detected from the stream.
     */
     AutoUTFInputStream(InputByteStream& is, UTFType type = kUTF8) : is_(&is), type_(type), hasBOM_(false) {
-        CEREAL_RAPIDJSON_ASSERT(type >= kUTF8 && type <= kUTF32BE);        
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(type >= kUTF8 && type <= kUTF32BE);        
         DetectType();
-        static const TakeFunc f[] = { CEREAL_RAPIDJSON_ENCODINGS_FUNC(Take) };
+        static const TakeFunc f[] = { TIMEMORY_CEREAL_RAPIDJSON_ENCODINGS_FUNC(Take) };
         takeFunc_ = f[type_];
         current_ = takeFunc_(*is_);
     }
@@ -158,10 +158,10 @@ public:
     size_t Tell() const { return is_->Tell(); }
 
     // Not implemented
-    void Put(Ch) { CEREAL_RAPIDJSON_ASSERT(false); }
-    void Flush() { CEREAL_RAPIDJSON_ASSERT(false); } 
-    Ch* PutBegin() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    size_t PutEnd(Ch*) { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    void Put(Ch) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); }
+    void Flush() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); } 
+    Ch* PutBegin() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    size_t PutEnd(Ch*) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
 
 private:
     AutoUTFInputStream(const AutoUTFInputStream&);
@@ -212,8 +212,8 @@ private:
         }
 
         // Runtime check whether the size of character type is sufficient. It only perform checks with assertion.
-        if (type_ == kUTF16LE || type_ == kUTF16BE) CEREAL_RAPIDJSON_ASSERT(sizeof(Ch) >= 2);
-        if (type_ == kUTF32LE || type_ == kUTF32BE) CEREAL_RAPIDJSON_ASSERT(sizeof(Ch) >= 4);
+        if (type_ == kUTF16LE || type_ == kUTF16BE) TIMEMORY_CEREAL_RAPIDJSON_ASSERT(sizeof(Ch) >= 2);
+        if (type_ == kUTF32LE || type_ == kUTF32BE) TIMEMORY_CEREAL_RAPIDJSON_ASSERT(sizeof(Ch) >= 4);
     }
 
     typedef Ch (*TakeFunc)(InputByteStream& is);
@@ -231,7 +231,7 @@ private:
 */
 template <typename CharType, typename OutputByteStream>
 class AutoUTFOutputStream {
-    CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+    TIMEMORY_CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
 public:
     typedef CharType Ch;
 
@@ -242,13 +242,13 @@ public:
         \param putBOM Whether to write BOM at the beginning of the stream.
     */
     AutoUTFOutputStream(OutputByteStream& os, UTFType type, bool putBOM) : os_(&os), type_(type) {
-        CEREAL_RAPIDJSON_ASSERT(type >= kUTF8 && type <= kUTF32BE);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(type >= kUTF8 && type <= kUTF32BE);
 
         // Runtime check whether the size of character type is sufficient. It only perform checks with assertion.
-        if (type_ == kUTF16LE || type_ == kUTF16BE) CEREAL_RAPIDJSON_ASSERT(sizeof(Ch) >= 2);
-        if (type_ == kUTF32LE || type_ == kUTF32BE) CEREAL_RAPIDJSON_ASSERT(sizeof(Ch) >= 4);
+        if (type_ == kUTF16LE || type_ == kUTF16BE) TIMEMORY_CEREAL_RAPIDJSON_ASSERT(sizeof(Ch) >= 2);
+        if (type_ == kUTF32LE || type_ == kUTF32BE) TIMEMORY_CEREAL_RAPIDJSON_ASSERT(sizeof(Ch) >= 4);
 
-        static const PutFunc f[] = { CEREAL_RAPIDJSON_ENCODINGS_FUNC(Put) };
+        static const PutFunc f[] = { TIMEMORY_CEREAL_RAPIDJSON_ENCODINGS_FUNC(Put) };
         putFunc_ = f[type_];
 
         if (putBOM)
@@ -261,11 +261,11 @@ public:
     void Flush() { os_->Flush(); } 
 
     // Not implemented
-    Ch Peek() const { CEREAL_RAPIDJSON_ASSERT(false); return 0;}
-    Ch Take() { CEREAL_RAPIDJSON_ASSERT(false); return 0;}
-    size_t Tell() const { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    Ch* PutBegin() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    size_t PutEnd(Ch*) { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    Ch Peek() const { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0;}
+    Ch Take() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0;}
+    size_t Tell() const { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    Ch* PutBegin() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    size_t PutEnd(Ch*) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
 
 private:
     AutoUTFOutputStream(const AutoUTFOutputStream&);
@@ -273,7 +273,7 @@ private:
 
     void PutBOM() { 
         typedef void (*PutBOMFunc)(OutputByteStream&);
-        static const PutBOMFunc f[] = { CEREAL_RAPIDJSON_ENCODINGS_FUNC(PutBOM) };
+        static const PutBOMFunc f[] = { TIMEMORY_CEREAL_RAPIDJSON_ENCODINGS_FUNC(PutBOM) };
         f[type_](*os_);
     }
 
@@ -284,16 +284,16 @@ private:
     PutFunc putFunc_;
 };
 
-#undef CEREAL_RAPIDJSON_ENCODINGS_FUNC
+#undef TIMEMORY_CEREAL_RAPIDJSON_ENCODINGS_FUNC
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_FILESTREAM_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_FILESTREAM_H_

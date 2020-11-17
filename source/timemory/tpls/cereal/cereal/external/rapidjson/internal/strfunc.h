@@ -12,13 +12,13 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_INTERNAL_STRFUNC_H_
-#define CEREAL_RAPIDJSON_INTERNAL_STRFUNC_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_STRFUNC_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_STRFUNC_H_
 
 #include "../stream.h"
 #include <cwchar>
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 namespace internal {
 
 //! Custom strlen() which works on different character types.
@@ -29,7 +29,7 @@ namespace internal {
 */
 template <typename Ch>
 inline SizeType StrLen(const Ch* s) {
-    CEREAL_RAPIDJSON_ASSERT(s != 0);
+    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(s != 0);
     const Ch* p = s;
     while (*p) ++p;
     return SizeType(p - s);
@@ -48,8 +48,8 @@ inline SizeType StrLen(const wchar_t* s) {
 //! Returns number of code points in a encoded string.
 template<typename Encoding>
 bool CountStringCodePoint(const typename Encoding::Ch* s, SizeType length, SizeType* outCount) {
-    CEREAL_RAPIDJSON_ASSERT(s != 0);
-    CEREAL_RAPIDJSON_ASSERT(outCount != 0);
+    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(s != 0);
+    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(outCount != 0);
     GenericStringStream<Encoding> is(s);
     const typename Encoding::Ch* end = s + length;
     SizeType count = 0;
@@ -64,6 +64,6 @@ bool CountStringCodePoint(const typename Encoding::Ch* s, SizeType length, SizeT
 }
 
 } // namespace internal
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
-#endif // CEREAL_RAPIDJSON_INTERNAL_STRFUNC_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_STRFUNC_H_

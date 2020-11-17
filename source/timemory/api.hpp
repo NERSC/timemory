@@ -198,13 +198,15 @@ struct is_available<os::supports_windows> : false_type
 //
 //--------------------------------------------------------------------------------------//
 //
+namespace tim
+{
 namespace cereal
 {
 class JSONInputArchive;
 class XMLInputArchive;
 class XMLOutputArchive;
 }  // namespace cereal
-
+}  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -12,18 +12,18 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_FILEWRITESTREAM_H_
-#define CEREAL_RAPIDJSON_FILEWRITESTREAM_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_FILEWRITESTREAM_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_FILEWRITESTREAM_H_
 
 #include "stream.h"
 #include <cstdio>
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(unreachable-code)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(unreachable-code)
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 //! Wrapper of C file stream for output using fwrite().
 /*!
@@ -34,7 +34,7 @@ public:
     typedef char Ch;    //!< Character type. Only support char.
 
     FileWriteStream(std::FILE* fp, char* buffer, size_t bufferSize) : fp_(fp), buffer_(buffer), bufferEnd_(buffer + bufferSize), current_(buffer_) { 
-        CEREAL_RAPIDJSON_ASSERT(fp_ != 0);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(fp_ != 0);
     }
 
     void Put(char c) { 
@@ -72,11 +72,11 @@ public:
     }
 
     // Not implemented
-    char Peek() const { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    char Take() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    size_t Tell() const { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    char* PutBegin() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    size_t PutEnd(char*) { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    char Peek() const { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    char Take() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    size_t Tell() const { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    char* PutBegin() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    size_t PutEnd(char*) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
 
 private:
     // Prohibit copy constructor & assignment operator.
@@ -95,10 +95,10 @@ inline void PutN(FileWriteStream& stream, char c, size_t n) {
     stream.PutN(c, n);
 }
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_FILESTREAM_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_FILESTREAM_H_

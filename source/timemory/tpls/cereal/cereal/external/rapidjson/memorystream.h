@@ -12,18 +12,18 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_MEMORYSTREAM_H_
-#define CEREAL_RAPIDJSON_MEMORYSTREAM_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_MEMORYSTREAM_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_MEMORYSTREAM_H_
 
 #include "stream.h"
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(unreachable-code)
-CEREAL_RAPIDJSON_DIAG_OFF(missing-noreturn)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(unreachable-code)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(missing-noreturn)
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 //! Represents an in-memory input byte stream.
 /*!
@@ -42,14 +42,14 @@ struct MemoryStream {
 
     MemoryStream(const Ch *src, size_t size) : src_(src), begin_(src), end_(src + size), size_(size) {}
 
-    Ch Peek() const { return CEREAL_RAPIDJSON_UNLIKELY(src_ == end_) ? '\0' : *src_; }
-    Ch Take() { return CEREAL_RAPIDJSON_UNLIKELY(src_ == end_) ? '\0' : *src_++; }
+    Ch Peek() const { return TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(src_ == end_) ? '\0' : *src_; }
+    Ch Take() { return TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(src_ == end_) ? '\0' : *src_++; }
     size_t Tell() const { return static_cast<size_t>(src_ - begin_); }
 
-    Ch* PutBegin() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    void Put(Ch) { CEREAL_RAPIDJSON_ASSERT(false); }
-    void Flush() { CEREAL_RAPIDJSON_ASSERT(false); }
-    size_t PutEnd(Ch*) { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    Ch* PutBegin() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    void Put(Ch) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); }
+    void Flush() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); }
+    size_t PutEnd(Ch*) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
 
     // For encoding detection only.
     const Ch* Peek4() const {
@@ -62,10 +62,10 @@ struct MemoryStream {
     size_t size_;       //!< Size of the stream.
 };
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_MEMORYBUFFER_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_MEMORYBUFFER_H_

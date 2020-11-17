@@ -27,18 +27,21 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_FORWARD_LIST_HPP_
-#define CEREAL_TYPES_FORWARD_LIST_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_FORWARD_LIST_HPP_
+#define TIMEMORY_CEREAL_TYPES_FORWARD_LIST_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <forward_list>
 
+namespace tim
+{
 namespace cereal
 {
 //! Saving for std::forward_list all other types
 template <class Archive, class T, class A>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::forward_list<T, A> const& forward_list)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive&                       ar,
+                                   std::forward_list<T, A> const& forward_list)
 {
     // write the size - note that this is slow because we need to traverse
     // the entire list. there are ways we could avoid this but this was chosen
@@ -55,7 +58,7 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::forward_list<T, A> const& forward_li
 //! Loading for std::forward_list all other types from
 template <class Archive, class T, class A>
 void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::forward_list<T, A>& forward_list)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::forward_list<T, A>& forward_list)
 {
     size_type size;
     ar(make_size_tag(size));
@@ -66,5 +69,6 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::forward_list<T, A>& forward_list)
         ar(i);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_FORWARD_LIST_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_FORWARD_LIST_HPP_

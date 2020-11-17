@@ -12,20 +12,20 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_FILEREADSTREAM_H_
-#define CEREAL_RAPIDJSON_FILEREADSTREAM_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_FILEREADSTREAM_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_FILEREADSTREAM_H_
 
 #include "stream.h"
 #include <cstdio>
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(padded)
-CEREAL_RAPIDJSON_DIAG_OFF(unreachable-code)
-CEREAL_RAPIDJSON_DIAG_OFF(missing-noreturn)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(padded)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(unreachable-code)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(missing-noreturn)
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 //! File byte stream for input using fread().
 /*!
@@ -42,8 +42,8 @@ public:
         \param bufferSize size of buffer in bytes. Must >=4 bytes.
     */
     FileReadStream(std::FILE* fp, char* buffer, size_t bufferSize) : fp_(fp), buffer_(buffer), bufferSize_(bufferSize), bufferLast_(0), current_(buffer_), readCount_(0), count_(0), eof_(false) { 
-        CEREAL_RAPIDJSON_ASSERT(fp_ != 0);
-        CEREAL_RAPIDJSON_ASSERT(bufferSize >= 4);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(fp_ != 0);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(bufferSize >= 4);
         Read();
     }
 
@@ -52,10 +52,10 @@ public:
     size_t Tell() const { return count_ + static_cast<size_t>(current_ - buffer_); }
 
     // Not implemented
-    void Put(Ch) { CEREAL_RAPIDJSON_ASSERT(false); }
-    void Flush() { CEREAL_RAPIDJSON_ASSERT(false); } 
-    Ch* PutBegin() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    size_t PutEnd(Ch*) { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    void Put(Ch) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); }
+    void Flush() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); } 
+    Ch* PutBegin() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    size_t PutEnd(Ch*) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
 
     // For encoding detection only.
     const Ch* Peek4() const {
@@ -90,10 +90,10 @@ private:
     bool eof_;
 };
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_FILESTREAM_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_FILESTREAM_H_

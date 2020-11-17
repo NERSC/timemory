@@ -217,7 +217,7 @@ TEST_F(archive_storage_tests, archive_hierarchy)
 {
     if(tim::dmp::rank() == 0)
     {
-        using archive_t              = cereal::JSONOutputArchive;
+        using archive_t              = tim::cereal::JSONOutputArchive;
         using api_t                  = TIMEMORY_API;
         auto              wc_storage = tim::storage<wall_clock>::instance();
         auto              cc_storage = tim::storage<cpu_clock>::instance();
@@ -241,7 +241,7 @@ TEST_F(archive_storage_tests, archive_hierarchy)
 
 TEST_F(archive_storage_tests, mpi_archive_hierarchy)
 {
-    using archive_t              = cereal::JSONOutputArchive;
+    using archive_t              = tim::cereal::JSONOutputArchive;
     using api_t                  = TIMEMORY_API;
     auto              wc_storage = tim::storage<wall_clock>::instance();
     auto              cc_storage = tim::storage<cpu_clock>::instance();
@@ -266,7 +266,7 @@ TEST_F(archive_storage_tests, mpi_archive_hierarchy)
 
 TEST_F(archive_storage_tests, upc_archive_hierarchy)
 {
-    using archive_t              = cereal::JSONOutputArchive;
+    using archive_t              = tim::cereal::JSONOutputArchive;
     using api_t                  = TIMEMORY_API;
     auto              wc_storage = tim::storage<wall_clock>::instance();
     auto              cc_storage = tim::storage<cpu_clock>::instance();
@@ -291,7 +291,7 @@ TEST_F(archive_storage_tests, upc_archive_hierarchy)
 
 TEST_F(archive_storage_tests, dmp_archive_hierarchy)
 {
-    using archive_t              = cereal::JSONOutputArchive;
+    using archive_t              = tim::cereal::JSONOutputArchive;
     using api_t                  = TIMEMORY_API;
     auto              wc_storage = tim::storage<wall_clock>::instance();
     auto              cc_storage = tim::storage<cpu_clock>::instance();

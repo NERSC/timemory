@@ -65,6 +65,8 @@ find_package(timemory COMPONENTS headers OPTIONAL_COMPONENTS mpi cxx shared)
 
 pybind11_add_module(libex_python_bindings ${PROJECT_SOURCE_DIR}/libex_bindings.cpp)
 
+include(CheckCXXCompilerFlag)
+
 set(_COMPILE_OPTS) # for -Wno-attributes if available by the compiler
 if(TARGET timemory-compile-options)
     set(_COMPILE_OPTS timemory-compile-options)
@@ -72,9 +74,24 @@ elseif(TARGET timemory::timemory-compile-options)
     set(_COMPILE_OPTS timemory::timemory-compile-options)
 endif()
 
+add_library(libex_python_bindings_flags INTERFACE)
+check_cxx_compiler_flag("-Wno-range-loop-analysis" cxx_no_range_loop_analysis)
+check_cxx_compiler_flag("-Wno-unused-value" cxx_no_unused_value)
+
+if(cxx_no_range_loop_analysis)
+    target_compile_options(libex_python_bindings_flags INTERFACE -Wno-range-loop-analysis)
+endif()
+if(cxx_no_unused_value)
+    target_compile_options(libex_python_bindings_flags INTERFACE -Wno-unused-value)
+endif()
+
 target_compile_definitions(libex_python_bindings PRIVATE USE_MPI)
 target_link_libraries(libex_python_bindings PRIVATE
-    MPI::MPI_C MPI::MPI_CXX ${_OMP} ${_COMPILE_OPTS})
+    MPI::MPI_C
+    MPI::MPI_CXX
+    ${_OMP}
+    ${_COMPILE_OPTS}
+    libex_python_bindings_flags)
 
 configure_file(${PROJECT_SOURCE_DIR}/ex_bindings.py
     ${TARGET_BINARY_DIR}/ex_python_bindings @ONLY)

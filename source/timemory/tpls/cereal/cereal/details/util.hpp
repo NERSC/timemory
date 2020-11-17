@@ -27,13 +27,15 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_DETAILS_UTIL_HPP_
-#define CEREAL_DETAILS_UTIL_HPP_
+#ifndef TIMEMORY_CEREAL_DETAILS_UTIL_HPP_
+#define TIMEMORY_CEREAL_DETAILS_UTIL_HPP_
 
 #include <string>
 #include <typeinfo>
 
 #ifdef _MSC_VER
+namespace tim
+{
 namespace cereal
 {
 namespace util
@@ -56,9 +58,12 @@ demangledName()
 }
 }  // namespace util
 }  // namespace cereal
+}  // namespace tim
 #else  // clang or gcc
 #    include <cstdlib>
 #    include <cxxabi.h>
+namespace tim
+{
 namespace cereal
 {
 namespace util
@@ -90,5 +95,6 @@ demangledName()
 }
 }  // namespace util
 }  // namespace cereal
+}  // namespace tim
 #endif  // clang or gcc branch of _MSC_VER
-#endif  // CEREAL_DETAILS_UTIL_HPP_
+#endif  // TIMEMORY_CEREAL_DETAILS_UTIL_HPP_

@@ -754,9 +754,3 @@ settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, std::string _env)
 //----------------------------------------------------------------------------------//
 //
 }  // namespace tim
-
-// TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
-
-#if !defined(_TIMEMORY_INTEL)
-CEREAL_CLASS_VERSION(tim::settings, 2)
-#endif

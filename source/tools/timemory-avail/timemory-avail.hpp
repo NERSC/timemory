@@ -47,16 +47,18 @@
 #include <tuple>
 #include <vector>
 
-#if !defined(CEREAL_EPILOGUE_FUNCTION_NAME)
-#    define CEREAL_EPILOGUE_FUNCTION_NAME epilogue
+#if !defined(TIMEMORY_CEREAL_EPILOGUE_FUNCTION_NAME)
+#    define TIMEMORY_CEREAL_EPILOGUE_FUNCTION_NAME epilogue
 #endif
 
-#if !defined(CEREAL_PROLOGUE_FUNCTION_NAME)
-#    define CEREAL_PROLOGUE_FUNCTION_NAME prologue
+#if !defined(TIMEMORY_CEREAL_PROLOGUE_FUNCTION_NAME)
+#    define TIMEMORY_CEREAL_PROLOGUE_FUNCTION_NAME prologue
 #endif
 
 //======================================================================================//
 
+namespace tim
+{
 namespace cereal
 {
 class SettingsTextArchive
@@ -175,7 +177,7 @@ private:
 /*! NVPs do not start or finish nodes - they just set up the names */
 template <typename T>
 inline void
-CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const NameValuePair<T>&)
+TIMEMORY_CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const NameValuePair<T>&)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -183,7 +185,7 @@ CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const NameValuePair<T>&)
 /*! NVPs do not start or finish nodes - they just set up the names */
 template <typename T>
 inline void
-CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const NameValuePair<T>&)
+TIMEMORY_CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const NameValuePair<T>&)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -191,7 +193,7 @@ CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const NameValuePair<T>&)
 /*! Do nothing for the defer wrapper */
 template <typename T>
 inline void
-CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const DeferredData<T>&)
+TIMEMORY_CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const DeferredData<T>&)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -199,7 +201,7 @@ CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const DeferredData<T>&)
 /*! NVPs do not start or finish nodes - they just set up the names */
 template <typename T>
 inline void
-CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const DeferredData<T>&)
+TIMEMORY_CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const DeferredData<T>&)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -207,7 +209,7 @@ CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const DeferredData<T>&)
 /*! SizeTags are ignored */
 template <typename T>
 inline void
-CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const SizeTag<T>&)
+TIMEMORY_CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const SizeTag<T>&)
 {
     ar.makeArray();
 }
@@ -217,7 +219,7 @@ CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const SizeTag<T>&)
 /*! SizeTags are ignored */
 template <typename T>
 inline void
-CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const SizeTag<T>&)
+TIMEMORY_CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const SizeTag<T>&)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -226,7 +228,7 @@ CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const SizeTag<T>&)
     that may be given data by the type about to be archived*/
 template <typename T>
 inline void
-CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const T&)
+TIMEMORY_CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const T&)
 {
     ar.startNode();
 }
@@ -236,7 +238,7 @@ CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const T&)
 /*! Finishes the node created in the prologue*/
 template <typename T>
 inline void
-CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const T&)
+TIMEMORY_CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const T&)
 {
     ar.finishNode();
 }
@@ -244,13 +246,13 @@ CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const T&)
 //--------------------------------------------------------------------------------------//
 //! Prologue for arithmetic types for settings archive
 inline void
-CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const std::nullptr_t&)
+TIMEMORY_CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const std::nullptr_t&)
 {}
 
 //--------------------------------------------------------------------------------------//
 //! Epilogue for arithmetic types for settings archive
 inline void
-CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const std::nullptr_t&)
+TIMEMORY_CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const std::nullptr_t&)
 {}
 
 //======================================================================================//
@@ -262,7 +264,7 @@ CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const std::nullptr_t&)
 //! Serializing NVP types
 template <typename T>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive& ar, const NameValuePair<T>& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive& ar, const NameValuePair<T>& t)
 {
     ar.setNextName(t.name);
     if(std::is_same<T, std::string>::value)
@@ -274,8 +276,9 @@ CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive& ar, const NameValuePair<T>& t)
 
 template <typename CharT, typename Traits, typename Alloc>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive& ar,
-                          const NameValuePair<std::basic_string<CharT, Traits, Alloc>>& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(
+    SettingsTextArchive&                                          ar,
+    const NameValuePair<std::basic_string<CharT, Traits, Alloc>>& t)
 {
     ar.setNextName(t.name);
     ar.setNextType("string");
@@ -284,13 +287,13 @@ CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive& ar,
 
 //! Saving for nullptr
 inline void
-CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive&, const std::nullptr_t&)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive&, const std::nullptr_t&)
 {}
 
 //! Saving for arithmetic
 template <typename T, traits::EnableIf<std::is_arithmetic<T>::value> = traits::sfinae>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive& ar, const T& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive& ar, const T& t)
 {
     if(std::is_same<T, std::string>::value)
         ar.setNextType("string");
@@ -300,8 +303,8 @@ CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive& ar, const T& t)
 //! saving string
 template <typename CharT, typename Traits, typename Alloc>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive&                           ar,
-                          const std::basic_string<CharT, Traits, Alloc>& str)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive&                           ar,
+                                   const std::basic_string<CharT, Traits, Alloc>& str)
 {
     ar.setNextType("string");
     ar.saveValue(str);
@@ -311,12 +314,13 @@ CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive&                           ar,
 //! Saving SizeTags
 template <typename T>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive&, const SizeTag<T>&)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive&, const SizeTag<T>&)
 {
     // nothing to do here, we don't explicitly save the size
 }
 
 }  // namespace cereal
+}  // namespace tim
 
 // register archives for polymorphic support
-CEREAL_REGISTER_ARCHIVE(SettingsTextArchive)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(SettingsTextArchive)

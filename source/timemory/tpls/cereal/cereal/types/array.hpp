@@ -27,12 +27,14 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_ARRAY_HPP_
-#define CEREAL_TYPES_ARRAY_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_ARRAY_HPP_
+#define TIMEMORY_CEREAL_TYPES_ARRAY_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <array>
 
+namespace tim
+{
 namespace cereal
 {
 //! Saving for std::array primitive types
@@ -42,7 +44,7 @@ inline typename std::enable_if<
     traits::is_output_serializable<BinaryData<T>, Archive>::value &&
         std::is_arithmetic<T>::value,
     void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::array<T, N> const& array)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::array<T, N> const& array)
 {
     ar(binary_data(array.data(), sizeof(array)));
 }
@@ -54,7 +56,7 @@ inline typename std::enable_if<
     traits::is_input_serializable<BinaryData<T>, Archive>::value &&
         std::is_arithmetic<T>::value,
     void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::array<T, N>& array)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::array<T, N>& array)
 {
     ar(binary_data(array.data(), sizeof(array)));
 }
@@ -65,7 +67,7 @@ inline typename std::enable_if<
     !traits::is_output_serializable<BinaryData<T>, Archive>::value ||
         !std::is_arithmetic<T>::value,
     void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::array<T, N> const& array)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::array<T, N> const& array)
 {
     for(auto const& i : array)
         ar(i);
@@ -77,11 +79,12 @@ inline typename std::enable_if<
     !traits::is_input_serializable<BinaryData<T>, Archive>::value ||
         !std::is_arithmetic<T>::value,
     void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::array<T, N>& array)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::array<T, N>& array)
 {
     for(auto& i : array)
         ar(i);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_ARRAY_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_ARRAY_HPP_

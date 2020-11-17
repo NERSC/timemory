@@ -27,18 +27,20 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_DEQUE_HPP_
-#define CEREAL_TYPES_DEQUE_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_DEQUE_HPP_
+#define TIMEMORY_CEREAL_TYPES_DEQUE_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <deque>
 
+namespace tim
+{
 namespace cereal
 {
 //! Saving for std::deque
 template <class Archive, class T, class A>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::deque<T, A> const& deque)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::deque<T, A> const& deque)
 {
     ar(make_size_tag(static_cast<size_type>(deque.size())));
 
@@ -49,7 +51,7 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::deque<T, A> const& deque)
 //! Loading for std::deque
 template <class Archive, class T, class A>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::deque<T, A>& deque)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::deque<T, A>& deque)
 {
     size_type size;
     ar(make_size_tag(size));
@@ -60,5 +62,6 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::deque<T, A>& deque)
         ar(i);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_DEQUE_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_DEQUE_HPP_

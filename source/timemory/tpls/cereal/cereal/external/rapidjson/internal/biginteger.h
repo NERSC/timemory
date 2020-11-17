@@ -12,8 +12,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_BIGINTEGER_H_
-#define CEREAL_RAPIDJSON_BIGINTEGER_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_BIGINTEGER_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_BIGINTEGER_H_
 
 #include "../rapidjson.h"
 
@@ -22,7 +22,7 @@
 #pragma intrinsic(_umul128)
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 namespace internal {
 
 class BigInteger {
@@ -38,7 +38,7 @@ public:
     }
 
     BigInteger(const char* decimals, size_t length) : count_(1) {
-        CEREAL_RAPIDJSON_ASSERT(length > 0);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(length > 0);
         digits_[0] = 0;
         size_t i = 0;
         const size_t kMaxDigitPerIteration = 19;  // 2^64 = 18446744073709551616 > 10^19
@@ -130,7 +130,7 @@ public:
 
         size_t offset = shift / kTypeBit;
         size_t interShift = shift % kTypeBit;
-        CEREAL_RAPIDJSON_ASSERT(count_ + offset <= kCapacity);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(count_ + offset <= kCapacity);
 
         if (interShift == 0) {
             std::memmove(digits_ + offset, digits_, count_ * sizeof(Type));
@@ -175,7 +175,7 @@ public:
             5 * 5 * 5 * 5 * 5 * 5 * 5 * 5 * 5 * 5 * 5 * 5
         };
         if (exp == 0) return *this;
-        for (; exp >= 27; exp -= 27) *this *= CEREAL_RAPIDJSON_UINT64_C2(0X6765C793, 0XFA10079D); // 5^27
+        for (; exp >= 27; exp -= 27) *this *= TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0X6765C793, 0XFA10079D); // 5^27
         for (; exp >= 13; exp -= 13) *this *= static_cast<uint32_t>(1220703125u); // 5^13
         if (exp > 0)                 *this *= kPow5[exp - 1];
         return *this;
@@ -185,7 +185,7 @@ public:
     // Assume this != rhs
     bool Difference(const BigInteger& rhs, BigInteger* out) const {
         int cmp = Compare(rhs);
-        CEREAL_RAPIDJSON_ASSERT(cmp != 0);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(cmp != 0);
         const BigInteger *a, *b;  // Makes a > b
         bool ret;
         if (cmp < 0) { a = &rhs; b = this; ret = true; }
@@ -217,7 +217,7 @@ public:
     }
 
     size_t GetCount() const { return count_; }
-    Type GetDigit(size_t index) const { CEREAL_RAPIDJSON_ASSERT(index < count_); return digits_[index]; }
+    Type GetDigit(size_t index) const { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(index < count_); return digits_[index]; }
     bool IsZero() const { return count_ == 1 && digits_[0] == 0; }
 
 private:
@@ -232,14 +232,14 @@ private:
     }
 
     void PushBack(Type digit) {
-        CEREAL_RAPIDJSON_ASSERT(count_ < kCapacity);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(count_ < kCapacity);
         digits_[count_++] = digit;
     }
 
     static uint64_t ParseUint64(const char* begin, const char* end) {
         uint64_t r = 0;
         for (const char* p = begin; p != end; ++p) {
-            CEREAL_RAPIDJSON_ASSERT(*p >= '0' && *p <= '9');
+            TIMEMORY_CEREAL_RAPIDJSON_ASSERT(*p >= '0' && *p <= '9');
             r = r * 10u + static_cast<unsigned>(*p - '0');
         }
         return r;
@@ -285,6 +285,6 @@ private:
 };
 
 } // namespace internal
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
-#endif // CEREAL_RAPIDJSON_BIGINTEGER_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_BIGINTEGER_H_

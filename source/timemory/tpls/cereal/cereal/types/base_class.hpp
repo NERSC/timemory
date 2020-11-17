@@ -27,12 +27,14 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_BASE_CLASS_HPP_
-#define CEREAL_TYPES_BASE_CLASS_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_BASE_CLASS_HPP_
+#define TIMEMORY_CEREAL_TYPES_BASE_CLASS_HPP_
 
 #include "timemory/tpls/cereal/cereal/details/polymorphic_impl_fwd.hpp"
 #include "timemory/tpls/cereal/cereal/details/traits.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 namespace base_class_detail
@@ -210,5 +212,6 @@ struct virtual_base_class : private traits::detail::BaseCastBase
 };
 
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_BASE_CLASS_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_BASE_CLASS_HPP_

@@ -29,12 +29,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef CEREAL_TYPES_VALARRAY_HPP_
-#define CEREAL_TYPES_VALARRAY_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_VALARRAY_HPP_
+#define TIMEMORY_CEREAL_TYPES_VALARRAY_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <valarray>
 
+namespace tim
+{
 namespace cereal
 {
 //! Saving for std::valarray arithmetic types, using binary serialization, if supported
@@ -43,7 +45,7 @@ inline typename std::enable_if<
     traits::is_output_serializable<BinaryData<T>, Archive>::value &&
         std::is_arithmetic<T>::value,
     void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::valarray<T> const& valarray)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::valarray<T> const& valarray)
 {
     ar(make_size_tag(static_cast<size_type>(valarray.size())));  // number of elements
     ar(binary_data(&valarray[0],
@@ -57,7 +59,7 @@ inline typename std::enable_if<
     traits::is_input_serializable<BinaryData<T>, Archive>::value &&
         std::is_arithmetic<T>::value,
     void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::valarray<T>& valarray)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::valarray<T>& valarray)
 {
     size_type valarraySize;
     ar(make_size_tag(valarraySize));
@@ -72,7 +74,7 @@ inline typename std::enable_if<
     !traits::is_output_serializable<BinaryData<T>, Archive>::value ||
         !std::is_arithmetic<T>::value,
     void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::valarray<T> const& valarray)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::valarray<T> const& valarray)
 {
     ar(make_size_tag(static_cast<size_type>(valarray.size())));  // number of elements
     for(auto&& v : valarray)
@@ -85,7 +87,7 @@ inline typename std::enable_if<
     !traits::is_input_serializable<BinaryData<T>, Archive>::value ||
         !std::is_arithmetic<T>::value,
     void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::valarray<T>& valarray)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::valarray<T>& valarray)
 {
     size_type valarraySize;
     ar(make_size_tag(valarraySize));
@@ -95,5 +97,6 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::valarray<T>& valarray)
         ar(v);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_VALARRAY_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_VALARRAY_HPP_

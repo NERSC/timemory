@@ -27,12 +27,14 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_VECTOR_HPP_
-#define CEREAL_TYPES_VECTOR_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_VECTOR_HPP_
+#define TIMEMORY_CEREAL_TYPES_VECTOR_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <vector>
 
+namespace tim
+{
 namespace cereal
 {
 //! Serialization for std::vectors of arithmetic (but not bool) using binary
@@ -42,7 +44,7 @@ inline typename std::enable_if<
     traits::is_output_serializable<BinaryData<T>, Archive>::value &&
         std::is_arithmetic<T>::value && !std::is_same<T, bool>::value,
     void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::vector<T, A> const& vector)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::vector<T, A> const& vector)
 {
     ar(make_size_tag(static_cast<size_type>(vector.size())));  // number of elements
     ar(binary_data(vector.data(), vector.size() * sizeof(T)));
@@ -55,7 +57,7 @@ inline typename std::enable_if<
     traits::is_input_serializable<BinaryData<T>, Archive>::value &&
         std::is_arithmetic<T>::value && !std::is_same<T, bool>::value,
     void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::vector<T, A>& vector)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::vector<T, A>& vector)
 {
     size_type vectorSize;
     ar(make_size_tag(vectorSize));
@@ -71,7 +73,7 @@ inline typename std::enable_if<
      !std::is_arithmetic<T>::value) &&
         !std::is_same<T, bool>::value,
     void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::vector<T, A> const& vector)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::vector<T, A> const& vector)
 {
     ar(make_size_tag(static_cast<size_type>(vector.size())));  // number of elements
     for(auto&& v : vector)
@@ -85,7 +87,7 @@ inline typename std::enable_if<
      !std::is_arithmetic<T>::value) &&
         !std::is_same<T, bool>::value,
     void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::vector<T, A>& vector)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::vector<T, A>& vector)
 {
     size_type size;
     ar(make_size_tag(size));
@@ -98,7 +100,7 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::vector<T, A>& vector)
 //! Serialization for bool vector types
 template <class Archive, class A>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::vector<bool, A> const& vector)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::vector<bool, A> const& vector)
 {
     ar(make_size_tag(static_cast<size_type>(vector.size())));  // number of elements
     for(const auto v : vector)
@@ -108,7 +110,7 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::vector<bool, A> const& vector)
 //! Serialization for bool vector types
 template <class Archive, class A>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::vector<bool, A>& vector)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::vector<bool, A>& vector)
 {
     size_type size;
     ar(make_size_tag(size));
@@ -122,5 +124,6 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::vector<bool, A>& vector)
     }
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_VECTOR_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_VECTOR_HPP_

@@ -27,8 +27,8 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_DETAILS_HELPERS_HPP_
-#define CEREAL_DETAILS_HELPERS_HPP_
+#ifndef TIMEMORY_CEREAL_DETAILS_HELPERS_HPP_
+#define TIMEMORY_CEREAL_DETAILS_HELPERS_HPP_
 
 #include <cstdint>
 #include <memory>
@@ -40,6 +40,8 @@
 #include "timemory/tpls/cereal/cereal/details/static_object.hpp"
 #include "timemory/tpls/cereal/cereal/macros.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 // ######################################################################
@@ -61,8 +63,8 @@ struct Exception : public std::runtime_error
     a fixed size type instead of size_t, which may vary from machine to
     machine.
 
-    The default value for CEREAL_SIZE_TYPE is specified in cereal/macros.hpp */
-using size_type = CEREAL_SIZE_TYPE;
+    The default value for TIMEMORY_CEREAL_SIZE_TYPE is specified in cereal/macros.hpp */
+using size_type = TIMEMORY_CEREAL_SIZE_TYPE;
 
 // forward decls
 class BinaryOutputArchive;
@@ -91,11 +93,11 @@ struct DeferredDataCore
       template<class Archive>
       void serialize(Archive & archive)
       {
-        archive( CEREAL_NVP(a),
-                 CEREAL_NVP(b),
-                 CEREAL_NVP(c),
-                 CEREAL_NVP(d),
-                 CEREAL_NVP(e) );
+        archive( TIMEMORY_CEREAL_NVP(a),
+                 TIMEMORY_CEREAL_NVP(b),
+                 TIMEMORY_CEREAL_NVP(c),
+                 TIMEMORY_CEREAL_NVP(d),
+                 TIMEMORY_CEREAL_NVP(e) );
       }
     };
     @endcode
@@ -109,11 +111,11 @@ struct DeferredDataCore
       template<class Archive>
       void serialize(Archive & archive)
       {
-        archive( CEREAL_NVP(a),
-                 CEREAL_NVP(b),
+        archive( TIMEMORY_CEREAL_NVP(a),
+                 TIMEMORY_CEREAL_NVP(b),
                  cereal::make_nvp("var", my_embarrassing_variable_name) );
-                 CEREAL_NVP(d),
-                 CEREAL_NVP(e) );
+                 TIMEMORY_CEREAL_NVP(d),
+                 TIMEMORY_CEREAL_NVP(e) );
       }
     };
     @endcode
@@ -182,8 +184,8 @@ public:
     @internal */
 template <class Archive, class T>
 inline typename std::enable_if<
-    std::is_same<Archive, ::cereal::BinaryInputArchive>::value ||
-        std::is_same<Archive, ::cereal::BinaryOutputArchive>::value,
+    std::is_same<Archive, ::tim::cereal::BinaryInputArchive>::value ||
+        std::is_same<Archive, ::tim::cereal::BinaryOutputArchive>::value,
     T&&>::type
 make_nvp(const char*, T&& value)
 {
@@ -195,8 +197,8 @@ make_nvp(const char*, T&& value)
     @internal */
 template <class Archive, class T>
 inline typename std::enable_if<
-    !std::is_same<Archive, ::cereal::BinaryInputArchive>::value &&
-        !std::is_same<Archive, ::cereal::BinaryOutputArchive>::value,
+    !std::is_same<Archive, ::tim::cereal::BinaryInputArchive>::value &&
+        !std::is_same<Archive, ::tim::cereal::BinaryOutputArchive>::value,
     NameValuePair<T>>::type
 make_nvp(const char* name, T&& value)
 {
@@ -207,7 +209,7 @@ make_nvp(const char* name, T&& value)
 /*! For use in internal generic typing functions which have an
     Archive type declared
     @internal */
-#define CEREAL_NVP_(name, value) ::cereal::make_nvp<Archive>(name, value)
+#define TIMEMORY_CEREAL_NVP_(name, value) ::tim::cereal::make_nvp<Archive>(name, value)
 
 // ######################################################################
 //! A wrapper around data that can be serialized in a binary fashion
@@ -285,9 +287,12 @@ class OutputArchiveBase
 {
 public:
     OutputArchiveBase() = default;
-    OutputArchiveBase(OutputArchiveBase&&) CEREAL_NOEXCEPT {}
-    OutputArchiveBase& operator=(OutputArchiveBase&&) CEREAL_NOEXCEPT { return *this; }
-    virtual ~OutputArchiveBase() CEREAL_NOEXCEPT = default;
+    OutputArchiveBase(OutputArchiveBase&&) TIMEMORY_CEREAL_NOEXCEPT {}
+    OutputArchiveBase& operator=(OutputArchiveBase&&) TIMEMORY_CEREAL_NOEXCEPT
+    {
+        return *this;
+    }
+    virtual ~OutputArchiveBase() TIMEMORY_CEREAL_NOEXCEPT = default;
 
 private:
     virtual void rtti() {}
@@ -297,9 +302,12 @@ class InputArchiveBase
 {
 public:
     InputArchiveBase() = default;
-    InputArchiveBase(InputArchiveBase&&) CEREAL_NOEXCEPT {}
-    InputArchiveBase& operator=(InputArchiveBase&&) CEREAL_NOEXCEPT { return *this; }
-    virtual ~InputArchiveBase() CEREAL_NOEXCEPT = default;
+    InputArchiveBase(InputArchiveBase&&) TIMEMORY_CEREAL_NOEXCEPT {}
+    InputArchiveBase& operator=(InputArchiveBase&&) TIMEMORY_CEREAL_NOEXCEPT
+    {
+        return *this;
+    }
+    virtual ~InputArchiveBase() TIMEMORY_CEREAL_NOEXCEPT = default;
 
 private:
     virtual void rtti() {}
@@ -388,7 +396,7 @@ struct MapItem
 
     //! Serialize the MapItem with the NVPs "key" and "value"
     template <class Archive>
-    inline void CEREAL_SERIALIZE_FUNCTION_NAME(Archive& archive)
+    inline void TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive& archive)
     {
         archive(make_nvp<Archive>("key", key), make_nvp<Archive>("value", value));
     }
@@ -408,7 +416,7 @@ namespace detail
 {
 //! Tag for Version, which due to its anonymous namespace, becomes a different
 //! type in each translation unit
-/*! This allows CEREAL_CLASS_VERSION to be safely called in a header file */
+/*! This allows TIMEMORY_CEREAL_CLASS_VERSION to be safely called in a header file */
 namespace
 {
 struct version_binding_tag
@@ -416,9 +424,20 @@ struct version_binding_tag
 }  // namespace
 
 // ######################################################################
-//! Version information class
+//! Static Version information class
 /*! This is the base case for classes that have not been explicitly
     registered */
+template <class T>
+struct StaticVersion
+{
+    static constexpr std::uint32_t version = 0;
+};
+
+/*
+// ######################################################################
+/// Version information class
+/// This is the base case for classes that have not been explicitly
+///    registered
 template <class T, class BindingTag = version_binding_tag>
 struct Version
 {
@@ -427,7 +446,7 @@ struct Version
     // always get a version number of 0
 };
 
-//! Holds all registered version information
+/// Holds all registered version information
 struct Versions
 {
     std::unordered_map<std::size_t, std::uint32_t> mapping;
@@ -438,7 +457,9 @@ struct Versions
         return result.first->second;
     }
 };  // struct Versions
+*/
 }  // namespace detail
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_DETAILS_HELPERS_HPP_
+#endif  // TIMEMORY_CEREAL_DETAILS_HELPERS_HPP_

@@ -1,5 +1,5 @@
-#ifndef CEREAL_RAPIDXML_PRINT_HPP_INCLUDED
-#define CEREAL_RAPIDXML_PRINT_HPP_INCLUDED
+#ifndef TIMEMORY_CEREAL_RAPIDXML_PRINT_HPP_INCLUDED
+#define TIMEMORY_CEREAL_RAPIDXML_PRINT_HPP_INCLUDED
 
 // Copyright (C) 2006, 2009 Marcin Kalicinski
 // Version 1.13
@@ -8,12 +8,15 @@
 #include "rapidxml.hpp"
 
 // Only include streams if not disabled
-#ifndef CEREAL_RAPIDXML_NO_STREAMS
+#ifndef TIMEMORY_CEREAL_RAPIDXML_NO_STREAMS
     #include <ostream>
     #include <iterator>
 #endif
 
-namespace cereal {
+namespace tim
+{
+namespace cereal
+{
 namespace rapidxml
 {
 
@@ -396,7 +399,7 @@ namespace rapidxml
         return internal::print_node(out, &node, flags, 0);
     }
 
-#ifndef CEREAL_RAPIDXML_NO_STREAMS
+#ifndef TIMEMORY_CEREAL_RAPIDXML_NO_STREAMS
 
     //! Prints XML to given output stream.
     //! \param out Output stream to print to.
@@ -423,6 +426,7 @@ namespace rapidxml
 #endif
 
 }
-} // namespace cereal
+}  // namespace cereal
+}  // namespace tim
 
 #endif

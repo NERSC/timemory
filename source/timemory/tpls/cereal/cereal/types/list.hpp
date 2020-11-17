@@ -27,18 +27,20 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_LIST_HPP_
-#define CEREAL_TYPES_LIST_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_LIST_HPP_
+#define TIMEMORY_CEREAL_TYPES_LIST_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <list>
 
+namespace tim
+{
 namespace cereal
 {
 //! Saving for std::list
 template <class Archive, class T, class A>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::list<T, A> const& list)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::list<T, A> const& list)
 {
     ar(make_size_tag(static_cast<size_type>(list.size())));
 
@@ -49,7 +51,7 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::list<T, A> const& list)
 //! Loading for std::list
 template <class Archive, class T, class A>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::list<T, A>& list)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::list<T, A>& list)
 {
     size_type size;
     ar(make_size_tag(size));
@@ -60,5 +62,6 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::list<T, A>& list)
         ar(i);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_LIST_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_LIST_HPP_

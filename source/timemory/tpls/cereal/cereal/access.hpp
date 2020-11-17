@@ -26,8 +26,8 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_ACCESS_HPP_
-#define CEREAL_ACCESS_HPP_
+#ifndef TIMEMORY_CEREAL_ACCESS_HPP_
+#define TIMEMORY_CEREAL_ACCESS_HPP_
 
 #include <cstdint>
 #include <functional>
@@ -38,6 +38,8 @@
 #include "timemory/tpls/cereal/cereal/macros.hpp"
 #include "timemory/tpls/cereal/cereal/specialize.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 // ######################################################################
@@ -216,9 +218,9 @@ public:
 
 private:
     template <class Ar, class TT>
-    friend struct ::cereal::memory_detail::LoadAndConstructLoadWrapper;
+    friend struct ::tim::cereal::memory_detail::LoadAndConstructLoadWrapper;
     template <class Ar, class TT>
-    friend struct ::cereal::boost_variant_detail::LoadAndConstructLoadWrapper;
+    friend struct ::tim::cereal::boost_variant_detail::LoadAndConstructLoadWrapper;
 
     construct(T* p)
     : itsPtr(p)
@@ -264,105 +266,107 @@ public:
     // ####### Standard Serialization ########################################
     template <class Archive, class T>
     inline static auto member_serialize(Archive& ar, T& t)
-        -> decltype(t.CEREAL_SERIALIZE_FUNCTION_NAME(ar))
+        -> decltype(t.TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(ar))
     {
-        return t.CEREAL_SERIALIZE_FUNCTION_NAME(ar);
+        return t.TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(ar);
     }
 
     template <class Archive, class T>
     inline static auto member_save(Archive& ar, T const& t)
-        -> decltype(t.CEREAL_SAVE_FUNCTION_NAME(ar))
+        -> decltype(t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar))
     {
-        return t.CEREAL_SAVE_FUNCTION_NAME(ar);
+        return t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar);
     }
 
     template <class Archive, class T>
     inline static auto member_save_non_const(Archive& ar, T& t)
-        -> decltype(t.CEREAL_SAVE_FUNCTION_NAME(ar))
+        -> decltype(t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar))
     {
-        return t.CEREAL_SAVE_FUNCTION_NAME(ar);
+        return t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar);
     }
 
     template <class Archive, class T>
     inline static auto member_load(Archive& ar, T& t)
-        -> decltype(t.CEREAL_LOAD_FUNCTION_NAME(ar))
+        -> decltype(t.TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(ar))
     {
-        return t.CEREAL_LOAD_FUNCTION_NAME(ar);
+        return t.TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(ar);
     }
 
     template <class Archive, class T>
     inline static auto member_save_minimal(Archive const& ar, T const& t)
-        -> decltype(t.CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar))
+        -> decltype(t.TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar))
     {
-        return t.CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar);
+        return t.TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar);
     }
 
     template <class Archive, class T>
     inline static auto member_save_minimal_non_const(Archive const& ar, T& t)
-        -> decltype(t.CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar))
+        -> decltype(t.TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar))
     {
-        return t.CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar);
+        return t.TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar);
     }
 
     template <class Archive, class T, class U>
     inline static auto member_load_minimal(Archive const& ar, T& t, U&& u)
-        -> decltype(t.CEREAL_LOAD_MINIMAL_FUNCTION_NAME(ar, std::forward<U>(u)))
+        -> decltype(t.TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(ar, std::forward<U>(u)))
     {
-        return t.CEREAL_LOAD_MINIMAL_FUNCTION_NAME(ar, std::forward<U>(u));
+        return t.TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(ar, std::forward<U>(u));
     }
 
     // ####### Versioned Serialization #######################################
     template <class Archive, class T>
     inline static auto member_serialize(Archive& ar, T& t, const std::uint32_t version)
-        -> decltype(t.CEREAL_SERIALIZE_FUNCTION_NAME(ar, version))
+        -> decltype(t.TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(ar, version))
     {
-        return t.CEREAL_SERIALIZE_FUNCTION_NAME(ar, version);
+        return t.TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(ar, version);
     }
 
     template <class Archive, class T>
     inline static auto member_save(Archive& ar, T const& t, const std::uint32_t version)
-        -> decltype(t.CEREAL_SAVE_FUNCTION_NAME(ar, version))
+        -> decltype(t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar, version))
     {
-        return t.CEREAL_SAVE_FUNCTION_NAME(ar, version);
+        return t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar, version);
     }
 
     template <class Archive, class T>
     inline static auto member_save_non_const(Archive& ar, T& t,
                                              const std::uint32_t version)
-        -> decltype(t.CEREAL_SAVE_FUNCTION_NAME(ar, version))
+        -> decltype(t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar, version))
     {
-        return t.CEREAL_SAVE_FUNCTION_NAME(ar, version);
+        return t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar, version);
     }
 
     template <class Archive, class T>
     inline static auto member_load(Archive& ar, T& t, const std::uint32_t version)
-        -> decltype(t.CEREAL_LOAD_FUNCTION_NAME(ar, version))
+        -> decltype(t.TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(ar, version))
     {
-        return t.CEREAL_LOAD_FUNCTION_NAME(ar, version);
+        return t.TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(ar, version);
     }
 
     template <class Archive, class T>
     inline static auto member_save_minimal(Archive const& ar, T const& t,
                                            const std::uint32_t version)
-        -> decltype(t.CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar, version))
+        -> decltype(t.TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar, version))
     {
-        return t.CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar, version);
+        return t.TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar, version);
     }
 
     template <class Archive, class T>
     inline static auto member_save_minimal_non_const(Archive const& ar, T& t,
                                                      const std::uint32_t version)
-        -> decltype(t.CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar, version))
+        -> decltype(t.TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar, version))
     {
-        return t.CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar, version);
+        return t.TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(ar, version);
     }
 
     template <class Archive, class T, class U>
     inline static auto member_load_minimal(Archive const& ar, T& t, U&& u,
                                            const std::uint32_t version)
-        -> decltype(t.CEREAL_LOAD_MINIMAL_FUNCTION_NAME(ar, std::forward<U>(u), version))
+        -> decltype(t.TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(ar, std::forward<U>(u),
+                                                                 version))
     {
-        return t.CEREAL_LOAD_MINIMAL_FUNCTION_NAME(ar, std::forward<U>(u), version);
+        return t.TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(ar, std::forward<U>(u),
+                                                            version);
     }
 
     // ####### Other Functionality ##########################################
@@ -391,15 +395,17 @@ public:
     }
 
     template <class T, class Archive>
-    inline static auto load_and_construct(Archive& ar, ::cereal::construct<T>& construct)
+    inline static auto load_and_construct(Archive&                     ar,
+                                          ::tim::cereal::construct<T>& construct)
         -> decltype(T::load_and_construct(ar, construct))
     {
         T::load_and_construct(ar, construct);
     }
 
     template <class T, class Archive>
-    inline static auto load_and_construct(Archive& ar, ::cereal::construct<T>& construct,
-                                          const std::uint32_t version)
+    inline static auto load_and_construct(Archive&                     ar,
+                                          ::tim::cereal::construct<T>& construct,
+                                          const std::uint32_t          version)
         -> decltype(T::load_and_construct(ar, construct, version))
     {
         T::load_and_construct(ar, construct, version);
@@ -416,10 +422,11 @@ construct<T>::operator()(Args&&... args)
     if(itsValid)
         throw Exception("Attempting to construct an already initialized object");
 
-    ::cereal::access::construct(itsPtr, std::forward<Args>(args)...);
+    ::tim::cereal::access::construct(itsPtr, std::forward<Args>(args)...);
     itsEnableSharedRestoreFunction();
     itsValid = true;
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_ACCESS_HPP_
+#endif  // TIMEMORY_CEREAL_ACCESS_HPP_
