@@ -35,16 +35,11 @@ endfunction()
 
 configure_python_script(sample tracer profiler general builtin external)
 
-if(TIMEMORY_BUILD_MINIMAL_TESTING)
-    return()
-endif()
-
 if(NOT TARGET pybind11::module)
     find_package(pybind11 QUIET)
-endif()
-
-if(NOT TARGET pybind11::module)
-    return()
+    if(NOT pybind11_FOUND)
+        return()
+    endif()
 endif()
 
 find_package(MPI QUIET)

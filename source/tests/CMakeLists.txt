@@ -585,7 +585,7 @@ if(TIMEMORY_BUILD_ERT)
     add_timemory_google_test(ert_tests
         SOURCES         ert_tests.cpp
         LINK_LIBRARIES  timemory::timemory-ert
-			            ${_LIBRARY})
+                        ${_LIBRARY})
 endif()
 
 if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)

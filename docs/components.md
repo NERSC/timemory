@@ -260,8 +260,6 @@ The general design is that each user-bundle:
 ```eval_rst
 .. doxygenstruct:: tim::component::gotcha
    :members:
-.. doxygenstruct:: tim::component::malloc_gotcha
-   :members:
 .. doxygenstruct:: tim::component::memory_allocations
    :members:
 ```

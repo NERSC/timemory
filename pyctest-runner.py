@@ -455,9 +455,9 @@ def run_pyctest():
         build_opts["TIMEMORY_BUILD_KOKKOS_TOOLS"] = (
             "ON" if args.kokkos else "OFF"
         )
-        build_opts["TIMEMORY_BUILD_DYNINST_TOOLS"] = (
-            "ON" if args.dyninst else "OFF"
-        )
+        if args.dyninst:
+            build_opts["TIMEMORY_USE_DYNINST"] = "ON"
+            build_opts["TIMEMORY_BUILD_DYNINST_TOOLS"] = "ON"
 
     if args.python:
         pyver = "{}.{}.{}".format(
