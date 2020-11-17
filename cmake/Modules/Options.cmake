@@ -204,6 +204,8 @@ add_option(TIMEMORY_BUILD_C
     "Build the C compatible library" ON)
 add_option(TIMEMORY_BUILD_PYTHON
     "Build Python binds for ${PROJECT_NAME}" OFF)
+add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
+    "Build customized Python line-profiler" ${UNIX})
 add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
