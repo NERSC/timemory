@@ -3,9 +3,12 @@ if(WIN32)
     return()
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    set(CMAKE_BUILD_TYPE RelWithDebInfo)
+if(NOT TIMEMORY_BUILD_TOOLS AND NOT TIMEMORY_BUILD_DYNINST_TOOLS)
+  set(_EXCLUDE EXCLUDE_FROM_ALL)
+  set(_OPTIONAL OPTIONAL)
 endif()
+
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-run
@@ -71,7 +74,7 @@ if(TIMEMORY_USE_DYNINST)
         timemory::timemory-roofline-options
         ${_LIBRARY})
 
-    add_executable(timemory-run
+    add_executable(timemory-run ${_EXCLUDE}
         ${CMAKE_CURRENT_LIST_DIR}/timemory-run.cpp
         ${CMAKE_CURRENT_LIST_DIR}/timemory-run.hpp
         ${CMAKE_CURRENT_LIST_DIR}/timemory-run-details.cpp
@@ -83,7 +86,7 @@ if(TIMEMORY_USE_DYNINST)
 
     set_target_properties(timemory-run PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
 
-    install(TARGETS timemory-run DESTINATION bin)
+    install(TARGETS timemory-run DESTINATION bin ${_OPTIONAL})
 
     configure_file(${CMAKE_CURRENT_LIST_DIR}/generated/timemory-instr.sh
         ${PROJECT_BINARY_DIR}/timemory-instr COPYONLY)
@@ -93,10 +96,13 @@ if(TIMEMORY_USE_DYNINST)
         PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE
         GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ)
+        WORLD_EXECUTE WORLD_READ
+        ${_OPTIONAL})
 
     file(GLOB COLLECTION_FILES "${CMAKE_CURRENT_LIST_DIR}/collections/*")
     foreach(_FILE ${COLLECTION_FILES})
-        install(FILES ${_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/timemory/collections)
+        install(FILES ${_FILE}
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/timemory/collections
+            ${_OPTIONAL})
     endforeach()
 endif()
