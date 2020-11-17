@@ -323,6 +323,11 @@ main(int argc, char** argv)
             // append "timem" + "ory-pid" to form "timemory-pid"
             pidexe += "ory-pid";
         }
+        else if(pidexe.substr(pidexe.find_last_of('/') + 1) == "timem-mpi")
+        {
+            // remove "-mpi" -> "timem" + "ory-pid" to form "timemory-pid"
+            pidexe = pidexe.substr(0, pidexe.length() - 4) + "ory-pid";
+        }
         else
         {
             if(verbose() > -1)

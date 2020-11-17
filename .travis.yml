@@ -45,7 +45,7 @@ jobs:
         - CC=gcc-6
         - CXX=g++-6
         - BUILD_TYPE=MinSizeRel
-        - BUILD_ARGS='--quick --build-libs static shared --python --papi --gotcha --caliper --kokkos --stats --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static shared --python --papi --gotcha --caliper --tools timem --stats --cxx-standard=14'
     # GCC 7
     - os: linux
       dist: bionic
@@ -66,8 +66,7 @@ jobs:
       env:
         - CC=gcc-7
         - CXX=g++-7
-        - COVERAGE=1
-        - BUILD_ARGS='--build-libs shared --mpi --papi --caliper --mpip --gotcha --stats --cxx-standard=17'
+        - BUILD_ARGS='--build-libs shared --mpi --papi --caliper --gotcha --tools mpip compiler --stats --cxx-standard=17 --coverage'
     #
     # GCC 8
     - os: linux
@@ -88,7 +87,7 @@ jobs:
       env:
         - CC=gcc-8
         - CXX=g++-8
-        - BUILD_ARGS='--build-libs static --mpi --cxx-standard=17'
+        - BUILD_ARGS='--build-libs static --mpi --tools timem --cxx-standard=17'
     # Clang 6.0
     - os: linux
       dist: xenial
@@ -105,7 +104,7 @@ jobs:
       env:
         - CC=clang-6.0
         - CXX=clang++-6.0
-        - BUILD_ARGS='--quick --build-libs static --kokkos --stats --tools --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static --stats --tools kokkos-config --cxx-standard=14'
     # Clang 7
     - os: linux
       dist: bionic
@@ -125,7 +124,7 @@ jobs:
       env:
         - CC=clang-7
         - CXX=clang++-7
-        - BUILD_ARGS='--quick --build-libs static --caliper --mpi --papi --ompt --stats --tools --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static --caliper --mpi --papi --stats --tools ompt --cxx-standard=14'
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7 / Linux
@@ -151,7 +150,7 @@ jobs:
         - CC=gcc-6
         - CXX=g++-6
         - BUILD_TYPE=MinSizeRel
-        - BUILD_ARGS='--build-libs shared --papi --gotcha --python --kokkos --stats --ipo --cxx-standard=14'
+        - BUILD_ARGS='--build-libs shared --papi --gotcha --python --stats --ipo --cxx-standard=14'
     # GCC 7
     - os: linux
       dist: bionic
@@ -172,7 +171,7 @@ jobs:
         - CC=gcc
         - CXX=g++
         - BUILD_TYPE=Debug
-        - BUILD_ARGS='--quick --build-libs static --papi --mpi --ompt --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static --papi --mpi --cxx-standard=14'
     #
     # GCC 8
     - os: linux
@@ -218,8 +217,7 @@ jobs:
       env:
         - CC=clang-6.0
         - CXX=clang++-6.0
-        - PROFILE=1
-        - BUILD_ARGS='--build-libs shared --gperftools --mpi --papi --mpip --stats --tools --cxx-standard=14'
+        - BUILD_ARGS='--build-libs shared --gperftools --mpi --papi --stats --tools compiler --cxx-standard=14 --profile=cpu'
         - CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'
     # Clang 7
     - os: linux
@@ -236,34 +234,40 @@ jobs:
       env:
         - CC=clang-7
         - CXX=clang++-7
-        - BUILD_ARGS='--quick --build-libs shared --gotcha --caliper --mpi --python --stats --tools --cxx-standard=14'
-
-    # ------------------------------------------------------------------------ #
+        - BUILD_ARGS='--quick --build-libs shared --gotcha --caliper --mpi --python --stats --tools timem --cxx-standard=14'
+  fast_finish: true
 
 before_install:
+  # only run macOS if a pull-request
+  - if [[ "$TRAVIS_PULL_REQUEST" != "false" || "${CONDA_OS}" != "MacOSX" ]]; then EXECUTE=1; else EXECUTE=0; fi;
   - if [ -z "${CONDA_OS}" ]; then CONDA_OS=Linux; fi
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p ${HOME}/miniconda
-  - export PATH="${HOME}/miniconda/bin:${PATH}"
-  - conda config --set always_yes yes --set changeps1 no
+  - if [ "${EXECUTE}" -ne 0 ]; then wget https://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh; fi
+  - if [ "${EXECUTE}" -ne 0 ]; then bash miniconda.sh -b -p ${HOME}/miniconda; fi
+  - if [ "${EXECUTE}" -ne 0 ]; then export PATH="${HOME}/miniconda/bin:${PATH}"; fi
+  - if [ "${EXECUTE}" -ne 0 ]; then conda config --set always_yes yes --set changeps1 no; fi
 
 install:
-  - env
-  - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip cython
-  - source activate pyctest
-  - if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
+  - if [ "${EXECUTE}" -ne 0 ]; then conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip cython; fi
+  - if [ "${EXECUTE}" -ne 0 ]; then source activate pyctest; fi
+  - if [ "${EXECUTE}" -ne 0 ]; then if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi; fi
 
 script:
-  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
-  - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; fi
-  - if [ -n "${PROFILE}" ]; then ARGS="${ARGS} --profile=cpu"; fi
+  - export BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis -j 1"
   - export CTEST_ARGS="-V --output-on-failure ${CTEST_ARGS}"
   - export CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${CMAKE_ARGS}"
-  - export PYCTEST_ARGS="-cc ${CC} -cxx ${CXX} --pyctest-build-type=${BUILD_TYPE} -j 1 ${ARGS}"
-  - travis_wait 85 python ./pyctest-runner.py ${PYCTEST_ARGS} --  ${CTEST_ARGS} -- ${CMAKE_ARGS}
-  - if [ "${CONDA_OS}" = "Linux" ]; then cd build-timemory/Linux; else cd build-timemory/Darwin; fi
-  - make install -j
+  - export PYCTEST_ARGS="${BASE_ARGS} -cc ${CC} -cxx ${CXX} --pyctest-build-type=${BUILD_TYPE} ${BUILD_ARGS}"
+  # main command
+  - if [ "${EXECUTE}" -ne 0 ]; then
+    travis_wait 85 python ./pyctest-runner.py ${PYCTEST_ARGS} --  ${CTEST_ARGS} -- ${CMAKE_ARGS};
+    fi
+  # cd into build directory
+  - if [ "${EXECUTE}" -ne 0 ]; then
+    if [ "${CONDA_OS}" = "Linux" ]; then cd build-timemory/Linux; else cd build-timemory/Darwin; fi;
+    fi
+  # make install
+  - if [ "${EXECUTE}" -ne 0 ]; then make install -j; fi
+  # if python install test file exists, run it
   - if [ -f "tests/test-python-install-import.cmake" ]; then
     cmake -P tests/test-python-install-import.cmake;
     cd;

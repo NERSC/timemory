@@ -17,6 +17,17 @@ import pyctest.pycmake as pycm
 import pyctest.helpers as helpers
 
 clobber_notes = True
+available_tools = {
+    "avail": "TIMEMORY_BUILD_AVAIL",
+    "timem": "TIMEMORY_BUILD_TIMEM",
+    "kokkos": "TIMEMORY_BUILD_KOKKOS_TOOLS",
+    "kokkos-config": "TIMEMORY_BUILD_KOKKOS_CONFIG",
+    "dyninst": "TIMEMORY_BUILD_DYNINST_TOOLS",
+    "mpip": "TIMEMORY_BUILD_MPIP_LIBRARY",
+    "ompt": "TIMEMORY_BUILD_OMPT_LIBRARY",
+    "ncclp": "TIMEMORY_BUILD_NCCLP_LIBRARY",
+    "compiler": "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION",
+}
 
 
 def get_branch(wd=pyct.SOURCE_DIRECTORY):
@@ -104,17 +115,12 @@ def configure():
     parser.add_argument(
         "--tools",
         help="TIMEMORY_BUILD_TOOLS=ON",
-        default=False,
-        action="store_true",
+        default=[],
+        nargs="*",
+        choices=available_tools.keys(),
     )
     parser.add_argument(
         "--tau", help="TIMEMORY_USE_TAU=ON", default=False, action="store_true"
-    )
-    parser.add_argument(
-        "--mpip",
-        help="TIMEMORY_BUILD_MPIP=ON",
-        default=False,
-        action="store_true",
     )
     parser.add_argument(
         "--cuda",
@@ -186,20 +192,8 @@ def configure():
         action="store_true",
     )
     parser.add_argument(
-        "--ompt",
-        help="TIMEMORY_USE_OMPT=ON",
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
         "--build-ompt",
         help="TIMEMORY_BUILD_OMPT=ON",
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
-        "--kokkos",
-        help="TIMEMORY_BUILD_KOKKOS_TOOLS=ON",
         default=False,
         action="store_true",
     )
@@ -296,6 +290,9 @@ def configure():
     )
 
     args = parser.parse_args()
+
+    if "kokkos-config" in args.tools and "kokkos" not in args.tools:
+        args.tools.append("kokkos")
 
     if "shared" not in args.build_libs and args.python:
         raise RuntimeError("Python cannot be built with static libraries")
@@ -413,7 +410,7 @@ def run_pyctest():
         "TIMEMORY_BUILD_C": "ON",
         "TIMEMORY_BUILD_LTO": "ON" if args.lto else "OFF",
         "TIMEMORY_BUILD_OMPT": "ON" if args.build_ompt else "OFF",
-        "TIMEMORY_BUILD_TOOLS": "ON" if args.tools else "OFF",
+        "TIMEMORY_BUILD_TOOLS": "ON" if len(args.tools) > 0 else "OFF",
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_BUILD_PYTHON": "ON" if args.python else "OFF",
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
@@ -466,19 +463,14 @@ def run_pyctest():
     if args.build_ompt:
         build_opts["OPENMP_ENABLE_LIBOMPTARGET"] = "OFF"
 
-    if args.tools:
-        build_opts["TIMEMORY_BUILD_MPIP_LIBRARY"] = (
-            "ON" if (args.mpi and args.mpip) else "OFF"
-        )
-        build_opts["TIMEMORY_BUILD_OMPT_LIBRARY"] = (
-            "ON" if (args.ompt) else "OFF"
-        )
-        build_opts["TIMEMORY_BUILD_KOKKOS_TOOLS"] = (
-            "ON" if args.kokkos else "OFF"
-        )
-        if args.dyninst:
-            build_opts["TIMEMORY_USE_DYNINST"] = "ON"
-            build_opts["TIMEMORY_BUILD_DYNINST_TOOLS"] = "ON"
+    if "avail" not in args.tools:
+        args.tools.append("avail")
+
+    for key, opt in available_tools.items():
+        build_opts[opt] = "ON" if (key in args.tools) else "OFF"
+
+    if "dyninst" in args.tools:
+        build_opts["TIMEMORY_USE_DYNINST"] = "ON"
 
     if args.python:
         pyver = "{}.{}.{}".format(
@@ -699,6 +691,42 @@ def run_pyctest():
 
     # create tests
     #
+    if "avail" in args.tools:
+        pyct.test(
+            "timemory-avail",
+            ["./timemory-avail", "-a"],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": test_env,
+            },
+        )
+
+    if "timem" in args.tools:
+        pyct.test(
+            "timemory-timem",
+            ["./timem", "--", "sleep 2"],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "300",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        if args.mpi:
+            pyct.test(
+                "timemory-timem",
+                ["mpirun", "-n", "2", "./timem-mpi", "--", "sleep 2"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "300",
+                    "ENVIRONMENT": base_env,
+                },
+            )
+
     if args.python:
         pyct.test(
             "timemory-python",
@@ -898,18 +926,6 @@ def run_pyctest():
                     "ENVIRONMENT": test_env,
                 },
             )
-
-    if args.tools:
-        pyct.test(
-            "timem-timemory-avail",
-            ["./timem", "./timemory-avail"],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
-                "ENVIRONMENT": test_env,
-            },
-        )
 
     if not args.quick and not args.coverage:
 
