@@ -21,6 +21,7 @@ clobber_notes = True
 
 def get_branch(wd=pyct.SOURCE_DIRECTORY):
     # handle pull-request
+    prname = None
     if os.environ.get("CIRCLE_PULL_REQUEST", None) is not None:
         prname = "pr"
     prname = os.environ.get("CIRCLE_PR_REPONAME", prname)
