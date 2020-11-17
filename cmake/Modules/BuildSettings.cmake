@@ -282,7 +282,7 @@ if (MSVC)
     # VTune is much more helpful when debug information is included in the
     # generated release code.
     add_flag_if_avail("/Zi")
-    add_flag_if_avail("/debug")
+    add_flag_if_avail("/DEBUG")
 endif()
 
 #----------------------------------------------------------------------------------------#
