@@ -20,6 +20,25 @@ clobber_notes = True
 
 
 def get_branch(wd=pyct.SOURCE_DIRECTORY):
+    # handle pull-request
+    if os.environ.get("CIRCLE_PULL_REQUEST", None) is not None:
+        prname = "pr"
+    prname = os.environ.get("CIRCLE_PR_REPONAME", prname)
+
+    if prname is None:
+        if os.environ.get("TRAVIS_EVENT_TYPE", "").lower() == "pull_request":
+            prname = os.environ.get("TRAVIS_PULL_REQUEST_SLUG", "pr").replace(
+                "/", "-"
+            )
+
+    # handle env specified
+    for env_var in ["CIRCLE_BRANCH", "TRAVIS_BRANCH"]:
+        env_branch = os.environ.get(env_var, None)
+        if env_branch is not None:
+            if prname is not None:
+                return "{}-{}".format(prname, env_branch)
+            return env_branch
+
     cmd = pyct.command(["git", "show", "-s", "--pretty=%d", "HEAD"])
     cmd.SetOutputStripTrailingWhitespace(True)
     cmd.SetWorkingDirectory(wd)
@@ -31,11 +50,6 @@ def get_branch(wd=pyct.SOURCE_DIRECTORY):
         branch = branch.strip(")")
     if not branch:
         branch = pyct.GetGitBranch(wd)
-
-    # handle pull-request
-    if os.environ.get("TRAVIS_EVENT_TYPE", None) == "pull_request":
-        prname = os.environ.get("TRAVIS_PULL_REQUEST_SLUG").replace("/", "-")
-        branch = "{}-{}".format(prname, branch.replace("origin-HEAD-", ""))
 
     return branch
 
@@ -172,6 +186,12 @@ def configure():
     )
     parser.add_argument(
         "--ompt",
+        help="TIMEMORY_USE_OMPT=ON",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--build-ompt",
         help="TIMEMORY_BUILD_OMPT=ON",
         default=False,
         action="store_true",
@@ -391,7 +411,7 @@ def run_pyctest():
         "TIMEMORY_CCACHE_BUILD": "OFF",
         "TIMEMORY_BUILD_C": "ON",
         "TIMEMORY_BUILD_LTO": "ON" if args.lto else "OFF",
-        "TIMEMORY_BUILD_OMPT": "OFF",
+        "TIMEMORY_BUILD_OMPT": "ON" if args.build_ompt else "OFF",
         "TIMEMORY_BUILD_TOOLS": "ON" if args.tools else "OFF",
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_BUILD_PYTHON": "ON" if args.python else "OFF",
@@ -442,8 +462,8 @@ def run_pyctest():
     if args.mpi and args.mpi_init:
         build_opts["TIMEMORY_USE_MPI_INIT"] = "ON"
 
-    # if args.ompt:
-    #    build_opts["OPENMP_ENABLE_LIBOMPTARGET"] = "OFF"
+    if args.build_ompt:
+        build_opts["OPENMP_ENABLE_LIBOMPTARGET"] = "OFF"
 
     if args.tools:
         build_opts["TIMEMORY_BUILD_MPIP_LIBRARY"] = (
