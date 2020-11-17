@@ -54,8 +54,8 @@
 //======================================================================================//
 
 #if !defined(TIMEMORY_FOLD_EXPANSION)
-#    define TIMEMORY_FOLD_EXPANSION(TYPE, ...)                                           \
-        ::std::initializer_list<TYPE>({ (::tim::consume_parameters(), __VA_ARGS__)... })
+#    define TIMEMORY_FOLD_EXPANSION(TYPE, SIZE, ...)                                     \
+        std::array<TYPE, SIZE>({ (::tim::consume_parameters(), __VA_ARGS__)... });
 #endif
 
 //======================================================================================//
