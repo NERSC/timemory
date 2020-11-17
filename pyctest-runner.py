@@ -428,7 +428,7 @@ def run_pyctest():
         "TIMEMORY_USE_PAPI": "ON" if args.papi else "OFF",
         "TIMEMORY_USE_CUDA": "ON" if args.cuda else "OFF",
         "TIMEMORY_USE_NVTX": "ON" if args.nvtx else "OFF",
-        "TIMEMORY_USE_OMPT": "ON" if args.ompt else "OFF",
+        "TIMEMORY_USE_OMPT": "ON" if "ompt" in args.tools else "OFF",
         "TIMEMORY_USE_XRAY": "ON" if args.xray else "OFF",
         "TIMEMORY_USE_CUPTI": "ON" if args.cupti else "OFF",
         "TIMEMORY_USE_UPCXX": "ON" if args.upcxx else "OFF",
