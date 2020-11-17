@@ -12,8 +12,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh lcov &&
-            echo 1 | update-alternatives --config gcc
+            apt-get install -y git ssh lcov
       - checkout
       - run:
           name: conda-installation
@@ -31,9 +30,9 @@ jobs:
             source activate &&
             conda activate pyctest &&
             python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j1
-            --build-libs shared --mpi --mpip --papi --caliper --gotcha --stats --cxx-standard=17
+            --build-libs shared --mpi --papi --gotcha --stats --tools mpip dyninst --cxx-standard=17
             -- -V --output-on-failure
-            -- -DTIMEMORY_BUILD_CALIPER=OFF -DTIMEMORY_BUILD_GOTCHA=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
+            -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:
           name: install
           command: >
