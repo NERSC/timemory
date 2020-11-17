@@ -33,6 +33,7 @@ set(_USE_COVERAGE OFF)
 set(_BUILD_OPT OFF)
 set(_BUILD_CALIPER ON)
 set(_NON_APPLE_UNIX OFF)
+set(_UNIX_OS ${UNIX})
 set(_DEFAULT_BUILD_SHARED ON)
 set(_DEFAULT_BUILD_STATIC OFF)
 
@@ -50,6 +51,10 @@ endif()
 if(UNIX AND NOT APPLE)
     set(_NON_APPLE_UNIX ON)
     set(_USE_PAPI ON)
+endif()
+
+if(NOT UNIX)
+    set(_UNIX_OS OFF)
 endif()
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
@@ -205,7 +210,7 @@ add_option(TIMEMORY_BUILD_C
 add_option(TIMEMORY_BUILD_PYTHON
     "Build Python binds for ${PROJECT_NAME}" OFF)
 add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
-    "Build customized Python line-profiler" ${UNIX})
+    "Build customized Python line-profiler" ${_UNIX_OS})
 add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
