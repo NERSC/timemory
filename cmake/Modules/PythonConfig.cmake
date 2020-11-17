@@ -13,11 +13,11 @@ set(Python3_FIND_VIRTUALENV "FIRST" CACHE STRING
     "Virtual environment is used before any other standard paths")
 set_property(CACHE Python3_FIND_VIRTUALENV PROPERTY STRINGS "FIRST;LAST;NEVER")
 
-if(APPLE)
-    set(Python3_FIND_FRAMEWORK "STANDARD" CACHE STRING
-        "Order of preference between Apple-style and unix-style package components")
-    set_property(CACHE Python3_FIND_FRAMEWORK PROPERTY STRINGS "FIRST;ONLY;STANDARD")
-endif()
+# if(APPLE)
+#    set(Python3_FIND_FRAMEWORK "STANDARD" CACHE STRING
+#        "Order of preference between Apple-style and unix-style package components")
+#    set_property(CACHE Python3_FIND_FRAMEWORK PROPERTY STRINGS "FIRST;ONLY;STANDARD")
+# endif()
 
 # PyPy does not support embedding the interpreter
 set(Python3_FIND_IMPLEMENTATIONS "CPython" CACHE STRING
@@ -26,8 +26,8 @@ set_property(CACHE Python3_FIND_IMPLEMENTATIONS PROPERTY STRINGS
     "CPython;IronPython;PyPy")
 
 # variable is a 3-tuple specifying, in order, pydebug (d), pymalloc (m) and unicode (u)
-set(Python3_FIND_ABI "OFF" "OFF" "OFF" CACHE STRING
-    "variable is a 3-tuple specifying pydebug (d), pymalloc (m) and unicode (u)")
+# set(Python3_FIND_ABI "OFF" "OFF" "OFF" CACHE STRING
+#    "variable is a 3-tuple specifying pydebug (d), pymalloc (m) and unicode (u)")
 
 # Create CMake cache entries for the above artifact specification variables so that users
 # can edit them interactively. This disables support for multiple version/component
@@ -35,13 +35,13 @@ set(Python3_FIND_ABI "OFF" "OFF" "OFF" CACHE STRING
 set(Python3_ARTIFACTS_INTERACTIVE ON CACHE BOOL
     "Create CMake cache entries so that users can edit them interactively")
 
-if("${Python3_USE_STATIC_LIBS}" STREQUAL "ANY")
-    set(Python3_USE_STATIC_LIBS "OFF" CACHE STRING
-        "If ON, only static libs; if OFF, only shared libs; if ANY, shared then static")
-    set_property(CACHE Python3_USE_STATIC_LIBS PROPERTY STRINGS "ON;OFF;ANY")
-else()
-    unset(Python3_USE_STATIC_LIBS)
-endif()
+# if("${Python3_USE_STATIC_LIBS}" STREQUAL "ANY")
+#    set(Python3_USE_STATIC_LIBS "OFF" CACHE STRING
+#        "If ON, only static libs; if OFF, only shared libs; if ANY, shared then static")
+#    set_property(CACHE Python3_USE_STATIC_LIBS PROPERTY STRINGS "ON;OFF;ANY")
+# else()
+#    unset(Python3_USE_STATIC_LIBS)
+# endif()
 
 # display version
 add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory" DOC)
