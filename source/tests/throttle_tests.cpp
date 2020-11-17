@@ -148,7 +148,6 @@ TEST_F(throttle_tests, expect_false)
 
 TEST_F(throttle_tests, multithreaded)
 {
-    using tuple_t = tim::auto_tuple<tim::component::wall_clock>;
     std::array<bool, nthreads> is_throttled;
     is_throttled.fill(false);
 

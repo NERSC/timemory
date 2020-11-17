@@ -173,11 +173,26 @@ TEST_F(api_tests, tpls)
     auto incoming = trait::runtime_enabled<test_t>::get();
     trait::runtime_enabled<test_t>::set(false);
 
+    EXPECT_FALSE(trait::runtime_enabled<test_t>::get());
+    EXPECT_FALSE(trait::runtime_enabled<caliper_marker>::get());
+
     cali_bundle_t _obj(details::get_test_name());
     _obj.start();
     details::consume(1000);
     _obj.stop();
-    EXPECT_EQ(_obj.get<wall_clock>(), nullptr);
+
+    std::cout << "tpls::caliper available == " << std::boolalpha << "[compile-time "
+              << tim::trait::is_available<test_t>::value << "] [run-time "
+              << trait::runtime_enabled<test_t>::get() << "]\n";
+
+    if(tim::trait::is_available<test_t>::value)
+    {
+        EXPECT_NEAR(_obj.get<wall_clock>()->get(), 0.0, 1.0e-6) << "obj: " << _obj;
+    }
+    else
+    {
+        EXPECT_EQ(_obj.get<wall_clock>(), nullptr) << "obj: " << _obj;
+    }
 
     trait::runtime_enabled<test_t>::set(incoming);
 }

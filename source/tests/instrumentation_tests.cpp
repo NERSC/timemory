@@ -109,8 +109,8 @@ protected:
 TEST_F(instrumentation_tests, random_entry)
 {
     std::vector<float> _v(100, 0.0);
-    float              _i = 1.243;
-    std::generate(_v.begin(), _v.end(), [&_i]() { return _i * (_i + 1.43); });
+    float              _i = 1.243f;
+    std::generate(_v.begin(), _v.end(), [&_i]() { return _i * (_i + 1.43f); });
     auto _ret = details::random_entry(_v);
     EXPECT_TRUE(_ret > 0);
 }
@@ -151,7 +151,7 @@ TEST_F(instrumentation_tests, mt_consume)
 
     std::vector<std::thread> _threads;
     for(int i = 0; i < 4; ++i)
-        _threads.emplace_back(std::move(std::thread(_consume)));
+        _threads.emplace_back(std::thread(_consume));
     for(auto& itr : _threads)
         itr.join();
     _threads.clear();

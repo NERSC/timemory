@@ -70,7 +70,13 @@ target_link_libraries(common-test-libs INTERFACE
     timemory::timemory-headers
     timemory::timemory-compile-options
     timemory::timemory-develop-options
-    timemory::timemory-analysis-tools)
+    timemory::timemory-analysis-tools
+    timemory::timemory-vector)
+
+if(TIMEMORY_USE_COVERAGE)
+    # ensures all usage updates coverage
+    target_link_libraries(common-test-libs INTERFACE ${_LIBRARY_TARGET})
+endif()
 
 set(HYBRID_COMPONENTS )
 
@@ -105,27 +111,34 @@ set(ENV{TIMEMORY_ENABLED} OFF)
 
 add_subdirectory(external)
 
+set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON")
+
 if(TARGET timemory::timemory-compiler-instrument-shared)
     add_timemory_google_test(compiler_instrument_shared_tests
         SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  timemory::timemory-compiler-instrument-shared
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        timemory::timemory-compiler-instrument-shared
                         timemory::timemory-headers
-                        test-opt-flags)
+        ENVIRONMENT     ${compiler_instr_env})
 endif()
 
 if(TARGET timemory::timemory-compiler-instrument-static)
     add_timemory_google_test(compiler_instrument_static_tests
         SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  timemory::timemory-compiler-instrument-static
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        timemory::timemory-compiler-instrument-static
                         timemory::timemory-headers
-                        test-opt-flags)
+        ENVIRONMENT     ${compiler_instr_env})
 endif()
 
 if(TARGET custom-record-functions)
     add_timemory_google_test(library_tests
         DISCOVER_TESTS
         SOURCES         library_tests.cpp
-        LINK_LIBRARIES  custom-record-functions
+        LINK_LIBRARIES  common-test-libs
+                        custom-record-functions
                         timemory::timemory-core)
 endif()
 
@@ -139,7 +152,8 @@ if(_LIBRARY_TARGET)
         MPI
         NPROC           4
         SOURCES         trace_tests.cpp
-        LINK_LIBRARIES  ${_LIBRARY_TARGET}
+        LINK_LIBRARIES  common-test-libs
+                        ${_LIBRARY_TARGET}
                         timemory::timemory-dmp
                         timemory::timemory-plotting
                         timemory::timemory-mpip-library
@@ -149,7 +163,8 @@ if(_LIBRARY_TARGET)
     add_timemory_google_test(throttle_tests
         DISCOVER_TESTS
         SOURCES         throttle_tests.cpp
-        LINK_LIBRARIES  ${_LIBRARY_TARGET})
+        LINK_LIBRARIES  common-test-libs
+                        ${_LIBRARY_TARGET})
 endif()
 
 add_timemory_google_test(api_tests
@@ -571,20 +586,24 @@ if(_OMPT_TARGET AND _OPENMP)
     add_timemory_google_test(ompt_handle_tests
         DISCOVER_TESTS
         SOURCES         ompt_handle_tests.cpp
-        LINK_LIBRARIES  ${_OMPT_TARGET} ${_OPENMP})
+        LINK_LIBRARIES  common-test-libs
+                        ${_OMPT_TARGET}
+                        ${_OPENMP})
 endif()
 
 if(TARGET timemory::timemory-ncclp-library AND TARGET nccl_test_interface)
     add_timemory_google_test(nccl_tests
         SOURCES         nccl_tests.cpp
-        LINK_LIBRARIES  nccl_test_interface
+        LINK_LIBRARIES  common-test-libs
+                        nccl_test_interface
                         timemory::timemory-ncclp-library)
 endif()
 
 if(TIMEMORY_BUILD_ERT)
     add_timemory_google_test(ert_tests
         SOURCES         ert_tests.cpp
-        LINK_LIBRARIES  timemory::timemory-ert
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-ert
                         ${_LIBRARY})
 endif()
 
@@ -602,6 +621,7 @@ if(TIMEMORY_USE_DYNINST)
 
     add_executable(dynamic_instrument_tests instrumentation_tests.cpp)
     target_link_libraries(dynamic_instrument_tests
+        common-test-libs
         ${_LIBRARY_TARGET}
         timemory-google-test
         google-test-debug-options)
