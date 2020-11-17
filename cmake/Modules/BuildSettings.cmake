@@ -279,14 +279,10 @@ else()
 endif()
 
 if (MSVC)
-    # set debug postfix so debug library and executable artifact names do not
-    # conflict with release artifacts
-    set(CMAKE_DEBUG_POSTFIX "_d" CACHE STRING "Build type" FORCE)
-
-    # VTune is much more helpful when debug information is included in the 
-    # generated release code. 
+    # VTune is much more helpful when debug information is included in the
+    # generated release code.
     add_flag_if_avail("/Zi")
-    add_flag_if_avail("/debug")
+    add_flag_if_avail("/DEBUG")
 endif()
 
 #----------------------------------------------------------------------------------------#

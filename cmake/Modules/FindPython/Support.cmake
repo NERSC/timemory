@@ -3162,32 +3162,3 @@ if (DEFINED _${_PYTHON_PREFIX}_CMAKE_FIND_FRAMEWORK)
 else()
   unset (CMAKE_FIND_FRAMEWORK)
 endif()
-
-# executable
-set(PYTHON_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH "Set via Python3_EXECUTABLE (timemory)" FORCE)
-# includes
-set(PYTHON_INCLUDE_DIR "${Python3_INCLUDE_DIRS}" CACHE PATH "Set via Python3_INCLUDE_DIR (timemory)" FORCE)
-set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}" CACHE PATH "Set via Python3_INCLUDE_DIRS (timemory)" FORCE)
-# libraries
-set(PYTHON_LIBRARY_DEBUG "${Python3_LIBRARY_DEBUG}" CACHE FILEPATH "Set via Python3_LIBRARY_DEBUG (timemory)" FORCE)
-set(PYTHON_LIBRARY_RELEASE "${Python3_LIBRARY_RELEASE}" CACHE FILEPATH "Set via Python3_LIBRARY_DEBUG (timemory)" FORCE)
-if(Python3_LIBRARY_RELEASE)
-    set(PYTHON_LIBRARY "${Python3_LIBRARY_RELEASE}" CACHE FILEPATH "Set via Python3_LIBRARY (timemory)" FORCE)
-    set(PYTHON_LIBRARIES "${Python3_LIBRARY_RELEASE}" CACHE FILEPATH "Set via Python3_LIBRARIES (timemory)" FORCE)
-else(Python3_LIBRARY_DEBUG)
-    set(PYTHON_LIBRARY "${Python3_LIBRARY_DEBUG}" CACHE FILEPATH "Set via Python3_LIBRARY (timemory)" FORCE)
-    set(PYTHON_LIBRARIES "${Python3_LIBRARY_DEBUG}" CACHE FILEPATH "Set via Python3_LIBRARIES (timemory)" FORCE)
-endif()
-set(PYTHON_LIBRARY_DIRS "${Python3_LIBRARY_DIRS}" CACHE PATH "Set via Python3_LIBRARY_DIRS (timemory)" FORCE)
-set(PYTHON_LINK_OPTIONS "${Python3_LINK_OPTIONS}" CACHE STRING "Set via Python3_LINK_OPTIONS (timemory)" FORCE)
-# module
-set(PYTHON_MODULE_EXTENSION "${Python3_MODULE_EXTENSION}" CACHE STRING "Set via Python3_MODULE_EXTENSION (timemory)" FORCE)
-set(PYTHON_MODULE_PREFIX "${Python3_MODULE_PREFIX}" CACHE STRING "Set via Python3_MODULE_PREFIX (timemory)" FORCE)
-# version
-set(PYTHON_VERSION "${Python3_VERSION}" CACHE STRING "Set via Python3_VERSION (timemory)" FORCE)
-set(PYTHON_VERSION_MAJOR "${Python3_VERSION_MAJOR}" CACHE STRING "Set via Python3_VERSION_MAJOR (timemory)" FORCE)
-set(PYTHON_VERSION_MINOR "${Python3_VERSION_MINOR}" CACHE STRING "Set via Python3_VERSION_MINOR (timemory)" FORCE)
-# find_package
-set(PYTHON_FOUND ${Python3_FOUND})
-set(PythonInterp_FOUND ${Python3_Interpreter_FOUND})
-set(PythonLibs_FOUND ${Python3_Development_FOUND})

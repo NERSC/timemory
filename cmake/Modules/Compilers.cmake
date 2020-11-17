@@ -128,6 +128,8 @@ macro(ADD_C_FLAG FLAG)
             add_target_c_flag(${_TARG} ${FLAG})
         endif()
     endif()
+    unset(_TARG)
+    unset(_LTARG)
 endmacro()
 
 
@@ -143,7 +145,7 @@ macro(ADD_C_FLAG_IF_AVAIL FLAG)
     endif()
     if(NOT "${FLAG}" STREQUAL "")
         string(REGEX REPLACE "^/" "c${_LTARG}_" FLAG_NAME "${FLAG}")
-        string(REGEX REPLACE "^-" "c${_LTARG}_" FLAG_NAME "${FLAG}")
+        string(REGEX REPLACE "^-" "c${_LTARG}_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE "-" "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE " " "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE "=" "_" FLAG_NAME "${FLAG_NAME}")
@@ -163,6 +165,8 @@ macro(ADD_C_FLAG_IF_AVAIL FLAG)
             endif()
         endif()
     endif()
+    unset(_TARG)
+    unset(_LTARG)
 endmacro()
 
 
@@ -220,6 +224,8 @@ macro(ADD_CXX_FLAG FLAG)
             add_target_cxx_flag(${_TARG} ${FLAG})
         endif()
     endif()
+    unset(_TARG)
+    unset(_LTARG)
 endmacro()
 
 
@@ -235,7 +241,7 @@ macro(ADD_CXX_FLAG_IF_AVAIL FLAG)
     endif()
     if(NOT "${FLAG}" STREQUAL "")
         string(REGEX REPLACE "^/" "cxx${_LTARG}_" FLAG_NAME "${FLAG}")
-        string(REGEX REPLACE "^-" "cxx${_LTARG}_" FLAG_NAME "${FLAG}")
+        string(REGEX REPLACE "^-" "cxx${_LTARG}_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE "-" "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE " " "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE "=" "_" FLAG_NAME "${FLAG_NAME}")
@@ -256,6 +262,8 @@ macro(ADD_CXX_FLAG_IF_AVAIL FLAG)
             endif()
         endif()
     endif()
+    unset(_TARG)
+    unset(_LTARG)
 endmacro()
 
 
@@ -274,6 +282,17 @@ endmacro()
 #                                       Common
 #
 ##########################################################################################
+
+
+#----------------------------------------------------------------------------------------#
+# check C and CXX flag to compile-options w/o checking
+#----------------------------------------------------------------------------------------#
+macro(ADD_FLAG)
+    foreach(_ARG ${ARGN})
+        ADD_C_FLAG("${_ARG}")
+        ADD_CXX_FLAG("${_ARG}")
+    endforeach()
+endmacro()
 
 
 #----------------------------------------------------------------------------------------#

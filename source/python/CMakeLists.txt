@@ -5,9 +5,12 @@
 #
 ##########################################################################################
 
+# if set, will screw up loading library
+unset(CMAKE_DEBUG_POSTFIX)
+
 set(_visibility timemory::timemory-default-visibility)
 set(CMAKE_CXX_CLANG_TIDY)
-set(CMAKE_UNITY_BUILD OFF)
+set(CMAKE_UNITY_BUILD ON)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
 
