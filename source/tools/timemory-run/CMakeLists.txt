@@ -42,13 +42,13 @@ if(TIMEMORY_USE_DYNINST)
                     NOT "${_FILE}" MATCHES "/doc/" AND
                     NOT "${_FILE}" MATCHES "/docs/")
                 get_filename_component(_FILE "${_FILE}" NAME)
-                list(APPEND _EXCLUDE ${_FILE})
+                list(APPEND _EXCLUDE_FILES ${_FILE})
             endif()
         endforeach()
 
-        list(REMOVE_DUPLICATES _EXCLUDE)
-        string(REPLACE ";" "|" _EXCLUDE "${_EXCLUDE}")
-        set(EXCLUDE_SOURCE_FILES "${_EXCLUDE}" CACHE INTERNAL "Excluded source files")
+        list(REMOVE_DUPLICATES _EXCLUDE_FILES)
+        string(REPLACE ";" "|" _EXCLUDE_FILES "${_EXCLUDE_FILES}")
+        set(EXCLUDE_SOURCE_FILES "${_EXCLUDE_FILES}" CACHE INTERNAL "Excluded source files")
 
     endif()
 
