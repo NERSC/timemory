@@ -4,14 +4,44 @@
 # include guard
 include_guard(DIRECTORY)
 
-# Stops lookup as soon as a version satisfying version constraints is founded.
-set(Python3_FIND_STRATEGY "LOCATION")
+# Stops lookup as soon as a version satisfying version constraints is found.
+set(Python3_FIND_STRATEGY "LOCATION" CACHE STRING
+    "Stops lookup as soon as a version satisfying version constraints is found")
 
 # virtual environment is used before any other standard paths to look-up for the interpreter
-set(Python3_FIND_VIRTUALENV "FIRST")
+set(Python3_FIND_VIRTUALENV "FIRST" CACHE STRING
+    "Virtual environment is used before any other standard paths")
+set_property(CACHE Python3_FIND_VIRTUALENV PROPERTY STRINGS "FIRST;LAST;NEVER")
+
+if(APPLE)
+    set(Python3_FIND_FRAMEWORK "STANDARD" CACHE STRING
+        "Order of preference between Apple-style and unix-style package components")
+    set_property(CACHE Python3_FIND_FRAMEWORK PROPERTY STRINGS "FIRST;ONLY;STANDARD")
+endif()
 
 # PyPy does not support embedding the interpreter
-set(Python3_FIND_IMPLEMENTATIONS "CPython")
+set(Python3_FIND_IMPLEMENTATIONS "CPython" CACHE STRING
+    "Different implementations which will be searched.")
+set_property(CACHE Python3_FIND_IMPLEMENTATIONS PROPERTY STRINGS
+    "CPython;IronPython;PyPy")
+
+# variable is a 3-tuple specifying, in order, pydebug (d), pymalloc (m) and unicode (u)
+set(Python3_FIND_ABI "OFF" "OFF" "OFF" CACHE STRING
+    "variable is a 3-tuple specifying pydebug (d), pymalloc (m) and unicode (u)")
+
+# Create CMake cache entries for the above artifact specification variables so that users
+# can edit them interactively. This disables support for multiple version/component
+# requirements.
+set(Python3_ARTIFACTS_INTERACTIVE ON CACHE BOOL
+    "Create CMake cache entries so that users can edit them interactively")
+
+if("${Python3_USE_STATIC_LIBS}" STREQUAL "ANY")
+    set(Python3_USE_STATIC_LIBS "OFF" CACHE STRING
+        "If ON, only static libs; if OFF, only shared libs; if ANY, shared then static")
+    set_property(CACHE Python3_USE_STATIC_LIBS PROPERTY STRINGS "ON;OFF;ANY")
+else()
+    unset(Python3_USE_STATIC_LIBS)
+endif()
 
 # display version
 add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory" DOC)
@@ -58,8 +88,56 @@ if("${_PYVERSION}" STREQUAL "" AND PYBIND11_PYTHON_VERSION)
 endif()
 
 # basically just used to get Python3_SITEARCH for installation
-find_package(Python3 ${_PYVERSION} ${TIMEMORY_FIND_REQUIREMENT}
-    COMPONENTS Interpreter Development)
+find_package(Python3 ${_PYVERSION} MODULE ${TIMEMORY_FIND_REQUIREMENT}
+    COMPONENTS Interpreter Development
+)
+
+# executable
+set(PYTHON_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH
+    "Set via Python3_EXECUTABLE (timemory)" FORCE)
+# includes
+set(PYTHON_INCLUDE_DIR "${Python3_INCLUDE_DIRS}" CACHE PATH
+    "Set via Python3_INCLUDE_DIR (timemory)" FORCE)
+set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}" CACHE PATH
+    "Set via Python3_INCLUDE_DIRS (timemory)" FORCE)
+# libraries
+set(PYTHON_LIBRARY_DEBUG "${Python3_LIBRARY_DEBUG}" CACHE FILEPATH
+    "Set via Python3_LIBRARY_DEBUG (timemory)" FORCE)
+set(PYTHON_LIBRARY_RELEASE "${Python3_LIBRARY_RELEASE}" CACHE FILEPATH
+    "Set via Python3_LIBRARY_DEBUG (timemory)" FORCE)
+if(Python3_LIBRARY_RELEASE)
+    set(PYTHON_LIBRARY "${Python3_LIBRARY_RELEASE}" CACHE FILEPATH
+        "Set via Python3_LIBRARY (timemory)" FORCE)
+    set(PYTHON_LIBRARIES "${Python3_LIBRARY_RELEASE}" CACHE FILEPATH
+        "Set via Python3_LIBRARIES (timemory)" FORCE)
+else(Python3_LIBRARY_DEBUG)
+    set(PYTHON_LIBRARY "${Python3_LIBRARY_DEBUG}" CACHE FILEPATH
+        "Set via Python3_LIBRARY (timemory)" FORCE)
+    set(PYTHON_LIBRARIES "${Python3_LIBRARY_DEBUG}" CACHE FILEPATH
+        "Set via Python3_LIBRARIES (timemory)" FORCE)
+endif()
+set(PYTHON_LIBRARY_DIRS "${Python3_LIBRARY_DIRS}" CACHE PATH
+    "Set via Python3_LIBRARY_DIRS (timemory)" FORCE)
+set(PYTHON_LINK_OPTIONS "${Python3_LINK_OPTIONS}" CACHE STRING
+    "Set via Python3_LINK_OPTIONS (timemory)" FORCE)
+
+# module
+set(PYTHON_MODULE_EXTENSION "${Python3_MODULE_EXTENSION}" CACHE STRING
+    "Set via Python3_MODULE_EXTENSION (timemory)" FORCE)
+set(PYTHON_MODULE_PREFIX "${Python3_MODULE_PREFIX}" CACHE STRING
+    "Set via Python3_MODULE_PREFIX (timemory)" FORCE)
+
+# version
+set(PYTHON_VERSION "${Python3_VERSION}" CACHE STRING
+    "Set via Python3_VERSION (timemory)" FORCE)
+set(PYTHON_VERSION_MAJOR "${Python3_VERSION_MAJOR}" CACHE STRING
+    "Set via Python3_VERSION_MAJOR (timemory)" FORCE)
+set(PYTHON_VERSION_MINOR "${Python3_VERSION_MINOR}" CACHE STRING
+    "Set via Python3_VERSION_MINOR (timemory)" FORCE)
+
+# find_package
+set(PythonInterp_FOUND ${Python3_Interpreter_FOUND})
+set(PythonLibs_FOUND ${Python3_Development_FOUND})
 
 # set TIMEMORY_PYTHON_VERSION if we have the python version
 if(PYTHON_VERSION_STRING)
@@ -214,3 +292,11 @@ unset(INSTALL_PYTHONDIR)
 add_feature(CMAKE_INSTALL_PYTHONDIR "Installation prefix of the python bindings")
 
 set(_PYVERSION_LAST "${TIMEMORY_PYTHON_VERSION}" CACHE INTERNAL "Last version" FORCE)
+
+find_package(PythonInterp ${TIMEMORY_PYTHON_VERSION} EXACT REQUIRED)
+find_package(PythonLibs ${TIMEMORY_PYTHON_VERSION} EXACT REQUIRED)
+# find_package(PythonExtensions REQUIRED)
+
+if("${PYTHON_MODULE_EXTENSION}" STREQUAL "")
+    message(WARNING "Python module extension is empty!")
+endif()
