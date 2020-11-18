@@ -104,7 +104,7 @@ jobs:
       env:
         - CC=clang-6.0
         - CXX=clang++-6.0
-        - BUILD_ARGS='--quick --build-libs static --stats --tools kokkos-config --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static --stats --cxx-standard=14'
     # Clang 7
     - os: linux
       dist: bionic
@@ -193,7 +193,7 @@ jobs:
         - CC=gcc-8
         - CXX=g++-8
         - BUILD_TYPE=Release
-        - BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17 --ipo --extra-optimizations'
+        - BUILD_ARGS='--build-libs shared --mpi --python --stats --cxx-standard=17 --extra-optimizations'
     # Clang 6.0
     - os: linux
       dist: xenial
@@ -234,7 +234,7 @@ jobs:
       env:
         - CC=clang-7
         - CXX=clang++-7
-        - BUILD_ARGS='--quick --build-libs shared --gotcha --caliper --mpi --python --stats --tools timem --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs shared --gotcha --mpi --python --stats --tools timem kokkos --cxx-standard=17'
   fast_finish: true
 
 before_install:
