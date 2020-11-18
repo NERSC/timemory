@@ -27,36 +27,39 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_STD_OPTIONAL_
-#define CEREAL_TYPES_STD_OPTIONAL_
+#ifndef TIMEMORY_CEREAL_TYPES_STD_OPTIONAL_
+#define TIMEMORY_CEREAL_TYPES_STD_OPTIONAL_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <optional>
 
+namespace tim
+{
 namespace cereal
 {
 //! Saving for std::optional
 template <class Archive, typename T>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const std::optional<T>& optional)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const std::optional<T>& optional)
 {
     if(!optional)
     {
-        ar(CEREAL_NVP_("nullopt", true));
+        ar(TIMEMORY_CEREAL_NVP_("nullopt", true));
     }
     else
     {
-        ar(CEREAL_NVP_("nullopt", false), CEREAL_NVP_("data", *optional));
+        ar(TIMEMORY_CEREAL_NVP_("nullopt", false),
+           TIMEMORY_CEREAL_NVP_("data", *optional));
     }
 }
 
 //! Loading for std::optional
 template <class Archive, typename T>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::optional<T>& optional)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::optional<T>& optional)
 {
     bool nullopt;
-    ar(CEREAL_NVP_("nullopt", nullopt));
+    ar(TIMEMORY_CEREAL_NVP_("nullopt", nullopt));
 
     if(nullopt)
     {
@@ -65,10 +68,11 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::optional<T>& optional)
     else
     {
         T value;
-        ar(CEREAL_NVP_("data", value));
+        ar(TIMEMORY_CEREAL_NVP_("data", value));
         optional = std::move(value);
     }
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_STD_OPTIONAL_
+#endif  // TIMEMORY_CEREAL_TYPES_STD_OPTIONAL_

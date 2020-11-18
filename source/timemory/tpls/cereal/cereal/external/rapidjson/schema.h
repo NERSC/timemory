@@ -12,67 +12,67 @@
 // CONDITIONS OF ANY KIND, either express or implied-> See the License for the 
 // specific language governing permissions and limitations under the License->
 
-#ifndef CEREAL_RAPIDJSON_SCHEMA_H_
-#define CEREAL_RAPIDJSON_SCHEMA_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_H_
 
 #include "document.h"
 #include "pointer.h"
 #include "stringbuffer.h"
 #include <cmath> // abs, floor
 
-#if !defined(CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX)
-#define CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX 1
+#if !defined(TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX)
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX 1
 #else
-#define CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX 0
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX 0
 #endif
 
-#if !CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX && defined(CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX) && (__cplusplus >=201103L || (defined(_MSC_VER) && _MSC_VER >= 1800))
-#define CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX 1
+#if !TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX && defined(TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX) && (__cplusplus >=201103L || (defined(_MSC_VER) && _MSC_VER >= 1800))
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX 1
 #else
-#define CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX 0
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX 0
 #endif
 
-#if CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX
 #include "internal/regex.h"
-#elif CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
+#elif TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
 #include <regex>
 #endif
 
-#if CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX || CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
-#define CEREAL_RAPIDJSON_SCHEMA_HAS_REGEX 1
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX || TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HAS_REGEX 1
 #else
-#define CEREAL_RAPIDJSON_SCHEMA_HAS_REGEX 0
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HAS_REGEX 0
 #endif
 
-#ifndef CEREAL_RAPIDJSON_SCHEMA_VERBOSE
-#define CEREAL_RAPIDJSON_SCHEMA_VERBOSE 0
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE 0
 #endif
 
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
 #include "stringbuffer.h"
 #endif
 
-CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
 
 #if defined(__GNUC__)
-CEREAL_RAPIDJSON_DIAG_OFF(effc++)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(effc++)
 #endif
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_OFF(weak-vtables)
-CEREAL_RAPIDJSON_DIAG_OFF(exit-time-destructors)
-CEREAL_RAPIDJSON_DIAG_OFF(c++98-compat-pedantic)
-CEREAL_RAPIDJSON_DIAG_OFF(variadic-macros)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(weak-vtables)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(exit-time-destructors)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(c++98-compat-pedantic)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(variadic-macros)
 #elif defined(_MSC_VER)
-CEREAL_RAPIDJSON_DIAG_OFF(4512) // assignment operator could not be generated
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(4512) // assignment operator could not be generated
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 ///////////////////////////////////////////////////////////////////////////////
 // Verbose Utilities
 
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
 
 namespace internal {
 
@@ -102,23 +102,23 @@ inline void PrintValidatorPointers(unsigned depth, const wchar_t* s, const wchar
 
 } // namespace internal
 
-#endif // CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#endif // TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
 
 ///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN
+// TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN
 
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
-#define CEREAL_RAPIDJSON_INVALID_KEYWORD_VERBOSE(keyword) internal::PrintInvalidKeyword(keyword)
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#define TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_VERBOSE(keyword) internal::PrintInvalidKeyword(keyword)
 #else
-#define CEREAL_RAPIDJSON_INVALID_KEYWORD_VERBOSE(keyword)
+#define TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_VERBOSE(keyword)
 #endif
 
-#define CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(keyword)\
-CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN\
+#define TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(keyword)\
+TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN\
     context.invalidKeyword = keyword.GetString();\
-    CEREAL_RAPIDJSON_INVALID_KEYWORD_VERBOSE(keyword.GetString());\
+    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_VERBOSE(keyword.GetString());\
     return false;\
-CEREAL_RAPIDJSON_MULTILINEMACRO_END
+TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_END
 
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -271,7 +271,7 @@ public:
     bool IsValid() const { return stack_.GetSize() == sizeof(uint64_t); }
 
     uint64_t GetHashCode() const {
-        CEREAL_RAPIDJSON_ASSERT(IsValid());
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(IsValid());
         return *stack_.template Top<uint64_t>();
     }
 
@@ -291,7 +291,7 @@ private:
     
     bool WriteBuffer(Type type, const void* data, size_t len) {
         // FNV-1a from http://isthe.com/chongo/tech/comp/fnv/
-        uint64_t h = Hash(CEREAL_RAPIDJSON_UINT64_C2(0x84222325, 0xcbf29ce4), type);
+        uint64_t h = Hash(TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x84222325, 0xcbf29ce4), type);
         const unsigned char* d = static_cast<const unsigned char*>(data);
         for (size_t i = 0; i < len; i++)
             h = Hash(h, d[i]);
@@ -300,7 +300,7 @@ private:
     }
 
     static uint64_t Hash(uint64_t h, uint64_t d) {
-        static const uint64_t kPrime = CEREAL_RAPIDJSON_UINT64_C2(0x00000100, 0x000001b3);
+        static const uint64_t kPrime = TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x00000100, 0x000001b3);
         h ^= d;
         h *= kPrime;
         return h;
@@ -657,7 +657,7 @@ public:
             AllocatorType::Free(patternProperties_);
         }
         AllocatorType::Free(itemsTuple_);
-#if CEREAL_RAPIDJSON_SCHEMA_HAS_REGEX
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HAS_REGEX
         if (pattern_) {
             pattern_->~RegexType();
             AllocatorType::Free(pattern_);
@@ -689,7 +689,7 @@ public:
                     context.valueSchema = typeless_;
                 else {
                     context.error_handler.DisallowedItem(context.arrayElementIndex);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetItemsString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetItemsString());
                 }
             }
             else
@@ -700,7 +700,7 @@ public:
         return true;
     }
 
-    CEREAL_RAPIDJSON_FORCEINLINE bool EndValue(Context& context) const {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE bool EndValue(Context& context) const {
         if (context.patternPropertiesValidatorCount > 0) {
             bool otherValid = false;
             SizeType count = context.patternPropertiesValidatorCount;
@@ -717,18 +717,18 @@ public:
             if (context.objectPatternValidatorType == Context::kPatternValidatorOnly) {
                 if (!patternValid) {
                     context.error_handler.PropertyViolations(context.patternPropertiesValidators, count);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetPatternPropertiesString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetPatternPropertiesString());
                 }
             }
             else if (context.objectPatternValidatorType == Context::kPatternValidatorWithProperty) {
                 if (!patternValid || !otherValid) {
                     context.error_handler.PropertyViolations(context.patternPropertiesValidators, count + 1);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetPatternPropertiesString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetPatternPropertiesString());
                 }
             }
             else if (!patternValid && !otherValid) { // kPatternValidatorWithAdditionalProperty)
                 context.error_handler.PropertyViolations(context.patternPropertiesValidators, count + 1);
-                CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetPatternPropertiesString());
+                TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetPatternPropertiesString());
             }
         }
 
@@ -738,7 +738,7 @@ public:
                 if (enum_[i] == h)
                     goto foundEnum;
             context.error_handler.DisallowedValue();
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetEnumString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetEnumString());
             foundEnum:;
         }
 
@@ -746,7 +746,7 @@ public:
             for (SizeType i = allOf_.begin; i < allOf_.begin + allOf_.count; i++)
                 if (!context.validators[i]->IsValid()) {
                     context.error_handler.NotAllOf(&context.validators[allOf_.begin], allOf_.count);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetAllOfString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetAllOfString());
                 }
         
         if (anyOf_.schemas) {
@@ -754,7 +754,7 @@ public:
                 if (context.validators[i]->IsValid())
                     goto foundAny;
             context.error_handler.NoneOf(&context.validators[anyOf_.begin], anyOf_.count);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetAnyOfString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetAnyOfString());
             foundAny:;
         }
 
@@ -764,19 +764,19 @@ public:
                 if (context.validators[i]->IsValid()) {
                     if (oneValid) {
                         context.error_handler.NotOneOf(&context.validators[oneOf_.begin], oneOf_.count);
-                        CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetOneOfString());
+                        TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetOneOfString());
                     } else
                         oneValid = true;
                 }
             if (!oneValid) {
                 context.error_handler.NotOneOf(&context.validators[oneOf_.begin], oneOf_.count);
-                CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetOneOfString());
+                TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetOneOfString());
             }
         }
 
         if (not_ && context.validators[notValidatorIndex_]->IsValid()) {
             context.error_handler.Disallowed();
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetNotString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetNotString());
         }
 
         return true;
@@ -785,7 +785,7 @@ public:
     bool Null(Context& context) const {
         if (!(type_ & (1 << kNullSchemaType))) {
             DisallowedType(context, GetNullString());
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
         }
         return CreateParallelValidator(context);
     }
@@ -793,7 +793,7 @@ public:
     bool Bool(Context& context, bool) const {
         if (!(type_ & (1 << kBooleanSchemaType))) {
             DisallowedType(context, GetBooleanString());
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
         }
         return CreateParallelValidator(context);
     }
@@ -825,7 +825,7 @@ public:
     bool Double(Context& context, double d) const {
         if (!(type_ & (1 << kNumberSchemaType))) {
             DisallowedType(context, GetNumberString());
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
         }
 
         if (!minimum_.IsNull() && !CheckDoubleMinimum(context, d))
@@ -843,7 +843,7 @@ public:
     bool String(Context& context, const Ch* str, SizeType length, bool) const {
         if (!(type_ & (1 << kStringSchemaType))) {
             DisallowedType(context, GetStringString());
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
         }
 
         if (minLength_ != 0 || maxLength_ != SizeType(~0)) {
@@ -851,18 +851,18 @@ public:
             if (internal::CountStringCodePoint<EncodingType>(str, length, &count)) {
                 if (count < minLength_) {
                     context.error_handler.TooShort(str, length, minLength_);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinLengthString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinLengthString());
                 }
                 if (count > maxLength_) {
                     context.error_handler.TooLong(str, length, maxLength_);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaxLengthString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaxLengthString());
                 }
             }
         }
 
         if (pattern_ && !IsPatternMatch(pattern_, str, length)) {
             context.error_handler.DoesNotMatch(str, length);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetPatternString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetPatternString());
         }
 
         return CreateParallelValidator(context);
@@ -871,7 +871,7 @@ public:
     bool StartObject(Context& context) const {
         if (!(type_ & (1 << kObjectSchemaType))) {
             DisallowedType(context, GetObjectString());
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
         }
 
         if (hasDependencies_ || hasRequired_) {
@@ -932,7 +932,7 @@ public:
 
         if (context.patternPropertiesSchemaCount == 0) { // patternProperties are not additional properties
             context.error_handler.DisallowedProperty(str, len);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetAdditionalPropertiesString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetAdditionalPropertiesString());
         }
 
         return true;
@@ -946,17 +946,17 @@ public:
                     if (properties_[index].schema->defaultValueLength_ == 0 )
                         context.error_handler.AddMissingProperty(properties_[index].name);
             if (context.error_handler.EndMissingProperties())
-                CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetRequiredString());
+                TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetRequiredString());
         }
 
         if (memberCount < minProperties_) {
             context.error_handler.TooFewProperties(memberCount, minProperties_);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinPropertiesString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinPropertiesString());
         }
 
         if (memberCount > maxProperties_) {
             context.error_handler.TooManyProperties(memberCount, maxProperties_);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaxPropertiesString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaxPropertiesString());
         }
 
         if (hasDependencies_) {
@@ -979,7 +979,7 @@ public:
                 }
             }
             if (context.error_handler.EndDependencyErrors())
-                CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetDependenciesString());
+                TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetDependenciesString());
         }
 
         return true;
@@ -988,7 +988,7 @@ public:
     bool StartArray(Context& context) const {
         if (!(type_ & (1 << kArraySchemaType))) {
             DisallowedType(context, GetArrayString());
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
         }
 
         context.arrayElementIndex = 0;
@@ -1002,61 +1002,61 @@ public:
         
         if (elementCount < minItems_) {
             context.error_handler.TooFewItems(elementCount, minItems_);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinItemsString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinItemsString());
         }
         
         if (elementCount > maxItems_) {
             context.error_handler.TooManyItems(elementCount, maxItems_);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaxItemsString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaxItemsString());
         }
 
         return true;
     }
 
     // Generate functions for string literal according to Ch
-#define CEREAL_RAPIDJSON_STRING_(name, ...) \
+#define TIMEMORY_CEREAL_RAPIDJSON_STRING_(name, ...) \
     static const ValueType& Get##name##String() {\
         static const Ch s[] = { __VA_ARGS__, '\0' };\
         static const ValueType v(s, static_cast<SizeType>(sizeof(s) / sizeof(Ch) - 1));\
         return v;\
     }
 
-    CEREAL_RAPIDJSON_STRING_(Null, 'n', 'u', 'l', 'l')
-    CEREAL_RAPIDJSON_STRING_(Boolean, 'b', 'o', 'o', 'l', 'e', 'a', 'n')
-    CEREAL_RAPIDJSON_STRING_(Object, 'o', 'b', 'j', 'e', 'c', 't')
-    CEREAL_RAPIDJSON_STRING_(Array, 'a', 'r', 'r', 'a', 'y')
-    CEREAL_RAPIDJSON_STRING_(String, 's', 't', 'r', 'i', 'n', 'g')
-    CEREAL_RAPIDJSON_STRING_(Number, 'n', 'u', 'm', 'b', 'e', 'r')
-    CEREAL_RAPIDJSON_STRING_(Integer, 'i', 'n', 't', 'e', 'g', 'e', 'r')
-    CEREAL_RAPIDJSON_STRING_(Type, 't', 'y', 'p', 'e')
-    CEREAL_RAPIDJSON_STRING_(Enum, 'e', 'n', 'u', 'm')
-    CEREAL_RAPIDJSON_STRING_(AllOf, 'a', 'l', 'l', 'O', 'f')
-    CEREAL_RAPIDJSON_STRING_(AnyOf, 'a', 'n', 'y', 'O', 'f')
-    CEREAL_RAPIDJSON_STRING_(OneOf, 'o', 'n', 'e', 'O', 'f')
-    CEREAL_RAPIDJSON_STRING_(Not, 'n', 'o', 't')
-    CEREAL_RAPIDJSON_STRING_(Properties, 'p', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
-    CEREAL_RAPIDJSON_STRING_(Required, 'r', 'e', 'q', 'u', 'i', 'r', 'e', 'd')
-    CEREAL_RAPIDJSON_STRING_(Dependencies, 'd', 'e', 'p', 'e', 'n', 'd', 'e', 'n', 'c', 'i', 'e', 's')
-    CEREAL_RAPIDJSON_STRING_(PatternProperties, 'p', 'a', 't', 't', 'e', 'r', 'n', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
-    CEREAL_RAPIDJSON_STRING_(AdditionalProperties, 'a', 'd', 'd', 'i', 't', 'i', 'o', 'n', 'a', 'l', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
-    CEREAL_RAPIDJSON_STRING_(MinProperties, 'm', 'i', 'n', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
-    CEREAL_RAPIDJSON_STRING_(MaxProperties, 'm', 'a', 'x', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
-    CEREAL_RAPIDJSON_STRING_(Items, 'i', 't', 'e', 'm', 's')
-    CEREAL_RAPIDJSON_STRING_(MinItems, 'm', 'i', 'n', 'I', 't', 'e', 'm', 's')
-    CEREAL_RAPIDJSON_STRING_(MaxItems, 'm', 'a', 'x', 'I', 't', 'e', 'm', 's')
-    CEREAL_RAPIDJSON_STRING_(AdditionalItems, 'a', 'd', 'd', 'i', 't', 'i', 'o', 'n', 'a', 'l', 'I', 't', 'e', 'm', 's')
-    CEREAL_RAPIDJSON_STRING_(UniqueItems, 'u', 'n', 'i', 'q', 'u', 'e', 'I', 't', 'e', 'm', 's')
-    CEREAL_RAPIDJSON_STRING_(MinLength, 'm', 'i', 'n', 'L', 'e', 'n', 'g', 't', 'h')
-    CEREAL_RAPIDJSON_STRING_(MaxLength, 'm', 'a', 'x', 'L', 'e', 'n', 'g', 't', 'h')
-    CEREAL_RAPIDJSON_STRING_(Pattern, 'p', 'a', 't', 't', 'e', 'r', 'n')
-    CEREAL_RAPIDJSON_STRING_(Minimum, 'm', 'i', 'n', 'i', 'm', 'u', 'm')
-    CEREAL_RAPIDJSON_STRING_(Maximum, 'm', 'a', 'x', 'i', 'm', 'u', 'm')
-    CEREAL_RAPIDJSON_STRING_(ExclusiveMinimum, 'e', 'x', 'c', 'l', 'u', 's', 'i', 'v', 'e', 'M', 'i', 'n', 'i', 'm', 'u', 'm')
-    CEREAL_RAPIDJSON_STRING_(ExclusiveMaximum, 'e', 'x', 'c', 'l', 'u', 's', 'i', 'v', 'e', 'M', 'a', 'x', 'i', 'm', 'u', 'm')
-    CEREAL_RAPIDJSON_STRING_(MultipleOf, 'm', 'u', 'l', 't', 'i', 'p', 'l', 'e', 'O', 'f')
-    CEREAL_RAPIDJSON_STRING_(DefaultValue, 'd', 'e', 'f', 'a', 'u', 'l', 't')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Null, 'n', 'u', 'l', 'l')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Boolean, 'b', 'o', 'o', 'l', 'e', 'a', 'n')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Object, 'o', 'b', 'j', 'e', 'c', 't')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Array, 'a', 'r', 'r', 'a', 'y')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(String, 's', 't', 'r', 'i', 'n', 'g')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Number, 'n', 'u', 'm', 'b', 'e', 'r')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Integer, 'i', 'n', 't', 'e', 'g', 'e', 'r')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Type, 't', 'y', 'p', 'e')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Enum, 'e', 'n', 'u', 'm')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(AllOf, 'a', 'l', 'l', 'O', 'f')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(AnyOf, 'a', 'n', 'y', 'O', 'f')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(OneOf, 'o', 'n', 'e', 'O', 'f')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Not, 'n', 'o', 't')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Properties, 'p', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Required, 'r', 'e', 'q', 'u', 'i', 'r', 'e', 'd')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Dependencies, 'd', 'e', 'p', 'e', 'n', 'd', 'e', 'n', 'c', 'i', 'e', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(PatternProperties, 'p', 'a', 't', 't', 'e', 'r', 'n', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(AdditionalProperties, 'a', 'd', 'd', 'i', 't', 'i', 'o', 'n', 'a', 'l', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(MinProperties, 'm', 'i', 'n', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(MaxProperties, 'm', 'a', 'x', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Items, 'i', 't', 'e', 'm', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(MinItems, 'm', 'i', 'n', 'I', 't', 'e', 'm', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(MaxItems, 'm', 'a', 'x', 'I', 't', 'e', 'm', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(AdditionalItems, 'a', 'd', 'd', 'i', 't', 'i', 'o', 'n', 'a', 'l', 'I', 't', 'e', 'm', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(UniqueItems, 'u', 'n', 'i', 'q', 'u', 'e', 'I', 't', 'e', 'm', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(MinLength, 'm', 'i', 'n', 'L', 'e', 'n', 'g', 't', 'h')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(MaxLength, 'm', 'a', 'x', 'L', 'e', 'n', 'g', 't', 'h')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Pattern, 'p', 'a', 't', 't', 'e', 'r', 'n')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Minimum, 'm', 'i', 'n', 'i', 'm', 'u', 'm')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Maximum, 'm', 'a', 'x', 'i', 'm', 'u', 'm')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(ExclusiveMinimum, 'e', 'x', 'c', 'l', 'u', 's', 'i', 'v', 'e', 'M', 'i', 'n', 'i', 'm', 'u', 'm')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(ExclusiveMaximum, 'e', 'x', 'c', 'l', 'u', 's', 'i', 'v', 'e', 'M', 'a', 'x', 'i', 'm', 'u', 'm')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(MultipleOf, 'm', 'u', 'l', 't', 'i', 'p', 'l', 'e', 'O', 'f')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(DefaultValue, 'd', 'e', 'f', 'a', 'u', 'l', 't')
 
-#undef CEREAL_RAPIDJSON_STRING_
+#undef TIMEMORY_CEREAL_RAPIDJSON_STRING_
 
 private:
     enum SchemaValueType {
@@ -1070,9 +1070,9 @@ private:
         kTotalSchemaType
     };
 
-#if CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX
         typedef internal::GenericRegex<EncodingType, AllocatorType> RegexType;
-#elif CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
+#elif TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
         typedef std::basic_regex<Ch> RegexType;
 #else
         typedef char RegexType;
@@ -1127,7 +1127,7 @@ private:
         }
     }
 
-#if CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_INTERNALREGEX
     template <typename ValueType>
     RegexType* CreatePattern(const ValueType& value) {
         if (value.IsString()) {
@@ -1146,7 +1146,7 @@ private:
         GenericRegexSearch<RegexType> rs(*pattern);
         return rs.Search(str);
     }
-#elif CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
+#elif TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
     template <typename ValueType>
     RegexType* CreatePattern(const ValueType& value) {
         if (value.IsString()) {
@@ -1170,7 +1170,7 @@ private:
     RegexType* CreatePattern(const ValueType&) { return 0; }
 
     static bool IsPatternMatch(const RegexType*, const Ch *, SizeType) { return true; }
-#endif // CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
+#endif // TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_USE_STDREGEX
 
     void AddType(const ValueType& type) {
         if      (type == GetNullString()   ) type_ |= 1 << kNullSchemaType;
@@ -1187,7 +1187,7 @@ private:
             context.hasher = context.factory.CreateHasher();
 
         if (validatorCount_) {
-            CEREAL_RAPIDJSON_ASSERT(context.validators == 0);
+            TIMEMORY_CEREAL_RAPIDJSON_ASSERT(context.validators == 0);
             context.validators = static_cast<ISchemaValidator**>(context.factory.MallocState(sizeof(ISchemaValidator*) * validatorCount_));
             context.validatorCount = validatorCount_;
 
@@ -1235,19 +1235,19 @@ private:
     bool CheckInt(Context& context, int64_t i) const {
         if (!(type_ & ((1 << kIntegerSchemaType) | (1 << kNumberSchemaType)))) {
             DisallowedType(context, GetIntegerString());
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
         }
 
         if (!minimum_.IsNull()) {
             if (minimum_.IsInt64()) {
                 if (exclusiveMinimum_ ? i <= minimum_.GetInt64() : i < minimum_.GetInt64()) {
                     context.error_handler.BelowMinimum(i, minimum_, exclusiveMinimum_);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinimumString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinimumString());
                 }
             }
             else if (minimum_.IsUint64()) {
                 context.error_handler.BelowMinimum(i, minimum_, exclusiveMinimum_);
-                CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinimumString()); // i <= max(int64_t) < minimum.GetUint64()
+                TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinimumString()); // i <= max(int64_t) < minimum.GetUint64()
             }
             else if (!CheckDoubleMinimum(context, static_cast<double>(i)))
                 return false;
@@ -1257,7 +1257,7 @@ private:
             if (maximum_.IsInt64()) {
                 if (exclusiveMaximum_ ? i >= maximum_.GetInt64() : i > maximum_.GetInt64()) {
                     context.error_handler.AboveMaximum(i, maximum_, exclusiveMaximum_);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaximumString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaximumString());
                 }
             }
             else if (maximum_.IsUint64()) { }
@@ -1270,7 +1270,7 @@ private:
             if (multipleOf_.IsUint64()) {
                 if (static_cast<uint64_t>(i >= 0 ? i : -i) % multipleOf_.GetUint64() != 0) {
                     context.error_handler.NotMultipleOf(i, multipleOf_);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMultipleOfString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMultipleOfString());
                 }
             }
             else if (!CheckDoubleMultipleOf(context, static_cast<double>(i)))
@@ -1283,14 +1283,14 @@ private:
     bool CheckUint(Context& context, uint64_t i) const {
         if (!(type_ & ((1 << kIntegerSchemaType) | (1 << kNumberSchemaType)))) {
             DisallowedType(context, GetIntegerString());
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetTypeString());
         }
 
         if (!minimum_.IsNull()) {
             if (minimum_.IsUint64()) {
                 if (exclusiveMinimum_ ? i <= minimum_.GetUint64() : i < minimum_.GetUint64()) {
                     context.error_handler.BelowMinimum(i, minimum_, exclusiveMinimum_);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinimumString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinimumString());
                 }
             }
             else if (minimum_.IsInt64())
@@ -1303,12 +1303,12 @@ private:
             if (maximum_.IsUint64()) {
                 if (exclusiveMaximum_ ? i >= maximum_.GetUint64() : i > maximum_.GetUint64()) {
                     context.error_handler.AboveMaximum(i, maximum_, exclusiveMaximum_);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaximumString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaximumString());
                 }
             }
             else if (maximum_.IsInt64()) {
                 context.error_handler.AboveMaximum(i, maximum_, exclusiveMaximum_);
-                CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaximumString()); // i >= 0 > maximum_
+                TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaximumString()); // i >= 0 > maximum_
             }
             else if (!CheckDoubleMaximum(context, static_cast<double>(i)))
                 return false;
@@ -1318,7 +1318,7 @@ private:
             if (multipleOf_.IsUint64()) {
                 if (i % multipleOf_.GetUint64() != 0) {
                     context.error_handler.NotMultipleOf(i, multipleOf_);
-                    CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMultipleOfString());
+                    TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMultipleOfString());
                 }
             }
             else if (!CheckDoubleMultipleOf(context, static_cast<double>(i)))
@@ -1331,7 +1331,7 @@ private:
     bool CheckDoubleMinimum(Context& context, double d) const {
         if (exclusiveMinimum_ ? d <= minimum_.GetDouble() : d < minimum_.GetDouble()) {
             context.error_handler.BelowMinimum(d, minimum_, exclusiveMinimum_);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinimumString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMinimumString());
         }
         return true;
     }
@@ -1339,7 +1339,7 @@ private:
     bool CheckDoubleMaximum(Context& context, double d) const {
         if (exclusiveMaximum_ ? d >= maximum_.GetDouble() : d > maximum_.GetDouble()) {
             context.error_handler.AboveMaximum(d, maximum_, exclusiveMaximum_);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaximumString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMaximumString());
         }
         return true;
     }
@@ -1350,7 +1350,7 @@ private:
         double r = a - q * b;
         if (r > 0.0) {
             context.error_handler.NotMultipleOf(d, multipleOf_);
-            CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMultipleOfString());
+            TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(GetMultipleOfString());
         }
         return true;
     }
@@ -1444,7 +1444,7 @@ private:
 
 template<typename Stack, typename Ch>
 struct TokenHelper {
-    CEREAL_RAPIDJSON_FORCEINLINE static void AppendIndexToken(Stack& documentStack, SizeType index) {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE static void AppendIndexToken(Stack& documentStack, SizeType index) {
         *documentStack.template Push<Ch>() = '/';
         char buffer[21];
         size_t length = static_cast<size_t>((sizeof(SizeType) == 4 ? u32toa(index, buffer) : u64toa(index, buffer)) - buffer);
@@ -1456,7 +1456,7 @@ struct TokenHelper {
 // Partial specialized version for char to prevent buffer copying.
 template <typename Stack>
 struct TokenHelper<Stack, char> {
-    CEREAL_RAPIDJSON_FORCEINLINE static void AppendIndexToken(Stack& documentStack, SizeType index) {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE static void AppendIndexToken(Stack& documentStack, SizeType index) {
         if (sizeof(SizeType) == 4) {
             char *buffer = documentStack.template Push<char>(1 + 10); // '/' + uint
             *buffer++ = '/';
@@ -1534,7 +1534,7 @@ public:
         schemaRef_(allocator, kInitialSchemaRefSize)
     {
         if (!allocator_)
-            ownAllocator_ = allocator_ = CEREAL_RAPIDJSON_NEW(Allocator)();
+            ownAllocator_ = allocator_ = TIMEMORY_CEREAL_RAPIDJSON_NEW(Allocator)();
 
         Ch noUri[1] = {0};
         uri_.SetString(uri ? uri : noUri, uriLength, *allocator_);
@@ -1564,14 +1564,14 @@ public:
             refEntry->~SchemaRefEntry();
         }
 
-        CEREAL_RAPIDJSON_ASSERT(root_ != 0);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(root_ != 0);
 
         schemaRef_.ShrinkToFit(); // Deallocate all memory for ref
     }
 
-#if CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
+#if TIMEMORY_CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
     //! Move constructor in C++11
-    GenericSchemaDocument(GenericSchemaDocument&& rhs) CEREAL_RAPIDJSON_NOEXCEPT :
+    GenericSchemaDocument(GenericSchemaDocument&& rhs) TIMEMORY_CEREAL_RAPIDJSON_NOEXCEPT :
         remoteProvider_(rhs.remoteProvider_),
         allocator_(rhs.allocator_),
         ownAllocator_(rhs.ownAllocator_),
@@ -1598,7 +1598,7 @@ public:
             Allocator::Free(typeless_);
         }
 
-        CEREAL_RAPIDJSON_DELETE(ownAllocator_);
+        TIMEMORY_CEREAL_RAPIDJSON_DELETE(ownAllocator_);
     }
 
     const URIType& GetURI() const { return uri_; }
@@ -1650,7 +1650,7 @@ private:
     }
 
     void CreateSchema(const SchemaType** schema, const PointerType& pointer, const ValueType& v, const ValueType& document) {
-        CEREAL_RAPIDJSON_ASSERT(pointer.IsValid());
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(pointer.IsValid());
         if (v.IsObject()) {
             if (!HandleRefSchema(pointer, schema, v, document)) {
                 SchemaType* s = new (allocator_->Malloc(sizeof(SchemaType))) SchemaType(this, pointer, v, document, allocator_);
@@ -1799,7 +1799,7 @@ public:
         currentError_(),
         missingDependents_(),
         valid_(true)
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
         , depth_(0)
 #endif
     {
@@ -1830,7 +1830,7 @@ public:
         currentError_(),
         missingDependents_(),
         valid_(true)
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
         , depth_(0)
 #endif
     {
@@ -1839,7 +1839,7 @@ public:
     //! Destructor.
     ~GenericSchemaValidator() {
         Reset();
-        CEREAL_RAPIDJSON_DELETE(ownStateAllocator_);
+        TIMEMORY_CEREAL_RAPIDJSON_DELETE(ownStateAllocator_);
     }
 
     //! Reset the internal states.
@@ -2045,43 +2045,43 @@ public:
         AddCurrentError(SchemaType::GetNotString());
     }
 
-#define CEREAL_RAPIDJSON_STRING_(name, ...) \
+#define TIMEMORY_CEREAL_RAPIDJSON_STRING_(name, ...) \
     static const StringRefType& Get##name##String() {\
         static const Ch s[] = { __VA_ARGS__, '\0' };\
         static const StringRefType v(s, static_cast<SizeType>(sizeof(s) / sizeof(Ch) - 1)); \
         return v;\
     }
 
-    CEREAL_RAPIDJSON_STRING_(InstanceRef, 'i', 'n', 's', 't', 'a', 'n', 'c', 'e', 'R', 'e', 'f')
-    CEREAL_RAPIDJSON_STRING_(SchemaRef, 's', 'c', 'h', 'e', 'm', 'a', 'R', 'e', 'f')
-    CEREAL_RAPIDJSON_STRING_(Expected, 'e', 'x', 'p', 'e', 'c', 't', 'e', 'd')
-    CEREAL_RAPIDJSON_STRING_(Actual, 'a', 'c', 't', 'u', 'a', 'l')
-    CEREAL_RAPIDJSON_STRING_(Disallowed, 'd', 'i', 's', 'a', 'l', 'l', 'o', 'w', 'e', 'd')
-    CEREAL_RAPIDJSON_STRING_(Missing, 'm', 'i', 's', 's', 'i', 'n', 'g')
-    CEREAL_RAPIDJSON_STRING_(Errors, 'e', 'r', 'r', 'o', 'r', 's')
-    CEREAL_RAPIDJSON_STRING_(Duplicates, 'd', 'u', 'p', 'l', 'i', 'c', 'a', 't', 'e', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(InstanceRef, 'i', 'n', 's', 't', 'a', 'n', 'c', 'e', 'R', 'e', 'f')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(SchemaRef, 's', 'c', 'h', 'e', 'm', 'a', 'R', 'e', 'f')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Expected, 'e', 'x', 'p', 'e', 'c', 't', 'e', 'd')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Actual, 'a', 'c', 't', 'u', 'a', 'l')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Disallowed, 'd', 'i', 's', 'a', 'l', 'l', 'o', 'w', 'e', 'd')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Missing, 'm', 'i', 's', 's', 'i', 'n', 'g')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Errors, 'e', 'r', 'r', 'o', 'r', 's')
+    TIMEMORY_CEREAL_RAPIDJSON_STRING_(Duplicates, 'd', 'u', 'p', 'l', 'i', 'c', 'a', 't', 'e', 's')
 
-#undef CEREAL_RAPIDJSON_STRING_
+#undef TIMEMORY_CEREAL_RAPIDJSON_STRING_
 
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
-#define CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_VERBOSE_() \
-CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN\
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_VERBOSE_() \
+TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN\
     *documentStack_.template Push<Ch>() = '\0';\
     documentStack_.template Pop<Ch>(1);\
     internal::PrintInvalidDocument(documentStack_.template Bottom<Ch>());\
-CEREAL_RAPIDJSON_MULTILINEMACRO_END
+TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_END
 #else
-#define CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_VERBOSE_()
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_VERBOSE_()
 #endif
 
-#define CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(method, arg1)\
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(method, arg1)\
     if (!valid_) return false; \
     if (!BeginValue() || !CurrentSchema().method arg1) {\
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_VERBOSE_();\
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_VERBOSE_();\
         return valid_ = false;\
     }
 
-#define CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(method, arg2)\
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(method, arg2)\
     for (Context* context = schemaStack_.template Bottom<Context>(); context != schemaStack_.template End<Context>(); context++) {\
         if (context->hasher)\
             static_cast<HasherType*>(context->hasher)->method arg2;\
@@ -2093,29 +2093,29 @@ CEREAL_RAPIDJSON_MULTILINEMACRO_END
                 static_cast<GenericSchemaValidator*>(context->patternPropertiesValidators[i_])->method arg2;\
     }
 
-#define CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_(method, arg2)\
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_(method, arg2)\
     return valid_ = EndValue() && (!outputHandler_ || outputHandler_->method arg2)
 
-#define CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(method, arg1, arg2) \
-    CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_   (method, arg1);\
-    CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(method, arg2);\
-    CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_     (method, arg2)
+#define TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(method, arg1, arg2) \
+    TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_   (method, arg1);\
+    TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(method, arg2);\
+    TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_     (method, arg2)
 
-    bool Null()             { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Null,   (CurrentContext()), ( )); }
-    bool Bool(bool b)       { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Bool,   (CurrentContext(), b), (b)); }
-    bool Int(int i)         { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Int,    (CurrentContext(), i), (i)); }
-    bool Uint(unsigned u)   { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Uint,   (CurrentContext(), u), (u)); }
-    bool Int64(int64_t i)   { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Int64,  (CurrentContext(), i), (i)); }
-    bool Uint64(uint64_t u) { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Uint64, (CurrentContext(), u), (u)); }
-    bool Double(double d)   { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Double, (CurrentContext(), d), (d)); }
+    bool Null()             { TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Null,   (CurrentContext()), ( )); }
+    bool Bool(bool b)       { TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Bool,   (CurrentContext(), b), (b)); }
+    bool Int(int i)         { TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Int,    (CurrentContext(), i), (i)); }
+    bool Uint(unsigned u)   { TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Uint,   (CurrentContext(), u), (u)); }
+    bool Int64(int64_t i)   { TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Int64,  (CurrentContext(), i), (i)); }
+    bool Uint64(uint64_t u) { TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Uint64, (CurrentContext(), u), (u)); }
+    bool Double(double d)   { TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(Double, (CurrentContext(), d), (d)); }
     bool RawNumber(const Ch* str, SizeType length, bool copy)
-                                    { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(String, (CurrentContext(), str, length, copy), (str, length, copy)); }
+                                    { TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(String, (CurrentContext(), str, length, copy), (str, length, copy)); }
     bool String(const Ch* str, SizeType length, bool copy)
-                                    { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(String, (CurrentContext(), str, length, copy), (str, length, copy)); }
+                                    { TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(String, (CurrentContext(), str, length, copy), (str, length, copy)); }
 
     bool StartObject() {
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(StartObject, (CurrentContext()));
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(StartObject, ());
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(StartObject, (CurrentContext()));
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(StartObject, ());
         return valid_ = !outputHandler_ || outputHandler_->StartObject();
     }
     
@@ -2123,39 +2123,39 @@ CEREAL_RAPIDJSON_MULTILINEMACRO_END
         if (!valid_) return false;
         AppendToken(str, len);
         if (!CurrentSchema().Key(CurrentContext(), str, len, copy)) return valid_ = false;
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(Key, (str, len, copy));
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(Key, (str, len, copy));
         return valid_ = !outputHandler_ || outputHandler_->Key(str, len, copy);
     }
     
     bool EndObject(SizeType memberCount) { 
         if (!valid_) return false;
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(EndObject, (memberCount));
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(EndObject, (memberCount));
         if (!CurrentSchema().EndObject(CurrentContext(), memberCount)) return valid_ = false;
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_(EndObject, (memberCount));
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_(EndObject, (memberCount));
     }
 
     bool StartArray() {
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(StartArray, (CurrentContext()));
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(StartArray, ());
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(StartArray, (CurrentContext()));
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(StartArray, ());
         return valid_ = !outputHandler_ || outputHandler_->StartArray();
     }
     
     bool EndArray(SizeType elementCount) {
         if (!valid_) return false;
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(EndArray, (elementCount));
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(EndArray, (elementCount));
         if (!CurrentSchema().EndArray(CurrentContext(), elementCount)) return valid_ = false;
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_(EndArray, (elementCount));
+        TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_(EndArray, (elementCount));
     }
 
-#undef CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_VERBOSE_
-#undef CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_
-#undef CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_
-#undef CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_
+#undef TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_VERBOSE_
+#undef TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_
+#undef TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_
+#undef TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_
 
     // Implementation of ISchemaStateFactory<SchemaType>
     virtual ISchemaValidator* CreateSchemaValidator(const SchemaType& root) {
         return new (GetStateAllocator().Malloc(sizeof(GenericSchemaValidator))) GenericSchemaValidator(*schemaDocument_, root, documentStack_.template Bottom<char>(), documentStack_.GetSize(),
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
         depth_ + 1,
 #endif
         &GetStateAllocator());
@@ -2198,7 +2198,7 @@ private:
         const SchemaDocumentType& schemaDocument,
         const SchemaType& root,
         const char* basePath, size_t basePathSize,
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
         unsigned depth,
 #endif
         StateAllocator* allocator = 0,
@@ -2216,7 +2216,7 @@ private:
         currentError_(),
         missingDependents_(),
         valid_(true)
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
         , depth_(depth)
 #endif
     {
@@ -2226,7 +2226,7 @@ private:
 
     StateAllocator& GetStateAllocator() {
         if (!stateAllocator_)
-            stateAllocator_ = ownStateAllocator_ = CEREAL_RAPIDJSON_NEW(StateAllocator)();
+            stateAllocator_ = ownStateAllocator_ = TIMEMORY_CEREAL_RAPIDJSON_NEW(StateAllocator)();
         return *stateAllocator_;
     }
 
@@ -2244,7 +2244,7 @@ private:
             const SchemaType** sa = CurrentContext().patternPropertiesSchemas;
             typename Context::PatternValidatorType patternValidatorType = CurrentContext().valuePatternValidatorType;
             bool valueUniqueness = CurrentContext().valueUniqueness;
-            CEREAL_RAPIDJSON_ASSERT(CurrentContext().valueSchema);
+            TIMEMORY_CEREAL_RAPIDJSON_ASSERT(CurrentContext().valueSchema);
             PushSchema(*CurrentContext().valueSchema);
 
             if (count > 0) {
@@ -2265,7 +2265,7 @@ private:
         if (!CurrentSchema().EndValue(CurrentContext()))
             return false;
 
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
         GenericStringBuffer<EncodingType> sb;
         schemaDocument_->GetPointer(&CurrentSchema()).Stringify(sb);
 
@@ -2287,7 +2287,7 @@ private:
                 for (typename HashCodeArray::ConstValueIterator itr = a->Begin(); itr != a->End(); ++itr)
                     if (itr->GetUint64() == h) {
                         DuplicateItems(static_cast<SizeType>(itr - a->Begin()), a->Size());
-                        CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(SchemaType::GetUniqueItemsString());
+                        TIMEMORY_CEREAL_RAPIDJSON_INVALID_KEYWORD_RETURN(SchemaType::GetUniqueItemsString());
                     }
                 a->PushBack(h, GetStateAllocator());
             }
@@ -2317,9 +2317,9 @@ private:
         }
     }
 
-    CEREAL_RAPIDJSON_FORCEINLINE void PushSchema(const SchemaType& schema) { new (schemaStack_.template Push<Context>()) Context(*this, *this, &schema); }
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void PushSchema(const SchemaType& schema) { new (schemaStack_.template Push<Context>()) Context(*this, *this, &schema); }
     
-    CEREAL_RAPIDJSON_FORCEINLINE void PopSchema() {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void PopSchema() {
         Context* c = schemaStack_.template Pop<Context>(1);
         if (HashCodeArray* a = static_cast<HashCodeArray*>(c->arrayElementHashCodes)) {
             a->~HashCodeArray();
@@ -2409,7 +2409,7 @@ private:
     ValueType currentError_;
     ValueType missingDependents_;
     bool valid_;
-#if CEREAL_RAPIDJSON_SCHEMA_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_VERBOSE
     unsigned depth_;
 #endif
 };
@@ -2491,7 +2491,7 @@ private:
     bool isValid_;
 };
 
-CEREAL_RAPIDJSON_NAMESPACE_END
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 
-#endif // CEREAL_RAPIDJSON_SCHEMA_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_SCHEMA_H_

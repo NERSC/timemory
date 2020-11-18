@@ -12,22 +12,22 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_ISTREAMWRAPPER_H_
-#define CEREAL_RAPIDJSON_ISTREAMWRAPPER_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_ISTREAMWRAPPER_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_ISTREAMWRAPPER_H_
 
 #include "stream.h"
 #include <iosfwd>
 #include <ios>
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(padded)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(padded)
 #elif defined(_MSC_VER)
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(4351) // new behavior: elements of array 'array' will be default initialized
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(4351) // new behavior: elements of array 'array' will be default initialized
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 //! Wrapper of \c std::basic_istream into RapidJSON's Stream concept.
 /*!
@@ -65,7 +65,7 @@ public:
         \param bufferSize size of buffer in bytes. Must >=4 bytes.
     */
     BasicIStreamWrapper(StreamType &stream, char* buffer, size_t bufferSize) : stream_(stream), buffer_(buffer), bufferSize_(bufferSize), bufferLast_(0), current_(buffer_), readCount_(0), count_(0), eof_(false) { 
-        CEREAL_RAPIDJSON_ASSERT(bufferSize >= 4);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(bufferSize >= 4);
         Read();
     }
 
@@ -74,10 +74,10 @@ public:
     size_t Tell() const { return count_ + static_cast<size_t>(current_ - buffer_); }
 
     // Not implemented
-    void Put(Ch) { CEREAL_RAPIDJSON_ASSERT(false); }
-    void Flush() { CEREAL_RAPIDJSON_ASSERT(false); } 
-    Ch* PutBegin() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    size_t PutEnd(Ch*) { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    void Put(Ch) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); }
+    void Flush() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); } 
+    Ch* PutBegin() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    size_t PutEnd(Ch*) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
 
     // For encoding detection only.
     const Ch* Peek4() const {
@@ -120,9 +120,9 @@ typedef BasicIStreamWrapper<std::istream> IStreamWrapper;
 typedef BasicIStreamWrapper<std::wistream> WIStreamWrapper;
 
 #if defined(__clang__) || defined(_MSC_VER)
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
-#endif // CEREAL_RAPIDJSON_ISTREAMWRAPPER_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_ISTREAMWRAPPER_H_

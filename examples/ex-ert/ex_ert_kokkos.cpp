@@ -206,7 +206,7 @@ public:
     {
         if(!data.get())  // for input
             data = data_ptr_t(new ert_data_t());
-        ar(cereal::make_nvp("params", params), cereal::make_nvp("data", *data));
+        ar(tim::cereal::make_nvp("params", params), tim::cereal::make_nvp("data", *data));
     }
 
     //----------------------------------------------------------------------------------//

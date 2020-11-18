@@ -25,14 +25,12 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_DETAILS_STATIC_OBJECT_HPP_
-#define CEREAL_DETAILS_STATIC_OBJECT_HPP_
+#ifndef TIMEMORY_CEREAL_DETAILS_STATIC_OBJECT_HPP_
+#define TIMEMORY_CEREAL_DETAILS_STATIC_OBJECT_HPP_
 
 #include "timemory/tpls/cereal/cereal/macros.hpp"
 
-#if CEREAL_THREAD_SAFE
-#    include <mutex>
-#endif
+#include <mutex>
 
 //! Prevent link optimization from removing non-referenced static objects
 /*! Especially for polymorphic support, we create static objects which
@@ -44,22 +42,24 @@
     License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
     http://www.boost.org/LICENSE_1_0.txt) */
 
-#if !defined(CEREAL_DLL_EXPORT)
+#if !defined(TIMEMORY_CEREAL_DLL_EXPORT)
 #    ifdef _MSC_VER
-#        define CEREAL_DLL_EXPORT __declspec(dllexport)
+#        define TIMEMORY_CEREAL_DLL_EXPORT __declspec(dllexport)
 #    else  // clang or gcc
-#        define CEREAL_DLL_EXPORT __attribute__((visibility("default")))
+#        define TIMEMORY_CEREAL_DLL_EXPORT __attribute__((visibility("default")))
 #    endif
 #endif
 
-#if !defined(CEREAL_USED)
+#if !defined(TIMEMORY_CEREAL_USED)
 #    ifdef _MSC_VER
-#        define CEREAL_USED
+#        define TIMEMORY_CEREAL_USED
 #    else  // clang or gcc
-#        define CEREAL_USED __attribute__((__used__))
+#        define TIMEMORY_CEREAL_USED __attribute__((__used__))
 #    endif
 #endif
 
+namespace tim
+{
 namespace cereal
 {
 namespace detail
@@ -72,7 +72,7 @@ namespace detail
     serialization mechanisms to bind various archive types with
     different polymorphic classes */
 template <class T>
-class CEREAL_DLL_EXPORT StaticObject
+class TIMEMORY_CEREAL_DLL_EXPORT StaticObject
 {
 private:
     static T& create()
@@ -91,7 +91,6 @@ public:
     //! A class that acts like std::lock_guard
     class LockGuard
     {
-#if CEREAL_THREAD_SAFE
     public:
         LockGuard(std::mutex& m)
         : lock(m)
@@ -99,28 +98,17 @@ public:
 
     private:
         std::unique_lock<std::mutex> lock;
-#else
-    public:
-        LockGuard(LockGuard const&) = default;  // prevents implicit copy ctor warning
-        ~LockGuard() CEREAL_NOEXCEPT {}         // prevents variable not used
-#endif
     };
 
     //! Attempts to lock this static object for the current scope
-    /*! @note This function is a no-op if cereal is not compiled with
-              thread safety enabled (CEREAL_THREAD_SAFE = 1).
-
+    /*!
         This function returns an object that holds a lock for
         this StaticObject that will release its lock upon destruction. This
         call will block until the lock is available. */
     static LockGuard lock()
     {
-#if CEREAL_THREAD_SAFE
         static std::mutex instanceMutex;
         return LockGuard{ instanceMutex };
-#else
-        return LockGuard{};
-#endif
     }
 
 private:
@@ -131,5 +119,6 @@ template <class T>
 T& StaticObject<T>::instance = StaticObject<T>::create();
 }  // namespace detail
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_DETAILS_STATIC_OBJECT_HPP_
+#endif  // TIMEMORY_CEREAL_DETAILS_STATIC_OBJECT_HPP_

@@ -12,22 +12,22 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_PRETTYWRITER_H_
-#define CEREAL_RAPIDJSON_PRETTYWRITER_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_PRETTYWRITER_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_PRETTYWRITER_H_
 
 #include "writer.h"
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(effc++)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(effc++)
 #endif
 
 #if defined(__clang__)
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(c++98-compat)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(c++98-compat)
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 //! Combination of PrettyWriter format flags.
 /*! \see PrettyWriter::SetFormatOptions
@@ -62,7 +62,7 @@ public:
     explicit PrettyWriter(StackAllocator* allocator = 0, size_t levelDepth = Base::kDefaultLevelDepth) : 
         Base(allocator, levelDepth), indentChar_(' '), indentCharCount_(4) {}
 
-#if CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
+#if TIMEMORY_CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
     PrettyWriter(PrettyWriter&& rhs) :
         Base(std::forward<PrettyWriter>(rhs)), indentChar_(rhs.indentChar_), indentCharCount_(rhs.indentCharCount_), formatOptions_(rhs.formatOptions_) {}
 #endif
@@ -73,7 +73,7 @@ public:
         \note The default indentation is 4 spaces.
     */
     PrettyWriter& SetIndent(Ch indentChar, unsigned indentCharCount) {
-        CEREAL_RAPIDJSON_ASSERT(indentChar == ' ' || indentChar == '\t' || indentChar == '\n' || indentChar == '\r');
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(indentChar == ' ' || indentChar == '\t' || indentChar == '\n' || indentChar == '\r');
         indentChar_ = indentChar;
         indentCharCount_ = indentCharCount;
         return *this;
@@ -101,20 +101,20 @@ public:
     bool Double(double d)       { PrettyPrefix(kNumberType); return Base::EndValue(Base::WriteDouble(d)); }
 
     bool RawNumber(const Ch* str, SizeType length, bool copy = false) {
-        CEREAL_RAPIDJSON_ASSERT(str != 0);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(str != 0);
         (void)copy;
         PrettyPrefix(kNumberType);
         return Base::EndValue(Base::WriteString(str, length));
     }
 
     bool String(const Ch* str, SizeType length, bool copy = false) {
-        CEREAL_RAPIDJSON_ASSERT(str != 0);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(str != 0);
         (void)copy;
         PrettyPrefix(kStringType);
         return Base::EndValue(Base::WriteString(str, length));
     }
 
-#if CEREAL_RAPIDJSON_HAS_STDSTRING
+#if TIMEMORY_CEREAL_RAPIDJSON_HAS_STDSTRING
     bool String(const std::basic_string<Ch>& str) {
         return String(str.data(), SizeType(str.size()));
     }
@@ -128,7 +128,7 @@ public:
 
     bool Key(const Ch* str, SizeType length, bool copy = false) { return String(str, length, copy); }
 
-#if CEREAL_RAPIDJSON_HAS_STDSTRING
+#if TIMEMORY_CEREAL_RAPIDJSON_HAS_STDSTRING
     bool Key(const std::basic_string<Ch>& str) {
         return Key(str.data(), SizeType(str.size()));
     }
@@ -136,9 +136,9 @@ public:
 	
     bool EndObject(SizeType memberCount = 0) {
         (void)memberCount;
-        CEREAL_RAPIDJSON_ASSERT(Base::level_stack_.GetSize() >= sizeof(typename Base::Level)); // not inside an Object
-        CEREAL_RAPIDJSON_ASSERT(!Base::level_stack_.template Top<typename Base::Level>()->inArray); // currently inside an Array, not Object
-        CEREAL_RAPIDJSON_ASSERT(0 == Base::level_stack_.template Top<typename Base::Level>()->valueCount % 2); // Object has a Key without a Value
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(Base::level_stack_.GetSize() >= sizeof(typename Base::Level)); // not inside an Object
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(!Base::level_stack_.template Top<typename Base::Level>()->inArray); // currently inside an Array, not Object
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(0 == Base::level_stack_.template Top<typename Base::Level>()->valueCount % 2); // Object has a Key without a Value
        
         bool empty = Base::level_stack_.template Pop<typename Base::Level>(1)->valueCount == 0;
 
@@ -148,7 +148,7 @@ public:
         }
         bool ret = Base::EndValue(Base::WriteEndObject());
         (void)ret;
-        CEREAL_RAPIDJSON_ASSERT(ret == true);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(ret == true);
         if (Base::level_stack_.Empty()) // end of json text
             Base::Flush();
         return true;
@@ -162,8 +162,8 @@ public:
 
     bool EndArray(SizeType memberCount = 0) {
         (void)memberCount;
-        CEREAL_RAPIDJSON_ASSERT(Base::level_stack_.GetSize() >= sizeof(typename Base::Level));
-        CEREAL_RAPIDJSON_ASSERT(Base::level_stack_.template Top<typename Base::Level>()->inArray);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(Base::level_stack_.GetSize() >= sizeof(typename Base::Level));
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(Base::level_stack_.template Top<typename Base::Level>()->inArray);
         bool empty = Base::level_stack_.template Pop<typename Base::Level>(1)->valueCount == 0;
 
         if (!empty && !(formatOptions_ & kFormatSingleLineArray)) {
@@ -172,7 +172,7 @@ public:
         }
         bool ret = Base::EndValue(Base::WriteEndArray());
         (void)ret;
-        CEREAL_RAPIDJSON_ASSERT(ret == true);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(ret == true);
         if (Base::level_stack_.Empty()) // end of json text
             Base::Flush();
         return true;
@@ -199,7 +199,7 @@ public:
         \note When using PrettyWriter::RawValue(), the result json may not be indented correctly.
     */
     bool RawValue(const Ch* json, size_t length, Type type) {
-        CEREAL_RAPIDJSON_ASSERT(json != 0);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(json != 0);
         PrettyPrefix(type);
         return Base::EndValue(Base::WriteRawValue(json, length));
     }
@@ -240,11 +240,11 @@ protected:
                     WriteIndent();
             }
             if (!level->inArray && level->valueCount % 2 == 0)
-                CEREAL_RAPIDJSON_ASSERT(type == kStringType);  // if it's in object, then even number should be a name
+                TIMEMORY_CEREAL_RAPIDJSON_ASSERT(type == kStringType);  // if it's in object, then even number should be a name
             level->valueCount++;
         }
         else {
-            CEREAL_RAPIDJSON_ASSERT(!Base::hasRoot_);  // Should only has one and only one root.
+            TIMEMORY_CEREAL_RAPIDJSON_ASSERT(!Base::hasRoot_);  // Should only has one and only one root.
             Base::hasRoot_ = true;
         }
     }
@@ -264,14 +264,14 @@ private:
     PrettyWriter& operator=(const PrettyWriter&);
 };
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #if defined(__clang__)
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_CEREAL_RAPIDJSON_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_TIMEMORY_CEREAL_RAPIDJSON_H_

@@ -1,5 +1,5 @@
-#ifndef CEREAL_RAPIDXML_UTILS_HPP_INCLUDED
-#define CEREAL_RAPIDXML_UTILS_HPP_INCLUDED
+#ifndef TIMEMORY_CEREAL_RAPIDXML_UTILS_HPP_INCLUDED
+#define TIMEMORY_CEREAL_RAPIDXML_UTILS_HPP_INCLUDED
 
 // Copyright (C) 2006, 2009 Marcin Kalicinski
 // Version 1.13
@@ -12,7 +12,10 @@
 #include <fstream>
 #include <stdexcept>
 
-namespace cereal {
+namespace tim
+{
+namespace cereal
+{
 namespace rapidxml
 {
 
@@ -118,6 +121,7 @@ namespace rapidxml
     }
 
 }
-} // namespace cereal
+}  // namespace cereal
+}  // namespace tim
 
 #endif

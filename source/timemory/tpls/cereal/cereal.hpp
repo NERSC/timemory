@@ -31,13 +31,9 @@
 #endif
 
 // define this so avoid warnings about noexcept functions throwing
-#if !defined(CEREAL_RAPIDJSON_ASSERT)
-#    define CEREAL_RAPIDJSON_ASSERT(x)                                                   \
+#if !defined(TIMEMORY_CEREAL_RAPIDJSON_ASSERT)
+#    define TIMEMORY_CEREAL_RAPIDJSON_ASSERT(x)                                          \
         {}
-#endif
-
-#if !defined(CEREAL_THREAD_SAFE)
-#    define CEREAL_THREAD_SAFE 1
 #endif
 
 // general

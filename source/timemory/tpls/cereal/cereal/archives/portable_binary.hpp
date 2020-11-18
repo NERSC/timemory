@@ -26,13 +26,15 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_ARCHIVES_PORTABLE_BINARY_HPP_
-#define CEREAL_ARCHIVES_PORTABLE_BINARY_HPP_
+#ifndef TIMEMORY_CEREAL_ARCHIVES_PORTABLE_BINARY_HPP_
+#define TIMEMORY_CEREAL_ARCHIVES_PORTABLE_BINARY_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <limits>
 #include <sstream>
 
+namespace tim
+{
 namespace cereal
 {
 namespace portable_binary_detail
@@ -141,7 +143,7 @@ public:
         this->operator()(options.is_little_endian());
     }
 
-    ~PortableBinaryOutputArchive() CEREAL_NOEXCEPT = default;
+    ~PortableBinaryOutputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
 
     //! Writes size bytes of data to the output stream
     template <std::streamsize DataSize>
@@ -262,7 +264,7 @@ public:
         itsConvertEndianness = options.is_little_endian() ^ streamLittleEndian;
     }
 
-    ~PortableBinaryInputArchive() CEREAL_NOEXCEPT = default;
+    ~PortableBinaryInputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
 
     //! Reads size bytes of data from the input stream
     /*! @param data The data to save
@@ -301,7 +303,7 @@ private:
 //! Saving for POD types to portable binary
 template <class T>
 inline typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-CEREAL_SAVE_FUNCTION_NAME(PortableBinaryOutputArchive& ar, T const& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(PortableBinaryOutputArchive& ar, T const& t)
 {
     static_assert(
         !std::is_floating_point<T>::value ||
@@ -313,7 +315,7 @@ CEREAL_SAVE_FUNCTION_NAME(PortableBinaryOutputArchive& ar, T const& t)
 //! Loading for POD types from portable binary
 template <class T>
 inline typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-CEREAL_LOAD_FUNCTION_NAME(PortableBinaryInputArchive& ar, T& t)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(PortableBinaryInputArchive& ar, T& t)
 {
     static_assert(
         !std::is_floating_point<T>::value ||
@@ -324,16 +326,18 @@ CEREAL_LOAD_FUNCTION_NAME(PortableBinaryInputArchive& ar, T& t)
 
 //! Serializing NVP types to portable binary
 template <class Archive, class T>
-inline CEREAL_ARCHIVE_RESTRICT(PortableBinaryInputArchive, PortableBinaryOutputArchive)
-    CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, NameValuePair<T>& t)
+inline TIMEMORY_CEREAL_ARCHIVE_RESTRICT(PortableBinaryInputArchive,
+                                        PortableBinaryOutputArchive)
+    TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, NameValuePair<T>& t)
 {
     ar(t.value);
 }
 
 //! Serializing SizeTags to portable binary
 template <class Archive, class T>
-inline CEREAL_ARCHIVE_RESTRICT(PortableBinaryInputArchive, PortableBinaryOutputArchive)
-    CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, SizeTag<T>& t)
+inline TIMEMORY_CEREAL_ARCHIVE_RESTRICT(PortableBinaryInputArchive,
+                                        PortableBinaryOutputArchive)
+    TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, SizeTag<T>& t)
 {
     ar(t.size);
 }
@@ -341,7 +345,8 @@ inline CEREAL_ARCHIVE_RESTRICT(PortableBinaryInputArchive, PortableBinaryOutputA
 //! Saving binary data to portable binary
 template <class T>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(PortableBinaryOutputArchive& ar, BinaryData<T> const& bd)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(PortableBinaryOutputArchive& ar,
+                                   BinaryData<T> const&         bd)
 {
     typedef typename std::remove_pointer<T>::type TT;
     static_assert(
@@ -355,7 +360,7 @@ CEREAL_SAVE_FUNCTION_NAME(PortableBinaryOutputArchive& ar, BinaryData<T> const& 
 //! Loading binary data from portable binary
 template <class T>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(PortableBinaryInputArchive& ar, BinaryData<T>& bd)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(PortableBinaryInputArchive& ar, BinaryData<T>& bd)
 {
     typedef typename std::remove_pointer<T>::type TT;
     static_assert(
@@ -366,13 +371,14 @@ CEREAL_LOAD_FUNCTION_NAME(PortableBinaryInputArchive& ar, BinaryData<T>& bd)
     ar.template loadBinary<sizeof(TT)>(bd.data, static_cast<std::streamsize>(bd.size));
 }
 }  // namespace cereal
+}  // namespace tim
 
 // register archives for polymorphic support
-CEREAL_REGISTER_ARCHIVE(cereal::PortableBinaryOutputArchive)
-CEREAL_REGISTER_ARCHIVE(cereal::PortableBinaryInputArchive)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(cereal::PortableBinaryOutputArchive)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(cereal::PortableBinaryInputArchive)
 
 // tie input and output archives together
-CEREAL_SETUP_ARCHIVE_TRAITS(cereal::PortableBinaryInputArchive,
-                            cereal::PortableBinaryOutputArchive)
+TIMEMORY_CEREAL_SETUP_ARCHIVE_TRAITS(cereal::PortableBinaryInputArchive,
+                                     cereal::PortableBinaryOutputArchive)
 
-#endif  // CEREAL_ARCHIVES_PORTABLE_BINARY_HPP_
+#endif  // TIMEMORY_CEREAL_ARCHIVES_PORTABLE_BINARY_HPP_

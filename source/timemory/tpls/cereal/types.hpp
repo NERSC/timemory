@@ -32,10 +32,6 @@
 #    pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
 
-#if !defined(CEREAL_THREAD_SAFE)
-#    define CEREAL_THREAD_SAFE 1
-#endif
-
 // types
 #include "timemory/tpls/cereal/cereal/types/array.hpp"
 #include "timemory/tpls/cereal/cereal/types/common.hpp"

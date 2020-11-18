@@ -43,8 +43,8 @@
    and /boost/serialization/void_cast.hpp for their implementation. Additional details
    found in other files split across serialization and archive.
 */
-#ifndef CEREAL_DETAILS_POLYMORPHIC_IMPL_HPP_
-#define CEREAL_DETAILS_POLYMORPHIC_IMPL_HPP_
+#ifndef TIMEMORY_CEREAL_DETAILS_POLYMORPHIC_IMPL_HPP_
+#define TIMEMORY_CEREAL_DETAILS_POLYMORPHIC_IMPL_HPP_
 
 #include "timemory/tpls/cereal/cereal/details/polymorphic_impl_fwd.hpp"
 #include "timemory/tpls/cereal/cereal/details/static_object.hpp"
@@ -61,18 +61,20 @@
 //! Helper macro to omit unused warning
 #if defined(__GNUC__)
 // GCC / clang don't want the function
-#    define CEREAL_BIND_TO_ARCHIVES_UNUSED_FUNCTION
+#    define TIMEMORY_CEREAL_BIND_TO_ARCHIVES_UNUSED_FUNCTION
 #else
-#    define CEREAL_BIND_TO_ARCHIVES_UNUSED_FUNCTION                                      \
+#    define TIMEMORY_CEREAL_BIND_TO_ARCHIVES_UNUSED_FUNCTION                             \
         static void unused() { (void) b; }
 #endif
 
 //! Binds a polymorhic type to all registered archives
 /*! This binds a polymorphic type to all compatible registered archives that
-    have been registered with CEREAL_REGISTER_ARCHIVE.  This must be called
+    have been registered with TIMEMORY_CEREAL_REGISTER_ARCHIVE.  This must be called
     after all archives are registered (usually after the archives themselves
     have been included). */
-#define CEREAL_BIND_TO_ARCHIVES(...)                                                     \
+#define TIMEMORY_CEREAL_BIND_TO_ARCHIVES(...)                                            \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     namespace detail                                                                     \
@@ -81,14 +83,18 @@
     struct init_binding<__VA_ARGS__>                                                     \
     {                                                                                    \
         static bind_to_archives<__VA_ARGS__> const& b;                                   \
-        CEREAL_BIND_TO_ARCHIVES_UNUSED_FUNCTION                                          \
+        TIMEMORY_CEREAL_BIND_TO_ARCHIVES_UNUSED_FUNCTION                                 \
     };                                                                                   \
     bind_to_archives<__VA_ARGS__> const& init_binding<__VA_ARGS__>::b =                  \
-        ::cereal::detail::StaticObject<bind_to_archives<__VA_ARGS__>>::getInstance()     \
+        ::tim::cereal::detail::StaticObject<                                             \
+            bind_to_archives<__VA_ARGS__>>::getInstance()                                \
             .bind();                                                                     \
+    }                                                                                    \
     }                                                                                    \
     } /* end namespaces */
 
+namespace tim
+{
 namespace cereal
 {
 /* Polymorphic casting support */
@@ -112,9 +118,12 @@ struct PolymorphicCaster
     PolymorphicCaster()                         = default;
     PolymorphicCaster(const PolymorphicCaster&) = default;
     PolymorphicCaster& operator=(const PolymorphicCaster&) = default;
-    PolymorphicCaster(PolymorphicCaster&&) CEREAL_NOEXCEPT {}
-    PolymorphicCaster& operator=(PolymorphicCaster&&) CEREAL_NOEXCEPT { return *this; }
-    virtual ~PolymorphicCaster() CEREAL_NOEXCEPT = default;
+    PolymorphicCaster(PolymorphicCaster&&) TIMEMORY_CEREAL_NOEXCEPT {}
+    PolymorphicCaster& operator=(PolymorphicCaster&&) TIMEMORY_CEREAL_NOEXCEPT
+    {
+        return *this;
+    }
+    virtual ~PolymorphicCaster() TIMEMORY_CEREAL_NOEXCEPT = default;
 
     //! Downcasts to the proper derived type
     virtual void const* downcast(void const* const ptr) const = 0;
@@ -144,12 +153,12 @@ struct PolymorphicCasters
         " a registered polymorphic type with an unregistered polymorphic cast.\n"        \
         "Could not find a path to a base class (" +                                      \
         util::demangle(baseInfo.name()) +                                                \
-        ") for type: " + ::cereal::util::demangledName<Derived>() +                      \
+        ") for type: " + ::tim::cereal::util::demangledName<Derived>() +                 \
         "\n"                                                                             \
         "Make sure you either serialize the base class at some point via "               \
         "cereal::base_class or cereal::virtual_base_class.\n"                            \
         "Alternatively, manually register the association with "                         \
-        "CEREAL_REGISTER_POLYMORPHIC_RELATION.");
+        "TIMEMORY_CEREAL_REGISTER_POLYMORPHIC_RELATION.");
 
     //! Checks if the mapping object that can perform the upcast or downcast exists, and
     //! returns it if so
@@ -251,12 +260,12 @@ struct PolymorphicCasters
 #undef UNREGISTERED_POLYMORPHIC_CAST_EXCEPTION
 };
 
-#ifdef CEREAL_OLDER_GCC
-#    define CEREAL_EMPLACE_MAP(map, key, value)                                          \
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
+#    define TIMEMORY_CEREAL_EMPLACE_MAP(map, key, value)                                 \
         map.insert(std::make_pair(std::move(key), std::move(value)));
-#else  // NOT CEREAL_OLDER_GCC
-#    define CEREAL_EMPLACE_MAP(map, key, value) map.emplace(key, value);
-#endif  // NOT_CEREAL_OLDER_GCC
+#else  // NOT TIMEMORY_CEREAL_OLDER_GCC
+#    define TIMEMORY_CEREAL_EMPLACE_MAP(map, key, value) map.emplace(key, value);
+#endif  // NOT_TIMEMORY_CEREAL_OLDER_GCC
 
 //! Strongly typed derivation of PolymorphicCaster
 template <class Base, class Derived>
@@ -285,7 +294,7 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
 
         // Insert reverse relation Derived->Base
         auto& reverseMap = StaticObject<PolymorphicCasters>::getInstance().reverseMap;
-        CEREAL_EMPLACE_MAP(reverseMap, derivedKey, baseKey);
+        TIMEMORY_CEREAL_EMPLACE_MAP(reverseMap, derivedKey, baseKey);
 
         // Find all chainable unregistered relations
         /* The strategy here is to process only the nodes in the class hierarchy graph
@@ -396,13 +405,13 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
 
 // Insert the new path if it doesn't exist, otherwise this will just lookup where to do
 // the replacement
-#ifdef CEREAL_OLDER_GCC
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
                                 auto old = unregisteredRelations.insert(
                                     hint, std::make_pair(parent, newPath));
-#else   // NOT CEREAL_OLDER_GCC
+#else   // NOT TIMEMORY_CEREAL_OLDER_GCC
                                 auto old = unregisteredRelations.emplace_hint(
                                     hint, parent, newPath);
-#endif  // NOT CEREAL_OLDER_GCC
+#endif  // NOT TIMEMORY_CEREAL_OLDER_GCC
 
                                 // If there was an uncommitted path, we need to perform a
                                 // replacement
@@ -418,7 +427,7 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
                 {
                     auto& derivedMap            = baseMap.find(it.first)->second;
                     derivedMap[it.second.first] = it.second.second;
-                    CEREAL_EMPLACE_MAP(reverseMap, it.second.first, it.first);
+                    TIMEMORY_CEREAL_EMPLACE_MAP(reverseMap, it.second.first, it.first);
                 }
 
                 // Mark current parent as modified
@@ -440,7 +449,7 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
         }      // end chainable relations
     }          // end PolymorphicVirtualCaster()
 
-#undef CEREAL_EMPLACE_MAP
+#undef TIMEMORY_CEREAL_EMPLACE_MAP
 
     //! Performs the proper downcast with the templated types
     void const* downcast(void const* const ptr) const override
@@ -467,7 +476,7 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
 
     Registration happens automatically via cereal::base_class and
    cereal::virtual_base_class instantiations. For cases where neither is called, see the
-   CEREAL_REGISTER_POLYMORPHIC_RELATION macro */
+   TIMEMORY_CEREAL_REGISTER_POLYMORPHIC_RELATION macro */
 template <class Base, class Derived>
 struct RegisterPolymorphicCaster
 {
@@ -594,8 +603,8 @@ struct InputBindingCreator
             Archive&           ar = *static_cast<Archive*>(arptr);
             std::shared_ptr<T> ptr;
 
-            ar(CEREAL_NVP_("ptr_wrapper",
-                           ::cereal::memory_detail::make_ptr_wrapper(ptr)));
+            ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper",
+                                    ::tim::cereal::memory_detail::make_ptr_wrapper(ptr)));
 
             dptr = PolymorphicCasters::template upcast<T>(ptr, baseInfo);
         };
@@ -606,8 +615,8 @@ struct InputBindingCreator
             Archive&           ar = *static_cast<Archive*>(arptr);
             std::unique_ptr<T> ptr;
 
-            ar(CEREAL_NVP_("ptr_wrapper",
-                           ::cereal::memory_detail::make_ptr_wrapper(ptr)));
+            ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper",
+                                    ::tim::cereal::memory_detail::make_ptr_wrapper(ptr)));
 
             dptr.reset(PolymorphicCasters::template upcast<T>(ptr.release(), baseInfo));
         };
@@ -632,14 +641,14 @@ struct OutputBindingCreator
         std::uint32_t id   = ar.registerPolymorphicType(name);
 
         // Serialize the id
-        ar(CEREAL_NVP_("polymorphic_id", id));
+        ar(TIMEMORY_CEREAL_NVP_("polymorphic_id", id));
 
         // If the msb of the id is 1, then the type name is new, and we should serialize
         // it
         if(id & detail::msb_32bit)
         {
             std::string namestring(name);
-            ar(CEREAL_NVP_("polymorphic_name", namestring));
+            ar(TIMEMORY_CEREAL_NVP_("polymorphic_name", namestring));
         }
     }
 
@@ -684,9 +693,10 @@ struct OutputBindingCreator
     static inline void savePolymorphicSharedPtr(Archive& ar, T const* dptr,
                                                 std::true_type /* has_shared_from_this */)
     {
-        ::cereal::memory_detail::EnableSharedStateHelper<T> state(const_cast<T*>(dptr));
-        PolymorphicSharedPointerWrapper                     psptr(dptr);
-        ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(psptr())));
+        ::tim::cereal::memory_detail::EnableSharedStateHelper<T> state(
+            const_cast<T*>(dptr));
+        PolymorphicSharedPointerWrapper psptr(dptr);
+        ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(psptr())));
     }
 
     //! Does the actual work of saving a polymorphic shared_ptr
@@ -701,7 +711,7 @@ struct OutputBindingCreator
         Archive& ar, T const* dptr, std::false_type /* has_shared_from_this */)
     {
         PolymorphicSharedPointerWrapper psptr(dptr);
-        ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(psptr())));
+        ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(psptr())));
     }
 
     //! Initialize the binding
@@ -726,12 +736,13 @@ struct OutputBindingCreator
 #ifdef _MSC_VER
             savePolymorphicSharedPtr(
                 ar, ptr,
-                ::cereal::traits::has_shared_from_this<T>::type());  // MSVC doesn't like
-                                                                     // typename here
-#else                                                                // not _MSC_VER
+                ::tim::cereal::traits::has_shared_from_this<T>::type());  // MSVC doesn't
+                                                                          // like typename
+                                                                          // here
+#else                                                                     // not _MSC_VER
             savePolymorphicSharedPtr(
-                ar, ptr, typename ::cereal::traits::has_shared_from_this<T>::type());
-#endif                                                               // _MSC_VER
+                ar, ptr, typename ::tim::cereal::traits::has_shared_from_this<T>::type());
+#endif                                                                    // _MSC_VER
         };
 
         serializers.unique_ptr = [&](void* arptr, void const* dptr,
@@ -742,7 +753,7 @@ struct OutputBindingCreator
             std::unique_ptr<T const, EmptyDeleter<T const>> const ptr(
                 PolymorphicCasters::template downcast<T>(dptr, baseInfo));
 
-            ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
+            ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
         };
 
         map.insert({ std::move(key), std::move(serializers) });
@@ -798,11 +809,11 @@ struct polymorphic_serialization_support
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
     //! Creates the appropriate bindings depending on whether the archive supports
     //! saving or loading
-    virtual CEREAL_DLL_EXPORT void instantiate() CEREAL_USED;
+    virtual TIMEMORY_CEREAL_DLL_EXPORT void instantiate() TIMEMORY_CEREAL_USED;
 #else   // NOT _MSC_VER
     //! Creates the appropriate bindings depending on whether the archive supports
     //! saving or loading
-    static CEREAL_DLL_EXPORT void instantiate() CEREAL_USED;
+    static TIMEMORY_CEREAL_DLL_EXPORT void instantiate() TIMEMORY_CEREAL_USED;
     //! This typedef causes the compiler to instantiate this static function
     typedef instantiate_function<instantiate> unused;
 #endif  // _MSC_VER
@@ -810,7 +821,7 @@ struct polymorphic_serialization_support
 
 // instantiate implementation
 template <class Archive, class T>
-CEREAL_DLL_EXPORT void
+TIMEMORY_CEREAL_DLL_EXPORT void
 polymorphic_serialization_support<Archive, T>::instantiate()
 {
     create_bindings<Archive, T>::save(
@@ -826,7 +837,7 @@ polymorphic_serialization_support<Archive, T>::instantiate()
 
 //! Begins the binding process of a type to all registered archives
 /*! Archives need to be registered prior to this struct being instantiated via
-    the CEREAL_REGISTER_ARCHIVE macro.  Overload resolution will then force
+    the TIMEMORY_CEREAL_REGISTER_ARCHIVE macro.  Overload resolution will then force
     several static objects to be made that allow us to bind together all
     registered archive types with the parameter type T. */
 template <class T, class Tag = polymorphic_binding_tag>
@@ -863,7 +874,7 @@ struct init_binding;
     accept pointers to archive types and have lower precedence than int.
 
     Since the compiler needs to check all possible overloads, the
-    other overloads created via CEREAL_REGISTER_ARCHIVE, which will have
+    other overloads created via TIMEMORY_CEREAL_REGISTER_ARCHIVE, which will have
     lower precedence due to requring a conversion from int to (Archive*),
     will cause their return types to be instantiated through the static object
     mechanisms even though they are never called.
@@ -875,5 +886,6 @@ instantiate_polymorphic_binding(T*, int, BindingTag, adl_tag)
 {}
 }  // namespace detail
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_DETAILS_POLYMORPHIC_IMPL_HPP_
+#endif  // TIMEMORY_CEREAL_DETAILS_POLYMORPHIC_IMPL_HPP_

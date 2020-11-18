@@ -120,23 +120,24 @@ time_fibonacci(int32_t n, int32_t cutoff)
 class mpi_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
+    static void SetUpTestSuite()
     {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                   = true;
-            tim::settings::verbose()     = 0;
-            tim::settings::debug()       = false;
-            tim::settings::json_output() = true;
-            tim::settings::mpi_thread()  = false;
-            tim::mpi::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output()        = true;
-            tim::settings::dart_count()         = 1;
-            tim::settings::banner()             = false;
-            tim::settings::collapse_processes() = false;
-        }
+        tim::settings::verbose()     = 0;
+        tim::settings::debug()       = false;
+        tim::settings::json_output() = true;
+        tim::settings::mpi_thread()  = false;
+        tim::mpi::initialize(_argc, _argv);
+        tim::timemory_init(_argc, _argv);
+        tim::settings::dart_output()        = true;
+        tim::settings::dart_count()         = 1;
+        tim::settings::banner()             = false;
+        tim::settings::collapse_processes() = false;
+    }
+
+    static void TearDownTestSuite()
+    {
+        tim::timemory_finalize();
+        tim::dmp::finalize();
     }
 };
 
@@ -388,12 +389,7 @@ main(int argc, char** argv)
     ::testing::InitGoogleTest(&argc, argv);
     _argc = argc;
     _argv = argv;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
+    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

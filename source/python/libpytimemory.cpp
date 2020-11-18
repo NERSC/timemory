@@ -246,15 +246,14 @@ PYBIND11_MODULE(libpytimemory, tim)
             auto enabled_signals = tim::signal_settings::get_enabled();
             tim::enable_signal_detection(enabled_signals);
             // executes after the signal has been caught
-            auto _exit_action = [](int nsig) {
-                auto _manager = manager_t::instance();
-                if(_manager)
+            auto _exit_action = [=](int nsig) {
+                if(_master_manager)
                 {
                     std::cout << "Finalizing after signal: " << nsig << " :: "
                               << tim::signal_settings::str(
                                      static_cast<tim::sys_signal>(nsig))
                               << std::endl;
-                    _manager->finalize();
+                    _master_manager->finalize();
                 }
             };
             //
@@ -604,7 +603,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
             _argv_i[_str.size()] = '\0';
-            _argv[i] = _argv_i;
+            _argv[i]             = _argv_i;
         }
         auto _argv_deleter = [](int fargc, char** fargv) {
             for(int i = 0; i < fargc; ++i)
@@ -625,7 +624,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             char* _argv_i = new char[_str.size() + 1];
             std::strcpy(_argv_i, _str.c_str());
             _argv_i[_str.size()] = '\0';
-            _argv[i] = _argv_i;
+            _argv[i]             = _argv_i;
         }
         tim::timemory_init(_argc, _argv, _prefix, _suffix);
         auto _manager = tim::manager::instance();

@@ -41,22 +41,10 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef CEREAL_MACROS_HPP_
-#define CEREAL_MACROS_HPP_
+#ifndef TIMEMORY_CEREAL_MACROS_HPP_
+#define TIMEMORY_CEREAL_MACROS_HPP_
 
-#ifndef CEREAL_THREAD_SAFE
-//! Whether cereal should be compiled for a threaded environment
-/*! This macro causes cereal to use mutexes to control access to
-    global internal state in a thread safe manner.
-
-    Note that even with this enabled you must still ensure that
-    archives are accessed by only one thread at a time; it is safe
-    to use multiple archives in parallel, but not to access one archive
-    from many places simultaneously. */
-#    define CEREAL_THREAD_SAFE 0
-#endif  // CEREAL_THREAD_SAFE
-
-#ifndef CEREAL_SIZE_TYPE
+#ifndef TIMEMORY_CEREAL_SIZE_TYPE
 //! Determines the data type used for size_type
 /*! cereal uses size_type to ensure that the serialized size of
     dynamic containers is compatible across different architectures
@@ -67,89 +55,89 @@
 
     If you choose to modify this type, ensure that you use a fixed
     size type (e.g. uint32_t). */
-#    define CEREAL_SIZE_TYPE uint64_t
-#endif  // CEREAL_SIZE_TYPE
+#    define TIMEMORY_CEREAL_SIZE_TYPE uint64_t
+#endif  // TIMEMORY_CEREAL_SIZE_TYPE
 
 // ######################################################################
-#ifndef CEREAL_SERIALIZE_FUNCTION_NAME
+#ifndef TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME
 //! The serialization/deserialization function name to search for.
-/*! You can define @c CEREAL_SERIALIZE_FUNCTION_NAME to be different assuming
+/*! You can define @c TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME to be different assuming
     you do so before this file is included. */
-#    define CEREAL_SERIALIZE_FUNCTION_NAME serialize
-#endif  // CEREAL_SERIALIZE_FUNCTION_NAME
+#    define TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME serialize
+#endif  // TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME
 
-#ifndef CEREAL_LOAD_FUNCTION_NAME
+#ifndef TIMEMORY_CEREAL_LOAD_FUNCTION_NAME
 //! The deserialization (load) function name to search for.
-/*! You can define @c CEREAL_LOAD_FUNCTION_NAME to be different assuming you do so
-    before this file is included. */
-#    define CEREAL_LOAD_FUNCTION_NAME load
-#endif  // CEREAL_LOAD_FUNCTION_NAME
+/*! You can define @c TIMEMORY_CEREAL_LOAD_FUNCTION_NAME to be different assuming you do
+   so before this file is included. */
+#    define TIMEMORY_CEREAL_LOAD_FUNCTION_NAME load
+#endif  // TIMEMORY_CEREAL_LOAD_FUNCTION_NAME
 
-#ifndef CEREAL_SAVE_FUNCTION_NAME
+#ifndef TIMEMORY_CEREAL_SAVE_FUNCTION_NAME
 //! The serialization (save) function name to search for.
-/*! You can define @c CEREAL_SAVE_FUNCTION_NAME to be different assuming you do so
-    before this file is included. */
-#    define CEREAL_SAVE_FUNCTION_NAME save
-#endif  // CEREAL_SAVE_FUNCTION_NAME
+/*! You can define @c TIMEMORY_CEREAL_SAVE_FUNCTION_NAME to be different assuming you do
+   so before this file is included. */
+#    define TIMEMORY_CEREAL_SAVE_FUNCTION_NAME save
+#endif  // TIMEMORY_CEREAL_SAVE_FUNCTION_NAME
 
-#ifndef CEREAL_LOAD_MINIMAL_FUNCTION_NAME
+#ifndef TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME
 //! The deserialization (load_minimal) function name to search for.
-/*! You can define @c CEREAL_LOAD_MINIMAL_FUNCTION_NAME to be different assuming you do so
-    before this file is included. */
-#    define CEREAL_LOAD_MINIMAL_FUNCTION_NAME load_minimal
-#endif  // CEREAL_LOAD_MINIMAL_FUNCTION_NAME
+/*! You can define @c TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME to be different assuming
+   you do so before this file is included. */
+#    define TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME load_minimal
+#endif  // TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME
 
-#ifndef CEREAL_SAVE_MINIMAL_FUNCTION_NAME
+#ifndef TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME
 //! The serialization (save_minimal) function name to search for.
-/*! You can define @c CEREAL_SAVE_MINIMAL_FUNCTION_NAME to be different assuming you do so
-    before this file is included. */
-#    define CEREAL_SAVE_MINIMAL_FUNCTION_NAME save_minimal
-#endif  // CEREAL_SAVE_MINIMAL_FUNCTION_NAME
+/*! You can define @c TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME to be different assuming
+   you do so before this file is included. */
+#    define TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME save_minimal
+#endif  // TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME
 
 // ######################################################################
-//! Defines the CEREAL_NOEXCEPT macro to use instead of noexcept
+//! Defines the TIMEMORY_CEREAL_NOEXCEPT macro to use instead of noexcept
 /*! If a compiler we support does not support noexcept, this macro
-    will detect this and define CEREAL_NOEXCEPT as a no-op
+    will detect this and define TIMEMORY_CEREAL_NOEXCEPT as a no-op
     @internal */
-#if !defined(CEREAL_HAS_NOEXCEPT)
+#if !defined(TIMEMORY_CEREAL_HAS_NOEXCEPT)
 #    if defined(__clang__)
 #        if __has_feature(cxx_noexcept)
-#            define CEREAL_HAS_NOEXCEPT
+#            define TIMEMORY_CEREAL_HAS_NOEXCEPT
 #        endif
 #    else  // NOT clang
 #        if defined(__GXX_EXPERIMENTAL_CXX0X__) &&                                       \
                 __GNUC__ * 10 + __GNUC_MINOR__ >= 46 ||                                  \
             defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023026
-#            define CEREAL_HAS_NOEXCEPT
+#            define TIMEMORY_CEREAL_HAS_NOEXCEPT
 #        endif  // end GCC/MSVC check
 #    endif      // end NOT clang block
 
-#    ifndef CEREAL_NOEXCEPT
-#        ifdef CEREAL_HAS_NOEXCEPT
-#            define CEREAL_NOEXCEPT noexcept
+#    ifndef TIMEMORY_CEREAL_NOEXCEPT
+#        ifdef TIMEMORY_CEREAL_HAS_NOEXCEPT
+#            define TIMEMORY_CEREAL_NOEXCEPT noexcept
 #        else
-#            define CEREAL_NOEXCEPT
-#        endif  // end CEREAL_HAS_NOEXCEPT
-#    endif      // end !defined(CEREAL_HAS_NOEXCEPT)
-#endif          // ifndef CEREAL_NOEXCEPT
+#            define TIMEMORY_CEREAL_NOEXCEPT
+#        endif  // end TIMEMORY_CEREAL_HAS_NOEXCEPT
+#    endif      // end !defined(TIMEMORY_CEREAL_HAS_NOEXCEPT)
+#endif          // ifndef TIMEMORY_CEREAL_NOEXCEPT
 
 // ######################################################################
 //! Checks if C++17 is available
 #if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-#    define CEREAL_HAS_CPP17
+#    define TIMEMORY_CEREAL_HAS_CPP17
 #endif
 
 //! Checks if C++14 is available
 #if __cplusplus >= 201402L
-#    define CEREAL_HAS_CPP14
+#    define TIMEMORY_CEREAL_HAS_CPP14
 #endif
 
 // ######################################################################
-//! Defines the CEREAL_ALIGNOF macro to use instead of alignof
+//! Defines the TIMEMORY_CEREAL_ALIGNOF macro to use instead of alignof
 #if defined(_MSC_VER) && _MSC_VER < 1900
-#    define CEREAL_ALIGNOF __alignof
+#    define TIMEMORY_CEREAL_ALIGNOF __alignof
 #else  // not MSVC 2013 or older
-#    define CEREAL_ALIGNOF alignof
+#    define TIMEMORY_CEREAL_ALIGNOF alignof
 #endif  // end MSVC check
 
-#endif  // CEREAL_MACROS_HPP_
+#endif  // TIMEMORY_CEREAL_MACROS_HPP_

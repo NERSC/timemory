@@ -644,7 +644,3 @@ manager::filtered_get_storage<Types...>::size(pointer_t         _manager,
 //
 //--------------------------------------------------------------------------------------//
 //
-
-#if !defined(_TIMEMORY_INTEL)
-CEREAL_CLASS_VERSION(tim::manager, 0)
-#endif

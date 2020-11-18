@@ -27,13 +27,15 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_BITSET_HPP_
-#define CEREAL_TYPES_BITSET_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_BITSET_HPP_
+#define TIMEMORY_CEREAL_TYPES_BITSET_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/tpls/cereal/cereal/types/string.hpp"
 #include <bitset>
 
+namespace tim
+{
 namespace cereal
 {
 namespace bitset_detail
@@ -54,9 +56,9 @@ template <class Archive, size_t N,
           traits::EnableIf<traits::is_output_serializable<
               BinaryData<std::uint32_t>, Archive>::value> = traits::sfinae>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::bitset<N> const& bits)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::bitset<N> const& bits)
 {
-    ar(CEREAL_NVP_("type", bitset_detail::type::bits));
+    ar(TIMEMORY_CEREAL_NVP_("type", bitset_detail::type::bits));
 
     // Serialize 8 bit chunks
     std::uint8_t chunk = 0;
@@ -89,24 +91,24 @@ template <class Archive, size_t N,
           traits::DisableIf<traits::is_output_serializable<
               BinaryData<std::uint32_t>, Archive>::value> = traits::sfinae>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::bitset<N> const& bits)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::bitset<N> const& bits)
 {
     try
     {
         auto const b = bits.to_ulong();
-        ar(CEREAL_NVP_("type", bitset_detail::type::ulong));
-        ar(CEREAL_NVP_("data", b));
+        ar(TIMEMORY_CEREAL_NVP_("type", bitset_detail::type::ulong));
+        ar(TIMEMORY_CEREAL_NVP_("data", b));
     } catch(std::overflow_error const&)
     {
         try
         {
             auto const b = bits.to_ullong();
-            ar(CEREAL_NVP_("type", bitset_detail::type::ullong));
-            ar(CEREAL_NVP_("data", b));
+            ar(TIMEMORY_CEREAL_NVP_("type", bitset_detail::type::ullong));
+            ar(TIMEMORY_CEREAL_NVP_("data", b));
         } catch(std::overflow_error const&)
         {
-            ar(CEREAL_NVP_("type", bitset_detail::type::string));
-            ar(CEREAL_NVP_("data", bits.to_string()));
+            ar(TIMEMORY_CEREAL_NVP_("type", bitset_detail::type::string));
+            ar(TIMEMORY_CEREAL_NVP_("data", bits.to_string()));
         }
     }
 }
@@ -114,31 +116,31 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::bitset<N> const& bits)
 //! Serializing (load) for std::bitset
 template <class Archive, size_t N>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::bitset<N>& bits)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::bitset<N>& bits)
 {
     bitset_detail::type t;
-    ar(CEREAL_NVP_("type", t));
+    ar(TIMEMORY_CEREAL_NVP_("type", t));
 
     switch(t)
     {
         case bitset_detail::type::ulong:
         {
             unsigned long b;
-            ar(CEREAL_NVP_("data", b));
+            ar(TIMEMORY_CEREAL_NVP_("data", b));
             bits = std::bitset<N>(b);
             break;
         }
         case bitset_detail::type::ullong:
         {
             unsigned long long b;
-            ar(CEREAL_NVP_("data", b));
+            ar(TIMEMORY_CEREAL_NVP_("data", b));
             bits = std::bitset<N>(b);
             break;
         }
         case bitset_detail::type::string:
         {
             std::string b;
-            ar(CEREAL_NVP_("data", b));
+            ar(TIMEMORY_CEREAL_NVP_("data", b));
             bits = std::bitset<N>(b);
             break;
         }
@@ -172,5 +174,6 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::bitset<N>& bits)
     }
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_BITSET_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_BITSET_HPP_

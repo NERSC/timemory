@@ -525,14 +525,14 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
         "Returns whether the provided string is a matching identifier for the type");
 
     auto _as_json = []() {
-        using archive_t   = cereal::MinimalJSONOutputArchive;
+        using archive_t   = tim::cereal::MinimalJSONOutputArchive;
         using api_t       = tim::project::python;
         using policy_type = tim::policy::output_archive<archive_t, api_t>;
         std::stringstream ss;
         property_t        prop{};
         {
             auto oa = policy_type::get(ss);
-            (*oa)(cereal::make_nvp("properties", prop));
+            (*oa)(tim::cereal::make_nvp("properties", prop));
         }
         auto json_module = py::module::import("json");
         return json_module.attr("loads")(ss.str());

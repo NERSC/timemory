@@ -27,12 +27,12 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_DETAILS_TRAITS_HPP_
-#define CEREAL_DETAILS_TRAITS_HPP_
+#ifndef TIMEMORY_CEREAL_DETAILS_TRAITS_HPP_
+#define TIMEMORY_CEREAL_DETAILS_TRAITS_HPP_
 
 #ifndef __clang__
 #    if(__GNUC__ == 4 && __GNUC_MINOR__ <= 7)
-#        define CEREAL_OLDER_GCC
+#        define TIMEMORY_CEREAL_OLDER_GCC
 #    endif  // gcc 4.7 or earlier
 #endif      // __clang__
 
@@ -42,6 +42,8 @@
 #include "timemory/tpls/cereal/cereal/access.hpp"
 #include "timemory/tpls/cereal/cereal/macros.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 namespace traits
@@ -59,13 +61,14 @@ struct delay_static_assert : std::false_type
 
 // ######################################################################
 // SFINAE Helpers
-#ifdef CEREAL_OLDER_GCC  // when VS supports better SFINAE, we can use this as the default
+#ifdef TIMEMORY_CEREAL_OLDER_GCC  // when VS supports better SFINAE, we can use this as
+                                  // the default
 template <typename>
 struct Void
 {
     typedef void type;
 };
-#endif  // CEREAL_OLDER_GCC
+#endif  // TIMEMORY_CEREAL_OLDER_GCC
 
 //! Return type for SFINAE Enablers
 enum class sfinae
@@ -185,7 +188,9 @@ struct get_input_from_output : no
 }  // namespace detail
 
 //! Sets up traits that relate an input archive to an output archive
-#define CEREAL_SETUP_ARCHIVE_TRAITS(InputArchive, OutputArchive)                         \
+#define TIMEMORY_CEREAL_SETUP_ARCHIVE_TRAITS(InputArchive, OutputArchive)                \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     namespace traits                                                                     \
@@ -204,11 +209,12 @@ struct get_input_from_output : no
     };                                                                                   \
     }                                                                                    \
     }                                                                                    \
+    }                                                                                    \
     } /* end namespaces */
 
 // ######################################################################
 //! Used to convert a MAKE_HAS_XXX macro into a versioned variant
-#define CEREAL_MAKE_VERSIONED_TEST , 0
+#define TIMEMORY_CEREAL_MAKE_VERSIONED_TEST , 0
 
 // ######################################################################
 //! Creates a test for whether a non const member function exists
@@ -218,9 +224,9 @@ struct get_input_from_output : no
     @param name The name of the function to test for (e.g. serialize, load, save)
     @param test_name The name to give the test for the function being tested for (e.g.
    serialize, versioned_serialize)
-    @param versioned Either blank or the macro CEREAL_MAKE_VERSIONED_TEST */
-#ifdef CEREAL_OLDER_GCC
-#    define CEREAL_MAKE_HAS_MEMBER_TEST(name, test_name, versioned)                      \
+    @param versioned Either blank or the macro TIMEMORY_CEREAL_MAKE_VERSIONED_TEST */
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
+#    define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_TEST(name, test_name, versioned)             \
         template <class T, class A, class SFINAE = void>                                 \
         struct has_member_##test_name : no                                               \
         {};                                                                              \
@@ -230,8 +236,8 @@ struct get_input_from_output : no
             typename detail::Void<decltype(cereal::access::member_##name(                \
                 std::declval<A&>(), std::declval<T&>() versioned))>::type> : yes         \
         {}
-#else  // NOT CEREAL_OLDER_GCC
-#    define CEREAL_MAKE_HAS_MEMBER_TEST(name, test_name, versioned)                      \
+#else  // NOT TIMEMORY_CEREAL_OLDER_GCC
+#    define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_TEST(name, test_name, versioned)             \
         namespace detail                                                                 \
         {                                                                                \
         template <class T, class A>                                                      \
@@ -253,13 +259,13 @@ struct get_input_from_output : no
         : std::integral_constant<                                                        \
               bool, detail::has_member_##name##_##versioned##_impl<T, A>::value>         \
         {}
-#endif  // NOT CEREAL_OLDER_GCC
+#endif  // NOT TIMEMORY_CEREAL_OLDER_GCC
 
 // ######################################################################
 //! Creates a test for whether a non const non-member function exists
 /*! This creates a class derived from std::integral_constant that will be true if
     the type has the proper non-member function for the given archive. */
-#define CEREAL_MAKE_HAS_NON_MEMBER_TEST(test_name, func, versioned)                      \
+#define TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_TEST(test_name, func, versioned)             \
     namespace detail                                                                     \
     {                                                                                    \
     template <class T, class A>                                                          \
@@ -282,41 +288,46 @@ struct get_input_from_output : no
 
 // ######################################################################
 // Member Serialize
-CEREAL_MAKE_HAS_MEMBER_TEST(serialize, serialize, );
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_TEST(serialize, serialize, );
 
 // ######################################################################
 // Member Serialize (versioned)
-CEREAL_MAKE_HAS_MEMBER_TEST(serialize, versioned_serialize, CEREAL_MAKE_VERSIONED_TEST);
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_TEST(serialize, versioned_serialize,
+                                     TIMEMORY_CEREAL_MAKE_VERSIONED_TEST);
 
 // ######################################################################
 // Non Member Serialize
-CEREAL_MAKE_HAS_NON_MEMBER_TEST(serialize, CEREAL_SERIALIZE_FUNCTION_NAME, );
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_TEST(serialize,
+                                         TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME, );
 
 // ######################################################################
 // Non Member Serialize (versioned)
-CEREAL_MAKE_HAS_NON_MEMBER_TEST(versioned_serialize, CEREAL_SERIALIZE_FUNCTION_NAME,
-                                CEREAL_MAKE_VERSIONED_TEST);
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_TEST(versioned_serialize,
+                                         TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME,
+                                         TIMEMORY_CEREAL_MAKE_VERSIONED_TEST);
 
 // ######################################################################
 // Member Load
-CEREAL_MAKE_HAS_MEMBER_TEST(load, load, );
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_TEST(load, load, );
 
 // ######################################################################
 // Member Load (versioned)
-CEREAL_MAKE_HAS_MEMBER_TEST(load, versioned_load, CEREAL_MAKE_VERSIONED_TEST);
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_TEST(load, versioned_load,
+                                     TIMEMORY_CEREAL_MAKE_VERSIONED_TEST);
 
 // ######################################################################
 // Non Member Load
-CEREAL_MAKE_HAS_NON_MEMBER_TEST(load, CEREAL_LOAD_FUNCTION_NAME, );
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_TEST(load, TIMEMORY_CEREAL_LOAD_FUNCTION_NAME, );
 
 // ######################################################################
 // Non Member Load (versioned)
-CEREAL_MAKE_HAS_NON_MEMBER_TEST(versioned_load, CEREAL_LOAD_FUNCTION_NAME,
-                                CEREAL_MAKE_VERSIONED_TEST);
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_TEST(versioned_load,
+                                         TIMEMORY_CEREAL_LOAD_FUNCTION_NAME,
+                                         TIMEMORY_CEREAL_MAKE_VERSIONED_TEST);
 
 // ######################################################################
-#undef CEREAL_MAKE_HAS_NON_MEMBER_TEST
-#undef CEREAL_MAKE_HAS_MEMBER_TEST
+#undef TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_TEST
+#undef TIMEMORY_CEREAL_MAKE_HAS_MEMBER_TEST
 
 // ######################################################################
 //! Creates a test for whether a member save function exists
@@ -324,9 +335,9 @@ CEREAL_MAKE_HAS_NON_MEMBER_TEST(versioned_load, CEREAL_LOAD_FUNCTION_NAME,
     the type has the proper member function for the given archive.
 
     @param test_name The name to give the test (e.g. save or versioned_save)
-    @param versioned Either blank or the macro CEREAL_MAKE_VERSIONED_TEST */
-#ifdef CEREAL_OLDER_GCC
-#    define CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL(test_name, versioned)                       \
+    @param versioned Either blank or the macro TIMEMORY_CEREAL_MAKE_VERSIONED_TEST */
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
+#    define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL(test_name, versioned)              \
         namespace detail                                                                 \
         {                                                                                \
         template <class T, class A>                                                      \
@@ -358,8 +369,8 @@ CEREAL_MAKE_HAS_NON_MEMBER_TEST(versioned_load, CEREAL_LOAD_FUNCTION_NAME,
             static const bool not_const_type = test2<T, A>();                            \
         };                                                                               \
         } /* end namespace detail */
-#else     /* NOT CEREAL_OLDER_GCC =================================== */
-#    define CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL(test_name, versioned)                       \
+#else     /* NOT TIMEMORY_CEREAL_OLDER_GCC =================================== */
+#    define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL(test_name, versioned)              \
         namespace detail                                                                 \
         {                                                                                \
         template <class T, class A>                                                      \
@@ -388,11 +399,11 @@ CEREAL_MAKE_HAS_NON_MEMBER_TEST(versioned_load, CEREAL_LOAD_FUNCTION_NAME,
                 std::is_same<decltype(test2<T, A>(0)), yes>::value;                      \
         };                                                                               \
         } /* end namespace detail */
-#endif    /* NOT CEREAL_OLDER_GCC */
+#endif    /* NOT TIMEMORY_CEREAL_OLDER_GCC */
 
 // ######################################################################
 // Member Save
-CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL(save, )
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL(save, )
 
 template <class T, class A>
 struct has_member_save
@@ -406,7 +417,8 @@ struct has_member_save
 
 // ######################################################################
 // Member Save (versioned)
-CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL(versioned_save, CEREAL_MAKE_VERSIONED_TEST)
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL(versioned_save,
+                                          TIMEMORY_CEREAL_MAKE_VERSIONED_TEST)
 
 template <class T, class A>
 struct has_member_versioned_save
@@ -419,7 +431,7 @@ struct has_member_versioned_save
 };
 
 // ######################################################################
-#undef CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL
+#undef TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_IMPL
 
 // ######################################################################
 //! Creates a test for whether a non-member save function exists
@@ -427,8 +439,8 @@ struct has_member_versioned_save
     the type has the proper non-member function for the given archive.
 
     @param test_name The name to give the test (e.g. save or versioned_save)
-    @param versioned Either blank or the macro CEREAL_MAKE_VERSIONED_TEST */
-#define CEREAL_MAKE_HAS_NON_MEMBER_SAVE_TEST(test_name, versioned)                       \
+    @param versioned Either blank or the macro TIMEMORY_CEREAL_MAKE_VERSIONED_TEST */
+#define TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_SAVE_TEST(test_name, versioned)              \
     namespace detail                                                                     \
     {                                                                                    \
     template <class T, class A>                                                          \
@@ -436,8 +448,9 @@ struct has_member_versioned_save
     {                                                                                    \
         template <class TT, class AA>                                                    \
         static auto test(int)                                                            \
-            -> decltype(CEREAL_SAVE_FUNCTION_NAME(std::declval<AA&>(),                   \
-                                                  std::declval<TT const&>() versioned),  \
+            -> decltype(TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(std::declval<AA&>(),          \
+                                                           std::declval<TT const&>()     \
+                                                               versioned),               \
                         yes());                                                          \
         template <class, class>                                                          \
         static no         test(...);                                                     \
@@ -445,7 +458,7 @@ struct has_member_versioned_save
                                                                                          \
         template <class TT, class AA>                                                    \
         static auto test2(int)                                                           \
-            -> decltype(CEREAL_SAVE_FUNCTION_NAME(                                       \
+            -> decltype(TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(                              \
                             std::declval<AA&>(),                                         \
                             std::declval<typename std::remove_const<TT>::type&>()        \
                                 versioned),                                              \
@@ -472,14 +485,15 @@ struct has_member_versioned_save
 
 // ######################################################################
 // Non Member Save
-CEREAL_MAKE_HAS_NON_MEMBER_SAVE_TEST(save, )
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_SAVE_TEST(save, )
 
 // ######################################################################
 // Non Member Save (versioned)
-CEREAL_MAKE_HAS_NON_MEMBER_SAVE_TEST(versioned_save, CEREAL_MAKE_VERSIONED_TEST)
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_SAVE_TEST(versioned_save,
+                                              TIMEMORY_CEREAL_MAKE_VERSIONED_TEST)
 
 // ######################################################################
-#undef CEREAL_MAKE_HAS_NON_MEMBER_SAVE_TEST
+#undef TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_SAVE_TEST
 
 // ######################################################################
 // Minimal Utilities
@@ -509,9 +523,9 @@ struct is_minimal_type
 
     @param test_name The name to give the test (e.g. save_minimal or
    versioned_save_minimal)
-    @param versioned Either blank or the macro CEREAL_MAKE_VERSIONED_TEST */
-#ifdef CEREAL_OLDER_GCC
-#    define CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL(test_name, versioned)               \
+    @param versioned Either blank or the macro TIMEMORY_CEREAL_MAKE_VERSIONED_TEST */
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
+#    define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL(test_name, versioned)      \
         namespace detail                                                                 \
         {                                                                                \
         template <class T, class A>                                                      \
@@ -546,8 +560,8 @@ struct is_minimal_type
             static const bool valid = value || !not_const_type;                          \
         };                                                                               \
         } /* end namespace detail */
-#else     /* NOT CEREAL_OLDER_GCC =================================== */
-#    define CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL(test_name, versioned)               \
+#else     /* NOT TIMEMORY_CEREAL_OLDER_GCC =================================== */
+#    define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL(test_name, versioned)      \
         namespace detail                                                                 \
         {                                                                                \
         template <class T, class A>                                                      \
@@ -577,7 +591,7 @@ struct is_minimal_type
             static const bool valid = value || !not_const_type;                          \
         };                                                                               \
         } /* end namespace detail */
-#endif    // NOT CEREAL_OLDER_GCC
+#endif    // NOT TIMEMORY_CEREAL_OLDER_GCC
 
 // ######################################################################
 //! Creates helpers for minimal save functions
@@ -587,8 +601,8 @@ struct is_minimal_type
 
     @param test_name The name to give the test (e.g. save_minimal or
    versioned_save_minimal)
-    @param versioned Either blank or the macro CEREAL_MAKE_VERSIONED_TEST */
-#define CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_HELPERS_IMPL(test_name, versioned)           \
+    @param versioned Either blank or the macro TIMEMORY_CEREAL_MAKE_VERSIONED_TEST */
+#define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_HELPERS_IMPL(test_name, versioned)  \
     namespace detail                                                                     \
     {                                                                                    \
     template <class T, class A, bool Valid>                                              \
@@ -612,7 +626,7 @@ struct is_minimal_type
 
     @param test_name The name to give the test (e.g. save_minimal or
    versioned_save_minimal) */
-#define CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST(test_name)                              \
+#define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST(test_name)                     \
     template <class T, class A>                                                          \
     struct has_member_##test_name                                                        \
     : std::integral_constant<bool, detail::has_member_##test_name##_impl<T, A>::value>   \
@@ -632,22 +646,22 @@ struct is_minimal_type
 
 // ######################################################################
 // Member Save Minimal
-CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL(save_minimal, )
-CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_HELPERS_IMPL(save_minimal, )
-CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST(save_minimal)
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL(save_minimal, )
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_HELPERS_IMPL(save_minimal, )
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST(save_minimal)
 
 // ######################################################################
 // Member Save Minimal (versioned)
-CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL(versioned_save_minimal,
-                                         CEREAL_MAKE_VERSIONED_TEST)
-CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_HELPERS_IMPL(versioned_save_minimal,
-                                                 CEREAL_MAKE_VERSIONED_TEST)
-CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST(versioned_save_minimal)
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL(versioned_save_minimal,
+                                                  TIMEMORY_CEREAL_MAKE_VERSIONED_TEST)
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_HELPERS_IMPL(
+    versioned_save_minimal, TIMEMORY_CEREAL_MAKE_VERSIONED_TEST)
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST(versioned_save_minimal)
 
 // ######################################################################
-#undef CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL
-#undef CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_HELPERS_IMPL
-#undef CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST
+#undef TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_IMPL
+#undef TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_HELPERS_IMPL
+#undef TIMEMORY_CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST
 
 // ######################################################################
 //! Creates a test for whether a non-member save_minimal function exists
@@ -656,26 +670,25 @@ CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST(versioned_save_minimal)
 
     @param test_name The name to give the test (e.g. save_minimal or
    versioned_save_minimal)
-    @param versioned Either blank or the macro CEREAL_MAKE_VERSIONED_TEST */
-#define CEREAL_MAKE_HAS_NON_MEMBER_SAVE_MINIMAL_TEST(test_name, versioned)               \
+    @param versioned Either blank or the macro TIMEMORY_CEREAL_MAKE_VERSIONED_TEST */
+#define TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_SAVE_MINIMAL_TEST(test_name, versioned)      \
     namespace detail                                                                     \
     {                                                                                    \
     template <class T, class A>                                                          \
     struct has_non_member_##test_name##_impl                                             \
     {                                                                                    \
         template <class TT, class AA>                                                    \
-        static auto test(int)                                                            \
-            -> decltype(CEREAL_SAVE_MINIMAL_FUNCTION_NAME(std::declval<AA const&>(),     \
-                                                          std::declval<TT const&>()      \
-                                                              versioned),                \
-                        yes());                                                          \
+        static auto test(int) -> decltype(TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(    \
+                                              std::declval<AA const&>(),                 \
+                                              std::declval<TT const&>() versioned),      \
+                                          yes());                                        \
         template <class, class>                                                          \
         static no         test(...);                                                     \
         static const bool value = std::is_same<decltype(test<T, A>(0)), yes>::value;     \
                                                                                          \
         template <class TT, class AA>                                                    \
         static auto test2(int)                                                           \
-            -> decltype(CEREAL_SAVE_MINIMAL_FUNCTION_NAME(                               \
+            -> decltype(TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(                      \
                             std::declval<AA const&>(),                                   \
                             std::declval<typename std::remove_const<TT>::type&>()        \
                                 versioned),                                              \
@@ -697,7 +710,7 @@ CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST(versioned_save_minimal)
     template <class T, class A>                                                          \
     struct get_non_member_##test_name##_type<T, A, true>                                 \
     {                                                                                    \
-        using type = decltype(CEREAL_SAVE_MINIMAL_FUNCTION_NAME(                         \
+        using type = decltype(TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(                \
             std::declval<A const&>(), std::declval<T const&>() versioned));              \
     };                                                                                   \
     } /* end namespace detail */                                                         \
@@ -725,15 +738,15 @@ CEREAL_MAKE_HAS_MEMBER_SAVE_MINIMAL_TEST(versioned_save_minimal)
 
 // ######################################################################
 // Non-Member Save Minimal
-CEREAL_MAKE_HAS_NON_MEMBER_SAVE_MINIMAL_TEST(save_minimal, )
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_SAVE_MINIMAL_TEST(save_minimal, )
 
 // ######################################################################
 // Non-Member Save Minimal (versioned)
-CEREAL_MAKE_HAS_NON_MEMBER_SAVE_MINIMAL_TEST(versioned_save_minimal,
-                                             CEREAL_MAKE_VERSIONED_TEST)
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_SAVE_MINIMAL_TEST(versioned_save_minimal,
+                                                      TIMEMORY_CEREAL_MAKE_VERSIONED_TEST)
 
 // ######################################################################
-#undef CEREAL_MAKE_HAS_NON_MEMBER_SAVE_MINIMAL_TEST
+#undef TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_SAVE_MINIMAL_TEST
 
 // ######################################################################
 // Load Minimal Utilities
@@ -818,9 +831,9 @@ struct AnyConvert
 
     @param test_name The name to give the test (e.g. load_minimal or
    versioned_load_minimal)
-    @param versioned Either blank or the macro CEREAL_MAKE_VERSIONED_TEST */
-#ifdef CEREAL_OLDER_GCC
-#    define CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL(test_name, versioned)               \
+    @param versioned Either blank or the macro TIMEMORY_CEREAL_MAKE_VERSIONED_TEST */
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
+#    define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL(test_name, versioned)      \
         namespace detail                                                                 \
         {                                                                                \
         template <class T, class A, class SFINAE = void>                                 \
@@ -845,8 +858,8 @@ struct AnyConvert
                 NoConvertConstRef<U>() versioned))>::type> : yes                         \
         {};                                                                              \
         } /* end namespace detail */
-#else     /* NOT CEREAL_OLDER_GCC =================================== */
-#    define CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL(test_name, versioned)               \
+#else     /* NOT TIMEMORY_CEREAL_OLDER_GCC =================================== */
+#    define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL(test_name, versioned)      \
         namespace detail                                                                 \
         {                                                                                \
         template <class T, class A>                                                      \
@@ -877,7 +890,7 @@ struct AnyConvert
                 std::is_same<decltype(test<T, A, U>(0)), yes>::value;                    \
         };                                                                               \
         } /* end namespace detail */
-#endif    // NOT CEREAL_OLDER_GCC
+#endif    // NOT TIMEMORY_CEREAL_OLDER_GCC
 
 // ######################################################################
 //! Creates helpers for minimal load functions
@@ -891,9 +904,9 @@ struct AnyConvert
     @param save_test_prefix The name to give the test (e.g. save_minimal or
    versioned_save_minimal, should match the load name, without the trailing "_minimal"
    (e.g. save or versioned_save).  Needed because the preprocessor is an abomination.
-    @param versioned Either blank or the macro CEREAL_MAKE_VERSIONED_TEST */
-#define CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_HELPERS_IMPL(load_test_name, save_test_name, \
-                                                         save_test_prefix, versioned)    \
+    @param versioned Either blank or the macro TIMEMORY_CEREAL_MAKE_VERSIONED_TEST */
+#define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_HELPERS_IMPL(                       \
+    load_test_name, save_test_name, save_test_prefix, versioned)                         \
     namespace detail                                                                     \
     {                                                                                    \
     template <class T, class A, bool Valid>                                              \
@@ -936,7 +949,8 @@ struct AnyConvert
     @param load_test_name The name to give the test (e.g. load_minimal or
    versioned_load_minimal)
     @param load_test_prefix The above parameter minus the trailing "_minimal" */
-#define CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_TEST(load_test_name, load_test_prefix)       \
+#define TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_TEST(load_test_name,                \
+                                                          load_test_prefix)              \
     template <class T, class A>                                                          \
     struct has_member_##load_test_prefix##_minimal                                       \
     : std::integral_constant<                                                            \
@@ -947,35 +961,36 @@ struct AnyConvert
 
 // ######################################################################
 // Member Load Minimal
-CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL(load_minimal, )
-CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_HELPERS_IMPL(load_minimal, save_minimal, save, )
-CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_TEST(load_minimal, load)
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL(load_minimal, )
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_HELPERS_IMPL(load_minimal, save_minimal,
+                                                          save, )
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_TEST(load_minimal, load)
 
 // ######################################################################
 // Member Load Minimal (versioned)
-CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL(versioned_load_minimal,
-                                         CEREAL_MAKE_VERSIONED_TEST)
-CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_HELPERS_IMPL(versioned_load_minimal,
-                                                 versioned_save_minimal, versioned_save,
-                                                 CEREAL_MAKE_VERSIONED_TEST)
-CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_TEST(versioned_load_minimal, versioned_load)
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL(versioned_load_minimal,
+                                                  TIMEMORY_CEREAL_MAKE_VERSIONED_TEST)
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_HELPERS_IMPL(
+    versioned_load_minimal, versioned_save_minimal, versioned_save,
+    TIMEMORY_CEREAL_MAKE_VERSIONED_TEST)
+TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_TEST(versioned_load_minimal, versioned_load)
 
 // ######################################################################
-#undef CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL
-#undef CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_HELPERS_IMPL
-#undef CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_TEST
+#undef TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_IMPL
+#undef TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_HELPERS_IMPL
+#undef TIMEMORY_CEREAL_MAKE_HAS_MEMBER_LOAD_MINIMAL_TEST
 
 // ######################################################################
 // Non-Member Load Minimal
 namespace detail
 {
-#ifdef CEREAL_OLDER_GCC
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
 void
-CEREAL_LOAD_MINIMAL_FUNCTION_NAME();  // prevents nonsense complaining about not finding
-                                      // this
+TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME();  // prevents nonsense complaining about not
+                                               // finding this
 void
-CEREAL_SAVE_MINIMAL_FUNCTION_NAME();
-#endif  // CEREAL_OLDER_GCC
+TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME();
+#endif  // TIMEMORY_CEREAL_OLDER_GCC
 }  // namespace detail
 
 // ######################################################################
@@ -1002,8 +1017,9 @@ CEREAL_SAVE_MINIMAL_FUNCTION_NAME();
    versioned_load_minimal)
     @param save_name The corresponding name the save test would have (e.g. save_minimal or
    versioned_save_minimal)
-    @param versioned Either blank or the macro CEREAL_MAKE_VERSIONED_TEST */
-#define CEREAL_MAKE_HAS_NON_MEMBER_LOAD_MINIMAL_TEST(test_name, save_name, versioned)    \
+    @param versioned Either blank or the macro TIMEMORY_CEREAL_MAKE_VERSIONED_TEST */
+#define TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_LOAD_MINIMAL_TEST(test_name, save_name,      \
+                                                              versioned)                 \
     namespace detail                                                                     \
     {                                                                                    \
     template <class T, class A, class U = void>                                          \
@@ -1011,9 +1027,9 @@ CEREAL_SAVE_MINIMAL_FUNCTION_NAME();
     {                                                                                    \
         template <class TT, class AA>                                                    \
         static auto test(int)                                                            \
-            -> decltype(CEREAL_LOAD_MINIMAL_FUNCTION_NAME(std::declval<AA const&>(),     \
-                                                          std::declval<TT&>(),           \
-                                                          AnyConvert() versioned),       \
+            -> decltype(TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(                      \
+                            std::declval<AA const&>(), std::declval<TT&>(),              \
+                            AnyConvert() versioned),                                     \
                         yes());                                                          \
         template <class, class>                                                          \
         static no         test(...);                                                     \
@@ -1021,10 +1037,9 @@ CEREAL_SAVE_MINIMAL_FUNCTION_NAME();
                                                                                          \
         template <class TT, class AA, class UU>                                          \
         static auto test2(int)                                                           \
-            -> decltype(CEREAL_LOAD_MINIMAL_FUNCTION_NAME(std::declval<AA const&>(),     \
-                                                          std::declval<TT&>(),           \
-                                                          NoConvertConstRef<UU>()        \
-                                                              versioned),                \
+            -> decltype(TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(                      \
+                            std::declval<AA const&>(), std::declval<TT&>(),              \
+                            NoConvertConstRef<UU>() versioned),                          \
                         yes());                                                          \
         template <class, class, class>                                                   \
         static no         test2(...);                                                    \
@@ -1032,9 +1047,9 @@ CEREAL_SAVE_MINIMAL_FUNCTION_NAME();
                                                                                          \
         template <class TT, class AA>                                                    \
         static auto test3(int)                                                           \
-            -> decltype(CEREAL_LOAD_MINIMAL_FUNCTION_NAME(std::declval<AA const&>(),     \
-                                                          NoConvertRef<TT>(),            \
-                                                          AnyConvert() versioned),       \
+            -> decltype(TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(                      \
+                            std::declval<AA const&>(), NoConvertRef<TT>(),               \
+                            AnyConvert() versioned),                                     \
                         yes());                                                          \
         template <class, class>                                                          \
         static no         test3(...);                                                    \
@@ -1081,16 +1096,16 @@ CEREAL_SAVE_MINIMAL_FUNCTION_NAME();
 
 // ######################################################################
 // Non-Member Load Minimal
-CEREAL_MAKE_HAS_NON_MEMBER_LOAD_MINIMAL_TEST(load_minimal, save_minimal, )
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_LOAD_MINIMAL_TEST(load_minimal, save_minimal, )
 
 // ######################################################################
 // Non-Member Load Minimal (versioned)
-CEREAL_MAKE_HAS_NON_MEMBER_LOAD_MINIMAL_TEST(versioned_load_minimal,
-                                             versioned_save_minimal,
-                                             CEREAL_MAKE_VERSIONED_TEST)
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_LOAD_MINIMAL_TEST(versioned_load_minimal,
+                                                      versioned_save_minimal,
+                                                      TIMEMORY_CEREAL_MAKE_VERSIONED_TEST)
 
 // ######################################################################
-#undef CEREAL_MAKE_HAS_NON_MEMBER_LOAD_MINIMAL_TEST
+#undef TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_LOAD_MINIMAL_TEST
 
 // ######################################################################
 namespace detail
@@ -1099,19 +1114,20 @@ namespace detail
 // construct<const T> to construct<T>
 template <typename T, typename A>
 struct has_member_load_and_construct_impl
-: std::integral_constant<bool, std::is_same<decltype(access::load_and_construct<T>(
-                                                std::declval<A&>(),
-                                                std::declval<::cereal::construct<T>&>())),
-                                            void>::value>
+: std::integral_constant<
+      bool,
+      std::is_same<decltype(access::load_and_construct<T>(
+                       std::declval<A&>(), std::declval<::tim::cereal::construct<T>&>())),
+                   void>::value>
 {};
 
 template <typename T, typename A>
 struct has_member_versioned_load_and_construct_impl
 : std::integral_constant<
-      bool,
-      std::is_same<decltype(access::load_and_construct<T>(
-                       std::declval<A&>(), std::declval<::cereal::construct<T>&>(), 0)),
-                   void>::value>
+      bool, std::is_same<decltype(access::load_and_construct<T>(
+                             std::declval<A&>(),
+                             std::declval<::tim::cereal::construct<T>&>(), 0)),
+                         void>::value>
 {};
 }  // namespace detail
 
@@ -1132,7 +1148,8 @@ struct has_member_versioned_load_and_construct
 //! Creates a test for whether a non-member load_and_construct specialization exists
 /*! This creates a class derived from std::integral_constant that will be true if
     the type has the proper non-member function for the given archive. */
-#define CEREAL_MAKE_HAS_NON_MEMBER_LOAD_AND_CONSTRUCT_TEST(test_name, versioned)         \
+#define TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_LOAD_AND_CONSTRUCT_TEST(test_name,           \
+                                                                    versioned)           \
     namespace detail                                                                     \
     {                                                                                    \
     template <class T, class A>                                                          \
@@ -1142,7 +1159,7 @@ struct has_member_versioned_load_and_construct
         static auto test(int)                                                            \
             -> decltype(LoadAndConstruct<TT>::load_and_construct(                        \
                             std::declval<AA&>(),                                         \
-                            std::declval<::cereal::construct<TT>&>() versioned),         \
+                            std::declval<::tim::cereal::construct<TT>&>() versioned),    \
                         yes());                                                          \
         template <class, class>                                                          \
         static no         test(...);                                                     \
@@ -1157,12 +1174,12 @@ struct has_member_versioned_load_and_construct
 
 // ######################################################################
 //! Non member load and construct check
-CEREAL_MAKE_HAS_NON_MEMBER_LOAD_AND_CONSTRUCT_TEST(load_and_construct, )
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_LOAD_AND_CONSTRUCT_TEST(load_and_construct, )
 
 // ######################################################################
 //! Non member load and construct check (versioned)
-CEREAL_MAKE_HAS_NON_MEMBER_LOAD_AND_CONSTRUCT_TEST(versioned_load_and_construct,
-                                                   CEREAL_MAKE_VERSIONED_TEST)
+TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_LOAD_AND_CONSTRUCT_TEST(
+    versioned_load_and_construct, TIMEMORY_CEREAL_MAKE_VERSIONED_TEST)
 
 // ######################################################################
 //! Has either a member or non member load and construct
@@ -1176,11 +1193,11 @@ struct has_load_and_construct
 {};
 
 // ######################################################################
-#undef CEREAL_MAKE_HAS_NON_MEMBER_LOAD_AND_CONSTRUCT_TEST
+#undef TIMEMORY_CEREAL_MAKE_HAS_NON_MEMBER_LOAD_AND_CONSTRUCT_TEST
 
 // ######################################################################
 // End of serialization existence tests
-#undef CEREAL_MAKE_VERSIONED_TEST
+#undef TIMEMORY_CEREAL_MAKE_VERSIONED_TEST
 
 // ######################################################################
 template <class T, class InputArchive, class OutputArchive>
@@ -1241,7 +1258,7 @@ struct has_invalid_input_versioning
 namespace detail
 {
 //! Create a test for a cereal::specialization entry
-#define CEREAL_MAKE_IS_SPECIALIZED_IMPL(name)                                            \
+#define TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_IMPL(name)                                   \
     template <class T, class A>                                                          \
     struct is_specialized_##name                                                         \
     : std::integral_constant<                                                            \
@@ -1249,14 +1266,14 @@ namespace detail
                                  specialize<A, T, specialization::name>>::value>         \
     {}
 
-CEREAL_MAKE_IS_SPECIALIZED_IMPL(member_serialize);
-CEREAL_MAKE_IS_SPECIALIZED_IMPL(member_load_save);
-CEREAL_MAKE_IS_SPECIALIZED_IMPL(member_load_save_minimal);
-CEREAL_MAKE_IS_SPECIALIZED_IMPL(non_member_serialize);
-CEREAL_MAKE_IS_SPECIALIZED_IMPL(non_member_load_save);
-CEREAL_MAKE_IS_SPECIALIZED_IMPL(non_member_load_save_minimal);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_IMPL(member_serialize);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_IMPL(member_load_save);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_IMPL(member_load_save_minimal);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_IMPL(non_member_serialize);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_IMPL(non_member_load_save);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_IMPL(non_member_load_save_minimal);
 
-#undef CEREAL_MAKE_IS_SPECIALIZED_IMPL
+#undef TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_IMPL
 
 //! Number of specializations detected
 template <class T, class A>
@@ -1289,7 +1306,8 @@ struct is_specialized
 //! Create the static assertion for some specialization
 /*! This assertion will fail if the type is indeed specialized and does not have the
    appropriate type of serialization functions */
-#define CEREAL_MAKE_IS_SPECIALIZED_ASSERT(name, versioned_name, print_name, spec_name)   \
+#define TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_ASSERT(name, versioned_name, print_name,     \
+                                                   spec_name)                            \
     static_assert((is_specialized<T, A>::value &&                                        \
                    detail::is_specialized_##spec_name<T, A>::value &&                    \
                    (has_##name<T, A>::value || has_##versioned_name<T, A>::value)) ||    \
@@ -1301,46 +1319,49 @@ struct is_specialized
 //! Generates a test for specialization for versioned and unversioned functions
 /*! This creates checks that can be queried to see if a given type of serialization
    function has been specialized for this type */
-#define CEREAL_MAKE_IS_SPECIALIZED(name, versioned_name, spec_name)                      \
+#define TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(name, versioned_name, spec_name)             \
     template <class T, class A>                                                          \
     struct is_specialized_##name                                                         \
     : std::integral_constant<bool, is_specialized<T, A>::value &&                        \
                                        detail::is_specialized_##spec_name<T, A>::value>  \
     {                                                                                    \
-        CEREAL_MAKE_IS_SPECIALIZED_ASSERT(name, versioned_name, name, spec_name);        \
+        TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_ASSERT(name, versioned_name, name,           \
+                                                   spec_name);                           \
     };                                                                                   \
     template <class T, class A>                                                          \
     struct is_specialized_##versioned_name                                               \
     : std::integral_constant<bool, is_specialized<T, A>::value &&                        \
                                        detail::is_specialized_##spec_name<T, A>::value>  \
     {                                                                                    \
-        CEREAL_MAKE_IS_SPECIALIZED_ASSERT(name, versioned_name, versioned_name,          \
-                                          spec_name);                                    \
+        TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_ASSERT(name, versioned_name, versioned_name, \
+                                                   spec_name);                           \
     }
 
-CEREAL_MAKE_IS_SPECIALIZED(member_serialize, member_versioned_serialize,
-                           member_serialize);
-CEREAL_MAKE_IS_SPECIALIZED(non_member_serialize, non_member_versioned_serialize,
-                           non_member_serialize);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(member_serialize, member_versioned_serialize,
+                                    member_serialize);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(non_member_serialize, non_member_versioned_serialize,
+                                    non_member_serialize);
 
-CEREAL_MAKE_IS_SPECIALIZED(member_save, member_versioned_save, member_load_save);
-CEREAL_MAKE_IS_SPECIALIZED(non_member_save, non_member_versioned_save,
-                           non_member_load_save);
-CEREAL_MAKE_IS_SPECIALIZED(member_load, member_versioned_load, member_load_save);
-CEREAL_MAKE_IS_SPECIALIZED(non_member_load, non_member_versioned_load,
-                           non_member_load_save);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(member_save, member_versioned_save, member_load_save);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(non_member_save, non_member_versioned_save,
+                                    non_member_load_save);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(member_load, member_versioned_load, member_load_save);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(non_member_load, non_member_versioned_load,
+                                    non_member_load_save);
 
-CEREAL_MAKE_IS_SPECIALIZED(member_save_minimal, member_versioned_save_minimal,
-                           member_load_save_minimal);
-CEREAL_MAKE_IS_SPECIALIZED(non_member_save_minimal, non_member_versioned_save_minimal,
-                           non_member_load_save_minimal);
-CEREAL_MAKE_IS_SPECIALIZED(member_load_minimal, member_versioned_load_minimal,
-                           member_load_save_minimal);
-CEREAL_MAKE_IS_SPECIALIZED(non_member_load_minimal, non_member_versioned_load_minimal,
-                           non_member_load_save_minimal);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(member_save_minimal, member_versioned_save_minimal,
+                                    member_load_save_minimal);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(non_member_save_minimal,
+                                    non_member_versioned_save_minimal,
+                                    non_member_load_save_minimal);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(member_load_minimal, member_versioned_load_minimal,
+                                    member_load_save_minimal);
+TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED(non_member_load_minimal,
+                                    non_member_versioned_load_minimal,
+                                    non_member_load_save_minimal);
 
-#undef CEREAL_MAKE_IS_SPECIALIZED_ASSERT
-#undef CEREAL_MAKE_IS_SPECIALIZED
+#undef TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED_ASSERT
+#undef TIMEMORY_CEREAL_MAKE_IS_SPECIALIZED
 
 // ######################################################################
 // detects if a type has any active minimal output serialization
@@ -1511,7 +1532,7 @@ struct shared_from_this_wrapper
 {
     template <class U>
     static auto(check)(U const& t)
-        -> decltype(::cereal::access::shared_from_this(t), std::true_type());
+        -> decltype(::tim::cereal::access::shared_from_this(t), std::true_type());
 
     static auto(check)(...) -> decltype(std::false_type());
 
@@ -1565,7 +1586,7 @@ struct strip_minimal<T, true>
 template <class T>
 struct is_default_constructible
 {
-#ifdef CEREAL_OLDER_GCC
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
     template <class TT, class SFINAE = void>
     struct test : no
     {};
@@ -1575,13 +1596,13 @@ struct is_default_constructible
     : yes
     {};
     static const bool value = test<T>();
-#else   // NOT CEREAL_OLDER_GCC =========================================
+#else   // NOT TIMEMORY_CEREAL_OLDER_GCC =========================================
     template <class TT>
     static auto test(int) -> decltype(cereal::access::construct<TT>(), yes());
     template <class>
     static no         test(...);
     static const bool value = std::is_same<decltype(test<T>(0)), yes>::value;
-#endif  // NOT CEREAL_OLDER_GCC
+#endif  // NOT TIMEMORY_CEREAL_OLDER_GCC
 };
 
 // ######################################################################
@@ -1621,7 +1642,7 @@ struct is_same_archive
 
     @code{.cpp}
     template <class Archive>
-    CEREAL_ARCHIVE_RESTRICT(BinaryInputArchive, BinaryOutputArchive)
+    TIMEMORY_CEREAL_ARCHIVE_RESTRICT(BinaryInputArchive, BinaryOutputArchive)
     serialize( Archive & ar, MyCoolType & m )
     {
       ar & m;
@@ -1631,7 +1652,7 @@ struct is_same_archive
     If you need to do more restrictions in your enable_if, you will need to do this by
    hand.
  */
-#define CEREAL_ARCHIVE_RESTRICT(INTYPE, OUTTYPE)                                         \
+#define TIMEMORY_CEREAL_ARCHIVE_RESTRICT(INTYPE, OUTTYPE)                                \
     typename std::enable_if<                                                             \
         cereal::traits::is_same_archive<Archive, INTYPE>::value ||                       \
             cereal::traits::is_same_archive<Archive, OUTTYPE>::value,                    \
@@ -1680,7 +1701,7 @@ struct Construct
 template <class T, class A>
 struct Construct<T, A, false, false, false, false>
 {
-    static_assert(::cereal::traits::is_default_constructible<T>::value,
+    static_assert(::tim::cereal::traits::is_default_constructible<T>::value,
                   "Trying to serialize a an object with no default constructor. \n\n "
                   "Types must either be default constructible or define either a member "
                   "or non member Construct function. \n "
@@ -1693,7 +1714,7 @@ struct Construct<T, A, false, false, false, false>
                   "  ar( a ) \n "
                   "  construct( a ); \n "
                   "} \n\n");
-    static T* load_andor_construct() { return ::cereal::access::construct<T>(); }
+    static T* load_andor_construct() { return ::tim::cereal::access::construct<T>(); }
 };
 
 // member non-versioned
@@ -1739,5 +1760,6 @@ struct Construct<T, A, false, false, false, true>
 };
 }  // namespace detail
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_DETAILS_TRAITS_HPP_
+#endif  // TIMEMORY_CEREAL_DETAILS_TRAITS_HPP_

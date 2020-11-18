@@ -27,12 +27,14 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_UNORDERED_SET_HPP_
-#define CEREAL_TYPES_UNORDERED_SET_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_UNORDERED_SET_HPP_
+#define TIMEMORY_CEREAL_TYPES_UNORDERED_SET_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <unordered_set>
 
+namespace tim
+{
 namespace cereal
 {
 namespace unordered_set_detail
@@ -72,8 +74,8 @@ load(Archive& ar, SetT& set)
 //! Saving for std::unordered_set
 template <class Archive, class K, class H, class KE, class A>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive&                               ar,
-                          std::unordered_set<K, H, KE, A> const& unordered_set)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive&                               ar,
+                                   std::unordered_set<K, H, KE, A> const& unordered_set)
 {
     unordered_set_detail::save(ar, unordered_set);
 }
@@ -81,7 +83,8 @@ CEREAL_SAVE_FUNCTION_NAME(Archive&                               ar,
 //! Loading for std::unordered_set
 template <class Archive, class K, class H, class KE, class A>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::unordered_set<K, H, KE, A>& unordered_set)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive&                         ar,
+                                   std::unordered_set<K, H, KE, A>& unordered_set)
 {
     unordered_set_detail::load(ar, unordered_set);
 }
@@ -89,8 +92,8 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::unordered_set<K, H, KE, A>& unordere
 //! Saving for std::unordered_multiset
 template <class Archive, class K, class H, class KE, class A>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive&                                    ar,
-                          std::unordered_multiset<K, H, KE, A> const& unordered_multiset)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(
+    Archive& ar, std::unordered_multiset<K, H, KE, A> const& unordered_multiset)
 {
     unordered_set_detail::save(ar, unordered_multiset);
 }
@@ -98,11 +101,12 @@ CEREAL_SAVE_FUNCTION_NAME(Archive&                                    ar,
 //! Loading for std::unordered_multiset
 template <class Archive, class K, class H, class KE, class A>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive&                              ar,
-                          std::unordered_multiset<K, H, KE, A>& unordered_multiset)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(
+    Archive& ar, std::unordered_multiset<K, H, KE, A>& unordered_multiset)
 {
     unordered_set_detail::load(ar, unordered_multiset);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_UNORDERED_SET_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_UNORDERED_SET_HPP_

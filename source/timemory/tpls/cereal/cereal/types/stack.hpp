@@ -27,8 +27,8 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_STACK_HPP_
-#define CEREAL_TYPES_STACK_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_STACK_HPP_
+#define TIMEMORY_CEREAL_TYPES_STACK_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <stack>
@@ -36,6 +36,8 @@
 // The default container for stack is deque, so let's include that too
 #include "timemory/tpls/cereal/cereal/types/deque.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 namespace stack_detail
@@ -57,20 +59,21 @@ container(std::stack<T, C> const& stack)
 //! Saving for std::stack
 template <class Archive, class T, class C>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::stack<T, C> const& stack)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::stack<T, C> const& stack)
 {
-    ar(CEREAL_NVP_("container", stack_detail::container(stack)));
+    ar(TIMEMORY_CEREAL_NVP_("container", stack_detail::container(stack)));
 }
 
 //! Loading for std::stack
 template <class Archive, class T, class C>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::stack<T, C>& stack)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::stack<T, C>& stack)
 {
     C container;
-    ar(CEREAL_NVP_("container", container));
+    ar(TIMEMORY_CEREAL_NVP_("container", container));
     stack = std::stack<T, C>(std::move(container));
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_STACK_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_STACK_HPP_

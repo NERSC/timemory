@@ -26,12 +26,14 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_ARCHIVES_BINARY_HPP_
-#define CEREAL_ARCHIVES_BINARY_HPP_
+#ifndef TIMEMORY_CEREAL_ARCHIVES_BINARY_HPP_
+#define TIMEMORY_CEREAL_ARCHIVES_BINARY_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <sstream>
 
+namespace tim
+{
 namespace cereal
 {
 // ######################################################################
@@ -60,7 +62,7 @@ public:
     , itsStream(stream)
     {}
 
-    ~BinaryOutputArchive() CEREAL_NOEXCEPT = default;
+    ~BinaryOutputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
 
     //! Writes size bytes of data to the output stream
     void saveBinary(const void* data, std::streamsize size)
@@ -98,7 +100,7 @@ public:
     , itsStream(stream)
     {}
 
-    ~BinaryInputArchive() CEREAL_NOEXCEPT = default;
+    ~BinaryInputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
 
     //! Reads size bytes of data from the input stream
     void loadBinary(void* const data, std::streamsize size)
@@ -121,7 +123,7 @@ private:
 //! Saving for POD types to binary
 template <class T>
 inline typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-CEREAL_SAVE_FUNCTION_NAME(BinaryOutputArchive& ar, T const& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(BinaryOutputArchive& ar, T const& t)
 {
     ar.saveBinary(std::addressof(t), sizeof(t));
 }
@@ -129,23 +131,23 @@ CEREAL_SAVE_FUNCTION_NAME(BinaryOutputArchive& ar, T const& t)
 //! Loading for POD types from binary
 template <class T>
 inline typename std::enable_if<std::is_arithmetic<T>::value, void>::type
-CEREAL_LOAD_FUNCTION_NAME(BinaryInputArchive& ar, T& t)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(BinaryInputArchive& ar, T& t)
 {
     ar.loadBinary(std::addressof(t), sizeof(t));
 }
 
 //! Serializing NVP types to binary
 template <class Archive, class T>
-inline CEREAL_ARCHIVE_RESTRICT(BinaryInputArchive, BinaryOutputArchive)
-    CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, NameValuePair<T>& t)
+inline TIMEMORY_CEREAL_ARCHIVE_RESTRICT(BinaryInputArchive, BinaryOutputArchive)
+    TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, NameValuePair<T>& t)
 {
     ar(t.value);
 }
 
 //! Serializing SizeTags to binary
 template <class Archive, class T>
-inline CEREAL_ARCHIVE_RESTRICT(BinaryInputArchive, BinaryOutputArchive)
-    CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, SizeTag<T>& t)
+inline TIMEMORY_CEREAL_ARCHIVE_RESTRICT(BinaryInputArchive, BinaryOutputArchive)
+    TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, SizeTag<T>& t)
 {
     ar(t.size);
 }
@@ -153,7 +155,7 @@ inline CEREAL_ARCHIVE_RESTRICT(BinaryInputArchive, BinaryOutputArchive)
 //! Saving binary data
 template <class T>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(BinaryOutputArchive& ar, BinaryData<T> const& bd)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(BinaryOutputArchive& ar, BinaryData<T> const& bd)
 {
     ar.saveBinary(bd.data, static_cast<std::streamsize>(bd.size));
 }
@@ -161,17 +163,19 @@ CEREAL_SAVE_FUNCTION_NAME(BinaryOutputArchive& ar, BinaryData<T> const& bd)
 //! Loading binary data
 template <class T>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(BinaryInputArchive& ar, BinaryData<T>& bd)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(BinaryInputArchive& ar, BinaryData<T>& bd)
 {
     ar.loadBinary(bd.data, static_cast<std::streamsize>(bd.size));
 }
 }  // namespace cereal
+}  // namespace tim
 
 // register archives for polymorphic support
-CEREAL_REGISTER_ARCHIVE(cereal::BinaryOutputArchive)
-CEREAL_REGISTER_ARCHIVE(cereal::BinaryInputArchive)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(cereal::BinaryOutputArchive)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(cereal::BinaryInputArchive)
 
 // tie input and output archives together
-CEREAL_SETUP_ARCHIVE_TRAITS(cereal::BinaryInputArchive, cereal::BinaryOutputArchive)
+TIMEMORY_CEREAL_SETUP_ARCHIVE_TRAITS(cereal::BinaryInputArchive,
+                                     cereal::BinaryOutputArchive)
 
-#endif  // CEREAL_ARCHIVES_BINARY_HPP_
+#endif  // TIMEMORY_CEREAL_ARCHIVES_BINARY_HPP_

@@ -27,20 +27,22 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_BOOST_VARIANT_HPP_
-#define CEREAL_TYPES_BOOST_VARIANT_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_BOOST_VARIANT_HPP_
+#define TIMEMORY_CEREAL_TYPES_BOOST_VARIANT_HPP_
 
 //! @internal
 #if defined(_MSC_VER) && _MSC_VER < 1911
-#    define CEREAL_CONSTEXPR_LAMBDA
+#    define TIMEMORY_CEREAL_CONSTEXPR_LAMBDA
 #else  // MSVC 2017 or newer, all other compilers
-#    define CEREAL_CONSTEXPR_LAMBDA constexpr
+#    define TIMEMORY_CEREAL_CONSTEXPR_LAMBDA constexpr
 #endif
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <boost/variant/static_visitor.hpp>
 #include <boost/variant/variant_fwd.hpp>
 
+namespace tim
+{
 namespace cereal
 {
 namespace boost_variant_detail
@@ -56,7 +58,7 @@ struct variant_save_visitor : boost::static_visitor<>
     template <class T>
     void operator()(T const& value) const
     {
-        ar(CEREAL_NVP_("data", value));
+        ar(TIMEMORY_CEREAL_NVP_("data", value));
     }
 
     Archive& ar;
@@ -66,7 +68,7 @@ struct variant_save_visitor : boost::static_visitor<>
 template <class Archive, class T>
 struct LoadAndConstructLoadWrapper
 {
-    using ST = typename std::aligned_storage<sizeof(T), CEREAL_ALIGNOF(T)>::type;
+    using ST = typename std::aligned_storage<sizeof(T), TIMEMORY_CEREAL_ALIGNOF(T)>::type;
 
     LoadAndConstructLoadWrapper()
     : construct(reinterpret_cast<T*>(&st))
@@ -80,13 +82,13 @@ struct LoadAndConstructLoadWrapper
         }
     }
 
-    void CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar)
+    void TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar)
     {
-        ::cereal::detail::Construct<T, Archive>::load_andor_construct(ar, construct);
+        ::tim::cereal::detail::Construct<T, Archive>::load_andor_construct(ar, construct);
     }
 
-    ST                     st;
-    ::cereal::construct<T> construct;
+    ST                          st;
+    ::tim::cereal::construct<T> construct;
 };
 
 //! @internal
@@ -112,7 +114,7 @@ struct load_variant_wrapper
     static void load_variant_impl(Archive& ar, Variant& variant, std::true_type)
     {
         T value;
-        ar(CEREAL_NVP_("data", value));
+        ar(TIMEMORY_CEREAL_NVP_("data", value));
         variant = std::move(value);
     }
 
@@ -122,7 +124,7 @@ struct load_variant_wrapper
     {
         LoadAndConstructLoadWrapper<Archive, T> loadWrapper;
 
-        ar(CEREAL_NVP_("data", loadWrapper));
+        ar(TIMEMORY_CEREAL_NVP_("data", loadWrapper));
         variant = std::move(*loadWrapper.construct.ptr());
     }
 
@@ -138,10 +140,11 @@ struct load_variant_wrapper
 //! Saving for boost::variant
 template <class Archive, typename... VariantTypes>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, boost::variant<VariantTypes...> const& variant)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive&                               ar,
+                                   boost::variant<VariantTypes...> const& variant)
 {
     int32_t which = variant.which();
-    ar(CEREAL_NVP_("which", which));
+    ar(TIMEMORY_CEREAL_NVP_("which", which));
     boost_variant_detail::variant_save_visitor<Archive> visitor(ar);
     variant.apply_visitor(visitor);
 }
@@ -149,13 +152,13 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, boost::variant<VariantTypes...> const& va
 //! Loading for boost::variant
 template <class Archive, typename... VariantTypes>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, boost::variant<VariantTypes...>& variant)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, boost::variant<VariantTypes...>& variant)
 {
     int32_t which;
-    ar(CEREAL_NVP_("which", which));
+    ar(TIMEMORY_CEREAL_NVP_("which", which));
 
     using LoadFuncType = void (*)(Archive&, boost::variant<VariantTypes...>&);
-    CEREAL_CONSTEXPR_LAMBDA LoadFuncType loadFuncArray[] = {
+    TIMEMORY_CEREAL_CONSTEXPR_LAMBDA LoadFuncType loadFuncArray[] = {
         &boost_variant_detail::load_variant_wrapper<VariantTypes>::load_variant...
     };
 
@@ -165,7 +168,8 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, boost::variant<VariantTypes...>& variant)
     loadFuncArray[which](ar, variant);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#undef CEREAL_CONSTEXPR_LAMBDA
+#undef TIMEMORY_CEREAL_CONSTEXPR_LAMBDA
 
-#endif  // CEREAL_TYPES_BOOST_VARIANT_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_BOOST_VARIANT_HPP_

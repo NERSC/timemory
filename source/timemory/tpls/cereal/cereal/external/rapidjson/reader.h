@@ -12,8 +12,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_READER_H_
-#define CEREAL_RAPIDJSON_READER_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_READER_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_READER_H_
 
 /*! \file reader.h */
 
@@ -25,48 +25,48 @@
 #include "internal/strtod.h"
 #include <limits>
 
-#if defined(CEREAL_RAPIDJSON_SIMD) && defined(_MSC_VER)
+#if defined(TIMEMORY_CEREAL_RAPIDJSON_SIMD) && defined(_MSC_VER)
 #include <intrin.h>
 #pragma intrinsic(_BitScanForward)
 #endif
-#ifdef CEREAL_RAPIDJSON_SSE42
+#ifdef TIMEMORY_CEREAL_RAPIDJSON_SSE42
 #include <nmmintrin.h>
-#elif defined(CEREAL_RAPIDJSON_SSE2)
+#elif defined(TIMEMORY_CEREAL_RAPIDJSON_SSE2)
 #include <emmintrin.h>
-#elif defined(CEREAL_RAPIDJSON_NEON)
+#elif defined(TIMEMORY_CEREAL_RAPIDJSON_NEON)
 #include <arm_neon.h>
 #endif
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(old-style-cast)
-CEREAL_RAPIDJSON_DIAG_OFF(padded)
-CEREAL_RAPIDJSON_DIAG_OFF(switch-enum)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(old-style-cast)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(padded)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(switch-enum)
 #elif defined(_MSC_VER)
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(4127)  // conditional expression is constant
-CEREAL_RAPIDJSON_DIAG_OFF(4702)  // unreachable code
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(4127)  // conditional expression is constant
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(4702)  // unreachable code
 #endif
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(effc++)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(effc++)
 #endif
 
-//!@cond CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
-#define CEREAL_RAPIDJSON_NOTHING /* deliberately empty */
-#ifndef CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN
-#define CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(value) \
-    CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN \
-    if (CEREAL_RAPIDJSON_UNLIKELY(HasParseError())) { return value; } \
-    CEREAL_RAPIDJSON_MULTILINEMACRO_END
+//!@cond TIMEMORY_CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
+#define TIMEMORY_CEREAL_RAPIDJSON_NOTHING /* deliberately empty */
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN
+#define TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(value) \
+    TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN \
+    if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(HasParseError())) { return value; } \
+    TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_END
 #endif
-#define CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID \
-    CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(CEREAL_RAPIDJSON_NOTHING)
+#define TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID \
+    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(TIMEMORY_CEREAL_RAPIDJSON_NOTHING)
 //!@endcond
 
-/*! \def CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN
-    \ingroup CEREAL_RAPIDJSON_ERRORS
+/*! \def TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN
+    \ingroup TIMEMORY_CEREAL_RAPIDJSON_ERRORS
     \brief Macro to indicate a parse error.
     \param parseErrorCode \ref rapidjson::ParseErrorCode of the error
     \param offset  position of the error in JSON input (\c size_t)
@@ -79,7 +79,7 @@ CEREAL_RAPIDJSON_DIAG_OFF(effc++)
     return value:
 
     \code
-    #define CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(parseErrorCode,offset) \
+    #define TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(parseErrorCode,offset) \
        throw ParseException(parseErrorCode, #parseErrorCode, offset)
 
     #include <stdexcept>               // std::runtime_error
@@ -93,50 +93,50 @@ CEREAL_RAPIDJSON_DIAG_OFF(effc++)
     #include "rapidjson/reader.h"
     \endcode
 
-    \see CEREAL_RAPIDJSON_PARSE_ERROR, rapidjson::GenericReader::Parse
+    \see TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR, rapidjson::GenericReader::Parse
  */
-#ifndef CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN
-#define CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(parseErrorCode, offset) \
-    CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN \
-    CEREAL_RAPIDJSON_ASSERT(!HasParseError()); /* Error can only be assigned once */ \
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN
+#define TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(parseErrorCode, offset) \
+    TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN \
+    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(!HasParseError()); /* Error can only be assigned once */ \
     SetParseError(parseErrorCode, offset); \
-    CEREAL_RAPIDJSON_MULTILINEMACRO_END
+    TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_END
 #endif
 
-/*! \def CEREAL_RAPIDJSON_PARSE_ERROR
-    \ingroup CEREAL_RAPIDJSON_ERRORS
+/*! \def TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR
+    \ingroup TIMEMORY_CEREAL_RAPIDJSON_ERRORS
     \brief (Internal) macro to indicate and handle a parse error.
     \param parseErrorCode \ref rapidjson::ParseErrorCode of the error
     \param offset  position of the error in JSON input (\c size_t)
 
-    Invokes CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN and stops the parsing.
+    Invokes TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN and stops the parsing.
 
-    \see CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN
+    \see TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN
     \hideinitializer
  */
-#ifndef CEREAL_RAPIDJSON_PARSE_ERROR
-#define CEREAL_RAPIDJSON_PARSE_ERROR(parseErrorCode, offset) \
-    CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN \
-    CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(parseErrorCode, offset); \
-    CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID; \
-    CEREAL_RAPIDJSON_MULTILINEMACRO_END
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR
+#define TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(parseErrorCode, offset) \
+    TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN \
+    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(parseErrorCode, offset); \
+    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID; \
+    TIMEMORY_CEREAL_RAPIDJSON_MULTILINEMACRO_END
 #endif
 
 #include "error/error.h" // ParseErrorCode, ParseResult
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 ///////////////////////////////////////////////////////////////////////////////
 // ParseFlag
 
-/*! \def CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS
-    \ingroup CEREAL_RAPIDJSON_CONFIG
+/*! \def TIMEMORY_CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS
+    \ingroup TIMEMORY_CEREAL_RAPIDJSON_CONFIG
     \brief User-defined kParseDefaultFlags definition.
 
     User can define this as any \c ParseFlag combinations.
 */
-#ifndef CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS
-#define CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS kParseNoFlags
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS
+#define TIMEMORY_CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS kParseNoFlags
 #endif
 
 //! Combination of parseFlags
@@ -153,7 +153,7 @@ enum ParseFlag {
     kParseNumbersAsStringsFlag = 64,    //!< Parse all numbers (ints/doubles) as strings.
     kParseTrailingCommasFlag = 128, //!< Allow trailing commas at the end of objects and arrays.
     kParseNanAndInfFlag = 256,      //!< Allow parsing NaN, Inf, Infinity, -Inf and -Infinity as doubles.
-    kParseDefaultFlags = CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS  //!< Default parse flags. Can be customized by defining CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS
+    kParseDefaultFlags = TIMEMORY_CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS  //!< Default parse flags. Can be customized by defining TIMEMORY_CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -276,7 +276,7 @@ inline const char* SkipWhitespace(const char* p, const char* end) {
     return p;
 }
 
-#ifdef CEREAL_RAPIDJSON_SSE42
+#ifdef TIMEMORY_CEREAL_RAPIDJSON_SSE42
 //! Skip whitespace with SSE 4.2 pcmpistrm instruction, testing 16 8-byte characters at once.
 inline const char *SkipWhitespace_SIMD(const char* p) {
     // Fast return for single non-whitespace
@@ -326,7 +326,7 @@ inline const char *SkipWhitespace_SIMD(const char* p, const char* end) {
     return SkipWhitespace(p, end);
 }
 
-#elif defined(CEREAL_RAPIDJSON_SSE2)
+#elif defined(TIMEMORY_CEREAL_RAPIDJSON_SSE2)
 
 //! Skip whitespace with SSE2 instructions, testing 16 8-byte characters at once.
 inline const char *SkipWhitespace_SIMD(const char* p) {
@@ -411,7 +411,7 @@ inline const char *SkipWhitespace_SIMD(const char* p, const char* end) {
     return SkipWhitespace(p, end);
 }
 
-#elif defined(CEREAL_RAPIDJSON_NEON)
+#elif defined(TIMEMORY_CEREAL_RAPIDJSON_NEON)
 
 //! Skip whitespace with ARM Neon instructions, testing 16 8-byte characters at once.
 inline const char *SkipWhitespace_SIMD(const char* p) {
@@ -496,9 +496,9 @@ inline const char *SkipWhitespace_SIMD(const char* p, const char* end) {
     return SkipWhitespace(p, end);
 }
 
-#endif // CEREAL_RAPIDJSON_NEON
+#endif // TIMEMORY_CEREAL_RAPIDJSON_NEON
 
-#ifdef CEREAL_RAPIDJSON_SIMD
+#ifdef TIMEMORY_CEREAL_RAPIDJSON_SIMD
 //! Template function specialization for InsituStringStream
 template<> inline void SkipWhitespace(InsituStringStream& is) {
     is.src_ = const_cast<char*>(SkipWhitespace_SIMD(is.src_));
@@ -512,7 +512,7 @@ template<> inline void SkipWhitespace(StringStream& is) {
 template<> inline void SkipWhitespace(EncodedInputStream<UTF8<>, MemoryStream>& is) {
     is.is_.src_ = SkipWhitespace_SIMD(is.is_.src_, is.is_.end_);
 }
-#endif // CEREAL_RAPIDJSON_SIMD
+#endif // TIMEMORY_CEREAL_RAPIDJSON_SIMD
 
 ///////////////////////////////////////////////////////////////////////////////
 // GenericReader
@@ -563,23 +563,23 @@ public:
         ClearStackOnExit scope(*this);
 
         SkipWhitespaceAndComments<parseFlags>(is);
-        CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
 
-        if (CEREAL_RAPIDJSON_UNLIKELY(is.Peek() == '\0')) {
-            CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorDocumentEmpty, is.Tell());
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(is.Peek() == '\0')) {
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorDocumentEmpty, is.Tell());
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
         }
         else {
             ParseValue<parseFlags>(is, handler);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
 
             if (!(parseFlags & kParseStopWhenDoneFlag)) {
                 SkipWhitespaceAndComments<parseFlags>(is);
-                CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
 
-                if (CEREAL_RAPIDJSON_UNLIKELY(is.Peek() != '\0')) {
-                    CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorDocumentRootNotSingular, is.Tell());
-                    CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+                if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(is.Peek() != '\0')) {
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorDocumentRootNotSingular, is.Tell());
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
                 }
             }
         }
@@ -616,7 +616,7 @@ public:
      */
     template <unsigned parseFlags, typename InputStream, typename Handler>
     bool IterativeParseNext(InputStream& is, Handler& handler) {
-        while (CEREAL_RAPIDJSON_LIKELY(is.Peek() != '\0')) {
+        while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(is.Peek() != '\0')) {
             SkipWhitespaceAndComments<parseFlags>(is);
 
             Token t = Tokenize(is.Peek());
@@ -624,7 +624,7 @@ public:
             IterativeParsingState d = Transit<parseFlags>(state_, t, n, is, handler);
 
             // If we've finished or hit an error...
-            if (CEREAL_RAPIDJSON_UNLIKELY(IsIterativeParsingCompleteState(d))) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(IsIterativeParsingCompleteState(d))) {
                 // Report errors.
                 if (d == IterativeParsingErrorState) {
                     HandleError(state_, is);
@@ -632,7 +632,7 @@ public:
                 }
 
                 // Transition to the finish state.
-                CEREAL_RAPIDJSON_ASSERT(d == IterativeParsingFinishState);
+                TIMEMORY_CEREAL_RAPIDJSON_ASSERT(d == IterativeParsingFinishState);
                 state_ = d;
 
                 // If StopWhenDone is not set...
@@ -672,7 +672,7 @@ public:
     //! Check if token-by-token parsing JSON text is complete
     /*! \return Whether the JSON has been fully decoded.
      */
-    CEREAL_RAPIDJSON_FORCEINLINE bool IterativeParseComplete() const {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE bool IterativeParseComplete() const {
         return IsIterativeParsingCompleteState(state_);
     }
 
@@ -710,11 +710,11 @@ private:
         SkipWhitespace(is);
 
         if (parseFlags & kParseCommentsFlag) {
-            while (CEREAL_RAPIDJSON_UNLIKELY(Consume(is, '/'))) {
+            while (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(Consume(is, '/'))) {
                 if (Consume(is, '*')) {
                     while (true) {
-                        if (CEREAL_RAPIDJSON_UNLIKELY(is.Peek() == '\0'))
-                            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorUnspecificSyntaxError, is.Tell());
+                        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(is.Peek() == '\0'))
+                            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorUnspecificSyntaxError, is.Tell());
                         else if (Consume(is, '*')) {
                             if (Consume(is, '/'))
                                 break;
@@ -723,10 +723,10 @@ private:
                             is.Take();
                     }
                 }
-                else if (CEREAL_RAPIDJSON_LIKELY(Consume(is, '/')))
+                else if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(Consume(is, '/')))
                     while (is.Peek() != '\0' && is.Take() != '\n') {}
                 else
-                    CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorUnspecificSyntaxError, is.Tell());
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorUnspecificSyntaxError, is.Tell());
 
                 SkipWhitespace(is);
             }
@@ -736,42 +736,42 @@ private:
     // Parse object: { string : value, ... }
     template<unsigned parseFlags, typename InputStream, typename Handler>
     void ParseObject(InputStream& is, Handler& handler) {
-        CEREAL_RAPIDJSON_ASSERT(is.Peek() == '{');
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(is.Peek() == '{');
         is.Take();  // Skip '{'
 
-        if (CEREAL_RAPIDJSON_UNLIKELY(!handler.StartObject()))
-            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.StartObject()))
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
 
         SkipWhitespaceAndComments<parseFlags>(is);
-        CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
 
         if (Consume(is, '}')) {
-            if (CEREAL_RAPIDJSON_UNLIKELY(!handler.EndObject(0)))  // empty object
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.EndObject(0)))  // empty object
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
             return;
         }
 
         for (SizeType memberCount = 0;;) {
-            if (CEREAL_RAPIDJSON_UNLIKELY(is.Peek() != '"'))
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissName, is.Tell());
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(is.Peek() != '"'))
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissName, is.Tell());
 
             ParseString<parseFlags>(is, handler, true);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
 
             SkipWhitespaceAndComments<parseFlags>(is);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
 
-            if (CEREAL_RAPIDJSON_UNLIKELY(!Consume(is, ':')))
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissColon, is.Tell());
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!Consume(is, ':')))
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissColon, is.Tell());
 
             SkipWhitespaceAndComments<parseFlags>(is);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
 
             ParseValue<parseFlags>(is, handler);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
 
             SkipWhitespaceAndComments<parseFlags>(is);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
 
             ++memberCount;
 
@@ -779,21 +779,21 @@ private:
                 case ',':
                     is.Take();
                     SkipWhitespaceAndComments<parseFlags>(is);
-                    CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
                     break;
                 case '}':
                     is.Take();
-                    if (CEREAL_RAPIDJSON_UNLIKELY(!handler.EndObject(memberCount)))
-                        CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+                    if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.EndObject(memberCount)))
+                        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
                     return;
                 default:
-                    CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissCommaOrCurlyBracket, is.Tell()); break; // This useless break is only for making warning and coverage happy
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissCommaOrCurlyBracket, is.Tell()); break; // This useless break is only for making warning and coverage happy
             }
 
             if (parseFlags & kParseTrailingCommasFlag) {
                 if (is.Peek() == '}') {
-                    if (CEREAL_RAPIDJSON_UNLIKELY(!handler.EndObject(memberCount)))
-                        CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+                    if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.EndObject(memberCount)))
+                        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
                     is.Take();
                     return;
                 }
@@ -804,45 +804,45 @@ private:
     // Parse array: [ value, ... ]
     template<unsigned parseFlags, typename InputStream, typename Handler>
     void ParseArray(InputStream& is, Handler& handler) {
-        CEREAL_RAPIDJSON_ASSERT(is.Peek() == '[');
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(is.Peek() == '[');
         is.Take();  // Skip '['
 
-        if (CEREAL_RAPIDJSON_UNLIKELY(!handler.StartArray()))
-            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.StartArray()))
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
 
         SkipWhitespaceAndComments<parseFlags>(is);
-        CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
 
         if (Consume(is, ']')) {
-            if (CEREAL_RAPIDJSON_UNLIKELY(!handler.EndArray(0))) // empty array
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.EndArray(0))) // empty array
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
             return;
         }
 
         for (SizeType elementCount = 0;;) {
             ParseValue<parseFlags>(is, handler);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
 
             ++elementCount;
             SkipWhitespaceAndComments<parseFlags>(is);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
 
             if (Consume(is, ',')) {
                 SkipWhitespaceAndComments<parseFlags>(is);
-                CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
             }
             else if (Consume(is, ']')) {
-                if (CEREAL_RAPIDJSON_UNLIKELY(!handler.EndArray(elementCount)))
-                    CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+                if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.EndArray(elementCount)))
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
                 return;
             }
             else
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorArrayMissCommaOrSquareBracket, is.Tell());
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorArrayMissCommaOrSquareBracket, is.Tell());
 
             if (parseFlags & kParseTrailingCommasFlag) {
                 if (is.Peek() == ']') {
-                    if (CEREAL_RAPIDJSON_UNLIKELY(!handler.EndArray(elementCount)))
-                        CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+                    if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.EndArray(elementCount)))
+                        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
                     is.Take();
                     return;
                 }
@@ -852,46 +852,46 @@ private:
 
     template<unsigned parseFlags, typename InputStream, typename Handler>
     void ParseNull(InputStream& is, Handler& handler) {
-        CEREAL_RAPIDJSON_ASSERT(is.Peek() == 'n');
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(is.Peek() == 'n');
         is.Take();
 
-        if (CEREAL_RAPIDJSON_LIKELY(Consume(is, 'u') && Consume(is, 'l') && Consume(is, 'l'))) {
-            if (CEREAL_RAPIDJSON_UNLIKELY(!handler.Null()))
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+        if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(Consume(is, 'u') && Consume(is, 'l') && Consume(is, 'l'))) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.Null()))
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
         }
         else
-            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell());
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell());
     }
 
     template<unsigned parseFlags, typename InputStream, typename Handler>
     void ParseTrue(InputStream& is, Handler& handler) {
-        CEREAL_RAPIDJSON_ASSERT(is.Peek() == 't');
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(is.Peek() == 't');
         is.Take();
 
-        if (CEREAL_RAPIDJSON_LIKELY(Consume(is, 'r') && Consume(is, 'u') && Consume(is, 'e'))) {
-            if (CEREAL_RAPIDJSON_UNLIKELY(!handler.Bool(true)))
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+        if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(Consume(is, 'r') && Consume(is, 'u') && Consume(is, 'e'))) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.Bool(true)))
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
         }
         else
-            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell());
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell());
     }
 
     template<unsigned parseFlags, typename InputStream, typename Handler>
     void ParseFalse(InputStream& is, Handler& handler) {
-        CEREAL_RAPIDJSON_ASSERT(is.Peek() == 'f');
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(is.Peek() == 'f');
         is.Take();
 
-        if (CEREAL_RAPIDJSON_LIKELY(Consume(is, 'a') && Consume(is, 'l') && Consume(is, 's') && Consume(is, 'e'))) {
-            if (CEREAL_RAPIDJSON_UNLIKELY(!handler.Bool(false)))
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+        if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(Consume(is, 'a') && Consume(is, 'l') && Consume(is, 's') && Consume(is, 'e'))) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!handler.Bool(false)))
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
         }
         else
-            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell());
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell());
     }
 
     template<typename InputStream>
-    CEREAL_RAPIDJSON_FORCEINLINE static bool Consume(InputStream& is, typename InputStream::Ch expect) {
-        if (CEREAL_RAPIDJSON_LIKELY(is.Peek() == expect)) {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE static bool Consume(InputStream& is, typename InputStream::Ch expect) {
+        if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(is.Peek() == expect)) {
             is.Take();
             return true;
         }
@@ -914,8 +914,8 @@ private:
             else if (c >= 'a' && c <= 'f')
                 codepoint -= 'a' - 10;
             else {
-                CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorStringUnicodeEscapeInvalidHex, escapeOffset);
-                CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(0);
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorStringUnicodeEscapeInvalidHex, escapeOffset);
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(0);
             }
             is.Take();
         }
@@ -928,12 +928,12 @@ private:
         typedef CharType Ch;
 
         StackStream(internal::Stack<StackAllocator>& stack) : stack_(stack), length_(0) {}
-        CEREAL_RAPIDJSON_FORCEINLINE void Put(Ch c) {
+        TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void Put(Ch c) {
             *stack_.template Push<Ch>() = c;
             ++length_;
         }
 
-        CEREAL_RAPIDJSON_FORCEINLINE void* Push(SizeType count) {
+        TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void* Push(SizeType count) {
             length_ += count;
             return stack_.template Push<Ch>(count);
         }
@@ -958,36 +958,36 @@ private:
         internal::StreamLocalCopy<InputStream> copy(is);
         InputStream& s(copy.s);
 
-        CEREAL_RAPIDJSON_ASSERT(s.Peek() == '\"');
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(s.Peek() == '\"');
         s.Take();  // Skip '\"'
 
         bool success = false;
         if (parseFlags & kParseInsituFlag) {
             typename InputStream::Ch *head = s.PutBegin();
             ParseStringToStream<parseFlags, SourceEncoding, SourceEncoding>(s, s);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
             size_t length = s.PutEnd(head) - 1;
-            CEREAL_RAPIDJSON_ASSERT(length <= 0xFFFFFFFF);
+            TIMEMORY_CEREAL_RAPIDJSON_ASSERT(length <= 0xFFFFFFFF);
             const typename TargetEncoding::Ch* const str = reinterpret_cast<typename TargetEncoding::Ch*>(head);
             success = (isKey ? handler.Key(str, SizeType(length), false) : handler.String(str, SizeType(length), false));
         }
         else {
             StackStream<typename TargetEncoding::Ch> stackStream(stack_);
             ParseStringToStream<parseFlags, SourceEncoding, TargetEncoding>(s, stackStream);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
             SizeType length = static_cast<SizeType>(stackStream.Length()) - 1;
             const typename TargetEncoding::Ch* const str = stackStream.Pop();
             success = (isKey ? handler.Key(str, length, true) : handler.String(str, length, true));
         }
-        if (CEREAL_RAPIDJSON_UNLIKELY(!success))
-            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, s.Tell());
+        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!success))
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, s.Tell());
     }
 
     // Parse string to an output is
     // This function handles the prefix/suffix double quotes, escaping, and optional encoding validation.
     template<unsigned parseFlags, typename SEncoding, typename TEncoding, typename InputStream, typename OutputStream>
-    CEREAL_RAPIDJSON_FORCEINLINE void ParseStringToStream(InputStream& is, OutputStream& os) {
-//!@cond CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void ParseStringToStream(InputStream& is, OutputStream& os) {
+//!@cond TIMEMORY_CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
 #define Z16 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         static const char escape[256] = {
             Z16, Z16, 0, 0,'\"', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,'/',
@@ -1005,68 +1005,68 @@ private:
                 ScanCopyUnescapedString(is, os);
 
             Ch c = is.Peek();
-            if (CEREAL_RAPIDJSON_UNLIKELY(c == '\\')) {    // Escape
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(c == '\\')) {    // Escape
                 size_t escapeOffset = is.Tell();    // For invalid escaping, report the initial '\\' as error offset
                 is.Take();
                 Ch e = is.Peek();
-                if ((sizeof(Ch) == 1 || unsigned(e) < 256) && CEREAL_RAPIDJSON_LIKELY(escape[static_cast<unsigned char>(e)])) {
+                if ((sizeof(Ch) == 1 || unsigned(e) < 256) && TIMEMORY_CEREAL_RAPIDJSON_LIKELY(escape[static_cast<unsigned char>(e)])) {
                     is.Take();
                     os.Put(static_cast<typename TEncoding::Ch>(escape[static_cast<unsigned char>(e)]));
                 }
-                else if (CEREAL_RAPIDJSON_LIKELY(e == 'u')) {    // Unicode
+                else if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(e == 'u')) {    // Unicode
                     is.Take();
                     unsigned codepoint = ParseHex4(is, escapeOffset);
-                    CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
-                    if (CEREAL_RAPIDJSON_UNLIKELY(codepoint >= 0xD800 && codepoint <= 0xDBFF)) {
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+                    if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(codepoint >= 0xD800 && codepoint <= 0xDBFF)) {
                         // Handle UTF-16 surrogate pair
-                        if (CEREAL_RAPIDJSON_UNLIKELY(!Consume(is, '\\') || !Consume(is, 'u')))
-                            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringUnicodeSurrogateInvalid, escapeOffset);
+                        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!Consume(is, '\\') || !Consume(is, 'u')))
+                            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringUnicodeSurrogateInvalid, escapeOffset);
                         unsigned codepoint2 = ParseHex4(is, escapeOffset);
-                        CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
-                        if (CEREAL_RAPIDJSON_UNLIKELY(codepoint2 < 0xDC00 || codepoint2 > 0xDFFF))
-                            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringUnicodeSurrogateInvalid, escapeOffset);
+                        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+                        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(codepoint2 < 0xDC00 || codepoint2 > 0xDFFF))
+                            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringUnicodeSurrogateInvalid, escapeOffset);
                         codepoint = (((codepoint - 0xD800) << 10) | (codepoint2 - 0xDC00)) + 0x10000;
                     }
                     TEncoding::Encode(os, codepoint);
                 }
                 else
-                    CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringEscapeInvalid, escapeOffset);
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringEscapeInvalid, escapeOffset);
             }
-            else if (CEREAL_RAPIDJSON_UNLIKELY(c == '"')) {    // Closing double quote
+            else if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(c == '"')) {    // Closing double quote
                 is.Take();
                 os.Put('\0');   // null-terminate the string
                 return;
             }
-            else if (CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(c) < 0x20)) { // RFC 4627: unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
+            else if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(c) < 0x20)) { // RFC 4627: unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
                 if (c == '\0')
-                    CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringMissQuotationMark, is.Tell());
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringMissQuotationMark, is.Tell());
                 else
-                    CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringInvalidEncoding, is.Tell());
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringInvalidEncoding, is.Tell());
             }
             else {
                 size_t offset = is.Tell();
-                if (CEREAL_RAPIDJSON_UNLIKELY((parseFlags & kParseValidateEncodingFlag ?
+                if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY((parseFlags & kParseValidateEncodingFlag ?
                     !Transcoder<SEncoding, TEncoding>::Validate(is, os) :
                     !Transcoder<SEncoding, TEncoding>::Transcode(is, os))))
-                    CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringInvalidEncoding, offset);
+                    TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorStringInvalidEncoding, offset);
             }
         }
     }
 
     template<typename InputStream, typename OutputStream>
-    static CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(InputStream&, OutputStream&) {
+    static TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(InputStream&, OutputStream&) {
             // Do nothing for generic version
     }
 
-#if defined(CEREAL_RAPIDJSON_SSE2) || defined(CEREAL_RAPIDJSON_SSE42)
+#if defined(TIMEMORY_CEREAL_RAPIDJSON_SSE2) || defined(TIMEMORY_CEREAL_RAPIDJSON_SSE42)
     // StringStream -> StackStream<char>
-    static CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(StringStream& is, StackStream<char>& os) {
+    static TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(StringStream& is, StackStream<char>& os) {
         const char* p = is.src_;
 
         // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
         const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
         while (p != nextAligned)
-            if (CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
                 is.src_ = p;
                 return;
             }
@@ -1088,7 +1088,7 @@ private:
             const __m128i t3 = _mm_cmpeq_epi8(_mm_max_epu8(s, sp), sp); // s < 0x20 <=> max(s, 0x1F) == 0x1F
             const __m128i x = _mm_or_si128(_mm_or_si128(t1, t2), t3);
             unsigned short r = static_cast<unsigned short>(_mm_movemask_epi8(x));
-            if (CEREAL_RAPIDJSON_UNLIKELY(r != 0)) {   // some of characters is escaped
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(r != 0)) {   // some of characters is escaped
                 SizeType length;
     #ifdef _MSC_VER         // Find the index of first escaped
                 unsigned long offset;
@@ -1113,8 +1113,8 @@ private:
     }
 
     // InsituStringStream -> InsituStringStream
-    static CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(InsituStringStream& is, InsituStringStream& os) {
-        CEREAL_RAPIDJSON_ASSERT(&is == &os);
+    static TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(InsituStringStream& is, InsituStringStream& os) {
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(&is == &os);
         (void)os;
 
         if (is.src_ == is.dst_) {
@@ -1128,7 +1128,7 @@ private:
         // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
         const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
         while (p != nextAligned)
-            if (CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
                 is.src_ = p;
                 is.dst_ = q;
                 return;
@@ -1151,7 +1151,7 @@ private:
             const __m128i t3 = _mm_cmpeq_epi8(_mm_max_epu8(s, sp), sp); // s < 0x20 <=> max(s, 0x1F) == 0x1F
             const __m128i x = _mm_or_si128(_mm_or_si128(t1, t2), t3);
             unsigned short r = static_cast<unsigned short>(_mm_movemask_epi8(x));
-            if (CEREAL_RAPIDJSON_UNLIKELY(r != 0)) {   // some of characters is escaped
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(r != 0)) {   // some of characters is escaped
                 size_t length;
 #ifdef _MSC_VER         // Find the index of first escaped
                 unsigned long offset;
@@ -1172,14 +1172,14 @@ private:
     }
 
     // When read/write pointers are the same for insitu stream, just skip unescaped characters
-    static CEREAL_RAPIDJSON_FORCEINLINE void SkipUnescapedString(InsituStringStream& is) {
-        CEREAL_RAPIDJSON_ASSERT(is.src_ == is.dst_);
+    static TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void SkipUnescapedString(InsituStringStream& is) {
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(is.src_ == is.dst_);
         char* p = is.src_;
 
         // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
         const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
         for (; p != nextAligned; p++)
-            if (CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
                 is.src_ = is.dst_ = p;
                 return;
             }
@@ -1199,7 +1199,7 @@ private:
             const __m128i t3 = _mm_cmpeq_epi8(_mm_max_epu8(s, sp), sp); // s < 0x20 <=> max(s, 0x1F) == 0x1F
             const __m128i x = _mm_or_si128(_mm_or_si128(t1, t2), t3);
             unsigned short r = static_cast<unsigned short>(_mm_movemask_epi8(x));
-            if (CEREAL_RAPIDJSON_UNLIKELY(r != 0)) {   // some of characters is escaped
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(r != 0)) {   // some of characters is escaped
                 size_t length;
 #ifdef _MSC_VER         // Find the index of first escaped
                 unsigned long offset;
@@ -1215,15 +1215,15 @@ private:
 
         is.src_ = is.dst_ = p;
     }
-#elif defined(CEREAL_RAPIDJSON_NEON)
+#elif defined(TIMEMORY_CEREAL_RAPIDJSON_NEON)
     // StringStream -> StackStream<char>
-    static CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(StringStream& is, StackStream<char>& os) {
+    static TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(StringStream& is, StackStream<char>& os) {
         const char* p = is.src_;
 
         // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
         const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
         while (p != nextAligned)
-            if (CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
                 is.src_ = p;
                 return;
             }
@@ -1260,7 +1260,7 @@ private:
                 length = lz >> 3;
                 escaped = true;
             }
-            if (CEREAL_RAPIDJSON_UNLIKELY(escaped)) {   // some of characters is escaped
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(escaped)) {   // some of characters is escaped
                 if (length != 0) {
                     char* q = reinterpret_cast<char*>(os.Push(length));
                     for (size_t i = 0; i < length; i++)
@@ -1277,8 +1277,8 @@ private:
     }
 
     // InsituStringStream -> InsituStringStream
-    static CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(InsituStringStream& is, InsituStringStream& os) {
-        CEREAL_RAPIDJSON_ASSERT(&is == &os);
+    static TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(InsituStringStream& is, InsituStringStream& os) {
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(&is == &os);
         (void)os;
 
         if (is.src_ == is.dst_) {
@@ -1292,7 +1292,7 @@ private:
         // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
         const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
         while (p != nextAligned)
-            if (CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
                 is.src_ = p;
                 is.dst_ = q;
                 return;
@@ -1330,7 +1330,7 @@ private:
                 length = lz >> 3;
                 escaped = true;
             }
-            if (CEREAL_RAPIDJSON_UNLIKELY(escaped)) {   // some of characters is escaped
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(escaped)) {   // some of characters is escaped
                 for (const char* pend = p + length; p != pend; ) {
                     *q++ = *p++;
                 }
@@ -1344,14 +1344,14 @@ private:
     }
 
     // When read/write pointers are the same for insitu stream, just skip unescaped characters
-    static CEREAL_RAPIDJSON_FORCEINLINE void SkipUnescapedString(InsituStringStream& is) {
-        CEREAL_RAPIDJSON_ASSERT(is.src_ == is.dst_);
+    static TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void SkipUnescapedString(InsituStringStream& is) {
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(is.src_ == is.dst_);
         char* p = is.src_;
 
         // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
         const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
         for (; p != nextAligned; p++)
-            if (CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\"') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(*p == '\\') || TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
                 is.src_ = is.dst_ = p;
                 return;
             }
@@ -1388,7 +1388,7 @@ private:
 
         is.src_ = is.dst_ = p;
     }
-#endif // CEREAL_RAPIDJSON_NEON
+#endif // TIMEMORY_CEREAL_RAPIDJSON_NEON
 
     template<typename InputStream, bool backup, bool pushOnTake>
     class NumberStream;
@@ -1400,10 +1400,10 @@ private:
 
         NumberStream(GenericReader& reader, InputStream& s) : is(s) { (void)reader;  }
 
-        CEREAL_RAPIDJSON_FORCEINLINE Ch Peek() const { return is.Peek(); }
-        CEREAL_RAPIDJSON_FORCEINLINE Ch TakePush() { return is.Take(); }
-        CEREAL_RAPIDJSON_FORCEINLINE Ch Take() { return is.Take(); }
-		  CEREAL_RAPIDJSON_FORCEINLINE void Push(char) {}
+        TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE Ch Peek() const { return is.Peek(); }
+        TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE Ch TakePush() { return is.Take(); }
+        TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE Ch Take() { return is.Take(); }
+		  TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void Push(char) {}
 
         size_t Tell() { return is.Tell(); }
         size_t Length() { return 0; }
@@ -1421,12 +1421,12 @@ private:
     public:
         NumberStream(GenericReader& reader, InputStream& s) : Base(reader, s), stackStream(reader.stack_) {}
 
-        CEREAL_RAPIDJSON_FORCEINLINE Ch TakePush() {
+        TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE Ch TakePush() {
             stackStream.Put(static_cast<char>(Base::is.Peek()));
             return Base::is.Take();
         }
 
-        CEREAL_RAPIDJSON_FORCEINLINE void Push(char c) {
+        TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE void Push(char c) {
             stackStream.Put(c);
         }
 
@@ -1447,7 +1447,7 @@ private:
     public:
         NumberStream(GenericReader& reader, InputStream& is) : Base(reader, is) {}
 
-        CEREAL_RAPIDJSON_FORCEINLINE Ch Take() { return Base::TakePush(); }
+        TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE Ch Take() { return Base::TakePush(); }
     };
 
     template<unsigned parseFlags, typename InputStream, typename Handler>
@@ -1472,17 +1472,17 @@ private:
         uint64_t i64 = 0;
         bool use64bit = false;
         int significandDigit = 0;
-        if (CEREAL_RAPIDJSON_UNLIKELY(s.Peek() == '0')) {
+        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(s.Peek() == '0')) {
             i = 0;
             s.TakePush();
         }
-        else if (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '1' && s.Peek() <= '9')) {
+        else if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '1' && s.Peek() <= '9')) {
             i = static_cast<unsigned>(s.TakePush() - '0');
 
             if (minus)
-                while (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
-                    if (CEREAL_RAPIDJSON_UNLIKELY(i >= 214748364)) { // 2^31 = 2147483648
-                        if (CEREAL_RAPIDJSON_LIKELY(i != 214748364 || s.Peek() > '8')) {
+                while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+                    if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(i >= 214748364)) { // 2^31 = 2147483648
+                        if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(i != 214748364 || s.Peek() > '8')) {
                             i64 = i;
                             use64bit = true;
                             break;
@@ -1492,9 +1492,9 @@ private:
                     significandDigit++;
                 }
             else
-                while (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
-                    if (CEREAL_RAPIDJSON_UNLIKELY(i >= 429496729)) { // 2^32 - 1 = 4294967295
-                        if (CEREAL_RAPIDJSON_LIKELY(i != 429496729 || s.Peek() > '5')) {
+                while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+                    if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(i >= 429496729)) { // 2^32 - 1 = 4294967295
+                        if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(i != 429496729 || s.Peek() > '5')) {
                             i64 = i;
                             use64bit = true;
                             break;
@@ -1505,39 +1505,39 @@ private:
                 }
         }
         // Parse NaN or Infinity here
-        else if ((parseFlags & kParseNanAndInfFlag) && CEREAL_RAPIDJSON_LIKELY((s.Peek() == 'I' || s.Peek() == 'N'))) {
+        else if ((parseFlags & kParseNanAndInfFlag) && TIMEMORY_CEREAL_RAPIDJSON_LIKELY((s.Peek() == 'I' || s.Peek() == 'N'))) {
             if (Consume(s, 'N')) {
                 if (Consume(s, 'a') && Consume(s, 'N')) {
                     d = std::numeric_limits<double>::quiet_NaN();
                     useNanOrInf = true;
                 }
             }
-            else if (CEREAL_RAPIDJSON_LIKELY(Consume(s, 'I'))) {
+            else if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(Consume(s, 'I'))) {
                 if (Consume(s, 'n') && Consume(s, 'f')) {
                     d = (minus ? -std::numeric_limits<double>::infinity() : std::numeric_limits<double>::infinity());
                     useNanOrInf = true;
 
-                    if (CEREAL_RAPIDJSON_UNLIKELY(s.Peek() == 'i' && !(Consume(s, 'i') && Consume(s, 'n')
+                    if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(s.Peek() == 'i' && !(Consume(s, 'i') && Consume(s, 'n')
                                                                 && Consume(s, 'i') && Consume(s, 't') && Consume(s, 'y')))) {
-                        CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, s.Tell());
+                        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, s.Tell());
                     }
                 }
             }
 
-            if (CEREAL_RAPIDJSON_UNLIKELY(!useNanOrInf)) {
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, s.Tell());
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!useNanOrInf)) {
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, s.Tell());
             }
         }
         else
-            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, s.Tell());
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, s.Tell());
 
         // Parse 64bit int
         bool useDouble = false;
         if (use64bit) {
             if (minus)
-                while (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
-                     if (CEREAL_RAPIDJSON_UNLIKELY(i64 >= CEREAL_RAPIDJSON_UINT64_C2(0x0CCCCCCC, 0xCCCCCCCC))) // 2^63 = 9223372036854775808
-                        if (CEREAL_RAPIDJSON_LIKELY(i64 != CEREAL_RAPIDJSON_UINT64_C2(0x0CCCCCCC, 0xCCCCCCCC) || s.Peek() > '8')) {
+                while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+                     if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(i64 >= TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x0CCCCCCC, 0xCCCCCCCC))) // 2^63 = 9223372036854775808
+                        if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(i64 != TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x0CCCCCCC, 0xCCCCCCCC) || s.Peek() > '8')) {
                             d = static_cast<double>(i64);
                             useDouble = true;
                             break;
@@ -1546,9 +1546,9 @@ private:
                     significandDigit++;
                 }
             else
-                while (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
-                    if (CEREAL_RAPIDJSON_UNLIKELY(i64 >= CEREAL_RAPIDJSON_UINT64_C2(0x19999999, 0x99999999))) // 2^64 - 1 = 18446744073709551615
-                        if (CEREAL_RAPIDJSON_LIKELY(i64 != CEREAL_RAPIDJSON_UINT64_C2(0x19999999, 0x99999999) || s.Peek() > '5')) {
+                while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+                    if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(i64 >= TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x19999999, 0x99999999))) // 2^64 - 1 = 18446744073709551615
+                        if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(i64 != TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x19999999, 0x99999999) || s.Peek() > '5')) {
                             d = static_cast<double>(i64);
                             useDouble = true;
                             break;
@@ -1560,7 +1560,7 @@ private:
 
         // Force double for big integer
         if (useDouble) {
-            while (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+            while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
                 d = d * 10 + (s.TakePush() - '0');
             }
         }
@@ -1571,17 +1571,17 @@ private:
         if (Consume(s, '.')) {
             decimalPosition = s.Length();
 
-            if (CEREAL_RAPIDJSON_UNLIKELY(!(s.Peek() >= '0' && s.Peek() <= '9')))
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorNumberMissFraction, s.Tell());
+            if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!(s.Peek() >= '0' && s.Peek() <= '9')))
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorNumberMissFraction, s.Tell());
 
             if (!useDouble) {
-#if CEREAL_RAPIDJSON_64BIT
+#if TIMEMORY_CEREAL_RAPIDJSON_64BIT
                 // Use i64 to store significand in 64-bit architecture
                 if (!use64bit)
                     i64 = i;
 
-                while (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
-                    if (i64 > CEREAL_RAPIDJSON_UINT64_C2(0x1FFFFF, 0xFFFFFFFF)) // 2^53 - 1 for fast path
+                while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+                    if (i64 > TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x1FFFFF, 0xFFFFFFFF)) // 2^53 - 1 for fast path
                         break;
                     else {
                         i64 = i64 * 10 + static_cast<unsigned>(s.TakePush() - '0');
@@ -1599,11 +1599,11 @@ private:
                 useDouble = true;
             }
 
-            while (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+            while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
                 if (significandDigit < 17) {
                     d = d * 10.0 + (s.TakePush() - '0');
                     --expFrac;
-                    if (CEREAL_RAPIDJSON_LIKELY(d > 0.0))
+                    if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(d > 0.0))
                         significandDigit++;
                 }
                 else
@@ -1627,7 +1627,7 @@ private:
             else if (Consume(s, '-'))
                 expMinus = true;
 
-            if (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+            if (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
                 exp = static_cast<int>(s.Take() - '0');
                 if (expMinus) {
                     // (exp + expFrac) must not underflow int => we're detecting when -exp gets
@@ -1636,28 +1636,28 @@ private:
                     //
                     //        -(exp * 10 + 9) + expFrac >= INT_MIN
                     //   <=>  exp <= (expFrac - INT_MIN - 9) / 10
-                    CEREAL_RAPIDJSON_ASSERT(expFrac <= 0);
+                    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(expFrac <= 0);
                     int maxExp = (expFrac + 2147483639) / 10;
 
-                    while (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+                    while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
                         exp = exp * 10 + static_cast<int>(s.Take() - '0');
-                        if (CEREAL_RAPIDJSON_UNLIKELY(exp > maxExp)) {
-                            while (CEREAL_RAPIDJSON_UNLIKELY(s.Peek() >= '0' && s.Peek() <= '9'))  // Consume the rest of exponent
+                        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(exp > maxExp)) {
+                            while (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(s.Peek() >= '0' && s.Peek() <= '9'))  // Consume the rest of exponent
                                 s.Take();
                         }
                     }
                 }
                 else {  // positive exp
                     int maxExp = 308 - expFrac;
-                    while (CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+                    while (TIMEMORY_CEREAL_RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
                         exp = exp * 10 + static_cast<int>(s.Take() - '0');
-                        if (CEREAL_RAPIDJSON_UNLIKELY(exp > maxExp))
-                            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorNumberTooBig, startOffset);
+                        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(exp > maxExp))
+                            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorNumberTooBig, startOffset);
                     }
                 }
             }
             else
-                CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorNumberMissExponent, s.Tell());
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorNumberMissExponent, s.Tell());
 
             if (expMinus)
                 exp = -exp;
@@ -1671,7 +1671,7 @@ private:
                 s.Pop();  // Pop stack no matter if it will be used or not.
                 typename InputStream::Ch* head = is.PutBegin();
                 const size_t length = s.Tell() - startOffset;
-                CEREAL_RAPIDJSON_ASSERT(length <= 0xFFFFFFFF);
+                TIMEMORY_CEREAL_RAPIDJSON_ASSERT(length <= 0xFFFFFFFF);
                 // unable to insert the \0 character here, it will erase the comma after this number
                 const typename TargetEncoding::Ch* const str = reinterpret_cast<typename TargetEncoding::Ch*>(head);
                 cont = handler.RawNumber(str, SizeType(length), false);
@@ -1704,7 +1704,7 @@ private:
                if (d > (std::numeric_limits<double>::max)()) {
                    // Overflow
                    // TODO: internal::StrtodX should report overflow (or underflow)
-                   CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorNumberTooBig, startOffset);
+                   TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorNumberTooBig, startOffset);
                }
 
                cont = handler.Double(minus ? -d : d);
@@ -1727,8 +1727,8 @@ private:
                }
            }
         }
-        if (CEREAL_RAPIDJSON_UNLIKELY(!cont))
-            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, startOffset);
+        if (TIMEMORY_CEREAL_RAPIDJSON_UNLIKELY(!cont))
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorTermination, startOffset);
     }
 
     // Parse any JSON value
@@ -1798,9 +1798,9 @@ private:
         kTokenCount
     };
 
-    CEREAL_RAPIDJSON_FORCEINLINE Token Tokenize(Ch c) const {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE Token Tokenize(Ch c) const {
 
-//!@cond CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
+//!@cond TIMEMORY_CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
 #define N NumberToken
 #define N16 N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
         // Maps from ASCII to Token
@@ -1825,7 +1825,7 @@ private:
             return NumberToken;
     }
 
-    CEREAL_RAPIDJSON_FORCEINLINE IterativeParsingState Predict(IterativeParsingState state, Token token) const {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE IterativeParsingState Predict(IterativeParsingState state, Token token) const {
         // current state x one lookahead token -> new state
         static const char G[cIterativeParsingStateCount][kTokenCount] = {
             // Finish(sink state)
@@ -1992,7 +1992,7 @@ private:
     // Make an advance in the token stream and state based on the candidate destination state which was returned by Transit().
     // May return a new state on state pop.
     template <unsigned parseFlags, typename InputStream, typename Handler>
-    CEREAL_RAPIDJSON_FORCEINLINE IterativeParsingState Transit(IterativeParsingState src, Token token, IterativeParsingState dst, InputStream& is, Handler& handler) {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE IterativeParsingState Transit(IterativeParsingState src, Token token, IterativeParsingState dst, InputStream& is, Handler& handler) {
         (void)token;
 
         switch (dst) {
@@ -2017,7 +2017,7 @@ private:
             bool hr = (dst == IterativeParsingObjectInitialState) ? handler.StartObject() : handler.StartArray();
             // On handler short circuits the parsing.
             if (!hr) {
-                CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
                 return IterativeParsingErrorState;
             }
             else {
@@ -2034,7 +2034,7 @@ private:
                 return dst;
 
         case IterativeParsingKeyValueDelimiterState:
-            CEREAL_RAPIDJSON_ASSERT(token == ColonToken);
+            TIMEMORY_CEREAL_RAPIDJSON_ASSERT(token == ColonToken);
             is.Take();
             return dst;
 
@@ -2065,7 +2065,7 @@ private:
         {
             // Transit from delimiter is only allowed when trailing commas are enabled
             if (!(parseFlags & kParseTrailingCommasFlag) && src == IterativeParsingMemberDelimiterState) {
-                CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorObjectMissName, is.Tell());
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorObjectMissName, is.Tell());
                 return IterativeParsingErrorState;
             }
             // Get member count.
@@ -2082,7 +2082,7 @@ private:
             bool hr = handler.EndObject(c);
             // On handler short circuits the parsing.
             if (!hr) {
-                CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
                 return IterativeParsingErrorState;
             }
             else {
@@ -2095,7 +2095,7 @@ private:
         {
             // Transit from delimiter is only allowed when trailing commas are enabled
             if (!(parseFlags & kParseTrailingCommasFlag) && src == IterativeParsingElementDelimiterState) {
-                CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorValueInvalid, is.Tell());
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorValueInvalid, is.Tell());
                 return IterativeParsingErrorState;
             }
             // Get element count.
@@ -2112,7 +2112,7 @@ private:
             bool hr = handler.EndArray(c);
             // On handler short circuits the parsing.
             if (!hr) {
-                CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
+                TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
                 return IterativeParsingErrorState;
             }
             else {
@@ -2132,7 +2132,7 @@ private:
             // The IterativeParsingFinishState is not enumerated in this switch-case either.
             // It is a "derivative" state which cannot triggered from Predict() directly.
             // Therefore it cannot happen here. And it can be caught by following assertion.
-            CEREAL_RAPIDJSON_ASSERT(dst == IterativeParsingValueState);
+            TIMEMORY_CEREAL_RAPIDJSON_ASSERT(dst == IterativeParsingValueState);
 
             // Must be non-compound value. Or it would be ObjectInitial or ArrayInitial state.
             ParseValue<parseFlags>(is, handler);
@@ -2151,24 +2151,24 @@ private:
         }
 
         switch (src) {
-        case IterativeParsingStartState:            CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorDocumentEmpty, is.Tell()); return;
-        case IterativeParsingFinishState:           CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorDocumentRootNotSingular, is.Tell()); return;
+        case IterativeParsingStartState:            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorDocumentEmpty, is.Tell()); return;
+        case IterativeParsingFinishState:           TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorDocumentRootNotSingular, is.Tell()); return;
         case IterativeParsingObjectInitialState:
-        case IterativeParsingMemberDelimiterState:  CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissName, is.Tell()); return;
-        case IterativeParsingMemberKeyState:        CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissColon, is.Tell()); return;
-        case IterativeParsingMemberValueState:      CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissCommaOrCurlyBracket, is.Tell()); return;
+        case IterativeParsingMemberDelimiterState:  TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissName, is.Tell()); return;
+        case IterativeParsingMemberKeyState:        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissColon, is.Tell()); return;
+        case IterativeParsingMemberValueState:      TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissCommaOrCurlyBracket, is.Tell()); return;
         case IterativeParsingKeyValueDelimiterState:
         case IterativeParsingArrayInitialState:
-        case IterativeParsingElementDelimiterState: CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell()); return;
-        default: CEREAL_RAPIDJSON_ASSERT(src == IterativeParsingElementState); CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorArrayMissCommaOrSquareBracket, is.Tell()); return;
+        case IterativeParsingElementDelimiterState: TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell()); return;
+        default: TIMEMORY_CEREAL_RAPIDJSON_ASSERT(src == IterativeParsingElementState); TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR(kParseErrorArrayMissCommaOrSquareBracket, is.Tell()); return;
         }
     }
 
-    CEREAL_RAPIDJSON_FORCEINLINE bool IsIterativeParsingDelimiterState(IterativeParsingState s) const {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE bool IsIterativeParsingDelimiterState(IterativeParsingState s) const {
         return s >= IterativeParsingElementDelimiterState;
     }
 
-    CEREAL_RAPIDJSON_FORCEINLINE bool IsIterativeParsingCompleteState(IterativeParsingState s) const {
+    TIMEMORY_CEREAL_RAPIDJSON_FORCEINLINE bool IsIterativeParsingCompleteState(IterativeParsingState s) const {
         return s <= IterativeParsingErrorState;
     }
 
@@ -2179,7 +2179,7 @@ private:
         IterativeParsingState state = IterativeParsingStartState;
 
         SkipWhitespaceAndComments<parseFlags>(is);
-        CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
         while (is.Peek() != '\0') {
             Token t = Tokenize(is.Peek());
             IterativeParsingState n = Predict(state, t);
@@ -2197,7 +2197,7 @@ private:
                 break;
 
             SkipWhitespaceAndComments<parseFlags>(is);
-            CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+            TIMEMORY_CEREAL_RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
         }
 
         // Handle the end of file.
@@ -2216,15 +2216,15 @@ private:
 //! Reader with UTF8 encoding and default allocator.
 typedef GenericReader<UTF8<>, UTF8<> > Reader;
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #if defined(__clang__) || defined(_MSC_VER)
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_READER_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_READER_H_

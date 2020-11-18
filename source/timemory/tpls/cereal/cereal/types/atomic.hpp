@@ -27,31 +27,34 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_ATOMIC_HPP_
-#define CEREAL_TYPES_ATOMIC_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_ATOMIC_HPP_
+#define TIMEMORY_CEREAL_TYPES_ATOMIC_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <atomic>
 
+namespace tim
+{
 namespace cereal
 {
 //! Serializing (save) for std::atomic
 template <class Archive, class T>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::atomic<T> const& a)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::atomic<T> const& a)
 {
-    ar(CEREAL_NVP_("atomic_data", a.load()));
+    ar(TIMEMORY_CEREAL_NVP_("atomic_data", a.load()));
 }
 
 //! Serializing (load) for std::atomic
 template <class Archive, class T>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::atomic<T>& a)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::atomic<T>& a)
 {
     T tmp;
-    ar(CEREAL_NVP_("atomic_data", tmp));
+    ar(TIMEMORY_CEREAL_NVP_("atomic_data", tmp));
     a.store(tmp);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_ATOMIC_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_ATOMIC_HPP_

@@ -27,15 +27,17 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_ARCHIVES_ADAPTERS_HPP_
-#define CEREAL_ARCHIVES_ADAPTERS_HPP_
+#ifndef TIMEMORY_CEREAL_ARCHIVES_ADAPTERS_HPP_
+#define TIMEMORY_CEREAL_ARCHIVES_ADAPTERS_HPP_
 
 #include "timemory/tpls/cereal/cereal/details/helpers.hpp"
 #include <utility>
 
+namespace tim
+{
 namespace cereal
 {
-#ifdef CEREAL_FUTURE_EXPERIMENTAL
+#ifdef TIMEMORY_CEREAL_FUTURE_EXPERIMENTAL
 
 // Forward declaration for friend access
 template <class U, class A>
@@ -159,11 +161,12 @@ get_user_data(Archive& ar)
         return dynamic_cast<UserDataAdapter<UserData, Archive>&>(ar).userdata;
     } catch(std::bad_cast const&)
     {
-        throw ::cereal::Exception(
+        throw ::tim::cereal::Exception(
             "Attempting to get user data from archive not wrapped in UserDataAdapter");
     }
 }
-#endif  // CEREAL_FUTURE_EXPERIMENTAL
+#endif  // TIMEMORY_CEREAL_FUTURE_EXPERIMENTAL
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_ARCHIVES_ADAPTERS_HPP_
+#endif  // TIMEMORY_CEREAL_ARCHIVES_ADAPTERS_HPP_

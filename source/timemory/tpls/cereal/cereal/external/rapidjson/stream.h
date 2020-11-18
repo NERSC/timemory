@@ -14,12 +14,12 @@
 
 #include "rapidjson.h"
 
-#ifndef CEREAL_RAPIDJSON_STREAM_H_
-#define CEREAL_RAPIDJSON_STREAM_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_STREAM_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_STREAM_H_
 
 #include "encodings.h"
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Stream
@@ -110,9 +110,9 @@ inline void PutN(Stream& stream, Ch c, size_t n) {
 */
 
 #if defined(_MSC_VER) && _MSC_VER <= 1800
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(4702)  // unreachable code
-CEREAL_RAPIDJSON_DIAG_OFF(4512)  // assignment operator could not be generated
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(4702)  // unreachable code
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(4512)  // assignment operator could not be generated
 #endif
 
 template <typename InputStream, typename Encoding = UTF8<> >
@@ -141,7 +141,7 @@ protected:
 };
 
 #if defined(_MSC_VER) && _MSC_VER <= 1800
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -160,10 +160,10 @@ struct GenericStringStream {
     Ch Take() { return *src_++; }
     size_t Tell() const { return static_cast<size_t>(src_ - head_); }
 
-    Ch* PutBegin() { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
-    void Put(Ch) { CEREAL_RAPIDJSON_ASSERT(false); }
-    void Flush() { CEREAL_RAPIDJSON_ASSERT(false); }
-    size_t PutEnd(Ch*) { CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    Ch* PutBegin() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
+    void Put(Ch) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); }
+    void Flush() { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); }
+    size_t PutEnd(Ch*) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(false); return 0; }
 
     const Ch* src_;     //!< Current read position.
     const Ch* head_;    //!< Original head of the string.
@@ -196,7 +196,7 @@ struct GenericInsituStringStream {
     size_t Tell() { return static_cast<size_t>(src_ - head_); }
 
     // Write
-    void Put(Ch c) { CEREAL_RAPIDJSON_ASSERT(dst_ != 0); *dst_++ = c; }
+    void Put(Ch c) { TIMEMORY_CEREAL_RAPIDJSON_ASSERT(dst_ != 0); *dst_++ = c; }
 
     Ch* PutBegin() { return dst_ = src_; }
     size_t PutEnd(Ch* begin) { return static_cast<size_t>(dst_ - begin); }
@@ -218,6 +218,6 @@ struct StreamTraits<GenericInsituStringStream<Encoding> > {
 //! Insitu string stream with UTF8 encoding.
 typedef GenericInsituStringStream<UTF8<> > InsituStringStream;
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
-#endif // CEREAL_RAPIDJSON_STREAM_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_STREAM_H_
