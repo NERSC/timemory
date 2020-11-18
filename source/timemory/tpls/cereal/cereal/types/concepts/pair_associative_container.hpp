@@ -28,18 +28,20 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_CONCEPTS_PAIR_ASSOCIATIVE_CONTAINER_HPP_
-#define CEREAL_CONCEPTS_PAIR_ASSOCIATIVE_CONTAINER_HPP_
+#ifndef TIMEMORY_CEREAL_CONCEPTS_PAIR_ASSOCIATIVE_CONTAINER_HPP_
+#define TIMEMORY_CEREAL_CONCEPTS_PAIR_ASSOCIATIVE_CONTAINER_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 //! Saving for std-like pair associative containers
 template <class Archive, template <typename...> class Map, typename... Args,
           typename = typename Map<Args...>::mapped_type>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, Map<Args...> const& map)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, Map<Args...> const& map)
 {
     ar(make_size_tag(static_cast<size_type>(map.size())));
 
@@ -51,7 +53,7 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, Map<Args...> const& map)
 template <class Archive, template <typename...> class Map, typename... Args,
           typename = typename Map<Args...>::mapped_type>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, Map<Args...>& map)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, Map<Args...>& map)
 {
     size_type size;
     ar(make_size_tag(size));
@@ -65,13 +67,14 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, Map<Args...>& map)
         typename Map<Args...>::mapped_type value;
 
         ar(make_map_item(key, value));
-#ifdef CEREAL_OLDER_GCC
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
         hint = map.insert(hint, std::make_pair(std::move(key), std::move(value)));
-#else   // NOT CEREAL_OLDER_GCC
+#else   // NOT TIMEMORY_CEREAL_OLDER_GCC
         hint = map.emplace_hint(hint, std::move(key), std::move(value));
-#endif  // NOT CEREAL_OLDER_GCC
+#endif  // NOT TIMEMORY_CEREAL_OLDER_GCC
     }
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_CONCEPTS_PAIR_ASSOCIATIVE_CONTAINER_HPP_
+#endif  // TIMEMORY_CEREAL_CONCEPTS_PAIR_ASSOCIATIVE_CONTAINER_HPP_

@@ -26,8 +26,8 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_CEREAL_HPP_
-#define CEREAL_CEREAL_HPP_
+#ifndef TIMEMORY_CEREAL_TIMEMORY_CEREAL_HPP_
+#define TIMEMORY_CEREAL_TIMEMORY_CEREAL_HPP_
 
 #include <cstddef>
 #include <cstdint>
@@ -44,6 +44,8 @@
 #include "timemory/tpls/cereal/cereal/macros.hpp"
 #include "timemory/tpls/cereal/cereal/types/base_class.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 // ######################################################################
@@ -70,7 +72,7 @@ make_nvp(const char* name, T&& value)
 //! Creates a name value pair for the variable T with the same name as the variable
 /*! @relates NameValuePair
     @ingroup Utility */
-#define CEREAL_NVP(T) ::cereal::make_nvp(#T, T)
+#define TIMEMORY_CEREAL_NVP(T) ::tim::cereal::make_nvp(#T, T)
 
 // ######################################################################
 //! Convenience function to create binary data for both const and non const pointers
@@ -201,7 +203,9 @@ enum Flags
     support pointers to polymorphic data types.  All archives that
     come with cereal are already registered.
     @ingroup Internal */
-#define CEREAL_REGISTER_ARCHIVE(Archive)                                                 \
+#define TIMEMORY_CEREAL_REGISTER_ARCHIVE(Archive)                                        \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     namespace detail                                                                     \
@@ -210,14 +214,15 @@ enum Flags
     typename polymorphic_serialization_support<Archive, T>::type                         \
     instantiate_polymorphic_binding(T*, Archive*, BindingTag, adl_tag);                  \
     }                                                                                    \
+    }                                                                                    \
     } /* end namespaces */
 
 //! Helper macro to omit unused warning
 #if defined(__GNUC__)
 // GCC / clang don't want the function
-#    define CEREAL_UNUSED_FUNCTION
+#    define TIMEMORY_CEREAL_UNUSED_FUNCTION
 #else
-#    define CEREAL_UNUSED_FUNCTION                                                       \
+#    define TIMEMORY_CEREAL_UNUSED_FUNCTION                                              \
         static void unused() { (void) version; }
 #endif
 
@@ -252,7 +257,7 @@ enum Flags
     Example interface for versioning on a non-member serialize function:
 
     @code{cpp}
-    CEREAL_CLASS_VERSION( Mytype, 77 ); // register class version
+    TIMEMORY_CEREAL_CLASS_VERSION( Mytype, 77 ); // register class version
 
     template <class Archive>
     void serialize( Archive & ar, Mytype & t, const std::uint32_t version )
@@ -272,24 +277,19 @@ enum Flags
     Interfaces for other forms of serialization functions is similar.  This
     macro should be placed at global scope.
     @ingroup Utility */
-#define CEREAL_CLASS_VERSION(TYPE, VERSION_NUMBER)                                       \
+#define TIMEMORY_CEREAL_CLASS_VERSION(TYPE, VERSION_NUMBER)                              \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     namespace detail                                                                     \
     {                                                                                    \
     template <>                                                                          \
-    struct Version<TYPE>                                                                 \
+    struct StaticVersion<TYPE>                                                           \
     {                                                                                    \
-        static const std::uint32_t version;                                              \
-        static std::uint32_t       registerVersion()                                     \
-        {                                                                                \
-            ::cereal::detail::StaticObject<Versions>::getInstance().mapping.emplace(     \
-                std::type_index(typeid(TYPE)).hash_code(), VERSION_NUMBER);              \
-            return VERSION_NUMBER;                                                       \
-        }                                                                                \
-        CEREAL_UNUSED_FUNCTION                                                           \
-    }; /* end Version */                                                                 \
-    const std::uint32_t Version<TYPE>::version = Version<TYPE>::registerVersion();       \
+        static constexpr std::uint32_t version = VERSION_NUMBER;                         \
+    };                                                                                   \
+    }                                                                                    \
     }                                                                                    \
     }  // end namespaces
 
@@ -513,7 +513,7 @@ private:
     template <class T, PROCESS_IF(non_member_serialize)>
     inline ArchiveType& processImpl(T const& t)
     {
-        CEREAL_SERIALIZE_FUNCTION_NAME(*self, const_cast<T&>(t));
+        TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(*self, const_cast<T&>(t));
         return *self;
     }
 
@@ -529,7 +529,7 @@ private:
     template <class T, PROCESS_IF(non_member_save)>
     inline ArchiveType& processImpl(T const& t)
     {
-        CEREAL_SAVE_FUNCTION_NAME(*self, t);
+        TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(*self, t);
         return *self;
     }
 
@@ -545,7 +545,7 @@ private:
     template <class T, PROCESS_IF(non_member_save_minimal)>
     inline ArchiveType& processImpl(T const& t)
     {
-        self->process(CEREAL_SAVE_MINIMAL_FUNCTION_NAME(*self, t));
+        self->process(TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(*self, t));
         return *self;
     }
 
@@ -608,13 +608,15 @@ private:
     template <class T>
     inline std::uint32_t registerClassVersion()
     {
-        static const auto hash         = std::type_index(typeid(T)).hash_code();
-        const auto        insertResult = itsVersionedTypes.insert(hash);
-        const auto        lock         = detail::StaticObject<detail::Versions>::lock();
-        const auto version = detail::StaticObject<detail::Versions>::getInstance().find(
-            hash, detail::Version<T>::version);
+        const auto hash      = std::type_index(typeid(T)).hash_code();
+        const auto version   = detail::StaticVersion<T>::version;
+        const auto insertion = itsVersionedTypes.insert(hash);
+        // const auto        lock         =
+        // detail::StaticObject<detail::Versions>::lock(); const auto version =
+        // detail::StaticObject<detail::Versions>::getInstance().find(
+        //    hash, detail::Version<T>::version);
 
-        if(insertResult.second)  // insertion took place, serialize the version number
+        if(insertion.second)  // insertion took place, serialize the version number
             process(make_nvp<ArchiveType>("cereal_class_version", version));
 
         return version;
@@ -634,8 +636,8 @@ private:
     template <class T, PROCESS_IF(non_member_versioned_serialize)>
     inline ArchiveType& processImpl(T const& t)
     {
-        CEREAL_SERIALIZE_FUNCTION_NAME(*self, const_cast<T&>(t),
-                                       registerClassVersion<T>());
+        TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(*self, const_cast<T&>(t),
+                                                registerClassVersion<T>());
         return *self;
     }
 
@@ -653,7 +655,7 @@ private:
     template <class T, PROCESS_IF(non_member_versioned_save)>
     inline ArchiveType& processImpl(T const& t)
     {
-        CEREAL_SAVE_FUNCTION_NAME(*self, t, registerClassVersion<T>());
+        TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(*self, t, registerClassVersion<T>());
         return *self;
     }
 
@@ -671,8 +673,8 @@ private:
     template <class T, PROCESS_IF(non_member_versioned_save_minimal)>
     inline ArchiveType& processImpl(T const& t)
     {
-        self->process(
-            CEREAL_SAVE_MINIMAL_FUNCTION_NAME(*self, t, registerClassVersion<T>()));
+        self->process(TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(
+            *self, t, registerClassVersion<T>()));
         return *self;
     }
 
@@ -944,7 +946,7 @@ private:
     template <class T, PROCESS_IF(non_member_serialize)>
     inline ArchiveType& processImpl(T& t)
     {
-        CEREAL_SERIALIZE_FUNCTION_NAME(*self, t);
+        TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(*self, t);
         return *self;
     }
 
@@ -960,7 +962,7 @@ private:
     template <class T, PROCESS_IF(non_member_load)>
     inline ArchiveType& processImpl(T& t)
     {
-        CEREAL_LOAD_FUNCTION_NAME(*self, t);
+        TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(*self, t);
         return *self;
     }
 
@@ -984,7 +986,7 @@ private:
             typename traits::detail::get_output_from_input<ArchiveType>::type;
         typename traits::has_non_member_save_minimal<T, OutArchiveType>::type value;
         self->process(value);
-        CEREAL_LOAD_MINIMAL_FUNCTION_NAME(*self, t, value);
+        TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(*self, t, value);
         return *self;
     }
 
@@ -1082,7 +1084,7 @@ private:
     inline ArchiveType& processImpl(T& t)
     {
         const auto version = loadClassVersion<T>();
-        CEREAL_SERIALIZE_FUNCTION_NAME(*self, t, version);
+        TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(*self, t, version);
         return *self;
     }
 
@@ -1102,7 +1104,7 @@ private:
     inline ArchiveType& processImpl(T& t)
     {
         const auto version = loadClassVersion<T>();
-        CEREAL_LOAD_FUNCTION_NAME(*self, t, version);
+        TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(*self, t, version);
         return *self;
     }
 
@@ -1131,7 +1133,7 @@ private:
         typename traits::has_non_member_versioned_save_minimal<T, OutArchiveType>::type
             value;
         self->process(value);
-        CEREAL_LOAD_MINIMAL_FUNCTION_NAME(*self, t, value, version);
+        TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(*self, t, value, version);
         return *self;
     }
 
@@ -1154,8 +1156,9 @@ private:
     std::unordered_map<std::size_t, std::uint32_t> itsVersionedTypes;
 };  // class InputArchive
 }  // namespace cereal
+}  // namespace tim
 
 // This include needs to come after things such as binary_data, make_nvp, etc
 #include "timemory/tpls/cereal/cereal/types/common.hpp"
 
-#endif  // CEREAL_CEREAL_HPP_
+#endif  // TIMEMORY_CEREAL_TIMEMORY_CEREAL_HPP_

@@ -232,7 +232,3 @@ set_env(const std::string& env_var, const Tp& _val, int override)
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
-
-#if !defined(_TIMEMORY_INTEL)
-CEREAL_CLASS_VERSION(tim::env_settings, 0)
-#endif

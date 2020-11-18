@@ -12,36 +12,36 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_INTERNAL_REGEX_H_
-#define CEREAL_RAPIDJSON_INTERNAL_REGEX_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_REGEX_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_REGEX_H_
 
 #include "../allocators.h"
 #include "../stream.h"
 #include "stack.h"
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(padded)
-CEREAL_RAPIDJSON_DIAG_OFF(switch-enum)
-CEREAL_RAPIDJSON_DIAG_OFF(implicit-fallthrough)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(padded)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(switch-enum)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(implicit-fallthrough)
 #elif defined(_MSC_VER)
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(4512) // assignment operator could not be generated
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(4512) // assignment operator could not be generated
 #endif
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(effc++)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(effc++)
 #if __GNUC__ >= 7
-CEREAL_RAPIDJSON_DIAG_OFF(implicit-fallthrough)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(implicit-fallthrough)
 #endif
 #endif
 
-#ifndef CEREAL_RAPIDJSON_REGEX_VERBOSE
-#define CEREAL_RAPIDJSON_REGEX_VERBOSE 0
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_REGEX_VERBOSE
+#define TIMEMORY_CEREAL_RAPIDJSON_REGEX_VERBOSE 0
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 namespace internal {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,7 +118,7 @@ public:
     template <typename, typename> friend class GenericRegexSearch;
 
     GenericRegex(const Ch* source, Allocator* allocator = 0) : 
-        ownAllocator_(allocator ? 0 : CEREAL_RAPIDJSON_NEW(Allocator)()), allocator_(allocator ? allocator : ownAllocator_), 
+        ownAllocator_(allocator ? 0 : TIMEMORY_CEREAL_RAPIDJSON_NEW(Allocator)()), allocator_(allocator ? allocator : ownAllocator_), 
         states_(allocator_, 256), ranges_(allocator_, 256), root_(kRegexInvalidState), stateCount_(), rangeCount_(), 
         anchorBegin_(), anchorEnd_()
     {
@@ -129,7 +129,7 @@ public:
 
     ~GenericRegex()
     {
-        CEREAL_RAPIDJSON_DELETE(ownAllocator_);
+        TIMEMORY_CEREAL_RAPIDJSON_DELETE(ownAllocator_);
     }
 
     bool IsValid() const {
@@ -171,22 +171,22 @@ private:
     };
 
     State& GetState(SizeType index) {
-        CEREAL_RAPIDJSON_ASSERT(index < stateCount_);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(index < stateCount_);
         return states_.template Bottom<State>()[index];
     }
 
     const State& GetState(SizeType index) const {
-        CEREAL_RAPIDJSON_ASSERT(index < stateCount_);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(index < stateCount_);
         return states_.template Bottom<State>()[index];
     }
 
     Range& GetRange(SizeType index) {
-        CEREAL_RAPIDJSON_ASSERT(index < rangeCount_);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(index < rangeCount_);
         return ranges_.template Bottom<Range>()[index];
     }
 
     const Range& GetRange(SizeType index) const {
-        CEREAL_RAPIDJSON_ASSERT(index < rangeCount_);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(index < rangeCount_);
         return ranges_.template Bottom<Range>()[index];
     }
 
@@ -308,7 +308,7 @@ private:
             Patch(e->out, NewState(kRegexInvalidState, kRegexInvalidState, 0));
             root_ = e->start;
 
-#if CEREAL_RAPIDJSON_REGEX_VERBOSE
+#if TIMEMORY_CEREAL_RAPIDJSON_REGEX_VERBOSE
             printf("root: %d\n", root_);
             for (SizeType i = 0; i < stateCount_ ; i++) {
                 State& s = GetState(i);
@@ -357,7 +357,7 @@ private:
     bool Eval(Stack<Allocator>& operandStack, Operator op) {
         switch (op) {
             case kConcatenation:
-                CEREAL_RAPIDJSON_ASSERT(operandStack.GetSize() >= sizeof(Frag) * 2);
+                TIMEMORY_CEREAL_RAPIDJSON_ASSERT(operandStack.GetSize() >= sizeof(Frag) * 2);
                 {
                     Frag e2 = *operandStack.template Pop<Frag>(1);
                     Frag e1 = *operandStack.template Pop<Frag>(1);
@@ -412,8 +412,8 @@ private:
     }
 
     bool EvalQuantifier(Stack<Allocator>& operandStack, unsigned n, unsigned m) {
-        CEREAL_RAPIDJSON_ASSERT(n <= m);
-        CEREAL_RAPIDJSON_ASSERT(operandStack.GetSize() >= sizeof(Frag));
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(n <= m);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(operandStack.GetSize() >= sizeof(Frag));
 
         if (n == 0) {
             if (m == 0)                             // a{0} not support
@@ -504,7 +504,7 @@ private:
                     return false;   // Error: nothing inside []
                 if (step == 2) { // Add trailing '-'
                     SizeType r = NewRange('-');
-                    CEREAL_RAPIDJSON_ASSERT(current != kRegexInvalidRange);
+                    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(current != kRegexInvalidRange);
                     GetRange(current).next = r;
                 }
                 if (negate)
@@ -543,7 +543,7 @@ private:
                     break;
 
                 default:
-                    CEREAL_RAPIDJSON_ASSERT(step == 2);
+                    TIMEMORY_CEREAL_RAPIDJSON_ASSERT(step == 2);
                     GetRange(current).end = codepoint;
                     step = 0;
                 }
@@ -613,9 +613,9 @@ public:
         regex_(regex), allocator_(allocator), ownAllocator_(0),
         state0_(allocator, 0), state1_(allocator, 0), stateSet_()
     {
-        CEREAL_RAPIDJSON_ASSERT(regex_.IsValid());
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(regex_.IsValid());
         if (!allocator_)
-            ownAllocator_ = allocator_ = CEREAL_RAPIDJSON_NEW(Allocator)();
+            ownAllocator_ = allocator_ = TIMEMORY_CEREAL_RAPIDJSON_NEW(Allocator)();
         stateSet_ = static_cast<unsigned*>(allocator_->Malloc(GetStateSetSize()));
         state0_.template Reserve<SizeType>(regex_.stateCount_);
         state1_.template Reserve<SizeType>(regex_.stateCount_);
@@ -623,7 +623,7 @@ public:
 
     ~GenericRegexSearch() {
         Allocator::Free(stateSet_);
-        CEREAL_RAPIDJSON_DELETE(ownAllocator_);
+        TIMEMORY_CEREAL_RAPIDJSON_DELETE(ownAllocator_);
     }
 
     template <typename InputStream>
@@ -690,7 +690,7 @@ private:
 
     // Return whether the added states is a match state
     bool AddState(Stack<Allocator>& l, SizeType index) {
-        CEREAL_RAPIDJSON_ASSERT(index != kRegexInvalidState);
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(index != kRegexInvalidState);
 
         const State& s = regex_.GetState(index);
         if (s.out1 != kRegexInvalidState) { // Split
@@ -727,14 +727,14 @@ typedef GenericRegex<UTF8<> > Regex;
 typedef GenericRegexSearch<Regex> RegexSearch;
 
 } // namespace internal
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
 #if defined(__clang__) || defined(_MSC_VER)
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_INTERNAL_REGEX_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_REGEX_H_

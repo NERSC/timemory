@@ -43,9 +43,11 @@
    their implementation.
 */
 
-#ifndef CEREAL_DETAILS_POLYMORPHIC_IMPL_FWD_HPP_
-#define CEREAL_DETAILS_POLYMORPHIC_IMPL_FWD_HPP_
+#ifndef TIMEMORY_CEREAL_DETAILS_POLYMORPHIC_IMPL_FWD_HPP_
+#define TIMEMORY_CEREAL_DETAILS_POLYMORPHIC_IMPL_FWD_HPP_
 
+namespace tim
+{
 namespace cereal
 {
 namespace detail
@@ -62,5 +64,6 @@ template <class Base, class Derived>
 struct PolymorphicRelation;
 }  // namespace detail
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_DETAILS_POLYMORPHIC_IMPL_FWD_HPP_
+#endif  // TIMEMORY_CEREAL_DETAILS_POLYMORPHIC_IMPL_FWD_HPP_

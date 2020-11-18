@@ -27,8 +27,8 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_QUEUE_HPP_
-#define CEREAL_TYPES_QUEUE_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_QUEUE_HPP_
+#define TIMEMORY_CEREAL_TYPES_QUEUE_HPP_
 
 #include "timemory/tpls/cereal/cereal/details/helpers.hpp"
 #include <queue>
@@ -38,6 +38,8 @@
 // The default comparator for queue is less
 #include "timemory/tpls/cereal/cereal/types/functional.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 namespace queue_detail
@@ -94,44 +96,46 @@ comparator(std::priority_queue<T, C, Comp> const& priority_queue)
 //! Saving for std::queue
 template <class Archive, class T, class C>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::queue<T, C> const& queue)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::queue<T, C> const& queue)
 {
-    ar(CEREAL_NVP_("container", queue_detail::container(queue)));
+    ar(TIMEMORY_CEREAL_NVP_("container", queue_detail::container(queue)));
 }
 
 //! Loading for std::queue
 template <class Archive, class T, class C>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::queue<T, C>& queue)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::queue<T, C>& queue)
 {
     C container;
-    ar(CEREAL_NVP_("container", container));
+    ar(TIMEMORY_CEREAL_NVP_("container", container));
     queue = std::queue<T, C>(std::move(container));
 }
 
 //! Saving for std::priority_queue
 template <class Archive, class T, class C, class Comp>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive&                               ar,
-                          std::priority_queue<T, C, Comp> const& priority_queue)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive&                               ar,
+                                   std::priority_queue<T, C, Comp> const& priority_queue)
 {
-    ar(CEREAL_NVP_("comparator", queue_detail::comparator(priority_queue)));
-    ar(CEREAL_NVP_("container", queue_detail::container(priority_queue)));
+    ar(TIMEMORY_CEREAL_NVP_("comparator", queue_detail::comparator(priority_queue)));
+    ar(TIMEMORY_CEREAL_NVP_("container", queue_detail::container(priority_queue)));
 }
 
 //! Loading for std::priority_queue
 template <class Archive, class T, class C, class Comp>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::priority_queue<T, C, Comp>& priority_queue)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive&                         ar,
+                                   std::priority_queue<T, C, Comp>& priority_queue)
 {
     Comp comparator;
-    ar(CEREAL_NVP_("comparator", comparator));
+    ar(TIMEMORY_CEREAL_NVP_("comparator", comparator));
 
     C container;
-    ar(CEREAL_NVP_("container", container));
+    ar(TIMEMORY_CEREAL_NVP_("container", container));
 
     priority_queue = std::priority_queue<T, C, Comp>(comparator, std::move(container));
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_QUEUE_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_QUEUE_HPP_

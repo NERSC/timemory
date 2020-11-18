@@ -800,6 +800,8 @@ struct tuple_element<Idx, tim::type_list<Types...>>
 
 //--------------------------------------------------------------------------------------//
 
+namespace tim
+{
 namespace cereal
 {
 namespace detail
@@ -808,11 +810,14 @@ template <typename Tp>
 struct StaticVersion;
 }  // namespace detail
 }  // namespace cereal
+}  // namespace tim
 
 //--------------------------------------------------------------------------------------//
 
 #if !defined(TIMEMORY_SET_CLASS_VERSION)
 #    define TIMEMORY_SET_CLASS_VERSION(VERSION_NUMBER, ...)                              \
+        namespace tim                                                                    \
+        {                                                                                \
         namespace cereal                                                                 \
         {                                                                                \
         namespace detail                                                                 \
@@ -820,13 +825,14 @@ struct StaticVersion;
         template <>                                                                      \
         struct StaticVersion<__VA_ARGS__>                                                \
         {                                                                                \
-            static constexpr std::int32_t value = VERSION_NUMBER;                        \
+            static constexpr std::uint32_t version = VERSION_NUMBER;                     \
         };                                                                               \
+        }                                                                                \
         }                                                                                \
         }
 #endif
 
 #if !defined(TIMEMORY_GET_CLASS_VERSION)
 #    define TIMEMORY_GET_CLASS_VERSION(...)                                              \
-        ::cereal::detail::StaticVersion<__VA_ARGS__>::value
+        ::tim::cereal::detail::StaticVersion<__VA_ARGS__>::version
 #endif

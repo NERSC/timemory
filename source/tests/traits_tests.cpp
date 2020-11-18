@@ -460,13 +460,15 @@ TEST_F(traits_tests, concepts)
         type_list<component_bundle<project::timemory>, auto_bundle<project::timemory>>;
 
     using input_archives =
-        type_list<cereal::JSONInputArchive, cereal::XMLInputArchive,
-                  cereal::PortableBinaryInputArchive, cereal::BinaryInputArchive>;
+        type_list<tim::cereal::JSONInputArchive, tim::cereal::XMLInputArchive,
+                  tim::cereal::PortableBinaryInputArchive,
+                  tim::cereal::BinaryInputArchive>;
 
     using output_archives =
-        type_list<cereal::PrettyJSONOutputArchive, cereal::MinimalJSONOutputArchive,
-                  cereal::XMLOutputArchive, cereal::PortableBinaryOutputArchive,
-                  cereal::BinaryOutputArchive>;
+        type_list<tim::cereal::PrettyJSONOutputArchive,
+                  tim::cereal::MinimalJSONOutputArchive, tim::cereal::XMLOutputArchive,
+                  tim::cereal::PortableBinaryOutputArchive,
+                  tim::cereal::BinaryOutputArchive>;
 
     using archives = tim::convert_t<output_archives, input_archives>;
 

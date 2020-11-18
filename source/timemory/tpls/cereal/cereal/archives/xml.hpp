@@ -26,8 +26,8 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_ARCHIVES_XML_HPP_
-#define CEREAL_ARCHIVES_XML_HPP_
+#ifndef TIMEMORY_CEREAL_ARCHIVES_XML_HPP_
+#define TIMEMORY_CEREAL_ARCHIVES_XML_HPP_
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/tpls/cereal/cereal/details/util.hpp"
 
@@ -43,19 +43,21 @@
 #include <string>
 #include <vector>
 
+namespace tim
+{
 namespace cereal
 {
 namespace xml_detail
 {
-#ifndef CEREAL_XML_STRING_VALUE
+#ifndef TIMEMORY_CEREAL_XML_STRING_VALUE
 //! The default name for the root node in a cereal xml archive.
-/*! You can define CEREAL_XML_STRING_VALUE to be different assuming you do so
+/*! You can define TIMEMORY_CEREAL_XML_STRING_VALUE to be different assuming you do so
     before this file is included. */
-#    define CEREAL_XML_STRING_VALUE "cereal"
-#endif  // CEREAL_XML_STRING_VALUE
+#    define TIMEMORY_CEREAL_XML_STRING_VALUE "cereal"
+#endif  // TIMEMORY_CEREAL_XML_STRING_VALUE
 
 //! The name given to the root node in a cereal xml archive
-static const char* CEREAL_XML_STRING = CEREAL_XML_STRING_VALUE;
+static const char* TIMEMORY_CEREAL_XML_STRING = TIMEMORY_CEREAL_XML_STRING_VALUE;
 
 //! Returns true if the character is whitespace
 inline bool
@@ -195,8 +197,8 @@ public:
         itsXML.append_node(node);
 
         // allocate root node
-        auto root =
-            itsXML.allocate_node(rapidxml::node_element, xml_detail::CEREAL_XML_STRING);
+        auto root = itsXML.allocate_node(rapidxml::node_element,
+                                         xml_detail::TIMEMORY_CEREAL_XML_STRING);
         itsXML.append_node(root);
         itsNodes.emplace(root);
 
@@ -208,7 +210,7 @@ public:
     }
 
     //! Destructor, flushes the XML
-    ~XMLOutputArchive() CEREAL_NOEXCEPT
+    ~XMLOutputArchive() TIMEMORY_CEREAL_NOEXCEPT
     {
         const int flags = itsIndent ? 0x0 : rapidxml::print_no_indenting;
         rapidxml::print(itsStream, itsXML, flags);
@@ -464,7 +466,7 @@ public:
         }
 
         // Parse the root
-        auto root = itsXML.first_node(xml_detail::CEREAL_XML_STRING);
+        auto root = itsXML.first_node(xml_detail::TIMEMORY_CEREAL_XML_STRING);
         if(root == nullptr)
             throw Exception("Could not detect cereal root node - likely due to empty or "
                             "invalid input");
@@ -472,7 +474,7 @@ public:
             itsNodes.emplace(root);
     }
 
-    ~XMLInputArchive() CEREAL_NOEXCEPT = default;
+    ~XMLInputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
 
     //! Loads some binary data, encoded as a base64 string, optionally specified by some
     //! name
@@ -956,7 +958,7 @@ epilogue(XMLInputArchive& ar, T const&)
 //! Saving NVP types to XML
 template <class T>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive& ar, NameValuePair<T> const& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive& ar, NameValuePair<T> const& t)
 {
     ar.setNextName(t.name);
     ar(t.value);
@@ -965,7 +967,7 @@ CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive& ar, NameValuePair<T> const& t)
 //! Loading NVP types from XML
 template <class T>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, NameValuePair<T>& t)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, NameValuePair<T>& t)
 {
     ar.setNextName(t.name);
     ar(t.value);
@@ -975,13 +977,13 @@ CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, NameValuePair<T>& t)
 //! Saving SizeTags to XML
 template <class T>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive&, SizeTag<T> const&)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive&, SizeTag<T> const&)
 {}
 
 //! Loading SizeTags from XML
 template <class T>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, SizeTag<T>& st)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, SizeTag<T>& st)
 {
     ar.loadSize(st.size);
 }
@@ -990,7 +992,7 @@ CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, SizeTag<T>& st)
 //! Saving for POD types to xml
 template <class T, traits::EnableIf<std::is_arithmetic<T>::value> = traits::sfinae>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive& ar, T const& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive& ar, T const& t)
 {
     ar.saveValue(t);
 }
@@ -998,7 +1000,7 @@ CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive& ar, T const& t)
 //! Loading for POD types from xml
 template <class T, traits::EnableIf<std::is_arithmetic<T>::value> = traits::sfinae>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, T& t)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, T& t)
 {
     ar.loadValue(t);
 }
@@ -1007,8 +1009,8 @@ CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, T& t)
 //! saving string to xml
 template <class CharT, class Traits, class Alloc>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive&                              ar,
-                          std::basic_string<CharT, Traits, Alloc> const& str)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive&                              ar,
+                                   std::basic_string<CharT, Traits, Alloc> const& str)
 {
     ar.saveValue(str);
 }
@@ -1016,18 +1018,19 @@ CEREAL_SAVE_FUNCTION_NAME(XMLOutputArchive&                              ar,
 //! loading string from xml
 template <class CharT, class Traits, class Alloc>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive&                         ar,
-                          std::basic_string<CharT, Traits, Alloc>& str)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive&                         ar,
+                                   std::basic_string<CharT, Traits, Alloc>& str)
 {
     ar.loadValue(str);
 }
 }  // namespace cereal
+}  // namespace tim
 
 // register archives for polymorphic support
-CEREAL_REGISTER_ARCHIVE(cereal::XMLOutputArchive)
-CEREAL_REGISTER_ARCHIVE(cereal::XMLInputArchive)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(cereal::XMLOutputArchive)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(cereal::XMLInputArchive)
 
 // tie input and output archives together
-CEREAL_SETUP_ARCHIVE_TRAITS(cereal::XMLInputArchive, cereal::XMLOutputArchive)
+TIMEMORY_CEREAL_SETUP_ARCHIVE_TRAITS(cereal::XMLInputArchive, cereal::XMLOutputArchive)
 
-#endif  // CEREAL_ARCHIVES_XML_HPP_
+#endif  // TIMEMORY_CEREAL_ARCHIVES_XML_HPP_

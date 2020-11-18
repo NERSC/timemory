@@ -26,12 +26,14 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_ARCHIVES_JSON_HPP_
-#define CEREAL_ARCHIVES_JSON_HPP_
+#ifndef TIMEMORY_CEREAL_ARCHIVES_JSON_HPP_
+#define TIMEMORY_CEREAL_ARCHIVES_JSON_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/tpls/cereal/cereal/details/util.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 //! An exception thrown when rapidjson fails an internal assertion
@@ -43,30 +45,31 @@ struct RapidJSONException : Exception
     {}
 };
 }  // namespace cereal
+}  // namespace tim
 
 // Inform rapidjson that assert will throw
-#ifndef CEREAL_RAPIDJSON_ASSERT_THROWS
-#    define CEREAL_RAPIDJSON_ASSERT_THROWS
-#endif  // CEREAL_RAPIDJSON_ASSERT_THROWS
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_ASSERT_THROWS
+#    define TIMEMORY_CEREAL_RAPIDJSON_ASSERT_THROWS
+#endif  // TIMEMORY_CEREAL_RAPIDJSON_ASSERT_THROWS
 
 // Override rapidjson assertions to throw exceptions by default
-#ifndef CEREAL_RAPIDJSON_ASSERT
-#    define CEREAL_RAPIDJSON_ASSERT(x)                                                   \
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_ASSERT
+#    define TIMEMORY_CEREAL_RAPIDJSON_ASSERT(x)                                          \
         if(!(x))                                                                         \
         {                                                                                \
-            throw ::cereal::RapidJSONException(                                          \
+            throw ::tim::cereal::RapidJSONException(                                     \
                 "rapidjson internal assertion failure: " #x);                            \
         }
 #endif  // RAPIDJSON_ASSERT
 
 // Enable support for parsing of nan, inf, -inf
-#ifndef CEREAL_RAPIDJSON_WRITE_DEFAULT_FLAGS
-#    define CEREAL_RAPIDJSON_WRITE_DEFAULT_FLAGS kWriteNanAndInfFlag
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_WRITE_DEFAULT_FLAGS
+#    define TIMEMORY_CEREAL_RAPIDJSON_WRITE_DEFAULT_FLAGS kWriteNanAndInfFlag
 #endif
 
 // Enable support for parsing of nan, inf, -inf
-#ifndef CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS
-#    define CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS                                         \
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS
+#    define TIMEMORY_CEREAL_RAPIDJSON_PARSE_DEFAULT_FLAGS                                \
         kParseFullPrecisionFlag | kParseNanAndInfFlag
 #endif
 
@@ -83,20 +86,22 @@ struct RapidJSONException : Exception
 #include <string>
 #include <vector>
 
+namespace tim
+{
 namespace cereal
 {
 struct MinimalJsonWriter
 {
-    using stream_type = CEREAL_RAPIDJSON_NAMESPACE::OStreamWrapper;
-    using type        = CEREAL_RAPIDJSON_NAMESPACE::Writer<stream_type>;
+    using stream_type = TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::OStreamWrapper;
+    using type        = TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::Writer<stream_type>;
 
     static void SetIndent(type&, char, unsigned int) {}
 };
 
 struct PrettyJsonWriter
 {
-    using stream_type = CEREAL_RAPIDJSON_NAMESPACE::OStreamWrapper;
-    using type        = CEREAL_RAPIDJSON_NAMESPACE::PrettyWriter<stream_type>;
+    using stream_type = TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::OStreamWrapper;
+    using type        = TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::PrettyWriter<stream_type>;
 
     static void SetIndent(type& itsWriter, char indentChar, unsigned int indentLength)
     {
@@ -213,7 +218,7 @@ public:
     }
 
     //! Destructor, flushes the JSON
-    ~BaseJSONOutputArchive() CEREAL_NOEXCEPT
+    ~BaseJSONOutputArchive() TIMEMORY_CEREAL_NOEXCEPT
     {
         if(itsNodeStack.top() == NodeType::InObject)
             itsWriter.EndObject();
@@ -296,8 +301,9 @@ public:
     //! Saves a string to the current node
     void saveValue(std::string const& s)
     {
-        itsWriter.String(s.c_str(),
-                         static_cast<CEREAL_RAPIDJSON_NAMESPACE::SizeType>(s.size()));
+        itsWriter.String(
+            s.c_str(),
+            static_cast<TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::SizeType>(s.size()));
     }
     //! Saves a const char * to the current node
     void saveValue(char const* s) { itsWriter.String(s); }
@@ -490,12 +496,13 @@ class JSONInputArchive
 , public traits::TextArchive
 {
 private:
-    using ReadStream = CEREAL_RAPIDJSON_NAMESPACE::IStreamWrapper;
-    typedef CEREAL_RAPIDJSON_NAMESPACE::GenericValue<CEREAL_RAPIDJSON_NAMESPACE::UTF8<>>
-                                                               JSONValue;
-    typedef JSONValue::ConstMemberIterator                     MemberIterator;
-    typedef JSONValue::ConstValueIterator                      ValueIterator;
-    typedef CEREAL_RAPIDJSON_NAMESPACE::Document::GenericValue GenericValue;
+    using ReadStream = TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::IStreamWrapper;
+    typedef TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::GenericValue<
+        TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::UTF8<>>
+                                                                        JSONValue;
+    typedef JSONValue::ConstMemberIterator                              MemberIterator;
+    typedef JSONValue::ConstValueIterator                               ValueIterator;
+    typedef TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::Document::GenericValue GenericValue;
 
 public:
     /*! @name Common Functionality
@@ -517,7 +524,7 @@ public:
                                           itsDocument.MemberEnd());
     }
 
-    ~JSONInputArchive() CEREAL_NOEXCEPT = default;
+    ~JSONInputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
 
     //! Loads some binary data, encoded as a base64 string
     /*! This will automatically start and finish a node to load the data, and can be
@@ -775,7 +782,7 @@ public:
     void loadValue(std::nullptr_t&)
     {
         search();
-        CEREAL_RAPIDJSON_ASSERT(itsIteratorStack.back().value().IsNull());
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(itsIteratorStack.back().value().IsNull());
         ++itsIteratorStack.back();
     }
 
@@ -887,10 +894,10 @@ public:
     //! @}
 
 private:
-    const char*           itsNextName;                 //!< Next name set by NVP
-    ReadStream            itsReadStream;               //!< Rapidjson write stream
-    std::vector<Iterator> itsIteratorStack;            //!< 'Stack' of rapidJSON iterators
-    CEREAL_RAPIDJSON_NAMESPACE::Document itsDocument;  //!< Rapidjson document
+    const char*           itsNextName;       //!< Next name set by NVP
+    ReadStream            itsReadStream;     //!< Rapidjson write stream
+    std::vector<Iterator> itsIteratorStack;  //!< 'Stack' of rapidJSON iterators
+    TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::Document itsDocument;  //!< Rapidjson document
 };
 
 // ######################################################################
@@ -1143,7 +1150,8 @@ epilogue(JSONInputArchive&, std::basic_string<CharT, Traits, Alloc> const&)
 //! Serializing NVP types to JSON
 template <class T, class W>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>& ar, NameValuePair<T> const& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>& ar,
+                                   NameValuePair<T> const&   t)
 {
     ar.setNextName(t.name);
     ar(t.value);
@@ -1151,7 +1159,7 @@ CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>& ar, NameValuePair<T> const& 
 
 template <class T>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, NameValuePair<T>& t)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, NameValuePair<T>& t)
 {
     ar.setNextName(t.name);
     ar(t.value);
@@ -1160,14 +1168,14 @@ CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, NameValuePair<T>& t)
 //! Saving for nullptr to JSON
 template <class W>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>& ar, std::nullptr_t const& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>& ar, std::nullptr_t const& t)
 {
     ar.saveValue(t);
 }
 
 //! Loading arithmetic from JSON
 inline void
-CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, std::nullptr_t& t)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, std::nullptr_t& t)
 {
     ar.loadValue(t);
 }
@@ -1176,7 +1184,7 @@ CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, std::nullptr_t& t)
 template <class T, class W,
           traits::EnableIf<std::is_arithmetic<T>::value> = traits::sfinae>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>& ar, T const& t)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>& ar, T const& t)
 {
     ar.saveValue(t);
 }
@@ -1184,7 +1192,7 @@ CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>& ar, T const& t)
 //! Loading arithmetic from JSON
 template <class T, traits::EnableIf<std::is_arithmetic<T>::value> = traits::sfinae>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, T& t)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, T& t)
 {
     ar.loadValue(t);
 }
@@ -1192,8 +1200,8 @@ CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, T& t)
 //! saving string to JSON
 template <class CharT, class Traits, class Alloc, class W>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>&                      ar,
-                          std::basic_string<CharT, Traits, Alloc> const& str)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>&                      ar,
+                                   std::basic_string<CharT, Traits, Alloc> const& str)
 {
     ar.saveValue(str);
 }
@@ -1201,8 +1209,8 @@ CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>&                      ar,
 //! loading string from JSON
 template <class CharT, class Traits, class Alloc>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive&                        ar,
-                          std::basic_string<CharT, Traits, Alloc>& str)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive&                        ar,
+                                   std::basic_string<CharT, Traits, Alloc>& str)
 {
     ar.loadValue(str);
 }
@@ -1211,7 +1219,7 @@ CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive&                        ar,
 //! Saving SizeTags to JSON
 template <class T, class W>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>&, SizeTag<T> const&)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>&, SizeTag<T> const&)
 {
     // nothing to do here, we don't explicitly save the size
 }
@@ -1219,21 +1227,24 @@ CEREAL_SAVE_FUNCTION_NAME(BaseJSONOutputArchive<W>&, SizeTag<T> const&)
 //! Loading SizeTags from JSON
 template <class T>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, SizeTag<T>& st)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(JSONInputArchive& ar, SizeTag<T>& st)
 {
     ar.loadSize(st.size);
 }
 }  // namespace cereal
+}  // namespace tim
 
 // register archives for polymorphic support
-CEREAL_REGISTER_ARCHIVE(cereal::JSONInputArchive)
-CEREAL_REGISTER_ARCHIVE(cereal::BaseJSONOutputArchive<cereal::MinimalJsonWriter>)
-CEREAL_REGISTER_ARCHIVE(cereal::BaseJSONOutputArchive<cereal::PrettyJsonWriter>)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(cereal::JSONInputArchive)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(cereal::BaseJSONOutputArchive<cereal::MinimalJsonWriter>)
+TIMEMORY_CEREAL_REGISTER_ARCHIVE(cereal::BaseJSONOutputArchive<cereal::PrettyJsonWriter>)
 
 // tie input and output archives together
-CEREAL_SETUP_ARCHIVE_TRAITS(cereal::JSONInputArchive,
-                            cereal::BaseJSONOutputArchive<cereal::MinimalJsonWriter>)
+TIMEMORY_CEREAL_SETUP_ARCHIVE_TRAITS(
+    cereal::JSONInputArchive, cereal::BaseJSONOutputArchive<cereal::MinimalJsonWriter>)
 
+namespace tim
+{
 namespace cereal
 {
 namespace traits
@@ -1248,11 +1259,16 @@ struct get_input_from_output<cereal::BaseJSONOutputArchive<cereal::PrettyJsonWri
 }  // namespace detail
 }  // namespace traits
 }  // namespace cereal
+}  // namespace tim
 
+namespace tim
+{
 namespace cereal
 {
 using JSONOutputArchive        = BaseJSONOutputArchive<PrettyJsonWriter>;
 using PrettyJSONOutputArchive  = BaseJSONOutputArchive<PrettyJsonWriter>;
 using MinimalJSONOutputArchive = BaseJSONOutputArchive<MinimalJsonWriter>;
 }  // namespace cereal
-#endif  // CEREAL_ARCHIVES_JSON_HPP_
+}  // namespace tim
+
+#endif  // TIMEMORY_CEREAL_ARCHIVES_JSON_HPP_

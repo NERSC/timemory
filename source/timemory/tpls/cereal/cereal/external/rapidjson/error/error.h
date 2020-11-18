@@ -12,53 +12,53 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_ERROR_ERROR_H_
-#define CEREAL_RAPIDJSON_ERROR_ERROR_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_ERROR_ERROR_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_ERROR_ERROR_H_
 
 #include "../rapidjson.h"
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(padded)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(padded)
 #endif
 
 /*! \file error.h */
 
-/*! \defgroup CEREAL_RAPIDJSON_ERRORS RapidJSON error handling */
+/*! \defgroup TIMEMORY_CEREAL_RAPIDJSON_ERRORS RapidJSON error handling */
 
 ///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_ERROR_CHARTYPE
+// TIMEMORY_CEREAL_RAPIDJSON_ERROR_CHARTYPE
 
 //! Character type of error messages.
-/*! \ingroup CEREAL_RAPIDJSON_ERRORS
+/*! \ingroup TIMEMORY_CEREAL_RAPIDJSON_ERRORS
     The default character type is \c char.
     On Windows, user can define this macro as \c TCHAR for supporting both
     unicode/non-unicode settings.
 */
-#ifndef CEREAL_RAPIDJSON_ERROR_CHARTYPE
-#define CEREAL_RAPIDJSON_ERROR_CHARTYPE char
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_ERROR_CHARTYPE
+#define TIMEMORY_CEREAL_RAPIDJSON_ERROR_CHARTYPE char
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_ERROR_STRING
+// TIMEMORY_CEREAL_RAPIDJSON_ERROR_STRING
 
-//! Macro for converting string literial to \ref CEREAL_RAPIDJSON_ERROR_CHARTYPE[].
-/*! \ingroup CEREAL_RAPIDJSON_ERRORS
+//! Macro for converting string literial to \ref TIMEMORY_CEREAL_RAPIDJSON_ERROR_CHARTYPE[].
+/*! \ingroup TIMEMORY_CEREAL_RAPIDJSON_ERRORS
     By default this conversion macro does nothing.
     On Windows, user can define this macro as \c _T(x) for supporting both
     unicode/non-unicode settings.
 */
-#ifndef CEREAL_RAPIDJSON_ERROR_STRING
-#define CEREAL_RAPIDJSON_ERROR_STRING(x) x
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_ERROR_STRING
+#define TIMEMORY_CEREAL_RAPIDJSON_ERROR_STRING(x) x
 #endif
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 ///////////////////////////////////////////////////////////////////////////////
 // ParseErrorCode
 
 //! Error code of parsing.
-/*! \ingroup CEREAL_RAPIDJSON_ERRORS
+/*! \ingroup TIMEMORY_CEREAL_RAPIDJSON_ERRORS
     \see GenericReader::Parse, GenericReader::GetParseErrorCode
 */
 enum ParseErrorCode {
@@ -91,7 +91,7 @@ enum ParseErrorCode {
 
 //! Result of parsing (wraps ParseErrorCode)
 /*!
-    \ingroup CEREAL_RAPIDJSON_ERRORS
+    \ingroup TIMEMORY_CEREAL_RAPIDJSON_ERRORS
     \code
         Document doc;
         ParseResult ok = doc.Parse("[42]");
@@ -141,21 +141,21 @@ private:
 };
 
 //! Function pointer type of GetParseError().
-/*! \ingroup CEREAL_RAPIDJSON_ERRORS
+/*! \ingroup TIMEMORY_CEREAL_RAPIDJSON_ERRORS
 
     This is the prototype for \c GetParseError_X(), where \c X is a locale.
     User can dynamically change locale in runtime, e.g.:
 \code
     GetParseErrorFunc GetParseError = GetParseError_En; // or whatever
-    const CEREAL_RAPIDJSON_ERROR_CHARTYPE* s = GetParseError(document.GetParseErrorCode());
+    const TIMEMORY_CEREAL_RAPIDJSON_ERROR_CHARTYPE* s = GetParseError(document.GetParseErrorCode());
 \endcode
 */
-typedef const CEREAL_RAPIDJSON_ERROR_CHARTYPE* (*GetParseErrorFunc)(ParseErrorCode);
+typedef const TIMEMORY_CEREAL_RAPIDJSON_ERROR_CHARTYPE* (*GetParseErrorFunc)(ParseErrorCode);
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #ifdef __clang__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_ERROR_ERROR_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_ERROR_ERROR_H_

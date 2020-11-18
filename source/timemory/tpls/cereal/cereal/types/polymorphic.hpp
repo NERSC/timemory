@@ -27,8 +27,8 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_POLYMORPHIC_HPP_
-#define CEREAL_TYPES_POLYMORPHIC_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_POLYMORPHIC_HPP_
+#define TIMEMORY_CEREAL_TYPES_POLYMORPHIC_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/tpls/cereal/cereal/types/memory.hpp"
@@ -39,9 +39,9 @@
 #include "timemory/tpls/cereal/cereal/details/util.hpp"
 
 #ifdef _MSC_VER
-#    define CEREAL_STATIC_CONSTEXPR static
+#    define TIMEMORY_CEREAL_STATIC_CONSTEXPR static
 #else
-#    define CEREAL_STATIC_CONSTEXPR static constexpr
+#    define TIMEMORY_CEREAL_STATIC_CONSTEXPR static constexpr
 #endif
 
 //! Registers a derived polymorphic type with cereal
@@ -64,7 +64,7 @@
 
     Registration can also be placed in a source file,
     but this may require the use of the
-    CEREAL_REGISTER_DYNAMIC_INIT macro (see below).
+    TIMEMORY_CEREAL_REGISTER_DYNAMIC_INIT macro (see below).
 
     Registration may be called repeatedly for the same
     type in different translation units to add support
@@ -79,7 +79,9 @@
 
     Polymorphic support in cereal requires RTTI to be
     enabled */
-#define CEREAL_REGISTER_TYPE(...)                                                        \
+#define TIMEMORY_CEREAL_REGISTER_TYPE(...)                                               \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     namespace detail                                                                     \
@@ -87,19 +89,22 @@
     template <>                                                                          \
     struct binding_name<__VA_ARGS__>                                                     \
     {                                                                                    \
-        CEREAL_STATIC_CONSTEXPR char const* name() { return #__VA_ARGS__; }              \
+        TIMEMORY_CEREAL_STATIC_CONSTEXPR char const* name() { return #__VA_ARGS__; }     \
     };                                                                                   \
     }                                                                                    \
+    }                                                                                    \
     } /* end namespaces */                                                               \
-    CEREAL_BIND_TO_ARCHIVES(__VA_ARGS__)
+    TIMEMORY_CEREAL_BIND_TO_ARCHIVES(__VA_ARGS__)
 
 //! Registers a polymorphic type with cereal, giving it a
 //! user defined name
 /*! In some cases the default name used with
-    CEREAL_REGISTER_TYPE (the name of the type) may not be
+    TIMEMORY_CEREAL_REGISTER_TYPE (the name of the type) may not be
     suitable.  This macro allows any name to be associated
     with the type.  The name should be unique */
-#define CEREAL_REGISTER_TYPE_WITH_NAME(T, Name)                                          \
+#define TIMEMORY_CEREAL_REGISTER_TYPE_WITH_NAME(T, Name)                                 \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     namespace detail                                                                     \
@@ -107,11 +112,12 @@
     template <>                                                                          \
     struct binding_name<T>                                                               \
     {                                                                                    \
-        CEREAL_STATIC_CONSTEXPR char const* name() { return Name; }                      \
+        TIMEMORY_CEREAL_STATIC_CONSTEXPR char const* name() { return Name; }             \
     };                                                                                   \
     }                                                                                    \
+    }                                                                                    \
     } /* end namespaces */                                                               \
-    CEREAL_BIND_TO_ARCHIVES(T)
+    TIMEMORY_CEREAL_BIND_TO_ARCHIVES(T)
 
 //! Registers the base-derived relationship for a polymorphic type
 /*! When polymorphic serialization occurs, cereal needs to know how to
@@ -125,8 +131,10 @@
     and the Base type any possible base that has not been covered under a base
     class serialization that will be used to store a Derived pointer.
 
-    Placement of this is the same as for CEREAL_REGISTER_TYPE. */
-#define CEREAL_REGISTER_POLYMORPHIC_RELATION(Base, Derived)                              \
+    Placement of this is the same as for TIMEMORY_CEREAL_REGISTER_TYPE. */
+#define TIMEMORY_CEREAL_REGISTER_POLYMORPHIC_RELATION(Base, Derived)                     \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     namespace detail                                                                     \
@@ -137,10 +145,11 @@
         static void bind() { RegisterPolymorphicCaster<Base, Derived>::bind(); }         \
     };                                                                                   \
     }                                                                                    \
+    }                                                                                    \
     } /* end namespaces */
 
 //! Adds a way to force initialization of a translation unit containing
-//! calls to CEREAL_REGISTER_TYPE
+//! calls to TIMEMORY_CEREAL_REGISTER_TYPE
 /*! In C++, dynamic initialization of non-local variables of a translation
     unit may be deferred until "the first odr-use of any function or variable
     defined in the same translation unit as the variable to be initialized."
@@ -151,52 +160,63 @@
     Since polymorphic type support in cereal relies on the dynamic
     initialization of certain global objects happening before
     serialization is performed, it is important to ensure that something
-    from files that call CEREAL_REGISTER_TYPE is odr-used before serialization
+    from files that call TIMEMORY_CEREAL_REGISTER_TYPE is odr-used before serialization
     occurs, otherwise the registration will never take place.  This may often
     be the case when serialization is built as a shared library external from
     your main program.
 
     This macro, with any name of your choosing, should be placed into the
-    source file that contains calls to CEREAL_REGISTER_TYPE.
+    source file that contains calls to TIMEMORY_CEREAL_REGISTER_TYPE.
 
-    Its counterpart, CEREAL_FORCE_DYNAMIC_INIT, should be placed in its
+    Its counterpart, TIMEMORY_CEREAL_FORCE_DYNAMIC_INIT, should be placed in its
     associated header file such that it is included in the translation units
     (source files) in which you want the registration to appear.
 
-    @relates CEREAL_FORCE_DYNAMIC_INIT
+    @relates TIMEMORY_CEREAL_FORCE_DYNAMIC_INIT
     */
-#define CEREAL_REGISTER_DYNAMIC_INIT(LibName)                                            \
+#define TIMEMORY_CEREAL_REGISTER_DYNAMIC_INIT(LibName)                                   \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     namespace detail                                                                     \
     {                                                                                    \
-    void CEREAL_DLL_EXPORT dynamic_init_dummy_##LibName() {}                             \
+    void TIMEMORY_CEREAL_DLL_EXPORT dynamic_init_dummy_##LibName() {}                    \
+    }                                                                                    \
     }                                                                                    \
     } /* end namespaces */
 
 //! Forces dynamic initialization of polymorphic support in a
 //! previously registered source file
-/*! @sa CEREAL_REGISTER_DYNAMIC_INIT
+/*! @sa TIMEMORY_CEREAL_REGISTER_DYNAMIC_INIT
 
-    See CEREAL_REGISTER_DYNAMIC_INIT for detailed explanation
+    See TIMEMORY_CEREAL_REGISTER_DYNAMIC_INIT for detailed explanation
     of how this macro should be used.  The name used should
-    match that for CEREAL_REGISTER_DYNAMIC_INIT. */
-#define CEREAL_FORCE_DYNAMIC_INIT(LibName)                                               \
+    match that for TIMEMORY_CEREAL_REGISTER_DYNAMIC_INIT. */
+#define TIMEMORY_CEREAL_FORCE_DYNAMIC_INIT(LibName)                                      \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     namespace detail                                                                     \
     {                                                                                    \
-    void CEREAL_DLL_EXPORT dynamic_init_dummy_##LibName();                               \
+    void TIMEMORY_CEREAL_DLL_EXPORT dynamic_init_dummy_##LibName();                      \
     } /* end detail */                                                                   \
+    }                                                                                    \
     } /* end cereal */                                                                   \
     namespace                                                                            \
     {                                                                                    \
     struct dynamic_init_##LibName                                                        \
     {                                                                                    \
-        dynamic_init_##LibName() { ::cereal::detail::dynamic_init_dummy_##LibName(); }   \
+        dynamic_init_##LibName()                                                         \
+        {                                                                                \
+            ::tim::tim::cereal::detail::dynamic_init_dummy_##LibName();                  \
+        }                                                                                \
     } dynamic_init_instance_##LibName;                                                   \
     } /* end anonymous namespace */
 
+namespace tim
+{
 namespace cereal
 {
 namespace polymorphic_detail
@@ -207,27 +227,31 @@ namespace polymorphic_detail
     throw cereal::Exception(                                                             \
         "Trying to " #LoadSave " an unregistered polymorphic type (" + Name +            \
         ").\n"                                                                           \
-        "Make sure your type is registered with CEREAL_REGISTER_TYPE and that the "      \
+        "Make sure your type is registered with TIMEMORY_CEREAL_REGISTER_TYPE and that " \
+        "the "                                                                           \
         "archive "                                                                       \
-        "you are using was included (and registered with CEREAL_REGISTER_ARCHIVE) "      \
-        "prior to calling CEREAL_REGISTER_TYPE.\n"                                       \
+        "you are using was included (and registered with "                               \
+        "TIMEMORY_CEREAL_REGISTER_ARCHIVE) "                                             \
+        "prior to calling TIMEMORY_CEREAL_REGISTER_TYPE.\n"                              \
         "If your type is already registered and you still see this error, you may need " \
-        "to use CEREAL_REGISTER_DYNAMIC_INIT.");
+        "to use TIMEMORY_CEREAL_REGISTER_DYNAMIC_INIT.");
 
 //! Get an input binding from the given archive by deserializing the type meta data
 /*! @internal */
 template <class Archive>
-inline typename ::cereal::detail::InputBindingMap<Archive>::Serializers
+inline typename ::tim::cereal::detail::InputBindingMap<Archive>::Serializers
 getInputBinding(Archive& ar, std::uint32_t const nameid)
 {
     // If the nameid is zero, we serialized a null pointer
     if(nameid == 0)
     {
-        typename ::cereal::detail::InputBindingMap<Archive>::Serializers emptySerializers;
+        typename ::tim::cereal::detail::InputBindingMap<Archive>::Serializers
+            emptySerializers;
         emptySerializers.shared_ptr = [](void*, std::shared_ptr<void>& ptr,
                                          std::type_info const&) { ptr.reset(); };
         emptySerializers.unique_ptr =
-            [](void*, std::unique_ptr<void, ::cereal::detail::EmptyDeleter<void>>& ptr,
+            [](void*,
+               std::unique_ptr<void, ::tim::cereal::detail::EmptyDeleter<void>>& ptr,
                std::type_info const&) { ptr.reset(nullptr); };
         return emptySerializers;
     }
@@ -235,7 +259,7 @@ getInputBinding(Archive& ar, std::uint32_t const nameid)
     std::string name;
     if(nameid & detail::msb_32bit)
     {
-        ar(CEREAL_NVP_("polymorphic_name", name));
+        ar(TIMEMORY_CEREAL_NVP_("polymorphic_name", name));
         ar.registerPolymorphicName(nameid, name);
     }
     else
@@ -268,7 +292,7 @@ serialize_wrapper(Archive& ar, std::shared_ptr<T>& ptr, std::uint32_t const name
 {
     if(nameid & detail::msb2_32bit)
     {
-        ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
+        ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
         return true;
     }
     return false;
@@ -288,7 +312,7 @@ serialize_wrapper(Archive& ar, std::unique_ptr<T, D>& ptr, std::uint32_t const n
 {
     if(nameid & detail::msb2_32bit)
     {
-        ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
+        ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
         return true;
     }
     return false;
@@ -347,12 +371,12 @@ template <class Archive, class T>
 inline
     typename std::enable_if<std::is_polymorphic<T>::value && std::is_abstract<T>::value,
                             void>::type
-    CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::shared_ptr<T> const& ptr)
+    TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::shared_ptr<T> const& ptr)
 {
     if(!ptr)
     {
         // same behavior as nullptr in memory implementation
-        ar(CEREAL_NVP_("polymorphic_id", std::uint32_t(0)));
+        ar(TIMEMORY_CEREAL_NVP_("polymorphic_id", std::uint32_t(0)));
         return;
     }
 
@@ -377,12 +401,12 @@ template <class Archive, class T>
 inline
     typename std::enable_if<std::is_polymorphic<T>::value && !std::is_abstract<T>::value,
                             void>::type
-    CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::shared_ptr<T> const& ptr)
+    TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::shared_ptr<T> const& ptr)
 {
     if(!ptr)
     {
         // same behavior as nullptr in memory implementation
-        ar(CEREAL_NVP_("polymorphic_id", std::uint32_t(0)));
+        ar(TIMEMORY_CEREAL_NVP_("polymorphic_id", std::uint32_t(0)));
         return;
     }
 
@@ -393,9 +417,9 @@ inline
     {
         // The 2nd msb signals that the following pointer does not need to be
         // cast with our polymorphic machinery
-        ar(CEREAL_NVP_("polymorphic_id", detail::msb2_32bit));
+        ar(TIMEMORY_CEREAL_NVP_("polymorphic_id", detail::msb2_32bit));
 
-        ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
+        ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
 
         return;
     }
@@ -413,10 +437,10 @@ inline
 //! Loading std::shared_ptr for polymorphic types
 template <class Archive, class T>
 inline typename std::enable_if<std::is_polymorphic<T>::value, void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::shared_ptr<T>& ptr)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::shared_ptr<T>& ptr)
 {
     std::uint32_t nameid;
-    ar(CEREAL_NVP_("polymorphic_id", nameid));
+    ar(TIMEMORY_CEREAL_NVP_("polymorphic_id", nameid));
 
     // Check to see if we can skip all of this polymorphism business
     if(polymorphic_detail::serialize_wrapper(ar, ptr, nameid))
@@ -431,19 +455,19 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::shared_ptr<T>& ptr)
 //! Saving std::weak_ptr for polymorphic types
 template <class Archive, class T>
 inline typename std::enable_if<std::is_polymorphic<T>::value, void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::weak_ptr<T> const& ptr)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::weak_ptr<T> const& ptr)
 {
     auto const sptr = ptr.lock();
-    ar(CEREAL_NVP_("locked_ptr", sptr));
+    ar(TIMEMORY_CEREAL_NVP_("locked_ptr", sptr));
 }
 
 //! Loading std::weak_ptr for polymorphic types
 template <class Archive, class T>
 inline typename std::enable_if<std::is_polymorphic<T>::value, void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::weak_ptr<T>& ptr)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::weak_ptr<T>& ptr)
 {
     std::shared_ptr<T> sptr;
-    ar(CEREAL_NVP_("locked_ptr", sptr));
+    ar(TIMEMORY_CEREAL_NVP_("locked_ptr", sptr));
     ptr = sptr;
 }
 
@@ -452,12 +476,12 @@ template <class Archive, class T, class D>
 inline
     typename std::enable_if<std::is_polymorphic<T>::value && std::is_abstract<T>::value,
                             void>::type
-    CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D> const& ptr)
+    TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D> const& ptr)
 {
     if(!ptr)
     {
         // same behavior as nullptr in memory implementation
-        ar(CEREAL_NVP_("polymorphic_id", std::uint32_t(0)));
+        ar(TIMEMORY_CEREAL_NVP_("polymorphic_id", std::uint32_t(0)));
         return;
     }
 
@@ -482,12 +506,12 @@ template <class Archive, class T, class D>
 inline
     typename std::enable_if<std::is_polymorphic<T>::value && !std::is_abstract<T>::value,
                             void>::type
-    CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D> const& ptr)
+    TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D> const& ptr)
 {
     if(!ptr)
     {
         // same behavior as nullptr in memory implementation
-        ar(CEREAL_NVP_("polymorphic_id", std::uint32_t(0)));
+        ar(TIMEMORY_CEREAL_NVP_("polymorphic_id", std::uint32_t(0)));
         return;
     }
 
@@ -498,9 +522,9 @@ inline
     {
         // The 2nd msb signals that the following pointer does not need to be
         // cast with our polymorphic machinery
-        ar(CEREAL_NVP_("polymorphic_id", detail::msb2_32bit));
+        ar(TIMEMORY_CEREAL_NVP_("polymorphic_id", detail::msb2_32bit));
 
-        ar(CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
+        ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
 
         return;
     }
@@ -519,21 +543,23 @@ inline
 //! types
 template <class Archive, class T, class D>
 inline typename std::enable_if<std::is_polymorphic<T>::value, void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D>& ptr)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::unique_ptr<T, D>& ptr)
 {
     std::uint32_t nameid;
-    ar(CEREAL_NVP_("polymorphic_id", nameid));
+    ar(TIMEMORY_CEREAL_NVP_("polymorphic_id", nameid));
 
     // Check to see if we can skip all of this polymorphism business
     if(polymorphic_detail::serialize_wrapper(ar, ptr, nameid))
         return;
 
     auto binding = polymorphic_detail::getInputBinding(ar, nameid);
-    std::unique_ptr<void, ::cereal::detail::EmptyDeleter<void>> result;
+    std::unique_ptr<void, ::tim::cereal::detail::EmptyDeleter<void>> result;
     binding.unique_ptr(&ar, result, typeid(T));
     ptr.reset(static_cast<T*>(result.release()));
 }
 
 #undef UNREGISTERED_POLYMORPHIC_EXCEPTION
 }  // namespace cereal
-#endif  // CEREAL_TYPES_POLYMORPHIC_HPP_
+}  // namespace tim
+
+#endif  // TIMEMORY_CEREAL_TYPES_POLYMORPHIC_HPP_

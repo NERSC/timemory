@@ -54,6 +54,8 @@ template <typename Tp>
 struct statistics;
 }
 
+namespace tim
+{
 namespace cereal
 {
 namespace detail
@@ -61,10 +63,11 @@ namespace detail
 template <typename Tp>
 struct StaticVersion<::tim::statistics<Tp>>
 {
-    static constexpr int32_t value = 0;
+    static constexpr uint32_t version = 0;
 };
 }  // namespace detail
 }  // namespace cereal
+}  // namespace tim
 
 namespace tim
 {
@@ -322,9 +325,3 @@ operator+=(::tim::statistics<tuple<>>& _lhs, const Tp&)
 
 //--------------------------------------------------------------------------------------//
 }  // namespace std
-
-#if !defined(_TIMEMORY_INTEL)
-CEREAL_CLASS_VERSION(tim::statistics<int64_t>, 0)
-CEREAL_CLASS_VERSION(tim::statistics<float>, 0)
-CEREAL_CLASS_VERSION(tim::statistics<double>, 0)
-#endif

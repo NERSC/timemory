@@ -142,7 +142,7 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
         if(_settings->get_enable_signal_handler())
         {
             auto _exit_action = [](int nsig) {
-                auto _manager = manager::instance();
+                auto _manager = manager::master_instance();
                 if(_manager)
                 {
                     std::cout << "Finalizing after signal: " << nsig << " :: "

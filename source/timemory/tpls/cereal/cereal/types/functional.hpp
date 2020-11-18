@@ -27,11 +27,13 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_FUNCTIONAL_HPP_
-#define CEREAL_TYPES_FUNCTIONAL_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_FUNCTIONAL_HPP_
+#define TIMEMORY_CEREAL_TYPES_FUNCTIONAL_HPP_
 
 #include <functional>
 
+namespace tim
+{
 namespace cereal
 {
 //! Saving for std::less
@@ -40,5 +42,6 @@ inline void
 serialize(Archive&, std::less<T>&)
 {}
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_FUNCTIONAL_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_FUNCTIONAL_HPP_

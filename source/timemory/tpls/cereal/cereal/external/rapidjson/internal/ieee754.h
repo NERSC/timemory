@@ -12,12 +12,12 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_IEEE754_
-#define CEREAL_RAPIDJSON_IEEE754_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_IEEE754_
+#define TIMEMORY_CEREAL_RAPIDJSON_IEEE754_
 
 #include "../rapidjson.h"
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 namespace internal {
 
 class Double {
@@ -30,7 +30,7 @@ public:
     uint64_t Uint64Value() const { return u_; }
 
     double NextPositiveDouble() const {
-        CEREAL_RAPIDJSON_ASSERT(!Sign());
+        TIMEMORY_CEREAL_RAPIDJSON_ASSERT(!Sign());
         return Double(u_ + 1).Value();
     }
 
@@ -61,10 +61,10 @@ private:
     static const int kSignificandSize = 52;
     static const int kExponentBias = 0x3FF;
     static const int kDenormalExponent = 1 - kExponentBias;
-    static const uint64_t kSignMask = CEREAL_RAPIDJSON_UINT64_C2(0x80000000, 0x00000000);
-    static const uint64_t kExponentMask = CEREAL_RAPIDJSON_UINT64_C2(0x7FF00000, 0x00000000);
-    static const uint64_t kSignificandMask = CEREAL_RAPIDJSON_UINT64_C2(0x000FFFFF, 0xFFFFFFFF);
-    static const uint64_t kHiddenBit = CEREAL_RAPIDJSON_UINT64_C2(0x00100000, 0x00000000);
+    static const uint64_t kSignMask = TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x80000000, 0x00000000);
+    static const uint64_t kExponentMask = TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x7FF00000, 0x00000000);
+    static const uint64_t kSignificandMask = TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x000FFFFF, 0xFFFFFFFF);
+    static const uint64_t kHiddenBit = TIMEMORY_CEREAL_RAPIDJSON_UINT64_C2(0x00100000, 0x00000000);
 
     union {
         double d_;
@@ -73,6 +73,6 @@ private:
 };
 
 } // namespace internal
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
-#endif // CEREAL_RAPIDJSON_IEEE754_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_IEEE754_

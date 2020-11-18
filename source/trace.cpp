@@ -748,9 +748,19 @@ extern "C"
             // configure bundle
             user_trace_bundle::global_init();
 
-            std::function<void(int)> exit_func = [](int) { tim::timemory_finalize(); };
-            tim::signal_settings::set_exit_action(exit_func);
-            std::atexit(&tim::timemory_finalize);
+            auto _exit_action = [](int nsig) {
+                auto _manager = tim::manager::master_instance();
+                if(_manager && !_manager->is_finalized() && !_manager->is_finalizing())
+                {
+                    std::cout << "Finalizing after signal: " << nsig << " :: "
+                              << tim::signal_settings::str(
+                                     static_cast<tim::sys_signal>(nsig))
+                              << std::endl;
+                    timemory_trace_finalize();
+                }
+            };
+            tim::signal_settings::set_exit_action(_exit_action);
+            std::atexit(&timemory_trace_finalize);
 #if !defined(_MACOS)
             // Apple clang version 11.0.3 (clang-1103.0.32.62) doesn't seem to have this
             // function
@@ -797,7 +807,8 @@ extern "C"
         if(_count > 0)
         {
             // have the manager finalize
-            tim::manager::instance()->finalize();
+            if(tim::manager::instance())
+                tim::manager::instance()->finalize();
             return;
         }
 
@@ -811,13 +822,22 @@ extern "C"
         // reset traces just in case
         user_trace_bundle::reset();
 
+        // if already finalized
+        bool _skip_stop = false;
+        auto _manager   = tim::manager::master_instance();
+        if(!_manager || _manager->is_finalized())
+            _skip_stop = true;
+
         // clean up any remaining entries
-        for(auto& itr : get_trace_map())
+        if(!_skip_stop)
         {
-            for(auto& eitr : itr.second)
-                eitr.stop();
-            // delete all the records
-            itr.second.clear();
+            for(auto& itr : get_trace_map())
+            {
+                for(auto& eitr : itr.second)
+                    eitr.stop();
+                // delete all the records
+                itr.second.clear();
+            }
         }
 
         // delete all the records

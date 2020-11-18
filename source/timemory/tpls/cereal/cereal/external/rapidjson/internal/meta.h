@@ -12,27 +12,27 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_INTERNAL_META_H_
-#define CEREAL_RAPIDJSON_INTERNAL_META_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_META_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_META_H_
 
 #include "../rapidjson.h"
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(effc++)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(effc++)
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
-CEREAL_RAPIDJSON_DIAG_PUSH
-CEREAL_RAPIDJSON_DIAG_OFF(6334)
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_PUSH
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_OFF(6334)
 #endif
 
-#if CEREAL_RAPIDJSON_HAS_CXX11_TYPETRAITS
+#if TIMEMORY_CEREAL_RAPIDJSON_HAS_CXX11_TYPETRAITS
 #include <type_traits>
 #endif
 
-//@cond CEREAL_RAPIDJSON_INTERNAL
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+//@cond TIMEMORY_CEREAL_RAPIDJSON_INTERNAL
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 namespace internal {
 
 // Helper to wrap/convert arbitrary types to void, useful for arbitrary type matching
@@ -97,7 +97,7 @@ template <typename T> struct IsPointer<T*> : TrueType {};
 ///////////////////////////////////////////////////////////////////////////////
 // IsBaseOf
 //
-#if CEREAL_RAPIDJSON_HAS_CXX11_TYPETRAITS
+#if TIMEMORY_CEREAL_RAPIDJSON_HAS_CXX11_TYPETRAITS
 
 template <typename B, typename D> struct IsBaseOf
     : BoolType< ::std::is_base_of<B,D>::value> {};
@@ -105,8 +105,8 @@ template <typename B, typename D> struct IsBaseOf
 #else // simplified version adopted from Boost
 
 template<typename B, typename D> struct IsBaseOfImpl {
-    CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(B) != 0);
-    CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(D) != 0);
+    TIMEMORY_CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(B) != 0);
+    TIMEMORY_CEREAL_RAPIDJSON_STATIC_ASSERT(sizeof(D) != 0);
 
     typedef char (&Yes)[1];
     typedef char (&No) [2];
@@ -126,7 +126,7 @@ template<typename B, typename D> struct IsBaseOfImpl {
 template <typename B, typename D> struct IsBaseOf
     : OrExpr<IsSame<B, D>, BoolExpr<IsBaseOfImpl<B, D> > >::Type {};
 
-#endif // CEREAL_RAPIDJSON_HAS_CXX11_TYPETRAITS
+#endif // TIMEMORY_CEREAL_RAPIDJSON_HAS_CXX11_TYPETRAITS
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -149,38 +149,38 @@ struct SfinaeTag {};
 template <typename T> struct RemoveSfinaeTag;
 template <typename T> struct RemoveSfinaeTag<SfinaeTag&(*)(T)> { typedef T Type; };
 
-#define CEREAL_RAPIDJSON_REMOVEFPTR_(type) \
-    typename ::CEREAL_RAPIDJSON_NAMESPACE::internal::RemoveSfinaeTag \
-        < ::CEREAL_RAPIDJSON_NAMESPACE::internal::SfinaeTag&(*) type>::Type
+#define TIMEMORY_CEREAL_RAPIDJSON_REMOVEFPTR_(type) \
+    typename ::TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::internal::RemoveSfinaeTag \
+        < ::TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::internal::SfinaeTag&(*) type>::Type
 
-#define CEREAL_RAPIDJSON_ENABLEIF(cond) \
-    typename ::CEREAL_RAPIDJSON_NAMESPACE::internal::EnableIf \
-        <CEREAL_RAPIDJSON_REMOVEFPTR_(cond)>::Type * = NULL
+#define TIMEMORY_CEREAL_RAPIDJSON_ENABLEIF(cond) \
+    typename ::TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::internal::EnableIf \
+        <TIMEMORY_CEREAL_RAPIDJSON_REMOVEFPTR_(cond)>::Type * = NULL
 
-#define CEREAL_RAPIDJSON_DISABLEIF(cond) \
-    typename ::CEREAL_RAPIDJSON_NAMESPACE::internal::DisableIf \
-        <CEREAL_RAPIDJSON_REMOVEFPTR_(cond)>::Type * = NULL
+#define TIMEMORY_CEREAL_RAPIDJSON_DISABLEIF(cond) \
+    typename ::TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::internal::DisableIf \
+        <TIMEMORY_CEREAL_RAPIDJSON_REMOVEFPTR_(cond)>::Type * = NULL
 
-#define CEREAL_RAPIDJSON_ENABLEIF_RETURN(cond,returntype) \
-    typename ::CEREAL_RAPIDJSON_NAMESPACE::internal::EnableIf \
-        <CEREAL_RAPIDJSON_REMOVEFPTR_(cond), \
-         CEREAL_RAPIDJSON_REMOVEFPTR_(returntype)>::Type
+#define TIMEMORY_CEREAL_RAPIDJSON_ENABLEIF_RETURN(cond,returntype) \
+    typename ::TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::internal::EnableIf \
+        <TIMEMORY_CEREAL_RAPIDJSON_REMOVEFPTR_(cond), \
+         TIMEMORY_CEREAL_RAPIDJSON_REMOVEFPTR_(returntype)>::Type
 
-#define CEREAL_RAPIDJSON_DISABLEIF_RETURN(cond,returntype) \
-    typename ::CEREAL_RAPIDJSON_NAMESPACE::internal::DisableIf \
-        <CEREAL_RAPIDJSON_REMOVEFPTR_(cond), \
-         CEREAL_RAPIDJSON_REMOVEFPTR_(returntype)>::Type
+#define TIMEMORY_CEREAL_RAPIDJSON_DISABLEIF_RETURN(cond,returntype) \
+    typename ::TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE::internal::DisableIf \
+        <TIMEMORY_CEREAL_RAPIDJSON_REMOVEFPTR_(cond), \
+         TIMEMORY_CEREAL_RAPIDJSON_REMOVEFPTR_(returntype)>::Type
 
 } // namespace internal
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 //@endcond
 
 #if defined(_MSC_VER) && !defined(__clang__)
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
 #ifdef __GNUC__
-CEREAL_RAPIDJSON_DIAG_POP
+TIMEMORY_CEREAL_RAPIDJSON_DIAG_POP
 #endif
 
-#endif // CEREAL_RAPIDJSON_INTERNAL_META_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_INTERNAL_META_H_

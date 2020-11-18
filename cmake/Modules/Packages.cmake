@@ -337,7 +337,6 @@ timemory_target_compile_definitions(timemory-default-disabled INTERFACE
 
 # this target is always linked whenever timemory is used via cmake
 timemory_target_compile_definitions(timemory-headers INTERFACE TIMEMORY_CMAKE)
-timemory_target_compile_definitions(timemory-headers INTERFACE CEREAL_THREAD_SAFE=1)
 
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source>

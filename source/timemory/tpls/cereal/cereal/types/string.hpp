@@ -27,19 +27,22 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_STRING_HPP_
-#define CEREAL_TYPES_STRING_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_STRING_HPP_
+#define TIMEMORY_CEREAL_TYPES_STRING_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <string>
 
+namespace tim
+{
 namespace cereal
 {
 //! Serialization for basic_string types, if binary data is supported
 template <class Archive, class CharT, class Traits, class Alloc>
 inline typename std::enable_if<
     traits::is_output_serializable<BinaryData<CharT>, Archive>::value, void>::type
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::basic_string<CharT, Traits, Alloc> const& str)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive&                                       ar,
+                                   std::basic_string<CharT, Traits, Alloc> const& str)
 {
     // Save number of chars + the data
     ar(make_size_tag(static_cast<size_type>(str.size())));
@@ -50,7 +53,8 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::basic_string<CharT, Traits, Alloc> c
 template <class Archive, class CharT, class Traits, class Alloc>
 inline typename std::enable_if<
     traits::is_input_serializable<BinaryData<CharT>, Archive>::value, void>::type
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::basic_string<CharT, Traits, Alloc>& str)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive&                                 ar,
+                                   std::basic_string<CharT, Traits, Alloc>& str)
 {
     size_type size;
     ar(make_size_tag(size));
@@ -59,5 +63,6 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::basic_string<CharT, Traits, Alloc>& 
                    static_cast<std::size_t>(size) * sizeof(CharT)));
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_STRING_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_STRING_HPP_

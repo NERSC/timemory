@@ -312,6 +312,8 @@ private:
 //
 }  // namespace tim
 
+namespace tim
+{
 namespace cereal
 {
 template <typename Archive, typename Tp>
@@ -322,3 +324,4 @@ save(Archive& ar, std::shared_ptr<tim::tsettings<Tp, Tp&>> obj)
     ar(_obj);
 }
 }  // namespace cereal
+}  // namespace tim

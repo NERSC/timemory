@@ -69,4 +69,3 @@ struct settings;
 
 TIMEMORY_SET_CLASS_VERSION(2, ::tim::settings)
 TIMEMORY_SET_CLASS_VERSION(0, ::tim::vsettings)
-// CEREAL_FORCE_DYNAMIC_INIT(timemory_settings_t)

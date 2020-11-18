@@ -27,11 +27,13 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_COMMON_HPP_
-#define CEREAL_TYPES_COMMON_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_COMMON_HPP_
+#define TIMEMORY_CEREAL_TYPES_COMMON_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 
+namespace tim
+{
 namespace cereal
 {
 namespace common_detail
@@ -85,7 +87,7 @@ class is_enum
 {
 private:
     using DecayedT  = typename std::decay<T>::type;
-    using StrippedT = typename ::cereal::traits::strip_minimal<DecayedT>::type;
+    using StrippedT = typename ::tim::cereal::traits::strip_minimal<DecayedT>::type;
 
 public:
     static const bool value = std::is_enum<StrippedT>::value;
@@ -98,7 +100,7 @@ public:
 template <class Archive, class T>
 inline typename std::enable_if<common_detail::is_enum<T>::value,
                                typename common_detail::is_enum<T>::base_type>::type
-CEREAL_SAVE_MINIMAL_FUNCTION_NAME(Archive const&, T const& t)
+TIMEMORY_CEREAL_SAVE_MINIMAL_FUNCTION_NAME(Archive const&, T const& t)
 {
     return static_cast<typename common_detail::is_enum<T>::base_type>(t);
 }
@@ -106,7 +108,7 @@ CEREAL_SAVE_MINIMAL_FUNCTION_NAME(Archive const&, T const& t)
 //! Loading for enum types
 template <class Archive, class T>
 inline typename std::enable_if<common_detail::is_enum<T>::value, void>::type
-CEREAL_LOAD_MINIMAL_FUNCTION_NAME(
+TIMEMORY_CEREAL_LOAD_MINIMAL_FUNCTION_NAME(
     Archive const&, T&& t, typename common_detail::is_enum<T>::base_type const& value)
 {
     t = reinterpret_cast<typename common_detail::is_enum<T>::type const&>(value);
@@ -117,7 +119,7 @@ CEREAL_LOAD_MINIMAL_FUNCTION_NAME(
  * pointers. */
 template <class Archive, class T>
 inline void
-CEREAL_SERIALIZE_FUNCTION_NAME(Archive&, T*&)
+TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive&, T*&)
 {
     static_assert(
         cereal::traits::detail::delay_static_assert<T>::value,
@@ -127,7 +129,7 @@ CEREAL_SERIALIZE_FUNCTION_NAME(Archive&, T*&)
 //! Serialization for C style arrays
 template <class Archive, class T>
 inline typename std::enable_if<std::is_array<T>::value, void>::type
-CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, T& array)
+TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, T& array)
 {
     common_detail::serializeArray(
         ar, array, std::integral_constant < bool,
@@ -136,5 +138,6 @@ CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, T& array)
             ());
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_COMMON_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_COMMON_HPP_

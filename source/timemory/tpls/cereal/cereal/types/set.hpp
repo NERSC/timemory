@@ -27,12 +27,14 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef CEREAL_TYPES_SET_HPP_
-#define CEREAL_TYPES_SET_HPP_
+#ifndef TIMEMORY_CEREAL_TYPES_SET_HPP_
+#define TIMEMORY_CEREAL_TYPES_SET_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <set>
 
+namespace tim
+{
 namespace cereal
 {
 namespace set_detail
@@ -64,11 +66,11 @@ load(Archive& ar, SetT& set)
         typename SetT::key_type key;
 
         ar(key);
-#ifdef CEREAL_OLDER_GCC
+#ifdef TIMEMORY_CEREAL_OLDER_GCC
         hint = set.insert(hint, std::move(key));
-#else   // NOT CEREAL_OLDER_GCC
+#else   // NOT TIMEMORY_CEREAL_OLDER_GCC
         hint = set.emplace_hint(hint, std::move(key));
-#endif  // NOT CEREAL_OLDER_GCC
+#endif  // NOT TIMEMORY_CEREAL_OLDER_GCC
     }
 }
 }  // namespace set_detail
@@ -76,7 +78,7 @@ load(Archive& ar, SetT& set)
 //! Saving for std::set
 template <class Archive, class K, class C, class A>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::set<K, C, A> const& set)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::set<K, C, A> const& set)
 {
     set_detail::save(ar, set);
 }
@@ -84,7 +86,7 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::set<K, C, A> const& set)
 //! Loading for std::set
 template <class Archive, class K, class C, class A>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::set<K, C, A>& set)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::set<K, C, A>& set)
 {
     set_detail::load(ar, set);
 }
@@ -92,7 +94,7 @@ CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::set<K, C, A>& set)
 //! Saving for std::multiset
 template <class Archive, class K, class C, class A>
 inline void
-CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::multiset<K, C, A> const& multiset)
+TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::multiset<K, C, A> const& multiset)
 {
     set_detail::save(ar, multiset);
 }
@@ -100,10 +102,11 @@ CEREAL_SAVE_FUNCTION_NAME(Archive& ar, std::multiset<K, C, A> const& multiset)
 //! Loading for std::multiset
 template <class Archive, class K, class C, class A>
 inline void
-CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::multiset<K, C, A>& multiset)
+TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(Archive& ar, std::multiset<K, C, A>& multiset)
 {
     set_detail::load(ar, multiset);
 }
 }  // namespace cereal
+}  // namespace tim
 
-#endif  // CEREAL_TYPES_SET_HPP_
+#endif  // TIMEMORY_CEREAL_TYPES_SET_HPP_

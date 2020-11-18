@@ -246,15 +246,14 @@ PYBIND11_MODULE(libpytimemory, tim)
             auto enabled_signals = tim::signal_settings::get_enabled();
             tim::enable_signal_detection(enabled_signals);
             // executes after the signal has been caught
-            auto _exit_action = [](int nsig) {
-                auto _manager = manager_t::instance();
-                if(_manager)
+            auto _exit_action = [=](int nsig) {
+                if(_master_manager)
                 {
                     std::cout << "Finalizing after signal: " << nsig << " :: "
                               << tim::signal_settings::str(
                                      static_cast<tim::sys_signal>(nsig))
                               << std::endl;
-                    _manager->finalize();
+                    _master_manager->finalize();
                 }
             };
             //

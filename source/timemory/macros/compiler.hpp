@@ -60,6 +60,7 @@
 #if defined(__GNUC__) && !defined(_TIMEMORY_CLANG)
 #    if(__GNUC__ <= 4 && __GNUC_MINOR__ < 9)
 #        warning "GCC compilers < 4.9 have been known to have compiler errors"
+#        define _TIMEMORY_GNU
 #    elif(__GNUC__ >= 4 && __GNUC_MINOR__ >= 9) || __GNUC__ >= 5
 #        define _TIMEMORY_GNU
 #    endif

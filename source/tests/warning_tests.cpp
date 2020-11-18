@@ -80,7 +80,7 @@ TEST_F(warning_tests, enabled)
         std::ofstream ofs(".settings-test.json");
         if(ofs)
         {
-            cereal::JSONOutputArchive oa(ofs);
+            tim::cereal::JSONOutputArchive oa(ofs);
             tim::settings::serialize_settings(oa);
         }
         if(ofs)
@@ -98,7 +98,7 @@ TEST_F(warning_tests, enabled)
         std::ifstream ifs(".settings-test.json");
         if(ifs)
         {
-            cereal::JSONInputArchive ia(ifs);
+            tim::cereal::JSONInputArchive ia(ifs);
             tim::settings::serialize_settings(ia);
         }
         ifs.close();

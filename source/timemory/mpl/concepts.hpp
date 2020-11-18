@@ -59,6 +59,8 @@
 // constexpr operator bool() const noexcept { return value; }
 
 //--------------------------------------------------------------------------------------//
+namespace tim
+{
 namespace cereal
 {
 namespace detail
@@ -69,6 +71,7 @@ class InputArchiveBase;
 //
 }  // namespace detail
 }  // namespace cereal
+}  // namespace tim
 //
 namespace tim
 {

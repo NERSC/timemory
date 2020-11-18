@@ -12,13 +12,13 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the 
 // specific language governing permissions and limitations under the License.
 
-#ifndef CEREAL_RAPIDJSON_MEMORYBUFFER_H_
-#define CEREAL_RAPIDJSON_MEMORYBUFFER_H_
+#ifndef TIMEMORY_CEREAL_RAPIDJSON_MEMORYBUFFER_H_
+#define TIMEMORY_CEREAL_RAPIDJSON_MEMORYBUFFER_H_
 
 #include "stream.h"
 #include "internal/stack.h"
 
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 //! Represents an in-memory output byte stream.
 /*!
@@ -65,6 +65,6 @@ inline void PutN(MemoryBuffer& memoryBuffer, char c, size_t n) {
     std::memset(memoryBuffer.stack_.Push<char>(n), c, n * sizeof(c));
 }
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
-#endif // CEREAL_RAPIDJSON_MEMORYBUFFER_H_
+#endif // TIMEMORY_CEREAL_RAPIDJSON_MEMORYBUFFER_H_

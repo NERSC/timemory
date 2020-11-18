@@ -27,9 +27,11 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef CEREAL_SPECIALIZE_HPP_
-#define CEREAL_SPECIALIZE_HPP_
+#ifndef TIMEMORY_CEREAL_SPECIALIZE_HPP_
+#define TIMEMORY_CEREAL_SPECIALIZE_HPP_
 
+namespace tim
+{
 namespace cereal
 {
 // Forward declaration of access class that users can become friends with
@@ -105,8 +107,8 @@ enum class specialization
     }
     @endcode
 
-    You can also choose to use the macros CEREAL_SPECIALIZE_FOR_ALL_ARCHIVES or
-    CEREAL_SPECIALIZE_FOR_ARCHIVE if you want to type a little bit less.
+    You can also choose to use the macros TIMEMORY_CEREAL_SPECIALIZE_FOR_ALL_ARCHIVES or
+    TIMEMORY_CEREAL_SPECIALIZE_FOR_ARCHIVE if you want to type a little bit less.
 
     @tparam T The type to specialize the serialization for
     @tparam S The specialization type to use for T
@@ -121,18 +123,22 @@ struct specialize : public std::false_type
 
     @code{cpp}
     struct MyType {};
-    CEREAL_SPECIALIZE_FOR_ALL_ARCHIVES( MyType, cereal::specialization::member_load_save
+    TIMEMORY_CEREAL_SPECIALIZE_FOR_ALL_ARCHIVES( MyType,
+   cereal::specialization::member_load_save
    );
     @endcode
 
     @relates specialize
     @ingroup Access */
-#define CEREAL_SPECIALIZE_FOR_ALL_ARCHIVES(Type, Specialization)                         \
+#define TIMEMORY_CEREAL_SPECIALIZE_FOR_ALL_ARCHIVES(Type, Specialization)                \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     template <class Archive>                                                             \
     struct specialize<Archive, Type, Specialization>                                     \
     {};                                                                                  \
+    }                                                                                    \
     }
 
 //! Convenient macro for performing specialization for a single archive type
@@ -141,19 +147,22 @@ struct specialize : public std::false_type
 
     @code{cpp}
     struct MyType {};
-    CEREAL_SPECIALIZE_FOR_ARCHIVE( cereal::XMLInputArchive, MyType,
+    TIMEMORY_CEREAL_SPECIALIZE_FOR_ARCHIVE( cereal::XMLInputArchive, MyType,
    cereal::specialization::member_load_save );
     @endcode
 
     @relates specialize
     @ingroup Access */
-#define CEREAL_SPECIALIZE_FOR_ARCHIVE(Archive, Type, Specialization)                     \
+#define TIMEMORY_CEREAL_SPECIALIZE_FOR_ARCHIVE(Archive, Type, Specialization)            \
+    namespace tim                                                                        \
+    {                                                                                    \
     namespace cereal                                                                     \
     {                                                                                    \
     template <>                                                                          \
     struct specialize<Archive, Type, Specialization>                                     \
     {};                                                                                  \
+    }                                                                                    \
     }
 }  // namespace cereal
-
+}  // namespace tim
 #endif

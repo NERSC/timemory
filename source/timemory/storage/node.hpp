@@ -422,6 +422,8 @@ tree<Tp>::operator=(const graph<Tp>& rhs)
 //
 //--------------------------------------------------------------------------------------//
 //
+namespace tim
+{
 namespace cereal
 {
 //
@@ -600,5 +602,6 @@ struct specialize<Archive, tim::node::result<Tp>,
 {};
 //
 }  // namespace cereal
+}  // namespace tim
 //
 //--------------------------------------------------------------------------------------//

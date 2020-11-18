@@ -22,8 +22,8 @@
    René Nyffenegger rene.nyffenegger@adp-gmbh.ch
 */
 
-#ifndef CEREAL_EXTERNAL_BASE64_HPP_
-#define CEREAL_EXTERNAL_BASE64_HPP_
+#ifndef TIMEMORY_CEREAL_EXTERNAL_BASE64_HPP_
+#define TIMEMORY_CEREAL_EXTERNAL_BASE64_HPP_
 
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -32,6 +32,8 @@
 
 #include <string>
 
+namespace tim
+{
 namespace cereal
 {
   namespace base64
@@ -128,7 +130,8 @@ namespace cereal
     }
   } // namespace base64
 } // namespace cereal
+}  // namespace tim
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
-#endif // CEREAL_EXTERNAL_BASE64_HPP_
+#endif // TIMEMORY_CEREAL_EXTERNAL_BASE64_HPP_

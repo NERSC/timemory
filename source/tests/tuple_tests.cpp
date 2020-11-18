@@ -104,14 +104,15 @@ template <typename Tp>
 void
 serialize(const std::string& fname, const std::string& title, const Tp& obj)
 {
-    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
-    std::stringstream     ss;
+    static constexpr auto spacing =
+        tim::cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::stringstream ss;
     {
         // ensure json write final block during destruction before the file is closed
         //                                  args: precision, spacing, indent size
-        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
-        cereal::JSONOutputArchive          oa(ss, opts);
-        oa(cereal::make_nvp(title, obj));
+        tim::cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        tim::cereal::JSONOutputArchive          oa(ss, opts);
+        oa(tim::cereal::make_nvp(title, obj));
     }
     std::ofstream ofs(fname.c_str());
     ofs << ss.str() << std::endl;
