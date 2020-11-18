@@ -45,7 +45,7 @@ jobs:
         - CC=gcc-6
         - CXX=g++-6
         - BUILD_TYPE=MinSizeRel
-        - BUILD_ARGS='--quick --build-libs static shared --python --papi --gotcha --caliper --tools timem --stats --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static shared --python --papi --gotcha --caliper --stats --cxx-standard=14'
     # GCC 7
     - os: linux
       dist: bionic
@@ -66,7 +66,7 @@ jobs:
       env:
         - CC=gcc-7
         - CXX=g++-7
-        - BUILD_ARGS='--build-libs shared --mpi --papi --caliper --gotcha --tools mpip compiler --stats --cxx-standard=17 --coverage'
+        - BUILD_ARGS='--build-libs shared --mpi --papi --caliper --gotcha --tools mpip --stats --cxx-standard=17 --coverage'
     #
     # GCC 8
     - os: linux
@@ -87,7 +87,7 @@ jobs:
       env:
         - CC=gcc-8
         - CXX=g++-8
-        - BUILD_ARGS='--build-libs static --mpi --tools timem --cxx-standard=17'
+        - BUILD_ARGS='--build-libs static --mpi --cxx-standard=17'
     # Clang 6.0
     - os: linux
       dist: xenial
