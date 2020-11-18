@@ -389,6 +389,7 @@ endif()
 add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${_TIMEM})
 add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF)
+add_option(TIMEMORY_BUILD_KOKKOS_CONFIG "Build various connector configurations" OFF)
 add_option(TIMEMORY_BUILD_DYNINST_TOOLS
     "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})
 add_option(TIMEMORY_BUILD_MPIP_LIBRARY "Build the mpiP library" ${_MPIP})

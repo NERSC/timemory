@@ -14,11 +14,9 @@ if(NOT TIMEMORY_BUILD_TIMEM)
 endif()
 
 set(_STATIC_LIB)
-foreach(_TARG core timing-component rusage-component)
-    if(TARGET timemory::timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
-        list(APPEND _STATIC_LIB timemory::timemory-${_TARG}-static)
-    endif()
-endforeach()
+if(TARGET timemory::timemory-core-static AND NOT TIMEMORY_USE_COVERAGE)
+    list(APPEND _STATIC_LIB timemory::timemory-core-static)
+endif()
 
 add_library(timem-libexplain INTERFACE)
 

@@ -25,18 +25,18 @@ if(NOT TIMEMORY_SKIP_BUILD AND TIMEMORY_BUILD_C)
         add_library(custom-record-functions ${_EXCLUDE} SHARED
     	    custom_record_functions.cpp)
         target_link_libraries(custom-record-functions
-            common-test-libs
             timemory::timemory-cxx-shared
             timemory::timemory-c-shared
-            timemory::timemory-plotting)
+            timemory::timemory-plotting
+            common-test-libs)
     elseif(BUILD_STATIC_LIBS)
         add_library(custom-record-functions ${_EXCLUDE} STATIC
             custom_record_functions.cpp)
         target_link_libraries(custom-record-functions PUBLIC
-            common-test-libs
             timemory::timemory-cxx-static
             timemory::timemory-c-static
-            timemory::timemory-plotting)
+            timemory::timemory-plotting
+            common-test-libs)
     endif()
 endif()
 

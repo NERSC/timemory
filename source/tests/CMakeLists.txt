@@ -75,7 +75,9 @@ target_link_libraries(common-test-libs INTERFACE
 
 if(TIMEMORY_USE_COVERAGE)
     # ensures all usage updates coverage
-    target_link_libraries(common-test-libs INTERFACE ${_LIBRARY_TARGET})
+    target_link_libraries(common-test-libs INTERFACE
+        ${_LIBRARY_TARGET}
+        timemory::timemory-extensions)
 endif()
 
 set(HYBRID_COMPONENTS )
@@ -120,6 +122,7 @@ if(TARGET timemory::timemory-compiler-instrument-shared)
                         test-opt-flags
                         timemory::timemory-compiler-instrument-shared
                         timemory::timemory-headers
+                        ${_LIBRARY}
         ENVIRONMENT     ${compiler_instr_env})
 endif()
 
@@ -130,6 +133,7 @@ if(TARGET timemory::timemory-compiler-instrument-static)
                         test-opt-flags
                         timemory::timemory-compiler-instrument-static
                         timemory::timemory-headers
+                        ${_LIBRARY}
         ENVIRONMENT     ${compiler_instr_env})
 endif()
 
@@ -172,7 +176,7 @@ add_timemory_google_test(api_tests
     SOURCES         api_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
-                    timemory::timemory-timing-component)
+                    ${_LIBRARY})
 
 add_timemory_google_test(type_trait_tests
     DISCOVER_TESTS
@@ -197,7 +201,7 @@ add_timemory_google_test(settings_tests
     SOURCES         settings_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
-                    timemory::timemory-config)
+                    ${_LIBRARY})
 
 add_timemory_google_test(argparse_tests
     SOURCES         argparse_tests.cpp
@@ -261,8 +265,7 @@ add_timemory_google_test(cache_tests
     SOURCES         cache_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
-                    timemory::timemory-timing-component
-                    timemory::timemory-rusage-component)
+                    ${_LIBRARY})
 
 add_timemory_google_test(archive_storage_tests
     SOURCES         archive_storage_tests.cpp
@@ -438,7 +441,6 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
                         timemory::timemory-cuda
                         timemory::timemory-cupti
                         timemory::timemory-plotting
-                        # timemory::timemory-cudart-device
                         cupti-compile-options)
 
     # NVPERF library

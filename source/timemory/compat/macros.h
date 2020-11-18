@@ -83,7 +83,7 @@
 #    if !defined(_UNIX)
 #        define _UNIX
 #    endif
-#elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
+#elif defined(__unix__) || defined(__unix) || defined(unix)
 #    if !defined(_UNIX)
 #        define _UNIX
 #    endif

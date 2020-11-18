@@ -125,7 +125,7 @@ TEST_F(ert_tests, run)
     auto nproc = dmp::size();
 
     auto cpu_min_size = 64;
-    auto cpu_max_data = 2 * ert::cache_size::get_max();
+    auto cpu_max_data = ert::cache_size::get_max();
 
     init_list_t cpu_num_threads;
 
@@ -137,6 +137,9 @@ TEST_F(ert_tests, run)
         if(entry > 0)
             cpu_num_threads.insert(entry);
     }
+
+    if(cpu_num_threads.empty())
+        cpu_num_threads.insert(1);
 
     TIMEMORY_BLANK_AUTO_TIMER("run_ert");
 

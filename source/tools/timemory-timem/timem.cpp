@@ -309,8 +309,7 @@ main(int argc, char** argv)
         tim::trait::apply<tim::trait::runtime_enabled>::set<
             child_user_clock, child_system_clock, child_cpu_clock, child_cpu_util,
             peak_rss, num_major_page_faults, num_minor_page_faults,
-            priority_context_switch, voluntary_context_switch, user_mode_time,
-            kernel_mode_time, papi_array_t>(false);
+            priority_context_switch, voluntary_context_switch, papi_array_t>(false);
 
         using info_t      = tim::mpi::info_t;
         using argvector_t = tim::argparse::argument_vector;
