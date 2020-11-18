@@ -7,20 +7,20 @@ jobs:
   include:
     # ------------------------------------------------------------------------ #
     #
-    #   Python3.7 / macOS
+    #   Python3.8 / macOS
     #
     # ------------------------------------------------------------------------ #
     - os: osx
-      osx_image: xcode12.2
+      osx_image: xcode12
       language: shell
       env:
         - TRAVIS_PYTHON_VERSION=3.8
         - CONDA_OS=MacOSX
         - CC=clang
         - CXX=clang++
-        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_HIDDEN=ON'
+        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_LINE_PROFILER=OFF'
         - CTEST_ARGS='--force-new-ctest-process'
-        - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=17'
 
     # ------------------------------------------------------------------------ #
     #
@@ -247,7 +247,7 @@ before_install:
   - if [ "${EXECUTE}" -ne 0 ]; then conda config --set always_yes yes --set changeps1 no; fi
 
 install:
-  - if [ "${EXECUTE}" -ne 0 ]; then conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip cython; fi
+  - if [ "${EXECUTE}" -ne 0 ]; then conda create -c conda-forge -c defaults -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip cython; fi
   - if [ "${EXECUTE}" -ne 0 ]; then source activate pyctest; fi
   - if [ "${EXECUTE}" -ne 0 ]; then if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi; fi
 
