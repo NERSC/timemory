@@ -49,7 +49,7 @@ setup_ompt()
 static handle_map_t          f_handle_map;
 static std::atomic<uint64_t> f_handle_count;
 static const bool            initial_config = setup_ompt();
-static auto                  settings       = tim::settings::shared_instance<api_t>();
+static auto                  settings       = tim::settings::shared_instance();
 
 extern "C"
 {

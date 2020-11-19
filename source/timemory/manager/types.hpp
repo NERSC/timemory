@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/manager/types.hpp
- * \brief Declare the manager types
- */
-
 #pragma once
 
 #include "timemory/manager/macros.hpp"
@@ -40,13 +35,13 @@
 namespace tim
 {
 //
-class manager;
+class TIMEMORY_VISIBILITY("default") manager;
 //
 manager*
-timemory_manager_master_instance();
+timemory_manager_master_instance() TIMEMORY_VISIBILITY("default");
 //
 void
-timemory_library_constructor();
+timemory_library_constructor() TIMEMORY_VISIBILITY("default");
 //
 }  // namespace tim
 

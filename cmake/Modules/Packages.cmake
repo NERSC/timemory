@@ -182,6 +182,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-cupti
     timemory-cudart-device
     timemory-caliper
+    timemory-likwid
     timemory-vtune
     timemory-tau
     timemory-ompt

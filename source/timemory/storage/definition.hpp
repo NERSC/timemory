@@ -913,8 +913,7 @@ storage<Type, true>::internal_print()
         // generate output
         if(m_settings->get_auto_output())
         {
-            if(!m_printer)
-                m_printer.reset(new printer_t(Type::get_label(), this));
+            m_printer.reset(new printer_t(Type::get_label(), this, m_settings));
 
             if(m_manager)
                 m_manager->add_entries(this->size());

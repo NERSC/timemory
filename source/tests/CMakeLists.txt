@@ -120,9 +120,8 @@ if(TARGET timemory::timemory-compiler-instrument-shared)
         SOURCES         instrumentation_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         test-opt-flags
-                        timemory::timemory-compiler-instrument-shared
-                        timemory::timemory-headers
                         ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-shared
         ENVIRONMENT     ${compiler_instr_env})
 endif()
 
@@ -131,9 +130,8 @@ if(TARGET timemory::timemory-compiler-instrument-static)
         SOURCES         instrumentation_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         test-opt-flags
-                        timemory::timemory-compiler-instrument-static
-                        timemory::timemory-headers
                         ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-static
         ENVIRONMENT     ${compiler_instr_env})
 endif()
 

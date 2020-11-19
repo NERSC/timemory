@@ -610,6 +610,7 @@ storage<Type, true>::serialize(Archive& ar, const unsigned int version)
 {
     auto   num_instances = instance_count().load();
     auto&& _results      = dmp_get();
+    ar.makeArray();
     for(uint64_t i = 0; i < _results.size(); ++i)
     {
         if(_results.at(i).empty())

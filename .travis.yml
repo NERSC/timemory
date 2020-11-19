@@ -44,7 +44,7 @@ jobs:
         - CC=gcc-6
         - CXX=g++-6
         - BUILD_TYPE=MinSizeRel
-        - BUILD_ARGS='--build-libs shared --python --stats --cxx-standard=17 --extra-optimizations'
+        - BUILD_ARGS='--build-libs shared --python --stats --cxx-standard=14 --extra-optimizations'
     # GCC 7
     - os: linux
       dist: bionic
@@ -104,7 +104,7 @@ jobs:
       env:
         - CC=clang-6.0
         - CXX=clang++-6.0
-        - BUILD_ARGS='--quick --build-libs static --stats --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs static --stats --tools timem --cxx-standard=14'
     # Clang 7
     - os: linux
       dist: bionic
@@ -201,7 +201,7 @@ jobs:
       env:
         - CC=clang-6.0
         - CXX=clang++-6.0
-        - BUILD_ARGS='--build-libs shared --gperftools --stats --tools compiler --cxx-standard=14 --profile=cpu'
+        - BUILD_ARGS='--build-libs shared --gperftools --stats --cxx-standard=14 --profile=cpu'
         - CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'
     # Clang 7
     - os: linux
@@ -218,7 +218,7 @@ jobs:
       env:
         - CC=clang-7
         - CXX=clang++-7
-        - BUILD_ARGS='--quick --build-libs shared --gotcha --mpi --python --stats --tools timem kokkos --cxx-standard=17'
+        - BUILD_ARGS='--quick --build-libs shared --gotcha --mpi --python --stats --tools compiler kokkos --cxx-standard=17'
   fast_finish: true
 
 before_install:

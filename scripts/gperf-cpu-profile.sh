@@ -114,8 +114,11 @@ if [ -f "${GPERF_PROFILE}" ]; then
     : ${PPROF:=$(which google-pprof)}
     : ${PPROF:=$(which pprof)}
     if [ -n "${PPROF}" ]; then
-        run-verbose ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.txt
-        run-verbose ${PPROF} --text --cum ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.cum.txt
+        run-verbose ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.txt.tmp
+        run-verbose cat ${GPERF_PROFILE}.txt.tmp | c++filt -n -t &> ${GPERF_PROFILE}.txt
+        run-verbose ${PPROF} --text --cum ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.cum.txt.tmp
+        run-verbose cat ${GPERF_PROFILE}.cum.txt.tmp | c++filt -n -t &> ${GPERF_PROFILE}.cum.txt
+        rm *.txt.tmp
         # if dot is available
         if [ -n "$(which dot)" ]; then
             run-verbose ${PPROF} --dot ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.dot

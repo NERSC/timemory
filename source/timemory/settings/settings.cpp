@@ -1013,7 +1013,9 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize()
 {
-    // PRINT_HERE("%s", "");
+    m_data.clear();
+    m_data.reserve(160);
+
     initialize_core();
     initialize_components();
     initialize_io();
@@ -1024,8 +1026,6 @@ settings::initialize()
     initialize_miscellaneous();
     initialize_ert();
     initialize_dart();
-
-    m_data.rehash(m_data.size());
 }
 //
 //--------------------------------------------------------------------------------------//

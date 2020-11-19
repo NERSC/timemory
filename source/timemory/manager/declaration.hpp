@@ -284,7 +284,7 @@ private:
     finalizer_list_t       m_worker_finalizers  = {};
     finalizer_void_t       m_pointer_fini       = {};
     filemap_t              m_output_files       = {};
-    settings_ptr_t         m_settings = settings::shared_instance<TIMEMORY_API>();
+    settings_ptr_t         m_settings           = settings::shared_instance();
 
 private:
     struct persistent_data
@@ -308,7 +308,7 @@ private:
         pointer_t                 master_instance;
         bool&                     debug   = settings::debug();
         int&                      verbose = settings::verbose();
-        std::shared_ptr<settings> config  = settings::shared_instance<TIMEMORY_API>();
+        std::shared_ptr<settings> config  = settings::shared_instance();
     };
 
     /// single instance of all the global static data

@@ -307,6 +307,9 @@ if(TIMEMORY_BUILD_EXAMPLES)
         "timemory build examples directory" FORCE)
     add_subdirectory(examples)
 elseif(TIMEMORY_BUILD_TESTING AND TIMEMORY_USE_PYTHON)
+    message(STATUS "Adding examples/ex-python...")
+    set(timemory_DIR "${PROJECT_BINARY_DIR}" CACHE STRING
+        "timemory build examples directory" FORCE)
     # copies over some python scripts
     add_subdirectory(examples/ex-python)
 endif()
