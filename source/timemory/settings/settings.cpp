@@ -1013,8 +1013,9 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize()
 {
-    m_data.clear();
-    m_data.reserve(160);
+    // m_data.clear();
+    if(m_data.empty())
+        m_data.reserve(160);
 
     initialize_core();
     initialize_components();
