@@ -155,7 +155,7 @@ main(int argc, char** argv)
 
     tim::timemory_init(argc, argv);
 
-    uint64_t n = 100000;
+    uint64_t n = 1000;
     if(argc > 1) n = atoi(argv[1]);
 
     double ret = 0.0;

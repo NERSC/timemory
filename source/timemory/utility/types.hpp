@@ -95,10 +95,16 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_ALWAYS_INLINE) && !defined(_WINDOWS)
-#    define TIMEMORY_ALWAYS_INLINE [[gnu::always_inline]] inline
-#else
-#    define TIMEMORY_ALWAYS_INLINE inline
+#if !defined(TIMEMORY_ALWAYS_INLINE)
+#    if defined(_WINDOWS)
+#        define TIMEMORY_ALWAYS_INLINE __forceinline
+#    else
+#        define TIMEMORY_ALWAYS_INLINE TIMEMORY_ATTRIBUTE(always_inline) inline
+#    endif
+#endif
+
+#if !defined(TIMEMORY_INLINE)
+#    define TIMEMORY_INLINE TIMEMORY_ALWAYS_INLINE
 #endif
 
 //======================================================================================//
@@ -141,6 +147,16 @@
 //
 #if !defined(TIMEMORY_EXTERN_VISIBLE)
 #    define TIMEMORY_EXTERN_VISIBLE [[gnu::externally_visible]]
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_HIDDEN)
+#    if !defined(_MSC_VER)
+#        define TIMEMORY_HIDDEN TIMEMORY_ATTRIBUTE(visibility("hidden"))
+#    else
+#        define TIMEMORY_HIDDEN
+#    endif
 #endif
 
 //======================================================================================//

@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <chrono>
@@ -106,7 +110,42 @@ compute_pi(uint64_t nstart, uint64_t nstop, double step, uint64_t nblock)
 
 class ptl_tests : public ::testing::Test
 {
-    void SetUp() override { tim::threading::affinity::set(); }
+protected:
+    static auto& get_manager()
+    {
+        static auto _instance = std::make_unique<PTL::TaskRunManager>();
+        return _instance;
+    }
+
+    static void SetUpTestSuite()
+    {
+        PTL::TaskRunManager& manager = *get_manager();
+
+        tim::settings::verbose()           = 0;
+        tim::settings::debug()             = false;
+        tim::settings::json_output()       = false;
+        tim::settings::flamegraph_output() = false;
+        tim::timemory_init(&_argc, &_argv);
+        tim::settings::dart_output() = false;
+        tim::settings::dart_count()  = 1;
+
+        std::cout << "Initializing thread-pool... " << std::flush;
+        manager.Initialize(tim::get_env<uint64_t>("NUM_THREADS", 4));
+        std::cout << "Done" << std::endl;
+        tim::threading::affinity::set();
+    }
+
+    static void TearDownTestSuite()
+    {
+        auto& manager = get_manager();
+
+        std::cout << "finalizing..." << std::endl;
+        tim::timemory_finalize();
+
+        std::cout << "Terminating thread-pool... " << std::flush;
+        manager.reset();
+        std::cout << "Done" << std::endl;
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -263,34 +302,6 @@ TEST_F(ptl_tests, async)
         tc_nlaps += itr.data().get_laps();
 
     ASSERT_EQ(wc_nlaps, tc_nlaps);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()           = 0;
-    tim::settings::debug()             = false;
-    tim::settings::json_output()       = false;
-    tim::settings::flamegraph_output() = false;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = false;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    int ret = 0;
-    {
-        PTL::TaskRunManager manager{};
-        manager.Initialize(tim::get_env<uint64_t>("NUM_THREADS", 4));
-        ret = RUN_ALL_TESTS();
-        manager.Terminate();
-    }
-    tim::timemory_finalize();
-
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -682,10 +682,11 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _argparse = [&pysettings](py::object parser, py::object subparser) {
+    auto _argparse = [tim](py::object parser, py::object subparser) {
         try
         {
-            pysettings.attr("add_arguments")(parser, py::none{}, subparser);
+            py::object _pysettings = tim.attr("settings");
+            _pysettings.attr("add_arguments")(parser, py::none{}, subparser);
         } catch(std::exception& e)
         {
             std::cerr << "[timemory_argparse]> Warning! " << e.what() << std::endl;

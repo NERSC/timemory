@@ -638,7 +638,28 @@ storage<Type, true>::do_serialize(Archive& ar)
 {
     if(m_is_master)
         merge();
-    ar(cereal::make_nvp(Type::label(), *this));
+
+    auto   num_instances = instance_count().load();
+    auto&& _results      = dmp_get();
+    ar.setNextName(Type::label().c_str());
+    ar.startNode();
+    ar.makeArray();
+    for(uint64_t i = 0; i < _results.size(); ++i)
+    {
+        if(_results.at(i).empty())
+            continue;
+
+        ar.startNode();
+
+        ar(cereal::make_nvp("rank", i));
+        ar(cereal::make_nvp("concurrency", num_instances));
+        m_printer->print_metadata(ar, _results.at(i).front().data());
+        operation::extra_serialization<Type>{ ar };
+        save(ar, _results.at(i));
+
+        ar.finishNode();
+    }
+    ar.finishNode();
 }
 //
 //--------------------------------------------------------------------------------------//

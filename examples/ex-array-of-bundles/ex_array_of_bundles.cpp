@@ -23,9 +23,25 @@
 // SOFTWARE.
 //
 
+// "all-inclusive" header ensuring extern templates are included properly
 #include "timemory/timemory.hpp"
+
+// select headers for reference if you want to explore the code some
+#include "timemory/components/base/declaration.hpp"         /// base class from components
+#include "timemory/components/data_tracker/components.hpp"  /// data tracker component
+#include "timemory/components/timing/components.hpp"        /// other timing components
+#include "timemory/components/timing/wall_clock.hpp"        /// wall-clock component
+#include "timemory/mpl/type_traits.hpp"                     /// type-traits
+#include "timemory/settings.hpp"                            /// available settings
+#include "timemory/variadic/component_bundle.hpp"           /// component bundler
+#include "timemory/variadic/lightweight_tuple.hpp"          /// component bundler
+
+//
 #include <chrono>
+#include <fstream>
 #include <iostream>
+#include <string>
+#include <thread>
 
 // Example demonstrating:
 // 1. Differences between bundles
@@ -85,6 +101,9 @@ main(int argc, char** argv)
     // - Use timemory-avail command-line tool with -S option to view available settings
     // - Add -d option to above to see descriptions of the settings
     //--------------------------------------------------------------------------------//
+
+    // parse command line options
+    tim::timemory_argparse(&argc, &argv);
 
     // initialize timemory
     tim::timemory_init(argc, argv);
@@ -208,6 +227,8 @@ main(int argc, char** argv)
         }
     }
 
+    std::cout << "Finished " << nitr << " iterations." << std::endl;
+
     // write a json serialization of the global call-stack
     if(nitr % ndump == 0)
     {
@@ -280,26 +301,34 @@ main(int argc, char** argv)
         // _ldata.initialize<wall_clock>()
         if(!_wc)
             continue;
+
         // the "get()" member function returns the accumulated measurement value
         double _elapsed = _wc->get();
+
         // units are static properties of type so convert this measurement to milliseconds
         _elapsed *= tim::units::msec / wall_clock::unit();
 
         // get the instance of the unsigned data-tracker component
         time_point_tracker* _tp = itr.get<time_point_tracker>();
-        if(!_tp)
-            continue;
+        if(_tp)
+        {
+            // get the time-point value
+            time_point_t _point = _tp->get();
+            // convert to time_t
+            std::time_t _today = std::chrono::system_clock::to_time_t(_point);
+            std::string _ctime = std::ctime(&_today);
 
-        // get the time-point value
-        time_point_t _point = _tp->get();
-        // convert to time_t
-        std::time_t _today = std::chrono::system_clock::to_time_t(_point);
-        std::string _ctime = std::ctime(&_today);
-
-        // report when the measurement was taken and how long it took.
-        std::cout << _cnt++ << " : " << itr.key() << " started on "
-                  << _ctime.substr(0, _ctime.find('\n')) << " and took " << _elapsed
-                  << " milliseconds" << std::endl;
+            // report when the measurement was taken and how long it took.
+            std::cout << _cnt++ << " : " << itr.key() << " started on "
+                      << _ctime.substr(0, _ctime.find('\n')) << " and took " << _elapsed
+                      << " milliseconds" << std::endl;
+        }
+        else
+        {
+            // report how long the the measurement took.
+            std::cout << _cnt++ << " : " << itr.key() << " took " << _elapsed
+                      << " milliseconds" << std::endl;
+        }
     }
 
     puts("\nFinalizing...\n");

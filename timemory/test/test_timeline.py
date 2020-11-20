@@ -165,7 +165,7 @@ class TimemoryTimelineTests(unittest.TestCase):
     # test profiler_depth
     def test_no_timeline(self):
         """no_timeline"""
-        old_data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
+        old_data = tim.get()["timemory"]["ranks"][0]["graph"]
         os.environ["TIMEMORY_TIMELINE_PROFILE"] = "OFF"
         tim.settings.parse()
 
@@ -178,7 +178,7 @@ class TimemoryTimelineTests(unittest.TestCase):
                     ret = fibonacci(n)
 
         # counts must be == 1
-        data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
+        data = tim.get()["timemory"]["ranks"][0]["graph"]
 
         maxcnt = 1
         for k in data:
@@ -191,7 +191,7 @@ class TimemoryTimelineTests(unittest.TestCase):
     # test profiler_depth
     def test_timeline(self):
         """timeline"""
-        old_data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
+        old_data = tim.get()["timemory"]["ranks"][0]["graph"]
 
         n = 5
         with marker(components=["wall_clock"], key=self.shortDescription()):
@@ -202,7 +202,7 @@ class TimemoryTimelineTests(unittest.TestCase):
                     ret = fibonacci(n)
 
         # inspect data
-        data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
+        data = tim.get()["timemory"]["ranks"][0]["graph"]
 
         # counts must be == 1
         for k in data:

@@ -492,14 +492,10 @@ if(TIMEMORY_USE_GOTCHA)
     add_timemory_google_test(gotcha_tests
         DISCOVER_TESTS
         SOURCES         gotcha_tests.cpp
-        LINK_LIBRARIES  common-test-libs
-                        gotcha-tests-lib
-                        timemory::timemory-gotcha
-                        timemory::timemory-dmp
-                        timemory::timemory-vector
-                        timemory::timemory-arch
+        LINK_LIBRARIES  gotcha-tests-lib
+                        timemory::timemory-headers
+                        timemory::timemory-analysis-tools
                         timemory::timemory-plotting
-                        timemory::timemory-core
                         ${_LIBRARY})
 endif()
 
@@ -636,8 +632,8 @@ if(TIMEMORY_USE_DYNINST)
     endif()
 
     set(TEST_ENVIRON)
-    list(APPEND TEST_ENVIRON "TIMEMORY_TRACE_COMPONENTS='wall_clock'")
-    list(APPEND TEST_ENVIRON "TIMEMORY_GLOBAL_COMPONENTS='wall_clock,cpu_clock'")
+    list(APPEND TEST_ENVIRON "TIMEMORY_TRACE_COMPONENTS=\"wall_clock\"")
+    list(APPEND TEST_ENVIRON "TIMEMORY_GLOBAL_COMPONENTS=\"wall_clock,cpu_clock\"")
 
     set(_scripts
         # attach-process

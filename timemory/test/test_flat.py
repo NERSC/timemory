@@ -159,7 +159,7 @@ class TimemoryFlatTests(unittest.TestCase):
             ret = fib(n, True)
 
         # inspect data
-        data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
+        data = tim.get()["timemory"]["ranks"][0]["graph"]
         self.assertEqual(data[-1]["depth"], n)
 
     # ---------------------------------------------------------------------------------- #
@@ -172,7 +172,7 @@ class TimemoryFlatTests(unittest.TestCase):
                 ret = fibonacci(n)
 
         # inspect data
-        data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
+        data = tim.get()["timemory"]["ranks"][0]["graph"]
         self.assertEqual(data[-1]["depth"], 0)
 
 
