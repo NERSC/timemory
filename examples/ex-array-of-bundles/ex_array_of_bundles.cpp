@@ -43,6 +43,20 @@ using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
 // alias the templated data-tracker component for storing time-stamps
 using time_point_tracker = data_tracker<time_point_t>;
 
+namespace tim
+{
+namespace trait
+{
+// disable value-based call-stack tracking for time_pointer_tracker since time_point_t
+// does not have overloads for math operations and because MSVC is instantiating
+// templates which use them (even though they are unused in this application and therefore
+// should not be instantiated)
+template <>
+struct uses_value_storage<time_point_tracker, time_point_t> : std::false_type
+{};
+}  // namespace trait
+}  // namespace tim
+
 // TODO: remove the need for this
 // Below is due to a bug in data-tracker
 namespace std
@@ -86,12 +100,15 @@ main(int argc, char** argv)
     // the global call-stack stack with the final value.
     using lbundle_t = tim::lightweight_tuple<wall_clock, cpu_clock, data_tracker_unsigned,
                                              time_point_tracker>;
-    // note: time_point_tracker can be used in lightweight_tuple as long as
+    // NOTE: time_point_tracker can be used in lightweight_tuple as long as
     // it does not interact with storage. Interacting with storage requires
     // some overloads and specializations due to the fact that time_point_t
     // doesn't support operator such as +=, -=, <<, and so on. It is
     // safe to remove from above if you want to experiment with pushing and
     // popping (nothing else below needs to be modified beyond that)
+    //
+    // EDIT: by setting trait::uses_value_storage to false, the above no longer applies
+    // but it will not be tracked in the call-graph
 
     // this bundle will implicitly "push" to persistent storage when start is
     // called. A "push" operation makes a bookmark in the global call-stack.
