@@ -86,7 +86,7 @@ public:
 
     static void reset()
     {
-        DEBUG_PRINT_HERE("size = %lu", size());
+        DEBUG_PRINT_HERE("size = %lu", (unsigned long) size());
         type::reset();
     }
 

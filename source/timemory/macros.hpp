@@ -25,6 +25,10 @@
 #pragma once
 
 #include "timemory/compat/macros.h"
+#include "timemory/macros/attributes.hpp"
+#include "timemory/macros/compiler.hpp"
+#include "timemory/macros/language.hpp"
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 
 //======================================================================================//

@@ -197,28 +197,46 @@ def embedded_plot(
         for i in range(len(args.files)):
             f = open(args.files[i], "r")
             _jdata = json.load(f)
-            _ranks = _jdata["timemory"]["ranks"]
+            _cdata = _jdata["timemory"]
 
-            nranks = len(_ranks)
-            for j in range(nranks):
-                _json = _ranks[j]
-                _data = read(_json)
-                _rtag = "" if nranks == 1 else "_{}".format(j)
-                _rtitle = "" if nranks == 1 else " (MPI rank: {})".format(j)
+            ncomps = len(_cdata)
+            for key, _json in _cdata.items():
+                nranks = int(_json["num_ranks"]) if "num_ranks" in _json else 1
+                concurrency = (
+                    int(_json["concurrency"]) if "concurrency" in _json else 1
+                )
+                ctype = _json["type"]  # collection type
+                cdesc = _json["description"]  # collection description
+                unitr = _json["unit_repr"]  # collection unit display repr
+                cid = " ".join(key.split("_")).title()
+                # roofl = _json["roofline"] if "roofline" in _json else None
 
-                _data.filename = args.files[i].replace(".json", _rtag)
-                if len(args.titles) == 1:
-                    _data.title = args.titles[0] + _rtitle
-                else:
-                    _data.title = args.titles[i] + _rtitle
-                _data.plot_params = params
-                _data.mpi_size = nranks
-                # print('### --> Processing "{}" from "{}"...'.format(_data.title,
-                #                                                    args.files[i]))
-                if not j in data.keys():
-                    data[j] = [_data]
-                else:
-                    data[j] += [_data]
+                _dict = {
+                    "cid": cid,
+                    "mpi_size": nranks,
+                    "concurrency": concurrency,
+                    "units": unitr,
+                    "ctype": ctype,
+                    "description": cdesc,
+                    "plot_params": params,
+                }
+
+                for j in range(0, nranks):
+                    rdata = _json["ranks"][j]
+
+                    _data = read(rdata, **_dict)
+                    _rtag = "" if nranks == 1 else "_{}".format(j)
+                    _rtitle = "" if nranks == 1 else " (MPI rank: {})".format(j)
+
+                    _data.filename = args.files[i].replace(".json", _rtag)
+                    if len(args.titles) == 1:
+                        _data.title = args.titles[0] + _rtitle
+                    else:
+                        _data.title = args.titles[i] + _rtitle
+                    if not j in data.keys():
+                        data[j] = [_data]
+                    else:
+                        data[j] += [_data]
 
         _pargs = {
             "plot_params": params,

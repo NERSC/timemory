@@ -4,6 +4,8 @@ if(WIN32)
     return()
 endif()
 
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #

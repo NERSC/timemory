@@ -91,6 +91,20 @@
 
 //======================================================================================//
 //
+//      General attribute
+//
+//======================================================================================//
+
+#if !defined(TIMEMORY_ATTRIBUTE)
+#    if !defined(_MSC_VER)
+#        define TIMEMORY_ATTRIBUTE(attr) __attribute__((attr))
+#    else
+#        define TIMEMORY_ATTRIBUTE(attr) __declspec(attr)
+#    endif
+#endif
+
+//======================================================================================//
+//
 //      Windows DLL settings
 //
 //======================================================================================//
@@ -130,31 +144,46 @@
 //======================================================================================//
 
 #if !defined(TIMEMORY_VISIBILITY)
-#    if defined(TIMEMORY_USE_VISIBILITY)
-#        define TIMEMORY_VISIBILITY(mode) __attribute__((visibility(mode)))
+#    if !defined(_MSC_VER)
+#        define TIMEMORY_VISIBILITY(mode) TIMEMORY_ATTRIBUTE(visibility(mode))
 #    else
 #        define TIMEMORY_VISIBILITY(mode)
 #    endif
 #endif
 
-//======================================================================================//
-//
-//      General attribute
-//
-//======================================================================================//
-
-#if !defined(declare_attribute)
-#    if defined(__GNUC__) || defined(__clang__)
-#        define declare_attribute(attr) __attribute__((attr))
-#    elif defined(_WIN32)
-#        define declare_attribute(attr) __declspec(attr)
-#    endif
+#if !defined(TIMEMORY_VISIBLE)
+#    define TIMEMORY_VISIBLE TIMEMORY_VISIBILITY("default")
 #endif
 
-#define TIMEMORY_NEVER_INSTRUMENT                                                        \
-    __attribute__((no_instrument_function)) __attribute__((xray_never_instrument))
+#if !defined(TIMEMORY_HIDDEN)
+#    define TIMEMORY_HIDDEN TIMEMORY_VISIBILITY("hidden")
+#endif
 
-#define TIMEMORY_INSTRUMENT __attribute__((xray_always_instrument))
+//======================================================================================//
+//
+//      Instrumentation
+//
+//======================================================================================//
+
+#if !defined(_WINDOWS)
+#    if !defined(TIMEMORY_NEVER_INSTRUMENT)
+#        define TIMEMORY_NEVER_INSTRUMENT                                                \
+            TIMEMORY_ATTRIBUTE(no_instrument_function)                                   \
+            TIMEMORY_ATTRIBUTE(xray_never_instrument)
+#    endif
+//
+#    if !defined(TIMEMORY_INSTRUMENT)
+#        define TIMEMORY_INSTRUMENT TIMEMORY_ATTRIBUTE(xray_always_instrument)
+#    endif
+#else
+#    if !defined(TIMEMORY_NEVER_INSTRUMENT)
+#        define TIMEMORY_NEVER_INSTRUMENT
+#    endif
+//
+#    if !defined(TIMEMORY_INSTRUMENT)
+#        define TIMEMORY_INSTRUMENT
+#    endif
+#endif
 
 //======================================================================================//
 //
@@ -163,11 +192,11 @@
 //======================================================================================//
 
 #if !defined(TIMEMORY_WEAK_PREFIX)
-#    if !defined(_WINDOWS)
+#    if !defined(_MSC_VER)
 #        if defined(__clang__) && defined(__APPLE__)
 #            define TIMEMORY_WEAK_PREFIX
 #        else
-#            define TIMEMORY_WEAK_PREFIX __attribute__((weak))
+#            define TIMEMORY_WEAK_PREFIX TIMEMORY_ATTRIBUTE(weak)
 #        endif
 #    else
 #        define TIMEMORY_WEAK_PREFIX
@@ -175,9 +204,9 @@
 #endif
 
 #if !defined(TIMEMORY_WEAK_POSTFIX)
-#    if !defined(_WINDOWS)
+#    if !defined(_MSC_VER)
 #        if defined(__clang__) && defined(__APPLE__)
-#            define TIMEMORY_WEAK_POSTFIX __attribute__((weak_import))
+#            define TIMEMORY_WEAK_POSTFIX TIMEMORY_ATTRIBUTE(weak_import)
 #        else
 #            define TIMEMORY_WEAK_POSTFIX
 #        endif
@@ -192,20 +221,38 @@
 //
 //======================================================================================//
 
-#if !defined(__library_ctor__)
+#if !defined(TIMEMORY_CTOR)
 #    if !defined(_WINDOWS)
-#        define __library_ctor__ __attribute__((constructor))
+#        define TIMEMORY_CTOR TIMEMORY_ATTRIBUTE(constructor)
 #    else
-#        define __library_ctor__
+#        define TIMEMORY_CTOR
 #    endif
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(__library_dtor__)
+#if !defined(TIMEMORY_DTOR)
 #    if !defined(_WINDOWS)
-#        define __library_dtor__ __attribute__((destructor))
+#        define TIMEMORY_DTOR TIMEMORY_ATTRIBUTE(destructor)
 #    else
-#        define __library_dtor__
+#        define TIMEMORY_DTOR
 #    endif
+#endif
+
+//======================================================================================//
+//
+//      WINDOWS WARNINGS (apply to C code)
+//
+//======================================================================================//
+
+//  MSVC compiler
+#if defined(_MSC_VER) && _MSC_VER > 0 && !defined(_TIMEMORY_MSVC)
+#    define _TIMEMORY_MSVC
+#endif
+
+#if defined(_TIMEMORY_MSVC) && !defined(TIMEMORY_MSVC_WARNINGS)
+
+#    pragma warning(disable : 4996)  // function may be unsafe
+#    pragma warning(disable : 5105)  // macro produce 'defined' has undefined behavior
+
 #endif

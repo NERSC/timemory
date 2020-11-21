@@ -2005,7 +2005,7 @@ load_dependent_libraries(address_space_t* bedit, char* bindings)
 inline void
 consume()
 {
-    consume_parameters(initialize_expr, expect_error);
+    consume_parameters(initialize_expr, expect_error, error_print);
 }
 //
 namespace

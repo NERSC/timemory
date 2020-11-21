@@ -41,6 +41,13 @@
 //
 namespace tim
 {
+//
+namespace operation
+{
+template <typename Tp>
+struct dummy;
+}
+//
 namespace node
 {
 //
@@ -370,8 +377,7 @@ template <typename Tp>
 Tp
 graph<Tp>::get_dummy()
 {
-    using object_base = typename Tp::base_type;
-    return object_base::dummy();
+    return operation::dummy<Tp>{}();
 }
 //
 //--------------------------------------------------------------------------------------//

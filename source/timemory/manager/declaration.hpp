@@ -563,12 +563,8 @@ manager::filtered_get_storage<Types...>::serialize(pointer_t         _manager,
         oa->setNextName("timemory");
         oa->startNode();
         {
-            oa->setNextName("ranks");
-            oa->startNode();
-            oa->makeArray();
             TIMEMORY_FOLD_EXPRESSION(
                 _manager->do_serialize<archive_type, Types>(*oa, _types));
-            oa->finishNode();
         }
         oa->finishNode();
     }

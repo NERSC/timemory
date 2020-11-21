@@ -924,4 +924,54 @@ PYBIND11_MODULE(libpytimemory, tim)
              "timemory args and replaces sys.argv with the unknown args (used to "
              "fix issue with unittest module)",
              py::arg("parser") = py::none{}, py::arg("subparser") = true);
+
+    py::module _socket = tim.def_submodule("socket", "Socket communication API");
+
+    using socket_manager_t = std::unique_ptr<tim::socket::manager>;
+    auto _socket_manager   = []() -> socket_manager_t& {
+        static auto _instance = std::make_unique<tim::socket::manager>();
+        return _instance;
+    };
+
+    auto _socket_connect = [_socket_manager](const std::string& _name,
+                                             const std::string& _addr, int _port) {
+        return _socket_manager()->connect(_name, _addr, _port);
+    };
+
+    auto _socket_send = [_socket_manager](const std::string& _name,
+                                          const std::string& _message) {
+        return _socket_manager()->send(_name, _message);
+    };
+
+    auto _socket_close = [_socket_manager](const std::string& _name) {
+        return _socket_manager()->close(_name);
+    };
+
+    auto _socket_listen = [](const std::string& _name, int _port, int _max_packets) {
+        std::vector<std::string> _results;
+
+        auto _handle_data = [&](std::string str) {
+            if(tim::settings::debug() || tim::settings::verbose() > 2)
+                std::cout << "[timemory-socket][server]> received: " << str << std::endl;
+            _results.emplace_back(std::move(str));
+        };
+
+        if(tim::settings::debug() || tim::settings::verbose() > 2)
+            std::cout << "[timemory-socket][server]> started listening..." << std::endl;
+
+        tim::socket::manager{}.listen(_name, _port, _handle_data, _max_packets);
+
+        if(tim::settings::debug() || tim::settings::verbose() > 2)
+            std::cout << "[timemory-socket][server]> stopped listening..." << std::endl;
+
+        return _results;
+    };
+
+    _socket.def("connect", _socket_connect, "Connect to a socket (client)",
+                py::arg("name"), py::arg("address"), py::arg("port"));
+    _socket.def("close", _socket_close, "Close a socket", py::arg("name"));
+    _socket.def("send", _socket_send, "Send a message over the socket", py::arg("name"),
+                py::arg("message"));
+    _socket.def("listen", _socket_listen, "Listen on a socket (server)", py::arg("name"),
+                py::arg("port"), py::arg("max_packets") = 0);
 }

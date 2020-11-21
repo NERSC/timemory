@@ -31,6 +31,8 @@
 #include "timemory/components/ompt/backends.hpp"
 #include "timemory/components/ompt/components.hpp"
 //
+#include <deque>
+
 namespace tim
 {
 //

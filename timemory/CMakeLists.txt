@@ -28,7 +28,8 @@ set(PYTHON_SUBMODULE_FOLDERS
     util bundle component hardware_counters test trace region)
 
 file(GLOB PYTHON_SUBMODULE_FILES ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/*.py)
-string(REPLACE "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/" "" PYTHON_SUBMODULE_FILES "${PYTHON_SUBMODULE_FILES}")
+string(REPLACE "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/" ""
+    PYTHON_SUBMODULE_FILES "${PYTHON_SUBMODULE_FILES}")
 
 foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
     set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${_SUBMODULE})
@@ -113,3 +114,34 @@ foreach(PYLIB_SUBMODULE ${PYTHON_SUBMODULE_FILES})
             DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
     endif()
 endforeach()
+
+#----------------------------------------------------------------------------
+# console scripts
+#
+if(SKBUILD)
+    return()
+endif()
+
+function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNCTION)
+    configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/console-script.py.in
+        ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} @ONLY)
+
+    if(CMAKE_INSTALL_PYTHONDIR)
+        install(FILES ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME}
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+            PERMISSIONS
+            OWNER_EXECUTE OWNER_READ OWNER_WRITE
+            GROUP_EXECUTE GROUP_READ
+            WORLD_EXECUTE WORLD_READ)
+    endif()
+endfunction()
+
+timemory_python_console_script("timemory-plotter" "timemory.plotting" "try_plot")
+timemory_python_console_script("timemory-roofline" "timemory.roofline" "try_plot")
+
+timemory_python_console_script("timemory-python-profiler" "timemory.profiler" "main")
+timemory_python_console_script("timemory-python-trace" "timemory.trace" "main")
+
+if(TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
+    timemory_python_console_script("timemory-python-line-profiler" "timemory.profiler" "main")
+endif()

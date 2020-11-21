@@ -683,8 +683,6 @@ template <typename Type>
 typename storage<Type, true>::graph_data_t&
 storage<Type, true>::_data()
 {
-    using object_base_t = typename Type::base_type;
-
     if(m_graph_data_instance == nullptr)
     {
         auto_lock_t lk(singleton_t::get_mutex(), std::defer_lock);
@@ -705,7 +703,7 @@ storage<Type, true>::_data()
                 auto         _current = m.current();
                 auto         _id      = _current->id();
                 auto         _depth   = _current->depth();
-                graph_node_t node(_id, object_base_t::dummy(), _depth, m_thread_idx);
+                graph_node_t node(_id, operation::dummy<Type>{}(), _depth, m_thread_idx);
                 if(!m_graph_data_instance)
                     m_graph_data_instance = new graph_data_t(node, _depth, &m);
                 m_graph_data_instance->depth()     = _depth;
@@ -715,7 +713,7 @@ storage<Type, true>::_data()
             {
                 if(!m_graph_data_instance)
                 {
-                    graph_node_t node(0, object_base_t::dummy(), 1, m_thread_idx);
+                    graph_node_t node(0, operation::dummy<Type>{}(), 1, m_thread_idx);
                     m_graph_data_instance = new graph_data_t(node, 1, &m);
                 }
                 m_graph_data_instance->depth()     = 1;
@@ -730,7 +728,7 @@ storage<Type, true>::_data()
 
             std::string _prefix = "> [tot] total";
             add_hash_id(_prefix);
-            graph_node_t node(0, object_base_t::dummy(), 0, m_thread_idx);
+            graph_node_t node(0, operation::dummy<Type>{}(), 0, m_thread_idx);
             if(!m_graph_data_instance)
                 m_graph_data_instance = new graph_data_t(node, 0, nullptr);
             m_graph_data_instance->depth()     = 0;

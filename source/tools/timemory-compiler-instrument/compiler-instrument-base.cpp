@@ -23,7 +23,9 @@
 // SOFTWARE.
 
 #define TIMEMORY_CEREAL_DLL_EXPORT
-#define TIMEMORY_VISIBILITY(...)
+#define TIMEMORY_INTERNAL __attribute__((visibility("internal")))
+#define TIMEMORY_VISIBILITY(...) TIMEMORY_INTERNAL
+#define TIMEMORY_INTERNAL_NO_INSTRUMENT TIMEMORY_INTERNAL TIMEMORY_NEVER_INSTRUMENT
 
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
@@ -49,49 +51,90 @@ extern "C"
 
 //--------------------------------------------------------------------------------------//
 
-static void
-initialize() TIMEMORY_NEVER_INSTRUMENT;
-static void
-allocate() TIMEMORY_NEVER_INSTRUMENT;
-static void
-finalize() TIMEMORY_NEVER_INSTRUMENT;
-static bool&
-get_enabled() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_first() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_overhead() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_throttle() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_trace_map() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_label_map() TIMEMORY_NEVER_INSTRUMENT;
-static auto
-get_label(void*, void*) TIMEMORY_NEVER_INSTRUMENT;
-
-//--------------------------------------------------------------------------------------//
-
 using namespace tim::component;
+
+struct pthread_gotcha;
 
 template <typename Tp>
 using uomap_t     = std::unordered_map<const void*, std::unordered_map<const void*, Tp>>;
 using trace_set_t = tim::available_list_t;
 using trace_vec_t = std::vector<std::unique_ptr<trace_set_t>>;
-using throttle_map_t = uomap_t<bool>;
-using overhead_map_t = uomap_t<std::pair<monotonic_clock, size_t>>;
-using trace_map_t    = uomap_t<trace_vec_t>;
-using label_map_t    = std::unordered_map<const void*, size_t>;
+using throttle_map_t   = uomap_t<bool>;
+using overhead_map_t   = uomap_t<std::pair<monotonic_clock, size_t>>;
+using trace_map_t      = uomap_t<trace_vec_t>;
+using label_map_t      = std::unordered_map<const void*, size_t>;
+using empty_tuple_t    = tim::component_tuple<>;
+using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
+using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
 
 //--------------------------------------------------------------------------------------//
 
-bool m_default_enabled = (std::atexit(&finalize), true);
+template <size_t... Idx>
+static auto
+get_storage(tim::index_sequence<Idx...>) TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
+template <size_t... Idx>
+static auto
+init_storage(tim::index_sequence<Idx...>) TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
+static bool&
+get_enabled() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_first() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_overhead() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_throttle() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_trace_map() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static unsigned long
+get_trace_size() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_label_map() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto
+get_label(void*, void*) TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_init() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
+static void
+initialize() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static void
+allocate() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static void
+finalize() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
+static std::shared_ptr<pthread_bundle_t>
+setup_pthread_gotcha() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+
+//--------------------------------------------------------------------------------------//
+
+namespace
+{
+bool        m_default_enabled     = (std::atexit(&finalize), true);
+const void* null_site             = nullptr;
+static auto pthread_gotcha_handle = setup_pthread_gotcha();
+}  // namespace
+
+#if !defined(CALL_SITE)
+#    define CALL_SITE call_site
+#endif
 
 //--------------------------------------------------------------------------------------//
 
 template <size_t... Idx>
 auto
 get_storage(tim::index_sequence<Idx...>)
+{
+    std::array<tim::storage_initializer, sizeof...(Idx)> _data;
+    TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
+    return _data;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t... Idx>
+static auto
+init_storage(tim::index_sequence<Idx...>)
 {
     std::array<tim::storage_initializer, sizeof...(Idx)> _data;
     TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
@@ -214,16 +257,24 @@ get_init()
 static void
 initialize()
 {
+    // default settings
     if(tim::get_env<std::string>("TIMEMORY_COUT_OUTPUT", "").empty())
         tim::settings::cout_output() = false;
     if(tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "").empty())
         tim::settings::global_components() = "wall_clock";
+
+    // initialization
     char* argv = new char[128];
     strcpy(argv, "compiler-instrumentation");
     tim::timemory_init(1, &argv);
     delete[] argv;
+
+    // parse environment
     tim::settings::parse();
     tim::settings::suppress_parsing() = true;
+    tim::settings::plot_output()      = false;
+
+    // output path
     if(tim::get_env<std::string>("TIMEMORY_OUTPUT_PATH", "").empty())
     {
         tim::settings::output_path() = tim::get_env<std::string>(
@@ -291,27 +342,10 @@ finalize()
 }
 
 //--------------------------------------------------------------------------------------//
-
-template <size_t... Idx>
-static auto
-init_storage(tim::index_sequence<Idx...>)
-{
-    std::array<tim::storage_initializer, sizeof...(Idx)> _data;
-    TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
-    return _data;
-}
-
-//--------------------------------------------------------------------------------------//
 //
 //      timemory symbols
 //
 //--------------------------------------------------------------------------------------//
-
-const void* null_site = nullptr;
-
-#if !defined(CALL_SITE)
-#    define CALL_SITE call_site
-#endif
 
 extern "C"
 {
@@ -401,46 +435,15 @@ extern "C"
         tim::consume_parameters(call_site, null_site);
     }
 
-    /*
-    extern int __real_pthread_create(pthread_t* thread, const pthread_attr_t* attr,
-                                     void* (*start_routine)(void*), void*     arg);
-    extern int __real_pthread_join(pthread_t thread, void** retval);
-
-    // pthread_create
-    int __wrap_pthread_create(pthread_t* thread, const pthread_attr_t* attr,
-                              void* (*start_routine)(void*), void*     arg)
-    {
-        PRINT_HERE("%s", "wrapping pthread_create");
-        auto _ini = init_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
-        tim::consume_parameters(_ini);
-        return __real_pthread_create(thread, attr, start_routine, arg);
-    }
-
-    // pthread_join
-    int __wrap_pthread_join(pthread_t thread, void** retval)
-    {
-        PRINT_HERE("%s", "wrapping pthread_join");
-        tim::manager::instance()->finalize();
-        return __real_pthread_join(thread, retval);
-    }
-    */
 }  // extern "C"
+
+//--------------------------------------------------------------------------------------//
 
 struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
 {
-    template <size_t... Idx>
-    static auto init_storage(tim::index_sequence<Idx...>)
-    {
-        std::array<tim::storage_initializer, sizeof...(Idx)> _data;
-        TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
-        return _data;
-    }
-
-    struct wrapper
+    struct TIMEMORY_HIDDEN wrapper
     {
         typedef void* (*routine_t)(void*);
-
-        TIMEMORY_DEFAULT_OBJECT(wrapper)
 
         wrapper(routine_t _routine, void* _arg, bool _debug)
         : m_routine(_routine)
@@ -514,13 +517,7 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-using empty_tuple_t    = tim::component_tuple<>;
-using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
-using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
-
-//--------------------------------------------------------------------------------------//
-
-auto
+std::shared_ptr<pthread_bundle_t>
 setup_pthread_gotcha()
 {
 #if defined(TIMEMORY_USE_GOTCHA)
@@ -533,8 +530,3 @@ setup_pthread_gotcha()
 }
 
 //--------------------------------------------------------------------------------------//
-
-namespace
-{
-static auto pthread_gotcha_handle = setup_pthread_gotcha();
-}

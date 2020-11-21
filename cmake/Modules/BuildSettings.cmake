@@ -206,9 +206,6 @@ add_target_flag_if_avail(timemory-hidden-visibility "-fvisibility=hidden")
 foreach(_TYPE default hidden)
     if(NOT cxx_timemory_${_TYPE}_visibility_fvisibility_${_TYPE})
         add_disabled_interface(timemory-${_TYPE}-visibility)
-    else()
-        timemory_target_compile_definitions(timemory-${_TYPE}-visibility INTERFACE
-            TIMEMORY_USE_VISIBILITY)
     endif()
 endforeach()
 

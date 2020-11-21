@@ -26,7 +26,6 @@
 
 #include <array>
 #include <chrono>
-#include <deque>
 #include <iostream>
 #include <random>
 #include <thread>

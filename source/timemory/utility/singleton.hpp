@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include "timemory/macros/attributes.hpp"
+
 #include <cstddef>
 #include <functional>
 #include <list>
@@ -181,13 +183,13 @@ public:
 
 private:
     // Private functions
-    static smart_pointer& _local_instance()
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE smart_pointer& _local_instance()
     {
         static thread_local smart_pointer _instance = smart_pointer();
         return _instance;
     }
 
-    static smart_pointer& _master_instance()
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE smart_pointer& _master_instance()
     {
         static smart_pointer _instance = smart_pointer();
         return _instance;
@@ -244,13 +246,13 @@ private:
         }
     };
 
-    bool                m_is_master = false;
-    static thread_id_t& f_master_thread();
-    static mutex_t&     f_mutex();
-    static pointer&     f_master_instance();
-    static list_t&      f_children();
+    bool                     m_is_master = false;
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE thread_id_t& f_master_thread();
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE mutex_t& f_mutex();
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE pointer& f_master_instance();
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE list_t& f_children();
 
-    static persistent_data& f_persistent_data()
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE persistent_data& f_persistent_data()
     {
         static persistent_data _instance;
         return _instance;

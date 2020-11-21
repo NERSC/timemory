@@ -559,6 +559,22 @@ struct cleanup;
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename T>
+struct dummy
+{
+    static_assert(std::is_default_constructible<T>::value,
+                  "Type is not default constructible and therefore a dummy object (for "
+                  "placeholders and meta-programming) cannot be automatically generated. "
+                  "Please specialize tim::operation::dummy<T> to provide operator()() "
+                  "which returns a dummy object.");
+
+    TIMEMORY_DEFAULT_OBJECT(dummy)
+
+    TIMEMORY_ALWAYS_INLINE T operator()() const { return T{}; }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace finalize
 {
 //

@@ -479,29 +479,33 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
             oa->startNode();
 
             // node
+            std::string _name = component::properties<Tp>::id();
+            if(_name.empty())
+                _name = Tp::label();
+            oa->setNextName(_name.c_str());
+            oa->startNode();
+            (*oa)(cereal::make_nvp("num_ranks", node_size));
+            (*oa)(cereal::make_nvp("concurrency", concurrency));
+            print_metadata(*oa, operation::dummy<Tp>{}());
+            operation::extra_serialization<Tp>{ *oa };
+            oa->setNextName("ranks");
+            oa->startNode();
+            oa->makeArray();
+            for(uint64_t i = 0; i < results.size(); ++i)
             {
-                (*oa)(cereal::make_nvp("num_ranks", results.size()));
-                oa->setNextName("ranks");
+                if(results.at(i).empty())
+                    continue;
+
                 oa->startNode();
-                oa->makeArray();
-                for(uint64_t i = 0; i < results.size(); ++i)
-                {
-                    if(results.at(i).empty())
-                        continue;
 
-                    oa->startNode();
+                (*oa)(cereal::make_nvp("rank", i));
+                save(*oa, results.at(i));
 
-                    (*oa)(cereal::make_nvp("rank", i));
-                    (*oa)(cereal::make_nvp("concurrency", concurrency));
-                    print_metadata(*oa, results.at(i).front().data());
-                    operation::extra_serialization<Tp>{ *oa };
-                    save(*oa, results.at(i));
-
-                    oa->finishNode();
-                }
                 oa->finishNode();
             }
-            oa->finishNode();
+            oa->finishNode();  // ranks
+            oa->finishNode();  // name
+            oa->finishNode();  // timemory
         }
         if(ofs)
             ofs << std::endl;

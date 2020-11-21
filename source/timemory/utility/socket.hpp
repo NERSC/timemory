@@ -63,6 +63,7 @@ class manager
 public:
     static constexpr int buffer_size = 4096;
     using socket_map_t               = std::unordered_map<std::string, socket_t>;
+    using listen_info_t              = std::pair<int64_t, int64_t>;
 
 public:
     manager()               = default;
@@ -74,21 +75,24 @@ public:
     manager& operator=(manager&&) = default;
 
 public:
+    /// listen for data on a socket. Returns a pair of the number of packets received and
+    /// the number of bytes received. If both are -1, connecting to socket failed.
     template <typename CallbackT>
-    auto listen(const std::string& _channel_name, int _port, CallbackT&& callback)
-        -> decltype(callback(_channel_name), void())
+    auto listen(const std::string& _channel_name, int _port, CallbackT&& callback,
+                int64_t _max_packets = 0)
+        -> decltype(callback(_channel_name), listen_info_t())
     {
         if(this->init() != 0)
         {
             std::cerr << "Can't start socket!" << std::endl;
-            return;
+            return { -1, -1 };
         }
 
         socket_t _listening = ::socket(AF_INET, SOCK_STREAM, 0);
         if(_listening == invalid_socket)
         {
             std::cerr << "Can't create a socket!" << std::endl;
-            return;
+            return { -1, -1 };
         }
 
         sockaddr_in _hint;
@@ -128,31 +132,45 @@ public:
                       << std::endl;
         }
         this->close(_listening);
-        char _buff[buffer_size];
+        char          _buff[buffer_size];
+        listen_info_t _nrecv = { 0, 0 };
         while(true)
         {
             memset(_buff, 0, buffer_size);
 
-            int _bytes_recv = recv(_client_socket, _buff, buffer_size, 0);
+            int _bytes_recv = ::recv(_client_socket, _buff, buffer_size, 0);
+
+            // exit out of receiving
             if(_bytes_recv == socket_error)
             {
                 std::cerr << "Error in recv(). Quitting" << std::endl;
                 break;
             }
+
             if(_bytes_recv > 0)
             {
+                _nrecv.first += 1;
+                _nrecv.second += _bytes_recv;
                 callback(std::string(_buff, 0, _bytes_recv));
+                if(_max_packets > 0 && _nrecv.first >= _max_packets)
+                {
+                    std::cerr << "Maximum number of packages received: " << _max_packets
+                              << ". Quitting" << std::endl;
+                    break;
+                }
             }
             else
             {
                 break;
             }
         }
+
         this->close(_client_socket);
         this->quit();
+        return _nrecv;
     }
 
-    void send(const std::string& _channel_name, const std::string& _data)
+    bool send(const std::string& _channel_name, const std::string& _data)
     {
         if(m_client_sockets.find(_channel_name) != m_client_sockets.end())
         {
@@ -161,16 +179,19 @@ public:
             if(_send_result == socket_error)
             {
                 std::cerr << "Can't create socket!" << std::endl;
+                return false;
             }
+            return true;
         }
+        return false;
     }
 
-    void connect(const std::string& _channel_name, const std::string& _ip, int _port)
+    bool connect(const std::string& _channel_name, const std::string& _ip, int _port)
     {
         if(this->init() != 0)
         {
             std::cerr << "Can't start socket!" << std::endl;
-            return;
+            return false;
         }
 
         socket_t _sock = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -178,7 +199,7 @@ public:
         {
             std::cerr << "Can't create socket!" << std::endl;
             this->quit();
-            return;
+            return false;
         }
 
         sockaddr_in _hint;
@@ -192,19 +213,22 @@ public:
             std::cerr << "Can't connect to server!" << std::endl;
             this->close(_sock);
             this->quit();
-            return;
+            return false;
         }
         m_client_sockets[_channel_name] = _sock;
+        return true;
     }
 
-    void close(const std::string& _channel_name)
+    bool close(const std::string& _channel_name)
     {
         if(m_client_sockets.find(_channel_name) != m_client_sockets.end())
         {
             socket_t s = m_client_sockets.at(_channel_name);
             this->close(s);
             this->quit();
+            return true;
         }
+        return false;
     }
 
 private:

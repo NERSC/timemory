@@ -87,14 +87,16 @@ public:
     using dynamic_type = typename trait::dynamic_base<Tp>::type;
     using cache_type   = typename trait::cache<Tp>::type;
 
-    using this_type         = Tp;
-    using base_type         = base<Tp, Value>;
-    using storage_type      = storage<Tp, Value>;
-    using base_storage_type = tim::base::storage;
-    using graph_iterator    = typename storage_type::iterator;
-    using state_t           = state<this_type>;
-    using statistics_policy = policy::record_statistics<Tp, Value>;
-    using fmtflags          = std::ios_base::fmtflags;
+    using this_type          = Tp;
+    using base_type          = base<Tp, Value>;
+    using storage_type       = storage<Tp, Value>;
+    using base_storage_type  = tim::base::storage;
+    using graph_iterator     = typename storage_type::iterator;
+    using state_t            = state<this_type>;
+    using statistics_policy  = policy::record_statistics<Tp, Value>;
+    using fmtflags           = std::ios_base::fmtflags;
+    using value_compute_type = math::compute<value_type, value_type>;
+    using accum_compute_type = math::compute<accum_type, accum_type>;
 
 private:
     friend class impl::storage<Tp, trait::uses_value_storage<Tp, Value>::value>;
@@ -135,14 +137,7 @@ private:
     static_assert(std::is_pointer<Tp>::value == false, "Error pointer base type");
 
 public:
-    base();
-    ~base() = default;
-
-    explicit base(const base_type&)     = default;
-    explicit base(base_type&&) noexcept = default;
-
-    base& operator=(const base_type&) = default;
-    base& operator=(base_type&&) noexcept = default;
+    TIMEMORY_DEFAULT_OBJECT(base)
 
 public:
     template <typename... Args>
@@ -150,21 +145,74 @@ public:
     {}
 
 public:
-    void set_started();  /// store that start has been called
-    void set_stopped();  /// store that stop has been called
-    void reset();        /// reset the values
-    void measure();      /// record a measurment
-    bool get_is_transient() const { return (laps > 0 || is_transient); }  /// phase
-    bool get_is_running() const { return is_running; }      /// currently collecting
-    bool get_is_on_stack() const { return is_on_stack; }    /// currently on call-stack
-    bool get_is_flat() const { return is_flat; }            /// flat call-stack
-    bool get_depth_change() const { return depth_change; }  /// changed call-stack depth
-    int64_t get_laps() const { return laps; }               /// get number of invocations
-    void    get_opaque_data(void*& ptr, size_t _hash) const;  /// assign to pointer
+    /// store that start has been called
+    TIMEMORY_INLINE void set_started();
 
-    void get(void*& ptr, size_t _typeid_hash) const;   /// assign type to a pointer
-    auto get() const { return this->load(); }          /// default get routine
-    auto get_display() const { return this->load(); }  /// default display routine
+    /// store that stop has been called
+    TIMEMORY_INLINE void set_stopped();
+
+    /// reset the values
+    TIMEMORY_INLINE void reset();
+
+    /// record a measurement
+    TIMEMORY_INLINE void measure();
+
+    /// phase
+    TIMEMORY_INLINE bool get_is_transient() const { return (laps > 0 || is_transient); }
+
+    /// currently collecting
+    TIMEMORY_INLINE bool get_is_running() const { return is_running; }
+
+    /// currently on call-stack
+    TIMEMORY_INLINE bool get_is_on_stack() const { return is_on_stack; }
+
+    /// flat call-stack entry
+    TIMEMORY_INLINE bool get_is_flat() const { return is_flat; }
+
+    /// last push/pop changed call-stack depth
+    TIMEMORY_INLINE bool get_depth_change() const { return depth_change; }
+
+    /// get number of measurement
+    TIMEMORY_INLINE int64_t get_laps() const { return laps; }
+
+    /// assign to pointer
+    TIMEMORY_INLINE void get_opaque_data(void*& ptr, size_t _hash) const;
+
+    /// assign type to a pointer
+    TIMEMORY_INLINE void get(void*& ptr, size_t _typeid_hash) const;
+
+    /// retrieve the current measurement value in the units for the type
+    TIMEMORY_INLINE auto get() const { return this->load(); }
+
+    /// retrieve the current measurement value in the units for the type in a format
+    /// that can be piped to the output stream operator ('<<')
+    TIMEMORY_INLINE auto get_display() const { return this->load(); }
+
+    TIMEMORY_INLINE bool operator<(const base_type& rhs) const
+    {
+        return (load() < rhs.load());
+    }
+    TIMEMORY_INLINE bool operator>(const base_type& rhs) const
+    {
+        return (load() > rhs.load());
+    }
+    TIMEMORY_INLINE bool operator<=(const base_type& rhs) const { return !(*this > rhs); }
+    TIMEMORY_INLINE bool operator>=(const base_type& rhs) const { return !(*this < rhs); }
+
+    TIMEMORY_INLINE Type& operator+=(const base_type& rhs) { return plus_oper(rhs); }
+    TIMEMORY_INLINE Type& operator-=(const base_type& rhs) { return minus_oper(rhs); }
+    TIMEMORY_INLINE Type& operator*=(const base_type& rhs) { return multiply_oper(rhs); }
+    TIMEMORY_INLINE Type& operator/=(const base_type& rhs) { return divide_oper(rhs); }
+
+    TIMEMORY_INLINE Type& operator+=(const Type& rhs) { return plus_oper(rhs); }
+    TIMEMORY_INLINE Type& operator-=(const Type& rhs) { return minus_oper(rhs); }
+    TIMEMORY_INLINE Type& operator*=(const Type& rhs) { return multiply_oper(rhs); }
+    TIMEMORY_INLINE Type& operator/=(const Type& rhs) { return divide_oper(rhs); }
+
+    TIMEMORY_INLINE Type& operator+=(const Value& rhs) { return plus_oper(rhs); }
+    TIMEMORY_INLINE Type& operator-=(const Value& rhs) { return minus_oper(rhs); }
+    TIMEMORY_INLINE Type& operator*=(const Value& rhs) { return multiply_oper(rhs); }
+    TIMEMORY_INLINE Type& operator/=(const Value& rhs) { return divide_oper(rhs); }
 
     template <typename Up = Tp, typename Vp = Value,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
@@ -174,96 +222,81 @@ public:
               enable_if_t<!trait::uses_value_storage<Up, Vp>::value, int> = 0>
     void print(std::ostream&) const;
 
-    bool operator<(const base_type& rhs) const { return (load() < rhs.load()); }
-    bool operator>(const base_type& rhs) const { return (load() > rhs.load()); }
-    bool operator<=(const base_type& rhs) const { return !(*this > rhs); }
-    bool operator>=(const base_type& rhs) const { return !(*this < rhs); }
-
-    Type& operator+=(const base_type& rhs) { return plus_oper(rhs); }
-    Type& operator-=(const base_type& rhs) { return minus_oper(rhs); }
-    Type& operator*=(const base_type& rhs) { return multiply_oper(rhs); }
-    Type& operator/=(const base_type& rhs) { return divide_oper(rhs); }
-
-    Type& operator+=(const Type& rhs) { return plus_oper(rhs); }
-    Type& operator-=(const Type& rhs) { return minus_oper(rhs); }
-    Type& operator*=(const Type& rhs) { return multiply_oper(rhs); }
-    Type& operator/=(const Type& rhs) { return divide_oper(rhs); }
-
-    Type& operator+=(const Value& rhs) { return plus_oper(rhs); }
-    Type& operator-=(const Value& rhs) { return minus_oper(rhs); }
-    Type& operator*=(const Value& rhs) { return multiply_oper(rhs); }
-    Type& operator/=(const Value& rhs) { return divide_oper(rhs); }
-
     friend std::ostream& operator<<(std::ostream& os, const base_type& obj)
     {
         obj.print(os);
         return os;
     }
 
-    // serialization load (input)
+    /// serialization load (input)
     template <typename Archive, typename Up = Type,
               enable_if_t<!trait::custom_serialization<Up>::value, int> = 0>
     void load(Archive& ar, const unsigned int);
 
-    // serialization store (output)
+    /// serialization store (output)
     template <typename Archive, typename Up = Type,
               enable_if_t<!trait::custom_serialization<Up>::value, int> = 0>
     void save(Archive& ar, const unsigned int version) const;
 
-    const value_type& get_value() const { return value; }
-    const accum_type& get_accum() const { return accum; }
-    const last_type&  get_last() const { return last; }
+    /// retrieve the raw value of the most recent measurement
+    TIMEMORY_INLINE const value_type& get_value() const { return value; }
 
-    void set_laps(int64_t v) { laps = v; }
-    void set_value(value_type v) { value = v; }
-    void set_accum(accum_type v) { accum = v; }
-    void set_last(last_type v) { last = v; }
-    void set_is_transient(bool v) { is_transient = v; }
+    /// retrieve the raw value of the all the measurements
+    TIMEMORY_INLINE const accum_type& get_accum() const { return accum; }
+
+    /// if \ref tim::trait::base_has_last is true, this will return the last valid
+    /// measurement
+    TIMEMORY_INLINE const last_type& get_last() const { return last; }
+
+    TIMEMORY_INLINE void set_laps(int64_t v) { laps = v; }
+    TIMEMORY_INLINE void set_value(value_type v) { value = v; }
+    TIMEMORY_INLINE void set_accum(accum_type v) { accum = v; }
+    TIMEMORY_INLINE void set_last(last_type v) { last = v; }
+    TIMEMORY_INLINE void set_is_transient(bool v) { is_transient = v; }
 
     template <typename Vp, typename Up = Tp,
               enable_if_t<trait::sampler<Up>::value, int> = 0>
     static void add_sample(Vp&&);  /// add a sample
 
-    void set_iterator(graph_iterator itr) { graph_itr = itr; }
-    auto get_iterator() const { return graph_itr; }
+    TIMEMORY_INLINE void set_iterator(graph_iterator itr) { graph_itr = itr; }
+    TIMEMORY_INLINE auto get_iterator() const { return graph_itr; }
 
 protected:
     static base_storage_type* get_storage();
-    static void               cleanup() {}
 
     template <typename Up = Tp, enable_if_t<trait::base_has_accum<Up>::value, int> = 0>
-    value_type& load();
+    TIMEMORY_INLINE value_type& load();
     template <typename Up = Tp, enable_if_t<trait::base_has_accum<Up>::value, int> = 0>
-    const value_type& load() const;
+    TIMEMORY_INLINE const value_type& load() const;
 
     template <typename Up = Tp, enable_if_t<!trait::base_has_accum<Up>::value, int> = 0>
-    value_type& load();
+    TIMEMORY_INLINE value_type& load();
     template <typename Up = Tp, enable_if_t<!trait::base_has_accum<Up>::value, int> = 0>
-    const value_type& load() const;
+    TIMEMORY_INLINE const value_type& load() const;
 
-    Type& plus_oper(const base_type& rhs);
-    Type& minus_oper(const base_type& rhs);
-    Type& multiply_oper(const base_type& rhs);
-    Type& divide_oper(const base_type& rhs);
+    TIMEMORY_INLINE Type& plus_oper(const base_type& rhs);
+    TIMEMORY_INLINE Type& minus_oper(const base_type& rhs);
+    TIMEMORY_INLINE Type& multiply_oper(const base_type& rhs);
+    TIMEMORY_INLINE Type& divide_oper(const base_type& rhs);
 
-    Type& plus_oper(const Type& rhs);
-    Type& minus_oper(const Type& rhs);
-    Type& multiply_oper(const Type& rhs);
-    Type& divide_oper(const Type& rhs);
+    TIMEMORY_INLINE Type& plus_oper(const Type& rhs);
+    TIMEMORY_INLINE Type& minus_oper(const Type& rhs);
+    TIMEMORY_INLINE Type& multiply_oper(const Type& rhs);
+    TIMEMORY_INLINE Type& divide_oper(const Type& rhs);
 
-    Type& plus_oper(const Value& rhs);
-    Type& minus_oper(const Value& rhs);
-    Type& multiply_oper(const Value& rhs);
-    Type& divide_oper(const Value& rhs);
+    TIMEMORY_INLINE Type& plus_oper(const Value& rhs);
+    TIMEMORY_INLINE Type& minus_oper(const Value& rhs);
+    TIMEMORY_INLINE Type& multiply_oper(const Value& rhs);
+    TIMEMORY_INLINE Type& divide_oper(const Value& rhs);
 
-    void plus(const base_type& rhs)
+    TIMEMORY_INLINE void plus(const base_type& rhs)
     {
         laps += rhs.laps;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
     }
 
-    void minus(const base_type& rhs)
+    TIMEMORY_INLINE void minus(const base_type& rhs)
     {
         laps -= rhs.laps;
         if(rhs.is_transient)
@@ -271,10 +304,8 @@ protected:
     }
 
 public:
-    auto plus(crtp::base, const base_type& rhs) { this->plus(rhs); }
-    auto minus(crtp::base, const base_type& rhs) { this->minus(rhs); }
-
-    static Type dummy();  // create an instance
+    TIMEMORY_INLINE auto plus(crtp::base, const base_type& rhs) { this->plus(rhs); }
+    TIMEMORY_INLINE auto minus(crtp::base, const base_type& rhs) { this->minus(rhs); }
 
 protected:
     bool           is_running   = false;
@@ -319,13 +350,13 @@ public:
               enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
     static std::string get_display_unit();
 
-    static short                   get_width();
-    static short                   get_precision();
-    static std::ios_base::fmtflags get_format_flags();
-    static std::string             label();
-    static std::string             description();
-    static std::string             get_label();
-    static std::string             get_description();
+    static short       get_width();
+    static short       get_precision();
+    static fmtflags    get_format_flags();
+    static std::string label();
+    static std::string description();
+    static std::string get_label();
+    static std::string get_description();
 };
 //
 //======================================================================================//
@@ -384,12 +415,7 @@ private:
     friend struct operation::compose;
 
 public:
-    base();
-    ~base()                             = default;
-    explicit base(const base_type&)     = default;
-    explicit base(base_type&&) noexcept = default;
-    base& operator=(const base_type&) = default;
-    base& operator=(base_type&&) noexcept = default;
+    TIMEMORY_DEFAULT_OBJECT(base)
 
 public:
     template <typename... Args>
@@ -397,43 +423,41 @@ public:
     {}
 
 public:
-    void    set_started();
-    void    set_stopped();
-    void    reset();
-    void    measure();
-    bool    get_is_running() const { return is_running; }
-    bool    get_is_on_stack() const { return is_on_stack; }
-    bool    get_is_transient() const { return is_transient; }
-    int64_t get_laps() const { return 0; }
-    void    get_opaque_data(void*& ptr, size_t _typeid_hash) const;
+    TIMEMORY_INLINE void set_started();
+    TIMEMORY_INLINE void set_stopped();
+    TIMEMORY_INLINE void reset();
+    TIMEMORY_INLINE void measure();
+    TIMEMORY_INLINE bool get_is_running() const { return is_running; }
+    TIMEMORY_INLINE bool get_is_on_stack() const { return is_on_stack; }
+    TIMEMORY_INLINE bool get_is_transient() const { return is_transient; }
+    TIMEMORY_INLINE int64_t get_laps() const { return 0; }
+    TIMEMORY_INLINE void    get_opaque_data(void*& ptr, size_t _typeid_hash) const;
 
     friend std::ostream& operator<<(std::ostream& os, const base_type&) { return os; }
 
-    void get() {}
-    void get(void*& ptr, size_t _typeid_hash) const;
+    TIMEMORY_INLINE void get() {}
+    TIMEMORY_INLINE void get(void*& ptr, size_t _typeid_hash) const;
 
     // used by operation::finalize::print<Type>
-    void operator-=(const base_type&) {}
-    void operator-=(const Type&) {}
+    TIMEMORY_INLINE void operator-=(const base_type&) {}
+    TIMEMORY_INLINE void operator-=(const Type&) {}
 
 protected:
-    static Type dummy() { return Tp{}; }
-
-    void plus(const base_type& rhs)
+    TIMEMORY_INLINE void plus(const base_type& rhs)
     {
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
     }
 
-    void minus(const base_type& rhs)
+    TIMEMORY_INLINE void minus(const base_type& rhs)
     {
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
     }
 
 public:
-    auto plus(crtp::base, const base_type& rhs) { this->plus(rhs); }
-    auto minus(crtp::base, const base_type& rhs) { this->minus(rhs); }
+    TIMEMORY_INLINE auto plus(crtp::base, const base_type& rhs) { this->plus(rhs); }
+    TIMEMORY_INLINE auto minus(crtp::base, const base_type& rhs) { this->minus(rhs); }
 
 protected:
     bool is_running   = false;
@@ -504,17 +528,7 @@ private:
     friend struct operation::compose;
 
 public:
-    base()                          = default;
-    ~base()                         = default;
-    explicit base(const base_type&) = default;
-    explicit base(base_type&&)      = default;
-    base& operator=(const base_type&) = default;
-    base& operator=(base_type&&) = default;
-
-public:
-    template <typename Archive>
-    static void extra_serialization(Archive&, const unsigned int)
-    {}
+    TIMEMORY_DEFAULT_OBJECT(base)
 
 public:
     template <typename... Args>
@@ -522,54 +536,51 @@ public:
     {}
 
 public:
-    void reset();    // reset the values
-    void measure();  // just record a measurment
-    void start();
-    void stop();
+    TIMEMORY_INLINE void reset();    // reset the values
+    TIMEMORY_INLINE void measure();  // just record a measurment
+    TIMEMORY_INLINE void start();
+    TIMEMORY_INLINE void stop();
 
-    auto start(crtp::base) {}
-    auto stop(crtp::base) {}
+    TIMEMORY_INLINE auto start(crtp::base) {}
+    TIMEMORY_INLINE auto stop(crtp::base) {}
 
     template <typename CacheT                                     = cache_type,
               enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
-    void start(const CacheT&)
+    TIMEMORY_INLINE void start(const CacheT&)
     {}
     template <typename CacheT                                     = cache_type,
               enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
-    void stop(const CacheT&)
+    TIMEMORY_INLINE void stop(const CacheT&)
     {}
 
-    void set_started() {}
-    void set_stopped() {}
+    TIMEMORY_INLINE void set_started() {}
+    TIMEMORY_INLINE void set_stopped() {}
 
     friend std::ostream& operator<<(std::ostream& os, const base_type&) { return os; }
 
-    void get() {}
-    void get(void*&, size_t) const {}
+    TIMEMORY_INLINE void get() {}
+    TIMEMORY_INLINE void get(void*&, size_t) const {}
 
-    void          get_opaque_data(void*&, size_t) const {}
-    dynamic_type* create() const { return nullptr; }
+    TIMEMORY_INLINE void get_opaque_data(void*&, size_t) const {}
 
-    int64_t get_laps() const { return 0; }
-    auto    get_is_running() const { return false; }
-    auto    get_is_on_stack() const { return false; }
-    auto    get_is_transient() const { return false; }
+    TIMEMORY_INLINE int64_t get_laps() const { return 0; }
+    TIMEMORY_INLINE auto    get_is_running() const { return false; }
+    TIMEMORY_INLINE auto    get_is_on_stack() const { return false; }
+    TIMEMORY_INLINE auto    get_is_transient() const { return false; }
 
     // used by operation::finalize::print<Type>
-    void operator-=(const base_type&) {}
-    void operator-=(const Type&) {}
+    TIMEMORY_INLINE void operator-=(const base_type&) {}
+    TIMEMORY_INLINE void operator-=(const Type&) {}
 
-    auto load() { return Tp{}; }
+    TIMEMORY_INLINE auto load() { return Tp{}; }
 
 protected:
-    static void cleanup() {}
-    static Type dummy() { return Tp{}; }
-    void        plus(const base_type&) {}
-    void        minus(const base_type&) {}
+    TIMEMORY_INLINE void plus(const base_type&) {}
+    TIMEMORY_INLINE void minus(const base_type&) {}
 
 public:
-    auto plus(crtp::base, const base_type&) {}
-    auto minus(crtp::base, const base_type&) {}
+    TIMEMORY_INLINE auto plus(crtp::base, const base_type&) {}
+    TIMEMORY_INLINE auto minus(crtp::base, const base_type&) {}
 
 protected:
     bool           is_running   = false;

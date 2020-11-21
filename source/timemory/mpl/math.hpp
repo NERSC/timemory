@@ -34,13 +34,10 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/types.hpp"
 
-#include <array>
 #include <cassert>
 #include <cmath>
-#include <deque>
 #include <limits>
 #include <utility>
-#include <vector>
 
 //======================================================================================//
 
@@ -66,92 +63,92 @@ is_finite(const Tp& val)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp>
-inline Tp abs(Tp);
+TIMEMORY_INLINE Tp abs(Tp);
 
 template <typename Tp>
-inline Tp sqrt(Tp);
+TIMEMORY_INLINE Tp sqrt(Tp);
 
 template <typename Tp>
-inline Tp
-pow(Tp, double);
+TIMEMORY_INLINE Tp
+                pow(Tp, double);
 
 template <typename Tp>
-inline Tp sqr(Tp);
+TIMEMORY_INLINE Tp sqr(Tp);
 
 template <typename Tp>
-inline Tp
-min(const Tp&, const Tp&);
+TIMEMORY_INLINE Tp
+                min(const Tp&, const Tp&);
 
 template <typename Tp>
-inline Tp
-max(const Tp&, const Tp&);
+TIMEMORY_INLINE Tp
+                max(const Tp&, const Tp&);
 
 template <typename Tp, typename Up = Tp>
-inline void
+TIMEMORY_INLINE void
 assign(Tp&, Up&&);
 
 template <typename Tp, typename Up = Tp,
           enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
-inline Tp&
-plus(Tp&, const Up&);
+TIMEMORY_INLINE Tp&
+                plus(Tp&, const Up&);
 
 template <typename Tp, typename Up = Tp,
           enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
-inline Tp&
-minus(Tp&, const Up&);
+TIMEMORY_INLINE Tp&
+                minus(Tp&, const Up&);
 
 template <typename Tp, typename Up = Tp,
           enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
-inline Tp&
-multiply(Tp&, const Up&);
+TIMEMORY_INLINE Tp&
+                multiply(Tp&, const Up&);
 
 template <typename Tp, typename Up = Tp,
           enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
-inline Tp&
-divide(Tp&, const Up&);
+TIMEMORY_INLINE Tp&
+                divide(Tp&, const Up&);
 
 template <typename Tp>
-inline Tp
-percent_diff(const Tp&, const Tp&);
+TIMEMORY_INLINE Tp
+                percent_diff(const Tp&, const Tp&);
 
 //--------------------------------------------------------------------------------------//
 //              dummy overloads for std::tuple<>, type_list<>, null_type
 //
 #define TIMEMORY_MATH_NULL_TYPE_OVERLOAD(TYPE)                                           \
-    inline TYPE  abs(TYPE) { return TYPE{}; }                                            \
-    inline TYPE  sqrt(TYPE) { return TYPE{}; }                                           \
-    inline TYPE  pow(TYPE, double) { return TYPE{}; }                                    \
-    inline TYPE  sqr(TYPE) { return TYPE{}; }                                            \
-    inline TYPE  min(const TYPE&, const TYPE&) { return TYPE{}; }                        \
-    inline TYPE  max(const TYPE&, const TYPE&) { return TYPE{}; }                        \
-    inline void  assign(TYPE&, TYPE&&) {}                                                \
-    inline TYPE& plus(TYPE& lhs, const TYPE&) { return lhs; }                            \
-    inline TYPE& minus(TYPE& lhs, const TYPE&) { return lhs; }                           \
-    inline TYPE& multiply(TYPE& lhs, const TYPE&) { return lhs; }                        \
-    inline TYPE& divide(TYPE& lhs, const TYPE&) { return lhs; }                          \
-    inline TYPE  percent_diff(const TYPE&, const TYPE&) { return TYPE{}; }               \
+    TIMEMORY_INLINE TYPE abs(TYPE) { return TYPE{}; }                                    \
+    TIMEMORY_INLINE TYPE sqrt(TYPE) { return TYPE{}; }                                   \
+    TIMEMORY_INLINE TYPE pow(TYPE, double) { return TYPE{}; }                            \
+    TIMEMORY_INLINE TYPE sqr(TYPE) { return TYPE{}; }                                    \
+    TIMEMORY_INLINE TYPE min(const TYPE&, const TYPE&) { return TYPE{}; }                \
+    TIMEMORY_INLINE TYPE max(const TYPE&, const TYPE&) { return TYPE{}; }                \
+    TIMEMORY_INLINE void assign(TYPE&, TYPE&&) {}                                        \
+    TIMEMORY_INLINE TYPE& plus(TYPE& lhs, const TYPE&) { return lhs; }                   \
+    TIMEMORY_INLINE TYPE& minus(TYPE& lhs, const TYPE&) { return lhs; }                  \
+    TIMEMORY_INLINE TYPE& multiply(TYPE& lhs, const TYPE&) { return lhs; }               \
+    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, const TYPE&) { return lhs; }                 \
+    TIMEMORY_INLINE TYPE percent_diff(const TYPE&, const TYPE&) { return TYPE{}; }       \
     template <typename Up>                                                               \
-    inline TYPE& plus(TYPE& lhs, Up&&)                                                   \
+    TIMEMORY_INLINE TYPE& plus(TYPE& lhs, Up&&)                                          \
     {                                                                                    \
         return lhs;                                                                      \
     }                                                                                    \
     template <typename Up>                                                               \
-    inline TYPE& minus(TYPE& lhs, Up&&)                                                  \
+    TIMEMORY_INLINE TYPE& minus(TYPE& lhs, Up&&)                                         \
     {                                                                                    \
         return lhs;                                                                      \
     }                                                                                    \
     template <typename Up>                                                               \
-    inline TYPE& multiply(TYPE& lhs, Up&&)                                               \
+    TIMEMORY_INLINE TYPE& multiply(TYPE& lhs, Up&&)                                      \
     {                                                                                    \
         return lhs;                                                                      \
     }                                                                                    \
     template <typename Up>                                                               \
-    inline TYPE& divide(TYPE& lhs, Up&&)                                                 \
+    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, Up&&)                                        \
     {                                                                                    \
         return lhs;                                                                      \
     }                                                                                    \
-    inline TYPE& divide(TYPE& lhs, const uint64_t&) { return lhs; }                      \
-    inline TYPE& divide(TYPE& lhs, const int64_t&) { return lhs; }
+    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, const uint64_t&) { return lhs; }             \
+    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, const int64_t&) { return lhs; }
 
 TIMEMORY_MATH_NULL_TYPE_OVERLOAD(std::tuple<>)
 TIMEMORY_MATH_NULL_TYPE_OVERLOAD(null_type)
@@ -161,7 +158,7 @@ TIMEMORY_MATH_NULL_TYPE_OVERLOAD(type_list<>)
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0,
           enable_if_t<std::is_integral<Tp>::value && std::is_unsigned<Tp>::value> = 0>
-auto
+TIMEMORY_INLINE auto
 abs(Tp _val, type_list<>) -> decltype(Tp{})
 {
     return _val;
@@ -169,8 +166,8 @@ abs(Tp _val, type_list<>) -> decltype(Tp{})
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0,
           enable_if_t<!(std::is_integral<Tp>::value && std::is_unsigned<Tp>::value)> = 0>
-auto
-abs(Tp _val, type_list<>) -> decltype(std::abs(_val), Tp{})
+auto TIMEMORY_INLINE
+     abs(Tp _val, type_list<>) -> decltype(std::abs(_val), Tp{})
 {
     return std::abs(_val);
 }
@@ -214,7 +211,7 @@ abs(Tp _val)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
-auto
+TIMEMORY_INLINE auto
 sqrt(Tp _val, type_list<>) -> decltype(std::sqrt(_val), Tp{})
 {
     return std::sqrt(_val);
@@ -260,7 +257,7 @@ sqrt(Tp _val)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
-auto
+TIMEMORY_INLINE auto
 pow(Tp _val, double _m, type_list<>) -> decltype(std::pow(_val, _m), Tp{})
 {
     return std::pow(_val, _m);
@@ -317,8 +314,8 @@ sqr(Tp _val)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
-Tp
-min(Tp _lhs, Tp _rhs, type_list<>)
+TIMEMORY_INLINE Tp
+                min(Tp _lhs, Tp _rhs, type_list<>)
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     return (_rhs > _lhs) ? _lhs : _rhs;
@@ -399,8 +396,8 @@ min(const Tp& _lhs, const Tp& _rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
-Tp
-max(Tp _lhs, Tp _rhs, type_list<>)
+TIMEMORY_INLINE Tp
+                max(Tp _lhs, Tp _rhs, type_list<>)
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     return (_rhs < _lhs) ? _lhs : _rhs;
@@ -481,7 +478,7 @@ max(const Tp& _lhs, const Tp& _rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename Up>
-inline void
+void
 assign(Tp& _lhs, Up&& _rhs)
 {
     _lhs = std::forward<Up>(_rhs);
@@ -489,15 +486,8 @@ assign(Tp& _lhs, Up&& _rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <>
-inline void
-assign(std::tuple<>&, std::tuple<>&&)
-{}
-
-//--------------------------------------------------------------------------------------//
-
 template <typename Tp, typename Up>
-auto
+TIMEMORY_INLINE auto
 plus(Tp& _lhs, const Up& _rhs, type_list<>, ...) -> decltype(_lhs += _rhs, void())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
@@ -547,7 +537,7 @@ plus(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), v
 }
 
 template <typename Tp, typename Up>
-auto
+TIMEMORY_INLINE auto
 plus(Tp&, const Up&, index_sequence<>, int)
 {}
 
@@ -573,7 +563,7 @@ plus(Tp& _lhs, const Up& _rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename Up>
-auto
+TIMEMORY_INLINE auto
 minus(Tp& _lhs, const Up& _rhs, type_list<>, ...) -> decltype(_lhs -= _rhs, void())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
@@ -615,7 +605,7 @@ minus(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), 
 }
 
 template <typename Tp, typename Up>
-auto
+TIMEMORY_INLINE auto
 minus(Tp&, const Up&, index_sequence<>, int)
 {}
 
@@ -641,7 +631,7 @@ minus(Tp& _lhs, const Up& _rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename Up>
-auto
+TIMEMORY_INLINE auto
 multiply(Tp& _lhs, Up _rhs, type_list<>, ...) -> decltype(_lhs *= _rhs, void())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
@@ -715,7 +705,7 @@ multiply(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs
 }
 
 template <typename Tp, typename Up>
-auto
+TIMEMORY_INLINE auto
 multiply(Tp&, const Up&, index_sequence<>, int)
 {}
 
@@ -754,7 +744,7 @@ multiply(Tp& _lhs, const Up& _rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename Up>
-auto
+TIMEMORY_INLINE auto
 divide(Tp& _lhs, Up _rhs, type_list<>, ...) -> decltype(_lhs /= _rhs, void())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
@@ -827,7 +817,7 @@ divide(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs),
 }
 
 template <typename Tp, typename Up>
-auto
+TIMEMORY_INLINE auto
 divide(Tp&, const Up&, index_sequence<>, int)
 {}
 
@@ -866,8 +856,8 @@ divide(Tp& _lhs, const Up& _rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
-Tp
-percent_diff(Tp _lhs, Tp _rhs, type_list<>, ...)
+TIMEMORY_INLINE Tp
+                percent_diff(Tp _lhs, Tp _rhs, type_list<>, ...)
 {
     constexpr Tp _zero    = Tp(0.0);
     constexpr Tp _one     = Tp(1.0);
@@ -959,41 +949,236 @@ percent_diff(const Tp& _lhs, const Tp& _rhs)
 template <typename Tp, typename Up = Tp>
 struct compute
 {
+    using this_type  = compute<Tp, Up>;
     using type       = Tp;
     using value_type = Up;
 
-    static type abs(const type& _v) { return ::tim::math::abs(_v); }
-    static type sqr(const type& _v) { return ::tim::math::sqr(_v); }
-    static type sqrt(const type& _v) { return ::tim::math::sqrt(_v); }
-    static type min(const type& _l, const type& _r) { return ::tim::math::min(_l, _r); }
-    static type max(const type& _l, const type& _r) { return ::tim::math::max(_l, _r); }
-    static type percent_diff(const type& _l, const type& _r)
+    static TIMEMORY_INLINE decltype(auto) abs(const type& _v)
+    {
+        return this_type::abs(_v, 0);
+    }
+
+    static TIMEMORY_INLINE decltype(auto) sqr(const type& _v)
+    {
+        return this_type::sqr(_v, 0);
+    }
+
+    static TIMEMORY_INLINE decltype(auto) sqrt(const type& _v)
+    {
+        return this_type::sqrt(_v, 0);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE decltype(auto) min(const type& _l, const V& _r)
+    {
+        return this_type::min(_l, _r, 0);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE decltype(auto) max(const type& _l, const V& _r)
+    {
+        return this_type::max(_l, _r, 0);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE decltype(auto) percent_diff(const type& _l, const V& _r)
+    {
+        return this_type::percent_diff(_l, _r, 0);
+    }
+
+    // reference
+    template <typename V>
+    static TIMEMORY_INLINE decltype(auto) plus(type& _l, const V& _r)
+    {
+        return this_type::plus(_l, _r, 0);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE decltype(auto) minus(type& _l, const V& _r)
+    {
+        return this_type::minus(_l, _r, 0);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE decltype(auto) multiply(type& _l, const V& _r)
+    {
+        return this_type::multiply(_l, _r, 0);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE decltype(auto) divide(type& _l, const V& _r)
+    {
+        return this_type::divide(_l, _r, 0);
+    }
+
+    // const ref
+    template <typename V>
+    static TIMEMORY_INLINE auto plus(const type& _l, const V& _r)
+    {
+        type _t{ _l };
+        return this_type::plus(_t, _r, 0);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto minus(const type& _l, const V& _r)
+    {
+        type _t{ _l };
+        return this_type::minus(_t, _r, 0);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto multiply(const type& _l, const V& _r)
+    {
+        type _t{ _l };
+        return this_type::multiply(_t, _r, 0);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto divide(const type& _l, const V& _r)
+    {
+        type _t{ _l };
+        return this_type::divide(_t, _r, 0);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    // tim::math overload available
+    //
+    template <typename V>
+    static TIMEMORY_INLINE auto abs(const V& _v, int) -> decltype(::tim::math::abs(_v))
+    {
+        return ::tim::math::abs(_v);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto sqr(const V& _v, int) -> decltype(::tim::math::sqr(_v))
+    {
+        return ::tim::math::sqr(_v);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto sqrt(const V& _v, int) -> decltype(::tim::math::sqrt(_v))
+    {
+        return ::tim::math::sqrt(_v);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto min(const type& _l, const V& _r, int)
+        -> decltype(::tim::math::min(_l, _r, get_index_sequence<type>::value, 0),
+                    ::tim::math::min(_l, _r))
+    {
+        return ::tim::math::min(_l, _r);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto max(const type& _l, const V& _r, int)
+        -> decltype(::tim::math::max(_l, _r, get_index_sequence<type>::value, 0),
+                    ::tim::math::max(_l, _r))
+    {
+        return ::tim::math::max(_l, _r);
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto percent_diff(const type& _l, const V& _r, int)
+        -> decltype(::tim::math::percent_diff(_l, _r, get_index_sequence<type>::value, 0),
+                    ::tim::math::percent_diff(_l, _r))
     {
         return ::tim::math::percent_diff(_l, _r);
     }
 
-    template <typename V = value_type>
-    static decltype(auto) plus(type& _l, const V& _r)
+    template <typename V>
+    static TIMEMORY_INLINE auto plus(type& _l, const V& _r, int)
+        -> decltype(::tim::math::plus(_l, _r, get_index_sequence<type>::value, 0),
+                    std::declval<type&>())
     {
         return ::tim::math::plus(_l, _r);
     }
 
-    template <typename V = value_type>
-    static decltype(auto) minus(type& _l, const V& _r)
+    template <typename V>
+    static TIMEMORY_INLINE auto minus(type& _l, const V& _r, int)
+        -> decltype(::tim::math::minus(_l, _r, get_index_sequence<type>::value, 0),
+                    std::declval<type&>())
     {
         return ::tim::math::minus(_l, _r);
     }
 
-    template <typename V = value_type>
-    static decltype(auto) multiply(type& _l, const V& _r)
+    template <typename V>
+    static TIMEMORY_INLINE auto multiply(type& _l, const V& _r, int)
+        -> decltype(::tim::math::multiply(_l, _r, get_index_sequence<type>::value, 0),
+                    std::declval<type&>())
     {
         return ::tim::math::multiply(_l, _r);
     }
 
-    template <typename V = value_type>
-    static decltype(auto) divide(type& _l, const V& _r)
+    template <typename V, typename U = void>
+    static TIMEMORY_INLINE auto divide(type& _l, const V& _r, int)
+        -> decltype(::tim::math::divide(_l, _r, get_index_sequence<type>::value, 0),
+                    std::declval<type&>())
     {
         return ::tim::math::divide(_l, _r);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // no tim::math overload available
+    //
+    template <typename V>
+    static TIMEMORY_INLINE auto abs(const V& _v, long)
+    {
+        return _v;
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto sqr(const V& _v, long)
+    {
+        return _v;
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto sqrt(const V& _v, long)
+    {
+        return _v;
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto min(const type& _l, const V&, long)
+    {
+        return _l;
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto max(const type& _l, const V&, long)
+    {
+        return _l;
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto percent_diff(const type& _l, const V&, long)
+    {
+        return _l;
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto& plus(type& _l, const V&, long)
+    {
+        return _l;
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto& minus(type& _l, const V&, long)
+    {
+        return _l;
+    }
+
+    template <typename V>
+    static TIMEMORY_INLINE auto& multiply(type& _l, const V&, long)
+    {
+        return _l;
+    }
+
+    template <typename V, typename U = void>
+    static TIMEMORY_INLINE auto& divide(type& _l, const V&, long)
+    {
+        return _l;
     }
 };
 
@@ -1011,10 +1196,26 @@ struct compute
         static type min(const type&, const type&) { return type{}; }                     \
         static type percent_diff(const type&, const type&) { return type{}; }            \
                                                                                          \
-        static decltype(auto) plus(type& lhs, const type&) { return lhs; }               \
-        static decltype(auto) minus(type& lhs, const type&) { return lhs; }              \
-        static decltype(auto) multiply(type& lhs, const type&) { return lhs; }           \
-        static decltype(auto) divide(type& lhs, const type&) { return lhs; }             \
+        template <typename Vp>                                                           \
+        static decltype(auto) plus(type& lhs, const Vp&)                                 \
+        {                                                                                \
+            return lhs;                                                                  \
+        }                                                                                \
+        template <typename Vp>                                                           \
+        static decltype(auto) minus(type& lhs, const Vp&)                                \
+        {                                                                                \
+            return lhs;                                                                  \
+        }                                                                                \
+        template <typename Vp>                                                           \
+        static decltype(auto) multiply(type& lhs, const Vp&)                             \
+        {                                                                                \
+            return lhs;                                                                  \
+        }                                                                                \
+        template <typename Vp>                                                           \
+        static decltype(auto) divide(type& lhs, const Vp&)                               \
+        {                                                                                \
+            return lhs;                                                                  \
+        }                                                                                \
     };
 
 TIMEMORY_MATH_NULL_TYPE_COMPUTE(std::tuple<>)

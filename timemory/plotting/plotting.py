@@ -149,7 +149,7 @@ plotted_files = []
 
 verbosity = os.environ.get("TIMEMORY_VERBOSE", 0)
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 
 
 class plot_parameters:
@@ -204,7 +204,7 @@ class plot_parameters:
         return "[{}]".format(_c)
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 def echo_dart_tag(name, filepath, img_type=plot_parameters.img_type):
     """
     Printing this string will upload the results to CDash when running CTest
@@ -215,7 +215,7 @@ def echo_dart_tag(name, filepath, img_type=plot_parameters.img_type):
     )
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 def add_plotted_files(name, filepath, echo_dart):
     """
     Adds a file to the plotted file list and print CDash dart string
@@ -233,7 +233,7 @@ def add_plotted_files(name, filepath, echo_dart):
         plotted_files.append([name, filepath])
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 def make_output_directory(directory):
     """
     mkdir -p
@@ -242,12 +242,12 @@ def make_output_directory(directory):
         os.makedirs(directory)
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 def nested_dict():
     return collections.defaultdict(nested_dict)
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 class timemory_data:
     """
     This class is for internal usage. It holds the JSON data
@@ -360,7 +360,7 @@ class timemory_data:
         return getattr(self, key)
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 class plot_data:
     """
     A custom configuration for the data to be plotted
@@ -390,6 +390,7 @@ class plot_data:
         title="",
         units="",
         ctype="",
+        cid="",
         description="",
         plot_params=plot_parameters(),
         output_name=None,
@@ -403,6 +404,7 @@ class plot_data:
             else:
                 return _obj
 
+        self.cid = cid
         self.units = _convert(units)
         self.ctype = _convert(ctype)
         self.description = _convert(description)
@@ -428,8 +430,6 @@ class plot_data:
                 tag = "_".join(self.ctype[n].lower().split())
                 self.filename.append("_".join([filename, tag]))
                 self.output_name.append("_".join([outname, tag]))
-            # print("plot filenames: {}".format(self.filename))
-            # print("plot output name: {}".format(self.output_name))
 
     # ------------------------------------------------------------------------ #
     def update_parameters(self, params=None):
@@ -494,53 +494,23 @@ class plot_data:
         """
         Construct the title for the plot
         """
-        return '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(
+        return "{} @ Processes = {}, Threads/process = {}".format(
             self.title, self.mpi_size, int(self.concurrency)
         )
 
 
-# ==============================================================================#
-def read(json_obj, plot_params=plot_parameters()):
-    """
-    Read the JSON data -- i.e. process JSON object of TiMemory data
-    """
+# -------------------------------------------------------------------------------------- #
+def read(data, **_kwargs):
+    """Read the graph data"""
 
     # some fields
-    data = json_obj
-    nranks = len(data["ranks"]) if "ranks" in data else 1
-    concurrency_sum = 0
     timemory_functions = nested_dict()
 
-    # print('num ranks = {}'.format(nranks))
-
-    # rank = data['rank']
-    nthrd = data["concurrency"]  # concurrency
-    ctype = data["type"]  # collection type
-    cdesc = data["description"]  # collection description
-    unitr = data["unit_repr"]  # collection unit display repr
-    gdata = data["graph"]  # graph data
-    ngraph = len(gdata)  # number of graph entries
-    roofl = data["roofline"] if "roofline" in data else None
-
-    # if roofl is not None:
-    #    print(roofl)
-
-    concurrency_sum += nthrd
-
-    # ------------------------------------------------------------------------ #
     # loop over ranks
+    ngraph = int(data["graph_size"])
     for i in range(0, ngraph):
-        _data = gdata[i]
+        _data = data["graph"][i]
         tag = _data["prefix"]
-
-        def _replace(_tag, _a, _b, _n=0):
-            _c = 0
-            while _a in _tag:
-                _tag = _tag.replace(_a, _b)
-                _c += 1
-                if _n > 0 and _c >= _n:
-                    break
-            return _tag
 
         _stats = _data["stats"] if "stats" in _data else None
         tfunc = timemory_data(tag, _data["entry"], _stats)
@@ -555,22 +525,11 @@ def read(json_obj, plot_params=plot_parameters()):
             # append
             timemory_functions[tag] += tfunc
 
-        # print(timemory_functions[tag])
-
-    # ------------------------------------------------------------------------ #
     # return a plot_data object
-    return plot_data(
-        concurrency=(concurrency_sum / nranks),
-        mpi_size=nranks,
-        description=cdesc,
-        ctype=ctype,
-        units=unitr,
-        timemory_functions=timemory_functions,
-        plot_params=plot_params,
-    )
+    return plot_data(**_kwargs, timemory_functions=timemory_functions)
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
 
     if _matplotlib_backend is None:
@@ -683,7 +642,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     return True
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
 
     #
@@ -714,6 +673,7 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
             _fname = "{}_{}".format(_fname, "_".join(_ctype.lower().split()))
         _units = get_obj_idx(_plot_data.units, idx)
         _desc = get_obj_idx(_plot_data.description, idx)
+        _ctype = get_obj_idx(_plot_data.ctype, idx)
         _plot_min = params.max_value * (0.01 * params.min_percent)
 
         _do_plot = plot_generic(_plot_data, _plot_min, _units, idx)
@@ -721,9 +681,16 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
         if not _do_plot:
             return
 
-        _xlabel = "{}".format(_desc.title())
+        _xlabel = "{}".format(_ctype.title())
         if _units:
             _xlabel = "{} [{}]".format(_xlabel, _units)
+
+        #
+        subfont = {
+            "family": "serif",
+            "color": "black",
+            "size": 16,
+        }
 
         font = {
             "family": "serif",
@@ -733,8 +700,11 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
         }
 
         plt.xlabel(_xlabel, **font)
-        title = title.replace(' "', '"').strip()
-        plt.title('"{}" Report for {}'.format(_desc.title(), title), **font)
+        title = title.replace("_", " ").title()
+        plt.suptitle("{}".format(title), **font)
+        if _desc:
+            plt.title("{}".format(_desc.title()), **subfont)
+
         if disp:
             print("Displaying plot...")
             plt.show()

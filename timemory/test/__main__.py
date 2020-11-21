@@ -39,6 +39,7 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 import os
+import sys
 import unittest
 import timemory as tim
 
@@ -75,10 +76,16 @@ def run_all_tests():
     # print the results
     print("\n============= Results =============\n")
     print("{}\n".format(result))
+    return result
 
 
 # run all tests
 if __name__ == "__main__":
     man = tim.manager()
-    run_all_tests()
+    result = run_all_tests()
     man.write_ctest_notes("./python-testing")
+    if result.errors is not None:
+        nerr = len(result.errors)
+        sys.exit(nerr)
+    else:
+        sys.exit(0)

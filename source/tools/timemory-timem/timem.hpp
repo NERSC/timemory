@@ -279,9 +279,8 @@ struct start<component::papi_array_t>
 template <>
 struct stop<component::papi_array_t>
 {
-    using type       = papi_array_t;
-    using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
+    using type      = component::papi_array_t;
+    using base_type = typename type::base_type;
 
     template <typename... Args>
     explicit stop(base_type&, Args&&...)
@@ -289,6 +288,26 @@ struct stop<component::papi_array_t>
 };
 //
 #endif
+//
+template <>
+struct stop<component::page_rss>
+{
+    using type = component::page_rss;
+
+    template <typename... Args>
+    explicit stop(type&, Args&&...)
+    {}
+};
+//
+template <>
+struct stop<component::virtual_memory>
+{
+    using type = component::virtual_memory;
+
+    template <typename... Args>
+    explicit stop(type&, Args&&...)
+    {}
+};
 //
 }  // namespace operation
 //

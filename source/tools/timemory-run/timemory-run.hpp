@@ -627,7 +627,7 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
 //
 //======================================================================================//
 //
-TIMEMORY_NOINLINE inline void
+TIMEMORY_NOINLINE void
 timemory_thread_exit(thread_t* thread, BPatch_exitType exit_type)
 {
     if(!thread)
@@ -671,7 +671,7 @@ timemory_thread_exit(thread_t* thread, BPatch_exitType exit_type)
 //
 //======================================================================================//
 //
-TIMEMORY_NOINLINE inline void
+TIMEMORY_NOINLINE void
 timemory_fork_callback(thread_t* parent, thread_t* child)
 {
     if(child)
