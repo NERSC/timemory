@@ -312,11 +312,17 @@ generate(py::module& _pymod)
         _scope_set);
 
     auto _init = []() {
-        user_profiler_bundle::global_init();
-        auto _file = py::module::import("timemory").attr("__file__").cast<std::string>();
-        if(_file.find('/') != std::string::npos)
-            _file = _file.substr(0, _file.find_last_of('/'));
-        get_config().base_module_path = _file;
+        try
+        {
+            auto _file =
+                py::module::import("timemory").attr("__file__").cast<std::string>();
+            if(_file.find('/') != std::string::npos)
+                _file = _file.substr(0, _file.find_last_of('/'));
+            get_config().base_module_path = _file;
+        } catch(py::cast_error& e)
+        {
+            std::cerr << "[profiler_init]> " << e.what() << std::endl;
+        }
         if(get_config().is_running)
             return;
         get_config().records.clear();
@@ -392,6 +398,9 @@ generate(py::module& _pymod)
                          get_config().exclude_functions)
     CONFIGURATION_STRSET("skip_filenames", "Filenames to filter out of collection",
                          get_config().exclude_filenames)
+
+    tim::operation::init<user_profiler_bundle>(
+        tim::operation::mode_constant<tim::operation::init_mode::global>{});
 
     return _prof;
 }

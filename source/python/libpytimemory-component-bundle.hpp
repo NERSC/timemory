@@ -172,7 +172,8 @@ generate(py::module& _pymod, const char* _name, const char* _doc,
         }
     };
 
-    UserBundleT::global_init();
+    tim::operation::init<UserBundleT>(
+        tim::operation::mode_constant<tim::operation::init_mode::global>{});
 
     //==================================================================================//
     //

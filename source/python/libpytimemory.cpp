@@ -28,6 +28,7 @@
 #include "timemory/enum.h"
 #include "timemory/library.h"
 #include "timemory/timemory.hpp"
+#include "timemory/utility/socket.hpp"
 
 #if defined(TIMEMORY_USE_OMPT)
 #    include "timemory/components/ompt.hpp"
@@ -594,23 +595,30 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     auto _get_argv = []() {
         py::module sys   = py::module::import("sys");
-        auto       argv  = sys.attr("argv").cast<py::list>();
-        int        _argc = argv.size();
-        char**     _argv = new char*[argv.size()];
-        for(int i = 0; i < _argc; ++i)
+        try
         {
-            auto  _str    = argv[i].cast<std::string>();
-            char* _argv_i = new char[_str.size() + 1];
-            std::strcpy(_argv_i, _str.c_str());
-            _argv_i[_str.size()] = '\0';
-            _argv[i]             = _argv_i;
+            auto   argv  = sys.attr("argv").cast<py::list>();
+            int    _argc = argv.size();
+            char** _argv = new char*[argv.size()];
+            for(int i = 0; i < _argc; ++i)
+            {
+                auto  _str    = argv[i].cast<std::string>();
+                char* _argv_i = new char[_str.size() + 1];
+                std::strcpy(_argv_i, _str.c_str());
+                _argv_i[_str.size()] = '\0';
+                _argv[i]             = _argv_i;
+            }
+            auto _argv_deleter = [](int fargc, char** fargv) {
+                for(int i = 0; i < fargc; ++i)
+                    delete[] fargv[i];
+                delete[] fargv;
+            };
+            return std::make_tuple(_argc, _argv, _argv_deleter);
+        } catch(py::cast_error& e)
+        {
+            std::cerr << "Cast error in get_argv: " << e.what() << std::endl;
+            throw;
         }
-        auto _argv_deleter = [](int fargc, char** fargv) {
-            for(int i = 0; i < fargc; ++i)
-                delete[] fargv[i];
-            delete[] fargv;
-        };
-        return std::make_tuple(_argc, _argv, _argv_deleter);
     };
     //----------------------------------------------------------------------------------//
     auto _init = [](py::list argv, std::string _prefix, std::string _suffix) {

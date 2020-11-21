@@ -30,6 +30,12 @@ TIMEMORY_TEST_DEFAULT_MAIN
 
 using bundle_t = tim::component_tuple<tim::component::wall_clock>;
 
+#if defined(ENABLE_MT)
+#    define INSTRUMENTATION_TESTS_NAME instrumentation_mt_tests
+#else
+#    define INSTRUMENTATION_TESTS_NAME instrumentation_tests
+#endif
+
 //--------------------------------------------------------------------------------------//
 
 auto&
@@ -98,7 +104,7 @@ random_entry(const std::vector<Tp>& v)
 
 //--------------------------------------------------------------------------------------//
 
-class instrumentation_tests : public ::testing::Test
+class INSTRUMENTATION_TESTS_NAME : public ::testing::Test
 {
 protected:
     TIMEMORY_TEST_DEFAULT_SUITE_BODY
@@ -106,7 +112,7 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(instrumentation_tests, random_entry)
+TEST_F(INSTRUMENTATION_TESTS_NAME, random_entry)
 {
     std::vector<float> _v(100, 0.0);
     float              _i = 1.243f;
@@ -117,7 +123,7 @@ TEST_F(instrumentation_tests, random_entry)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(instrumentation_tests, consume)
+TEST_F(INSTRUMENTATION_TESTS_NAME, consume)
 {
     std::uniform_int_distribution<std::mt19937::result_type> dist(100, 1000);
     auto _ret = details::consume(dist(get_rng()));
@@ -127,7 +133,7 @@ TEST_F(instrumentation_tests, consume)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(instrumentation_tests, sleep)
+TEST_F(INSTRUMENTATION_TESTS_NAME, sleep)
 {
     std::uniform_int_distribution<std::mt19937::result_type> dist(100, 1000);
     auto _ret = details::do_sleep(dist(get_rng()));
@@ -136,8 +142,8 @@ TEST_F(instrumentation_tests, sleep)
 }
 
 //--------------------------------------------------------------------------------------//
-
-TEST_F(instrumentation_tests, mt_consume)
+#if defined(ENABLE_MT)
+TEST_F(INSTRUMENTATION_TESTS_NAME, mt_consume)
 {
     auto _consume = []() {
         std::uniform_int_distribution<std::mt19937::result_type> dist(100, 1000);
@@ -156,7 +162,7 @@ TEST_F(instrumentation_tests, mt_consume)
         itr.join();
     _threads.clear();
 }
-
+#endif
 //--------------------------------------------------------------------------------------//
 
 static bool _setup = (details::setup_rng(), true);

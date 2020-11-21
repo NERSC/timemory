@@ -53,6 +53,15 @@ struct init
 
     TIMEMORY_DELETED_OBJECT(init)
 
+    template <typename Up                                       = Tp, int StateT,
+              enable_if_t<trait::is_available<Up>::value, char> = 0>
+    explicit init(mode_constant<StateT>)
+    {
+        auto _storage = storage<Tp>::instance();
+        if(_storage)
+            sfinae<type, StateT>(_storage, 0, 0);
+    }
+
     template <typename Up = Tp, int StateT, typename StorageT,
               enable_if_t<trait::is_available<Up>::value, char> = 0>
     explicit init(StorageT _storage, mode_constant<StateT>)

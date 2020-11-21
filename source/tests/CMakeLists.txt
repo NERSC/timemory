@@ -123,11 +123,29 @@ if(TARGET timemory::timemory-compiler-instrument-shared)
                         ${_LIBRARY}
                         timemory::timemory-compiler-instrument-shared
         ENVIRONMENT     ${compiler_instr_env})
+    #
+    add_timemory_google_test(compiler_instrument_mt_shared_tests
+        SOURCES         instrumentation_tests.cpp
+        DEFINITIONS     ENABLE_MT
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-shared
+        ENVIRONMENT     ${compiler_instr_env})
 endif()
 
 if(TARGET timemory::timemory-compiler-instrument-static)
     add_timemory_google_test(compiler_instrument_static_tests
         SOURCES         instrumentation_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-static
+        ENVIRONMENT     ${compiler_instr_env})
+    #
+    add_timemory_google_test(compiler_instrument_mt_static_tests
+        SOURCES         instrumentation_tests.cpp
+        DEFINITIONS     ENABLE_MT
         LINK_LIBRARIES  common-test-libs
                         test-opt-flags
                         ${_LIBRARY}

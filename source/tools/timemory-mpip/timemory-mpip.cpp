@@ -80,7 +80,8 @@ extern "C"
             dlerror();  // Clear any existing error
 
             configure_mpip<mpi_toolset_t, api_t>();
-            user_mpip_bundle::global_init();
+            tim::operation::init<user_mpip_bundle>(
+                tim::operation::mode_constant<tim::operation::init_mode::global>{});
             auto ret = activate_mpip<mpi_toolset_t, api_t>();
             dlclose(libmpi_handle);
             return ret;
