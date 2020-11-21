@@ -53,6 +53,7 @@ DEBUG = (
     else False
 )
 VERBOSE = int(os.environ.get("TIMEMORY_VERBOSE", "0")) if not DEBUG else 255
+RANK_INDEX = 0
 
 __all__ = [
     "echo_dart_tag",
@@ -74,22 +75,11 @@ __all__ = [
     "FONT_SIZE",
     "VERBOSE",
     "DEBUG",
+    "RANK_INDEX",
 ]
 
-#   labels_type m_labels = {{"label", "working-set", "trials", "total-bytes",
-#                            "total-ops", "ops-per-set", "counter", "device", "dtype",
-#                            "exec-params"}}
-#        ar(serializer:: make_nvp("working_set_min", working_set_min),
-#           serializer:: make_nvp("memory_max", memory_max),
-#           serializer:: make_nvp("nthreads", nthreads),
-#           serializer:: make_nvp("nrank", nrank), serializer: : make_nvp("nproc", nproc),
-#           serializer:: make_nvp("nstreams", nstreams),
-#           serializer:: make_nvp("grid_size", grid_size),
-#           serializer:: make_nvp("block_size", block_size),
-#           serializer: : make_nvp("shmem_size", shmem_size))
 
-
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def echo_dart_tag(name, filepath, img_type):
     """
@@ -101,7 +91,7 @@ def echo_dart_tag(name, filepath, img_type):
     )
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def get_json_entry(inp, key):
     for _key in [key, key.replace("_", "-"), key.replace("-", "_")]:
@@ -110,13 +100,13 @@ def get_json_entry(inp, key):
     return None
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def flatten_list(datalist):
     return [item for sublist in datalist for item in sublist]
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def get_font():
     return {
@@ -127,7 +117,7 @@ def get_font():
     }
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 class ert_params:
     """
@@ -162,7 +152,7 @@ class ert_params:
         return ", ".join(ret)
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 class ert_counter:
     """
@@ -206,7 +196,7 @@ class ert_counter:
         return _list
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 class ert_data:
     """
@@ -250,7 +240,7 @@ class ert_data:
         return ", ".join(ret)
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def smooth(x, y):
     """
@@ -269,7 +259,7 @@ def smooth(x, y):
     return xs, ys
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def read_ert(inp):
     data = inp
@@ -297,7 +287,7 @@ def read_ert(inp):
     return inst
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def get_peak_ops(roof_data, flop_info=None):
     """
@@ -338,7 +328,7 @@ def get_peak_ops(roof_data, flop_info=None):
     return peak_ops
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def get_peak_int_theo(_inst_peak):
     peak = {}
@@ -349,7 +339,7 @@ def get_peak_int_theo(_inst_peak):
     return peak_ops
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def get_peak_bandwidth(roof_data, band_labels):
     """
@@ -433,7 +423,7 @@ def get_peak_bandwidth(roof_data, band_labels):
     return peak_bandwidths
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def get_theo_bandwidth_txns(txn_bandwidth):
 
@@ -444,9 +434,9 @@ def get_theo_bandwidth_txns(txn_bandwidth):
     return peak_bandwidths
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
-def get_hotspots(op_data, ai_data):
+def get_hotspots(op_data, ai_data, index=None):
     """
     Get the hotspots information
     """
@@ -470,6 +460,14 @@ def get_hotspots(op_data, ai_data):
         op_type = "gpu"
     if "gpu_roofline" in ai_data_type:
         ai_type = "gpu"
+
+    if index is None:
+        index = RANK_INDEX
+
+    if "ranks" in op_data:
+        op_data = op_data["ranks"][index]
+    if "ranks" in ai_data:
+        ai_data = ai_data["ranks"][index]
 
     op_graph_data = op_data["graph"]
     ai_graph_data = ai_data["graph"]
@@ -625,9 +623,9 @@ def get_hotspots(op_data, ai_data):
     return hotspots
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
-def get_hotspots_integer(op_data, ai_data):
+def get_hotspots_integer(op_data, ai_data, index=None):
     """
     Get the hotspots information
     """
@@ -650,6 +648,14 @@ def get_hotspots_integer(op_data, ai_data):
         op_type = "gpu"
     if "gpu_roofline" in ai_data_type:
         ai_type = "gpu"
+
+    if index is None:
+        index = RANK_INDEX
+
+    if "ranks" in op_data:
+        op_data = op_data["ranks"][index]
+    if "ranks" in ai_data:
+        ai_data = ai_data["ranks"][index]
 
     op_graph_data = op_data["graph"]
     ai_graph_data = ai_data["graph"]
@@ -819,7 +825,7 @@ def get_hotspots_integer(op_data, ai_data):
     return hotspots
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 def get_color(proportion):
     if proportion < 0.2:
@@ -831,7 +837,7 @@ def get_color(proportion):
     return color
 
 
-# ==============================================================================#
+# -------------------------------------------------------------------------------------- #
 #
 class plot_parameters:
     def __init__(self, peak_flops, hotspots, _inst_roofline):
@@ -877,9 +883,37 @@ class plot_parameters:
         )
 
 
-# ==============================================================================#
+#
+# -------------------------------------------------------------------------------------- #
 #
 def plot_roofline(
+    ai_data,
+    op_data,
+    *_args,
+    **_kwargs,
+):
+    _ai = []
+    _op = []
+
+    if "timemory" in ai_data:
+        for key, data in ai_data["timemory"].items():
+            _ai.append(data)
+    else:
+        _ai.append(ai_data)
+
+    if "timemory" in op_data:
+        for key, data in op_data["timemory"].items():
+            _op.append(data)
+    else:
+        _op.append(op_data)
+
+    for ai, op in zip(_ai, _op):
+        plot_roofline_impl(ai, op, *_args, **_kwargs)
+
+
+# -------------------------------------------------------------------------------------- #
+#
+def plot_roofline_impl(
     ai_data,
     op_data,
     band_labels,
@@ -895,22 +929,19 @@ def plot_roofline(
     height=1200,
     dpi=100,
     echo_dart=False,
+    index=None,
 ):
-    """
-    Plot the roofline
-    """
+    """Plot the roofline"""
+
+    if index is None:
+        index = RANK_INDEX
+
     inst_roofline = False
     if "gpu_roofline_inst" in _rtype:
         inst_roofline = True
         print("GPU INST ROOFLINE ON")
     else:
         print("GPU INST ROOFLINE OFF")
-    # if passed the entire JSON (i.e. not invoked using main),
-    # just plot the first rank
-    if "timemory" in ai_data:
-        ai_data = ai_data["timemory"]["ranks"][0]
-    if "timemory" in op_data:
-        op_data = op_data["timemory"]["ranks"][0]
 
     band_data = read_ert(ai_data)
     peak_data = read_ert(op_data)
@@ -928,9 +959,9 @@ def plot_roofline(
         peak_band = get_peak_bandwidth(band_data, band_labels)
 
     if inst_roofline:
-        hotspots = get_hotspots_integer(op_data, ai_data)
+        hotspots = get_hotspots_integer(op_data, ai_data, index)
     else:
-        hotspots = get_hotspots(op_data, ai_data)
+        hotspots = get_hotspots(op_data, ai_data, index)
 
     print("peak_flop = {}, peak_band = {}".format(peak_flop, peak_band))
 

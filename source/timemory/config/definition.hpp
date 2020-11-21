@@ -89,16 +89,15 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
             auto _files = tim::delimit(_cfg, ",;");
             for(const auto& citr : _files)
             {
-                try
+                std::ifstream ifs(citr);
+                if(ifs)
                 {
-                    _settings->read(citr);
-                } catch(std::runtime_error& e)
+                    _settings->read(ifs, citr);
+                }
+                else if(_dcfg.find(citr) == _dcfg.end())
                 {
-                    if(_dcfg.find(citr) == _dcfg.end())
-                    {
-                        std::cerr << e.what() << std::endl;
-                        throw;
-                    }
+                    throw std::runtime_error(
+                        std::string("Error reading configuration file: ") + citr);
                 }
             }
         }

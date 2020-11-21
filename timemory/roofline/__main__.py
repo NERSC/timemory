@@ -209,68 +209,51 @@ Examples:
 def plot(args):
 
     try:
-        fname = os.path.basename(args.output_file)
-        fdir = os.path.realpath(args.output_dir)
-
         fai = open(args.arithmetic_intensity, "r")
         fop = open(args.operations, "r")
 
         ai_data = json.load(fai)
         op_data = json.load(fop)
 
-        ai_ranks = ai_data["timemory"]["ranks"]
-        op_ranks = op_data["timemory"]["ranks"]
+        _ai_ranks = []
+        _op_ranks = []
+        _data = {}
 
-        band_labels = [element.upper() for element in args.bandwidths]
+        for key, data in ai_data["timemory"].items():
+            _ai_ranks.append(int(data["num_ranks"]))
+            _data[key] = [data]
 
-        if len(ai_ranks) != len(op_ranks):
-            raise RuntimeError(
-                "Number of ranks in output files is different: {} vs. {}".format(
-                    len(ai_ranks), len(op_ranks)
+        for key, data in op_data["timemory"].items():
+            _op_ranks.append(int(data["num_ranks"]))
+            if key not in _data.keys():
+                raise RuntimeError(
+                    "Key '{}' found in operation data but not in AI data".format(
+                        key
+                    )
                 )
-            )
+            _data[key].append(data)
 
-        if len(op_data) == 1:
-            _roofline.plot_roofline(
-                ai_ranks[0],
-                op_ranks[0],
-                band_labels,
-                args.txns_bandwidths,
-                args.inst_peak,
-                args.rtype,
-                args.display,
-                fname,
-                args.format,
-                fdir,
-                args.title,
-                args.plot_dimensions[0],
-                args.plot_dimensions[1],
-                args.plot_dimensions[2],
-                args.echo_dart,
-            )
-        else:
-            _rank = 0
-            for _ai, _op in zip(ai_ranks, op_ranks):
-                _fname = "{}_{}".format(fname, _rank)
-                _title = "{} (MPI rank: {})".format(args.title, _rank)
-                _roofline.plot_roofline(
-                    _ai,
-                    _op,
-                    band_labels,
-                    args.txns_bandwidths,
-                    args.inst_peak,
-                    args.rtype,
-                    args.display,
-                    _fname,
-                    args.format,
-                    fdir,
-                    _title,
-                    args.plot_dimensions[0],
-                    args.plot_dimensions[1],
-                    args.plot_dimensions[2],
-                    args.echo_dart,
+        for rank_ai, rank_op in zip(_ai_ranks, _op_ranks):
+            if rank_ai != rank_op:
+                raise RuntimeError(
+                    "Number of ranks in output files is different: {} vs. {}".format(
+                        len(rank_ai), len(rank_op)
+                    )
                 )
-                _rank += 1
+
+        use_label = True if len(_data) > 1 else False
+        use_rank = True if len(_ai_ranks) > 1 else False
+
+        _rank = 0
+        for key, data in _data.items():
+            plot_impl(
+                args,
+                data[0],
+                data[1],
+                _rank if use_rank else None,
+                key if use_label else None,
+            )
+            _rank += 1
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -280,6 +263,40 @@ def plot(args):
 
     print("Done - {}".format(sys.argv[0]))
     sys.exit(0)
+
+
+def plot_impl(args, ai_data, op_data, rank=None, label=None):
+
+    fname = os.path.basename(args.output_file)
+    fdir = os.path.realpath(args.output_dir)
+
+    if label is not None:
+        fname = "_".join([label, fname])
+
+    band_labels = [element.upper() for element in args.bandwidths]
+
+    if rank is not None:
+        fname = "{}_{}".format(fname, rank)
+        title = "{} (MPI rank: {})".format(args.title, rank)
+
+    _roofline.plot_roofline(
+        ai_data,
+        op_data,
+        band_labels,
+        args.txns_bandwidths,
+        args.inst_peak,
+        args.rtype,
+        args.display,
+        fname,
+        args.format,
+        fdir,
+        args.title,
+        args.plot_dimensions[0],
+        args.plot_dimensions[1],
+        args.plot_dimensions[2],
+        args.echo_dart,
+        rank,
+    )
 
 
 def run(args, cmd):

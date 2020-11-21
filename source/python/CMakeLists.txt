@@ -31,6 +31,10 @@ function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
         set(_SUBDIR "/${_SUBDIR}")
     endif()
 
+    if(WIN32)
+        target_compile_definitions(libpytimemory-interface INTERFACE TIMEMORY_USE_WINSOCK)
+    endif()
+
     if(TIMEMORY_USE_CUDA)
         set(EXTRA_PROPERTIES LINKER_LANGUAGE CUDA)
     endif()
