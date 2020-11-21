@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#define TIMEMORY_USER_ERT_FLOPS 2
+
 #include "test_macros.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN
@@ -125,7 +127,7 @@ TEST_F(ert_tests, run)
     auto nproc = dmp::size();
 
     auto cpu_min_size = 64;
-    auto cpu_max_data = ert::cache_size::get_max();
+    auto cpu_max_data = ert::cache_size::get_max() / 4;
 
     init_list_t cpu_num_threads;
 
@@ -238,8 +240,9 @@ details::run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size,
     // create a label for this test
     auto dtype = tim::demangle(typeid(Tp).name());
     auto htype = DeviceT::name();
-    auto label = TIMEMORY_JOIN("_", __FUNCTION__, dtype, htype, num_threads, "threads",
-                               min_size, "min-ws", max_data, "max-size");
+    auto label =
+        TIMEMORY_JOIN("", __FUNCTION__, '/', dtype, '/', htype, '/', num_threads,
+                      "-threads", '/', min_size, "-min-ws", '/', max_data, "-max-size");
 
     if(std::is_same<DeviceT, device::gpu>::value)
     {
@@ -274,7 +277,7 @@ details::run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size,
     //
     // create a configuration object -- this handles a lot of the setup
     //
-    ert_config_type config;
+    ert_config_type config{};
     //
     // start generic timemory timer
     //
@@ -287,7 +290,25 @@ details::run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size,
     // NOTE: the ert::executor has callbacks that allows one to customize the
     //       the ERT execution
     //
-    ert_executor_type(config, data, set_counter_device);
+    // check the operations were performed
+    {
+        auto _counter = config.executor(data);
+        _counter.set_callback(set_counter_device);
+        auto _executed = ert_executor_type::template execute<1, 4>(
+            _counter, { "scalar_add", "vector_fma" });
+        EXPECT_TRUE(_executed);
+    }
+    // check that operations were skipped
+    {
+        auto _counter = config.executor(data);
+        _counter.add_skip_ops(1);
+        _counter.add_skip_ops(4);
+        _counter.set_callback(set_counter_device);
+        auto _executed = ert_executor_type::template execute<1, 4>(
+            _counter, { "scalar_add", "vector_fma" });
+        EXPECT_FALSE(_executed);
+    }
+
     if(data && (settings::verbose() > 0 || settings::debug()))
         std::cout << "\n" << *(data) << std::endl;
     printf("\n");

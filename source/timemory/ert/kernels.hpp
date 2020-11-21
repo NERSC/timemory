@@ -150,12 +150,12 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
 template <size_t Nops, size_t... Nextra, typename DeviceT, typename Tp, typename CounterT,
           typename OpsFuncT, typename StoreFuncT,
           enable_if_t<sizeof...(Nextra) == 0, int> = 0>
-void
+bool
 ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
          StoreFuncT&& store_func)
 {
     if(_counter.skip(Nops))
-        return;
+        return false;
 
     using stream_list_t   = std::vector<cuda::stream_t>;
     using thread_list_t   = std::vector<std::thread>;
@@ -373,6 +373,9 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
         cuda::device_sync();
 
     dmp::barrier();  // synchronize MPI processes
+
+    // code was executed
+    return true;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -383,14 +386,16 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
 template <size_t Nops, size_t... Nextra, typename DeviceT, typename Tp, typename CounterT,
           typename OpsFuncT, typename StoreFuncT,
           enable_if_t<(sizeof...(Nextra) > 0), int> = 0>
-void
+bool
 ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
          StoreFuncT&& store_func)
 {
+    bool ret = false;
     // execute a single parameter
-    ops_main<Nops>(std::ref(_counter).get(), ops_func, store_func);
+    ret |= ops_main<Nops>(std::ref(_counter).get(), ops_func, store_func);
     // continue the recursive loop
-    ops_main<Nextra...>(std::ref(_counter).get(), ops_func, store_func);
+    ret |= ops_main<Nextra...>(std::ref(_counter).get(), ops_func, store_func);
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -400,9 +405,11 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
 template <size_t... Nops, typename DeviceT, typename Tp, typename CounterT,
           typename OpsFuncT, typename StoreFuncT,
           enable_if_t<sizeof...(Nops) == 0, int> = 0>
-void
+bool
 ops_main(counter<DeviceT, Tp, CounterT>&, OpsFuncT&&, StoreFuncT&&)
-{}
+{
+    return false;
+}
 
 //--------------------------------------------------------------------------------------//
 
