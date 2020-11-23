@@ -35,6 +35,7 @@
 
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/extern.hpp"
+#include "timemory/operations/types/fini.hpp"
 #include "timemory/operations/types/init.hpp"
 
 #include <array>
@@ -90,6 +91,8 @@ struct gpu_roofline
     friend struct operation::record<this_type>;
     friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
+    friend struct operation::set_started<this_type>;
+    friend struct operation::set_stopped<this_type>;
 
     using ert_data_t     = ert::exec_data<count_type>;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
@@ -190,45 +193,20 @@ public:
         {
             strvec_t events  = { "global_load", "global_store" };
             strvec_t metrics = { "ldst_executed" };
-            /*
-            strvec_t events  = { "active_warps", "global_load", "global_store" };
-            strvec_t metrics = { "ldst_executed",
-                                 "ldst_issued",
-                                 "gld_transactions",
-                                 "gst_transactions",
-                                 "atomic_transactions",
-                                 "local_load_transactions",
-                                 "local_store_transactions",
-                                 "shared_load_transactions",
-                                 "shared_store_transactions",
-                                 "l2_read_transactions",
-                                 "l2_write_transactions",
-                                 "dram_read_transactions",
-                                 "dram_write_transactions" };
-            */
 #if defined(TIMEMORY_USE_CUDA_HALF)
             if(is_one_of<cuda::fp16_t, types_tuple>::value)
             {
-                // for(string_t itr : { "flop_count_hp", "flop_count_hp_add",
-                //                     "flop_count_hp_mul", "flop_count_hp_fma" })
-                //    metrics.push_back(itr);
                 metrics.push_back("flop_count_hp");
             }
 #endif
 
             if(is_one_of<float, types_tuple>::value)
             {
-                // for(string_t itr : { "flop_count_sp", "flop_count_sp_add",
-                //                     "flop_count_sp_mul", "flop_count_sp_fma" })
-                //    metrics.push_back(itr);
                 metrics.push_back("flop_count_sp");
             }
 
             if(is_one_of<double, types_tuple>::value)
             {
-                // for(string_t itr : { "flop_count_dp", "flop_count_dp_add",
-                //                     "flop_count_dp_mul", "flop_count_dp_fma" })
-                //    metrics.push_back(itr);
                 metrics.push_back("flop_count_dp");
             }
 
@@ -339,11 +317,15 @@ public:
 
     static void global_finalize(storage_type* _store)
     {
+        // disable the activity/counters before running ERT
         if(event_mode() == MODE::ACTIVITY)
-            activity_type::global_finalize();
+            operation::fini<activity_type>{}(
+                operation::mode_constant<operation::fini_mode::global>{});
         else
-            counters_type::global_finalize();
+            operation::fini<counters_type>{}(
+                operation::mode_constant<operation::fini_mode::global>{});
 
+        // run ERT
         if(_store && _store->size() > 0)
         {
             assert(_store->is_finalizing());
@@ -703,16 +685,10 @@ private:
 private:
     static label_type& get_labels() { return *_get_labels(); }
 
-    static label_type*& _get_labels()
+    static label_type* _get_labels()
     {
-        static label_type* _instance = new label_type();
-        return _instance;
-    }
-
-    static void cleanup()
-    {
-        delete _get_labels();
-        _get_labels() = nullptr;
+        static auto _instance = std::make_unique<label_type>();
+        return _instance.get();
     }
 
 private:

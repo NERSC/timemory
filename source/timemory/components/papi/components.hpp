@@ -30,14 +30,15 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/policy.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/units.hpp"
-
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/types.hpp"
 #include "timemory/components/timing/wall_clock.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/operations/types/fini.hpp"
+#include "timemory/operations/types/init.hpp"
+#include "timemory/units.hpp"
 
 #include <algorithm>
 #include <array>
@@ -684,6 +685,8 @@ struct papi_array
     friend struct operation::record<this_type>;
     friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
+    friend struct operation::set_started<this_type>;
+    friend struct operation::set_stopped<this_type>;
 
     //----------------------------------------------------------------------------------//
 
@@ -1005,6 +1008,8 @@ struct papi_tuple
     friend struct operation::record<this_type>;
     friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
+    friend struct operation::set_started<this_type>;
+    friend struct operation::set_stopped<this_type>;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -1287,11 +1292,21 @@ struct papi_rate_tuple
     friend struct operation::record<common_type>;
     friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
+    friend struct operation::set_started<this_type>;
+    friend struct operation::set_stopped<this_type>;
 
 public:
     static void configure() { tuple_type::configure(); }
-    static void thread_init() { tuple_type::thread_init(); }
-    static void thread_finalize() { tuple_type::thread_finalize(); }
+    static void thread_init()
+    {
+        operation::init<tuple_type>{}(
+            operation::mode_constant<operation::init_mode::thread>{});
+    }
+    static void thread_finalize()
+    {
+        operation::fini<tuple_type>{}(
+            operation::mode_constant<operation::fini_mode::thread>{});
+    }
     static void initialize() { tuple_type::initialize(); }
     static void finalize() { tuple_type::finalize(); }
 

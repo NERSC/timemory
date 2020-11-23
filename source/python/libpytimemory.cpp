@@ -594,7 +594,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     };
     //----------------------------------------------------------------------------------//
     auto _get_argv = []() {
-        py::module sys   = py::module::import("sys");
+        py::module sys = py::module::import("sys");
         try
         {
             auto   argv  = sys.attr("argv").cast<py::list>();

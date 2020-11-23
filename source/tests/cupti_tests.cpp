@@ -26,11 +26,9 @@
 #    undef DEBUG
 #endif
 
-#include "gtest/gtest.h"
+#include "test_macros.hpp"
 
-// #if !defined(DEBUG)
-// #    define DEBUG
-// #endif
+TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/timemory.hpp"
 
@@ -176,7 +174,10 @@ KERNEL_B(T* arr, int size, tim::cuda::stream_t stream = 0)
 //--------------------------------------------------------------------------------------//
 
 class cupti_tests : public ::testing::Test
-{};
+{
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -284,7 +285,8 @@ TEST_F(cupti_tests, activity)
     cupti_activity::global_finalize();
     num_iter /= 2;
 
-    ASSERT_NEAR(real_diff, expected_diff, expected_tol);
+    ASSERT_NEAR(real_diff, expected_diff, expected_tol)
+        << "real_clock: " << rc << ", cupti_activity: " << ca << std::endl;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -592,6 +594,9 @@ TEST_F(cupti_tests, roofline_counters)
     using roofline_t = gpu_roofline<float>;
     using tuple_t    = tim::component_tuple_t<wall_clock, roofline_t>;
 
+    tim::settings::ert_max_data_size_gpu()    = 100000000;
+    tim::settings::ert_min_working_size_gpu() = 5000000;
+
     roofline_t::configure(roofline_t::MODE::COUNTERS);
     num_iter *= 2;
 
@@ -630,7 +635,7 @@ TEST_F(cupti_tests, roofline_counters)
 }
 
 //--------------------------------------------------------------------------------------//
-
+/*
 int
 main(int argc, char** argv)
 {
@@ -654,5 +659,7 @@ main(int argc, char** argv)
     tim::timemory_finalize();
     return ret;
 }
-
+*/
 //--------------------------------------------------------------------------------------//
+
+// TIMEMORY_INITIALIZE_STORAGE(cupti_activity, cupti_counters, gpu_roofline<float>)

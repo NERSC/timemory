@@ -114,6 +114,8 @@ private:
     friend struct operation::measure<Tp>;
     friend struct operation::start<Tp>;
     friend struct operation::stop<Tp>;
+    friend struct operation::set_started<Tp>;
+    friend struct operation::set_stopped<Tp>;
     friend struct operation::minus<Tp>;
     friend struct operation::plus<Tp>;
     friend struct operation::multiply<Tp>;
@@ -402,6 +404,8 @@ private:
     friend struct operation::measure<Tp>;
     friend struct operation::start<Tp>;
     friend struct operation::stop<Tp>;
+    friend struct operation::set_started<Tp>;
+    friend struct operation::set_stopped<Tp>;
     friend struct operation::minus<Tp>;
     friend struct operation::plus<Tp>;
     friend struct operation::multiply<Tp>;
@@ -515,6 +519,8 @@ private:
     friend struct operation::measure<Tp>;
     friend struct operation::start<Tp>;
     friend struct operation::stop<Tp>;
+    friend struct operation::set_started<Tp>;
+    friend struct operation::set_stopped<Tp>;
     friend struct operation::minus<Tp>;
     friend struct operation::plus<Tp>;
     friend struct operation::multiply<Tp>;

@@ -27,12 +27,16 @@ if("CUDA" IN_LIST LANGUAGES)
     add_feature(TIMEMORY_CUDA_ARCH "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
     set_property(CACHE TIMEMORY_CUDA_ARCH PROPERTY STRINGS ${CUDA_ARCHITECTURES})
 
-    set(cuda_kepler_arch    30)
-    set(cuda_tesla_arch     35)
-    set(cuda_maxwell_arch   50)
-    set(cuda_pascal_arch    60)
-    set(cuda_volta_arch     70)
-    set(cuda_turing_arch    75)
+    set(cuda_kepler_arch    30 CACHE STRING "")
+    set(cuda_tesla_arch     35 CACHE STRING "")
+    set(cuda_maxwell_arch   50 CACHE STRING "")
+    set(cuda_pascal_arch    60 CACHE STRING "")
+    set(cuda_volta_arch     70 CACHE STRING "")
+    set(cuda_turing_arch    75 CACHE STRING "")
+
+    foreach(_type kepler tesla maxwell pascal volta turing)
+        mark_as_advanced(cuda_${_type}_arch)
+    endforeach()
 
     if(NOT "${TIMEMORY_CUDA_ARCH}" STREQUAL "${CUDA_AUTO_ARCH}")
         if(NOT "${TIMEMORY_CUDA_ARCH}" IN_LIST CUDA_ARCHITECTURES)
@@ -67,6 +71,10 @@ if("CUDA" IN_LIST LANGUAGES)
 
     # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
     #    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
+    # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
+    #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=shared>)
+    # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
+    #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
 
     add_user_flags(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda "CUDA")
 
@@ -92,12 +100,6 @@ if("CUDA" IN_LIST LANGUAGES)
 
     find_library(CUDA_dl_LIBRARY
         NAMES dl)
-
-    #target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
-    #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=shared>)
-
-    #target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
-    #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
 
     target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
         ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})

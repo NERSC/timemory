@@ -135,6 +135,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cuda
     timemory-nccl
     timemory-cupti
+    timemory-cudart
     timemory-cudart-device
     #
     timemory-papi

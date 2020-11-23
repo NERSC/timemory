@@ -24,8 +24,34 @@
 
 #include "timemory/components/roofline/extern.hpp"
 
-#if defined(TIMEMORY_USE_PAPI)
-template struct tim::component::cpu_roofline<float>;
-template struct tim::component::cpu_roofline<double>;
-template struct tim::component::cpu_roofline<float, double>;
+#if defined(TIMEMORY_USE_CUPTI)
+#    if defined(TIMEMORY_USE_CUDA_HALF)
+TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(
+    gpu_roofline_hp_flops, true,
+    std::tuple<typename ::tim::component::cupti_activity::value_type,
+               typename ::tim::component::cupti_counters::value_type>)
+#    endif
+TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(
+    gpu_roofline_sp_flops, true,
+    std::tuple<typename ::tim::component::cupti_activity::value_type,
+               typename ::tim::component::cupti_counters::value_type>)
+TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(
+    gpu_roofline_dp_flops, true,
+    std::tuple<typename ::tim::component::cupti_activity::value_type,
+               typename ::tim::component::cupti_counters::value_type>)
+TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(
+    gpu_roofline_flops, true,
+    std::tuple<typename ::tim::component::cupti_activity::value_type,
+               typename ::tim::component::cupti_counters::value_type>)
+#endif
+
+#if defined(TIMEMORY_USE_CUPTI)
+template struct tim::component::gpu_roofline<float>;
+template struct tim::component::gpu_roofline<double>;
+#    if defined(TIMEMORY_USE_CUDA_HALF)
+template struct tim::component::gpu_roofline<tim::cuda::fp16_t>;
+template struct tim::component::gpu_roofline<tim::cuda::fp16_t, float, double>;
+#    else
+template struct tim::component::gpu_roofline<float, double>;
+#    endif
 #endif

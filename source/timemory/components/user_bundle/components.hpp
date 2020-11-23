@@ -216,6 +216,8 @@ public:
     friend struct operation::record<this_type>;
     friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
+    friend struct operation::set_started<this_type>;
+    friend struct operation::set_stopped<this_type>;
 
     using start_func_t  = std::function<void*(const string_t&, scope::config)>;
     using stop_func_t   = std::function<void(void*)>;

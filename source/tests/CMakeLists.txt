@@ -446,6 +446,8 @@ if(TIMEMORY_USE_CUDA)
 endif()
 
 if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
+    set(cupti_tests_env
+        "TIMEMORY_CUPTI_ACTIVITY_LEVEL=2;TIMEMORY_TIMING_PRECISION=9;TIMEMORY_TIMING_UNITS=msec")
     add_library(cupti-compile-options INTERFACE)
     target_compile_options(cupti-compile-options INTERFACE
         $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
@@ -459,7 +461,9 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
                         timemory::timemory-cuda
                         timemory::timemory-cupti
                         timemory::timemory-plotting
-                        cupti-compile-options)
+                        cupti-compile-options
+                        ${_LIBRARY}
+        ENVIRONMENT     ${cupti_tests_env})
 
     # NVPERF library
     set(nvperf_valid_archs volta turing)
@@ -474,7 +478,8 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
                             timemory::timemory-cupti
                             timemory::timemory-plotting
                             timemory::timemory-cudart-device
-                            cupti-compile-options)
+                            cupti-compile-options
+                            ${_LIBRARY})
     endif()
 endif()
 
@@ -612,7 +617,8 @@ if(TARGET timemory::timemory-ncclp-library AND TARGET nccl_test_interface)
         SOURCES         nccl_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         nccl_test_interface
-                        timemory::timemory-ncclp-library)
+                        timemory::timemory-ncclp-library
+        ENVIRONMENT     "TIMEMORY_NCCLP_COMPONENTS=wall_clock")
 endif()
 
 if(TIMEMORY_BUILD_ERT)

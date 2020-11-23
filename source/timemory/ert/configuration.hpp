@@ -568,11 +568,12 @@ public:
         return _executed;
     }
 
-private:
+public:
     //----------------------------------------------------------------------------------//
     //
-    template <size_t Flops, enable_if_t<Flops == 1> = 0>
-    static bool execute_impl(counter_type& _counter, const std::string& _label)
+    template <size_t Flops>
+    static enable_if_t<Flops == 1, bool> execute_impl(counter_type&      _counter,
+                                                      const std::string& _label)
     {
         // functions
         auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b) { a = b; };
@@ -593,8 +594,9 @@ private:
 
     //----------------------------------------------------------------------------------//
     //
-    template <size_t Flops, enable_if_t<(Flops > 1)> = 0>
-    static bool execute_impl(counter_type& _counter, const std::string& _label)
+    template <size_t Flops>
+    static enable_if_t<(Flops > 1), bool> execute_impl(counter_type&      _counter,
+                                                       const std::string& _label)
     {
         // functions
         auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b) { a = b; };

@@ -88,6 +88,8 @@ struct cpu_roofline
     friend struct operation::record<this_type>;
     friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
+    friend struct operation::set_started<this_type>;
+    friend struct operation::set_stopped<this_type>;
 
     using unit_type         = typename trait::units<this_type>::type;
     using display_unit_type = typename trait::units<this_type>::display_type;

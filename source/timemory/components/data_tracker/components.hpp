@@ -99,6 +99,8 @@ struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
     friend struct operation::record<this_type>;
     friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
+    friend struct operation::set_started<this_type>;
+    friend struct operation::set_stopped<this_type>;
 
     static std::string& label()
     {
