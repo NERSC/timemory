@@ -269,11 +269,11 @@ public:
         {
             case NodeType::StartArray:
                 itsWriter.StartArray();
-                // fall through
+                [[gnu::fallthrough]];  // fall through
             case NodeType::InArray: itsWriter.EndArray(); break;
             case NodeType::StartObject:
                 itsWriter.StartObject();
-                // fall through
+                [[gnu::fallthrough]];  // fall through
             case NodeType::InObject: itsWriter.EndObject(); break;
         }
 
