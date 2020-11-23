@@ -11,6 +11,7 @@ unset(CMAKE_DEBUG_POSTFIX)
 set(_visibility timemory::timemory-default-visibility)
 set(CMAKE_CXX_CLANG_TIDY)
 set(CMAKE_UNITY_BUILD ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
 
@@ -29,10 +30,6 @@ function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
     set(_SUBDIR ${ARGN})
     if(_SUBDIR)
         set(_SUBDIR "/${_SUBDIR}")
-    endif()
-
-    if(WIN32)
-        target_compile_definitions(libpytimemory-interface INTERFACE TIMEMORY_USE_WINSOCK)
     endif()
 
     if(TIMEMORY_USE_CUDA)

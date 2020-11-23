@@ -933,6 +933,7 @@ PYBIND11_MODULE(libpytimemory, tim)
              "fix issue with unittest module)",
              py::arg("parser") = py::none{}, py::arg("subparser") = true);
 
+#if !defined(_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
     py::module _socket = tim.def_submodule("socket", "Socket communication API");
 
     using socket_manager_t = std::unique_ptr<tim::socket::manager>;
@@ -982,4 +983,5 @@ PYBIND11_MODULE(libpytimemory, tim)
                 py::arg("message"));
     _socket.def("listen", _socket_listen, "Listen on a socket (server)", py::arg("name"),
                 py::arg("port"), py::arg("max_packets") = 0);
+#endif
 }

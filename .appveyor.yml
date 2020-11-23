@@ -20,6 +20,7 @@ environment:
       CONFIG: Debug
       EXAMPLES: "ON"
       TOOLS: "OFF"
+      WINSOCK: "OFF"
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "ON"
@@ -30,6 +31,7 @@ environment:
       CONFIG: MinSizeRel
       EXAMPLES: "OFF"
       TOOLS: "ON"
+      WINSOCK: "OFF"
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "OFF"
@@ -40,6 +42,7 @@ environment:
       CONFIG: RelWithDebInfo
       EXAMPLES: "OFF"
       TOOLS: "OFF"
+      WINSOCK: "OFF"
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "OFF"
@@ -50,6 +53,7 @@ environment:
       CONFIG: Release
       EXAMPLES: "ON"
       TOOLS: "OFF"
+      WINSOCK: "ON"
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "ON"
@@ -123,6 +127,7 @@ build_script:
     -DTIMEMORY_BUILD_MINIMAL_TESTING="%BUILD_TESTING%"
     -DTIMEMORY_BUILD_TOOLS="%TOOLS%"
     -DTIMEMORY_BUILD_GOOGLE_TEST=OFF
+    -DTIMEMORY_USE_WINSOCK="%WINSOCK%"
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
   - cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
