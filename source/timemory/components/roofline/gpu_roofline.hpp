@@ -35,6 +35,7 @@
 
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/extern.hpp"
+#include "timemory/operations/types/init.hpp"
 
 #include <array>
 #include <cassert>
