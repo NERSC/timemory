@@ -565,6 +565,14 @@ def run_pyctest():
     # split and join with dashes
     pyct.BUILD_NAME = "-".join(pyct.BUILD_NAME.replace("/", "-").split())
 
+    pyct.BUILD_NAME = (
+        pyct.BUILD_NAME.replace("_LIBRARY", "")
+        .replace("COMPILER_INSTRUMENTATION", "COMP_INST")
+        .replace("TLS_MODEL_", "")
+        .replace("STATISTICS", "STATS")
+        .replace("KOKKOS-KOKKOS", "KOKKOS")
+    )
+
     # default options
     cmake_args = "-DCMAKE_BUILD_TYPE={} -DTIMEMORY_BUILD_EXAMPLES=ON".format(
         pyct.BUILD_TYPE
