@@ -320,10 +320,10 @@ public:
     static void global_init()
     {
         if(event_mode() == MODE::ACTIVITY)
-            operation::init<activity_type>(
+            operation::init<activity_type>{}(
                 operation::mode_constant<operation::init_mode::global>{});
         else
-            operation::init<counters_type>(
+            operation::init<counters_type>{}(
                 operation::mode_constant<operation::init_mode::global>{});
     }
 

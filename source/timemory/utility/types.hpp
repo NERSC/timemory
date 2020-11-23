@@ -96,6 +96,16 @@
 
 //======================================================================================//
 //
+#if !defined(TIMEMORY_DELETE_COPY_MOVE_OBJECT)
+#    define TIMEMORY_DELETE_COPY_MOVE_OBJECT(NAME)                                       \
+        NAME(const NAME&) = delete;                                                      \
+        NAME(NAME&&)      = delete;                                                      \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) = delete;
+#endif
+
+//======================================================================================//
+//
 #if !defined(TIMEMORY_DEFAULT_OBJECT)
 #    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
         NAME()                = default;                                                 \
