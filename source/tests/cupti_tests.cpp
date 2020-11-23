@@ -635,31 +635,8 @@ TEST_F(cupti_tests, roofline_counters)
 }
 
 //--------------------------------------------------------------------------------------//
-/*
-int
-main(int argc, char** argv)
+
+namespace
 {
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::scientific()   = false;
-    tim::settings::timing_units() = "msec";
-    tim::settings::precision()    = 6;
-    tim::settings::width()        = 12;
-    tim::settings::debug()        = false;
-    tim::settings::verbose()      = 0;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    return ret;
+static auto library_init = (tim::set_env("TIMEMORY_CUPTI_ACTIVITY_LEVEL", "2", 1), true);
 }
-*/
-//--------------------------------------------------------------------------------------//
-
-// TIMEMORY_INITIALIZE_STORAGE(cupti_activity, cupti_counters, gpu_roofline<float>)

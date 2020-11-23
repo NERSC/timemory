@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <omp.h>
@@ -109,7 +113,10 @@ compute_pi(uint64_t nstart, uint64_t nstop, double step, uint64_t nblock)
 //--------------------------------------------------------------------------------------//
 
 class ompt_handle_tests : public ::testing::Test
-{};
+{
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+};
 
 static std::atomic<int> thread_count;
 int&
@@ -210,23 +217,6 @@ TEST_F(ompt_handle_tests, init)
     EXPECT_EQ(idx, 1);
     idx = timemory_stop_ompt(idx);
     EXPECT_EQ(idx, 0);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    // _argc = argc;
-    // _argv = argv;
-
-    timemory_init_library(argc, argv);
-    auto ret = RUN_ALL_TESTS();
-    timemory_finalize_library();
-
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

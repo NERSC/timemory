@@ -118,7 +118,8 @@ TEST_F(INSTRUMENTATION_TESTS_NAME, random_entry)
     float              _i = 1.243f;
     std::generate(_v.begin(), _v.end(), [&_i]() { return _i * (_i + 1.43f); });
     auto _ret = details::random_entry(_v);
-    EXPECT_TRUE(_ret > 0);
+
+    EXPECT_TRUE(_ret > 0) << "ret = " << _ret;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -129,6 +130,12 @@ TEST_F(INSTRUMENTATION_TESTS_NAME, consume)
     auto _ret = details::consume(dist(get_rng()));
     EXPECT_TRUE(_ret >= 100);
     EXPECT_TRUE(_ret <= 1000);
+
+#if defined(TIMEMORY_USE_MPI)
+    long _recv = 0;
+    MPI_Allreduce(&_ret, &_recv, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_TRUE(_recv > 0) << "recv = " << _recv;
+#endif
 }
 
 //--------------------------------------------------------------------------------------//

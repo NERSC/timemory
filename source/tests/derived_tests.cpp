@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include "timemory/timemory.hpp"
@@ -35,9 +39,6 @@
 #include <vector>
 
 using namespace tim::component;
-
-static int    _argc = 0;
-static char** _argv = nullptr;
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
@@ -117,10 +118,12 @@ protected:
         tim::settings::dart_count()  = 1;
         tim::settings::banner()      = false;
         tim::enable_signal_detection();
+        metric().start();
     }
 
     static void TearDownTestSuite()
     {
+        metric().stop();
         tim::timemory_finalize();
         tim::dmp::finalize();
     }
@@ -327,17 +330,6 @@ TEST_F(derived_tests, cpu_util_hybrid_wc)
 
     ASSERT_FALSE(obj.get_component<cpu_util>()->is_derived());
     std::cout << '\n';
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

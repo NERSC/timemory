@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include "timemory/mpl/apply.hpp"
@@ -38,12 +42,25 @@ static const double epsilon = 1.1 * std::numeric_limits<double>::epsilon();
 
 //--------------------------------------------------------------------------------------//
 namespace details
-{}  // namespace details
+{
+//--------------------------------------------------------------------------------------//
+//  Get the current tests name
+//
+inline std::string
+get_test_name()
+{
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
+}
+}  // namespace details
 
 //--------------------------------------------------------------------------------------//
 
 class apply_tests : public ::testing::Test
-{};
+{
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -96,30 +113,6 @@ TEST_F(apply_tests, traits)
     EXPECT_FALSE(std::get<CpuUtilIdx>(check));
     EXPECT_TRUE(std::get<PeakRssIdx>(check));
     EXPECT_FALSE(std::get<AlwaysOffIdx>(check));
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

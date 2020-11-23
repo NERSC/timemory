@@ -2,6 +2,8 @@
 #
 # NOTE: The attach mode may not work if system permissions are disabled.
 #
+source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
+
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
 rm -rf ${TIMEMORY_OUTPUT_PATH}

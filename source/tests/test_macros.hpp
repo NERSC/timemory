@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(TIMEMORY_TEST_NO_METRIC)
+#    include "timemory/timemory.hpp"
+#endif
+
 #include "gtest/gtest.h"
 
 #include <chrono>
@@ -38,6 +42,32 @@ using mutex_t        = std::mutex;
 using lock_t         = std::unique_lock<mutex_t>;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
+
+namespace
+{
+#if !defined(TIMEMORY_TEST_NO_METRIC)
+static inline auto&
+metric()
+{
+    static tim::component_tuple<tim::component::wall_clock, tim::component::peak_rss>
+        _instance{ ::testing::UnitTest::GetInstance()->current_test_suite()->name(),
+                   tim::scope::flat{} };
+    return _instance;
+}
+#else
+struct dummy
+{
+    void start() {}
+    void stop() {}
+};
+static inline auto&
+metric()
+{
+    static dummy _instance{};
+    return _instance;
+}
+#endif
+}  // namespace
 
 #define TIMEMORY_TEST_ARGS                                                               \
     static int    _argc = 0;                                                             \
@@ -70,6 +100,7 @@ protected:                                                                      
         tim::settings::dart_count()  = 1;                                                \
         tim::settings::banner()      = false;                                            \
         __VA_ARGS__;                                                                     \
+        metric().start();                                                                \
     }
 
 #define TIMEMORY_TEST_DEFAULT_SUITE_SETUP TIMEMORY_TEST_SUITE_SETUP({})
@@ -78,6 +109,7 @@ protected:                                                                      
 protected:                                                                               \
     static void TearDownTestSuite()                                                      \
     {                                                                                    \
+        metric().stop();                                                                 \
         __VA_ARGS__;                                                                     \
         tim::timemory_finalize();                                                        \
         tim::dmp::finalize();                                                            \

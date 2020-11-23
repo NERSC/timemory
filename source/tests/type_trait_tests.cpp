@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <chrono>
@@ -33,9 +37,6 @@
 #include <vector>
 
 #include "timemory/timemory.hpp"
-
-static int    _argc = 0;
-static char** _argv = nullptr;
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
@@ -103,23 +104,7 @@ random_entry(const std::vector<Tp>& v)
 class type_trait_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
-    {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                   = true;
-            tim::settings::verbose()     = 0;
-            tim::settings::debug()       = false;
-            tim::settings::json_output() = true;
-            tim::settings::mpi_thread()  = false;
-            tim::dmp::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
-        }
-    }
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
 };
 
 //--------------------------------------------------------------------------------------//
@@ -297,22 +282,6 @@ TEST_F(type_trait_tests, is_comp_wrapper)
     TEST_FALSE_TRAIT(concepts::is_comp_wrapper, auto_list<wall_clock>)
     TEST_TRUE_TRAIT(concepts::is_comp_wrapper, lightweight_tuple<wall_clock>)
     puts("");
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

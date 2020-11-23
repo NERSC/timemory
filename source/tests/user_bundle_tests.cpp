@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include "timemory/components/user_bundle/overloads.hpp"
@@ -111,6 +115,9 @@ consume(long n)
 class user_bundle_tests : public ::testing::Test
 {
 protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+
     void SetUp() override
     {
         wc_size_orig = tim::storage<wall_clock>::instance()->size();
@@ -607,29 +614,6 @@ TEST_F(user_bundle_tests, laps)
 
     EXPECT_EQ(wc_data.back().data().get_laps(), 10) << "data: " << wc_data.back().data();
     EXPECT_EQ(cc_data.back().data().get_laps(), 10) << "data: " << cc_data.back().data();
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = false;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

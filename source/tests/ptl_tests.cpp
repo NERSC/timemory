@@ -133,10 +133,13 @@ protected:
         manager.Initialize(tim::get_env<uint64_t>("NUM_THREADS", 4));
         std::cout << "Done" << std::endl;
         tim::threading::affinity::set();
+
+        metric().start();
     }
 
     static void TearDownTestSuite()
     {
+        metric().stop();
         auto& manager = get_manager();
 
         std::cout << "finalizing..." << std::endl;

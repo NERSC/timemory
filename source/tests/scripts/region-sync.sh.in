@@ -2,6 +2,8 @@
 #
 # NOTE: remove '--mpi' after @PROJECT_BINARY_DIR@/timemory-run if applications built without MPI
 #
+source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
+
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-trace-output
 rm -rf ${TIMEMORY_OUTPUT_PATH}
@@ -27,8 +29,8 @@ rm -rf ${TIMEMORY_OUTPUT_PATH}
 TRACE_OUTPUT=$(cat @CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-trace-output/*.txt | grep '>>>')
 REGION_OUTPUT=$(cat @CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-region-output/*.txt | grep '>>>')
 
-NTRACE=$(echo ${TRACE_OUTPUT} | wc -l)
-NREGION=$(echo ${REGION_OUTPUT} | wc -l)
+NTRACE=$(count-lines @CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-trace-output/*.txt)
+NREGION=$(count-lines @CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-region-output/*.txt)
 
 if [ "${NTRACE}" -lt 3 ]; then
     echo -e "Trace output was only ${NTRACE} lines (< 3)\n"
@@ -50,3 +52,6 @@ if [ "${NREGION}" -le "${NTRACE}" ]; then
     echo -e "${TRACE_OUTPUT}"
     exit -1
 fi
+
+echo -e "Instrumentation... Done"
+exit 0

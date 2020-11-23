@@ -658,12 +658,11 @@ if(TIMEMORY_USE_DYNINST)
     endif()
 
     set(TEST_ENVIRON)
-    list(APPEND TEST_ENVIRON "TIMEMORY_TRACE_COMPONENTS=\"wall_clock\"")
-    list(APPEND TEST_ENVIRON "TIMEMORY_GLOBAL_COMPONENTS=\"wall_clock,cpu_clock\"")
+    list(APPEND TEST_ENVIRON "TIMEMORY_TRACE_COMPONENTS=wall_clock")
+    list(APPEND TEST_ENVIRON "TIMEMORY_GLOBAL_COMPONENTS=wall_clock:cpu_clock")
 
     set(_scripts
         # attach-process
-        # binary-rewrite-mpip
         binary-rewrite-regex
         binary-rewrite-stubs
         binary-rewrite
@@ -671,8 +670,16 @@ if(TIMEMORY_USE_DYNINST)
         # launch-process
         region-sync)
 
+    if(TIMEMORY_USE_MPI AND TIMEMORY_USE_GOTCHA)
+        list(APPEND _scripts binary-rewrite-mpip)
+    endif()
+
     set(COMMAND
         ${CMAKE_CURRENT_BINARY_DIR}/dynamic_instrument_tests)
+
+    configure_file(
+        ${CMAKE_CURRENT_LIST_DIR}/scripts/common.sh.in
+        ${CMAKE_CURRENT_BINARY_DIR}/common.sh @ONLY)
 
     foreach(_file ${_scripts})
         set(TEST_NAME dynamic_instrument_tests-${_file})

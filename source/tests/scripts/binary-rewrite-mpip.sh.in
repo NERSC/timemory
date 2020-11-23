@@ -2,15 +2,38 @@
 #
 # NOTE: remove '--mpi --mpip' after @PROJECT_BINARY_DIR@/timemory-run if application built without MPI
 #
+source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
+
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
 rm -rf ${TIMEMORY_OUTPUT_PATH}
 
+export TIMEMORY_OUTPUT_PREFIX="orig-"
+
+# no instrumentation
+@MPIEXEC_EXECUTABLE@ -n 2 @COMMAND@
+
 # add path to libtimemory to LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 
+export TIMEMORY_OUTPUT_PREFIX="mpip-"
+
 # add mpi and mpip instrumentation
-@PROJECT_BINARY_DIR@/timemory-run --mpip -o @COMMAND@.inst -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run --mpip -o @COMMAND@.inst -I 'agasdf' -- @COMMAND@
 
 # run the application
-@LAUNCH@ @COMMAND@.inst
+@MPIEXEC_EXECUTABLE@ -n 2 @LAUNCH@ @COMMAND@.inst
+
+NORIG=$(count-lines ${TIMEMORY_OUTPUT_PATH}/orig-*.txt)
+NMPIP=$(count-lines ${TIMEMORY_OUTPUT_PATH}/mpip-*.txt)
+
+if [ "${NMPIP}" -le "${NORIG}" ]; then
+    echo -e "Orig output line count: ${NORIG}"
+    echo -e "MPIP output line count: ${NMPIP}"
+    echo -e "MPIP should be > Orig"
+    echo -e "\nOrig:\n"
+    echo -e "$(cat ${TIMEMORY_OUTPUT_PATH}/orig-*.txt | grep '>>>')"
+    echo -e "\nMPIP:\n"
+    echo -e "$(cat ${TIMEMORY_OUTPUT_PATH}/mpip-*.txt | grep '>>>')"
+    exit 1
+fi

@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <chrono>
@@ -33,9 +37,6 @@
 #include <vector>
 
 #include "timemory/timemory.hpp"
-
-static int    _argc = 0;
-static char** _argv = nullptr;
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
@@ -153,6 +154,8 @@ protected:
         tim::settings::dart_output() = true;
         tim::settings::dart_count()  = 1;
         tim::settings::banner()      = false;
+
+        metric().start();
         std::vector<std::thread> threads;
         for(uint64_t i = 0; i < 2; ++i)
             threads.emplace_back(std::thread(details::generate_history, 5, 2));
@@ -163,6 +166,7 @@ protected:
 
     static void TearDownTestSuite()
     {
+        metric().stop();
         tim::timemory_finalize();
         tim::dmp::finalize();
         std::cout << "Finalized" << std::endl;
@@ -349,17 +353,6 @@ TEST_F(archive_storage_tests, check_archive)
         EXPECT_NE(f_results["mpi_archive_hierarchy"], f_results["dmp_archive_hierarchy"]);
         EXPECT_NE(f_results["upc_archive_hierarchy"], f_results["dmp_archive_hierarchy"]);
     }
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

@@ -26,6 +26,10 @@
 #    undef DEBUG
 #endif
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include "timemory/timemory.hpp"
@@ -182,10 +186,7 @@ KERNEL_B(T* arr, int size, tim::cuda::stream_t stream = 0)
 class cupti_profiler_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
-    {
-        // cuptiKernelReplaySubscribeUpdate(&record_kernel, nullptr);
-    }
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
 };
 
 //--------------------------------------------------------------------------------------//
@@ -331,32 +332,6 @@ TEST_F(cupti_profiler_tests, nested)
     tim::device::gpu::free(data);
     tim::cuda::device_sync();
     num_iter /= 2;
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::scientific()   = false;
-    tim::settings::timing_units() = "msec";
-    tim::settings::precision()    = 6;
-    tim::settings::width()        = 12;
-    tim::settings::debug()        = false;
-    tim::settings::verbose()      = 0;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

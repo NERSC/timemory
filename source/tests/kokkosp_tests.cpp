@@ -109,9 +109,14 @@ protected:
         kokkosp_init_library(0, 0, 0, nullptr);
         tim::settings::dart_output() = true;
         tim::settings::dart_count()  = 1;
+        metric().start();
     }
 
-    static void TearDownTestSuite() { kokkosp_finalize_library(); }
+    static void TearDownTestSuite()
+    {
+        metric().stop();
+        kokkosp_finalize_library();
+    }
 };
 
 //--------------------------------------------------------------------------------------//

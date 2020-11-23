@@ -23,6 +23,10 @@
 // SOFTWARE.
 //
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gotcha_tests_lib.hpp"
 
 #include "gtest/gtest.h"
@@ -69,8 +73,6 @@ using vector_t = std::vector<Tp>;
 static constexpr int64_t nitr      = 100000;
 static const double      tolerance = 1.0e-2;
 
-static int    _argc = 0;
-static char** _argv = nullptr;
 namespace details
 {
 //--------------------------------------------------------------------------------------//
@@ -211,10 +213,12 @@ protected:
         cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
         cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
 #endif
+        metric().start();
     }
 
     static void TearDownTestSuite()
     {
+        metric().stop();
         tim::timemory_finalize();
         tim::manager::master_instance().reset();
         tim::dmp::finalize();
@@ -907,17 +911,6 @@ TEST_F(gotcha_tests, mpip)
 }
 
 #endif
-
-//======================================================================================//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-    return RUN_ALL_TESTS();
-}
 
 //======================================================================================//
 
