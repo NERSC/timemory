@@ -218,8 +218,11 @@ component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _lo
 template <typename Tag, typename... Types>
 component_bundle<Tag, Types...>::~component_bundle()
 {
-    if(m_is_active())
-        stop();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_stop>::value)
+    {
+        if(m_is_active())
+            stop();
+    }
     DEBUG_PRINT_HERE("%s", "deleting components");
     invoke::destroy<Tag>(m_data);
 }

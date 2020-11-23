@@ -150,9 +150,18 @@ public:
     static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
-    //----------------------------------------------------------------------------------//
-    //
+public:
     static initializer_type& get_initializer();
+
+public:
+    template <typename T, typename... U>
+    struct quirk_config
+    {
+        static constexpr bool value =
+            is_one_of<T, type_list<Types..., U...>>::value ||
+            is_one_of<T,
+                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
+    };
 
 public:
     component_list();

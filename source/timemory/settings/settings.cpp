@@ -814,17 +814,20 @@ settings::initialize_roofline()
         "Configure the roofline collection mode. Options: 'op' 'ai'.", "op",
         strvector_t({ "--timemory-roofline-mode" }), 1, 1, strvector_t({ "op", "ai" }));
 
-    TIMEMORY_SETTINGS_MEMBER_IMPL(
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, cpu_roofline_mode, "TIMEMORY_ROOFLINE_MODE_CPU",
-        "Configure the roofline collection mode for CPU specifically. Options: 'op' "
-        "'ai'",
-        static_cast<tsettings<string_t>*>(m_data["TIMEMORY_ROOFLINE_MODE"].get())->get());
+        "Configure the roofline collection mode for CPU specifically. Options: 'op', "
+        "'ai', 'mp'",
+        "mp", strvector_t({ "--timemory-cpu-roofline-mode" }), 1, 1,
+        strvector_t({ "op", "ai", "mp" }));
 
-    TIMEMORY_SETTINGS_MEMBER_IMPL(
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, gpu_roofline_mode, "TIMEMORY_ROOFLINE_MODE_GPU",
         "Configure the roofline collection mode for GPU specifically. Options: 'op' "
         "'ai'.",
-        static_cast<tsettings<string_t>*>(m_data["TIMEMORY_ROOFLINE_MODE"].get())->get());
+        static_cast<tsettings<string_t>*>(m_data["TIMEMORY_ROOFLINE_MODE"].get())->get(),
+        strvector_t({ "--timemory-gpu-roofline-mode" }), 1, 1,
+        strvector_t({ "op", "ai" }));
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         string_t, cpu_roofline_events, "TIMEMORY_ROOFLINE_EVENTS_CPU",

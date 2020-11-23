@@ -142,11 +142,6 @@ public:
         ssval << std::boolalpha << _val;
         if(current_value)
         {
-            using Dp = std::decay_t<Tp>;
-            std::string dtype =
-                (std::is_same<Dp, std::string>::value) ? "string" : tim::demangle<Tp>();
-
-            current_entry->insert({ "data_type", dtype });
             *current_value = ssval.str();
         }
     }
@@ -161,9 +156,8 @@ private:
     array_type* output_stream  = nullptr;
     unique_set  exclude_stream = {};
     int_stack   name_counter;
-    unique_set  value_keys = {
-        "name", "value", "description", "count", "environ", "max_count", "cmdline",
-    };
+    unique_set  value_keys = { "name",    "value",     "description", "count",
+                              "environ", "max_count", "cmdline",     "data_type" };
 };
 
 //======================================================================================//

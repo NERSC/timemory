@@ -156,21 +156,25 @@ private:
             if(storage_type::is_finalizing())
             {
                 operation::plus<type>(targ, _obj);
-                operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
+                if(_storage)
+                    operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
                 operation::add_statistics<type>(_obj, stats);
             }
             else if(_obj.is_flat)
             {
                 operation::plus<type>(targ, _obj);
-                operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
+                if(_storage)
+                    operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
                 operation::add_statistics<type>(_obj, stats);
-                _storage->stack_pop(&_obj);
+                if(_storage)
+                    _storage->stack_pop(&_obj);
             }
             else
             {
-                auto _beg_depth = _storage->depth();
+                auto _beg_depth = (_storage) ? _storage->depth() : 0;
                 operation::plus<type>(targ, _obj);
-                operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
+                if(_storage)
+                    operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
                 operation::add_statistics<type>(_obj, stats);
                 if(_storage)
                 {

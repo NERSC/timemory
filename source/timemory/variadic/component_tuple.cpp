@@ -145,8 +145,11 @@ component_tuple<Types...>::component_tuple(size_t _hash, const bool& _store,
 template <typename... Types>
 component_tuple<Types...>::~component_tuple()
 {
-    if(m_is_active())
-        stop();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_stop>::value)
+    {
+        if(m_is_active())
+            stop();
+    }
 }
 
 //--------------------------------------------------------------------------------------//

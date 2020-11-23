@@ -67,16 +67,20 @@ component_list<Types...>::component_list()
 template <typename... Types>
 template <typename FuncT>
 component_list<Types...>::component_list(const string_t& _key, const bool& _store,
-                                         scope::config _scope, const FuncT& _func)
-: bundle_type((settings::enabled()) ? add_hash_id(_key) : 0, _store, _scope)
+                                         scope::config _scope, const FuncT& _init_func)
+: bundle_type((settings::enabled()) ? add_hash_id(_key) : 0, _store,
+              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
+                                     quirk_config<quirk::timeline_scope>::value,
+                                     quirk_config<quirk::tree_scope>::value))
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        _func(*this);
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope(m_data, m_scope);
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -86,16 +90,20 @@ template <typename... Types>
 template <typename FuncT>
 component_list<Types...>::component_list(const captured_location_t& _loc,
                                          const bool& _store, scope::config _scope,
-                                         const FuncT& _func)
-: bundle_type(_loc.get_hash(), _store, _scope)
+                                         const FuncT& _init_func)
+: bundle_type(_loc.get_hash(), _store,
+              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
+                                     quirk_config<quirk::timeline_scope>::value,
+                                     quirk_config<quirk::tree_scope>::value))
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        _func(*this);
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
         set_prefix(_loc.get_hash());
         invoke::set_scope(m_data, m_scope);
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -104,16 +112,20 @@ component_list<Types...>::component_list(const captured_location_t& _loc,
 template <typename... Types>
 template <typename FuncT>
 component_list<Types...>::component_list(size_t _hash, const bool& _store,
-                                         scope::config _scope, const FuncT& _func)
-: bundle_type(_hash, _store, _scope)
+                                         scope::config _scope, const FuncT& _init_func)
+: bundle_type(_hash, _store,
+              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
+                                     quirk_config<quirk::timeline_scope>::value,
+                                     quirk_config<quirk::tree_scope>::value))
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        _func(*this);
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
         set_prefix(_hash);
         invoke::set_scope(m_data, m_scope);
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -122,8 +134,11 @@ component_list<Types...>::component_list(size_t _hash, const bool& _store,
 template <typename... Types>
 component_list<Types...>::~component_list()
 {
-    if(m_is_active())
-        stop();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_stop>::value)
+    {
+        if(m_is_active())
+            stop();
+    }
     // DEBUG_PRINT_HERE("%s", "deleting components");
     apply_v::access<operation_t<operation::generic_deleter>>(m_data);
 }

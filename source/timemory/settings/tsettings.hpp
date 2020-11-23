@@ -142,12 +142,15 @@ struct tsettings : public vsettings
               enable_if_t<!std::is_reference<Up>::value> = 0>
     void save(Archive& ar, const unsigned int) const
     {
+        std::string _dtype =
+            (std::is_same<Tp, std::string>::value) ? "string" : demangle<Tp>();
         ar(cereal::make_nvp("name", m_name));
         ar(cereal::make_nvp("environ", m_env_name));
         ar(cereal::make_nvp("description", m_description));
         ar(cereal::make_nvp("count", m_count));
         ar(cereal::make_nvp("max_count", m_max_count));
         ar(cereal::make_nvp("cmdline", m_cmdline));
+        ar(cereal::make_nvp("data_type", _dtype));
         ar(cereal::make_nvp("value", m_value));
     }
 
@@ -156,12 +159,14 @@ struct tsettings : public vsettings
     {
         try
         {
+            std::string _dtype = "";
             ar(cereal::make_nvp("name", m_name));
             ar(cereal::make_nvp("environ", m_env_name));
             ar(cereal::make_nvp("description", m_description));
             ar(cereal::make_nvp("count", m_count));
             ar(cereal::make_nvp("max_count", m_max_count));
             ar(cereal::make_nvp("cmdline", m_cmdline));
+            ar(cereal::make_nvp("data_type", _dtype));
         } catch(...)
         {}
         ar(cereal::make_nvp("value", m_value));

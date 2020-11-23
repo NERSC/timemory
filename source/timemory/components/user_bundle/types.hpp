@@ -267,3 +267,23 @@ TIMEMORY_METADATA_SPECIALIZATION(
     "Generic bundle for inserting components at runtime around NCCL calls",
     "Configure via TIMEMORY_NCCLP_COMPONENTS [environment], "
     "settings::ncclp_components() [string], or direct insertion")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_profiler_bundle, "user_profiler_bundle",
+    "Generic bundle for inserting components at runtime around calls when profiling (via "
+    "Python)",
+    "Configure via TIMEMORY_PROFILER_COMPONENTS [environment], "
+    "settings::profiler_components() [string], or direct insertion")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_trace_bundle, "user_trace_bundle",
+    "Generic bundle for inserting components at runtime around calls when tracing (via "
+    "Python or Dyninst)",
+    "Configure via TIMEMORY_TRACE_COMPONENTS [environment], "
+    "settings::trace_components() [string], or direct insertion")
+//
+TIMEMORY_METADATA_SPECIALIZATION(
+    user_kokkosp_bundle, "user_kokkosp_bundle",
+    "Generic bundle for inserting components into Kokkos profiling API",
+    "Configure via TIMEMORY_KOKKOS_COMPONENTS [environment], "
+    "settings::kokkos_components() [string], or direct insertion")
