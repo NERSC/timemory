@@ -93,7 +93,7 @@ target_link_libraries(${LIB_TARGET} PUBLIC
 target_link_libraries(${LIB_TARGET} PRIVATE
     timemory::timemory-dmp
     timemory::timemory-headers
-    timemory::timemory-external-static
+    timemory::timemory-external-shared
     timemory::timemory-compile-options
     timemory::timemory-hidden-visibility
     timemory::timemory-compiler-instrument-compile-options
