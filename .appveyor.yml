@@ -53,7 +53,7 @@ environment:
       CONFIG: Release
       EXAMPLES: "ON"
       TOOLS: "OFF"
-      WINSOCK: "ON"
+      WINSOCK: "OFF"
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "ON"

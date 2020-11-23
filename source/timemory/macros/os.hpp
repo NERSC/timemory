@@ -91,7 +91,7 @@
 #        define WIN32
 #    endif
 #    if defined(TIMEMORY_USE_WINSOCK)
-#        include <WinSock.h>
+#        include <WinSock2.h>
 #    endif
 #    include <Windows.h>
 #endif
