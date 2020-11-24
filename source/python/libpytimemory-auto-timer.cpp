@@ -36,7 +36,7 @@
 using namespace tim::component;
 
 using auto_timer_t = typename tim::auto_timer::type;
-using tim_timer_t  = typename auto_timer_t::component_type;
+using tim_timer_t  = typename tim::auto_timer::component_type;
 
 //======================================================================================//
 //

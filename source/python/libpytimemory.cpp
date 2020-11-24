@@ -475,7 +475,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         return manager_t::get_storage<tim::available_types_t>::size(_types);
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json_classic = [](const pytim::pyenum_set_t& _types) {
+    auto _as_json_classic = [](const pytim::pyenum_set_t& _types) -> std::string {
         using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
         auto json_str    = manager_t::get_storage<tuple_type>::serialize(_types);
         if(tim::settings::debug())
@@ -483,7 +483,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         return json_str;
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json_hierarchy = [](const pytim::pyenum_set_t& _types) {
+    auto _as_json_hierarchy = [](const pytim::pyenum_set_t& _types) -> std::string {
         std::stringstream ss;
         {
             using policy_type = tim::policy::output_archive_t<tim::manager>;
@@ -767,21 +767,27 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     tim.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
-    tim.def("toggle", [](bool on) { tim::settings::enabled() = on; },
-            "Enable/disable timemory", py::arg("on") = true);
+    tim.def(
+        "toggle", [](bool on) { tim::settings::enabled() = on; },
+        "Enable/disable timemory", py::arg("on") = true);
     //----------------------------------------------------------------------------------//
-    tim.def("enable", []() { tim::settings::enabled() = true; }, "Enable timemory");
+    tim.def(
+        "enable", []() { tim::settings::enabled() = true; }, "Enable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def("disable", []() { tim::settings::enabled() = false; }, "Disable timemory");
+    tim.def(
+        "disable", []() { tim::settings::enabled() = false; }, "Disable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def("is_enabled", []() { return tim::settings::enabled(); },
-            "Return if timemory is enabled or disabled");
+    tim.def(
+        "is_enabled", []() { return tim::settings::enabled(); },
+        "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def("enabled", []() { return tim::settings::enabled(); },
-            "Return if timemory is enabled or disabled");
+    tim.def(
+        "enabled", []() { return tim::settings::enabled(); },
+        "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def("has_mpi_support", []() { return tim::mpi::is_supported(); },
-            "Return if the timemory library has MPI support");
+    tim.def(
+        "has_mpi_support", []() { return tim::mpi::is_supported(); },
+        "Return if the timemory library has MPI support");
     //----------------------------------------------------------------------------------//
     tim.def("set_rusage_children", set_rusage_child,
             "Set the rusage to record child processes");
