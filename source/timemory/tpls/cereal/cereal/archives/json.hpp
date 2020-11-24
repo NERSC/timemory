@@ -76,7 +76,7 @@ struct RapidJSONException : Exception
 #if !defined(TIMEMORY_CEREAL_FALLTHROUGH)
 #    if __cplusplus > 201402L  // C++17
 #        define TIMEMORY_CEREAL_FALLTHROUGH [[fallthrough]]
-#    elif defined(__GNUC__) && (__GNUC__ >= 7)
+#    elif defined(__GNUC__) && (__GNUC__ >= 7) && !defined(__clang__)
 #        define TIMEMORY_CEREAL_FALLTHROUGH [[gnu::fallthrough]]
 #    else
 #        define TIMEMORY_CEREAL_FALLTHROUGH
