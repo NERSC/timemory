@@ -228,12 +228,12 @@
         template <>                                                                      \
         struct properties<TYPE> : static_properties<TYPE>                                \
         {                                                                                \
-            using type                         = TYPE;                                   \
-            using value_type                   = TIMEMORY_COMPONENT;                     \
-            static constexpr value_type  value = ENUM;                                   \
-            static constexpr const char* enum_string() { return #ENUM; }                 \
-            static constexpr const char* id() { return ID; }                             \
-            static const idset_t&        ids()                                           \
+            using type                        = TYPE;                                    \
+            using value_type                  = TIMEMORY_COMPONENT;                      \
+            static constexpr value_type value = ENUM;                                    \
+            static const char*          enum_string() { return #ENUM; }                  \
+            static const char*          id() { return ID; }                              \
+            static const idset_t&       ids()                                            \
             {                                                                            \
                 static auto _instance = []() {                                           \
                     auto _val = idset_t{ ID, __VA_ARGS__ };                              \
@@ -246,11 +246,10 @@
             template <typename Archive>                                                  \
             void save(Archive& ar, const unsigned int) const                             \
             {                                                                            \
-                std::string           _enum = enum_string();                             \
-                std::string           _id   = id();                                      \
-                std::set<std::string> _ids  = ids();                                     \
-                ar(cereal::make_nvp("value", ENUM), cereal::make_nvp("enum", _enum),     \
-                   cereal::make_nvp("id", _id), cereal::make_nvp("ids", _ids));          \
+                ar(cereal::make_nvp("value", ENUM),                                      \
+                   cereal::make_nvp("enum", std::string{ enum_string() }),               \
+                   cereal::make_nvp("id", std::string{ id() }),                          \
+                   cereal::make_nvp("ids", ids()));                                      \
             }                                                                            \
             template <typename Archive>                                                  \
             void load(Archive&, const unsigned int)                                      \

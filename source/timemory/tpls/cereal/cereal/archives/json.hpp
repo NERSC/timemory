@@ -267,13 +267,9 @@ public:
         // We'll also end any object/arrays we happen to be in
         switch(itsNodeStack.top())
         {
-            case NodeType::StartArray:
-                itsWriter.StartArray();
-                [[gnu::fallthrough]];  // fall through
+            case NodeType::StartArray: itsWriter.StartArray(); [[gnu::fallthrough]];
             case NodeType::InArray: itsWriter.EndArray(); break;
-            case NodeType::StartObject:
-                itsWriter.StartObject();
-                [[gnu::fallthrough]];  // fall through
+            case NodeType::StartObject: itsWriter.StartObject(); [[gnu::fallthrough]];
             case NodeType::InObject: itsWriter.EndObject(); break;
         }
 

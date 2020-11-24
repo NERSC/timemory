@@ -154,9 +154,8 @@ allocate()
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
           typename FuncT = std::function<Vp(Vp)>>
 inline void
-print_info(
-    const Tp& obj, const Up& expected, const string_t& unit,
-    FuncT _func = [](const Vp& _obj) { return _obj; })
+print_info(const Tp& obj, const Up& expected, const string_t& unit,
+           FuncT _func = [](const Vp& _obj) { return _obj; })
 {
     std::cout << std::endl;
     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;

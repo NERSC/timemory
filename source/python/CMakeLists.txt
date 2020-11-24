@@ -5,6 +5,9 @@
 #
 ##########################################################################################
 
+include(ProcessorCount)
+ProcessorCount(NCPU)
+
 # if set, will screw up loading library
 unset(CMAKE_DEBUG_POSTFIX)
 
@@ -14,6 +17,11 @@ set(CMAKE_UNITY_BUILD ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
+if(NOT NCPU GREATER 2)
+  set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
+else()
+  set(CMAKE_UNITY_BUILD_BATCH_SIZE 4)
+endif()
 
 if(TIMEMORY_BUILD_PYTHON_HIDDEN)
     set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
