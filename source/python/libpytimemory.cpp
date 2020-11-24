@@ -767,27 +767,21 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     tim.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
-    tim.def(
-        "toggle", [](bool on) { tim::settings::enabled() = on; },
-        "Enable/disable timemory", py::arg("on") = true);
+    tim.def("toggle", [](bool on) { tim::settings::enabled() = on; },
+            "Enable/disable timemory", py::arg("on") = true);
     //----------------------------------------------------------------------------------//
-    tim.def(
-        "enable", []() { tim::settings::enabled() = true; }, "Enable timemory");
+    tim.def("enable", []() { tim::settings::enabled() = true; }, "Enable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def(
-        "disable", []() { tim::settings::enabled() = false; }, "Disable timemory");
+    tim.def("disable", []() { tim::settings::enabled() = false; }, "Disable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def(
-        "is_enabled", []() { return tim::settings::enabled(); },
-        "Return if timemory is enabled or disabled");
+    tim.def("is_enabled", []() { return tim::settings::enabled(); },
+            "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def(
-        "enabled", []() { return tim::settings::enabled(); },
-        "Return if timemory is enabled or disabled");
+    tim.def("enabled", []() { return tim::settings::enabled(); },
+            "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def(
-        "has_mpi_support", []() { return tim::mpi::is_supported(); },
-        "Return if the timemory library has MPI support");
+    tim.def("has_mpi_support", []() { return tim::mpi::is_supported(); },
+            "Return if the timemory library has MPI support");
     //----------------------------------------------------------------------------------//
     tim.def("set_rusage_children", set_rusage_child,
             "Set the rusage to record child processes");

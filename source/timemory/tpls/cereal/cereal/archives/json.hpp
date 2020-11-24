@@ -73,6 +73,16 @@ struct RapidJSONException : Exception
         kParseFullPrecisionFlag | kParseNanAndInfFlag
 #endif
 
+#if !defined(TIMEMORY_CEREAL_FALLTHROUGH)
+#    if __cplusplus > 201402L  // C++17
+#        define TIMEMORY_CEREAL_FALLTHROUGH [[fallthrough]]
+#    elif defined(__GNUC__) && (__GNUC__ >= 7)
+#        define TIMEMORY_CEREAL_FALLTHROUGH [[gnu::fallthrough]]
+#    else
+#        define TIMEMORY_CEREAL_FALLTHROUGH
+#    endif
+#endif
+
 #include "timemory/tpls/cereal/cereal/external/base64.hpp"
 #include "timemory/tpls/cereal/cereal/external/rapidjson/document.h"
 #include "timemory/tpls/cereal/cereal/external/rapidjson/istreamwrapper.h"
@@ -267,9 +277,13 @@ public:
         // We'll also end any object/arrays we happen to be in
         switch(itsNodeStack.top())
         {
-            case NodeType::StartArray: itsWriter.StartArray(); [[gnu::fallthrough]];
+            case NodeType::StartArray:
+                itsWriter.StartArray();
+                TIMEMORY_CEREAL_FALLTHROUGH;
             case NodeType::InArray: itsWriter.EndArray(); break;
-            case NodeType::StartObject: itsWriter.StartObject(); [[gnu::fallthrough]];
+            case NodeType::StartObject:
+                itsWriter.StartObject();
+                TIMEMORY_CEREAL_FALLTHROUGH;
             case NodeType::InObject: itsWriter.EndObject(); break;
         }
 

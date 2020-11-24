@@ -104,6 +104,7 @@ private:
     friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
+    friend struct operation::fini_storage<Tp>;
     friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
@@ -394,6 +395,7 @@ private:
     friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
+    friend struct operation::fini_storage<Tp>;
     friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
@@ -509,6 +511,7 @@ private:
     friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
+    friend struct operation::fini_storage<Tp>;
     friend struct operation::cache<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;

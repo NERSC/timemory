@@ -34,19 +34,40 @@
 
 #if !defined(_WINDOWS)
 
+#    include <array>
+#    include <functional>
 #    include <pthread.h>
 
 using namespace tim::component;
 
 //--------------------------------------------------------------------------------------//
 
+extern "C"
+{
+    TIMEMORY_WEAK_PREFIX
+    bool timemory_enable_pthread_gotcha_wrapper() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
+
+    bool timemory_enable_pthread_gotcha_wrapper()
+    {
+        return tim::get_env("TIMEMORY_ENABLE_PTHREAD_GOTCHA_WRAPPER", false);
+    };
+}
+
+//--------------------------------------------------------------------------------------//
+
 struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
 {
     template <size_t... Idx>
-    static auto init_storage(tim::index_sequence<Idx...>)
+    static auto get_storage(tim::index_sequence<Idx...>)
     {
-        std::array<tim::storage_initializer, sizeof...(Idx)> _data;
-        TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
+        // array of finalization functions
+        std::array<std::function<void()>, sizeof...(Idx)> _data{};
+        // initialize the storage in the thread
+        TIMEMORY_FOLD_EXPRESSION(tim::storage_initializer::get<Idx>());
+        // generate a function for finalizing
+        TIMEMORY_FOLD_EXPRESSION(get_storage_impl<Idx>(_data));
+        // return the array of finalization functions
         return _data;
     }
 
@@ -68,13 +89,21 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
             if(!_arg)
                 return nullptr;
 
-            // create the manager and initialize the storage
-            static thread_local auto _tlm = tim::manager::instance();
-            auto _ini = init_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
-            tim::consume_parameters(_tlm, _ini);
-            // execute the original function
+            // convert the argument
             wrapper* _wrapper = static_cast<wrapper*>(_arg);
-            return (*_wrapper)();
+            // create the manager and initialize the storage
+            auto _tlm = tim::manager::instance();
+            assert(_tlm.get() != nullptr);
+            // initialize the storage
+            auto _final =
+                get_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+            // execute the original function
+            auto _ret = (*_wrapper)();
+            // finalize
+            for(auto& itr : _final)
+                itr();
+            // return the data
+            return _ret;
         }
 
     private:
@@ -86,24 +115,17 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
     int operator()(pthread_t* thread, const pthread_attr_t* attr,
                    void* (*start_routine)(void*), void*     arg)
     {
-        // tim::trace::lock<tim::trace::threading> lk{};
-        // if(!lk)
-        //    return;
-        PRINT_HERE("%s", "wrapping pthread_create");
-        auto  _obj  = wrapper(start_routine, arg);
-        void* _vobj = static_cast<void*>(&_obj);
-        return pthread_create(thread, attr, &wrapper::wrap, _vobj);
+        auto* _obj = new wrapper(start_routine, arg);
+        return pthread_create(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
     }
 
-    // pthread_join
-    int operator()(pthread_t thread, void** retval)
+private:
+    template <size_t Idx, size_t N>
+    static void get_storage_impl(std::array<std::function<void()>, N>& _data)
     {
-        // tim::trace::lock<tim::trace::threading> lk{};
-        // if(!lk)
-        //    return;
-        PRINT_HERE("%s", "wrapping pthread_join");
-        tim::manager::instance()->finalize();
-        return pthread_join(thread, retval);
+        _data[Idx] = []() {
+            tim::operation::fini_storage<tim::component::enumerator_t<Idx>>{};
+        };
     }
 };
 
@@ -111,19 +133,21 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
 
 using empty_tuple_t    = tim::component_tuple<>;
 using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
-using pthread_bundle_t = tim::component_tuple<pthread_gotcha_t>;
+using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
 
 //--------------------------------------------------------------------------------------//
 
 auto
 setup_pthread_gotcha()
 {
+    if(timemory_enable_pthread_gotcha_wrapper())
+    {
 #    if defined(TIMEMORY_USE_GOTCHA)
-    pthread_gotcha_t::get_initializer() = []() {
-        TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
-        TIMEMORY_C_GOTCHA(pthread_gotcha_t, 1, pthread_join);
-    };
+        pthread_gotcha_t::get_initializer() = []() {
+            TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
+        };
 #    endif
+    }
     return std::make_shared<pthread_bundle_t>("pthread");
 }
 

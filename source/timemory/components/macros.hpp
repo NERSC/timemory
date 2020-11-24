@@ -456,6 +456,7 @@
         namespace operation                                                              \
         {                                                                                \
         extern template struct init_storage<COMPONENT_NAME>;                             \
+        extern template struct fini_storage<COMPONENT_NAME>;                             \
         extern template struct push_node<COMPONENT_NAME>;                                \
         extern template struct pop_node<COMPONENT_NAME>;                                 \
         extern template struct set_prefix<COMPONENT_NAME>;                               \
@@ -514,6 +515,7 @@
         namespace operation                                                              \
         {                                                                                \
         template struct init_storage<COMPONENT_NAME>;                                    \
+        template struct fini_storage<COMPONENT_NAME>;                                    \
         template struct push_node<COMPONENT_NAME>;                                       \
         template struct pop_node<COMPONENT_NAME>;                                        \
         template struct set_prefix<COMPONENT_NAME>;                                      \
