@@ -507,7 +507,19 @@ def run_pyctest():
 
     pyct.set(
         "CTEST_CUSTOM_COVERAGE_EXCLUDE",
-        "/usr/.*;.*external/.*;.*examples/.*;.*source/tests/.*;.*source/tools/.*;.*source/python/.*",
+        ";".join(
+            [
+                "/usr/.*",
+                ".*external/.*",
+                ".*examples/.*",
+                ".*source/tests/.*",
+                ".*source/tools/.*",
+                ".*source/python/.*",
+                ".*source/timemory/tpls/.*",
+                ".*/signals.hpp",
+                ".*/popen.cpp",
+            ]
+        ),
     )
     pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_ERRORS", "100")
     pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS", "100")
@@ -552,6 +564,14 @@ def run_pyctest():
 
     # split and join with dashes
     pyct.BUILD_NAME = "-".join(pyct.BUILD_NAME.replace("/", "-").split())
+
+    pyct.BUILD_NAME = (
+        pyct.BUILD_NAME.replace("_LIBRARY", "")
+        .replace("COMPILER_INSTRUMENTATION", "COMP_INST")
+        .replace("TLS_MODEL_", "")
+        .replace("STATISTICS", "STATS")
+        .replace("KOKKOS-KOKKOS", "KOKKOS")
+    )
 
     # default options
     cmake_args = "-DCMAKE_BUILD_TYPE={} -DTIMEMORY_BUILD_EXAMPLES=ON".format(
@@ -1325,7 +1345,9 @@ def run_pyctest():
     pyct.generate_config(pyct.BINARY_DIRECTORY)
     pyct.generate_test_file(os.path.join(pyct.BINARY_DIRECTORY, "tests"))
     if not args.generate:
-        pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
+        ret = pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
+        if ret is not None and ret is False:
+            sys.exit(1)
         if args.coverage:
             script = os.path.join(
                 pyct.SOURCE_DIRECTORY, "scripts", "submit-coverage.sh"

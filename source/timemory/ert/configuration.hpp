@@ -289,20 +289,14 @@ struct executor
     using ert_data_t         = exec_data<CounterT>;
 
 public:
+    TIMEMORY_DEFAULT_OBJECT(executor)
+
     //----------------------------------------------------------------------------------//
     //  standard invocation with no callback specialization
     //
     executor(configuration_type& config, std::shared_ptr<ert_data_t> _data)
     {
-        try
-        {
-            auto _counter = config.executor(_data);
-            callback(_counter);
-        } catch(std::exception& e)
-        {
-            std::cerr << "\n\nEXCEPTION:\n";
-            std::cerr << "\t" << e.what() << "\n\n" << std::endl;
-        }
+        (*this)(config, _data);
     }
 
     //----------------------------------------------------------------------------------//
@@ -312,16 +306,32 @@ public:
     executor(configuration_type& config, std::shared_ptr<ert_data_t> _data,
              FuncT&& _counter_callback)
     {
+        (*this)(config, _data, std::forward<FuncT>(_counter_callback));
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  execute
+    //
+    template <typename FuncT = std::function<void(uint64_t, counter_type&)>>
+    auto operator()(configuration_type& config, std::shared_ptr<ert_data_t> _data = {},
+                    FuncT&& _counter_callback = FuncT{})
+    {
+        std::function<void(uint64_t, counter_type&)> _cb =
+            std::forward<FuncT>(_counter_callback);
         try
         {
+            if(!_data)
+                _data.reset(new ert_data_t);
             auto _counter = config.executor(_data);
-            _counter.set_callback(std::forward<FuncT>(_counter_callback));
+            if(_cb)
+                _counter.set_callback(std::move(_cb));
             callback(_counter);
         } catch(std::exception& e)
         {
             std::cerr << "\n\nEXCEPTION:\n";
             std::cerr << "\t" << e.what() << "\n\n" << std::endl;
         }
+        return _data;
     }
 
 public:
@@ -352,9 +362,8 @@ public:
 
         // functions
         auto store_func = [](Tp& a, const Tp& b) { a = b; };
-        // auto mult_func  = [](Tp& a, const Tp& b, const Tp& c) { a = b * c; };
-        auto add_func = [](Tp& a, const Tp& b, const Tp& c) { a = b + c; };
-        auto fma_func = [](Tp& a, const Tp& b, const Tp& c) { a = a * b + c; };
+        auto add_func   = [](Tp& a, const Tp& b, const Tp& c) { a = b + c; };
+        auto fma_func   = [](Tp& a, const Tp& b, const Tp& c) { a = a * b + c; };
 
         // set bytes per element
         _counter.bytes_per_element = sizeof(Tp);
@@ -367,15 +376,62 @@ public:
         ops_main<1>(_counter, add_func, store_func);
 
         // set the label
-        // _counter.label = "vector_mult";
-        // run the kernels
-        // ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, mult_func, store_func);
-
-        // set the label
         _counter.label = "vector_fma";
         // run the kernels
-        ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, fma_func, store_func);
-        ops_main<TIMEMORY_USER_ERT_FLOPS>(_counter, fma_func, store_func);
+        if(!ops_main<TIMEMORY_USER_ERT_FLOPS>(_counter, fma_func, store_func))
+            ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, fma_func, store_func);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // user specified flops as template parameters
+    template <size_t... Flops, enable_if_t<(sizeof...(Flops) > 0)> = 0>
+    static bool execute(counter_type&                             _counter,
+                        std::array<std::string, sizeof...(Flops)> _labels)
+    {
+        bool _executed = false;
+        auto itr       = _labels.begin();
+        TIMEMORY_FOLD_EXPRESSION(_executed |= execute_impl<Flops>(_counter, *(itr++)));
+        return _executed;
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //
+    template <size_t Flops, enable_if_t<Flops == 1> = 0>
+    static bool execute_impl(counter_type& _counter, const std::string& _label)
+    {
+        // functions
+        auto store_func = [](Tp& a, const Tp& b) { a = b; };
+        auto add_func   = [](Tp& a, const Tp& b, const Tp& c) { a = b + c; };
+
+        // set bytes per element
+        _counter.bytes_per_element = sizeof(Tp);
+        // set number of memory accesses per element from two functions
+        _counter.memory_accesses_per_element = 2;
+
+        // set the label
+        _counter.label = _label;
+        // run the kernels
+        return ops_main<Flops>(_counter, add_func, store_func);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <size_t Flops, enable_if_t<(Flops > 1)> = 0>
+    static bool execute_impl(counter_type& _counter, const std::string& _label)
+    {
+        // functions
+        auto store_func = [](Tp& a, const Tp& b) { a = b; };
+        auto fma_func   = [](Tp& a, const Tp& b, const Tp& c) { a = a * b + c; };
+
+        // set bytes per element
+        _counter.bytes_per_element = sizeof(Tp);
+        // set number of memory accesses per element from two functions
+        _counter.memory_accesses_per_element = 2;
+
+        // set the label
+        _counter.label = _label;
+        return ops_main<Flops>(_counter, fma_func, store_func);
     }
 };
 
@@ -400,20 +456,14 @@ struct executor<device::gpu, Tp, CounterT>
     using ert_data_t         = exec_data<CounterT>;
 
 public:
+    TIMEMORY_DEFAULT_OBJECT(executor)
+
     //----------------------------------------------------------------------------------//
     //  standard invocation with no callback specialization
     //
     executor(configuration_type& config, std::shared_ptr<ert_data_t> _data)
     {
-        try
-        {
-            auto _counter = config.executor(_data);
-            callback(_counter);
-        } catch(std::exception& e)
-        {
-            std::cerr << "\n\nEXCEPTION:\n";
-            std::cerr << "\t" << e.what() << "\n\n" << std::endl;
-        }
+        (*this)(config, _data);
     }
 
     //----------------------------------------------------------------------------------//
@@ -423,16 +473,32 @@ public:
     executor(configuration_type& config, std::shared_ptr<ert_data_t> _data,
              FuncT&& _counter_callback)
     {
+        (*this)(config, _data, std::forward<FuncT>(_counter_callback));
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  execute
+    //
+    template <typename FuncT = std::function<void(uint64_t, counter_type&)>>
+    auto operator()(configuration_type& config, std::shared_ptr<ert_data_t> _data = {},
+                    FuncT&& _counter_callback = FuncT{})
+    {
+        std::function<void(uint64_t, counter_type&)> _cb =
+            std::forward<FuncT>(_counter_callback);
         try
         {
+            if(!_data)
+                _data.reset(new ert_data_t);
             auto _counter = config.executor(_data);
-            _counter.set_callback(std::forward<FuncT>(_counter_callback));
+            if(_cb)
+                _counter.set_callback(std::move(_cb));
             callback(_counter);
         } catch(std::exception& e)
         {
             std::cerr << "\n\nEXCEPTION:\n";
             std::cerr << "\t" << e.what() << "\n\n" << std::endl;
         }
+        return _data;
     }
 
 public:
@@ -486,8 +552,66 @@ public:
         // set the label
         _counter.label = "vector_fma";
         // run the kernels
-        ops_main<4, 16, 64, 128, 256, 512>(_counter, fma_func, store_func);
-        ops_main<TIMEMORY_USER_ERT_FLOPS>(_counter, fma_func, store_func);
+        if(!ops_main<TIMEMORY_USER_ERT_FLOPS>(_counter, fma_func, store_func))
+            ops_main<4, 16, 64, 128, 256, 512>(_counter, fma_func, store_func);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // user specified flops as template parameters
+    template <size_t... Flops, enable_if_t<(sizeof...(Flops) > 0)> = 0>
+    static bool execute(counter_type&                             _counter,
+                        std::array<std::string, sizeof...(Flops)> _labels)
+    {
+        bool _executed = false;
+        auto itr       = _labels.begin();
+        TIMEMORY_FOLD_EXPRESSION(_executed |= execute_impl<Flops>(_counter, *(itr++)));
+        return _executed;
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    template <size_t Flops>
+    static enable_if_t<Flops == 1, bool> execute_impl(counter_type&      _counter,
+                                                      const std::string& _label)
+    {
+        // functions
+        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b) { a = b; };
+        auto add_func   = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
+            a = b + c;
+        };
+
+        // set bytes per element
+        _counter.bytes_per_element = sizeof(Tp);
+        // set number of memory accesses per element from two functions
+        _counter.memory_accesses_per_element = 2;
+
+        // set the label
+        _counter.label = _label;
+        // run the kernels
+        return ops_main<Flops>(_counter, add_func, store_func);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <size_t Flops>
+    static enable_if_t<(Flops > 1), bool> execute_impl(counter_type&      _counter,
+                                                       const std::string& _label)
+    {
+        // functions
+        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b) { a = b; };
+        auto fma_func   = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
+            a = a * b + c;
+        };
+
+        // set bytes per element
+        _counter.bytes_per_element = sizeof(Tp);
+        // set number of memory accesses per element from two functions
+        _counter.memory_accesses_per_element = 2;
+
+        // set the label
+        _counter.label = _label;
+        return ops_main<Flops>(_counter, fma_func, store_func);
     }
 };
 
@@ -519,11 +643,11 @@ template <typename DeviceT, typename CounterT, typename Tp, typename... Types,
 std::shared_ptr<DataType>
 execute(std::shared_ptr<DataType> _data = std::make_shared<DataType>())
 {
-    using _ConfigType = configuration<DeviceT, Tp, CounterT>;
-    using _ExecType   = executor<DeviceT, Tp, CounterT>;
+    using ConfigType = configuration<DeviceT, Tp, CounterT>;
+    using ExecType   = executor<DeviceT, Tp, CounterT>;
 
-    _ConfigType _config;
-    _ExecType(_config, _data);
+    ConfigType _config{};
+    ExecType(_config, _data);
 
     return _data;
 }

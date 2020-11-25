@@ -561,6 +561,10 @@ private:
 
     static void init()
     {
+        auto _manager = manager::instance();
+        if(!_manager || _manager->is_finalized() || _manager->is_finalizing())
+            return;
+
         auto _init_cb = tim::get_env<bool>("TIMEMORY_CUPTI_INIT_CB", true);
         cupti::init_driver();
         if(_init_cb)

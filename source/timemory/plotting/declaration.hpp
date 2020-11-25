@@ -75,9 +75,8 @@ join(const char* sep, Arg&& arg, Args&&... args)
 {
     std::stringstream ss;
     ss << std::forward<Arg>(arg);
-    auto tmp =
-        ::std::initializer_list<int>{ (ss << sep << std::forward<Args>(args), 0)... };
-    tim::consume_parameters(tmp);
+    tim::consume_parameters(
+        ::std::initializer_list<int>{ (ss << sep << std::forward<Args>(args), 0)... });
     return ss.str();
 }
 //

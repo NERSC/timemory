@@ -49,12 +49,6 @@ namespace component
 //======================================================================================//
 //
 template <typename Tp, typename Value>
-base<Tp, Value>::base()
-{}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
 void
 base<Tp, Value>::reset()
 {
@@ -126,17 +120,6 @@ base<Tp, Value>::set_stopped()
         is_transient = true;
         is_running   = false;
     }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-Tp
-base<Tp, Value>::dummy()
-{
-    state_t::has_storage() = true;
-    Type _fake{};
-    return _fake;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -293,8 +276,8 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::plus_oper(const Tp& rhs)
 {
-    math::plus(value, rhs.value);
-    math::plus(accum, rhs.accum);
+    value = value_compute_type::plus(value, rhs.value);
+    accum = accum_compute_type::plus(accum, rhs.accum);
     return static_cast<Type&>(*this);
 }
 //
@@ -304,8 +287,8 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::minus_oper(const Tp& rhs)
 {
-    math::minus(value, rhs.value);
-    math::minus(accum, rhs.accum);
+    value = value_compute_type::minus(value, rhs.value);
+    accum = accum_compute_type::minus(accum, rhs.accum);
     return static_cast<Type&>(*this);
 }
 //
@@ -315,8 +298,8 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::multiply_oper(const Tp& rhs)
 {
-    math::multiply(value, rhs.value);
-    math::multiply(accum, rhs.accum);
+    value = value_compute_type::multiply(value, rhs.value);
+    accum = accum_compute_type::multiply(accum, rhs.accum);
     return static_cast<Type&>(*this);
 }
 //
@@ -326,8 +309,8 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::divide_oper(const Tp& rhs)
 {
-    math::divide(value, rhs.value);
-    math::divide(accum, rhs.accum);
+    value = value_compute_type::divide(value, rhs.value);
+    accum = accum_compute_type::divide(accum, rhs.accum);
     return static_cast<Type&>(*this);
 }
 //
@@ -341,8 +324,8 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::plus_oper(const Value& rhs)
 {
-    math::plus(value, rhs);
-    math::plus(accum, rhs);
+    value = value_compute_type::plus(value, rhs);
+    accum = accum_compute_type::plus(accum, rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -352,8 +335,8 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::minus_oper(const Value& rhs)
 {
-    math::minus(value, rhs);
-    math::minus(accum, rhs);
+    value = value_compute_type::minus(value, rhs);
+    accum = accum_compute_type::minus(accum, rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -363,8 +346,8 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::multiply_oper(const Value& rhs)
 {
-    math::multiply(value, rhs);
-    math::multiply(accum, rhs);
+    value = value_compute_type::multiply(value, rhs);
+    accum = accum_compute_type::multiply(accum, rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -374,8 +357,8 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::divide_oper(const Value& rhs)
 {
-    math::divide(value, rhs);
-    math::divide(accum, rhs);
+    value = value_compute_type::divide(value, rhs);
+    accum = accum_compute_type::divide(accum, rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -423,15 +406,6 @@ operator/(const base<Tp, Value>& lhs, const base<Tp, Value>& rhs)
 //                              VOID BASE
 //
 //======================================================================================//
-//
-template <typename Tp>
-base<Tp, void>::base()
-: is_running(false)
-, is_on_stack(false)
-, is_transient(false)
-{}
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
 void

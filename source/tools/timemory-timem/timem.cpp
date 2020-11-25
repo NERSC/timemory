@@ -32,7 +32,7 @@ childpid_catcher(int);
 void
 parent_process(pid_t pid);
 void
-      child_process(int argc, char** argv) declare_attribute(noreturn);
+      child_process(int argc, char** argv) TIMEMORY_ATTRIBUTE(noreturn);
 pid_t read_pid(pid_t);
 static bool&
 timem_mpi_was_finalized();
@@ -144,17 +144,9 @@ main(int argc, char** argv)
     parser.add_argument({ "-e", "--events", "--papi-events" },
                         "Set the hardware counter events to record (ref: `timemory-avail "
                         "-H | grep PAPI`)");
-    parser
-        .add_argument(
-            { "--mpi" },
-            "Launch processes via MPI_Comm_spawn_multiple (reduced functionality)")
-        .count(0);
     parser.add_argument({ "--disable-papi" }, "Disable hardware counters")
         .count(0)
         .action([](parser_t&) { use_papi() = false; });
-    parser.add_argument({ "--disable-mpi" }, "Disable MPI_Finalize")
-        .count(0)
-        .action([](parser_t&) { timem_mpi_was_finalized() = true; });
     parser
         .add_argument(
             { "-o", "--output" },
@@ -162,12 +154,6 @@ main(int argc, char** argv)
             "such as those associated with timers, may report intermediate values (e.g. "
             "starting timestamps as number of \"seconds\")")
         .max_count(1);
-    parser
-        .add_argument({ "-i", "--indiv" },
-                      "Output individual results for each process (i.e. rank) instead of "
-                      "reporting the aggregation")
-        .count(0)
-        .action([](parser_t&) { tim::settings::collapse_processes() = false; });
     parser
         .add_argument({ "-s", "--shell" }, "Enable launching command via a shell command "
                                            "(if no arguments, $SHELL is used)")
@@ -183,6 +169,22 @@ main(int argc, char** argv)
                       "string as leading dashes can confuse parser) [default: -i]")
         .count(1)
         .action([](parser_t& p) { shell_flags() = p.get<std::string>("shell-flags"); });
+#if defined(TIMEMORY_USE_MPI)
+    parser
+        .add_argument(
+            { "--mpi" },
+            "Launch processes via MPI_Comm_spawn_multiple (reduced functionality)")
+        .count(0);
+    parser.add_argument({ "--disable-mpi" }, "Disable MPI_Finalize")
+        .count(0)
+        .action([](parser_t&) { timem_mpi_was_finalized() = true; });
+    parser
+        .add_argument({ "-i", "--indiv" },
+                      "Output individual results for each process (i.e. rank) instead of "
+                      "reporting the aggregation")
+        .count(0)
+        .action([](parser_t&) { tim::settings::collapse_processes() = false; });
+#endif
 
     auto _args = parser.parse_known_args(argc, argv);
     auto _argc = std::get<1>(_args);
@@ -200,14 +202,12 @@ main(int argc, char** argv)
     sample_delay() = std::max<double>(sample_delay(), 1.0e-6);
     sample_freq()  = std::min<double>(sample_freq(), 5000.);
 
+#if defined(TIMEMORY_USE_MPI)
     if(parser.exists("mpi"))
     {
-#if !defined(TIMEMORY_USE_MPI)
-        throw std::runtime_error("Error! timemory was not built with MPI support");
-#else
         use_mpi() = true;
-#endif
     }
+#endif
 
     if(parser.exists("events"))
     {
@@ -295,7 +295,6 @@ main(int argc, char** argv)
 
     using comm_t        = tim::mpi::comm_t;
     comm_t comm_world_v = tim::mpi::comm_world_v;
-    comm_t comm_child_v;
 
     if(!use_sample() || signal_types().empty())
     {
@@ -304,13 +303,15 @@ main(int argc, char** argv)
             false);
     }
 
+#if defined(TIMEMORY_USE_MPI)
+    comm_t comm_child_v;
+    //
     if(use_mpi())
     {
         tim::trait::apply<tim::trait::runtime_enabled>::set<
             child_user_clock, child_system_clock, child_cpu_clock, child_cpu_util,
             peak_rss, num_major_page_faults, num_minor_page_faults,
-            priority_context_switch, voluntary_context_switch, user_mode_time,
-            kernel_mode_time, papi_array_t>(false);
+            priority_context_switch, voluntary_context_switch, papi_array_t>(false);
 
         using info_t      = tim::mpi::info_t;
         using argvector_t = tim::argparse::argument_vector;
@@ -322,6 +323,11 @@ main(int argc, char** argv)
         {
             // append "timem" + "ory-pid" to form "timemory-pid"
             pidexe += "ory-pid";
+        }
+        else if(pidexe.substr(pidexe.find_last_of('/') + 1) == "timem-mpi")
+        {
+            // remove "-mpi" -> "timem" + "ory-pid" to form "timemory-pid"
+            pidexe = pidexe.substr(0, pidexe.length() - 4) + "ory-pid";
         }
         else
         {
@@ -386,6 +392,7 @@ main(int argc, char** argv)
             itr.clear();
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
     }
+#endif
     //
     //----------------------------------------------------------------------------------//
     CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");

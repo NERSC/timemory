@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/variadic/functional.hpp"
@@ -68,7 +72,10 @@ fibonacci(int32_t n)
 //--------------------------------------------------------------------------------------//
 
 class variadic_tests : public ::testing::Test
-{};
+{
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -344,30 +351,6 @@ TEST_F(variadic_tests, get)
     EXPECT_NEAR(std::get<0>(dl1), 1.0, 0.1);
     EXPECT_NEAR(std::get<0>(dl2), 1.0, 0.1);
     EXPECT_NEAR(std::get<0>(dl3), 1.0, 0.1);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

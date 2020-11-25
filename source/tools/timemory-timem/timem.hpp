@@ -279,9 +279,8 @@ struct start<component::papi_array_t>
 template <>
 struct stop<component::papi_array_t>
 {
-    using type       = papi_array_t;
-    using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
+    using type      = component::papi_array_t;
+    using base_type = typename type::base_type;
 
     template <typename... Args>
     explicit stop(base_type&, Args&&...)
@@ -289,6 +288,26 @@ struct stop<component::papi_array_t>
 };
 //
 #endif
+//
+template <>
+struct stop<component::page_rss>
+{
+    using type = component::page_rss;
+
+    template <typename... Args>
+    explicit stop(type&, Args&&...)
+    {}
+};
+//
+template <>
+struct stop<component::virtual_memory>
+{
+    using type = component::virtual_memory;
+
+    template <typename... Args>
+    explicit stop(type&, Args&&...)
+    {}
+};
 //
 }  // namespace operation
 //
@@ -530,8 +549,7 @@ using timem_tuple_t = convert_t<available_t<type_list<Types...>>, timem_tuple<>>
                            child_cpu_clock, child_cpu_util, peak_rss, page_rss,          \
                            virtual_memory, num_major_page_faults, num_minor_page_faults, \
                            priority_context_switch, voluntary_context_switch, read_char, \
-                           read_bytes, written_char, written_bytes, user_mode_time,      \
-                           kernel_mode_time, papi_array_t>
+                           read_bytes, written_char, written_bytes, papi_array_t>
 #endif
 //
 #if !defined(TIMEM_PID_SIGNAL)

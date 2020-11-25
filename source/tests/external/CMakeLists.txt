@@ -10,60 +10,33 @@ endif()
 
 add_executable(socket-server ${_EXCLUDE} server.cpp)
 add_executable(socket-client ${_EXCLUDE} client.cpp)
+add_library(extern-test-templates ${_EXCLUDE} SHARED extern_templates.cpp)
+add_library(gotcha-tests-lib ${_EXCLUDE} SHARED gotcha_tests_lib.hpp gotcha_tests_lib.cpp)
 
-target_link_libraries(socket-server PRIVATE
-    timemory::timemory-headers ${_LINK}
-    ${_ANALYSIS_TOOLS})
+target_include_directories(gotcha-tests-lib PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(socket-client PRIVATE
-    timemory::timemory-headers ${_LINK}
-    ${_ANALYSIS_TOOLS})
-
-add_library(extern-test-templates ${_EXCLUDE} SHARED
-    extern_templates.cpp)
-
-target_link_libraries(extern-test-templates PUBLIC
-    timemory::timemory-headers
-    timemory::timemory-compile-options
-    timemory::timemory-vector
-    timemory::timemory-core
-    ${_ANALYSIS_TOOLS})
-
-add_library(gotcha-tests-lib ${_EXCLUDE} SHARED
-    gotcha_tests_lib.hpp
-    gotcha_tests_lib.cpp)
-
-target_link_libraries(gotcha-tests-lib PUBLIC
-    timemory::timemory-compile-options
-    timemory::timemory-vector
-    timemory::timemory-core
-    ${_ANALYSIS_TOOLS})
-
-target_include_directories(gotcha-tests-lib PUBLIC
-    ${CMAKE_CURRENT_LIST_DIR})
+target_link_libraries(socket-server PRIVATE common-test-libs)
+target_link_libraries(socket-client PRIVATE common-test-libs)
+target_link_libraries(extern-test-templates PUBLIC common-test-libs)
+target_link_libraries(gotcha-tests-lib PUBLIC common-test-libs)
 
 if(NOT TIMEMORY_SKIP_BUILD AND TIMEMORY_BUILD_C)
-    set(_LINK
-        timemory::timemory-headers timemory::timemory-compile-options
-        timemory::timemory-develop-options timemory::timemory-plotting
-        timemory::timemory-analysis-tools)
-
     if(BUILD_SHARED_LIBS)
         add_library(custom-record-functions ${_EXCLUDE} SHARED
     	    custom_record_functions.cpp)
         target_link_libraries(custom-record-functions
             timemory::timemory-cxx-shared
             timemory::timemory-c-shared
-            ${_ANALYSIS_TOOLS}
-            ${_LINK})
+            timemory::timemory-plotting
+            common-test-libs)
     elseif(BUILD_STATIC_LIBS)
         add_library(custom-record-functions ${_EXCLUDE} STATIC
             custom_record_functions.cpp)
         target_link_libraries(custom-record-functions PUBLIC
             timemory::timemory-cxx-static
             timemory::timemory-c-static
-            ${_ANALYSIS_TOOLS}
-            ${_LINK})
+            timemory::timemory-plotting
+            common-test-libs)
     endif()
 endif()
 

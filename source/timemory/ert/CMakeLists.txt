@@ -3,6 +3,8 @@ if(NOT TIMEMORY_BUILD_ERT)
     return()
 endif()
 
+set(CMAKE_UNITY_BUILD OFF)
+
 file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 

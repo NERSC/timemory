@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <cassert>
@@ -47,9 +51,6 @@ using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 using auto_tuple_t =
     tim::auto_tuple_t<wall_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
                       process_cpu_util, peak_rss, page_rss>;
-
-static int    _argc = 0;
-static char** _argv = nullptr;
 
 //--------------------------------------------------------------------------------------//
 
@@ -132,10 +133,12 @@ protected:
         tim::settings::dart_count()         = 1;
         tim::settings::banner()             = false;
         tim::settings::collapse_processes() = false;
+        metric().start();
     }
 
     static void TearDownTestSuite()
     {
+        metric().stop();
         tim::timemory_finalize();
         tim::dmp::finalize();
     }
@@ -379,17 +382,6 @@ TEST_F(mpi_tests, per_thread)
     {
         EXPECT_EQ(tim::storage<page_rss>::instance()->get().size(), store_size);
     }
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

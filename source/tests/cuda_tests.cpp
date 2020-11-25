@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include "timemory/backends/device.hpp"
@@ -72,7 +76,10 @@ saxpy(int64_t n, float a, float* x, float* y)
 //--------------------------------------------------------------------------------------//
 
 class cuda_tests : public ::testing::Test
-{};
+{
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -280,31 +287,6 @@ TEST_F(cuda_tests, saxpy_streams)
     std::cout << bw << std::endl;
     std::cout << std::endl;
     ASSERT_NEAR(ce.get(), rc.get(), 1.0e-3);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::file_output()      = false;
-    tim::settings::cout_output()      = true;
-    tim::settings::json_output()      = false;
-    tim::settings::timing_precision() = 6;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

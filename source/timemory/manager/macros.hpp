@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/manager/macros.hpp
- * \brief Include the macros for manager
- */
-
 #pragma once
 
 #include "timemory/compat/macros.h"
@@ -38,9 +33,13 @@
 //
 #if defined(TIMEMORY_MANAGER_SOURCE)
 #    define TIMEMORY_MANAGER_LINKAGE(...) __VA_ARGS__
+#    define TIMEMORY_MANAGER_LINKAGE_API
 #elif defined(TIMEMORY_USE_MANAGER_EXTERN)
 #    define TIMEMORY_MANAGER_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_MANAGER_LINKAGE_API
 #else
-#    define TIMEMORY_MANGER_INLINE
+#    define TIMEMORY_MANAGER_INLINE
 #    define TIMEMORY_MANAGER_LINKAGE(...) inline __VA_ARGS__
+#    define TIMEMORY_MANAGER_LINKAGE_API inline
 #endif
+//

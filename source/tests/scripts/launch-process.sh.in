@@ -2,6 +2,8 @@
 #
 # NOTE: Applications built with MPI may abort when launched via @PROJECT_BINARY_DIR@/timemory-run
 #
+source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
+
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
 rm -rf ${TIMEMORY_OUTPUT_PATH}

@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <chrono>
@@ -40,9 +44,6 @@
 #include "nccl_test/broadcast.h"
 #include "nccl_test/reduce.h"
 #include "nccl_test/reduce_scatter.h"
-
-static int    _argc = 0;
-static char** _argv = nullptr;
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
@@ -124,26 +125,29 @@ get_size()
 class nccl_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
+    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+
+    virtual void SetUp() override
     {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                   = true;
-            tim::settings::verbose()     = 0;
-            tim::settings::debug()       = false;
-            tim::settings::json_output() = true;
-            tim::settings::mpi_thread()  = false;
-            tim::dmp::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output()      = true;
-            tim::settings::dart_count()       = 1;
-            tim::settings::banner()           = false;
-            tim::settings::ncclp_components() = "wall_clock";
-        }
+        tim::set_env("TIMEMORY_NCCLP_REJECT_LIST",
+                     "ncclGroupStart, ncclGroupEnd, ncclCommCuDevice, ncclCommUserRank",
+                     0);
+        m_idx = timemory_start_ncclp();
+    }
+    virtual void TearDown() override { timemory_stop_ncclp(m_idx); }
+
+    static void ignore_warnings()
+    {
+        char fake[1];
+        wordSize(ncclInt8);
+        getHostHash("");
+        getHostName(fake, 0);
+        ncclstringtotype(fake);
+        ncclstringtoop(fake);
     }
 
-    void TearDown() override {}
+    uint64_t m_idx = 0;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -210,25 +214,6 @@ TEST_F(nccl_tests, reduce_scatter)
     auto end_sz = details::get_size();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(end_sz - beg_sz, 1);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-
-    tim::set_env("TIMEMORY_NCCLP_REJECT_LIST",
-                 "ncclGroupStart, ncclGroupEnd, ncclCommCuDevice, ncclCommUserRank", 0);
-    timemory_register_ncclp();
-    auto ret = RUN_ALL_TESTS();
-    timemory_deregister_ncclp();
-
-    tim::timemory_finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -649,7 +649,9 @@ public:
     template <typename... T, typename... Args>
     auto initialize(Args&&... args)
     {
-        return TIMEMORY_FOLD_EXPANSION(bool, this->init<T>(std::forward<Args>(args)...));
+        constexpr auto N = sizeof...(T);
+        return TIMEMORY_FOLD_EXPANSION(bool, N,
+                                       this->init<T>(std::forward<Args>(args)...));
     }
 
     /// delete any optional types currently allocated

@@ -37,7 +37,6 @@
 #include "timemory/compat/library.h"
 #include "timemory/timemory.hpp"
 
-#include <deque>
 #include <iostream>
 #include <unordered_map>
 #include <vector>

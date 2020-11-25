@@ -46,9 +46,11 @@ endif()
 # add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
 add_library(test-opt-flags INTERFACE)
 string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
-target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
-if(NOT TIMEMORY_USE_ARCH)
-  add_target_flag_if_avail(test-opt-flags "-march=native")
+if(NOT TIMEMORY_USE_COVERAGE)
+    target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
+    if(NOT TIMEMORY_USE_ARCH)
+        add_target_flag_if_avail(test-opt-flags "-march=native")
+    endif()
 endif()
 
 # Debug flags
@@ -70,7 +72,15 @@ target_link_libraries(common-test-libs INTERFACE
     timemory::timemory-headers
     timemory::timemory-compile-options
     timemory::timemory-develop-options
-    timemory::timemory-analysis-tools)
+    timemory::timemory-analysis-tools
+    timemory::timemory-vector)
+
+if(TIMEMORY_USE_COVERAGE)
+    # ensures all usage updates coverage
+    target_link_libraries(common-test-libs INTERFACE
+        ${_LIBRARY_TARGET}
+        timemory::timemory-extensions)
+endif()
 
 set(HYBRID_COMPONENTS )
 
@@ -105,27 +115,52 @@ set(ENV{TIMEMORY_ENABLED} OFF)
 
 add_subdirectory(external)
 
+set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON")
+
 if(TARGET timemory::timemory-compiler-instrument-shared)
     add_timemory_google_test(compiler_instrument_shared_tests
         SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  timemory::timemory-compiler-instrument-shared
-                        timemory::timemory-headers
-                        test-opt-flags)
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-shared
+        ENVIRONMENT     ${compiler_instr_env})
+    #
+    add_timemory_google_test(compiler_instrument_mt_shared_tests
+        SOURCES         instrumentation_tests.cpp
+        DEFINITIONS     ENABLE_MT
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-shared
+        ENVIRONMENT     ${compiler_instr_env})
 endif()
 
 if(TARGET timemory::timemory-compiler-instrument-static)
     add_timemory_google_test(compiler_instrument_static_tests
         SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  timemory::timemory-compiler-instrument-static
-                        timemory::timemory-headers
-                        test-opt-flags)
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-static
+        ENVIRONMENT     ${compiler_instr_env})
+    #
+    add_timemory_google_test(compiler_instrument_mt_static_tests
+        SOURCES         instrumentation_tests.cpp
+        DEFINITIONS     ENABLE_MT
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-static
+        ENVIRONMENT     ${compiler_instr_env})
 endif()
 
 if(TARGET custom-record-functions)
     add_timemory_google_test(library_tests
         DISCOVER_TESTS
         SOURCES         library_tests.cpp
-        LINK_LIBRARIES  custom-record-functions
+        LINK_LIBRARIES  common-test-libs
+                        custom-record-functions
                         timemory::timemory-core)
 endif()
 
@@ -139,7 +174,8 @@ if(_LIBRARY_TARGET)
         MPI
         NPROC           4
         SOURCES         trace_tests.cpp
-        LINK_LIBRARIES  ${_LIBRARY_TARGET}
+        LINK_LIBRARIES  common-test-libs
+                        ${_LIBRARY_TARGET}
                         timemory::timemory-dmp
                         timemory::timemory-plotting
                         timemory::timemory-mpip-library
@@ -149,7 +185,8 @@ if(_LIBRARY_TARGET)
     add_timemory_google_test(throttle_tests
         DISCOVER_TESTS
         SOURCES         throttle_tests.cpp
-        LINK_LIBRARIES  ${_LIBRARY_TARGET})
+        LINK_LIBRARIES  common-test-libs
+                        ${_LIBRARY_TARGET})
 endif()
 
 add_timemory_google_test(api_tests
@@ -157,7 +194,7 @@ add_timemory_google_test(api_tests
     SOURCES         api_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
-                    timemory::timemory-timing-component)
+                    ${_LIBRARY})
 
 add_timemory_google_test(type_trait_tests
     DISCOVER_TESTS
@@ -182,7 +219,7 @@ add_timemory_google_test(settings_tests
     SOURCES         settings_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
-                    timemory::timemory-config)
+                    ${_LIBRARY})
 
 add_timemory_google_test(argparse_tests
     SOURCES         argparse_tests.cpp
@@ -246,8 +283,7 @@ add_timemory_google_test(cache_tests
     SOURCES         cache_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
-                    timemory::timemory-timing-component
-                    timemory::timemory-rusage-component)
+                    ${_LIBRARY})
 
 add_timemory_google_test(archive_storage_tests
     SOURCES         archive_storage_tests.cpp
@@ -410,6 +446,8 @@ if(TIMEMORY_USE_CUDA)
 endif()
 
 if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
+    set(cupti_tests_env
+        "TIMEMORY_CUPTI_ACTIVITY_LEVEL=2;TIMEMORY_TIMING_PRECISION=9;TIMEMORY_TIMING_UNITS=msec")
     add_library(cupti-compile-options INTERFACE)
     target_compile_options(cupti-compile-options INTERFACE
         $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
@@ -423,8 +461,9 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
                         timemory::timemory-cuda
                         timemory::timemory-cupti
                         timemory::timemory-plotting
-                        # timemory::timemory-cudart-device
-                        cupti-compile-options)
+                        cupti-compile-options
+                        ${_LIBRARY}
+        ENVIRONMENT     ${cupti_tests_env})
 
     # NVPERF library
     set(nvperf_valid_archs volta turing)
@@ -439,7 +478,8 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
                             timemory::timemory-cupti
                             timemory::timemory-plotting
                             timemory::timemory-cudart-device
-                            cupti-compile-options)
+                            cupti-compile-options
+                            ${_LIBRARY})
     endif()
 endif()
 
@@ -477,14 +517,10 @@ if(TIMEMORY_USE_GOTCHA)
     add_timemory_google_test(gotcha_tests
         DISCOVER_TESTS
         SOURCES         gotcha_tests.cpp
-        LINK_LIBRARIES  common-test-libs
-                        gotcha-tests-lib
-                        timemory::timemory-gotcha
-                        timemory::timemory-dmp
-                        timemory::timemory-vector
-                        timemory::timemory-arch
+        LINK_LIBRARIES  gotcha-tests-lib
+                        timemory::timemory-headers
+                        timemory::timemory-analysis-tools
                         timemory::timemory-plotting
-                        timemory::timemory-core
                         ${_LIBRARY})
 endif()
 
@@ -571,14 +607,26 @@ if(_OMPT_TARGET AND _OPENMP)
     add_timemory_google_test(ompt_handle_tests
         DISCOVER_TESTS
         SOURCES         ompt_handle_tests.cpp
-        LINK_LIBRARIES  ${_OMPT_TARGET} ${_OPENMP})
+        LINK_LIBRARIES  common-test-libs
+                        ${_OMPT_TARGET}
+                        ${_OPENMP})
 endif()
 
 if(TARGET timemory::timemory-ncclp-library AND TARGET nccl_test_interface)
     add_timemory_google_test(nccl_tests
         SOURCES         nccl_tests.cpp
-        LINK_LIBRARIES  nccl_test_interface
-                        timemory::timemory-ncclp-library)
+        LINK_LIBRARIES  common-test-libs
+                        nccl_test_interface
+                        timemory::timemory-ncclp-library
+        ENVIRONMENT     "TIMEMORY_NCCLP_COMPONENTS=wall_clock")
+endif()
+
+if(TIMEMORY_BUILD_ERT)
+    add_timemory_google_test(ert_tests
+        SOURCES         ert_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-ert
+                        ${_LIBRARY})
 endif()
 
 if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
@@ -595,6 +643,7 @@ if(TIMEMORY_USE_DYNINST)
 
     add_executable(dynamic_instrument_tests instrumentation_tests.cpp)
     target_link_libraries(dynamic_instrument_tests
+        common-test-libs
         ${_LIBRARY_TARGET}
         timemory-google-test
         google-test-debug-options)
@@ -609,12 +658,11 @@ if(TIMEMORY_USE_DYNINST)
     endif()
 
     set(TEST_ENVIRON)
-    list(APPEND TEST_ENVIRON "TIMEMORY_TRACE_COMPONENTS='wall_clock'")
-    list(APPEND TEST_ENVIRON "TIMEMORY_GLOBAL_COMPONENTS='wall_clock,cpu_clock'")
+    list(APPEND TEST_ENVIRON "TIMEMORY_TRACE_COMPONENTS=wall_clock")
+    list(APPEND TEST_ENVIRON "TIMEMORY_GLOBAL_COMPONENTS=wall_clock:cpu_clock")
 
     set(_scripts
         # attach-process
-        # binary-rewrite-mpip
         binary-rewrite-regex
         binary-rewrite-stubs
         binary-rewrite
@@ -622,8 +670,16 @@ if(TIMEMORY_USE_DYNINST)
         # launch-process
         region-sync)
 
+    if(TIMEMORY_USE_MPI AND TIMEMORY_USE_GOTCHA)
+        list(APPEND _scripts binary-rewrite-mpip)
+    endif()
+
     set(COMMAND
         ${CMAKE_CURRENT_BINARY_DIR}/dynamic_instrument_tests)
+
+    configure_file(
+        ${CMAKE_CURRENT_LIST_DIR}/scripts/common.sh.in
+        ${CMAKE_CURRENT_BINARY_DIR}/common.sh @ONLY)
 
     foreach(_file ${_scripts})
         set(TEST_NAME dynamic_instrument_tests-${_file})

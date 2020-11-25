@@ -4,6 +4,8 @@ if(WIN32)
     return()
 endif()
 
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #
@@ -13,16 +15,10 @@ if(NOT TIMEMORY_BUILD_TIMEM)
     set(_OPTIONAL OPTIONAL)
 endif()
 
-set(_STATIC_LIB)
-foreach(_TARG core timing-component rusage-component)
-    if(TARGET timemory::timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
-        list(APPEND _STATIC_LIB timemory::timemory-${_TARG}-static)
-    endif()
-endforeach()
-
 add_library(timem-libexplain INTERFACE)
 
-add_option(TIMEMORY_BUILD_TOOLS_LIBEXPECT "Enable using libexpect to diagnose errors" OFF NO_FEATURE)
+add_option(TIMEMORY_BUILD_TOOLS_LIBEXPECT "Enable using libexpect to diagnose errors"
+    OFF NO_FEATURE)
 if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
 
     find_path(LIBEXPLAIN_INCLUDE_DIR
@@ -47,6 +43,7 @@ add_executable(timem ${_EXCLUDE} timem.cpp timem.hpp)
 
 target_link_libraries(timem PRIVATE
     timemory::timemory-compile-options
+    timemory::timemory-develop-options
     timemory::timemory-threading
     timemory::timemory-headers
     timemory::timemory-arch
@@ -73,13 +70,13 @@ add_executable(timem-mpi ${_EXCLUDE} timem.cpp timem.hpp)
 
 target_link_libraries(timem-mpi PRIVATE
     timemory::timemory-compile-options
+    timemory::timemory-develop-options
     timemory::timemory-threading
     timemory::timemory-headers
     timemory::timemory-arch
     timemory::timemory-papi
     timemory::timemory-mpi
-    timem-libexplain
-    ${_STATIC_LIB})
+    timem-libexplain)
 
 add_target_flag_if_avail(timem-mpi "-g")
 

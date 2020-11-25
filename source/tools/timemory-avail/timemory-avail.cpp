@@ -58,6 +58,7 @@ bool     all_info     = false;
 bool     force_brief  = false;
 int      padding      = 4;
 string_t regex_key    = "";
+bool     regex_hl     = false;
 
 //--------------------------------------------------------------------------------------//
 
@@ -227,6 +228,37 @@ banner(IntArrayT _breaks, std::array<bool, N> _use, char filler = '-', char deli
 
 //--------------------------------------------------------------------------------------//
 
+bool
+not_filtered(const std::string& line)
+{
+    bool _display = regex_key.empty();
+    if(!_display)
+    {
+        const auto _rc = regex_const::egrep | regex_const::optimize;
+        const auto _re = std::regex(regex_key, _rc);
+        _display       = std::regex_search(line, _re);
+    }
+    return _display;
+}
+
+//--------------------------------------------------------------------------------------//
+
+std::string
+hl_filtered(std::string line)
+{
+#if defined(_UNIX)
+    if(regex_hl)
+    {
+        const auto _rc = regex_const::egrep | regex_const::optimize;
+        const auto _re = std::regex(regex_key, _rc);
+        line           = std::regex_replace(line, _re, "\33[01;04;36;40m$&\33[0m");
+    }
+#endif
+    return line;
+}
+
+//--------------------------------------------------------------------------------------//
+
 static constexpr size_t num_component_options  = 6;
 static constexpr size_t num_settings_options   = 3;
 static constexpr size_t num_hw_counter_options = 5;
@@ -290,7 +322,8 @@ main(int argc, char** argv)
 
     std::string file = "";
 
-    tim::argparse::argument_parser parser("timemory-avail");
+    using parser_t = tim::argparse::argument_parser;
+    parser_t parser("timemory-avail");
 
     parser.enable_help();
     parser.add_argument({ "-a", "--all" }, "Print all available info");
@@ -323,8 +356,14 @@ main(int argc, char** argv)
     parser.add_argument({ "-O", "--output" }, "Write results to file").count(1);
     parser
         .add_argument({ "-r", "--filter" },
-                      "Filter the output according to provided regex")
+                      "Filter the output according to provided regex (egrep + "
+                      "case-sensitive) [e.g. -r \"true\"]")
         .count(1);
+    parser
+        .add_argument({ "--hl", "--highlight" },
+                      "Highlight regex matches (only available on UNIX)")
+        .count(0)
+        .action([](parser_t&) { regex_hl = true; });
 
     auto err = parser.parse(argc, argv);
     if(err)
@@ -521,6 +560,23 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     for(const auto& itr : _info)
     {
         {
+            std::stringstream ss;
+            write_entry(ss, std::get<0>(itr), _widths.at(0) - 1, false, true);
+            if(!force_brief)
+                write_entry(ss, std::get<1>(itr), _widths.at(1), true, false);
+            for(size_t i = 0; i < std::get<2>(itr).size(); ++i)
+            {
+                if(!options[i])
+                    continue;
+                bool center = (i > 0) ? false : true;
+                write_entry(ss, std::get<2>(itr).at(i), _widths.at(i + 2), center,
+                            _mark.at(i));
+            }
+            if(!not_filtered(ss.str()))
+                continue;
+        }
+
+        {
             constexpr size_t idx = 0;
             stringstream_t   ss;
             write_entry(ss, std::get<idx>(itr), 0, true, true);
@@ -563,19 +619,25 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
 
     for(const auto& itr : _info)
     {
-        os << global_delim;
-        write_entry(os, std::get<0>(itr), _widths.at(0) - 1, false, true);
+        std::stringstream ss;
+        write_entry(ss, std::get<0>(itr), _widths.at(0) - 1, false, true);
         if(!force_brief)
-            write_entry(os, std::get<1>(itr), _widths.at(1), true, false);
+            write_entry(ss, std::get<1>(itr), _widths.at(1), true, false);
         for(size_t i = 0; i < std::get<2>(itr).size(); ++i)
         {
             if(!options[i])
                 continue;
             bool center = (i > 0) ? false : true;
-            write_entry(os, std::get<2>(itr).at(i), _widths.at(i + 2), center,
+            write_entry(ss, std::get<2>(itr).at(i), _widths.at(i + 2), center,
                         _mark.at(i));
         }
-        os << "\n";
+
+        if(not_filtered(ss.str()))
+        {
+            os << global_delim;
+            os << hl_filtered(ss.str());
+            os << "\n";
+        }
     }
 
     if(!markdown)
@@ -641,9 +703,25 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
     }
 
     for(const auto& itr : _results)
+    {
+        std::stringstream ss;
         for(size_t i = 0; i < itr.size(); ++i)
+        {
+            if(!_wusing.at(i))
+                continue;
+            auto _w = _widths.at(i) - ((i == 0) ? 1 : 0);
+            write_entry(ss, itr.at(i), _w, _center.at(i), _mark.at(i));
+        }
+
+        if(!not_filtered(ss.str()))
+            continue;
+
+        for(size_t i = 0; i < itr.size(); ++i)
+        {
             _widths.at(i) =
                 std::max<uint64_t>(_widths.at(i), itr.at(i).length() + padding);
+        }
+    }
 
     if(!markdown)
         os << banner(_widths, _wusing, '-');
@@ -660,15 +738,21 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
 
     for(const auto& itr : _results)
     {
-        os << global_delim;
+        std::stringstream ss;
         for(size_t i = 0; i < itr.size(); ++i)
         {
             if(!_wusing.at(i))
                 continue;
             auto _w = _widths.at(i) - ((i == 0) ? 1 : 0);
-            write_entry(os, itr.at(i), _w, _center.at(i), _mark.at(i));
+            write_entry(ss, itr.at(i), _w, _center.at(i), _mark.at(i));
         }
-        os << "\n";
+
+        if(not_filtered(ss.str()))
+        {
+            os << global_delim;
+            os << hl_filtered(ss.str());
+            os << "\n";
+        }
     }
 
     if(!markdown)
@@ -794,13 +878,13 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
 
         for(const auto& itr : fitr)
         {
-            os << global_delim;
+            std::stringstream ss;
 
             if(options[0])
-                write_entry(os, itr.symbol(), _widths.at(0) - 1, _center.at(0),
+                write_entry(ss, itr.symbol(), _widths.at(0) - 1, _center.at(0),
                             _mark.at(0));
             if(options[1])
-                write_entry(os, itr.available(), _widths.at(1), _center.at(1),
+                write_entry(ss, itr.available(), _widths.at(1), _center.at(1),
                             _mark.at(1));
 
             array_t<string_t, N> _e = { { "", "", itr.python_symbol(),
@@ -809,10 +893,15 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
             for(size_t i = 2; i < N; ++i)
             {
                 if(options[i])
-                    write_entry(os, _e.at(i), _widths.at(i), _center.at(i), _mark.at(i));
+                    write_entry(ss, _e.at(i), _widths.at(i), _center.at(i), _mark.at(i));
             }
 
-            os << "\n";
+            if(not_filtered(ss.str()))
+            {
+                os << global_delim;
+                os << hl_filtered(ss.str());
+                os << "\n";
+            }
         }
     }
 

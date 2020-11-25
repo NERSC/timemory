@@ -36,6 +36,9 @@
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/macros.hpp"
+#include "timemory/macros/compiler.hpp"
+#include "timemory/macros/language.hpp"
+#include "timemory/macros/os.hpp"
 
 #if defined(TIMEMORY_USE_CUDA)
 #    include "timemory/components/cuda/backends.hpp"
@@ -73,30 +76,31 @@ TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(class counter<device::gpu, float, component::ert_timer>)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+    class counter<device::gpu, float, component::ert_timer>)
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
     class counter<device::gpu, double, component::ert_timer>)
 //
 #if defined(TIMEMORY_USE_CUDA_HALF)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
     class counter<device::gpu, cuda::fp16_t, component::ert_timer>)
 #endif
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
     struct configuration<device::gpu, float, component::ert_timer>)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
     struct configuration<device::gpu, double, component::ert_timer>)
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
     struct executor<device::gpu, float, component::ert_timer>)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
     struct executor<device::gpu, double, component::ert_timer>)
 //
 #if defined(TIMEMORY_USE_CUDA_HALF)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
     struct configuration<device::gpu, cuda::fp16_t, component::ert_timer>)
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
     struct executor<device::gpu, cuda::fp16_t, component::ert_timer>)
 #endif
 //

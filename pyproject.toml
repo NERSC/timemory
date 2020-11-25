@@ -24,7 +24,6 @@ exclude = '''
     | docker
     | docs
   )/
-  | foo.py           # also separately exclude a file named foo.py in
-                     # the root of the project
+  | cmake/Templates/console-script.py.in
 )
 '''

@@ -1,0 +1,7 @@
+#!@PYTHON_EXECUTABLE@
+
+__requires__ = 'timemory==@TIMEMORY_VERSION_STRING@'
+
+if __name__ == '__main__':
+    from @SCRIPT_SUBMODULE@.__main__ import @SCRIPT_FUNCTION@
+    @SCRIPT_FUNCTION@()

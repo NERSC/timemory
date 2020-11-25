@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/operations/types/finalize_print.hpp
- * \brief Definition for various functions for finalize_print in operations
- */
-
 #pragma once
 
 #include "timemory/data/stream.hpp"
@@ -66,8 +61,8 @@ base::print::print_plot(const std::string& outfname, const std::string suffix)  
         if(!suffix.empty())
             plot_label += std::string(" ") + suffix;
 
-        plotting::plot(label, plot_label, settings::output_path(),
-                       settings::dart_output(), outfname);
+        plotting::plot(label, plot_label, m_settings->get_output_path(),
+                       m_settings->get_dart_output(), outfname);
     }
 }
 //
@@ -118,8 +113,8 @@ base::print::print_text(const std::string& outfname, stream_type stream)  // NOL
 #endif  // !defined(TIMEMORY_OPERATIONS_SOURCE)
 //
 template <typename Tp>
-print<Tp, true>::print(storage_type* _data)
-: base_type(trait::requires_json<Tp>::value)
+print<Tp, true>::print(storage_type* _data, settings_t _settings)
+: base_type(trait::requires_json<Tp>::value, _settings)
 , data(_data)
 {
     dmp::barrier();
@@ -149,7 +144,7 @@ print<Tp, true>::print(storage_type* _data)
             const auto& itr_prefix = itr.prefix();
             const auto& itr_depth  = itr.depth();
 
-            if(itr_depth < 0 || itr_depth > settings::max_depth() ||
+            if(itr_depth < 0 || itr_depth > m_settings->get_max_depth() ||
                itr_depth > max_call_stack)
                 continue;
 
@@ -186,7 +181,7 @@ print<Tp, true>::setup()
             const auto& itr_prefix = itr.prefix();
             const auto& itr_depth  = itr.depth();
 
-            if(itr_depth < 0 || itr_depth > settings::max_depth() ||
+            if(itr_depth < 0 || itr_depth > m_settings->get_max_depth() ||
                itr_depth > max_call_stack)
                 continue;
 
@@ -212,13 +207,13 @@ print<Tp, true>::setup()
     auto is_pretty_json =
         std::is_same<trait::output_archive_t<Tp>, cereal::PrettyJSONOutputArchive>::value;
     auto fext       = (is_minimal_json || is_pretty_json) ? ".json" : ".xml";
-    auto extensions = tim::delimit(settings::input_extensions(), ",; ");
+    auto extensions = tim::delimit(m_settings->get_input_extensions(), ",; ");
 
     tree_outfname = settings::compose_output_filename(label + ".tree", fext);
     json_outfname = settings::compose_output_filename(label, fext);
     text_outfname = settings::compose_output_filename(label, ".txt");
 
-    if(settings::diff_output())
+    if(m_settings->get_diff_output())
     {
         extensions.insert(extensions.begin(), fext);
         for(const auto& itr : extensions)
@@ -237,7 +232,7 @@ print<Tp, true>::setup()
         auto dext     = std::string(".diff") + fext;
         json_diffname = settings::compose_output_filename(label, dext);
         text_diffname = settings::compose_output_filename(label, ".diff.txt");
-        if(settings::debug())
+        if(m_settings->get_debug())
             printf("difference filenames: '%s' and '%s'\n", json_diffname.c_str(),
                    text_diffname.c_str());
     }
@@ -368,7 +363,7 @@ print<Tp, true>::update_data()
     data_concurrency = data->instance_count().load();
     dmp::barrier();
 
-    if(settings::debug())
+    if(m_settings->get_debug())
         printf("[%s]|%i> dmp results size: %i\n", label.c_str(), node_rank,
                (int) node_results.size());
 
@@ -412,7 +407,7 @@ print<Tp, true>::update_data()
     }
 
 #if defined(DEBUG)
-    if(tim::settings::debug() && tim::settings::verbose() > 3)
+    if(m_settings->get_debug() && m_settings->get_verbose() > 3)
     {
         auto indiv_results = get_flattened(node_results);
         printf("\n");
@@ -484,29 +479,33 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
             oa->startNode();
 
             // node
+            std::string _name = component::properties<Tp>::id();
+            if(_name.empty())
+                _name = Tp::label();
+            oa->setNextName(_name.c_str());
+            oa->startNode();
+            (*oa)(cereal::make_nvp("num_ranks", node_size));
+            (*oa)(cereal::make_nvp("concurrency", concurrency));
+            print_metadata(*oa, operation::dummy<Tp>{}());
+            operation::extra_serialization<Tp>{ *oa };
+            oa->setNextName("ranks");
+            oa->startNode();
+            oa->makeArray();
+            for(uint64_t i = 0; i < results.size(); ++i)
             {
-                (*oa)(cereal::make_nvp("num_ranks", results.size()));
-                oa->setNextName("ranks");
+                if(results.at(i).empty())
+                    continue;
+
                 oa->startNode();
-                oa->makeArray();
-                for(uint64_t i = 0; i < results.size(); ++i)
-                {
-                    if(results.at(i).empty())
-                        continue;
 
-                    oa->startNode();
+                (*oa)(cereal::make_nvp("rank", i));
+                save(*oa, results.at(i));
 
-                    (*oa)(cereal::make_nvp("rank", i));
-                    (*oa)(cereal::make_nvp("concurrency", concurrency));
-                    print_metadata(*oa, results.at(i).front().data());
-                    operation::extra_serialization<Tp>{ *oa };
-                    save(*oa, results.at(i));
-
-                    oa->finishNode();
-                }
                 oa->finishNode();
             }
-            oa->finishNode();
+            oa->finishNode();  // ranks
+            oa->finishNode();  // name
+            oa->finishNode();  // timemory
         }
         if(ofs)
             ofs << std::endl;
@@ -564,9 +563,9 @@ print<Tp, true>::print_dart()
     using strvector_t = std::vector<std::string>;
 
     // if only a specific type should be echoed
-    if(settings::dart_type().length() > 0)
+    if(m_settings->get_dart_type().length() > 0)
     {
-        auto dtype = settings::dart_type();
+        auto dtype = m_settings->get_dart_type();
         if(operation::echo_measurement<Tp>::lowercase(dtype) !=
            operation::echo_measurement<Tp>::lowercase(label))
         {
@@ -585,7 +584,7 @@ print<Tp, true>::print_dart()
             continue;
 
         // if only a specific number of measurements should be echoed
-        if(settings::dart_count() > 0 && _nitr >= settings::dart_count())
+        if(m_settings->get_dart_count() > 0 && _nitr >= m_settings->get_dart_count())
             continue;
 
         auto&       itr_obj       = itr->data();

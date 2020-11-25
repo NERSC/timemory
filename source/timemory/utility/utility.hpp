@@ -497,7 +497,7 @@ print_demangled_backtrace(std::ostream& os = std::cerr)
 template <typename ContainerT = std::vector<std::string>,
           typename PredicateT = std::function<string_t(string_t)>>
 inline ContainerT
-delimit(const string_t& line, const string_t& delimiters = ",; ",
+delimit(const string_t& line, const string_t& delimiters = "\"',;: ",
         PredicateT&& predicate = [](const string_t& s) -> string_t { return s; })
 {
     auto _get_first_not_of = [&delimiters](const string_t& _string, const size_t& _beg) {

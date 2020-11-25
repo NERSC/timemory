@@ -183,7 +183,8 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
     include(GoogleTest)
     # list of arguments taking multiple values
-    set(multival_args SOURCES DEPENDS PROPERTIES LINK_LIBRARIES COMMAND OPTIONS ENVIRONMENT)
+    set(multival_args SOURCES DEPENDS PROPERTIES DEFINITIONS LINK_LIBRARIES
+        COMMAND OPTIONS ENVIRONMENT)
     # parse args
     cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS;MPI" "NPROCS"
         "${multival_args}" ${ARGN})
@@ -202,6 +203,8 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             SOURCES         ${TEST_SOURCES}
             LINK_LIBRARIES  timemory-google-test ${TEST_LINK_LIBRARIES}
             PROPERTIES      "${TEST_PROPERTIES}")
+
+        target_compile_definitions(${TEST_NAME} PUBLIC ${TEST_DEFINITIONS})
 
         # always add as a dependency if target is built
         add_dependencies(timemory-test ${TEST_NAME})

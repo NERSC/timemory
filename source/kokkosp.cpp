@@ -92,7 +92,9 @@ extern "C"
         assert(env_configured);
 
         // search unique and fallback environment variables
-        kokkosp::kokkos_bundle::global_init();
+        namespace operation = tim::operation;
+        operation::init<kokkosp::kokkos_bundle>(
+            operation::mode_constant<operation::init_mode::global>{});
 
         // add at least one
         if(kokkosp::kokkos_bundle::bundle_size() == 0)

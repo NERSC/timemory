@@ -26,11 +26,9 @@
 #    undef DEBUG
 #endif
 
-#include "gtest/gtest.h"
+#include "test_macros.hpp"
 
-// #if !defined(DEBUG)
-// #    define DEBUG
-// #endif
+TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/timemory.hpp"
 
@@ -176,7 +174,10 @@ KERNEL_B(T* arr, int size, tim::cuda::stream_t stream = 0)
 //--------------------------------------------------------------------------------------//
 
 class cupti_tests : public ::testing::Test
-{};
+{
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -284,7 +285,8 @@ TEST_F(cupti_tests, activity)
     cupti_activity::global_finalize();
     num_iter /= 2;
 
-    ASSERT_NEAR(real_diff, expected_diff, expected_tol);
+    ASSERT_NEAR(real_diff, expected_diff, expected_tol)
+        << "real_clock: " << rc << ", cupti_activity: " << ca << std::endl;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -592,6 +594,9 @@ TEST_F(cupti_tests, roofline_counters)
     using roofline_t = gpu_roofline<float>;
     using tuple_t    = tim::component_tuple_t<wall_clock, roofline_t>;
 
+    tim::settings::ert_max_data_size_gpu()    = 100000000;
+    tim::settings::ert_min_working_size_gpu() = 5000000;
+
     roofline_t::configure(roofline_t::MODE::COUNTERS);
     num_iter *= 2;
 
@@ -631,28 +636,7 @@ TEST_F(cupti_tests, roofline_counters)
 
 //--------------------------------------------------------------------------------------//
 
-int
-main(int argc, char** argv)
+namespace
 {
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::scientific()   = false;
-    tim::settings::timing_units() = "msec";
-    tim::settings::precision()    = 6;
-    tim::settings::width()        = 12;
-    tim::settings::debug()        = false;
-    tim::settings::verbose()      = 0;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    return ret;
+static auto library_init = (tim::set_env("TIMEMORY_CUPTI_ACTIVITY_LEVEL", "2", 1), true);
 }
-
-//--------------------------------------------------------------------------------------//

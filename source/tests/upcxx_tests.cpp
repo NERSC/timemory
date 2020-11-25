@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <cassert>
@@ -47,9 +51,6 @@ using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 using auto_tuple_t =
     tim::auto_tuple_t<wall_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
                       process_cpu_util, peak_rss, page_rss>;
-
-static int    _argc = 0;
-static char** _argv = nullptr;
 
 //--------------------------------------------------------------------------------------//
 
@@ -120,22 +121,7 @@ time_fibonacci(int32_t n, int32_t cutoff)
 class upcxx_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
-    {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                   = true;
-            tim::settings::verbose()     = 0;
-            tim::settings::debug()       = false;
-            tim::settings::json_output() = true;
-            tim::upc::initialize();
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
-        }
-    }
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
 };
 
 //--------------------------------------------------------------------------------------//
@@ -267,24 +253,6 @@ TEST_F(upcxx_tests, general)
     {
         EXPECT_EQ(tim::storage<page_rss>::instance()->get().size(), store_size);
     }
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc                        = argc;
-    _argv                        = argv;
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -194,7 +194,8 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
         default_components = TIMEMORY_JOIN(",", default_components, "papi_vector");
 
     // search unique and fallback environment variables
-    KokkosUserBundle::global_init();
+    tim::operation::init<KokkosUserBundle>(
+        tim::operation::mode_constant<tim::operation::init_mode::global>{});
 
     // add defaults
     if(KokkosUserBundle::bundle_size() == 0)

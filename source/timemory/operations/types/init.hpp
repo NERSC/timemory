@@ -51,7 +51,19 @@ struct init
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(init)
+    init()  = default;
+    ~init() = default;
+
+    TIMEMORY_DELETE_COPY_MOVE_OBJECT(init)
+
+    template <typename Up                                       = Tp, int StateT,
+              enable_if_t<trait::is_available<Up>::value, char> = 0>
+    explicit init(mode_constant<StateT>)
+    {
+        auto _storage = storage<Tp>::instance();
+        if(_storage)
+            sfinae<type, StateT>(_storage, 0, 0);
+    }
 
     template <typename Up = Tp, int StateT, typename StorageT,
               enable_if_t<trait::is_available<Up>::value, char> = 0>
@@ -65,52 +77,84 @@ struct init
     explicit init(StorageT, mode_constant<StateT>)
     {}
 
+    template <typename Up                                       = Tp, int StateT,
+              enable_if_t<trait::is_available<Up>::value, char> = 0>
+    auto operator()(mode_constant<StateT>)
+    {
+        auto _storage = storage<Tp>::instance();
+        if(_storage)
+            return sfinae<type, StateT>(_storage, 0, 0);
+        return false;
+    }
+
+    template <typename Up                                        = Tp, int StateT,
+              enable_if_t<!trait::is_available<Up>::value, char> = 0>
+    auto operator()(mode_constant<StateT>)
+    {
+        return false;
+    }
+
+    /// returns whether the finalization function has been executed (will return false
+    /// if the component does not support any overload of `global_init(...)` or
+    /// `thread_init(...)`
+    template <int StateT>
+    static bool get_executed()
+    {
+        return was_executed<StateT>();
+    }
+
 private:
     template <typename Up, int StateT, typename StorageT,
               enable_if_t<StateT == init_mode::global, char> = 0>
     auto sfinae(StorageT _storage, int, int)
-        -> decltype(std::declval<Up>().global_init(_storage), void())
+        -> decltype(std::declval<Up>().global_init(_storage), bool())
     {
         if(was_executed<StateT>())
-            return;
+            return false;
         type::global_init(_storage);
         was_executed<StateT>() = true;
+        return true;
     }
 
     template <typename Up, int StateT, typename StorageT,
               enable_if_t<StateT == init_mode::global, int> = 0>
-    auto sfinae(StorageT, int, long) -> decltype(std::declval<Up>().global_init(), void())
+    auto sfinae(StorageT, int, long) -> decltype(std::declval<Up>().global_init(), bool())
     {
         if(was_executed<StateT>())
-            return;
+            return false;
         type::global_init();
         was_executed<StateT>() = true;
+        return true;
     }
 
     template <typename Up, int StateT, typename StorageT,
               enable_if_t<StateT == init_mode::thread, char> = 0>
     auto sfinae(StorageT _storage, int, int)
-        -> decltype(std::declval<Up>().thread_init(_storage), void())
+        -> decltype(std::declval<Up>().thread_init(_storage), bool())
     {
         if(was_executed<StateT>())
-            return;
+            return false;
         type::thread_init(_storage);
         was_executed<StateT>() = true;
+        return true;
     }
 
     template <typename Up, int StateT, typename StorageT,
               enable_if_t<StateT == init_mode::thread, int> = 0>
-    auto sfinae(StorageT, int, long) -> decltype(std::declval<Up>().thread_init(), void())
+    auto sfinae(StorageT, int, long) -> decltype(std::declval<Up>().thread_init(), bool())
     {
         if(was_executed<StateT>())
-            return;
+            return false;
         type::thread_init();
         was_executed<StateT>() = true;
+        return true;
     }
 
     template <typename Up, int StateT, typename StorageT>
-    void sfinae(StorageT, long, long)
-    {}
+    bool sfinae(StorageT, long, long)
+    {
+        return false;
+    }
 
 private:
     template <int StateT, enable_if_t<StateT == init_mode::global, char> = 0>

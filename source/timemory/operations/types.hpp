@@ -237,6 +237,11 @@ struct init_storage;
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
+struct fini_storage;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
 struct construct;
 //
 //--------------------------------------------------------------------------------------//
@@ -559,6 +564,22 @@ struct cleanup;
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename T>
+struct dummy
+{
+    static_assert(std::is_default_constructible<T>::value,
+                  "Type is not default constructible and therefore a dummy object (for "
+                  "placeholders and meta-programming) cannot be automatically generated. "
+                  "Please specialize tim::operation::dummy<T> to provide operator()() "
+                  "which returns a dummy object.");
+
+    TIMEMORY_DEFAULT_OBJECT(dummy)
+
+    TIMEMORY_ALWAYS_INLINE T operator()() const { return T{}; }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace finalize
 {
 //
@@ -667,15 +688,34 @@ struct print
 {
     using this_type   = print;
     using stream_type = std::shared_ptr<utility::stream>;
+    using settings_t  = std::shared_ptr<settings>;
 
-    explicit print(bool _forced_json = false)
-    : json_forced(_forced_json)
-    {}
+    explicit print(bool       _forced_json = false,
+                   settings_t _settings    = settings::shared_instance())
+    : m_settings(_settings)
+    , json_forced(_forced_json)
+    {
+        if(m_settings)
+        {
+            debug          = m_settings->get_debug();
+            verbose        = m_settings->get_verbose();
+            max_call_stack = m_settings->get_max_depth();
+        }
+    }
 
-    print(const std::string& _label, bool _forced_json)
-    : json_forced(_forced_json)
+    print(const std::string& _label, bool _forced_json,
+          settings_t _settings = settings::shared_instance())
+    : m_settings(_settings)
+    , json_forced(_forced_json)
     , label(_label)
-    {}
+    {
+        if(m_settings)
+        {
+            debug          = m_settings->get_debug();
+            verbose        = m_settings->get_verbose();
+            max_call_stack = m_settings->get_max_depth();
+        }
+    }
 
     virtual void setup()        = 0;
     virtual void execute()      = 0;
@@ -704,8 +744,9 @@ struct print
 
     int64_t get_max_depth() const
     {
-        return (max_depth > 0) ? max_depth
-                               : std::min<int64_t>(max_call_stack, settings::max_depth());
+        return (max_depth > 0)
+                   ? max_depth
+                   : std::min<int64_t>(max_call_stack, m_settings->get_max_depth());
     }
 
     bool dart_output()
@@ -742,7 +783,7 @@ struct print
             PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
-        return (m_settings->get_json_output() || json_forced) &&
+        return (m_settings->get_tree_output() || json_forced) &&
                m_settings->get_file_output();
     }
     bool json_output()
@@ -786,15 +827,16 @@ struct print
 
 protected:
     // default initialized
-    bool    debug          = settings::debug();
-    bool    update         = true;
-    bool    json_forced    = false;
-    bool    node_init      = dmp::is_initialized();
-    int32_t node_rank      = dmp::rank();
-    int32_t node_size      = dmp::size();
-    int32_t verbose        = settings::verbose();
-    int64_t max_depth      = 0;
-    int64_t max_call_stack = settings::max_depth();
+    settings_t m_settings     = settings::shared_instance();
+    bool       debug          = false;
+    bool       update         = true;
+    bool       json_forced    = false;
+    bool       node_init      = dmp::is_initialized();
+    int32_t    node_rank      = dmp::rank();
+    int32_t    node_size      = dmp::size();
+    int32_t    verbose        = 0;
+    int64_t    max_depth      = 0;
+    int64_t    max_call_stack = std::numeric_limits<int64_t>::max();
 
 protected:
     int64_t     data_concurrency  = 1;
@@ -809,7 +851,6 @@ protected:
     std::string json_diffname     = "";
     stream_type data_stream       = stream_type{};
     stream_type diff_stream       = stream_type{};
-    settings*   m_settings        = settings::instance();
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -843,10 +884,12 @@ struct print<Tp, true> : public base::print
         return _instance;
     }
 
-    explicit print(storage_type* _data);
+    explicit print(storage_type* _data,
+                   settings_t    _settings = settings::shared_instance());
 
-    print(const std::string& _label, storage_type* _data)
-    : base_type(_label, trait::requires_json<Tp>::value)
+    print(const std::string& _label, storage_type* _data,
+          settings_t _settings = settings::shared_instance())
+    : base_type(_label, trait::requires_json<Tp>::value, _settings)
     , data(_data)
     {}
 

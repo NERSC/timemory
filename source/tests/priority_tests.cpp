@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <chrono>
@@ -158,6 +162,9 @@ get_test_name()
 class priority_tests : public ::testing::Test
 {
 protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+
     void SetUp() override
     {
         priority_start_wc::get_label() = "priority-start-clock";
@@ -260,29 +267,6 @@ TEST_F(priority_tests, start_stop)
     ASSERT_NEAR(native_exp, native_wc.get(), 0.125);
     ASSERT_NEAR(pstart_exp, pstart_wc.get(), 0.125);
     ASSERT_NEAR(pstop_exp, pstop_wc.get(), 0.125);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::precision() = 6;
-    tim::settings::width()     = 15;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

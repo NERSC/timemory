@@ -364,7 +364,7 @@ get_value(Arg&)
 }
 
 //--------------------------------------------------------------------------------------//
-
+#if defined(_LINUX)
 TEST_F(cache_tests, io)
 {
     using io_bundle_t =
@@ -426,7 +426,7 @@ TEST_F(cache_tests, io)
             EXPECT_GT(_tot.at(i), 0.0) << " " << _labels.at(i) << " = " << _tot.at(i);
     }
 }
-
+#endif
 //--------------------------------------------------------------------------------------//
 
 TEST_F(cache_tests, validation)

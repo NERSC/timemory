@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <chrono>
@@ -112,6 +116,9 @@ compute_pi(uint64_t nstart, uint64_t nstop, double step, uint64_t nblock)
 
 class threading_tests : public ::testing::Test
 {
+    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+
     void SetUp() override { tim::threading::affinity::set(); }
 };
 
@@ -317,28 +324,6 @@ TEST_F(threading_tests, stl)
         tc_nlaps += itr.data().get_laps();
 
     ASSERT_EQ(wc_nlaps, tc_nlaps);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = false;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -15,7 +15,7 @@ cd ${DIR}
 echo "Generating coverage..."
 lcov --directory . --capture --output-file coverage.info
 echo "Removing coverage..."
-lcov --remove coverage.info '/usr/*' '/tmp/*' "${HOME}"'/.cache/*' '*/external/*' '*/examples/*' '*/tests/*' '*/tools/*' '*/python/*' --output-file coverage.info
+lcov --remove coverage.info '/usr/*' '/tmp/*' "${HOME}"'/.cache/*' '*/external/*' '*/examples/*' '*/tests/*' '*/tools/*' '*/python/*' '*/timemory/tpls/*' '*/signals.hpp' '*/popen.cpp' --output-file coverage.info
 echo "Listing coverage..."
 lcov --list coverage.info
 echo "Submitting coverage..."

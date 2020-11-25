@@ -257,4 +257,5 @@ def run():
 
 
 if __name__ == "__main__":
+    tim.initialize([__file__])
     run()

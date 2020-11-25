@@ -70,9 +70,6 @@ static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
     static user_bundle_variables_t _instance = {
         { component::global_bundle_idx,
           { []() { return settings::global_components(); } } },
-        { component::tuple_bundle_idx,
-          { []() { return settings::tuple_components(); } } },
-        { component::list_bundle_idx, { []() { return settings::list_components(); } } },
         { component::ompt_bundle_idx,
           { []() { return settings::ompt_components(); },
             []() { return settings::trace_components(); },
@@ -219,6 +216,8 @@ public:
     friend struct operation::record<this_type>;
     friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
+    friend struct operation::set_started<this_type>;
+    friend struct operation::set_stopped<this_type>;
 
     using start_func_t  = std::function<void*(const string_t&, scope::config)>;
     using stop_func_t   = std::function<void(void*)>;

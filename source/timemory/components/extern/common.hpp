@@ -47,6 +47,7 @@
 #include "timemory/operations/types/finalize/mpi_get.hpp"
 #include "timemory/operations/types/finalize/print.hpp"
 #include "timemory/operations/types/finalize/upc_get.hpp"
+#include "timemory/operations/types/fini_storage.hpp"
 #include "timemory/operations/types/get.hpp"
 #include "timemory/operations/types/init_storage.hpp"
 #include "timemory/operations/types/node.hpp"

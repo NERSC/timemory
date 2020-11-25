@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/variadic/functional.hpp"
@@ -97,32 +101,10 @@ consume(long n)
 
 //--------------------------------------------------------------------------------------//
 
-static int    _argc = 0;
-static char** _argv = nullptr;
-
-//--------------------------------------------------------------------------------------//
-
 class component_bundle_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
-    {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                   = true;
-            tim::settings::verbose()     = 0;
-            tim::settings::debug()       = false;
-            tim::settings::json_output() = true;
-            tim::settings::mpi_thread()  = false;
-            tim::settings::scientific()  = true;
-            tim::dmp::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
-        }
-    }
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
 };
 
 //--------------------------------------------------------------------------------------//
@@ -540,20 +522,6 @@ TEST_F(component_bundle_tests, custom_type_count_w_init)
 
     test<api_t>::derive_auto_t::get_initializer() = [](auto&) {};
     test<api_t>::direct_comp_t::get_initializer() = [](auto&) {};
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc    = argc;
-    _argv    = argv;
-    auto ret = RUN_ALL_TESTS();
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include "timemory/timemory.hpp"
@@ -89,6 +93,9 @@ consume(long n)
 class timing_tests : public ::testing::Test
 {
 protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+
     void SetUp() override
     {
         tim::settings::timing_units() = "sec";
@@ -318,30 +325,6 @@ TEST_F(timing_tests, process_cpu_utilization)
               << std::endl;
     std::cout << datastr(obj);
     ASSERT_NEAR(150.0, obj.get(), util_tolerance);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

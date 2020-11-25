@@ -70,11 +70,7 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-using auto_list_t  = tim::available_auto_list_t;
-using auto_timer_t = tim::auto_timer;
-using tim_timer_t  = typename auto_timer_t::component_type;
-using manager_t    = tim::manager;
-using farray_t     = py::array_t<double, py::array::c_style | py::array::forcecast>;
+using manager_t = tim::manager;
 
 namespace pytim
 {

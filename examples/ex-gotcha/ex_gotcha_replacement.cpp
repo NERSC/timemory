@@ -60,7 +60,7 @@ namespace tim
 {
 namespace component
 {
-struct exp_intercept : public base<exp_intercept, void>
+struct exp_replace : public base<exp_replace, void>
 {
     double operator()(double val)
     {
@@ -69,7 +69,7 @@ struct exp_intercept : public base<exp_intercept, void>
             printf("\texecuting modified exp function : %20.3f...", val);
 #endif
         ++get_intercepts();
-        return exp(val);
+        return static_cast<double>(expf(static_cast<float>(val)));
     }
 };
 }  // namespace component
@@ -78,24 +78,24 @@ struct exp_intercept : public base<exp_intercept, void>
 //======================================================================================//
 
 using wc_t         = tim::component_bundle<TIMEMORY_API, wall_clock>;
-using exptime_t    = gotcha<2, wc_t>;
-using exp2expf_t   = gotcha<1, std::tuple<>, exp_intercept>;
-using exp_bundle_t = tim::component_bundle<TIMEMORY_API, exp2expf_t*, exptime_t*>;
+using exp_time_t   = gotcha<2, wc_t>;
+using exp_repl_t   = gotcha<2, std::tuple<>, exp_replace>;
+using exp_bundle_t = tim::component_bundle<TIMEMORY_API, exp_repl_t*, exp_time_t*>;
 
-using exp2expf_ot = typename exp2expf_t::operator_type;
-static_assert(std::is_same<exp2expf_ot, exp_intercept>::value,
-              "exp2expf_t operator_type is not exp_intercept");
-static_assert(exp2expf_t::components_size == 0, "exp2expf_t should have no components");
-static_assert(exp2expf_t::differ_is_component, "exp2expf_t won't replace exp");
+using exp2expf_ot = typename exp_repl_t::operator_type;
+static_assert(std::is_same<exp2expf_ot, exp_replace>::value,
+              "exp_repl_t operator_type is not exp_replace");
+static_assert(exp_repl_t::components_size == 0, "exp_repl_t should have no components");
+static_assert(exp_repl_t::differ_is_component, "exp_repl_t won't replace exp");
 
-using exptime_ot = typename exptime_t::operator_type;
-using exptime_ct = typename exptime_t::bundle_type;
+using exptime_ot = typename exp_time_t::operator_type;
+using exptime_ct = typename exp_time_t::bundle_type;
 static_assert(std::is_same<exptime_ot, void>::value,
-              "exptime_t operator_type is not exp_intercept");
-static_assert(exptime_t::components_size == 1, "exptime_t should have no components");
+              "exp_time_t operator_type is not exp_replace");
+static_assert(exp_time_t::components_size == 1, "exp_time_t should have no components");
 static_assert(std::is_same<exptime_ct, wc_t>::value,
-              "exptime_t has incorrect components");
-static_assert(!exptime_t::differ_is_component, "exp2expf_t won't replace exp");
+              "exp_time_t has incorrect components");
+static_assert(!exp_time_t::differ_is_component, "exp_repl_t won't replace exp");
 
 //======================================================================================//
 
@@ -107,7 +107,7 @@ sum_exp(const vector<double>&);
 
 //======================================================================================//
 
-static auto use_intercept = tim::get_env("EXP_INTERCEPT", true);
+static auto use_intercept = tim::get_env("EXP_REPLACE", true);
 static auto use_timers    = tim::get_env("EXP_TIMERS", true);
 
 bool
@@ -116,24 +116,26 @@ init()
     //
     // configure the initializer for the gotcha component which replaces exp with expf
     //
-    exp2expf_t::get_initializer() = []() {
+    exp_repl_t::get_initializer() = []() {
         puts("Generating exp intercept...");
-        TIMEMORY_C_GOTCHA(exp2expf_t, 0, exp);
+        TIMEMORY_C_GOTCHA(exp_repl_t, 0, exp);
+        TIMEMORY_DERIVED_GOTCHA(exp_repl_t, 1, exp, "__exp_finite");
+        // exp might actually resolve to above symbol
     };
 
     //
     // configure the initializer for the gotcha components which places wall-clock
     // timers around exp and sum_exp
     //
-    exptime_t::get_initializer() = []() {
+    exp_time_t::get_initializer() = []() {
         puts("Generating exp timers...");
-        TIMEMORY_C_GOTCHA(exptime_t, 0, exp);
-        TIMEMORY_CXX_GOTCHA(exptime_t, 1, sum_exp);
+        TIMEMORY_C_GOTCHA(exp_time_t, 0, exp);
+        TIMEMORY_CXX_GOTCHA(exp_time_t, 1, sum_exp);
     };
 
     exp_bundle_t::get_initializer() = [=](exp_bundle_t& obj) {
-        if(use_intercept) obj.initialize<exp2expf_t>();
-        if(use_timers) obj.initialize<exptime_t>();
+        if(use_intercept) obj.initialize<exp_repl_t>();
+        if(use_timers) obj.initialize<exp_time_t>();
     };
 
     return true;
@@ -153,7 +155,7 @@ main(int argc, char** argv)
 
     tim::timemory_init(argc, argv);
 
-    uint64_t n = 100000;
+    uint64_t n = 1000;
     if(argc > 1) n = atoi(argv[1]);
 
     double ret = 0.0;

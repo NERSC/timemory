@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/macros/attributes.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/concepts.hpp"
 
@@ -39,120 +40,47 @@
 #include <initializer_list>
 #include <memory>
 #include <ostream>
-#include <random>
 #include <sstream>
 #include <string>
 #include <type_traits>
 
 //======================================================================================//
-
+//
 #if !defined(TIMEMORY_FOLD_EXPRESSION)
 #    define TIMEMORY_FOLD_EXPRESSION(...)                                                \
         ::tim::consume_parameters(::std::initializer_list<int>{ (__VA_ARGS__, 0)... })
 #endif
 
 //======================================================================================//
-
+//
 #if !defined(TIMEMORY_FOLD_EXPANSION)
-#    define TIMEMORY_FOLD_EXPANSION(TYPE, ...)                                           \
-        ::std::initializer_list<TYPE> { (::tim::consume_parameters(), __VA_ARGS__)... }
+#    define TIMEMORY_FOLD_EXPANSION(TYPE, SIZE, ...)                                     \
+        std::array<TYPE, SIZE>({ (::tim::consume_parameters(), __VA_ARGS__)... });
 #endif
 
 //======================================================================================//
-
+//
 #if !defined(TIMEMORY_RETURN_FOLD_EXPRESSION)
 #    define TIMEMORY_RETURN_FOLD_EXPRESSION(...)                                         \
         ::std::make_tuple((::tim::consume_parameters(), __VA_ARGS__)...)
 #endif
 
 //======================================================================================//
-
+//
 #if !defined(TIMEMORY_DECLARE_EXTERN_TEMPLATE)
 #    define TIMEMORY_DECLARE_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
 #endif
 
 //======================================================================================//
-
+//
 #if !defined(TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE)
 #    define TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(...) template __VA_ARGS__;
 #endif
 
 //======================================================================================//
-
+//
 #if !defined(TIMEMORY_ESC)
 #    define TIMEMORY_ESC(...) __VA_ARGS__
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_ATTRIBUTE)
-#    if defined(_WINDOWS)
-#        define TIMEMORY_ATTRIBUTE(...) __declspec(__VA_ARGS__)
-#    else
-#        define TIMEMORY_ATTRIBUTE(...) __attribute__((__VA_ARGS__))
-#    endif
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_ALWAYS_INLINE) && !defined(_WINDOWS)
-#    define TIMEMORY_ALWAYS_INLINE [[gnu::always_inline]] inline
-#else
-#    define TIMEMORY_ALWAYS_INLINE inline
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_FLATTEN) && !defined(_WINDOWS)
-#    define TIMEMORY_FLATTEN [[gnu::flatten]]
-#else
-#    define TIMEMORY_FLATTEN
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_HOT) && !defined(_WINDOWS)
-#    define TIMEMORY_HOT [[gnu::hot]]
-#else
-#    define TIMEMORY_HOT
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_COLD) && !defined(_WINDOWS)
-#    define TIMEMORY_COLD [[gnu::cold]]
-#else
-#    define TIMEMORY_COLD
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_CONST)
-#    define TIMEMORY_CONST [[gnu::const]]
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DEPRECATED)
-#    define TIMEMORY_DEPRECATED(...) [[gnu::deprecated(__VA_ARGS__)]]
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_EXTERN_VISIBLE)
-#    define TIMEMORY_EXTERN_VISIBLE [[gnu::externally_visible]]
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_ALIAS)
-#    define TIMEMORY_ALIAS(...) [[gnu::alias(__VA_ARGS__)]]
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_NOINLINE)
-#    define TIMEMORY_NOINLINE TIMEMORY_ATTRIBUTE(noinline)
 #endif
 
 //======================================================================================//
@@ -160,6 +88,16 @@
 #if !defined(TIMEMORY_DELETED_OBJECT)
 #    define TIMEMORY_DELETED_OBJECT(NAME)                                                \
         NAME()            = delete;                                                      \
+        NAME(const NAME&) = delete;                                                      \
+        NAME(NAME&&)      = delete;                                                      \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) = delete;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DELETE_COPY_MOVE_OBJECT)
+#    define TIMEMORY_DELETE_COPY_MOVE_OBJECT(NAME)                                       \
         NAME(const NAME&) = delete;                                                      \
         NAME(NAME&&)      = delete;                                                      \
         NAME& operator=(const NAME&) = delete;                                           \
@@ -206,8 +144,8 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 template <typename T>
 using decay_t = typename std::decay<T>::type;
 //
-template <bool Val, typename Lhs, typename Rhs>
-using conditional_t = typename std::conditional<(Val), Lhs, Rhs>::type;
+template <bool B, typename Lhs, typename Rhs>
+using conditional_t = typename std::conditional<B, Lhs, Rhs>::type;
 //
 using true_type = std::true_type;
 //
@@ -269,7 +207,7 @@ template <size_t Idx, size_t TargIdx, typename Tp, typename... Tail>
 struct type_list_element<Idx, TargIdx, Tp, Tail...>
 {
     using type =
-        conditional_t<(Idx == TargIdx), Tp,
+        conditional_t<Idx == TargIdx, Tp,
                       typename type_list_element<Idx + 1, TargIdx, Tail...>::type>;
 };
 }  // namespace internal
@@ -415,7 +353,7 @@ get_fields()
 //
 template <typename Arg, size_t... Idx>
 static inline auto
-generate(Arg&& arg, std::index_sequence<Idx...>)
+generate(Arg&& arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
     data_type ret;
@@ -427,7 +365,7 @@ generate(Arg&& arg, std::index_sequence<Idx...>)
 //
 template <size_t... Idx>
 static inline auto
-either(data_type ret, data_type arg, std::index_sequence<Idx...>)
+either(data_type ret, data_type arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
     TIMEMORY_FOLD_EXPRESSION(ret.set(Idx, ret.test(Idx) || arg.test(Idx)));
@@ -439,7 +377,7 @@ either(data_type ret, data_type arg, std::index_sequence<Idx...>)
 static inline data_type
 get_default()
 {
-    return generate(get_fields(), std::make_index_sequence<scope_count>{});
+    return generate(get_fields(), make_index_sequence<scope_count>{});
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -465,17 +403,17 @@ struct config : public data_type
 
     explicit config(bool _flat)
     : data_type(generate(input_type{ { _flat, false, false } },
-                         std::make_index_sequence<scope_count>{}))
+                         make_index_sequence<scope_count>{}))
     {}
 
     config(bool _flat, bool _timeline)
     : data_type(generate(input_type{ { _flat, _timeline, false } },
-                         std::make_index_sequence<scope_count>{}))
+                         make_index_sequence<scope_count>{}))
     {}
 
     config(bool _flat, bool _timeline, bool _tree)
     : data_type(generate(input_type{ { _flat, _timeline, _tree } },
-                         std::make_index_sequence<scope_count>{}))
+                         make_index_sequence<scope_count>{}))
     {}
 
     config(tree)
@@ -679,7 +617,7 @@ operator+(config _lhs, timeline)
 inline config
 operator+(config _lhs, config _rhs)
 {
-    return either(_lhs, _rhs, std::make_index_sequence<scope_count>{});
+    return either(_lhs, _rhs, make_index_sequence<scope_count>{});
 }
 //
 //--------------------------------------------------------------------------------------//

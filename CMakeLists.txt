@@ -32,8 +32,9 @@ cmake_policy(SET CMP0022 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0053 NEW)
-#cmake_policy(SET CMP0063 NEW)
+cmake_policy(SET CMP0063 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+    cmake_policy(SET CMP0077 NEW)
     cmake_policy(SET CMP0079 NEW)
 endif()
 if(NOT CMAKE_VERSION VERSION_LESS 3.14)
@@ -41,6 +42,10 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.14)
 endif()
 if(NOT CMAKE_VERSION VERSION_LESS 3.18)
     cmake_policy(SET CMP0104 OLD)
+endif()
+# make sure testing enabled
+if(TIMEMORY_BUILD_MINIMAL_TESTING)
+    set(TIMEMORY_BUILD_TESTING ON)
 endif()
 # this gets annoying
 if(TIMEMORY_BUILD_GOOGLE_TEST OR TIMEMORY_BUILD_TESTING)
@@ -301,7 +306,10 @@ if(TIMEMORY_BUILD_EXAMPLES)
     set(timemory_DIR "${PROJECT_BINARY_DIR}" CACHE STRING
         "timemory build examples directory" FORCE)
     add_subdirectory(examples)
-elseif(TIMEMORY_BUILD_MINIMAL_TESTING AND (TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON))
+elseif(TIMEMORY_BUILD_TESTING AND TIMEMORY_USE_PYTHON)
+    message(STATUS "Adding examples/ex-python...")
+    set(timemory_DIR "${PROJECT_BINARY_DIR}" CACHE STRING
+        "timemory build examples directory" FORCE)
     # copies over some python scripts
     add_subdirectory(examples/ex-python)
 endif()
@@ -327,3 +335,10 @@ endif()
 
 message(STATUS "Generating Makefile...")
 include(GenerateMakefile)
+
+# remove testing configure warnings:
+#   "Manually-specified variables were not used by the project: ... etc. ..."
+#
+foreach(_EXAMPLE_OPTION MPI TAU CUDA PAPI CUPTI KOKKOS CALIPER)
+    set(_IGNORE ${USE_${_EXAMPLE_OPTION}})
+endforeach()

@@ -33,6 +33,8 @@ include(CheckCXXCompilerFlag)
 include(CheckCXXSourceCompiles)
 include(CheckCXXSourceRuns)
 
+include(CMakeParseArguments)
+
 include(MacroUtilities)
 
 if("${LIBNAME}" STREQUAL "")
@@ -326,6 +328,73 @@ macro(ADD_TARGET_FLAG_IF_AVAIL _TARG)
         ADD_TARGET_CXX_FLAG_IF_AVAIL(${_TARG} ${_ARG})
     endforeach()
 endmacro()
+
+
+#----------------------------------------------------------------------------------------#
+# check flag
+#----------------------------------------------------------------------------------------#
+function(TIMEMORY_TARGET_FLAG _TARG_TARGET)
+    cmake_parse_arguments(_TARG "IF_AVAIL" "MODE" "FLAGS;LANGUAGES" ${ARGN})
+
+    if(NOT _TARG_MODE)
+        set(_TARG_MODE INTERFACE)
+    endif()
+
+    get_property(ENABLED_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+
+    if(NOT _TARG_LANGUAGES)
+        get_property(_TARG_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    endif()
+
+    string(TOLOWER "_${_TARG_TARGET}" _LTARG)
+
+    foreach(_FLAG ${_TARG_FLAGS})
+        foreach(_LANG ${_TARG_LANGUAGES})
+            if(NOT _TARG_IF_AVAIL)
+                target_compile_options(${_TARG_TARGET} ${_TARG_MODE} $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                continue()
+            endif()
+
+            if("${_LANG}" STREQUAL "C")
+                string(REGEX REPLACE "^/" "c${_LTARG}_" FLAG_NAME "${_FLAG}")
+                string(REGEX REPLACE "^-" "c${_LTARG}_" FLAG_NAME "${FLAG_NAME}")
+                string(REPLACE "-" "_" FLAG_NAME "${FLAG_NAME}")
+                string(REPLACE " " "_" FLAG_NAME "${FLAG_NAME}")
+                string(REPLACE "=" "_" FLAG_NAME "${FLAG_NAME}")
+                check_c_compiler_flag("-Werror" c_werror)
+                if(c_werror)
+                    check_c_compiler_flag("${FLAG} -Werror" ${FLAG_NAME})
+                else()
+                    check_c_compiler_flag("${FLAG}" ${FLAG_NAME})
+                endif()
+                if(${FLAG_NAME})
+                    target_compile_options(${_TARG_TARGET} ${_TARG_MODE}
+                        $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                endif()
+            elseif("${_LANG}" STREQUAL "CXX")
+                string(REGEX REPLACE "^/" "cxx${_LTARG}_" FLAG_NAME "${_FLAG}")
+                string(REGEX REPLACE "^-" "cxx${_LTARG}_" FLAG_NAME "${FLAG_NAME}")
+                string(REPLACE "-" "_" FLAG_NAME "${FLAG_NAME}")
+                string(REPLACE " " "_" FLAG_NAME "${FLAG_NAME}")
+                string(REPLACE "=" "_" FLAG_NAME "${FLAG_NAME}")
+                check_cxx_compiler_flag("-Werror" cxx_werror)
+                if(cxx_werror)
+                    check_cxx_compiler_flag("${FLAG} -Werror" ${FLAG_NAME})
+                else()
+                    check_cxx_compiler_flag("${FLAG}" ${FLAG_NAME})
+                endif()
+                if(${FLAG_NAME})
+                    target_compile_options(${_TARG_TARGET} ${_TARG_MODE}
+                        $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                    if("CUDA" IN_LIST ENABLED_LANGUAGES AND "${CMAKE_CUDA_COMPILER_ID}" STREQUAL "NVIDIA")
+                        target_compile_options(${_TARG_TARGET} ${_TARG_MODE}
+                            $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${_FLAG}>)
+                    endif()
+                endif()
+            endif()
+        endforeach()
+    endforeach()
+endfunction()
 
 
 #----------------------------------------------------------------------------------------#

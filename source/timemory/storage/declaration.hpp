@@ -64,8 +64,8 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-storage_singleton<Tp>*
-get_storage_singleton();
+TIMEMORY_NOINLINE TIMEMORY_NOCLONE storage_singleton<Tp>*
+                                   get_storage_singleton();
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -610,6 +610,12 @@ storage<Type, true>::serialize(Archive& ar, const unsigned int version)
 {
     auto   num_instances = instance_count().load();
     auto&& _results      = dmp_get();
+    ar(cereal::make_nvp("concurrency", num_instances));
+    m_printer->print_metadata(ar, Type{});
+    operation::extra_serialization<Type>{ ar };
+    ar.setNextName("ranks");
+    ar.startNode();
+    ar.makeArray();
     for(uint64_t i = 0; i < _results.size(); ++i)
     {
         if(_results.at(i).empty())
@@ -618,13 +624,11 @@ storage<Type, true>::serialize(Archive& ar, const unsigned int version)
         ar.startNode();
 
         ar(cereal::make_nvp("rank", i));
-        ar(cereal::make_nvp("concurrency", num_instances));
-        m_printer->print_metadata(ar, _results.at(i).front().data());
-        operation::extra_serialization<Type>{ ar };
         save(ar, _results.at(i));
 
         ar.finishNode();
     }
+    ar.finishNode();  // ranks
     consume_parameters(version);
 }
 //
@@ -637,7 +641,31 @@ storage<Type, true>::do_serialize(Archive& ar)
 {
     if(m_is_master)
         merge();
-    ar(cereal::make_nvp(Type::label(), *this));
+
+    auto   num_instances = instance_count().load();
+    auto&& _results      = dmp_get();
+    ar.setNextName(component::properties<Type>::id());
+    ar.startNode();
+    ar(cereal::make_nvp("concurrency", num_instances));
+    m_printer->print_metadata(ar, Type{});
+    operation::extra_serialization<Type>{ ar };
+    ar.setNextName("ranks");
+    ar.startNode();
+    ar.makeArray();
+    for(uint64_t i = 0; i < _results.size(); ++i)
+    {
+        if(_results.at(i).empty())
+            continue;
+
+        ar.startNode();
+
+        ar(cereal::make_nvp("rank", i));
+        save(ar, _results.at(i));
+
+        ar.finishNode();
+    }
+    ar.finishNode();  // ranks
+    ar.finishNode();  // label
 }
 //
 //--------------------------------------------------------------------------------------//

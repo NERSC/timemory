@@ -28,6 +28,7 @@
 #include "timemory/enum.h"
 #include "timemory/library.h"
 #include "timemory/timemory.hpp"
+#include "timemory/utility/socket.hpp"
 
 #if defined(TIMEMORY_USE_OMPT)
 #    include "timemory/components/ompt.hpp"
@@ -474,7 +475,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         return manager_t::get_storage<tim::available_types_t>::size(_types);
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json_classic = [](const pytim::pyenum_set_t& _types) {
+    auto _as_json_classic = [](const pytim::pyenum_set_t& _types) -> std::string {
         using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
         auto json_str    = manager_t::get_storage<tuple_type>::serialize(_types);
         if(tim::settings::debug())
@@ -482,7 +483,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         return json_str;
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json_hierarchy = [](const pytim::pyenum_set_t& _types) {
+    auto _as_json_hierarchy = [](const pytim::pyenum_set_t& _types) -> std::string {
         std::stringstream ss;
         {
             using policy_type = tim::policy::output_archive_t<tim::manager>;
@@ -593,24 +594,31 @@ PYBIND11_MODULE(libpytimemory, tim)
     };
     //----------------------------------------------------------------------------------//
     auto _get_argv = []() {
-        py::module sys   = py::module::import("sys");
-        auto       argv  = sys.attr("argv").cast<py::list>();
-        int        _argc = argv.size();
-        char**     _argv = new char*[argv.size()];
-        for(int i = 0; i < _argc; ++i)
+        py::module sys = py::module::import("sys");
+        try
         {
-            auto  _str    = argv[i].cast<std::string>();
-            char* _argv_i = new char[_str.size() + 1];
-            std::strcpy(_argv_i, _str.c_str());
-            _argv_i[_str.size()] = '\0';
-            _argv[i]             = _argv_i;
+            auto   argv  = sys.attr("argv").cast<py::list>();
+            int    _argc = argv.size();
+            char** _argv = new char*[argv.size()];
+            for(int i = 0; i < _argc; ++i)
+            {
+                auto  _str    = argv[i].cast<std::string>();
+                char* _argv_i = new char[_str.size() + 1];
+                std::strcpy(_argv_i, _str.c_str());
+                _argv_i[_str.size()] = '\0';
+                _argv[i]             = _argv_i;
+            }
+            auto _argv_deleter = [](int fargc, char** fargv) {
+                for(int i = 0; i < fargc; ++i)
+                    delete[] fargv[i];
+                delete[] fargv;
+            };
+            return std::make_tuple(_argc, _argv, _argv_deleter);
+        } catch(py::cast_error& e)
+        {
+            std::cerr << "Cast error in get_argv: " << e.what() << std::endl;
+            throw;
         }
-        auto _argv_deleter = [](int fargc, char** fargv) {
-            for(int i = 0; i < fargc; ++i)
-                delete[] fargv[i];
-            delete[] fargv;
-        };
-        return std::make_tuple(_argc, _argv, _argv_deleter);
     };
     //----------------------------------------------------------------------------------//
     auto _init = [](py::list argv, std::string _prefix, std::string _suffix) {
@@ -682,10 +690,11 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _argparse = [&pysettings](py::object parser, py::object subparser) {
+    auto _argparse = [tim](py::object parser, py::object subparser) {
         try
         {
-            pysettings.attr("add_arguments")(parser, py::none{}, subparser);
+            py::object _pysettings = tim.attr("settings");
+            _pysettings.attr("add_arguments")(parser, py::none{}, subparser);
         } catch(std::exception& e)
         {
             std::cerr << "[timemory_argparse]> Warning! " << e.what() << std::endl;
@@ -923,4 +932,56 @@ PYBIND11_MODULE(libpytimemory, tim)
              "timemory args and replaces sys.argv with the unknown args (used to "
              "fix issue with unittest module)",
              py::arg("parser") = py::none{}, py::arg("subparser") = true);
+
+#if !defined(_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
+    py::module _socket = tim.def_submodule("socket", "Socket communication API");
+
+    using socket_manager_t = std::unique_ptr<tim::socket::manager>;
+    auto _socket_manager   = []() -> socket_manager_t& {
+        static auto _instance = std::make_unique<tim::socket::manager>();
+        return _instance;
+    };
+
+    auto _socket_connect = [_socket_manager](const std::string& _name,
+                                             const std::string& _addr, int _port) {
+        return _socket_manager()->connect(_name, _addr, _port);
+    };
+
+    auto _socket_send = [_socket_manager](const std::string& _name,
+                                          const std::string& _message) {
+        return _socket_manager()->send(_name, _message);
+    };
+
+    auto _socket_close = [_socket_manager](const std::string& _name) {
+        return _socket_manager()->close(_name);
+    };
+
+    auto _socket_listen = [](const std::string& _name, int _port, int _max_packets) {
+        std::vector<std::string> _results;
+
+        auto _handle_data = [&](std::string str) {
+            if(tim::settings::debug() || tim::settings::verbose() > 2)
+                std::cout << "[timemory-socket][server]> received: " << str << std::endl;
+            _results.emplace_back(std::move(str));
+        };
+
+        if(tim::settings::debug() || tim::settings::verbose() > 2)
+            std::cout << "[timemory-socket][server]> started listening..." << std::endl;
+
+        tim::socket::manager{}.listen(_name, _port, _handle_data, _max_packets);
+
+        if(tim::settings::debug() || tim::settings::verbose() > 2)
+            std::cout << "[timemory-socket][server]> stopped listening..." << std::endl;
+
+        return _results;
+    };
+
+    _socket.def("connect", _socket_connect, "Connect to a socket (client)",
+                py::arg("name"), py::arg("address"), py::arg("port"));
+    _socket.def("close", _socket_close, "Close a socket", py::arg("name"));
+    _socket.def("send", _socket_send, "Send a message over the socket", py::arg("name"),
+                py::arg("message"));
+    _socket.def("listen", _socket_listen, "Listen on a socket (server)", py::arg("name"),
+                py::arg("port"), py::arg("max_packets") = 0);
+#endif
 }

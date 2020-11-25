@@ -262,6 +262,8 @@ The general design is that each user-bundle:
    :members:
 .. doxygenstruct:: tim::component::malloc_gotcha
    :members:
+.. doxygenstruct:: tim::component::memory_allocations
+   :members:
 ```
 
 ## Base Components

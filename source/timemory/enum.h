@@ -92,7 +92,7 @@ enum TIMEMORY_NATIVE_COMPONENT
     KERNEL_MODE_TIME,
     LIKWID_MARKER,
     LIKWID_NVMARKER,
-    MALLOC_GOTCHA,
+    MEMORY_ALLOCATIONS,
     MONOTONIC_CLOCK,
     MONOTONIC_RAW_CLOCK,
     NUM_IO_IN,
@@ -161,6 +161,18 @@ typedef int TIMEMORY_COMPONENT;
 //
 #if !defined(CALIPER)
 #    define CALIPER CALIPER_MARKER
+#endif
+//
+#if !defined(USER_TUPLE_BUNDLE)
+#    define USER_TUPLE_BUNDLE USER_GLOBAL_BUNDLE
+#endif
+//
+#if !defined(USER_LIST_BUNDLE)
+#    define USER_LIST_BUNDLE USER_GLOBAL_BUNDLE
+#endif
+//
+#if !defined(MALLOC_GOTCHA)
+#    define MALLOC_GOTCHA MEMORY_ALLOCATIONS
 #endif
 //
 //--------------------------------------------------------------------------------------//

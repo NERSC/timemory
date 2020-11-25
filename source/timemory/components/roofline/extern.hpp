@@ -43,6 +43,9 @@ TIMEMORY_EXTERN_COMPONENT(cpu_roofline_dp_flops, true,
                           std::pair<std::vector<long long>, double>)
 TIMEMORY_EXTERN_COMPONENT(cpu_roofline_flops, true,
                           std::pair<std::vector<long long>, double>)
+extern template struct tim::component::cpu_roofline<float>;
+extern template struct tim::component::cpu_roofline<double>;
+extern template struct tim::component::cpu_roofline<float, double>;
 #endif
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -50,21 +53,32 @@ TIMEMORY_EXTERN_COMPONENT(cpu_roofline_flops, true,
 #    include "timemory/components/cupti/extern.hpp"
 
 #    if defined(TIMEMORY_USE_CUDA_HALF)
-TIMEMORY_EXTERN_COMPONENT(
+TIMEMORY_DECLARE_EXTERN_COMPONENT(
     gpu_roofline_hp_flops, true,
     std::tuple<typename ::tim::component::cupti_activity::value_type,
                typename ::tim::component::cupti_counters::value_type>)
 #    endif
-TIMEMORY_EXTERN_COMPONENT(
+TIMEMORY_DECLARE_EXTERN_COMPONENT(
     gpu_roofline_sp_flops, true,
     std::tuple<typename ::tim::component::cupti_activity::value_type,
                typename ::tim::component::cupti_counters::value_type>)
-TIMEMORY_EXTERN_COMPONENT(
+TIMEMORY_DECLARE_EXTERN_COMPONENT(
     gpu_roofline_dp_flops, true,
     std::tuple<typename ::tim::component::cupti_activity::value_type,
                typename ::tim::component::cupti_counters::value_type>)
-TIMEMORY_EXTERN_COMPONENT(
+TIMEMORY_DECLARE_EXTERN_COMPONENT(
     gpu_roofline_flops, true,
     std::tuple<typename ::tim::component::cupti_activity::value_type,
                typename ::tim::component::cupti_counters::value_type>)
+#endif
+
+#if defined(TIMEMORY_USE_CUPTI)
+extern template struct tim::component::gpu_roofline<float>;
+extern template struct tim::component::gpu_roofline<double>;
+#    if defined(TIMEMORY_USE_CUDA_HALF)
+extern template struct tim::component::gpu_roofline<tim::cuda::fp16_t>;
+extern template struct tim::component::gpu_roofline<tim::cuda::fp16_t, float, double>;
+#    else
+extern template struct tim::component::gpu_roofline<float, double>;
+#    endif
 #endif

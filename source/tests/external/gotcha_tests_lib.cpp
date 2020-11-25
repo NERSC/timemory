@@ -31,6 +31,12 @@
 #include <string>
 #include <thread>
 
+extern "C"
+{
+    double test_exp(double val) { return exp(val); }
+}
+//
+
 namespace ext
 {
 //--------------------------------------------------------------------------------------//

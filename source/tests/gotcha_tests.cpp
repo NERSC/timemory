@@ -23,6 +23,10 @@
 // SOFTWARE.
 //
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gotcha_tests_lib.hpp"
 
 #include "gtest/gtest.h"
@@ -30,6 +34,7 @@
 #include "timemory/timemory.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <condition_variable>
 #include <mutex>
 #include <random>
@@ -40,16 +45,15 @@ using namespace tim::component;
 using tim::component_tuple_t;
 
 // create a hybrid for inside the gotcha
-using gotcha_tuple_t  = component_tuple_t<wall_clock, cpu_clock, peak_rss>;
-using gotcha_list_t   = tim::component_list_t<cpu_roofline_dp_flops>;
+using gotcha_tuple_t  = component_tuple_t<wall_clock, peak_rss>;
+using gotcha_list_t   = tim::component_list_t<cpu_clock>;
 using gotcha_hybrid_t = tim::auto_hybrid_t<gotcha_tuple_t, gotcha_list_t>;
 
 // create gotcha types for various bundles of functions
 using mpi_gotcha_t    = tim::component::gotcha<1, gotcha_hybrid_t>;
 using work_gotcha_t   = tim::component::gotcha<1, gotcha_hybrid_t, int>;
 using memfun_gotcha_t = tim::component::gotcha<5, gotcha_tuple_t>;
-
-using malloc_gotcha_t = malloc_gotcha::gotcha_type<gotcha_tuple_t>;
+using malloc_gotcha_t = malloc_gotcha::gotcha_type<component_tuple_t<>>;
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, mpi_gotcha_t, priority_constant<256>)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, malloc_gotcha_t, priority_constant<512>)
@@ -58,7 +62,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, mpi_gotcha_t, priority_constant<-2
 TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, malloc_gotcha_t, priority_constant<-512>)
 
 using comp_t  = component_tuple_t<wall_clock, cpu_clock, peak_rss>;
-using tuple_t = component_tuple_t<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t>;
+using tuple_t = component_tuple_t<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t,
+                                  malloc_gotcha_t>;
 using list_t  = gotcha_list_t;
 using auto_hybrid_t = tim::auto_hybrid_t<tuple_t, list_t>;
 
@@ -68,8 +73,6 @@ using vector_t = std::vector<Tp>;
 static constexpr int64_t nitr      = 100000;
 static const double      tolerance = 1.0e-2;
 
-static int    _argc = 0;
-static char** _argv = nullptr;
 namespace details
 {
 //--------------------------------------------------------------------------------------//
@@ -84,12 +87,46 @@ get_test_name()
 
 //--------------------------------------------------------------------------------------//
 
+inline auto&
+get_cleanup()
+{
+    static std::vector<std::function<void()>> _instance;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+cleanup()
+{
+    for(auto& itr : get_cleanup())
+        itr();
+    get_cleanup().clear();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp>
+auto
+allocate(int64_t nsize)
+{
+    Tp* ptr = (Tp*) malloc(nsize * sizeof(Tp));
+    memset(ptr, 0, nsize * sizeof(Tp));
+    get_cleanup().emplace_back([=]() { free(ptr); });
+    std::vector<Tp> buf{};
+    buf.assign(ptr, ptr + nsize);
+    return buf;
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename Tp>
 inline vector_t<Tp>
 generate(const int64_t& nsize)
 {
-    std::vector<Tp> sendbuf(nsize, static_cast<Tp>(0.0));
-    std::mt19937    rng;
+    auto sendbuf = allocate<Tp>(nsize);
+
+    std::mt19937 rng;
     rng.seed(54561434UL);
     auto dist = [&]() { return std::generate_canonical<Tp, 10>(rng); };
     std::generate(sendbuf.begin(), sendbuf.end(), [&]() { return dist(); });
@@ -102,7 +139,9 @@ template <typename Tp>
 inline void
 generate(const int64_t& nsize, std::vector<Tp>& sendbuf)
 {
-    sendbuf.resize(nsize, static_cast<Tp>(0.0));
+    sendbuf.clear();
+    sendbuf = allocate<Tp>(nsize);
+
     for(auto& itr : sendbuf)
         itr = static_cast<Tp>(0.0);
     std::mt19937 rng;
@@ -117,7 +156,7 @@ template <typename Tp>
 inline vector_t<Tp>
 allreduce(const vector_t<Tp>& sendbuf)
 {
-    vector_t<Tp> recvbuf(sendbuf.size(), static_cast<Tp>(0.0));
+    auto recvbuf = allocate<Tp>(sendbuf.size());
 #if defined(TIMEMORY_USE_MPI)
     auto dtype = (std::is_same<Tp, float>::value) ? MPI_FLOAT : MPI_DOUBLE;
     MPI_Allreduce(sendbuf.data(), recvbuf.data(), sendbuf.size(), dtype, MPI_SUM,
@@ -134,9 +173,7 @@ template <typename Tp>
 inline void
 allreduce(const vector_t<Tp>& sendbuf, vector_t<Tp>& recvbuf)
 {
-    recvbuf.resize(sendbuf.size(), static_cast<Tp>(0.0));
-    for(auto& itr : recvbuf)
-        itr = static_cast<Tp>(0.0);
+    recvbuf = allocate<Tp>(sendbuf.size());
 #if defined(TIMEMORY_USE_MPI)
     auto dtype = (std::is_same<Tp, float>::value) ? MPI_FLOAT : MPI_DOUBLE;
     MPI_Allreduce(sendbuf.data(), recvbuf.data(), sendbuf.size(), dtype, MPI_SUM,
@@ -155,9 +192,10 @@ allreduce(const vector_t<Tp>& sendbuf, vector_t<Tp>& recvbuf)
 class gotcha_tests : public ::testing::Test
 {
 protected:
+    void TearDown() override { details::cleanup(); }
+
     static void SetUpTestSuite()
     {
-        tim::settings::banner()       = false;
         tim::settings::width()        = 16;
         tim::settings::precision()    = 6;
         tim::settings::timing_units() = "sec";
@@ -175,11 +213,14 @@ protected:
         cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
         cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
 #endif
+        metric().start();
     }
 
     static void TearDownTestSuite()
     {
+        metric().stop();
         tim::timemory_finalize();
+        tim::manager::master_instance().reset();
         tim::dmp::finalize();
     }
 };
@@ -210,6 +251,7 @@ TEST_F(gotcha_tests, mpi_explicit)
         auto dsendbuf = details::generate<double>(1000);
         auto drecvbuf = details::allreduce(dsendbuf);
         dsum += std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
+        details::cleanup();
     }
 
     auto rank = tim::mpi::rank();
@@ -230,8 +272,8 @@ TEST_F(gotcha_tests, mpi_explicit)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
-    ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+    EXPECT_NEAR(fsum, 49892284.00 * size, tolerance);
+    EXPECT_NEAR(dsum, 49868704.48 * size, tolerance);
 }
 
 //======================================================================================//
@@ -259,6 +301,7 @@ TEST_F(gotcha_tests, mpi_macro)
         auto dsendbuf = details::generate<double>(1000);
         auto drecvbuf = details::allreduce(dsendbuf);
         dsum += std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
+        details::cleanup();
     }
 
     auto rank = tim::mpi::rank();
@@ -279,8 +322,8 @@ TEST_F(gotcha_tests, mpi_macro)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
-    ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+    EXPECT_NEAR(fsum, 49892284.00 * size, tolerance);
+    EXPECT_NEAR(dsum, 49868704.48 * size, tolerance);
 }
 
 //======================================================================================//
@@ -326,8 +369,8 @@ TEST_F(gotcha_tests, work_explicit)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, -2416347.50, tolerance);
-    ASSERT_NEAR(dsum, -1829370.79, tolerance);
+    EXPECT_NEAR(fsum, -2416347.50, tolerance);
+    EXPECT_NEAR(dsum, -1829370.79, tolerance);
 }
 
 //======================================================================================//
@@ -371,8 +414,8 @@ TEST_F(gotcha_tests, work_macro)
         if(rank == 0)
             printf("\n");
 
-        ASSERT_NEAR(fsum, -2416347.50, tolerance);
-        ASSERT_NEAR(dsum, -1829370.79, tolerance);
+        EXPECT_NEAR(fsum, -2416347.50, tolerance);
+        EXPECT_NEAR(dsum, -1829370.79, tolerance);
     };
 
     for(auto i = 0; i < 4; ++i)
@@ -399,9 +442,9 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
-    using toolset_t = tim::auto_tuple_t<gotcha_tuple_t, malloc_gotcha, mpi_gotcha_t>;
+    using toolset_t = tim::auto_tuple_t<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
 
-    malloc_gotcha::configure<gotcha_tuple_t>();
+    malloc_gotcha::configure<component_tuple_t<>>();
 
     mpi_gotcha_t::get_initializer() = [=]() {
 #if defined(TIMEMORY_USE_MPI)
@@ -428,14 +471,16 @@ TEST_F(gotcha_tests, malloc_gotcha)
             details::generate<double>(1000, dsendbuf);
             details::allreduce(dsendbuf, drecvbuf);
             dsum += std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
+
+            details::cleanup();
         }
     }
 
     tool.stop();
     PRINT_HERE("%s", "stopped");
 
-    malloc_gotcha& mc = *tool.get<malloc_gotcha>();
-    std::cout << mc << std::endl;
+    // malloc_gotcha& mc = *tool.get<malloc_gotcha>();
+    // std::cout << mc << std::endl;
 
     auto rank = tim::mpi::rank();
     auto size = tim::mpi::size();
@@ -455,8 +500,10 @@ TEST_F(gotcha_tests, malloc_gotcha)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, 4986708.50 * size, tolerance);
-    ASSERT_NEAR(dsum, 4986870.45 * size, tolerance);
+    EXPECT_NEAR(fsum, 4986708.50 * size, tolerance);
+    EXPECT_NEAR(dsum, 4986870.45 * size, tolerance);
+
+    malloc_gotcha::tear_down<component_tuple_t<>>();
 }
 
 //======================================================================================//
@@ -494,31 +541,28 @@ namespace tim
 {
 namespace component
 {
-struct exp_intercept : public base<exp_intercept, void>
+struct cmath_intercept : public base<cmath_intercept, void>
 {
     static auto& get_intercepts()
     {
-        static uint64_t _instance{ 0 };
+        static unsigned long _instance{ 0 };
         return _instance;
     }
 
     static auto& puts_intercepts()
     {
-        static uint64_t _instance{ 0 };
+        static unsigned long _instance{ 0 };
         return _instance;
     }
 
-    void operator()(const char* msg)
+    TIMEMORY_NOINLINE void operator()(const char* msg) const
     {
         ++puts_intercepts();
         puts(msg);
     }
 
-    double operator()(double val)
+    TIMEMORY_NOINLINE double operator()(double val) const
     {
-        std::stringstream ss;
-        ss << "computing exp(" << val << ")";
-        ext::do_puts(ss.str().c_str());
         ++get_intercepts();
         return exp(val);
     }
@@ -526,38 +570,104 @@ struct exp_intercept : public base<exp_intercept, void>
 }  // namespace component
 }  // namespace tim
 
+using cmath_intercept_t = gotcha<4, std::tuple<>, cmath_intercept>;
+
 TEST_F(gotcha_tests, replacement)
 {
-    auto _dbg              = tim::settings::debug();
-    tim::settings::debug() = true;
+    auto _dbg = tim::settings::debug();
+    // tim::settings::debug() = true;
 
-    using exp_intercept_t = gotcha<2, std::tuple<>, exp_intercept>;
-    using exp_bundle_t    = tim::component_bundle<TIMEMORY_API, exp_intercept_t>;
+    using exp_bundle_t = tim::component_bundle<TIMEMORY_API, cmath_intercept_t>;
 
-    static_assert(exp_intercept_t::components_size == 0,
-                  "exp_intercept_t should have no components");
-    static_assert(exp_intercept_t::differ_is_component,
-                  "exp_intercept_t won't replace exp");
+    static_assert(cmath_intercept_t::components_size == 0,
+                  "cmath_intercept_t should have no components");
+    static_assert(cmath_intercept_t::differentiator_is_component,
+                  "cmath_intercept_t won't replace exp");
 
     //
-    // configure the initializer for the gotcha component which replaces exp with expf
+    // configure the initializer for the gotcha component which replaces exp
     //
-    exp_intercept_t::get_initializer() = []() {
+    cmath_intercept_t::get_default_ready() = true;
+    cmath_intercept_t::get_initializer()   = []() {
         puts("Generating exp intercept...");
-        TIMEMORY_C_GOTCHA(exp_intercept_t, 0, exp);
-        TIMEMORY_CXX_GOTCHA(exp_intercept_t, 1, ext::do_puts);
+        TIMEMORY_C_GOTCHA(cmath_intercept_t, 0, exp);
+        // TIMEMORY_C_GOTCHA(cmath_intercept_t, 1, test_exp);
+        TIMEMORY_CXX_GOTCHA(cmath_intercept_t, 2, ext::do_puts);
+        TIMEMORY_DERIVED_GOTCHA(cmath_intercept_t, 3, exp, "__exp_finite");
     };
 
+    auto inp = std::min<double>(10.0, exp(5.0));
     {
-        TIMEMORY_BLANK_MARKER(exp_bundle_t, details::get_test_name());
-        double ret = 10.0;
+        {
+            auto _configured = cmath_intercept_t::is_configured();
+            EXPECT_FALSE(_configured);
+        }
+        // TIMEMORY_BLANK_MARKER(exp_bundle_t, details::get_test_name());
+        auto _handle = exp_bundle_t(details::get_test_name());
+        {
+            auto _info = cmath_intercept_t::get_info();
+            EXPECT_GE(_info[0], 0) << "# ready";
+            EXPECT_GE(_info[1], 0) << "# filled";
+            EXPECT_GE(_info[2], 0) << "# is_active";
+            EXPECT_EQ(_info[3], 0) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
+        _handle.start();
+        {
+            auto _configured = cmath_intercept_t::is_configured();
+            EXPECT_TRUE(_configured);
+            auto _info = cmath_intercept_t::get_info();
+            EXPECT_GE(_info[0], 2) << "# ready";
+            EXPECT_GE(_info[1], 2) << "# filled";
+            EXPECT_GE(_info[2], 2) << "# is_active";
+            EXPECT_EQ(_info[3], 0) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
+        double ret = inp;
         for(int i = 0; i < 10; ++i)
-            ret += exp(ret);
+        {
+            auto val = ret / ::pow(ret, 2);
+            ret += test_exp(val);
+            ext::do_puts(TIMEMORY_JOIN("", "computing exp(", val, ")").c_str());
+        }
+        {
+            auto _info = cmath_intercept_t::get_info();
+            EXPECT_GE(_info[0], 2) << "# ready";
+            EXPECT_GE(_info[1], 2) << "# filled";
+            EXPECT_GE(_info[2], 2) << "# is_active";
+            EXPECT_EQ(_info[3], 0) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
+        _handle.stop();
+        {
+            auto _info = cmath_intercept_t::get_info();
+            EXPECT_GE(_info[0], 0) << "# ready";
+            EXPECT_GE(_info[1], 2) << "# filled";
+            EXPECT_GE(_info[2], 0) << "# is_active";
+            EXPECT_EQ(_info[3], 0) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
+        cmath_intercept_t::disable();
+        {
+            auto _configured = cmath_intercept_t::is_configured();
+            EXPECT_FALSE(_configured);
+            auto _info = cmath_intercept_t::get_info();
+            EXPECT_GE(_info[0], 0) << "# ready";
+            EXPECT_GE(_info[1], 2) << "# filled";
+            EXPECT_GE(_info[2], 0) << "# is_active";
+            EXPECT_GE(_info[3], 2) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
         printf("result: %f\n", ret);
+        EXPECT_GT(ret, 10.9);
+        // EXPECT_LT(ret, 11.0);
     }
 
-    EXPECT_EQ(exp_intercept::get_intercepts(), 10);
-    EXPECT_EQ(exp_intercept::puts_intercepts(), 10);
+    printf("number of exp  intercepts: %lu\n", cmath_intercept::get_intercepts());
+    printf("number of puts intercepts: %lu\n", cmath_intercept::puts_intercepts());
+
+    EXPECT_EQ(cmath_intercept::get_intercepts(), 10);
+    EXPECT_EQ(cmath_intercept::puts_intercepts(), 10);
 
     tim::settings::debug() = _dbg;
 }
@@ -567,6 +677,7 @@ TEST_F(gotcha_tests, replacement)
 TEST_F(gotcha_tests, member_functions)
 {
     using pair_type     = std::pair<float, double>;
+    using bundle_type   = tim::auto_tuple<memfun_gotcha_t>;
     auto real_storage   = tim::storage<wall_clock>::instance();
     auto real_init_size = real_storage->size();
     printf("[initial]> wall-clock storage size: %li\n", (long int) real_init_size);
@@ -604,21 +715,23 @@ TEST_F(gotcha_tests, member_functions)
     float  fsum = 0.0;
     double dsum = 0.0;
     {
-        TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
+        TIMEMORY_BLANK_POINTER(gotcha_tuple_t, details::get_test_name());
 
         DoWork dw(pair_type(0.25, 0.5));
 
-        auto    _nitr = nitr / 10;
-        int64_t ntot  = 0;
-        for(int i = 0; i < _nitr; i += 10)
+        decltype(nitr) _ndiv = 1000;
+        auto           _nitr = nitr / _ndiv;
+        int64_t        ntot  = 0;
+        for(int i = 0; i < _nitr; i += _ndiv)
         {
-            ntot += 10;
-            if(i >= (_nitr - 10))
+            TIMEMORY_BLANK_POINTER(bundle_type, details::get_test_name());
+            ntot += _ndiv;
+            if(i >= (_nitr - _ndiv))
             {
-                for(int j = 0; j < 10; ++j)
+                for(int j = 0; j < _ndiv; ++j)
                 {
-                    dw.execute_fp4(1000);
-                    dw.execute_fp8(1000);
+                    dw.execute_fp4(10);
+                    dw.execute_fp8(10);
                     auto ret = dw.get();
                     fsum += std::get<0>(ret);
                     dsum += std::get<1>(ret);
@@ -627,18 +740,18 @@ TEST_F(gotcha_tests, member_functions)
             else
             {
                 auto _fp4 = [&]() {
-                    for(int j = 0; j < 10; ++j)
+                    for(int j = 0; j < _ndiv; ++j)
                     {
-                        dw.execute_fp4(1000);
+                        dw.execute_fp4(10);
                         auto ret = dw.get();
                         fsum += std::get<0>(ret);
                     }
                 };
 
                 auto _fp8 = [&]() {
-                    for(int j = 0; j < 10; ++j)
+                    for(int j = 0; j < _ndiv; ++j)
                     {
-                        dw.execute_fp8(1000);
+                        dw.execute_fp8(10);
                         auto ret = dw.get();
                         dsum += std::get<1>(ret);
                     }
@@ -665,7 +778,7 @@ TEST_F(gotcha_tests, member_functions)
         double dsum2 = 0.0;
         for(int64_t i = 0; i < ntot; ++i)
         {
-            dw.execute_fp(1000, { 0.25 }, { 0.5 });
+            dw.execute_fp(10, { 0.25 }, { 0.5 });
             auto ret = dw.get();
             fsum2 += std::get<0>(ret);
             dsum2 += std::get<1>(ret);
@@ -679,8 +792,8 @@ TEST_F(gotcha_tests, member_functions)
             printf("[%i]> double-precision sum2 = %8.2f\n", rank, dsum2);
         }
 
-        ASSERT_NEAR(fsum2, fsum, tolerance);
-        ASSERT_NEAR(dsum2, dsum, tolerance);
+        EXPECT_NEAR(fsum2, fsum, tolerance);
+        EXPECT_NEAR(dsum2, dsum, tolerance);
     }
 
     auto rank = tim::mpi::rank();
@@ -701,12 +814,40 @@ TEST_F(gotcha_tests, member_functions)
     if(rank == 0)
         printf("\n");
 
-    auto real_final_size = real_storage->get().size();
+    auto real_data       = real_storage->get();
+    auto real_final_size = real_storage->size();
     printf("[final]> wall-clock storage size: %li\n", (long int) real_final_size);
 
-    ASSERT_NEAR(fsum, -241718.61, tolerance);
-    ASSERT_NEAR(dsum, +88155.09, tolerance);
-    ASSERT_EQ(real_final_size, 5 + real_init_size);
+    EXPECT_NEAR(fsum, -1818.20, tolerance);
+    EXPECT_NEAR(dsum, -858.72, tolerance);
+    EXPECT_EQ(real_final_size, 5 + real_init_size);
+    {
+        auto itr = real_data.begin();
+        std::advance(itr, real_init_size);
+        EXPECT_EQ(itr->data().get_laps(), 1) << itr->prefix();
+    }
+    {
+        auto itr = real_data.begin();
+        std::advance(itr, real_init_size + 1);
+        EXPECT_GE(itr->data().get_laps(), 1000) << itr->prefix();
+        ++itr;
+        EXPECT_GE(itr->data().get_laps(), 1000) << itr->prefix();
+        ++itr;
+        EXPECT_GE(itr->data().get_laps(), 1000) << itr->prefix();
+        ++itr;
+        EXPECT_GE(itr->data().get_laps(), 1000) << itr->prefix();
+    }
+    {
+        auto itr = real_data.begin();
+        std::advance(itr, real_init_size + 1);
+        EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
+        ++itr;
+        EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
+        ++itr;
+        EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
+        ++itr;
+        EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
+    }
 }
 
 //======================================================================================//
@@ -740,6 +881,8 @@ TEST_F(gotcha_tests, mpip)
             auto dsendbuf = details::generate<double>(1000);
             auto drecvbuf = details::allreduce(dsendbuf);
             dsum += std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
+
+            details::cleanup();
         }
 
         auto rank = tim::mpi::rank();
@@ -760,8 +903,8 @@ TEST_F(gotcha_tests, mpip)
         if(rank == 0)
             printf("\n");
 
-        ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
-        ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+        EXPECT_NEAR(fsum, 49892284.00 * size, tolerance);
+        EXPECT_NEAR(dsum, 49868704.48 * size, tolerance);
     }
 
     deactivate_mpip<mpi_toolset_t, api_t>(ret);
@@ -771,17 +914,6 @@ TEST_F(gotcha_tests, mpip)
 
 //======================================================================================//
 
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-    return RUN_ALL_TESTS();
-}
-
-//======================================================================================//
-
-TIMEMORY_INITIALIZE_STORAGE(mpi_gotcha_t)
-TIMEMORY_INITIALIZE_STORAGE(work_gotcha_t)
-TIMEMORY_INITIALIZE_STORAGE(memfun_gotcha_t)
+TIMEMORY_INITIALIZE_STORAGE(mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t, malloc_gotcha_t,
+                            cmath_intercept, cmath_intercept_t, wall_clock, cpu_clock,
+                            peak_rss)

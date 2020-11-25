@@ -94,10 +94,13 @@ struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
         operation::generic_operator<this_type, operation::start<this_type>, Tag>;
     using stop_t =
         operation::generic_operator<this_type, operation::stop<this_type>, Tag>;
+    using compute_type = math::compute<InpT, typename trait::units<this_type>::type>;
 
     friend struct operation::record<this_type>;
     friend struct operation::start<this_type>;
     friend struct operation::stop<this_type>;
+    friend struct operation::set_started<this_type>;
+    friend struct operation::set_stopped<this_type>;
 
     static std::string& label()
     {
@@ -155,14 +158,14 @@ struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
               enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void store(const T& val)
     {
-        handler_type::store(*this, val / get_unit());
+        handler_type::store(*this, compute_type::divide(val, get_unit()));
     }
 
     template <typename T,
               enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void store(handler_type&&, const T& val)
     {
-        handler_type::store(*this, val / get_unit());
+        handler_type::store(*this, compute_type::divide(val, get_unit()));
     }
 
     template <typename FuncT, typename T,
@@ -172,7 +175,8 @@ struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
                                                        val),
                     void())
     {
-        handler_type::store(*this, std::forward<FuncT>(f), val / get_unit());
+        handler_type::store(*this, std::forward<FuncT>(f),
+                            compute_type::divide(val, get_unit()));
     }
 
     template <typename FuncT, typename T,
@@ -182,35 +186,36 @@ struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
                                                        val),
                     void())
     {
-        handler_type::store(*this, std::forward<FuncT>(f), val / get_unit());
+        handler_type::store(*this, std::forward<FuncT>(f),
+                            compute_type::divide(val, get_unit()));
     }
 
     template <typename T,
               enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_begin(const T& val)
     {
-        handler_type::begin(*this, val / get_unit());
+        handler_type::begin(*this, compute_type::divide(val, get_unit()));
     }
 
     template <typename T,
               enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_end(const T& val)
     {
-        handler_type::end(*this, val / get_unit());
+        handler_type::end(*this, compute_type::divide(val, get_unit()));
     }
 
     template <typename T,
               enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_begin(handler_type&&, const T& val)
     {
-        handler_type::begin(*this, val / get_unit());
+        handler_type::begin(*this, compute_type::divide(val, get_unit()));
     }
 
     template <typename T,
               enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, int> = 0>
     void mark_end(handler_type&&, const T& val)
     {
-        handler_type::end(*this, val / get_unit());
+        handler_type::end(*this, compute_type::divide(val, get_unit()));
     }
 
     auto get() const { return handler_type::get(*this); }

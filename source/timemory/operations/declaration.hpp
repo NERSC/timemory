@@ -548,10 +548,6 @@ public:
 //
 //--------------------------------------------------------------------------------------//
 //
-//
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename Tp>
 struct init_storage
 {
@@ -579,6 +575,34 @@ struct init_storage
     static get_type get();
 
     static void init();
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct fini_storage
+{
+    fini_storage();
+
+private:
+    // first check if type is available
+    template <typename Up = Tp, enable_if_t<trait::is_available<Up>::value, char> = 0>
+    TIMEMORY_INLINE void sfinae(int) const;
+    //
+    template <typename Up = Tp, enable_if_t<!trait::is_available<Up>::value, char> = 0>
+    TIMEMORY_INLINE void sfinae(long) const;
+    //
+    // second check for whether storage has finalize function
+    template <typename StorageT>
+    TIMEMORY_INLINE auto sfinae(StorageT* ptr, int) const
+        -> decltype(ptr->finalize(), void())
+    {
+        ptr->finalize();
+    }
+    //
+    template <typename StorageT>
+    TIMEMORY_INLINE void sfinae(StorageT*, long) const
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//

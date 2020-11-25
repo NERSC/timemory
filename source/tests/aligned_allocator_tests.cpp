@@ -24,8 +24,7 @@
 
 #include "test_macros.hpp"
 
-TIMEMORY_TEST_ARGS
-TIMEMORY_TEST_MAIN
+TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/backends.hpp"
 #include "timemory/config.hpp"

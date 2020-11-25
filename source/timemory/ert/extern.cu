@@ -25,3 +25,37 @@
 #define TIMEMORY_ERT_SOURCE_CUDA
 
 #include "timemory/ert/extern.hpp"
+
+namespace tim
+{
+namespace ert
+{
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(
+    class counter<device::gpu, float, component::ert_timer>)
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(
+    class counter<device::gpu, double, component::ert_timer>)
+//
+#if defined(TIMEMORY_USE_CUDA_HALF)
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(
+    class counter<device::gpu, cuda::fp16_t, component::ert_timer>)
+#endif
+//
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(
+    struct configuration<device::gpu, float, component::ert_timer>)
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(
+    struct configuration<device::gpu, double, component::ert_timer>)
+//
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(
+    struct executor<device::gpu, float, component::ert_timer>)
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(
+    struct executor<device::gpu, double, component::ert_timer>)
+//
+#if defined(TIMEMORY_USE_CUDA_HALF)
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(
+    struct configuration<device::gpu, cuda::fp16_t, component::ert_timer>)
+//
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(
+    struct executor<device::gpu, cuda::fp16_t, component::ert_timer>)
+#endif
+}  // namespace ert
+}  // namespace tim

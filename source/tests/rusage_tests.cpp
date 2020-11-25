@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include "timemory/timemory.hpp"
@@ -58,9 +62,6 @@ static const double byte_tolerance = tot_rw;  // macOS is not dependable
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \
         return;
-
-static int    _argc = 0;
-static char** _argv = nullptr;
 
 //--------------------------------------------------------------------------------------//
 namespace details
@@ -219,31 +220,24 @@ print_info(const Tp& obj, int64_t expected)
 class rusage_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override
+    static void SetUpTestSuite()
     {
-        static bool configured = false;
-        if(!configured)
-        {
-            configured                    = true;
-            tim::settings::verbose()      = 0;
-            tim::settings::debug()        = false;
-            tim::settings::json_output()  = true;
-            tim::settings::mpi_thread()   = false;
-            tim::settings::precision()    = 9;
-            tim::settings::memory_units() = memory_unit.second;
-            tim::dmp::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::file_output() = false;
+        tim::settings::verbose()      = 0;
+        tim::settings::debug()        = false;
+        tim::settings::json_output()  = true;
+        tim::settings::mpi_thread()   = false;
+        tim::settings::precision()    = 9;
+        tim::settings::memory_units() = memory_unit.second;
+        tim::dmp::initialize(_argc, _argv);
+        tim::timemory_init(_argc, _argv);
+        tim::settings::file_output() = false;
 
-            // preform allocation only once here
-            details::allocate();
-
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
-            tim::settings::dart_type()   = "peak_rss";
-        }
+        metric().start();
+        // preform allocation only once here
+        details::allocate();
     }
+
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
 };
 
 //--------------------------------------------------------------------------------------//
@@ -290,22 +284,6 @@ TEST_F(rusage_tests, current_peak_rss)
     details::print_info(current_peak, tot_size);
     ASSERT_NEAR(tot_size, current_peak.get().second - current_peak.get().first,
                 peak_tolerance);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -142,8 +142,11 @@ lightweight_tuple<Types...>::lightweight_tuple(const captured_location_t& loc,
 template <typename... Types>
 lightweight_tuple<Types...>::~lightweight_tuple()
 {
-    if(m_is_active())
-        stop();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_stop>::value)
+    {
+        if(m_is_active())
+            stop();
+    }
 }
 
 //--------------------------------------------------------------------------------------//

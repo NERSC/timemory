@@ -53,6 +53,7 @@
 #include "timemory/operations/types/finalize/print.hpp"
 #include "timemory/operations/types/finalize/upc_get.hpp"
 #include "timemory/operations/types/fini.hpp"
+#include "timemory/operations/types/fini_storage.hpp"
 #include "timemory/operations/types/generic.hpp"
 #include "timemory/operations/types/get.hpp"
 #include "timemory/operations/types/init.hpp"

@@ -26,6 +26,8 @@
 
 #include "timemory/compat/macros.h"
 
+#include <cassert>
+
 #if defined(TIMEMORY_CORE_SOURCE)
 #    define TIMEMORY_SETTINGS_SOURCE
 #elif defined(TIMEMORY_USE_CORE_EXTERN)
@@ -60,7 +62,7 @@
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
             static auto _key = new std::string(ENV_VAR);                                 \
-            return static_cast<tsettings<TYPE>*>(m_data[*_key].get())->get();            \
+            return static_cast<tsettings<TYPE>*>(m_data.at(*_key).get())->get();         \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
@@ -90,7 +92,7 @@
         TYPE& get_##FUNC()                                                               \
         {                                                                                \
             static auto _key = new std::string(ENV_VAR);                                 \
-            return static_cast<tsettings<TYPE, TYPE&>*>(m_data[*_key].get())->get();     \
+            return static_cast<tsettings<TYPE, TYPE&>*>(m_data.at(*_key).get())->get();  \
         }                                                                                \
                                                                                          \
         TYPE get_##FUNC() const                                                          \
@@ -114,36 +116,47 @@
 //
 #if !defined(TIMEMORY_SETTINGS_MEMBER_IMPL)
 #    define TIMEMORY_SETTINGS_MEMBER_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT)               \
-        m_order.push_back(ENV_VAR);                                                      \
-        m_data.insert(                                                                   \
-            { ENV_VAR, std::make_shared<tsettings<TYPE>>(INIT, #FUNC, ENV_VAR, DESC) });
+                                                                                         \
+        if(m_data                                                                        \
+               .insert({ ENV_VAR, std::make_shared<tsettings<TYPE>>(INIT, #FUNC,         \
+                                                                    ENV_VAR, DESC) })    \
+               .second)                                                                  \
+            m_order.push_back(ENV_VAR);
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_SETTINGS_MEMBER_ARG_IMPL)
 #    define TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT, ...)      \
-        m_order.push_back(ENV_VAR);                                                      \
-        m_data.insert({ ENV_VAR, std::make_shared<tsettings<TYPE>>(                      \
-                                     INIT, #FUNC, ENV_VAR, DESC, __VA_ARGS__) });
+                                                                                         \
+        if(m_data                                                                        \
+               .insert({ ENV_VAR, std::make_shared<tsettings<TYPE>>(                     \
+                                      INIT, #FUNC, ENV_VAR, DESC, __VA_ARGS__) })        \
+               .second)                                                                  \
+            m_order.push_back(ENV_VAR);
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_SETTINGS_REFERENCE_IMPL)
 #    define TIMEMORY_SETTINGS_REFERENCE_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT)            \
-        m_order.push_back(ENV_VAR);                                                      \
-        m_data.insert({ ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(               \
-                                     INIT, #FUNC, ENV_VAR, DESC) });
+                                                                                         \
+        if(m_data                                                                        \
+               .insert({ ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(              \
+                                      INIT, #FUNC, ENV_VAR, DESC) })                     \
+               .second)                                                                  \
+            m_order.push_back(ENV_VAR);
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL)
 #    define TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT, ...)   \
-        m_order.push_back(ENV_VAR);                                                      \
-        m_data.insert({ ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(               \
-                                     INIT, #FUNC, ENV_VAR, DESC, __VA_ARGS__) });
+        if(m_data                                                                        \
+               .insert({ ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(              \
+                                      INIT, #FUNC, ENV_VAR, DESC, __VA_ARGS__) })        \
+               .second)                                                                  \
+            m_order.push_back(ENV_VAR);
 #endif
 //
 //--------------------------------------------------------------------------------------//

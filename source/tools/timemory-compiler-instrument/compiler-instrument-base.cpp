@@ -23,16 +23,21 @@
 // SOFTWARE.
 
 #define TIMEMORY_CEREAL_DLL_EXPORT
-#define TIMEMORY_VISIBILITY(...)
+#define TIMEMORY_INTERNAL __attribute__((visibility("internal")))
+#define TIMEMORY_EXTERNAL __attribute__((visibility("default")))
+#define TIMEMORY_VISIBILITY(...) TIMEMORY_INTERNAL
+#define TIMEMORY_INTERNAL_NO_INSTRUMENT TIMEMORY_INTERNAL TIMEMORY_NEVER_INSTRUMENT
 
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
 
+#include <array>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <dlfcn.h>
+#include <functional>
 #include <limits>
 #include <thread>
 #include <unordered_map>
@@ -42,59 +47,106 @@
 extern "C"
 {
     void timemory_profile_func_enter(void* this_fn, void* call_site)
-        TIMEMORY_ATTRIBUTE(visibility("default")) TIMEMORY_NEVER_INSTRUMENT;
+        TIMEMORY_EXTERNAL TIMEMORY_NEVER_INSTRUMENT;
     void timemory_profile_func_exit(void* this_fn, void* call_site)
-        TIMEMORY_ATTRIBUTE(visibility("default")) TIMEMORY_NEVER_INSTRUMENT;
+        TIMEMORY_EXTERNAL TIMEMORY_NEVER_INSTRUMENT;
+    int timemory_profile_thread_init(void) TIMEMORY_EXTERNAL TIMEMORY_NEVER_INSTRUMENT;
+    int timemory_profile_thread_fini(void) TIMEMORY_EXTERNAL TIMEMORY_NEVER_INSTRUMENT;
 }
-
-//--------------------------------------------------------------------------------------//
-
-static void
-initialize() TIMEMORY_NEVER_INSTRUMENT;
-static void
-allocate() TIMEMORY_NEVER_INSTRUMENT;
-static void
-finalize() TIMEMORY_NEVER_INSTRUMENT;
-static bool&
-get_enabled() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_first() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_overhead() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_throttle() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_trace_map() TIMEMORY_NEVER_INSTRUMENT;
-static auto&
-get_label_map() TIMEMORY_NEVER_INSTRUMENT;
-static auto
-get_label(void*, void*) TIMEMORY_NEVER_INSTRUMENT;
 
 //--------------------------------------------------------------------------------------//
 
 using namespace tim::component;
 
+struct pthread_gotcha;
+static int64_t primary_tidx   = 0;
+static size_t  throttle_count = 1000;
+static size_t  throttle_value = 10000;
+
 template <typename Tp>
 using uomap_t     = std::unordered_map<const void*, std::unordered_map<const void*, Tp>>;
 using trace_set_t = tim::available_list_t;
 using trace_vec_t = std::vector<std::unique_ptr<trace_set_t>>;
-using throttle_map_t = uomap_t<bool>;
-using overhead_map_t = uomap_t<std::pair<monotonic_clock, size_t>>;
-using trace_map_t    = uomap_t<trace_vec_t>;
-using label_map_t    = std::unordered_map<const void*, size_t>;
-
-//--------------------------------------------------------------------------------------//
-
-bool m_default_enabled = (std::atexit(&finalize), true);
+using throttle_map_t   = uomap_t<bool>;
+using overhead_map_t   = uomap_t<std::pair<monotonic_clock, size_t>>;
+using trace_map_t      = uomap_t<trace_vec_t>;
+using label_map_t      = std::unordered_map<const void*, size_t>;
+using empty_tuple_t    = tim::component_tuple<>;
+using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
+using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
 
 //--------------------------------------------------------------------------------------//
 
 template <size_t... Idx>
-auto
-get_storage(tim::index_sequence<Idx...>)
+static auto get_storage(tim::index_sequence<Idx...>) TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
+template <size_t Idx, size_t N>
+static void
+get_storage_impl(std::array<std::function<void()>, N>&) TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
+static bool&
+get_enabled() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_first() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_overhead() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_throttle() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_trace_map() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static unsigned long
+get_trace_size() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_label_map() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto
+get_label(void*, void*) TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
+static void
+initialize() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static void
+allocate() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static void
+finalize() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
+static std::shared_ptr<pthread_bundle_t>
+setup_pthread_gotcha() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+
+//--------------------------------------------------------------------------------------//
+
+namespace
 {
-    std::array<tim::storage_initializer, sizeof...(Idx)> _data;
-    TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
+bool        m_default_enabled = (std::atexit(&finalize), true);
+const void* null_site         = nullptr;
+}  // namespace
+
+#if !defined(CALL_SITE)
+#    define CALL_SITE call_site
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t Idx, size_t N>
+void
+get_storage_impl(std::array<std::function<void()>, N>& _data)
+{
+    static_assert(Idx < N, "Error! Expanded greater than array size");
+    _data[Idx] = []() {
+        tim::operation::fini_storage<tim::component::enumerator_t<Idx>>{};
+    };
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t... Idx>
+auto get_storage(tim::index_sequence<Idx...>)
+{
+    // array of finalization functions
+    std::array<std::function<void()>, sizeof...(Idx)> _data{};
+    // initialize the storage in the thread
+    TIMEMORY_FOLD_EXPRESSION(tim::storage_initializer::get<Idx>());
+    // generate a function for finalizing
+    TIMEMORY_FOLD_EXPRESSION(get_storage_impl<Idx>(_data));
+    // return the array of finalization functions
     return _data;
 }
 
@@ -104,6 +156,24 @@ bool&
 get_enabled()
 {
     static auto _instance = new bool{ tim::settings::enabled() };
+    return *_instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+bool&
+get_thread_enabled()
+{
+    static thread_local auto _instance = new bool{ get_enabled() };
+    return *_instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+bool
+get_debug()
+{
+    static auto _instance = new bool{ tim::get_env("TIMEMORY_COMPILER_DEBUG", false) };
     return *_instance;
 }
 
@@ -199,31 +269,40 @@ get_label(void* this_fn, void* call_site)
 
 //--------------------------------------------------------------------------------------//
 
-static auto&
-get_init()
-{
-    static auto _comp_env = tim::get_env<std::string>("TIMEMORY_COMPILER_COMPONENTS", "");
-    static auto _glob_env = tim::settings::global_components();
-    static auto _used_env = (_comp_env.empty()) ? _glob_env : _comp_env;
-    static auto _enum_env = tim::enumerate_components(tim::delimit(_used_env, ",;: "));
-    return _enum_env;
-}
-
-//--------------------------------------------------------------------------------------//
-
 static void
 initialize()
 {
+    static bool _first = true;
+    if(!_first)
+        return;
+    _first = false;
+
+    // ensure a static holds a reference count to the manager
+    static auto _manager = tim::manager::instance();
+    tim::consume_parameters(_manager);
+
+    primary_tidx = tim::threading::get_id();
+
+    // default settings
     if(tim::get_env<std::string>("TIMEMORY_COUT_OUTPUT", "").empty())
         tim::settings::cout_output() = false;
-    if(tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "").empty())
-        tim::settings::global_components() = "wall_clock";
+
+    // initialization
     char* argv = new char[128];
     strcpy(argv, "compiler-instrumentation");
     tim::timemory_init(1, &argv);
     delete[] argv;
+
+    // parse environment
     tim::settings::parse();
     tim::settings::suppress_parsing() = true;
+    tim::settings::plot_output()      = false;
+
+    // throttling
+    throttle_count = tim::get_env("TIMEMORY_COMPILER_THROTTLE_COUNT", throttle_count);
+    throttle_value = tim::get_env("TIMEMORY_COMPILER_THROTTLE_VALUE", throttle_value);
+
+    // output path
     if(tim::get_env<std::string>("TIMEMORY_OUTPUT_PATH", "").empty())
     {
         tim::settings::output_path() = tim::get_env<std::string>(
@@ -234,30 +313,58 @@ initialize()
         tim::settings::output_prefix() =
             tim::get_env<std::string>("TIMEMORY_COMPILER_OUTPUT_PREFIX", "compiler-");
     }
-    tim::consume_parameters(
-        get_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{}));
+
+    auto        _comp_env = tim::get_env<std::string>("TIMEMORY_COMPILER_COMPONENTS", "");
+    auto        _glob_env = tim::settings::global_components();
+    auto        _used_env = (_comp_env.empty()) ? _glob_env : _comp_env;
+    static auto _enum_env = tim::enumerate_components(tim::delimit(_used_env, ",;: "));
+    if(_enum_env.empty())
+        _enum_env.push_back(WALL_CLOCK);
+
+    static_assert(std::is_same<trace_set_t, tim::available_list_t>::value,
+                  "Error! mismatched types");
+
+    trace_set_t::get_initializer() = [](trace_set_t& ts) {
+        tim::initialize(ts, _enum_env);
+    };
 }
 
 //--------------------------------------------------------------------------------------//
 
 static void
 allocate()
-{}
+{
+    static thread_local bool _first = true;
+    if(!_first)
+        return;
+    _first = false;
+
+    auto tidx = tim::threading::get_id();
+    tim::consume_parameters(
+        tidx, get_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{}));
+}
 
 //--------------------------------------------------------------------------------------//
 
 void
 finalize()
 {
-    get_enabled() = false;
-    auto lk       = new tim::trace::lock<tim::trace::compiler>{};
+    if(tim::threading::get_id() == primary_tidx)
+        get_enabled() = false;
+
+    get_thread_enabled() = false;
+
+    // acquire a lock so that no more entries are added while finalizing
+    tim::trace::lock<tim::trace::compiler> lk{};
+    lk.acquire();
+
     if(get_trace_map())
-        printf("[%i]> timemory-compiler-instrument: %lu results\n",
-               tim::process::get_id(), (unsigned long) get_trace_size());
+        printf("[pid=%i][tid=%i]> timemory-compiler-instrument: %lu results\n",
+               (int) tim::process::get_id(), (int) tim::threading::get_id(),
+               (unsigned long) get_trace_size());
     else
-        printf("[%i]> timemory-compiler-instrument: finalizing...\n",
-               tim::process::get_id());
-    lk->acquire();
+        printf("[pid=%i][tid=%i]> timemory-compiler-instrument: finalizing...\n",
+               (int) tim::process::get_id(), (int) tim::threading::get_id());
 
     // clean up trace map
     if(get_trace_map())
@@ -268,10 +375,13 @@ finalize()
                 for(auto ritr = fitr.second.rbegin(); ritr != fitr.second.rend(); ++ritr)
                     (*ritr)->stop();
         }
-        get_trace_map()->clear();
-        delete get_trace_map();
-        get_trace_map() = nullptr;
     }
+
+    // clean up trace map
+    if(get_trace_map())
+        get_trace_map()->clear();
+    delete get_trace_map();
+    get_trace_map() = nullptr;
 
     // clean up overhead map
     if(get_overhead())
@@ -285,20 +395,12 @@ finalize()
     delete get_throttle();
     get_throttle() = nullptr;
 
+    if(tim::threading::get_id() != primary_tidx)
+        return;
+
     auto _manager = tim::manager::instance();
-    if(_manager && !_manager->is_finalized())
+    if(_manager && !_manager->is_finalized() && !_manager->is_finalizing())
         tim::timemory_finalize();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <size_t... Idx>
-static auto
-init_storage(tim::index_sequence<Idx...>)
-{
-    std::array<tim::storage_initializer, sizeof...(Idx)> _data;
-    TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
-    return _data;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -306,12 +408,6 @@ init_storage(tim::index_sequence<Idx...>)
 //      timemory symbols
 //
 //--------------------------------------------------------------------------------------//
-
-const void* null_site = nullptr;
-
-#if !defined(CALL_SITE)
-#    define CALL_SITE call_site
-#endif
 
 extern "C"
 {
@@ -321,29 +417,28 @@ extern "C"
         if(!lk || !get_enabled())
             return;
 
-        static auto _initialized = (initialize(), true);
-        static auto _allocated   = (allocate(), true);
-
         const auto& _trace_map = get_trace_map();
         if(!_trace_map)
             return;
 
         auto _label = get_label(this_fn, call_site);
-        // puts(tim::get_hash_identifier(_label).c_str());
+        if(get_debug())
+            fprintf(stderr, "[%i][%i][timemory-compiler-inst]> %s\n",
+                    (int) tim::process::get_id(), (int) tim::threading::get_id(),
+                    tim::get_hash_identifier(_label).substr(0, 120).c_str());
 
         const auto& _overhead = get_overhead();
         const auto& _throttle = get_throttle();
         if((*_throttle)[CALL_SITE][this_fn])
             return;
 
-        (*_trace_map)[CALL_SITE][this_fn].emplace_back(
-            std::make_unique<trace_set_t>(_label));
-        tim::initialize(*(*_trace_map)[CALL_SITE][this_fn].back(), get_init());
-        (*_trace_map)[CALL_SITE][this_fn].back()->start();
-        if((*_trace_map)[CALL_SITE][this_fn].empty())
+        auto& vec = (*_trace_map)[CALL_SITE][this_fn];
+        vec.emplace_back(std::make_unique<trace_set_t>(_label));
+        vec.back()->start();
+        if(vec.size() == 1)
             (*_overhead)[CALL_SITE][this_fn].first.start();
 
-        tim::consume_parameters(call_site, null_site, _initialized, _allocated);
+        tim::consume_parameters(call_site, null_site);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -354,13 +449,22 @@ extern "C"
         if(!lk || !get_enabled())
             return;
 
-        // puts(tim::get_hash_identifier(get_label(this_fn, call_site)).c_str());
+        if(get_debug())
+            fprintf(stderr, "[%i][%i][timemory-compiler-inst]> %s\n",
+                    (int) tim::process::get_id(), (int) tim::threading::get_id(),
+                    tim::get_hash_identifier(get_label(this_fn, call_site))
+                        .substr(0, 120)
+                        .c_str());
 
         const bool _is_first =
             (get_first().first == this_fn && get_first().second == call_site);
 
         if(_is_first)
-            get_enabled() = false;
+        {
+            get_thread_enabled() = false;
+            if(tim::threading::get_id() == primary_tidx)
+                get_enabled() = false;
+        }
 
         const auto& _trace_map = get_trace_map();
         if(!_trace_map)
@@ -372,13 +476,14 @@ extern "C"
         if((*_throttle)[CALL_SITE][this_fn])
             return;
 
-        if((*_trace_map)[CALL_SITE][this_fn].empty())
+        auto& vec = (*_trace_map)[CALL_SITE][this_fn];
+        if(vec.empty())
             return;
 
-        if((*_trace_map)[CALL_SITE][this_fn].size() == 1)
+        if(vec.size() == 1)
             (*_overhead)[CALL_SITE][this_fn].first.stop();
-        (*_trace_map)[CALL_SITE][this_fn].back()->stop();
-        (*_trace_map)[CALL_SITE][this_fn].pop_back();
+        vec.back()->stop();
+        vec.pop_back();
 
         if(_is_first)
         {
@@ -386,11 +491,10 @@ extern "C"
             return;
         }
 
-        static auto throttle_count = tim::settings::throttle_count();
-        static auto throttle_value = tim::settings::throttle_value();
-        auto        _count         = ++((*_overhead)[CALL_SITE][this_fn].second);
+        auto _count = ++((*_overhead)[CALL_SITE][this_fn].second);
         if(_count % throttle_count == 0)
         {
+            (*_overhead)[CALL_SITE][this_fn].first.stop();
             auto _accum = (*_overhead)[CALL_SITE][this_fn].first.get_accum() / _count;
             if(_accum < throttle_value)
                 (*_throttle)[CALL_SITE][this_fn] = true;
@@ -400,47 +504,40 @@ extern "C"
 
         tim::consume_parameters(call_site, null_site);
     }
-
-    /*
-    extern int __real_pthread_create(pthread_t* thread, const pthread_attr_t* attr,
-                                     void* (*start_routine)(void*), void*     arg);
-    extern int __real_pthread_join(pthread_t thread, void** retval);
-
-    // pthread_create
-    int __wrap_pthread_create(pthread_t* thread, const pthread_attr_t* attr,
-                              void* (*start_routine)(void*), void*     arg)
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    int timemory_profile_thread_init(void)
     {
-        PRINT_HERE("%s", "wrapping pthread_create");
-        auto _ini = init_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
-        tim::consume_parameters(_ini);
-        return __real_pthread_create(thread, attr, start_routine, arg);
+        tim::trace::lock<tim::trace::compiler> lk{};
+        if(!lk || !get_enabled() || !get_thread_enabled())
+            return 0;
+        static auto              _initialized = (initialize(), true);
+        static thread_local auto _allocated   = (allocate(), true);
+        tim::consume_parameters(_initialized, _allocated);
+        return 1;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    int timemory_profile_thread_fini(void)
+    {
+        tim::trace::lock<tim::trace::compiler> lk{};
+        if(!lk || !get_enabled() || !get_thread_enabled())
+            return 0;
+        finalize();
+        return 1;
     }
 
-    // pthread_join
-    int __wrap_pthread_join(pthread_t thread, void** retval)
-    {
-        PRINT_HERE("%s", "wrapping pthread_join");
-        tim::manager::instance()->finalize();
-        return __real_pthread_join(thread, retval);
-    }
-    */
 }  // extern "C"
+
+//--------------------------------------------------------------------------------------//
 
 struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
 {
-    template <size_t... Idx>
-    static auto init_storage(tim::index_sequence<Idx...>)
+    struct TIMEMORY_INTERNAL_NO_INSTRUMENT wrapper
     {
-        std::array<tim::storage_initializer, sizeof...(Idx)> _data;
-        TIMEMORY_FOLD_EXPRESSION(_data[Idx] = tim::storage_initializer::get<Idx>());
-        return _data;
-    }
-
-    struct wrapper
-    {
-        typedef void* (*routine_t)(void*);
-
-        TIMEMORY_DEFAULT_OBJECT(wrapper)
+        using routine_t = void* (*) (void*);
 
         wrapper(routine_t _routine, void* _arg, bool _debug)
         : m_routine(_routine)
@@ -466,12 +563,25 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
             assert(_tlm.get() != nullptr);
             if(_wrapper->debug())
                 PRINT_HERE("%s", "Initializing timemory component storage");
-            auto _ini = init_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
-            tim::consume_parameters(_tlm, _ini);
+            // initialize the storage
+            tim::consume_parameters(
+                get_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{}));
             if(_wrapper->debug())
                 PRINT_HERE("%s", "Executing original function");
             // execute the original function
-            return (*_wrapper)();
+            auto _ret = (*_wrapper)();
+            // only child threads
+            if(tim::threading::get_id() != primary_tidx)
+            {
+                if(_wrapper->debug())
+                    PRINT_HERE("%s", "Executing finalizing");
+                // disable future instrumentation for thread
+                get_thread_enabled() = false;
+                // finalize
+                finalize();
+            }
+            // return the data
+            return _ret;
         }
 
     private:
@@ -492,21 +602,6 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
         return pthread_create(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
     }
 
-    // pthread_join
-    int operator()(pthread_t thread, void** retval)
-    {
-        tim::trace::lock<tim::trace::threading> lk{};
-        lk.acquire();  // ensure the lock was acquired
-        if(m_debug)
-            PRINT_HERE("%s", "wrapping pthread_join");
-        if(m_debug)
-            PRINT_HERE("%s", "finalizing timemory manager");
-        tim::manager::instance()->finalize();
-        if(m_debug)
-            PRINT_HERE("%s", "executing pthread_join");
-        return pthread_join(thread, retval);
-    }
-
 private:
     bool m_debug =
         (tim::settings::instance()) ? tim::settings::instance()->get_debug() : false;
@@ -514,27 +609,20 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-using empty_tuple_t    = tim::component_tuple<>;
-using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
-using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
-
-//--------------------------------------------------------------------------------------//
-
-auto
+std::shared_ptr<pthread_bundle_t>
 setup_pthread_gotcha()
 {
 #if defined(TIMEMORY_USE_GOTCHA)
     pthread_gotcha_t::get_initializer() = []() {
         TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
-        TIMEMORY_C_GOTCHA(pthread_gotcha_t, 1, pthread_join);
     };
 #endif
     return std::make_shared<pthread_bundle_t>("pthread");
 }
 
-//--------------------------------------------------------------------------------------//
-
 namespace
 {
 static auto pthread_gotcha_handle = setup_pthread_gotcha();
-}
+}  // namespace
+
+//--------------------------------------------------------------------------------------//

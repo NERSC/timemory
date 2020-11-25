@@ -1,21 +1,30 @@
 #!@PYTHON_EXECUTABLE@
 
 
-import sys
 import numpy
 import argparse
-import mpi4py
-from mpi4py import MPI
+
+use_mpi = True
+try:
+    import mpi4py
+    from mpi4py import MPI
+except ImportError:
+    use_mpi = False
+    pass
 
 import timemory
 from timemory.profiler import profile
-from timemory.bundle import auto_timer
 
 import libex_python_bindings as ex_bindings
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
+if use_mpi:
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+else:
+    comm = None
+    rank = 0
+    size = 1
 
 if size > 2:
     raise RuntimeError("This example only supports two MPI procs")

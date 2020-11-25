@@ -1,6 +1,6 @@
 
 # windows not yet implemented
-if(WIN32 OR NOT TIMEMORY_BUILD_TOOLS OR NOT TIMEMORY_BUILD_COMPILER_INSTRUMENTATION)
+if(WIN32 OR NOT TIMEMORY_BUILD_COMPILER_INSTRUMENTATION)
     return()
 endif()
 
@@ -9,8 +9,8 @@ cmake_policy(SET CMP0063 NEW)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON) # ensure always pic
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
-# set(CMAKE_C_VISIBILITY_PRESET)
-# set(CMAKE_CXX_VISIBILITY_PRESET)
+set(CMAKE_C_VISIBILITY_PRESET "hidden")
+set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_UNITY_BUILD OFF)
@@ -64,19 +64,20 @@ endfunction()
 #----------------------------------------------------------------------------------------#
 
 add_interface_library(timemory-compiler-instrument-compile-options)
-add_cxx_flag_if_avail("-ftls-model=local-dynamic"
-    timemory-compiler-instrument-compile-options)
+# add_cxx_flag_if_avail("-ftls-model=local-dynamic"
+#    timemory-compiler-instrument-compile-options)
 
 # target_link_options(timemory-compiler-instrument-compile-options INTERFACE
 #    -Wl,--wrap,pthread_create
 #    -Wl,--wrap,pthread_join)
 
 set(LIB_TARGET timemory-compiler-instrument-base)
+set(LIB_TYPE STATIC)
 
 build_library(
     PIC
     NO_CACHE_LIST
-    TYPE                STATIC
+    TYPE                ${LIB_TYPE}
     TARGET_NAME         ${LIB_TARGET}
     OUTPUT_NAME         ${LIB_TARGET}
     LANGUAGE            CXX
@@ -88,20 +89,23 @@ target_compile_definitions(${LIB_TARGET} PRIVATE
     TIMEMORY_COMPILER_INSTRUMENTATION)
 
 target_link_libraries(${LIB_TARGET} PUBLIC
+    timemory::timemory-dmp
+    timemory::timemory-threading
     ${LINK_LIBS})
 
+# only papi and gotcha are useful TPLs here
 target_link_libraries(${LIB_TARGET} PRIVATE
-    timemory::timemory-dmp
     timemory::timemory-headers
-    timemory::timemory-extensions
+    timemory::timemory-papi
+    timemory::timemory-gotcha
+    timemory::timemory-statistics
     timemory::timemory-compile-options
     timemory::timemory-hidden-visibility
-    timemory::timemory-compiler-instrument-compile-options
-    )
+    timemory::timemory-compiler-instrument-compile-options)
 
 add_cxx_flag_if_avail("-ftls-model=local-exec" ${LIB_TARGET})
 
-# strip_target(${LIB_TARGET} STATIC "timemory_profile_func")
+# strip_target(${LIB_TARGET} ${LIB_TYPE} "timemory_profile_func")
 
 install(TARGETS ${LIB_TARGET}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler)
@@ -109,16 +113,16 @@ install(TARGETS ${LIB_TARGET}
 # build tree
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E create_symlink
-        compiler/libtimemory-compiler-instrument${CMAKE_STATIC_LIBRARY_SUFFIX}
-        libtimemory-compiler-instrument${CMAKE_STATIC_LIBRARY_SUFFIX}
+        compiler/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
 # install tree
 install(CODE "
 EXECUTE_PROCESS(
     COMMAND ${CMAKE_COMMAND} -E create_symlink
-        timemory/compiler/libtimemory-compiler-instrument${CMAKE_STATIC_LIBRARY_SUFFIX}
-        libtimemory-compiler-instrument${CMAKE_STATIC_LIBRARY_SUFFIX}
+        timemory/compiler/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 ")
 
@@ -127,7 +131,11 @@ EXECUTE_PROCESS(
 if(APPLE)
     set(_LIB_TYPES shared)
 else()
-    set(_LIB_TYPES shared static)
+    if(CMAKE_CXX_COMPILER_IS_GNU)
+        set(_LIB_TYPES shared static)
+    else()
+        set(_LIB_TYPES shared)
+    endif()
 endif()
 
 foreach(LIB_TYPE ${_LIB_TYPES})
@@ -145,6 +153,10 @@ foreach(LIB_TYPE ${_LIB_TYPES})
         LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}/compiler
         SOURCES             ${CMAKE_CURRENT_LIST_DIR}/compiler-instrument.cpp)
+
+    target_link_libraries(${LIB_TARGET} PUBLIC
+        timemory::timemory-dmp
+        timemory::timemory-threading)
 
     target_link_libraries(${LIB_TARGET} PRIVATE
         timemory-compiler-instrument-base
@@ -187,7 +199,7 @@ foreach(LIB_TYPE ${_LIB_TYPES})
     endif()
 
     if(NOT LINUX AND NOT "${LIB_TYPE}" STREQUAL "static")
-        strip_target(${LIB_TARGET} ${LIB_TYPE} "__cyg_profile_func")
+        # strip_target(${LIB_TARGET} ${LIB_TYPE} "__cyg_profile_func")
     endif()
 
     install(TARGETS ${LIB_TARGET}

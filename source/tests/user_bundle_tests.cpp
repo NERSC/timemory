@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include "timemory/components/user_bundle/overloads.hpp"
@@ -50,12 +54,12 @@ using stringstream_t = std::stringstream;
 struct bundle_testing
 {};
 
-using auto_bundle_t = tim::auto_tuple<user_tuple_bundle, user_list_bundle>;
+using auto_bundle_t = tim::auto_tuple<user_global_bundle, user_profiler_bundle>;
 using comp_bundle_t = typename auto_bundle_t::component_type;
 using bundle0_t     = tim::auto_tuple<wall_clock, cpu_util>;
 using bundle1_t     = tim::auto_list<cpu_clock, peak_rss>;
 
-using custom_bundle_t      = user_global_bundle;
+using custom_bundle_t      = user_kokkosp_bundle;
 using auto_custom_bundle_t = tim::auto_tuple<custom_bundle_t>;
 using comp_custom_bundle_t = typename auto_custom_bundle_t::component_type;
 
@@ -111,6 +115,9 @@ consume(long n)
 class user_bundle_tests : public ::testing::Test
 {
 protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+
     void SetUp() override
     {
         wc_size_orig = tim::storage<wall_clock>::instance()->size();
@@ -128,8 +135,8 @@ protected:
         ret = 0;
 
         custom_bundle_t::reset();
-        user_list_bundle::reset();
-        user_tuple_bundle::reset();
+        user_global_bundle::reset();
+        user_profiler_bundle::reset();
 
         auto bundle1_init = [](bundle1_t& _bundle) {
             PRINT_HERE("%s", "bundle1_init");
@@ -171,11 +178,12 @@ protected:
             }
         };
 
-        user_tuple_bundle::configure<bundle0_t, wall_clock, cpu_util>();
-        user_list_bundle::configure<bundle1_t>(tim::scope::tree{}, false, bundle1_init);
+        user_global_bundle::configure<bundle0_t, wall_clock, cpu_util>();
+        user_profiler_bundle::configure<bundle1_t>(tim::scope::tree{}, false,
+                                                   bundle1_init);
 
-        EXPECT_EQ(user_tuple_bundle::bundle_size(), 1);
-        EXPECT_EQ(user_list_bundle::bundle_size(), 1);
+        EXPECT_EQ(user_global_bundle::bundle_size(), 1);
+        EXPECT_EQ(user_profiler_bundle::bundle_size(), 1);
     }
 
 protected:
@@ -243,7 +251,7 @@ TEST_F(user_bundle_tests, comp_bundle)
 
     {
         comp_bundle_t _instance(details::get_test_name(), true);
-        _instance.get<user_tuple_bundle>()->clear();
+        _instance.get<user_global_bundle>()->clear();
 
         _instance.start();
         ret += details::fibonacci(35);
@@ -564,22 +572,30 @@ TEST_F(user_bundle_tests, laps)
 {
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 
+    custom_bundle_t::reset();
     using lw_bundle_t = tim::lightweight_tuple<custom_bundle_t>;
 
     custom_bundle_t::configure<wall_clock, cpu_clock>();
 
     size_t      n = 10;
-    lw_bundle_t obj{ details::get_test_name() };
-    // auto cfg = tim::scope::config{} + tim::scope::flat{} + tim::scope::timeline{};
-    obj.set_scope(tim::scope::config(true, true));
+    lw_bundle_t obj{ details::get_test_name(), tim::scope::config(true, true) };
+
+    DEBUG_PRINT_HERE("%s", "Real push begin");
     obj.push();
+    DEBUG_PRINT_HERE("%s", "Real push end");
     for(size_t i = 0; i < n; ++i)
     {
+        DEBUG_PRINT_HERE("%s", "Real start begin");
         obj.start();
+        DEBUG_PRINT_HERE("%s", "Real start end");
         ret += details::fibonacci(35);
+        DEBUG_PRINT_HERE("%s", "Real stop begin");
         obj.stop();
+        DEBUG_PRINT_HERE("%s", "Real stop end");
     }
+    DEBUG_PRINT_HERE("%s", "Real pop start");
     obj.pop();
+    DEBUG_PRINT_HERE("%s", "Real pop end");
 
     printf("fibonacci(35) = %li\n", ret);
 
@@ -598,29 +614,6 @@ TEST_F(user_bundle_tests, laps)
 
     EXPECT_EQ(wc_data.back().data().get_laps(), 10) << "data: " << wc_data.back().data();
     EXPECT_EQ(cc_data.back().data().get_laps(), 10) << "data: " << cc_data.back().data();
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = false;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

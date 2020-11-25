@@ -610,11 +610,17 @@ generate(py::module& _pymod)
     auto _init = []() {
         auto _verbose = get_config().verbose;
         CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Initializing trace");
-        user_trace_bundle::global_init();
-        auto _file = py::module::import("timemory").attr("__file__").cast<string_t>();
-        if(_file.find('/') != string_t::npos)
-            _file = _file.substr(0, _file.find_last_of('/'));
-        get_config().base_module_path = _file;
+        try
+        {
+            auto _file = py::module::import("timemory").attr("__file__").cast<string_t>();
+            if(_file.find('/') != string_t::npos)
+                _file = _file.substr(0, _file.find_last_of('/'));
+            get_config().base_module_path = _file;
+        } catch(py::cast_error& e)
+        {
+            std::cerr << "[trace_init]> " << e.what() << std::endl;
+        }
+
         if(get_config().is_running)
         {
             CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Trace already running");
@@ -705,6 +711,9 @@ generate(py::module& _pymod)
                          get_config().exclude_functions)
     CONFIGURATION_STRSET("skip_filenames", "Filenames to filter out of collection",
                          get_config().exclude_filenames)
+
+    tim::operation::init<user_trace_bundle>(
+        tim::operation::mode_constant<tim::operation::init_mode::global>{});
 
     return _trace;
 }

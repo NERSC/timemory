@@ -37,8 +37,7 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if(!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MANAGER_EXTERN)) ||           \
-    defined(TIMEMORY_MANAGER_SOURCE)
+#if defined(TIMEMORY_MANAGER_SOURCE) || defined(TIMEMORY_MANAGER_INLINE)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -68,14 +67,6 @@ namespace tim
 //
 //----------------------------------------------------------------------------------//
 //
-#    if !defined(TIMEMORY_MANAGER_LINKAGE_API)
-#        if defined(TIMEMORY_MANAGER_SOURCE)
-#            define TIMEMORY_MANAGER_LINKAGE_API
-#        else
-#            define TIMEMORY_MANAGER_LINKAGE_API inline
-#        endif
-#    endif
-
 TIMEMORY_MANAGER_LINKAGE_API
 manager::manager()
 : m_is_finalizing(false)
@@ -758,7 +749,7 @@ timemory_library_constructor()
 //
 //--------------------------------------------------------------------------------------//
 //
-#    if defined(TIMEMORY_MANGER_INLINE)
+#    if defined(TIMEMORY_MANAGER_INLINE)
 namespace
 {
 static auto timemory_library_is_constructed = (timemory_library_constructor(), true);

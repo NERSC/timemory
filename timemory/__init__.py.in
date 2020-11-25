@@ -363,6 +363,7 @@ version = sys.modules[__name__].__getattribute__("version")
 try:
     if "line_profiler" not in sys.modules:
         from . import line_profiler as lineprof
+
         _lineprof = lineprof._line_profiler
 
         sys.modules["line_profiler"] = lineprof

@@ -60,7 +60,7 @@ def fibonacci(n):
 
 def fib(n, instr):
     if instr == True:
-        with marker(components=["wall_clock"], key="fib"):
+        with marker(components=["wall_clock", "current_peak_rss"], key="fib"):
             return n if n < 2 else (fib(n - 1, True) + fib(n - 2, False))
     else:
         return n if n < 2 else (fibonacci(n - 1) + fibonacci(n - 2))
@@ -155,11 +155,18 @@ class TimemoryFlatTests(unittest.TestCase):
         """not_flat"""
         n = 10
         tim.settings.flat_profile = False
-        with marker(components=["wall_clock"], key=self.shortDescription()):
+        with marker(
+            components=["wall_clock", "cpu_clock"], key=self.shortDescription()
+        ):
             ret = fib(n, True)
 
+        print(
+            "{}\n".format(
+                json.dumps(tim.get()["timemory"]["wall_clock"], indent=4)
+            )
+        )
         # inspect data
-        data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
+        data = tim.get()["timemory"]["wall_clock"]["ranks"][0]["graph"]
         self.assertEqual(data[-1]["depth"], n)
 
     # ---------------------------------------------------------------------------------- #
@@ -167,12 +174,23 @@ class TimemoryFlatTests(unittest.TestCase):
     def test_flat(self):
         """flat"""
         n = 10
-        with marker(components=["wall_clock"], key=self.shortDescription()):
-            with profile(components=["wall_clock"], flat=True, timeline=False):
+        with marker(
+            components=["wall_clock", "cpu_clock"], key=self.shortDescription()
+        ):
+            with profile(
+                components=["wall_clock", "cpu_clock"],
+                flat=True,
+                timeline=False,
+            ):
                 ret = fibonacci(n)
 
+        print(
+            "{}\n".format(
+                json.dumps(tim.get()["timemory"]["wall_clock"], indent=4)
+            )
+        )
         # inspect data
-        data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
+        data = tim.get()["timemory"]["wall_clock"]["ranks"][0]["graph"]
         self.assertEqual(data[-1]["depth"], 0)
 
 
@@ -184,4 +202,5 @@ def run():
 
 
 if __name__ == "__main__":
+    tim.initialize([__file__])
     run()

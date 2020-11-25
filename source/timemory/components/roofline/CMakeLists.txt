@@ -4,12 +4,15 @@ if(TIMEMORY_USE_PAPI OR TIMEMORY_USE_CUPTI)
     set(DEPS timemory-papi-component timemory-cupti-component)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
-    file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/*.cu)
-
+    if(CMAKE_CUDA_COMPILER AND TIMEMORY_USE_CUPTI)
+        file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+                                       ${CMAKE_CURRENT_SOURCE_DIR}/*.cu)
+    else()
+        file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+    endif()
+                                   
     if(TIMEMORY_USE_CUPTI AND CMAKE_CUDA_COMPILER)
         set_source_files_properties(${source_files} PROPERTIES
-            # LANGUAGE CUDA
             LINKER_LANGUAGE CUDA)
     endif()
 

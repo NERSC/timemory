@@ -22,16 +22,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#define HIDDEN_VISIBILITY __attribute__((visibility("hidden")))
+#define PUBLIC_VISIBILITY __attribute__((visibility("default")))
+#define NEVER_INSTRUMENT __attribute__((no_instrument_function))
+
 extern "C"
 {
     extern void timemory_profile_func_enter(void* this_fn, void* call_site)
-        __attribute__((visibility("hidden")));
+        PUBLIC_VISIBILITY NEVER_INSTRUMENT;
     extern void timemory_profile_func_exit(void* this_fn, void* call_site)
-        __attribute__((visibility("hidden")));
-    void __cyg_profile_func_enter(void* this_fn, void* call_site)
-        __attribute__((visibility("default"))) __attribute__((no_instrument_function));
-    void __cyg_profile_func_exit(void* this_fn, void* call_site)
-        __attribute__((visibility("default"))) __attribute__((no_instrument_function));
+        PUBLIC_VISIBILITY NEVER_INSTRUMENT;
+    extern int timemory_profile_thread_init(void) PUBLIC_VISIBILITY NEVER_INSTRUMENT;
+    extern int timemory_profile_thread_fini(void) PUBLIC_VISIBILITY NEVER_INSTRUMENT;
+
+    // bool timemory_enable_pthread_gotcha_wrapper() PUBLIC_VISIBILITY NEVER_INSTRUMENT;
+
+    void __cyg_profile_func_enter(void* this_fn,
+                                  void* call_site) PUBLIC_VISIBILITY NEVER_INSTRUMENT;
+    void __cyg_profile_func_exit(void* this_fn,
+                                 void* call_site) PUBLIC_VISIBILITY NEVER_INSTRUMENT;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -39,11 +48,30 @@ extern "C"
 //      timemory symbols
 //
 //--------------------------------------------------------------------------------------//
+namespace
+{
+// this struct ensures that the thread finalization function is called
+struct HIDDEN_VISIBILITY NEVER_INSTRUMENT thread_exit
+{
+    thread_exit() HIDDEN_VISIBILITY NEVER_INSTRUMENT;
+    ~thread_exit() HIDDEN_VISIBILITY NEVER_INSTRUMENT;
+};
+//
+thread_exit::thread_exit() { timemory_profile_thread_init(); }
+thread_exit::~thread_exit() { timemory_profile_thread_fini(); }
+//
+}  // namespace
+
+//--------------------------------------------------------------------------------------//
 
 extern "C"
 {
+    // bool timemory_enable_pthread_gotcha_wrapper() { return false; };
+    //
     void __cyg_profile_func_enter(void* this_fn, void* call_site)
     {
+        static thread_local auto _tl = thread_exit{};
+        (void) _tl;
         timemory_profile_func_enter(this_fn, call_site);
     }
     //

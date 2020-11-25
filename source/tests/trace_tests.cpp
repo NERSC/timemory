@@ -107,7 +107,7 @@ protected:
         timemory_trace_set_env("TIMEMORY_DART_COUNT", "1");
         timemory_trace_init("peak_rss", true, _argv[0]);
         tim::dmp::initialize(_argc, _argv);
-
+        tim::timemory_init(_argc, _argv);
         timemory_push_trace("setup");
     }
 

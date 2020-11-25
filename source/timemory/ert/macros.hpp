@@ -47,13 +47,23 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if !defined(TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE)
+#    define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
+#endif
+//
+#if !defined(TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE)
+#    define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE(...) template __VA_ARGS__;
+#endif
+//
 #if defined(TIMEMORY_ERT_SOURCE)
 #    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
-#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...) template __VA_ARGS__;
+#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...)                                        \
+            TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #    endif
 #elif defined(TIMEMORY_USE_ERT_EXTERN)
 #    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
-#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
+#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...)                                        \
+            TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #    endif
 #else
 #    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
@@ -71,8 +81,14 @@
         (defined(TIMEMORY_ERT_SOURCE) && !defined(_TIMEMORY_NVCC))
 #        define TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(...)                                    \
             TIMEMORY_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
+#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CXX(...)                            \
+            TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
+#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CXX(...)                        \
+            TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #    else
 #        define TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(...)
+#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CXX(...)
+#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CXX(...)
 #    endif
 #endif
 //
@@ -86,7 +102,13 @@
         (defined(TIMEMORY_ERT_SOURCE) && defined(_TIMEMORY_NVCC))
 #        define TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(...)                                   \
             TIMEMORY_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
+#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(...)                           \
+            TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
+#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(...)                       \
+            TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #    else
 #        define TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(...)
+#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(...)
+#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(...)
 #    endif
 #endif

@@ -22,11 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <array>
 #include <chrono>
-#include <deque>
 #include <iostream>
 #include <random>
 #include <thread>
@@ -73,7 +76,10 @@ fibonacci(long n)
 //--------------------------------------------------------------------------------------//
 
 class stl_overload_tests : public ::testing::Test
-{};
+{
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -287,28 +293,6 @@ TEST_F(stl_overload_tests, statistics)
         apply(stat_v, init_v);
 
     std::cout << '\n';
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = false;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

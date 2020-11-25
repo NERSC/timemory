@@ -63,6 +63,9 @@ nm --demangle <EXE or LIB> | grep operation
 .. doxygenstruct:: tim::operation::init_storage
     :members:
     :undoc-members:
+.. doxygenstruct:: tim::operation::fini_storage
+    :members:
+    :undoc-members:
 .. doxygenstruct:: tim::operation::construct
     :members:
     :undoc-members:

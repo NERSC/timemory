@@ -135,6 +135,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cuda
     timemory-nccl
     timemory-cupti
+    timemory-cudart
     timemory-cudart-device
     #
     timemory-papi
@@ -182,6 +183,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-cupti
     timemory-cudart-device
     timemory-caliper
+    timemory-likwid
     timemory-vtune
     timemory-tau
     timemory-ompt
@@ -337,6 +339,10 @@ timemory_target_compile_definitions(timemory-default-disabled INTERFACE
 
 # this target is always linked whenever timemory is used via cmake
 timemory_target_compile_definitions(timemory-headers INTERFACE TIMEMORY_CMAKE)
+
+if(TIMEMORY_USE_WINSOCK)
+    timemory_target_compile_definitions(timemory-headers INTERFACE TIMEMORY_USE_WINSOCK)
+endif()
 
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source>
@@ -1300,6 +1306,10 @@ if(Dyninst_FOUND AND Boost_FOUND)
 else()
     set(TIMEMORY_USE_DYNINST OFF)
     inform_empty_interface(timemory-dyninst "dyninst")
+endif()
+
+if(TIMEMORY_USE_DYNINST)
+    set(TIMEMORY_BUILD_DYNINST_TOOLS ${TIMEMORY_USE_DYNINST})
 endif()
 
 add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
