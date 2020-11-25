@@ -154,7 +154,7 @@ storage::add_hash_id(uint64_t _lhs, uint64_t _rhs)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_STORAGE_LINKAGE hash_result_type
-                         storage::add_hash_id(const std::string& _prefix)
+storage::add_hash_id(const std::string& _prefix)
 {
     return ::tim::add_hash_id(m_hash_ids, _prefix);
 }
@@ -653,6 +653,12 @@ storage<Type, true>::get_prefix(const graph_node& node)
             return get_hash_identifier(node.id());
         }
     }
+
+#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
+    if(_ret.find("unknown-hash=") == 0)
+        throw std::runtime_error("Hash-lookup error!");
+#endif
+
     return _ret;
 }
 //
@@ -675,6 +681,12 @@ storage<Type, true>::get_prefix(const uint64_t& id)
             return get_hash_identifier(id);
         }
     }
+
+#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
+    if(_ret.find("unknown-hash=") == 0)
+        throw std::runtime_error("Hash-lookup error!");
+#endif
+
     return _ret;
 }
 //

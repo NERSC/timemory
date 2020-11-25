@@ -344,6 +344,10 @@ if(TIMEMORY_USE_WINSOCK)
     timemory_target_compile_definitions(timemory-headers INTERFACE TIMEMORY_USE_WINSOCK)
 endif()
 
+if(TIMEMORY_BUILD_TESTING)
+    target_compile_definitions(timemory-headers INTERFACE $<BUILD_INTERFACE:TIMEMORY_INTERNAL_TESTING>)
+endif()
+
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
