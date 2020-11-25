@@ -65,43 +65,31 @@ file(GLOB_RECURSE source_files
     ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp)
 
-if(TIMEMORY_USE_COVERAGE)
-    build_intermediate_library(
-        # FORCE_OBJECT
-        USE_INTERFACE
-        INSTALL_SOURCE
-        NAME                core
-        TARGET              core
-        CATEGORY            GLOBAL
-        FOLDER              components
-        HEADERS             ${header_files}
-        SOURCES             ${source_files})
-    target_link_libraries(timemory-core-shared PUBLIC
-        timemory-analysis-tools)
-else()
-    set(_FORCE_OBJECT FORCE_OBJECT)
-    if(MSVC OR XCODE)
-        set(_FORCE_OBJECT)
-    endif()
+build_intermediate_library(
+    USE_INTERFACE
+    INSTALL_SOURCE
+    NAME                core
+    TARGET              core
+    CATEGORY            GLOBAL
+    FOLDER              components
+    HEADERS             ${header_files}
+    SOURCES             ${source_files})
 
-    build_intermediate_library(
-        ${_FORCE_OBJECT}
-        USE_INTERFACE
-        INSTALL_SOURCE
-        NAME                core
-        TARGET              core
-        CATEGORY            GLOBAL
-        FOLDER              components
-        HEADERS             ${header_files}
-        SOURCES             ${source_files})
+if(TIMEMORY_USE_COVERAGE)
+    if(TARGET timemory-core-shared)
+        target_link_libraries(timemory-core-shared PUBLIC timemory-analysis-tools)
+    endif()
+    if(TARGET timemory-core-static)
+        target_link_libraries(timemory-core-static PUBLIC timemory-analysis-tools)
+    endif()
 endif()
 
 # core
-#add_subdirectory(utility)
-#add_subdirectory(hash)
-#add_subdirectory(environment)
-#add_subdirectory(settings)
-#add_subdirectory(plotting)
+# add_subdirectory(utility)
+# add_subdirectory(hash)
+# add_subdirectory(environment)
+# add_subdirectory(settings)
+# add_subdirectory(plotting)
 
 # global
 add_subdirectory(manager)
@@ -123,4 +111,3 @@ add_subdirectory(containers)
 # add_subdirectory(general)
 # add_subdirectory(mpl)
 # add_subdirectory(utility)
-

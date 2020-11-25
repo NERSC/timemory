@@ -875,21 +875,22 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
     set(_LIB_TYPES)
     set(_LIB_DEFAULT_TYPE)
 
-    if(TIMEMORY_BUILD_LTO OR COMP_FORCE_OBJECT)
+    # if(TIMEMORY_BUILD_LTO OR COMP_FORCE_OBJECT)
+    if(COMP_FORCE_OBJECT)
         list(APPEND _LIB_TYPES object)
         set(object_OPTIONS PIC TYPE OBJECT)
+    endif()
+
+    if(_BUILD_STATIC_CXX OR COMP_FORCE_STATIC)
+        list(APPEND _LIB_TYPES static)
+        set(static_OPTIONS PIC TYPE STATIC)
+        set(_LIB_DEFAULT_TYPE static)
     endif()
 
     if(_BUILD_SHARED_CXX OR COMP_FORCE_SHARED)
         list(APPEND _LIB_TYPES shared)
         set(shared_OPTIONS PIC TYPE SHARED)
         set(_LIB_DEFAULT_TYPE shared)
-    endif()
-
-    if(_BUILD_STATIC_CXX OR COMP_FORCE_STATIC)
-        list(APPEND _LIB_TYPES static)
-        set(static_OPTIONS TYPE STATIC)
-        set(_LIB_DEFAULT_TYPE static)
     endif()
 
     set(_SOURCES ${COMP_SOURCES} ${COMP_HEADERS})
@@ -908,7 +909,7 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
         endif()
 
         # set the depends before creating the library so it does not link to itself
-        timemory_get_internal_depends(_DEPENDS ${LINK} ${COMP_DEPENDS})
+        timemory_get_internal_depends(_DEPENDS ${LINK} ${COMP_DEPENDS} timemory-core)
         timemory_get_property_depends(_PROPERTY_OBJS OBJECT ${COMP_PROPERTY_DEPENDS})
         timemory_get_property_depends(_PROPERTY_LINK ${UPP_LINK} ${COMP_PROPERTY_DEPENDS})
 
@@ -941,16 +942,16 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
         target_include_directories(${TARGET_NAME} PUBLIC ${COMP_INCLUDES})
 
         target_link_libraries(${TARGET_NAME} PUBLIC
+            timemory-external-${LINK}
             timemory-headers
             timemory-vector
+            timemory-dmp
             ${DEPENDS}
             ${COMP_PUBLIC_LINK})
 
         target_link_libraries(${TARGET_NAME} PRIVATE
-            timemory-dmp
             timemory-compile-options
             timemory-develop-options
-            timemory-external-${LINK}
             timemory-${COMP_VISIBILITY}-visibility
             ${COMP_PRIVATE_LINK})
 
@@ -959,16 +960,16 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
             TIMEMORY_${COMP_CATEGORY}_SOURCE
             TIMEMORY_${UPP_COMP}_SOURCE)
 
-        set(_USE_VIS PUBLIC)
-        if(COMP_USE_INTERFACE)
-            set(_USE_VIS INTERFACE)
-        endif()
-
-        timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
+        timemory_target_compile_definitions(${TARGET_NAME} INTERFACE
             TIMEMORY_USE_${UPP_COMP}_EXTERN)
 
+        if(NOT "${COMP_NAME}" STREQUAL "CORE")
+            timemory_target_compile_definitions(${TARGET_NAME} PUBLIC
+                TIMEMORY_USE_CORE_EXTERN)
+        endif()
+
         if("${COMP_CATEGORY}" STREQUAL "COMPONENT" OR COMP_USE_CATEGORY)
-            timemory_target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
+            timemory_target_compile_definitions(${TARGET_NAME} INTERFACE
                 TIMEMORY_USE_${COMP_CATEGORY}_EXTERN)
         endif()
 
@@ -1242,4 +1243,3 @@ ENDFUNCTION()
 
 
 cmake_policy(POP)
-

@@ -176,7 +176,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-threading
     timemory-statistics
-    timemory-papi-static
+    timemory-papi
     timemory-cuda
     timemory-cudart-static
     timemory-nccl

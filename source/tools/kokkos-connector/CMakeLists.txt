@@ -249,7 +249,7 @@ add_connector_config(gperftools
 add_connector_config(papi
     CONDITION "${TIMEMORY_USE_PAPI}"
     COMPONENTS papi_array_t
-    TARGETS timemory::timemory-papi-component-shared)
+    TARGETS timemory::timemory-papi-component)
 
 add_connector_config(cpu_roofline
     CONDITION "${TIMEMORY_USE_PAPI}"
@@ -257,8 +257,8 @@ add_connector_config(cpu_roofline
     TARGETS
     timemory::timemory-ert
     timemory::timemory-cpu-roofline
-    timemory::timemory-papi-component-shared
-    timemory::timemory-roofline-component-shared)
+    timemory::timemory-papi-component
+    timemory::timemory-roofline-component)
 
 # creates a normal connector config and a rates version
 function(add_papi_connector_config _NAME)
@@ -337,25 +337,25 @@ add_connector_config(cuda_profiler
     CONDITION "${TIMEMORY_USE_CUDA}"
     COMPONENTS nvtx_marker
     TARGETS
-    timemory::timemory-cuda-component-shared)
+    timemory::timemory-cuda-component)
 
 add_connector_config(cuda_event
     CONDITION "${TIMEMORY_USE_CUDA}"
     COMPONENTS cuda_event
     TARGETS
-    timemory::timemory-cuda-component-shared)
+    timemory::timemory-cuda-component)
 
 add_connector_config(cuda_activity
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_activity
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(cuda_hw_counters
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_roofline
     CONDITION "${TIMEMORY_USE_CUPTI}"
@@ -364,85 +364,85 @@ add_connector_config(gpu_roofline
     TARGETS
     timemory::timemory-ert
     timemory::timemory-gpu-roofline
-    timemory::timemory-cupti-component-shared
-    timemory::timemory-roofline-component-shared)
+    timemory::timemory-cupti-component
+    timemory::timemory-roofline-component)
 
 add_connector_config(gpu_instructions
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=inst_issued,inst_executed,thread_inst_executed,ldst_executed,inst_integer,inst_fp_16,inst_fp_32,inst_fp_64,inst_inter_thread_communication"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_cache_misses
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=tex_cache_transactions,tex_cache_hit_rate,tex0_cache_sector_queries,tex0_cache_sector_misses,tex1_cache_sector_queries,tex1_cache_sector_misses,l2_tex_hit_rate,dram_read_bytes,dram_write_bytes"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_branching
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=divergent_branch,branch,branch_efficiency"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_stalls
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=stall_inst_fetch,stall_exec_dependency,stall_memory_dependency,stall_texture,stall_sync,stall_other,stall_constant_memory_dependency,stall_pipe_busy,stall_memory_throttle,stall_not_selected"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_l2_total
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=l2_read_transactions,l2_write_transactions,l2_atomic_transactions,l2_global_load_bytes,l2_local_load_bytes,l2_local_global_store_bytes,l2_global_reduction_bytes,l2_global_atomic_store_bytes"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_efficiency
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=branch_efficiency,warp_execution_efficiency,warp_nonpred_execution_efficiency,gld_efficiency,gst_efficiency,shared_efficiency,sm_efficiency,flop_hp_efficiency,flop_sp_efficiency,flop_dp_efficiency"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_ipc
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=ipc,issued_ipc"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_warps
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=warps_launched,active_warps,inst_per_warp,warp_execution_efficiency,warp_nonpred_execution_efficiency,unique_warps_launched,eligible_warps_per_cycle"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_double_flops
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=flop_count_dp,flop_count_dp_add,flop_count_dp_fma,flop_count_dp_mul,flop_dp_efficiency"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_single_flops
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=flop_count_sp,flop_count_sp_add,flop_count_sp_fma,flop_count_sp_mul,flop_count_sp_special,flop_sp_efficiency"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(gpu_half_flops
     CONDITION "${TIMEMORY_USE_CUPTI}"
     COMPONENTS cupti_counters
     ENVIRONMENT "TIMEMORY_CUPTI_METRICS=flop_count_hp,flop_count_hp_add,flop_count_hp_mul,flop_count_hp_fma,flop_hp_efficiency"
     TARGETS
-    timemory::timemory-cupti-component-shared)
+    timemory::timemory-cupti-component)
 
 add_connector_config(vtune
     CONDITION "${TIMEMORY_USE_VTUNE}"
@@ -465,8 +465,8 @@ add_connector_config(tau
     TARGETS timemory::timemory-tau)
 
 set(USE_OMPT ${TIMEMORY_USE_OMPT})
-if(TARGET timemory::timemory-ompt-shared)
-    set(_OMPT_LIB timemory::timemory-ompt-shared)
+if(TARGET timemory::timemory-ompt)
+    set(_OMPT_LIB timemory::timemory-ompt)
 elseif(TARGET timemory::timemory-ompt-static)
     set(_OMPT_LIB timemory::timemory-ompt-static)
 else()

@@ -157,9 +157,9 @@ if(TIMEMORY_BUILD_LTO)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
     target_link_libraries(timemory-compile-options INTERFACE timemory-lto)
     if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
-        add_target_cuda_flag(timemory-lto "-dlto")
-        set_target_properties(timemory-lto PROPERTIES
-            INTERFACE_LINK_OPTIONS $<$<LINK_LANGUAGE:CUDA>:-dlto>)
+        # add_target_cuda_flag(timemory-lto "-dlto")
+        # set_target_properties(timemory-lto PROPERTIES
+        #    INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-dlto>)
     endif()
 endif()
 

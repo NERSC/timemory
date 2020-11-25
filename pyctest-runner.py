@@ -350,7 +350,7 @@ def configure():
     # construct a build name from the arguments that were changed
     for key, itr in argparse_defaults.items():
         # ignore all pyctest args except the build type
-        if "pyctest_" in key and key is not "pyctest_build_type":
+        if "pyctest_" in key and key != "pyctest_build_type":
             continue
         # get the current value
         curr = args.__getattribute__(key)
