@@ -564,9 +564,6 @@ def run_pyctest():
         .replace(" ", "-")
     )
 
-    print(f"BUILD_NAME: {pyct.BUILD_NAME}")
-    sys.exit(0)
-
     # default options
     cmake_args = "-DCMAKE_BUILD_TYPE={} -DTIMEMORY_BUILD_EXAMPLES=ON".format(
         pyct.BUILD_TYPE
