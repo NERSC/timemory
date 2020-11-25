@@ -201,12 +201,6 @@ def configure():
         action="store_true",
     )
     parser.add_argument(
-        "--dyninst",
-        help="TIMEMORY_USE_DYNINST=ON",
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
         "--extra-optimizations",
         help="TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON",
         default=False,
@@ -367,9 +361,12 @@ def configure():
                         "-".join(["{}".format(val[:6]) for val in curr]),
                     ]
                 )
-            else:
-                # else, just add abbreviated name
+            elif isinstance(curr, str):
+                # if string, just abbreviated name
                 build_name = "-".join([build_name, curr[:6]])
+            elif key == "cxx_standard":
+                # ignore all else except for the C++ standard
+                build_name = "-".join([build_name, f"cxx{itr}"])
 
     build_name = build_name.strip("-")
 
