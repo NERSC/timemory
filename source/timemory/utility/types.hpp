@@ -352,7 +352,7 @@ get_fields()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Arg, size_t... Idx>
-static inline auto
+static TIMEMORY_INLINE auto
 generate(Arg&& arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
@@ -364,7 +364,7 @@ generate(Arg&& arg, index_sequence<Idx...>)
 //--------------------------------------------------------------------------------------//
 //
 template <size_t... Idx>
-static inline auto
+static TIMEMORY_INLINE auto
 either(data_type ret, data_type arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
@@ -374,8 +374,8 @@ either(data_type ret, data_type arg, index_sequence<Idx...>)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline data_type
-get_default()
+static TIMEMORY_INLINE data_type
+get_default_bitset()
 {
     return generate(get_fields(), make_index_sequence<scope_count>{});
 }
@@ -390,14 +390,14 @@ get_default()
 struct config : public data_type
 {
     config()
-    : data_type(get_default())
+    : data_type(get_default_bitset())
     {}
 
-    config(const data_type& obj)
+    explicit config(const data_type& obj)
     : data_type(obj)
     {}
 
-    config(data_type&& obj) noexcept
+    explicit config(data_type&& obj) noexcept
     : data_type(std::forward<data_type>(obj))
     {}
 
@@ -406,12 +406,12 @@ struct config : public data_type
                          make_index_sequence<scope_count>{}))
     {}
 
-    config(bool _flat, bool _timeline)
+    explicit config(bool _flat, bool _timeline)
     : data_type(generate(input_type{ { _flat, _timeline, false } },
                          make_index_sequence<scope_count>{}))
     {}
 
-    config(bool _flat, bool _timeline, bool _tree)
+    explicit config(bool _flat, bool _timeline, bool _tree)
     : data_type(generate(input_type{ { _flat, _timeline, _tree } },
                          make_index_sequence<scope_count>{}))
     {}
@@ -444,6 +444,20 @@ struct config : public data_type
     config(config&&) noexcept = default;
     config& operator=(const config&) = default;
     config& operator=(config&&) noexcept = default;
+
+    config& operator=(const data_type& rhs)
+    {
+        if(this != &rhs)
+            data_type::operator=(rhs);
+        return *this;
+    }
+
+    config& operator=(data_type&& rhs) noexcept
+    {
+        if(this != &rhs)
+            data_type::operator=(std::forward<data_type>(rhs));
+        return *this;
+    }
 
     template <typename T, std::enable_if_t<(std::is_same<T, tree>::value ||
                                             std::is_same<T, flat>::value ||
@@ -548,46 +562,26 @@ struct config : public data_type
         if(ForceTimeT::value || is_timeline())
         {
             // printf("compute_hash is timeline at %i\n", (int) _depth);
-#if defined(TIMEMORY_USE_TIMELINE_RNG)
-            _id ^= get_random_value<uint64_t>();
-#else
             _id ^= _counter++;
-#endif
         }
         // printf("compute_hash is %i at depth %i (counter = %i)\n", (int) _id, (int)
         // _depth,
         //       (int) _counter);
         return _id;
     }
-
-private:
-#if defined(TIMEMORY_USE_TIMELINE_RNG)
-    // random number generator
-    template <typename T = std::mt19937_64>
-    static inline T& get_rng(size_t initial_seed = 0)
-    {
-        static T _instance = [=]() {
-            T _rng;
-            _rng.seed((initial_seed == 0) ? std::random_device()() : initial_seed);
-            return _rng;
-        }();
-        return _instance;
-    }
-
-    // random integer
-    template <typename T, typename R = std::mt19937_64,
-              std::enable_if_t<std::is_integral<T>::value, int> = 0>
-    static inline T get_random_value(T beg = 0, T end = std::numeric_limits<T>::max())
-    {
-        std::uniform_int_distribution<T> dist(beg, end);
-        return dist(get_rng<R>());
-    }
-#endif
 };
 //
 //--------------------------------------------------------------------------------------//
 //
-inline config
+static TIMEMORY_INLINE config
+get_default()
+{
+    return config{ get_default_bitset() };
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_INLINE config
 operator+(config _lhs, tree)
 {
     _lhs.set(tree::value, true);
@@ -596,7 +590,7 @@ operator+(config _lhs, tree)
 //
 //--------------------------------------------------------------------------------------//
 //
-inline config
+TIMEMORY_INLINE config
 operator+(config _lhs, flat)
 {
     _lhs.set(flat::value, true);
@@ -605,7 +599,7 @@ operator+(config _lhs, flat)
 //
 //--------------------------------------------------------------------------------------//
 //
-inline config
+TIMEMORY_INLINE config
 operator+(config _lhs, timeline)
 {
     _lhs.set(timeline::value, true);
@@ -614,10 +608,10 @@ operator+(config _lhs, timeline)
 //
 //--------------------------------------------------------------------------------------//
 //
-inline config
+TIMEMORY_INLINE config
 operator+(config _lhs, config _rhs)
 {
-    return either(_lhs, _rhs, make_index_sequence<scope_count>{});
+    return config{ either(_lhs, _rhs, make_index_sequence<scope_count>{}) };
 }
 //
 //--------------------------------------------------------------------------------------//
