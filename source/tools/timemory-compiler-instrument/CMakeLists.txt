@@ -63,14 +63,6 @@ endfunction()
 
 #----------------------------------------------------------------------------------------#
 
-add_interface_library(timemory-compiler-instrument-compile-options)
-# add_cxx_flag_if_avail("-ftls-model=local-dynamic"
-#    timemory-compiler-instrument-compile-options)
-
-# target_link_options(timemory-compiler-instrument-compile-options INTERFACE
-#    -Wl,--wrap,pthread_create
-#    -Wl,--wrap,pthread_join)
-
 set(LIB_TARGET timemory-compiler-instrument-base)
 set(LIB_TYPE STATIC)
 
@@ -100,8 +92,7 @@ target_link_libraries(${LIB_TARGET} PRIVATE
     timemory::timemory-gotcha
     timemory::timemory-statistics
     timemory::timemory-compile-options
-    timemory::timemory-hidden-visibility
-    timemory::timemory-compiler-instrument-compile-options)
+    timemory::timemory-hidden-visibility)
 
 add_cxx_flag_if_avail("-ftls-model=local-exec" ${LIB_TARGET})
 
@@ -179,23 +170,9 @@ foreach(LIB_TYPE ${_LIB_TYPES})
         set_target_properties(${LIB_TARGET} PROPERTIES
             INTERFACE_LINK_OPTIONS "/DEBUG")
     else()
-        target_compile_options(${LIB_TARGET} INTERFACE
-            $<$<COMPILE_LANGUAGE:C>:-g>
-            $<$<COMPILE_LANGUAGE:CXX>:-g>
-            $<$<COMPILE_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU>:-rdynamic>>
-            $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-rdynamic>>
-            $<$<COMPILE_LANGUAGE:C>:-fno-omit-frame-pointer>
-            $<$<COMPILE_LANGUAGE:CXX>:-fno-omit-frame-pointer>
-            $<$<COMPILE_LANGUAGE:C>:-fno-optimize-sibling-calls>
-            $<$<COMPILE_LANGUAGE:CXX>:-fno-optimize-sibling-calls>
-            $<$<COMPILE_LANGUAGE:C>:-finstrument-functions>
-            $<$<COMPILE_LANGUAGE:CXX>:-finstrument-functions>)
-
-        target_compile_options(${LIB_TARGET} PRIVATE
-            $<$<COMPILE_LANGUAGE:C>:-fvisibility=hidden>
-            $<$<COMPILE_LANGUAGE:CXX>:-fvisibility=hidden>
-            $<$<COMPILE_LANGUAGE:C>:-fvisibility-inlines-hidden>
-            $<$<COMPILE_LANGUAGE:CXX>:-fvisibility-inlines-hidden>)
+        target_link_libraries(${LIB_TARGET} INTERFACE
+            timemory::timemory-compile-debuginfo
+            timemory::timemory-instrument-functions)
     endif()
 
     if(NOT LINUX AND NOT "${LIB_TYPE}" STREQUAL "static")

@@ -63,15 +63,62 @@ if(TIMEMORY_BUILD_QUIET)
 endif()
 
 #----------------------------------------------------------------------------------------#
+# extra flags for debug information in debug or optimized binaries
+#
+add_interface_library(timemory-compile-debuginfo
+    "Attempts to set best flags for more expressive profiling information in debug or optimized binaries")
+
+# if cmake provides dl library, use that
+if(CMAKE_DL_LIBS)
+    set(dl_LIBRARY "${CMAKE_DL_LIBS}" CACHE STRING "dynamic linking libraries")
+endif()
+
+find_library(rt_LIBRARY NAMES rt)
+find_library(dl_LIBRARY NAMES dl)
+find_library(dw_LIBRARY NAMES dw)
+
+add_target_flag_if_avail(timemory-compile-debuginfo
+    "-g"
+    "-fno-omit-frame-pointer"
+    "-fno-optimize-sibling-calls")
+
+if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
+    add_target_cuda_flag(timemory-compile-debuginfo "-lineinfo")
+endif()
+
+target_compile_options(timemory-compile-debuginfo INTERFACE
+    $<$<COMPILE_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU>:-rdynamic>>
+    $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-rdynamic>>)
+
+if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
+    target_compile_options(timemory-compile-debuginfo INTERFACE
+        $<$<COMPILE_LANGUAGE:CUDA>:$<$<CXX_COMPILER_ID:GNU>:-Xcompiler=-rdynamic>>)
+endif()
+
+if(dl_LIBRARY)
+    target_link_libraries(timemory-compile-debuginfo INTERFACE ${dl_LIBRARY})
+endif()
+
+if(rt_LIBRARY)
+    target_link_libraries(timemory-compile-debuginfo INTERFACE ${rt_LIBRARY})
+endif()
+
+#----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
-if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
-    add_flag_if_avail(
+add_interface_library(timemory-compile-options-extra "Extra optimization flags")
+if(NOT TIMEMORY_USE_COVERAGE)
+    add_target_flag_if_avail(timemory-compile-options-extra
         "-finline-functions"
         "-funroll-loops"
         "-ftree-vectorize"
         "-ftree-loop-optimize"
-        "-ftree-loop-vectorize"
+        "-ftree-loop-vectorize")
+endif()
+
+if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
+    target_link_libraries(timemory-compile-options INTERFACE timemory-compile-options-extra)
+    add_flag_if_avail(
         "-fno-signaling-nans"
         "-fno-trapping-math"
         "-fno-signed-zeros"
@@ -95,7 +142,8 @@ add_target_flag_if_avail(timemory-lto "-flto=thin")
 if(NOT cxx_timemory_lto_flto_thin)
     add_target_flag_if_avail(timemory-lto "-flto")
     if(NOT cxx_timemory_lto_flto)
-        add_disabled_interface(timemory-compile-timing)
+        add_disabled_interface(timemory-lto)
+        set(TIMEMORY_BUILD_LTO OFF)
     else()
         set_target_properties(timemory-lto PROPERTIES
             INTERFACE_LINK_OPTIONS -flto)
@@ -108,6 +156,11 @@ endif()
 if(TIMEMORY_BUILD_LTO)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
     target_link_libraries(timemory-compile-options INTERFACE timemory-lto)
+    if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
+        add_target_cuda_flag(timemory-lto "-dlto")
+        set_target_properties(timemory-lto PROPERTIES
+            INTERFACE_LINK_OPTIONS $<$<LINK_LANGUAGE:CUDA>:-dlto>)
+    endif()
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -147,13 +200,22 @@ else()
 endif()
 
 #----------------------------------------------------------------------------------------#
-# use built-in instrumentation
+# use compiler instrumentation
 #
 add_interface_library(timemory-instrument-functions
     "Adds compiler flags to enable compile-time instrumentation")
 
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/compiler-instr.cpp.in
     ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.c COPYONLY)
+
+if(NOT TIMEMORY_INLINE_COMPILER_INSTRUMENTATION)
+    try_compile(c_timemory_instrument_finstrument_functions_after_inlining
+        ${PROJECT_BINARY_DIR}/compile-tests
+        SOURCES ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.c
+        CMAKE_FLAGS -finstrument-functions-after-inlining)
+else()
+    set(c_timemory_instrument_finstrument_functions_after_inlining FALSE)
+endif()
 
 try_compile(c_timemory_instrument_finstrument_functions
     ${PROJECT_BINARY_DIR}/compile-tests
@@ -163,18 +225,47 @@ try_compile(c_timemory_instrument_finstrument_functions
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/compiler-instr.cpp.in
     ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.cpp COPYONLY)
 
-try_compile(cxx_timemory_instrument_finstrument_functions
-    ${PROJECT_BINARY_DIR}/compile-tests
-    SOURCES ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.cpp
-    CMAKE_FLAGS -finstrument-functions)
-
-if(c_timemory_instrument_finstrument_functions AND
-   cxx_timemory_instrument_finstrument_functions)
-     target_compile_options(timemory-instrument-functions INTERFACE
-         $<$<COMPILE_LANGUAGE:C>:-finstrument-functions>
-         $<$<COMPILE_LANGUAGE:CXX>:-finstrument-functions>)
+if(NOT TIMEMORY_INLINE_COMPILER_INSTRUMENTATION)
+    try_compile(cxx_timemory_instrument_finstrument_functions_after_inlining
+        ${PROJECT_BINARY_DIR}/compile-tests
+        SOURCES ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.cpp
+        CMAKE_FLAGS -finstrument-functions-after-inlining)
 else()
+    set(cxx_timemory_instrument_finstrument_functions_after_inlining FALSE)
+endif()
+
+if(c_timemory_instrument_finstrument_functions_after_inlining AND
+   cxx_timemory_instrument_finstrument_functions_after_inlining)
+    set(_OPT       "$<NOT:$<BOOL:TIMEMORY_INLINE_COMPILER_INSTRUMENTATION>>")
+    set(_C_CHK     "$<C_COMPILER_ID:Clang>")
+    set(_C_AND     "$<AND:${_OPT},${_C_CHK}>")
+    set(_C_NOT     "$<NOT:${_C_AND}>")
+    set(_C_FLG     "$<${_C_AND}:-finstrument-functions-after-inlining>"
+                   "$<${_C_NOT}:-finstrument-functions>")
+    set(_CXX_CHK   "$<CXX_COMPILER_ID:Clang>")
+    set(_CXX_AND   "$<AND:${_OPT},${_CXX_CHK}>")
+    set(_CXX_NOT   "$<NOT:${_CXX_AND}>")
+    set(_CXX_FLG   "$<${_CXX_AND}:-finstrument-functions-after-inlining>"
+                   "$<${_CXX_NOT}:-finstrument-functions>")
+    target_compile_options(timemory-instrument-functions INTERFACE
+         $<$<COMPILE_LANGUAGE:C>:${_C_FLG}>
+         $<$<COMPILE_LANGUAGE:CXX>:${_CXX_FLG}>)
+elseif(c_timemory_instrument_finstrument_functions AND
+   cxx_timemory_instrument_finstrument_functions)
+    set(TIMEMORY_INLINE_COMPILER_INSTRUMENTATION ON CACHE BOOL
+        "Enable compiler instrumentation for inlined function calls" FORCE)
+    set(TIMEMORY_INLINE_COMPILER_INSTRUMENTATION ON)
+    target_compile_options(timemory-instrument-functions INTERFACE
+        $<$<COMPILE_LANGUAGE:C>:-finstrument-functions>
+        $<$<COMPILE_LANGUAGE:CXX>:-finstrument-functions>)
+else()
+    set(TIMEMORY_BUILD_COMPILER_INSTRUMENTATION OFF)
     add_disabled_interface(timemory-instrument-functions)
+endif()
+
+if(TIMEMORY_BUILD_COMPILER_INSTRUMENTATION)
+    target_link_libraries(timemory-instrument-functions INTERFACE
+        timemory-compile-debuginfo)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -200,8 +291,10 @@ add_interface_library(timemory-default-visibility
 add_interface_library(timemory-hidden-visibility
     "Adds -fvisibility=hidden compiler flag")
 
-add_target_flag_if_avail(timemory-default-visibility "-fvisibility=default")
-add_target_flag_if_avail(timemory-hidden-visibility "-fvisibility=hidden")
+add_target_flag_if_avail(timemory-default-visibility
+    "-fvisibility=default")
+add_target_flag_if_avail(timemory-hidden-visibility
+    "-fvisibility=hidden" "-fvisibility-inlines-hidden")
 
 foreach(_TYPE default hidden)
     if(NOT cxx_timemory_${_TYPE}_visibility_fvisibility_${_TYPE})

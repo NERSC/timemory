@@ -122,6 +122,12 @@ if(NOT WIN32)
 endif()
 find_package(Threads QUIET @TIMEMORY_FIND_REQUIREMENT@)
 
+# compiler-instrumentation
+# if TIMEMORY_INLINE_COMPILER_INSTRUMENTATION not set, set it to the default
+if(NOT DEFINED TIMEMORY_INLINE_COMPILER_INSTRUMENTATION)
+    set(TIMEMORY_INLINE_COMPILER_INSTRUMENTATION @TIMEMORY_INLINE_COMPILER_INSTRUMENTATION@)
+endif()
+
 #----------------------------------------------------------------------------------------#
 #   Determine install tree or build tree
 #----------------------------------------------------------------------------------------#

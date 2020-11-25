@@ -39,6 +39,6 @@ This section covers the executables and libraries that are distributed as part o
     - [timemory-ompt](tools/timemory-ompt/README.md)
         - Provide OpenMP profiling via OMPT (OpenMP Tools)
     - [timemory-compiler-instrument](tools/timemory-compiler-instrument/README.md)
-        - Use this library with compilers which support `-finstrument-functions`
+        - Automatically instrument C and C++ source code via `-finstrument-functions` compiler flag
     - [Kokkos Connectors](tools/kokkos-connector/README.md)
         - Libraries for Kokkos profiling

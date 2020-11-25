@@ -11,7 +11,8 @@ target_include_directories(timemory-avail PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(timemory-avail PRIVATE
     timemory::timemory-compile-options
     timemory::timemory-extensions
-    timemory::timemory-headers)
+    timemory::timemory-headers
+    timemory::timemory-python)
 set_target_properties(timemory-avail PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
 install(TARGETS timemory-avail
     DESTINATION bin
