@@ -234,6 +234,11 @@ else()
     set(cxx_timemory_instrument_finstrument_functions_after_inlining FALSE)
 endif()
 
+try_compile(cxx_timemory_instrument_finstrument_functions
+    ${PROJECT_BINARY_DIR}/compile-tests
+    SOURCES ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.cpp
+    CMAKE_FLAGS -finstrument-functions)
+
 if(c_timemory_instrument_finstrument_functions_after_inlining AND
    cxx_timemory_instrument_finstrument_functions_after_inlining)
     set(_OPT       "$<NOT:$<BOOL:TIMEMORY_INLINE_COMPILER_INSTRUMENTATION>>")
