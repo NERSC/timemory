@@ -34,7 +34,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/compat/macros.h"
 #include "timemory/environment/declaration.hpp"
-#include "timemory/macros/compiler.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/tsettings.hpp"

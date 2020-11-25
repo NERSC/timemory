@@ -28,7 +28,6 @@
  */
 
 #include "timemory/variadic/component_hybrid.hpp"
-#include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
 
 //======================================================================================//

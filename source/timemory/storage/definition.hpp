@@ -36,6 +36,7 @@
 #include "timemory/operations/types/start.hpp"
 #include "timemory/operations/types/stop.hpp"
 #include "timemory/plotting/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/storage/macros.hpp"
 #include "timemory/storage/types.hpp"

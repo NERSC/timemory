@@ -29,6 +29,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/components/base.hpp"
+#include "timemory/settings/declaration.hpp"
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
 #    include "pybind11/cast.h"

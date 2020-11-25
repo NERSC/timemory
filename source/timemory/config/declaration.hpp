@@ -32,6 +32,7 @@
 #include "timemory/config/macros.hpp"
 #include "timemory/config/types.hpp"
 #include "timemory/manager/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
 
 namespace tim
 {

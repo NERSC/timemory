@@ -78,7 +78,8 @@ using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
 //--------------------------------------------------------------------------------------//
 
 template <size_t... Idx>
-static auto get_storage(tim::index_sequence<Idx...>) TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto
+get_storage(tim::index_sequence<Idx...>) TIMEMORY_INTERNAL_NO_INSTRUMENT;
 //
 template <size_t Idx, size_t N>
 static void
@@ -138,7 +139,8 @@ get_storage_impl(std::array<std::function<void()>, N>& _data)
 //--------------------------------------------------------------------------------------//
 
 template <size_t... Idx>
-auto get_storage(tim::index_sequence<Idx...>)
+auto
+get_storage(tim::index_sequence<Idx...>)
 {
     // array of finalization functions
     std::array<std::function<void()>, sizeof...(Idx)> _data{};

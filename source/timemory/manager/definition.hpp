@@ -28,6 +28,7 @@
 #include "timemory/manager/declaration.hpp"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/signals.hpp"
 
 //--------------------------------------------------------------------------------------//

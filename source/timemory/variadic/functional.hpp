@@ -35,7 +35,6 @@
 #include "timemory/mpl/available.hpp"
 #include "timemory/operations/types/cache.hpp"
 #include "timemory/operations/types/generic.hpp"
-#include "timemory/settings/settings.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <type_traits>
@@ -161,7 +160,6 @@ template <template <typename...> class OpT, typename ApiT,
 TIMEMORY_HOT void
 invoke(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<OpT, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -179,7 +177,6 @@ construct(Args&&... args)
 {
     IF_CONSTEXPR(trait::is_available<ApiT>::value)
     {
-        // if(settings::enabled())
         {
             TupleT obj{};
             invoke_impl::construct(std::ref(obj).get(), std::forward<Args>(args)...);
@@ -216,7 +213,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 start(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     {
         using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
         using priority_types_t = filter_false_t<negative_start_priority, data_type>;
@@ -248,7 +244,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 stop(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     {
         using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
         using priority_types_t = filter_false_t<negative_stop_priority, data_type>;
@@ -280,7 +275,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 mark_begin(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::mark_begin, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -296,7 +290,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 mark_end(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::mark_end, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -312,7 +305,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 store(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::store, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -328,7 +320,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 reset(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::reset, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -344,7 +335,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 record(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::record, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -360,7 +350,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 measure(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::measure, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -376,7 +365,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 push(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::push_node, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -392,7 +380,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 pop(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::pop_node, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -408,7 +395,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 set_prefix(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::set_prefix, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -424,7 +410,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 set_scope(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::set_scope, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -440,7 +425,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 assemble(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::assemble, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -456,7 +440,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 derive(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::derive, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -472,7 +455,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 audit(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::audit, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -488,7 +470,6 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT void
 add_secondary(TupleT<Tp...>& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::invoke<operation::add_secondary, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
@@ -700,7 +681,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 start(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::start(std::forward<TupleT<Tp...>>(obj),
                        std::make_index_sequence<sizeof...(Tp)>{},
                        std::forward<Args>(args)...);
@@ -710,7 +690,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 stop(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::stop(std::forward<TupleT<Tp...>>(obj),
                       std::make_index_sequence<sizeof...(Tp)>{},
                       std::forward<Args>(args)...);
@@ -720,7 +699,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 mark_begin(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::mark_begin(std::forward<TupleT<Tp...>>(obj),
                             std::make_index_sequence<sizeof...(Tp)>{},
                             std::forward<Args>(args)...);
@@ -730,7 +708,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 mark_end(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::mark_end(std::forward<TupleT<Tp...>>(obj),
                           std::make_index_sequence<sizeof...(Tp)>{},
                           std::forward<Args>(args)...);
@@ -740,7 +717,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 store(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::store(std::forward<TupleT<Tp...>>(obj),
                        std::make_index_sequence<sizeof...(Tp)>{},
                        std::forward<Args>(args)...);
@@ -750,7 +726,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 reset(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::reset(std::forward<TupleT<Tp...>>(obj),
                        std::make_index_sequence<sizeof...(Tp)>{},
                        std::forward<Args>(args)...);
@@ -760,7 +735,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 record(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::record(std::forward<TupleT<Tp...>>(obj),
                         std::make_index_sequence<sizeof...(Tp)>{},
                         std::forward<Args>(args)...);
@@ -770,7 +744,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 measure(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::measure(std::forward<TupleT<Tp...>>(obj),
                          std::make_index_sequence<sizeof...(Tp)>{},
                          std::forward<Args>(args)...);
@@ -780,7 +753,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 push(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::push(std::forward<TupleT<Tp...>>(obj),
                       std::make_index_sequence<sizeof...(Tp)>{},
                       std::forward<Args>(args)...);
@@ -790,7 +762,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 pop(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::pop(std::forward<TupleT<Tp...>>(obj),
                      std::make_index_sequence<sizeof...(Tp)>{},
                      std::forward<Args>(args)...);
@@ -800,7 +771,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 set_prefix(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::set_prefix(std::forward<TupleT<Tp...>>(obj),
                             std::make_index_sequence<sizeof...(Tp)>{},
                             std::forward<Args>(args)...);
@@ -810,7 +780,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 set_scope(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::set_scope(std::forward<TupleT<Tp...>>(obj),
                            std::make_index_sequence<sizeof...(Tp)>{},
                            std::forward<Args>(args)...);
@@ -820,7 +789,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 assemble(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::assemble(std::forward<TupleT<Tp...>>(obj),
                           std::make_index_sequence<sizeof...(Tp)>{},
                           std::forward<Args>(args)...);
@@ -830,7 +798,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 derive(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::derive(std::forward<TupleT<Tp...>>(obj),
                         std::make_index_sequence<sizeof...(Tp)>{},
                         std::forward<Args>(args)...);
@@ -840,7 +807,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 audit(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::audit(std::forward<TupleT<Tp...>>(obj),
                        std::make_index_sequence<sizeof...(Tp)>{},
                        std::forward<Args>(args)...);
@@ -850,7 +816,6 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 TIMEMORY_HOT void
 add_secondary(TupleT<Tp...>&& obj, Args&&... args)
 {
-    // if(settings::enabled())
     invoke_impl::add_secondary(std::forward<TupleT<Tp...>>(obj),
                                std::make_index_sequence<sizeof...(Tp)>{},
                                std::forward<Args>(args)...);

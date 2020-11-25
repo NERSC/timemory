@@ -33,6 +33,7 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/operations/types/finalize/get.hpp"
+#include "timemory/settings/declaration.hpp"
 
 namespace tim
 {

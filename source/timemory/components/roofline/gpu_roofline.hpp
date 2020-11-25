@@ -25,13 +25,12 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/settings/declaration.hpp"
-
 #include "timemory/components/cupti/components.hpp"
+#include "timemory/components/macros.hpp"
 #include "timemory/components/roofline/backends.hpp"
 #include "timemory/components/roofline/types.hpp"
 #include "timemory/components/timing/wall_clock.hpp"
+#include "timemory/settings/declaration.hpp"
 
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/extern.hpp"
