@@ -1,4 +1,4 @@
-# timemory stubs library
+# timemory-stubs library
 
 The timemory stubs library implements the **stub** instrumentation mode for `timemory-run` tool. Additionally, this library can
 be linked to in lieu of the traditional timemory library and provide instrumentation via `LD_PRELOAD` on Linux and `DYLD_INSERT_LIBRARIES`

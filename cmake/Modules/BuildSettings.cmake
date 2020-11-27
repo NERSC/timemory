@@ -106,9 +106,9 @@ endif()
 #----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
-add_interface_library(timemory-compile-options-extra "Extra optimization flags")
+add_interface_library(timemory-compile-extra "Extra optimization flags")
 if(NOT TIMEMORY_USE_COVERAGE)
-    add_target_flag_if_avail(timemory-compile-options-extra
+    add_target_flag_if_avail(timemory-compile-extra
         "-finline-functions"
         "-funroll-loops"
         "-ftree-vectorize"
@@ -117,7 +117,7 @@ if(NOT TIMEMORY_USE_COVERAGE)
 endif()
 
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
-    target_link_libraries(timemory-compile-options INTERFACE timemory-compile-options-extra)
+    target_link_libraries(timemory-compile-options INTERFACE timemory-compile-extra)
     add_flag_if_avail(
         "-fno-signaling-nans"
         "-fno-trapping-math"

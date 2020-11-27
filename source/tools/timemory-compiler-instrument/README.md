@@ -1,4 +1,4 @@
-# timemory-compiler-instrument
+# timemory-compiler-instrument library
 
 The timemory compiler instrumentation library provides the symbols required by the `-finstrument-functions` compiler flag supported by Clang and GCC.
 This compiler flag enables the insertion of a callback at the entry and exit of each function currently being compiled -- it has no effect whatsoever

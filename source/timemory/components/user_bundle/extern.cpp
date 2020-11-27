@@ -26,3 +26,17 @@
 #include "timemory/runtime/properties.hpp"
 //
 #include "timemory/components/user_bundle/extern.hpp"
+
+namespace tim
+{
+namespace component
+{
+template struct user_bundle<global_bundle_idx, project::timemory>;
+template struct user_bundle<ompt_bundle_idx, project::timemory>;
+template struct user_bundle<mpip_bundle_idx, project::timemory>;
+template struct user_bundle<ncclp_bundle_idx, project::timemory>;
+template struct user_bundle<trace_bundle_idx, project::timemory>;
+template struct user_bundle<profiler_bundle_idx, project::timemory>;
+template struct user_bundle<kokkosp_bundle_idx, project::kokkosp>;
+}  // namespace component
+}  // namespace tim

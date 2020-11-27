@@ -1198,7 +1198,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 target_link_libraries(timemory-roofline-options INTERFACE
-    timemory-compile-options-extra
+    timemory-compile-extra
     timemory-arch)
 
 target_link_libraries(timemory-cpu-roofline INTERFACE

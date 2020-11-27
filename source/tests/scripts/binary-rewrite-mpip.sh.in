@@ -37,3 +37,11 @@ if [ "${NMPIP}" -le "${NORIG}" ]; then
     echo -e "$(cat ${TIMEMORY_OUTPUT_PATH}/mpip-*.txt | grep '>>>')"
     exit 1
 fi
+
+NALLR=$(cat ${TIMEMORY_OUTPUT_PATH}/mpip-*.txt | grep MPI_Allreduce | wc -l)
+
+if [ "${NALLR}" -eq 0 ]; then
+    echo -e "\nMPIP results did not contain MPI_Allreduce!:\n"
+    echo -e "$(cat ${TIMEMORY_OUTPUT_PATH}/mpip-*.txt | grep '>>>')"
+    exit 1
+fi

@@ -167,9 +167,13 @@
 
 #if !defined(_WINDOWS)
 #    if !defined(TIMEMORY_NEVER_INSTRUMENT)
-#        define TIMEMORY_NEVER_INSTRUMENT                                                \
-            TIMEMORY_ATTRIBUTE(no_instrument_function)                                   \
-            TIMEMORY_ATTRIBUTE(xray_never_instrument)
+#        if defined(__clang__)
+#            define TIMEMORY_NEVER_INSTRUMENT                                            \
+                TIMEMORY_ATTRIBUTE(no_instrument_function)                               \
+                TIMEMORY_ATTRIBUTE(xray_never_instrument)
+#        else
+#            define TIMEMORY_NEVER_INSTRUMENT TIMEMORY_ATTRIBUTE(no_instrument_function)
+#        endif
 #    endif
 //
 #    if !defined(TIMEMORY_INSTRUMENT)

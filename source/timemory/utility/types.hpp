@@ -375,7 +375,7 @@ either(data_type ret, data_type arg, index_sequence<Idx...>)
 //--------------------------------------------------------------------------------------//
 //
 static TIMEMORY_INLINE data_type
-get_default_bitset()
+                       get_default_bitset()
 {
     return generate(get_fields(), make_index_sequence<scope_count>{});
 }
@@ -574,7 +574,7 @@ struct config : public data_type
 //--------------------------------------------------------------------------------------//
 //
 static TIMEMORY_INLINE config
-get_default()
+                       get_default()
 {
     return config{ get_default_bitset() };
 }
@@ -582,7 +582,7 @@ get_default()
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_INLINE config
-operator+(config _lhs, tree)
+                operator+(config _lhs, tree)
 {
     _lhs.set(tree::value, true);
     return _lhs;
@@ -591,7 +591,7 @@ operator+(config _lhs, tree)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_INLINE config
-operator+(config _lhs, flat)
+                operator+(config _lhs, flat)
 {
     _lhs.set(flat::value, true);
     return _lhs;
@@ -600,7 +600,7 @@ operator+(config _lhs, flat)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_INLINE config
-operator+(config _lhs, timeline)
+                operator+(config _lhs, timeline)
 {
     _lhs.set(timeline::value, true);
     return _lhs;
@@ -609,7 +609,7 @@ operator+(config _lhs, timeline)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_INLINE config
-operator+(config _lhs, config _rhs)
+                operator+(config _lhs, config _rhs)
 {
     return config{ either(_lhs, _rhs, make_index_sequence<scope_count>{}) };
 }
