@@ -26,6 +26,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/hash/macros.hpp"
+#include "timemory/macros/attributes.hpp"
 
 #include <memory>
 #include <string>
@@ -48,14 +49,18 @@ using graph_hash_alias_ptr_t    = std::shared_ptr<graph_hash_alias_t>;
 //--------------------------------------------------------------------------------------//
 //
 graph_hash_map_ptr_t
-get_hash_ids();
+get_hash_ids() TIMEMORY_HOT;
 //
 //--------------------------------------------------------------------------------------//
 //
 graph_hash_alias_ptr_t
-get_hash_aliases();
+get_hash_aliases() TIMEMORY_HOT;
 //
 //--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+hash_result_type
+get_hash_id(Tp&& prefix) TIMEMORY_HOT;
 //
 template <typename Tp>
 hash_result_type
@@ -67,40 +72,42 @@ get_hash_id(Tp&& prefix)
 //--------------------------------------------------------------------------------------//
 //
 hash_result_type
-get_hash_id(const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id);
+get_hash_id(const graph_hash_alias_ptr_t& _hash_alias,
+            hash_result_type              _hash_id) TIMEMORY_HOT;
 //
 //--------------------------------------------------------------------------------------//
 //
 hash_result_type
-add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix);
+add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix) TIMEMORY_HOT;
 //
 //--------------------------------------------------------------------------------------//
 //
 hash_result_type
-add_hash_id(const std::string& prefix);
+add_hash_id(const std::string& prefix) TIMEMORY_HOT;
 //
 //--------------------------------------------------------------------------------------//
 //
 void
 add_hash_id(const graph_hash_map_ptr_t&   _hash_map,
             const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id,
-            hash_result_type _alias_hash_id);
+            hash_result_type _alias_hash_id) TIMEMORY_HOT;
 //
 //--------------------------------------------------------------------------------------//
 //
 void
-add_hash_id(hash_result_type _hash_id, hash_result_type _alias_hash_id);
+add_hash_id(hash_result_type _hash_id, hash_result_type _alias_hash_id) TIMEMORY_HOT;
 //
 //--------------------------------------------------------------------------------------//
 //
 std::string
 get_hash_identifier(const graph_hash_map_ptr_t&   _hash_map,
-                    const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id);
+                    const graph_hash_alias_ptr_t& _hash_alias,
+                    hash_result_type              _hash_id) TIMEMORY_HOT;
 //
 //--------------------------------------------------------------------------------------//
 //
 std::string
-get_hash_identifier(hash_result_type _hash_id);
+get_hash_identifier(hash_result_type _hash_id) TIMEMORY_HOT;
 //
 //--------------------------------------------------------------------------------------//
 //

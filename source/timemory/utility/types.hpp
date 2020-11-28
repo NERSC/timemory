@@ -226,7 +226,7 @@ using type_list_element_t = typename type_list_element<Idx, Tp>::type;
 /// \fn consume_parameters
 /// \brief use this function to get rid of "unused parameter" warnings
 template <typename... ArgsT>
-void
+TIMEMORY_ALWAYS_INLINE void
 consume_parameters(ArgsT&&...)
 {}
 //
@@ -352,7 +352,7 @@ get_fields()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Arg, size_t... Idx>
-static TIMEMORY_INLINE auto
+static TIMEMORY_INLINE TIMEMORY_HOT auto
 generate(Arg&& arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
@@ -364,7 +364,7 @@ generate(Arg&& arg, index_sequence<Idx...>)
 //--------------------------------------------------------------------------------------//
 //
 template <size_t... Idx>
-static TIMEMORY_INLINE auto
+static TIMEMORY_INLINE TIMEMORY_HOT auto
 either(data_type ret, data_type arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
@@ -374,8 +374,8 @@ either(data_type ret, data_type arg, index_sequence<Idx...>)
 //
 //--------------------------------------------------------------------------------------//
 //
-static TIMEMORY_INLINE data_type
-                       get_default_bitset()
+static TIMEMORY_INLINE TIMEMORY_HOT data_type
+get_default_bitset()
 {
     return generate(get_fields(), make_index_sequence<scope_count>{});
 }
@@ -573,16 +573,16 @@ struct config : public data_type
 //
 //--------------------------------------------------------------------------------------//
 //
-static TIMEMORY_INLINE config
-                       get_default()
+static TIMEMORY_INLINE TIMEMORY_HOT config
+get_default()
 {
     return config{ get_default_bitset() };
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE config
-                operator+(config _lhs, tree)
+TIMEMORY_INLINE TIMEMORY_HOT config
+operator+(config _lhs, tree)
 {
     _lhs.set(tree::value, true);
     return _lhs;
@@ -590,8 +590,8 @@ TIMEMORY_INLINE config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE config
-                operator+(config _lhs, flat)
+TIMEMORY_INLINE TIMEMORY_HOT config
+operator+(config _lhs, flat)
 {
     _lhs.set(flat::value, true);
     return _lhs;
@@ -599,8 +599,8 @@ TIMEMORY_INLINE config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE config
-                operator+(config _lhs, timeline)
+TIMEMORY_INLINE TIMEMORY_HOT config
+operator+(config _lhs, timeline)
 {
     _lhs.set(timeline::value, true);
     return _lhs;
@@ -608,8 +608,8 @@ TIMEMORY_INLINE config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE config
-                operator+(config _lhs, config _rhs)
+TIMEMORY_INLINE TIMEMORY_HOT config
+operator+(config _lhs, config _rhs)
 {
     return config{ either(_lhs, _rhs, make_index_sequence<scope_count>{}) };
 }
