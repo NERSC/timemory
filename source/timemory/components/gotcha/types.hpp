@@ -78,13 +78,11 @@ TIMEMORY_STATISTICS_TYPE(component::malloc_gotcha, double)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::memory_allocations, false_type)
-//
 #if !defined(TIMEMORY_USE_GOTCHA)
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::gotcha, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::malloc_gotcha, false_type)
-// TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::memory_allocations, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::memory_allocations, false_type)
 //
 namespace tim
 {

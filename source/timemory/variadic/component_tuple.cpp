@@ -27,6 +27,9 @@
  *
  */
 
+#ifndef TIMEMORY_COMPONENT_TUPLE_CPP
+#define TIMEMORY_COMPONENT_TUPLE_CPP 1
+
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"
@@ -443,3 +446,5 @@ component_tuple<Types...>::init_storage()
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+
+#endif  // TIMEMORY_COMPONENT_TUPLE_CPP

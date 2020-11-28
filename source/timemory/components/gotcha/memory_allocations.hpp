@@ -104,3 +104,5 @@ private:
 //
 }  // namespace component
 }  // namespace tim
+
+#include "timemory/variadic/component_tuple.cpp"
