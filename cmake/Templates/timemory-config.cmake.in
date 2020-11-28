@@ -337,14 +337,11 @@ if(TIMEMORY_INSTALL_TREE)
     if(NOT TARGET timemory::timemory)
         add_library(timemory::timemory INTERFACE IMPORTED)
     endif()
+    
     if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
-        target_link_libraries(timemory::timemory ${_INTERFACE_LIB})
+        target_link_libraries(timemory::timemory INTERFACE ${_INTERFACE_LIB})
     else()
-        target_link_libraries(timemory::timemory ${timemory_LIBRARIES})
-    endif()
-
-    if(NOT TARGET timemory::timemory)
-        add_library(timemory::timemory INTERFACE IMPORTED)
+        target_link_libraries(timemory::timemory INTERFACE ${timemory_LIBRARIES})
     endif()
 endif()
 
