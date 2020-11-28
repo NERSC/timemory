@@ -267,8 +267,12 @@ if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
 endif()
 
 if(APPLE)
-    target_link_libraries(timemory-python INTERFACE
-        "$<$<LINK_LANGUAGE:CXX>:-undefined dynamic_lookup>")
+    if(CMAKE_VERSION VERSION_LESS 3.18)
+        target_link_libraries(timemory-python INTERFACE "-undefined dynamic_lookup")
+    else()
+        target_link_libraries(timemory-python INTERFACE
+            "$<$<LINK_LANGUAGE:CXX>:-undefined dynamic_lookup>")
+    endif()
 endif()
 
 if(WIN32)

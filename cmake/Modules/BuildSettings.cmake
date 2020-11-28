@@ -285,6 +285,10 @@ endif()
 #----------------------------------------------------------------------------------------#
 # user customization
 #
+get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+
 add_user_flags(timemory-compile-options "C")
 add_user_flags(timemory-compile-options "CXX")
-add_user_flags(timemory-compile-options "CUDA")
+if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST ENABLED_LANGUAGES)
+    add_user_flags(timemory-compile-options "CUDA")
+endif()

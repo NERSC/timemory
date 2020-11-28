@@ -65,35 +65,19 @@ file(GLOB_RECURSE source_files
     ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp)
 
+build_intermediate_library(
+    USE_INTERFACE
+    INSTALL_SOURCE
+    NAME                core
+    TARGET              core
+    CATEGORY            GLOBAL
+    FOLDER              components
+    HEADERS             ${header_files}
+    SOURCES             ${source_files})
+
 if(TIMEMORY_USE_COVERAGE)
-    build_intermediate_library(
-        # FORCE_OBJECT
-        USE_INTERFACE
-        INSTALL_SOURCE
-        NAME                core
-        TARGET              core
-        CATEGORY            GLOBAL
-        FOLDER              components
-        HEADERS             ${header_files}
-        SOURCES             ${source_files})
     target_link_libraries(timemory-core-shared PUBLIC
         timemory-analysis-tools)
-else()
-    set(_FORCE_OBJECT FORCE_OBJECT)
-    if(MSVC OR XCODE)
-        set(_FORCE_OBJECT)
-    endif()
-
-    build_intermediate_library(
-        ${_FORCE_OBJECT}
-        USE_INTERFACE
-        INSTALL_SOURCE
-        NAME                core
-        TARGET              core
-        CATEGORY            GLOBAL
-        FOLDER              components
-        HEADERS             ${header_files}
-        SOURCES             ${source_files})
 endif()
 
 # core
