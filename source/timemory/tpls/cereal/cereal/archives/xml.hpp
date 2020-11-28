@@ -53,7 +53,7 @@ namespace xml_detail
 //! The default name for the root node in a cereal xml archive.
 /*! You can define TIMEMORY_CEREAL_XML_STRING_VALUE to be different assuming you do so
     before this file is included. */
-#    define TIMEMORY_CEREAL_XML_STRING_VALUE "cereal"
+#    define TIMEMORY_CEREAL_XML_STRING_VALUE "timemory_xml"
 #endif  // TIMEMORY_CEREAL_XML_STRING_VALUE
 
 //! The name given to the root node in a cereal xml archive

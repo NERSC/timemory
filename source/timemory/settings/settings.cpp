@@ -190,12 +190,6 @@ settings::get_global_output_prefix(bool fake)
         }
     }
 
-    if(!fake && (debug() || verbose() > 2))
-        PRINT_HERE("creating output directory: '%s'", _dir.c_str());
-
-    if(fake)
-        tim::consume_parameters(get_global_input_prefix());
-
     auto ret = (fake) ? 0 : makedir(_dir);
     return (ret == 0) ? filepath::osrepr(_dir + std::string("/") + _prefix)
                       : filepath::osrepr(std::string("./") + _prefix);
@@ -321,8 +315,6 @@ settings::parse(settings* _settings)
 
     for(auto& itr : *_settings)
     {
-        if(_settings->get_debug() && _settings->get_verbose() > 0)
-            std::cerr << "Executing parse callback for: " << itr.first << std::endl;
         itr.second->parse();
     }
 }
@@ -342,12 +334,25 @@ settings::settings()
 TIMEMORY_SETTINGS_INLINE
 settings::settings(const settings& rhs)
 : m_data(data_type{})
+, m_order(rhs.m_order)
 , m_command_line(rhs.m_command_line)
 , m_environment(rhs.m_environment)
 {
-    // PRINT_HERE("%s", "");
     for(auto& itr : rhs.m_data)
         m_data.insert({ itr.first, itr.second->clone() });
+    for(auto& itr : m_order)
+    {
+        if(m_data.find(itr) == m_data.end())
+        {
+            auto ritr = rhs.m_data.find(itr);
+            if(ritr == rhs.m_data.end())
+                throw std::runtime_error("Error! Missing ordered entry: " + itr);
+            else
+            {
+                m_data.insert({ itr, ritr->second->clone() });
+            }
+        }
+    }
 }
 //
 //----------------------------------------------------------------------------------//
@@ -362,8 +367,22 @@ settings::operator=(const settings& rhs)
 
     for(auto& itr : rhs.m_data)
         m_data[itr.first] = itr.second->clone();
+    m_order        = rhs.m_order;
     m_command_line = rhs.m_command_line;
     m_environment  = rhs.m_environment;
+    for(auto& itr : m_order)
+    {
+        if(m_data.find(itr) == m_data.end())
+        {
+            auto ritr = rhs.m_data.find(itr);
+            if(ritr == rhs.m_data.end())
+                throw std::runtime_error("Error! Missing ordered entry: " + itr);
+            else
+            {
+                m_data.insert({ itr, ritr->second->clone() });
+            }
+        }
+    }
     return *this;
 }
 //
@@ -1075,7 +1094,7 @@ settings::read(std::istream& ifs, std::string inp)
         ia->finishNode();
         return true;
     }
-#if defined(TIMEMORY_USE_XML_ARCHIVE) || defined(TIMEMORY_XML_SUPPORT)
+#if defined(TIMEMORY_USE_XML)
     else if(inp.find(".xml") != std::string::npos || inp == "xml")
     {
         using policy_type = policy::input_archive<cereal::XMLInputArchive, TIMEMORY_API>;

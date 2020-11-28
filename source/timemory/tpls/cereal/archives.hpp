@@ -33,9 +33,24 @@
 #    pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
 
+// forward decls
+namespace tim
+{
+namespace cereal
+{
+class BinaryInputArchive;
+class BinaryOutputArchive;
+class PortableBinaryInputArchive;
+class PortableBinaryOutputArchive;
+class XMLInputArchive;
+class XMLOutputArchive;
+// json are always included so no forward decl necessary
+}  // namespace cereal
+}  // namespace tim
+
 // archives
 #include "timemory/tpls/cereal/cereal/archives/json.hpp"
-#if defined(TIMEMORY_USE_XML_ARCHIVE)
+#if defined(TIMEMORY_USE_XML)
 #    include "timemory/tpls/cereal/cereal/archives/xml.hpp"
 #endif
 

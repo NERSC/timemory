@@ -253,26 +253,12 @@ class XMLOutputArchive;
 #    define TIMEMORY_PYTHON_PLOTTER "python"
 #endif
 
-#if !defined(TIMEMORY_USE_XML_ARCHIVE)
-//
-#    if !defined(TIMEMORY_DEFAULT_INPUT_ARCHIVE)
-#        define TIMEMORY_DEFAULT_INPUT_ARCHIVE cereal::JSONInputArchive
-#    endif
-//
-#    if !defined(TIMEMORY_DEFAULT_OUTPUT_ARCHIVE)
-#        define TIMEMORY_DEFAULT_OUTPUT_ARCHIVE ::tim::type_list<>
-#    endif
-//
-#else
-//
-#    if !defined(TIMEMORY_DEFAULT_INPUT_ARCHIVE)
-#        define TIMEMORY_DEFAULT_INPUT_ARCHIVE cereal::XMLInputArchive
-#    endif
-//
-#    if !defined(TIMEMORY_DEFAULT_OUTPUT_ARCHIVE)
-#        define TIMEMORY_DEFAULT_OUTPUT_ARCHIVE cereal::XMLOutputArchive
-#    endif
-//
+#if !defined(TIMEMORY_DEFAULT_INPUT_ARCHIVE)
+#    define TIMEMORY_DEFAULT_INPUT_ARCHIVE cereal::JSONInputArchive
+#endif
+
+#if !defined(TIMEMORY_DEFAULT_OUTPUT_ARCHIVE)
+#    define TIMEMORY_DEFAULT_OUTPUT_ARCHIVE ::tim::type_list<>
 #endif
 
 #if !defined(TIMEMORY_INPUT_ARCHIVE)

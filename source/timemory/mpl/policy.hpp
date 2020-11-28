@@ -215,6 +215,57 @@ struct output_archive<cereal::MinimalJSONOutputArchive, Api>
     }
 };
 
+//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_USE_XML)
+///
+/// partial specialization for XMLOutputArchive
+///
+template <typename Api>
+struct output_archive<cereal::XMLOutputArchive, Api>
+{
+    using type        = cereal::XMLOutputArchive;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = bool;
+    using output_type = bool;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+
+    // indent the output
+    static indent_type& indent()
+    {
+        static indent_type value =
+            trait::pretty_archive<Api>::value || trait::pretty_archive<void>::value;
+        return value;
+    }
+
+    // output the type as an attribute
+    static output_type& type_attribute()
+    {
+        static output_type value = false;
+        return value;
+    }
+
+    // Whether dynamically sized containers output the size=dynamic attribute
+    static output_type& size_attribute()
+    {
+        static output_type value = false;
+        return value;
+    }
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        //  The last two options are meaningless for the minimal writer
+        option_type opts(precision(), indent(), type_attribute(), size_attribute());
+        return std::make_shared<type>(os, opts);
+    }
+};
+#endif
 //======================================================================================//
 
 template <typename Tp>

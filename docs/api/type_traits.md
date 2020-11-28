@@ -98,7 +98,7 @@ user code.
 .. doxygenstruct:: tim::trait::output_archive
    :members:
    :undoc-members:
-.. doxygenstruct:: tim::trait::pretty_json
+.. doxygenstruct:: tim::trait::pretty_archive
    :members:
    :undoc-members:
 .. doxygenstruct:: tim::trait::requires_json

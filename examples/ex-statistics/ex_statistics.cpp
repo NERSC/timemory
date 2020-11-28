@@ -35,7 +35,7 @@
 //
 // all types use pretty json
 //
-TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_json, void, std::true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_archive, void, std::true_type)
 
 #include "timemory/components/types.hpp"
 

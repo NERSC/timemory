@@ -490,12 +490,12 @@ struct echo_enabled : true_type
 {};
 
 //--------------------------------------------------------------------------------------//
-/// \struct tim::trait::pretty_json
-/// \brief trait that configures whether JSON output uses pretty print. If set to
-/// false_type then the JSON will be compact
+/// \struct tim::trait::pretty_archive
+/// \brief trait that configures whether output archive uses pretty formmatting. If set
+/// to false_type then the JSON/XML/etc. will be compact (if supported)
 ///
 template <typename T>
-struct pretty_json : std::false_type
+struct pretty_archive : std::false_type
 {};
 
 /// \struct tim::trait::api_input_archive
@@ -522,13 +522,12 @@ struct api_output_archive
     using default_type = TIMEMORY_OUTPUT_ARCHIVE;
 
     static constexpr bool is_default_v = std::is_same<default_type, type_list<>>::value;
-    static constexpr bool is_pretty_v  = pretty_json<void>::value;
+    static constexpr bool is_pretty_v  = pretty_archive<void>::value;
 
-    using type =
-        conditional_t<(is_default_v),
-                      conditional_t<(is_pretty_v), cereal::PrettyJSONOutputArchive,
-                                    cereal::MinimalJSONOutputArchive>,
-                      default_type>;
+    using type = conditional_t<is_default_v,
+                               conditional_t<is_pretty_v, cereal::PrettyJSONOutputArchive,
+                                             cereal::MinimalJSONOutputArchive>,
+                               default_type>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -553,15 +552,15 @@ struct output_archive
     using minimal_type = cereal::MinimalJSONOutputArchive;
     using pretty_type  = cereal::PrettyJSONOutputArchive;
 
-    static constexpr bool is_pretty_v =
-        (pretty_json<T>::value && pretty_json<void>::value);
+    static constexpr bool is_pretty_v = pretty_archive<T>::value ||
+                                        pretty_archive<Api>::value ||
+                                        pretty_archive<void>::value;
 
     static constexpr bool is_json = (std::is_same<api_type, pretty_type>::value ||
                                      std::is_same<api_type, minimal_type>::value);
 
-    using type =
-        conditional_t<(is_json), conditional_t<(is_pretty_v), pretty_type, api_type>,
-                      api_type>;
+    using type = conditional_t<is_json, conditional_t<is_pretty_v, pretty_type, api_type>,
+                               api_type>;
 };
 
 template <>
@@ -573,6 +572,41 @@ struct output_archive<manager, api::native_tag>
 template <typename Api>
 struct output_archive<manager, Api> : output_archive<manager, api::native_tag>
 {};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::archive_extension
+/// \brief Extension for the input or output archive types. It will throw an error if
+/// used on new archive types and not specialized
+template <typename T>
+struct archive_extension
+{
+    using xml_types = type_list<cereal::XMLInputArchive, cereal::XMLOutputArchive>;
+    using json_types =
+        type_list<cereal::JSONInputArchive, cereal::PrettyJSONOutputArchive,
+                  cereal::MinimalJSONOutputArchive>;
+    using binary_types =
+        type_list<cereal::BinaryInputArchive, cereal::BinaryOutputArchive,
+                  cereal::PortableBinaryInputArchive,
+                  cereal::PortableBinaryOutputArchive>;
+
+    template <typename U = T>
+    enable_if_t<is_one_of<U, xml_types>::value, std::string> operator()()
+    {
+        return ".xml";
+    }
+
+    template <typename U = T>
+    enable_if_t<is_one_of<U, json_types>::value, std::string> operator()()
+    {
+        return ".json";
+    }
+
+    template <typename U = T>
+    enable_if_t<is_one_of<U, binary_types>::value, std::string> operator()()
+    {
+        return ".dat";
+    }
+};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::report

@@ -617,8 +617,11 @@ private:
         //    hash, detail::Version<T>::version);
 
         if(insertion.second)  // insertion took place, serialize the version number
+        {
+#if !defined(TIMEMORY_DISABLE_CEREAL_CLASS_VERSION)
             process(make_nvp<ArchiveType>("cereal_class_version", version));
-
+#endif
+        }
         return version;
     }
 
@@ -1059,9 +1062,11 @@ private:
             return lookupResult->second;
         else  // need to load
         {
-            std::uint32_t version;
+            std::uint32_t version = 0;
 
+#if !defined(TIMEMORY_DISABLE_CEREAL_CLASS_VERSION)
             process(make_nvp<ArchiveType>("cereal_class_version", version));
+#endif
             itsVersionedTypes.emplace_hint(lookupResult, hash, version);
 
             return version;

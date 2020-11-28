@@ -230,7 +230,10 @@ template <typename T, typename Api = api::native_tag>
 struct output_archive;
 
 template <typename T>
-struct pretty_json;
+struct pretty_archive;
+
+template <typename T>
+struct archive_extension;
 
 template <typename T>
 struct report;
@@ -616,24 +619,68 @@ struct convert<auto_hybrid<LhsInT<LhsIn...>, RhsInT<RhsIn...>>,
     using type = component_hybrid<LhsInT<LhsIn...>, RhsInT<RhsIn...>>;
 };
 
-//--------------------------------------------------------------------------------------//
-
-template <typename In, typename Out>
-struct pointer_convert
+//======================================================================================//
+// check if type is in expansion
+//
+template <typename...>
+struct is_one_of
 {
-    using type = add_pointer_t<Out>;
+    static constexpr bool value = false;
 };
 
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class InTuple, typename... In,
-          template <typename...> class OutTuple, typename... Out>
-struct pointer_convert<InTuple<In...>, OutTuple<Out...>>
+template <typename F, typename S, template <typename...> class Tuple, typename... T>
+struct is_one_of<F, S, Tuple<T...>>
 {
-    using type = OutTuple<add_pointer_t<In>...>;
+    static constexpr bool value =
+        std::is_same<F, S>::value || is_one_of<F, Tuple<T...>>::value;
+};
+
+template <typename F, typename S, template <typename...> class Tuple, typename... T>
+struct is_one_of<F, Tuple<S, T...>>
+{
+    static constexpr bool value = is_one_of<F, S, Tuple<T...>>::value;
+};
+
+//======================================================================================//
+// check if trait is satisfied by at least one type in variadic sequence
+//
+template <template <typename> class Test, typename Sequence>
+struct contains_one_of;
+
+template <template <typename> class Test, template <typename...> class Tuple>
+struct contains_one_of<Test, Tuple<>>
+{
+    static constexpr bool value = false;
+    using type                  = Tuple<>;
+};
+
+template <template <typename> class Test, typename F, template <typename...> class Tuple,
+          typename... T>
+struct contains_one_of<Test, Tuple<F, T...>>
+{
+    static constexpr bool value =
+        Test<F>::value || contains_one_of<Test, Tuple<T...>>::value;
+    using type = conditional_t<Test<F>::value, F,
+                               typename contains_one_of<Test, Tuple<T...>>::type>;
 };
 
 }  // namespace impl
+
+//======================================================================================//
+///
+/// check if type is in expansion
+///
+template <typename Tp, typename Types>
+using is_one_of = typename impl::is_one_of<Tp, Types>;
+
+///
+/// check if type is in expansion
+///
+template <template <typename> class Predicate, typename Types>
+using contains_one_of = typename impl::contains_one_of<Predicate, Types>;
+
+template <template <typename> class Predicate, typename Types>
+using contains_one_of_t = typename contains_one_of<Predicate, Types>::type;
 
 //======================================================================================//
 
@@ -703,9 +750,6 @@ using get_index_sequence_t = typename get_index_sequence<decay_t<Tp>>::type;
 
 template <typename T, typename U>
 using convert_t = typename impl::convert<T, U>::type;
-
-template <typename T, typename U>
-using pointer_convert_t = typename impl::pointer_convert<T, U>::type;
 
 template <typename T>
 using unwrap_t = typename impl::unwrapper<T>::type;
