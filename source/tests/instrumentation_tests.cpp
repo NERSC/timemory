@@ -26,6 +26,7 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
+#include "timemory/backends.hpp"
 #include "timemory/timemory.hpp"
 
 #include <algorithm>
