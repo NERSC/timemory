@@ -149,51 +149,6 @@ template <template <typename> class TraitT, typename... T>
 using get_trait_type_t = typename get_trait_type<TraitT, T...>::type;
 
 //======================================================================================//
-// check if type is in expansion
-//
-template <typename...>
-struct is_one_of
-{
-    static constexpr bool value = false;
-};
-
-template <typename F, typename S, template <typename...> class Tuple, typename... T>
-struct is_one_of<F, S, Tuple<T...>>
-{
-    static constexpr bool value =
-        std::is_same<F, S>::value || is_one_of<F, Tuple<T...>>::value;
-};
-
-template <typename F, typename S, template <typename...> class Tuple, typename... T>
-struct is_one_of<F, Tuple<S, T...>>
-{
-    static constexpr bool value = is_one_of<F, S, Tuple<T...>>::value;
-};
-
-//======================================================================================//
-// check if trait is satisfied by at least one type in variadic sequence
-//
-template <template <typename> class Test, typename Sequence>
-struct contains_one_of;
-
-template <template <typename> class Test, template <typename...> class Tuple>
-struct contains_one_of<Test, Tuple<>>
-{
-    static constexpr bool value = false;
-    using type                  = Tuple<>;
-};
-
-template <template <typename> class Test, typename F, template <typename...> class Tuple,
-          typename... T>
-struct contains_one_of<Test, Tuple<F, T...>>
-{
-    static constexpr bool value =
-        Test<F>::value || contains_one_of<Test, Tuple<T...>>::value;
-    using type = conditional_t<(Test<F>::value), F,
-                               typename contains_one_of<Test, Tuple<T...>>::type>;
-};
-
-//======================================================================================//
 // check if any types are integral types
 //
 template <typename...>
@@ -412,21 +367,6 @@ using append_type_t = typename append_type<Tp, Types>::type;
 ///
 template <typename Tp, typename Types>
 using remove_type_t = typename remove_type<Tp, Types>::type;
-
-///
-/// check if type is in expansion
-///
-template <typename Tp, typename Types>
-using is_one_of = typename impl::is_one_of<Tp, Types>;
-
-///
-/// check if type is in expansion
-///
-template <template <typename> class Predicate, typename Types>
-using contains_one_of = typename impl::contains_one_of<Predicate, Types>;
-
-template <template <typename> class Predicate, typename Types>
-using contains_one_of_t = typename contains_one_of<Predicate, Types>::type;
 
 //======================================================================================//
 

@@ -36,6 +36,7 @@ set(_NON_APPLE_UNIX OFF)
 set(_UNIX_OS ${UNIX})
 set(_DEFAULT_BUILD_SHARED ON)
 set(_DEFAULT_BUILD_STATIC OFF)
+set(_USE_XML ON)
 
 set(SANITIZER_TYPE leak CACHE STRING "Sanitizer type")
 set(TIMEMORY_gperftools_COMPONENTS "profiler" CACHE STRING "gperftools components")
@@ -67,6 +68,11 @@ endif()
 
 if(WIN32)
     set(_BUILD_CALIPER OFF)
+endif()
+
+# intel compiler has had issues with rapidxml library in past so default to off
+if(CMAKE_CXX_COMPILER_IS_INTEL)
+    set(_USE_XML OFF)
 endif()
 
 # Check if CUDA can be enabled if CUDA is enabled or in auto-detect mode
@@ -342,6 +348,8 @@ add_option(TIMEMORY_USE_LIKWID_NVMON
     "Enable LIKWID support for nvidia (GPU)" ${_LIKWID_NVMON} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_GOTCHA
     "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_XML
+    "Enable XML serialization support" ${_USE_XML} CMAKE_DEFINE)
 add_option(TIMEMORY_BUILD_ERT
     "Build ERT library" ON)
 if(CMAKE_CXX_COMPILER_IS_CLANG OR TIMEMORY_BUILD_DOCS)

@@ -16,8 +16,8 @@ add_interface_library(timemory-headers
     "Provides minimal set of include flags to compile with timemory")
 add_interface_library(timemory-precompiled-headers
     "Provides timemory-headers + precompiles headers if CMAKE_VERSION >= 3.16")
-add_interface_library(timemory-cereal-xml
-    "Enables XML serialization output")
+add_interface_library(timemory-xml
+    "Enables XML serialization support")
 add_interface_library(timemory-extern
     "Enables pre-processor directive to ensure all extern templates are used")
 add_interface_library(timemory-statistics
@@ -372,6 +372,10 @@ endif()
 # include threading because of rooflines
 target_link_libraries(timemory-headers INTERFACE timemory-threading)
 
+if(TIMEMORY_USE_XML)
+    target_link_libraries(timemory-headers INTERFACE timemory-xml)
+endif()
+
 # minimum: C++14
 target_compile_features(timemory-headers INTERFACE
     cxx_std_14
@@ -462,7 +466,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 
-timemory_target_compile_definitions(timemory-cereal-xml INTERFACE TIMEMORY_USE_XML_ARCHIVE)
+timemory_target_compile_definitions(timemory-xml INTERFACE TIMEMORY_USE_XML)
 
 
 #----------------------------------------------------------------------------------------#

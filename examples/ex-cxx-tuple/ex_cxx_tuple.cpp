@@ -23,6 +23,13 @@
 // SOFTWARE.
 //
 
+#define TIMEMORY_INPUT_ARCHIVE ::tim::cereal::XMLInputArchive
+#define TIMEMORY_OUTPUT_ARCHIVE ::tim::cereal::XMLOutputArchive
+
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/utility/testing.hpp"
+
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -33,10 +40,6 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#include "timemory/timemory.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/testing.hpp"
 
 using namespace tim::stl;
 using namespace tim::component;

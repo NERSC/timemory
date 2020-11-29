@@ -202,11 +202,7 @@ print<Tp, true>::setup()
         return success;
     };
 
-    auto is_minimal_json = std::is_same<trait::output_archive_t<Tp>,
-                                        cereal::MinimalJSONOutputArchive>::value;
-    auto is_pretty_json =
-        std::is_same<trait::output_archive_t<Tp>, cereal::PrettyJSONOutputArchive>::value;
-    auto fext       = (is_minimal_json || is_pretty_json) ? ".json" : ".xml";
+    auto fext       = trait::archive_extension<trait::output_archive_t<Tp>>{}();
     auto extensions = tim::delimit(m_settings->get_input_extensions(), ",; ");
 
     tree_outfname = settings::compose_output_filename(label + ".tree", fext);
