@@ -27,9 +27,12 @@
 #include "timemory/library.h"
 
 #include <cstdint>
-#include <dlfcn.h>
 #include <limits>
 #include <numeric>
+
+#if !defined(_WINDOWS)
+#    include <dlfcn.h>
+#endif
 
 // Macro for obtaining jump pointer function association
 #if defined(_WINDOWS)
