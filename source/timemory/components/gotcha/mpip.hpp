@@ -83,14 +83,13 @@ struct mpip_handle : base<mpip_handle<Toolset, Tag>, void>
     using this_type  = mpip_handle<Toolset, Tag>;
     using base_type  = base<this_type, value_type>;
 
-    using string_t      = std::string;
     using mpi_toolset_t = Toolset;
     using mpip_gotcha_t = tim::component::gotcha<mpip_wrapper_count, mpi_toolset_t, Tag>;
     using mpip_tuple_t  = tim::component_tuple<mpip_gotcha_t>;
     using toolset_ptr_t = std::shared_ptr<mpip_tuple_t>;
 
-    static string_t label() { return "mpip_handle"; }
-    static string_t description() { return "Handle for activating MPI wrappers"; }
+    static std::string label() { return "mpip_handle"; }
+    static std::string description() { return "Handle for activating MPI wrappers"; }
 
     void get() {}
 
@@ -230,11 +229,10 @@ void
 tim::component::configure_mpip(std::set<std::string> permit, std::set<std::string> reject)
 {
     static constexpr size_t mpip_wrapper_count = NUM_TIMEMORY_MPIP_WRAPPERS;
+    static bool             is_initialized     = false;
 
-    using string_t      = std::string;
     using mpip_gotcha_t = tim::component::gotcha<mpip_wrapper_count, Toolset, Tag>;
 
-    static bool is_initialized = false;
     if(!is_initialized)
     {
         // generate the gotcha wrappers
@@ -491,7 +489,7 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
         mpip_gotcha_t::get_reject_list() = [reject]() {
             auto _reject = reject;
             // check environment
-            auto reject_list = tim::get_env<string_t>("TIMEMORY_MPIP_REJECT_LIST", "");
+            auto reject_list = tim::get_env<std::string>("TIMEMORY_MPIP_REJECT_LIST", "");
             // add environment setting
             for(const auto& itr : tim::delimit(reject_list))
                 _reject.insert(itr);
@@ -502,7 +500,7 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
         mpip_gotcha_t::get_permit_list() = [permit]() {
             auto _permit = permit;
             // check environment
-            auto permit_list = tim::get_env<string_t>("TIMEMORY_MPIP_PERMIT_LIST", "");
+            auto permit_list = tim::get_env<std::string>("TIMEMORY_MPIP_PERMIT_LIST", "");
             // add environment setting
             for(const auto& itr : tim::delimit(permit_list))
                 _permit.insert(itr);

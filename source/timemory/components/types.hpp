@@ -356,6 +356,8 @@ public:
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_DEPRECATED)
+//
 template <typename Tuple, typename List>
 TSTAG(struct)
 tuple_size<tim::component_hybrid<Tuple, List>>
@@ -375,7 +377,7 @@ public:
     static constexpr auto value = tuple_size<Tuple>::value + tuple_size<List>::value;
 };
 //
-//--------------------------------------------------------------------------------------//
+#endif
 //
 }  // namespace std
 

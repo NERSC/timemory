@@ -4,24 +4,8 @@ language: python
 
 # The apt packages here install our compiled code dependencies.
 jobs:
+  fast_finish: true
   include:
-    # ------------------------------------------------------------------------ #
-    #
-    #   Python3.8 / macOS
-    #
-    # ------------------------------------------------------------------------ #
-    - os: osx
-      osx_image: xcode12
-      language: shell
-      env:
-        - TRAVIS_PYTHON_VERSION=3.8
-        - CONDA_OS=MacOSX
-        - CC=clang
-        - CXX=clang++
-        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_LINE_PROFILER=OFF'
-        - CTEST_ARGS='--force-new-ctest-process'
-        - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=17'
-
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.6 / Linux
@@ -142,7 +126,7 @@ jobs:
         - CC=gcc-6
         - CXX=g++-6
         - BUILD_TYPE=MinSizeRel
-        - BUILD_ARGS='--build-libs shared --papi --gotcha --python --stats --ipo --cxx-standard=14'
+        - BUILD_ARGS='--build-libs shared --papi --gotcha --python --stats --cxx-standard=14'
     # GCC 7
     - os: linux
       dist: bionic
@@ -219,7 +203,22 @@ jobs:
         - CC=clang-7
         - CXX=clang++-7
         - BUILD_ARGS='--quick --build-libs shared --gotcha --mpi --python --stats --tools compiler kokkos --cxx-standard=17'
-  fast_finish: true
+    # ------------------------------------------------------------------------ #
+    #
+    #   Python3.8 / macOS
+    #
+    # ------------------------------------------------------------------------ #
+    - os: osx
+      osx_image: xcode12
+      language: shell
+      env:
+        - TRAVIS_PYTHON_VERSION=3.8
+        - CONDA_OS=MacOSX
+        - CC=clang
+        - CXX=clang++
+        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_LINE_PROFILER=OFF'
+        - CTEST_ARGS='--force-new-ctest-process'
+        - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=17'
 
 before_install:
   # only run macOS if a pull-request

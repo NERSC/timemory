@@ -134,11 +134,6 @@ using namespace tim::component;
 
 //--------------------------------------------------------------------------------------//
 
-using comp_hybrid_t = component_hybrid<type_list<wall_clock>, type_list<cpu_clock>>;
-using autp_hybrid_t = auto_hybrid<type_list<wall_clock>, type_list<cpu_clock>>;
-
-//--------------------------------------------------------------------------------------//
-
 TEST_F(type_trait_tests, is_null_type)
 {
     puts("");

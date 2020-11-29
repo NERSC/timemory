@@ -873,27 +873,27 @@ main(int argc, char** argv)
         use_stubs[_name] = false;
 
         string_t best_init_name = "";
-        for(const auto& itr : init_stub_names)
+        for(const auto& sitr : init_stub_names)
         {
-            if(itr.find(_name) != npos_v && used_stub_names.count(itr) == 0)
+            if(sitr.find(_name) != npos_v && used_stub_names.count(sitr) == 0)
             {
                 verbprintf(
                     3, "Found possible match for '%s' instrumentation init: '%s'...\n",
-                    _name.c_str(), itr.c_str());
-                best_init_name = itr;
+                    _name.c_str(), sitr.c_str());
+                best_init_name = sitr;
                 break;
             }
         }
 
         string_t base_fini_name = "";
-        for(const auto& itr : fini_stub_names)
+        for(const auto& sitr : fini_stub_names)
         {
-            if(itr.find(_name) != npos_v && used_stub_names.count(itr) == 0)
+            if(sitr.find(_name) != npos_v && used_stub_names.count(sitr) == 0)
             {
                 verbprintf(
                     3, "Found possible match for '%s' instrumentation fini: '%s'...\n",
-                    _name.c_str(), itr.c_str());
-                base_fini_name = itr;
+                    _name.c_str(), sitr.c_str());
+                base_fini_name = sitr;
                 break;
             }
         }
@@ -1510,8 +1510,8 @@ main(int argc, char** argv)
 
             strvec_t linked_libraries = tim::popen::read_fork(ldd);
 
-            auto err = tim::popen::pclose(ldd);
-            if(err != 0)
+            auto perr = tim::popen::pclose(ldd);
+            if(perr != 0)
                 perror("Error in timemory_fork");
 
             for(auto itr : linked_libraries)

@@ -30,44 +30,4 @@
 #pragma once
 
 #include "timemory/containers/macros.hpp"
-
-namespace tim
-{
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              containers
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename... Types>
-class generic_bundle;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-class component_tuple;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-class component_list;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-class auto_tuple;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tuple, typename List>
-class component_hybrid;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tuple, typename List>
-class auto_hybrid;
-//
-//--------------------------------------------------------------------------------------//
-//
-}  // namespace tim
+#include "timemory/variadic/types.hpp"

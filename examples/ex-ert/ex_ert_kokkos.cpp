@@ -72,7 +72,6 @@ template <typename Tp, typename CounterT>
 class counter<device::kokkos, Tp, CounterT> {
 public:
     using DeviceT       = device::kokkos;
-    using string_t      = std::string;
     using mutex_t       = std::recursive_mutex;
     using lock_t        = std::unique_lock<mutex_t>;
     using counter_type  = CounterT;

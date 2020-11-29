@@ -504,6 +504,15 @@ public:
         return get<T>();
     }
 
+    template <
+        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+        enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value,
+                    int> = 0>
+    auto get_component()
+    {
+        return get<T>();
+    }
+
     /// returns a reference from a stack component instead of a pointer
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               enable_if_t<trait::is_available<T>::value && is_one_of<T, data_type>::value,
@@ -528,13 +537,12 @@ public:
     /// accepts arguments
     ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args,
-              enable_if_t<trait::is_available<T>::value == true &&
-                              is_one_of<T*, data_type>::value == true &&
-                              is_one_of<T, data_type>::value == false &&
-                              std::is_constructible<T, Args...>::value == true,
-                          char> = 0>
-    bool init(Args&&... _args)
+              typename... Args>
+    enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value &&
+                    !is_one_of<T, data_type>::value &&
+                    std::is_constructible<T, Args...>::value,
+                bool>
+    init(Args&&... _args)
     {
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
@@ -542,7 +550,7 @@ public:
             if(settings::debug())
             {
                 printf("[component_bundle::init]> initializing type '%s'...\n",
-                       demangle(typeid(T).name()).c_str());
+                       demangle<T>().c_str());
             }
             _obj = new T(std::forward<Args>(_args)...);
             set_prefix(_obj);
@@ -554,10 +562,11 @@ public:
             static std::atomic<int> _count(0);
             if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
             {
-                std::string _id = demangle(typeid(T).name());
-                printf("[component_bundle::init]> skipping re-initialization of type"
-                       " \"%s\"...\n",
-                       _id.c_str());
+                std::string _id = demangle<T>();
+                fprintf(stderr,
+                        "[component_bundle::init]> skipping re-initialization of type"
+                        " \"%s\"...\n",
+                        _id.c_str());
             }
         }
         return false;
@@ -568,22 +577,21 @@ public:
     /// constructible with provided arguments
     ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args,
-              enable_if_t<trait::is_available<T>::value == true &&
-                              is_one_of<T*, data_type>::value == true &&
-                              is_one_of<T, data_type>::value == false &&
-                              std::is_constructible<T, Args...>::value == false &&
-                              std::is_default_constructible<T>::value == true,
-                          char> = 0>
-    bool init(Args&&...)
+              typename... Args>
+    enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value &&
+                    !is_one_of<T, data_type>::value &&
+                    !std::is_constructible<T, Args...>::value &&
+                    std::is_default_constructible<T>::value,
+                bool>
+    init(Args&&...)
     {
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
         {
             if(settings::debug())
             {
-                printf("[component_bundle::init]> initializing type '%s'...\n",
-                       demangle(typeid(T).name()).c_str());
+                fprintf(stderr, "[component_bundle::init]> initializing type '%s'...\n",
+                        demangle<T>().c_str());
             }
             _obj = new T{};
             set_prefix(_obj);
@@ -595,10 +603,10 @@ public:
             static std::atomic<int> _count(0);
             if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
             {
-                std::string _id = demangle(typeid(T).name());
-                printf("[component_bundle::init]> skipping re-initialization of type"
-                       " \"%s\"...\n",
-                       _id.c_str());
+                fprintf(stderr,
+                        "[component_bundle::init]> skipping re-initialization of type "
+                        "\"%s\"...\n",
+                        demangle<T>().c_str());
             }
         }
         return false;
@@ -608,15 +616,41 @@ public:
     /// try to re-create a stack object with provided arguments
     ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args,
-              enable_if_t<trait::is_available<T>::value == true &&
-                              is_one_of<T*, data_type>::value == false &&
-                              is_one_of<T, data_type>::value == true,
-                          char> = 0>
-    bool init(Args&&... _args)
+              typename... Args>
+    enable_if_t<trait::is_available<T>::value && !is_one_of<T*, data_type>::value &&
+                    is_one_of<T, data_type>::value,
+                bool>
+    init(Args&&... _args)
     {
-        T&                      _obj = std::get<index_of<T, data_type>::value>(m_data);
-        operation::construct<T> _tmp(_obj, std::forward<Args>(_args)...);
+        T& _obj = std::get<index_of<T, data_type>::value>(m_data);
+        operation::construct<T>{ _obj, std::forward<Args>(_args)... };
+        set_prefix(&_obj);
+        set_scope(&_obj);
+        return true;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// try to re-create a stack object with provided arguments (ignore heap type)
+    ///
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              typename... Args>
+    enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value &&
+                    is_one_of<T, data_type>::value,
+                bool>
+    init(Args&&... _args)
+    {
+        static std::atomic<int> _count(0);
+        if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
+        {
+            fprintf(stderr,
+                    "[component_bundle::init]> type exists as a heap-allocated instance "
+                    "and stack-allocated instance: \"%s\"...\n",
+                    demangle<T>().c_str());
+        }
+        T& _obj = std::get<index_of<T, data_type>::value>(m_data);
+        operation::construct<T>{ _obj, std::forward<Args>(_args)... };
+        set_prefix(&_obj);
+        set_scope(&_obj);
         return true;
     }
 
@@ -625,13 +659,11 @@ public:
     /// available, add it in there
     ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args,
-              enable_if_t<trait::is_available<T>::value == true &&
-                              is_one_of<T, data_type>::value == false &&
-                              is_one_of<T*, data_type>::value == false &&
-                              has_user_bundle_v == true,
-                          int> = 0>
-    bool init(Args&&...)
+              typename... Args>
+    enable_if_t<trait::is_available<T>::value && !is_one_of<T, data_type>::value &&
+                    !is_one_of<T*, data_type>::value && has_user_bundle_v,
+                bool>
+    init(Args&&...)
     {
         using bundle_t =
             decay_t<decltype(std::get<0>(std::declval<user_bundle_types>()))>;
@@ -651,13 +683,13 @@ public:
     /// do nothing if type not available, not one of the variadic types, and there
     /// is no user bundle available
     ///
-    template <typename T, typename... Args,
-              enable_if_t<trait::is_available<T>::value == false ||
-                              (is_one_of<T*, data_type>::value == false &&
-                               is_one_of<T, data_type>::value == false &&
-                               has_user_bundle_v == false),
-                          int> = 0>
-    bool init(Args&&...)
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              typename... Args>
+    enable_if_t<!trait::is_available<T>::value ||
+                    !(is_one_of<T*, data_type>::value || is_one_of<T, data_type>::value ||
+                      has_user_bundle_v),
+                bool>
+    init(Args&&...)
     {
         return false;
     }
@@ -671,8 +703,7 @@ public:
     auto initialize(Args&&... args)
     {
         constexpr auto N = sizeof...(T);
-        return TIMEMORY_FOLD_EXPANSION(bool, N,
-                                       this->init<T>(std::forward<Args>(args)...));
+        return TIMEMORY_FOLD_EXPANSION(bool, N, init<T>(std::forward<Args>(args)...));
     }
 
     /// delete any optional types currently allocated
@@ -687,7 +718,7 @@ public:
     /// apply a member function to a stack type that is in variadic list AND is available
     ///
     template <typename T, typename Func, typename... Args,
-              enable_if_t<is_one_of<T, data_type>::value == true, int> = 0>
+              enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
         auto* _obj = get<T>();
@@ -696,7 +727,7 @@ public:
 
     /// apply a member function to either a heap type or a type that is in a user_bundle
     template <typename T, typename Func, typename... Args,
-              enable_if_t<trait::is_available<T>::value == true, int> = 0>
+              enable_if_t<trait::is_available<T>::value, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
         auto* _obj = get<T>();
@@ -706,7 +737,7 @@ public:
 
     /// ignore applying a member function because the type is not present
     template <typename T, typename Func, typename... Args,
-              enable_if_t<trait::is_available<T>::value == false, int> = 0>
+              enable_if_t<!trait::is_available<T>::value, int> = 0>
     void type_apply(Func&&, Args&&...)
     {}
 

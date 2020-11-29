@@ -401,8 +401,8 @@ public:
         auto&&         _key   = obj.key();
         auto&&         _width = obj.output_width();
 
-        using print_t = custom_operation_t<operation::custom_print, data_type>;
-        apply<void>::access_with_indices<print_t>(_data, std::ref(ssd));
+        using cprint_t = custom_operation_t<operation::custom_print, data_type>;
+        apply<void>::access_with_indices<cprint_t>(_data, std::ref(ssd));
 
         ssp << std::setw(_width) << std::left << _key;
         os << ssp.str() << ssd.str();

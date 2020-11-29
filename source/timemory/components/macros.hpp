@@ -455,43 +455,54 @@
         }                                                                                \
         namespace operation                                                              \
         {                                                                                \
-        extern template struct init_storage<COMPONENT_NAME>;                             \
+        extern template struct add_secondary<COMPONENT_NAME>;                            \
+        extern template struct add_statistics<COMPONENT_NAME>;                           \
+        extern template struct assemble<COMPONENT_NAME>;                                 \
+        extern template struct audit<COMPONENT_NAME>;                                    \
+        extern template struct cache<COMPONENT_NAME>;                                    \
+        extern template struct cleanup<COMPONENT_NAME>;                                  \
+        extern template struct construct<COMPONENT_NAME>;                                \
+        extern template struct copy<COMPONENT_NAME>;                                     \
+        extern template struct derive<COMPONENT_NAME>;                                   \
+        extern template struct fini<COMPONENT_NAME>;                                     \
         extern template struct fini_storage<COMPONENT_NAME>;                             \
-        extern template struct push_node<COMPONENT_NAME>;                                \
-        extern template struct pop_node<COMPONENT_NAME>;                                 \
-        extern template struct set_prefix<COMPONENT_NAME>;                               \
-        extern template struct set_scope<COMPONENT_NAME>;                                \
-        extern template struct set_started<COMPONENT_NAME>;                              \
-        extern template struct set_stopped<COMPONENT_NAME>;                              \
+        extern template struct echo_measurement<                                         \
+            COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                 \
+        extern template struct extra_serialization<COMPONENT_NAME>;                      \
+        extern template struct get<COMPONENT_NAME>;                                      \
+        extern template struct init<COMPONENT_NAME>;                                     \
+        extern template struct init_storage<COMPONENT_NAME>;                             \
         extern template struct is_running<COMPONENT_NAME, true>;                         \
         extern template struct is_running<COMPONENT_NAME, false>;                        \
-        extern template struct record<COMPONENT_NAME>;                                   \
-        extern template struct reset<COMPONENT_NAME>;                                    \
-        extern template struct cleanup<COMPONENT_NAME>;                                  \
-        extern template struct cache<COMPONENT_NAME>;                                    \
-        extern template struct get<COMPONENT_NAME>;                                      \
-        extern template struct copy<COMPONENT_NAME>;                                     \
-        extern template struct assemble<COMPONENT_NAME>;                                 \
-        extern template struct derive<COMPONENT_NAME>;                                   \
+        extern template struct minus<COMPONENT_NAME>;                                    \
+        extern template struct plus<COMPONENT_NAME>;                                     \
+        extern template struct pop_node<COMPONENT_NAME>;                                 \
         extern template struct print<COMPONENT_NAME>;                                    \
         extern template struct print_header<COMPONENT_NAME>;                             \
         extern template struct print_statistics<COMPONENT_NAME>;                         \
         extern template struct print_storage<COMPONENT_NAME>;                            \
+        extern template struct push_node<COMPONENT_NAME>;                                \
+        extern template struct record<COMPONENT_NAME>;                                   \
+        extern template struct reset<COMPONENT_NAME>;                                    \
         extern template struct serialization<COMPONENT_NAME>;                            \
-        extern template struct extra_serialization<COMPONENT_NAME>;                      \
-        extern template struct echo_measurement<                                         \
-            COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                 \
+        extern template struct set_prefix<COMPONENT_NAME>;                               \
+        extern template struct set_scope<COMPONENT_NAME>;                                \
+        extern template struct set_started<COMPONENT_NAME>;                              \
+        extern template struct set_stopped<COMPONENT_NAME>;                              \
+        extern template struct store<COMPONENT_NAME>;                                    \
+        extern template struct finalize::ctest_notes<COMPONENT_NAME>;                    \
+        extern template struct finalize::dmp_get<                                        \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
+        extern template struct finalize::flamegraph<COMPONENT_NAME>;                     \
         extern template struct finalize::get<                                            \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
+        extern template struct finalize::merge<                                          \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::mpi_get<                                        \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        extern template struct finalize::upc_get<                                        \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        extern template struct finalize::dmp_get<                                        \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::print<                                          \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        extern template struct finalize::merge<                                          \
+        extern template struct finalize::upc_get<                                        \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         }                                                                                \
         }
@@ -514,43 +525,54 @@
         }                                                                                \
         namespace operation                                                              \
         {                                                                                \
-        template struct init_storage<COMPONENT_NAME>;                                    \
+        template struct add_secondary<COMPONENT_NAME>;                                   \
+        template struct add_statistics<COMPONENT_NAME>;                                  \
+        template struct assemble<COMPONENT_NAME>;                                        \
+        template struct audit<COMPONENT_NAME>;                                           \
+        template struct cache<COMPONENT_NAME>;                                           \
+        template struct cleanup<COMPONENT_NAME>;                                         \
+        template struct construct<COMPONENT_NAME>;                                       \
+        template struct copy<COMPONENT_NAME>;                                            \
+        template struct derive<COMPONENT_NAME>;                                          \
+        template struct echo_measurement<COMPONENT_NAME,                                 \
+                                         trait::echo_enabled<COMPONENT_NAME>::value>;    \
+        template struct extra_serialization<COMPONENT_NAME>;                             \
+        template struct fini<COMPONENT_NAME>;                                            \
         template struct fini_storage<COMPONENT_NAME>;                                    \
-        template struct push_node<COMPONENT_NAME>;                                       \
-        template struct pop_node<COMPONENT_NAME>;                                        \
-        template struct set_prefix<COMPONENT_NAME>;                                      \
-        template struct set_scope<COMPONENT_NAME>;                                       \
-        template struct set_started<COMPONENT_NAME>;                                     \
-        template struct set_stopped<COMPONENT_NAME>;                                     \
+        template struct get<COMPONENT_NAME>;                                             \
+        template struct init<COMPONENT_NAME>;                                            \
+        template struct init_storage<COMPONENT_NAME>;                                    \
         template struct is_running<COMPONENT_NAME, true>;                                \
         template struct is_running<COMPONENT_NAME, false>;                               \
-        template struct record<COMPONENT_NAME>;                                          \
-        template struct reset<COMPONENT_NAME>;                                           \
-        template struct cleanup<COMPONENT_NAME>;                                         \
-        template struct cache<COMPONENT_NAME>;                                           \
-        template struct get<COMPONENT_NAME>;                                             \
-        template struct copy<COMPONENT_NAME>;                                            \
-        template struct assemble<COMPONENT_NAME>;                                        \
-        template struct derive<COMPONENT_NAME>;                                          \
+        template struct minus<COMPONENT_NAME>;                                           \
+        template struct plus<COMPONENT_NAME>;                                            \
+        template struct pop_node<COMPONENT_NAME>;                                        \
         template struct print<COMPONENT_NAME>;                                           \
         template struct print_header<COMPONENT_NAME>;                                    \
         template struct print_statistics<COMPONENT_NAME>;                                \
         template struct print_storage<COMPONENT_NAME>;                                   \
+        template struct push_node<COMPONENT_NAME>;                                       \
+        template struct record<COMPONENT_NAME>;                                          \
+        template struct reset<COMPONENT_NAME>;                                           \
         template struct serialization<COMPONENT_NAME>;                                   \
-        template struct extra_serialization<COMPONENT_NAME>;                             \
-        template struct echo_measurement<COMPONENT_NAME,                                 \
-                                         trait::echo_enabled<COMPONENT_NAME>::value>;    \
+        template struct set_prefix<COMPONENT_NAME>;                                      \
+        template struct set_scope<COMPONENT_NAME>;                                       \
+        template struct set_started<COMPONENT_NAME>;                                     \
+        template struct set_stopped<COMPONENT_NAME>;                                     \
+        template struct store<COMPONENT_NAME>;                                           \
+        template struct finalize::ctest_notes<COMPONENT_NAME>;                           \
+        template struct finalize::dmp_get<                                               \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
+        template struct finalize::flamegraph<COMPONENT_NAME>;                            \
         template struct finalize::get<                                                   \
+            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
+        template struct finalize::merge<                                                 \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::mpi_get<                                               \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        template struct finalize::upc_get<                                               \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        template struct finalize::dmp_get<                                               \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::print<                                                 \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        template struct finalize::merge<                                                 \
+        template struct finalize::upc_get<                                               \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         }                                                                                \
         }

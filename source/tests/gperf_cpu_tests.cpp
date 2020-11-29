@@ -22,7 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "gtest/gtest.h"
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/timemory.hpp"
 
@@ -47,7 +49,9 @@ using list_t =
 using auto_tuple_t  = typename tuple_t::auto_type;
 using auto_list_t   = typename list_t::auto_type;
 using mem_list_t    = tim::component_list_t<cpu_clock, cpu_util, peak_rss, page_rss>;
-using auto_hybrid_t = tim::auto_hybrid<tuple_t, mem_list_t>;
+using auto_bundle_t = tim::auto_bundle<TIMEMORY_API, wall_clock, gperftools_cpu_profiler,
+                                       gperftools_heap_profiler, cpu_clock*, cpu_util*,
+                                       peak_rss*, page_rss*>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -131,6 +135,9 @@ allocate(int64_t nfactor)
 class gperf_cpu_tests : public ::testing::Test
 {
 protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+
     void SetUp() override
     {
         list_t::get_initializer() = [](auto& obj) {
@@ -169,36 +176,12 @@ TEST_F(gperf_cpu_tests, cpu_profile)
     {
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "2000", 1);
-        TIMEMORY_BLANK_MARKER(auto_hybrid_t, details::get_test_name(), "_", 2);
+        TIMEMORY_BLANK_MARKER(auto_bundle_t, details::get_test_name(), "_", 2);
         details::consume(1000);
         details::allocate(50);
     }
     ret += details::fibonacci(43);
     printf("fibonacci(43) * 4 = %li\n", ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//
