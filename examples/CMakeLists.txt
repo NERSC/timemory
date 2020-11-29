@@ -13,7 +13,6 @@ project(timemory-Examples C CXX)
 #   Add the examples
 #
 
-add_subdirectory(ex-c)
 add_subdirectory(ex-minimal)
 add_subdirectory(ex-derived)
 add_subdirectory(ex-optional)
@@ -21,25 +20,59 @@ add_subdirectory(ex-cxx-basic)
 add_subdirectory(ex-cxx-tuple)
 add_subdirectory(ex-statistics)
 add_subdirectory(ex-cxx-overhead)
-add_subdirectory(ex-compiler-instrument)
 add_subdirectory(ex-array-of-bundles)
 
+if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
+    set(DEFAULT_CHOICE ON)
+else()
+    set(DEFAULT_CHOICE OFF)
+endif()
+
+option(TIMEMORY_BUILD_C_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_TPL_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_CUDA_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_PYTHON_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_ROOFLINE_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_DYNAMIC_INSTRUMENT_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_COMPILER_INSTRUMENT_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+
+# C language related
+if(TIMEMORY_BUILD_C_EXAMPLES)
+    add_subdirectory(ex-c)
+endif()
+
 # external package related
-add_subdirectory(ex-caliper)
-add_subdirectory(ex-gotcha)
-add_subdirectory(ex-likwid)
+if(TIMEMORY_BUILD_TPL_EXAMPLES)
+    add_subdirectory(ex-caliper)
+    add_subdirectory(ex-gotcha)
+    add_subdirectory(ex-likwid)
+endif()
 
 # GPU related
-add_subdirectory(ex-cuda-event)
-
-# Roofline related
-add_subdirectory(ex-ert)
-add_subdirectory(ex-cpu-roofline)
-add_subdirectory(ex-gpu-roofline)
+if(TIMEMORY_BUILD_CUDA_EXAMPLES)
+    add_subdirectory(ex-cuda-event)
+endif()
 
 # Python related
-add_subdirectory(ex-python)
+if(TIMEMORY_BUILD_PYTHON_EXAMPLES)
+    add_subdirectory(ex-python)
+endif()
+
+# Roofline related
+if(TIMEMORY_BUILD_ROOFLINE_EXAMPLES)
+    add_subdirectory(ex-ert)
+    add_subdirectory(ex-cpu-roofline)
+    add_subdirectory(ex-gpu-roofline)
+endif()
 
 # Dynamic instrumentation
-add_subdirectory(ex-custom-dynamic-instr)
+if(TIMEMORY_BUILD_DYNAMIC_INSTRUMENT_EXAMPLES)
+    add_subdirectory(ex-custom-dynamic-instr)
+endif()
+
+# Compiler instrumentation
+if(TIMEMORY_BUILD_COMPILER_INSTRUMENT_EXAMPLES)
+    add_subdirectory(ex-compiler-instrument)
+endif()
+
 cmake_policy(POP)

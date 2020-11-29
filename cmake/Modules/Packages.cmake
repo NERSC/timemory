@@ -1377,3 +1377,6 @@ endif()
 include(UserPackages)
 
 add_feature(CMAKE_INSTALL_RPATH "Installation RPATH")
+
+install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/LocalFindUtilities.cmake
+    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules)
