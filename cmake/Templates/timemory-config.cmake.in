@@ -1,5 +1,5 @@
-# Don't allow cmake older than 3.11 to use this configuration
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+# Don't allow cmake older than 3.13 to use this configuration
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 foreach(_VAR ROOT_DIR INCLUDE_DIR LIB_DIR PYTHON_DIR INCLUDE_DIRS MISSING_COMPONENTS
     FOUND_COMPONENTS LIBRARIES LIBRARY_FOUND SHARED_LIBRARY_FOUND STATIC_LIBRARY_FOUND
@@ -343,14 +343,11 @@ if(TIMEMORY_INSTALL_TREE)
     if(NOT TARGET timemory::timemory)
         add_library(timemory::timemory INTERFACE IMPORTED)
     endif()
+    
     if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
-        target_link_libraries(timemory::timemory ${_INTERFACE_LIB})
+        target_link_libraries(timemory::timemory INTERFACE ${_INTERFACE_LIB})
     else()
-        target_link_libraries(timemory::timemory ${timemory_LIBRARIES})
-    endif()
-
-    if(NOT TARGET timemory::timemory)
-        add_library(timemory::timemory INTERFACE IMPORTED)
+        target_link_libraries(timemory::timemory INTERFACE ${timemory_LIBRARIES})
     endif()
 endif()
 

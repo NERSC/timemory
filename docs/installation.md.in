@@ -43,7 +43,7 @@ For packages which are included as submodules (Caliper, GOTCHA, pybind11, etc.),
 is desired, the latter specifies that this support should be enabled via the submodule. Thus,
 if `TIMEMORY_USE_<PACKAGE>=OFF` then `TIMEMORY_BUILD_<PACKAGE>` is ignored. If `TIMEMORY_USE_<PACKAGE>=ON`
 and `TIMEMORY_BUILD_<PACKAGE>=OFF`, then timemory will search for an external installation of the package.
-If `TIMEMORY_USE_<PACKAGE>=ON` and `TIMEMORY_USE_<PACKAGE>=ON`, then timemory will use the built-in
+If `TIMEMORY_USE_<PACKAGE>=ON` and `TIMEMORY_BUILD_<PACKAGE>=ON`, then timemory will use the built-in
 submodule to enable support for the package.
 
 | Option | Description |
