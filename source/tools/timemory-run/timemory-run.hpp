@@ -579,8 +579,8 @@ private:
 //======================================================================================//
 //
 static inline address_space_t*
-timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool _rewrite,
-                           int _pid = -1, string_t _name = "")
+timemory_get_address_space(patch_pointer_t _bpatch, int _cmdc, char** _cmdv,
+                           bool _rewrite, int _pid = -1, string_t _name = "")
 {
     address_space_t* mutatee = nullptr;
 
@@ -589,7 +589,7 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
         verbprintf(1, "Opening '%s' for binary rewrite... ", _name.c_str());
         fflush(stderr);
         if(!_name.empty())
-            mutatee = bpatch->openBinary(_name.c_str(), false);
+            mutatee = _bpatch->openBinary(_name.c_str(), false);
         if(!mutatee)
         {
             fprintf(stderr, "[timemory-run]> Failed to open binary '%s'\n",
@@ -603,7 +603,7 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
         verbprintf(1, "Attaching to process %i... ", _pid);
         fflush(stderr);
         char* _cmdv0 = (_cmdc > 0) ? _cmdv[0] : nullptr;
-        mutatee      = bpatch->processAttach(_cmdv0, _pid);
+        mutatee      = _bpatch->processAttach(_cmdv0, _pid);
         if(!mutatee)
         {
             fprintf(stderr, "[timemory-run]> Failed to connect to process %i\n",
@@ -616,7 +616,7 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
     {
         verbprintf(1, "Creating process '%s'... ", _cmdv[0]);
         fflush(stderr);
-        mutatee = bpatch->processCreate(_cmdv[0], (const char**) _cmdv, nullptr);
+        mutatee = _bpatch->processCreate(_cmdv[0], (const char**) _cmdv, nullptr);
         if(!mutatee)
         {
             std::stringstream ss;

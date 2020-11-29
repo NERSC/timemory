@@ -45,14 +45,13 @@ using namespace tim::component;
 using tim::component_tuple_t;
 
 // create a hybrid for inside the gotcha
-using gotcha_tuple_t  = component_tuple_t<wall_clock, peak_rss>;
-using gotcha_list_t   = tim::component_list_t<cpu_clock>;
-using gotcha_hybrid_t = tim::auto_hybrid_t<gotcha_tuple_t, gotcha_list_t>;
+using gotcha_hybrid_t =
+    tim::auto_bundle_t<TIMEMORY_API, wall_clock, peak_rss, cpu_clock*>;
 
 // create gotcha types for various bundles of functions
 using mpi_gotcha_t    = tim::component::gotcha<1, gotcha_hybrid_t>;
 using work_gotcha_t   = tim::component::gotcha<1, gotcha_hybrid_t, int>;
-using memfun_gotcha_t = tim::component::gotcha<5, gotcha_tuple_t>;
+using memfun_gotcha_t = tim::component::gotcha<5, gotcha_hybrid_t>;
 using malloc_gotcha_t = malloc_gotcha::gotcha_type<component_tuple_t<>>;
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, mpi_gotcha_t, priority_constant<256>)
@@ -61,11 +60,9 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, malloc_gotcha_t, priority_constan
 TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, mpi_gotcha_t, priority_constant<-256>)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, malloc_gotcha_t, priority_constant<-512>)
 
-using comp_t  = component_tuple_t<wall_clock, cpu_clock, peak_rss>;
-using tuple_t = component_tuple_t<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t,
-                                  malloc_gotcha_t>;
-using list_t  = gotcha_list_t;
-using auto_hybrid_t = tim::auto_hybrid_t<tuple_t, list_t>;
+using auto_hybrid_t =
+    tim::component_bundle_t<TIMEMORY_API, wall_clock, cpu_clock, peak_rss, mpi_gotcha_t,
+                            work_gotcha_t, memfun_gotcha_t, malloc_gotcha_t, cpu_clock*>;
 
 template <typename Tp>
 using vector_t = std::vector<Tp>;
@@ -442,7 +439,8 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
-    using toolset_t = tim::auto_tuple_t<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
+    using toolset_t =
+        tim::auto_tuple_t<wall_clock, peak_rss, malloc_gotcha_t, mpi_gotcha_t>;
 
     malloc_gotcha::configure<component_tuple_t<>>();
 
@@ -715,7 +713,7 @@ TEST_F(gotcha_tests, member_functions)
     float  fsum = 0.0;
     double dsum = 0.0;
     {
-        TIMEMORY_BLANK_POINTER(gotcha_tuple_t, details::get_test_name());
+        TIMEMORY_BLANK_POINTER(gotcha_hybrid_t, details::get_test_name());
 
         DoWork dw(pair_type(0.25, 0.5));
 

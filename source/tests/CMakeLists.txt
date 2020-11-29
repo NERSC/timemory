@@ -52,8 +52,8 @@ endif()
 # add_library(no-store-merge INTERFACE)
 # add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
 add_library(test-opt-flags INTERFACE)
-string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 if(NOT TIMEMORY_USE_COVERAGE)
+    string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
     target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
     if(NOT TIMEMORY_USE_ARCH)
         add_target_flag_if_avail(test-opt-flags "-march=native")
@@ -343,11 +343,13 @@ add_timemory_google_test(threading_tests
                     ${_LIBRARY} ${_OPENMP})
 
 if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
+    list(APPEND ptl_tests_env "TIMEMORY_ENABLE_PTHREAD_GOTCHA_WRAPPER=ON")
     add_timemory_google_test(ptl_tests
         SOURCES         ptl_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         ${_LIBRARY}
-                        PTL::ptl)
+                        PTL::ptl
+        ENVIRONMENT     ${ptl_tests_env})
 endif()
 
 add_timemory_google_test(stl_overload_tests
@@ -550,7 +552,8 @@ endif()
 add_timemory_google_test(gperf_fake_cpu_tests
     DISCOVER_TESTS
     SOURCES         gperf_cpu_tests.cpp
-    LINK_LIBRARIES  timemory::timemory-headers
+    LINK_LIBRARIES  common-test-libs
+                    timemory::timemory-headers
                     timemory::timemory-plotting
                     timemory::timemory-analysis-tools
                     timemory::timemory-core
@@ -561,7 +564,8 @@ if(TIMEMORY_USE_GOTCHA)
     add_timemory_google_test(gotcha_tests
         DISCOVER_TESTS
         SOURCES         gotcha_tests.cpp
-        LINK_LIBRARIES  gotcha-tests-lib
+        LINK_LIBRARIES  common-test-libs
+                        gotcha-tests-lib
                         timemory::timemory-headers
                         timemory::timemory-analysis-tools
                         timemory::timemory-plotting

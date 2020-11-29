@@ -167,7 +167,7 @@ using identity_t = typename identity<T>::type;
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct null_type
+/// \struct tim::null_type
 /// \brief this is a placeholder type for optional type-traits. It is used as the default
 /// type for the type-traits to signify there is no specialization.
 struct null_type : concepts::null_type
@@ -175,7 +175,7 @@ struct null_type : concepts::null_type
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct type_list
+/// \struct tim::type_list
 /// \brief lightweight tuple-alternative for meta-programming logic
 template <typename... Tp>
 struct type_list
@@ -183,8 +183,8 @@ struct type_list
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct type_list
-/// \brief lightweight tuple-alternative for meta-programming logic
+/// \struct tim::type_list_element
+/// \brief Variant of `std::tuple_element` for \ref tim::type_list
 template <size_t Idx, typename Tp>
 struct type_list_element;
 
@@ -223,7 +223,7 @@ using type_list_element_t = typename type_list_element<Idx, Tp>::type;
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \fn consume_parameters
+/// \fn tim::consume_parameters
 /// \brief use this function to get rid of "unused parameter" warnings
 template <typename... ArgsT>
 TIMEMORY_ALWAYS_INLINE void
@@ -289,7 +289,7 @@ namespace scope
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct tree
+/// \struct tim::scope::tree
 /// \brief Dummy struct to designates tree (hierarchical) storage. This scope (default)
 /// maintains nesting in the call-graph storage. In this scoping mode, the results
 /// will be separated from each other based on the identifier AND the current number
@@ -301,7 +301,7 @@ struct tree : std::integral_constant<int, 2>
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct flat
+/// \struct tim::scope::flat
 /// \brief Dummy struct to designates flat (no hierarchy) storage.
 /// When flat scoping is globally enabled, all entries to the call-graph storage at
 /// entered at a depth of zero. Thus, if you want a report of all the function calls
@@ -319,7 +319,7 @@ struct flat : std::integral_constant<int, 0>
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct timeline
+/// \struct tim::scope::timeline
 /// \brief Dummy struct to designates timeline (hierarchical, non-duplicated) storage.
 /// It is meaningless by itself and should be combined with \ref tim::scope::tree or
 /// \ref tim::scope::flat. A tree timeline has all the hierarchy properties of the
@@ -572,6 +572,19 @@ struct config : public data_type
 };
 //
 //--------------------------------------------------------------------------------------//
+// clang-format off
+static TIMEMORY_INLINE config
+get_default() TIMEMORY_HOT;
+TIMEMORY_INLINE        config
+operator+(config _lhs, tree) TIMEMORY_HOT;
+TIMEMORY_INLINE        config
+operator+(config _lhs, flat) TIMEMORY_HOT;
+TIMEMORY_INLINE        config
+operator+(config _lhs, timeline) TIMEMORY_HOT;
+TIMEMORY_INLINE        config
+operator+(config _lhs, config _rhs) TIMEMORY_HOT;
+// clang-format on
+//--------------------------------------------------------------------------------------//
 //
 static TIMEMORY_HOT_INLINE auto
 get_default() -> config
@@ -665,7 +678,7 @@ namespace lifetime
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct lifetime::scoped
+/// \struct tim::lifetime::scoped
 /// \brief Dummy struct for meta-programming to designate that a component activates
 /// it's features at the first start() invocation and deactivates it's features when
 /// all instances that called start() have called stop(). Thus, the component's
@@ -677,7 +690,7 @@ struct scoped
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct lifetime::persistent
+/// \struct tim::lifetime::persistent
 /// \brief Dummy struct for meta-programming to designate that a component activates its
 /// features in {global,thread}_init and deactivates it's features in
 /// {global,thead}_finalize
@@ -696,7 +709,7 @@ namespace audit
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct incoming
+/// \struct tim::audit::incoming
 /// \brief Used by component audit member function to designate the
 /// parameters being passed are incoming (e.g. before a gotcha wrappee is invoked)
 ///
@@ -705,7 +718,7 @@ struct incoming
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct outgoing
+/// \struct tim::audit::outgoing
 /// \brief Used by component audit member function to designate the
 /// parameters being passed are outgoing (e.g. the return value from a gotcha wrappee)
 ///

@@ -111,8 +111,10 @@ class component_list
     // manager is friend so can use above
     friend class manager;
 
+#if defined(TIMEMORY_USE_DEPRECATED)
     template <typename TupleC, typename ListC>
     friend class component_hybrid;
+#endif
 
     template <typename... Tp>
     friend class auto_list;

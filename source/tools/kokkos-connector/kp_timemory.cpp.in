@@ -53,6 +53,26 @@ struct kp_timemory_section
 
 //--------------------------------------------------------------------------------------//
 
+template <typename... Tp>
+std::enable_if_t<sizeof...(Tp) != 0, std::string> get_types_string(
+    tim::component_tuple<Tp...>)
+{
+    return TIMEMORY_JOIN(" + ", tim::demangle<Tp>()...);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Tp>
+std::enable_if_t<sizeof...(Tp) == 0, std::string> get_types_string(
+    tim::component_tuple<Tp...>)
+{
+    return TIMEMORY_JOIN("", "NONE [the requested types in ",
+                         tim::demangle<profile_entry_t>(),
+                         " were probably marked as disabled]");
+}
+
+//--------------------------------------------------------------------------------------//
+
 extern "C"
 {
     TIMEMORY_WEAK_PREFIX
@@ -157,15 +177,17 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     timemory_ompt_library_ctor();
 
     printf("%s\n", spacer.c_str());
-    printf("# KokkosP: timemory Connector (sequence is %d, version: %llu)\n", loadSeq,
-           (unsigned long long) interfaceVer);
+    printf(
+        "# KokkosP: timemory Connector (sequence is %d, version: %llu, components: %s)\n",
+        loadSeq, (unsigned long long) interfaceVer,
+        get_types_string(profile_entry_t{}).c_str());
     printf("%s\n\n", spacer.c_str());
 
     // timemory_init is expecting some args so generate some
     std::array<char*, 1> cstr = { { strdup("@KP_LIBNAME@") } };
     tim::timemory_init(1, cstr.data());
     free(cstr.at(0));
-    assert(env_configured);
+    assert(env_configured);    
 }
 
 extern "C" void

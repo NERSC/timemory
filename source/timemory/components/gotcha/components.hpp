@@ -944,19 +944,19 @@ private:
         bool did_data_toggle = false;
         bool did_glob_toggle = false;
 
-        auto toggle_suppress_on = [](bool* _suppress, bool& _did) {
-            if(_suppress && *_suppress == false)
+        auto toggle_suppress_on = [](bool* _bsuppress, bool& _did) {
+            if(_bsuppress && *_bsuppress == false)
             {
-                *(_suppress) = true;
-                _did         = true;
+                *(_bsuppress) = true;
+                _did          = true;
             }
         };
 
-        auto toggle_suppress_off = [](bool* _suppress, bool& _did) {
-            if(_suppress && _did == true && *_suppress == true)
+        auto toggle_suppress_off = [](bool* _bsuppress, bool& _did) {
+            if(_bsuppress && _did == true && *_bsuppress == true)
             {
-                *(_suppress) = false;
-                _did         = false;
+                *(_bsuppress) = false;
+                _did          = false;
             }
         };
 
@@ -1049,19 +1049,19 @@ private:
         bool did_data_toggle = false;
         bool did_glob_toggle = false;
 
-        auto toggle_suppress_on = [](bool* _suppress, bool& _did) {
-            if(_suppress && *_suppress == false)
+        auto toggle_suppress_on = [](bool* _bsuppress, bool& _did) {
+            if(_bsuppress && *_bsuppress == false)
             {
-                *(_suppress) = true;
-                _did         = true;
+                *(_bsuppress) = true;
+                _did          = true;
             }
         };
 
-        auto toggle_suppress_off = [](bool* _suppress, bool& _did) {
-            if(_suppress && _did == true && *_suppress == true)
+        auto toggle_suppress_off = [](bool* _bsuppress, bool& _did) {
+            if(_bsuppress && _did == true && *_bsuppress == true)
             {
-                *(_suppress) = false;
-                _did         = false;
+                *(_bsuppress) = false;
+                _did          = false;
             }
         };
 

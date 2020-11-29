@@ -518,7 +518,7 @@ public:
     // use return type SFINAE to check whether "val" supports operator<<
     // if Tp does not support <<, then this function will not be called
     template <typename Tp>
-    auto start(const char* label, const Tp& val) -> decltype(std::cerr << val, void())
+    auto stop(const char* label, const Tp& val) -> decltype(std::cerr << val, void())
     {
         std::cerr << "[LOG:STOP][" << label << "]> " << val << std::endl;
     }

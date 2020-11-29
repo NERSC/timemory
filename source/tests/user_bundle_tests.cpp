@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "test_macros.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN
@@ -32,6 +34,8 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/insert.hpp"
 #include "timemory/timemory.hpp"
+#include "timemory/variadic/auto_hybrid.hpp"
+#include "timemory/variadic/component_hybrid.hpp"
 
 #include <chrono>
 #include <condition_variable>
@@ -318,7 +322,7 @@ TEST_F(user_bundle_tests, bundle_init_func)
 
     using auto_hybrid_t = tim::auto_hybrid<bundle0_t, bundle1_t>;
 
-    auto init_func = [](auto& al) { al.get_list().template initialize<cpu_clock>(); };
+    auto init_func = [](auto& al) { al.template initialize<cpu_clock>(); };
 
     {
         auto_hybrid_t _bundle(details::get_test_name(), tim::scope::tree{}, false,

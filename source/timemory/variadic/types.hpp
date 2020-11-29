@@ -81,9 +81,6 @@ class component_tuple;
 template <typename... Types>
 class component_list;
 
-template <typename TupleT, typename ListT>
-class component_hybrid;
-
 template <typename... Types>
 class auto_bundle;
 
@@ -96,6 +93,9 @@ class auto_tuple;
 
 template <typename... Types>
 class auto_list;
+
+template <typename TupleT, typename ListT>
+class component_hybrid;
 
 template <typename TupleT, typename ListT>
 class auto_hybrid;
@@ -112,8 +112,10 @@ TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, std::tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, type_list, true_type, typename)
 
 // there are timemory-specific variadic wrappers
+#if defined(TIMEMORY_USE_DEPRECATED)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, auto_hybrid, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, component_hybrid, true_type, typename)
+#endif
 
 // {auto,component}_bundle are empty if one template is supplied
 TIMEMORY_DEFINE_TEMPLATE_CONCEPT(is_empty, auto_bundle, true_type, typename)
@@ -211,12 +213,14 @@ struct type_list_only<type_list<Lhs...>, component_list<Types...>, Rhs...>
                                          typename type_list_only<Rhs...>::type>::type;
 };
 
+#if defined(TIMEMORY_USE_DEPRECATED)
 template <typename Tup, typename Lst, typename... Lhs, typename... Rhs>
 struct type_list_only<type_list<Lhs...>, component_hybrid<Tup, Lst>, Rhs...>
 {
     using type = typename type_list_only<typename type_list_only<Lhs..., Tup, Lst>::type,
                                          typename type_list_only<Rhs...>::type>::type;
 };
+#endif
 
 template <typename... Lhs, typename... Types, typename... Rhs>
 struct type_list_only<type_list<Lhs...>, auto_tuple<Types...>, Rhs...>
@@ -232,12 +236,14 @@ struct type_list_only<type_list<Lhs...>, auto_list<Types...>, Rhs...>
                                          typename type_list_only<Rhs...>::type>::type;
 };
 
+#if defined(TIMEMORY_USE_DEPRECATED)
 template <typename Tup, typename Lst, typename... Lhs, typename... Rhs>
 struct type_list_only<type_list<Lhs...>, auto_hybrid<Tup, Lst>, Rhs...>
 {
     using type = typename type_list_only<typename type_list_only<Lhs..., Tup, Lst>::type,
                                          typename type_list_only<Rhs...>::type>::type;
 };
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -287,6 +293,7 @@ struct type_list_only<auto_list<Types...>, Rhs...>
                                          typename type_list_only<Rhs...>::type>::type;
 };
 
+#if defined(TIMEMORY_USE_DEPRECATED)
 template <typename Tup, typename Lst, typename... Rhs>
 struct type_list_only<component_hybrid<Tup, Lst>, Rhs...>
 {
@@ -304,6 +311,7 @@ struct type_list_only<auto_hybrid<Tup, Lst>, Rhs...>
     using type      = auto_hybrid<convert_t<tup_types, component_tuple<>>,
                              convert_t<lst_types, component_list<>>>;
 };
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -372,7 +380,7 @@ struct concat<std::tuple<Lhs...>, std::tuple<Rhs...>>
 //--------------------------------------------------------------------------------------//
 //      component_hybrid
 //--------------------------------------------------------------------------------------//
-
+#if defined(TIMEMORY_USE_DEPRECATED)
 template <typename... TupTypes, typename... LstTypes>
 struct concat<component_hybrid<std::tuple<TupTypes...>, std::tuple<LstTypes...>>>
 {
@@ -472,7 +480,7 @@ struct concat<auto_hybrid<type_list<TupTypes...>, component_list<LstTypes...>>>
     using list_type  = component_list<LstTypes...>;
     using type       = auto_hybrid<tuple_type, list_type>;
 };
-
+#endif
 //--------------------------------------------------------------------------------------//
 //
 //      Combine
@@ -551,7 +559,7 @@ struct concat<auto_list<Lhs...>*, Rhs...> : public concat<auto_list<Lhs...>, Rhs
 //--------------------------------------------------------------------------------------//
 //      component_hybrid
 //--------------------------------------------------------------------------------------//
-
+#if defined(TIMEMORY_USE_DEPRECATED)
 template <typename Tup, typename Lst, typename... Rhs, typename... Tail>
 struct concat<component_hybrid<Tup, Lst>, component_tuple<Rhs...>, Tail...>
 {
@@ -593,7 +601,7 @@ struct concat<auto_hybrid<Tup, Lst>, component_list<Rhs...>, Tail...>
     using tuple_type = typename type::tuple_t;
     using list_type  = typename type::list_t;
 };
-
+#endif
 }  // namespace impl
 
 template <typename... Types>
@@ -632,13 +640,9 @@ template <typename... Types>
 TSTAG(struct)
 tuple_size<tim::component_list<Types...>>;
 
-template <typename TupleT, typename ListT>
+template <typename... Types>
 TSTAG(struct)
-tuple_size<tim::component_hybrid<TupleT, ListT>>;
-
-template <typename TupleT, typename ListT>
-TSTAG(struct)
-tuple_size<tim::auto_hybrid<TupleT, ListT>>;
+tuple_size<tim::auto_bundle<Types...>>;
 
 template <typename... Types>
 TSTAG(struct)
@@ -647,6 +651,16 @@ tuple_size<tim::auto_tuple<Types...>>;
 template <typename... Types>
 TSTAG(struct)
 tuple_size<tim::auto_list<Types...>>;
+
+#if defined(TIMEMORY_USE_DEPRECATED)
+template <typename TupleT, typename ListT>
+TSTAG(struct)
+tuple_size<tim::component_hybrid<TupleT, ListT>>;
+
+template <typename TupleT, typename ListT>
+TSTAG(struct)
+tuple_size<tim::auto_hybrid<TupleT, ListT>>;
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //

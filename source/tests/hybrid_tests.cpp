@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(TIMEMORY_USE_DEPRECATED)
+#    define TIMEMORY_USE_DEPRECATED
+#endif
+
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "test_macros.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN

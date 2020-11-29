@@ -25,12 +25,10 @@
 #pragma once
 
 #include "timemory/variadic/auto_bundle.hpp"
-#include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/component_bundle.hpp"
-#include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/variadic/definition.hpp"
@@ -38,3 +36,8 @@
 #include "timemory/variadic/lightweight_tuple.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
+
+#if defined(TIMEMORY_USE_DEPRECATED)
+#    include "timemory/variadic/auto_hybrid.hpp"
+#    include "timemory/variadic/component_hybrid.hpp"
+#endif

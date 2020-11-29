@@ -53,11 +53,15 @@ using default_record_statistics_type = TIMEMORY_DEFAULT_STATISTICS_TYPE;
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_DEPRECATED)
+//
 template <typename TupleT, typename ListT>
-class component_hybrid;
-
+class[[deprecated("Use component_bundle<T..., L*...>")]] component_hybrid;
+//
 template <typename TupleT, typename ListT>
-class auto_hybrid;
+class[[deprecated("Use auto_bundle<T..., L*...>")]] auto_hybrid;
+//
+#endif
 //
 //======================================================================================//
 // type-traits for customization
@@ -596,7 +600,9 @@ struct convert<InTuple<ApiT, In...>, OutTuple<ApiT>>
 {};
 
 //--------------------------------------------------------------------------------------//
-
+//
+#if defined(TIMEMORY_USE_DEPRECATED)
+//
 template <template <typename...> class LhsInT, typename... LhsIn,
           template <typename...> class RhsInT, typename... RhsIn,
           template <typename...> class LhsOutT, typename... LhsOut,
@@ -618,6 +624,8 @@ struct convert<auto_hybrid<LhsInT<LhsIn...>, RhsInT<RhsIn...>>,
 {
     using type = component_hybrid<LhsInT<LhsIn...>, RhsInT<RhsIn...>>;
 };
+//
+#endif
 
 //======================================================================================//
 // check if type is in expansion
