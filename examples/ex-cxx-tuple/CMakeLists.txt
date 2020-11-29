@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(timemory-CXX-Tuple-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cxx_tuple)
-set(COMPONENTS compile-options threading analysis-tools OPTIONAL_COMPONENTS cereal-xml cxx)
+set(COMPONENTS compile-options threading analysis-tools OPTIONAL_COMPONENTS xml cxx)
 
 option(USE_MPI "Enable MPI" ON)
 if(USE_MPI)
