@@ -45,7 +45,7 @@ using stringstream_t = std::stringstream;
 
 namespace
 {
-#if !defined(TIMEMORY_TEST_NO_METRIC)
+#if !defined(TIMEMORY_TEST_NO_METRIC) && !defined(DISABLE_TIMEMORY)
 static inline auto&
 metric()
 {
@@ -83,52 +83,67 @@ print_dart(dummy&)
 #endif
 }  // namespace
 
-#define TIMEMORY_TEST_ARGS                                                               \
-    static int    _argc = 0;                                                             \
-    static char** _argv = nullptr;
+#if !defined(DISABLE_TIMEMORY)
+#    define TIMEMORY_TEST_ARGS                                                           \
+        static int    _argc = 0;                                                         \
+        static char** _argv = nullptr;
 
-#define TIMEMORY_TEST_MAIN                                                               \
-    int main(int argc, char** argv)                                                      \
-    {                                                                                    \
-        ::testing::InitGoogleTest(&argc, argv);                                          \
-        _argc = argc;                                                                    \
-        _argv = argv;                                                                    \
-        return RUN_ALL_TESTS();                                                          \
-    }
+#    define TIMEMORY_TEST_MAIN                                                           \
+        int main(int argc, char** argv)                                                  \
+        {                                                                                \
+            ::testing::InitGoogleTest(&argc, argv);                                      \
+            _argc = argc;                                                                \
+            _argv = argv;                                                                \
+            return RUN_ALL_TESTS();                                                      \
+        }
 
-#define TIMEMORY_TEST_DEFAULT_MAIN                                                       \
-    TIMEMORY_TEST_ARGS                                                                   \
-    TIMEMORY_TEST_MAIN
+#    define TIMEMORY_TEST_DEFAULT_MAIN                                                   \
+        TIMEMORY_TEST_ARGS                                                               \
+        TIMEMORY_TEST_MAIN
 
-#define TIMEMORY_TEST_SUITE_SETUP(...)                                                   \
-protected:                                                                               \
-    static void SetUpTestSuite()                                                         \
-    {                                                                                    \
-        tim::settings::verbose()     = 0;                                                \
-        tim::settings::debug()       = false;                                            \
-        tim::settings::json_output() = true;                                             \
-        tim::settings::mpi_thread()  = false;                                            \
-        tim::dmp::initialize(_argc, _argv);                                              \
-        tim::timemory_init(_argc, _argv);                                                \
-        tim::settings::dart_output() = false;                                            \
-        tim::settings::dart_count()  = 1;                                                \
-        tim::settings::banner()      = false;                                            \
-        __VA_ARGS__;                                                                     \
-        metric().start();                                                                \
-    }
+#    define TIMEMORY_TEST_SUITE_SETUP(...)                                               \
+    protected:                                                                           \
+        static void SetUpTestSuite()                                                     \
+        {                                                                                \
+            tim::settings::verbose()     = 0;                                            \
+            tim::settings::debug()       = false;                                        \
+            tim::settings::json_output() = true;                                         \
+            tim::settings::mpi_thread()  = false;                                        \
+            tim::dmp::initialize(_argc, _argv);                                          \
+            tim::timemory_init(_argc, _argv);                                            \
+            tim::settings::dart_output() = false;                                        \
+            tim::settings::dart_count()  = 1;                                            \
+            tim::settings::banner()      = false;                                        \
+            __VA_ARGS__;                                                                 \
+            metric().start();                                                            \
+        }
 
-#define TIMEMORY_TEST_DEFAULT_SUITE_SETUP TIMEMORY_TEST_SUITE_SETUP({})
+#    define TIMEMORY_TEST_DEFAULT_SUITE_SETUP TIMEMORY_TEST_SUITE_SETUP({})
 
-#define TIMEMORY_TEST_SUITE_TEARDOWN(...)                                                \
-protected:                                                                               \
-    static void TearDownTestSuite()                                                      \
-    {                                                                                    \
-        metric().stop();                                                                 \
-        print_dart(metric());                                                            \
-        __VA_ARGS__;                                                                     \
-        tim::timemory_finalize();                                                        \
-        tim::dmp::finalize();                                                            \
-    }
+#    define TIMEMORY_TEST_SUITE_TEARDOWN(...)                                            \
+    protected:                                                                           \
+        static void TearDownTestSuite()                                                  \
+        {                                                                                \
+            metric().stop();                                                             \
+            print_dart(metric());                                                        \
+            __VA_ARGS__;                                                                 \
+            tim::timemory_finalize();                                                    \
+            tim::dmp::finalize();                                                        \
+        }
+
+#else
+#    define TIMEMORY_TEST_ARGS
+#    define TIMEMORY_TEST_MAIN                                                           \
+        int main(int argc, char** argv)                                                  \
+        {                                                                                \
+            ::testing::InitGoogleTest(&argc, argv);                                      \
+            return RUN_ALL_TESTS();                                                      \
+        }
+#    define TIMEMORY_TEST_DEFAULT_MAIN TIMEMORY_TEST_MAIN
+#    define TIMEMORY_TEST_SUITE_SETUP(...)
+#    define TIMEMORY_TEST_DEFAULT_SUITE_SETUP
+#    define TIMEMORY_TEST_SUITE_TEARDOWN(...)
+#endif
 
 #define TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN TIMEMORY_TEST_SUITE_TEARDOWN({})
 

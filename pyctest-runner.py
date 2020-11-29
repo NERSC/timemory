@@ -723,10 +723,10 @@ def run_pyctest():
             },
         )
 
-        if args.mpi:
+        if args.mpi and dmprun is not None:
             pyct.test(
-                "timemory-timem",
-                ["mpirun", "-n", "2", "./timem-mpi", "--", "sleep 2"],
+                "timemory-timem-mpi",
+                [dmprun] + dmpargs + ["./timem-mpi", "sleep 2"],
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,

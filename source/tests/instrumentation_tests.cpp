@@ -28,7 +28,15 @@ TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/timemory.hpp"
 
+#include <algorithm>
+#include <atomic>
+#include <functional>
+#include <string>
+#include <thread>
+
+#if !defined(DISABLE_TIMEMORY)
 using bundle_t = tim::component_tuple<tim::component::wall_clock>;
+#endif
 
 #if defined(ENABLE_MT)
 #    define INSTRUMENTATION_TESTS_NAME instrumentation_mt_tests
@@ -154,7 +162,12 @@ TEST_F(INSTRUMENTATION_TESTS_NAME, mt_consume)
 {
     auto _consume = []() {
         std::uniform_int_distribution<std::mt19937::result_type> dist(100, 1000);
+#    if !defined(DISABLE_TIMEMORY)
         auto _tid = tim::threading::get_id() + 1;
+#    else
+        std::atomic<int64_t> _tidc;
+        auto                 _tid = ++_tidc;
+#    endif
         auto _rng = get_rng();
         _rng.seed(std::random_device()() * _tid * _tid);
         auto _ret = details::consume(dist(_rng));

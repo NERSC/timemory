@@ -161,6 +161,22 @@ FUNCTION(CREATE_EXECUTABLE)
     endif()
 ENDFUNCTION()
 
+
+#------------------------------------------------------------------------------#
+# function add_timemory_test_target()
+#
+# Creates a target which runs ctest but depends on all the tests being built.
+#
+FUNCTION(ADD_TIMEMORY_TEST_TARGET)
+    if(NOT TARGET timemory-test)
+        add_custom_target(timemory-test
+            COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target test
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+            COMMENT "Running tests...")
+    endif()
+ENDFUNCTION()
+
+
 #------------------------------------------------------------------------------#
 # macro add_googletest()
 #
@@ -175,12 +191,7 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     if(NOT TIMEMORY_BUILD_TESTING)
         set(_OPTS EXCLUDE_FROM_ALL)
     endif()
-    if(NOT TARGET timemory-test)
-        add_custom_target(timemory-test
-            COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target test
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-            COMMENT "Running tests...")
-    endif()
+    add_timemory_test_target()
     include(GoogleTest)
     # list of arguments taking multiple values
     set(multival_args SOURCES DEPENDS PROPERTIES DEFINITIONS LINK_LIBRARIES
