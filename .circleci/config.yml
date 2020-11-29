@@ -82,3 +82,10 @@ jobs:
             cd build-examples &&
             cmake .. &&
             make ex_array_of_bundles
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - user-build
+      - dev-build
