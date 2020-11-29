@@ -15,6 +15,7 @@ import multiprocessing as mp
 import pyctest.pyctest as pyct
 import pyctest.pycmake as pycm
 import pyctest.helpers as helpers
+from collections import OrderedDict
 
 clobber_notes = True
 available_tools = {
@@ -28,6 +29,8 @@ available_tools = {
     "ncclp": "TIMEMORY_BUILD_NCCLP_LIBRARY",
     "compiler": "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION",
 }
+argparse_defaults = {}
+build_name = ""
 
 
 def get_branch(wd=pyct.SOURCE_DIRECTORY):
@@ -198,12 +201,6 @@ def configure():
         action="store_true",
     )
     parser.add_argument(
-        "--dyninst",
-        help="TIMEMORY_USE_DYNINST=ON",
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
         "--extra-optimizations",
         help="TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON",
         default=False,
@@ -248,7 +245,7 @@ def configure():
     parser.add_argument(
         "--build-libs",
         help="Build library type(s)",
-        default=("shared"),
+        default=["shared"],
         nargs="*",
         type=str,
         choices=("static", "shared"),
@@ -338,6 +335,41 @@ def configure():
     pypath = [pyct.BINARY_DIRECTORY] + pypath
     os.environ["PYTHONPATH"] = ":".join(pypath)
 
+    global build_name
+    global argparse_defaults
+    # generate the defaults
+    argparse_defaults = {key: parser.get_default(key) for key in vars(args)}
+    # sort them for consistency
+    argparse_defaults = OrderedDict(sorted(argparse_defaults.items()))
+    # construct a build name from the arguments that were changed
+    for key, itr in argparse_defaults.items():
+        # ignore all pyctest args except the build type
+        if "pyctest_" in key and key != "pyctest_build_type":
+            continue
+        # get the current value
+        curr = args.__getattribute__(key)
+        # if the value is true
+        if curr != itr:
+            if isinstance(curr, bool) and curr:
+                # just add name of boolean options
+                build_name = "-".join([build_name, key[:4]])
+            elif isinstance(curr, list):
+                # if list, join the args
+                build_name = "-".join(
+                    [
+                        build_name,
+                        "-".join(["{}".format(val[:6]) for val in curr]),
+                    ]
+                )
+            elif isinstance(curr, str):
+                # if string, just abbreviated name
+                build_name = "-".join([build_name, curr[:6]])
+            elif key == "cxx_standard":
+                # ignore all else except for the C++ standard
+                build_name = "-".join([build_name, f"cxx{itr}"])
+
+    build_name = build_name.strip("-")
+
     return args
 
 
@@ -379,24 +411,26 @@ def run_pyctest():
     try:
         cn = compiler_version.split()[0]
         cv = re.search(r"(\b)\d.\d.\d", compiler_version)
-        compiler_version = "{}-{}".format(cn, cv.group()[0])
+        compiler_version = "{}{}".format(cn, cv.group()[0]).replace("++", "xx")
     except Exception as e:
         print("Exception! {}".format(e))
         cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
         cmd.SetOutputStripTrailingWhitespace(True)
         cmd.Execute()
-        compiler_version = "{}-{}".format(cn, cmd.Output())
+        compiler_version = "{}{}".format(cn, cmd.Output()).replace("++", "xx")
 
     # Set the build name
     #
-    pyct.BUILD_NAME = "{} {} {} {} {}".format(
-        get_branch(pyct.SOURCE_DIRECTORY),
-        platform.uname()[0],
-        helpers.GetSystemVersionInfo(),
-        platform.uname()[4],
-        compiler_version,
+    pyct.BUILD_NAME = (
+        "{}-{}-{}".format(
+            get_branch(pyct.SOURCE_DIRECTORY),
+            platform.uname()[0],
+            compiler_version,
+        )
+        .replace("/", "-")
+        .replace(" ", "-")
+        .replace("--", "-")
     )
-    pyct.BUILD_NAME = "-".join(pyct.BUILD_NAME.split())
 
     #   build specifications
     #
@@ -473,21 +507,18 @@ def run_pyctest():
         build_opts["TIMEMORY_USE_DYNINST"] = "ON"
 
     if args.python:
-        pyver = "{}.{}.{}".format(
-            sys.version_info[0], sys.version_info[1], sys.version_info[2]
+        pyver = "{}{}".format(
+            sys.version_info[0],
+            sys.version_info[1],
         )
-        pyct.BUILD_NAME = "{} PY-{}".format(pyct.BUILD_NAME, pyver)
+        pyct.BUILD_NAME = "{}-py{}".format(pyct.BUILD_NAME, pyver)
 
     if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERFTOOLS"] = "ON"
         components = "profiler" if args.profile == "cpu" else "tcmalloc"
         build_opts["TIMEMORY_gperftools_COMPONENTS"] = components
-        pyct.BUILD_NAME = "{} {}".format(pyct.BUILD_NAME, args.profile.upper())
 
     if args.sanitizer is not None:
-        pyct.BUILD_NAME = "{} {}SAN".format(
-            pyct.BUILD_NAME, args.sanitizer.upper()[0]
-        )
         build_opts["SANITIZER_TYPE"] = args.sanitizer
         build_opts["TIMEMORY_USE_SANITIZER"] = "ON"
 
@@ -496,7 +527,6 @@ def run_pyctest():
         if gcov_exe is not None:
             pyct.COVERAGE_COMMAND = "{}".format(gcov_exe)
             build_opts["TIMEMORY_USE_COVERAGE"] = "ON"
-            pyct.BUILD_NAME = "{} COV".format(pyct.BUILD_NAME)
             if pyct.BUILD_TYPE != "Debug":
                 warnings.warn(
                     "Forcing build type to 'Debug' when coverage is enabled"
@@ -525,52 +555,10 @@ def run_pyctest():
     pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS", "100")
 
     # Use the options to create a build name with configuration
-    build_name = set()
-    mangled_tags = {
-        "EXTRA_OPTIMIZATIONS": "OPT",
-        "KOKKOS_TOOLS": "KOKKOS",
-        "DYNINST_TOOLS": "DYNINST",
-    }
-    exclude_keys = (
-        "TESTING",
-        "EXAMPLES",
-        "GOOGLE_TEST",
-        "CCACHE_BUILD",
-        "gperftools_COMPONENTS",
-    )
-    for opt_key, opt_val in build_opts.items():
-        tag = None
-        key = None
-        if opt_val == "OFF" or opt_val is None:
-            continue
-        else:
-            if "TIMEMORY_BUILD_" in opt_key:
-                tag = opt_key.replace("TIMEMORY_BUILD_", "")
-                key = tag
-            elif "TIMEMORY_USE_" in opt_key:
-                tag = opt_key.replace("TIMEMORY_USE_", "")
-                key = tag
-            elif "TIMEMORY_" in opt_key:
-                key = opt_key.replace("TIMEMORY_", "")
-                tag = "{}_{}".format(key, opt_val)
-
-        # if valid and turned on
-        if tag is not None and key is not None and key not in exclude_keys:
-            tag = mangled_tags.get(tag, tag)
-            build_name.add(tag)
-
-    build_name = sorted(build_name)
-    pyct.BUILD_NAME += " {}".format(" ".join(build_name))
-
-    # split and join with dashes
-    pyct.BUILD_NAME = "-".join(pyct.BUILD_NAME.replace("/", "-").split())
-
     pyct.BUILD_NAME = (
-        pyct.BUILD_NAME.replace("_LIBRARY", "")
-        .replace("COMPILER_INSTRUMENTATION", "COMP_INST")
-        .replace("TLS_MODEL_", "")
-        .replace("STATISTICS", "STATS")
-        .replace("KOKKOS-KOKKOS", "KOKKOS")
+        "{}-{}".format(pyct.BUILD_NAME, build_name)
+        .replace("/", "-")
+        .replace(" ", "-")
     )
 
     # default options
@@ -1128,25 +1116,25 @@ def run_pyctest():
                 )
 
         if args.python:
-            pyct.test(
-                construct_name("ex-python-bindings"),
-                construct_command(
-                    [
-                        "mpirun",
-                        "-np",
-                        "2",
-                        sys.executable,
-                        "./ex_python_bindings",
-                    ],
-                    args,
-                ),
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
-                    "ENVIRONMENT": base_env,
-                },
-            )
+            if dmprun is not None:
+                pyct.test(
+                    construct_name("ex-python-bindings"),
+                    construct_command(
+                        [dmprun]
+                        + dmpargs
+                        + [
+                            sys.executable,
+                            "./ex_python_bindings",
+                        ],
+                        args,
+                    ),
+                    {
+                        "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                        "LABELS": pyct.PROJECT_NAME,
+                        "TIMEOUT": "300",
+                        "ENVIRONMENT": base_env,
+                    },
+                )
 
             if args.caliper:
                 pyct.test(

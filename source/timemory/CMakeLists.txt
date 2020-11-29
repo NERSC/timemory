@@ -76,16 +76,20 @@ build_intermediate_library(
     SOURCES             ${source_files})
 
 if(TIMEMORY_USE_COVERAGE)
-    target_link_libraries(timemory-core-shared PUBLIC
-        timemory-analysis-tools)
+    if(TARGET timemory-core-shared)
+        target_link_libraries(timemory-core-shared PUBLIC timemory-analysis-tools)
+    endif()
+    if(TARGET timemory-core-static)
+        target_link_libraries(timemory-core-static PUBLIC timemory-analysis-tools)
+    endif()
 endif()
 
 # core
-#add_subdirectory(utility)
-#add_subdirectory(hash)
-#add_subdirectory(environment)
-#add_subdirectory(settings)
-#add_subdirectory(plotting)
+# add_subdirectory(utility)
+# add_subdirectory(hash)
+# add_subdirectory(environment)
+# add_subdirectory(settings)
+# add_subdirectory(plotting)
 
 # global
 add_subdirectory(manager)
@@ -107,4 +111,3 @@ add_subdirectory(containers)
 # add_subdirectory(general)
 # add_subdirectory(mpl)
 # add_subdirectory(utility)
-

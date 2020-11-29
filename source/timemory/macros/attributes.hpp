@@ -62,7 +62,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_HOT) && !defined(_TIMEMORY_MSVC)
-#    define TIMEMORY_HOT [[gnu::hot]]
+#    define TIMEMORY_HOT TIMEMORY_ATTRIBUTE(hot)
 #else
 #    define TIMEMORY_HOT
 #endif
@@ -70,7 +70,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_COLD) && !defined(_TIMEMORY_MSVC)
-#    define TIMEMORY_COLD [[gnu::cold]]
+#    define TIMEMORY_COLD TIMEMORY_ATTRIBUTE(cold)
 #else
 #    define TIMEMORY_COLD
 #endif

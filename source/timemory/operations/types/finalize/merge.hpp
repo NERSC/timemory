@@ -32,6 +32,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/storage/basic_tree.hpp"
 #include "timemory/storage/graph.hpp"
 
@@ -146,7 +147,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 
         PRINT_HERE("%s", ss.str().c_str());
 
-#if defined(TIMEMORY_TESTING)
+#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
         throw std::runtime_error(ss.str());
 #endif
     }

@@ -30,6 +30,11 @@
 
 #pragma once
 
+#include "timemory/mpl/types.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/utility/types.hpp"
+#include "timemory/utility/utility.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <iomanip>
@@ -38,11 +43,6 @@
 #include <set>
 #include <string>
 #include <vector>
-
-#include "timemory/mpl/types.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
 
 namespace tim
 {

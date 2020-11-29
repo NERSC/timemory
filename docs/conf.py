@@ -154,7 +154,10 @@ for file in glob.glob("*.xml"):
     for line in fileinput.input(file, inplace=True):
         for key in [
             " TIMEMORY_VISIBLE",
+            "TIMEMORY_NEVER_INSTRUMENT"
             "TIMEMORY_ALWAYS_INLINE",
+            "TIMEMORY_NOINLINE"
+            "TIMEMORY_INLINE"
             "TIMEMORY_HOT",
             "TIMEMORY_DLL ",
             "TIMEMORY_CDLL ",

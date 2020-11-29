@@ -26,6 +26,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/components/base.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
@@ -55,19 +56,21 @@ namespace component
 //--------------------------------------------------------------------------------------//
 //
 template <typename Toolset, typename Tag>
-void
-configure_mpip(std::set<std::string> permit = {}, std::set<std::string> reject = {});
+TIMEMORY_VISIBILITY("default")
+TIMEMORY_NOINLINE void configure_mpip(std::set<std::string> permit = {},
+                                      std::set<std::string> reject = {});
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Toolset, typename Tag>
-static uint64_t
-activate_mpip();
+TIMEMORY_VISIBILITY("default")
+TIMEMORY_NOINLINE uint64_t activate_mpip();
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Toolset, typename Tag>
-static uint64_t deactivate_mpip(uint64_t);
+TIMEMORY_VISIBILITY("default")
+TIMEMORY_NOINLINE uint64_t deactivate_mpip(uint64_t);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -156,7 +159,7 @@ private:
 /// Function returns the number of new mpip handles
 ///
 template <typename Toolset, typename Tag>
-static uint64_t
+uint64_t
 tim::component::activate_mpip()
 {
     using handle_t = tim::component::mpip_handle<Toolset, Tag>;
@@ -176,9 +179,13 @@ tim::component::activate_mpip()
             }
         };
 
-        std::stringstream ss;
-        ss << "timemory-mpip-" << typeid(Toolset).name() << "-" << typeid(Tag).name();
-        tim::manager::instance()->add_cleanup(ss.str(), cleanup_functor);
+        static std::string _label = []() {
+            std::stringstream ss;
+            ss << "timemory-mpip-" << demangle<Toolset>() << "-" << demangle<Tag>();
+            return ss.str();
+        }();
+        DEBUG_PRINT_HERE("Adding cleanup for %s", _label.c_str());
+        tim::manager::instance()->add_cleanup(_label, cleanup_functor);
         return 1;
     }
     return 0;
@@ -191,14 +198,18 @@ tim::component::activate_mpip()
 /// the number of handles active
 ///
 template <typename Toolset, typename Tag>
-static uint64_t
+uint64_t
 tim::component::deactivate_mpip(uint64_t id)
 {
     if(id > 0)
     {
-        std::stringstream ss;
-        ss << "timemory-mpip-" << typeid(Toolset).name() << "-" << typeid(Tag).name();
-        tim::manager::instance()->cleanup(ss.str());
+        static std::string _label = []() {
+            std::stringstream ss;
+            ss << "timemory-mpip-" << demangle<Toolset>() << "-" << demangle<Tag>();
+            return ss.str();
+        }();
+        DEBUG_PRINT_HERE("Removing cleanup for %s", _label.c_str());
+        tim::manager::instance()->cleanup(_label);
         return 0;
     }
     return 1;
@@ -264,7 +275,7 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 33, MPI_Comm_create);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 34, MPI_Comm_create_errhandler);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 35, MPI_Comm_create_group);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 36, MPI_Comm_create_keyval);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 36, MPI_Comm_create_keyval);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 37, MPI_Comm_delete_attr);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 38, MPI_Comm_disconnect);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 39, MPI_Comm_dup);
@@ -282,15 +293,15 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 51, MPI_Comm_rank);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 52, MPI_Comm_remote_group);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 53, MPI_Comm_remote_size);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 54, MPI_Comm_set_attr);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 54, MPI_Comm_set_attr);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 55, MPI_Comm_set_errhandler);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 56, MPI_Comm_set_info);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 57, MPI_Comm_set_name);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 58, MPI_Comm_size);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 59, MPI_Comm_spawn);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 60, MPI_Comm_spawn_multiple);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 61, MPI_Comm_split);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 62, MPI_Comm_split_type);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 59, MPI_Comm_spawn);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 60, MPI_Comm_spawn_multiple);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 61, MPI_Comm_split);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 62, MPI_Comm_split_type);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 63, MPI_Comm_test_inter);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 64, MPI_Compare_and_swap);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 65, MPI_Dims_create);

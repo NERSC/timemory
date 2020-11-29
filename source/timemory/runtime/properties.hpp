@@ -31,6 +31,7 @@
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
 #include "timemory/runtime/macros.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/variadic/definition.hpp"
 
 #include <set>

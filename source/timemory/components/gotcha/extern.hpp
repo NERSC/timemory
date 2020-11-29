@@ -31,6 +31,8 @@
 
 #include "timemory/components/extern/common.hpp"
 #include "timemory/components/gotcha/components.hpp"
+#include "timemory/components/gotcha/memory_allocations.hpp"
 #include "timemory/components/macros.hpp"
 
 TIMEMORY_EXTERN_COMPONENT(malloc_gotcha, true, double)
+TIMEMORY_EXTERN_COMPONENT(memory_allocations, false, void)

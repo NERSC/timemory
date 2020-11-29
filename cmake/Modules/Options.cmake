@@ -224,6 +224,8 @@ add_option(TIMEMORY_BUILD_TOOLS
     "Enable building tools" ON)
 add_option(TIMEMORY_BUILD_COMPILER_INSTRUMENTATION
     "Enable building compiler instrumentation libraries" ${TIMEMORY_BUILD_TOOLS})
+add_option(TIMEMORY_INLINE_COMPILER_INSTRUMENTATION
+    "Insert compiler instrumentation around inlined function calls" OFF NO_FEATURE)
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_CALIPER
@@ -259,6 +261,11 @@ endif()
 
 if(TIMEMORY_REQUIRE_PACKAGES)
     set(TIMEMORY_FIND_REQUIREMENT REQUIRED)
+endif()
+
+if(NOT CMAKE_CXX_COMPILER_IS_CLANG OR CMAKE_CXX_COMPILER_IS_APPLE_CLANG)
+    set(TIMEMORY_INLINE_COMPILER_INSTRUMENTATION ON CACHE BOOL
+        "Only the Clang compiler supports instrumentation after inlining" FORCE)
 endif()
 
 # Features

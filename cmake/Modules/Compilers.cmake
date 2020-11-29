@@ -200,7 +200,7 @@ macro(ADD_TARGET_CXX_FLAG _TARG)
     target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${ARGN}>)
     list(APPEND ${_MAKE_TARG}_CXX_FLAGS ${ARGN})
     get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
-    if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST LANGUAGES)
+    if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
         target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${ARGN}>)
         list(APPEND ${_MAKE_TARG}_CUDA_FLAGS -Xcompiler=${ARGN})
     endif()
@@ -386,7 +386,7 @@ function(TIMEMORY_TARGET_FLAG _TARG_TARGET)
                 if(${FLAG_NAME})
                     target_compile_options(${_TARG_TARGET} ${_TARG_MODE}
                         $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
-                    if("CUDA" IN_LIST ENABLED_LANGUAGES AND "${CMAKE_CUDA_COMPILER_ID}" STREQUAL "NVIDIA")
+                    if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
                         target_compile_options(${_TARG_TARGET} ${_TARG_MODE}
                             $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${_FLAG}>)
                     endif()
@@ -396,6 +396,17 @@ function(TIMEMORY_TARGET_FLAG _TARG_TARGET)
     endforeach()
 endfunction()
 
+
+#----------------------------------------------------------------------------------------#
+# add CUDA flag to target
+#----------------------------------------------------------------------------------------#
+macro(ADD_TARGET_CUDA_FLAG _TARG)
+    string(REPLACE "-" "_" _MAKE_TARG "${_TARG}")
+    list(APPEND TIMEMORY_MAKE_TARGETS ${_MAKE_TARG})
+
+    target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:${ARGN}>)
+    list(APPEND ${_MAKE_TARG}_CUDA_FLAGS ${ARGN})
+endmacro()
 
 #----------------------------------------------------------------------------------------#
 # add to any language
@@ -421,11 +432,10 @@ endfunction()
 # add compiler definition
 #----------------------------------------------------------------------------------------#
 function(TIMEMORY_TARGET_COMPILE_DEFINITIONS _TARG _VIS)
-    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
     foreach(_DEF ${ARGN})
         target_compile_definitions(${_TARG} ${_VIS}
             $<$<COMPILE_LANGUAGE:CXX>:${_DEF}>)
-        if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST LANGUAGES)
+        if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
             target_compile_definitions(${_TARG} ${_VIS}
                 $<$<COMPILE_LANGUAGE:CUDA>:${_DEF}>)
         endif()
@@ -435,7 +445,16 @@ endfunction()
 #----------------------------------------------------------------------------------------#
 # determine compiler types for each language
 #----------------------------------------------------------------------------------------#
-foreach(LANG C CXX)
+get_property(ENABLED_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+foreach(LANG C CXX CUDA)
+
+    if(NOT DEFINED CMAKE_${LANG}_COMPILER)
+        set(CMAKE_${LANG}_COMPILER "")
+    endif()
+
+    if(NOT DEFINED CMAKE_${LANG}_COMPILER_ID)
+        set(CMAKE_${LANG}_COMPILER_ID "")
+    endif()
 
     function(SET_COMPILER_VAR VAR _BOOL)
         set(CMAKE_${LANG}_COMPILER_IS_${VAR} ${_BOOL} CACHE INTERNAL
@@ -509,6 +528,10 @@ foreach(LANG C CXX)
 
         # Windows Visual Studio compiler
         SET_COMPILER_VAR(       MSVC                1)
+
+    elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "NVIDIA")
+
+        SET_COMPILER_VAR(       NVIDIA               1)
 
     endif()
 

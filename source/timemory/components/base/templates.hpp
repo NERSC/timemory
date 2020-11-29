@@ -33,6 +33,7 @@
 #include "timemory/operations/types/add_statistics.hpp"
 #include "timemory/operations/types/base_printer.hpp"
 #include "timemory/operations/types/serialization.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"

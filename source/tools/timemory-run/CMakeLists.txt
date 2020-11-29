@@ -17,9 +17,9 @@ if(TIMEMORY_USE_DYNINST)
 
     if(NOT DEFINED EXCLUDE_SOURCE_FILES OR "${EXCLUDE_SOURCE_FILES}" STREQUAL "")
 
-        unset(EXCLUDE_SOURCE_FILES CACHE)
+        unset(_EXCLUDE_SOURCE_FILES CACHE)
 
-        file(GLOB_RECURSE EXCLUDE_SOURCE_FILES
+        file(GLOB_RECURSE _EXCLUDE_SOURCE_FILES
             ${PROJECT_SOURCE_DIR}/source/*.c
             ${PROJECT_SOURCE_DIR}/source/*.cu
             ${PROJECT_SOURCE_DIR}/source/*.cpp
@@ -31,7 +31,7 @@ if(TIMEMORY_USE_DYNINST)
             ${PROJECT_SOURCE_DIR}/external/*.cpp
             )
 
-        foreach(_FILE ${EXCLUDE_SOURCE_FILES})
+        foreach(_FILE ${_EXCLUDE_SOURCE_FILES})
             if(NOT "${_FILE}" MATCHES "/tests/" AND
                     NOT "${_FILE}" MATCHES "/test/" AND
                     NOT "${_FILE}" MATCHES "/unittests/" AND
@@ -55,34 +55,22 @@ if(TIMEMORY_USE_DYNINST)
     configure_file(${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp.in
         ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp @ONLY)
 
-    add_library(timemory-run-interface INTERFACE)
-
-    add_target_flag_if_avail(timemory-run-interface "-Wno-unused-function")
-
-    foreach(_TYPE core-static cxx-static core-shared cxx-shared)
-        if(TARGET timemory::timemory-${_TYPE})
-            set(_LIBRARY timemory::timemory-${_TYPE})
-            break()
-        endif()
-    endforeach()
-
-    target_link_libraries(timemory-run-interface INTERFACE
-        timemory::timemory-dmp
-        timemory::timemory-headers
-        timemory::timemory-dyninst
-        timemory::timemory-compile-options
-        timemory::timemory-roofline-options
-        ${_LIBRARY})
-
     add_executable(timemory-run ${_EXCLUDE}
         ${CMAKE_CURRENT_LIST_DIR}/timemory-run.cpp
         ${CMAKE_CURRENT_LIST_DIR}/timemory-run.hpp
         ${CMAKE_CURRENT_LIST_DIR}/timemory-run-details.cpp
         ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp)
 
-    target_include_directories(timemory-run PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+    add_target_flag_if_avail(timemory-run "-Wno-unused-function")
 
-    target_link_libraries(timemory-run PRIVATE timemory-run-interface)
+    target_link_libraries(timemory-run PRIVATE
+        timemory::timemory-dmp
+        timemory::timemory-headers
+        timemory::timemory-dyninst
+        timemory::timemory-compile-options
+        timemory::timemory-develop-options)
+
+    target_include_directories(timemory-run PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
     set_target_properties(timemory-run PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
 

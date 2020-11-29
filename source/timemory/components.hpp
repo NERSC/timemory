@@ -81,6 +81,7 @@
 // gotcha components
 #if defined(TIMEMORY_USE_GOTCHA)
 #    include "timemory/components/gotcha/components.hpp"
+#    include "timemory/components/gotcha/memory_allocations.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//

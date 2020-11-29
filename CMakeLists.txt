@@ -282,6 +282,8 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     _timemory_activate_clang_tidy()
 endif()
 
+set(timemory_DIR ${PROJECT_BINARY_DIR} CACHE PATH "Path to timemory" FORCE)
+
 message(STATUS "Adding timemory (python)...")
 add_subdirectory(timemory)
 
@@ -303,13 +305,9 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 
 if(TIMEMORY_BUILD_EXAMPLES)
     message(STATUS "Adding examples...")
-    set(timemory_DIR "${PROJECT_BINARY_DIR}" CACHE STRING
-        "timemory build examples directory" FORCE)
     add_subdirectory(examples)
 elseif(TIMEMORY_BUILD_TESTING AND TIMEMORY_USE_PYTHON)
     message(STATUS "Adding examples/ex-python...")
-    set(timemory_DIR "${PROJECT_BINARY_DIR}" CACHE STRING
-        "timemory build examples directory" FORCE)
     # copies over some python scripts
     add_subdirectory(examples/ex-python)
 endif()

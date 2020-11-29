@@ -33,6 +33,7 @@
 #include "timemory/data/statistics.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 
 #include "timemory/components/rusage/backends.hpp"

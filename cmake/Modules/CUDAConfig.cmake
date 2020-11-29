@@ -56,42 +56,44 @@ if("CUDA" IN_LIST LANGUAGES)
         set(_ARCH_NUM 60)
     endif()
 
-    target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-        $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${_ARCH_NUM}
-        -gencode=arch=compute_${_ARCH_NUM},code=sm_${_ARCH_NUM}
-        -gencode=arch=compute_${_ARCH_NUM},code=compute_${_ARCH_NUM}>)
+    if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
+        target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
+            $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${_ARCH_NUM}
+            -gencode=arch=compute_${_ARCH_NUM},code=sm_${_ARCH_NUM}
+            -gencode=arch=compute_${_ARCH_NUM},code=compute_${_ARCH_NUM}>)
 
-    #   30, 32      + Kepler support
-    #               + Unified memory programming
-    #   35          + Dynamic parallelism support
-    #   50, 52, 53  + Maxwell support
-    #   60, 61, 62  + Pascal support
-    #   70, 72      + Volta support
-    #   75          + Turing support
+        #   30, 32      + Kepler support
+        #               + Unified memory programming
+        #   35          + Dynamic parallelism support
+        #   50, 52, 53  + Maxwell support
+        #   60, 61, 62  + Pascal support
+        #   70, 72      + Volta support
+        #   75          + Turing support
 
-    # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-    #    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
-    # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
-    #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=shared>)
-    # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
-    #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
+        # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
+        #    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
+        # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
+        #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=shared>)
+        # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
+        #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
+
+        target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
+            $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+
+        if(NOT WIN32)
+            get_filename_component(_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+            target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler INTERFACE
+                $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${_COMPILER_DIR}>)
+        endif()
+    endif()
 
     add_user_flags(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda "CUDA")
-
-    target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-        $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
 
     if(DEFINED PROJECT_CUDA_USE_HALF_OPTION)
         if(${PROJECT_CUDA_USE_HALF_OPTION} AND NOT _ARCH_NUM LESS 60)
             target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
                 ${PROJECT_CUDA_USE_HALF_DEFINITION})
         endif()
-    endif()
-
-    if(NOT WIN32)
-        get_filename_component(_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
-        target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler INTERFACE
-            $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${_COMPILER_DIR}>)
     endif()
 
     target_include_directories(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE

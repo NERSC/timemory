@@ -1,4 +1,4 @@
-# timemory-ncclp
+# timemory-ncclp library
 
 Produces a `libtimemory-ncclp.so` that uses GOTCHA wrappers around ~12 NCCL functions.
 

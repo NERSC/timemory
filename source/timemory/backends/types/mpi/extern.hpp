@@ -35,6 +35,7 @@
 #    include "timemory/backends/mpi.hpp"
 #    include "timemory/config.hpp"
 #    include "timemory/manager/declaration.hpp"
+#    include "timemory/settings/declaration.hpp"
 
 #    if defined(TIMEMORY_USE_TAU)
 #        define TAU_ENABLED

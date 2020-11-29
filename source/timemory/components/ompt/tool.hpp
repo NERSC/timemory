@@ -24,9 +24,11 @@
 
 #pragma once
 
+#include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/settings/declaration.hpp"
 //
 #include "timemory/components/ompt/backends.hpp"
 #include "timemory/components/ompt/components.hpp"

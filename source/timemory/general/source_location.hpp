@@ -294,9 +294,6 @@ public:
     template <typename... ArgsT>
     const captured& get_captured(ArgsT&&... _args)
     {
-        // return (settings::enabled())
-        //           ? m_captured.set(*this, std::forward<ArgsT>(_args)...)
-        //           : m_captured;
         return m_captured.set(*this, std::forward<ArgsT>(_args)...);
     }
 

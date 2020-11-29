@@ -1,17 +1,17 @@
-# timemory-ompt
+# timemory-ompt library
 
 Produces a `libtimemory-ompt.so` library which uses the OpenMP-tools (OMP-T) interface.
 
 Four functions are provided for C, C++, and Fortran:
 
-- `uint64_t init_timemory_ompt_tools()`
+- `uint64_t timemory_start_ompt()`
   - Returns the number of initializations
-- `uint64_t stop_timemory_ompt_tools(uint64_t idx)`
+- `uint64_t timemory_stop_ompt(uint64_t idx)`
   - Removes the initialization request at `idx`
   - Returns the number of remaining initializations
-- `void register_timemory_ompt()`
+- `void timemory_register_ompt()`
   - Ensures a global initialization exists until it deregistration
-- `void deregister_timemory_ompt()`
+- `void timemory_deregister_ompt()`
   - Deactivates the global initialization
 
 ## Usage

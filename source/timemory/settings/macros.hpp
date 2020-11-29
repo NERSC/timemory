@@ -59,16 +59,16 @@
 // which may have already deleted a non-heap allocation
 #    define TIMEMORY_SETTINGS_MEMBER_DECL(TYPE, FUNC, ENV_VAR)                           \
     public:                                                                              \
-        TYPE& get_##FUNC()                                                               \
+        TYPE& get_##FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default")      \
+                                                                                         \
         {                                                                                \
-            static auto _key = new std::string(ENV_VAR);                                 \
-            return static_cast<tsettings<TYPE>*>(m_data.at(*_key).get())->get();         \
+            return static_cast<tsettings<TYPE>*>(m_data.at(ENV_VAR).get())->get();       \
         }                                                                                \
                                                                                          \
-        TYPE get_##FUNC() const                                                          \
+        TYPE get_##FUNC() const TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default") \
+                                                                                         \
         {                                                                                \
-            static auto _key = new std::string(ENV_VAR);                                 \
-            auto        ret  = m_data.find(*_key);                                       \
+            auto ret = m_data.find(ENV_VAR);                                             \
             if(ret == m_data.end())                                                      \
                 return TYPE{};                                                           \
             if(!ret->second)                                                             \
@@ -76,9 +76,10 @@
             return static_cast<tsettings<TYPE>*>(ret->second.get())->get();              \
         }                                                                                \
                                                                                          \
-        static TYPE& FUNC() TIMEMORY_VISIBILITY("default")                               \
+        static TYPE& FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default")     \
+                                                                                         \
         {                                                                                \
-            return instance()->get_##FUNC();                                             \
+            return shared_instance()->get_##FUNC();                                      \
         }
 #endif
 //
@@ -89,16 +90,17 @@
 // which may have already deleted a non-heap allocation
 #    define TIMEMORY_SETTINGS_REFERENCE_DECL(TYPE, FUNC, ENV_VAR)                        \
     public:                                                                              \
-        TYPE& get_##FUNC()                                                               \
+        TYPE& get_##FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default")      \
+                                                                                         \
         {                                                                                \
-            static auto _key = new std::string(ENV_VAR);                                 \
-            return static_cast<tsettings<TYPE, TYPE&>*>(m_data.at(*_key).get())->get();  \
+            return static_cast<tsettings<TYPE, TYPE&>*>(m_data.at(ENV_VAR).get())        \
+                ->get();                                                                 \
         }                                                                                \
                                                                                          \
-        TYPE get_##FUNC() const                                                          \
+        TYPE get_##FUNC() const TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default") \
+                                                                                         \
         {                                                                                \
-            static auto _key = new std::string(ENV_VAR);                                 \
-            auto        ret  = m_data.find(*_key);                                       \
+            auto ret = m_data.find(ENV_VAR);                                             \
             if(ret == m_data.end())                                                      \
                 return TYPE{};                                                           \
             if(!ret->second)                                                             \
@@ -106,9 +108,10 @@
             return static_cast<tsettings<TYPE, TYPE&>*>(ret->second.get())->get();       \
         }                                                                                \
                                                                                          \
-        static TYPE& FUNC() TIMEMORY_VISIBILITY("default")                               \
+        static TYPE& FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default")     \
+                                                                                         \
         {                                                                                \
-            return instance()->get_##FUNC();                                             \
+            return shared_instance()->get_##FUNC();                                      \
         }
 #endif
 //

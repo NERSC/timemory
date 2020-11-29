@@ -33,6 +33,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/cupti/backends.hpp"
 #include "timemory/components/cupti/types.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
 
 #include <algorithm>

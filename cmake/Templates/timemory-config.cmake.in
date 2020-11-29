@@ -114,6 +114,12 @@ endif()
 
 set(TIMEMORY_C_COMPILER_ID @CMAKE_C_COMPILER_ID@)
 set(TIMEMORY_CXX_COMPILER_ID @CMAKE_CXX_COMPILER_ID@)
+set(TIMEMORY_CUDA_COMPILER_ID @CMAKE_CUDA_COMPILER_ID@)
+
+set(TIMEMORY_USE_CUDA @TIMEMORY_USE_CUDA@)
+if(TIMEMORY_USE_CUDA AND TIMEMORY_CUDA_COMPILER_ID)
+    list(APPEND TIMEMORY_LANGUAGES CUDA)
+endif()
 
 # timemory-threading
 if(NOT WIN32)
@@ -121,6 +127,27 @@ if(NOT WIN32)
     set(THREADS_PREFER_PTHREAD_FLAG @THREADS_PREFER_PTHREAD_FLAG@)
 endif()
 find_package(Threads QUIET @TIMEMORY_FIND_REQUIREMENT@)
+
+# compiler-instrumentation
+# if TIMEMORY_INLINE_COMPILER_INSTRUMENTATION not set, set it to the default
+if(NOT DEFINED TIMEMORY_INLINE_COMPILER_INSTRUMENTATION)
+    set(TIMEMORY_INLINE_COMPILER_INSTRUMENTATION @TIMEMORY_INLINE_COMPILER_INSTRUMENTATION@)
+endif()
+
+get_property(ENABLED_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+foreach(_LANG ${TIMEMORY_LANGUAGES})
+    if(NOT "${_LANG}" IN_LIST ENABLED_LANGUAGES)
+        message(STATUS "Timemory was built with ${_LANG} support. Enabling the ${_LANG} language...")
+        include(CheckLanguage)
+        check_language(${_LANG})
+        if(CMAKE_${_LANG}_COMPILER)
+            enable_language(${_LANG})
+        else()
+            message(WARNING "Timemory was built with ${_LANG} support but this language could not be enabled")
+        endif()
+    endif()
+endforeach()
+unset(ENABLED_LANGUAGES)
 
 #----------------------------------------------------------------------------------------#
 #   Determine install tree or build tree
@@ -337,7 +364,7 @@ if(TIMEMORY_INSTALL_TREE)
     if(NOT TARGET timemory::timemory)
         add_library(timemory::timemory INTERFACE IMPORTED)
     endif()
-    
+
     if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
         target_link_libraries(timemory::timemory INTERFACE ${_INTERFACE_LIB})
     else()

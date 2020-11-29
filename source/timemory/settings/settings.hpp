@@ -34,7 +34,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/compat/macros.h"
 #include "timemory/environment/declaration.hpp"
-#include "timemory/macros/compiler.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/tsettings.hpp"
@@ -88,13 +88,13 @@ struct settings
     using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
 
     template <typename Tag>
-    static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
+    TIMEMORY_HOT static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
 
     template <typename Tag>
-    static settings* instance() TIMEMORY_VISIBILITY("default");
+    TIMEMORY_HOT static settings* instance() TIMEMORY_VISIBILITY("default");
 
-    static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
-    static settings* instance() TIMEMORY_VISIBILITY("default");
+    TIMEMORY_HOT static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
+    TIMEMORY_HOT static settings* instance() TIMEMORY_VISIBILITY("default");
 
     settings();
     ~settings() = default;

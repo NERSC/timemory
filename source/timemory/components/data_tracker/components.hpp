@@ -33,6 +33,7 @@
 #include "timemory/components/data_tracker/types.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)

@@ -36,6 +36,7 @@
 #include "timemory/operations/types/start.hpp"
 #include "timemory/operations/types/stop.hpp"
 #include "timemory/plotting/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/storage/macros.hpp"
 #include "timemory/storage/types.hpp"
@@ -652,6 +653,12 @@ storage<Type, true>::get_prefix(const graph_node& node)
             return get_hash_identifier(node.id());
         }
     }
+
+#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
+    if(_ret.find("unknown-hash=") == 0)
+        throw std::runtime_error("Hash-lookup error!");
+#endif
+
     return _ret;
 }
 //
@@ -674,6 +681,12 @@ storage<Type, true>::get_prefix(const uint64_t& id)
             return get_hash_identifier(id);
         }
     }
+
+#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
+    if(_ret.find("unknown-hash=") == 0)
+        throw std::runtime_error("Hash-lookup error!");
+#endif
+
     return _ret;
 }
 //

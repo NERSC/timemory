@@ -81,8 +81,6 @@ add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
     if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
     {
         (*_hash_map)[_hash_id] = prefix;
-        if(_hash_map->bucket_count() < _hash_map->size())
-            _hash_map->rehash(_hash_map->size() + 10);
     }
     return _hash_id;
 }
@@ -107,8 +105,6 @@ add_hash_id(const graph_hash_map_ptr_t&   _hash_map,
        _hash_map->find(_hash_id) != _hash_map->end())
     {
         (*_hash_alias)[_alias_hash_id] = _hash_id;
-        if(_hash_alias->bucket_count() < _hash_alias->size())
-            _hash_alias->rehash(_hash_alias->size() + 10);
     }
 }
 //

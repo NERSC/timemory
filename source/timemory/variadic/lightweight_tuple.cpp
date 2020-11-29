@@ -28,7 +28,6 @@
  */
 
 #include "timemory/variadic/lightweight_tuple.hpp"
-#include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"
 #include "timemory/utility/macros.hpp"

@@ -345,39 +345,6 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-    TIMEMORY_WEAK_PREFIX
-    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX
-        TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
-    void timemory_register_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
-    void timemory_deregister_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-
-    TIMEMORY_WEAK_PREFIX
-    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX
-        TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
-    void timemory_register_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
-    void timemory_deregister_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
-    ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_version,
-                                              const char*  runtime_version)
-        TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-
-    void                      timemory_register_mpip() {}
-    void                      timemory_register_ompt() {}
-    void                      timemory_deregister_mpip() {}
-    void                      timemory_deregister_ompt() {}
-    void                      timemory_mpip_library_ctor() {}
-    void                      timemory_ompt_library_ctor() {}
-    ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*)
-    {
-        return nullptr;
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
     bool timemory_trace_is_initialized()
     {
         return (get_library_state()[0] &&

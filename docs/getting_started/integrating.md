@@ -39,6 +39,8 @@ were not available when timemory was installed.
 | `timemory::timemory-bounds-sanitizer` | Adds compiler flags to enable bounds sanitizer (-fsanitize=bounds) |
 | `timemory::timemory-caliper` | Enables Caliper support |
 | `timemory::timemory-cereal-xml` | Enables XML serialization output |
+| `timemory::timemory-compile-debuginfo` | Attempts to set best flags for more expressive profiling information in debug or optimized binaries |
+| `timemory::timemory-compile-extra` | Extra optimization flags |
 | `timemory::timemory-compile-options` | Adds the standard set of compiler flags used by timemory |
 | `timemory::timemory-compile-timing` | Adds compiler flags which report compilation timing metrics |
 | `timemory::timemory-compiler-instrument` | Provides library for compiler instrumentation |

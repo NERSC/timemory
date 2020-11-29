@@ -123,3 +123,19 @@ TIMEMORY_EXTERN_USER_BUNDLE(user_ncclp_bundle)
 TIMEMORY_EXTERN_USER_BUNDLE(user_trace_bundle)
 TIMEMORY_EXTERN_USER_BUNDLE(user_profiler_bundle)
 TIMEMORY_EXTERN_USER_BUNDLE(user_kokkosp_bundle)
+
+#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+namespace tim
+{
+namespace component
+{
+extern template struct user_bundle<global_bundle_idx, project::timemory>;
+extern template struct user_bundle<ompt_bundle_idx, project::timemory>;
+extern template struct user_bundle<mpip_bundle_idx, project::timemory>;
+extern template struct user_bundle<ncclp_bundle_idx, project::timemory>;
+extern template struct user_bundle<trace_bundle_idx, project::timemory>;
+extern template struct user_bundle<profiler_bundle_idx, project::timemory>;
+extern template struct user_bundle<kokkosp_bundle_idx, project::kokkosp>;
+}  // namespace component
+}  // namespace tim
+#endif

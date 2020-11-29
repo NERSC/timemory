@@ -1,17 +1,17 @@
-# timemory-mpip
+# timemory-mpip library
 
 Produces a `libtimemory-mpip.so` that uses GOTCHA wrappers around ~245 MPI functions.
 
 Four functions are provided for C, C++, and Fortran:
 
-- `uint64_t init_timemory_mpip_tools()`
+- `uint64_t timemory_start_mpip()`
   - Returns the number of initializations
-- `uint64_t stop_timemory_mpip_tools(uint64_t idx)`
+- `uint64_t timemory_stop_mpip(uint64_t idx)`
   - Removes the initialization request at `idx`
   - Returns the number of remaining initializations
-- `void register_timemory_mpip()`
+- `void timemory_register_mpip()`
   - Ensures a global initialization exists until it deregistration
-- `void deregister_timemory_mpip()`
+- `void timemory_deregister_mpip()`
   - Deactivates the global initialization
 
 ## Usage

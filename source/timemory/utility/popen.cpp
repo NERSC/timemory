@@ -26,6 +26,7 @@
 #if !defined(_WINDOWS)
 
 #    include "timemory/utility/popen.hpp"
+#    include <limits>
 
 #    if !defined(OPEN_MAX)
 #        define OPEN_MAX 1024
@@ -49,9 +50,9 @@ namespace popen
 //
 struct group_info
 {
-    int   ngroups  = -1;
-    gid_t group_id = -1;
-    uid_t user_id  = -1;
+    int   ngroups = -1;
+    gid_t group_id;
+    uid_t user_id;
     gid_t groups[NGROUPS_MAX];
 };
 //
@@ -101,7 +102,7 @@ drop_privileges(int permanent)
         if(permanent != 0 && setgid(newgid) == -1)
             abort();
 #    else
-        if(setregid((permanent ? newgid : -1), newgid) == -1)
+        if(setregid((permanent ? newgid : oldgid), newgid) == -1)
             abort();
 #    endif
     }
@@ -115,7 +116,7 @@ drop_privileges(int permanent)
         if(permanent != 0 && setuid(newuid) == -1)
             abort();
 #    else
-        if(setreuid(((permanent != 0) ? newuid : -1), newuid) == -1)
+        if(setreuid(((permanent != 0) ? newuid : olduid), newuid) == -1)
             abort();
 #    endif
     }
@@ -175,12 +176,12 @@ open_devnull(int fd)
 void
 sanitize_files()
 {
-    int         fds;
+    // int         fds;
     struct stat st;
 
     // Make sure all open descriptors other than the standard ones are closed
-    if((fds = getdtablesize()) == -1)
-        fds = OPEN_MAX;
+    // if((fds = getdtablesize()) == -1)
+    //    fds = OPEN_MAX;
 
     // closing these files results in the inability to read the pipe from the parent
     // for(int fd = 3; fd < fds; ++fd)

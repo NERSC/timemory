@@ -113,16 +113,21 @@ and/or outgoing return value from function, or just provide stubs which can be o
         - Dynamic instrumentation profiling tool
         - Supports runtime instrumentation and binary re-writing
     - `timemory-python-profiler`
-        - Python function profiler
+        - Python function profiler supporting all timemory components
+        - `from timemory.profiler import Profile`
+    - `timemory-python-trace`
+        - Python line-by-line profiler supporting all timemory components
+        - `from timemory.trace import Trace`
     - `timemory-python-line-profiler`
-        - Python line-by-line profiler
-        - Design based on [line-profiler](https://pypi.org/project/line-profiler/) package
+        - Python line-by-line profiler based on [line-profiler](https://pypi.org/project/line-profiler/) package
         - Extended to use components: cpu-clock, memory-usage, context-switches, etc. (all components which collect scalar values)
+        - `from timemory.line_profiler import LineProfiler`
 - Instrumentation Libraries
-    - [kokkos-connector](source/tools/kokkos-connector/README.md): Kokkos Profiling Libraries
     - [timemory-mpip](source/tools/timemory-mpip/README.md): MPI Profiling Library (Linux-only)
     - [timemory-ncclp](source/tools/timemory-ncclp/README.md): NCCL Profiling Library (Linux-only)
     - [timemory-ompt](source/tools/timemory-ompt/README.md): OpenMP Profiling Library
+    - [timemory-compiler-instrument](source/tools/timemory-compiler-instrument/README.md): Compiler instrumentation Library
+    - [kokkos-connector](source/tools/kokkos-connector/README.md): Kokkos Profiling Libraries
 
 ## Design Goals
 
@@ -442,21 +447,35 @@ with marker(["papi_vector"], key="MY_REGION_OF_INTEREST"):
     #
 ```
 
+> Note: `from timemory.profiler import profile` and `from timemory.trace import trace` can replace `marker` above
+
+### Python Decorator
+
+```python
+from timemory.util import marker
+
+@marker(["papi_vector"])
+def my_function_of_interest():
+    #
+    # do something in region of interest...
+    #
+```
+
+> Note: `from timemory.profiler import profile` and `from timemory.trace import trace` can replace `marker` above
+
 ### Python Component Class
 
 ```python
 from timemory.component import PapiVector
 
-hwc = PapiVector("MY_REGION_OF_INTEREST")
+hwc = PapiVector("MY_REGION_OF_INTEREST")  # label when printing
 hwc.start()
-//
-// do something in region of interest...
-//
+#
+# do something in region of interest...
+#
 hwc.stop()
-// get values
-l1_tcm, l2_tcm, l3_tcm = hwc.get()
-// print as string
-print("{}".format(hwc))
+l1_tcm, l2_tcm, l3_tcm = hwc.get()  # get values
+print("{}".format(hwc))             # print with label and value(s)
 ```
 
 ### C Enumeration Interface
@@ -476,13 +495,73 @@ FREE_TIMEMORY_MARKER(roi)
 - Create your own components: any one-time measurement or start/stop paradigm can be wrapped with timemory
     - Flexible and easily extensible interface: no data type restrictions in custom components
 
+### Custom Logging Component Example
+
+Thanks to the ability to pass pretty much _anything_ to a component, timemory components are not limited to
+performance measurements: they can serve as very efficient logging and debugging components since they can
+easily be compiled out of the code by marking them with the `is_available` type-trait set to false.
+
+```cpp
+// This "component" is for conceptual demonstration only
+// It is not intended to be copy+pasted
+struct log_message : base<log_message, void>
+{
+public:
+    // use return type SFINAE to check whether "val" supports operator<<
+    // if Tp does not support <<, then this function will not be called
+    template <typename Tp>
+    auto start(const char* label, const Tp& val) -> decltype(std::cerr << val, void())
+    {
+        std::cerr << "[LOG:START][" << label << "]> " << msg << std::endl;
+    }
+
+    // use return type SFINAE to check whether "val" supports operator<<
+    // if Tp does not support <<, then this function will not be called
+    template <typename Tp>
+    auto start(const char* label, const Tp& val) -> decltype(std::cerr << val, void())
+    {
+        std::cerr << "[LOG:STOP][" << label << "]> " << val << std::endl;
+    }
+};
+```
+
+Where usage could look below, where the usage within the loop, e.g. `logger_t{}.start("foo", val)`,
+will never even create an instance of `log_message` unless `ENABLE_LOG_MESSAGE` is defined at compile-time.
+Since the construction of `logger_t{}` and `start("foo", val)` do not have any side-effects,
+the entire line will likely be optimized entirely away (depending on the optimization settings).
+
+```cpp
+// log_message will NEVER be called when ENABLE_LOG_MESSAGE is not defined
+#if !defined(ENABLE_LOG_MESSAGE)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::log_message, false_type)
+#endif
+
+// just a general bundle that uses TIMEMORY_GLOBAL_COMPONENTS environ variable
+using bundle_t = tim::component_tuple<global_user_bundle>;
+
+// a dedicated bundle for logging
+using logger_t = tim::lightweight_bundle<log_message>;
+
+void foo(double val)
+{
+    // basic label == function name
+    TIMEMORY_BASIC_MARKER(bundle_t, "")
+    for(int i = 0; i < 10; ++i)
+    {
+        logger_t{}.start("foo", val); // write log message or nothing if not available
+        val += i;
+        logger_t{}.stop("foo", val); // write log message or nothing if not available
+    }
+}
+```
+
 ### Composable Components Example
 
 Building a brand-new component is simple and straight-forward.
 In fact, new components can simply be composites of existing components.
 For example, if a component for measuring the FLOP-rate (floating point operations per second)
 is desired, it is arbitrarily easy to create and this new component will have all the
-features of `wall_clock` and `papi_vector` component:
+features of `wall_clock` and `papi_tuple` component:
 
 ```cpp
 // This "component" is for conceptual demonstration only
@@ -490,15 +569,10 @@ features of `wall_clock` and `papi_vector` component:
 struct flop_rate : base<flop_rate, double>
 {
 private:
-    wall_clock  wc;
-    papi_vector hw;
+    wall_clock              wc;
+    papi_tuple<PAPI_DP_OPS> hw;
 
 public:
-    static void global_init()
-    {
-        papi_vector::add_event(PAPI_DP_OPS);
-    }
-
     void start()
     {
         wc.start();
@@ -750,7 +824,8 @@ int main(int argc, char** argv)
     // ... do some stuff
     std::vector<double> recvbuf(sizebuf, 0.0);
 
-    MPI_Allreduce(sendbuf.data(), recvbuf.data(), sizebuf, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(sendbuf.data(), recvbuf.data(), sizebuf,
+                  MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     // ... etc.
 
     int64_t nitr = 10;
@@ -778,6 +853,14 @@ void init()
 // uses comma operator to call init() during static construction of boolean
 static bool is_initialized = (init(), true);
 ```
+
+Additionally, `TIMEMORY_DERIVED_GOTCHA` accepts the same parameters as `TIMEMORY_C_GOTCHA`
+and `TIMEMORY_CXX_GOTCHA` + one extra parameter for specifying the symbol. For example,
+`TIMEMORY_DERIVED_GOTCHA(gotcha_t, 0, exp, "__finite_exp")` would create a gotcha based
+on the function signature of the standard C math function `double exp(double)` but it
+would wrap the symbol named `"__finite_exp"` in the binary (which may exist in lieu of
+`_exp` with certain compiler flags -- in this situation, it is generally safe to just
+wrap both).
 
 ## Compilation with the Template Interface
 

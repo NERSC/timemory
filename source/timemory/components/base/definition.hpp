@@ -31,6 +31,7 @@
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types/record.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"

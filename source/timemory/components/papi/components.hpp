@@ -38,6 +38,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types/fini.hpp"
 #include "timemory/operations/types/init.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 
 #include <algorithm>

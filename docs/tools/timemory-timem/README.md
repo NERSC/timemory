@@ -11,6 +11,59 @@ Command-line tool which provides the same capabilities of the UNIX command-line 
 
 ## Options
 
+### Command Line
+
+#### Standard Executable
+
+The `timem` and `timem-mpi` executation wrappers support simple prefixing of the executable and any arguments
+are assumed to belong to the file being executed unless `"--"` (two dashes) surrounded by spaces is detected.
+If the two stand-alone dashes are detected, these executables assume every argument preceding the
+`"--"` is an argument to `timem`/`timem-mpi` and every argument following the two dashes is the command
+to execute, e.g. `timem <timem-arguments> -- <exe> <exe-arguments>`.
+
+```console
+$ timem --help
+Usage: ./timem [tim::argparse::argument_parser arguments...] -- <CMD> <ARGS>
+
+Options:
+    -h, -?, --help                 Shows this page
+    --debug                        Debug output
+    -v, --verbose                  Verbose output
+    -q, --quiet                    Suppress as much reporting as possible
+    -d, --sample-delay             Set the delay before the sampler starts (seconds)
+    -f, --sample-freq              Set the frequency of the sampler (number of interrupts per second
+    --disable-sample               Disable sampling completely
+    -e, --events, --papi-events    Set the hardware counter events to record (ref: `timemory-avail -H | grep PAPI`)
+    --disable-papi                 Disable hardware counters
+    -o, --output                   Write intermediate data to an output process-specific file. Some metrics, such as those associated with timers, may report intermediate values (e.g. starting timestamps as number of "seconds")
+    -s, --shell                    Enable launching command via a shell command (if no arguments, $SHELL is used)
+    --shell-flags                  Set the shell flags to use (pass as single string as leading dashes can confuse parser) [default: -i]
+```
+
+#### MPI-Compatible Executable
+
+```console
+$ ./timem-mpi --help
+Usage: ./timem-mpi [tim::argparse::argument_parser arguments...] -- <CMD> <ARGS>
+
+Options:
+    -h, -?, --help                 Shows this page
+    --debug                        Debug output
+    -v, --verbose                  Verbose output
+    -q, --quiet                    Suppress as much reporting as possible
+    -d, --sample-delay             Set the delay before the sampler starts (seconds)
+    -f, --sample-freq              Set the frequency of the sampler (number of interrupts per second
+    --disable-sample               Disable sampling completely
+    -e, --events, --papi-events    Set the hardware counter events to record (ref: `timemory-avail -H | grep PAPI`)
+    --disable-papi                 Disable hardware counters
+    -o, --output                   Write intermediate data to an output process-specific file. Some metrics, such as those associated with timers, may report intermediate values (e.g. starting timestamps as number of "seconds")
+    -s, --shell                    Enable launching command via a shell command (if no arguments, $SHELL is used)
+    --shell-flags                  Set the shell flags to use (pass as single string as leading dashes can confuse parser) [default: -i]
+    --mpi                          Launch processes via MPI_Comm_spawn_multiple (reduced functionality)
+    --disable-mpi                  Disable MPI_Finalize
+    -i, --indiv                    Output individual results for each process (i.e. rank) instead of reporting the aggregation
+```
+
 ### Environment
 
 - `TIMEM_USE_SHELL` : enable execution via `$SHELL`

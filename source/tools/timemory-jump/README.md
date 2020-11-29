@@ -1,4 +1,4 @@
-# timemory jump library
+# timemory-jump library
 
 The timemory jump library implements the **jump** instrumentation mode for `timemory-run` tool. Additionally, this library can
 be linked to in lieu of the traditional timemory library and provide instrumentation via setting the environment variable

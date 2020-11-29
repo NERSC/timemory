@@ -31,6 +31,7 @@
 
 #include "timemory/general/source_location.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_tuple.hpp"

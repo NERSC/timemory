@@ -10,7 +10,7 @@ if(TIMEMORY_USE_PAPI OR TIMEMORY_USE_CUPTI)
     else()
         file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
     endif()
-                                   
+
     if(TIMEMORY_USE_CUPTI AND CMAKE_CUDA_COMPILER)
         set_source_files_properties(${source_files} PROPERTIES
             LINKER_LANGUAGE CUDA)

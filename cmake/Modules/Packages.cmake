@@ -176,7 +176,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-threading
     timemory-statistics
-    timemory-papi-static
+    timemory-papi
     timemory-cuda
     timemory-cudart-static
     timemory-nccl
@@ -344,6 +344,10 @@ if(TIMEMORY_USE_WINSOCK)
     timemory_target_compile_definitions(timemory-headers INTERFACE TIMEMORY_USE_WINSOCK)
 endif()
 
+if(TIMEMORY_BUILD_TESTING)
+    target_compile_definitions(timemory-headers INTERFACE $<BUILD_INTERFACE:TIMEMORY_INTERNAL_TESTING>)
+endif()
+
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
@@ -351,23 +355,14 @@ target_include_directories(timemory-headers INTERFACE
 target_include_directories(timemory-headers SYSTEM INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-# if cmake provides dl library, use that
-if(CMAKE_DL_LIBS)
-    set(dl_LIBRARY "${CMAKE_DL_LIBS}" CACHE STRING "dynamic linking libraries")
-endif()
-
-find_library(rt_LIBRARY NAMES rt)
-find_library(dl_LIBRARY NAMES dl)
-find_library(dw_LIBRARY NAMES dw)
-
-# dynamic linking library
+# dynamic linking library (searched for in BuildSettings)
 if(dl_LIBRARY)
     target_link_libraries(timemory-headers INTERFACE ${dl_LIBRARY})
 elseif(TIMEMORY_LINK_DL)
     target_link_libraries(timemory-headers INTERFACE dl)
 endif()
 
-# Realtime Extensions library
+# Realtime Extensions library (searched for in BuildSettings)
 if(rt_LIBRARY)
     target_link_libraries(timemory-headers INTERFACE ${rt_LIBRARY})
 elseif(TIMEMORY_LINK_RT)
@@ -888,7 +883,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     #
     # general set of compiler flags when using gperftools
     #
-    add_target_flag_if_avail(timemory-gperftools "-g" "-rdynamic")
+    target_link_libraries(timemory-gperftools INTERFACE timemory-compile-debuginfo)
 
     # NOTE:
     #   When compiling with programs with gcc, that you plan to link
@@ -1206,17 +1201,9 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-if(NOT TIMEMORY_USE_COVERAGE)
-    add_target_flag_if_avail(timemory-roofline-options
-        "-finline-functions" "-funroll-loops" "-ftree-vectorize"
-        "-ftree-loop-optimize" "-ftree-loop-vectorize")
-endif()
-
-set(VECTOR_DEFINITION               TIMEMORY_VEC)
-set(VECTOR_INTERFACE_TARGET         timemory-roofline-options)
-set(ARCH_INTERFACE_TARGET           timemory-roofline-options)
-
-include(ArchConfig)
+target_link_libraries(timemory-roofline-options INTERFACE
+    timemory-compile-extra
+    timemory-arch)
 
 target_link_libraries(timemory-cpu-roofline INTERFACE
     timemory-roofline-options
@@ -1255,17 +1242,23 @@ if(TIMEMORY_USE_DYNINST)
 endif()
 
 if(Dyninst_FOUND AND Boost_FOUND)
+
+    set(_Dyninst)
     # some installs of dyninst don't set this properly
-    find_path(DYNINST_HEADER_DIR
-        NAMES BPatch.h dyninstAPI_RT.h
-        HINTS ${Dyninst_DIR}
-        PATHS ${Dyninst_DIR}
-        PATH_SUFFIXES include)
+    if(EXISTS "${DYNINST_INCLUDE_DIR}" AND NOT DYNINST_HEADER_DIR)
+        get_filename_component(DYNINST_HEADER_DIR "${DYNINST_INCLUDE_DIR}" REALPATH CACHE)
+    else()
+        find_path(DYNINST_HEADER_DIR
+            NAMES BPatch.h dyninstAPI_RT.h
+            HINTS ${Dyninst_ROOT_DIR} ${Dyninst_DIR} ${Dyninst_DIR}/../../..
+            PATHS ${Dyninst_ROOT_DIR} ${Dyninst_DIR} ${Dyninst_DIR}/../../..
+            PATH_SUFFIXES include)
+    endif()
 
     # useful for defining the location of the runtime API
     find_library(DYNINST_API_RT dyninstAPI_RT
-        HINTS ${Dyninst_DIR}
-        PATHS ${Dyninst_DIR}
+        HINTS ${Dyninst_ROOT_DIR} ${Dyninst_DIR}
+        PATHS ${Dyninst_ROOT_DIR} ${Dyninst_DIR}
         PATH_SUFFIXES lib)
 
     find_path(TBB_INCLUDE_DIR
@@ -1274,10 +1267,6 @@ if(Dyninst_FOUND AND Boost_FOUND)
 
     if(TBB_INCLUDE_DIR)
         set(TBB_INCLUDE_DIRS ${TBB_INCLUDE_DIR})
-    endif()
-
-    if(DYNINST_HEADER_DIR)
-        target_include_directories(timemory-dyninst SYSTEM INTERFACE ${DYNINST_HEADER_DIR})
     endif()
 
     if(DYNINST_API_RT)
@@ -1303,9 +1292,9 @@ if(Dyninst_FOUND AND Boost_FOUND)
         endif()
     endforeach()
     target_include_directories(timemory-dyninst SYSTEM INTERFACE
-        ${DYNINST_INCLUDE_DIRS} ${DYNINST_INCLUDE_DIR}
-        ${Dyninst_INCLUDE_DIRS} ${Dyninst_INCLUDE_DIR}
-        ${TBB_INCLUDE_DIRS}     ${Boost_INCLUDE_DIRS})
+        ${TBB_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
+        ${DYNINST_HEADER_DIR})
     timemory_target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
 else()
     set(TIMEMORY_USE_DYNINST OFF)
@@ -1392,3 +1381,6 @@ endif()
 include(UserPackages)
 
 add_feature(CMAKE_INSTALL_RPATH "Installation RPATH")
+
+install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/LocalFindUtilities.cmake
+    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules)

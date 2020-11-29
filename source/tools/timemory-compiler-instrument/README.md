@@ -1,6 +1,8 @@
-# timemory compiler instrumentation library
+# timemory-compiler-instrument library
 
 The timemory compiler instrumentation library provides the symbols required by the `-finstrument-functions` compiler flag supported by Clang and GCC.
+This compiler flag enables the insertion of a callback at the entry and exit of each function currently being compiled -- it has no effect whatsoever
+on the functions which are defined in an external library and linked into your executable or library.
 
 ## Description
 
@@ -24,7 +26,19 @@ via the `TIMEMORY_COMPILER_COMPONENTS` environment variable or synchronized with
 instrumentation present in the target code via `TIMEMORY_GLOBAL_COMPONENTS`.
 Timemory compiler instrumentation is fully compatible with codes that are instrumented with timemory
 but, in order to prevent expensive checks for recursion, the data is collected separately --
-resulting in an entirely separate set of outputs.
+resulting in an entirely separate set of outputs. Although most traditional environment
+variables are respected, there are a few exceptions:
+
+- The output folder for the compiler instrumentation defaults to `"timemory-compiler-instrumentation-output"`
+  - This can be exclusively controlled via the `TIMEMORY_COMPILER_OUTPUT_PATH` environment variable
+  - If `TIMEMORY_OUTPUT_PATH` is set, the compiler instrumentation uses this path but uses the `TIMEMORY_COMPILER_OUTPUT_PREFIX`
+    environment variable, which defaults to `"compiler-"`, e.g. compiler instrumentation for the wall-clock
+    timers with `TIMEMORY_OUTPUT_PATH` set would be `${TIMEMORY_OUTPUT_PATH}/compiler-wall.txt`
+- `"TIMEMORY_THROTTLE_COUNT"` is ignored, use `"TIMEMORY_COMPILER_THROTTLE_COUNT"`
+  - defaults to checking whether to throttle every 1,000 invocations
+- `"TIMEMORY_THROTTLE_VALUE"` is ignored, use `"TIMEMORY_COMPILER_THROTTLE_VALUE"`
+  - defaults to enabling throttling functions averaging less than 10,000 nanoseconds (i.e. 10 microseconds) in the last N invocations
+  (where N is the throttle-count)
 
 ## Usage
 
@@ -36,6 +50,37 @@ libraries and the compiler flags for the best resolution of the instrumented fun
 > When compiling with `-finstrument-functions`, it is highly recommended to also compile with:
 > `-g -rdynamic -fno-omit-frame-pointer -fno-optimize-sibling-calls`.
 > These flags are automatically provided when using CMake.
+
+The Clang compiler supports `-finstrument-functions-after-inlining`. This flag causes clang to only instrument non-inlined function calls, which
+can significantly lower the size of the results and the overhead of the compiler instrumentation.
+If this flag is available, timemory will propagate this flag to downstream projects by default instead of `-finstrument-functions`
+unless `TIMEMORY_INLINE_COMPILER_INSTRUMENTATION=ON` during the _timemory_ CMake configuration (which sets the default for the timemory
+installation) or the default for the installation can be changed by setting `TIMEMORY_INLINE_COMPILER_INSTRUMENTATION=OFF` within the downstream CMake project.
+In other words:
+
+- Setting `TIMEMORY_INLINE_COMPILER_INSTRUMENTATION=ON` when installing timemory with the
+Clang compiler will set `TIMEMORY_INLINE_COMPILER_INSTRUMENTATION` to `ON` by default
+in the installation.
+- Setting `TIMEMORY_INLINE_COMPILER_INSTRUMENTATION=OFF` when installing timemory with the
+Clang compiler will set `TIMEMORY_INLINE_COMPILER_INSTRUMENTATION` to `OFF` by default
+in the installation.
+- Using any non-Clang compiler to install timemory will set `TIMEMORY_INLINE_COMPILER_INSTRUMENTATION` to `OFF`
+by default in the installation.
+- Using any non-Clang compiler to when building your project and linking against the
+`timemory::timemory-compiler-instrument` CMake target will result in `-finstrument-functions`, regardless
+of whether Clang was used to install timemory.
+
+For reference, the check (provided below in non-generator-syntax form) is:
+
+```cmake
+if(NOT TIMEMORY_INLINE_COMPILER_INSTRUMENTATION AND CMAKE_<LANG>_COMPILER_ID MATCHES "Clang")
+    # if options is enabled and the C or CXX compiler ID for your compiler is Clang
+    target_compile_options(<mylib> PUBLIC -finstrument-functions-after-inlining)
+else()
+    # otherwise, use flag which includes inlined function calls
+    target_compile_options(<mylib> PUBLIC -finstrument-functions)
+endif()
+```
 
 #### CMake Example
 
@@ -94,8 +139,8 @@ target_link_libraries(bar PRIVATE foo)
 
 ```makefile
 CC = gcc
-CFLAGS += -finstrument-functions -g -rdynamic -fno-omit-frame-pointer -fno-optimize-sibling-calls
-LIBS += timemory-compiler-instrument
+CFLAGS += -finstrument-functions -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -rdynamic
+LIBS += timemory-compiler-instrument dl rt
 OBJ = foo.o
 
 %.o: %.c $(DEPS)
@@ -108,8 +153,9 @@ bar: $(OBJ) bar.c
 ### Restricting Instrumentation
 
 Compiler instrumentation will generate alot of profiling information -- instrumentation is also done for functions expanded inline in other functions.
-In order to reduce this, refer to the compiler documentation for the additional flags: [-finstrument-functions-exclude-file-list=file,file,...](https://gcc.gnu.org/onlinedocs/gcc-4.4.4/gcc/Code-Gen-Options.html) and
+In order to reduce this with GCC, refer to the compiler documentation for the additional flags: [-finstrument-functions-exclude-file-list=file,file,...](https://gcc.gnu.org/onlinedocs/gcc-4.4.4/gcc/Code-Gen-Options.html) and
 [-finstrument-functions-exclude-function-list=sym,sym,...](https://gcc.gnu.org/onlinedocs/gcc-4.4.4/gcc/Code-Gen-Options.html).
+In order to reduce the profiling information with Clang, set the `TIMEMORY_INLINE_COMPILER_INSTRUMENTATION=OFF`
 
 ## Examples
 

@@ -223,6 +223,7 @@ jobs:
 
 before_install:
   # only run macOS if a pull-request
+  - export TIMEMORY_SOURCE_DIRECTORY=${PWD}
   - if [[ "$TRAVIS_PULL_REQUEST" != "false" || "${CONDA_OS}" != "MacOSX" ]]; then EXECUTE=1; else EXECUTE=0; fi;
   - if [ -z "${CONDA_OS}" ]; then CONDA_OS=Linux; fi
   - if [ "${EXECUTE}" -ne 0 ]; then wget https://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh; fi
@@ -249,8 +250,8 @@ script:
   - if [ "${EXECUTE}" -ne 0 ]; then
     if [ "${CONDA_OS}" = "Linux" ]; then cd build-timemory/Linux; else cd build-timemory/Darwin; fi;
     fi
-  # make install
-  - if [ "${EXECUTE}" -ne 0 ]; then make install -j; fi
+  # make install and check that cmake configures from installation and at least one of them builds
+  - if [ "${EXECUTE}" -ne 0 ]; then make install -j; cd ${TIMEMORY_SOURCE_DIRECTORY}/examples && mkdir build-examples && cd build-examples; cmake -DTIMEMORY_BUILD_C_EXAMPLES=ON .. && make ex_array_of_bundles; fi
   # if python install test file exists, run it
   - if [ -f "tests/test-python-install-import.cmake" ]; then
     cmake -P tests/test-python-install-import.cmake;

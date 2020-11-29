@@ -89,13 +89,20 @@ endfunction()
 #
 #   Build object library
 #
-add_library(kp_timemory_common OBJECT ${PROJECT_SOURCE_DIR}/kp_timemory_common.cpp
+add_library(kp_timemory_common OBJECT
+    ${PROJECT_SOURCE_DIR}/kp_timemory_common.cpp
     ${PROJECT_SOURCE_DIR}/kp_timemory.hpp)
+
 target_link_libraries(kp_timemory_common PUBLIC
+    timemory::timemory-dmp
+    timemory::timemory-threading
     timemory::timemory-headers
     timemory::timemory-compile-options
+    timemory::timemory-develop-options
     ${timemory_INTERFACE_LIBRARY})
-set(timemory_COMMON_SOURCES $<TARGET_OBJECTS:kp_timemory_common>)
+
+set(timemory_COMMON_SOURCES
+    $<TARGET_OBJECTS:kp_timemory_common>)
 
 #
 #   Build generic library
@@ -194,6 +201,10 @@ function(ADD_CONNECTOR_CONFIG _NAME)
     if(NOT CONNECTOR_DISABLE_COMPILE_OPTIONS)
         list(APPEND CONNECTOR_TARGETS timemory::timemory-compile-options)
     endif()
+
+    list(APPEND CONNECTOR_TARGETS
+        timemory::timemory-dmp
+        timemory::timemory-threading)
 
     add_library(kp_timemory_${_NAME} SHARED
         ${SOURCE_FILE} ${timemory_COMMON_SOURCES})
@@ -454,8 +465,8 @@ add_connector_config(tau
     TARGETS timemory::timemory-tau)
 
 set(USE_OMPT ${TIMEMORY_USE_OMPT})
-if(TARGET timemory::timemory-ompt-shared)
-    set(_OMPT_LIB timemory::timemory-ompt-shared)
+if(TARGET timemory::timemory-ompt)
+    set(_OMPT_LIB timemory::timemory-ompt)
 elseif(TARGET timemory::timemory-ompt-static)
     set(_OMPT_LIB timemory::timemory-ompt-static)
 else()

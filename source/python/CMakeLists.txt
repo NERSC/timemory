@@ -115,7 +115,7 @@ if(TIMEMORY_BUILD_PYTHON)
     endif()
 
     set(pybind_libs pybind11::module)
-    if(TIMEMORY_BUILD_LTO)
+    if(TIMEMORY_BUILD_LTO AND TARGET pybind11::thin_lto)
         list(APPEND pybind_libs pybind11::thin_lto)
     endif()
 
