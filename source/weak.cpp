@@ -177,7 +177,7 @@ get_tool_stubs();
     }
 
 TOOL_DLSYM_SPECIALIZAITON(mpip_idx, "mpip", "TIMEMORY_MPIP_LIBRARY")
-TOOL_DLSYM_SPECIALIZAITON(ompt_idx, "mpip", "TIMEMORY_OMPT_LIBRARY")
+TOOL_DLSYM_SPECIALIZAITON(ompt_idx, "ompt", "TIMEMORY_OMPT_LIBRARY")
 TOOL_DLSYM_SPECIALIZAITON(ncclp_idx, "ncclp", "TIMEMORY_NCCLP_LIBRARY")
 
 #define TOOL_INDEX(NAME) NAME##_idx
@@ -210,16 +210,6 @@ extern "C"
     TOOL_STUBS(mpip)
     TOOL_STUBS(ompt)
     TOOL_STUBS(ncclp)
-    //
-    TIMEMORY_WEAK_PREFIX
-    ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_version,
-                                              const char*  runtime_version)
-        TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-    //
-    ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*)
-    {
-        return nullptr;
-    }
     //
     //----------------------------------------------------------------------------------//
     //
