@@ -33,7 +33,7 @@ LORIG=""
 if [ -f "${WALL_FILE}" ]; then
     NORIG=$(count-lines ${WALL_FILE})
     LORIG=$(cat ${WALL_FILE} | grep '>>>')
-else
+fi
 
 # preload libtimemory and then run again for instrumentation data
 LD_PRELOAD=libtimemory.so @COMMAND@.inst
@@ -55,5 +55,6 @@ else
         echo -e "${LORIG}"
         echo -e "\nInstrumented output:\n"
         echo -e "$(cat ${WALL_FILE} | grep '>>>')"
+        exit 1
     fi
 fi
