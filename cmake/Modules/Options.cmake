@@ -343,7 +343,7 @@ add_option(TIMEMORY_USE_OMPT
 add_option(TIMEMORY_USE_LIKWID
     "Enable LIKWID marker forwarding" ${_LIKWID} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_LIKWID_PERFMON
-    "Enable LIKWID support for perf (CPU)" ${_LIKWID} CMAKE_DEFINE)
+    "Enable LIKWID support for perf (CPU)" ${TIMEMORY_USE_LIKWID} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_LIKWID_NVMON
     "Enable LIKWID support for nvidia (GPU)" ${_LIKWID_NVMON} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_GOTCHA
