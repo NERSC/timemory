@@ -250,7 +250,7 @@ TEST_F(user_bundle_tests, comp_bundle)
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 
     {
-        comp_bundle_t _instance(details::get_test_name(), true);
+        comp_bundle_t _instance{ details::get_test_name() };
         _instance.get<user_global_bundle>()->clear();
 
         _instance.start();
@@ -286,10 +286,11 @@ TEST_F(user_bundle_tests, get_bundle)
     cpu_clock*  cc = nullptr;
     peak_rss*   pr = nullptr;
 
-    comp_bundle_t _instance(details::get_test_name(), true);
+    comp_bundle_t _instance{ details::get_test_name() };
 
     _instance.start();
     ret += details::fibonacci(35);
+    details::consume(250);
     _instance.stop();
 
     wc = _instance.get<wall_clock>();

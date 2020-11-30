@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if defined(TIMEMORY_USE_MPI)
+#    include <mpi.h>
+#endif
+
 #if !defined(TIMEMORY_TEST_NO_METRIC)
 #    include "timemory/timemory.hpp"
 #endif
@@ -133,12 +137,24 @@ print_dart(dummy&)
 
 #else
 #    define TIMEMORY_TEST_ARGS
-#    define TIMEMORY_TEST_MAIN                                                           \
-        int main(int argc, char** argv)                                                  \
-        {                                                                                \
-            ::testing::InitGoogleTest(&argc, argv);                                      \
-            return RUN_ALL_TESTS();                                                      \
-        }
+#    if defined(TIMEMORY_USE_MPI)
+#        define TIMEMORY_TEST_MAIN                                                       \
+            int main(int argc, char** argv)                                              \
+            {                                                                            \
+                MPI_Init(&argc, &argv);                                                  \
+                ::testing::InitGoogleTest(&argc, argv);                                  \
+                auto ret = RUN_ALL_TESTS();                                              \
+                MPI_Finalize();                                                          \
+                return ret;                                                              \
+            }
+#    else
+#        define TIMEMORY_TEST_MAIN                                                       \
+            int main(int argc, char** argv)                                              \
+            {                                                                            \
+                ::testing::InitGoogleTest(&argc, argv);                                  \
+                return RUN_ALL_TESTS();                                                  \
+            }
+#    endif
 #    define TIMEMORY_TEST_DEFAULT_MAIN TIMEMORY_TEST_MAIN
 #    define TIMEMORY_TEST_SUITE_SETUP(...)
 #    define TIMEMORY_TEST_DEFAULT_SUITE_SETUP
