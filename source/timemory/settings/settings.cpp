@@ -248,12 +248,12 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
     if(!_prefix.empty() && _prefix[plast] != '/' && isalnum(_prefix[plast]))
         _prefix += "-";
     // create the path
-    auto fpath = path_t(_prefix + _tag + _rank_suffix + _ext);
+    auto fpath         = path_t(_prefix + _tag + _rank_suffix + _ext);
     using strvecpair_t = std::vector<std::pair<std::string, std::string>>;
     for(auto itr : strvecpair_t{ { "--", "-" }, { "__", "_" }, { "//", "/" } })
     {
         while(fpath.find(itr.first) != std::string::npos)
-            fpath.replace(fpath.find(itr.first), itr.first.length, itr.second);
+            fpath.replace(fpath.find(itr.first), itr.first.length(), itr.second);
     }
     return fpath;
 }
