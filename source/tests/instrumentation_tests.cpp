@@ -27,8 +27,10 @@
 TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/timemory.hpp"
-//
-#include "timemory/backends.hpp"
+
+#if defined(TIMEMORY_USE_MPI)
+#    include <mpi.h>
+#endif
 
 #include <algorithm>
 #include <atomic>

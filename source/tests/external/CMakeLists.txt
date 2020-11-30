@@ -50,6 +50,7 @@ if(NOT TIMEMORY_SKIP_BUILD AND _BUILD)
             timemory::timemory-plotting
             common-test-libs)
         set_target_properties(custom-dynamic-instr PROPERTIES
+            OUTPUT_NAME                 custom_dynamic_instr
             LIBRARY_OUTPUT_DIRECTORY    ${PROJECT_BINARY_DIR}
             ARCHIVE_OUTPUT_DIRECTORY    ${PROJECT_BINARY_DIR}
             RUNTIME_OUTPUT_DIRECTORY    ${PROJECT_BINARY_DIR})

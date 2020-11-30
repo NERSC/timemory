@@ -653,7 +653,7 @@ main(int argc, char** argv)
         verbprintf(0, "Warning! No functions in application...\n");
     }
 
-    verbprintf(1, "Module size before loading instrumentation library: %lu\n",
+    verbprintf(0, "Module size before loading instrumentation library: %lu\n",
                (long unsigned) app_modules->size());
 
     dump_info("available_module_functions.txt", available_module_functions, 1);
@@ -1025,7 +1025,7 @@ main(int argc, char** argv)
     //----------------------------------------------------------------------------------//
 
     // begin insertion
-    if(binary_rewrite)
+    // if(binary_rewrite)
     {
         verbprintf(2, "Beginning insertion set...\n");
         addr_space->beginInsertionSet();
@@ -1128,12 +1128,12 @@ main(int argc, char** argv)
     {
         if(itr.second)
         {
-            verbprintf(0, "+ Adding %s instrumentation...\n", itr.first.c_str());
+            verbprintf(1, "+ Adding %s instrumentation...\n", itr.first.c_str());
             init_names.push_back(itr.second.get());
         }
         else
         {
-            verbprintf(0, "- Skipping %s instrumentation...\n", itr.first.c_str());
+            verbprintf(1, "- Skipping %s instrumentation...\n", itr.first.c_str());
         }
     }
 
@@ -1431,12 +1431,11 @@ main(int argc, char** argv)
     //  Either write the instrumented binary or execute the application
     //
     //----------------------------------------------------------------------------------//
+    addr_space->finalizeInsertionSet(false, nullptr);
 
     int code = -1;
     if(binary_rewrite)
     {
-        addr_space->finalizeInsertionSet(false, nullptr);
-
         char cwd[FUNCNAMELEN];
         auto ret = getcwd(cwd, FUNCNAMELEN);
         consume_parameters(ret);
@@ -1530,7 +1529,7 @@ main(int argc, char** argv)
             fprintf(stderr, "\nApplication exited with signal: %i\n", int(sign));
         }
 
-        addr_space->finalizeInsertionSet(false, nullptr);
+        // addr_space->finalizeInsertionSet(false, nullptr);
 
         code = app_thread->getExitCode();
         consume_parameters(_prefork, _postfork);
@@ -1635,9 +1634,10 @@ process_file_for_instrumentation(const string_t& file_name)
     string_t          ext_str = "\\.S$";
     static std::regex ext_regex(ext_str, regex_opts);
     static std::regex sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$", regex_opts);
-    static std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
-                                    "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread)",
-                                    regex_opts);
+    static std::regex userlib_regex(
+        "^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
+        "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread|nvperf)",
+        regex_opts);
     static std::regex corelib_regex("^lib(rt-|dl-|util-|python)", regex_opts);
     // these are all due to TAU
     static std::regex prefix_regex(

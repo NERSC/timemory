@@ -3,13 +3,13 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(CTEST_TEST_TIMEOUT 180)
+set(CMAKE_UNITY_BUILD OFF)
 
 set(_EXCLUDE)
 if(NOT TIMEMORY_BUILD_TESTING)
     set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
-set(CMAKE_UNITY_BUILD OFF)
 
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY )
 unset(CMAKE_LIBRARY_OUTPUT_DIRECTORY )
@@ -688,6 +688,7 @@ if(TIMEMORY_BUILD_GOOGLE_TEST)
     target_link_libraries(dynamic_instrument_tests
         common-test-libs
         timemory-google-test
+        timemory::timemory-dmp
         google-test-debug-options)
     set_target_properties(dynamic_instrument_tests PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -700,6 +701,7 @@ if(TIMEMORY_BUILD_GOOGLE_TEST)
         common-test-libs
         ${_LIBRARY_TARGET}
         timemory-google-test
+        timemory::timemory-dmp
         google-test-debug-options)
     set_target_properties(dynamic_instrument_timemory_tests PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -742,7 +744,7 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
         list(APPEND _scripts custom-components)
     endif()
 
-    set(_DYNAMIC_TARGETS dynamic_instrument_timemory_tests dynamic_instrument_tests)
+    set(_DYNAMIC_TARGETS dynamic_instrument_tests dynamic_instrument_timemory_tests)
     foreach(_TARGET ${_DYNAMIC_TARGETS})
         set(COMMAND
             ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET})
@@ -752,15 +754,22 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
             ${CMAKE_CURRENT_BINARY_DIR}/common.sh @ONLY)
 
         foreach(_file ${_scripts})
+            # do not run launch-process + timemory
+            if("${_file}" STREQUAL "launch-process" AND
+                "${_TARGET}" STREQUAL "dynamic_instrument_timemory_tests")
+                continue()
+            endif()
             set(TEST_NAME ${_TARGET}-${_file})
             configure_file(
                 ${CMAKE_CURRENT_LIST_DIR}/scripts/${_file}.sh.in
-                ${CMAKE_CURRENT_BINARY_DIR}/${_file}.sh @ONLY)
+                ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET}-${_file}.sh @ONLY)
             add_test(
                 NAME                ${_TARGET}-${_file}
-                COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/${_file}.sh
+                COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET}-${_file}.sh
                 WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR})
-            set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRON}")
+            set_tests_properties(${TEST_NAME} PROPERTIES
+                ENVIRONMENT "${TEST_ENVIRON}"
+                TIMEOUT     300)
             set_property(TEST ${_TARGET}-${_file} APPEND PROPERTY
                 DEPENDS ${_TARGET} timemory-run)
         endforeach()

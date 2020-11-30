@@ -74,7 +74,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 extern "C" void
-timemory_register_ex_custom_dynamic_instr()
+timemory_register_custom_dynamic_instr()
 {
     PRINT_HERE("%s", "Registering the custom dynamic instrumentation");
 
@@ -106,7 +106,7 @@ timemory_register_ex_custom_dynamic_instr()
 //--------------------------------------------------------------------------------------//
 //
 extern "C" void
-timemory_deregister_ex_custom_dynamic_instr()
+timemory_deregister_custom_dynamic_instr()
 {
     PRINT_HERE("%s", "Deregistering the custom dynamic instrumentation");
 }

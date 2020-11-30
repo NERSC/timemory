@@ -648,6 +648,7 @@ function(TIMEMORY_GET_PROPERTY_DEPENDS VAR LINK)
     set(DEPENDS)
     foreach(DEP ${ARGN})
         get_property(TMP GLOBAL PROPERTY TIMEMORY_${LINK}_${DEP}_LIBRARIES)
+        # message(STATUS "TIMEMORY_${LINK}_${DEP}_LIBRARIES :: ${TMP}")
         foreach(_ENTRY ${TMP})
             if(NOT TARGET ${_ENTRY})
                 continue()
@@ -924,6 +925,12 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
         timemory_get_property_depends(_PROPERTY_OBJS OBJECT ${COMP_PROPERTY_DEPENDS})
         timemory_get_property_depends(_PROPERTY_LINK ${UPP_LINK} ${COMP_PROPERTY_DEPENDS})
 
+        # message(STATUS "[DEPENDS] ${TARGET_NAME} :: ${_DEPENDS}")
+        # message(STATUS "[PROPOBJ] ${TARGET_NAME} :: ${_PROPERTY_OBJS}")
+        # message(STATUS "[PROPLNK] ${TARGET_NAME} :: ${_PROPERTY_LINK}")
+
+        # must reset this variable
+        set(DEPENDS)
         foreach(_DEP ${_DEPENDS} ${_PROPERTY_OBJS} ${_PROPERTY_LINK})
             if("${_DEP}" MATCHES ".*TARGET_OBJECTS:.*")
                 list(APPEND _SOURCES ${_DEP})
@@ -932,12 +939,17 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
             endif()
         endforeach()
 
+        if(DEPENDS)
+            list(REMOVE_DUPLICATES DEPENDS)
+        endif()
+
         set_property(GLOBAL APPEND PROPERTY TIMEMORY_HEADERS ${COMP_HEADERS})
         set_property(GLOBAL APPEND PROPERTY TIMEMORY_SOURCES ${COMP_SOURCES})
         set_property(GLOBAL APPEND PROPERTY TIMEMORY_${UPP_LINK}_${COMP_CATEGORY}_LIBRARIES
             timemory-${COMP_TARGET}-${LINK})
 
         # message(STATUS "Building ${TARGET_NAME}")
+        # message(STATUS "[-------] ${TARGET_NAME} :: ${DEPENDS}")
 
         build_library(
             NO_CACHE_LIST
