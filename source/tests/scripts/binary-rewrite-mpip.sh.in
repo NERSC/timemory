@@ -8,7 +8,7 @@ TEST_NAME=$(basename ${BASH_SOURCE[0]})
 export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
 rm -rf ${TIMEMORY_OUTPUT_PATH}
 
-export TIMEMORY_OUTPUT_PREFIX="orig-"
+export TIMEMORY_OUTPUT_PREFIX="orig"
 
 # no instrumentation
 @MPIEXEC_EXECUTABLE@ -n 2 @COMMAND@
@@ -16,7 +16,7 @@ export TIMEMORY_OUTPUT_PREFIX="orig-"
 # add path to libtimemory to LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 
-export TIMEMORY_OUTPUT_PREFIX="mpip-"
+export TIMEMORY_OUTPUT_PREFIX="mpip"
 
 # add mpi and mpip instrumentation
 @PROJECT_BINARY_DIR@/timemory-run --mpip -o @COMMAND@.inst -I 'agasdf' -- @COMMAND@
