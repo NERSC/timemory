@@ -5,7 +5,17 @@
 source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
 
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
+USE_PAPI="@USE_PAPI@"
+
 export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
+export TIMEMORY_OUTPUT_PREFIX="custom-components-"
+export TIMEMORY_TEXT_OUTPUT=ON
+export TIMEMORY_FILE_OUTPUT=ON
+export TIMEMORY_AUTO_OUTPUT=ON
+export TIMEMORY_TREE_OUTPUT=OFF
+export TIMEMORY_JSON_OUTPUT=OFF
+export TIMEMORY_COUT_OUTPUT=ON
+
 rm -rf ${TIMEMORY_OUTPUT_PATH}
 
 # add path to custom lib in LD_LIBRARY_PATH
@@ -16,3 +26,34 @@ export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 
 # run the instrumented binary
 @LAUNCH@ @COMMAND@.inst
+
+MONO_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-monotonic.txt"
+IPC_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-inst_per_cycle.txt"
+
+if [ ! -f "${MONO_FILE}" ]; then
+    echo -e "Missing monotonic-clock output file: \"${MONO_FILE}\""
+    echo -e "File in ${TIMEMORY_OUTPUT_PATH}:\n$(ls ${TIMEMORY_OUTPUT_PATH})"
+    exit 1
+else
+    NMONO=$(count-lines ${MONO_FILE})
+    if [ "${NMONO}" -eq 0 ]; then
+        echo -e "\nMonotonic-clock results from \"${MONO_FILE}\" were empty:\n"
+        echo -e "$(cat ${MONO_FILE} | grep '>>>')"
+        exit 1
+    fi
+fi
+
+if [ "${USE_PAPI}" -ne 0 ]; then
+    if [ ! -f "${IPC_FILE}" ]; then
+        echo -e "Missing instructions-per-cycle output file: \"${IPC_FILE}\""
+        echo -e "File in ${TIMEMORY_OUTPUT_PATH}:\n$(ls ${TIMEMORY_OUTPUT_PATH})"
+        exit 1
+    else
+        NIPC=$(count-lines ${IPC_FILE})
+        if [ "${NIPC}" -eq 0 ]; then
+            echo -e "\nInstructions-per-cycle results from \"${IPC_FILE}\" were empty:\n"
+            echo -e "$(cat ${IPC_FILE} | grep '>>>')"
+            exit 1
+        fi
+    fi
+fi

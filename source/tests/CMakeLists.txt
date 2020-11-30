@@ -2,6 +2,11 @@
 # include the current directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+set(_EXCLUDE)
+if(NOT TIMEMORY_BUILD_TESTING)
+    set(_EXCLUDE EXCLUDE_FROM_ALL)
+endif()
+
 set(CMAKE_UNITY_BUILD OFF)
 
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY )
@@ -675,16 +680,11 @@ if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
         WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
 endif()
 
-if(TIMEMORY_USE_DYNINST)
-    if(NOT TARGET timemory-run)
-        message(FATAL_ERROR "TIMEMORY_USE_DYNINST is ON but no target 'timemory-run'")
-    endif()
-
-    add_executable(dynamic_instrument_tests instrumentation_tests.cpp)
+if(TIMEMORY_BUILD_GOOGLE_TEST)
+    add_executable(dynamic_instrument_tests ${_EXCLUDE} instrumentation_tests.cpp)
     target_compile_definitions(dynamic_instrument_tests PRIVATE DISABLE_TIMEMORY)
     target_link_libraries(dynamic_instrument_tests
         common-test-libs
-        ${_LIBRARY_TARGET}
         timemory-google-test
         google-test-debug-options)
     set_target_properties(dynamic_instrument_tests PROPERTIES
@@ -693,7 +693,7 @@ if(TIMEMORY_USE_DYNINST)
         ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     add_dependencies(timemory-test dynamic_instrument_tests)
 
-    add_executable(dynamic_instrument_timemory_tests instrumentation_tests.cpp)
+    add_executable(dynamic_instrument_timemory_tests ${_EXCLUDE} instrumentation_tests.cpp)
     target_link_libraries(dynamic_instrument_timemory_tests
         common-test-libs
         ${_LIBRARY_TARGET}
@@ -704,6 +704,12 @@ if(TIMEMORY_USE_DYNINST)
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     add_dependencies(timemory-test dynamic_instrument_timemory_tests)
+endif()
+
+if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
+    if(NOT TARGET timemory-run)
+        message(FATAL_ERROR "TIMEMORY_USE_DYNINST is ON but no target 'timemory-run'")
+    endif()
 
     if(TIMEMORY_USE_MPI)
         set(LAUNCHER "${MPIEXEC_EXECUTABLE} -n 2")
@@ -718,13 +724,20 @@ if(TIMEMORY_USE_DYNINST)
         binary-rewrite-regex
         binary-rewrite-stubs
         binary-rewrite
-        # custom-components
-        # launch-process
+        launch-process
         region-sync)
 
     if(TIMEMORY_USE_MPI AND TIMEMORY_USE_GOTCHA)
         list(APPEND _scripts binary-rewrite-mpip)
         list(APPEND TEST_ENVIRON "TIMEMORY_MPIP_COMPONENTS=wall_clock")
+    endif()
+
+    if(TARGET custom-dynamic-instr)
+        set(USE_PAPI 0)
+        if(TIMEMORY_USE_PAPI)
+            set(USE_PAPI 1)
+        endif()
+        list(APPEND _scripts custom-components)
     endif()
 
     set(_DYNAMIC_TARGETS dynamic_instrument_timemory_tests dynamic_instrument_tests)

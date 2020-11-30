@@ -20,21 +20,33 @@ target_link_libraries(socket-client PRIVATE common-test-libs)
 target_link_libraries(extern-test-templates PUBLIC common-test-libs)
 target_link_libraries(gotcha-tests-lib PUBLIC common-test-libs)
 
-if(NOT TIMEMORY_SKIP_BUILD AND TIMEMORY_BUILD_C)
-    if(BUILD_SHARED_LIBS)
-        add_library(custom-record-functions ${_EXCLUDE} SHARED
-    	    custom_record_functions.cpp)
-        target_link_libraries(custom-record-functions
-            timemory::timemory-cxx-shared
-            timemory::timemory-c-shared
-            timemory::timemory-plotting
-            common-test-libs)
-    elseif(BUILD_STATIC_LIBS)
-        add_library(custom-record-functions ${_EXCLUDE} STATIC
+set(_BUILD OFF)
+if(BUILD_SHARED_LIBS)
+    set(_BUILD ON)
+    set(_LIB_TAG shared)
+    set(_LIB_TYPE SHARED)
+elseif(BUILD_STATIC_LIBS)
+    set(_BUILD ON)
+    set(_LIB_TAG static)
+    set(_LIB_TYPE STATIC)
+endif()
+
+if(NOT TIMEMORY_SKIP_BUILD AND _BUILD)
+    if(TIMEMORY_BUILD_C)
+        add_library(custom-record-functions ${_EXCLUDE} ${_LIB_TYPE}
             custom_record_functions.cpp)
         target_link_libraries(custom-record-functions PUBLIC
-            timemory::timemory-cxx-static
-            timemory::timemory-c-static
+            timemory::timemory-cxx-${_LIB_TAG}
+            timemory::timemory-c-${_LIB_TAG}
+            timemory::timemory-plotting
+            common-test-libs)
+    endif()
+
+    if(TIMEMORY_USE_DYNINST)
+        add_library(custom-dynamic-instr ${_EXCLUDE} ${_LIB_TYPE}
+            custom_dynamic_instr.cpp)
+        target_link_libraries(custom-dynamic-instr PUBLIC
+            timemory::timemory-cxx-${_LIB_TAG}
             timemory::timemory-plotting
             common-test-libs)
     endif()

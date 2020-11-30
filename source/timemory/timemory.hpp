@@ -79,87 +79,249 @@ struct dummy
 };
 }  // namespace tim
 
+#    if !defined(TIMEMORY_MACROS)
+#        define TIMEMORY_MACROS
+#    endif
+
 // startup/shutdown/configure
-#    define TIMEMORY_INIT(...)
-#    define TIMEMORY_FINALIZE()
-#    define TIMEMORY_CONFIGURE(...)
+#    if !defined(TIMEMORY_INIT)
+#        define TIMEMORY_INIT(...)
+#    endif
+
+#    if !defined(TIMEMORY_FINALIZE)
+#        define TIMEMORY_FINALIZE()
+#    endif
+
+#    if !defined(TIMEMORY_CONFIGURE)
+#        define TIMEMORY_CONFIGURE(...)
+#    endif
 
 // label creation
-#    define TIMEMORY_BASIC_LABEL(...) std::string("")
-#    define TIMEMORY_LABEL(...) std::string("")
-#    define TIMEMORY_JOIN(...) std::string("")
+#    if !defined(TIMEMORY_BASIC_LABEL)
+#        define TIMEMORY_BASIC_LABEL(...) std::string("")
+#    endif
+
+#    if !defined(TIMEMORY_LABEL)
+#        define TIMEMORY_LABEL(...) std::string("")
+#    endif
+
+#    if !defined(TIMEMORY_JOIN)
+#        define TIMEMORY_JOIN(...) std::string("")
+#    endif
 
 // define an object
-#    define TIMEMORY_BLANK_MARKER(...)
-#    define TIMEMORY_BASIC_MARKER(...)
-#    define TIMEMORY_MARKER(...)
+#    if !defined(TIMEMORY_BLANK_MARKER)
+#        define TIMEMORY_BLANK_MARKER(...)
+#    endif
+
+#    if !defined(TIMEMORY_BASIC_MARKER)
+#        define TIMEMORY_BASIC_MARKER(...)
+#    endif
+
+#    if !defined(TIMEMORY_MARKER)
+#        define TIMEMORY_MARKER(...)
+#    endif
 
 // define an unique pointer object
-#    define TIMEMORY_BLANK_POINTER(...)
-#    define TIMEMORY_BASIC_POINTER(...)
-#    define TIMEMORY_POINTER(...)
+#    if !defined(TIMEMORY_BLANK_POINTER)
+#        define TIMEMORY_BLANK_POINTER(...)
+#    endif
+
+#    if !defined(TIMEMORY_BASIC_POINTER)
+#        define TIMEMORY_BASIC_POINTER(...)
+#    endif
+
+#    if !defined(TIMEMORY_POINTER)
+#        define TIMEMORY_POINTER(...)
+#    endif
 
 // define an object with a caliper reference
-#    define TIMEMORY_BLANK_CALIPER(...)
-#    define TIMEMORY_BASIC_CALIPER(...)
-#    define TIMEMORY_CALIPER(...)
+#    if !defined(TIMEMORY_BLANK_CALIPER)
+#        define TIMEMORY_BLANK_CALIPER(...)
+#    endif
+
+#    if !defined(TIMEMORY_BASIC_CALIPER)
+#        define TIMEMORY_BASIC_CALIPER(...)
+#    endif
+
+#    if !defined(TIMEMORY_CALIPER)
+#        define TIMEMORY_CALIPER(...)
+#    endif
 
 // define a static object with a caliper reference
-#    define TIMEMORY_STATIC_BLANK_CALIPER(...)
-#    define TIMEMORY_STATIC_BASIC_CALIPER(...)
-#    define TIMEMORY_STATIC_CALIPER(...)
+#    if !defined(TIMEMORY_STATIC_BLANK_CALIPER)
+#        define TIMEMORY_STATIC_BLANK_CALIPER(...)
+#    endif
+
+#    if !defined(TIMEMORY_STATIC_BASIC_CALIPER)
+#        define TIMEMORY_STATIC_BASIC_CALIPER(...)
+#    endif
+
+#    if !defined(TIMEMORY_STATIC_CALIPER)
+#        define TIMEMORY_STATIC_CALIPER(...)
+#    endif
 
 // invoke member function on caliper reference or type within reference
-#    define TIMEMORY_CALIPER_APPLY(...)
-#    define TIMEMORY_CALIPER_TYPE_APPLY(...)
-#    define TIMEMORY_CALIPER_APPLY0(...)
-#    define TIMEMORY_CALIPER_TYPE_APPLY0(...)
-#    define TIMEMORY_CALIPER_LAMBDA(...)
-#    define TIMEMORY_CALIPER_TYPE_LAMBDA(...)
+#    if !defined(TIMEMORY_CALIPER_APPLY)
+#        define TIMEMORY_CALIPER_APPLY(...)
+#    endif
+
+#    if !defined(TIMEMORY_CALIPER_TYPE_APPLY)
+#        define TIMEMORY_CALIPER_TYPE_APPLY(...)
+#    endif
+
+#    if !defined(TIMEMORY_CALIPER_APPLY0)
+#        define TIMEMORY_CALIPER_APPLY0(...)
+#    endif
+
+#    if !defined(TIMEMORY_CALIPER_TYPE_APPLY0)
+#        define TIMEMORY_CALIPER_TYPE_APPLY0(...)
+#    endif
+
+#    if !defined(TIMEMORY_CALIPER_LAMBDA)
+#        define TIMEMORY_CALIPER_LAMBDA(...)
+#    endif
+
+#    if !defined(TIMEMORY_CALIPER_TYPE_LAMBDA)
+#        define TIMEMORY_CALIPER_TYPE_LAMBDA(...)
+#    endif
 
 // get an object
-#    define TIMEMORY_BLANK_HANDLE(...) tim::dummy()
-#    define TIMEMORY_BASIC_HANDLE(...) tim::dummy()
-#    define TIMEMORY_HANDLE(...) tim::dummy()
+#    if !defined(TIMEMORY_BLANK_HANDLE)
+#        define TIMEMORY_BLANK_HANDLE(...) tim::dummy()
+#    endif
+
+#    if !defined(TIMEMORY_BASIC_HANDLE)
+#        define TIMEMORY_BASIC_HANDLE(...) tim::dummy()
+#    endif
+
+#    if !defined(TIMEMORY_HANDLE)
+#        define TIMEMORY_HANDLE(...) tim::dummy()
+#    endif
 
 // get a pointer to an object
-#    define TIMEMORY_BLANK_RAW_POINTER(...) nullptr
-#    define TIMEMORY_BASIC_RAW_POINTER(...) nullptr
-#    define TIMEMORY_RAW_POINTER(...) nullptr
+#    if !defined(TIMEMORY_BLANK_RAW_POINTER)
+#        define TIMEMORY_BLANK_RAW_POINTER(...) nullptr
+#    endif
+
+#    if !defined(TIMEMORY_BASIC_RAW_POINTER)
+#        define TIMEMORY_BASIC_RAW_POINTER(...) nullptr
+#    endif
+
+#    if !defined(TIMEMORY_RAW_POINTER)
+#        define TIMEMORY_RAW_POINTER(...) nullptr
+#    endif
 
 // debug only
-#    define TIMEMORY_DEBUG_BLANK_MARKER(...)
-#    define TIMEMORY_DEBUG_BASIC_MARKER(...)
-#    define TIMEMORY_DEBUG_MARKER(...)
+#    if !defined(TIMEMORY_DEBUG_BLANK_MARKER)
+#        define TIMEMORY_DEBUG_BLANK_MARKER(...)
+#    endif
+
+#    if !defined(TIMEMORY_DEBUG_BASIC_MARKER)
+#        define TIMEMORY_DEBUG_BASIC_MARKER(...)
+#    endif
+
+#    if !defined(TIMEMORY_DEBUG_MARKER)
+#        define TIMEMORY_DEBUG_MARKER(...)
+#    endif
 
 // auto-timers
-#    define TIMEMORY_BLANK_AUTO_TIMER(...)
-#    define TIMEMORY_BASIC_AUTO_TIMER(...)
-#    define TIMEMORY_AUTO_TIMER(...)
-#    define TIMEMORY_BLANK_AUTO_TIMER_HANDLE(...)
-#    define TIMEMORY_BASIC_AUTO_TIMER_HANDLE(...)
-#    define TIMEMORY_AUTO_TIMER_HANDLE(...)
-#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)
-#    define TIMEMORY_DEBUG_AUTO_TIMER(...)
+#    if !defined(TIMEMORY_BLANK_AUTO_TIMER)
+#        define TIMEMORY_BLANK_AUTO_TIMER(...)
+#    endif
+
+#    if !defined(TIMEMORY_BASIC_AUTO_TIMER)
+#        define TIMEMORY_BASIC_AUTO_TIMER(...)
+#    endif
+
+#    if !defined(TIMEMORY_AUTO_TIMER)
+#        define TIMEMORY_AUTO_TIMER(...)
+#    endif
+
+#    if !defined(TIMEMORY_BLANK_AUTO_TIMER_HANDLE)
+#        define TIMEMORY_BLANK_AUTO_TIMER_HANDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_BASIC_AUTO_TIMER_HANDLE)
+#        define TIMEMORY_BASIC_AUTO_TIMER_HANDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_AUTO_TIMER_HANDLE)
+#        define TIMEMORY_AUTO_TIMER_HANDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_DEBUG_BASIC_AUTO_TIMER)
+#        define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)
+#    endif
+
+#    if !defined(TIMEMORY_DEBUG_AUTO_TIMER)
+#        define TIMEMORY_DEBUG_AUTO_TIMER(...)
+#    endif
 
 // auto-bundle (user-bundles)
-#    define TIMEMORY_BLANK_AUTO_BUNDLE(...)
-#    define TIMEMORY_BASIC_AUTO_BUNDLE(...)
-#    define TIMEMORY_AUTO_BUNDLE(...)
-#    define TIMEMORY_BLANK_AUTO_BUNDLE_HANDLE(...)
-#    define TIMEMORY_BASIC_AUTO_BUNDLE_HANDLE(...)
-#    define TIMEMORY_AUTO_BUNDLE_HANDLE(...)
-#    define TIMEMORY_DEBUG_BASIC_AUTO_BUNDLE(...)
-#    define TIMEMORY_DEBUG_AUTO_BUNDLE(...)
+#    if !defined(TIMEMORY_BLANK_AUTO_BUNDLE)
+#        define TIMEMORY_BLANK_AUTO_BUNDLE(...)
+#    endif
 
-#    define TIMEMORY_TOOLSET_ALIAS(...)
-#    define TIMEMORY_DECLARE_COMPONENT(...)
-#    define TIMEMORY_STATISTICS_TYPE(...)
-#    define TIMEMORY_TEMPLATE_STATISTICS_TYPE(...)
-#    define TIMEMORY_VARIADIC_STATISTICS_TYPE(...)
-#    define TIMEMORY_DEFINE_CONCRETE_TRAIT(...)
-#    define TIMEMORY_DEFINE_TEMPLATE_TRAIT(...)
-#    define TIMEMORY_DEFINE_VARIADIC_TRAIT(...)
+#    if !defined(TIMEMORY_BASIC_AUTO_BUNDLE)
+#        define TIMEMORY_BASIC_AUTO_BUNDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_AUTO_BUNDLE)
+#        define TIMEMORY_AUTO_BUNDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_BLANK_AUTO_BUNDLE_HANDLE)
+#        define TIMEMORY_BLANK_AUTO_BUNDLE_HANDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_BASIC_AUTO_BUNDLE_HANDLE)
+#        define TIMEMORY_BASIC_AUTO_BUNDLE_HANDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_AUTO_BUNDLE_HANDLE)
+#        define TIMEMORY_AUTO_BUNDLE_HANDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_DEBUG_BASIC_AUTO_BUNDLE)
+#        define TIMEMORY_DEBUG_BASIC_AUTO_BUNDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_DEBUG_AUTO_BUNDLE)
+#        define TIMEMORY_DEBUG_AUTO_BUNDLE(...)
+#    endif
+
+#    if !defined(TIMEMORY_TOOLSET_ALIAS)
+#        define TIMEMORY_TOOLSET_ALIAS(...)
+#    endif
+
+#    if !defined(TIMEMORY_DECLARE_COMPONENT)
+#        define TIMEMORY_DECLARE_COMPONENT(...)
+#    endif
+
+#    if !defined(TIMEMORY_STATISTICS_TYPE)
+#        define TIMEMORY_STATISTICS_TYPE(...)
+#    endif
+
+#    if !defined(TIMEMORY_TEMPLATE_STATISTICS_TYPE)
+#        define TIMEMORY_TEMPLATE_STATISTICS_TYPE(...)
+#    endif
+
+#    if !defined(TIMEMORY_VARIADIC_STATISTICS_TYPE)
+#        define TIMEMORY_VARIADIC_STATISTICS_TYPE(...)
+#    endif
+
+#    if !defined(TIMEMORY_DEFINE_CONCRETE_TRAIT)
+#        define TIMEMORY_DEFINE_CONCRETE_TRAIT(...)
+#    endif
+
+#    if !defined(TIMEMORY_DEFINE_TEMPLATE_TRAIT)
+#        define TIMEMORY_DEFINE_TEMPLATE_TRAIT(...)
+#    endif
+
+#    if !defined(TIMEMORY_DEFINE_VARIADIC_TRAIT)
+#        define TIMEMORY_DEFINE_VARIADIC_TRAIT(...)
+#    endif
 
 #else
 
