@@ -700,7 +700,7 @@ extern "C"
         // write the info about the rank/pid/thread/command
         auto _write_info = [&]() {
             std::stringstream _info;
-            _info << "[" << __FUNCTION__ << "]> ";
+            _info << "[timemory_trace_init]> ";
             if(tim::dmp::is_initialized())
                 _info << "rank = " << tim::dmp::rank() << ", ";
             _info << "pid = " << tim::process::get_id() << ", ";
@@ -732,7 +732,7 @@ extern "C"
 
         if(!get_library_state()[0] && library_trace_count++ == 0)
         {
-            _write_info();
+            _configure_components();
             _configure_output_path();
 
             tim::manager::use_exit_hook(false);
