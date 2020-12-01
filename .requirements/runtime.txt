@@ -3,3 +3,5 @@ numpy
 matplotlib
 pillow
 six
+pandas
+pydot

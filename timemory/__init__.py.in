@@ -370,3 +370,33 @@ try:
         sys.modules["line_profiler._line_profiler"] = _lineprof
 except (ImportError, AttributeError):
     pass
+
+# try to import real hatchet
+try:
+    if "hatchet" not in sys.modules:
+        # check for timemory reader
+        from hatchet.readers import timemory_reader
+
+        sys.modules["hatchet"] = hatchet
+        sys.modules["timemory.hatchet"] = hatchet
+except (ImportError):
+    pass
+
+# if real hatchet doesn't exist w/ timemory support, try to import the local one
+try:
+    if "hatchet" not in sys.modules:
+        from . import hatchet as hatchet
+
+        sys.modules["hatchet"] = hatchet
+        sys.modules["timemory.hatchet"] = hatchet
+except (ImportError):
+    pass
+
+# if the real hatchet does exist but timemory.hatchet does not:
+try:
+    if "hatchet" in sys.modules and "timemory.hatchet" in sys.modules:
+        from . import hatchet as hatchet
+
+        sys.modules["timemory.hatchet"] = hatchet
+except (ImportError):
+    pass
