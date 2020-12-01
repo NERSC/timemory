@@ -21,8 +21,12 @@ if(TIMEMORY_BUILD_PYTHON AND TIMEMORY_BUILD_PYTHON_HATCHET)
         REPO_URL https://github.com/jrmadsen/hatchet.git
         REPO_BRANCH timemory)
 
-    find_package(Cython QUIET)
-    if(Cython_FOUND)
+    # line_profiler might have already found Cython
+    if(CYTHON_EXECUTABLE)
+        find_package(Cython QUIET)
+    endif()
+
+    if(CYTHON_EXECUTABLE OR Cython_FOUND)
         message(STATUS "Adding external/hatchet")
         add_subdirectory(hatchet)
     else()
