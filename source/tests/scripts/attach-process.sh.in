@@ -6,7 +6,7 @@ source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
 
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 
-export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/dynamic/timemory-@TEST_NAME@-output
 export TIMEMORY_OUTPUT_PREFIX="attach-process"
 export TIMEMORY_TEXT_OUTPUT=ON
 export TIMEMORY_FILE_OUTPUT=ON
@@ -21,11 +21,16 @@ rm -rf ${TIMEMORY_OUTPUT_PATH}
 # add path to libtimemory to LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 
+emit-separator "Executing command in background"
 # launch and grab PID
 @COMMAND@ & PID=$!
 
+emit-separator "Attaching to pid ${PID}"
+
 # attach via @PROJECT_BINARY_DIR@/timemory-run
-@PROJECT_BINARY_DIR@/timemory-run --pid ${PID} -v 3 -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run --pid ${PID} -- @COMMAND@
+
+emit-separator "Analyzing results in ${TIMEMORY_OUTPUT_PATH}"
 
 WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall.txt"
 

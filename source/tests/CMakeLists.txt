@@ -744,14 +744,17 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
         list(APPEND _scripts custom-components)
     endif()
 
-    set(_DYNAMIC_TARGETS dynamic_instrument_tests dynamic_instrument_timemory_tests)
+    configure_file(
+        ${CMAKE_CURRENT_LIST_DIR}/scripts/common.sh.in
+        ${CMAKE_CURRENT_BINARY_DIR}/dynamic/common.sh @ONLY)
+
+    set(_DYNAMIC_TARGETS
+        dynamic_instrument_tests
+        dynamic_instrument_timemory_tests)
+
     foreach(_TARGET ${_DYNAMIC_TARGETS})
         set(COMMAND
             ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET})
-
-        configure_file(
-            ${CMAKE_CURRENT_LIST_DIR}/scripts/common.sh.in
-            ${CMAKE_CURRENT_BINARY_DIR}/common.sh @ONLY)
 
         foreach(_file ${_scripts})
             # do not run launch-process + timemory
@@ -762,14 +765,14 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
             set(TEST_NAME ${_TARGET}-${_file})
             configure_file(
                 ${CMAKE_CURRENT_LIST_DIR}/scripts/${_file}.sh.in
-                ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET}-${_file}.sh @ONLY)
+                ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_file}.sh @ONLY)
             add_test(
                 NAME                ${_TARGET}-${_file}
-                COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET}-${_file}.sh
-                WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR})
+                COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_file}.sh
+                WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR}/dynamic)
             set_tests_properties(${TEST_NAME} PROPERTIES
                 ENVIRONMENT "${TEST_ENVIRON}"
-                TIMEOUT     300)
+                TIMEOUT     360)
             set_property(TEST ${_TARGET}-${_file} APPEND PROPERTY
                 DEPENDS ${_TARGET} timemory-run)
         endforeach()

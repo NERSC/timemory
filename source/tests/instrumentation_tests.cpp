@@ -26,7 +26,11 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "timemory/timemory.hpp"
+#include "timemory/macros/attributes.hpp"
+
+#if !defined(DISABLE_TIMEMORY)
+#    include "timemory/timemory.hpp"
+#endif
 
 #if defined(TIMEMORY_USE_MPI)
 #    include <mpi.h>
@@ -85,7 +89,7 @@ do_sleep(long n)
 }
 
 // this function consumes approximately "t" milliseconds of cpu time
-auto
+TIMEMORY_NOINLINE auto
 consume(long n)
 {
     TIMEMORY_BASIC_MARKER(bundle_t, "");

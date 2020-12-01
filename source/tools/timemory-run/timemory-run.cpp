@@ -224,22 +224,7 @@ main(int argc, char** argv)
         .count(1);
     parser.add_argument()
         .names({ "-d", "--default-components" })
-        .description("Default components to instrument")
-        .action([](parser_t& p) {
-            auto _components   = p.get<strvec_t>("default-components");
-            default_components = "";
-            for(size_t i = 0; i < _components.size(); ++i)
-            {
-                if(_components.at(i) == "none")
-                {
-                    default_components = "";
-                    break;
-                }
-                default_components += _components.at(i);
-                if(i + 1 < _components.size())
-                    default_components += ",";
-            }
-        });
+        .description("Default components to instrument");
     parser.add_argument()
         .names({ "-M", "--mode" })
         .description("Instrumentation mode. 'trace' mode is immutable, 'region' mode is "
@@ -396,7 +381,7 @@ main(int argc, char** argv)
     if(parser.exists("p"))
         _pid = parser.get<int>("p");
 
-    if(parser.exists("default-components"))
+    if(parser.exists("d"))
     {
         auto _components   = parser.get<strvec_t>("default-components");
         default_components = "";
@@ -404,12 +389,20 @@ main(int argc, char** argv)
         {
             if(_components.at(i) == "none")
             {
-                default_components = "";
+                default_components = "none";
                 break;
             }
             default_components += _components.at(i);
             if(i + 1 < _components.size())
                 default_components += ",";
+        }
+        if(default_components == "none")
+            default_components = "";
+        else
+        {
+            auto _strcomp = parser.get<std::string>("d");
+            if(!_strcomp.empty() && default_components.empty())
+                default_components = _strcomp;
         }
     }
 
@@ -1025,7 +1018,7 @@ main(int argc, char** argv)
     //----------------------------------------------------------------------------------//
 
     // begin insertion
-    // if(binary_rewrite)
+    if(binary_rewrite)
     {
         verbprintf(2, "Beginning insertion set...\n");
         addr_space->beginInsertionSet();
@@ -1390,7 +1383,7 @@ main(int argc, char** argv)
 
     if(binary_rewrite)
     {
-        verbprintf(2, "Adding main entry and exit snippets\n");
+        verbprintf(1, "Adding main entry and exit snippets\n");
         if(main_entr_points)
             addr_space->insertSnippet(BPatch_sequence(init_names), *main_entr_points,
                                       BPatch_callBefore, BPatch_firstSnippet);
@@ -1412,10 +1405,30 @@ main(int argc, char** argv)
     //  Actually insert the instrumentation into the procedures
     //
     //----------------------------------------------------------------------------------//
+    if(app_thread)
+    {
+        verbprintf(1, "Beginning insertion set...\n");
+        addr_space->beginInsertionSet();
+    }
 
     verbprintf(2, "Beginning loop over modules [instrumentation pass]\n");
     for(auto& instr_procedure : instr_procedure_functions)
         instr_procedure();
+
+    if(app_thread)
+    {
+        verbprintf(1, "Finalizing insertion set...\n");
+        bool modified = true;
+        bool success  = addr_space->finalizeInsertionSet(true, &modified);
+        if(!success)
+        {
+            verbprintf(
+                1,
+                "Using insertion set failed. Restarting with individual insertion...\n");
+            for(auto& instr_procedure : instr_procedure_functions)
+                instr_procedure();
+        }
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -1431,7 +1444,8 @@ main(int argc, char** argv)
     //  Either write the instrumented binary or execute the application
     //
     //----------------------------------------------------------------------------------//
-    addr_space->finalizeInsertionSet(false, nullptr);
+    if(binary_rewrite)
+        addr_space->finalizeInsertionSet(false, nullptr);
 
     int code = -1;
     if(binary_rewrite)

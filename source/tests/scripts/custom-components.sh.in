@@ -7,7 +7,7 @@ source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 USE_PAPI="@USE_PAPI@"
 
-export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/dynamic/timemory-@TEST_NAME@-output
 export TIMEMORY_OUTPUT_PREFIX="custom-components"
 export TIMEMORY_TEXT_OUTPUT=ON
 export TIMEMORY_FILE_OUTPUT=ON
@@ -22,11 +22,21 @@ rm -rf ${TIMEMORY_OUTPUT_PATH}
 # add path to custom lib in LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 
+if [ ! -f "@PROJECT_BINARY_DIR@/libcustom_dynamic_instr.so" ]; then
+    emit-separator "Warning! \"@PROJECT_BINARY_DIR@/libcustom_dynamic_instr.so\" does not appear to exist"
+fi
+
+emit-separator "Performing binary re-write"
+
 # instrument using custom dynamic instrumentation library
-@PROJECT_BINARY_DIR@/timemory-run --load libcustom_dynamic_instr -o @COMMAND@.inst -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run --load libcustom_dynamic_instr -o ./@TEST_NAME@.inst -- @COMMAND@
+
+emit-separator "Executing instrumented binary"
 
 # run the instrumented binary
-@LAUNCH@ @COMMAND@.inst
+./@TEST_NAME@.inst
+
+emit-separator "Analyzing results in ${TIMEMORY_OUTPUT_PATH}"
 
 MONO_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-monotonic_clock.txt"
 IPC_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-inst_per_cycle.txt"

@@ -490,8 +490,7 @@ get_snippet(Tp arg)
 inline snippet_pointer_t
 get_snippet(string_t arg)
 {
-    auto _arg = strdup(arg.c_str());
-    return snippet_pointer_t(new const_expr_t(_arg));
+    return snippet_pointer_t(new const_expr_t(arg.c_str()));
 }
 //
 //======================================================================================//

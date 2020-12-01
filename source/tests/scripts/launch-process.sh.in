@@ -6,7 +6,7 @@ source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
 
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 
-export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/dynamic/timemory-@TEST_NAME@-output
 export TIMEMORY_OUTPUT_PREFIX="launch-process"
 export TIMEMORY_TEXT_OUTPUT=ON
 export TIMEMORY_FILE_OUTPUT=ON
@@ -21,10 +21,18 @@ rm -rf ${TIMEMORY_OUTPUT_PATH}
 # add path to libtimemory to LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 
+emit-separator "Performing runtime instrumentation"
+
 # launch
-@PROJECT_BINARY_DIR@/timemory-run -l --label args return -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run --label args return -- @COMMAND@
+
+emit-separator "Analyzing results in ${TIMEMORY_OUTPUT_PATH}"
+
+find ${TIMEMORY_OUTPUT_PATH}
 
 WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall.txt"
+
+echo "WALL_FILE: ${WALL_FILE}"
 
 if [ ! -f "${WALL_FILE}" ]; then
     echo -e "Missing wall-clock output file: \"${WALL_FILE}\""
@@ -39,12 +47,11 @@ else
     fi
     NCONSUME=$(cat ${WALL_FILE} | grep 'details::consume(' | wc -l)
     CCONSUME=$(cat ${WALL_FILE} | grep 'details::consume(')
-    if [ "${NCONSUME}" -lt 2 ]; then
-        echo -e "\nMissing 'details::consume' function and loop instrumentation w/ arguments in \"${WALL_FILE}\":\n"
+    if [ "${NCONSUME}" -lt 1 ]; then
+        echo -e "\nMissing 'details::consume' function w/ arguments in \"${WALL_FILE}\":\n"
         echo -e "$(cat ${WALL_FILE})"
         echo -e "\nShould contain something similar to:\n"
         echo -e "| >>>   |_long int details::consume(long int)"
-        echo -e "| >>>     |_long int details::consume(long int)/[{148,11}-{149,4}]"
         exit 1
     fi
 

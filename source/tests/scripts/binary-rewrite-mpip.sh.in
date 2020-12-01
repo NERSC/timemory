@@ -6,7 +6,7 @@ source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
 
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 
-export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/dynamic/timemory-@TEST_NAME@-output
 export TIMEMORY_TEXT_OUTPUT=ON
 export TIMEMORY_FILE_OUTPUT=ON
 export TIMEMORY_AUTO_OUTPUT=ON
@@ -22,6 +22,8 @@ export TIMEMORY_OUTPUT_PREFIX="orig"
 # add path to libtimemory to LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 
+emit-separator "Executing non-instrumented run"
+
 # no instrumentation
 @MPIEXEC_EXECUTABLE@ -n 2 @COMMAND@
 
@@ -29,11 +31,17 @@ ORIG_WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall.txt"
 
 export TIMEMORY_OUTPUT_PREFIX="mpip"
 
+emit-separator "Performing binary re-write"
+
 # add mpi and mpip instrumentation
-@PROJECT_BINARY_DIR@/timemory-run --mpip -o @COMMAND@.inst -I 'agasdf' -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run --mpip -o ./@TEST_NAME@.inst -I 'agasdf' -- @COMMAND@
+
+emit-separator "Executing instrumented binary"
 
 # run the application
-@MPIEXEC_EXECUTABLE@ -n 2 @LAUNCH@ @COMMAND@.inst
+@MPIEXEC_EXECUTABLE@ -n 2 @LAUNCH@ ./@TEST_NAME@.inst
+
+emit-separator "Analyzing results in ${TIMEMORY_OUTPUT_PATH}"
 
 if [ -f "${ORIG_WALL_FILE}" ]; then
     NORIG=$(count-lines ${TIMEMORY_OUTPUT_PATH}/orig-*.txt)

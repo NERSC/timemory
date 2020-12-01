@@ -6,7 +6,7 @@ source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
 
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 
-export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/timemory-${TEST_NAME}-output
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/dynamic/timemory-@TEST_NAME@-output
 export TIMEMORY_OUTPUT_PREFIX="binary-rewrite-stubs"
 export TIMEMORY_TEXT_OUTPUT=ON
 export TIMEMORY_FILE_OUTPUT=ON
@@ -21,11 +21,17 @@ rm -rf ${TIMEMORY_OUTPUT_PATH}
 # add path to libtimemory to LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 
+emit-separator "Performing binary re-write"
+
 # instrumentation using --stubs mode.
-@PROJECT_BINARY_DIR@/timemory-run --stubs -o @COMMAND@.inst -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run --stubs -o ./@TEST_NAME@.inst -- @COMMAND@
+
+emit-separator "Executing instrumented exe with stub functions"
 
 # run. no instrumentation data since only stubs
-@COMMAND@
+./@TEST_NAME@.inst
+
+emit-separator "Collecting stub results"
 
 WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall.txt"
 
@@ -36,8 +42,12 @@ if [ -f "${WALL_FILE}" ]; then
     LORIG=$(cat ${WALL_FILE} | grep '>>>')
 fi
 
+emit-separator "Executing instrumented exe with LD_PRELOAD"
+
 # preload libtimemory and then run again for instrumentation data
-LD_PRELOAD=libtimemory.so @COMMAND@.inst
+LD_PRELOAD=libtimemory.so ./@TEST_NAME@.inst
+
+emit-separator "Analyzing results in ${TIMEMORY_OUTPUT_PATH}"
 
 if [ ! -f "${WALL_FILE}" ]; then
     echo -e "Missing wall-clock output file: \"${WALL_FILE}\""
