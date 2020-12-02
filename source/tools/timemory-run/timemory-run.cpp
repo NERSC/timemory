@@ -224,22 +224,7 @@ main(int argc, char** argv)
         .count(1);
     parser.add_argument()
         .names({ "-d", "--default-components" })
-        .description("Default components to instrument")
-        .action([](parser_t& p) {
-            auto _components   = p.get<strvec_t>("default-components");
-            default_components = "";
-            for(size_t i = 0; i < _components.size(); ++i)
-            {
-                if(_components.at(i) == "none")
-                {
-                    default_components = "";
-                    break;
-                }
-                default_components += _components.at(i);
-                if(i + 1 < _components.size())
-                    default_components += ",";
-            }
-        });
+        .description("Default components to instrument");
     parser.add_argument()
         .names({ "-M", "--mode" })
         .description("Instrumentation mode. 'trace' mode is immutable, 'region' mode is "
@@ -396,7 +381,7 @@ main(int argc, char** argv)
     if(parser.exists("p"))
         _pid = parser.get<int>("p");
 
-    if(parser.exists("default-components"))
+    if(parser.exists("d"))
     {
         auto _components   = parser.get<strvec_t>("default-components");
         default_components = "";
@@ -404,12 +389,20 @@ main(int argc, char** argv)
         {
             if(_components.at(i) == "none")
             {
-                default_components = "";
+                default_components = "none";
                 break;
             }
             default_components += _components.at(i);
             if(i + 1 < _components.size())
                 default_components += ",";
+        }
+        if(default_components == "none")
+            default_components = "";
+        else
+        {
+            auto _strcomp = parser.get<std::string>("d");
+            if(!_strcomp.empty() && default_components.empty())
+                default_components = _strcomp;
         }
     }
 
@@ -653,7 +646,7 @@ main(int argc, char** argv)
         verbprintf(0, "Warning! No functions in application...\n");
     }
 
-    verbprintf(1, "Module size before loading instrumentation library: %lu\n",
+    verbprintf(0, "Module size before loading instrumentation library: %lu\n",
                (long unsigned) app_modules->size());
 
     dump_info("available_module_functions.txt", available_module_functions, 1);
@@ -1128,12 +1121,12 @@ main(int argc, char** argv)
     {
         if(itr.second)
         {
-            verbprintf(0, "+ Adding %s instrumentation...\n", itr.first.c_str());
+            verbprintf(1, "+ Adding %s instrumentation...\n", itr.first.c_str());
             init_names.push_back(itr.second.get());
         }
         else
         {
-            verbprintf(0, "- Skipping %s instrumentation...\n", itr.first.c_str());
+            verbprintf(1, "- Skipping %s instrumentation...\n", itr.first.c_str());
         }
     }
 
@@ -1390,7 +1383,7 @@ main(int argc, char** argv)
 
     if(binary_rewrite)
     {
-        verbprintf(2, "Adding main entry and exit snippets\n");
+        verbprintf(1, "Adding main entry and exit snippets\n");
         if(main_entr_points)
             addr_space->insertSnippet(BPatch_sequence(init_names), *main_entr_points,
                                       BPatch_callBefore, BPatch_firstSnippet);
@@ -1412,10 +1405,30 @@ main(int argc, char** argv)
     //  Actually insert the instrumentation into the procedures
     //
     //----------------------------------------------------------------------------------//
+    if(app_thread)
+    {
+        verbprintf(1, "Beginning insertion set...\n");
+        addr_space->beginInsertionSet();
+    }
 
     verbprintf(2, "Beginning loop over modules [instrumentation pass]\n");
     for(auto& instr_procedure : instr_procedure_functions)
         instr_procedure();
+
+    if(app_thread)
+    {
+        verbprintf(1, "Finalizing insertion set...\n");
+        bool modified = true;
+        bool success  = addr_space->finalizeInsertionSet(true, &modified);
+        if(!success)
+        {
+            verbprintf(
+                1,
+                "Using insertion set failed. Restarting with individual insertion...\n");
+            for(auto& instr_procedure : instr_procedure_functions)
+                instr_procedure();
+        }
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -1431,12 +1444,12 @@ main(int argc, char** argv)
     //  Either write the instrumented binary or execute the application
     //
     //----------------------------------------------------------------------------------//
+    if(binary_rewrite)
+        addr_space->finalizeInsertionSet(false, nullptr);
 
     int code = -1;
     if(binary_rewrite)
     {
-        addr_space->finalizeInsertionSet(false, nullptr);
-
         char cwd[FUNCNAMELEN];
         auto ret = getcwd(cwd, FUNCNAMELEN);
         consume_parameters(ret);
@@ -1530,7 +1543,7 @@ main(int argc, char** argv)
             fprintf(stderr, "\nApplication exited with signal: %i\n", int(sign));
         }
 
-        addr_space->finalizeInsertionSet(false, nullptr);
+        // addr_space->finalizeInsertionSet(false, nullptr);
 
         code = app_thread->getExitCode();
         consume_parameters(_prefork, _postfork);
@@ -1635,9 +1648,10 @@ process_file_for_instrumentation(const string_t& file_name)
     string_t          ext_str = "\\.S$";
     static std::regex ext_regex(ext_str, regex_opts);
     static std::regex sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$", regex_opts);
-    static std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
-                                    "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread)",
-                                    regex_opts);
+    static std::regex userlib_regex(
+        "^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
+        "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread|nvperf)",
+        regex_opts);
     static std::regex corelib_regex("^lib(rt-|dl-|util-|python)", regex_opts);
     // these are all due to TAU
     static std::regex prefix_regex(

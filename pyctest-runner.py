@@ -706,7 +706,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -718,19 +718,19 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
 
-        if args.mpi:
+        if args.mpi and dmprun is not None:
             pyct.test(
-                "timemory-timem",
-                ["mpirun", "-n", "2", "./timem-mpi", "--", "sleep 2"],
+                "timemory-timem-mpi",
+                [dmprun] + dmpargs + ["./timem-mpi", "sleep 2"],
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": base_env,
                 },
             )
@@ -742,7 +742,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -757,7 +757,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -782,7 +782,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -808,7 +808,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -823,7 +823,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -847,7 +847,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -872,7 +872,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -894,7 +894,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -917,7 +917,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -930,7 +930,7 @@ def run_pyctest():
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": test_env,
                 },
             )
@@ -943,7 +943,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -954,7 +954,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -981,7 +981,7 @@ def run_pyctest():
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": test_env,
                 },
             )
@@ -992,7 +992,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1003,7 +1003,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1014,7 +1014,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1025,7 +1025,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1036,7 +1036,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1047,7 +1047,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1063,7 +1063,7 @@ def run_pyctest():
                     {
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                         "LABELS": pyct.PROJECT_NAME,
-                        "TIMEOUT": "300",
+                        "TIMEOUT": "120",
                         "ENVIRONMENT": test_env,
                     },
                 )
@@ -1074,7 +1074,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1086,7 +1086,7 @@ def run_pyctest():
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": test_env,
                 },
             )
@@ -1097,7 +1097,7 @@ def run_pyctest():
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": test_env,
                 },
             )
@@ -1110,7 +1110,7 @@ def run_pyctest():
                     {
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                         "LABELS": pyct.PROJECT_NAME,
-                        "TIMEOUT": "300",
+                        "TIMEOUT": "120",
                         "ENVIRONMENT": test_env,
                     },
                 )
@@ -1131,7 +1131,7 @@ def run_pyctest():
                     {
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                         "LABELS": pyct.PROJECT_NAME,
-                        "TIMEOUT": "300",
+                        "TIMEOUT": "120",
                         "ENVIRONMENT": base_env,
                     },
                 )
@@ -1145,7 +1145,7 @@ def run_pyctest():
                     {
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                         "LABELS": pyct.PROJECT_NAME,
-                        "TIMEOUT": "300",
+                        "TIMEOUT": "120",
                         "ENVIRONMENT": base_env,
                     },
                 )
@@ -1158,7 +1158,7 @@ def run_pyctest():
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": base_env,
                 },
             )
@@ -1171,7 +1171,7 @@ def run_pyctest():
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": base_env,
                 },
             )
@@ -1182,7 +1182,7 @@ def run_pyctest():
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": base_env,
                 },
             )
@@ -1194,7 +1194,7 @@ def run_pyctest():
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": test_env,
                 },
             )
@@ -1205,7 +1205,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1216,7 +1216,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1227,7 +1227,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1238,7 +1238,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "300",
+                "TIMEOUT": "120",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -1264,7 +1264,7 @@ def run_pyctest():
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "300",
+                    "TIMEOUT": "120",
                     "ENVIRONMENT": test_env,
                 },
             )
@@ -1278,7 +1278,7 @@ def run_pyctest():
                     {
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                         "LABELS": pyct.PROJECT_NAME,
-                        "TIMEOUT": "300",
+                        "TIMEOUT": "120",
                         "ENVIRONMENT": test_env,
                     },
                 )

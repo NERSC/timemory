@@ -644,8 +644,7 @@ extern "C"
         if(get_library_state()[0])
         {
             tim::settings::parse();
-            tim::operation::init<user_trace_bundle>(
-                tim::operation::mode_constant<tim::operation::init_mode::global>{});
+            user_trace_bundle::global_init();
         }
     }
     //
@@ -657,23 +656,11 @@ extern "C"
         if(!tim::manager::instance() || tim::manager::instance()->is_finalized())
             return;
 
-        if(get_library_state()[0])
-        {
-            if(tim::settings::debug())
-                PRINT_HERE("trace already initialized: %s",
-                           (get_library_state()[0]) ? "Y" : "N");
-            return;
-        }
-
-        if(library_trace_count++ == 0)
-        {
-            PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
-                       (int) tim::process::get_id(), (int) tim::threading::get_id(),
-                       comps);
-
-            tim::manager::use_exit_hook(false);
-            get_library_state()[0] = true;
-
+        // configures the output path
+        auto _configure_output_path = [&]() {
+            static bool _performed_explicit = false;
+            if(_performed_explicit || tim::settings::output_path() != "timemory-output")
+                return;
             if(read_command_line)
             {
                 auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
@@ -682,6 +669,9 @@ extern "C"
             else
             {
                 std::string exe_name = (cmd) ? cmd : "";
+                if(!exe_name.empty())
+                    _performed_explicit = true;
+
                 while(exe_name.find('\\') != std::string::npos)
                     exe_name = exe_name.substr(exe_name.find_last_of('\\') + 1);
                 while(exe_name.find('/') != std::string::npos)
@@ -703,9 +693,30 @@ extern "C"
 
                 tim::settings::output_path() = exe_name;
             }
+            if(tim::manager::instance())
+                tim::manager::instance()->update_metadata_prefix();
+        };
 
+        // write the info about the rank/pid/thread/command
+        auto _write_info = [&]() {
+            std::stringstream _info;
+            _info << "[timemory_trace_init]> ";
+            if(tim::dmp::is_initialized())
+                _info << "rank = " << tim::dmp::rank() << ", ";
+            _info << "pid = " << tim::process::get_id() << ", ";
+            _info << "tid = " << tim::threading::get_id();
+            if(cmd && strlen(cmd) > 0)
+                _info << ", command: " << cmd;
+            if(comps && strlen(comps) > 0)
+                _info << ", default components: " << comps;
+            fprintf(stderr, "%s\n", _info.str().c_str());
+        };
+
+        // configures the tracing components
+        auto _configure_components = [&]() {
             if(comps && strlen(comps) > 0)
             {
+                _write_info();
                 tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", comps, 0);
                 if(tim::settings::trace_components().empty())
                     tim::settings::trace_components() = comps;
@@ -714,8 +725,18 @@ extern "C"
             tim::settings::parse();
 
             // configure bundle
-            tim::operation::init<user_trace_bundle>(
-                tim::operation::mode_constant<tim::operation::init_mode::global>{});
+            user_trace_bundle::global_init();
+            // tim::operation::init<user_trace_bundle>(
+            //    tim::operation::mode_constant<tim::operation::init_mode::global>{});
+        };
+
+        if(!get_library_state()[0] && library_trace_count++ == 0)
+        {
+            _configure_components();
+            _configure_output_path();
+
+            tim::manager::use_exit_hook(false);
+            get_library_state()[0] = true;
 
             auto _exit_action = [](int nsig) {
                 auto _manager = tim::manager::master_instance();
@@ -750,11 +771,17 @@ extern "C"
             }
             else if(mpi_gotcha_handle.get())
             {
-                PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
-                           (int) tim::process::get_id(), (int) tim::threading::get_id());
                 tim::manager::instance()->update_metadata_prefix();
             }
 #endif
+        }
+        else
+        {
+            if(tim::settings::debug())
+                PRINT_HERE("trace already initialized: %s",
+                           (get_library_state()[0]) ? "Y" : "N");
+
+            _configure_components();
         }
     }
     //

@@ -215,7 +215,8 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
                                   bool _mpi_init, const int32_t _mpi_rank, bool fake,
                                   std::string _explicit)
 {
-    auto _prefix = (_explicit.length() > 0) ? _explicit : get_global_output_prefix(fake);
+    // if there isn't an explicit prefix, get the <OUTPUT_PATH>/<OUTPUT_PREFIX>
+    auto _prefix = (!_explicit.empty()) ? _explicit : get_global_output_prefix(fake);
 
     // if just caching this static variable return
     if(fake)
@@ -226,24 +227,34 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
     _prefix.erase(std::remove_if(_prefix.begin(), _prefix.end(), only_ascii),
                   _prefix.end());
 
-    if(_explicit.length() > 0)
+    // if explicit prefix is provided, then make the directory
+    if(!_explicit.empty())
     {
         auto ret = makedir(_prefix);
         if(ret != 0)
             _prefix = filepath::osrepr(std::string("./"));
     }
 
+    // add the mpi rank if not root
     auto _rank_suffix = (_mpi_init && _mpi_rank >= 0)
                             ? (std::string("_") + std::to_string(_mpi_rank))
                             : std::string("");
+
+    // add period before extension
     if(_ext.find('.') != 0)
         _ext = std::string(".") + _ext;
-    auto plast = _prefix.length() - 1;
-    if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))
-        _prefix += "_";
-    auto fpath = path_t(_prefix + _tag + _rank_suffix + _ext);
-    while(fpath.find("//") != std::string::npos)
-        fpath.replace(fpath.find("//"), 2, "/");
+    auto plast = static_cast<intmax_t>(_prefix.length()) - 1;
+    // add dash if not empty, not ends in '/', and last char is alphanumeric
+    if(!_prefix.empty() && _prefix[plast] != '/' && isalnum(_prefix[plast]))
+        _prefix += "-";
+    // create the path
+    auto fpath         = path_t(_prefix + _tag + _rank_suffix + _ext);
+    using strpairvec_t = std::vector<std::pair<std::string, std::string>>;
+    for(auto&& itr : strpairvec_t{ { "--", "-" }, { "__", "_" }, { "//", "/" } })
+    {
+        while(fpath.find(itr.first) != std::string::npos)
+            fpath.replace(fpath.find(itr.first), itr.first.length(), itr.second);
+    }
     return std::move(fpath);
 }
 //

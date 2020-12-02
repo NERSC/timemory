@@ -2,7 +2,14 @@
 # include the current directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+set(CTEST_TEST_TIMEOUT 180)
 set(CMAKE_UNITY_BUILD OFF)
+
+set(_EXCLUDE)
+if(NOT TIMEMORY_BUILD_TESTING)
+    set(_EXCLUDE EXCLUDE_FROM_ALL)
+endif()
+
 
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY )
 unset(CMAKE_LIBRARY_OUTPUT_DIRECTORY )
@@ -113,6 +120,9 @@ endif()
 
 set(ENV{TIMEMORY_ENABLED} OFF)
 
+# always make sure timemory-test exists
+add_timemory_test_target()
+
 add_subdirectory(external)
 
 set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON")
@@ -120,6 +130,7 @@ set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON")
 if(TARGET timemory::timemory-compiler-instrument-shared)
     add_timemory_google_test(compiler_instrument_shared_tests
         SOURCES         instrumentation_tests.cpp
+        DEFINITIONS     DISABLE_TIMEMORY
         LINK_LIBRARIES  common-test-libs
                         test-opt-flags
                         ${_LIBRARY}
@@ -127,6 +138,23 @@ if(TARGET timemory::timemory-compiler-instrument-shared)
         ENVIRONMENT     ${compiler_instr_env})
     #
     add_timemory_google_test(compiler_instrument_mt_shared_tests
+        SOURCES         instrumentation_tests.cpp
+        DEFINITIONS     ENABLE_MT DISABLE_TIMEMORY
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-shared
+        ENVIRONMENT     ${compiler_instr_env})
+    #
+    add_timemory_google_test(compiler_instrument_timemory_shared_tests
+        SOURCES         instrumentation_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-shared
+        ENVIRONMENT     ${compiler_instr_env})
+    #
+    add_timemory_google_test(compiler_instrument_timemory_mt_shared_tests
         SOURCES         instrumentation_tests.cpp
         DEFINITIONS     ENABLE_MT
         LINK_LIBRARIES  common-test-libs
@@ -139,6 +167,7 @@ endif()
 if(TARGET timemory::timemory-compiler-instrument-static)
     add_timemory_google_test(compiler_instrument_static_tests
         SOURCES         instrumentation_tests.cpp
+        DEFINITIONS     DISABLE_TIMEMORY
         LINK_LIBRARIES  common-test-libs
                         test-opt-flags
                         ${_LIBRARY}
@@ -146,6 +175,23 @@ if(TARGET timemory::timemory-compiler-instrument-static)
         ENVIRONMENT     ${compiler_instr_env})
     #
     add_timemory_google_test(compiler_instrument_mt_static_tests
+        SOURCES         instrumentation_tests.cpp
+        DEFINITIONS     ENABLE_MT DISABLE_TIMEMORY
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-static
+        ENVIRONMENT     ${compiler_instr_env})
+    #
+    add_timemory_google_test(compiler_instrument_timemory_static_tests
+        SOURCES         instrumentation_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        test-opt-flags
+                        ${_LIBRARY}
+                        timemory::timemory-compiler-instrument-static
+        ENVIRONMENT     ${compiler_instr_env})
+    #
+    add_timemory_google_test(compiler_instrument_timemory_mt_static_tests
         SOURCES         instrumentation_tests.cpp
         DEFINITIONS     ENABLE_MT
         LINK_LIBRARIES  common-test-libs
@@ -636,22 +682,38 @@ if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
         WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
 endif()
 
-if(TIMEMORY_USE_DYNINST)
-    if(NOT TARGET timemory-run)
-        message(FATAL_ERROR "TIMEMORY_USE_DYNINST is ON but no target 'timemory-run'")
-    endif()
-
-    add_executable(dynamic_instrument_tests instrumentation_tests.cpp)
+if(TIMEMORY_BUILD_GOOGLE_TEST)
+    add_executable(dynamic_instrument_tests ${_EXCLUDE} instrumentation_tests.cpp)
+    target_compile_definitions(dynamic_instrument_tests PRIVATE DISABLE_TIMEMORY)
     target_link_libraries(dynamic_instrument_tests
         common-test-libs
-        ${_LIBRARY_TARGET}
         timemory-google-test
+        timemory::timemory-dmp
         google-test-debug-options)
     set_target_properties(dynamic_instrument_tests PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     add_dependencies(timemory-test dynamic_instrument_tests)
+
+    add_executable(dynamic_instrument_timemory_tests ${_EXCLUDE} instrumentation_tests.cpp)
+    target_link_libraries(dynamic_instrument_timemory_tests
+        common-test-libs
+        ${_LIBRARY_TARGET}
+        timemory-google-test
+        timemory::timemory-dmp
+        google-test-debug-options)
+    set_target_properties(dynamic_instrument_timemory_tests PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    add_dependencies(timemory-test dynamic_instrument_timemory_tests)
+endif()
+
+if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
+    if(NOT TARGET timemory-run)
+        message(FATAL_ERROR "TIMEMORY_USE_DYNINST is ON but no target 'timemory-run'")
+    endif()
 
     if(TIMEMORY_USE_MPI)
         set(LAUNCHER "${MPIEXEC_EXECUTABLE} -n 2")
@@ -666,33 +728,53 @@ if(TIMEMORY_USE_DYNINST)
         binary-rewrite-regex
         binary-rewrite-stubs
         binary-rewrite
-        # custom-components
-        # launch-process
+        launch-process
         region-sync)
 
     if(TIMEMORY_USE_MPI AND TIMEMORY_USE_GOTCHA)
         list(APPEND _scripts binary-rewrite-mpip)
+        list(APPEND TEST_ENVIRON "TIMEMORY_MPIP_COMPONENTS=wall_clock")
     endif()
 
-    set(COMMAND
-        ${CMAKE_CURRENT_BINARY_DIR}/dynamic_instrument_tests)
+    if(TARGET custom-dynamic-instr)
+        set(USE_PAPI 0)
+        if(TIMEMORY_USE_PAPI)
+            set(USE_PAPI 1)
+        endif()
+        list(APPEND _scripts custom-components)
+    endif()
 
     configure_file(
         ${CMAKE_CURRENT_LIST_DIR}/scripts/common.sh.in
-        ${CMAKE_CURRENT_BINARY_DIR}/common.sh @ONLY)
+        ${CMAKE_CURRENT_BINARY_DIR}/dynamic/common.sh @ONLY)
 
-    foreach(_file ${_scripts})
-        set(TEST_NAME dynamic_instrument_tests-${_file})
-        configure_file(
-            ${CMAKE_CURRENT_LIST_DIR}/scripts/${_file}.sh.in
-            ${CMAKE_CURRENT_BINARY_DIR}/${_file}.sh @ONLY)
-        add_test(
-            NAME                dynamic_instrument_tests-${_file}
-            COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/${_file}.sh
-            WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR})
-        set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRON}")
-        add_dependencies(timemory-test dynamic_instrument_tests)
-        set_property(TEST dynamic_instrument_tests-${_file} APPEND PROPERTY
-            DEPENDS dynamic_instrument_tests timemory-run)
+    set(_DYNAMIC_TARGETS
+        dynamic_instrument_tests
+        dynamic_instrument_timemory_tests)
+
+    foreach(_TARGET ${_DYNAMIC_TARGETS})
+        set(COMMAND
+            ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET})
+
+        foreach(_file ${_scripts})
+            # do not run launch-process + timemory
+            if("${_file}" STREQUAL "launch-process" AND
+                "${_TARGET}" STREQUAL "dynamic_instrument_timemory_tests")
+                continue()
+            endif()
+            set(TEST_NAME ${_TARGET}-${_file})
+            configure_file(
+                ${CMAKE_CURRENT_LIST_DIR}/scripts/${_file}.sh.in
+                ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_file}.sh @ONLY)
+            add_test(
+                NAME                ${_TARGET}-${_file}
+                COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_file}.sh
+                WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR}/dynamic)
+            set_tests_properties(${TEST_NAME} PROPERTIES
+                ENVIRONMENT "${TEST_ENVIRON}"
+                TIMEOUT     360)
+            set_property(TEST ${_TARGET}-${_file} APPEND PROPERTY
+                DEPENDS ${_TARGET} timemory-run)
+        endforeach()
     endforeach()
 endif()

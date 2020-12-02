@@ -34,6 +34,7 @@
 #include "pybind11/stl.h"
 
 #include <random>
+#include <string>
 #include <thread>
 #include <type_traits>
 #include <vector>
@@ -112,13 +113,21 @@ run(int nitr, int nsize)
 PYBIND11_MODULE(libex_python_bindings, ex)
 {
     auto _run = [](int nitr, int nsize) {
-        py::gil_scoped_release release;
+        try
+        {
+            py::gil_scoped_release release;
 #if defined(_OPENMP)
-        int nrank = 1;
-        MPI_Comm_size(MPI_COMM_WORLD, &nrank);
-        omp_set_num_threads(std::thread::hardware_concurrency() / nrank);
+            int nrank = 1;
+            MPI_Comm_size(MPI_COMM_WORLD, &nrank);
+            omp_set_num_threads(std::thread::hardware_concurrency() / nrank);
 #endif
-        return run(nitr, nsize);
+            return run(nitr, nsize);
+        } catch(std::exception& e)
+        {
+            fprintf(stderr, "Error! %s\n", e.what());
+            throw;
+        }
+        return 0.0;
     };
 
     ex.def("run", _run, "Run a calculation", py::arg("nitr") = 10,

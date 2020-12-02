@@ -335,18 +335,21 @@ storage<Type, true>::storage()
     if(_skip_once++ > 0)
     {
         // make sure all worker instances have a copy of the hash id and aliases
-        auto               _master       = singleton_t::master_instance();
-        graph_hash_map_t   _hash_ids     = *_master->get_hash_ids();
-        graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases();
-        for(const auto& itr : _hash_ids)
+        auto _master = singleton_t::master_instance();
+        if(_master)
         {
-            if(m_hash_ids->find(itr.first) == m_hash_ids->end())
-                m_hash_ids->insert({ itr.first, itr.second });
-        }
-        for(const auto& itr : _hash_aliases)
-        {
-            if(m_hash_aliases->find(itr.first) == m_hash_aliases->end())
-                m_hash_aliases->insert({ itr.first, itr.second });
+            graph_hash_map_t   _hash_ids     = *_master->get_hash_ids();
+            graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases();
+            for(const auto& itr : _hash_ids)
+            {
+                if(m_hash_ids->find(itr.first) == m_hash_ids->end())
+                    m_hash_ids->insert({ itr.first, itr.second });
+            }
+            for(const auto& itr : _hash_aliases)
+            {
+                if(m_hash_aliases->find(itr.first) == m_hash_aliases->end())
+                    m_hash_aliases->insert({ itr.first, itr.second });
+            }
         }
     }
 
@@ -361,14 +364,27 @@ storage<Type, true>::~storage()
 {
     component::state<Type>::has_storage() = false;
 
-    if(m_settings->get_debug())
+    auto _debug = m_settings->get_debug();
+
+    if(_debug)
         printf("[%s]> destructing @ %i...\n", m_label.c_str(), __LINE__);
 
     if(!m_is_master)
-        singleton_t::master_instance()->merge(this);
+    {
+        if(singleton_t::master_instance())
+        {
+            printf("[%s]> merging into master @ %i...\n", m_label.c_str(), __LINE__);
+            singleton_t::master_instance()->merge(this);
+        }
+    }
 
+    if(_debug)
+        printf("[%s]> deleting graph data @ %i...\n", m_label.c_str(), __LINE__);
     delete m_graph_data_instance;
     m_graph_data_instance = nullptr;
+
+    if(_debug)
+        printf("[%s]> storage destroyed @ %i...\n", m_label.c_str(), __LINE__);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -643,7 +659,7 @@ storage<Type, true>::get_prefix(const graph_node& node)
     auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, node.id());
     if(_ret.find("unknown-hash=") == 0)
     {
-        if(!m_is_master)
+        if(!m_is_master && singleton_t::master_instance())
         {
             auto _master = singleton_t::master_instance();
             return _master->get_prefix(node);
@@ -671,7 +687,7 @@ storage<Type, true>::get_prefix(const uint64_t& id)
     auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, id);
     if(_ret.find("unknown-hash=") == 0)
     {
-        if(!m_is_master)
+        if(!m_is_master && singleton_t::master_instance())
         {
             auto _master = singleton_t::master_instance();
             return _master->get_prefix(id);
@@ -893,7 +909,8 @@ storage<Type, true>::internal_print()
 
     if(!singleton_t::is_master(this))
     {
-        singleton_t::master_instance()->merge(this);
+        if(singleton_t::master_instance())
+            singleton_t::master_instance()->merge(this);
         finalize();
     }
     else
@@ -988,23 +1005,25 @@ storage<Type, true>::get_shared_manager()
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 _instance->reset(this);
-                if(_debug_v || _verb_v > 1)
-                    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                               "calling _instance->smart_instance().reset()");
-                _instance->smart_instance().reset();
-                if(_is_master)
+                // if(_debug_v || _verb_v > 1)
+                //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                //               "calling _instance->smart_instance().reset()");
+                // _instance->smart_instance().reset();
+                if(_is_master && _instance)
                 {
                     if(_debug_v || _verb_v > 1)
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                                   "calling _instance->smart_master_instance().reset()");
-                    _instance->smart_master_instance().reset();
+                                   "calling _instance->reset()");
+                    _instance->reset();
+                    // _instance->smart_master_instance().reset();
                 }
             }
             else
             {
                 DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(), (void*) _instance);
             }
-            trait::runtime_enabled<Type>::set(false);
+            if(_is_master)
+                trait::runtime_enabled<Type>::set(false);
         };
 
         m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
@@ -1193,23 +1212,25 @@ storage<Type, false>::get_shared_manager()
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 _instance->reset(this);
-                if(_debug_v || _verb_v > 1)
-                    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                               "calling _instance->smart_instance().reset()");
-                _instance->smart_instance().reset();
-                if(_is_master)
+                // if(_debug_v || _verb_v > 1)
+                //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                //               "calling _instance->smart_instance().reset()");
+                // _instance->smart_instance().reset();
+                if(_is_master && _instance)
                 {
                     if(_debug_v || _verb_v > 1)
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                                   "calling _instance->smart_master_instance().reset()");
-                    _instance->smart_master_instance().reset();
+                                   "calling _instance->reset()");
+                    _instance->reset();
+                    // _instance->smart_master_instance().reset();
                 }
             }
             else
             {
                 DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(), (void*) _instance);
             }
-            trait::runtime_enabled<Type>::set(false);
+            if(_is_master)
+                trait::runtime_enabled<Type>::set(false);
         };
 
         m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),

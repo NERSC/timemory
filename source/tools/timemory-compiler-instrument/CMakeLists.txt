@@ -119,15 +119,7 @@ EXECUTE_PROCESS(
 
 #----------------------------------------------------------------------------------------#
 
-if(APPLE)
-    set(_LIB_TYPES shared)
-else()
-    if(CMAKE_CXX_COMPILER_IS_GNU)
-        set(_LIB_TYPES shared static)
-    else()
-        set(_LIB_TYPES shared)
-    endif()
-endif()
+set(_LIB_TYPES shared)
 
 foreach(LIB_TYPE ${_LIB_TYPES})
 

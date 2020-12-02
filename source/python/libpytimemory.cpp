@@ -30,10 +30,6 @@
 #include "timemory/timemory.hpp"
 #include "timemory/utility/socket.hpp"
 
-#if defined(TIMEMORY_USE_OMPT)
-#    include "timemory/components/ompt.hpp"
-#endif
-
 //======================================================================================//
 
 extern "C"
@@ -49,12 +45,11 @@ extern "C"
 #endif
 
 #if defined(TIMEMORY_USE_OMPT_LIBRARY)
-    extern uint64_t timemory_start_ompt();
-    extern uint64_t timemory_stop_ompt(uint64_t);
-#endif
-
+    extern uint64_t                  timemory_start_ompt();
+    extern uint64_t                  timemory_stop_ompt(uint64_t);
     extern ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_ver,
                                                      const char*  run_ver);
+#endif
 }
 
 //======================================================================================//

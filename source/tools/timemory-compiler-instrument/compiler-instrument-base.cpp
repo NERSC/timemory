@@ -416,7 +416,7 @@ extern "C"
     void timemory_profile_func_enter(void* this_fn, void* call_site)
     {
         tim::trace::lock<tim::trace::compiler> lk{};
-        if(!lk || !get_enabled())
+        if(!lk || !get_enabled() || !get_thread_enabled())
             return;
 
         const auto& _trace_map = get_trace_map();
@@ -448,7 +448,7 @@ extern "C"
     void timemory_profile_func_exit(void* this_fn, void* call_site)
     {
         tim::trace::lock<tim::trace::compiler> lk{};
-        if(!lk || !get_enabled())
+        if(!lk || !get_enabled() || !get_thread_enabled())
             return;
 
         if(get_debug())

@@ -951,6 +951,10 @@ struct storage_deleter : public std::default_delete<StorageType>
             delete master;
             _deleted_master = true;
         }
+
+        using Type = typename StorageType::component_type;
+        if(_deleted_master)
+            trait::runtime_enabled<Type>::set(false);
     }
 
     bool _printed_master = false;
