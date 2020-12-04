@@ -42,7 +42,7 @@
 #endif
 
 #if !defined(TIMEMORY_DECLARE_API)
-#    define TIMEMORY_DECLARE_API(NAME) TIMEMORY_DECLARE_NS_API(project, NAME)
+#    define TIMEMORY_DECLARE_API(NAME) TIMEMORY_DECLARE_NS_API(api, NAME)
 #endif
 
 //

@@ -411,7 +411,25 @@ finalize()
 
     auto _manager = tim::manager::instance();
     if(_manager && !_manager->is_finalized() && !_manager->is_finalizing())
+    {
+        wall_clock wc{};
+        peak_rss   pr{};
+        tim::invoke::disjoint::start(std::forward_as_tuple(wc, pr));
+        //
         tim::timemory_finalize();
+        //
+        tim::invoke::disjoint::stop(std::forward_as_tuple(wc, pr));
+        std::stringstream ss;
+        ss << "required " << wc.get() << " " << wc.display_unit() << " and " << pr.get()
+           << " " << pr.display_unit();
+        std::string msg = ss.str();
+        printf("[pid=%i][tid=%i]> timemory-compiler-instrument: finalization %s\n",
+               (int) tim::process::get_id(), (int) tim::threading::get_id(), msg.c_str());
+#if defined(TIMEMORY_INTERNAL_TESTING)
+        assert(wc.get() > 0.0);
+        assert(pr.get() > 0.0);
+#endif
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -571,7 +589,9 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
                 PRINT_HERE("%s", "Creating timemory manager");
             // create the manager and initialize the storage
             auto _tlm = tim::manager::instance();
+#if defined(TIMEMORY_INTERNAL_TESTING)
             assert(_tlm.get() != nullptr);
+#endif
             if(_wrapper->debug())
                 PRINT_HERE("%s", "Initializing timemory component storage");
             // initialize the storage

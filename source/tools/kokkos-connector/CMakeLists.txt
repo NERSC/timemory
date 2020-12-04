@@ -475,7 +475,7 @@ endif()
 
 add_connector_config(ompt
     CONDITION "${USE_OMPT}"
-    COMPONENTS ompt_handle<tim::api::native_tag>
+    COMPONENTS ompt_handle<tim::project::timemory>
     DEFINITIONS TIMEMORY_USE_OMPT_LIBRARY
     TARGETS ${_OMPT_LIB})
 
