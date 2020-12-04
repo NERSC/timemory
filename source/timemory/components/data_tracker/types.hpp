@@ -32,7 +32,7 @@
 #include "timemory/mpl/types.hpp"
 
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(data_tracker, typename InpT,
-                                    typename Tag = project::timemory)
+                                    typename Tag = TIMEMORY_API)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -47,17 +47,17 @@ namespace component
 /// \typedef tim::component::data_tracker_integer
 /// \brief Specialization of \ref tim::component::data_tracker for storing signed integer
 /// data
-using data_tracker_integer = data_tracker<intmax_t, project::timemory>;
+using data_tracker_integer = data_tracker<intmax_t, TIMEMORY_API>;
 
 /// \typedef tim::component::data_tracker_unsigned
 /// \brief Specialization of \ref tim::component::data_tracker for storing unsigned
 /// integer data
-using data_tracker_unsigned = data_tracker<size_t, project::timemory>;
+using data_tracker_unsigned = data_tracker<size_t, TIMEMORY_API>;
 
 /// \typedef tim::component::data_tracker_floating
 /// \brief Specialization of \ref tim::component::data_tracker for storing floating point
 /// data
-using data_tracker_floating = data_tracker<double, project::timemory>;
+using data_tracker_floating = data_tracker<double, TIMEMORY_API>;
 }  // namespace component
 }  // namespace tim
 //
@@ -68,7 +68,7 @@ namespace trait
 template <typename InpT, typename Tag>
 struct component_apis<component::data_tracker<InpT, Tag>>
 {
-    using type = type_list<project::timemory, category::logger, os::agnostic>;
+    using type = type_list<TIMEMORY_API, category::logger, os::agnostic>;
 };
 //
 #if defined(TIMEMORY_COMPILER_INSTRUMENTATION)

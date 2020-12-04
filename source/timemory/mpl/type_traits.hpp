@@ -164,13 +164,13 @@ template <>
 struct runtime_enabled<void>
 {
     // GET specialization if component is available
-    static bool get() { return get_runtime_value(); }
+    static TIMEMORY_HOT TIMEMORY_INLINE bool get() { return get_runtime_value(); }
 
     // SET specialization if component is available
     static void set(bool val) { get_runtime_value() = val; }
 
 private:
-    static bool& get_runtime_value()
+    static TIMEMORY_HOT TIMEMORY_INLINE bool& get_runtime_value()
     {
         static bool _instance = TIMEMORY_DEFAULT_ENABLED;
         return _instance;
@@ -192,7 +192,7 @@ struct runtime_enabled
 
     // GET specialization if component is available
     template <typename U = T>
-    TIMEMORY_HOT static inline enable_if_t<is_available<U>::value, bool> get()
+    static TIMEMORY_HOT TIMEMORY_INLINE enable_if_t<is_available<U>::value, bool> get()
     {
         return (runtime_enabled<void>::get() && get_runtime_value() &&
                 apply<runtime_enabled>{}(api_type_list{}));
@@ -200,25 +200,26 @@ struct runtime_enabled
 
     /// SET specialization if component is available
     template <typename U = T>
-    TIMEMORY_HOT static inline enable_if_t<is_available<U>::value, void> set(bool val)
+    static TIMEMORY_HOT TIMEMORY_INLINE enable_if_t<is_available<U>::value, void> set(
+        bool val)
     {
         get_runtime_value() = val;
     }
 
     /// GET specialization if component is NOT available
     template <typename U = T>
-    static inline enable_if_t<!is_available<U>::value, bool> get()
+    static TIMEMORY_INLINE enable_if_t<!is_available<U>::value, bool> get()
     {
         return false;
     }
 
     /// SET specialization if component is NOT available
     template <typename U = T>
-    static inline enable_if_t<!is_available<U>::value, void> set(bool)
+    static TIMEMORY_INLINE enable_if_t<!is_available<U>::value, void> set(bool)
     {}
 
 private:
-    TIMEMORY_HOT static bool& get_runtime_value()
+    static TIMEMORY_HOT TIMEMORY_INLINE bool& get_runtime_value()
     {
         static bool _instance = is_available<T>::value;
         return _instance;
@@ -564,13 +565,13 @@ struct output_archive
 };
 
 template <>
-struct output_archive<manager, api::native_tag>
+struct output_archive<manager, TIMEMORY_API>
 {
     using type = cereal::BaseJSONOutputArchive<cereal::PrettyJsonWriter>;
 };
 
 template <typename Api>
-struct output_archive<manager, Api> : output_archive<manager, api::native_tag>
+struct output_archive<manager, Api> : output_archive<manager, TIMEMORY_API>
 {};
 
 //--------------------------------------------------------------------------------------//

@@ -225,7 +225,7 @@ struct tsettings : public vsettings
         return val;
     }
 
-    virtual parser_func_t get_action(project::timemory) override { return get_action(); }
+    virtual parser_func_t get_action(TIMEMORY_API) override { return get_action(); }
 
 private:
     template <typename Up = decay_t<Tp>, enable_if_t<std::is_same<Up, bool>::value> = 0>

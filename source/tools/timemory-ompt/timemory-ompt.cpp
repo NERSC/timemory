@@ -33,7 +33,7 @@
 
 using namespace tim::component;
 
-using api_t          = tim::api::native_tag;
+using api_t          = TIMEMORY_API;
 using ompt_handle_t  = ompt_handle<api_t>;
 using ompt_toolset_t = typename ompt_handle_t::toolset_type;
 using ompt_bundle_t  = tim::component_tuple<ompt_handle_t>;

@@ -128,7 +128,7 @@ struct nccl_comm_data : base<nccl_comm_data, void>
     using value_type = void;
     using this_type  = nccl_comm_data;
     using base_type  = base<this_type, value_type>;
-    using tracker_t  = tim::auto_bundle<tim::api::native_tag, nccl_data_tracker_t*>;
+    using tracker_t  = tim::auto_bundle<TIMEMORY_API, nccl_data_tracker_t*>;
     using data_type  = float;
 
     TIMEMORY_DEFAULT_OBJECT(nccl_comm_data)

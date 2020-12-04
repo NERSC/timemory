@@ -65,7 +65,7 @@ TIMEMORY_SETTINGS_INLINE
 std::shared_ptr<settings>
 settings::shared_instance()
 {
-    static auto _instance = shared_instance<project::timemory>();
+    static auto _instance = shared_instance<TIMEMORY_API>();
     return _instance;
 }
 //

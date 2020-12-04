@@ -404,7 +404,7 @@
                                             trait::uses_value_storage<TYPE>::value>;         \
         extern template class storage<TYPE, typename TYPE::value_type>;                      \
         extern template class singleton<alias::storage_impl_t<TYPE>,                         \
-                                        alias::storage_pointer_t<TYPE>>;                     \
+                                        alias::storage_pointer_t<TYPE>, TIMEMORY_API>;       \
         extern template storage_singleton<alias::storage_t<TYPE>>*                           \
                                             get_storage_singleton<alias::storage_t<TYPE>>(); \
         extern template storage_initializer storage_initializer::get<TYPE>();                \
@@ -421,7 +421,7 @@
         template class impl::storage<TYPE, trait::uses_value_storage<TYPE>::value>;      \
         template class storage<TYPE, typename TYPE::value_type>;                         \
         template class singleton<alias::storage_impl_t<TYPE>,                            \
-                                 alias::storage_pointer_t<TYPE>>;                        \
+                                 alias::storage_pointer_t<TYPE>, TIMEMORY_API>;          \
         template storage_singleton<alias::storage_t<TYPE>>*                              \
                                      get_storage_singleton<alias::storage_t<TYPE>>();    \
         template storage_initializer storage_initializer::get<TYPE>();                   \

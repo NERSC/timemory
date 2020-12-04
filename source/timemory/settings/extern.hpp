@@ -27,4 +27,4 @@
 #include "timemory/settings.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
 
-TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
+TIMEMORY_SETTINGS_EXTERN_TEMPLATE(TIMEMORY_API)

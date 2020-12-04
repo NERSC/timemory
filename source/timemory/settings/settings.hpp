@@ -282,7 +282,7 @@ public:
                                            std::string   _explicit = "")
         TIMEMORY_VISIBILITY("default");
 
-    static void parse(settings* = instance<api::native_tag>())
+    static void parse(settings* = instance<TIMEMORY_API>())
         TIMEMORY_VISIBILITY("default");
 
     static void parse(std::shared_ptr<settings>) TIMEMORY_VISIBILITY("default");

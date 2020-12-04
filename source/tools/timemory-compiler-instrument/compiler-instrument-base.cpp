@@ -28,6 +28,15 @@
 #define TIMEMORY_VISIBILITY(...) TIMEMORY_INTERNAL
 #define TIMEMORY_INTERNAL_NO_INSTRUMENT TIMEMORY_INTERNAL TIMEMORY_NEVER_INSTRUMENT
 
+#include "timemory/api/macros.hpp"
+
+// create an API for the compiler instrumentation whose singletons will not be shared
+// with the default timemory API
+TIMEMORY_DEFINE_NS_API(project, compiler_instrument)
+
+// define the API for all instantiations before including any more timemory headers
+#define TIMEMORY_API ::tim::project::compiler_instrument
+
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
 

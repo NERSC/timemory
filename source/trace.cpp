@@ -808,7 +808,7 @@ extern "C"
             return;
         }
 
-        tim::auto_lock_t lock(tim::type_mutex<tim::api::native_tag>());
+        tim::auto_lock_t lock(tim::type_mutex<TIMEMORY_API>());
 
         // tim::settings::enabled() = false;
         get_library_state()[1] = true;

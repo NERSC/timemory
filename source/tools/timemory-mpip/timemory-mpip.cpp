@@ -51,7 +51,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, mpi_data_tracker_t, true_type
 //
 //--------------------------------------------------------------------------------------//
 //
-using api_t            = tim::api::native_tag;
+using api_t            = TIMEMORY_API;
 using mpi_toolset_t    = tim::component_tuple<user_mpip_bundle, mpi_comm_data>;
 using mpip_handle_t    = mpip_handle<mpi_toolset_t, api_t>;
 uint64_t global_id     = 0;
@@ -123,7 +123,7 @@ struct mpi_comm_data : base<mpi_comm_data, void>
     using value_type = void;
     using this_type  = mpi_comm_data;
     using base_type  = base<this_type, value_type>;
-    using tracker_t  = tim::auto_bundle<tim::api::native_tag, mpi_data_tracker_t*>;
+    using tracker_t  = tim::auto_bundle<TIMEMORY_API, mpi_data_tracker_t*>;
     using data_type  = float;
 
     TIMEMORY_DEFAULT_OBJECT(mpi_comm_data)

@@ -191,7 +191,7 @@ generate(py::module& _pymod)
     };
     auto _init = []() {
         auto ret = new tim::settings{};
-        *ret     = *tim::settings::instance<tim::api::native_tag>();
+        *ret     = *tim::settings::instance<TIMEMORY_API>();
         return ret;
     };
     auto _parse = [](py::object _instance) {
@@ -354,7 +354,7 @@ generate(py::module& _pymod)
                         py::arg("subparser") = true);
 
     std::set<std::string> names;
-    auto                  _settings = tim::settings::instance<tim::api::native_tag>();
+    auto                  _settings = tim::settings::instance<TIMEMORY_API>();
     if(_settings)
     {
         for(auto& itr : *_settings)

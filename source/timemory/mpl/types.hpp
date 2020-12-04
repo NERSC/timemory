@@ -217,16 +217,16 @@ struct units;
 template <typename T>
 struct echo_enabled;
 
-template <typename Api = api::native_tag>
+template <typename Api = TIMEMORY_API>
 struct api_input_archive;
 
-template <typename Api = api::native_tag>
+template <typename Api = TIMEMORY_API>
 struct api_output_archive;
 
-template <typename T, typename Api = api::native_tag>
+template <typename T, typename Api = TIMEMORY_API>
 struct input_archive;
 
-template <typename T, typename Api = api::native_tag>
+template <typename T, typename Api = TIMEMORY_API>
 struct output_archive;
 
 template <typename T>
@@ -382,7 +382,7 @@ struct record_statistics;
 /// \brief Provides a static get() function which returns a shared pointer to an instance
 /// of the given archive format for input. Can also provides static functions for any
 /// global configuration options, if necessary.
-template <typename Archive, typename Api = api::native_tag>
+template <typename Archive, typename Api = TIMEMORY_API>
 struct input_archive;
 
 /// \struct tim::policy::output_archive
@@ -391,7 +391,7 @@ struct input_archive;
 /// global configuration options for the archive format. For example, the (pretty) JSON
 /// output archive supports specification of the precision, indentation length, and the
 /// indentation character.
-template <typename Archive, typename Api = api::native_tag>
+template <typename Archive, typename Api = TIMEMORY_API>
 struct output_archive;
 
 //--------------------------------------------------------------------------------------//

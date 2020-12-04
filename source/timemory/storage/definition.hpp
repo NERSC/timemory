@@ -373,7 +373,8 @@ storage<Type, true>::~storage()
     {
         if(singleton_t::master_instance())
         {
-            printf("[%s]> merging into master @ %i...\n", m_label.c_str(), __LINE__);
+            if(_debug)
+                printf("[%s]> merging into master @ %i...\n", m_label.c_str(), __LINE__);
             singleton_t::master_instance()->merge(this);
         }
     }

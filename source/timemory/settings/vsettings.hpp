@@ -175,7 +175,7 @@ struct vsettings
 
     void set(const std::string& _val) { parse(_val); }
 
-    virtual parser_func_t get_action(project::timemory) = 0;
+    virtual parser_func_t get_action(TIMEMORY_API) = 0;
 
 protected:
     std::type_index          m_type_index  = std::type_index(typeid(void));
