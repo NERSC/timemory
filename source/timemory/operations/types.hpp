@@ -618,6 +618,9 @@ struct merge;
 template <typename Type>
 struct merge<Type, true>
 {
+    template <typename KeyT, typename MappedT>
+    using uomap_t = std::unordered_map<KeyT, MappedT>;
+
     static constexpr bool has_data = true;
     using storage_type             = impl::storage<Type, has_data>;
     using singleton_t              = typename storage_type::singleton_type;
@@ -630,7 +633,7 @@ struct merge<Type, true>
     TIMEMORY_DEFAULT_OBJECT(merge)
 
     merge(storage_type& lhs, storage_type& rhs);
-    merge(result_type& lhs, const result_type& rhs);
+    merge(result_type& lhs, result_type& rhs);
 
     // unary
     template <typename Tp>
@@ -978,10 +981,10 @@ struct print<Tp, true> : public base::print
 
     void write_stream(stream_type& stream, result_type& results);
     void print_json(const std::string& fname, result_type& results, int64_t concurrency);
-    auto get_data() const { return data; }
-    auto get_node_results() const { return node_results; }
-    auto get_node_input() const { return node_input; }
-    auto get_node_delta() const { return node_delta; }
+    const auto& get_data() const { return data; }
+    const auto& get_node_results() const { return node_results; }
+    const auto& get_node_input() const { return node_input; }
+    const auto& get_node_delta() const { return node_delta; }
 
     template <typename Archive>
     void print_metadata(Archive& ar, const Tp& obj);

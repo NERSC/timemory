@@ -369,9 +369,7 @@ print<Tp, true>::update_data()
 
     if(node_input.size() > 0 && node_rank == 0)
     {
-        using input_type = decay_t<decltype(node_input)>;
-        using value_type = typename input_type::value_type;
-        node_delta.resize(node_input.size(), value_type{});
+        node_delta.resize(node_input.size());
 
         size_t num_ranks = std::min<size_t>(node_input.size(), node_results.size());
 

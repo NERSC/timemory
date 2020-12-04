@@ -104,7 +104,8 @@ upc_get<Type, true>::operator()(distrib_type& results)
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using UPC++");
 
-    results = distrib_type(1, data.get());
+    results = distrib_type{};
+    results.emplace_back(std::move(data.get()));
 #else
     if(settings::debug())
         PRINT_HERE("%s", "timemory using UPC++");
@@ -183,7 +184,10 @@ upc_get<Type, true>::operator()(distrib_type& results)
     upcxx::barrier(upcxx::world());
 
     if(comm_rank != 0)
-        results = distrib_type(1, data.get());
+    {
+        results = distrib_type{};
+        results.emplace_back(std::move(data.get()));
+    }
 
     // collapse into a single result
     if(comm_rank == 0 && settings::collapse_processes() && settings::node_count() <= 1)
@@ -202,7 +206,7 @@ upc_get<Type, true>::operator()(distrib_type& results)
         while(!results.empty())
         {
             if(_collapsed.empty())
-                _collapsed.emplace_back(results.back());
+                _collapsed.emplace_back(std::move(results.back()));
             else
                 operation::finalize::merge<Type, true>(_collapsed.front(),
                                                        results.back());
@@ -210,7 +214,7 @@ upc_get<Type, true>::operator()(distrib_type& results)
         }
 
         // assign results to collapsed entry
-        results = _collapsed;
+        results = std::move(_collapsed);
 
         if(settings::debug() || settings::verbose() > 3)
         {
@@ -281,7 +285,7 @@ upc_get<Type, true>::operator()(distrib_type& results)
         }
 
         // assign results to collapsed entry
-        results = _collapsed;
+        results = std::move(_collapsed);
 
         if(settings::debug() || settings::verbose() > 3)
         {

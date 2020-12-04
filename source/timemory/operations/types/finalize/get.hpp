@@ -389,7 +389,7 @@ get<Type, true>::operator()(result_type& ret)
 
     // convert graph to a vector
     auto convert_graph = [&]() {
-        result_type _list;
+        result_type _list{};
         {
             // the head node should always be ignored
             int64_t _min = std::numeric_limits<int64_t>::max();
@@ -422,14 +422,18 @@ get<Type, true>::operator()(result_type& ret)
                     if(_hierarchy.size() > 1)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());
                     _hierarchy.push_back(itr->id());
-                    auto&& _entry = result_node(itr->id(), itr->obj(), _prefix, _depth,
-                                                _rolling, _hierarchy, _stats, _tid, _pid);
-                    _list.push_back(_entry);
+                    auto _entry = result_node(itr->id(), itr->obj(), _prefix, _depth,
+                                              _rolling, _hierarchy, _stats, _tid, _pid);
+                    _list.push_back(std::move(_entry));
                 }
             }
         }
 
-        result_type _combined;
+        // if collapse is disabled or thread-scope only, there is nothing to merge
+        if(!settings::collapse_threads() || _thread_scope_only)
+            return _list;
+
+        result_type _combined{};
         operation::finalize::merge<Type, true>(_combined, _list);
         return _combined;
     };
