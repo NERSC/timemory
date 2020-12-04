@@ -10,7 +10,14 @@ include_guard(DIRECTORY)
 include(MacroUtilities)
 include(CheckLanguage)
 
-set(TIMEMORY_REQUIRE_PACKAGES ON CACHE BOOL "Disable auto-detection and explicitly require packages")
+set(TIMEMORY_REQUIRE_PACKAGES ON CACHE BOOL
+    "Disable auto-detection and explicitly require packages")
+
+# advanced options not using the "add_option" macro
+option(SPACK_BUILD "Tweak some installation directories when building via spack" OFF)
+option(TIMEMORY_SOURCE_GROUP "Enable source_group" OFF)
+mark_as_advanced(SPACK_BUILD)
+mark_as_advanced(TIMEMORY_SOURCE_GROUP)
 
 function(DEFINE_DEFAULT_OPTION VAR VAL)
     if(TIMEMORY_REQUIRE_PACKAGES)
@@ -74,6 +81,12 @@ endif()
 if(CMAKE_CXX_COMPILER_IS_INTEL)
     set(_USE_XML OFF)
 endif()
+
+set(_HATCHET ${_UNIX_OS})
+# once hatchet is available in a release with timemory support
+# if(SKBUILD OR SPACK_BUILD)
+#    set(_HATCHET OFF)
+# endif()
 
 # Check if CUDA can be enabled if CUDA is enabled or in auto-detect mode
 if(TIMEMORY_USE_CUDA OR (NOT DEFINED TIMEMORY_USE_CUDA AND NOT TIMEMORY_REQUIRE_PACKAGES))
@@ -218,6 +231,8 @@ add_option(TIMEMORY_BUILD_PYTHON
     "Build Python binds for ${PROJECT_NAME}" OFF)
 add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
     "Build customized Python line-profiler" ${_UNIX_OS})
+add_option(TIMEMORY_BUILD_PYTHON_HATCHET
+    "Build internal Hatchet distribution" ${_HATCHET})
 add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
@@ -479,9 +494,6 @@ macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)
     endif()
 endmacro()
 
-option(TIMEMORY_SOURCE_GROUP "Enable source_group" OFF)
-mark_as_advanced(TIMEMORY_SOURCE_GROUP)
-
 # these variables conflict with variables in examples, leading to things like: -lON flags
 get_property(DEFAULT_OPTION_VARIABLES GLOBAL PROPERTY DEFAULT_OPTION_VARIABLES)
 foreach(_VAR ${DEFAULT_OPTION_VARIABLES})
@@ -498,9 +510,6 @@ endif()
 if(TIMEMORY_USE_PYTHON)
     set(TIMEMORY_BUILD_PYTHON ON)
 endif()
-
-option(SPACK_BUILD "Tweak some installation directories when building via spack" OFF)
-mark_as_advanced(SPACK_BUILD)
 
 if(WIN32)
     option(TIMEMORY_USE_WINSOCK "Include winsock.h with the windows build" OFF)

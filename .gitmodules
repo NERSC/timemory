@@ -22,3 +22,6 @@
 [submodule "external/PTL"]
 	path = external/ptl
 	url = https://github.com/jrmadsen/PTL.git
+[submodule "external/hatchet"]
+	path = external/hatchet
+	url = https://github.com/jrmadsen/hatchet.git

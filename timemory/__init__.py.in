@@ -370,3 +370,31 @@ try:
         sys.modules["line_profiler._line_profiler"] = _lineprof
 except (ImportError, AttributeError):
     pass
+
+# try to import the local hatchet first
+try:
+    from . import hatchet as local_hatchet
+    from .hatchet.readers import timemory_reader as hatchet_reader
+    from .hatchet.graphframe import GraphFrame as graphframe
+
+    sys.modules["timemory.hatchet"] = local_hatchet
+    sys.modules["timemory.hatchet_reader"] = hatchet_reader
+    __all__ += ["graphframe"]
+except (ImportError) as e:
+    pass
+
+# try to import real hatchet
+try:
+    if "hatchet" not in sys.modules:
+        import hatchet as global_hatchet
+
+        sys.modules["hatchet"] = global_hatchet
+except (ImportError):
+    pass
+
+# if real hatchet doesn't exist, set the local one as the global
+try:
+    if "hatchet" not in sys.modules and "timemory.hatchet" in sys.modules:
+        sys.modules["hatchet"] = sys.modules["timemory.hatchet"]
+except (KeyError):
+    pass

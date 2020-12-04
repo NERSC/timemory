@@ -232,7 +232,7 @@ before_install:
   - if [ "${EXECUTE}" -ne 0 ]; then conda config --set always_yes yes --set changeps1 no; fi
 
 install:
-  - if [ "${EXECUTE}" -ne 0 ]; then conda create -c conda-forge -c defaults -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip cython; fi
+  - if [ "${EXECUTE}" -ne 0 ]; then conda create -c conda-forge -c defaults -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip cython pydot pandas; fi
   - if [ "${EXECUTE}" -ne 0 ]; then source activate pyctest; fi
   - if [ "${EXECUTE}" -ne 0 ]; then if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi; fi
 
