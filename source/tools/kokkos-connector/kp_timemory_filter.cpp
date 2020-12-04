@@ -22,17 +22,25 @@ using KokkosUserBundle = tim::component::user_kokkosp_bundle;
 
 using external_profilers_t =
     tim::component_tuple<vtune_profiler, cuda_profiler, craypat_record, allinea_map>;
-using profile_entry_t = tim::component_tuple_t<external_profilers_t, KokkosUserBundle>;
+using profile_entry_t =
+    tim::component_tuple_t<external_profilers_t, KokkosUserBundle, vtune_frame,
+                           vtune_event, nvtx_marker, craypat_region>;
 
 //
-//  re-nice the start priority so KokkosUserBundle starts after profilers
+//  re-nice the start priority starts after profiler controllers
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, KokkosUserBundle, priority_constant<64>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, vtune_frame, priority_constant<64>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, vtune_event, priority_constant<64>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, nvtx_marker, priority_constant<64>)
 
 //
-//  re-nice the stop priority so KokkosUserBundle stops before profilers
+//  re-nice the stop priority so stops before profilers
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, KokkosUserBundle, priority_constant<-64>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, vtune_frame, priority_constant<-64>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, vtune_event, priority_constant<-64>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, nvtx_marker, priority_constant<-64>)
 
 //--------------------------------------------------------------------------------------//
 
@@ -45,7 +53,8 @@ using section_map_t   = std::unordered_map<uint64_t, section_entry_t>;
 //--------------------------------------------------------------------------------------//
 
 static std::string kernel_regex_expr = "^[A-Za-z]";
-static auto        regex_constants   = std::regex_constants::ECMAScript;
+static auto        regex_constants =
+    std::regex_constants::ECMAScript | std::regex_constants::optimize;
 static auto        kernel_regex      = std::regex(kernel_regex_expr, regex_constants);
 
 //--------------------------------------------------------------------------------------//
@@ -306,6 +315,33 @@ kokkosp_end_parallel_scan(uint64_t kernid)
 
 //--------------------------------------------------------------------------------------//
 
+extern "C" void
+kokkosp_begin_fence(const char* name, uint32_t devid, uint64_t* kernid)
+{
+    if(!check_regex(name))
+    {
+        *kernid = std::numeric_limits<uint64_t>::max();
+        return;
+    }
+
+    auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+    *kernid    = get_unique_id();
+    create_profiler(pname, *kernid);
+    start_profiler(*kernid);
+}
+
+extern "C" void
+kokkosp_end_fence(uint64_t kernid)
+{
+    if(kernid == std::numeric_limits<uint64_t>::max())
+        return;
+
+    stop_profiler(kernid);
+    destroy_profiler(kernid);
+}
+
+//--------------------------------------------------------------------------------------//
+
 static thread_local int64_t region_skip = 0;
 
 //--------------------------------------------------------------------------------------//
@@ -381,6 +417,17 @@ kokkosp_stop_profile_section(uint32_t secid)
         return;
 
     start_profiler(secid);
+}
+
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
+kokkosp_profile_event(const char* name)
+{
+    if(!check_regex(name))
+        return;
+
+    profile_entry_t{}.mark(name);
 }
 
 //--------------------------------------------------------------------------------------//

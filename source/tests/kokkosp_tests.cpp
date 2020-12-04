@@ -125,9 +125,11 @@ TEST_F(kokkosp_tests, profiling_routines)
 {
     auto _beg_sz = tim::storage<tim::component::wall_clock>::instance()->size();
 
-    std::array<uint64_t, 3> idx;
+    std::array<uint64_t, 4> idx;
     uint32_t                sec_idx = 0;
     idx.fill(0);
+
+    kokkosp_profile_event(details::get_test_name().c_str());
 
     kokkosp_begin_parallel_for("parallel_for", 0, &idx.at(0));
 
@@ -138,6 +140,10 @@ TEST_F(kokkosp_tests, profiling_routines)
     details::consume(100);
 
     kokkosp_begin_parallel_scan("parallel_scan", 0, &idx.at(2));
+
+    details::consume(100);
+
+    kokkosp_begin_parallel_scan("fence", 0, &idx.at(3));
 
     details::consume(100);
 
@@ -156,6 +162,10 @@ TEST_F(kokkosp_tests, profiling_routines)
     details::consume(100);
 
     kokkosp_pop_profile_region();
+
+    details::consume(100);
+
+    kokkosp_end_fence(idx.at(3));
 
     details::consume(100);
 
