@@ -230,27 +230,16 @@ get_env(const std::string& env_id, bool _default)
             val = (bool) atoi(var.c_str());
         else
         {
-            const auto        regex_constants = regex_const::egrep | regex_const::icase;
-            const std::string pattern         = "^(off|false|no|n|f|0)$";
-            bool              _match          = false;
-            try
+            for(auto& itr : var)
+                itr = tolower(itr);
+            for(const auto& itr : { "off", "false", "no", "n", "f", "0" })
             {
-                _match = std::regex_match(var, std::regex(pattern, regex_constants));
-            } catch(std::bad_cast&)
-            {
-                for(auto& itr : var)
-                    itr = tolower(itr);
-                for(const auto& itr : { "off", "false", "no", "n", "f", "0" })
+                if(var == itr)
                 {
-                    if(var == itr)
-                    {
-                        _match = true;
-                        break;
-                    }
+                    env_settings::instance()->insert<bool>(env_id, false);
+                    return false;
                 }
             }
-            if(_match)
-                val = false;
         }
         env_settings::instance()->insert<bool>(env_id, val);
         return val;

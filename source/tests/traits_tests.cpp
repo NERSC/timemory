@@ -373,20 +373,20 @@ TEST_F(traits_tests, sizeof)
            (unsigned long) sizeof(__VA_ARGS__))
 
     auto void_test     = TYPE_TEST(void_component);
-    auto int_test      = TYPE_TEST(int64_component);
+    auto int64_test    = TYPE_TEST(int64_component);
     auto array_test    = TYPE_TEST(array_component);
-    auto temp_i64_test = TYPE_TEST(template_component<int64_t>);
     auto temp_i32_test = TYPE_TEST(template_component<int32_t>);
+    auto temp_i64_test = TYPE_TEST(template_component<int64_t>);
     auto temp_u64_test = TYPE_TEST(template_component<uint64_t>);
     auto var_test      = TYPE_TEST(variadic_component<double, 1, 3>);
 
-    EXPECT_EQ(void_test, 3);
-    EXPECT_EQ(int_test, 56);
-    EXPECT_EQ(temp_i32_test, 48);
-    EXPECT_EQ(temp_i64_test, 64);
-    EXPECT_EQ(temp_u64_test, 72);
-    EXPECT_EQ(array_test, 72);
-    EXPECT_EQ(var_test, 104);
+    EXPECT_EQ(void_test, 5);
+    EXPECT_EQ(int64_test, 56);
+    EXPECT_EQ(temp_i32_test, 40);
+    EXPECT_EQ(temp_i64_test, 56);
+    EXPECT_EQ(temp_u64_test, 64);
+    EXPECT_EQ(array_test, 64);
+    EXPECT_EQ(var_test, 96);
 #undef TYPE_TEST
 }
 
