@@ -352,8 +352,8 @@ get_fields()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Arg, size_t... Idx>
-static TIMEMORY_INLINE TIMEMORY_HOT auto
-                       generate(Arg&& arg, index_sequence<Idx...>)
+static TIMEMORY_HOT_INLINE auto
+generate(Arg&& arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
     data_type ret;
@@ -364,8 +364,8 @@ static TIMEMORY_INLINE TIMEMORY_HOT auto
 //--------------------------------------------------------------------------------------//
 //
 template <size_t... Idx>
-static TIMEMORY_INLINE TIMEMORY_HOT auto
-                       either(data_type ret, data_type arg, index_sequence<Idx...>)
+static TIMEMORY_HOT_INLINE auto
+either(data_type ret, data_type arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
     TIMEMORY_FOLD_EXPRESSION(ret.set(Idx, ret.test(Idx) || arg.test(Idx)));
@@ -374,8 +374,8 @@ static TIMEMORY_INLINE TIMEMORY_HOT auto
 //
 //--------------------------------------------------------------------------------------//
 //
-static TIMEMORY_INLINE TIMEMORY_HOT data_type
-                                    get_default_bitset()
+static TIMEMORY_HOT_INLINE auto
+get_default_bitset() -> data_type
 {
     return generate(get_fields(), make_index_sequence<scope_count>{});
 }
@@ -573,16 +573,16 @@ struct config : public data_type
 //
 //--------------------------------------------------------------------------------------//
 //
-static TIMEMORY_INLINE TIMEMORY_HOT config
-                                    get_default()
+static TIMEMORY_HOT_INLINE auto
+get_default() -> config
 {
     return config{ get_default_bitset() };
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE TIMEMORY_HOT config
-                             operator+(config _lhs, tree)
+TIMEMORY_HOT_INLINE auto
+operator+(config _lhs, tree) -> config
 {
     _lhs.set(tree::value, true);
     return _lhs;
@@ -590,8 +590,8 @@ TIMEMORY_INLINE TIMEMORY_HOT config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE TIMEMORY_HOT config
-                             operator+(config _lhs, flat)
+TIMEMORY_HOT_INLINE auto
+operator+(config _lhs, flat) -> config
 {
     _lhs.set(flat::value, true);
     return _lhs;
@@ -599,8 +599,8 @@ TIMEMORY_INLINE TIMEMORY_HOT config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE TIMEMORY_HOT config
-                             operator+(config _lhs, timeline)
+TIMEMORY_HOT_INLINE auto
+operator+(config _lhs, timeline) -> config
 {
     _lhs.set(timeline::value, true);
     return _lhs;
@@ -608,8 +608,8 @@ TIMEMORY_INLINE TIMEMORY_HOT config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE TIMEMORY_HOT config
-                             operator+(config _lhs, config _rhs)
+TIMEMORY_HOT_INLINE auto
+operator+(config _lhs, config _rhs) -> config
 {
     return config{ either(_lhs, _rhs, make_index_sequence<scope_count>{}) };
 }

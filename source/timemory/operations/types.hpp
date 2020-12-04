@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/macros.hpp"
@@ -297,20 +298,20 @@ struct set_started
     TIMEMORY_DEFAULT_OBJECT(set_started)
 
     template <typename Up>
-    auto operator()(Up& obj) const
+    TIMEMORY_HOT_INLINE auto operator()(Up& obj) const
     {
         return sfinae(obj, 0);
     }
 
 private:
     template <typename Up>
-    static auto sfinae(Up& obj, int) -> decltype(obj.set_started())
+    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int) -> decltype(obj.set_started())
     {
         return obj.set_started();
     }
 
     template <typename Up>
-    static auto sfinae(Up&, long) -> void
+    TIMEMORY_INLINE auto sfinae(Up&, long) -> void
     {}
 };
 //
@@ -322,20 +323,20 @@ struct set_stopped
     TIMEMORY_DEFAULT_OBJECT(set_stopped)
 
     template <typename Up>
-    auto operator()(Up& obj) const
+    TIMEMORY_HOT_INLINE auto operator()(Up& obj) const
     {
         return sfinae(obj, 0);
     }
 
 private:
     template <typename Up>
-    static auto sfinae(Up& obj, int) -> decltype(obj.set_stopped())
+    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int) -> decltype(obj.set_stopped())
     {
         return obj.set_stopped();
     }
 
     template <typename Up>
-    static auto sfinae(Up&, long) -> void
+    TIMEMORY_INLINE auto sfinae(Up&, long) -> void
     {}
 };
 //
@@ -347,7 +348,7 @@ struct is_running
     TIMEMORY_DEFAULT_OBJECT(is_running)
 
     template <typename Up>
-    auto operator()(const Up& obj) const
+    TIMEMORY_HOT_INLINE auto operator()(const Up& obj) const
     {
         return sfinae(obj, 0);
     }

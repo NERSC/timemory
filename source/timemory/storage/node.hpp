@@ -132,8 +132,8 @@ public:
     graph();
     explicit graph(base_type&& _base) noexcept;
 
-    ~graph()            = default;
-    graph(const graph&) = default;
+    ~graph()                = default;
+    graph(const graph&)     = default;
     graph(graph&&) noexcept = default;
     graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint16_t _tid,
           uint16_t _pid = process::get_id(), bool _is_dummy = false);
@@ -193,9 +193,9 @@ struct result : public data<Tp>::result_type
     using stats_type   = typename data<Tp>::stats_type;
     using this_type    = result<Tp>;
 
-    result()              = default;
-    ~result()             = default;
-    result(const result&) = default;
+    result()                  = default;
+    ~result()                 = default;
+    result(const result&)     = default;
     result(result&&) noexcept = default;
     result& operator=(const result&) = default;
     result& operator=(result&&) noexcept = default;
@@ -279,8 +279,8 @@ public:
     tree(const graph<Tp>&);
     tree& operator=(const graph<Tp>&);
 
-    ~tree()           = default;
-    tree(const tree&) = default;
+    ~tree()               = default;
+    tree(const tree&)     = default;
     tree(tree&&) noexcept = default;
     tree(bool _is_dummy, uint16_t _tid, uint16_t _pid, uint64_t _hash, int64_t _depth,
          const Tp& _obj);
