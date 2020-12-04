@@ -72,5 +72,5 @@
 /// is_api<...>, thus allowing specialization from tools downstream
 ///
 #if !defined(TIMEMORY_DEFINE_API)
-#    define TIMEMORY_DEFINE_API(NAME) TIMEMORY_DEFINE_NS_API(project, NAME)
+#    define TIMEMORY_DEFINE_API(NAME) TIMEMORY_DEFINE_NS_API(api, NAME)
 #endif
