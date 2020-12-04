@@ -226,6 +226,12 @@ public:
             m_temporary.derive(std::forward<Args>(args)...);
     }
     template <typename... Args>
+    void mark(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary.mark(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
     void mark_begin(Args&&... args)
     {
         if(m_enabled)

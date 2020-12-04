@@ -96,6 +96,12 @@ nm --demangle <EXE or LIB> | grep operation
 .. doxygenstruct:: tim::operation::compose
     :members:
     :undoc-members:
+.. doxygenstruct:: tim::operation::is_running
+    :members:
+    :undoc-members:
+.. doxygenstruct:: tim::operation::set_started
+    :members:
+    :undoc-members:
 .. doxygenstruct:: tim::operation::start
     :members:
     :undoc-members:
@@ -108,6 +114,9 @@ nm --demangle <EXE or LIB> | grep operation
 .. doxygenstruct:: tim::operation::delayed_start
     :members:
     :undoc-members:
+.. doxygenstruct:: tim::operation::set_stopped
+    :members:
+    :undoc-members:
 .. doxygenstruct:: tim::operation::stop
     :members:
     :undoc-members:
@@ -118,6 +127,9 @@ nm --demangle <EXE or LIB> | grep operation
     :members:
     :undoc-members:
 .. doxygenstruct:: tim::operation::delayed_stop
+    :members:
+    :undoc-members:
+.. doxygenstruct:: tim::operation::mark
     :members:
     :undoc-members:
 .. doxygenstruct:: tim::operation::mark_begin

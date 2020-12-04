@@ -273,6 +273,21 @@ stop(TupleT<Tp...>& obj, Args&&... args)
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
 TIMEMORY_HOT_INLINE void
+mark(TupleT<Tp...>& obj, Args&&... args)
+{
+    invoke_impl::invoke<operation::mark, ApiT>(obj, std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+TIMEMORY_HOT_INLINE void
+mark(TupleT<Tp...>& obj, Args&&... args)
+{
+    mark<TIMEMORY_API>(obj, std::forward<Args>(args)...);
+}
+//
+template <typename ApiT, template <typename...> class TupleT, typename... Tp,
+          typename... Args>
+TIMEMORY_HOT_INLINE void
 mark_begin(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::mark_begin, ApiT>(obj, std::forward<Args>(args)...);
@@ -563,6 +578,14 @@ stop(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
 TIMEMORY_INLINE void
+mark(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).mark(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+TIMEMORY_INLINE void
 mark_begin(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).mark_begin(std::forward<Args>(args)...));
@@ -691,6 +714,15 @@ TIMEMORY_HOT_INLINE void
 stop(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::stop(std::forward<TupleT<Tp...>>(obj),
+                      std::make_index_sequence<sizeof...(Tp)>{},
+                      std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+TIMEMORY_HOT_INLINE void
+mark(TupleT<Tp...>&& obj, Args&&... args)
+{
+    invoke_impl::mark(std::forward<TupleT<Tp...>>(obj),
                       std::make_index_sequence<sizeof...(Tp)>{},
                       std::forward<Args>(args)...);
 }

@@ -271,7 +271,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // construct the objects that have constructors with matching arguments
+    /// construct the objects that have constructors with matching arguments
     //
     template <typename... Args>
     void construct(Args&&... _args)
@@ -281,7 +281,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    /// provide preliminary info to the objects with matching arguments
+    /// provide preliminary info to the objects with matching arguments. This is typically
+    /// used to notify a component that it has been bundled alongside another component
+    /// that it can extract data from.
     //
     template <typename... Args>
     void assemble(Args&&... _args)
@@ -290,7 +292,10 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    /// provide conclusive info to the objects with matching arguments
+    /// provide conclusive info to the objects with matching arguments. This is typically
+    /// used by components to extract data from another component it has been bundled
+    /// alongside, e.g. the cpu_util component can extract data from \ref
+    /// tim::component::wall_clock and \ref tim::component::cpu_clock
     //
     template <typename... Args>
     void derive(Args&&... _args)
@@ -299,8 +304,17 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // mark a beginning position in the execution (typically used by asynchronous
-    // structures)
+    /// mark an atomic event
+    //
+    template <typename... Args>
+    void mark(Args&&... _args)
+    {
+        invoke::mark(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// mark a beginning position in the execution (typically used by asynchronous
+    /// structures)
     //
     template <typename... Args>
     void mark_begin(Args&&... _args)
@@ -309,8 +323,8 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // mark a beginning position in the execution (typically used by asynchronous
-    // structures)
+    /// mark a beginning position in the execution (typically used by asynchronous
+    /// structures)
     //
     template <typename... Args>
     void mark_end(Args&&... _args)
@@ -319,7 +333,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // store a value
+    /// store a value
     //
     template <typename... Args>
     void store(Args&&... _args)
@@ -328,7 +342,8 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a audit operation (typically for GOTCHA)
+    /// allow the components to inspect the incoming arguments before start
+    /// or out-going return value before returning (typically using in GOTCHA components)
     //
     template <typename... Args>
     void audit(Args&&... _args)
@@ -337,7 +352,8 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform an add_secondary operation
+    /// perform an add_secondary operation. This operation allows components to add
+    /// additional entries to storage which are their direct descendant
     //
     template <typename... Args>
     void add_secondary(Args&&... _args)
@@ -346,7 +362,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-
+    /// generic member function for invoking user-provided operations
+    /// \tparam OpT Operation struct
+    //
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
     {
@@ -354,7 +372,10 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-
+    /// generic member function for invoking user-provided operations on a specific
+    /// set of component types
+    /// \tparam OpT Operation struct
+    //
     template <template <typename> class OpT, typename... Tp, typename... Args>
     void invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
     {
