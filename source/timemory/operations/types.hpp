@@ -642,9 +642,6 @@ struct merge;
 template <typename Type>
 struct merge<Type, true>
 {
-    template <typename KeyT, typename MappedT>
-    using uomap_t = std::unordered_map<KeyT, MappedT>;
-
     static constexpr bool has_data = true;
     using storage_type             = impl::storage<Type, has_data>;
     using singleton_t              = typename storage_type::singleton_type;

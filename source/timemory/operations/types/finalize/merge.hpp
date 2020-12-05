@@ -36,12 +36,17 @@
 #include "timemory/storage/basic_tree.hpp"
 #include "timemory/storage/graph.hpp"
 
+#include <unordered_map>
+
 namespace tim
 {
 namespace operation
 {
 namespace finalize
 {
+//
+template <typename KeyT, typename MappedT>
+using uomap_t = std::unordered_map<KeyT, MappedT>;
 //
 //--------------------------------------------------------------------------------------//
 //
