@@ -169,49 +169,98 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-merge<Type, true>::merge(result_type& dst, const result_type& src)
+merge<Type, true>::merge(result_type& dst, result_type& src)
 {
     using result_node = typename result_type::value_type;
 
-    //--------------------------------------------------------------------------//
+    try
+    {
+        dst.reserve(dst.size() + src.size());
+    } catch(std::bad_alloc& e)
+    {
+        std::cerr << "Warning! Running out of memory is probable! " << e.what()
+                  << std::endl;
+    }
+
+    //----------------------------------------------------------------------------------//
     //
-    auto _equiv = [&](const result_node& _lhs, const result_node& _rhs) {
-        return (_lhs.hash() == _rhs.hash() && _lhs.prefix() == _rhs.prefix() &&
-                _lhs.depth() == _rhs.depth() &&
-                _lhs.rolling_hash() == _rhs.rolling_hash());
+    using hash_map_t =
+        uomap_t<int64_t,
+                uomap_t<uint64_t, uomap_t<uint64_t, uomap_t<std::string, int64_t>>>>;
+
+    // this is a look-up table for the index in dst of existing records with same depth +
+    // hash + rolling-hash + prefix
+    hash_map_t _hash_table{};
+
+    //----------------------------------------------------------------------------------//
+    // add hash-table entries for a new record
+    //
+    auto _add_entry = [&_hash_table](const result_node& _obj, int64_t _idx) {
+        _hash_table[_obj.depth()][_obj.hash()][_obj.rolling_hash()][_obj.prefix()] = _idx;
     };
 
-    //--------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
+    // get the index in dst of an existing match if it exists, otherwise return -1
     //
-    auto _exists = [&](const result_node& _lhs) {
-        for(auto itr = dst.begin(); itr != dst.end(); ++itr)
-        {
-            if(_equiv(_lhs, *itr))
-                return itr;
-        }
-        return dst.end();
+    auto _get_index = [&](const result_node& _lhs) -> int64_t {
+        auto& _tbl = _hash_table[_lhs.depth()][_lhs.hash()][_lhs.rolling_hash()];
+        auto  itr  = _tbl.find(_lhs.prefix());
+        if(itr != _tbl.end())
+            return itr->second;
+        return -1;
     };
 
-    //--------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
+    // add hash-table entries for all the existing records
+    //
+    for(size_t i = 0; i < dst.size(); ++i)
+        _add_entry(dst.at(i), static_cast<int64_t>(i));
+
+    //----------------------------------------------------------------------------------//
     //  collapse duplicates
     //
+    size_t cnt       = 0;
+    size_t dup       = 0;
+    auto   _settings = tim::settings::instance();
+    auto   _debug    = (_settings) ? _settings->get_debug() : true;
+    auto   _verbose  = (_settings) ? _settings->get_verbose() : 1;
+
+    if(_debug || _verbose > 0)
+        fprintf(stderr, "Merging %lu new records into %lu existing records\n",
+                (unsigned long) src.size(), (unsigned long) dst.size());
+
     for(auto& itr : src)
     {
-        auto citr = _exists(itr);
-        if(citr == dst.end())
+        if(_debug || _verbose > 3)
+            fprintf(stderr, "Checking %lu of %lu...", (unsigned long) cnt++,
+                    (unsigned long) src.size());
+
+        auto idx = _get_index(itr);
+        if(idx < 0)
         {
-            // auto val  = itr;
-            // val.tid() = std::numeric_limits<uint16_t>::max();
-            // dst.emplace_back(val);
-            dst.emplace_back(itr);
+            if(_debug || _verbose > 3)
+                fprintf(stderr, "new entry\n");
+            _add_entry(itr, static_cast<int64_t>(dst.size()));
+            dst.emplace_back(std::move(itr));
         }
         else
         {
-            citr->data() += itr.data();
-            citr->data().plus(itr.data());
-            citr->stats() += itr.stats();
+            ++dup;
+            if(_debug || _verbose > 3)
+                fprintf(stderr, "duplicate\n");
+            auto& citr = dst.at(idx);
+            citr.data() += itr.data();
+            citr.data().plus(itr.data());
+            citr.stats() += itr.stats();
         }
     }
+
+    if(_debug || _verbose > 0)
+        fprintf(stderr, "Merged %lu duplicates into %lu records\n", (unsigned long) dup,
+                (unsigned long) dst.size());
+
+    // shrink the reserved memory
+    dst.shrink_to_fit();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -247,7 +296,7 @@ merge<Type, true>::operator()(const basic_tree<Tp>& _bt)
             }
         }
         if(!found)
-            _children.push_back(itr);
+            _children.emplace_back(std::move(itr));
     }
 
     // update new children
@@ -328,12 +377,13 @@ merge<Type, true>::operator()(const std::vector<basic_tree<Tp>>& _lhs,
     // create the final product
     auto _ret = basic_vec_t{};
     auto n    = std::max<size_t>(_lhs.size(), _rhs.size());
+    _ret.reserve(n);
     for(size_t i = 0; i < n; ++i)
     {
         auto _append = [&](auto& _obj) {
             auto itr = _obj.find(i);
             if(itr != _obj.end())
-                _ret.push_back(itr->second);
+                _ret.emplace_back(std::move(itr->second));
         };
         _append(_p);
         _append(_ul);

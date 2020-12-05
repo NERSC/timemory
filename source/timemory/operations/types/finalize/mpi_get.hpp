@@ -112,7 +112,8 @@ mpi_get<Type, true>::operator()(distrib_type& results)
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using MPI");
 
-    results = distrib_type(1, data.get());
+    results = distrib_type{};
+    results.emplace_back(std::move(data.get()));
 #else
     if(settings::debug())
         PRINT_HERE("%s", "timemory using MPI");
@@ -187,7 +188,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
                 printf("[RECV: %i]> completed %i\n", comm_rank, i);
             results[i] = recv_serialize(str);
         }
-        results[comm_rank] = ret;
+        results[comm_rank] = std::move(ret);
     }
     else
     {
@@ -199,7 +200,8 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         mpi::send(str_ret, 0, 0, comm);
         if(settings::debug())
             printf("[SEND: %i]> completed\n", comm_rank);
-        results = distrib_type(1, ret);
+        results = distrib_type{};
+        results.emplace_back(std::move(ret));
     }
 
     // collapse into a single result
@@ -219,7 +221,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         while(!results.empty())
         {
             if(_collapsed.empty())
-                _collapsed.emplace_back(results.back());
+                _collapsed.emplace_back(std::move(results.back()));
             else
                 operation::finalize::merge<Type, true>(_collapsed.front(),
                                                        results.back());
@@ -227,7 +229,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         }
 
         // assign results to collapsed entry
-        results = _collapsed;
+        results = std::move(_collapsed);
 
         if(settings::debug() || settings::verbose() > 3)
         {
@@ -298,7 +300,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         }
 
         // assign results to collapsed entry
-        results = _collapsed;
+        results = std::move(_collapsed);
 
         if(settings::debug() || settings::verbose() > 3)
         {
