@@ -53,15 +53,9 @@ template <typename Tp, typename Value>
 void
 base<Tp, Value>::reset()
 {
-    is_running   = false;
-    is_on_stack  = false;
-    is_transient = false;
-    is_flat      = false;
-    depth_change = false;
-    laps         = 0;
-    value        = value_type{};
-    accum        = accum_type{};
-    last         = last_type{};
+    laps = 0;
+    base_state::reset();
+    data_type::reset();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -70,7 +64,7 @@ template <typename Tp, typename Value>
 void
 base<Tp, Value>::measure()
 {
-    is_transient                = false;
+    set_is_transient(false);
     Type*                   obj = static_cast<Type*>(this);
     operation::record<Type> m{ *obj };
 }
@@ -93,10 +87,10 @@ base<Tp, Value>::get_opaque_data(void*& ptr, size_t _typeid_hash) const
 {
     if(!ptr && _typeid_hash == typeid_hash<Tp>())
     {
-        auto _data      = static_cast<const Tp*>(this)->get();
-        using data_type = decay_t<decltype(_data)>;
-        auto _pdata     = new data_type(_data);
-        ptr             = reinterpret_cast<void*>(_pdata);
+        auto _data   = static_cast<const Tp*>(this)->get();
+        using data_t = decay_t<decltype(_data)>;
+        auto _pdata  = new data_t(_data);
+        ptr          = reinterpret_cast<void*>(_pdata);
     }
 }
 //
@@ -106,7 +100,7 @@ template <typename Tp, typename Value>
 void
 base<Tp, Value>::set_started()
 {
-    is_running = true;
+    set_is_running(true);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -115,11 +109,11 @@ template <typename Tp, typename Value>
 void
 base<Tp, Value>::set_stopped()
 {
-    if(is_running)
+    if(get_is_running())
     {
         ++laps;
-        is_transient = true;
-        is_running   = false;
+        set_is_transient(true);
+        set_is_running(false);
     }
 }
 //
@@ -277,8 +271,7 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::plus_oper(const Tp& rhs)
 {
-    value = value_compute_type::plus(value, rhs.value);
-    accum = accum_compute_type::plus(accum, rhs.accum);
+    data_type::plus(rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -288,8 +281,7 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::minus_oper(const Tp& rhs)
 {
-    value = value_compute_type::minus(value, rhs.value);
-    accum = accum_compute_type::minus(accum, rhs.accum);
+    data_type::minus(rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -299,8 +291,7 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::multiply_oper(const Tp& rhs)
 {
-    value = value_compute_type::multiply(value, rhs.value);
-    accum = accum_compute_type::multiply(accum, rhs.accum);
+    data_type::multiply(rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -310,8 +301,7 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::divide_oper(const Tp& rhs)
 {
-    value = value_compute_type::divide(value, rhs.value);
-    accum = accum_compute_type::divide(accum, rhs.accum);
+    data_type::divide(rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -325,8 +315,7 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::plus_oper(const Value& rhs)
 {
-    value = value_compute_type::plus(value, rhs);
-    accum = accum_compute_type::plus(accum, rhs);
+    data_type::plus(rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -336,8 +325,7 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::minus_oper(const Value& rhs)
 {
-    value = value_compute_type::minus(value, rhs);
-    accum = accum_compute_type::minus(accum, rhs);
+    data_type::minus(rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -347,8 +335,7 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::multiply_oper(const Value& rhs)
 {
-    value = value_compute_type::multiply(value, rhs);
-    accum = accum_compute_type::multiply(accum, rhs);
+    data_type::minus(rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -358,8 +345,7 @@ template <typename Tp, typename Value>
 Tp&
 base<Tp, Value>::divide_oper(const Value& rhs)
 {
-    value = value_compute_type::divide(value, rhs);
-    accum = accum_compute_type::divide(accum, rhs);
+    data_type::divide(rhs);
     return static_cast<Type&>(*this);
 }
 //
@@ -412,9 +398,7 @@ template <typename Tp>
 void
 base<Tp, void>::reset()
 {
-    is_running   = false;
-    is_on_stack  = false;
-    is_transient = false;
+    base_state::reset();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -423,8 +407,7 @@ template <typename Tp>
 void
 base<Tp, void>::measure()
 {
-    // is_running   = false;
-    is_transient = false;
+    set_is_transient(false);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -433,7 +416,7 @@ template <typename Tp>
 void
 base<Tp, void>::set_started()
 {
-    is_running = true;
+    set_is_running(true);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -442,8 +425,9 @@ template <typename Tp>
 void
 base<Tp, void>::set_stopped()
 {
-    is_running   = false;
-    is_transient = true;
+    if(get_is_running())
+        set_is_transient(true);
+    set_is_running(false);
 }
 //
 //--------------------------------------------------------------------------------------//

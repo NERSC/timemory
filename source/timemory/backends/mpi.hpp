@@ -152,7 +152,7 @@ rank(comm_t comm = comm_world_v);
 
 //--------------------------------------------------------------------------------------//
 
-inline bool&
+static inline bool&
 use_mpi_thread()
 {
     static bool _instance = true;

@@ -986,7 +986,7 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
         timemory_target_compile_definitions(${TARGET_NAME} INTERFACE
             TIMEMORY_USE_${UPP_COMP}_EXTERN)
 
-        if(NOT "${COMP_NAME}" STREQUAL "CORE")
+        if(NOT "${UPP_COMP}" STREQUAL "CORE")
             timemory_target_compile_definitions(${TARGET_NAME} PUBLIC
                 TIMEMORY_USE_CORE_EXTERN)
         endif()

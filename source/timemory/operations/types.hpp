@@ -347,26 +347,26 @@ struct is_running
     TIMEMORY_DEFAULT_OBJECT(is_running)
 
     template <typename Up>
-    auto operator()(Up& obj) const
+    auto operator()(const Up& obj) const
     {
         return sfinae(obj, 0);
     }
 
 private:
     template <typename Up>
-    static auto sfinae(Up& obj, int) -> decltype(obj.get_is_running())
+    static auto sfinae(const Up& obj, int) -> decltype(obj.get_is_running())
     {
         return obj.get_is_running();
     }
 
     template <typename Up>
-    static auto sfinae(Up& obj, long) -> decltype(obj.is_running())
+    static auto sfinae(const Up& obj, long) -> decltype(obj.is_running())
     {
         return obj.is_running();
     }
 
     template <typename Up>
-    static auto sfinae(Up&, ...) -> bool
+    static auto sfinae(const Up&, ...) -> bool
     {
         return DefaultValue;
     }

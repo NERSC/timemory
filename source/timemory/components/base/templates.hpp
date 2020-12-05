@@ -57,7 +57,7 @@ template <typename Tp, typename Value>
 template <typename Archive, typename Up,
           enable_if_t<!trait::custom_serialization<Up>::value, int>>
 void
-base<Tp, Value>::load(Archive& ar, const unsigned int)
+base<Tp, Value>::load(Archive& ar, const unsigned int version)
 {
     auto try_catch = [](Archive& arch, const char* key, auto& val) {
         try
@@ -70,11 +70,11 @@ base<Tp, Value>::load(Archive& ar, const unsigned int)
         }
     };
 
-    try_catch(ar, "is_transient", is_transient);
+    bool _transient = get_is_transient();
+    try_catch(ar, "is_transient", _transient);
     try_catch(ar, "laps", laps);
-    try_catch(ar, "value", value);
-    try_catch(ar, "accum", accum);
-    try_catch(ar, "last", last);
+    data_type::serialize(ar, version);
+    set_is_transient(_transient);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -99,46 +99,6 @@ base<Tp, Value>::add_sample(Vp&& _obj)
     assert(_storage != nullptr);
     if(_storage)
         _storage->add_sample(std::forward<Vp>(_obj));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Up, enable_if_t<trait::base_has_accum<Up>::value, int>>
-Value&
-base<Tp, Value>::load()
-{
-    return (get_is_transient()) ? accum : value;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Up, enable_if_t<trait::base_has_accum<Up>::value, int>>
-const Value&
-base<Tp, Value>::load() const
-{
-    return (get_is_transient()) ? accum : value;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Up, enable_if_t<!trait::base_has_accum<Up>::value, int>>
-Value&
-base<Tp, Value>::load()
-{
-    return value;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Up, enable_if_t<!trait::base_has_accum<Up>::value, int>>
-const Value&
-base<Tp, Value>::load() const
-{
-    return value;
 }
 //
 //--------------------------------------------------------------------------------------//
