@@ -117,6 +117,10 @@ EXECUTE_PROCESS(
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 ")
 
+if(NOT TARGET timemory::${LIB_TARGET})
+    add_library(timemory::${LIB_TARGET} ALIAS ${LIB_TARGET})
+endif()
+
 #----------------------------------------------------------------------------------------#
 
 set(_LIB_TYPES shared)
@@ -190,6 +194,9 @@ EXECUTE_PROCESS(
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
     ")
 
+    if(NOT TARGET timemory::${LIB_TARGET})
+        add_library(timemory::${LIB_TARGET} ALIAS ${LIB_TARGET})
+    endif()
 endforeach()
 
 cmake_policy(POP)

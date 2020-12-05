@@ -70,24 +70,24 @@ private:
     template <typename Up, typename Vp = value_type, typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
     auto sfinae(Up& _obj, int, int, int, scope::config _scope, int64_t _hash)
-        -> decltype(_obj.is_on_stack && _obj.is_flat && _obj.get_storage() &&
-                        _obj.graph_itr && _obj.depth_change,
+        -> decltype(_obj.get_is_on_stack() && _obj.get_is_flat() && _obj.get_storage() &&
+                        _obj.get_depth_change(),
                     void())
     {
         using storage_type          = storage<Tp, value_type>;
         constexpr bool force_flat_v = trait::flat_storage<Tp>::value;
         constexpr bool force_time_v = trait::timeline_storage<Tp>::value;
-        if(!_obj.is_on_stack)
+        if(!_obj.get_is_on_stack())
         {
-            _obj.is_on_stack = true;
-            _obj.is_flat     = _scope.is_flat() || force_flat_v;
+            _obj.set_is_on_stack(true);
+            _obj.get_is_flat() = _scope.is_flat() || force_flat_v;
             auto _storage    = static_cast<storage_type*>(_obj.get_storage());
             assert(_storage != nullptr);
             auto _beg_depth = _storage->depth();
-            _obj.graph_itr  = _storage->insert(_scope, _obj, _hash);
+            _obj.set_iterator(_storage->insert(_scope, _obj, _hash));
             auto _end_depth = _storage->depth();
-            _obj.depth_change =
-                (_beg_depth < _end_depth) || (_scope.is_timeline() || force_time_v);
+            _obj.set_depth_change((_beg_depth < _end_depth) ||
+                                  (_scope.is_timeline() || force_time_v));
             _storage->stack_push(&_obj);
         }
     }
@@ -138,18 +138,18 @@ private:
     template <typename Up, typename Vp = value_type, typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
     auto sfinae(Up& _obj, int, int, int, int)
-        -> decltype(_obj.is_on_stack && _obj.depth_change && _obj.get_storage() &&
-                        _obj.graph_itr,
+        -> decltype(_obj.get_is_on_stack() && _obj.get_depth_change() &&
+                        _obj.get_storage() && _obj.get_iterator(),
                     void())
     {
         using storage_type = StorageT;
         // obj.pop_node(std::forward<Args>(args)...);
-        if(_obj.is_on_stack)
+        if(_obj.get_is_on_stack() && _obj.get_iterator())
         {
-            _obj.is_on_stack  = false;
-            type& targ        = _obj.graph_itr->obj();
-            auto& stats       = _obj.graph_itr->stats();
-            _obj.depth_change = false;
+            _obj.set_is_on_stack(false);
+            type& targ  = _obj.get_iterator()->obj();
+            auto& stats = _obj.get_iterator()->stats();
+            _obj.set_depth_change(false);
             auto _storage     = static_cast<storage_type*>(_obj.get_storage());
             assert(_storage != nullptr);
 
@@ -157,14 +157,14 @@ private:
             {
                 operation::plus<type>(targ, _obj);
                 if(_storage)
-                    operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
+                    operation::add_secondary<type>(_storage, _obj.get_iterator(), _obj);
                 operation::add_statistics<type>(_obj, stats);
             }
-            else if(_obj.is_flat)
+            else if(_obj.get_is_flat())
             {
                 operation::plus<type>(targ, _obj);
                 if(_storage)
-                    operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
+                    operation::add_secondary<type>(_storage, _obj.get_iterator(), _obj);
                 operation::add_statistics<type>(_obj, stats);
                 if(_storage)
                     _storage->stack_pop(&_obj);
@@ -174,17 +174,17 @@ private:
                 auto _beg_depth = (_storage) ? _storage->depth() : 0;
                 operation::plus<type>(targ, _obj);
                 if(_storage)
-                    operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
+                    operation::add_secondary<type>(_storage, _obj.get_iterator(), _obj);
                 operation::add_statistics<type>(_obj, stats);
                 if(_storage)
                 {
                     _storage->pop();
                     _storage->stack_pop(&_obj);
                     auto _end_depth   = _storage->depth();
-                    _obj.depth_change = (_beg_depth > _end_depth);
+                    _obj.set_depth_change(_beg_depth > _end_depth);
                 }
             }
-            targ.is_running = false;
+            targ.set_is_running(false);
         }
     }
 

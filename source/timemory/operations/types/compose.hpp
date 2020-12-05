@@ -70,9 +70,9 @@ struct compose
     static RetType generate(const lhs_base_type& lhs, const rhs_base_type& rhs)
     {
         RetType ret;
-        ret.is_running   = false;
-        ret.is_on_stack  = false;
-        ret.is_transient = (lhs.is_transient && rhs.is_transient);
+        ret.set_is_running(false);
+        ret.set_is_on_stack(false);
+        ret.set_is_transient(lhs.is_transient && rhs.is_transient);
         ret.laps         = std::min(lhs.laps, rhs.laps);
         ret.value        = (lhs.value + rhs.value);
         ret.accum        = (lhs.accum + rhs.accum);
@@ -84,9 +84,9 @@ struct compose
                             const Func& func, Args&&... args)
     {
         RetType ret(std::forward<Args>(args)...);
-        ret.is_running   = false;
-        ret.is_on_stack  = false;
-        ret.is_transient = (lhs.is_transient && rhs.is_transient);
+        ret.set_is_running(false);
+        ret.set_is_on_stack(false);
+        ret.set_is_transient(lhs.is_transient && rhs.is_transient);
         ret.laps         = std::min(lhs.laps, rhs.laps);
         ret.value        = func(lhs.value, rhs.value);
         ret.accum        = func(lhs.accum, rhs.accum);

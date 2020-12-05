@@ -22,15 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/variadic/component_bundle.cpp
- * \brief Implementation for various component_bundle member functions
- *
- */
-
 #include "timemory/variadic/component_bundle.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"
-#include "timemory/runtime/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"
@@ -43,50 +37,7 @@ template <typename Tag, typename... Types>
 typename component_bundle<Tag, Types...>::initializer_type&
 component_bundle<Tag, Types...>::get_initializer()
 {
-    static initializer_type _instance = [](this_type& cl) {
-        static auto env_enum = []() {
-            auto _tag = demangle<Tag>();
-            for(const auto& itr : { string_t("tim::"), string_t("api::") })
-            {
-                auto _pos = _tag.find(itr);
-                do
-                {
-                    if(_pos != std::string::npos)
-                        _tag = _tag.erase(_pos, itr.length());
-                    _pos = _tag.find(itr);
-                } while(_pos != std::string::npos);
-            }
-
-            for(const auto& itr : { string_t("::"), string_t("<"), string_t(">"),
-                                    string_t(" "), string_t("__") })
-            {
-                auto _pos = _tag.find(itr);
-                do
-                {
-                    if(_pos != std::string::npos)
-                        _tag = _tag.replace(_pos, itr.length(), "_");
-                    _pos = _tag.find(itr);
-                } while(_pos != std::string::npos);
-            }
-
-            if(_tag.length() > 0 && _tag.at(0) == '_')
-                _tag = _tag.substr(1);
-            if(_tag.length() > 0 && _tag.at(_tag.size() - 1) == '_')
-                _tag = _tag.substr(0, _tag.size() - 1);
-
-            for(auto& itr : _tag)
-                itr = toupper(itr);
-            auto env_var = string_t("TIMEMORY_") + _tag + "_COMPONENTS";
-            if(settings::debug() || settings::verbose() > 1)
-                PRINT_HERE("%s is using environment variable: '%s'",
-                           demangle<this_type>().c_str(), env_var.c_str());
-
-            // get environment variable
-            return enumerate_components(
-                tim::delimit(tim::get_env<string_t>(env_var, "")));
-        }();
-        ::tim::initialize(cl, env_enum);
-    };
+    static initializer_type _instance = [](this_type&) {};
     return _instance;
 }
 
