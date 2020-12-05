@@ -77,14 +77,7 @@ public:
         : m_result(std::move(_result))
         {}
 
-        captured()  = default;
-        ~captured() = default;
-
-        captured(const captured&)     = default;
-        captured(captured&&) noexcept = default;
-
-        captured& operator=(const captured&) = default;
-        captured& operator=(captured&&) noexcept = default;
+        TIMEMORY_DEFAULT_OBJECT(captured)
 
     protected:
         friend class source_location;

@@ -76,7 +76,7 @@ using operation_tt = typename OperatorTT<Tag, Op, TupleT>::type;
 //
 template <template <typename> class OpT, typename Tag,
           template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_INLINE void
 invoke(TupleT<Tp...>& _obj, Args&&... _args)
 {
     using data_type = std::tuple<Tp...>;
@@ -91,7 +91,7 @@ invoke(TupleT<Tp...>& _obj, Args&&... _args)
 //
 template <template <typename, typename> class OpT, typename Tag,
           template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_INLINE void
 invoke(TupleT<Tp...>& _obj, Args&&... _args)
 {
     using data_type = std::tuple<Tp...>;
@@ -106,7 +106,7 @@ invoke(TupleT<Tp...>& _obj, Args&&... _args)
 //
 template <template <typename> class OpT, typename OpTupleT, size_t Idx, typename Tag,
           template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_INLINE void
 invoke_out_of_order(TupleT<Tp...>& _obj, Args&&... _args)
 {
     using OperT = operation_t<Tag, OpT, OpTupleT>;
@@ -118,7 +118,7 @@ invoke_out_of_order(TupleT<Tp...>& _obj, Args&&... _args)
 template <template <typename, typename> class OpT, typename OpTupleT, size_t Idx,
           typename Tag, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-void
+TIMEMORY_INLINE void
 invoke_out_of_order(TupleT<Tp...>& _obj, Args&&... _args)
 {
     using OperT = operation_tt<Tag, OpT, OpTupleT>;
@@ -128,7 +128,7 @@ invoke_out_of_order(TupleT<Tp...>& _obj, Args&&... _args)
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_INLINE void
 construct(TupleT<Tp...>& _obj, Args&&... _args)
 {
     using data_type = std::tuple<Tp...>;
@@ -142,14 +142,14 @@ construct(TupleT<Tp...>& _obj, Args&&... _args)
 //======================================================================================//
 //
 template <typename... Args>
-void
+TIMEMORY_INLINE void
 print(std::ostream& os, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(os << args << "\n");
 }
 //
 template <typename... Args>
-void
+TIMEMORY_INLINE void
 print(std::ostream& os, const std::string& delim, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(os << args << delim);
@@ -157,7 +157,7 @@ print(std::ostream& os, const std::string& delim, Args&&... args)
 //
 template <template <typename...> class OpT, typename ApiT,
           template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 invoke(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<OpT, ApiT>(obj, std::forward<Args>(args)...);
@@ -165,14 +165,14 @@ invoke(TupleT<Tp...>& obj, Args&&... args)
 //
 template <template <typename...> class OpT, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 invoke(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke<OpT, TIMEMORY_API>(obj, std::forward<Args>(args)...);
 }
 //
 template <typename TupleT, typename ApiT, typename... Args>
-TIMEMORY_HOT auto
+TIMEMORY_HOT_INLINE auto
 construct(Args&&... args)
 {
     IF_CONSTEXPR(trait::is_available<ApiT>::value)
@@ -188,21 +188,21 @@ construct(Args&&... args)
 //
 //
 template <typename TupleT, typename... Args>
-TIMEMORY_HOT auto
+TIMEMORY_HOT_INLINE auto
 construct(Args&&... args)
 {
     return construct<TupleT, TIMEMORY_API>(std::forward<Args>(args)...);
 }
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT auto
+TIMEMORY_HOT_INLINE auto
 destroy(TupleT<Tp...>& obj)
 {
     invoke_impl::invoke<operation::generic_deleter, ApiT>(obj);
 }
 //
 template <template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT auto
+TIMEMORY_HOT_INLINE auto
 destroy(TupleT<Tp...>& obj)
 {
     destroy<TIMEMORY_API>(obj);
@@ -210,7 +210,7 @@ destroy(TupleT<Tp...>& obj)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 start(TupleT<Tp...>& obj, Args&&... args)
 {
     {
@@ -233,7 +233,7 @@ start(TupleT<Tp...>& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 start(TupleT<Tp...>& obj, Args&&... args)
 {
     start<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -241,7 +241,7 @@ start(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 stop(TupleT<Tp...>& obj, Args&&... args)
 {
     {
@@ -264,7 +264,7 @@ stop(TupleT<Tp...>& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 stop(TupleT<Tp...>& obj, Args&&... args)
 {
     stop<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -272,14 +272,29 @@ stop(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
+mark(TupleT<Tp...>& obj, Args&&... args)
+{
+    invoke_impl::invoke<operation::mark, ApiT>(obj, std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+TIMEMORY_HOT_INLINE void
+mark(TupleT<Tp...>& obj, Args&&... args)
+{
+    mark<TIMEMORY_API>(obj, std::forward<Args>(args)...);
+}
+//
+template <typename ApiT, template <typename...> class TupleT, typename... Tp,
+          typename... Args>
+TIMEMORY_HOT_INLINE void
 mark_begin(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::mark_begin, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 mark_begin(TupleT<Tp...>& obj, Args&&... args)
 {
     mark_begin<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -287,14 +302,14 @@ mark_begin(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 mark_end(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::mark_end, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 mark_end(TupleT<Tp...>& obj, Args&&... args)
 {
     mark_end<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -302,14 +317,14 @@ mark_end(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 store(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::store, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 store(TupleT<Tp...>& obj, Args&&... args)
 {
     store<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -317,14 +332,14 @@ store(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 reset(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::reset, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 reset(TupleT<Tp...>& obj, Args&&... args)
 {
     reset<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -332,14 +347,14 @@ reset(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 record(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::record, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 record(TupleT<Tp...>& obj, Args&&... args)
 {
     record<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -347,14 +362,14 @@ record(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 measure(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::measure, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 measure(TupleT<Tp...>& obj, Args&&... args)
 {
     measure<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -362,14 +377,14 @@ measure(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 push(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::push_node, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 push(TupleT<Tp...>& obj, Args&&... args)
 {
     push<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -377,14 +392,14 @@ push(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 pop(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::pop_node, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 pop(TupleT<Tp...>& obj, Args&&... args)
 {
     pop<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -392,14 +407,14 @@ pop(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 set_prefix(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::set_prefix, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 set_prefix(TupleT<Tp...>& obj, Args&&... args)
 {
     set_prefix<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -407,14 +422,14 @@ set_prefix(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 set_scope(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::set_scope, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 set_scope(TupleT<Tp...>& obj, Args&&... args)
 {
     set_scope<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -422,14 +437,14 @@ set_scope(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 assemble(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::assemble, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 assemble(TupleT<Tp...>& obj, Args&&... args)
 {
     assemble<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -437,14 +452,14 @@ assemble(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 derive(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::derive, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 derive(TupleT<Tp...>& obj, Args&&... args)
 {
     derive<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -452,14 +467,14 @@ derive(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 audit(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::audit, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 audit(TupleT<Tp...>& obj, Args&&... args)
 {
     audit<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -467,14 +482,14 @@ audit(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 add_secondary(TupleT<Tp...>& obj, Args&&... args)
 {
     invoke_impl::invoke<operation::add_secondary, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 add_secondary(TupleT<Tp...>& obj, Args&&... args)
 {
     add_secondary<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -482,7 +497,7 @@ add_secondary(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT auto
+TIMEMORY_HOT_INLINE auto
 get(TupleT<Tp...>& obj, Args&&... args)
 {
     using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
@@ -496,7 +511,7 @@ get(TupleT<Tp...>& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT auto
+TIMEMORY_HOT_INLINE auto
 get(TupleT<Tp...>& obj, Args&&... args)
 {
     return ::tim::invoke::get<TIMEMORY_API>(obj, std::forward<Args>(args)...);
@@ -504,7 +519,7 @@ get(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT auto
+TIMEMORY_HOT_INLINE auto
 get_labeled(TupleT<Tp...>& obj, Args&&... args)
 {
     using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
@@ -518,14 +533,14 @@ get_labeled(TupleT<Tp...>& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT auto
+TIMEMORY_HOT_INLINE auto
 get_labeled(TupleT<Tp...>& obj, Args&&... args)
 {
     return get_labeled<TIMEMORY_API>(obj, std::forward<Args>(args)...);
 }
 //
 template <typename... BundleT>
-TIMEMORY_HOT auto
+TIMEMORY_HOT_INLINE auto
 get_cache()
 {
     operation::construct_cache<std::tuple<BundleT...>> tmp{};
@@ -546,7 +561,7 @@ namespace invoke_impl
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 start(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).start(std::forward<Args>(args)...));
@@ -554,7 +569,7 @@ start(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 stop(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).stop(std::forward<Args>(args)...));
@@ -562,7 +577,15 @@ stop(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
+mark(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).mark(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+TIMEMORY_INLINE void
 mark_begin(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).mark_begin(std::forward<Args>(args)...));
@@ -570,7 +593,7 @@ mark_begin(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 mark_end(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).mark_end(std::forward<Args>(args)...));
@@ -578,7 +601,7 @@ mark_end(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 store(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).store(std::forward<Args>(args)...));
@@ -586,7 +609,7 @@ store(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 reset(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).reset(std::forward<Args>(args)...));
@@ -594,7 +617,7 @@ reset(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 record(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).record(std::forward<Args>(args)...));
@@ -602,7 +625,7 @@ record(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 measure(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).measure(std::forward<Args>(args)...));
@@ -610,7 +633,7 @@ measure(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 push(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).push(std::forward<Args>(args)...));
@@ -618,7 +641,7 @@ push(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 pop(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).pop(std::forward<Args>(args)...));
@@ -626,7 +649,7 @@ pop(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 set_prefix(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).set_prefix(std::forward<Args>(args)...));
@@ -634,7 +657,7 @@ set_prefix(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 set_scope(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).set_scope(std::forward<Args>(args)...));
@@ -642,7 +665,7 @@ set_scope(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 assemble(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).assemble(std::forward<Args>(args)...));
@@ -650,7 +673,7 @@ assemble(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 derive(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).derive(std::forward<Args>(args)...));
@@ -658,7 +681,7 @@ derive(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 audit(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).audit(std::forward<Args>(args)...));
@@ -666,7 +689,7 @@ audit(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //
 template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
           typename... Args>
-void
+TIMEMORY_INLINE void
 add_secondary(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 {
     TIMEMORY_FOLD_EXPRESSION(
@@ -678,7 +701,7 @@ add_secondary(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 start(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::start(std::forward<TupleT<Tp...>>(obj),
@@ -687,7 +710,7 @@ start(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 stop(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::stop(std::forward<TupleT<Tp...>>(obj),
@@ -696,7 +719,16 @@ stop(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
+mark(TupleT<Tp...>&& obj, Args&&... args)
+{
+    invoke_impl::mark(std::forward<TupleT<Tp...>>(obj),
+                      std::make_index_sequence<sizeof...(Tp)>{},
+                      std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+TIMEMORY_HOT_INLINE void
 mark_begin(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::mark_begin(std::forward<TupleT<Tp...>>(obj),
@@ -705,7 +737,7 @@ mark_begin(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 mark_end(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::mark_end(std::forward<TupleT<Tp...>>(obj),
@@ -714,7 +746,7 @@ mark_end(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 store(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::store(std::forward<TupleT<Tp...>>(obj),
@@ -723,7 +755,7 @@ store(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 reset(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::reset(std::forward<TupleT<Tp...>>(obj),
@@ -732,7 +764,7 @@ reset(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 record(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::record(std::forward<TupleT<Tp...>>(obj),
@@ -741,7 +773,7 @@ record(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 measure(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::measure(std::forward<TupleT<Tp...>>(obj),
@@ -750,7 +782,7 @@ measure(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 push(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::push(std::forward<TupleT<Tp...>>(obj),
@@ -759,7 +791,7 @@ push(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 pop(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::pop(std::forward<TupleT<Tp...>>(obj),
@@ -768,7 +800,7 @@ pop(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 set_prefix(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::set_prefix(std::forward<TupleT<Tp...>>(obj),
@@ -777,7 +809,7 @@ set_prefix(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 set_scope(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::set_scope(std::forward<TupleT<Tp...>>(obj),
@@ -786,7 +818,7 @@ set_scope(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 assemble(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::assemble(std::forward<TupleT<Tp...>>(obj),
@@ -795,7 +827,7 @@ assemble(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 derive(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::derive(std::forward<TupleT<Tp...>>(obj),
@@ -804,7 +836,7 @@ derive(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 audit(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::audit(std::forward<TupleT<Tp...>>(obj),
@@ -813,7 +845,7 @@ audit(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT void
+TIMEMORY_HOT_INLINE void
 add_secondary(TupleT<Tp...>&& obj, Args&&... args)
 {
     invoke_impl::add_secondary(std::forward<TupleT<Tp...>>(obj),

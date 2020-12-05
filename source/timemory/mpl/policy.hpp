@@ -277,12 +277,7 @@ public:
     using pair_type                      = std::pair<int_type, int_type>;
     static constexpr bool thread_support = true;
 
-    instance_tracker()                            = default;
-    ~instance_tracker()                           = default;
-    instance_tracker(const instance_tracker&)     = default;
-    instance_tracker(instance_tracker&&) noexcept = default;
-    instance_tracker& operator=(const instance_tracker&) = default;
-    instance_tracker& operator=(instance_tracker&&) noexcept = default;
+    TIMEMORY_DEFAULT_OBJECT(instance_tracker)
 
     enum
     {

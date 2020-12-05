@@ -389,9 +389,9 @@ struct papi_vector
 
     //----------------------------------------------------------------------------------//
 
-    ~papi_vector()                          = default;
-    papi_vector(const papi_vector& rhs)     = default;
-    papi_vector(papi_vector&& rhs) noexcept = default;
+    ~papi_vector()                      = default;
+    papi_vector(const papi_vector&)     = default;
+    papi_vector(papi_vector&&) noexcept = default;
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&&) noexcept = default;
 
@@ -713,9 +713,9 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    ~papi_array() {}
-    papi_array(const papi_array& rhs)     = default;
-    papi_array(papi_array&& rhs) noexcept = default;
+    ~papi_array()                     = default;
+    papi_array(const papi_array&)     = default;
+    papi_array(papi_array&&) noexcept = default;
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&&) noexcept = default;
 
@@ -1078,11 +1078,10 @@ public:
         apply<void>::set_value(accum, 0);
     }
 
-    ~papi_tuple() {}
-
-    papi_tuple(const papi_tuple& rhs) = default;
-    this_type& operator=(const this_type& rhs) = default;
-    papi_tuple(papi_tuple&& rhs) noexcept      = default;
+    ~papi_tuple()                     = default;
+    papi_tuple(const papi_tuple&)     = default;
+    papi_tuple(papi_tuple&&) noexcept = default;
+    this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
@@ -1319,6 +1318,8 @@ public:
     }
 
 public:
+    TIMEMORY_DEFAULT_OBJECT(papi_rate_tuple)
+
     void start()
     {
         value.first.start();

@@ -168,15 +168,10 @@ struct cupti_activity : public base<cupti_activity, intmax_t>
     //----------------------------------------------------------------------------------//
 
 public:
-    cupti_activity() = default;
+    TIMEMORY_DEFAULT_OBJECT(cupti_activity)
 
     // make sure it is removed
     ~cupti_activity() { cupti::activity::get_receiver().remove(this); }
-
-    cupti_activity(const cupti_activity&)     = default;
-    cupti_activity(cupti_activity&&) noexcept = default;
-    cupti_activity& operator=(const cupti_activity&) = default;
-    cupti_activity& operator=(cupti_activity&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
     // start

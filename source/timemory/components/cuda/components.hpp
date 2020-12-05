@@ -125,6 +125,8 @@ struct cuda_event : public base<cuda_event, float>
     }
 
 public:
+    TIMEMORY_DEFAULT_OBJECT(cuda_event)
+
     explicit cuda_event(cuda::stream_t _stream)
     : m_stream(_stream)
     , m_global(marker{})
@@ -135,13 +137,6 @@ public:
     //: cuda_event(_stream.cast<cuda::stream_t>())
     //{}
 #endif
-
-    cuda_event()                      = default;
-    ~cuda_event()                     = default;
-    cuda_event(const cuda_event&)     = default;
-    cuda_event(cuda_event&&) noexcept = default;
-    cuda_event& operator=(const cuda_event&) = default;
-    cuda_event& operator=(cuda_event&&) noexcept = default;
 
     float get_display() const
     {

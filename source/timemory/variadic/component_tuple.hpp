@@ -264,7 +264,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    /// provide preliminary info to the objects with matching arguments
+    /// provide preliminary info to the objects with matching arguments. This is typically
+    /// used to notify a component that it has been bundled alongside another component
+    /// that it can extract data from.
     //
     template <typename... Args>
     void assemble(Args&&... _args)
@@ -273,12 +275,24 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    /// provide conclusive info to the objects with matching arguments
+    /// provide conclusive info to the objects with matching arguments. This is typically
+    /// used by components to extract data from another component it has been bundled
+    /// alongside, e.g. the cpu_util component can extract data from \ref
+    /// tim::component::wall_clock and \ref tim::component::cpu_clock
     //
     template <typename... Args>
     void derive(Args&&... _args)
     {
         invoke::derive(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// mark an atomic event
+    //
+    template <typename... Args>
+    void mark(Args&&... _args)
+    {
+        invoke::mark(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -330,10 +344,24 @@ public:
 
     //----------------------------------------------------------------------------------//
     /// apply a user-defined operation to all the components
+    /// \tparam OpT Operation struct
+    //
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
     {
         invoke::invoke<OpT>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// generic member function for invoking user-provided operations on a specific
+    /// set of component types
+    /// \tparam OpT Operation struct
+    //
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    void invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, TIMEMORY_API>(
+            this->get<Tp>(), std::forward<Args>(_args)...));
     }
 
     //----------------------------------------------------------------------------------//

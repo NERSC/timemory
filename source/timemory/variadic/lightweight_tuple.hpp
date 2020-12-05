@@ -201,7 +201,7 @@ public:
     using bundle_type::store;
 
     //----------------------------------------------------------------------------------//
-    // construct the objects that have constructors with matching arguments
+    /// construct the objects that have constructors with matching arguments
     //
     template <typename... Args>
     void construct(Args&&... _args)
@@ -211,7 +211,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    /// provide preliminary info to the objects with matching arguments
+    /// provide preliminary info to the objects with matching arguments. This is typically
+    /// used to notify a component that it has been bundled alongside another component
+    /// that it can extract data from.
     //
     void assemble() { invoke::assemble(m_data, *this); }
 
@@ -222,7 +224,10 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    /// provide conclusive info to the objects with matching arguments
+    /// provide conclusive info to the objects with matching arguments. This is typically
+    /// used by components to extract data from another component it has been bundled
+    /// alongside, e.g. the cpu_util component can extract data from \ref
+    /// tim::component::wall_clock and \ref tim::component::cpu_clock
     //
     void derive() { invoke::derive(m_data, *this); }
 
@@ -233,8 +238,8 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // mark a beginning position in the execution (typically used by asynchronous
-    // structures)
+    /// mark a beginning position in the execution (typically used by asynchronous
+    /// structures)
     //
     template <typename... Args>
     void mark_begin(Args&&... _args)
@@ -243,8 +248,8 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // mark a beginning position in the execution (typically used by asynchronous
-    // structures)
+    /// mark a beginning position in the execution (typically used by asynchronous
+    /// structures)
     //
     template <typename... Args>
     void mark_end(Args&&... _args)
@@ -253,7 +258,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // store a value
+    /// store a value
     //
     template <typename... Args>
     void store(Args&&... _args)
@@ -262,7 +267,8 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a auditd operation (typically for GOTCHA)
+    /// allow the components to inspect the incoming arguments before start
+    /// or out-going return value before returning (typically using in GOTCHA components)
     //
     template <typename... Args>
     void audit(Args&&... _args)
@@ -271,7 +277,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-
+    /// apply a user-defined operation to all the components
+    /// \tparam OpT Operation struct
+    //
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
     {
@@ -279,7 +287,19 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // get member functions taking either a type
+    /// generic member function for invoking user-provided operations on a specific
+    /// set of component types
+    /// \tparam OpT Operation struct
+    //
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    void invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, TIMEMORY_API>(
+            this->get<Tp>(), std::forward<Args>(_args)...));
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// get member functions taking either a type
     //
     template <typename T, enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     T* get()
@@ -344,7 +364,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    //  variadic initialization
+    ///  variadic initialization
     //
     template <typename... T, typename... Args>
     auto initialize(Args&&... args)

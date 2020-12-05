@@ -53,20 +53,20 @@ struct set_prefix
 
     TIMEMORY_DELETED_OBJECT(set_prefix)
 
-    set_prefix(type& obj, const string_t& prefix);
-    set_prefix(type& obj, uint64_t nhash, const string_t& prefix);
+    TIMEMORY_HOT_INLINE set_prefix(type& obj, const string_t& prefix);
+    TIMEMORY_HOT_INLINE set_prefix(type& obj, uint64_t nhash, const string_t& prefix);
 
 private:
     //  If the component has a set_prefix(const string_t&) member function
     template <typename U>
-    auto sfinae_str(U& obj, int, int, const string_t& prefix)
+    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, int, const string_t& prefix)
         -> decltype(obj.set_prefix(prefix), void())
     {
         obj.set_prefix(prefix);
     }
 
     template <typename U>
-    auto sfinae_str(U& obj, int, long, const string_t& prefix)
+    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, long, const string_t& prefix)
         -> decltype(obj.set_prefix(prefix.c_str()), void())
     {
         obj.set_prefix(prefix.c_str());
@@ -74,13 +74,13 @@ private:
 
     //  If the component does not have a set_prefix(const string_t&) member function
     template <typename U>
-    void sfinae_str(U&, long, long, const string_t&)
+    TIMEMORY_INLINE void sfinae_str(U&, long, long, const string_t&)
     {}
 
 private:
     //  If the component has a set_prefix(uint64_t) member function
     template <typename U>
-    auto sfinae_hash(U& obj, int, uint64_t nhash)
+    TIMEMORY_HOT_INLINE auto sfinae_hash(U& obj, int, uint64_t nhash)
         -> decltype(obj.set_prefix(nhash), void())
     {
         obj.set_prefix(nhash);
@@ -88,7 +88,7 @@ private:
 
     //  If the component does not have a set_prefix(uint64_t) member function
     template <typename U>
-    void sfinae_hash(U&, long, uint64_t)
+    TIMEMORY_INLINE void sfinae_hash(U&, long, uint64_t)
     {}
 };
 //
@@ -107,12 +107,12 @@ struct set_scope
 
     TIMEMORY_DELETED_OBJECT(set_scope)
 
-    set_scope(type& obj, scope::config _data);
+    TIMEMORY_HOT_INLINE set_scope(type& obj, scope::config _data);
 
 private:
     //  If the component has a set_scope(...) member function
     template <typename T>
-    auto sfinae(T& obj, int, scope::config _data)
+    TIMEMORY_HOT_INLINE auto sfinae(T& obj, int, scope::config _data)
         -> decltype(obj.set_scope(_data), void())
     {
         obj.set_scope(_data);
@@ -120,7 +120,7 @@ private:
 
     //  If the component does not have a set_scope(...) member function
     template <typename T>
-    auto sfinae(T&, long, scope::config) -> decltype(void(), void())
+    TIMEMORY_INLINE auto sfinae(T&, long, scope::config) -> decltype(void(), void())
     {}
 };
 //

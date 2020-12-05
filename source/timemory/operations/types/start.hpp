@@ -55,16 +55,16 @@ struct start
 
     TIMEMORY_DELETED_OBJECT(start)
 
-    explicit start(type& obj) { impl(obj); }
+    TIMEMORY_HOT_INLINE explicit start(type& obj) { impl(obj); }
 
     template <typename Arg, typename... Args>
-    start(type& obj, Arg&& arg, Args&&... args)
+    TIMEMORY_HOT_INLINE start(type& obj, Arg&& arg, Args&&... args)
     {
         impl(obj, std::forward<Arg>(arg), std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    auto operator()(type& obj, Args&&... args)
+    TIMEMORY_HOT_INLINE auto operator()(type& obj, Args&&... args)
     {
         using RetT = decltype(do_sfinae(obj, 0, 0, std::forward<Args>(args)...));
         if(trait::runtime_enabled<type>::get() && !is_running<Tp, false>{}(obj))
@@ -76,11 +76,11 @@ struct start
 
 private:
     template <typename... Args>
-    void impl(type& obj, Args&&... args);
+    TIMEMORY_HOT_INLINE void impl(type& obj, Args&&... args);
 
     // resolution #1 (best)
     template <typename Up, typename... Args>
-    auto do_sfinae(Up& obj, int, int, Args&&... args)
+    TIMEMORY_HOT_INLINE auto do_sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(obj.start(std::forward<Args>(args)...))
     {
         set_started<Tp>{}(obj);
@@ -89,7 +89,8 @@ private:
 
     // resolution #2
     template <typename Up, typename... Args>
-    auto do_sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.start())
+    TIMEMORY_HOT_INLINE auto do_sfinae(Up& obj, int, long, Args&&...)
+        -> decltype(obj.start())
     {
         set_started<Tp>{}(obj);
         return obj.start();
@@ -120,19 +121,19 @@ struct priority_start
     TIMEMORY_DELETED_OBJECT(priority_start)
 
     template <typename... Args>
-    explicit priority_start(type& obj, Args&&... args);
+    TIMEMORY_HOT_INLINE explicit priority_start(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, true_type&&, Args&&... args)
+    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
         start<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, false_type&&, Args&&...)
+    TIMEMORY_INLINE void sfinae(Up&, false_type&&, Args&&...)
     {}
 };
 //
@@ -151,19 +152,19 @@ struct standard_start
     TIMEMORY_DELETED_OBJECT(standard_start)
 
     template <typename... Args>
-    explicit standard_start(type& obj, Args&&... args);
+    TIMEMORY_HOT_INLINE explicit standard_start(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, true_type&&, Args&&... args)
+    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
         start<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, false_type&&, Args&&...)
+    TIMEMORY_INLINE void sfinae(Up&, false_type&&, Args&&...)
     {}
 };
 //
@@ -182,19 +183,19 @@ struct delayed_start
     TIMEMORY_DELETED_OBJECT(delayed_start)
 
     template <typename... Args>
-    explicit delayed_start(type& obj, Args&&... args);
+    TIMEMORY_HOT_INLINE explicit delayed_start(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, true_type&&, Args&&... args)
+    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
         start<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, false_type&&, Args&&...)
+    TIMEMORY_INLINE void sfinae(Up&, false_type&&, Args&&...)
     {}
 };
 //

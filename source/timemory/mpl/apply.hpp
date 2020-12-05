@@ -22,13 +22,12 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file mpl/apply.hpp
- * \headerfile mpl/apply.hpp "timemory/mpl/apply.hpp"
- * Provides the template meta-programming expansions heavily utilized by timemory
- *
- */
-
 #pragma once
+
+#include "timemory/macros/attributes.hpp"
+#include "timemory/mpl/function_traits.hpp"
+#include "timemory/mpl/math.hpp"
+#include "timemory/mpl/stl.hpp"
 
 #include <functional>
 #include <initializer_list>
@@ -37,10 +36,6 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
-
-#include "timemory/mpl/function_traits.hpp"
-#include "timemory/mpl/math.hpp"
-#include "timemory/mpl/stl.hpp"
 
 #if defined(__NVCC__)
 #    define TIMEMORY_LAMBDA __host__ __device__
@@ -71,7 +66,7 @@ struct apply
     //  invoke a function with a tuple
     //
     template <typename Fn, typename Tuple, size_t... Idx>
-    static Ret invoke(Fn&& __f, Tuple&& __t, index_sequence<Idx...>)
+    static TIMEMORY_HOT_INLINE Ret invoke(Fn&& __f, Tuple&& __t, index_sequence<Idx...>)
     {
         return __f(std::get<Idx>(std::forward<Tuple>(__t))...);
     }
@@ -81,7 +76,8 @@ struct apply
     //
     template <typename SepT, typename Arg,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0>
-    static Ret join_tail(std::stringstream& _ss, const SepT& _sep, Arg&& _arg)
+    static TIMEMORY_HOT_INLINE Ret join_tail(std::stringstream& _ss, const SepT& _sep,
+                                             Arg&& _arg)
     {
         _ss << _sep << std::forward<Arg>(_arg);
         return _ss.str();
@@ -92,8 +88,8 @@ struct apply
     //
     template <typename SepT, typename Arg, typename... Args,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0>
-    static Ret join_tail(std::stringstream& _ss, const SepT& _sep, Arg&& _arg,
-                         Args&&... __args)
+    static TIMEMORY_HOT_INLINE Ret join_tail(std::stringstream& _ss, const SepT& _sep,
+                                             Arg&& _arg, Args&&... __args)
     {
         _ss << _sep << std::forward<Arg>(_arg);
         return join_tail<SepT, Args...>(_ss, _sep, std::forward<Args>(__args)...);
@@ -104,7 +100,7 @@ struct apply
     //
     template <typename SepT, typename Arg,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0>
-    static Ret join(std::stringstream& _ss, const SepT&, Arg&& _arg)
+    static TIMEMORY_HOT_INLINE Ret join(std::stringstream& _ss, const SepT&, Arg&& _arg)
     {
         _ss << std::forward<Arg>(_arg);
         return _ss.str();
@@ -116,8 +112,8 @@ struct apply
     template <typename SepT, typename Arg, typename... Args,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0,
               enable_if_t<(sizeof...(Args) > 0), int>                  = 0>
-    static Ret join(std::stringstream& _ss, const SepT& _sep, Arg&& _arg,
-                    Args&&... __args)
+    static TIMEMORY_HOT_INLINE Ret join(std::stringstream& _ss, const SepT& _sep,
+                                        Arg&& _arg, Args&&... __args)
     {
         _ss << std::forward<Arg>(_arg);
         return join_tail<SepT, Args...>(_ss, _sep, std::forward<Args>(__args)...);
@@ -227,7 +223,7 @@ struct apply<void>
     //  invoke a function with a tuple
     //
     template <typename Fn, typename Tuple, size_t... Idx>
-    static Ret invoke(Fn&& __f, Tuple&& __t, index_sequence<Idx...>)
+    static TIMEMORY_HOT_INLINE Ret invoke(Fn&& __f, Tuple&& __t, index_sequence<Idx...>)
     {
         __f(std::get<Idx>(std::forward<Tuple>(__t))...);
     }
@@ -236,7 +232,7 @@ struct apply<void>
     // temporary construction
     //
     template <typename Type, typename... Args>
-    static void construct(Args&&... _args)
+    static TIMEMORY_HOT_INLINE void construct(Args&&... _args)
     {
         Type(std::forward<Args>(_args)...);
     }
@@ -245,7 +241,8 @@ struct apply<void>
     // temporary construction
     //
     template <typename Type, typename... Args, size_t... Idx>
-    static void construct_tuple(std::tuple<Args...>&& _args, index_sequence<Idx>...)
+    static TIMEMORY_HOT_INLINE void construct_tuple(std::tuple<Args...>&& _args,
+                                                    index_sequence<Idx>...)
     {
         construct<Type>(std::get<Idx>(_args)...);
     }
@@ -254,7 +251,8 @@ struct apply<void>
 
     template <template <typename> class Access, typename Tuple, typename... Args,
               size_t... Idx>
-    static void unroll_access(Tuple&& __t, index_sequence<Idx...>, Args&&... __args)
+    static TIMEMORY_HOT_INLINE void unroll_access(Tuple&& __t, index_sequence<Idx...>,
+                                                  Args&&... __args)
     {
         TIMEMORY_FOLD_EXPRESSION(Access<decay_t<decltype(std::get<Idx>(__t))>>(
             std::forward<decltype(std::get<Idx>(__t))>(std::get<Idx>(__t)),
@@ -264,7 +262,8 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Access, typename Tuple, typename... Args, size_t... Idx>
-    static void variadic_1d(Tuple&& __t, Args&&... _args, index_sequence<Idx...>)
+    static TIMEMORY_HOT_INLINE void variadic_1d(Tuple&& __t, Args&&... _args,
+                                                index_sequence<Idx...>)
     {
         TIMEMORY_FOLD_EXPRESSION(
             construct<typename std::tuple_element<Idx, Access>::type>(
@@ -275,8 +274,8 @@ struct apply<void>
 
     template <typename Access, typename TupleA, typename TupleB, typename... Args,
               size_t... Idx>
-    static void variadic_2d(TupleA&& __a, TupleB&& __b, Args&&... _args,
-                            index_sequence<Idx...>)
+    static TIMEMORY_HOT_INLINE void variadic_2d(TupleA&& __a, TupleB&& __b,
+                                                Args&&... _args, index_sequence<Idx...>)
     {
         TIMEMORY_FOLD_EXPRESSION(
             construct<typename std::tuple_element<Idx, Access>::type>(
@@ -287,7 +286,7 @@ struct apply<void>
 
     template <template <typename> class Access, typename Tuple, typename... Args,
               size_t... Idx>
-    static void type_access(index_sequence<Idx...>, Args&&... __args)
+    static TIMEMORY_HOT_INLINE void type_access(index_sequence<Idx...>, Args&&... __args)
     {
         TIMEMORY_FOLD_EXPRESSION(
             Access<decay_t<typename std::tuple_element<Idx, Tuple>::type>>(
@@ -297,8 +296,9 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Access, typename Tuple, typename... Args, size_t... Idx>
-    static void apply_access_with_indices(Tuple&& __t, index_sequence<Idx...>,
-                                          Args&&... __args)
+    static TIMEMORY_HOT_INLINE void apply_access_with_indices(Tuple&& __t,
+                                                              index_sequence<Idx...>,
+                                                              Args&&... __args)
     {
         // call constructor
         TIMEMORY_FOLD_EXPRESSION(decay_t<typename std::tuple_element<Idx, Access>::type>(
@@ -311,8 +311,9 @@ struct apply<void>
 
     template <typename Access, typename TupleA, typename TupleB, typename... Args,
               size_t... Idx>
-    static void apply_access2(TupleA&& __ta, TupleB&& __tb, index_sequence<Idx...>,
-                              Args&&... __args)
+    static TIMEMORY_HOT_INLINE void apply_access2(TupleA&& __ta, TupleB&& __tb,
+                                                  index_sequence<Idx...>,
+                                                  Args&&... __args)
     {
         // call constructor
         TIMEMORY_FOLD_EXPRESSION(decay_t<typename std::tuple_element<Idx, Access>::type>(
@@ -346,7 +347,7 @@ struct apply<void>
     template <size_t N, typename Device, typename Func, typename... Args,
               typename std::enable_if<
                   (N == 1 && std::is_same<Device, device::cpu>::value), int>::type = 0>
-    static void unroll(Func&& __func, Args&&... __args)
+    static TIMEMORY_HOT_INLINE void unroll(Func&& __func, Args&&... __args)
     {
         std::forward<Func>(__func)(std::forward<Args>(__args)...);
     }
@@ -354,7 +355,7 @@ struct apply<void>
     template <size_t N, typename Device, typename Func, typename... Args,
               typename std::enable_if<(N > 1 && std::is_same<Device, device::cpu>::value),
                                       int>::type = 0>
-    static void unroll(Func&& __func, Args&&... __args)
+    static TIMEMORY_HOT_INLINE void unroll(Func&& __func, Args&&... __args)
     {
         std::forward<Func>(__func)(std::forward<Args>(__args)...);
         unroll<N - 1, Device, Func, Args...>(std::forward<Func>(__func),
@@ -402,7 +403,7 @@ struct apply<std::string>
 
     template <typename SepT, typename... Args, typename ReturnT = Ret,
               size_t N = sizeof...(Args), enable_if_t<(N > 0), char> = 0>
-    static ReturnT join(SepT&& separator, Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE ReturnT join(SepT&& separator, Args&&... __args) noexcept
     {
         std::stringstream ss;
         ss << std::boolalpha;
@@ -413,7 +414,7 @@ struct apply<std::string>
     //----------------------------------------------------------------------------------//
 
     template <typename SepT, typename Arg, if_string_t<Arg, true> = 0>
-    static Ret join(SepT&&, Arg&& _arg) noexcept
+    static TIMEMORY_HOT_INLINE Ret join(SepT&&, Arg&& _arg) noexcept
     {
         return std::forward<Arg>(_arg);
     }
@@ -421,7 +422,7 @@ struct apply<std::string>
     //----------------------------------------------------------------------------------//
 
     template <typename SepT, typename Arg, if_string_t<Arg, false> = 0>
-    static Ret join(SepT&&, Arg&& _arg) noexcept
+    static TIMEMORY_HOT_INLINE Ret join(SepT&&, Arg&& _arg) noexcept
     {
         std::stringstream ss;
         ss << _arg;
@@ -430,8 +431,8 @@ struct apply<std::string>
 
     //----------------------------------------------------------------------------------//
 
-    static Ret join(const string_t&) noexcept { return Ret{}; }
-    static Ret join(const char) noexcept { return Ret{}; }
+    static TIMEMORY_HOT_INLINE Ret join(const string_t&) noexcept { return Ret{}; }
+    static TIMEMORY_HOT_INLINE Ret join(const char) noexcept { return Ret{}; }
 
     //----------------------------------------------------------------------------------//
 };
@@ -451,7 +452,7 @@ struct apply
     //  invoke a function
     //
     template <typename Fn, typename... Args, size_t N = sizeof...(Args)>
-    static Ret invoke(Fn&& __f, Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE Ret invoke(Fn&& __f, Args&&... __args) noexcept
     {
         return __f(std::forward<Args>(__args)...);
     }
@@ -461,7 +462,7 @@ struct apply
     //
     template <typename Fn, template <typename...> class Tuple, typename... Args,
               size_t N = sizeof...(Args)>
-    static Ret invoke(Fn&& __f, Tuple<Args...>&& __t) noexcept
+    static TIMEMORY_HOT_INLINE Ret invoke(Fn&& __f, Tuple<Args...>&& __t) noexcept
     {
         using Tuple_t = Tuple<Args...>;
         return internal::apply<Ret>::template invoke<Fn, Tuple_t>(
@@ -471,7 +472,8 @@ struct apply
     //----------------------------------------------------------------------------------//
 
     template <typename SepT, typename Tuple, size_t... Idx>
-    static string_t join(SepT&& separator, Tuple&& __tup, index_sequence<Idx...>) noexcept
+    static TIMEMORY_HOT_INLINE string_t join(SepT&& separator, Tuple&& __tup,
+                                             index_sequence<Idx...>) noexcept
     {
         return apply<string_t>::join(separator, std::get<Idx>(__tup)...);
     }
@@ -514,8 +516,9 @@ struct apply<std::tuple<std::string>>
     template <typename LabelSep, typename EntrySep, typename LabelTup, typename EntryTup,
               size_t N                  = std::tuple_size<decay_t<LabelTup>>::value,
               enable_if_t<(N > 0), int> = 0>
-    static Ret join(LabelSep&& _label_sep, EntrySep&& _entry_sep, LabelTup&& _label_tup,
-                    EntryTup&& _entry_tup) noexcept
+    static TIMEMORY_HOT_INLINE Ret join(LabelSep&& _label_sep, EntrySep&& _entry_sep,
+                                        LabelTup&& _label_tup,
+                                        EntryTup&& _entry_tup) noexcept
     {
         // clang-format off
         return impl::join(std::forward<LabelSep>(_label_sep),
@@ -532,7 +535,8 @@ struct apply<std::tuple<std::string>>
     template <typename LabelSep, typename EntrySep, typename LabelTup, typename EntryTup,
               size_t N                 = std::tuple_size<decay_t<LabelTup>>::value,
               enable_if_t<N == 0, int> = 0>
-    static Ret join(LabelSep&&, EntrySep&&, LabelTup&&, EntryTup&&) noexcept
+    static TIMEMORY_HOT_INLINE Ret join(LabelSep&&, EntrySep&&, LabelTup&&,
+                                        EntryTup&&) noexcept
     {
         return "";
     }
@@ -560,7 +564,7 @@ struct apply<void>
     //  invoke a function
     //
     template <typename Fn, typename... Args, size_t N = sizeof...(Args)>
-    static Ret invoke(Fn&& __f, Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE Ret invoke(Fn&& __f, Args&&... __args) noexcept
     {
         __f(std::forward<Args>(__args)...);
     }
@@ -570,7 +574,7 @@ struct apply<void>
     //
     template <typename Fn, template <typename...> class Tuple, typename... Args,
               size_t N = sizeof...(Args)>
-    static Ret invoke(Fn&& __f, Tuple<Args...>&& __t) noexcept
+    static TIMEMORY_HOT_INLINE Ret invoke(Fn&& __f, Tuple<Args...>&& __t) noexcept
     {
         using Tuple_t = Tuple<Args...>;
         internal::apply<Ret>::template invoke<Fn, Tuple_t>(
@@ -581,7 +585,7 @@ struct apply<void>
     //  per-element addition
     //
     template <typename Tuple, size_t N = std::tuple_size<Tuple>::value>
-    static void plus(Tuple& _lhs, const Tuple& _rhs) noexcept
+    static TIMEMORY_HOT_INLINE void plus(Tuple& _lhs, const Tuple& _rhs) noexcept
     {
         math::plus(_lhs, _rhs);
     }
@@ -590,7 +594,7 @@ struct apply<void>
     //  per-element subtraction
     //
     template <typename Tuple, size_t N = std::tuple_size<Tuple>::value>
-    static void minus(Tuple& _lhs, const Tuple& _rhs) noexcept
+    static TIMEMORY_HOT_INLINE void minus(Tuple& _lhs, const Tuple& _rhs) noexcept
     {
         math::minus(_lhs, _rhs);
     }
@@ -599,7 +603,8 @@ struct apply<void>
     //  per-element percent difference
     //
     template <typename Tuple, size_t N = std::tuple_size<Tuple>::value>
-    static void percent_diff(Tuple& _ret, const Tuple& _lhs, const Tuple& _rhs) noexcept
+    static TIMEMORY_HOT_INLINE void percent_diff(Tuple& _ret, const Tuple& _lhs,
+                                                 const Tuple& _rhs) noexcept
     {
         _ret = math::compute<Tuple>::percent_diff(_lhs, _rhs);
     }
@@ -618,7 +623,7 @@ struct apply<void>
 
     template <size_t N, typename Device, typename Func, typename... Args,
               enable_if_t<std::is_same<Device, device::cpu>::value, char> = 0>
-    static void unroll(Func&& __func, Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE void unroll(Func&& __func, Args&&... __args) noexcept
     {
         internal::apply<void>::template unroll<N, Device, Func, Args...>(
             std::forward<Func>(__func), std::forward<Args>(__args)...);
@@ -631,19 +636,19 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Tp, typename Value>
-    static inline auto set_value_fold(Tp&& _t, int, Value&& _v) noexcept
+    static TIMEMORY_HOT_INLINE auto set_value_fold(Tp&& _t, int, Value&& _v) noexcept
         -> decltype(std::forward<Tp>(_t) = std::forward<Value>(_v), void())
     {
         std::forward<Tp>(_t) = std::forward<Value>(_v);
     }
 
     template <typename Tp, typename Value>
-    static inline void set_value_fold(Tp&&, long, Value&&) noexcept
+    static TIMEMORY_HOT_INLINE void set_value_fold(Tp&&, long, Value&&) noexcept
     {}
 
     template <typename Tuple, typename Value, size_t... Idx>
-    static inline void set_value_fold(Tuple&& _t, Value&& _v,
-                                      index_sequence<Idx...>) noexcept
+    static TIMEMORY_HOT_INLINE void set_value_fold(Tuple&& _t, Value&& _v,
+                                                   index_sequence<Idx...>) noexcept
     {
         TIMEMORY_FOLD_EXPRESSION(
             set_value_fold(std::get<Idx>(_t), 0, std::forward<Value>(_v)));
@@ -652,7 +657,7 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Tuple, typename Value>
-    static inline void set_value(Tuple&& _t, Value&& _v) noexcept
+    static TIMEMORY_HOT_INLINE void set_value(Tuple&& _t, Value&& _v) noexcept
     {
         constexpr auto N = std::tuple_size<decay_t<Tuple>>::value;
         set_value_fold(std::forward<Tuple>(_t), std::forward<Value>(_v),
@@ -662,7 +667,8 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Access, typename Tuple, size_t... Idx, typename... Args>
-    static inline void access_fold(Tuple&& _t, index_sequence<Idx...>, Args&&... _args)
+    static TIMEMORY_HOT_INLINE void access_fold(Tuple&& _t, index_sequence<Idx...>,
+                                                Args&&... _args)
     {
         TIMEMORY_FOLD_EXPRESSION(
             Access_t<Idx, Access>(std::get<Idx>(_t), std::forward<Args>(_args)...));
@@ -671,7 +677,7 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Access, typename Tuple, typename... Args>
-    static inline void access(Tuple&& __t, Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE void access(Tuple&& __t, Args&&... __args) noexcept
     {
         constexpr auto N  = std::tuple_size<decay_t<Access>>::value;
         constexpr auto Nt = std::tuple_size<decay_t<Tuple>>::value;
@@ -683,7 +689,7 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Access, size_t... Idx, typename... Args>
-    static inline auto get_fold(index_sequence<Idx...>, Args&&... _args)
+    static TIMEMORY_HOT_INLINE auto get_fold(index_sequence<Idx...>, Args&&... _args)
     {
         return std::make_tuple(
             Access_t<Idx, Access>::get(std::forward<Args>(_args)...)...);
@@ -692,7 +698,7 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Access, typename... Args>
-    static inline auto get(Args&&... __args)
+    static TIMEMORY_HOT_INLINE auto get(Args&&... __args)
     {
         constexpr auto N = std::tuple_size<decay_t<Access>>::value;
         return get_fold<Access>(std::make_index_sequence<N>{},
@@ -705,7 +711,7 @@ struct apply<void>
               typename... Args, size_t N = std::tuple_size<decay_t<Access>>::value,
               size_t Nt = std::tuple_size<decay_t<Tuple>>::value,
               enable_if_t<(N > 0 && Nt > 0), int> = 0>
-    static void out_of_order(Tuple&& __t, Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE void out_of_order(Tuple&& __t, Args&&... __args) noexcept
     {
         using OutOfOrder_t = internal::apply<void>::out_of_order<Access, Mapper, R>;
         OutOfOrder_t::template access<Tuple, Args...>(std::forward<Tuple>(__t),
@@ -715,7 +721,8 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Access, typename Tuple, typename... Args>
-    static void access_with_indices(Tuple&& __t, Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE void access_with_indices(Tuple&& __t,
+                                                        Args&&... __args) noexcept
     {
         constexpr auto N = std::tuple_size<decay_t<Tuple>>::value;
         internal::apply<void>::template apply_access_with_indices<Access, Tuple, Args...>(
@@ -726,7 +733,8 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename Access, typename TupleA, typename TupleB, typename... Args>
-    static void access2(TupleA&& __ta, TupleB&& __tb, Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE void access2(TupleA&& __ta, TupleB&& __tb,
+                                            Args&&... __args) noexcept
     {
         constexpr size_t N  = std::tuple_size<decay_t<Access>>::value;
         constexpr size_t Na = std::tuple_size<decay_t<TupleA>>::value;
@@ -740,7 +748,7 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <template <typename> class Access, typename Tuple, typename... Args>
-    static void unroll_access(Tuple&& __t, Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE void unroll_access(Tuple&& __t, Args&&... __args) noexcept
     {
         constexpr size_t N = std::tuple_size<decay_t<Tuple>>::value;
         internal::apply<void>::template unroll_access<Access, Tuple, Args...>(
@@ -751,7 +759,7 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <template <typename> class Access, typename Tuple, typename... Args>
-    static void type_access(Args&&... __args) noexcept
+    static TIMEMORY_HOT_INLINE void type_access(Args&&... __args) noexcept
     {
         constexpr size_t N = std::tuple_size<decay_t<Tuple>>::value;
         internal::apply<void>::template type_access<Access, Tuple, Args...>(
@@ -768,7 +776,7 @@ struct apply<void>
               typename... Args, size_t N = std::tuple_size<decay_t<Access>>::value,
               size_t Nt = std::tuple_size<decay_t<Tuple>>::value,
               enable_if_t<N == 0 || Nt == 0, int> = 0>
-    static void out_of_order(Tuple&&, Args&&...) noexcept
+    static TIMEMORY_HOT_INLINE void out_of_order(Tuple&&, Args&&...) noexcept
     {}
 
     //----------------------------------------------------------------------------------//
