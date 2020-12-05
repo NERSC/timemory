@@ -39,12 +39,12 @@
 
 //======================================================================================//
 //
-TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx,
-                                    typename Tag = api::native_tag)
+TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx, typename Tag = TIMEMORY_API)
 //
 TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)
 //
-TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle, user_bundle<ompt_bundle_idx, api::native_tag>)
+TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle,
+                         user_bundle<ompt_bundle_idx, project::timemory>)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -59,7 +59,7 @@ namespace tim
 {
 namespace component
 {
-template <typename Api = api::native_tag>
+template <typename Api = TIMEMORY_API>
 struct ompt_handle;
 
 template <typename Api>
@@ -68,8 +68,8 @@ struct ompt_data_tracker;
 struct ompt_target_data_tag
 {};
 
-using ompt_native_handle       = ompt_handle<api::native_tag>;
-using ompt_native_data_tracker = ompt_data_tracker<api::native_tag>;
+using ompt_native_handle       = ompt_handle<TIMEMORY_API>;
+using ompt_native_data_tracker = ompt_data_tracker<TIMEMORY_API>;
 //
 using ompt_data_tracker_t = data_tracker<int64_t, ompt_target_data_tag>;
 //
@@ -122,7 +122,7 @@ struct is_available<component::ompt_native_data_tracker> : false_type
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<api::native_tag>, OMPT_HANDLE, "ompt_handle",
+TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<TIMEMORY_API>, OMPT_HANDLE, "ompt_handle",
                                  "ompt", "ompt_handle", "openmp", "openmp_tools")
 //
 //======================================================================================//
@@ -166,7 +166,7 @@ struct endpoint_callback
 /// \brief this struct provides the methods through which a unique identifier and
 /// a label are generated for each OMPT callback.
 ///
-template <typename Api = api::native_tag>
+template <typename Api = TIMEMORY_API>
 struct context_handler;
 //
 //--------------------------------------------------------------------------------------//
@@ -175,7 +175,7 @@ struct context_handler;
 /// \brief this struct provides the routines through which timemory components
 /// are applied to the callbacks
 ///
-template <typename Components, typename Api = api::native_tag>
+template <typename Components, typename Api = TIMEMORY_API>
 struct callback_connector;
 //
 //--------------------------------------------------------------------------------------//

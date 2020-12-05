@@ -94,7 +94,7 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)  // NOLINT
 
     using Archive = cereal::MinimalJSONOutputArchive;
     // using Archive     = cereal::PrettyJSONOutputArchive;
-    using policy_type = policy::output_archive<Archive, api::native_tag>;
+    using policy_type = policy::output_archive<Archive, TIMEMORY_API>;
 
     auto outfname =
         settings::compose_output_filename(_label + std::string(".flamegraph"), ".json");

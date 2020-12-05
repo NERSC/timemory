@@ -24,61 +24,13 @@
 
 #pragma once
 
+#include "timemory/api/macros.hpp"
 #include "timemory/defines.h"
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/version.h"
 
 #include <type_traits>
-
-/// \macro TIMEMORY_DECLARE_NS_API(NS, NAME)
-/// \brief Declare an API category. APIs are used to designate
-/// different project implementations, different external library tools, etc.
-///
-#if !defined(TIMEMORY_DECLARE_NS_API)
-#    define TIMEMORY_DECLARE_NS_API(NS, NAME)                                            \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace NS                                                                     \
-        {                                                                                \
-        struct NAME;                                                                     \
-        }                                                                                \
-        }
-#endif
-
-#if !defined(TIMEMORY_DECLARE_API)
-#    define TIMEMORY_DECLARE_API(NAME) TIMEMORY_DECLARE_NS_API(api, NAME)
-#endif
-
-//
-/// \macro TIMEMORY_DEFINE_NS_API(NS, NAME)
-/// \param NS sub-namespace within tim::api
-/// \param NAME the name of the API
-///
-/// \brief Define an API category within a namespace
-///
-#if !defined(TIMEMORY_DEFINE_NS_API)
-#    define TIMEMORY_DEFINE_NS_API(NS, NAME)                                             \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace NS                                                                     \
-        {                                                                                \
-        struct NAME : public concepts::api                                               \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-
-///
-/// \macro TIMEMORY_DEFINE_API
-/// \brief Define an API category. APIs are used to designate
-/// different project implementations, different external library tools, etc.
-/// Note: this macro inherits from \ref concepts::api instead of specializing
-/// is_api<...>, thus allowing specialization from tools downstream
-///
-#if !defined(TIMEMORY_DEFINE_API)
-#    define TIMEMORY_DEFINE_API(NAME) TIMEMORY_DEFINE_NS_API(api, NAME)
-#endif
 
 //
 // General APIs
@@ -216,7 +168,7 @@ class XMLOutputArchive;
 //
 
 #if !defined(TIMEMORY_DEFAULT_API)
-#    define TIMEMORY_DEFAULT_API ::tim::api::native_tag
+#    define TIMEMORY_DEFAULT_API ::tim::project::timemory
 #endif
 
 #if !defined(TIMEMORY_API)

@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
 #include "timemory/macros/attributes.hpp"
 
 #include <cstddef>
@@ -45,14 +46,13 @@
 
 namespace tim
 {
-//======================================================================================//
-
 template <typename Type,
-          typename Pointer = std::unique_ptr<Type, std::default_delete<Type>>>
+          typename Pointer = std::unique_ptr<Type, std::default_delete<Type>>,
+          typename Tag     = TIMEMORY_API>
 class singleton
 {
 public:
-    using this_type     = singleton<Type, Pointer>;
+    using this_type     = singleton<Type, Pointer, Tag>;
     using thread_id_t   = std::thread::id;
     using mutex_t       = std::recursive_mutex;
     using auto_lock_t   = std::unique_lock<mutex_t>;
@@ -261,60 +261,60 @@ private:
 
 //======================================================================================//
 
-template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::thread_id_t&
-singleton<Type, Pointer>::f_master_thread()
+template <typename Type, typename Pointer, typename Tag>
+typename singleton<Type, Pointer, Tag>::thread_id_t&
+singleton<Type, Pointer, Tag>::f_master_thread()
 {
     return f_persistent_data().m_master_thread;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::pointer&
-singleton<Type, Pointer>::f_master_instance()
+template <typename Type, typename Pointer, typename Tag>
+typename singleton<Type, Pointer, Tag>::pointer&
+singleton<Type, Pointer, Tag>::f_master_instance()
 {
     return f_persistent_data().m_master_instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::mutex_t&
-singleton<Type, Pointer>::f_mutex()
+template <typename Type, typename Pointer, typename Tag>
+typename singleton<Type, Pointer, Tag>::mutex_t&
+singleton<Type, Pointer, Tag>::f_mutex()
 {
     return f_persistent_data().m_mutex;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::list_t&
-singleton<Type, Pointer>::f_children()
+template <typename Type, typename Pointer, typename Tag>
+typename singleton<Type, Pointer, Tag>::list_t&
+singleton<Type, Pointer, Tag>::f_children()
 {
     return f_persistent_data().m_children;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
-singleton<Type, Pointer>::singleton()
+template <typename Type, typename Pointer, typename Tag>
+singleton<Type, Pointer, Tag>::singleton()
 {
     initialize();
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
-singleton<Type, Pointer>::singleton(pointer ptr)
+template <typename Type, typename Pointer, typename Tag>
+singleton<Type, Pointer, Tag>::singleton(pointer ptr)
 {
     initialize(ptr);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
-singleton<Type, Pointer>::~singleton()
+template <typename Type, typename Pointer, typename Tag>
+singleton<Type, Pointer, Tag>::~singleton()
 {
     auto& del = get_deleter();
     if(del)
@@ -323,9 +323,9 @@ singleton<Type, Pointer>::~singleton()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
+template <typename Type, typename Pointer, typename Tag>
 void
-singleton<Type, Pointer>::initialize()
+singleton<Type, Pointer, Tag>::initialize()
 {
     if(!f_master_instance())
     {
@@ -336,9 +336,9 @@ singleton<Type, Pointer>::initialize()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
+template <typename Type, typename Pointer, typename Tag>
 void
-singleton<Type, Pointer>::initialize(pointer ptr)
+singleton<Type, Pointer, Tag>::initialize(pointer ptr)
 {
     if(!f_master_instance())
     {
@@ -349,9 +349,9 @@ singleton<Type, Pointer>::initialize(pointer ptr)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
+template <typename Type, typename Pointer, typename Tag>
 void
-singleton<Type, Pointer>::destroy()
+singleton<Type, Pointer, Tag>::destroy()
 {
     if(std::this_thread::get_id() == f_master_thread() && f_master_instance())
     {
@@ -366,9 +366,9 @@ singleton<Type, Pointer>::destroy()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::pointer
-singleton<Type, Pointer>::instance()
+template <typename Type, typename Pointer, typename Tag>
+typename singleton<Type, Pointer, Tag>::pointer
+singleton<Type, Pointer, Tag>::instance()
 {
     if(std::this_thread::get_id() == f_master_thread())
         return master_instance();
@@ -382,9 +382,9 @@ singleton<Type, Pointer>::instance()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::pointer
-singleton<Type, Pointer>::master_instance()
+template <typename Type, typename Pointer, typename Tag>
+typename singleton<Type, Pointer, Tag>::pointer
+singleton<Type, Pointer, Tag>::master_instance()
 {
     if(!f_master_instance())
     {

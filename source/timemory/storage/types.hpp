@@ -186,7 +186,8 @@ class storage;
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-using storage_singleton = singleton<Tp, std::unique_ptr<Tp, impl::storage_deleter<Tp>>>;
+using storage_singleton =
+    singleton<Tp, std::unique_ptr<Tp, impl::storage_deleter<Tp>>, TIMEMORY_API>;
 //
 //--------------------------------------------------------------------------------------//
 //

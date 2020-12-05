@@ -48,7 +48,7 @@ namespace data
 /// defined for a specific data type (e.g. int) with a tag (e.g. ConvergenceIterations)
 /// and shared among multiple template types of data_tracker<T>
 ///
-template <typename V, typename Tag = api::native_tag>
+template <typename V, typename Tag = TIMEMORY_API>
 struct handler
 {
     using value_type = V;

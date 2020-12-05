@@ -584,7 +584,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_OMPT_API_TAG)
-#    define TIMEMORY_OMPT_API_TAG ::tim::api::native_tag
+#    define TIMEMORY_OMPT_API_TAG TIMEMORY_API
 #endif
 
 // for callback declarations

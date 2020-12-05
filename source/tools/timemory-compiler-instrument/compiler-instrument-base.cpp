@@ -28,6 +28,15 @@
 #define TIMEMORY_VISIBILITY(...) TIMEMORY_INTERNAL
 #define TIMEMORY_INTERNAL_NO_INSTRUMENT TIMEMORY_INTERNAL TIMEMORY_NEVER_INSTRUMENT
 
+#include "timemory/api/macros.hpp"
+
+// create an API for the compiler instrumentation whose singletons will not be shared
+// with the default timemory API
+TIMEMORY_DEFINE_NS_API(project, compiler_instrument)
+
+// define the API for all instantiations before including any more timemory headers
+#define TIMEMORY_API ::tim::project::compiler_instrument
+
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
 
@@ -402,7 +411,25 @@ finalize()
 
     auto _manager = tim::manager::instance();
     if(_manager && !_manager->is_finalized() && !_manager->is_finalizing())
+    {
+        wall_clock wc{};
+        peak_rss   pr{};
+        tim::invoke::disjoint::start(std::forward_as_tuple(wc, pr));
+        //
         tim::timemory_finalize();
+        //
+        tim::invoke::disjoint::stop(std::forward_as_tuple(wc, pr));
+        std::stringstream ss;
+        ss << "required " << wc.get() << " " << wc.display_unit() << " and " << pr.get()
+           << " " << pr.display_unit();
+        std::string msg = ss.str();
+        printf("[pid=%i][tid=%i]> timemory-compiler-instrument: finalization %s\n",
+               (int) tim::process::get_id(), (int) tim::threading::get_id(), msg.c_str());
+#if defined(TIMEMORY_INTERNAL_TESTING)
+        assert(wc.get() > 0.0);
+        assert(pr.get() > 0.0);
+#endif
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -562,7 +589,9 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
                 PRINT_HERE("%s", "Creating timemory manager");
             // create the manager and initialize the storage
             auto _tlm = tim::manager::instance();
+#if defined(TIMEMORY_INTERNAL_TESTING)
             assert(_tlm.get() != nullptr);
+#endif
             if(_wrapper->debug())
                 PRINT_HERE("%s", "Initializing timemory component storage");
             // initialize the storage

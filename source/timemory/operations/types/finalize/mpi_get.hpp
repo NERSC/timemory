@@ -133,7 +133,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         std::stringstream ss;
         {
             auto oa = policy::output_archive<cereal::MinimalJSONOutputArchive,
-                                             api::native_tag>::get(ss);
+                                             TIMEMORY_API>::get(ss);
             (*oa)(cereal::make_nvp("data", src));
         }
         return ss.str();
@@ -148,7 +148,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         ss << src;
         {
             auto ia =
-                policy::input_archive<cereal::JSONInputArchive, api::native_tag>::get(ss);
+                policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
             (*ia)(cereal::make_nvp("data", ret));
             if(settings::debug())
                 printf("[RECV: %i]> data size: %lli\n", comm_rank,
@@ -359,7 +359,7 @@ mpi_get<Type, true>::operator()(basic_tree_vector_type& bt)
         std::stringstream ss;
         {
             auto oa = policy::output_archive<cereal::MinimalJSONOutputArchive,
-                                             api::native_tag>::get(ss);
+                                             TIMEMORY_API>::get(ss);
             (*oa)(cereal::make_nvp("data", src));
         }
         return ss.str();
@@ -374,7 +374,7 @@ mpi_get<Type, true>::operator()(basic_tree_vector_type& bt)
         ss << src;
         {
             auto ia =
-                policy::input_archive<cereal::JSONInputArchive, api::native_tag>::get(ss);
+                policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
             (*ia)(cereal::make_nvp("data", ret));
             if(settings::debug())
                 printf("[RECV: %i]> data size: %lli\n", comm_rank,
@@ -479,7 +479,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         std::stringstream ss;
         {
             auto oa = policy::output_archive<cereal::MinimalJSONOutputArchive,
-                                             api::native_tag>::get(ss);
+                                             TIMEMORY_API>::get(ss);
             (*oa)(cereal::make_nvp("data", src));
         }
         return ss.str();
@@ -494,7 +494,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         ss << src;
         {
             auto ia =
-                policy::input_archive<cereal::JSONInputArchive, api::native_tag>::get(ss);
+                policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
             (*ia)(cereal::make_nvp("data", ret));
         }
         return ret;
