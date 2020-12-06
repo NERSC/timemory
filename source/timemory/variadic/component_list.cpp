@@ -235,9 +235,7 @@ template <typename... Args>
 void
 component_list<Types...>::sample(Args&&... args)
 {
-    sample_type _samples{};
-    apply_v::access2<operation_t<operation::sample>>(m_data, _samples,
-                                                     std::forward<Args>(args)...);
+    invoke::invoke<operation::sample, TIMEMORY_API>(m_data, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//

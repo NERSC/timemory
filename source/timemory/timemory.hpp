@@ -323,6 +323,8 @@ struct dummy
 #        define TIMEMORY_DEFINE_VARIADIC_TRAIT(...)
 #    endif
 
+#    include "timemory/general/serialization.hpp"
+
 #else
 
 #    if !defined(TIMEMORY_MASTER_HEADER)
@@ -343,6 +345,7 @@ struct dummy
 #    include "timemory/api.hpp"
 #    include "timemory/config.hpp"
 #    include "timemory/enum.h"
+#    include "timemory/general.hpp"
 #    include "timemory/plotting.hpp"
 #    include "timemory/types.hpp"
 #    include "timemory/units.hpp"
@@ -361,31 +364,6 @@ struct dummy
 //
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-/// args:
-///     1) filename
-///     2) reference an object
-///
-template <typename Tp>
-void
-generic_serialization(const std::string& fname, const Tp& obj)
-{
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
-    {
-        // ensure json write final block during destruction before the file is closed
-        using policy_type = policy::output_archive_t<Tp>;
-        auto oa           = policy_type::get(ofs);
-        oa->setNextName("timemory");
-        oa->startNode();
-        (*oa)(cereal::make_nvp("data", obj));
-        oa->finishNode();
-    }
-    if(ofs)
-        ofs << std::endl;
-    ofs.close();
-}
-//
 // deprecated namespace
 namespace variadic
 {

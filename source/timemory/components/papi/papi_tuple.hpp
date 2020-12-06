@@ -151,6 +151,20 @@ public:
     TIMEMORY_DEFAULT_OBJECT(papi_tuple)
 
     //----------------------------------------------------------------------------------//
+    // sample
+    //
+    void sample()
+    {
+        if(events.size() == 0)
+        {
+            configure();
+            events = get_events<common_type>();
+        }
+
+        accum = value = record();
+    }
+
+    //----------------------------------------------------------------------------------//
     // start
     //
     void start()

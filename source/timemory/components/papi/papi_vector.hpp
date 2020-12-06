@@ -138,6 +138,20 @@ struct papi_vector
     }
 
     //----------------------------------------------------------------------------------//
+    // sample
+    //
+    void sample()
+    {
+        if(events.size() == 0)
+        {
+            configure();
+            events = get_events<common_type>();
+        }
+
+        accum = value = record();
+    }
+
+    //----------------------------------------------------------------------------------//
     // start
     //
     void start()

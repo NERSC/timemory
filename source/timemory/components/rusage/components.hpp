@@ -81,25 +81,23 @@ struct peak_rss : public base<peak_rss>
         accum += value;
     }
 
-    void measure() { accum = value = std::max<int64_t>(value, record()); }
+    /// sample a measurement
+    void sample() { accum = value = std::max<int64_t>(value, record()); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    /// sample a measurement from cached data
+    void sample(const cache_type& _cache)
     {
-        return _cache.get_peak_rss();
+        accum = value = std::max<int64_t>(value, record(_cache));
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    /// read the value from cached data
+    static value_type record(const cache_type& _cache) { return _cache.get_peak_rss(); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    /// start a measurement using the cached data
+    void start(const cache_type& _cache) { value = record(_cache); }
+
+    /// stop a measurement using the cached data
+    void stop(const cache_type& _cache)
     {
         auto tmp   = record(_cache);
         auto delta = tmp - value;
@@ -141,7 +139,7 @@ struct page_rss : public base<page_rss, int64_t>
         value = (record() - value);
         accum += value;
     }
-    void measure() { accum = value = std::max<int64_t>(value, record()); }
+    void sample() { accum = value = std::max<int64_t>(value, record()); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -177,23 +175,11 @@ struct num_io_in : public base<num_io_in>
         accum += value;
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
-    {
-        return _cache.get_num_io_in();
-    }
+    static value_type record(const cache_type& _cache) { return _cache.get_num_io_in(); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    void stop(const cache_type& _cache)
     {
         auto tmp = record(_cache);
         accum += (tmp - value);
@@ -234,23 +220,11 @@ struct num_io_out : public base<num_io_out>
         accum += value;
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
-    {
-        return _cache.get_num_io_out();
-    }
+    static value_type record(const cache_type& _cache) { return _cache.get_num_io_out(); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    void stop(const cache_type& _cache)
     {
         auto tmp = record(_cache);
         accum += (tmp - value);
@@ -293,23 +267,14 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
         accum += value;
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    static value_type record(const cache_type& _cache)
     {
         return _cache.get_num_minor_page_faults();
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    void stop(const cache_type& _cache)
     {
         auto tmp = record(_cache);
         accum += (tmp - value);
@@ -350,23 +315,14 @@ struct num_major_page_faults : public base<num_major_page_faults>
         accum += value;
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    static value_type record(const cache_type& _cache)
     {
         return _cache.get_num_major_page_faults();
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    void stop(const cache_type& _cache)
     {
         auto tmp = record(_cache);
         accum += (tmp - value);
@@ -410,23 +366,14 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
         accum += value;
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    static value_type record(const cache_type& _cache)
     {
         return _cache.get_num_voluntary_context_switch();
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    void stop(const cache_type& _cache)
     {
         auto tmp = record(_cache);
         accum += (tmp - value);
@@ -471,23 +418,14 @@ struct priority_context_switch : public base<priority_context_switch>
         accum += value;
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    static value_type record(const cache_type& _cache)
     {
         return _cache.get_num_priority_context_switch();
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    void stop(const cache_type& _cache)
     {
         auto tmp = record(_cache);
         accum += (tmp - value);
@@ -522,7 +460,7 @@ struct virtual_memory : public base<virtual_memory>
         value = (record() - value);
         accum += value;
     }
-    void measure() { accum = value = std::max<int64_t>(value, record()); }
+    void sample() { accum = value = std::max<int64_t>(value, record()); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -562,23 +500,14 @@ struct user_mode_time : public base<user_mode_time, int64_t>
         }
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    static value_type record(const cache_type& _cache)
     {
         return _cache.get_user_mode_time();
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    void stop(const cache_type& _cache)
     {
         auto tmp = record(_cache);
         if(tmp > value)
@@ -626,23 +555,14 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
         }
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    static value_type record(const cache_type& _cache)
     {
         return _cache.get_kernel_mode_time();
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    void stop(const cache_type& _cache)
     {
         auto tmp = record(_cache);
         if(tmp > value)
@@ -683,23 +603,14 @@ struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64
         accum = std::max(accum, value);
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    static value_type record(const cache_type& _cache)
     {
         return value_type{ _cache.get_peak_rss(), 0 };
     }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                        = cache_type,
-              enable_if_t<std::is_same<CacheT, rusage_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    void stop(const cache_type& _cache)
     {
         value = value_type{ value.first, record(_cache).first };
         accum = std::max(accum, value);

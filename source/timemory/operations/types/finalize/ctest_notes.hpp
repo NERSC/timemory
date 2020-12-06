@@ -55,6 +55,13 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
 
     void operator()(strset_t* data)
     {
+        auto _settings = settings::instance();
+        if(data->empty() || !_settings || !_settings->get_ctest_notes())
+        {
+            delete data;
+            return;
+        }
+
         std::stringstream ss;
         // loop over filenames
         for(auto&& itr : *data)
@@ -81,6 +88,7 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
                           << std::endl;
             ofs << ss.str() << std::endl;
         }
+        delete data;
     }
 };
 

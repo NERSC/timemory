@@ -269,10 +269,7 @@ template <typename... Args>
 void
 component_bundle<Tag, Types...>::sample(Args&&... args)
 {
-    sample_type _samples{};
-    if(trait::runtime_enabled<Tag>::get())
-        apply_v::access2<operation_t<operation::sample>>(m_data, _samples,
-                                                         std::forward<Args>(args)...);
+    invoke::invoke<operation::sample, Tag>(m_data, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
