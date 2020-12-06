@@ -124,3 +124,9 @@
 #        define TIMEMORY_NOCLONE
 #    endif
 #endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_HOT_INLINE)
+#    define TIMEMORY_HOT_INLINE TIMEMORY_HOT TIMEMORY_INLINE
+#endif

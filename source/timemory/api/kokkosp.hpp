@@ -313,6 +313,12 @@ extern "C"
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_end_parallel_scan(uint64_t kernid)
         TIMEMORY_KOKKOSP_POSTFIX;
 
+    TIMEMORY_KOKKOSP_PREFIX void kokkosp_begin_fence(
+        const char* name, uint32_t devid, uint64_t* kernid) TIMEMORY_KOKKOSP_POSTFIX;
+
+    TIMEMORY_KOKKOSP_PREFIX void kokkosp_end_fence(uint64_t kernid)
+        TIMEMORY_KOKKOSP_POSTFIX;
+
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_push_profile_region(const char* name)
         TIMEMORY_KOKKOSP_POSTFIX;
 
@@ -343,4 +349,7 @@ extern "C"
         uint64_t size) TIMEMORY_KOKKOSP_POSTFIX;
 
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_end_deep_copy() TIMEMORY_KOKKOSP_POSTFIX;
+
+    TIMEMORY_KOKKOSP_PREFIX void kokkosp_profile_event(const char* name)
+        TIMEMORY_KOKKOSP_POSTFIX;
 }

@@ -220,6 +220,24 @@ kokkosp_end_parallel_scan(uint64_t kernid)
 //--------------------------------------------------------------------------------------//
 
 extern "C" void
+kokkosp_begin_fence(const char* name, uint32_t devid, uint64_t* kernid)
+{
+    auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+    *kernid    = get_unique_id();
+    create_profiler(pname, *kernid);
+    start_profiler(*kernid);
+}
+
+extern "C" void
+kokkosp_end_fence(uint64_t kernid)
+{
+    stop_profiler(kernid);
+    destroy_profiler(kernid);
+}
+
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
 kokkosp_push_profile_region(const char* name)
 {
     get_profile_stack().push_back(profile_entry_t(name, true));
@@ -266,3 +284,9 @@ kokkosp_stop_profile_section(uint32_t secid)
 }
 
 //--------------------------------------------------------------------------------------//
+
+extern "C" void
+kokkosp_profile_event(const char* name)
+{
+    profile_entry_t{}.mark(name);
+}

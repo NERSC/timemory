@@ -241,7 +241,7 @@ struct generic_deleter
 
     TIMEMORY_DELETED_OBJECT(generic_deleter)
 
-    explicit generic_deleter(type*& obj)
+    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(type*& obj)
     {
         DEBUG_PRINT_HERE("%s %s :: %p", "deleting pointer lvalue",
                          demangle<type>().c_str(), (void*) obj);
@@ -250,7 +250,7 @@ struct generic_deleter
     }
 
     template <typename Up, enable_if_t<std::is_pointer<Up>::value, int> = 0>
-    explicit generic_deleter(Up&& obj)
+    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(Up&& obj)
     {
         DEBUG_PRINT_HERE("%s %s :: %p", "deleting pointer rvalue",
                          demangle<type>().c_str(), (void*) obj);
@@ -259,14 +259,15 @@ struct generic_deleter
     }
 
     template <typename... Deleter>
-    explicit generic_deleter(std::unique_ptr<type, Deleter...>& obj)
+    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(
+        std::unique_ptr<type, Deleter...>& obj)
     {
         DEBUG_PRINT_HERE("%s %s :: %p", "deleting unique_ptr", demangle<type>().c_str(),
                          (void*) obj.get());
         obj.reset();
     }
 
-    explicit generic_deleter(std::shared_ptr<type> obj)
+    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(std::shared_ptr<type> obj)
     {
         DEBUG_PRINT_HERE("%s %s :: %p", "deleting shared_ptr", demangle<type>().c_str(),
                          (void*) obj.get());
@@ -274,7 +275,7 @@ struct generic_deleter
     }
 
     template <typename Up, enable_if_t<!std::is_pointer<Up>::value, int> = 0>
-    explicit generic_deleter(Up&&)
+    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(Up&&)
     {
         DEBUG_PRINT_HERE("%s %s", "type is not deleted", demangle<type>().c_str());
     }
@@ -295,14 +296,14 @@ struct generic_counter
     TIMEMORY_DELETED_OBJECT(generic_counter)
 
     template <typename Up, enable_if_t<std::is_pointer<Up>::value, int> = 0>
-    explicit generic_counter(const Up& obj, uint64_t& count)
+    TIMEMORY_ALWAYS_INLINE explicit generic_counter(const Up& obj, uint64_t& count)
     {
         // static_assert(std::is_same<Up, type>::value, "Error! Up != type");
         count += (trait::runtime_enabled<type>::get() && obj) ? 1 : 0;
     }
 
     template <typename Up, enable_if_t<!std::is_pointer<Up>::value, int> = 0>
-    explicit generic_counter(const Up&, uint64_t& count)
+    TIMEMORY_ALWAYS_INLINE explicit generic_counter(const Up&, uint64_t& count)
     {
         // static_assert(std::is_same<Up, type>::value, "Error! Up != type");
         count += (trait::runtime_enabled<type>::get()) ? 1 : 0;

@@ -94,34 +94,37 @@ struct add_statistics
     //
     template <typename StatsT, typename U = type,
               enable_if_t<enabled_statistics<U, StatsT>::value, int> = 0>
-    add_statistics(const U& rhs, StatsT& stats)
-    {
-        // for type comparison
-        using incoming_t = decay_t<typename StatsT::value_type>;
-        using expected_t = decay_t<typename trait::statistics<U>::type>;
-        // check the incomming stat type against declared stat type
-        // but allow for permissive_statistics when there is an acceptable
-        // implicit conversion
-        static_assert((!trait::permissive_statistics<U>::value &&
-                       std::is_same<incoming_t, expected_t>::value),
-                      "add_statistics was passed a data type different than declared "
-                      "trait::statistics type. To disable this error, e.g. permit "
-                      "implicit conversion, set trait::permissive_statistics "
-                      "to true_type for component");
-        using stats_policy_type = policy::record_statistics<U>;
-        stats_policy_type::apply(stats, rhs);
-    }
+    TIMEMORY_HOT_INLINE add_statistics(const U& rhs, StatsT& stats);
 
     //----------------------------------------------------------------------------------//
     // if statistics is not enabled
     //
     template <typename StatsT, typename U,
               enable_if_t<!enabled_statistics<U, StatsT>::value, int> = 0>
-    add_statistics(const U&, StatsT&)
+    TIMEMORY_INLINE add_statistics(const U&, StatsT&)
     {}
 };
 //
-//--------------------------------------------------------------------------------------//
+template <typename T>
+template <typename StatsT, typename U,
+          enable_if_t<enabled_statistics<U, StatsT>::value, int>>
+add_statistics<T>::add_statistics(const U& rhs, StatsT& stats)
+{
+    // for type comparison
+    using incoming_t = decay_t<typename StatsT::value_type>;
+    using expected_t = decay_t<typename trait::statistics<U>::type>;
+    // check the incomming stat type against declared stat type
+    // but allow for permissive_statistics when there is an acceptable
+    // implicit conversion
+    static_assert((!trait::permissive_statistics<U>::value &&
+                   std::is_same<incoming_t, expected_t>::value),
+                  "add_statistics was passed a data type different than declared "
+                  "trait::statistics type. To disable this error, e.g. permit "
+                  "implicit conversion, set trait::permissive_statistics "
+                  "to true_type for component");
+    using stats_policy_type = policy::record_statistics<U>;
+    stats_policy_type::apply(stats, rhs);
+}
 //
 }  // namespace operation
 }  // namespace tim

@@ -41,6 +41,50 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
+/// \struct operation::mark
+/// \brief This operation class is used for marking some event (usually in some external
+/// profiler)
+///
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct mark
+{
+    using type = Tp;
+
+    TIMEMORY_DEFAULT_OBJECT(mark)
+
+    template <typename... Args>
+    explicit mark(type& obj, Args&&... args)
+    {
+        sfinae(obj, 0, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    auto operator()(type& obj, Args&&... args)
+    {
+        return sfinae(obj, 0, std::forward<Args>(args)...);
+    }
+
+private:
+    //  The equivalent of supports args
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, Args&&... args)
+        -> decltype(obj.mark(std::forward<Args>(args)...))
+    {
+        return obj.mark(std::forward<Args>(args)...);
+    }
+
+    //  No member function
+    template <typename Up, typename... Args>
+    void sfinae(Up&, long, Args&&...)
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+///
 /// \struct operation::mark_begin
 /// \brief This operation class is used for asynchronous routines such as \ref cuda_event
 /// and \ref nvtx_marker which are passed cudaStream_t instances

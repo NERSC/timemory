@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/macros.hpp"
@@ -291,63 +292,81 @@ struct compose;
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::operation::set_started
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not it is currently within a phase measurement (to
+/// prevent restarts)
 template <typename T>
 struct set_started
 {
     TIMEMORY_DEFAULT_OBJECT(set_started)
 
     template <typename Up>
-    auto operator()(Up& obj) const
+    TIMEMORY_HOT_INLINE auto operator()(Up& obj) const
     {
         return sfinae(obj, 0);
     }
 
 private:
     template <typename Up>
-    static auto sfinae(Up& obj, int) -> decltype(obj.set_started())
+    static TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int) -> decltype(obj.set_started())
     {
         return obj.set_started();
     }
 
     template <typename Up>
-    static auto sfinae(Up&, long) -> void
+    static TIMEMORY_INLINE auto sfinae(Up&, long) -> void
     {}
 };
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::operation::set_stopped
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not it is currently within a phase measurement (to
+/// prevent stopping when it hasn't been started)
 template <typename T>
 struct set_stopped
 {
     TIMEMORY_DEFAULT_OBJECT(set_stopped)
 
     template <typename Up>
-    auto operator()(Up& obj) const
+    TIMEMORY_HOT_INLINE auto operator()(Up& obj) const
     {
         return sfinae(obj, 0);
     }
 
 private:
     template <typename Up>
-    static auto sfinae(Up& obj, int) -> decltype(obj.set_stopped())
+    static TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int) -> decltype(obj.set_stopped())
     {
         return obj.set_stopped();
     }
 
     template <typename Up>
-    static auto sfinae(Up&, long) -> void
+    static TIMEMORY_INLINE auto sfinae(Up&, long) -> void
     {}
 };
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::operation::is_running
+/// \tparam T Component type
+/// \tparam DefaultValue The value to return if the member function is not provided
+///
+/// \brief This operation attempts to call a member function which provides whether or not
+/// the component currently within a phase measurement
 template <typename T, bool DefaultValue>
 struct is_running
 {
     TIMEMORY_DEFAULT_OBJECT(is_running)
 
     template <typename Up>
-    auto operator()(const Up& obj) const
+    TIMEMORY_HOT_INLINE auto operator()(const Up& obj) const
     {
         return sfinae(obj, 0);
     }
@@ -411,6 +430,11 @@ struct standard_stop;
 //
 template <typename T>
 struct delayed_stop;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct mark;
 //
 //--------------------------------------------------------------------------------------//
 //

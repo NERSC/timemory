@@ -146,6 +146,8 @@ public:
     }
 
 public:
+    TIMEMORY_DEFAULT_OBJECT(papi_rate_tuple)
+
     void start()
     {
         value.first.start();

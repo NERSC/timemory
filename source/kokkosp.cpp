@@ -162,6 +162,22 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
+    void kokkosp_begin_fence(const char* name, uint32_t devid, uint64_t* kernid)
+    {
+        auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        *kernid    = kokkosp::get_unique_id();
+        kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *kernid);
+        kokkosp::start_profiler<kokkosp::kokkos_bundle>(*kernid);
+    }
+
+    void kokkosp_end_fence(uint64_t kernid)
+    {
+        kokkosp::stop_profiler<kokkosp::kokkos_bundle>(kernid);
+        kokkosp::destroy_profiler<kokkosp::kokkos_bundle>(kernid);
+    }
+
+    //----------------------------------------------------------------------------------//
+
     void kokkosp_push_profile_region(const char* name)
     {
         kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().push_back(
@@ -263,6 +279,13 @@ extern "C"
         kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().back().store(
             std::minus<int64_t>{}, 0);
         kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().pop_back();
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void kokkosp_profile_event(const char* name)
+    {
+        kokkosp::profiler_t<kokkosp::kokkos_bundle>{}.mark(name);
     }
 
     //----------------------------------------------------------------------------------//
