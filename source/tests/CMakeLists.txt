@@ -127,13 +127,12 @@ add_subdirectory(external)
 
 set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON")
 
-if(TARGET timemory::timemory-compiler-instrument-shared)
+if(TARGET timemory::timemory-compiler-instrument-sh)
     add_timemory_google_test(compiler_instrument_shared_tests
         SOURCES         instrumentation_tests.cpp
         DEFINITIONS     DISABLE_TIMEMORY
         LINK_LIBRARIES  common-test-libs
                         test-opt-flags
-                        ${_LIBRARY}
                         timemory::timemory-compiler-instrument-shared
         ENVIRONMENT     ${compiler_instr_env})
     #
@@ -142,7 +141,6 @@ if(TARGET timemory::timemory-compiler-instrument-shared)
         DEFINITIONS     ENABLE_MT DISABLE_TIMEMORY
         LINK_LIBRARIES  common-test-libs
                         test-opt-flags
-                        ${_LIBRARY}
                         timemory::timemory-compiler-instrument-shared
         ENVIRONMENT     ${compiler_instr_env})
     #
@@ -170,7 +168,6 @@ if(TARGET timemory::timemory-compiler-instrument-static)
         DEFINITIONS     DISABLE_TIMEMORY
         LINK_LIBRARIES  common-test-libs
                         test-opt-flags
-                        ${_LIBRARY}
                         timemory::timemory-compiler-instrument-static
         ENVIRONMENT     ${compiler_instr_env})
     #
@@ -179,7 +176,6 @@ if(TARGET timemory::timemory-compiler-instrument-static)
         DEFINITIONS     ENABLE_MT DISABLE_TIMEMORY
         LINK_LIBRARIES  common-test-libs
                         test-opt-flags
-                        ${_LIBRARY}
                         timemory::timemory-compiler-instrument-static
         ENVIRONMENT     ${compiler_instr_env})
     #
@@ -440,6 +436,8 @@ if(TIMEMORY_USE_PAPI)
                         timemory::timemory-papi
                         timemory::timemory-plotting
                         timemory::timemory-arch
+                        timemory::timemory-roofline-options
+                        test-opt-flags
                         ${_LIBRARY})
 endif()
 
@@ -772,7 +770,7 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
                 WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR}/dynamic)
             set_tests_properties(${TEST_NAME} PROPERTIES
                 ENVIRONMENT "${TEST_ENVIRON}"
-                TIMEOUT     360)
+                TIMEOUT     480)
             set_property(TEST ${_TARGET}-${_file} APPEND PROPERTY
                 DEPENDS ${_TARGET} timemory-run)
         endforeach()

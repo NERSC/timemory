@@ -970,15 +970,7 @@ private:
             // bundle_type is always: component_{tuple,list,bundle}
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
             //
-            static const char* _tool_id   = _data.tool_id.c_str();
-            static auto        _tool_hash = get_hash_id(_data.tool_id);
-            if(_tool_id != _data.tool_id.data())
-            {
-                _tool_id   = _data.tool_id.c_str();
-                _tool_hash = get_hash_id(_data.tool_id);
-            }
-            //
-            bundle_type _obj{ _tool_hash };
+            bundle_type _obj{ _data.tool_id };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
@@ -1081,15 +1073,8 @@ private:
 
         if(_orig)
         {
-            static const char* _tool_id   = _data.tool_id.c_str();
-            static auto        _tool_hash = get_hash_id(_data.tool_id);
-            if(_tool_id != _data.tool_id.data())
-            {
-                _tool_id   = _data.tool_id.c_str();
-                _tool_hash = get_hash_id(_data.tool_id);
-            }
             //
-            bundle_type _obj{ _tool_hash };
+            bundle_type _obj{ _data.tool_id };
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);

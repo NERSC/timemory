@@ -271,9 +271,9 @@ function(add_papi_connector_config _NAME)
         DEFINITIONS ${CONNECTOR_DEFINITIONS}
         ENVIRONMENT ${CONNECTOR_ENVIRONMENT}
         TARGETS timemory::timemory-papi)
-    string(REPLACE "papi_tuple" "papi_rate_tuple"
+    string(REPLACE "papi_tuple<" "papi_rate_tuple<wall_clock,"
         CONNECTOR_COMPONENTS "${CONNECTOR_COMPONENTS}")
-    add_connector_config(${_NAME}_rate
+    add_connector_config(${_NAME}_wall_rate
         CONDITION "${TIMEMORY_USE_PAPI}"
         COMPONENTS  ${CONNECTOR_COMPONENTS}
         TARGETS     ${CONNECTOR_TARGETS}

@@ -75,10 +75,10 @@ static size_t  throttle_value = 10000;
 template <typename Tp>
 using uomap_t     = std::unordered_map<const void*, std::unordered_map<const void*, Tp>>;
 using trace_set_t = tim::available_list_t;
-using trace_vec_t = std::vector<std::unique_ptr<trace_set_t>>;
-using throttle_map_t   = uomap_t<bool>;
-using overhead_map_t   = uomap_t<std::pair<monotonic_clock, size_t>>;
-using trace_map_t      = uomap_t<trace_vec_t>;
+using throttle_map_t = uomap_t<bool>;
+using overhead_map_t = uomap_t<std::tuple<size_t, monotonic_clock, size_t>>;
+using trace_vec_t =
+    std::vector<std::tuple<const void*, const void*, std::unique_ptr<trace_set_t>>>;
 using label_map_t      = std::unordered_map<const void*, size_t>;
 using empty_tuple_t    = tim::component_tuple<>;
 using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
@@ -103,7 +103,7 @@ get_overhead() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static auto&
 get_throttle() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static auto&
-get_trace_map() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+get_trace_vec() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static unsigned long
 get_trace_size() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static auto&
@@ -218,9 +218,9 @@ get_throttle()
 //--------------------------------------------------------------------------------------//
 
 static auto&
-get_trace_map()
+get_trace_vec()
 {
-    static thread_local auto _instance = new trace_map_t{};
+    static thread_local auto _instance = new trace_vec_t{};
     return _instance;
 }
 
@@ -369,7 +369,7 @@ finalize()
     tim::trace::lock<tim::trace::compiler> lk{};
     lk.acquire();
 
-    if(get_trace_map())
+    if(get_trace_vec())
         printf("[pid=%i][tid=%i]> timemory-compiler-instrument: %lu results\n",
                (int) tim::process::get_id(), (int) tim::threading::get_id(),
                (unsigned long) get_trace_size());
@@ -378,21 +378,17 @@ finalize()
                (int) tim::process::get_id(), (int) tim::threading::get_id());
 
     // clean up trace map
-    if(get_trace_map())
+    if(get_trace_vec())
     {
-        for(auto& sitr : *get_trace_map())
-        {
-            for(auto& fitr : sitr.second)
-                for(auto ritr = fitr.second.rbegin(); ritr != fitr.second.rend(); ++ritr)
-                    (*ritr)->stop();
-        }
+        for(auto& itr : *get_trace_vec())
+            std::get<2>(itr)->stop();
     }
 
     // clean up trace map
-    if(get_trace_map())
-        get_trace_map()->clear();
-    delete get_trace_map();
-    get_trace_map() = nullptr;
+    if(get_trace_vec())
+        get_trace_vec()->clear();
+    delete get_trace_vec();
+    get_trace_vec() = nullptr;
 
     // clean up overhead map
     if(get_overhead())
@@ -446,9 +442,12 @@ extern "C"
         if(!lk || !get_enabled() || !get_thread_enabled())
             return;
 
-        const auto& _trace_map = get_trace_map();
-        if(!_trace_map)
+        const auto& _trace_vec = get_trace_vec();
+        if(!_trace_vec)
             return;
+
+        if(_trace_vec->size() % 100 == 0)
+            _trace_vec->reserve(_trace_vec->size() + 100);
 
         auto _label = get_label(this_fn, call_site);
         if(get_debug())
@@ -461,11 +460,13 @@ extern "C"
         if((*_throttle)[CALL_SITE][this_fn])
             return;
 
-        auto& vec = (*_trace_map)[CALL_SITE][this_fn];
-        vec.emplace_back(std::make_unique<trace_set_t>(_label));
-        vec.back()->start();
-        if(vec.size() == 1)
-            (*_overhead)[CALL_SITE][this_fn].first.start();
+        _trace_vec->emplace_back(
+            std::make_tuple(this_fn, call_site, std::make_unique<trace_set_t>(_label)));
+        std::get<2>(_trace_vec->back())->start();
+
+        auto& _this_over = (*_overhead)[CALL_SITE][this_fn];
+        if(std::get<0>(_this_over) == 0)
+            std::get<1>(_this_over).start();
 
         tim::consume_parameters(call_site, null_site);
     }
@@ -495,24 +496,24 @@ extern "C"
                 get_enabled() = false;
         }
 
-        const auto& _trace_map = get_trace_map();
-        if(!_trace_map)
+        const auto& _trace_vec = get_trace_vec();
+        if(!_trace_vec)
             return;
 
         const auto& _overhead = get_overhead();
         const auto& _throttle = get_throttle();
 
-        if((*_throttle)[CALL_SITE][this_fn])
+        if(_throttle && (*_throttle)[CALL_SITE][this_fn])
             return;
 
-        auto& vec = (*_trace_map)[CALL_SITE][this_fn];
-        if(vec.empty())
+        if(_trace_vec->empty())
             return;
 
-        if(vec.size() == 1)
-            (*_overhead)[CALL_SITE][this_fn].first.stop();
-        vec.back()->stop();
-        vec.pop_back();
+        if(_overhead)
+            --(std::get<0>((*_overhead)[CALL_SITE][this_fn]));
+
+        std::get<2>(_trace_vec->back())->stop();
+        _trace_vec->pop_back();
 
         if(_is_first)
         {
@@ -520,15 +521,17 @@ extern "C"
             return;
         }
 
-        auto _count = ++((*_overhead)[CALL_SITE][this_fn].second);
+        auto& _this_over = (*_overhead)[CALL_SITE][this_fn];
+        auto  _count     = ++(std::get<2>(_this_over));
         if(_count % throttle_count == 0)
         {
-            (*_overhead)[CALL_SITE][this_fn].first.stop();
-            auto _accum = (*_overhead)[CALL_SITE][this_fn].first.get_accum() / _count;
+            auto& _mono = std::get<1>(_this_over);
+            _mono.stop();
+            auto _accum = _mono.get_accum() / _count;
             if(_accum < throttle_value)
                 (*_throttle)[CALL_SITE][this_fn] = true;
-            (*_overhead)[CALL_SITE][this_fn].first.reset();
-            (*_overhead)[CALL_SITE][this_fn].second = 0;
+            _mono.reset();
+            std::get<2>(_this_over) = 0;
         }
 
         tim::consume_parameters(call_site, null_site);

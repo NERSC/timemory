@@ -52,6 +52,9 @@ static constexpr uint64_t SIZE   = 1024 * 1024 * 64;
 static const int64_t ops_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
 static const int64_t lst_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
 
+static std::function<void()> begin_cb = [] {};
+static std::function<void()> end_cb   = [] {};
+
 #define CHECK_WORKING()                                                                  \
     if(!tim::papi::working())                                                            \
     {                                                                                    \
@@ -111,22 +114,15 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, ArgsT&&... _args)
     ptr_t<ComponentT> _obj;
     {
         using measure_t = tim::auto_bundle<TIMEMORY_API, ComponentT>;
+        begin_cb();
         measure_t obj(std::forward<ArgsT>(_args)...);
         tim::ert::ops_kernel<Nunroll, device_t>(ntrials, nsize, array.data(), op_func,
                                                 store_func);
         obj.stop();
-        ComponentT::finalize();
+        end_cb();
         _obj = std::make_shared<ComponentT>(*obj.template get<ComponentT>());
     }
 
-    // return zeros if not working
-    if(!tim::papi::working())
-    {
-        std::cout << "\n\nPAPI is not working so returning zeros instead of total_ops = "
-                  << total_ops << " and total_lst = " << total_lst << "\n\n"
-                  << std::endl;
-        return return_type<ComponentT>(_obj, 0, 0);
-    }
     return return_type<ComponentT>(_obj, total_ops, total_lst);
 }
 //--------------------------------------------------------------------------------------//
@@ -174,10 +170,13 @@ protected:
         if(once++ == 0)
         {
             tim::papi::init();
-            tim::papi::print_hw_info();
         }
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(papi_tests, print_hw_info) { tim::papi::print_hw_info(); }
 
 //--------------------------------------------------------------------------------------//
 
@@ -191,7 +190,7 @@ TEST_F(papi_tests, tuple_single_precision_ops)
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
+    auto total_measured = obj->get<int64_t>().at(0);
 
     // int idx = 0;
     // for(auto itr : test_type::get_overhead())
@@ -199,10 +198,7 @@ TEST_F(papi_tests, tuple_single_precision_ops)
 
     details::report<float>(total_measured, total_expected, ops_tolerance,
                            "PAPI float ops");
-    if(std::abs(total_measured - total_expected) < ops_tolerance)
-        SUCCEED();
-    else
-        FAIL();
+    EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -218,14 +214,11 @@ TEST_F(papi_tests, array_single_precision_ops)
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
+    auto total_measured = obj->get<int64_t>().at(0);
 
     details::report<float>(total_measured, total_expected, ops_tolerance,
                            "PAPI float ops");
-    if(std::abs(total_measured - total_expected) < ops_tolerance)
-        SUCCEED();
-    else
-        FAIL();
+    EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -241,14 +234,11 @@ TEST_F(papi_tests, vector_single_precision_ops)
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
+    auto total_measured = obj->get<int64_t>().at(0);
 
     details::report<float>(total_measured, total_expected, ops_tolerance,
                            "PAPI float ops");
-    if(std::abs(total_measured - total_expected) < ops_tolerance)
-        SUCCEED();
-    else
-        FAIL();
+    EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -263,14 +253,11 @@ TEST_F(papi_tests, tuple_double_precision_ops)
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
+    auto total_measured = obj->get<int64_t>().at(0);
 
     details::report<double>(total_measured, total_expected, ops_tolerance,
                             "PAPI double ops");
-    if(std::abs(total_measured - total_expected) < ops_tolerance)
-        SUCCEED();
-    else
-        FAIL();
+    EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -286,14 +273,11 @@ TEST_F(papi_tests, array_double_precision_ops)
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
+    auto total_measured = obj->get<int64_t>().at(0);
 
     details::report<double>(total_measured, total_expected, ops_tolerance,
                             "PAPI double ops");
-    if(std::abs(total_measured - total_expected) < ops_tolerance)
-        SUCCEED();
-    else
-        FAIL();
+    EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -309,21 +293,18 @@ TEST_F(papi_tests, vector_double_precision_ops)
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
+    auto total_measured = obj->get<int64_t>().at(0);
 
     details::report<double>(total_measured, total_expected, ops_tolerance,
                             "PAPI double ops");
-    if(std::abs(total_measured - total_expected) < ops_tolerance)
-        SUCCEED();
-    else
-        FAIL();
+    EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(papi_tests, tuple_load_store_ins_sp)
+TEST_F(papi_tests, tuple_load_store_ins)
 {
-    using test_type = papi_tuple<PAPI_LD_INS, PAPI_SR_INS>;
+    using test_type = papi_tuple<PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
     CHECK_AVAILABLE(test_type);
 
     auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
@@ -331,60 +312,137 @@ TEST_F(papi_tests, tuple_load_store_ins_sp)
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);
-    auto total_measured = obj->get<int64_t>()[0] + obj->get<int64_t>()[1];
+    auto total_measured = obj->get<int64_t>().at(0) + obj->get<int64_t>().at(1);
+
+    auto indiv = obj->get<int64_t>().at(0) + obj->get<int64_t>().at(1);
+    auto accum = obj->get<int64_t>().at(2);
+    EXPECT_EQ(indiv, accum);
+    EXPECT_GT(indiv, 0);
+    EXPECT_GT(accum, 0);
 
     details::report<float>(total_measured, total_expected, ops_tolerance,
                            "PAPI load/store");
-    if(std::abs(total_measured - total_expected) < ops_tolerance)
-        SUCCEED();
-    else
-        FAIL();
+    EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(papi_tests, array_load_store_ins_dp)
+TEST_F(papi_tests, array_load_store_ins)
 {
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
 
-    test_type::get_initializer() = []() { return std::vector<int>({ PAPI_LST_INS }); };
-    auto ret                     = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
+    test_type::get_initializer() = []() {
+        return std::vector<int>({ PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS });
+    };
+    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
         TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
+    auto total_measured = obj->get<int64_t>().at(2);
+
+    auto indiv = obj->get<int64_t>().at(0) + obj->get<int64_t>().at(1);
+    auto accum = obj->get<int64_t>().at(2);
+    EXPECT_EQ(indiv, accum);
+    EXPECT_GT(indiv, 0);
+    EXPECT_GT(accum, 0);
 
     details::report<double>(total_measured, total_expected, lst_tolerance,
                             "PAPI load/store");
-    if(std::abs(total_measured - total_expected) < lst_tolerance)
-        SUCCEED();
-    else
-        FAIL();
+    EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(papi_tests, vector_load_store_ins_dp)
+TEST_F(papi_tests, vector_load_store_ins)
 {
     using test_type = papi_vector;
     CHECK_AVAILABLE(test_type);
 
-    test_type::get_initializer() = []() { return std::vector<int>({ PAPI_LST_INS }); };
-    auto ret                     = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
+    test_type::get_initializer() = []() {
+        return std::vector<int>({ PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS });
+    };
+    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
         TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
+    auto total_measured = obj->get<int64_t>().at(2);
+
+    auto indiv = obj->get<int64_t>().at(0) + obj->get<int64_t>().at(1);
+    auto accum = obj->get<int64_t>().at(2);
+    EXPECT_EQ(indiv, accum);
+    EXPECT_GT(indiv, 0);
+    EXPECT_GT(accum, 0);
 
     details::report<double>(total_measured, total_expected, lst_tolerance,
                             "PAPI load/store");
-    if(std::abs(total_measured - total_expected) < lst_tolerance)
-        SUCCEED();
-    else
-        FAIL();
+    EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(papi_tests, tuple_load_store_ins_rate)
+{
+    using check_type = papi_tuple<PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
+    using test_type = papi_rate_tuple<wall_clock, PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
+
+    CHECK_AVAILABLE(test_type);
+
+    tim::lightweight_tuple<check_type, wall_clock> check{};
+
+    // call-backs around algorithm
+    begin_cb = [&check]() { check.start(); };
+    end_cb   = [&check]() { check.stop(); };
+
+    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
+
+    auto obj = std::get<0>(ret);
+
+    auto ld_ins_rate  = obj->get().at(0);
+    auto sr_ins_rate  = obj->get().at(1);
+    auto lst_ins_rate = obj->get().at(2);
+
+    auto* pt = check.get<check_type>();
+    auto* wc = check.get<wall_clock>();
+
+    auto _wc_val = wc->get();
+    auto _pt_val = pt->get();
+
+    auto _ld_ins  = ld_ins_rate * _wc_val;
+    auto _sr_ins  = sr_ins_rate * _wc_val;
+    auto _lst_ins = lst_ins_rate * _wc_val;
+
+    std::cout << "RATE_TUPLE : " << *obj << std::endl;
+    std::cout << "TUPLE      : " << *pt << std::endl;
+    std::cout << "WALL-CLOCK : " << *wc << std::endl;
+
+    EXPECT_NEAR(_ld_ins, _pt_val.at(0), 0.1 * _pt_val.at(0));
+    EXPECT_NEAR(_sr_ins, _pt_val.at(1), 0.1 * _pt_val.at(1));
+    EXPECT_NEAR(_lst_ins, _pt_val.at(2), 0.1 * _pt_val.at(2));
+
+    auto indiv = obj->get().at(0) + obj->get().at(1);
+    auto accum = obj->get().at(2);
+    EXPECT_NEAR(indiv, accum, 50);
+    EXPECT_GT(indiv, 0);
+    EXPECT_GT(accum, 0);
+
+    auto total_expected = std::get<2>(ret) / _wc_val;
+    auto total_measured = obj->get<double>().at(2);
+    details::report<double>(total_measured, total_expected,
+                            static_cast<double>(ops_tolerance), "PAPI load/store rate");
+
+    EXPECT_NEAR(total_measured, total_expected, 0.05 * total_expected);
+}
+
+//--------------------------------------------------------------------------------------//
+
+using instruction_rate_t =
+    papi_rate_tuple<wall_clock, PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
+using instruction_tuple_t = papi_tuple<PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
+
+TIMEMORY_INITIALIZE_STORAGE(instruction_rate_t, instruction_tuple_t)
 
 //--------------------------------------------------------------------------------------//

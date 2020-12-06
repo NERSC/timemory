@@ -59,7 +59,7 @@ static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
 
 // acceptable absolute error
-static const double util_tolerance  = 2.5;
+static const double util_tolerance  = 5.0;
 static const double timer_tolerance = 0.075;
 
 // acceptable relative error
@@ -275,9 +275,9 @@ TEST_F(hybrid_tests, hybrid)
     hybrid_t obj(details::get_test_name());
 
     obj.start();
-    std::thread t(details::consume, 500);
-    details::do_sleep(250);
-    details::consume(750);
+    std::thread t(details::consume, 1000);
+    details::do_sleep(500);
+    details::consume(1500);
     t.join();
     obj.stop();
     std::cout << "\n" << obj << std::endl;
@@ -291,17 +291,17 @@ TEST_F(hybrid_tests, hybrid)
     auto* t_cpu  = obj.get_tuple().get<cpu_clock>();
     auto* t_util = obj.get_tuple().get<cpu_util>();
 
-    details::print_info(*t_rc, 1.0, "sec", clock_convert);
-    details::print_info(*t_cpu, 1.25, "sec", clock_convert);
+    details::print_info(*t_rc, 2.0, "sec", clock_convert);
+    details::print_info(*t_cpu, 2.5, "sec", clock_convert);
     details::print_info(*t_util, 125.0, "%", cpu_util_convert);
 
     ASSERT_TRUE(t_rc != nullptr);
     ASSERT_TRUE(t_cpu != nullptr);
     ASSERT_TRUE(t_util != nullptr);
 
-    ASSERT_NEAR(1.0, t_rc->get(), timer_tolerance);
-    ASSERT_NEAR(1.25, t_cpu->get(), timer_tolerance);
-    ASSERT_NEAR(125.0, t_util->get(), util_tolerance);
+    EXPECT_NEAR(2.0, t_rc->get(), timer_tolerance);
+    EXPECT_NEAR(2.5, t_cpu->get(), timer_tolerance);
+    EXPECT_NEAR(125.0, t_util->get(), util_tolerance);
 
     auto* l_rc   = obj.get_list().get<wall_clock>();
     auto* l_cpu  = obj.get_list().get<cpu_clock>();
@@ -314,13 +314,13 @@ TEST_F(hybrid_tests, hybrid)
     ASSERT_TRUE(l_cpu != nullptr);
     ASSERT_TRUE(l_util != nullptr);
 
-    details::print_info(*l_rc, 1.0, "sec", clock_convert);
-    details::print_info(*l_cpu, 1.25, "sec", clock_convert);
+    details::print_info(*l_rc, 2.0, "sec", clock_convert);
+    details::print_info(*l_cpu, 2.5, "sec", clock_convert);
     details::print_info(*l_util, 125.0, "%", cpu_util_convert);
 
-    ASSERT_NEAR(t_rc->get(), l_rc->get(), timer_epsilon);
-    ASSERT_NEAR(t_cpu->get(), l_cpu->get(), timer_epsilon);
-    ASSERT_NEAR(t_util->get(), l_util->get(), util_epsilon);
+    EXPECT_NEAR(t_rc->get(), l_rc->get(), timer_epsilon);
+    EXPECT_NEAR(t_cpu->get(), l_cpu->get(), timer_epsilon);
+    EXPECT_NEAR(t_util->get(), l_util->get(), util_epsilon);
 }
 
 //--------------------------------------------------------------------------------------//

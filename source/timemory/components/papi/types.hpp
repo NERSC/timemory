@@ -43,7 +43,7 @@
 TIMEMORY_DECLARE_COMPONENT(papi_vector)
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(papi_tuple, int... EventTypes)
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(papi_array, size_t MaxNumEvents)
-TIMEMORY_DECLARE_TEMPLATE_COMPONENT(papi_rate_tuple, int... EventTypes)
+TIMEMORY_DECLARE_TEMPLATE_COMPONENT(papi_rate_tuple, typename RateT, int... EventTypes)
 //
 TIMEMORY_COMPONENT_ALIAS(papi_array8_t, papi_array<8>)
 TIMEMORY_COMPONENT_ALIAS(papi_array16_t, papi_array<16>)
@@ -63,11 +63,10 @@ TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(int... Evts),
                                     tpls::papi, category::external,
                                     category::hardware_counter, os::supports_linux)
 //
-TIMEMORY_SET_TEMPLATE_COMPONENT_API(TIMEMORY_ESC(int... Evts),
-                                    TIMEMORY_ESC(component::papi_rate_tuple<Evts...>),
-                                    tpls::papi, category::external,
-                                    category::hardware_counter, category::timing,
-                                    os::supports_linux)
+TIMEMORY_SET_TEMPLATE_COMPONENT_API(
+    TIMEMORY_ESC(typename RateT, int... Evts),
+    TIMEMORY_ESC(component::papi_rate_tuple<RateT, Evts...>), tpls::papi,
+    category::external, category::hardware_counter, category::timing, os::supports_linux)
 //
 //======================================================================================//
 //
@@ -80,7 +79,8 @@ TIMEMORY_TEMPLATE_STATISTICS_TYPE(component::papi_array, std::vector<double>, si
 TIMEMORY_VARIADIC_TRAIT_TYPE(statistics, component::papi_tuple, TIMEMORY_ESC(int... Idx),
                              TIMEMORY_ESC(Idx...), std::array<double, sizeof...(Idx)>)
 TIMEMORY_VARIADIC_TRAIT_TYPE(statistics, component::papi_rate_tuple,
-                             TIMEMORY_ESC(int... Idx), TIMEMORY_ESC(Idx...),
+                             TIMEMORY_ESC(typename RateT, int... Idx),
+                             TIMEMORY_ESC(RateT, Idx...),
                              std::array<double, sizeof...(Idx)>)
 //
 //--------------------------------------------------------------------------------------//
@@ -94,7 +94,16 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::papi, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::papi_vector, false_type)
 TIMEMORY_DEFINE_TEMPLATE_TRAIT(is_available, component::papi_array, false_type, size_t)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::papi_tuple, false_type, int)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::papi_rate_tuple, false_type, int)
+//
+namespace tim
+{
+namespace trait
+{
+template <typename RateT, int... EventTypes>
+struct is_available<component::papi_rate_tuple<RateT, EventTypes...>> : false_type
+{};
+}  // namespace trait
+}  // namespace tim
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -107,8 +116,16 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::papi_vector, true
 TIMEMORY_DEFINE_TEMPLATE_TRAIT(array_serialization, component::papi_array, true_type,
                                size_t)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::papi_tuple, true_type, int)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::papi_rate_tuple, true_type,
-                               int)
+//
+namespace tim
+{
+namespace trait
+{
+template <typename RateT, int... EventTypes>
+struct array_serialization<component::papi_rate_tuple<RateT, EventTypes...>> : true_type
+{};
+}  // namespace trait
+}  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -138,8 +155,15 @@ TIMEMORY_DEFINE_VARIADIC_TRAIT(sampler, component::papi_tuple, true_type, int)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_DEFINE_VARIADIC_TRAIT(base_has_accum, component::papi_rate_tuple, false_type,
-                               int)
+namespace tim
+{
+namespace trait
+{
+template <typename RateT, int... EventTypes>
+struct base_has_accum<component::papi_rate_tuple<RateT, EventTypes...>> : false_type
+{};
+}  // namespace trait
+}  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //

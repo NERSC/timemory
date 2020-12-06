@@ -29,12 +29,17 @@
 extern "C" bool
 timemory_source_file_constraint(const std::string& fname)
 {
-    static auto regex_opts =
-        std::regex_constants::ECMAScript | std::regex_constants::optimize;
+    return false;
+
+    //
+    // static auto regex_opts =
+    //     std::regex_constants::ECMAScript | std::regex_constants::optimize;
     // clang-format off
     //
-    std::regex file_regex("^(@EXCLUDE_SOURCE_FILES@)$", regex_opts);
-    return std::regex_search(fname, file_regex);
+    // std::regex file_regex("^(@EXCLUDE_SOURCE_FILES@)$", regex_opts);
+    // return std::regex_search(fname, file_regex);
     //
     // clang-format on
+    //
+    (void) fname;
 }

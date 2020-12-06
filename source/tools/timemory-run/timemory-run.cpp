@@ -612,6 +612,7 @@ main(int argc, char** argv)
     //  Generate a log of all the available procedures and modules
     //
     //----------------------------------------------------------------------------------//
+    std::set<std::string> module_names;
 
     if(app_modules && app_modules->size() > 0)
     {
@@ -622,7 +623,11 @@ main(int argc, char** argv)
             if(procedures)
             {
                 for(auto pitr : *procedures)
-                    available_module_functions.insert(module_function(itr, pitr));
+                {
+                    auto _modfn = module_function(itr, pitr);
+                    module_names.insert(_modfn.module);
+                    available_module_functions.insert(std::move(_modfn));
+                }
             }
         }
     }
@@ -638,7 +643,11 @@ main(int argc, char** argv)
         {
             module_t* mod = itr->getModule();
             if(mod)
-                available_module_functions.insert(module_function(mod, itr));
+            {
+                auto _modfn = module_function(mod, itr);
+                module_names.insert(_modfn.module);
+                available_module_functions.insert(std::move(_modfn));
+            }
         }
     }
     else
@@ -648,6 +657,26 @@ main(int argc, char** argv)
 
     verbprintf(0, "Module size before loading instrumentation library: %lu\n",
                (long unsigned) app_modules->size());
+
+    if(debug_print || verbose_level > 1)
+    {
+        module_function::reset_width();
+        for(const auto& itr : available_module_functions)
+            module_function::update_width(itr);
+
+        auto mwid = module_function::get_width().at(0);
+        auto ncol = 240 / std::min<size_t>(mwid, 240);
+        std::cout << "### MODULES ###\n| ";
+        for(size_t i = 0; i < module_names.size(); ++i)
+        {
+            auto itr = module_names.begin();
+            std::advance(itr, i);
+            std::cout << std::setw(mwid) << *itr << " | ";
+            if(i % ncol == ncol - 1)
+                std::cout << "\n| ";
+        }
+        std::cout << '\n' << std::endl;
+    }
 
     dump_info("available_module_functions.txt", available_module_functions, 1);
 

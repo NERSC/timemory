@@ -225,7 +225,7 @@ merge<Type, true>::merge(result_type& dst, result_type& src)
     //  collapse duplicates
     //
     size_t cnt       = 0;
-    size_t dup       = 0;
+    size_t ndup      = 0;
     auto   _settings = tim::settings::instance();
     auto   _debug    = (_settings) ? _settings->get_debug() : true;
     auto   _verbose  = (_settings) ? _settings->get_verbose() : 1;
@@ -250,7 +250,7 @@ merge<Type, true>::merge(result_type& dst, result_type& src)
         }
         else
         {
-            ++dup;
+            ++ndup;
             if(_debug || _verbose > 3)
                 fprintf(stderr, "duplicate\n");
             auto& citr = dst.at(idx);
@@ -261,7 +261,7 @@ merge<Type, true>::merge(result_type& dst, result_type& src)
     }
 
     if(_debug || _verbose > 0)
-        fprintf(stderr, "Merged %lu duplicates into %lu records\n", (unsigned long) dup,
+        fprintf(stderr, "Merged %lu duplicates into %lu records\n", (unsigned long) ndup,
                 (unsigned long) dst.size());
 
     // shrink the reserved memory
@@ -301,7 +301,8 @@ merge<Type, true>::operator()(const basic_tree<Tp>& _bt)
             }
         }
         if(!found)
-            _children.emplace_back(std::move(itr));
+            _children.emplace_back(itr);
+        // _children.emplace_back(std::move(itr));
     }
 
     // update new children
@@ -388,7 +389,8 @@ merge<Type, true>::operator()(const std::vector<basic_tree<Tp>>& _lhs,
         auto _append = [&](auto& _obj) {
             auto itr = _obj.find(i);
             if(itr != _obj.end())
-                _ret.emplace_back(std::move(itr->second));
+                _ret.emplace_back(itr->second);
+            //_ret.emplace_back(std::move(itr->second));
         };
         _append(_p);
         _append(_ul);

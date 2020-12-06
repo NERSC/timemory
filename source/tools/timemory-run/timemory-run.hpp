@@ -439,9 +439,21 @@ struct module_function
     friend std::ostream& operator<<(std::ostream& os, const module_function& rhs)
     {
         std::stringstream ss;
-        ss << std::setw(get_width()[0] + 8) << std::left << rhs.module << " "
-           << std::setw(get_width()[1] + 8) << std::left << rhs.function << " "
-           << std::setw(get_width()[2] + 8) << std::left << rhs.signature.get();
+
+        static size_t absolute_max = 80;
+        auto          w0           = std::min<size_t>(get_width()[0], absolute_max);
+        auto          w1           = std::min<size_t>(get_width()[1], absolute_max);
+        auto          w2           = std::min<size_t>(get_width()[2], absolute_max);
+
+        auto _get_str = [](const std::string& _inc) {
+            if(_inc.length() > absolute_max)
+                return _inc.substr(0, absolute_max - 3) + "...";
+            return _inc;
+        };
+
+        ss << std::setw(w0 + 8) << std::left << _get_str(rhs.module) << " "
+           << std::setw(w1 + 8) << std::left << _get_str(rhs.function) << " "
+           << std::setw(w2 + 8) << std::left << _get_str(rhs.signature.get());
         os << ss.str();
         return os;
     }
