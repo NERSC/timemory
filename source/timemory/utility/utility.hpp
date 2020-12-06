@@ -335,11 +335,18 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
     if(_dir.length() == 0)
         return 0;
 
-    if(_mkdir(_dir.c_str()) != 0)
+    int ret = _mkdir(_dir.c_str());
+    if(ret != 0)
     {
-        std::stringstream _sdir;
-        _sdir << "dir " << _dir;
-        return (launch_process(_sdir.str().c_str())) ? 0 : 1;
+        int err = errno;
+        if(err != EEXIST)
+        {
+            std::cerr << "_mkdir(" << _dir.c_str() << ") returned: " 
+                      << ret << std::endl;
+            std::stringstream _sdir;
+            _sdir << "mkdir " << _dir;
+            return (launch_process(_sdir.str().c_str())) ? 0 : 1;
+        }
     }
 #endif
     return 0;
