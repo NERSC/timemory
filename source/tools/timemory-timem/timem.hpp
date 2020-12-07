@@ -639,7 +639,7 @@ struct timem_config
     string_t      shell            = tim::get_env<string_t>("SHELL", getusershell());
     string_t      shell_flags  = tim::get_env<string_t>("TIMEM_USE_SHELL_FLAGS", "-i");
     string_t      output_file  = tim::get_env<string_t>("TIMEM_OUTPUT", "");
-    double        sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 1.0);
+    double        sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 5.0);
     double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 1.0e-6);
     pid_t         master_pid   = getpid();
     pid_t         worker_pid   = getpid();
