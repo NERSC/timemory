@@ -585,6 +585,46 @@ get_measure()
 //
 //--------------------------------------------------------------------------------------//
 //
+using sigaction_t = struct sigaction;
+//
+struct signal_handler
+{
+    sigaction_t m_custom_sigaction;
+    sigaction_t m_original_sigaction;
+};
+//
+static void
+create_signal_handler(int sig, signal_handler& sh, void (*func)(int))
+{
+    sh.m_custom_sigaction.sa_handler = func;
+    sigemptyset(&sh.m_custom_sigaction.sa_mask);
+    sh.m_custom_sigaction.sa_flags = SA_RESTART;
+    if(sigaction(sig, &sh.m_custom_sigaction, &sh.m_original_sigaction) == -1)
+    {
+        std::cerr << "Failed to create signal handler for " << sig << std::endl;
+    }
+}
+//
+static void
+restore_signal_handler(int sig, signal_handler& sh)
+{
+    if(sigaction(sig, &sh.m_original_sigaction, &sh.m_custom_sigaction) == -1)
+    {
+        std::cerr << "Failed to restore signal handler for " << sig << std::endl;
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline signal_handler&
+get_signal_handler()
+{
+    static signal_handler _instance{};
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 struct timem_config
 {
     static constexpr bool papi_available = tim::trait::is_available<papi_array_t>::value;
@@ -600,7 +640,7 @@ struct timem_config
     string_t      shell_flags  = tim::get_env<string_t>("TIMEM_USE_SHELL_FLAGS", "-i");
     string_t      output_file  = tim::get_env<string_t>("TIMEM_OUTPUT", "");
     double        sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 1.0);
-    double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 0.001);
+    double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 1.0e-6);
     pid_t         master_pid   = getpid();
     pid_t         worker_pid   = getpid();
     string_t      command      = "";

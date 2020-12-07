@@ -239,17 +239,17 @@ public:
     /// \param[in] _verb Logging Verbosity
     ///
     /// \brief Set up the sampler
-    static void configure(std::set<int> _signals, int _verbose = 1);
-    static void configure(int _signal = SIGALRM, int _verbose = 1)
+    static TIMEMORY_INLINE void configure(std::set<int> _signals, int _verbose = 1);
+    static TIMEMORY_INLINE void configure(int _signal = SIGALRM, int _verbose = 1)
     {
         configure({ _signal }, _verbose);
     }
 
-    /// \fn void ignore(std::set<int> _signals)
+    /// \fn void ignore(const std::set<int>& _signals)
     /// \param[in] _signals Set of signals
     ///
     /// \brief Ignore the signals
-    static void ignore(std::set<int> _signals = {});
+    static TIMEMORY_INLINE void ignore(const std::set<int>& _signals);
 
     /// \fn void clear()
     /// \brief Clear all signals. Recommended to call ignore() prior to clearing all the
@@ -258,7 +258,7 @@ public:
 
     /// \fn void pause()
     /// \brief Pause until a signal is delivered
-    static void pause()
+    static TIMEMORY_INLINE void pause()
     {
         if(!get_persistent_data().m_signals.empty())
             ::pause();
@@ -667,7 +667,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
         _custom_sa.sa_flags     = SA_RESTART | SA_SIGINFO;
 
         // start the interval timer
-        for(auto itr : _signals)
+        for(auto& itr : _signals)
         {
             // get the associated itimer type
             auto _itimer = get_itimer(itr);
@@ -701,16 +701,13 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 inline void
-sampler<CompT<Types...>, N, SigIds...>::ignore(std::set<int> _signals)
+sampler<CompT<Types...>, N, SigIds...>::ignore(const std::set<int>& _signals)
 {
-    if(_signals.empty())
-        _signals = get_persistent_data().m_signals;
-
-    for(auto itr : _signals)
+    for(const auto& itr : _signals)
         signal(itr, SIG_IGN);
 
     auto& _original_it = get_persistent_data().m_original_itimerval;
-    for(auto itr : _signals)
+    for(const auto& itr : _signals)
     {
         itimerval_t _curr;
         auto        _itimer = get_itimer(itr);
