@@ -200,7 +200,7 @@ main(int argc, char** argv)
     // make sure config is instantiated
     tim::consume_parameters(get_config());
 
-    sample_delay() = std::max<double>(sample_delay(), 1.0e-6);
+    // sample_delay() = std::max<double>(sample_delay(), 1.0e-6);
     sample_freq()  = std::min<double>(sample_freq(), 5000.);
 
 #if defined(TIMEMORY_USE_MPI)
@@ -291,8 +291,6 @@ main(int argc, char** argv)
     // unnecessary
     if(use_mpi())
         signal(TIMEM_PID_SIGNAL, childpid_catcher);
-    else
-        signal_delivered() = true;
 
     for(int i = 0; i < _argc; ++i)
         argvector().emplace_back(_argv[i]);
@@ -303,6 +301,11 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
     pid_t pid = (use_mpi()) ? master_pid() : fork();
+
+    // SIGCHLD notifies the parent process when a child process exits, is interrupted, or
+    // resumes after being interrupted
+    if(!use_mpi())
+        signal(SIGCHLD, childpid_catcher);
 
     using comm_t        = tim::mpi::comm_t;
     comm_t comm_world_v = tim::mpi::comm_world_v;
@@ -488,8 +491,10 @@ main(int argc, char** argv)
         sampler_t::configure(signal_types(), verbose());
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
-        // pause until first interrupt delivered
-        sampler_t::pause();
+
+        // pause until first interrupt delivered if SIGCHLD has not been delivered
+        if(!signal_delivered())
+            sampler_t::pause();
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "starting sampler");
         get_sampler()->start();
@@ -559,17 +564,24 @@ read_pid(pid_t _master)
 //--------------------------------------------------------------------------------------//
 
 void
-childpid_catcher(int)
+childpid_catcher(int sig)
 {
     signal_delivered() = true;
-    signal(TIMEM_PID_SIGNAL, SIG_DFL);
-    int _worker                   = read_pid(master_pid());
-    worker_pid()                  = _worker;
-    tim::process::get_target_id() = _worker;
-    if(debug())
-        printf("[%s][pid=%i]> worker_pid() = %i, worker = %i, target_id() = %i\n",
-               __FUNCTION__, getpid(), worker_pid(), _worker,
-               tim::process::get_target_id());
+    if(sig == SIGCHLD)
+    {
+        signal(SIGCHLD, SIG_DFL);
+    }
+    else
+    {
+        signal(TIMEM_PID_SIGNAL, SIG_DFL);
+        int _worker                   = read_pid(master_pid());
+        worker_pid()                  = _worker;
+        tim::process::get_target_id() = _worker;
+        if(debug())
+            printf("[%s][pid=%i]> worker_pid() = %i, worker = %i, target_id() = %i\n",
+                   __FUNCTION__, getpid(), worker_pid(), _worker,
+                   tim::process::get_target_id());
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -622,8 +634,9 @@ parent_process(pid_t pid)
                tim::cereal::make_nvp("config", get_config()));
         };
 
-        auto fname = output_file();
-        fname += "-" + std::to_string(worker_pid()) + ".json";
+        auto job_id = tim::get_env("SLURM_JOB_ID", worker_pid());
+        auto fname  = output_file();
+        fname += "-" + std::to_string(job_id) + ".json";
         fprintf(stderr, "\n[%s]> Outputting '%s'...\n", command().c_str(), fname.c_str());
         tim::generic_serialization<json_type>(fname, _measurements, "timemory", "timem",
                                               _cmdline);
