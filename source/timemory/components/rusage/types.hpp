@@ -181,8 +181,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_minor_page_faults, f
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mode_time, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::kernel_mode_time, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::current_peak_rss, false_type)
-
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::current_peak_rss, false_type)
 #endif
 
 //

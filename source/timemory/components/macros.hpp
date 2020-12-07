@@ -490,10 +490,8 @@
         extern template struct set_started<COMPONENT_NAME>;                              \
         extern template struct set_stopped<COMPONENT_NAME>;                              \
         extern template struct store<COMPONENT_NAME>;                                    \
-        extern template struct finalize::ctest_notes<COMPONENT_NAME>;                    \
         extern template struct finalize::dmp_get<                                        \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        extern template struct finalize::flamegraph<COMPONENT_NAME>;                     \
         extern template struct finalize::get<                                            \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         extern template struct finalize::merge<                                          \
@@ -560,10 +558,8 @@
         template struct set_started<COMPONENT_NAME>;                                     \
         template struct set_stopped<COMPONENT_NAME>;                                     \
         template struct store<COMPONENT_NAME>;                                           \
-        template struct finalize::ctest_notes<COMPONENT_NAME>;                           \
         template struct finalize::dmp_get<                                               \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        template struct finalize::flamegraph<COMPONENT_NAME>;                            \
         template struct finalize::get<                                                   \
             COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
         template struct finalize::merge<                                                 \
