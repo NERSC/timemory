@@ -112,10 +112,14 @@ static inline char*
 strdup(const char* s)
 {
     auto slen   = strlen(s);
-    auto result = new char[slen];
+    auto result = new char[slen + 1];
     if(result)
-        memcpy(result, s, slen + 1);
-    return result;
+    {
+        memcpy(result, s, slen * sizeof(char));
+        result[slen] = '\0';
+        return result;
+    }
+    return nullptr;
 }
 //
 //--------------------------------------------------------------------------------------//

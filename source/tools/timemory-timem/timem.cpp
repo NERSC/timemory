@@ -199,8 +199,8 @@ main(int argc, char** argv)
     // make sure config is instantiated
     tim::consume_parameters(get_config());
 
-    sample_delay() = std::max<double>(sample_delay(), 1.0e-6);
-    sample_freq()  = std::min<double>(sample_freq(), 5000.);
+    // sample_delay() = std::max<double>(sample_delay(), 1.0e-6);
+    sample_freq() = std::min<double>(sample_freq(), 5000.);
 
 #if defined(TIMEMORY_USE_MPI)
     if(parser.exists("mpi"))
@@ -242,10 +242,6 @@ main(int argc, char** argv)
         return ss.str();
     };
 
-    // for(int i = 0; i < _argc; ++i)
-    //    std::cout << _argv[i] << " ";
-    // std::cout << std::endl;
-
     if(_argc > 1)
     {
         // e.g. timem mycmd
@@ -282,9 +278,7 @@ main(int argc, char** argv)
     // the file providing the PID. If not, fork provides the PID so this is
     // unnecessary
     if(use_mpi())
-        signal(TIMEM_PID_SIGNAL, childpid_catcher);
-    else
-        signal_delivered() = true;
+        create_signal_handler(TIMEM_PID_SIGNAL, get_signal_handler(), &childpid_catcher);
 
     //----------------------------------------------------------------------------------//
     //
@@ -477,11 +471,10 @@ main(int argc, char** argv)
         ///
         sampler_t::set_frequency(1.0 / sample_freq());
 
-        sampler_t::configure(signal_types(), verbose());
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
+                               "configuring signal types");
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
-        // pause until first interrupt delivered
-        sampler_t::pause();
+        sampler_t::configure(signal_types(), verbose());
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "starting sampler");
         get_sampler()->start();
@@ -504,7 +497,7 @@ main(int argc, char** argv)
         get_sampler()->stop();
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
-        sampler_t::ignore();
+        sampler_t::ignore(signal_types());
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         tim::mpi::barrier(comm_world_v);
@@ -551,10 +544,10 @@ read_pid(pid_t _master)
 //--------------------------------------------------------------------------------------//
 
 void
-childpid_catcher(int)
+childpid_catcher(int sig)
 {
     signal_delivered() = true;
-    signal(TIMEM_PID_SIGNAL, SIG_DFL);
+    restore_signal_handler(sig, get_signal_handler());
     int _worker                   = read_pid(master_pid());
     worker_pid()                  = _worker;
     tim::process::get_target_id() = _worker;
