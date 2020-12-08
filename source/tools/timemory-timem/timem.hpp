@@ -151,45 +151,6 @@ struct custom_print
     }
 };
 //
-template <typename Tp, bool SampleV = (tim::trait::sampler<Tp>::value ||
-                                       tim::trait::file_sampler<Tp>::value)>
-struct timem_sample;
-//
-template <typename Tp>
-struct timem_sample<Tp, true>
-{
-    template <typename... Args>
-    explicit timem_sample(Tp& obj, Args&&... args);
-
-    template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, Args&&... args)
-        -> decltype(obj.measure(std::forward<Args>(args)...), void())
-    {
-        obj.measure(std::forward<Args>(args)...);
-    }
-
-    template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, Args&&...) -> decltype(obj.measure(), void())
-    {
-        obj.measure();
-    }
-};
-//
-template <typename Tp>
-template <typename... Args>
-timem_sample<Tp, true>::timem_sample(Tp& obj, Args&&... args)
-{
-    sfinae(obj, 0, std::forward<Args>(args)...);
-}
-//
-template <typename Tp>
-struct timem_sample<Tp, false>
-{
-    template <typename... Args>
-    explicit timem_sample(Tp&, Args&&...)
-    {}
-};
-//
 /// this is a custom version of base_printer for {read,written}_{char,bytes} components
 template <typename Tp>
 struct custom_base_printer
@@ -415,9 +376,11 @@ public:
     template <typename... Args>
     void sample(Args&&... args)
     {
+        stop();
         base_type::sample(std::forward<Args>(args)...);
         if(m_ofs)
             (*m_ofs) << get_local_datetime("[===== %r %F =====]\n") << *this << std::endl;
+        start();
     }
 
     auto mpi_get()

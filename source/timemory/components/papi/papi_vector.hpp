@@ -142,13 +142,13 @@ struct papi_vector
     //
     void sample()
     {
-        if(events.size() == 0)
-        {
+        if(tracker_type::get_thread_started() == 0)
             configure();
+        if(events.empty())
             events = get_events<common_type>();
-        }
 
-        accum = value = record();
+        tracker_type::start();
+        value = record();
     }
 
     //----------------------------------------------------------------------------------//

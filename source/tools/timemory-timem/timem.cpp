@@ -304,8 +304,8 @@ main(int argc, char** argv)
 
     // SIGCHLD notifies the parent process when a child process exits, is interrupted, or
     // resumes after being interrupted
-    if(!use_mpi())
-        signal(SIGCHLD, childpid_catcher);
+    // if(!use_mpi())
+    //    signal(SIGCHLD, childpid_catcher);
 
     using comm_t        = tim::mpi::comm_t;
     comm_t comm_world_v = tim::mpi::comm_world_v;
@@ -313,8 +313,8 @@ main(int argc, char** argv)
     if(!use_sample() || signal_types().empty())
     {
         tim::trait::apply<tim::trait::runtime_enabled>::set<
-            page_rss, virtual_memory, read_char, read_bytes, written_char, written_bytes>(
-            false);
+            page_rss, virtual_memory, read_char, read_bytes, written_char, written_bytes,
+            papi_array_t>(false);
     }
 
 #if defined(TIMEMORY_USE_MPI)
@@ -493,6 +493,13 @@ main(int argc, char** argv)
 
         sampler_t::configure(signal_types(), verbose());
 
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        // tim::mpi::barrier(comm_world_v);
+
+#if defined(TIMEMORY_USE_MPI)
+        sampler_t::pause();
+#endif
+
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "starting sampler");
         get_sampler()->start();
 
@@ -565,8 +572,8 @@ childpid_catcher(int sig)
 {
     signal_delivered() = true;
     restore_signal_handler(sig, get_signal_handler());
-    int _worker = read_pid(master_pid());
-    worker_pid() = _worker;
+    int _worker                   = read_pid(master_pid());
+    worker_pid()                  = _worker;
     tim::process::get_target_id() = _worker;
     if(debug())
         printf("[%s][pid=%i]> worker_pid() = %i, worker = %i, target_id() = %i\n",
