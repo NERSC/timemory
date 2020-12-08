@@ -201,7 +201,7 @@ main(int argc, char** argv)
     tim::consume_parameters(get_config());
 
     // sample_delay() = std::max<double>(sample_delay(), 1.0e-6);
-    sample_freq()  = std::min<double>(sample_freq(), 5000.);
+    sample_freq() = std::min<double>(sample_freq(), 5000.);
 
 #if defined(TIMEMORY_USE_MPI)
     if(parser.exists("mpi"))
@@ -290,7 +290,7 @@ main(int argc, char** argv)
     // the file providing the PID. If not, fork provides the PID so this is
     // unnecessary
     if(use_mpi())
-        signal(TIMEM_PID_SIGNAL, childpid_catcher);
+        create_signal_handler(TIMEM_PID_SIGNAL, get_signal_handler(), &childpid_catcher);
 
     for(int i = 0; i < _argc; ++i)
         argvector().emplace_back(_argv[i]);
@@ -488,13 +488,10 @@ main(int argc, char** argv)
         ///
         sampler_t::set_frequency(1.0 / sample_freq());
 
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
+                               "configuring signal types");
+
         sampler_t::configure(signal_types(), verbose());
-
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
-
-        // pause until first interrupt delivered if SIGCHLD has not been delivered
-        if(!signal_delivered())
-            sampler_t::pause();
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "starting sampler");
         get_sampler()->start();
@@ -517,7 +514,7 @@ main(int argc, char** argv)
         get_sampler()->stop();
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
-        sampler_t::ignore();
+        sampler_t::ignore(signal_types());
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         tim::mpi::barrier(comm_world_v);
@@ -567,21 +564,14 @@ void
 childpid_catcher(int sig)
 {
     signal_delivered() = true;
-    if(sig == SIGCHLD)
-    {
-        signal(SIGCHLD, SIG_DFL);
-    }
-    else
-    {
-        signal(TIMEM_PID_SIGNAL, SIG_DFL);
-        int _worker                   = read_pid(master_pid());
-        worker_pid()                  = _worker;
-        tim::process::get_target_id() = _worker;
-        if(debug())
-            printf("[%s][pid=%i]> worker_pid() = %i, worker = %i, target_id() = %i\n",
-                   __FUNCTION__, getpid(), worker_pid(), _worker,
-                   tim::process::get_target_id());
-    }
+    restore_signal_handler(sig, get_signal_handler());
+    int _worker = read_pid(master_pid());
+    worker_pid() = _worker;
+    tim::process::get_target_id() = _worker;
+    if(debug())
+        printf("[%s][pid=%i]> worker_pid() = %i, worker = %i, target_id() = %i\n",
+               __FUNCTION__, getpid(), worker_pid(), _worker,
+               tim::process::get_target_id());
 }
 
 //--------------------------------------------------------------------------------------//
