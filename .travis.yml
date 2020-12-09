@@ -28,7 +28,7 @@ jobs:
         - CC=gcc-6
         - CXX=g++-6
         - BUILD_TYPE=MinSizeRel
-        - BUILD_ARGS='--build-libs shared --python --stats --cxx-standard=14 --extra-optimizations'
+        - BUILD_ARGS='--build-libs shared --gotcha --python --stats --cxx-standard=14 --extra-optimizations'
     # GCC 7
     - os: linux
       dist: bionic
@@ -126,7 +126,7 @@ jobs:
         - CC=gcc-6
         - CXX=g++-6
         - BUILD_TYPE=MinSizeRel
-        - BUILD_ARGS='--build-libs shared --papi --gotcha --python --stats --cxx-standard=14'
+        - BUILD_ARGS='--build-libs shared --papi --python --stats --cxx-standard=14 --extra-optimizations'
     # GCC 7
     - os: linux
       dist: bionic
