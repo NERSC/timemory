@@ -145,7 +145,7 @@ find_package_handle_standard_args(PAPI DEFAULT_MSG
 #----------------------------------------------------------------------------------------#
 
 if(PAPI_FOUND)
-    if(NOT TARGET PAPI::papi-shared)
+    if(NOT TARGET PAPI::papi-shared AND PAPI_LIBRARY)
         add_library(PAPI::papi-shared INTERFACE IMPORTED)
         target_link_libraries(PAPI::papi-shared INTERFACE ${PAPI_LIBRARY})
         target_include_directories(PAPI::papi-shared INTERFACE ${PAPI_INCLUDE_DIR})
@@ -154,7 +154,7 @@ if(PAPI_FOUND)
         endif()
     endif()
 
-    if(NOT TARGET PAPI::papi-static)
+    if(NOT TARGET PAPI::papi-static AND PAPI_STATIC_LIBRARY)
         add_library(PAPI::papi-static INTERFACE IMPORTED)
         target_link_libraries(PAPI::papi-static INTERFACE ${PAPI_STATIC_LIBRARY})
         target_include_directories(PAPI::papi-static INTERFACE ${PAPI_INCLUDE_DIR})

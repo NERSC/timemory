@@ -90,14 +90,14 @@ public:
     using dynamic_type                 = typename trait::dynamic_base<Tp>::type;
     using cache_type                   = typename trait::cache<Tp>::type;
 
-    using this_type          = Tp;
-    using base_type          = base<Tp, Value>;
-    using storage_type       = storage<Tp, Value>;
-    using base_storage_type  = tim::base::storage;
-    using graph_iterator     = typename storage_type::iterator;
-    using state_t            = state<this_type>;
-    using statistics_policy  = policy::record_statistics<Tp, Value>;
-    using fmtflags           = std::ios_base::fmtflags;
+    using this_type         = Tp;
+    using base_type         = base<Tp, Value>;
+    using storage_type      = storage<Tp, Value>;
+    using base_storage_type = tim::base::storage;
+    using graph_iterator    = typename storage_type::iterator;
+    using state_t           = state<this_type>;
+    using statistics_policy = policy::record_statistics<Tp, Value>;
+    using fmtflags          = std::ios_base::fmtflags;
 
 private:
     friend class impl::storage<Tp, trait::uses_value_storage<Tp, Value>::value>;
@@ -157,9 +157,6 @@ public:
 
     /// reset the values
     TIMEMORY_INLINE void reset();
-
-    /// record a measurement
-    TIMEMORY_INLINE void measure();
 
     /// assign to pointer
     TIMEMORY_INLINE void get_opaque_data(void*& ptr, size_t _hash) const;
@@ -295,8 +292,8 @@ public:
     TIMEMORY_INLINE auto minus(crtp::base, const base_type& rhs) { this->minus(rhs); }
 
 protected:
-    int64_t        laps         = 0;
-    graph_iterator graph_itr    = graph_iterator{ nullptr };
+    int64_t        laps      = 0;
+    graph_iterator graph_itr = graph_iterator{ nullptr };
 
     using base_state::depth_change;
     using base_state::is_flat;
@@ -418,7 +415,6 @@ public:
     TIMEMORY_INLINE void set_started();
     TIMEMORY_INLINE void set_stopped();
     TIMEMORY_INLINE void reset();
-    TIMEMORY_INLINE void measure();
     TIMEMORY_INLINE int64_t get_laps() const { return 0; }
     TIMEMORY_INLINE void*   get_iterator() const { return nullptr; }
 
@@ -546,8 +542,7 @@ public:
     {}
 
 public:
-    TIMEMORY_INLINE void reset();    // reset the values
-    TIMEMORY_INLINE void measure();  // just record a measurment
+    TIMEMORY_INLINE void reset();  // reset the values
     TIMEMORY_INLINE void start();
     TIMEMORY_INLINE void stop();
 
@@ -572,7 +567,7 @@ public:
     TIMEMORY_INLINE void get(void*&, size_t) const {}
     TIMEMORY_INLINE void get_opaque_data(void*&, size_t) const {}
 
-    TIMEMORY_INLINE int64_t        get_laps() const { return laps; }
+    TIMEMORY_INLINE int64_t get_laps() const { return laps; }
     TIMEMORY_INLINE graph_iterator get_iterator() const { return graph_itr; }
 
     TIMEMORY_INLINE void set_laps(int64_t v) { laps = v; }
@@ -611,11 +606,11 @@ public:
     TIMEMORY_INLINE auto minus(crtp::base, const base_type&) {}
 
 protected:
-    int64_t        laps         = 0;
-    value_type     value        = value_type{};
-    accum_type     accum        = accum_type{};
-    last_type      last         = last_type{};
-    graph_iterator graph_itr    = nullptr;
+    int64_t        laps      = 0;
+    value_type     value     = value_type{};
+    accum_type     accum     = accum_type{};
+    last_type      last      = last_type{};
+    graph_iterator graph_itr = nullptr;
 
 public:
     static std::string label() { return ""; }

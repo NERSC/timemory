@@ -138,6 +138,20 @@ struct papi_vector
     }
 
     //----------------------------------------------------------------------------------//
+    // sample
+    //
+    void sample()
+    {
+        if(tracker_type::get_thread_started() == 0)
+            configure();
+        if(events.empty())
+            events = get_events<common_type>();
+
+        tracker_type::start();
+        value = record();
+    }
+
+    //----------------------------------------------------------------------------------//
     // start
     //
     void start()

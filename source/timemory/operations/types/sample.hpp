@@ -56,64 +56,64 @@ struct sample
 
     TIMEMORY_DELETED_OBJECT(sample)
 
-    template <typename Up                                 = Tp, typename... Args,
-              enable_if_t<trait::sampler<Up>::value, int> = 0>
-    explicit sample(Up& obj, Args&&... args);
+    explicit sample(type& obj);
 
-    template <typename Up                                  = Tp, typename... Args,
-              enable_if_t<!trait::sampler<Up>::value, int> = 0>
-    explicit sample(Up&, Args&&...);
+    template <typename Arg, typename... Args>
+    sample(type& obj, Arg&& arg, Args&&... args);
+
+    template <typename... Args>
+    auto operator()(type& obj, Args&&... args)
+    {
+        return sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    }
 
 private:
     //  satisfies mpl condition and accepts arguments
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, int, int, Args&&... args)
-        -> decltype(obj.sample(std::forward<Args>(args)...), bool())
+        -> decltype(obj.sample(std::forward<Args>(args)...))
     {
-        init_storage<Tp>::init();
-        obj.sample(std::forward<Args>(args)...);
-        return true;
+        return obj.sample(std::forward<Args>(args)...);
     }
 
     //  satisfies mpl condition but does not accept arguments
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.sample(), bool())
+    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.sample())
     {
-        init_storage<Tp>::init();
-        obj.sample();
-        return true;
+        return obj.sample();
     }
 
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    bool sfinae(Up&, long, long, Args&&...)
+    null_type sfinae(Up&, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
-        return false;
+        return null_type{};
     }
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Up, typename... Args, enable_if_t<trait::sampler<Up>::value, int>>
-sample<Tp>::sample(Up& obj, Args&&... args)
+sample<Tp>::sample(Tp& obj)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
 
-    if(sfinae(obj, 0, 0, std::forward<Args>(args)...))
-    {
-        Tp::add_sample(std::move(obj));
-    }
+    sfinae(obj, 0, 0, null_type{});
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Up, typename... Args, enable_if_t<!trait::sampler<Up>::value, int>>
-sample<Tp>::sample(Up&, Args&&...)
-{}
+template <typename Arg, typename... Args>
+sample<Tp>::sample(Tp& obj, Arg&& arg, Args&&... args)
+{
+    if(!trait::runtime_enabled<type>::get())
+        return;
+
+    sfinae(obj, 0, 0, std::forward<Arg>(arg), std::forward<Args>(args)...);
+}
 //
 //--------------------------------------------------------------------------------------//
 //

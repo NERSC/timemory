@@ -31,6 +31,7 @@
 #define TIMEM_DEBUG
 #define TIMEMORY_DISABLE_BANNER
 #define TIMEMORY_DISABLE_STORE_ENVIRONMENT
+#define TIMEMORY_DISABLE_CEREAL_CLASS_VERSION
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
 
 // disables unnecessary instantiations
@@ -45,8 +46,19 @@ TIMEMORY_FORWARD_DECLARE_COMPONENT(page_rss)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::page_rss, false_type)
 #endif
 
+namespace tim
+{
+namespace trait
+{
+template <>
+struct pretty_archive<void> : true_type
+{};
+}  // namespace trait
+}  // namespace tim
+
 #include "timemory/components/timing/child.hpp"
-#include "timemory/sampling/sampler.hpp"
+#include "timemory/general.hpp"
+#include "timemory/sampling.hpp"
 #include "timemory/timemory.hpp"
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::papi_array_t, true_type)
@@ -139,45 +151,6 @@ struct custom_print
     }
 };
 //
-template <typename Tp, bool SampleV = (tim::trait::sampler<Tp>::value ||
-                                       tim::trait::file_sampler<Tp>::value)>
-struct timem_sample;
-//
-template <typename Tp>
-struct timem_sample<Tp, true>
-{
-    template <typename... Args>
-    explicit timem_sample(Tp& obj, Args&&... args);
-
-    template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, Args&&... args)
-        -> decltype(obj.measure(std::forward<Args>(args)...), void())
-    {
-        obj.measure(std::forward<Args>(args)...);
-    }
-
-    template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, Args&&...) -> decltype(obj.measure(), void())
-    {
-        obj.measure();
-    }
-};
-//
-template <typename Tp>
-template <typename... Args>
-timem_sample<Tp, true>::timem_sample(Tp& obj, Args&&... args)
-{
-    sfinae(obj, 0, std::forward<Args>(args)...);
-}
-//
-template <typename Tp>
-struct timem_sample<Tp, false>
-{
-    template <typename... Args>
-    explicit timem_sample(Tp&, Args&&...)
-    {}
-};
-//
 /// this is a custom version of base_printer for {read,written}_{char,bytes} components
 template <typename Tp>
 struct custom_base_printer
@@ -241,49 +214,22 @@ CUSTOM_BASE_PRINTER_SPECIALIZATION(component::written_char, "char written")
 #if defined(TIMEMORY_USE_PAPI)
 //
 template <>
-struct sample<component::papi_array_t>
-{
-    using EmptyT                 = std::tuple<>;
-    using type                   = papi_array_t;
-    using value_type             = typename type::value_type;
-    using base_type              = typename type::base_type;
-    using this_type              = sample<type>;
-    static constexpr bool enable = trait::sampler<type>::value;
-    using data_type = conditional_t<enable, decltype(std::declval<type>().get()), EmptyT>;
-
-    TIMEMORY_DEFAULT_OBJECT(sample)
-
-    template <typename Up, typename... Args,
-              enable_if_t<std::is_same<Up, this_type>::value, int> = 0>
-    explicit sample(base_type& obj, Up, Args&&...)
-    {
-        obj.value        = type::record();
-        obj.is_transient = false;
-    }
-};
-//
-template <>
 struct start<component::papi_array_t>
 {
-    using type       = papi_array_t;
-    using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
+    using type = papi_array_t;
 
     template <typename... Args>
-    explicit start(base_type&, Args&&...)
-    {
-        type::configure();
-    }
+    explicit start(type&, Args&&...)
+    {}
 };
 //
 template <>
 struct stop<component::papi_array_t>
 {
-    using type      = component::papi_array_t;
-    using base_type = typename type::base_type;
+    using type = component::papi_array_t;
 
     template <typename... Args>
-    explicit stop(base_type&, Args&&...)
+    explicit stop(type&, Args&&...)
     {}
 };
 //
@@ -392,20 +338,6 @@ public:
         typename base_type::template custom_operation<Op, Tuple>::type;
 
     template <typename... T>
-    struct opsample;
-
-    template <template <typename...> class Tuple, typename... T>
-    struct opsample<Tuple<T...>>
-    {
-        using type =
-            Tuple<operation::timem_sample<T, (trait::sampler<T>::value ||
-                                              trait::file_sampler<T>::value)>...>;
-    };
-
-    template <typename T>
-    using opsample_t = typename opsample<T>::type;
-
-    template <typename... T>
     struct mpi_getter;
 
     template <template <typename...> class Tuple, typename... T>
@@ -444,11 +376,11 @@ public:
     template <typename... Args>
     void sample(Args&&... args)
     {
+        stop();
         base_type::sample(std::forward<Args>(args)...);
-        apply<void>::access<opsample_t<data_type>>(this->m_data,
-                                                   std::forward<Args>(args)...);
         if(m_ofs)
             (*m_ofs) << get_local_datetime("[===== %r %F =====]\n") << *this << std::endl;
+        start();
     }
 
     auto mpi_get()
@@ -489,6 +421,52 @@ public:
     }
 
     bool empty() const { return m_empty; }
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        using data_tuple_type = decay_t<decltype(m_data)>;
+        constexpr auto N      = std::tuple_size<data_tuple_type>::value;
+        serialize_tuple(ar, m_data, make_index_sequence<N>{});
+    }
+
+    template <typename Up, typename Tp = decay_t<Up>>
+    static auto get_metadata_label()
+    {
+        auto _name = metadata<Tp>::name();
+        for(auto&& itr : { "::", "child_" })
+        {
+            auto _pos = std::string::npos;
+            while((_pos = _name.find(itr)) != std::string::npos)
+            {
+                _name = _name.substr(_pos + std::string(itr).length());
+            }
+        }
+        _name = _name.substr(0, _name.find("<"));
+        return _name;
+    }
+
+    template <typename Archive, typename Tp>
+    static auto serialize_entry(Archive& ar, Tp&& _obj)
+    {
+        auto _name = get_metadata_label<Tp>();
+        ar.setNextName(_name.c_str());
+        ar.startNode();
+        ar(cereal::make_nvp("value", _obj.get()));
+        ar(cereal::make_nvp("repr", _obj.get_display()));
+        ar(cereal::make_nvp("laps", _obj.get_laps()));
+        ar(cereal::make_nvp("unit_value", _obj.get_unit()));
+        ar(cereal::make_nvp("unit_repr", _obj.get_display_unit()));
+        ar.finishNode();
+        // ar(cereal::make_nvp(_name, std::forward<Tp>(_obj)));
+    }
+
+    template <typename Archive, typename... Tp, size_t... Idx>
+    static void serialize_tuple(Archive& ar, std::tuple<Tp...>& _data,
+                                index_sequence<Idx...>)
+    {
+        TIMEMORY_FOLD_EXPRESSION(serialize_entry(ar, std::get<Idx>(_data)));
+    }
 
 private:
     // this mpi_get overload merges the results from the different mpi processes
@@ -645,6 +623,22 @@ struct timem_config
     pid_t         worker_pid   = getpid();
     string_t      command      = "";
     std::set<int> signal_types = { SIGALRM };
+    std::vector<std::string> argvector = {};
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        ar(tim::cereal::make_nvp("use_shell", use_shell),
+           tim::cereal::make_nvp("use_mpi", use_mpi),
+           tim::cereal::make_nvp("use_papi", use_papi),
+           tim::cereal::make_nvp("use_sample", use_sample),
+           tim::cereal::make_nvp("debug", debug),
+           tim::cereal::make_nvp("verbose", verbose),
+           tim::cereal::make_nvp("shell", shell),
+           tim::cereal::make_nvp("shell_flags", shell_flags),
+           tim::cereal::make_nvp("sample_freq", sample_freq),
+           tim::cereal::make_nvp("sample_delay", sample_delay));
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -679,6 +673,7 @@ TIMEM_CONFIG_FUNCTION(command)
 TIMEM_CONFIG_FUNCTION(master_pid)
 TIMEM_CONFIG_FUNCTION(worker_pid)
 TIMEM_CONFIG_FUNCTION(signal_types)
+TIMEM_CONFIG_FUNCTION(argvector)
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -341,8 +341,7 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
         int err = errno;
         if(err != EEXIST)
         {
-            std::cerr << "_mkdir(" << _dir.c_str() << ") returned: " 
-                      << ret << std::endl;
+            std::cerr << "_mkdir(" << _dir.c_str() << ") returned: " << ret << std::endl;
             std::stringstream _sdir;
             _sdir << "mkdir " << _dir;
             return (launch_process(_sdir.str().c_str())) ? 0 : 1;

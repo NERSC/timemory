@@ -219,33 +219,31 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
         return _instance;
     }
 
-    //----------------------------------------------------------------------------------//
-    // record a measurment (for file sampling)
-    //
-    void measure()
+    /// sample a measurement
+    void sample()
     {
         std::get<0>(accum) = std::get<0>(value) =
             std::max<int64_t>(std::get<0>(value), get_char_read());
     }
 
-    /// read the value from the cache
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    /// sample a measurement from cached data
+    void sample(const cache_type& _cache)
+    {
+        std::get<0>(accum) = std::get<0>(value) =
+            std::max<int64_t>(std::get<0>(value), _cache.get_char_read());
+    }
+
+    /// read the value from cached data
+    static value_type record(const cache_type& _cache)
     {
         return value_type{ _cache.get_char_read(), get_timestamp() };
     }
 
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    /// start a measurement using the cached data
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    /// stop a measurement using the cached data
+    void stop(const cache_type& _cache)
     {
         using namespace tim::component::operators;
         auto diff         = (record(_cache) - value);
@@ -429,33 +427,31 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
         return _instance;
     }
 
-    //----------------------------------------------------------------------------------//
-    // record a measurment (for file sampling)
-    //
-    void measure()
+    /// sample a measurement
+    void sample()
     {
         std::get<0>(accum) = std::get<0>(value) =
             std::max<int64_t>(std::get<0>(value), get_char_written());
     }
 
-    /// read the value from the cache
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    /// sample a measurement from cached data
+    void sample(const cache_type& _cache)
+    {
+        std::get<0>(accum) = std::get<0>(value) =
+            std::max<int64_t>(std::get<0>(value), _cache.get_char_written());
+    }
+
+    /// read the value from cached data
+    static value_type record(const cache_type& _cache)
     {
         return value_type{ { _cache.get_char_written(), get_timestamp() } };
     }
 
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    /// start a measurement using the cached data
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    /// stop a measurement using the cached data
+    void stop(const cache_type& _cache)
     {
         using namespace tim::component::operators;
         auto diff         = (record(_cache) - value);
@@ -636,33 +632,31 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
         return _instance;
     }
 
-    //----------------------------------------------------------------------------------//
-    // record a measurment (for file sampling)
-    //
-    void measure()
+    /// sample a measurement
+    void sample()
     {
         std::get<0>(accum) = std::get<0>(value) =
             std::max<int64_t>(std::get<0>(value), get_bytes_read());
     }
 
+    /// sample a measurement from cached data
+    void sample(const cache_type& _cache)
+    {
+        std::get<0>(accum) = std::get<0>(value) =
+            std::max<int64_t>(std::get<0>(value), _cache.get_bytes_read());
+    }
+
     /// read the value from the cache
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    static value_type record(const cache_type& _cache)
     {
         return value_type{ _cache.get_bytes_read(), get_timestamp() };
     }
 
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    /// start a measurement using the cached data
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    /// stop a measurement using the cached data
+    void stop(const cache_type& _cache)
     {
         using namespace tim::component::operators;
         auto diff         = (record(_cache) - value);
@@ -844,33 +838,31 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
         return _instance;
     }
 
-    //----------------------------------------------------------------------------------//
-    // record a measurment (for file sampling)
-    //
-    void measure()
+    /// sample a measurement
+    void sample()
     {
         std::get<0>(accum) = std::get<0>(value) =
             std::max<int64_t>(std::get<0>(value), get_bytes_written());
     }
 
+    /// sample a measurement from cached data
+    void sample(const cache_type& _cache)
+    {
+        std::get<0>(accum) = std::get<0>(value) =
+            std::max<int64_t>(std::get<0>(value), _cache.get_bytes_written());
+    }
+
     /// read the value from the cache
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    static value_type record(const CacheT& _cache)
+    static value_type record(const cache_type& _cache)
     {
         return value_type{ { _cache.get_bytes_written(), get_timestamp() } };
     }
 
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    void start(const CacheT& _cache)
-    {
-        value = record(_cache);
-    }
+    /// start a measurement using the cached data
+    void start(const cache_type& _cache) { value = record(_cache); }
 
-    template <typename CacheT                                    = cache_type,
-              enable_if_t<std::is_same<CacheT, io_cache>::value> = 0>
-    void stop(const CacheT& _cache)
+    /// stop a measurement using the cached data
+    void stop(const cache_type& _cache)
     {
         using namespace tim::component::operators;
         auto diff         = (record(_cache) - value);

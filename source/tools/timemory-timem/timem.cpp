@@ -55,6 +55,7 @@ main(int argc, char** argv)
     tim::settings::banner()           = false;
     tim::settings::auto_output()      = false;
     tim::settings::file_output()      = false;
+    tim::settings::ctest_notes()      = false;
     tim::settings::scientific()       = false;
     tim::settings::width()            = 16;
     tim::settings::precision()        = 6;
@@ -232,7 +233,7 @@ main(int argc, char** argv)
 
     auto compose_prefix = [&]() {
         stringstream_t ss;
-        ss << "[" << command().c_str() << "] measurement totals";
+        ss << "[" << command().c_str() << "]> Measurement totals";
         if(use_mpi())
             ss << " (# ranks = " << tim::mpi::size() << "):";
         else if(tim::dmp::size() > 1)
@@ -258,8 +259,19 @@ main(int argc, char** argv)
     {
         auto ofname = parser.get<string_t>("output");
         if(ofname.empty())
-            ofname = TIMEMORY_JOIN("", argv[0], "-output", '/', command());
-        output_file() = ofname;
+        {
+            auto _cmd = command();
+            auto _pos = _cmd.find_last_of('/');
+            if(_pos != std::string::npos)
+                _cmd = _cmd.substr(_pos + 1);
+            ofname = TIMEMORY_JOIN("", argv[0], "-output", '/', _cmd);
+            fprintf(stderr, "[%s]> No output filename provided. Using '%s'...\n",
+                    command().c_str(), ofname.c_str());
+        }
+        output_file()   = ofname;
+        auto output_dir = output_file().substr(0, output_file().find_last_of('/'));
+        if(output_dir != output_file())
+            tim::makedir(output_dir);
     }
 
     if(tim::settings::papi_events().empty())
@@ -280,6 +292,9 @@ main(int argc, char** argv)
     if(use_mpi())
         create_signal_handler(TIMEM_PID_SIGNAL, get_signal_handler(), &childpid_catcher);
 
+    for(int i = 0; i < _argc; ++i)
+        argvector().emplace_back(_argv[i]);
+
     //----------------------------------------------------------------------------------//
     //
     //          Create subprocesses
@@ -287,14 +302,19 @@ main(int argc, char** argv)
     //----------------------------------------------------------------------------------//
     pid_t pid = (use_mpi()) ? master_pid() : fork();
 
+    // SIGCHLD notifies the parent process when a child process exits, is interrupted, or
+    // resumes after being interrupted
+    // if(!use_mpi())
+    //    signal(SIGCHLD, childpid_catcher);
+
     using comm_t        = tim::mpi::comm_t;
     comm_t comm_world_v = tim::mpi::comm_world_v;
 
     if(!use_sample() || signal_types().empty())
     {
         tim::trait::apply<tim::trait::runtime_enabled>::set<
-            page_rss, virtual_memory, read_char, read_bytes, written_char, written_bytes>(
-            false);
+            page_rss, virtual_memory, read_char, read_bytes, written_char, written_bytes,
+            papi_array_t>(false);
     }
 
 #if defined(TIMEMORY_USE_MPI)
@@ -353,7 +373,7 @@ main(int argc, char** argv)
         if(debug() && comm_rank == 0)
         {
             std::stringstream ss;
-            std::cout << "[timem]> parent pids: ";
+            std::cout << "[" << command() << "]> parent pids: ";
             for(const auto& itr : pids)
                 ss << ", " << itr;
             std::cout << ss.str().substr(2) << '\n';
@@ -368,7 +388,7 @@ main(int argc, char** argv)
             cargv_arg0.push_back(_cargv.argv()[0]);
             cargv_argv.push_back(_cargv.argv() + 1);
             if(debug() && comm_rank == 0)
-                fprintf(stderr, "[timem][rank=%i]> cmd :: %s\n", (int) i,
+                fprintf(stderr, "[%s][rank=%i]> cmd :: %s\n", command().c_str(), (int) i,
                         _cargv.args().c_str());
         }
 
@@ -445,13 +465,10 @@ main(int argc, char** argv)
     {
         // ensure always enabled
         tim::settings::enabled() = true;
-        if(!output_file().empty())
+        if(!output_file().empty() && (debug() || verbose() > 1))
         {
             auto fname = output_file();
             fname += "-" + std::to_string(worker_pid()) + ".log";
-            auto output_dir = output_file().substr(0, output_file().find_last_of('/'));
-            if(output_dir != output_file())
-                tim::makedir(output_dir);
             ofs = std::make_unique<std::ofstream>(fname.c_str());
         }
 
@@ -475,6 +492,13 @@ main(int argc, char** argv)
                                "configuring signal types");
 
         sampler_t::configure(signal_types(), verbose());
+
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        // tim::mpi::barrier(comm_world_v);
+
+#if defined(TIMEMORY_USE_MPI)
+        sampler_t::pause();
+#endif
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "starting sampler");
         get_sampler()->start();
@@ -590,49 +614,32 @@ parent_process(pid_t pid)
             continue;
         if(!_measurements.empty() && (use_mpi() || tim::mpi::size() > 1))
             itr.set_rank(i);
-        _oss << "\n" << itr << std::flush;
+        _oss << itr << std::flush;
     }
 
     if(_oss.str().empty())
         return;
 
-    auto _file_out = tim::settings::file_output();
-    auto _text_out = tim::settings::text_output();
-    auto _json_out = tim::settings::json_output();
-
-    if(_file_out)
-    {
-        std::string label = "timem";
-        if(_text_out)
-        {
-            auto          fname = tim::settings::compose_output_filename(label, ".txt");
-            std::ofstream ofs(fname.c_str());
-            if(ofs)
-            {
-                fprintf(stderr, "[timem]> Outputting '%s'...\n", fname.c_str());
-                ofs << _oss.str();
-                ofs.close();
-            }
-            else
-            {
-                std::cerr << "[timem]>  opening output file '" << fname << "'...\n";
-                std::cerr << _oss.str();
-            }
-        }
-
-        if(_json_out)
-        {
-            auto jname = tim::settings::compose_output_filename(label, ".json");
-            fprintf(stderr, "[timem]> Outputting '%s'...\n", jname.c_str());
-            tim::generic_serialization(jname, _measurements);
-        }
-    }
+    if(output_file().empty())
+        std::cerr << '\n';
     else
     {
-        std::cerr << _oss.str() << std::endl;
+        using json_type = tim::cereal::PrettyJSONOutputArchive;
+        // extra function
+        auto _cmdline = [](json_type& ar) {
+            ar(tim::cereal::make_nvp("command_line", argvector()),
+               tim::cereal::make_nvp("config", get_config()));
+        };
+
+        auto job_id = tim::get_env("SLURM_JOB_ID", worker_pid());
+        auto fname  = output_file();
+        fname += "-" + std::to_string(job_id) + ".json";
+        fprintf(stderr, "\n[%s]> Outputting '%s'...\n", command().c_str(), fname.c_str());
+        tim::generic_serialization<json_type>(fname, _measurements, "timemory", "timem",
+                                              _cmdline);
     }
 
-    std::cerr << std::flush;
+    std::cerr << _oss.str() << std::endl;
 
     // tim::mpi::barrier();
     // tim::mpi::finalize();
@@ -669,8 +676,8 @@ child_process(int argc, char** argv)
             auto shellc = argpv.get_execv(shellp);
 
             if(debug())
-                CONDITIONAL_PRINT_HERE((debug() && verbose() > 1),
-                                       "[timem]> command :: %s", shellc.args().c_str());
+                CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "[%s]> command :: %s",
+                                       command().c_str(), shellc.args().c_str());
 
             explain(0, shellc.argv()[0], shellc.argv());
 
@@ -714,8 +721,8 @@ child_process(int argc, char** argv)
         auto argpv = tim::argparse::argument_vector(argc, argv);
         auto argpc = argpv.get_execv(1);
         if(debug())
-            CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "[timem]> command :: '%s'",
-                                   argpc.args().c_str());
+            CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "[%s]> command :: '%s'",
+                                   command().c_str(), argpc.args().c_str());
         int ret = execvp(argpc.argv()[0], argpc.argv());
         // explain error if enabled
         explain(ret, argpc.argv()[0], argpc.argv());

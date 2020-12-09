@@ -706,7 +706,7 @@ def run_pyctest():
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "120",
+                "TIMEOUT": "30",
                 "ENVIRONMENT": test_env,
             },
         )
@@ -714,11 +714,44 @@ def run_pyctest():
     if "timem" in args.tools:
         pyct.test(
             "timemory-timem",
-            ["./timem", "--", "sleep 2"],
+            ["./timem", "--", "sleep", "2"],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "120",
+                "TIMEOUT": "30",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-timem-shell",
+            ["./timem", "-s", "--", "sleep", "2"],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "30",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-timem-no-sample",
+            ["./timem", "--disable-sample", "--", "sleep", "2"],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "30",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-timem-json",
+            ["./timem", "-o", "timem-output", "--", "sleep", "2"],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "30",
                 "ENVIRONMENT": base_env,
             },
         )
@@ -726,11 +759,54 @@ def run_pyctest():
         if args.mpi and dmprun is not None:
             pyct.test(
                 "timemory-timem-mpi",
-                [dmprun] + dmpargs + ["./timem-mpi", "sleep 2"],
+                [dmprun] + dmpargs + ["./timem-mpi", "sleep", "2"],
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "120",
+                    "TIMEOUT": "30",
+                    "ENVIRONMENT": base_env,
+                },
+            )
+
+            pyct.test(
+                "timemory-timem-mpi-shell",
+                [dmprun] + dmpargs + ["./timem-mpi", "-s", "--", "sleep", "2"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "30",
+                    "ENVIRONMENT": base_env,
+                },
+            )
+
+            pyct.test(
+                "timemory-timem-mpi-individual",
+                [dmprun] + dmpargs + ["./timem-mpi", "-i", "--", "sleep", "2"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "30",
+                    "ENVIRONMENT": base_env,
+                },
+            )
+
+            pyct.test(
+                "timemory-timem-mpi-individual-json",
+                [dmprun]
+                + dmpargs
+                + [
+                    "./timem-mpi",
+                    "-i",
+                    "-o",
+                    "timem-mpi-output",
+                    "--",
+                    "sleep",
+                    "2",
+                ],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "30",
                     "ENVIRONMENT": base_env,
                 },
             )
@@ -738,7 +814,11 @@ def run_pyctest():
     if args.python:
         pyct.test(
             "timemory-python",
-            [sys.executable, "-c", '"import timemory"'],
+            [
+                sys.executable,
+                "-c",
+                '"import timemory; print(timemory.__file__)"',
+            ],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,

@@ -81,7 +81,7 @@ private:
         {
             _obj.set_is_on_stack(true);
             _obj.get_is_flat() = _scope.is_flat() || force_flat_v;
-            auto _storage    = static_cast<storage_type*>(_obj.get_storage());
+            auto _storage      = static_cast<storage_type*>(_obj.get_storage());
             assert(_storage != nullptr);
             auto _beg_depth = _storage->depth();
             _obj.set_iterator(_storage->insert(_scope, _obj, _hash));
@@ -150,7 +150,7 @@ private:
             type& targ  = _obj.get_iterator()->obj();
             auto& stats = _obj.get_iterator()->stats();
             _obj.set_depth_change(false);
-            auto _storage     = static_cast<storage_type*>(_obj.get_storage());
+            auto _storage = static_cast<storage_type*>(_obj.get_storage());
             assert(_storage != nullptr);
 
             if(storage_type::is_finalizing())
@@ -180,7 +180,7 @@ private:
                 {
                     _storage->pop();
                     _storage->stack_pop(&_obj);
-                    auto _end_depth   = _storage->depth();
+                    auto _end_depth = _storage->depth();
                     _obj.set_depth_change(_beg_depth > _end_depth);
                 }
             }

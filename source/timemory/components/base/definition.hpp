@@ -62,17 +62,6 @@ base<Tp, Value>::reset()
 //
 template <typename Tp, typename Value>
 void
-base<Tp, Value>::measure()
-{
-    set_is_transient(false);
-    Type*                   obj = static_cast<Type*>(this);
-    operation::record<Type> m{ *obj };
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-void
 base<Tp, Value>::get(void*& ptr, size_t _typeid_hash) const
 {
     if(!ptr && _typeid_hash == typeid_hash<Tp>())
@@ -399,15 +388,6 @@ void
 base<Tp, void>::reset()
 {
     base_state::reset();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-void
-base<Tp, void>::measure()
-{
-    set_is_transient(false);
 }
 //
 //--------------------------------------------------------------------------------------//

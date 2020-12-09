@@ -181,7 +181,7 @@ TEST_F(kokkosp_tests, profiling_routines)
 
     auto _end_sz = tim::storage<tim::component::wall_clock>::instance()->size();
 
-    EXPECT_EQ(_end_sz - _beg_sz, 5)
+    EXPECT_EQ(_end_sz - _beg_sz, 6)
         << " begin size: " << _beg_sz << ", end size: " << _end_sz;
 }
 

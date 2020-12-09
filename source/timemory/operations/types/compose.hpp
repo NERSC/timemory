@@ -73,9 +73,9 @@ struct compose
         ret.set_is_running(false);
         ret.set_is_on_stack(false);
         ret.set_is_transient(lhs.is_transient && rhs.is_transient);
-        ret.laps         = std::min(lhs.laps, rhs.laps);
-        ret.value        = (lhs.value + rhs.value);
-        ret.accum        = (lhs.accum + rhs.accum);
+        ret.laps  = std::min(lhs.laps, rhs.laps);
+        ret.value = (lhs.value + rhs.value);
+        ret.accum = (lhs.accum + rhs.accum);
         return ret;
     }
 
@@ -87,9 +87,9 @@ struct compose
         ret.set_is_running(false);
         ret.set_is_on_stack(false);
         ret.set_is_transient(lhs.is_transient && rhs.is_transient);
-        ret.laps         = std::min(lhs.laps, rhs.laps);
-        ret.value        = func(lhs.value, rhs.value);
-        ret.accum        = func(lhs.accum, rhs.accum);
+        ret.laps  = std::min(lhs.laps, rhs.laps);
+        ret.value = func(lhs.value, rhs.value);
+        ret.accum = func(lhs.accum, rhs.accum);
         return ret;
     }
 };

@@ -5,6 +5,7 @@ if(WIN32)
 endif()
 
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
@@ -38,6 +39,15 @@ if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
     endif()
 endif()
 
+find_package(PAPI QUIET)
+if(NOT DEFINED TIMEM_PAPI_TARGET OR NOT TIMEM_PAPI_TARGET)
+    if(PAPI_STATIC_LIBRARIES OR TARGET PAPI::papi-static)
+        set(TIMEM_PAPI_TARGET PAPI::papi-static timemory::timemory-papi-static)
+    else()
+        set(TIMEM_PAPI_TARGET timemory::timemory-papi)
+    endif()
+endif()
+
 # non-MPI version
 add_executable(timem ${_EXCLUDE} timem.cpp timem.hpp)
 
@@ -47,7 +57,7 @@ target_link_libraries(timem PRIVATE
     timemory::timemory-threading
     timemory::timemory-headers
     timemory::timemory-arch
-    timemory::timemory-papi
+    ${TIMEM_PAPI_TARGET}
     timem-libexplain)
 
 add_target_flag_if_avail(timem "-g")
@@ -74,7 +84,7 @@ target_link_libraries(timem-mpi PRIVATE
     timemory::timemory-threading
     timemory::timemory-headers
     timemory::timemory-arch
-    timemory::timemory-papi
+    ${TIMEM_PAPI_TARGET}
     timemory::timemory-mpi
     timem-libexplain)
 

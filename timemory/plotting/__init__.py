@@ -46,8 +46,22 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
-from . import plotting
-from .plotting import *
+from .plotting import (
+    plot_maximums,
+    plot,
+    plot_all,
+    plot_generic,
+    read,
+    plot_data,
+    timemory_data,
+    echo_dart_tag,
+    add_plotted_files,
+    make_output_directory,
+    plot_parameters,
+    plotted_files,
+)
+
+from .table import timem
 
 __all__ = [
     "plotting",
@@ -61,10 +75,11 @@ __all__ = [
     "echo_dart_tag",
     "add_plotted_files",
     "make_output_directory",
-    "nested_dict",
     "plot_parameters",
     "plotted_files",
     "embedded_plot",
+    "table",
+    "timem",
 ]
 
 
@@ -154,6 +169,12 @@ def embedded_plot(
             help="Call exit if failed",
             action="store_true",
         )
+        parser.add_argument(
+            "-T",
+            "--table",
+            help="Generate a table",
+            action="store_true",
+        )
 
         parser.set_defaults(display_plot=False)
         parser.set_defaults(combine=False)
@@ -184,14 +205,17 @@ def embedded_plot(
             font_size=args.font_size,
         )
 
-        if do_plot_max:
-            if len(args.titles) != 1:
-                raise Exception("Error must provide one title")
-        else:
-            if len(args.titles) != 1 and len(args.titles) != len(args.files):
-                raise Exception(
-                    "Error must provide one title or a title for each file"
-                )
+        if not args.table:
+            if do_plot_max:
+                if len(args.titles) != 1:
+                    raise Exception("Error must provide one title")
+            else:
+                if len(args.titles) != 1 and len(args.titles) != len(
+                    args.files
+                ):
+                    raise Exception(
+                        "Error must provide one title or a title for each file"
+                    )
 
         data = {}
         for i in range(len(args.files)):
@@ -199,60 +223,174 @@ def embedded_plot(
             _jdata = json.load(f)
             _cdata = _jdata["timemory"]
 
-            ncomps = len(_cdata)
-            for key, _json in _cdata.items():
-                nranks = int(_json["num_ranks"]) if "num_ranks" in _json else 1
-                concurrency = (
-                    int(_json["concurrency"]) if "concurrency" in _json else 1
-                )
-                ctype = _json["type"]  # collection type
-                cdesc = _json["description"]  # collection description
-                unitr = _json["unit_repr"]  # collection unit display repr
-                cid = " ".join(key.split("_")).title()
-                # roofl = _json["roofline"] if "roofline" in _json else None
-
-                _dict = {
-                    "cid": cid,
-                    "mpi_size": nranks,
-                    "concurrency": concurrency,
-                    "units": unitr,
-                    "ctype": ctype,
-                    "description": cdesc,
-                    "plot_params": params,
+            if "timem" in _cdata:
+                if args.table:
+                    timem(_cdata, args.files[i], args)
+                    continue
+                _tdata = _cdata["timem"]
+                nranks = len(_tdata)
+                concurrency = 1  # always unknown
+                _groups = {
+                    "time": [
+                        "wall_clock",
+                        "user_clock",
+                        "system_clock",
+                        "cpu_clock",
+                    ],
+                    "utilization": [
+                        "cpu_util",
+                    ],
+                    "memory": [
+                        "peak_rss",
+                        "page_rss",
+                        "virtual_memory",
+                    ],
+                    "page_faults": [
+                        "num_major_page_faults",
+                        "num_minor_page_faults",
+                    ],
+                    "context_switches": [
+                        "priority_context_switch",
+                        "voluntary_context_switch",
+                    ],
+                    "io": [
+                        "read_char",
+                        "read_bytes",
+                        "written_char",
+                        "written_bytes",
+                    ],
+                    "hw": [
+                        "papi_array",
+                    ],
                 }
 
-                for j in range(0, nranks):
-                    rdata = _json["ranks"][j]
+                for cid, itr in _groups.items():
+                    data = {}
+                    unitr = ""
+                    for k in itr:
+                        if k in _tdata and "unit_repr" in _tdata[k]:
+                            unitr = _tdata[k]["unit_repr"]
+                            break
 
-                    _data = read(rdata, **_dict)
-                    _rtag = "" if nranks == 1 else "_{}".format(j)
-                    _rtitle = "" if nranks == 1 else " (MPI rank: {})".format(j)
+                    _dict = {
+                        "cid": cid,
+                        "mpi_size": nranks,
+                        "concurrency": concurrency,
+                        "units": unitr,
+                        "ctype": cid,
+                        "description": "",
+                        "plot_params": params,
+                    }
 
-                    _data.filename = args.files[i].replace(".json", _rtag)
-                    if len(args.titles) == 1:
-                        _data.title = args.titles[0] + _rtitle
-                    else:
-                        _data.title = args.titles[i] + _rtitle
-                    if not j in data.keys():
-                        data[j] = [_data]
-                    else:
-                        data[j] += [_data]
+                    for j in range(0, nranks):
+                        rdata = _tdata[j]
 
-        _pargs = {
-            "plot_params": params,
-            "display": args.display_plot,
-            "output_dir": args.output_dir,
-            "echo_dart": args.echo_dart,
-        }
+                        _idata = {}
+                        for k in itr:
+                            if k in rdata.keys():
+                                _idata[k] = rdata[k]
+                                if not unitr and "unit_repr" in rdata[k]:
+                                    _dict["units"] = rdata[k]["unit_repr"]
 
-        if do_plot_max:
-            _pargs["combine"] = args.combine
+                        if len(_idata) == 0:
+                            continue
+                        _data = read(_idata, **_dict)
+                        _rtag = "" if nranks == 1 else "_{}".format(j)
+                        _rtitle = (
+                            "" if nranks == 1 else " (MPI rank: {})".format(j)
+                        )
 
-        for _rank, _data in data.items():
-            if do_plot_max:
-                plot_maximums(args.plot_max, args.titles[0], _data, **_pargs)
+                        _data.filename = args.files[i].replace(".json", _rtag)
+                        _data.filename = "{}_{}".format(_data.filename, cid)
+                        if len(args.titles) == 1:
+                            _data.title = args.titles[0] + _rtitle
+                        else:
+                            _data.title = args.titles[i] + _rtitle
+                        if j not in data.keys():
+                            data[j] = [_data]
+                        else:
+                            data[j] += [_data]
+
+                    _pargs = {
+                        "plot_params": params,
+                        "display": args.display_plot,
+                        "output_dir": args.output_dir,
+                        "echo_dart": args.echo_dart,
+                    }
+
+                    if do_plot_max:
+                        _pargs["combine"] = args.combine
+
+                    for _rank, _data in data.items():
+                        if do_plot_max:
+                            plot_maximums(
+                                args.plot_max, args.titles[0], _data, **_pargs
+                            )
+                        else:
+                            plot(data=_data, **_pargs)
+
             else:
-                plot(data=_data, **_pargs)
+                for key, _json in _cdata.items():
+                    nranks = (
+                        int(_json["num_ranks"]) if "num_ranks" in _json else 1
+                    )
+                    concurrency = (
+                        int(_json["concurrency"])
+                        if "concurrency" in _json
+                        else 1
+                    )
+                    ctype = _json["type"]  # collection type
+                    cdesc = _json["description"]  # collection description
+                    unitr = _json["unit_repr"]  # collection unit display repr
+                    cid = " ".join(key.split("_")).title()
+                    # roofl = _json["roofline"] if "roofline" in _json else None
+
+                    _dict = {
+                        "cid": cid,
+                        "mpi_size": nranks,
+                        "concurrency": concurrency,
+                        "units": unitr,
+                        "ctype": ctype,
+                        "description": cdesc,
+                        "plot_params": params,
+                    }
+
+                    for j in range(0, nranks):
+                        rdata = _json["ranks"][j]
+
+                        _data = read(rdata, **_dict)
+                        _rtag = "" if nranks == 1 else "_{}".format(j)
+                        _rtitle = (
+                            "" if nranks == 1 else " (MPI rank: {})".format(j)
+                        )
+
+                        _data.filename = args.files[i].replace(".json", _rtag)
+                        if len(args.titles) == 1:
+                            _data.title = args.titles[0] + _rtitle
+                        else:
+                            _data.title = args.titles[i] + _rtitle
+                        if j not in data.keys():
+                            data[j] = [_data]
+                        else:
+                            data[j] += [_data]
+
+            _pargs = {
+                "plot_params": params,
+                "display": args.display_plot,
+                "output_dir": args.output_dir,
+                "echo_dart": args.echo_dart,
+            }
+
+            if do_plot_max:
+                _pargs["combine"] = args.combine
+
+            for _rank, _data in data.items():
+                if do_plot_max:
+                    plot_maximums(
+                        args.plot_max, args.titles[0], _data, **_pargs
+                    )
+                else:
+                    plot(data=_data, **_pargs)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

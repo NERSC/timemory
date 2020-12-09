@@ -61,8 +61,9 @@ struct echo_measurement<Tp, false> : public common_utils
 template <typename Tp>
 struct echo_measurement<Tp, true> : public common_utils
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type         = Tp;
+    using value_type   = typename type::value_type;
+    using attributes_t = std::map<std::string, std::string>;
 
     //----------------------------------------------------------------------------------//
     /// generate a name attribute
