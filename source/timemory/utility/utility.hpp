@@ -543,6 +543,22 @@ print_demangled_backtrace(std::ostream& os = std::cerr)
     os << std::flush;
 }
 //
+#else
+//
+// define these dummy functions since they are used in operation::decode
+//
+static inline auto
+demangle_backtrace(const char* cstr)
+{
+    return std::string(cstr);
+}
+//
+static inline auto
+demangle_backtrace(const std::string& str)
+{
+    return str;
+}
+//
 #endif
 //
 //--------------------------------------------------------------------------------------//
