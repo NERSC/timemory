@@ -35,6 +35,8 @@
 
 #include "timemory/backends/extern.hpp"
 #include "timemory/backends/types/mpi/extern.hpp"
+#include "timemory/components/extern.hpp"
+#include "timemory/components/user_bundle/extern.hpp"
 #include "timemory/containers/auto_timer.hpp"
 #include "timemory/containers/auto_user_bundle.hpp"
 #include "timemory/environment/extern.hpp"
