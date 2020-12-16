@@ -65,7 +65,7 @@ jobs:
         - CC=clang-6.0
         - CXX=clang++-6.0
         - BUILD_TYPE=Debug
-        - BUILD_ARGS='--quick --build-libs shared static --python --stats --tools ompt --cxx-standard=17'
+        - BUILD_ARGS='--quick --build-libs shared static --python --stats --tools ompt --cxx-standard=14'
     # Clang 7
     - os: linux
       dist: bionic
@@ -223,7 +223,7 @@ script:
   - export PYCTEST_ARGS="${BASE_ARGS} -cc ${CC} -cxx ${CXX} --pyctest-build-type=${BUILD_TYPE} ${BUILD_ARGS}"
   # main command
   - if [ "${EXECUTE}" -ne 0 ]; then
-    travis_wait 85 python ./pyctest-runner.py ${PYCTEST_ARGS} --  ${CTEST_ARGS} -- ${CMAKE_ARGS};
+    travis_wait 85 python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS};
     fi
   # cd into build directory
   - if [ "${EXECUTE}" -ne 0 ]; then

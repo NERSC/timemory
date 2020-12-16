@@ -22,8 +22,5 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/definition.hpp"
-#include "timemory/runtime/types.hpp"
-#include "timemory/storage/definition.hpp"
-//
 #include "timemory/runtime/extern.hpp"
+#include "timemory/runtime/types.hpp"
