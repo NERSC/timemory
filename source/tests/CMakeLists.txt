@@ -470,6 +470,18 @@ if(TIMEMORY_USE_PAPI AND VALID_PARANOID)
                         test-opt-flags
                         ${_LIBRARY})
 
+elseif(TIMEMORY_USE_PAPI)
+    if(PARANOID_VALUE)
+        paranoid_warning_message(${PARANOID_FILE} ${PARANOID_VALUE}
+            "Disabling PAPI validation tests")
+    else()
+        paranoid_warning_message(${PARANOID_FILE} "unknown"
+            "Disabling PAPI validation tests")
+    endif()
+endif()
+
+# doesn't require valid HW-counter values
+if(TIMEMORY_USE_PAPI)
     # roofline
     add_timemory_google_test(cpu_roofline_tests
         DISCOVER_TESTS
@@ -481,14 +493,6 @@ if(TIMEMORY_USE_PAPI AND VALID_PARANOID)
                         timemory::timemory-roofline-options
                         test-opt-flags
                         ${_LIBRARY})
-elseif(TIMEMORY_USE_PAPI)
-    if(PARANOID_VALUE)
-        paranoid_warning_message(${PARANOID_FILE} ${PARANOID_VALUE}
-            "Disabling papi_tests and cpu_roofline_tests")
-    else()
-        paranoid_warning_message(${PARANOID_FILE} "unknown"
-            "Disabling papi_tests and cpu_roofline_tests")
-    endif()
 endif()
 
 add_timemory_google_test(apply_tests

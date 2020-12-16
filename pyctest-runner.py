@@ -1002,11 +1002,15 @@ def run_pyctest():
             },
         )
 
-        pyunittests = ["flat", "rusage", "throttle", "timeline", "timing"]
+        pyunittests = ["flat", "rusage", "throttle", "timeline", "timing", "hatchet"]
+        pyusempi = {"hatchet": True}
         for t in pyunittests:
+            pyunitcmd = [sys.executable, "-m", "timemory.test.test_{}".format(t)]
+            if t in pyusempi and pyusempi[t] and args.mpi and dmprun is not None:
+                pyunitcmd = [dmprun] + dmpargs + pyunitcmd
             pyct.test(
                 "python-unittest-{}".format(t),
-                [sys.executable, "-m", "timemory.test.test_{}".format(t)],
+                pyunitcmd,
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
