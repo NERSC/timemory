@@ -1,6 +1,17 @@
 # Features
 
+```eval_rst
+.. toctree::
+   :glob:
+   :maxdepth: 2
+```
+
 ## Cross-Language Support
+
+- Variadic interface to all the utilities from C code
+- Variadic interface to all the utilities from C++ code
+- Variadic interface to all the utilities from Python code
+  - Includes context-managers and decorators
 
 It is very common for Python projects to implement expensive routines in C or C++. Implementing a timemory auto-tuple in any combination
 of these languages will produce one combined report for all the languages (provided each language links to the same library).
@@ -100,6 +111,11 @@ The results from timemory can be serialized to JSON and the JSON output can be u
 via the standalone `timemory-plotter` or `timemory.plotting` Python module. For roofline analysis,
 the `timemory.roofline` module can be used.
 
+## Pandas Dataframe Analysis in Python
+
+Timemory supports conversion to pandas dataframe via a Python package called [hatchet](https://github.com/LLNL/hatchet).
+Hatchet requires timemory's hierarchical JSON format (file with extension `.tree.json` or `timemory.get(hierarchy=True)` in Python).
+
 ## Command-line Tools
 
 The command-line tools `timem` and `pytimem` work like the `time` executable but with more information.
@@ -148,3 +164,44 @@ A `get_max()` function is provided for convenience as some systems (e.g. KNL) do
 | L3          | `tim::ert::cache_size::get(3)`, `tim::ert::cache_size::get<3>()` |
 | max         | `tim::ert::cache_size::get_max()`                                |
 
+## Support for Multiple Third-Party Instrumentation APIs
+
+- [LIKWID](https://github.com/RRZE-HPC/likwid)
+- [Caliper](https://github.com/LLNL/Caliper)
+- [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
+- [gperftools](https://github.com/gperftools/gperftools)
+- MPI
+- OpenMP
+- CrayPAT
+- Allinea-MAP
+- PAPI
+- ittnotify (Intel Parallel Studio API)
+- CUPTI (NVIDIA performance API)
+- NVTX (NVIDIA marker API)
+
+## Generic Bundling of Multiple Tools
+
+- CPU and GPU hardware counters via PAPI
+- NVIDIA GPU hardware counters via CUPTI
+- NVIDIA GPU tracing via CUPTI
+- Generating a Roofline for performance-critical sections on the CPU and NVIDIA GPUs
+  - Classical Roofline (FLOPs)
+  - Instruction Roofline
+- Memory usage
+- Tool insertion around `malloc`, `calloc`, `free`, `cudaMalloc`, `cudaFree`
+- Wall-clock, cpu-clock, system-clock timing
+- Number of bytes read/written to file-system (and rate)
+- Number of context switches
+- Trip counts
+- CUDA kernel runtime(s)
+- Data value tracking
+
+## Powerful GOTCHA Extensions
+
+- [GOTCHA](https://github.com/LLNL/GOTCHA) is an API wrapping function calls similar to the use of LD_PRELOAD
+    - Significantly simplify existing implementations
+- Scoped GOTCHA
+    - Enables temporary wrapping over regions
+- Use gotcha component to replace external function calls with custom replacements
+    - E.g. replace the C math function `exp` with custom `exp` implementation
+- Use gotcha component to wrap external library calls with custom instrumentation

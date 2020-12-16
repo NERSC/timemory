@@ -48,9 +48,8 @@ namespace operation
 template <typename Tp>
 struct print_header : public common_utils
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
-    using widths_t   = std::vector<int64_t>;
+    using type     = Tp;
+    using widths_t = std::vector<int64_t>;
 
     //----------------------------------------------------------------------------------//
     // only if components are available

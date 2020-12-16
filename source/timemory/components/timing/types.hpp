@@ -32,6 +32,7 @@
 #include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
+#include "timemory/macros/os.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
@@ -131,6 +132,19 @@ TIMEMORY_SET_COMPONENT_API(component::process_cpu_util, project::timemory,
                            category::timing, os::supports_unix)
 TIMEMORY_SET_COMPONENT_API(component::thread_cpu_util, project::timemory,
                            category::timing, os::supports_unix)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(_WINDOWS)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::thread_cpu_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::process_cpu_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::thread_cpu_util, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::process_cpu_util, false_type)
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //

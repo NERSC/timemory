@@ -22,29 +22,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/containers/types/minimal_auto_timer.hpp
- * \brief Include the extern declarations for minimal_auto_timer in containers
- */
-
 #pragma once
 
-#include "timemory/api.hpp"
-#include "timemory/components.hpp"
-#include "timemory/components/extern.hpp"
-#include "timemory/containers/declaration.hpp"
-#include "timemory/containers/macros.hpp"
-#include "timemory/containers/types.hpp"
-#include "timemory/manager/declaration.hpp"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/enumerate.hpp"
-#include "timemory/runtime/initialize.hpp"
-#include "timemory/runtime/properties.hpp"
-#include "timemory/storage/definition.hpp"
-#include "timemory/variadic/definition.hpp"
-#include "timemory/variadic/types.hpp"
+#if !defined(TIMEMORY_FULL_AUTO_TIMER)
+
+#    include "timemory/api.hpp"
+#    include "timemory/components.hpp"
+#    include "timemory/components/extern.hpp"
+#    include "timemory/containers/declaration.hpp"
+#    include "timemory/containers/macros.hpp"
+#    include "timemory/containers/types.hpp"
+#    include "timemory/manager/declaration.hpp"
+#    include "timemory/runtime/configure.hpp"
+#    include "timemory/runtime/enumerate.hpp"
+#    include "timemory/runtime/initialize.hpp"
+#    include "timemory/runtime/properties.hpp"
+#    include "timemory/storage/definition.hpp"
+#    include "timemory/variadic/definition.hpp"
+#    include "timemory/variadic/types.hpp"
 
 TIMEMORY_EXTERN_BUNDLE(component_bundle, TIMEMORY_API, TIMEMORY_MINIMAL_TUPLE_TYPES,
                        TIMEMORY_MINIMAL_LIST_TYPES)
 TIMEMORY_EXTERN_BUNDLE(auto_bundle, TIMEMORY_API, TIMEMORY_MINIMAL_TUPLE_TYPES,
                        TIMEMORY_MINIMAL_LIST_TYPES)
+
+#endif

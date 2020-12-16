@@ -28,6 +28,9 @@
 #include "timemory/containers/auto_user_bundle.hpp"
 #include "timemory/containers/declaration.hpp"
 #include "timemory/containers/definition.hpp"
-#include "timemory/containers/extern.hpp"
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
+
+#if defined(TIMEMORY_USE_CONTAINERS_EXTERN)
+#    include "timemory/containers/extern.hpp"
+#endif

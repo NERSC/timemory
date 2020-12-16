@@ -57,9 +57,8 @@ namespace operation
 template <typename Tp>
 struct add_secondary
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
-    using string_t   = std::string;
+    using type     = Tp;
+    using string_t = std::string;
 
     //----------------------------------------------------------------------------------//
     // if secondary data explicitly specified
@@ -72,6 +71,7 @@ struct add_secondary
            !settings::add_secondary())
             return;
 
+        using value_type       = typename type::value_type;
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
         for(const auto& _data : _rhs.get_secondary())
             _storage->append(secondary_data_t{ _itr, _data.first, _data.second });
@@ -84,7 +84,7 @@ struct add_secondary
               enable_if_t<!trait::secondary_data<Up>::value, int> = 0>
     add_secondary(Storage* _storage, Iterator _itr, const Up& _rhs)
     {
-        add_secondary_sfinae(_storage, _itr, _rhs, 0);
+        storage_sfinae(_storage, _itr, _rhs, 0);
     }
 
     //----------------------------------------------------------------------------------//
@@ -100,8 +100,9 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the component has a get_secondary() member function
     //
-    template <typename Storage, typename Iterator, typename Up = type>
-    auto add_secondary_sfinae(Storage* _storage, Iterator _itr, const Up& _rhs, int)
+    template <typename Storage, typename Iterator, typename Up = type,
+              typename value_type = typename Up::value_type>
+    auto storage_sfinae(Storage* _storage, Iterator _itr, const Up& _rhs, int)
         -> decltype(_rhs.get_secondary(), void())
     {
         if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr ||
@@ -117,8 +118,7 @@ private:
     //  If the component does not have a get_secondary() member function
     //
     template <typename Storage, typename Iterator, typename Up = type>
-    auto add_secondary_sfinae(Storage*, Iterator, const Up&, long)
-        -> decltype(void(), void())
+    void storage_sfinae(Storage*, Iterator, const Up&, long)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -138,7 +138,7 @@ private:
     //  If the component does not have a add_secondary(Args...) member function
     //
     template <typename Up, typename... Args>
-    auto sfinae(Up&, long, Args&&...) -> decltype(void(), void())
+    void sfinae(Up&, long, Args&&...)
     {}
 };
 //

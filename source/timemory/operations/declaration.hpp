@@ -551,12 +551,11 @@ public:
 template <typename Tp>
 struct init_storage
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
-    using string_t   = std::string;
-    using this_type  = init_storage<Tp>;
-    using pointer_t  = tim::base::storage*;
-    using get_type   = std::tuple<pointer_t, bool, bool, bool>;
+    using type      = Tp;
+    using string_t  = std::string;
+    using this_type = init_storage<Tp>;
+    using pointer_t = tim::base::storage*;
+    using get_type  = std::tuple<pointer_t, bool, bool, bool>;
 
     template <typename Up                                             = Tp,
               enable_if_t<trait::uses_value_storage<Up>::value, char> = 0>

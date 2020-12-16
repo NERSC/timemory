@@ -95,8 +95,7 @@ private:
 template <typename Tp>
 struct mark_begin
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(mark_begin)
 
@@ -138,8 +137,7 @@ private:
 template <typename Tp>
 struct mark_end
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(mark_end)
 

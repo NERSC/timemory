@@ -84,8 +84,7 @@ private:
 template <typename Tp>
 struct derive
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(derive)
 

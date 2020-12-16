@@ -47,6 +47,7 @@ init_storage<Tp>::init_storage()
 {
 #if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
 #else
+    using value_type = typename type::value_type;
     base::storage::template base_instance<type, value_type>();
 #endif
 }
@@ -72,7 +73,9 @@ init_storage<Tp>::get()
     static thread_local auto _instance = []() {
         if(!trait::runtime_enabled<Tp>::get())
             return get_type{ nullptr, false, false, false };
-        auto this_inst = tim::base::storage::template base_instance<Tp, value_type>();
+
+        using value_type = typename type::value_type;
+        auto this_inst   = tim::base::storage::template base_instance<Tp, value_type>();
         this_inst->initialize();
         bool this_glob = true;
         bool this_work = true;
@@ -97,7 +100,9 @@ init_storage<Tp>::get()
     static thread_local auto _instance = []() {
         if(!trait::runtime_enabled<Tp>::get())
             return get_type{ nullptr, false, false, false };
-        auto this_inst = tim::base::storage::template base_instance<Tp, value_type>();
+
+        using value_type = typename type::value_type;
+        auto this_inst   = tim::base::storage::template base_instance<Tp, value_type>();
         this_inst->initialize();
         return get_type{ this_inst, false, false, false };
     }();

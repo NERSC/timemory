@@ -48,7 +48,6 @@ template <typename Tp>
 struct cache
 {
     using type       = Tp;
-    using value_type = typename type::value_type;
     using cache_type = typename trait::cache<Tp>::type;
 
     TIMEMORY_DEFAULT_OBJECT(cache)

@@ -42,3 +42,27 @@ This section covers the executables and libraries that are distributed as part o
         - Automatically instrument C and C++ source code via `-finstrument-functions` compiler flag
     - [Kokkos Connectors](tools/kokkos-connector/README.md)
         - Libraries for Kokkos profiling
+
+## Profiling with timemory
+
+### Instrumenting Existing Binary
+
+Timemory includes the [timemory-run](tools/timemory-run/README.md) as a full profiler for Linux systems.
+This executable supports dynamic instrumentation (instrumenting at the target applicaiton's runtime), attaching
+to a running process, and binary re-writing (creating a new instrumented binary). The instrumented applications
+support flat-profiling, call-stack profiling, and timeline profiling and can be configured to use any of the
+components timemory provides or, with a little work, can also be used to instrument custom components defined by the user. It is highly recommended for custom tools targetting specific functions to use the combination of
+GOTCHA and the dynamic instrumentation. Using the GOTCHA extensions for
+profiling specific functions enables creating components which replace the function or audit the
+incoming arguments and return values for the functions and the dynamic instrumentation makes it
+easy to inject using the GOTCHA wrappers into an executable or library.
+
+### Instrumentation Binary at Compile-Time
+
+Timemory includes support for compile-time instrumentation via the
+[timemory-compiler-instrument](tools/timemory-compiler-instrument/README.md) library.
+This form of instrumentation is available on UNIX systems and compilers which support the `-finstrument-functions`
+compiler flag. It is generally recommended that the compiler instrumentation be propagated all the way to the
+compilation of the executable (as opposed to only the libraries called by the executable) since finalization is
+typically triggered when the executable returns from `main`. Failure to insert instrumentation
+around `main` may or may not result in segmentation faults.

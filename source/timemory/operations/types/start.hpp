@@ -47,8 +47,7 @@ namespace operation
 template <typename Tp>
 struct start
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     template <typename U>
     using base_t = typename U::base_type;
@@ -115,8 +114,7 @@ private:
 template <typename Tp>
 struct priority_start
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(priority_start)
 
@@ -146,8 +144,7 @@ private:
 template <typename Tp>
 struct standard_start
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(standard_start)
 
@@ -177,8 +174,7 @@ private:
 template <typename Tp>
 struct delayed_start
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(delayed_start)
 

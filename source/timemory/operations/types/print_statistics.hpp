@@ -57,9 +57,8 @@ template <typename Tp>
 struct print_statistics : public common_utils
 {
 public:
-    using type       = Tp;
-    using value_type = typename type::value_type;
-    using widths_t   = std::vector<int64_t>;
+    using type     = Tp;
+    using widths_t = std::vector<int64_t>;
 
 public:
     template <typename Self, template <typename> class Sp, typename Vp, typename Up = Tp,
