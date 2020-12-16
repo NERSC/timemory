@@ -268,6 +268,13 @@ add_timemory_google_test(argparse_tests
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core)
 
+if(UNIX)
+    add_timemory_google_test(backtrace_tests
+        SOURCES         backtrace_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-core)
+endif()
+
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_THREADS=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
@@ -416,7 +423,42 @@ add_timemory_google_test(rusage_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
-if(TIMEMORY_USE_PAPI)
+set(VALID_PARANOID OFF)
+set(PARANOID_FILE "/proc/sys/kernel/perf_event_paranoid")
+if(EXISTS "${PARANOID_FILE}")
+    file(READ "${PARANOID_FILE}" PARANOID_VALUE
+        LIMIT_COUNT 1)
+    if(PARANOID_VALUE LESS 2)
+        set(VALID_PARANOID ON)
+    endif()
+endif()
+set(PARANOID_VALUE 3)
+function(PARANOID_WARNING_MESSAGE _FILE _VALUE)
+    if(NOT TIMEMORY_BUILD_GOOGLE_TEST OR NOT EXISTS "${_FILE}")
+        return()
+    endif()
+
+    message(AUTHOR_WARNING
+"
+Hardware counters are not available: \n\t${_FILE} is ${_VALUE}
+${ARGN}
+perf_event_paranoid controls use of the performance events system by unprivileged users
+(without CAP_SYS_ADMIN). The default value is 2.
+    -1:  Allow use of (almost) all events by all users
+         Ignore mlock limit after perf_event_mlock_kb without CAP_IPC_LOCK
+    >=0: Disallow ftrace function tracepoint by users without CAP_SYS_ADMIN
+         Disallow raw tracepoint access by users without CAP_SYS_ADMIN
+    >=1: Disallow CPU event access by users without CAP_SYS_ADMIN
+    >=2: Disallow kernel profiling by users without CAP_SYS_ADMIN
+If you have sudo access, you can change this setting via one of the following commands:
+$ echo -1 | sudo tee ${_FILE}
+$ echo 0 | sudo tee ${_FILE}
+$ echo 1 | sudo tee ${_FILE}
+"
+)
+endfunction()
+
+if(TIMEMORY_USE_PAPI AND VALID_PARANOID)
     add_timemory_google_test(papi_tests
         DISCOVER_TESTS
         SOURCES         papi_tests.cpp
@@ -439,6 +481,14 @@ if(TIMEMORY_USE_PAPI)
                         timemory::timemory-roofline-options
                         test-opt-flags
                         ${_LIBRARY})
+elseif(TIMEMORY_USE_PAPI)
+    if(PARANOID_VALUE)
+        paranoid_warning_message(${PARANOID_FILE} ${PARANOID_VALUE}
+            "Disabling papi_tests and cpu_roofline_tests")
+    else()
+        paranoid_warning_message(${PARANOID_FILE} "unknown"
+            "Disabling papi_tests and cpu_roofline_tests")
+    endif()
 endif()
 
 add_timemory_google_test(apply_tests
@@ -578,8 +628,12 @@ add_timemory_google_test(priority_tests
 
 if(TIMEMORY_USE_MPI)
     #
-    list(APPEND mpi_tests_env "TIMEMORY_MPI_THREAD_TYPE=serialized")
-    list(APPEND mpi_tests_env "TIMEMORY_SEPARATOR_FREQ=0")
+    list(APPEND mpi_base_env "TIMEMORY_MPI_THREAD_TYPE=serialized")
+    list(APPEND mpi_base_env "TIMEMORY_SEPARATOR_FREQ=0")
+    #
+    set(mpi_tests_env ${mpi_base_env})
+    list(APPEND mpi_tests_env
+        "TIMEMORY_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/timemory-mpi-tests-output")
     #
     add_timemory_google_test(mpi_tests
         MPI
@@ -592,9 +646,10 @@ if(TIMEMORY_USE_MPI)
                         ${_LIBRARY}
         ENVIRONMENT     "${mpi_tests_env}")
     #
-    list(APPEND mpi_tests_env "TIMEMORY_DIFF_OUTPUT=ON")
-    list(APPEND mpi_tests_env "TIMEMORY_OUTPUT_PATH=timemory-mpi-tests-diff-output")
-    list(APPEND mpi_tests_env
+    set(mpi_tests_diff_env ${mpi_base_env})
+    list(APPEND mpi_tests_diff_env "TIMEMORY_DIFF_OUTPUT=ON")
+    list(APPEND mpi_tests_diff_env "TIMEMORY_OUTPUT_PATH=timemory-mpi-tests-diff-output")
+    list(APPEND mpi_tests_diff_env
         "TIMEMORY_INPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}/timemory-mpi-tests-output")
     #
     add_timemory_google_test(mpi_tests_diff
@@ -607,7 +662,7 @@ if(TIMEMORY_USE_MPI)
                         timemory::timemory-dmp
                         timemory::timemory-core
                         ${_LIBRARY}
-        ENVIRONMENT     "${mpi_tests_env}")
+        ENVIRONMENT     "${mpi_tests_diff_env}")
 
 endif()
 

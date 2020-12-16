@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
@@ -145,20 +146,26 @@ using auto_lock_t = std::unique_lock<mutex_t>;
 //
 //======================================================================================//
 
-template <typename Tp>
+template <typename Tp, typename ApiT = TIMEMORY_API>
 mutex_t&
 type_mutex(const uint64_t& _n = 0)
 {
-    static auto* _mutex = new mutex_t();
-    if(_n == 0)
-        return *_mutex;
+    static std::vector<mutex_t*> _mutexes{};
+    if(_n < _mutexes.size())
+        return *(_mutexes.at(_n));
 
-    static std::vector<mutex_t*> _mutexes;
-    if(_n > _mutexes.size())
-        _mutexes.resize(_n, nullptr);
-    if(!_mutexes[_n])
-        _mutexes[_n] = new mutex_t();
-    return *(_mutexes[_n - 1]);
+    static mutex_t _internal{};
+    auto_lock_t    _internal_lk{ _internal };
+
+    // check in case another already resized
+    if(_n < _mutexes.size())
+        return *(_mutexes.at(_n));
+
+    // append new mutexes
+    auto i0 = _mutexes.size();
+    for(auto i = i0; i < (_n + 1); ++i)
+        _mutexes.push_back(new mutex_t{});
+    return *(_mutexes.at(_n));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -368,9 +375,97 @@ get_max_threads()
 //
 #if defined(_UNIX)
 //
-template <size_t Depth, size_t Offset = 0,
-          typename Func = std::function<std::string(const char*)>>
 static inline auto
+demangle_backtrace(const char* cstr)
+{
+    auto _trim = [](std::string& _sub, size_t& _len) {
+        size_t _pos = 0;
+        while((_pos = _sub.find_first_of(' ')) == 0)
+        {
+            _sub = _sub.erase(_pos, 1);
+            --_len;
+        }
+        while((_pos = _sub.find_last_of(' ')) == _sub.length() - 1)
+        {
+            _sub = _sub.substr(0, _sub.length() - 1);
+            --_len;
+        }
+        return _sub;
+    };
+
+    auto str = demangle(std::string(cstr));
+    auto beg = str.find("(");
+    if(beg == std::string::npos)
+    {
+        beg = str.find("_Z");
+        if(beg != std::string::npos)
+            beg -= 1;
+    }
+    auto end = str.find("+", beg);
+    if(beg != std::string::npos && end != std::string::npos)
+    {
+        auto len = end - (beg + 1);
+        auto sub = str.substr(beg + 1, len);
+        auto dem = demangle(_trim(sub, len));
+        str      = str.replace(beg + 1, len, dem);
+    }
+    else if(beg != std::string::npos)
+    {
+        auto len = str.length() - (beg + 1);
+        auto sub = str.substr(beg + 1, len);
+        auto dem = demangle(_trim(sub, len));
+        str      = str.replace(beg + 1, len, dem);
+    }
+    else if(end != std::string::npos)
+    {
+        auto len = end;
+        auto sub = str.substr(beg, len);
+        auto dem = demangle(_trim(sub, len));
+        str      = str.replace(beg, len, dem);
+    }
+    return str;
+}
+//
+static inline auto
+demangle_backtrace(const std::string& str)
+{
+    return demangle_backtrace(str.c_str());
+}
+//
+template <size_t Depth, size_t Offset = 1>
+TIMEMORY_NOINLINE auto
+get_backtrace()
+{
+    static_assert((Depth - Offset) >= 1, "Error Depth - Offset should be >= 1");
+
+    using type = const char*;
+    // destination
+    std::array<type, Depth> btrace;
+    btrace.fill(nullptr);
+
+    // plus one for this stack-frame
+    std::array<void*, Depth + Offset> buffer;
+    // size of returned buffer
+    auto sz = backtrace(buffer.data(), Depth + Offset);
+    // size of relevant data
+    auto n = sz - Offset;
+
+    // skip ahead (Offset + 1) stack frames
+    char** bsym = backtrace_symbols(buffer.data() + Offset, n);
+
+    // report errors
+    if(bsym == nullptr)
+        perror("backtrace_symbols");
+    else
+    {
+        for(decltype(n) i = 0; i < n; ++i)
+            btrace[i] = bsym[i];
+    }
+    return btrace;
+}
+//
+template <size_t Depth, size_t Offset, typename Func>
+TIMEMORY_NOINLINE auto
 get_backtrace(Func&& func = [](const char* inp) { return std::string(inp); })
 {
     static_assert((Depth - Offset) >= 1, "Error Depth - Offset should be >= 1");
@@ -404,65 +499,18 @@ get_backtrace(Func&& func = [](const char* inp) { return std::string(inp); })
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 0>
-static inline auto
+template <size_t Depth, size_t Offset = 2>
+TIMEMORY_NOINLINE auto
 get_demangled_backtrace()
 {
-    auto demangle_bt = [](const char* cstr) {
-        auto _trim = [](std::string& _sub, size_t& _len) {
-            size_t _pos = 0;
-            while((_pos = _sub.find_first_of(' ')) == 0)
-            {
-                _sub = _sub.erase(_pos, 1);
-                --_len;
-            }
-            while((_pos = _sub.find_last_of(' ')) == _sub.length() - 1)
-            {
-                _sub = _sub.substr(0, _sub.length() - 1);
-                --_len;
-            }
-            return _sub;
-        };
-
-        auto str = demangle(std::string(cstr));
-        auto beg = str.find("(");
-        if(beg == std::string::npos)
-        {
-            beg = str.find("_Z");
-            if(beg != std::string::npos)
-                beg -= 1;
-        }
-        auto end = str.find("+", beg);
-        if(beg != std::string::npos && end != std::string::npos)
-        {
-            auto len = end - (beg + 1);
-            auto sub = str.substr(beg + 1, len);
-            auto dem = demangle(_trim(sub, len));
-            str      = str.replace(beg + 1, len, dem);
-        }
-        else if(beg != std::string::npos)
-        {
-            auto len = str.length() - (beg + 1);
-            auto sub = str.substr(beg + 1, len);
-            auto dem = demangle(_trim(sub, len));
-            str      = str.replace(beg + 1, len, dem);
-        }
-        else if(end != std::string::npos)
-        {
-            auto len = end;
-            auto sub = str.substr(beg, len);
-            auto dem = demangle(_trim(sub, len));
-            str      = str.replace(beg, len, dem);
-        }
-        return str;
-    };
+    auto demangle_bt = [](const char* cstr) { return demangle_backtrace(cstr); };
     return get_backtrace<Depth, Offset>(demangle_bt);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 0>
-static inline auto
+template <size_t Depth, size_t Offset = 2>
+TIMEMORY_NOINLINE void
 print_backtrace(std::ostream& os = std::cerr)
 {
     auto              bt = tim::get_backtrace<Depth, Offset>();
@@ -479,8 +527,8 @@ print_backtrace(std::ostream& os = std::cerr)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 0>
-static inline auto
+template <size_t Depth, size_t Offset = 3>
+TIMEMORY_NOINLINE void
 print_demangled_backtrace(std::ostream& os = std::cerr)
 {
     auto              bt = tim::get_demangled_backtrace<Depth, Offset>();
@@ -949,6 +997,57 @@ struct hasher
     inline size_t operator()(T&& val) const { return get_hash(std::forward<T>(val)); }
     inline size_t operator()(const T& val) const { return get_hash(val); }
 };
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(_UNIX) &&                                                                    \
+    (defined(TIMEMORY_UTILITY_SOURCE) || defined(TIMEMORY_USE_UTILITY_EXTERN))
+//
+extern template auto
+get_backtrace<2, 1>();
+extern template auto
+get_backtrace<3, 1>();
+extern template auto
+get_backtrace<4, 1>();
+extern template auto
+get_backtrace<8, 1>();
+extern template auto
+get_backtrace<16, 1>();
+extern template auto
+get_backtrace<32, 1>();
+//
+extern template auto
+get_demangled_backtrace<3, 2>();
+extern template auto
+get_demangled_backtrace<4, 2>();
+extern template auto
+get_demangled_backtrace<8, 2>();
+extern template auto
+get_demangled_backtrace<16, 2>();
+extern template auto
+get_demangled_backtrace<32, 2>();
+//
+extern template auto
+get_backtrace<3, 2>();
+extern template auto
+get_backtrace<4, 2>();
+extern template auto
+get_backtrace<8, 2>();
+extern template auto
+get_backtrace<16, 2>();
+extern template auto
+get_backtrace<32, 2>();
+//
+extern template auto
+get_demangled_backtrace<4, 3>();
+extern template auto
+get_demangled_backtrace<8, 3>();
+extern template auto
+get_demangled_backtrace<16, 3>();
+extern template auto
+get_demangled_backtrace<32, 3>();
+//
+#endif
 
 //--------------------------------------------------------------------------------------//
 

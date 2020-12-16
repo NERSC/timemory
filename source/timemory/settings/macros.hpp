@@ -52,21 +52,52 @@
 #    define TIMEMORY_SETTINGS_LINKAGE(...) inline __VA_ARGS__
 #endif
 //
+#if !defined(TIMEMORY_SETTINGS_PREFIX)
+#    define TIMEMORY_SETTINGS_PREFIX "TIMEMORY_"
+#endif
+//
+#if !defined(TIMEMORY_SETTINGS_KEY)
+#    define TIMEMORY_SETTINGS_KEY(...) TIMEMORY_SETTINGS_PREFIX __VA_ARGS__
+#endif
+//
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_SETTINGS_MEMBER_DECL)
 // memory leak w/ _key is intentional due to potential calls during _cxa_finalize
 // which may have already deleted a non-heap allocation
-#    define TIMEMORY_SETTINGS_MEMBER_DECL(TYPE, FUNC, ENV_VAR)                           \
+#    define TIMEMORY_SETTINGS_MEMBER_DECL(TYPE, FUNC)                                    \
     public:                                                                              \
-        TYPE& get_##FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default")      \
-                                                                                         \
+        TYPE& get_##FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default");     \
+        TYPE                                         get_##FUNC()                        \
+            const TIMEMORY_NEVER_INSTRUMENT          TIMEMORY_VISIBILITY("default");     \
+        static TYPE& FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default");
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_SETTINGS_REFERENCE_DECL)
+// memory leak w/ _key is intentional due to potential calls during _cxa_finalize
+// which may have already deleted a non-heap allocation
+#    define TIMEMORY_SETTINGS_REFERENCE_DECL(TYPE, FUNC)                                 \
+    public:                                                                              \
+        TYPE& get_##FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default");     \
+        TYPE                                         get_##FUNC()                        \
+            const TIMEMORY_NEVER_INSTRUMENT          TIMEMORY_VISIBILITY("default");     \
+        static TYPE& FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default");
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_SETTINGS_MEMBER_DEF)
+// memory leak w/ _key is intentional due to potential calls during _cxa_finalize
+// which may have already deleted a non-heap allocation
+#    define TIMEMORY_SETTINGS_MEMBER_DEF(TYPE, FUNC, ENV_VAR)                            \
+        TIMEMORY_SETTINGS_INLINE TYPE& settings::get_##FUNC()                            \
         {                                                                                \
             return static_cast<tsettings<TYPE>*>(m_data.at(ENV_VAR).get())->get();       \
         }                                                                                \
                                                                                          \
-        TYPE get_##FUNC() const TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default") \
-                                                                                         \
+        TIMEMORY_SETTINGS_INLINE TYPE settings::get_##FUNC() const                       \
         {                                                                                \
             auto ret = m_data.find(ENV_VAR);                                             \
             if(ret == m_data.end())                                                      \
@@ -76,29 +107,25 @@
             return static_cast<tsettings<TYPE>*>(ret->second.get())->get();              \
         }                                                                                \
                                                                                          \
-        static TYPE& FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default")     \
-                                                                                         \
+        TIMEMORY_SETTINGS_INLINE TYPE& settings::FUNC()                                  \
         {                                                                                \
-            return shared_instance()->get_##FUNC();                                      \
+            return shared_instance<TIMEMORY_API>()->get_##FUNC();                        \
         }
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_SETTINGS_REFERENCE_DECL)
+#if !defined(TIMEMORY_SETTINGS_REFERENCE_DEF)
 // memory leak w/ _key is intentional due to potential calls during _cxa_finalize
 // which may have already deleted a non-heap allocation
-#    define TIMEMORY_SETTINGS_REFERENCE_DECL(TYPE, FUNC, ENV_VAR)                        \
-    public:                                                                              \
-        TYPE& get_##FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default")      \
-                                                                                         \
+#    define TIMEMORY_SETTINGS_REFERENCE_DEF(TYPE, FUNC, ENV_VAR)                         \
+        TIMEMORY_SETTINGS_INLINE TYPE& settings::get_##FUNC()                            \
         {                                                                                \
             return static_cast<tsettings<TYPE, TYPE&>*>(m_data.at(ENV_VAR).get())        \
                 ->get();                                                                 \
         }                                                                                \
                                                                                          \
-        TYPE get_##FUNC() const TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default") \
-                                                                                         \
+        TIMEMORY_SETTINGS_INLINE TYPE settings::get_##FUNC() const                       \
         {                                                                                \
             auto ret = m_data.find(ENV_VAR);                                             \
             if(ret == m_data.end())                                                      \
@@ -108,10 +135,9 @@
             return static_cast<tsettings<TYPE, TYPE&>*>(ret->second.get())->get();       \
         }                                                                                \
                                                                                          \
-        static TYPE& FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default")     \
-                                                                                         \
+        TIMEMORY_SETTINGS_INLINE TYPE& settings::FUNC()                                  \
         {                                                                                \
-            return shared_instance()->get_##FUNC();                                      \
+            return shared_instance<TIMEMORY_API>()->get_##FUNC();                        \
         }
 #endif
 //

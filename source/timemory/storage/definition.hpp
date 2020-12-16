@@ -30,6 +30,7 @@
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/manager/declaration.hpp"
+#include "timemory/operations/types/decode.hpp"
 #include "timemory/operations/types/fini.hpp"
 #include "timemory/operations/types/init.hpp"
 #include "timemory/operations/types/node.hpp"
@@ -657,7 +658,7 @@ template <typename Type>
 std::string
 storage<Type, true>::get_prefix(const graph_node& node)
 {
-    auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, node.id());
+    auto _ret = operation::decode<TIMEMORY_API>{}(m_hash_ids, m_hash_aliases, node.id());
     if(_ret.find("unknown-hash=") == 0)
     {
         if(!m_is_master && singleton_t::master_instance())
@@ -667,7 +668,7 @@ storage<Type, true>::get_prefix(const graph_node& node)
         }
         else
         {
-            return get_hash_identifier(node.id());
+            return operation::decode<TIMEMORY_API>{}(node.id());
         }
     }
 

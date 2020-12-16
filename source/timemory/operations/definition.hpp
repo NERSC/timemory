@@ -43,6 +43,7 @@
 #include "timemory/operations/types/compose.hpp"
 #include "timemory/operations/types/construct.hpp"
 #include "timemory/operations/types/copy.hpp"
+#include "timemory/operations/types/decode.hpp"
 #include "timemory/operations/types/derive.hpp"
 #include "timemory/operations/types/echo_measurement.hpp"
 #include "timemory/operations/types/finalize/dmp_get.hpp"

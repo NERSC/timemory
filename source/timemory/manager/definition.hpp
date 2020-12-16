@@ -28,6 +28,7 @@
 #include "timemory/manager/declaration.hpp"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
+#include "timemory/operations/types/decode.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/signals.hpp"
 
@@ -462,12 +463,14 @@ manager::write_metadata(const char* context)
             auto hitr = m_hash_ids->find(itr.second);
             if(hitr != m_hash_ids->end())
             {
-                _hashes[hitr->second].insert(itr.first);
-                _hashes[hitr->second].insert(hitr->first);
+                _hashes[operation::decode<TIMEMORY_API>{}(hitr->second)].insert(
+                    itr.first);
+                _hashes[operation::decode<TIMEMORY_API>{}(hitr->second)].insert(
+                    hitr->first);
             }
         }
         for(const auto& itr : (*m_hash_ids))
-            _hashes[itr.second].insert(itr.first);
+            _hashes[operation::decode<TIMEMORY_API>{}(itr.second)].insert(itr.first);
     }
     if(_hashes.empty())
         return;

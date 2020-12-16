@@ -577,8 +577,8 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
     {
         // calculate some size parameters
         int32_t nmod  = comm_size % settings::node_count();
-        int32_t bins  = comm_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
-        int32_t bsize = comm_size / bins;
+        int32_t bsize = comm_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
+        int32_t bins  = comm_size / bsize;
 
         if(settings::debug() || settings::verbose() > 3)
             PRINT_HERE("[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "
