@@ -47,8 +47,7 @@ namespace operation
 template <typename Tp>
 struct record
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(record)
 
@@ -64,7 +63,8 @@ struct record
 
 private:
     //  satisfies mpl condition and accepts arguments
-    template <typename Up, typename Vp, typename T, typename... Args,
+    template <typename Up, typename T, typename... Args,
+              typename Vp = typename Up::value_type,
               enable_if_t<check_record_type<Up, Vp>::value, int> = 0>
     auto sfinae(T& obj, int, int, Args&&... args)
         -> decltype((std::declval<T&>().value = obj.record(std::forward<Args>(args)...)),
@@ -74,7 +74,8 @@ private:
     }
 
     //  satisfies mpl condition but does not accept arguments
-    template <typename Up, typename Vp, typename T, typename... Args,
+    template <typename Up, typename T, typename... Args,
+              typename Vp = typename Up::value_type,
               enable_if_t<check_record_type<Up, Vp>::value, int> = 0>
     auto sfinae(T& obj, int, long, Args&&...)
         -> decltype((std::declval<T&>().value = obj.record()), void())
@@ -83,24 +84,24 @@ private:
     }
 
     //  satisfies mpl condition but does not accept arguments
-    template <typename Up, typename Vp, typename T, typename... Args,
+    template <typename Up, typename T, typename... Args,
+              typename Vp = typename Up::value_type,
               enable_if_t<check_record_type<Up, Vp>::value, int> = 0>
     auto sfinae(T&, long, long, Args&&...) -> decltype(void(), void())
     {}
 
     //  no member function or does not satisfy mpl condition
-    template <typename Up, typename Vp, typename T, typename... Args,
-              enable_if_t<!check_record_type<Up, Vp>::value, int> = 0>
-    auto sfinae(T&, long, long, Args&&...) -> decltype(void(), void())
+    template <typename Up, typename T, typename... Args>
+    void sfinae(T&, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
     }
 
     //  satisfies mpl condition but does not accept arguments
     template <typename T>
-    auto sfinae(T& obj, const T& rhs, int, long) -> decltype((obj += rhs), void())
+    auto sfinae(T& obj, const T& rhs, int, long) -> decltype(obj += rhs)
     {
-        obj += rhs;
+        return obj += rhs;
     }
 
     //  no member function or does not satisfy mpl condition
@@ -129,7 +130,7 @@ record<Tp>::record(T& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
-    sfinae<type, value_type>(obj, 0, 0, std::forward<Args>(args)...);
+    sfinae<type>(obj, 0, 0, std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -182,7 +182,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_ty
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mode_time, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::kernel_mode_time, false_type)
 //
-TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::current_peak_rss, false_type)
 #endif
 
 //
@@ -202,6 +201,16 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_ty
 
 #    endif  // !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE) && defined(_MACOS)
 
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//                                  ECHO ENABLED
+//
+//--------------------------------------------------------------------------------------//
+
+#if defined(_WINDOWS)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::current_peak_rss, false_type)
 #endif
 
 //--------------------------------------------------------------------------------------//

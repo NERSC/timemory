@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/containers/definition.hpp
- * \brief The definitions for the types in containers
- */
-
 #pragma once
 
 #include "timemory/containers/auto_timer.hpp"

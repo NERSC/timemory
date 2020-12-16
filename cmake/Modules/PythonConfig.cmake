@@ -231,7 +231,8 @@ else()
         set(_REMOVE ON)
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E make_directory ${Python3_SITEARCH}/timemory
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+            ERROR_QUIET)
     endif()
     # figure out if we can install to Python3_SITEARCH
     execute_process(
@@ -243,7 +244,8 @@ else()
     if(_REMOVE)
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E remove_directory ${Python3_SITEARCH}/timemory
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+            ERROR_QUIET)
     endif()
     # check the error code of the touch command
     if(ERR_CODE)

@@ -1,22 +1,22 @@
 # Using GOTCHA
 
+C++ codes running on the Linux operating system can take advantage of the built-in
+[GOTCHA](https://github.com/LLNL/GOTCHA) functionality to insert timemory markers around external function calls.
 [GOTCHA](https://github.com/LLNL/GOTCHA) is a library that wraps functions and is used to place hook into external libraries.
 It is similar to LD_PRELOAD, but operates via a programmable API.
 This enables easy methods of accomplishing tasks like code instrumentation or wholesale replacement of mechanisms in programs without disrupting their source code.
 
+Writing a GOTCHA hook in timemory is greatly simplified and applications using timemory can specify their own GOTCHA hooks
+in a few lines of code.
+
 The `gotcha` component in timemory supports implicit extraction of the wrapped function return type and arguments and
 significantly reduces the complexity of a traditional GOTCHA specification.
-Additionally, limited support for C++ function mangling required to intercept C++ function calls.
-
-| Component Name                | Category                       | Dependences                              | Description                                           |
-| ----------------------------- | ------------------------------ | ---------------------------------------- | ----------------------------------------------------- |
-| **`gotcha<Size,Tools,Diff>`** | All (specify other components) | [GOTCHA](https://github.com/LLNL/GOTCHA) | Wrap external function calls with timemory components |
-
-Requires at least two template parameters: `gotcha<Size, Tools, Diff = void>`
-where `Size` is the maximum number of external functions to be wrapped,
-`Tools` is a [variadic component wrapper](#variadic-component-wrappers), and
-`Diff` is an optional template parameter for differentiating `gotcha` components with equivalent `Size` and `Tools`
-parameters but wrap different functions. Note: the `Tools` type cannot contain other `gotcha` components.
+The GOTCHA library requires specifying the name of the function in the binary being wrapped. This name is simple for
+functions using C linkage (just the name of the function) but these names are more complex in C++ due to name mangling.
+Timemory includes limited support for using GOTCHA for C++ functions by providing basic "mangler", e.g.
+`tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func))` where `func` would be `ext::do_work` for the function
+`std::tuple<float, double> do_work(int64_t, const std::pair<float, double>&)` in `namespace ext` (in general,
+mangling template functions are not supported -- yet).
 
 ## Use Cases
 
@@ -66,7 +66,7 @@ static int fputs_wrapper(const char* str, FILE* f)
 }
 ```
 
-## Using GOTCHA with timemory
+## GOTCHA in timemory
 
 A `gotcha` component in timemory has three template paramters:
 
@@ -84,7 +84,69 @@ A GOTCHA wrapper with timemory can be defined in a single line of code and there
 macros provided that eliminate the need for specifying the function signature (return-type and
 arguments) due to the ability for templates to extract these parameters.
 
-## Function Replacement with GOTCHA Example
+```eval_rst
+.. doxygenstruct:: tim::component::gotcha
+```
+
+## Function Wrapping
+
+If an application wanted to insert `tim::auto_timer` around (unmangled) `MPI_Allreduce` and
+(mangled) `ext::do_work` in the following executable:
+
+```cpp
+#include <mpi.h>
+#include <vector>
+
+int main(int argc, char** argv)
+{
+    init();
+
+    MPI_Init(&argc, &argv);
+
+    int sizebuf = 100;
+    std::vector<double> sendbuf(sizebuf, 1.0);
+    // ... do some stuff
+    std::vector<double> recvbuf(sizebuf, 0.0);
+
+    MPI_Allreduce(sendbuf.data(), recvbuf.data(), sizebuf,
+                  MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    // ... etc.
+
+    int64_t nitr = 10;
+    std::pair<float, double> settings{ 1.25f, 2.5 };
+    std::tuple<float, double> result = ext::do_work(nitr, settings);
+    // ... etc.
+
+    return 0;
+}
+```
+
+This would be the required specification using the `TIMEMORY_C_GOTCHA` macro for unmangled functions
+and `TIMEMORY_CXX_GOTCHA` macro for mangled functions:
+
+```cpp
+#include <timemory/timemory.hpp>
+
+static constexpr size_t NUM_FUNCS = 2;
+using gotcha_t = tim::component::gotcha<NUM_FUNCS, tim::auto_timer_t>;
+void init()
+{
+    TIMEMORY_C_GOTCHA(gotcha_t, 0, MPI_Allreduce);
+    TIMEMORY_CXX_GOTCHA(gotcha_t, 1, ext::do_work);
+}
+// uses comma operator to call init() during static construction of boolean
+static bool is_initialized = (init(), true);
+```
+
+Additionally, `TIMEMORY_DERIVED_GOTCHA` accepts the same parameters as `TIMEMORY_C_GOTCHA`
+and `TIMEMORY_CXX_GOTCHA` + one extra parameter for specifying the symbol. For example,
+`TIMEMORY_DERIVED_GOTCHA(gotcha_t, 0, exp, "__finite_exp")` would create a gotcha based
+on the function signature of the standard C math function `double exp(double)` but it
+would wrap the symbol named `"__finite_exp"` in the binary (which may exist in lieu of
+`_exp` with certain compiler flags -- in this situation, it is generally safe to just
+wrap both).
+
+## Function Replacement
 
 Suppose that an application is spending a signifincant amount of run-time calling the standard math library
 double-precision `exp` function and you would like to investigate whether using single-precision `expf` is an
@@ -95,11 +157,19 @@ Provided below is the full component specification require to implement the repl
 
 ```cpp
 // NOTE: declared in tim::component::
+namespace tim
+{
+namespace component
+{
 struct exp_intercept : public base<exp_intercept, void>
 {
     double operator()(double val)
-    { return expf(static_cast<float>(val)); }
+    {
+        return expf(static_cast<float>(val));
+    }
 };
+}  // namespace component
+}  // namespace tim
 ```
 
 When the `exp_intercept` component is _appropriately_ configured within a `gotcha` component,
@@ -136,12 +206,12 @@ instead of explicitly invoking `TIMEMORY_C_GOTCHA`, the gotcha wrapper is not ac
 meaning that the redirection of `exp` to `expf` is explicitly tied to the allocation of
 at least one instance of `exp_gotcha_t`.
 
-## Instrumentation with GOTCHA Example
+## Extended Example
 
 > Reference: [source/tests/gotcha_tests.cpp](https://github.com/NERSC/timemory/blob/master/source/tests/gotcha_tests.cpp)
 
-Lets introduce an unmangled function (i.e. `extern "C"` if compiling in C++) and a
-mangled function.
+Lets revisit the unmangled function (i.e. `extern "C"` if compiling in C++) `MPI_Allreduce` and
+introduce a mangled function `ext::do_work`.
 
 The `MPI_Allreduce` has the following signature (mpich):
 
@@ -160,8 +230,11 @@ $ nm --dynamic test_gotcha_mpi | grep MPI_Allreduce
 An imaginary C++ function defined in an external library `do_work` has the following signature:
 
 ```cpp
+namespace ext
+{
 std::tuple<float, double>
 do_work(int, const std::pair<float, double>&);
+}  // namespace ext
 ```
 
 and is mangled in the binary:

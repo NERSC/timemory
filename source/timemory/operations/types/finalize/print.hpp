@@ -598,7 +598,6 @@ void
 print<Tp, true>::read_json()
 {
     using policy_type = policy::input_archive_t<Tp>;
-    // using bool_type   = typename trait::array_serialization<Tp>::type;
 
     if(json_inpfname.length() > 0)
     {
@@ -616,10 +615,18 @@ print<Tp, true>::read_json()
             ia->startNode();
 
             // node
+            std::string _name = component::properties<Tp>::id();
+            if(_name.empty())
+                _name = Tp::label();
+            ia->setNextName(_name.c_str());
+            ia->startNode();
+
+            // node
             try
             {
                 cereal::size_type _nranks = 0;
                 (*ia)(cereal::make_nvp("num_ranks", _nranks));
+                (*ia)(cereal::make_nvp("concurrency", input_concurrency));
                 ia->setNextName("ranks");
                 ia->startNode();
                 ia->loadSize(num_ranks);
@@ -636,7 +643,6 @@ print<Tp, true>::read_json()
                     ia->startNode();
 
                     (*ia)(cereal::make_nvp("rank", i));
-                    (*ia)(cereal::make_nvp("concurrency", input_concurrency));
                     try
                     {
                         load(*ia, node_input.at(i));
@@ -653,14 +659,21 @@ print<Tp, true>::read_json()
             {
                 fprintf(stderr, "[%s]> Error reading input file '%s': %s\n",
                         label.c_str(), json_inpfname.c_str(), e.what());
+#if defined(TIMEMORY_INTERNAL_TESTING)
+                throw;
+#endif
             }
 
+            ia->finishNode();
             ia->finishNode();
         }
         else
         {
             fprintf(stderr, "[%s]|%i> Failure opening '%s' for input...\n", label.c_str(),
                     node_rank, json_inpfname.c_str());
+#if defined(TIMEMORY_INTERNAL_TESTING)
+            throw;
+#endif
         }
         ifs.close();
     }

@@ -223,42 +223,42 @@ enumerator_enumerate(component_hash_map_t& _map, component_key_set_t& _set,
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename... Args>
+template <typename Tp, typename Arg, typename... Args>
 void
-initialize(Tp& obj, int idx, Args&&... args)
+initialize(Tp& obj, int idx, Arg&& arg, Args&&... args)
 {
     enumerator_init(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{},
-                    std::forward<Args>(args)...);
+                    std::forward<Arg>(arg), std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename... Args>
+template <typename Tp, typename Arg, typename... Args>
 void
-insert(Tp& obj, int idx, Args&&... args)
+insert(Tp& obj, int idx, Arg&& arg, Args&&... args)
 {
     enumerator_insert(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{},
-                      std::forward<Args>(args)...);
+                      std::forward<Arg>(arg), std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename... Args>
+template <typename Tp, typename Arg, typename... Args>
 void
-configure(int idx, Args&&... args)
+configure(int idx, Arg&& arg, Args&&... args)
 {
     enumerator_configure<Tp>(idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{},
-                             std::forward<Args>(args)...);
+                             std::forward<Arg>(arg), std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename... Args>
+template <typename Tp, typename Arg, typename... Args>
 void
-configure(Tp& obj, int idx, Args&&... args)
+configure(Tp& obj, int idx, Arg&& arg, Args&&... args)
 {
     enumerator_configure(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{},
-                         std::forward<Args>(args)...);
+                         std::forward<Arg>(arg), std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -315,6 +315,33 @@ void
 initialize(Tp& obj, int idx)
 {
     enumerator_init(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{});
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+insert(Tp& obj, int idx)
+{
+    enumerator_insert(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{});
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+configure(int idx)
+{
+    enumerator_configure<Tp>(idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{});
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+configure(Tp& obj, int idx)
+{
+    enumerator_configure(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{});
 }
 //
 //--------------------------------------------------------------------------------------//

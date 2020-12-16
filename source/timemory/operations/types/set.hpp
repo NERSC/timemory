@@ -47,9 +47,8 @@ namespace operation
 template <typename Tp>
 struct set_prefix
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
-    using string_t   = std::string;
+    using type     = Tp;
+    using string_t = std::string;
 
     TIMEMORY_DELETED_OBJECT(set_prefix)
 
@@ -101,9 +100,8 @@ private:
 template <typename Tp>
 struct set_scope
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
-    using string_t   = std::string;
+    using type     = Tp;
+    using string_t = std::string;
 
     TIMEMORY_DELETED_OBJECT(set_scope)
 

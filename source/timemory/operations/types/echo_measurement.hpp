@@ -62,7 +62,6 @@ template <typename Tp>
 struct echo_measurement<Tp, true> : public common_utils
 {
     using type         = Tp;
-    using value_type   = typename type::value_type;
     using attributes_t = std::map<std::string, std::string>;
 
     //----------------------------------------------------------------------------------//
@@ -251,7 +250,7 @@ struct echo_measurement<Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// assumes type is not a iterable
     ///
-    template <typename Up = Tp, typename Vt = value_type,
+    template <typename Up = Tp, typename Vt = typename Up::value_type,
               enable_if_t<is_enabled<Up>::value, char> = 0,
               enable_if_t<!(trait::array_serialization<Up>::value ||
                             trait::iterable_measurement<Up>::value),
@@ -272,7 +271,7 @@ struct echo_measurement<Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// assumes type is iterable
     ///
-    template <typename Up = Tp, typename Vt = value_type,
+    template <typename Up = Tp, typename Vt = typename Up::value_type,
               enable_if_t<is_enabled<Up>::value, char> = 0,
               enable_if_t<trait::array_serialization<Up>::value ||
                               trait::iterable_measurement<Up>::value,
@@ -299,7 +298,7 @@ struct echo_measurement<Tp, true> : public common_utils
         std::cout << ss.str() << std::flush;
     }
 
-    template <typename... Args, typename Up = Tp, typename Vt = value_type,
+    template <typename... Args, typename Up = Tp, typename Vt = typename Up::value_type,
               enable_if_t<!is_enabled<Up>::value, char> = 0>
     echo_measurement(Up&, Args&&...)
     {}

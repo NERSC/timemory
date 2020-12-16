@@ -57,9 +57,8 @@ namespace operation
 template <typename Tp>
 struct print
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
-    using widths_t   = std::vector<int64_t>;
+    using type     = Tp;
+    using widths_t = std::vector<int64_t>;
 
     // only if components are available
     template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>

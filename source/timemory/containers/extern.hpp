@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/containers/extern.hpp
- * \brief Include the extern declarations for containers
- */
-
 #pragma once
 
 #include "timemory/containers/declaration.hpp"
@@ -41,6 +36,6 @@
 #endif
 #include "timemory/runtime/configure.hpp"
 
-// #include "timemory/containers/types/complete_list.hpp"
-// #include "timemory/containers/types/full_auto_timer.hpp"
-// #include "timemory/containers/types/minimal_auto_timer.hpp"
+#include "timemory/containers/types/complete_list.hpp"
+#include "timemory/containers/types/full_auto_timer.hpp"
+#include "timemory/containers/types/minimal_auto_timer.hpp"

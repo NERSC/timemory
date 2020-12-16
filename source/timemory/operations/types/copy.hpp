@@ -50,8 +50,7 @@ namespace operation
 template <typename Tp>
 struct copy
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(copy)
 

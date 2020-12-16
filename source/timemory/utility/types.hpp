@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/compat/macros.h"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/concepts.hpp"
@@ -227,6 +228,10 @@ using type_list_element_t = typename type_list_element<Idx, Tp>::type;
 /// \brief use this function to get rid of "unused parameter" warnings
 template <typename... ArgsT>
 TIMEMORY_ALWAYS_INLINE void
+consume_parameters(ArgsT&&...) TIMEMORY_HIDDEN TIMEMORY_NEVER_INSTRUMENT;
+//
+template <typename... ArgsT>
+void
 consume_parameters(ArgsT&&...)
 {}
 //

@@ -52,8 +52,7 @@ namespace operation
 template <typename Tp>
 struct get
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(get)
 
@@ -99,8 +98,6 @@ struct get_data
 {
     using type      = Tp;
     using data_type = decltype(std::declval<type>().get());
-
-    using value_type = typename type::value_type;
 
     TIMEMORY_DELETED_OBJECT(get_data)
 
@@ -170,8 +167,6 @@ struct get_labeled_data
 {
     using type      = Tp;
     using data_type = std::tuple<std::string, decltype(std::declval<type>().get())>;
-
-    using value_type = typename type::value_type;
 
     TIMEMORY_DELETED_OBJECT(get_labeled_data)
 
