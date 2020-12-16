@@ -281,7 +281,13 @@ def configure():
     )
     parser.add_argument(
         "--quick",
-        help="Only run unit tests (not examples)",
+        help="Only build the library",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--minimal",
+        help="Only build unit tests (not examples)",
         default=False,
         action="store_true",
     )
@@ -451,7 +457,7 @@ def run_pyctest():
         "TIMEMORY_BUILD_DEVELOPER": "ON" if args.developer else "OFF",
         "TIMEMORY_BUILD_TESTING": "ON" if not args.quick else "OFF",
         "TIMEMORY_BUILD_EXAMPLES": "OFF"
-        if args.quick or args.coverage
+        if args.quick or args.minimal
         else "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON"
         if args.extra_optimizations
@@ -479,7 +485,11 @@ def run_pyctest():
         "PYTHON_EXECUTABLE": "{}".format(sys.executable),
     }
 
-    if args.coverage or (args.quick and args.python):
+    if args.minimal:
+        build_opts["TIMEMORY_BUILD_MINIMAL_TESTING"] = "ON"
+        build_opts["TIMEMORY_BUILD_EXAMPLES"] = "OFF"
+
+    if args.quick and args.python:
         build_opts["TIMEMORY_BUILD_MINIMAL_TESTING"] = "ON"
 
     if args.papi:
@@ -1015,7 +1025,7 @@ def run_pyctest():
                 },
             )
 
-    if not args.quick and not args.coverage:
+    if not args.quick and not args.coverage and not args.minimal:
 
         pyct.test(
             construct_name("ex-derived"),
