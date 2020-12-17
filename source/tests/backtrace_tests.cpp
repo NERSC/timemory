@@ -120,6 +120,20 @@ random_entry(const std::vector<Tp>& v)
     return v.at(dist(rng));
 }
 
+static inline auto&
+replace_seq(std::string& inp, const std::string& seq, const std::string& repl = {})
+{
+    auto pos = std::string::npos;
+    while((pos = inp.find(seq)) != std::string::npos)
+    {
+        if(repl.empty())
+            inp = inp.erase(pos, seq.length());
+        else
+            inp = inp.replace(pos, seq.length(), repl);
+    }
+    return inp;
+}
+
 }  // namespace details
 
 //--------------------------------------------------------------------------------------//
@@ -182,6 +196,9 @@ TEST_F(backtrace_tests, demangled_backtrace)
     for(const auto& itr : ret)
         EXPECT_TRUE(itr.find("backtrace_tests") != std::string::npos) << itr;
 
+    for(auto& itr : ret)
+        details::replace_seq(itr, "[abi:cxx11]");
+
     EXPECT_TRUE(ret.at(0).find("foo_d()") != std::string::npos) << ret.at(0);
     EXPECT_TRUE(ret.at(1).find("bar_d()") != std::string::npos) << ret.at(1);
     EXPECT_TRUE(ret.at(2).find("spam_d()") != std::string::npos) << ret.at(2);
@@ -213,27 +230,137 @@ TEST_F(backtrace_tests, decode)
 
     ASSERT_EQ(cnt_m, cnt_d);
 
+    auto _basename = [](std::string& inp) -> std::string& {
+        auto _b = inp.find_first_of('/');
+        while(_b > 0 && _b != std::string::npos)
+        {
+            if(inp.at(_b - 1) == '.')
+                --_b;
+            else
+                break;
+        }
+        auto _e = inp.find_last_of('/');
+        if(_e > _b && _e != std::string::npos)
+            inp = inp.erase(_b, _e - _b + 1);
+        return inp;
+    };
+
     for(int i = 0; i < cnt_m; ++i)
     {
         std::string _d = tim::operation::decode<TIMEMORY_API>{}(ret_d.at(i));
         EXPECT_EQ(ret_d.at(i), _d);
-        auto _pos = _d.find("_d()");
-        while(_pos != std::string::npos)
-        {
-            _d   = _d.erase(_pos, 2);
-            _pos = _d.find("_d()");
-        }
         std::string _m = tim::operation::decode<TIMEMORY_API>{}(ret_m.at(i));
-        std::regex  _re(
-            "([0-9])[ ]+([a-zA-Z:_]+)[ ]+0x[0-9a-fA-F]+[ ]+([A-Za-z_:\\(\\)]+).*");
-        _m = std::regex_replace(_m, _re, "$1 $2 $3");
-        _d = std::regex_replace(_d, _re, "$1 $2 $3");
-        if(i == 0)
+
+        std::stringstream _errmsg;
+        bool              _apply = true;
+        auto _storemsg = [&_apply, &_d, &_m, &_errmsg](const std::string& _label) {
+            if(_apply || tim::settings::debug() || tim::settings::verbose() > 2)
+                _errmsg << '\n'
+                        << _label << "\n\t_d :: " << _d << "\n\t_m :: " << _m << '\n';
+        };
+
+        // _storemsg("Stripping [abi:cxx11]");
+        if(_apply)
         {
-            EXPECT_EQ(_m, std::string("0 backtrace_tests foo()"));
-            EXPECT_EQ(_d, std::string("0 backtrace_tests foo()"));
+            details::replace_seq(_d, "[abi:cxx11]");
+            details::replace_seq(_m, "[abi:cxx11]");
         }
-        EXPECT_EQ(_m, _d) << "\nmangle: " << ret_m.at(i) << "\ndemangle: " << ret_d.at(i);
+
+        // _storemsg("Replacing _d() with ()");
+        if(_apply)
+        {
+            details::replace_seq(_d, "_d()", "()");
+            details::replace_seq(_m, "_d()", "()");
+        }
+
+        _storemsg("Generic replacement (macOS)");
+        if(_apply)
+        {
+            std::regex _re(
+                "[0-9 ]+([a-zA-Z:_]+)[ ]+0x[[:xdigit:]]+[ ]+([A-Za-z_:\\(\\)]+).*");
+            if(std::regex_search(_m, _re) && std::regex_search(_d, _re))
+                _apply = false;
+            _m = std::regex_replace(_m, _re, "$1 $2");
+            _d = std::regex_replace(_d, _re, "$1 $2");
+        }
+
+        _storemsg("Generic replacement (linux)");
+        if(_apply)
+        {
+            std::regex _re("([^\\(]+)[\\(]([^\\+]+)(\\+0x[[:xdigit:]]+)(.*)");
+            if(std::regex_search(_m, _re) && std::regex_search(_d, _re))
+                _apply = false;
+            _m = std::regex_replace(_m, _re, "$1 $2");
+            _d = std::regex_replace(_d, _re, "$1 $2");
+        }
+
+#if defined(ONLY_HERE_FOR_REFERENCE_DONT_DEFINE_ME)
+        _storemsg("Inserting spaces b/t address start");
+        if(_apply)
+        {
+            std::regex _re("([A-Za-z0-9_])\\(([A-Za-z0-9_])");
+            _m = std::regex_replace(_m, _re, "$1 $2");
+            _d = std::regex_replace(_d, _re, "$1 $2");
+        }
+
+        _storemsg("Inserting spaces b/t address end");
+        if(_apply)
+        {
+            std::regex _re("\\)(\\+0x[[:xdigit:]]+)\\)");
+            _m = std::regex_replace(_m, _re, ") [$1]");
+            _d = std::regex_replace(_d, _re, ") [$1]");
+        }
+
+        _storemsg("Stripping addresses");
+        if(_apply)
+        {
+            std::regex _re("([ ]*\\[[+]?0x[[:xdigit:]]+\\])");
+            _m = std::regex_replace(_m, _re, "");
+            _d = std::regex_replace(_d, _re, "");
+        }
+#endif
+
+        _apply = true;
+        _storemsg("Basename");
+        _m = _basename(_m);
+        _d = _basename(_d);
+
+        _storemsg("Final result");
+        switch(i)
+        {
+            case 0: {
+                auto _e = std::string("backtrace_tests foo()");
+                EXPECT_EQ(_m, _e) << _errmsg.str();
+                EXPECT_EQ(_d, _e) << _errmsg.str();
+                break;
+            }
+            case 1: {
+                auto _e = std::string("backtrace_tests bar()");
+                EXPECT_EQ(_m, _e) << _errmsg.str();
+                EXPECT_EQ(_d, _e) << _errmsg.str();
+                break;
+            }
+            case 2: {
+                auto _e = std::string("backtrace_tests spam()");
+                EXPECT_EQ(_m, _e) << _errmsg.str();
+                EXPECT_EQ(_d, _e) << _errmsg.str();
+                break;
+            }
+            case 3: {
+                auto _e = std::string(
+                    "backtrace_tests backtrace_tests_decode_Test::TestBody()");
+                EXPECT_EQ(_m, _e) << _errmsg.str();
+                EXPECT_EQ(_d, _e) << _errmsg.str();
+                break;
+            }
+            default: break;
+        }
+
+        EXPECT_EQ(_m, _d) << "\nmangle:   " << ret_m.at(i)
+                          << "\ndemangle: " << ret_d.at(i);
+
+        std::cerr << '[' << details::get_test_name() << " @ " << i << "]:\n  _d :: " << _d
+                  << "\n  _m :: " << _m << '\n';
     }
 }
 
