@@ -27,6 +27,9 @@
 #define TIMEMORY_EXTERNAL __attribute__((visibility("default")))
 #define TIMEMORY_VISIBILITY(...) TIMEMORY_INTERNAL
 #define TIMEMORY_INTERNAL_NO_INSTRUMENT TIMEMORY_INTERNAL TIMEMORY_NEVER_INSTRUMENT
+//
+#define TIMEMORY_USE_TIMING_MINIMAL
+#define TIMEMORY_DISABLE_BANNER
 
 #include "timemory/api/macros.hpp"
 
@@ -36,6 +39,27 @@ TIMEMORY_DEFINE_NS_API(project, compiler_instrument)
 
 // define the API for all instantiations before including any more timemory headers
 #define TIMEMORY_API ::tim::project::compiler_instrument
+#define TIMEMORY_SETTINGS_PREFIX "TIMEMORY_COMPILER_"
+
+#include "timemory/components/macros.hpp"
+#include "timemory/mpl/types.hpp"
+
+// forward declare components to disable
+namespace tim
+{
+namespace component
+{
+struct monotonic_clock;
+struct monotonic_raw_clock;
+struct user_mode_time;
+struct kernel_mode_time;
+}  // namespace component
+}  // namespace tim
+// disable these components for compiler instrumentation
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::monotonic_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::monotonic_raw_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mode_time, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::kernel_mode_time, false_type)
 
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
@@ -77,9 +101,9 @@ using uomap_t     = std::unordered_map<const void*, std::unordered_map<const voi
 using trace_set_t = tim::available_list_t;
 using throttle_map_t = uomap_t<bool>;
 using overhead_map_t = uomap_t<std::tuple<size_t, monotonic_clock, size_t>>;
+using label_map_t    = uomap_t<size_t>;
 using trace_vec_t =
     std::vector<std::tuple<const void*, const void*, std::unique_ptr<trace_set_t>>>;
-using label_map_t      = std::unordered_map<const void*, size_t>;
 using empty_tuple_t    = tim::component_tuple<>;
 using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
 using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
@@ -184,7 +208,8 @@ get_thread_enabled()
 bool
 get_debug()
 {
-    static auto _instance = new bool{ tim::get_env("TIMEMORY_COMPILER_DEBUG", false) };
+    static auto _instance =
+        new bool{ tim::get_env(TIMEMORY_SETTINGS_KEY("DEBUG"), false) };
     return *_instance;
 }
 
@@ -247,8 +272,14 @@ get_label_map()
 static auto
 get_label(void* this_fn, void* call_site)
 {
-    auto itr = get_label_map()->find(this_fn);
-    if(itr != get_label_map()->end())
+    auto& _label_map = get_label_map();
+    if(!_label_map)
+        return static_cast<size_t>(0);
+
+    auto& _label_site = (*_label_map)[call_site];
+
+    auto itr = _label_site.find(this_fn);
+    if(itr != _label_site.end())
         return itr->second;
 
     Dl_info finfo;
@@ -256,9 +287,9 @@ get_label(void* this_fn, void* call_site)
 
     if(!finfo.dli_saddr)
     {
-        auto _key  = TIMEMORY_JOIN("", this_fn);
+        auto _key  = TIMEMORY_JOIN("", '[', this_fn, ']', '[', call_site, ']');
         auto _hash = tim::add_hash_id(_key);
-        get_label_map()->insert({ this_fn, _hash });
+        _label_site.insert({ this_fn, _hash });
         return _hash;
     }
 
@@ -273,8 +304,9 @@ get_label(void* this_fn, void* call_site)
         }
     }
 
-    auto _hash = tim::add_hash_id(tim::demangle(finfo.dli_sname));
-    get_label_map()->insert({ this_fn, _hash });
+    auto _hash = tim::add_hash_id(
+        TIMEMORY_JOIN("", '[', finfo.dli_sname, ']', '[', finfo.dli_fname, ']'));
+    _label_site.insert({ this_fn, _hash });
     return _hash;
 }
 
@@ -295,7 +327,7 @@ initialize()
     primary_tidx = tim::threading::get_id();
 
     // default settings
-    if(tim::get_env<std::string>("TIMEMORY_COUT_OUTPUT", "").empty())
+    if(tim::get_env<std::string>(TIMEMORY_SETTINGS_KEY("COUT_OUTPUT"), "").empty())
         tim::settings::cout_output() = false;
 
     // initialization
@@ -310,24 +342,27 @@ initialize()
     tim::settings::plot_output()      = false;
 
     // throttling
-    throttle_count = tim::get_env("TIMEMORY_COMPILER_THROTTLE_COUNT", throttle_count);
-    throttle_value = tim::get_env("TIMEMORY_COMPILER_THROTTLE_VALUE", throttle_value);
+    throttle_count =
+        tim::get_env(TIMEMORY_SETTINGS_KEY("THROTTLE_COUNT"), throttle_count);
+    throttle_value =
+        tim::get_env(TIMEMORY_SETTINGS_KEY("THROTTLE_VALUE"), throttle_value);
 
     // output path
-    if(tim::get_env<std::string>("TIMEMORY_OUTPUT_PATH", "").empty())
+    if(tim::get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"), "").empty())
     {
-        tim::settings::output_path() = tim::get_env<std::string>(
-            "TIMEMORY_COMPILER_OUTPUT_PATH", "timemory-compiler-instrumentation-output");
+        tim::settings::output_path() =
+            tim::get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"),
+                                      "timemory-compiler-instrumentation-output");
     }
     else
     {
-        tim::settings::output_prefix() =
-            tim::get_env<std::string>("TIMEMORY_COMPILER_OUTPUT_PREFIX", "compiler-");
+        tim::settings::output_prefix() = tim::get_env<std::string>(
+            TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"), "compiler-");
     }
 
-    auto        _comp_env = tim::get_env<std::string>("TIMEMORY_COMPILER_COMPONENTS", "");
-    auto        _glob_env = tim::settings::global_components();
-    auto        _used_env = (_comp_env.empty()) ? _glob_env : _comp_env;
+    auto _comp_env = tim::get_env<std::string>(TIMEMORY_SETTINGS_KEY("COMPONENTS"), "");
+    auto _glob_env = tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "");
+    auto _used_env = (_comp_env.empty()) ? _glob_env : _comp_env;
     static auto _enum_env = tim::enumerate_components(tim::delimit(_used_env, ",;: "));
     if(_enum_env.empty())
         _enum_env.push_back(WALL_CLOCK);
@@ -335,9 +370,12 @@ initialize()
     static_assert(std::is_same<trace_set_t, tim::available_list_t>::value,
                   "Error! mismatched types");
 
-    trace_set_t::get_initializer() = [](trace_set_t& ts) {
-        tim::initialize(ts, _enum_env);
-    };
+    if(get_enabled())
+    {
+        trace_set_t::get_initializer() = [](trace_set_t& ts) {
+            tim::initialize(ts, _enum_env);
+        };
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -369,13 +407,17 @@ finalize()
     tim::trace::lock<tim::trace::compiler> lk{};
     lk.acquire();
 
+    bool _remove_manager = false;
     if(get_trace_vec())
         printf("[pid=%i][tid=%i]> timemory-compiler-instrument: %lu results\n",
                (int) tim::process::get_id(), (int) tim::threading::get_id(),
                (unsigned long) get_trace_size());
     else
+    {
         printf("[pid=%i][tid=%i]> timemory-compiler-instrument: finalizing...\n",
                (int) tim::process::get_id(), (int) tim::threading::get_id());
+        _remove_manager = true;
+    }
 
     // clean up trace map
     if(get_trace_vec())
@@ -426,6 +468,9 @@ finalize()
         assert(pr.get() > 0.0);
 #endif
     }
+
+    if(_remove_manager)
+        tim::manager::instance().reset();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -451,9 +496,10 @@ extern "C"
 
         auto _label = get_label(this_fn, call_site);
         if(get_debug())
-            fprintf(stderr, "[%i][%i][timemory-compiler-inst]> %s\n",
-                    (int) tim::process::get_id(), (int) tim::threading::get_id(),
-                    tim::get_hash_identifier(_label).substr(0, 120).c_str());
+            fprintf(
+                stderr, "[%i][%i][timemory-compiler-inst]> %s\n",
+                (int) tim::process::get_id(), (int) tim::threading::get_id(),
+                tim::operation::decode<TIMEMORY_API>{}(_label).substr(0, 120).c_str());
 
         const auto& _overhead = get_overhead();
         const auto& _throttle = get_throttle();
@@ -482,7 +528,7 @@ extern "C"
         if(get_debug())
             fprintf(stderr, "[%i][%i][timemory-compiler-inst]> %s\n",
                     (int) tim::process::get_id(), (int) tim::threading::get_id(),
-                    tim::get_hash_identifier(get_label(this_fn, call_site))
+                    tim::operation::decode<TIMEMORY_API>{}(get_label(this_fn, call_site))
                         .substr(0, 120)
                         .c_str());
 

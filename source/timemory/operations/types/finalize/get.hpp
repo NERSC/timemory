@@ -292,7 +292,7 @@ get<Type, true>::operator()(result_type& ret)
         auto _idx   = data.m_node_rank;
         auto _range = std::make_pair(-1, -1);
 
-        if(_nc > 0)
+        if(_nc > 0 && _nc < data.m_node_size)
         {
             // calculate some size parameters and generate map of the pids to node ids
             int32_t nmod  = _num_pid_count % _nc;

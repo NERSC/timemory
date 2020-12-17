@@ -28,6 +28,7 @@
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/macros.hpp"
 #include "timemory/hash/types.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <cstdint>
 #include <iomanip>
@@ -163,6 +164,25 @@ TIMEMORY_HASH_LINKAGE(std::string)
 get_hash_identifier(hash_result_type _hash_id)
 {
     return get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(std::string)
+demangle_hash_identifier(std::string inp, char bdelim, char edelim)
+{
+    inp         = demangle(inp);
+    size_t _beg = inp.find_first_of(bdelim);
+    while(_beg != std::string::npos)
+    {
+        size_t _end = inp.find_first_of(edelim, _beg);
+        if(_end == std::string::npos)
+            break;
+        auto _sz = _end - _beg - 1;
+        inp      = inp.replace(_beg + 1, _sz, demangle(inp.substr(_beg + 1, _sz)));
+        _beg     = inp.find_first_of(bdelim, _end + 1);
+    }
+    return demangle(inp);
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -22,21 +22,57 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/papi/extern.hpp
- * \brief Include the extern declarations for papi components
- */
+#include "timemory/utility/utility.hpp"
 
-#pragma once
-
-#include "timemory/components/extern/common.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/components/papi/components.hpp"
-
-TIMEMORY_EXTERN_COMPONENT(papi_vector, true, std::vector<long long>)
-TIMEMORY_EXTERN_COMPONENT(papi_array_t, true,
-                          std::array<long long, TIMEMORY_PAPI_ARRAY_SIZE>)
-
-// TIMEMORY_EXTERN_COMPONENT(papi_array8_t, true, std::array<long long, 8>)
-// TIMEMORY_EXTERN_COMPONENT(papi_array16_t, true, std::array<long long, 16>)
-// TIMEMORY_EXTERN_COMPONENT(papi_array32_t, true, std::array<long long, 32>)
+#if defined(_UNIX)
+//
+namespace tim
+{
+//
+template auto
+get_backtrace<2, 1>();
+template auto
+get_backtrace<3, 1>();
+template auto
+get_backtrace<4, 1>();
+template auto
+get_backtrace<8, 1>();
+template auto
+get_backtrace<16, 1>();
+template auto
+get_backtrace<32, 1>();
+//
+template auto
+get_demangled_backtrace<3, 2>();
+template auto
+get_demangled_backtrace<4, 2>();
+template auto
+get_demangled_backtrace<8, 2>();
+template auto
+get_demangled_backtrace<16, 2>();
+template auto
+get_demangled_backtrace<32, 2>();
+//
+template auto
+get_backtrace<3, 2>();
+template auto
+get_backtrace<4, 2>();
+template auto
+get_backtrace<8, 2>();
+template auto
+get_backtrace<16, 2>();
+template auto
+get_backtrace<32, 2>();
+//
+template auto
+get_demangled_backtrace<4, 3>();
+template auto
+get_demangled_backtrace<8, 3>();
+template auto
+get_demangled_backtrace<16, 3>();
+template auto
+get_demangled_backtrace<32, 3>();
+//
+}  // namespace tim
+//
+#endif

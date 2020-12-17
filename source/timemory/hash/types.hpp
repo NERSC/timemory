@@ -101,13 +101,26 @@ add_hash_id(hash_result_type _hash_id, hash_result_type _alias_hash_id) TIMEMORY
 //
 std::string
 get_hash_identifier(const graph_hash_map_ptr_t&   _hash_map,
-                    const graph_hash_alias_ptr_t& _hash_alias,
-                    hash_result_type              _hash_id) TIMEMORY_HOT;
+                    const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id);
 //
 //--------------------------------------------------------------------------------------//
 //
 std::string
-get_hash_identifier(hash_result_type _hash_id) TIMEMORY_HOT;
+get_hash_identifier(hash_result_type _hash_id);
+//
+//--------------------------------------------------------------------------------------//
+//
+std::string
+demangle_hash_identifier(std::string, char bdelim = '[', char edelim = ']');
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Args>
+auto
+get_demangled_hash_identifier(Args&&... _args)
+{
+    return demangle_hash_identifier(get_hash_identifier(std::forward<Args>(_args)...));
+}
 //
 //--------------------------------------------------------------------------------------//
 //
