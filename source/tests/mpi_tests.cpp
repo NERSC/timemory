@@ -385,3 +385,53 @@ TEST_F(mpi_tests, per_thread)
 }
 
 //--------------------------------------------------------------------------------------//
+
+TEST_F(mpi_tests, vector_get)
+{
+    auto_tuple_t tot{ details::get_test_name() };
+
+    tot.start();
+
+    long ret = 0;
+
+    // run a fibonacci calculation and accumulate metric
+    auto run_fibonacci = [&](long n) { ret += details::time_fibonacci(n, n - 2); };
+
+    run_fibonacci(42);
+
+    tot.stop();
+
+    std::vector<wall_clock> wc_vec;
+    std::vector<peak_rss>   pr_vec;
+
+    tim::settings::verbose() = 2;
+
+    tim::settings::collapse_processes() = true;
+    tim::operation::finalize::mpi_get<wall_clock, true>{ wc_vec, *tot.get<wall_clock>() };
+
+    tim::settings::collapse_processes() = false;
+    tim::settings::node_count()         = 2;
+    tim::operation::finalize::mpi_get<peak_rss, true>{ pr_vec, *tot.get<peak_rss>() };
+
+    tim::settings::verbose() = 0;
+
+    std::cout << "\nfibonacci total: " << ret << "\n" << std::endl;
+
+    if(tim::mpi::rank() == 0)
+    {
+        std::cout << "WALL-CLOCK: " << std::endl;
+        for(const auto& itr : wc_vec)
+            std::cout << "    " << itr << std::endl;
+        EXPECT_EQ(wc_vec.size(), 1);
+
+        std::cout << "PEAK-RSS: " << std::endl;
+        for(const auto& itr : pr_vec)
+            std::cout << "    " << itr << std::endl;
+        auto nc = tim::settings::node_count();
+        if(nc > tim::mpi::size())
+            nc = 1;
+        EXPECT_EQ(pr_vec.size(), nc);
+    }
+}
+
+//--------------------------------------------------------------------------------------//

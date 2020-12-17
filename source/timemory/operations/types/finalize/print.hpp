@@ -539,7 +539,10 @@ print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
             if(rt.find("process") != rt.end())
                 (*oa)(cereal::make_nvp("graph", rt["process"]));
             else
-                (*oa)(cereal::make_nvp("graph", rt));
+            {
+                for(const auto& itr : rt)
+                    (*oa)(cereal::make_nvp(itr.first, itr.second));
+            }
             oa->finishNode();
             oa->finishNode();
         }
