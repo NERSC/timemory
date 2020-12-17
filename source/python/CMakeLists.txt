@@ -28,6 +28,10 @@ if(TIMEMORY_BUILD_PYTHON_HIDDEN)
     set(_visibility timemory::timemory-hidden-visibility)
 endif()
 
+if("$ENV{USER}" STREQUAL "travis" AND "$ENV{TRAVIS}" STREQUAL "true")
+    set(CMAKE_UNITY_BUILD OFF)
+endif()
+
 ##########################################################################################
 
 function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)

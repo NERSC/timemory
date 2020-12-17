@@ -2,8 +2,10 @@
 # include the current directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-set(CTEST_TEST_TIMEOUT 180)
 set(CMAKE_UNITY_BUILD OFF)
+if(NOT DEFINED CTEST_TEST_TIMEOUT or "${CTEST_TEST_TIMEOUT}" STREQUAL "")
+    set(CTEST_TEST_TIMEOUT 180)
+endif()
 
 set(_EXCLUDE)
 if(NOT TIMEMORY_BUILD_TESTING)
@@ -809,32 +811,38 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
         ${CMAKE_CURRENT_LIST_DIR}/scripts/common.sh.in
         ${CMAKE_CURRENT_BINARY_DIR}/dynamic/common.sh @ONLY)
 
+    # the executable being instrumented
     set(_DYNAMIC_TARGETS
         dynamic_instrument_tests
         dynamic_instrument_timemory_tests)
+
+    # skip these types when timemory exists in the source
+    set(_SKIP_DYNAMIC_WITH_TIMEMORY
+        "launch-process"
+        "binary-rewrite-stubs")
 
     foreach(_TARGET ${_DYNAMIC_TARGETS})
         set(COMMAND
             ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET})
 
-        foreach(_file ${_scripts})
+        foreach(_FILE ${_scripts})
             # do not run launch-process + timemory
-            if("${_file}" STREQUAL "launch-process" AND
-                "${_TARGET}" STREQUAL "dynamic_instrument_timemory_tests")
+            if("${_TARGET}" STREQUAL "dynamic_instrument_timemory_tests" AND
+               "${_FILE}" IN_LIST _SKIP_DYNAMIC_WITH_TIMEMORY)
                 continue()
             endif()
-            set(TEST_NAME ${_TARGET}-${_file})
+            set(TEST_NAME ${_TARGET}-${_FILE})
             configure_file(
-                ${CMAKE_CURRENT_LIST_DIR}/scripts/${_file}.sh.in
-                ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_file}.sh @ONLY)
+                ${CMAKE_CURRENT_LIST_DIR}/scripts/${_FILE}.sh.in
+                ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_FILE}.sh @ONLY)
             add_test(
-                NAME                ${_TARGET}-${_file}
-                COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_file}.sh
+                NAME                ${_TARGET}-${_FILE}
+                COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_FILE}.sh
                 WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR}/dynamic)
             set_tests_properties(${TEST_NAME} PROPERTIES
                 ENVIRONMENT "${TEST_ENVIRON}"
                 TIMEOUT     480)
-            set_property(TEST ${_TARGET}-${_file} APPEND PROPERTY
+            set_property(TEST ${_TARGET}-${_FILE} APPEND PROPERTY
                 DEPENDS ${_TARGET} timemory-run)
         endforeach()
     endforeach()
