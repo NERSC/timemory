@@ -65,7 +65,7 @@ jobs:
         - CC=clang-6.0
         - CXX=clang++-6.0
         - BUILD_TYPE=Debug
-        - BUILD_ARGS='--quick --build-libs shared static --python --stats --tools kokkos --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs shared static --stats --tools kokkos --cxx-standard=14'
     # Clang 7
     - os: linux
       dist: bionic
@@ -104,8 +104,8 @@ jobs:
       env:
         - CC=gcc-6
         - CXX=g++-6
-        - BUILD_TYPE=Release
-        - BUILD_ARGS='--minimal --build-libs shared --gotcha --python --stats --cxx-standard=14 --extra-optimizations'
+        - BUILD_TYPE=RelWithDebInfo
+        - BUILD_ARGS='--minimal --build-libs shared --gotcha --python --stats --cxx-standard=14'
     # GCC 7
     - os: linux
       dist: bionic
@@ -218,12 +218,12 @@ install:
 script:
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - export BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis -j 1"
-  - export CTEST_ARGS="-V --output-on-failure ${CTEST_ARGS}"
+  - export CTEST_ARGS="-VV ${CTEST_ARGS}"
   - export CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${CMAKE_ARGS}"
   - export PYCTEST_ARGS="${BASE_ARGS} -cc ${CC} -cxx ${CXX} --pyctest-build-type=${BUILD_TYPE} ${BUILD_ARGS}"
   # main command
   - if [ "${EXECUTE}" -ne 0 ]; then
-    travis_wait 85 python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS};
+    python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS};
     fi
   # cd into build directory
   - if [ "${EXECUTE}" -ne 0 ]; then
