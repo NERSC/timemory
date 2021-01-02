@@ -357,13 +357,15 @@ start(TupleT<Tp&...>&& obj, Args&&... args)
 
         // start high priority components
         invoke_impl::invoke_out_of_order<operation::priority_start, priority_tuple_t, 1,
-                                         ApiT>(obj, std::forward<Args>(args)...);
+                                         ApiT>(std::forward<TupleT<Tp&...>>(obj),
+                                               std::forward<Args>(args)...);
         // start non-prioritized components
-        invoke_impl::invoke<operation::standard_start, ApiT>(obj,
-                                                             std::forward<Args>(args)...);
+        invoke_impl::invoke<operation::standard_start, ApiT>(
+            std::forward<TupleT<Tp&...>>(obj), std::forward<Args>(args)...);
         // start low prioritized components
         invoke_impl::invoke_out_of_order<operation::delayed_start, delayed_tuple_t, 1,
-                                         ApiT>(obj, std::forward<Args>(args)...);
+                                         ApiT>(std::forward<TupleT<Tp&...>>(obj),
+                                               std::forward<Args>(args)...);
     }
 }
 //
@@ -423,13 +425,15 @@ stop(TupleT<Tp&...>&& obj, Args&&... args)
 
         // stop high priority components
         invoke_impl::invoke_out_of_order<operation::priority_stop, priority_tuple_t, 1,
-                                         ApiT>(obj, std::forward<Args>(args)...);
+                                         ApiT>(std::forward<TupleT<Tp&...>>(obj),
+                                               std::forward<Args>(args)...);
         // stop non-prioritized components
-        invoke_impl::invoke<operation::standard_stop, ApiT>(obj,
-                                                            std::forward<Args>(args)...);
+        invoke_impl::invoke<operation::standard_stop, ApiT>(
+            std::forward<TupleT<Tp&...>>(obj), std::forward<Args>(args)...);
         // stop low prioritized components
         invoke_impl::invoke_out_of_order<operation::delayed_stop, delayed_tuple_t, 1,
-                                         ApiT>(obj, std::forward<Args>(args)...);
+                                         ApiT>(std::forward<TupleT<Tp&...>>(obj),
+                                               std::forward<Args>(args)...);
     }
 }
 //

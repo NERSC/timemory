@@ -146,6 +146,12 @@ struct apply<void>
         static constexpr int value = 0;
     };
 
+    template <typename Tp, typename... Tail>
+    struct get_index_of<Tp, std::tuple<Tp&, Tail...>>
+    {
+        static constexpr int value = 0;
+    };
+
     template <typename Tp, typename Head, typename... Tail>
     struct get_index_of<Tp, std::tuple<Head, Tail...>>
     {
