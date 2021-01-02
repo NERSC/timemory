@@ -1007,20 +1007,6 @@ get(TupleT<Tp...>& obj, void*& _ptr, size_t _hash)
     return ::tim::invoke::get<TIMEMORY_API>(obj, _ptr, _hash);
 }
 //
-template <typename ApiT, template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT_INLINE auto
-get(TupleT<Tp&...>&& obj, void*& _ptr, size_t _hash)
-{
-    invoke_impl::invoke<operation::get, ApiT>(obj, _ptr, _hash);
-}
-//
-template <template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT_INLINE auto
-get(TupleT<Tp&...>&& obj, void*& _ptr, size_t _hash)
-{
-    return ::tim::invoke::get<TIMEMORY_API>(obj, _ptr, _hash);
-}
-//
 //--------------------------------------------------------------------------------------//
 //                                  get_labeled
 //--------------------------------------------------------------------------------------//
