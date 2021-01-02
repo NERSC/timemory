@@ -168,7 +168,9 @@ get_opaque(scope::config _scope)
         {
             DEBUG_PRINT_HERE("Getting %s", demangle<Toolset>().c_str());
             Toolset* _result = static_cast<Toolset*>(v_result);
-            invoke::get<TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
+            // invoke::get<TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
+            // operation::get<Toolset>{ *_result, _ptr, _hash };
+            invoke::invoke<operation::get, TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
         }
     };
 
