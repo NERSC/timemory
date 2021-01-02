@@ -32,6 +32,7 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/variadic/functional.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -112,70 +113,66 @@ get_opaque(scope::config _scope)
 {
     auto _typeid_hash = typeid_hash<Toolset>();
 
-    auto _init = []() { operation::init_storage<Toolset>(); };
+    auto _init = []() { operation::init_storage<Toolset>{}; };
 
-    auto _setup = [=](void* v_result, const string_t& _prefix, scope::config arg_scope) {
+    auto _setup = [](void* v_result, const string_t& _prefix, scope::config arg_scope) {
         DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset* _result = static_cast<Toolset*>(v_result);
         if(!_result)
             _result = new Toolset{};
-        operation::set_prefix<Toolset> _opprefix(*_result, _prefix);
-        operation::set_scope<Toolset>  _opscope(*_result, arg_scope);
-        consume_parameters(_opprefix, _opscope);
+        invoke::set_prefix<TIMEMORY_API>(std::tie(*_result), _prefix);
+        invoke::set_scope<TIMEMORY_API>(std::tie(*_result), arg_scope);
         return (void*) _result;
     };
 
-    auto _push = [=](void*& v_result, const string_t& _prefix, scope::config arg_scope) {
+    auto _push = [_scope](void*& v_result, const string_t& _prefix,
+                          scope::config arg_scope) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Pushing %s", demangle<Toolset>().c_str());
-            auto                          _hash   = add_hash_id(_prefix);
-            Toolset*                      _result = static_cast<Toolset*>(v_result);
-            operation::push_node<Toolset> _opinsert(*_result, _scope + arg_scope, _hash);
-            consume_parameters(_opinsert);
+            auto     _hash   = add_hash_id(_prefix);
+            Toolset* _result = static_cast<Toolset*>(v_result);
+            invoke::push<TIMEMORY_API>(std::tie(*_result), _scope + arg_scope, _hash);
         }
     };
 
-    auto _start = [=](void* v_result) {
+    auto _start = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Starting %s", demangle<Toolset>().c_str());
-            Toolset*                  _result = static_cast<Toolset*>(v_result);
-            operation::start<Toolset> _opstart(*_result);
-            consume_parameters(_opstart);
+            Toolset* _result = static_cast<Toolset*>(v_result);
+            invoke::start<TIMEMORY_API>(std::tie(*_result));
         }
     };
 
-    auto _stop = [=](void* v_result) {
+    auto _stop = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Stopping %s", demangle<Toolset>().c_str());
-            Toolset*                 _result = static_cast<Toolset*>(v_result);
-            operation::stop<Toolset> _opstop(*_result);
-            consume_parameters(_opstop);
+            Toolset* _result = static_cast<Toolset*>(v_result);
+            invoke::stop<TIMEMORY_API>(std::tie(*_result));
         }
     };
 
-    auto _pop = [=](void* v_result) {
+    auto _pop = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Popping %s", demangle<Toolset>().c_str());
-            Toolset*                     _result = static_cast<Toolset*>(v_result);
-            operation::pop_node<Toolset> _oppop(*_result);
-            consume_parameters(_oppop);
+            Toolset* _result = static_cast<Toolset*>(v_result);
+            invoke::pop<TIMEMORY_API>(std::tie(*_result));
         }
     };
 
-    auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
-        if(_hash == _typeid_hash && v_result && !ptr)
+    auto _get = [_typeid_hash](void* v_result, void*& _ptr, size_t _hash) {
+        if(_hash == _typeid_hash && v_result && !_ptr)
         {
             DEBUG_PRINT_HERE("Getting %s", demangle<Toolset>().c_str());
             Toolset* _result = static_cast<Toolset*>(v_result);
-            operation::get<Toolset>(*_result, ptr, _hash);
+            invoke::get<TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
         }
     };
 
-    auto _del = [=](void* v_result) {
+    auto _del = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Deleting %s", demangle<Toolset>().c_str());
@@ -186,9 +183,6 @@ get_opaque(scope::config _scope)
 
     return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del, _setup, _push,
                   _pop);
-    // return opaque(true, _typeid_hash, std::move(_init), std::move(_start),
-    //              std::move(_stop), std::move(_get), std::move(_del), std::move(_setup),
-    //              std::move(_push), std::move(_pop));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -212,8 +206,8 @@ get_opaque(scope::config _scope, Args&&... args)
 
     auto _init = []() {};
 
-    auto _setup = [=, &args...](void* v_result, const string_t& _prefix,
-                                scope::config arg_scope) {
+    auto _setup = [_scope, &args...](void* v_result, const string_t& _prefix,
+                                     scope::config arg_scope) {
         DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset_t* _result = static_cast<Toolset_t*>(v_result);
         if(!_result)
@@ -224,7 +218,8 @@ get_opaque(scope::config _scope, Args&&... args)
         return (void*) _result;
     };
 
-    auto _push = [=](void*& v_result, const string_t& _prefix, scope::config arg_scope) {
+    auto _push = [_setup](void*& v_result, const string_t& _prefix,
+                          scope::config arg_scope) {
         v_result = _setup(v_result, _prefix, arg_scope);
         if(v_result)
         {
@@ -234,7 +229,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _start = [=](void* v_result) {
+    auto _start = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Starting %s", demangle<Toolset>().c_str());
@@ -243,7 +238,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _stop = [=](void* v_result) {
+    auto _stop = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Stopping %s", demangle<Toolset>().c_str());
@@ -252,7 +247,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _pop = [=](void* v_result) {
+    auto _pop = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Popping %s", demangle<Toolset>().c_str());
@@ -261,7 +256,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
+    auto _get = [](void* v_result, void*& ptr, size_t _hash) {
         if(v_result && !ptr)
         {
             DEBUG_PRINT_HERE("Getting %s", demangle<Toolset>().c_str());
@@ -270,7 +265,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _del = [=](void* v_result) {
+    auto _del = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Deleting %s", demangle<Toolset>().c_str());

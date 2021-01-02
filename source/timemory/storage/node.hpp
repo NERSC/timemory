@@ -29,6 +29,7 @@
 #include "timemory/hash.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
 
 #include <cstdint>

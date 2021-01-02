@@ -100,6 +100,14 @@ struct construct_cache
 //
 //--------------------------------------------------------------------------------------//
 //
+template <template <typename...> class TupleT, typename... Tp>
+struct construct_cache<TupleT<Tp...>>
+: conditional_t<concepts::is_wrapper<TupleT<Tp...>>::value, construct_cache<Tp...>,
+                construct_cache<TupleT<Tp...>>>
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename... Tp>
 struct construct_cache<std::tuple<Tp...>> : construct_cache<Tp...>
 {};
@@ -111,6 +119,9 @@ struct construct_cache<type_list<Tp...>> : construct_cache<Tp...>
 {};
 //
 //--------------------------------------------------------------------------------------//
+//
+template <typename... Tp>
+using construct_cache_t = typename construct_cache<Tp...>::type;
 //
 }  // namespace operation
 }  // namespace tim

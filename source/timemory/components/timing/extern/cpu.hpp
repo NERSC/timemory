@@ -22,17 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/timing/extern.hpp
- * \brief Include the extern declarations for timing components
- */
-
 #pragma once
 
 #include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/components/timing/components.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(wall_clock, true, int64_t)
-TIMEMORY_EXTERN_COMPONENT(monotonic_clock, true, int64_t)
-TIMEMORY_EXTERN_COMPONENT(monotonic_raw_clock, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(system_clock, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(user_clock, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(cpu_clock, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(process_cpu_clock, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(thread_cpu_clock, true, int64_t)

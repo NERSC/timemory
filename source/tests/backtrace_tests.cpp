@@ -328,25 +328,29 @@ TEST_F(backtrace_tests, decode)
         _storemsg("Final result");
         switch(i)
         {
-            case 0: {
+            case 0:
+            {
                 auto _e = std::string("backtrace_tests foo()");
                 EXPECT_EQ(_m, _e) << _errmsg.str();
                 EXPECT_EQ(_d, _e) << _errmsg.str();
                 break;
             }
-            case 1: {
+            case 1:
+            {
                 auto _e = std::string("backtrace_tests bar()");
                 EXPECT_EQ(_m, _e) << _errmsg.str();
                 EXPECT_EQ(_d, _e) << _errmsg.str();
                 break;
             }
-            case 2: {
+            case 2:
+            {
                 auto _e = std::string("backtrace_tests spam()");
                 EXPECT_EQ(_m, _e) << _errmsg.str();
                 EXPECT_EQ(_d, _e) << _errmsg.str();
                 break;
             }
-            case 3: {
+            case 3:
+            {
                 auto _e = std::string(
                     "backtrace_tests backtrace_tests_decode_Test::TestBody()");
                 EXPECT_EQ(_m, _e) << _errmsg.str();

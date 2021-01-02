@@ -102,6 +102,6 @@ if(CLANG_FORMATTER)
     add_custom_target(${FORMAT_NAME}
         ${_COMMAND}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        COMMENT "Running '${CLANG_FORMATTER}'..."
+        COMMENT "[${PROJECT_NAME}] Running '${CLANG_FORMATTER}'..."
         SOURCES ${headers} ${sources} ${examples})
 endif()

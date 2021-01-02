@@ -29,6 +29,7 @@
 #include "timemory/components/properties.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/storage/graph.hpp"
 #include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 
@@ -41,6 +42,12 @@ namespace tim
 //
 namespace component
 {
+//
+template <typename Tp>
+using graph_iterator_t = typename graph<node::graph<Tp>>::iterator;
+//
+template <typename Tp>
+using graph_const_iterator_t = typename graph<node::graph<Tp>>::const_iterator;
 //
 //======================================================================================//
 //
@@ -92,18 +99,15 @@ public:
 
     using this_type         = Tp;
     using base_type         = base<Tp, Value>;
-    using storage_type      = storage<Tp, Value>;
     using base_storage_type = tim::base::storage;
-    using graph_iterator    = typename storage_type::iterator;
+    using storage_type      = storage<Tp, Value>;
+    using graph_iterator    = graph_iterator_t<Tp>;
     using state_t           = state<this_type>;
     using statistics_policy = policy::record_statistics<Tp, Value>;
     using fmtflags          = std::ios_base::fmtflags;
 
 private:
-    friend class impl::storage<Tp, trait::uses_value_storage<Tp, Value>::value>;
-    friend class storage<Tp, Value>;
     friend struct node::graph<Tp>;
-
     friend struct operation::init_storage<Tp>;
     friend struct operation::fini_storage<Tp>;
     friend struct operation::cache<Tp>;
@@ -373,10 +377,7 @@ public:
     using storage_type = storage<Tp, void>;
 
 private:
-    friend class impl::storage<Tp, false>;
-    friend class storage<Tp, void>;
     friend struct node::graph<Tp>;
-
     friend struct operation::init_storage<Tp>;
     friend struct operation::fini_storage<Tp>;
     friend struct operation::cache<Tp>;
@@ -503,10 +504,7 @@ public:
     using graph_iterator = void*;
 
 private:
-    friend class impl::storage<Tp, false>;
-    friend class storage<Tp, void>;
     friend struct node::graph<Tp>;
-
     friend struct operation::init_storage<Tp>;
     friend struct operation::fini_storage<Tp>;
     friend struct operation::cache<Tp>;

@@ -55,13 +55,27 @@ struct push_node
 
     TIMEMORY_DELETED_OBJECT(push_node)
 
-    push_node(type& obj, scope::config _scope, int64_t _hash)
+    push_node(type& obj, scope::config _scope, hash_result_type _hash)
+    {
+        (*this)(obj, _scope, _hash);
+    }
+
+    push_node(type& obj, scope::config _scope, const std::string& _key)
+    : push_node(obj, _scope, get_hash_id(_key))
+    {}
+
+    auto operator()(type& obj, scope::config _scope, hash_result_type _hash) const
     {
         if(!trait::runtime_enabled<type>::get())
             return;
 
         init_storage<Tp>::init();
-        sfinae(obj, 0, 0, 0, _scope, _hash);
+        return sfinae(obj, 0, 0, 0, _scope, _hash);
+    }
+
+    auto operator()(type& obj, scope::config _scope, const std::string& _key) const
+    {
+        return (*this)(obj, _scope, get_hash_id(_key));
     }
 
 private:
@@ -69,7 +83,8 @@ private:
     template <typename Up, typename Vp = typename Up::value_type,
               typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
-    auto sfinae(Up& _obj, int, int, int, scope::config _scope, int64_t _hash)
+    auto sfinae(Up& _obj, int, int, int, scope::config _scope,
+                hash_result_type _hash) const
         -> decltype(_obj.get_is_on_stack() && _obj.get_is_flat() && _obj.get_storage() &&
                         _obj.get_depth_change(),
                     void())
@@ -80,36 +95,38 @@ private:
         if(!_obj.get_is_on_stack())
         {
             _obj.set_is_on_stack(true);
-            _obj.get_is_flat() = _scope.is_flat() || force_flat_v;
-            auto _storage      = static_cast<storage_type*>(_obj.get_storage());
-            assert(_storage != nullptr);
-            auto _beg_depth = _storage->depth();
-            _obj.set_iterator(_storage->insert(_scope, _obj, _hash));
-            auto _end_depth = _storage->depth();
-            _obj.set_depth_change((_beg_depth < _end_depth) ||
-                                  (_scope.is_timeline() || force_time_v));
-            _storage->stack_push(&_obj);
+            _obj.set_is_flat(_scope.is_flat() || force_flat_v);
+            auto _storage = static_cast<storage_type*>(_obj.get_storage());
+            if(_storage)
+            {
+                auto _beg_depth = _storage->depth();
+                _obj.set_iterator(_storage->insert(_scope, _obj, _hash));
+                auto _end_depth = _storage->depth();
+                _obj.set_depth_change((_beg_depth < _end_depth) ||
+                                      (_scope.is_timeline() || force_time_v));
+                _storage->stack_push(&_obj);
+            }
         }
     }
 
     //  typical resolution: variadic bundle of components
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, long, Args&&... args)
-        -> decltype(obj.push(std::forward<Args>(args)...), void())
+    auto sfinae(Up& obj, int, int, long, Args&&... args) const
+        -> decltype(obj.push(std::forward<Args>(args)...))
     {
-        obj.push(std::forward<Args>(args)...);
+        return obj.push(std::forward<Args>(args)...);
     }
 
     //  typical resolution: variadic bundle of components
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, long, Args&&...) -> decltype(obj.push(), void())
+    auto sfinae(Up& obj, int, long, long, Args&&...) const -> decltype(obj.push())
     {
-        obj.push();
+        return obj.push();
     }
 
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, long, Args&&...)
+    void sfinae(Up&, long, long, long, Args&&...) const
     {}
 };
 //

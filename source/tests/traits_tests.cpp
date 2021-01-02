@@ -382,8 +382,8 @@ TEST_F(traits_tests, sizeof)
 
     EXPECT_EQ(void_test, 5);
     EXPECT_EQ(int64_test, 56);
-    EXPECT_EQ(temp_i32_test, 40);
-    EXPECT_EQ(temp_i64_test, 56);
+    EXPECT_EQ(temp_i32_test, 48);
+    EXPECT_EQ(temp_i64_test, 64);
     EXPECT_EQ(temp_u64_test, 64);
     EXPECT_EQ(array_test, 64);
     EXPECT_EQ(var_test, 96);

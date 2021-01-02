@@ -30,6 +30,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/graph.hpp"
+#include "timemory/storage/types.hpp"
 
 #include <algorithm>
 #include <cstdint>

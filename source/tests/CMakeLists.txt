@@ -283,7 +283,8 @@ list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
 
 add_timemory_google_test(traits_tests
     SOURCES         traits_tests.cpp
-    LINK_LIBRARIES  common-test-libs)
+    LINK_LIBRARIES  common-test-libs
+                    ${_LIBRARY})
 
 add_timemory_google_test(component_bundle_tests
     MPI

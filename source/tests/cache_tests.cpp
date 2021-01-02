@@ -270,20 +270,23 @@ run3()
 
 //--------------------------------------------------------------------------------------//
 
-void
+std::string
 print_rusage_cache(const tim::rusage_cache& _rusage)
 {
-    std::cout << "\tpeak_rss          : " << _rusage.get_peak_rss() << '\n';
-    std::cout << "\tkernel mode time  : " << _rusage.get_kernel_mode_time() << '\n';
-    std::cout << "\tuser mode time    : " << _rusage.get_user_mode_time() << '\n';
-    std::cout << "\tio in             : " << _rusage.get_num_io_in() << '\n';
-    std::cout << "\tio out            : " << _rusage.get_num_io_out() << '\n';
-    std::cout << "\tmajor page faults : " << _rusage.get_num_major_page_faults() << '\n';
-    std::cout << "\tminor page faults : " << _rusage.get_num_minor_page_faults() << '\n';
-    std::cout << "\tprio ctx switch   : " << _rusage.get_num_priority_context_switch()
-              << '\n';
-    std::cout << "\tvol ctx switch    : " << _rusage.get_num_voluntary_context_switch()
-              << '\n';
+    std::stringstream _msg;
+    _msg << "\tpeak_rss          : " << _rusage.get_peak_rss() << '\n';
+    _msg << "\tkernel mode time  : " << _rusage.get_kernel_mode_time() << '\n';
+    _msg << "\tuser mode time    : " << _rusage.get_user_mode_time() << '\n';
+    _msg << "\tio in             : " << _rusage.get_num_io_in() << '\n';
+    _msg << "\tio out            : " << _rusage.get_num_io_out() << '\n';
+    _msg << "\tmajor page faults : " << _rusage.get_num_major_page_faults() << '\n';
+    _msg << "\tminor page faults : " << _rusage.get_num_minor_page_faults() << '\n';
+    _msg << "\tprio ctx switch   : " << _rusage.get_num_priority_context_switch() << '\n';
+    _msg << "\tvol ctx switch    : " << _rusage.get_num_voluntary_context_switch()
+         << '\n';
+    if(tim::settings::debug() || tim::settings::verbose() > 0)
+        std::cerr << _msg.str() << std::endl;
+    return _msg.str();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -337,9 +340,170 @@ TEST_F(cache_tests, rusage)
     std::cout << "cache type        : " << tim::demangle<cache_type>() << std::endl;
     std::cout << "cache value       : " << tim::demangle<decltype(_cache)>() << std::endl;
 
-    print_rusage_cache(_rusage);
+    auto _msg  = print_rusage_cache(_rusage);
     auto check = std::is_same<decltype(_cache), std::tuple<tim::rusage_cache>>::value;
-    EXPECT_TRUE(check);
+    EXPECT_TRUE(check) << _msg;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, component_bundle)
+{
+    using bundle_type   = tim::component_bundle<TIMEMORY_API, peak_rss, current_peak_rss,
+                                              num_io_in*, num_io_out*, wall_clock>;
+    using data_type     = typename bundle_type::data_type;
+    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using cache_type    = tim::operation::construct_cache_t<bundle_type>;
+    auto        _cache  = tim::invoke::get_cache<bundle_type>();
+    const auto& _rusage = std::get<0>(_cache);
+
+    std::cout << "bundle type       : " << tim::demangle<bundle_type>() << std::endl;
+    std::cout << "data type         : " << tim::demangle<data_type>() << std::endl;
+    std::cout << "trait type        : " << tim::demangle<trait_type>() << std::endl;
+    std::cout << "cache type        : " << tim::demangle<cache_type>() << std::endl;
+    std::cout << "cache value       : " << tim::demangle<decltype(_cache)>() << std::endl;
+
+    auto _msg  = print_rusage_cache(_rusage);
+    auto check = std::is_same<decltype(_cache), std::tuple<tim::rusage_cache>>::value;
+    EXPECT_TRUE(check) << _msg;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, auto_bundle)
+{
+    using bundle_type   = tim::auto_bundle<TIMEMORY_API, peak_rss, current_peak_rss,
+                                         num_io_in*, num_io_out*, wall_clock*>;
+    using data_type     = typename bundle_type::data_type;
+    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using cache_type    = tim::operation::construct_cache_t<bundle_type>;
+    auto        _cache  = tim::invoke::get_cache<bundle_type>();
+    const auto& _rusage = std::get<0>(_cache);
+
+    std::cout << "bundle type       : " << tim::demangle<bundle_type>() << std::endl;
+    std::cout << "data type         : " << tim::demangle<data_type>() << std::endl;
+    std::cout << "trait type        : " << tim::demangle<trait_type>() << std::endl;
+    std::cout << "cache type        : " << tim::demangle<cache_type>() << std::endl;
+    std::cout << "cache value       : " << tim::demangle<decltype(_cache)>() << std::endl;
+
+    auto _msg  = print_rusage_cache(_rusage);
+    auto check = std::is_same<decltype(_cache), std::tuple<tim::rusage_cache>>::value;
+    EXPECT_TRUE(check) << _msg;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, component_tuple)
+{
+    using bundle_type   = tim::component_tuple<peak_rss, current_peak_rss, num_io_in,
+                                             num_io_out, wall_clock>;
+    using data_type     = typename bundle_type::data_type;
+    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using cache_type    = tim::operation::construct_cache_t<bundle_type>;
+    auto        _cache  = tim::invoke::get_cache<bundle_type>();
+    const auto& _rusage = std::get<0>(_cache);
+
+    std::cout << "bundle type       : " << tim::demangle<bundle_type>() << std::endl;
+    std::cout << "data type         : " << tim::demangle<data_type>() << std::endl;
+    std::cout << "trait type        : " << tim::demangle<trait_type>() << std::endl;
+    std::cout << "cache type        : " << tim::demangle<cache_type>() << std::endl;
+    std::cout << "cache value       : " << tim::demangle<decltype(_cache)>() << std::endl;
+
+    auto _msg  = print_rusage_cache(_rusage);
+    auto check = std::is_same<decltype(_cache), std::tuple<tim::rusage_cache>>::value;
+    EXPECT_TRUE(check) << _msg;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, auto_tuple)
+{
+    using bundle_type =
+        tim::auto_tuple<peak_rss, current_peak_rss, num_io_in, num_io_out, wall_clock>;
+    using data_type     = typename bundle_type::data_type;
+    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using cache_type    = tim::operation::construct_cache_t<bundle_type>;
+    auto        _cache  = tim::invoke::get_cache<bundle_type>();
+    const auto& _rusage = std::get<0>(_cache);
+
+    std::cout << "bundle type       : " << tim::demangle<bundle_type>() << std::endl;
+    std::cout << "data type         : " << tim::demangle<data_type>() << std::endl;
+    std::cout << "trait type        : " << tim::demangle<trait_type>() << std::endl;
+    std::cout << "cache type        : " << tim::demangle<cache_type>() << std::endl;
+    std::cout << "cache value       : " << tim::demangle<decltype(_cache)>() << std::endl;
+
+    auto _msg  = print_rusage_cache(_rusage);
+    auto check = std::is_same<decltype(_cache), std::tuple<tim::rusage_cache>>::value;
+    EXPECT_TRUE(check) << _msg;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, component_list)
+{
+    using bundle_type   = tim::component_list<peak_rss, current_peak_rss, num_io_in,
+                                            num_io_out, wall_clock>;
+    using data_type     = typename bundle_type::data_type;
+    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using cache_type    = tim::operation::construct_cache_t<bundle_type>;
+    auto        _cache  = tim::invoke::get_cache<bundle_type>();
+    const auto& _rusage = std::get<0>(_cache);
+
+    std::cout << "bundle type       : " << tim::demangle<bundle_type>() << std::endl;
+    std::cout << "data type         : " << tim::demangle<data_type>() << std::endl;
+    std::cout << "trait type        : " << tim::demangle<trait_type>() << std::endl;
+    std::cout << "cache type        : " << tim::demangle<cache_type>() << std::endl;
+    std::cout << "cache value       : " << tim::demangle<decltype(_cache)>() << std::endl;
+
+    auto _msg  = print_rusage_cache(_rusage);
+    auto check = std::is_same<decltype(_cache), std::tuple<tim::rusage_cache>>::value;
+    EXPECT_TRUE(check) << _msg;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, auto_list)
+{
+    using bundle_type =
+        tim::auto_list<peak_rss, current_peak_rss, num_io_in, num_io_out, wall_clock>;
+    using data_type     = typename bundle_type::data_type;
+    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using cache_type    = tim::operation::construct_cache_t<bundle_type>;
+    auto        _cache  = tim::invoke::get_cache<bundle_type>();
+    const auto& _rusage = std::get<0>(_cache);
+
+    std::cout << "bundle type       : " << tim::demangle<bundle_type>() << std::endl;
+    std::cout << "data type         : " << tim::demangle<data_type>() << std::endl;
+    std::cout << "trait type        : " << tim::demangle<trait_type>() << std::endl;
+    std::cout << "cache type        : " << tim::demangle<cache_type>() << std::endl;
+    std::cout << "cache value       : " << tim::demangle<decltype(_cache)>() << std::endl;
+
+    auto _msg  = print_rusage_cache(_rusage);
+    auto check = std::is_same<decltype(_cache), std::tuple<tim::rusage_cache>>::value;
+    EXPECT_TRUE(check) << _msg;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, lightweight_tuple)
+{
+    using bundle_type   = tim::lightweight_tuple<peak_rss, current_peak_rss, num_io_in,
+                                               num_io_out, wall_clock>;
+    using data_type     = typename bundle_type::data_type;
+    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using cache_type    = tim::operation::construct_cache_t<bundle_type>;
+    auto        _cache  = tim::invoke::get_cache<bundle_type>();
+    const auto& _rusage = std::get<0>(_cache);
+
+    std::cout << "bundle type       : " << tim::demangle<bundle_type>() << std::endl;
+    std::cout << "data type         : " << tim::demangle<data_type>() << std::endl;
+    std::cout << "trait type        : " << tim::demangle<trait_type>() << std::endl;
+    std::cout << "cache type        : " << tim::demangle<cache_type>() << std::endl;
+    std::cout << "cache value       : " << tim::demangle<decltype(_cache)>() << std::endl;
+
+    auto _msg  = print_rusage_cache(_rusage);
+    auto check = std::is_same<decltype(_cache), std::tuple<tim::rusage_cache>>::value;
+    EXPECT_TRUE(check) << _msg;
 }
 
 //--------------------------------------------------------------------------------------//
