@@ -37,6 +37,16 @@
 // disables unnecessary instantiations
 #define TIMEMORY_COMPILER_INSTRUMENTATION
 
+#include "timemory/api/macros.hpp"
+
+// create an API for the compiler instrumentation whose singletons will not be shared
+// with the default timemory API
+// TIMEMORY_DEFINE_NS_API(project, timem)
+
+// define the API for all instantiations before including any more timemory headers
+// #define TIMEMORY_API ::tim::project::timem
+#define TIMEMORY_SETTINGS_PREFIX "TIMEM_"
+
 #include "timemory/macros.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
@@ -61,7 +71,27 @@ struct pretty_archive<void> : true_type
 #include "timemory/sampling.hpp"
 #include "timemory/timemory.hpp"
 
+// clang-format off
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::papi_array_t, true_type)
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::wall_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::child_user_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::child_system_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::child_cpu_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::child_cpu_util, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::peak_rss, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::page_rss, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::virtual_memory, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::num_major_page_faults, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::num_minor_page_faults, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::priority_context_switch, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::voluntary_context_switch, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::read_char, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::read_bytes, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::written_char, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::written_bytes, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::papi_array_t, false_type)
+// clang-format on
 
 // C includes
 #include <errno.h>
@@ -346,13 +376,8 @@ public:
         using value_type = Tuple<std::vector<T>...>;
     };
 
-    template <typename T>
-    using mpi_getter_v = typename mpi_getter<T>::value_type;
-
 public:
-    timem_tuple()
-    : base_type()
-    {}
+    TIMEMORY_DEFAULT_OBJECT(timem_tuple)
 
     explicit timem_tuple(const string_t& key)
     : base_type(key)
@@ -364,29 +389,32 @@ public:
         m_data = std::move(_data);
     }
 
-    ~timem_tuple() {}
+    using base_type::get;
+    using base_type::get_labeled;
+    using base_type::reset;
+    using base_type::start;
+    using base_type::stop;
 
-    void start() { base_type::start(); }
-    void stop() { base_type::stop(); }
-    void reset() { base_type::reset(); }
-    auto get() { return base_type::get(); }
-    auto get_labeled() { return base_type::get_labeled(); }
     void set_output(std::ofstream* ofs) { m_ofs = ofs; }
 
     template <typename... Args>
     void sample(Args&&... args)
     {
-        stop();
-        base_type::sample(std::forward<Args>(args)...);
-        if(m_ofs)
-            (*m_ofs) << get_local_datetime("[===== %r %F =====]\n") << *this << std::endl;
-        start();
+        if(base_type::m_is_active())
+        {
+            stop();
+            base_type::sample(std::forward<Args>(args)...);
+            if(m_ofs)
+                (*m_ofs) << get_local_datetime("[===== %r %F =====]\n") << *this
+                         << std::endl;
+            start();
+        }
     }
 
     auto mpi_get()
     {
         constexpr auto N      = std::tuple_size<data_type>::value;
-        auto           v_data = mpi_getter_v<data_type>{};
+        auto           v_data = typename mpi_getter<data_type>::value_type{};
         // merge the data
         mpi_get(v_data, m_data, make_index_sequence<N>{});
         // return an array of this_type
@@ -614,8 +642,9 @@ struct timem_config
     bool          signal_delivered = false;
     bool          debug            = tim::get_env("TIMEM_DEBUG", false);
     int           verbose          = tim::get_env("TIMEM_VERBOSE", 0);
-    string_t      shell            = tim::get_env<string_t>("SHELL", getusershell());
-    string_t      shell_flags  = tim::get_env<string_t>("TIMEM_USE_SHELL_FLAGS", "-i");
+    string_t      shell =
+        tim::get_env("TIMEM_SHELL", tim::get_env<string_t>("SHELL", getusershell()));
+    string_t      shell_flags  = tim::get_env<string_t>("TIMEM_SHELL_FLAGS", "-i");
     string_t      output_file  = tim::get_env<string_t>("TIMEM_OUTPUT", "");
     double        sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 5.0);
     double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 1.0e-6);
@@ -638,6 +667,23 @@ struct timem_config
            tim::cereal::make_nvp("shell_flags", shell_flags),
            tim::cereal::make_nvp("sample_freq", sample_freq),
            tim::cereal::make_nvp("sample_delay", sample_delay));
+    }
+
+    std::string get_output_filename(std::string inp = {})
+    {
+        if(inp.empty())
+            inp = output_file;
+
+        using pair_t = std::pair<std::string, int64_t>;
+        for(auto itr :
+            { pair_t{ "%p", worker_pid }, pair_t{ "%j", tim::get_env("SLURM_JOB_ID", 0) },
+              pair_t{ "%r", tim::mpi::rank() }, pair_t{ "%s", tim::mpi::size() } })
+        {
+            auto pos = std::string::npos;
+            while((pos = inp.find(itr.first)) != std::string::npos)
+                inp = inp.replace(pos, itr.first.length(), std::to_string(itr.second));
+        }
+        return inp;
     }
 };
 //

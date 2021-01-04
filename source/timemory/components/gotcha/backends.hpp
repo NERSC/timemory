@@ -212,6 +212,42 @@ private:
     //----------------------------------------------------------------------------------//
 };
 //
+//======================================================================================//
+//
+///
+/// \struct tim::component::gotcha_data
+/// \brief Holds the properties for wrapping and unwrapping a GOTCHA binding
+struct gotcha_data
+{
+    using binding_t     = backend::gotcha::binding_t;
+    using wrappee_t     = backend::gotcha::wrappee_t;
+    using wrappid_t     = backend::gotcha::string_t;
+    using constructor_t = std::function<void()>;
+    using destructor_t  = std::function<void()>;
+
+    gotcha_data()  = default;
+    ~gotcha_data() = default;
+
+    gotcha_data(const gotcha_data&) = delete;
+    gotcha_data(gotcha_data&&)      = delete;
+    gotcha_data& operator=(const gotcha_data&) = delete;
+    gotcha_data& operator=(gotcha_data&&) = delete;
+
+    bool          ready        = false;        /// ready to be used
+    bool          filled       = false;        /// structure is populated
+    bool          is_active    = false;        /// is currently wrapping
+    bool          is_finalized = false;        /// no more wrapping is allowed
+    int           priority     = 0;            /// current priority
+    binding_t     binding      = binding_t{};  /// hold the binder set
+    wrappee_t     wrapper      = 0x0;          /// the func pointer doing wrapping
+    wrappee_t     wrappee      = 0x0;          /// the func pointer being wrapped
+    wrappid_t     wrap_id      = "";           /// the function name (possibly mangled)
+    wrappid_t     tool_id      = "";           /// the function name (unmangled)
+    constructor_t constructor  = []() {};      /// wrap the function
+    destructor_t  destructor   = []() {};      /// unwrap the function
+    bool*         suppression  = nullptr;      /// turn on/off some suppression variable
+    bool*         debug        = &settings::debug();
+};
 }  // namespace component
 }  // namespace tim
 //

@@ -482,7 +482,6 @@ def run_pyctest():
         "TIMEMORY_USE_COMPILE_TIMING": "ON" if args.timing else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
-        "PYTHON_EXECUTABLE": "{}".format(sys.executable),
     }
 
     if args.minimal:
@@ -572,15 +571,15 @@ def run_pyctest():
     )
 
     # default options
-    cmake_args = "-DCMAKE_BUILD_TYPE={} -DTIMEMORY_BUILD_EXAMPLES=ON".format(
-        pyct.BUILD_TYPE
-    )
+    cmake_args = "-DCMAKE_BUILD_TYPE={}".format(pyct.BUILD_TYPE)
 
     # customized from args
     for key, val in build_opts.items():
         cmake_args = "{} -D{}={}".format(cmake_args, key, val)
 
-    cmake_args = "{} {}".format(cmake_args, " ".join(pycm.ARGUMENTS))
+    cmake_args = "-DPYTHON_EXECUTABLE={} {} {}".format(
+        sys.executable, cmake_args, " ".join(pycm.ARGUMENTS)
+    )
 
     # how to build the code
     #
@@ -722,85 +721,59 @@ def run_pyctest():
         )
 
     if "timem" in args.tools:
-        pyct.test(
-            "timemory-timem",
-            ["./timem", "--", "sleep", "2"],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "30",
-                "ENVIRONMENT": base_env,
-            },
-        )
 
-        pyct.test(
-            "timemory-timem-shell",
-            ["./timem", "-s", "--", "sleep", "2"],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "30",
-                "ENVIRONMENT": base_env,
-            },
-        )
+        def add_timem_test(name, cmd):
+            pyct.test(
+                "{}-zero".format(name),
+                cmd + ["--", "sleep", "0"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "10",
+                    "ENVIRONMENT": base_env,
+                },
+            )
 
-        pyct.test(
+            pyct.test(
+                name,
+                cmd + ["--", "sleep", "2"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "10",
+                    "ENVIRONMENT": base_env,
+                },
+            )
+
+        add_timem_test("timemory-timem-shell", ["./timem", "-s"])
+
+        add_timem_test(
             "timemory-timem-no-sample",
-            ["./timem", "--disable-sample", "--", "sleep", "2"],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "30",
-                "ENVIRONMENT": base_env,
-            },
+            ["./timem", "--disable-sample"],
         )
 
-        pyct.test(
+        add_timem_test(
             "timemory-timem-json",
-            ["./timem", "-o", "timem-output", "--", "sleep", "2"],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "30",
-                "ENVIRONMENT": base_env,
-            },
+            ["./timem", "-o", "timem-output"],
         )
 
         if args.mpi and dmprun is not None:
-            pyct.test(
+            add_timem_test(
                 "timemory-timem-mpi",
                 [dmprun] + dmpargs + ["./timem-mpi", "sleep", "2"],
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "30",
-                    "ENVIRONMENT": base_env,
-                },
             )
 
-            pyct.test(
+            add_timem_test(
                 "timemory-timem-mpi-shell",
-                [dmprun] + dmpargs + ["./timem-mpi", "-s", "--", "sleep", "2"],
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "30",
-                    "ENVIRONMENT": base_env,
-                },
+                [dmprun] + dmpargs + ["./timem-mpi", "-s"],
             )
 
-            pyct.test(
+            add_timem_test(
                 "timemory-timem-mpi-individual",
-                [dmprun] + dmpargs + ["./timem-mpi", "-i", "--", "sleep", "2"],
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "30",
-                    "ENVIRONMENT": base_env,
-                },
+                [dmprun] + dmpargs + ["./timem-mpi", "-i"],
             )
 
-            pyct.test(
+            add_timem_test(
                 "timemory-timem-mpi-individual-json",
                 [dmprun]
                 + dmpargs
@@ -809,16 +782,7 @@ def run_pyctest():
                     "-i",
                     "-o",
                     "timem-mpi-output",
-                    "--",
-                    "sleep",
-                    "2",
                 ],
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "30",
-                    "ENVIRONMENT": base_env,
-                },
             )
 
     if args.python:
@@ -1012,11 +976,27 @@ def run_pyctest():
             },
         )
 
-        pyunittests = ["flat", "rusage", "throttle", "timeline", "timing", "hatchet"]
+        pyunittests = [
+            "flat",
+            "rusage",
+            "throttle",
+            "timeline",
+            "timing",
+            "hatchet",
+        ]
         pyusempi = {"hatchet": True}
         for t in pyunittests:
-            pyunitcmd = [sys.executable, "-m", "timemory.test.test_{}".format(t)]
-            if t in pyusempi and pyusempi[t] and args.mpi and dmprun is not None:
+            pyunitcmd = [
+                sys.executable,
+                "-m",
+                "timemory.test.test_{}".format(t),
+            ]
+            if (
+                t in pyusempi
+                and pyusempi[t]
+                and args.mpi
+                and dmprun is not None
+            ):
                 pyunitcmd = [dmprun] + dmpargs + pyunitcmd
             pyct.test(
                 "python-unittest-{}".format(t),

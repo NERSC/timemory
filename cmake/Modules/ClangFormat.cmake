@@ -31,6 +31,7 @@ find_program(CLANG_FORMATTER
 if(CLANG_FORMATTER)
     file(GLOB_RECURSE _headers
         ${PROJECT_SOURCE_DIR}/source/tools/*.hpp
+        ${PROJECT_SOURCE_DIR}/source/tests/*.hpp
         ${PROJECT_SOURCE_DIR}/source/python/*.hpp
         ${PROJECT_SOURCE_DIR}/source/timemory/*.h
         ${PROJECT_SOURCE_DIR}/source/timemory/*.hpp)

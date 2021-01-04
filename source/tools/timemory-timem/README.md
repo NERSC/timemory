@@ -2,12 +2,149 @@
 
 Command-line tool which provides the same capabilities of the UNIX command-line tool `time` but extends it to several additional metrics:
 
+- Percent CPU utilization
 - Memory usage
-- Major/minor page faults
+- Page faults
 - Context switches
 - Read/write bytes
 - Read/write bytes per second
-- Hardware counters (when PAPI is available)
+- Hardware counters (when built with PAPI support)
+- Aggregation of data for multiple MPI processes (when using `timem-mpi`)
+
+## Output Examples
+
+```console
+$ timem ls /
+bin  boot  dev	etc  home  lib	lib32  lib64  libx32  media  mnt  opt  proc  root  run	sbin  srv  sys	tmp  usr  var
+
+[ls]> Measurement totals:
+            0.001380 sec wall
+            0.000000 sec user
+            0.000000 sec sys
+            0.000000 sec cpu
+            0.000000 % cpu_util
+            2.152000 MB peak_rss
+            0.004096 MB page_rss
+            0.004096 MB virtual_memory
+                   0 major_page_flts
+                 122 minor_page_flts
+                   0 prio_cxt_swch
+                   1 vol_cxt_swch
+            0.001116 MB char read
+            0.912436 MB/sec char read
+            0.000000 MB bytes read
+            0.000000 MB/sec bytes read
+            0.000000 MB char written
+            0.000000 MB/sec char written
+            0.000000 MB bytes written
+            0.000000 MB/sec bytes written
+```
+
+### JSON Output
+
+```console
+$ timem -o sleep -- sleep 2
+
+[sleep]> Outputting 'sleep.json'...
+[sleep]> Measurement totals:
+            1.997019 sec wall
+            0.000000 sec user
+            0.000000 sec sys
+            0.000000 sec cpu
+            0.000000 % cpu_util
+            1.912000 MB peak_rss
+            0.798720 MB page_rss
+            4.648960 MB virtual_memory
+                   0 major_page_flts
+                  87 minor_page_flts
+                   0 prio_cxt_swch
+                   2 vol_cxt_swch
+            0.003896 MB char read
+            0.021460 MB/sec char read
+            0.000000 MB bytes read
+            0.000000 MB/sec bytes read
+            0.000000 MB char written
+            0.000000 MB/sec char written
+            0.000000 MB bytes written
+            0.000000 MB/sec bytes written
+```
+
+### Aggregated MPI Output
+
+```console
+mpirun -n 2 timem-mpi -- sleep 2
+
+[sleep]> Measurement totals (# ranks = 2):
+    0|>         3.998239 sec wall
+    0|>         0.000000 sec user
+    0|>         0.000000 sec sys
+    0|>         0.000000 sec cpu
+    0|>         0.000000 % cpu_util
+    0|>        13.040000 MB peak_rss
+    0|>         9.879552 MB page_rss
+    0|>       117.964800 MB virtual_memory
+    0|>                0 major_page_flts
+    0|>              187 minor_page_flts
+    0|>                2 prio_cxt_swch
+    0|>                4 vol_cxt_swch
+    0|>         0.007792 MB char read
+    0|>         0.021438 MB/sec char read
+    0|>         0.000000 MB bytes read
+    0|>         0.000000 MB/sec bytes read
+    0|>         0.000000 MB char written
+    0|>         0.000000 MB/sec char written
+    0|>         0.000000 MB bytes written
+    0|>         0.000000 MB/sec bytes written
+```
+
+### Individual MPI Output
+
+```console
+$ mpirun -n 2 timem-mpi -i -- sleep 2
+
+[sleep]> Measurement totals (# ranks = 2):
+    0|>         1.997152 sec wall
+    0|>         0.000000 sec user
+    0|>         0.000000 sec sys
+    0|>         0.000000 sec cpu
+    0|>         0.000000 % cpu_util
+    0|>         6.488000 MB peak_rss
+    0|>         4.947968 MB page_rss
+    0|>        58.994688 MB virtual_memory
+    0|>                0 major_page_flts
+    0|>               90 minor_page_flts
+    0|>                1 prio_cxt_swch
+    0|>                2 vol_cxt_swch
+    0|>         0.003896 MB char read
+    0|>         0.021459 MB/sec char read
+    0|>         0.000000 MB bytes read
+    0|>         0.000000 MB/sec bytes read
+    0|>         0.000000 MB char written
+    0|>         0.000000 MB/sec char written
+    0|>         0.000000 MB bytes written
+    0|>         0.000000 MB/sec bytes written
+[sleep]> Measurement totals (# ranks = 2):
+    1|>         1.996507 sec wall
+    1|>         0.000000 sec user
+    1|>         0.000000 sec sys
+    1|>         0.000000 sec cpu
+    1|>         0.000000 % cpu_util
+    1|>         6.484000 MB peak_rss
+    1|>         0.856064 MB page_rss
+    1|>         4.648960 MB virtual_memory
+    1|>                0 major_page_flts
+    1|>               91 minor_page_flts
+    1|>                0 prio_cxt_swch
+    1|>                2 vol_cxt_swch
+    1|>         0.003896 MB char read
+    1|>         0.021467 MB/sec char read
+    1|>         0.000000 MB bytes read
+    1|>         0.000000 MB/sec bytes read
+    1|>         0.000000 MB char written
+    1|>         0.000000 MB/sec char written
+    1|>         0.000000 MB bytes written
+    1|>         0.000000 MB/sec bytes written
+```
 
 ## Options
 
@@ -31,11 +168,19 @@ Options:
     -v, --verbose                  Verbose output
     -q, --quiet                    Suppress as much reporting as possible
     -d, --sample-delay             Set the delay before the sampler starts (seconds)
-    -f, --sample-freq              Set the frequency of the sampler (number of interrupts per second
-    --disable-sample               Disable sampling completely
+    -f, --sample-freq              Set the frequency of the sampler (number of interrupts per second)
+    --disable-sample               Disable UNIX signal-based sampling.
+                                   Sampling is the most common culprit for timem hanging (i.e. failing to exit after the child process exits)
     -e, --events, --papi-events    Set the hardware counter events to record (ref: `timemory-avail -H | grep PAPI`)
     --disable-papi                 Disable hardware counters
-    -o, --output                   Write intermediate data to an output process-specific file. Some metrics, such as those associated with timers, may report intermediate values (e.g. starting timestamps as number of "seconds")
+    -o, --output                   Write results to JSON output file.
+                                   Use:
+                                   - '%p' to encode the process ID
+                                   - '%j' to encode the slurm job ID
+                                   - '%r' to encode the MPI comm rank
+                                   - '%s' to encode the MPI comm size
+                                   E.g. '-o timem-output-%p'.
+                                   If verbosity >= 2 or debugging is enabled, will also write sampling data to log file.
     -s, --shell                    Enable launching command via a shell command (if no arguments, $SHELL is used)
     --shell-flags                  Set the shell flags to use (pass as single string as leading dashes can confuse parser) [default: -i]
 ```
@@ -52,11 +197,19 @@ Options:
     -v, --verbose                  Verbose output
     -q, --quiet                    Suppress as much reporting as possible
     -d, --sample-delay             Set the delay before the sampler starts (seconds)
-    -f, --sample-freq              Set the frequency of the sampler (number of interrupts per second
-    --disable-sample               Disable sampling completely
+    -f, --sample-freq              Set the frequency of the sampler (number of interrupts per second)
+    --disable-sample               Disable UNIX signal-based sampling.
+                                   Sampling is the most common culprit for timem hanging (i.e. failing to exit after the child process exits)
     -e, --events, --papi-events    Set the hardware counter events to record (ref: `timemory-avail -H | grep PAPI`)
     --disable-papi                 Disable hardware counters
-    -o, --output                   Write intermediate data to an output process-specific file. Some metrics, such as those associated with timers, may report intermediate values (e.g. starting timestamps as number of "seconds")
+    -o, --output                   Write results to JSON output file.
+                                   Use:
+                                   - '%p' to encode the process ID
+                                   - '%j' to encode the slurm job ID
+                                   - '%r' to encode the MPI comm rank
+                                   - '%s' to encode the MPI comm size
+                                   E.g. '-o timem-output-%p'.
+                                   If verbosity >= 2 or debugging is enabled, will also write sampling data to log file.
     -s, --shell                    Enable launching command via a shell command (if no arguments, $SHELL is used)
     --shell-flags                  Set the shell flags to use (pass as single string as leading dashes can confuse parser) [default: -i]
     --mpi                          Launch processes via MPI_Comm_spawn_multiple (reduced functionality)
@@ -64,19 +217,35 @@ Options:
     -i, --indiv                    Output individual results for each process (i.e. rank) instead of reporting the aggregation
 ```
 
+The `--mpi` option is only recommended if forking MPI processes causes issues.
+The processes spawn through this method are not children of the `timem-mpi` process and
+thus `timem-mpi` is more restricted with respect to the data that it can collect for the
+spawned processes. The `--disable-mpi` option is generally not recommended unless `timem-mpi`
+is hanging and using `--disable-sample` does not resolve the issue.
+
 ### Environment
 
-- `TIMEM_USE_SHELL` : enable execution via `$SHELL`
-    - default: `"OFF"`
-    - e.g. `/bin/bash <CMD>`
-- `TIMEM_USE_SHELL_OPTIONS` : shell invocation options
-    - default: `-i`
-    - e.g. `/bin/bash -i <CMD>`
-- `TIMEM_SAMPLE_FREQ` : expressed in 1/seconds, that sets the frequency that the timem executable samples the relevant measurements
-    - default: `2.0`
-- `TIMEM_SAMPLE_DELAY` : expressed in seconds, that sets the length of time the timem executable waits before starting sampling of the relevant measurements
-    - default: `0.001`
-- `TIMEMORY_PAPI_EVENTS` : Hardware counters. Use `papi_avail` and `papi_native_avail`
+All the standard environment variables provided by `timemory-avail -S` are supported (when applicable).
+However, these environment variables use `TIMEM_` as the prefix to the environment variable instead
+of `TIMEMORY_`, e.g. instead of using `TIMEMORY_PRECISION=4` to set the output precision to 4, use `TIMEM_PRECISION=4`.
+
+In addition to the standard environment variables, many of the command-line options are configurable via the
+following environment variables:
+
+| Environment Variable | Default value           | Equivalent Command-line Argument         |
+| -------------------- | ----------------------- | ---------------------------------------- |
+| `TIMEM_OUTPUT`       | `""`                    | `-o`, `--output` (with argument)         |
+| `TIMEM_USE_SHELL`    | `"OFF"`                 | `-s`, `--shell` (with no argument)       |
+| `TIMEM_SHELL_FLAGS`  | `-i`                    | `--shell-flags`                          |
+| `TIMEM_SHELL`        | `$SHELL`                | `-s`, `--shell` (with argument)          |
+| `TIMEM_SAMPLE`       | `"ON"`                  | `--disable-sample` (if value is `"OFF"`) |
+| `TIMEM_SAMPLE_FREQ`  | `5.0`                   | `-f`, `--sample-freq`                    |
+| `TIMEM_SAMPLE_DELAY` | `1.0e-6`                | `-d`, `--sample-delay`                   |
+| `TIMEM_USE_MPI`      | `false`                 | `--mpi`                                  |
+| `TIMEM_USE_PAPI`     | `true` (when available) | `--disable-papi` (if value is `"OFF"`)   |
+
+> Command-line arguments override environment variables,
+> e.g. `TIMEM_OUTPUT=foo timem -o bar -- <CMD>` will output `bar.json`, not `foo.json`.
 
 ## Customization Demonstration
 

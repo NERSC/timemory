@@ -4,7 +4,7 @@ if(WIN32)
     return()
 endif()
 
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
 
 #----------------------------------------------------------------------------------------#
@@ -42,7 +42,7 @@ endif()
 find_package(PAPI QUIET)
 if(NOT DEFINED TIMEM_PAPI_TARGET OR NOT TIMEM_PAPI_TARGET)
     if(PAPI_STATIC_LIBRARIES OR TARGET PAPI::papi-static)
-        set(TIMEM_PAPI_TARGET PAPI::papi-static timemory::timemory-papi-static)
+        set(TIMEM_PAPI_TARGET PAPI::papi-static)
     else()
         set(TIMEM_PAPI_TARGET timemory::timemory-papi)
     endif()

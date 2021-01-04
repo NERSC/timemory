@@ -88,13 +88,11 @@ struct settings
     using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
 
     template <typename Tag>
-    TIMEMORY_HOT static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
-
+    static TIMEMORY_HOT pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
     template <typename Tag>
-    TIMEMORY_HOT static settings* instance() TIMEMORY_VISIBILITY("default");
-
-    TIMEMORY_HOT static pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
-    TIMEMORY_HOT static settings* instance() TIMEMORY_VISIBILITY("default");
+    static TIMEMORY_HOT settings* instance() TIMEMORY_VISIBILITY("default");
+    static TIMEMORY_HOT pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
+    static TIMEMORY_HOT settings* instance() TIMEMORY_VISIBILITY("default");
 
     settings();
     ~settings() = default;

@@ -31,6 +31,7 @@ TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "gtest/gtest.h"
 
+#include "timemory/components/gotcha/memory_allocations.hpp"
 #include "timemory/timemory.hpp"
 
 #include <chrono>
@@ -440,9 +441,7 @@ print_func_info(const std::string& fname)
 TEST_F(gotcha_tests, malloc_gotcha)
 {
     using toolset_t =
-        tim::auto_tuple_t<wall_clock, peak_rss, malloc_gotcha_t, mpi_gotcha_t>;
-
-    malloc_gotcha::configure<component_tuple_t<>>();
+        tim::auto_tuple_t<wall_clock, peak_rss, memory_allocations, mpi_gotcha_t>;
 
     mpi_gotcha_t::get_initializer() = [=]() {
 #if defined(TIMEMORY_USE_MPI)
@@ -502,6 +501,14 @@ TEST_F(gotcha_tests, malloc_gotcha)
     EXPECT_NEAR(dsum, 4986870.45 * size, tolerance);
 
     malloc_gotcha::tear_down<component_tuple_t<>>();
+
+    auto _data = tim::storage<malloc_gotcha>::instance()->get();
+    EXPECT_GE(_data.size(), 2);
+    for(auto& itr : _data)
+    {
+        std::cerr << std::setw(10) << itr.prefix() << " : " << itr.data() << std::endl;
+        EXPECT_GT(itr.data().get(), 400000.) << itr.prefix() << ": " << itr.data();
+    }
 }
 
 //======================================================================================//

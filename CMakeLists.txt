@@ -331,7 +331,6 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
 endif()
 
-message(STATUS "Generating Makefile...")
 include(GenerateMakefile)
 
 # remove testing configure warnings:

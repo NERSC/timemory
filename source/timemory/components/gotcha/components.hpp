@@ -199,8 +199,8 @@ struct gotcha
     using wrappee_t     = backend::gotcha::wrappee_t;
     using wrappid_t     = backend::gotcha::string_t;
     using error_t       = backend::gotcha::error_t;
-    using destructor_t  = std::function<void()>;
     using constructor_t = std::function<void()>;
+    using destructor_t  = std::function<void()>;
     using atomic_bool_t = std::atomic<bool>;
 
     using select_list_t = std::set<std::string>;
@@ -575,38 +575,18 @@ public:
 
 private:
     //----------------------------------------------------------------------------------//
-    /// \brief gotcha_data
-    /// Holds the properties for wrapping and unwrapping a binding
-    struct gotcha_data
-    {
-        gotcha_data()  = default;
-        ~gotcha_data() = default;
-
-        gotcha_data(const gotcha_data&) = delete;
-        gotcha_data(gotcha_data&&)      = delete;
-        gotcha_data& operator=(const gotcha_data&) = delete;
-        gotcha_data& operator=(gotcha_data&&) = delete;
-
-        bool          ready        = get_default_ready();  /// ready to be used
-        bool          filled       = false;                /// structure is populated
-        bool          is_active    = false;                /// is currently wrapping
-        bool          is_finalized = false;                /// no more wrapping is allowed
-        int           priority     = 0;                    /// current priority
-        binding_t     binding      = binding_t{};          /// hold the binder set
-        wrappee_t     wrapper      = 0x0;      /// the func pointer doing wrapping
-        wrappee_t     wrappee      = 0x0;      /// the func pointer being wrapped
-        wrappid_t     wrap_id      = "";       /// the function name (possibly mangled)
-        wrappid_t     tool_id      = "";       /// the function name (unmangled)
-        constructor_t constructor  = []() {};  /// wrap the function
-        destructor_t  destructor   = []() {};  /// unwrap the function
-        bool*         suppression  = nullptr;  /// turn on/off some suppression variable
-        bool*         debug        = &settings::debug();
-    };
-
-    //----------------------------------------------------------------------------------//
     //
     struct persistent_data
     {
+        persistent_data()
+        {
+            for(auto& itr : m_data)
+                itr.ready = get_default_ready();
+        }
+
+        ~persistent_data() = default;
+        TIMEMORY_DELETE_COPY_MOVE_OBJECT(persistent_data)
+
         bool                  m_is_configured = false;
         std::atomic<int64_t>  m_started{ 0 };
         array_t<gotcha_data>  m_data;
@@ -973,7 +953,7 @@ private:
             bundle_type _obj{ _data.tool_id };
             _obj.construct(_args...);
             _obj.start();
-            _obj.audit(_data.tool_id, _args...);
+            _obj.audit(_data, audit::incoming{}, _args...);
             toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
             _data.ready = true;
@@ -982,7 +962,7 @@ private:
             _data.ready = false;
 
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-            _obj.audit(_data.tool_id, _ret);
+            _obj.audit(_data, audit::outgoing{}, _ret);
             _obj.stop();
             toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
@@ -1077,7 +1057,7 @@ private:
             bundle_type _obj{ _data.tool_id };
             _obj.construct(_args...);
             _obj.start();
-            _obj.audit(_data.tool_id, _args...);
+            _obj.audit(_data, audit::incoming{}, _args...);
             toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
             _data.ready = true;
@@ -1085,7 +1065,7 @@ private:
             _data.ready = false;
 
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-            _obj.audit(_data.tool_id);
+            _obj.audit(_data, audit::outgoing{});
             _obj.stop();
         }
         else if(_data.debug && *_data.debug)
@@ -1186,463 +1166,3 @@ private:
 //
 }  // namespace component
 }  // namespace tim
-//
-//======================================================================================//
-//
-#if defined(__GNUC__) && (__GNUC__ >= 6)
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wignored-attributes"
-#endif
-//
-namespace tim
-{
-namespace component
-{
-//
-struct malloc_gotcha
-: base<malloc_gotcha, double>
-, public concepts::external_function_wrapper
-{
-#if defined(TIMEMORY_USE_CUDA)
-    static constexpr uintmax_t data_size = 5;
-    static constexpr uintmax_t num_alloc = 3;
-#else
-    static constexpr uintmax_t data_size = 3;
-    static constexpr uintmax_t num_alloc = 2;
-#endif
-
-    using value_type   = double;
-    using this_type    = malloc_gotcha;
-    using base_type    = base<this_type, value_type>;
-    using storage_type = typename base_type::storage_type;
-    using string_hash  = std::hash<std::string>;
-
-    // formatting
-    static const short precision = 3;
-    static const short width     = 12;
-
-    // required static functions
-    static std::string label() { return "malloc_gotcha"; }
-    static std::string description()
-    {
-        return "GOTCHA wrapper for memory allocation functions";
-    }
-    static std::string display_unit() { return "MB"; }
-    static int64_t     unit() { return units::megabyte; }
-    static value_type  record() { return value_type{ 0.0 }; }
-
-    using base_type::accum;
-    using base_type::is_transient;
-    using base_type::set_started;
-    using base_type::set_stopped;
-    using base_type::value;
-
-    template <typename Tp>
-    using gotcha_component_type = push_back_t<Tp, this_type>;
-
-    template <typename Tp>
-    using gotcha_type =
-        gotcha<data_size, push_back_t<Tp, this_type>, type_list<this_type>>;
-
-    template <typename Tp>
-    using component_type = push_back_t<Tp, gotcha_type<Tp>>;
-
-    static void global_finalize()
-    {
-        for(auto& itr : get_cleanup_list())
-            itr();
-        get_cleanup_list().clear();
-    }
-
-public:
-    //----------------------------------------------------------------------------------//
-
-    template <typename Tp>
-    static void configure();
-
-    template <typename Tp>
-    static void tear_down();
-
-    //----------------------------------------------------------------------------------//
-
-    static uintmax_t get_index(uintmax_t _hash)
-    {
-        uintmax_t idx = std::numeric_limits<uintmax_t>::max();
-        for(uintmax_t i = 0; i < get_hash_array().size(); ++i)
-        {
-            if(_hash == get_hash_array()[i])
-                idx = i;
-        }
-        return idx;
-    }
-
-public:
-    TIMEMORY_DEFAULT_OBJECT(malloc_gotcha)
-
-    malloc_gotcha(const std::string& _prefix)
-    : prefix_hash(string_hash()(_prefix))
-    , prefix_idx(get_index(prefix_hash))
-    , prefix(_prefix)
-    {
-        value = 0.0;
-        accum = 0.0;
-    }
-
-public:
-    //----------------------------------------------------------------------------------//
-
-    void start() { value = record(); }
-
-    void stop()
-    {
-        // value should be update via audit in-between start() and stop()
-        auto tmp = record();
-        accum += (value - tmp);
-        value = std::move(std::max(value, tmp));
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    double get_display() const { return get(); }
-
-    //----------------------------------------------------------------------------------//
-
-    double get() const { return accum / base_type::get_unit(); }
-
-    //----------------------------------------------------------------------------------//
-
-    void audit(const std::string& fname, size_t nbytes)
-    {
-        DEBUG_PRINT_HERE("%s(%i)", fname.c_str(), (int) nbytes);
-
-        auto _hash = string_hash()(fname);
-        auto idx   = get_index(_hash);
-
-        DEBUG_PRINT_HERE("hash: %lu, index: %i", (unsigned long) _hash, (int) idx);
-
-        if(idx > get_hash_array().size())
-        {
-            if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
-                       fname.c_str());
-            return;
-        }
-
-        if(_hash == prefix_hash)
-        {
-            // malloc
-            value = (nbytes);
-            accum += (nbytes);
-            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
-        }
-        else
-        {
-            if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> skipped function '%s with hash %llu'\n",
-                       this_type::get_label().c_str(), fname.c_str(),
-                       (long long unsigned) _hash);
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    void audit(const std::string& fname, size_t nmemb, size_t size)
-    {
-        DEBUG_PRINT_HERE("%s(%i, %i)", fname.c_str(), (int) nmemb, (int) size);
-
-        auto _hash = string_hash()(fname);
-        auto idx   = get_index(_hash);
-
-        if(idx > get_hash_array().size())
-        {
-            if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
-                       fname.c_str());
-            return;
-        }
-
-        if(_hash == prefix_hash)
-        {
-            // calloc
-            value = (nmemb * size);
-            accum += (nmemb * size);
-            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
-        }
-        else
-        {
-            if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> skipped function '%s with hash %llu'\n",
-                       this_type::get_label().c_str(), fname.c_str(),
-                       (long long unsigned) _hash);
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    void audit(const std::string& fname, void* ptr)
-    {
-        DEBUG_PRINT_HERE("%s(%p)", fname.c_str(), ptr);
-
-        if(!ptr)
-            return;
-
-        auto _hash = string_hash()(fname);
-        auto idx   = get_index(_hash);
-
-        if(idx > get_hash_array().size())
-        {
-            if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
-                       fname.c_str());
-            return;
-        }
-
-        // malloc
-        if(idx < num_alloc)
-        {
-            get_allocation_map()[ptr] = value;
-            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
-        }
-        else
-        {
-            auto itr = get_allocation_map().find(ptr);
-            if(itr != get_allocation_map().end())
-            {
-                value = itr->second;
-                accum += itr->second;
-                DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
-                get_allocation_map().erase(itr);
-            }
-            else
-            {
-                if(settings::verbose() > 1 || settings::debug())
-                    printf("[%s]> free of unknown pointer size: %p\n",
-                           this_type::get_label().c_str(), ptr);
-            }
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-#if defined(TIMEMORY_USE_CUDA)
-
-    //----------------------------------------------------------------------------------//
-
-    void audit(const std::string& fname, void** devPtr, size_t size)
-    {
-        auto _hash = string_hash()(fname);
-        auto idx   = get_index(_hash);
-
-        if(idx > get_hash_array().size())
-        {
-            if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
-                       fname.c_str());
-            return;
-        }
-
-        if(_hash == prefix_hash)
-        {
-            // malloc
-            value = (size);
-            accum += (size);
-            m_last_addr = devPtr;
-        }
-        else
-        {
-            if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> skipped function '%s with hash %llu'\n",
-                       this_type::get_label().c_str(), fname.c_str(),
-                       (long long unsigned) _hash);
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    void audit(const std::string& fname, cuda::error_t)
-    {
-        auto _hash = string_hash()(fname);
-        auto idx   = get_index(_hash);
-
-        if(idx > get_hash_array().size())
-        {
-            if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
-                       fname.c_str());
-            return;
-        }
-
-        if(_hash == prefix_hash && idx < num_alloc)
-        {
-            // cudaMalloc
-            if(m_last_addr)
-            {
-                void* ptr                 = (void*) ((char**) (m_last_addr)[0]);
-                get_allocation_map()[ptr] = value;
-            }
-        }
-        else if(_hash == prefix_hash && idx >= num_alloc)
-        {
-            // cudaFree
-        }
-        else
-        {
-            if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> skipped function '%s with hash %llu'\n",
-                       this_type::get_label().c_str(), fname.c_str(),
-                       (long long unsigned) _hash);
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-#endif
-
-    //----------------------------------------------------------------------------------//
-
-    void set_prefix(const std::string& _prefix)
-    {
-        prefix      = _prefix;
-        prefix_hash = add_hash_id(prefix);
-        for(uintmax_t i = 0; i < get_hash_array().size(); ++i)
-        {
-            if(prefix_hash == get_hash_array()[i])
-                prefix_idx = i;
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    this_type& operator+=(const this_type& rhs)
-    {
-        value += rhs.value;
-        accum += rhs.accum;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return *this;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    this_type& operator-=(const this_type& rhs)
-    {
-        value -= rhs.value;
-        accum -= rhs.accum;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return *this;
-    }
-
-private:
-    using alloc_map_t  = std::unordered_map<void*, size_t>;
-    using vaddr_map_t  = std::unordered_map<void**, size_t>;
-    using hash_array_t = std::array<uintmax_t, data_size>;
-    using clean_list_t = std::vector<std::function<void()>>;
-
-    static clean_list_t& get_cleanup_list()
-    {
-        static clean_list_t _instance;
-        return _instance;
-    }
-
-    static alloc_map_t& get_allocation_map()
-    {
-        static thread_local alloc_map_t _instance;
-        return _instance;
-    }
-
-    static vaddr_map_t& get_void_address_map()
-    {
-        static thread_local vaddr_map_t _instance;
-        return _instance;
-    }
-
-    static hash_array_t& get_hash_array()
-    {
-        static hash_array_t _instance = []() {
-#if defined(TIMEMORY_USE_CUDA)
-            hash_array_t _tmp = {
-                { string_hash()("malloc"),
-                  string_hash()("calloc"),
-                  string_hash()("cudaMalloc"),
-                  string_hash()("free"),
-                  string_hash()("cudaFree") }
-            };
-#else
-            hash_array_t _tmp = { { string_hash()("malloc"), string_hash()("calloc"),
-                                    string_hash()("free") } };
-#endif
-
-            return _tmp;
-        }();
-        return _instance;
-    }
-
-private:
-    uintmax_t   prefix_hash = string_hash()("");
-    uintmax_t   prefix_idx  = std::numeric_limits<uintmax_t>::max();
-    std::string prefix      = "";
-#if defined(TIMEMORY_USE_CUDA)
-    void** m_last_addr = nullptr;
-#endif
-};
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_USE_GOTCHA)
-//
-template <typename Tp>
-inline void
-malloc_gotcha::configure()
-{
-    // static_assert(!std::is_same<Type, malloc_gotcha>::value,
-    //              "Error! Cannot configure with self as the type!");
-
-    using tuple_t           = push_back_t<Tp, this_type>;
-    using local_gotcha_type = gotcha<data_size, tuple_t, type_list<this_type>>;
-
-    local_gotcha_type::get_default_ready() = false;
-    local_gotcha_type::get_initializer()   = []() {
-    //
-#    if defined(TIMEMORY_USE_CUDA)
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
-        // TIMEMORY_C_GOTCHA(local_gotcha_type, 2, cudaMalloc);
-        local_gotcha_type::template configure<2, cudaError_t, void**, size_t>(
-            "cudaMalloc");
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 3, free);
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 4, cudaFree);
-#    else
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 2, free);
-#    endif
-        //
-    };
-
-    get_cleanup_list().emplace_back([]() { malloc_gotcha::tear_down<Tp>(); });
-}
-//
-template <typename Tp>
-inline void
-malloc_gotcha::tear_down()
-{
-    // static_assert(!std::is_same<Type, malloc_gotcha>::value,
-    //              "Error! Cannot configure with self as the type!");
-
-    using tuple_t           = push_back_t<Tp, this_type>;
-    using local_gotcha_type = gotcha<data_size, tuple_t, type_list<this_type>>;
-
-    local_gotcha_type::get_default_ready() = false;
-    local_gotcha_type::get_initializer()   = []() {};
-    local_gotcha_type::disable();
-}
-//
-#endif
-//
-}  // namespace component
-}  // namespace tim
-//
-#if defined(__GNUC__) && (__GNUC__ >= 6)
-#    pragma GCC diagnostic pop
-#endif

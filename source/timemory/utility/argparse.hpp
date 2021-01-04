@@ -775,9 +775,24 @@ struct argument_parser
                     ss << " | " << *itr;
                 ss << " ] ";
             }
-            std::cerr << "    " << std::setw(m_width) << std::left << ss.str();
+            std::stringstream prefix;
+            prefix << "    " << std::setw(m_width) << std::left << ss.str();
+            std::cerr << std::left << prefix.str();
 
-            std::cerr << " " << std::setw(m_width) << a.m_desc;
+            auto desc = a.m_desc;
+            if(ss.str().length() >= static_cast<size_t>(m_width))
+                desc = std::string("\n%{INDENT}%") + desc;
+
+            // replace %{INDENT}% with indentation
+            const std::string indent_key = "%{INDENT}%";
+            const auto        npos       = std::string::npos;
+            auto              pos        = npos;
+            std::stringstream indent;
+            indent << std::setw(prefix.str().length()) << "";
+            while((pos = desc.find(indent_key)) != npos)
+                desc = desc.replace(pos, indent_key.length(), indent.str());
+            std::cerr << " " << std::setw(m_width) << desc;
+
             if(a.m_required)
                 std::cerr << " (Required)";
             std::cerr << std::endl;

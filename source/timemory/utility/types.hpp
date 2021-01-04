@@ -718,7 +718,7 @@ namespace audit
 /// \brief Used by component audit member function to designate the
 /// parameters being passed are incoming (e.g. before a gotcha wrappee is invoked)
 ///
-struct incoming
+struct incoming : concepts::phase_id
 {};
 //
 //--------------------------------------------------------------------------------------//
@@ -728,7 +728,7 @@ struct incoming
 /// parameters being passed are outgoing (e.g. the return value from a gotcha wrappee)
 ///
 // audit the return type
-struct outgoing
+struct outgoing : concepts::phase_id
 {};
 //
 //--------------------------------------------------------------------------------------//
