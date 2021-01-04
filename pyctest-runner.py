@@ -723,9 +723,13 @@ def run_pyctest():
     if "timem" in args.tools:
 
         def add_timem_test(name, cmd):
+            if len(cmd) > 1:
+                cmd.append("--")
+            cmd.append("sleep")
+
             pyct.test(
                 "{}-zero".format(name),
-                cmd + ["--", "sleep", "0"],
+                cmd + ["0"],
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
@@ -736,7 +740,7 @@ def run_pyctest():
 
             pyct.test(
                 name,
-                cmd + ["--", "sleep", "2"],
+                cmd + ["2"],
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
@@ -744,6 +748,8 @@ def run_pyctest():
                     "ENVIRONMENT": base_env,
                 },
             )
+
+        add_timem_test("timemory-timem", ["./timem"])
 
         add_timem_test("timemory-timem-shell", ["./timem", "-s"])
 
@@ -760,7 +766,7 @@ def run_pyctest():
         if args.mpi and dmprun is not None:
             add_timem_test(
                 "timemory-timem-mpi",
-                [dmprun] + dmpargs + ["./timem-mpi", "sleep", "2"],
+                [dmprun] + dmpargs + ["./timem-mpi"],
             )
 
             add_timem_test(

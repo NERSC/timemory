@@ -256,7 +256,8 @@ add_timemory_google_test(socket_tests
     SOURCES         socket_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
-                    test-werror-flags)
+                    test-werror-flags
+    TIMEOUT         15)
 
 add_timemory_google_test(settings_tests
     DISCOVER_TESTS
