@@ -91,6 +91,7 @@
     component::likwid_marker,                   \
     component::likwid_nvmarker,                 \
     component::malloc_gotcha,                   \
+    component::memory_allocations,              \
     component::monotonic_clock,                 \
     component::monotonic_raw_clock,             \
     component::num_io_in,                       \
