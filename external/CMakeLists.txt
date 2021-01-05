@@ -6,7 +6,7 @@ if(TIMEMORY_BUILD_PYTHON AND TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
         REPO_URL https://github.com/jrmadsen/line_profiler.git
         REPO_BRANCH timemory)
 
-    message(STATUS "Adding external/line-profiler")
+    message(STATUS "Adding external/line-profiler...")
     add_subdirectory(line-profiler)
 
     if(TARGET libpytimemory AND TARGET _line_profiler)
@@ -27,7 +27,7 @@ if(TIMEMORY_BUILD_PYTHON AND TIMEMORY_BUILD_PYTHON_HATCHET)
     endif()
 
     if(CYTHON_EXECUTABLE OR Cython_FOUND)
-        message(STATUS "Adding external/hatchet")
+        message(STATUS "Adding external/hatchet...")
         add_subdirectory(hatchet)
     else()
         message(WARNING "Internal Hatchet could not built because Cython could not be found")

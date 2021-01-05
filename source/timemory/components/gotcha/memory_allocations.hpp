@@ -119,14 +119,12 @@ public:
     TIMEMORY_DEFAULT_OBJECT(malloc_gotcha)
 
 public:
-    void start() { value = record(); }
+    void start() { value = 0; }
 
     void stop()
     {
-        // value should be update via audit in-between start() and stop()
-        auto tmp = record();
-        accum += (value - tmp);
-        value = std::move(std::max(value, tmp));
+        // value should be updated via audit in-between start() and stop()
+        accum += value;
     }
 
     double get() const { return accum / base_type::get_unit(); }
@@ -141,7 +139,6 @@ public:
         DEBUG_PRINT_HERE("%s(%i)", m_prefix, (int) nbytes);
         // malloc
         value = (nbytes);
-        accum += (nbytes);
         DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
     }
 
@@ -151,7 +148,6 @@ public:
         DEBUG_PRINT_HERE("%s(%i, %i)", m_prefix, (int) nmemb, (int) size);
         // calloc
         value = (nmemb * size);
-        accum += (nmemb * size);
         DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
     }
 
@@ -174,7 +170,6 @@ public:
         if(itr != get_allocation_map().end())
         {
             value = itr->second;
-            accum += itr->second;
             DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
             get_allocation_map().erase(itr);
         }
@@ -197,7 +192,6 @@ public:
         DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
         // malloc
         value = (size);
-        accum += (size);
         m_last_addr = devPtr;
         DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
     }
@@ -208,7 +202,6 @@ public:
     {
         DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
         value = (size);
-        accum += (size);
         m_last_addr = hostPtr;
         DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
         consume_parameters(flags);

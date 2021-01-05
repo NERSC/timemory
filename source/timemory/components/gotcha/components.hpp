@@ -264,6 +264,36 @@ struct gotcha
     }
 
     //----------------------------------------------------------------------------------//
+    /// get an array of whether the wrappers are filled and ready
+    static auto get_ready()
+    {
+        std::array<std::pair<bool, bool>, Nt> _ready;
+        for(size_t i = 0; i < Nt; ++i)
+            _ready.at(i) = { get_data().at(i).filled, get_data().at(i).ready };
+        return _ready;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// set filled wrappers to array of ready values
+    static auto set_ready(bool val)
+    {
+        for(size_t i = 0; i < Nt; ++i)
+            if(get_data().at(i).filled)
+                get_data().at(i).ready = val;
+        return get_ready();
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// set filled wrappers to array of ready values
+    static auto set_ready(const std::array<bool, Nt>& values)
+    {
+        for(size_t i = 0; i < Nt; ++i)
+            if(get_data().at(i).filled)
+                get_data().at(i).ready = values.at(i);
+        return get_ready();
+    }
+
+    //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args>
     static bool construct(const std::string& _func, int _priority = 0,
@@ -911,11 +941,12 @@ private:
             {
                 _recursive             = true;
                 auto              _tid = threading::get_id();
-                std::stringstream ss;
-                ss << "[T" << _tid << "]> " << _data.tool_id << " is either not ready ("
-                   << std::boolalpha << !_data.ready << ") or is globally suppressed ("
-                   << _suppress << ")...\n";
-                std::cout << ss.str() << std::flush;
+                fprintf(stderr,
+                        "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
+                        "suppressed (suppressed=%s)\n",
+                        (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
+                        (_data.ready) ? "true" : "false", (_suppress) ? "true" : "false");
+                fflush(stderr);
                 _recursive = false;
             }
             return (_orig) ? (*_orig)(_args...) : Ret{};
@@ -1014,11 +1045,12 @@ private:
             {
                 _recursive             = true;
                 auto              _tid = threading::get_id();
-                std::stringstream ss;
-                ss << "[T" << _tid << "]> " << _data.tool_id << " is either not ready ("
-                   << std::boolalpha << !_data.ready << ") or is globally suppressed ("
-                   << _suppress << ")...\n";
-                std::cout << ss.str() << std::flush;
+                fprintf(stderr,
+                        "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
+                        "suppressed (suppressed=%s)\n",
+                        (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
+                        (_data.ready) ? "true" : "false", (_suppress) ? "true" : "false");
+                fflush(stderr);
                 _recursive = false;
             }
             if(_orig)

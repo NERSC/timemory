@@ -60,8 +60,7 @@ struct base_printer : public common_utils
     }
 
 private:
-    template <typename Up, typename Vp = typename Up::value_type,
-              enable_if_t<!std::is_void<Vp>::value> = 0>
+    template <typename Up>
     auto operator()(std::ostream& _os, const Up& _obj, int) const
         -> decltype(_obj.get_display(), _obj.get_display_unit(), _obj.get_label(), void())
     {
@@ -72,7 +71,7 @@ private:
         sfinae(_os, 0, _value, _disp, _label);
     }
 
-    template <typename Up, typename Vp>
+    template <typename Up>
     void operator()(std::ostream&, const Up&, long) const
     {}
 

@@ -148,6 +148,12 @@ using decay_t = typename std::decay<T>::type;
 template <bool B, typename Lhs, typename Rhs>
 using conditional_t = typename std::conditional<B, Lhs, Rhs>::type;
 //
+template <typename T>
+using remove_cv_t = typename std::remove_cv<T>::type;
+//
+template <typename T>
+using remove_const_t = typename std::remove_const<T>::type;
+//
 using true_type = std::true_type;
 //
 using false_type = std::false_type;

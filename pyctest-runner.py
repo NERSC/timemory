@@ -797,7 +797,7 @@ def run_pyctest():
             [
                 sys.executable,
                 "-c",
-                '"import timemory; print(timemory.__file__)"',
+                "import timemory; print(timemory.__file__)",
             ],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,

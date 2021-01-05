@@ -100,14 +100,6 @@ struct is_available<component::gotcha<N, Comp, Diff>> : false_type
 //
 //--------------------------------------------------------------------------------------//
 //
-//                              REQUIRES PREFIX
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::malloc_gotcha, true_type)
-//
-//--------------------------------------------------------------------------------------//
-//
 //                              IS MEMORY CATEGORY
 //
 //--------------------------------------------------------------------------------------//
@@ -175,8 +167,10 @@ struct has_gotcha<Tuple<T...>>
 //
 //======================================================================================//
 //
+TIMEMORY_PROPERTY_SPECIALIZATION(malloc_gotcha, MALLOC_GOTCHA, "malloc_gotcha", "")
+//
 TIMEMORY_PROPERTY_SPECIALIZATION(memory_allocations, MEMORY_ALLOCATIONS,
-                                 "memory_allocations", "malloc_gotcha")
+                                 "memory_allocations", "")
 //
 //======================================================================================//
 //
