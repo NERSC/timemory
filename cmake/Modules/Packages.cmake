@@ -103,11 +103,18 @@ add_interface_library(timemory-ompt-library
     "Provides OMPT library for OpenMP performance analysis")
 add_interface_library(timemory-ncclp-library
     "Provides NCCLP library for NCCL performance analysis")
+add_interface_library(timemory-mallocp-library
+    "Provides MALLOCP library for tracking memory allocations")
 add_interface_library(timemory-compiler-instrument
     "Provides library for compiler instrumentation")
 
-target_link_libraries(timemory-mpip-library INTERFACE timemory-mpi timemory-gotcha)
-target_link_libraries(timemory-ncclp-library INTERFACE timemory-nccl timemory-gotcha)
+if(TIMEMORY_USE_MPI)
+    target_link_libraries(timemory-mpip-library INTERFACE timemory-mpi timemory-gotcha)
+endif()
+
+if(TIMEMORY_USE_NCCL)
+    target_link_libraries(timemory-ncclp-library INTERFACE timemory-nccl timemory-gotcha)
+endif()
 
 set(_DMP_LIBRARIES)
 

@@ -108,3 +108,12 @@ add_subdirectory(components)
 
 add_subdirectory(runtime)
 add_subdirectory(containers)
+
+# add_subdirectory(compat)
+# add_subdirectory(data)
+# add_subdirectory(general)
+# add_subdirectory(mpl)
+# add_subdirectory(utility)
+
+# tools
+add_subdirectory(tools)

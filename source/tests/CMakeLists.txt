@@ -739,6 +739,14 @@ if(TIMEMORY_BUILD_ERT)
                         ${_LIBRARY})
 endif()
 
+if(TARGET timemory-mallocp-shared)
+    add_timemory_google_test(mallocp_tests
+        DISCOVER_TESTS
+        SOURCES         mallocp_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-mallocp-library)
+endif()
+
 if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
     # test showing linked libraries of python module
     if(APPLE)

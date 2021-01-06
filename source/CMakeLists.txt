@@ -342,6 +342,15 @@ else()
     inform_empty_interface(timemory-ncclp-library "NCCLP standalone instrumentation library")
 endif()
 
+if(TARGET timemory-mallocp-shared)
+    timemory_target_compile_definitions(timemory-mallocp-library INTERFACE
+        TIMEMORY_USE_MALLOCP_LIBRARY)
+    target_link_libraries(timemory-mallocp-library INTERFACE timemory-mallocp-shared)
+    list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mallocp-shared)
+else()
+    inform_empty_interface(timemory-mallocp-library "MALLOCP standalone instrumentation library")
+endif()
+
 if(TARGET timemory-compiler-instrument-base)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-base)
 endif()

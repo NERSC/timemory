@@ -626,8 +626,8 @@ public:
         for(auto itr : _delim)
         {
             itr       = _trim(itr);
-            auto nlen = r_banner.back().length() + itr.length() + 1;
-            if(nlen > static_cast<size_t>(tot_w))
+            auto nlen = r_banner.back().length() + itr.length() + 2;
+            if(nlen >= static_cast<size_t>(tot_w))
                 r_banner.push_back("");
             if(r_banner.back().empty())
                 r_banner.back() += itr;

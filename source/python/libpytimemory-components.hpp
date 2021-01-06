@@ -84,6 +84,31 @@ try_cast_seq(FuncT&& f, ValT&& v)
 //
 using pyenum_set_t = std::set<TIMEMORY_COMPONENT>;
 //
+/// \fn TIMEMORY_COMPONENT get_enum(py::object args)
+/// \param[in] args String or component enumeration for component
+/// \param[out] component_enum Return TIMEMORY_COMPONENT enum
+///
+/// \brief Converts a python specification of component into a C++ enum type
+inline TIMEMORY_COMPONENT
+get_enum(py::object _obj)
+{
+    try
+    {
+        std::string _sitr = _obj.cast<std::string>();
+        if(_sitr.length() > 0)
+            return tim::runtime::enumerate(_sitr);
+    } catch(py::cast_error&)
+    {}
+
+    try
+    {
+        return _obj.cast<TIMEMORY_COMPONENT>();
+    } catch(py::cast_error&)
+    {}
+
+    return TIMEMORY_COMPONENTS_END;
+}
+//
 /// \fn auto get_enum_set(py::list args)
 /// \param[in] args Python list of strings or component enumerations
 /// \param[out] components Return a set of TIMEMORY_COMPONENT enums
@@ -96,27 +121,7 @@ get_enum_set(py::list _args)
 
     for(auto itr : _args)
     {
-        std::string        _sitr = "";
-        TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
-
-        try
-        {
-            _sitr = itr.cast<std::string>();
-            if(_sitr.length() > 0)
-                _citr = tim::runtime::enumerate(_sitr);
-            else
-                continue;
-        } catch(py::cast_error&)
-        {}
-
-        if(_citr == TIMEMORY_COMPONENTS_END)
-        {
-            try
-            {
-                _citr = itr.cast<TIMEMORY_COMPONENT>();
-            } catch(py::cast_error&)
-            {}
-        }
+        TIMEMORY_COMPONENT _citr = get_enum(itr.cast<py::object>());
 
         if(_citr != TIMEMORY_COMPONENTS_END)
             components.insert(_citr);

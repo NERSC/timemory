@@ -38,7 +38,6 @@ __status__ = "Development"
 import os
 import time
 import json
-import time
 import random
 import unittest
 import threading
