@@ -42,6 +42,9 @@
             {                                                                            \
             namespace runtime                                                            \
             {                                                                            \
+            template void insert(TYPE&, int);                                            \
+            template void configure<TYPE>(int);                                          \
+            template void configure(TYPE&, int);                                         \
             template void insert(TYPE&, int, __VA_ARGS__);                               \
             template void configure<TYPE>(int, __VA_ARGS__);                             \
             template void configure(TYPE&, int, __VA_ARGS__);                            \
@@ -55,6 +58,9 @@
             {                                                                            \
             namespace runtime                                                            \
             {                                                                            \
+            extern template void insert(TYPE&, int);                                     \
+            extern template void configure<TYPE>(int);                                   \
+            extern template void configure(TYPE&, int);                                  \
             extern template void insert(TYPE&, int, __VA_ARGS__);                        \
             extern template void configure<TYPE>(int, __VA_ARGS__);                      \
             extern template void configure(TYPE&, int, __VA_ARGS__);                     \

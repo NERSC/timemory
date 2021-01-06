@@ -290,7 +290,7 @@ add_subdirectory(timemory)
 message(STATUS "Adding source...")
 add_subdirectory(source)
 
-message(STATUS "Adding external")
+message(STATUS "Adding external...")
 add_subdirectory(external)
 
 # Install the export set for use with the install-tree
@@ -322,17 +322,30 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
     if(TIMEMORY_BUILD_DOCS)
         message(STATUS "Adding documentation...")
-        # SET(CMAKE_INSTALL_MESSAGE NEVER)
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
-        # SET(CMAKE_INSTALL_MESSAGE LAZY)
     endif()
 
-    print_features()
+    option(TIMEMORY_PRINT_FEATURES
+        "Print the list of enabled/disabled options and interface libraries" ON)
+    mark_as_advanced(TIMEMORY_PRINT_FEATURES)
+
+    if(TIMEMORY_PRINT_FEATURES)
+        print_features()
+    endif()
 
 endif()
 
-message(STATUS "Generating Makefile...")
-include(GenerateMakefile)
+#----------------------------------------------------------------------------------------#
+#   Makefile.timemory.inc
+#----------------------------------------------------------------------------------------#
+
+option(TIMEMORY_GENERATE_MAKEFILE_INCLUDE
+    "Generate a Makefile.timemory.inc for Makefile build systems" ON)
+mark_as_advanced(TIMEMORY_GENERATE_MAKEFILE_INCLUDE)
+
+if(TIMEMORY_GENERATE_MAKEFILE_INCLUDE)
+    include(GenerateMakefile)
+endif()
 
 # remove testing configure warnings:
 #   "Manually-specified variables were not used by the project: ... etc. ..."

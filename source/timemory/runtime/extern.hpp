@@ -39,7 +39,6 @@
 #include "timemory/components/user_bundle/extern.hpp"
 #include "timemory/containers/auto_timer.hpp"
 #include "timemory/containers/auto_user_bundle.hpp"
-#include "timemory/containers/extern.hpp"
 #include "timemory/environment/extern.hpp"
 #include "timemory/hash/extern.hpp"
 #include "timemory/manager/extern.hpp"

@@ -47,8 +47,7 @@ namespace operation
 template <typename Tp>
 struct stop
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     template <typename U>
     using base_t = typename U::base_type;
@@ -113,8 +112,7 @@ private:
 template <typename Tp>
 struct priority_stop
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(priority_stop)
 
@@ -144,8 +142,7 @@ private:
 template <typename Tp>
 struct standard_stop
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(standard_stop)
 
@@ -175,8 +172,7 @@ private:
 template <typename Tp>
 struct delayed_stop
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(delayed_stop)
 

@@ -83,6 +83,12 @@ struct null_type;
 //
 struct quirk_type;
 //
+namespace audit
+{
+struct incoming;
+struct outgoing;
+}  // namespace audit
+//
 namespace trait
 {
 template <typename Tp>
@@ -318,6 +324,29 @@ TIMEMORY_IMPL_IS_CONCEPT(runtime_configurable)
 /// \brief concept that specifies that a component type wraps external functions
 ///
 TIMEMORY_IMPL_IS_CONCEPT(external_function_wrapper)
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_phase_id
+/// \brief concept that specifies that a type is used for identifying a phase in some
+/// measurement. For example, `tim::audit::incoming` and `tim::audit::outgoing`
+/// can be added to overloads to distinguish whether the `double` type in `double
+/// exp(double val)` is `val` or whether it is the return value.
+///
+/// \code{.cpp}
+/// struct exp_wrapper_A
+/// {
+///     // unable to distingush whether "val" is input or output
+///     void audit(double val) { ... }
+/// };
+///
+/// struct exp_wrapper_B
+/// {
+///     // able to distingush whether "val" is input or output
+///     void audit(audit::incoming, double val) { ... }
+///     void audit(audit::outgoing, double val) { ... }
+/// };
+/// \endcode
+TIMEMORY_IMPL_IS_CONCEPT(phase_id)
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::has_gotcha

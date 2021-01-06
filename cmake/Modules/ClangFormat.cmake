@@ -31,6 +31,7 @@ find_program(CLANG_FORMATTER
 if(CLANG_FORMATTER)
     file(GLOB_RECURSE _headers
         ${PROJECT_SOURCE_DIR}/source/tools/*.hpp
+        ${PROJECT_SOURCE_DIR}/source/tests/*.hpp
         ${PROJECT_SOURCE_DIR}/source/python/*.hpp
         ${PROJECT_SOURCE_DIR}/source/timemory/*.h
         ${PROJECT_SOURCE_DIR}/source/timemory/*.hpp)
@@ -102,6 +103,6 @@ if(CLANG_FORMATTER)
     add_custom_target(${FORMAT_NAME}
         ${_COMMAND}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        COMMENT "Running '${CLANG_FORMATTER}'..."
+        COMMENT "[${PROJECT_NAME}] Running '${CLANG_FORMATTER}'..."
         SOURCES ${headers} ${sources} ${examples})
 endif()

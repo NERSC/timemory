@@ -39,10 +39,293 @@
 #include <memory>
 #include <string>
 
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wignored-attributes"
+#endif
+
 namespace tim
 {
 namespace component
 {
+//
+struct malloc_gotcha
+: base<malloc_gotcha, double>
+, public concepts::external_function_wrapper
+{
+#if defined(TIMEMORY_USE_CUDA)
+    static constexpr size_t data_size = 9;
+#else
+    static constexpr size_t data_size = 3;
+#endif
+
+    using value_type   = double;
+    using this_type    = malloc_gotcha;
+    using base_type    = base<this_type, value_type>;
+    using storage_type = typename base_type::storage_type;
+    using string_hash  = std::hash<std::string>;
+
+    // formatting
+    static const short precision = 3;
+    static const short width     = 12;
+
+    // required static functions
+    static std::string label() { return "malloc_gotcha"; }
+    static std::string description()
+    {
+#if defined(TIMEMORY_USE_CUDA)
+        return "GOTCHA wrapper for memory allocation functions: malloc, calloc, free, "
+               "cudaMalloc, cudaMallocHost, cudaMallocManaged, cudaHostAlloc, cudaFree, "
+               "cudaFreeHost";
+#else
+        return "GOTCHA wrapper for memory allocation functions: malloc, calloc, free";
+#endif
+    }
+    static std::string display_unit() { return "MB"; }
+    static int64_t     unit() { return units::megabyte; }
+    static value_type  record() { return value_type{ 0.0 }; }
+
+    using base_type::accum;
+    using base_type::is_transient;
+    using base_type::set_started;
+    using base_type::set_stopped;
+    using base_type::value;
+
+    template <typename Tp>
+    using gotcha_component_type = push_back_t<Tp, this_type>;
+
+    template <typename Tp>
+    using gotcha_type =
+        gotcha<data_size, push_back_t<Tp, this_type>, type_list<this_type>>;
+
+    template <typename Tp>
+    using component_type = push_back_t<Tp, gotcha_type<Tp>>;
+
+    static void global_finalize()
+    {
+        for(auto& itr : get_cleanup_list())
+            itr();
+        get_cleanup_list().clear();
+    }
+
+public:
+    template <typename Tp>
+    static void configure();
+
+    template <typename Tp>
+    static void tear_down();
+
+public:
+    TIMEMORY_DEFAULT_OBJECT(malloc_gotcha)
+
+public:
+    void start() { value = 0; }
+
+    void stop()
+    {
+        // value should be updated via audit in-between start() and stop()
+        accum += value;
+    }
+
+    double get() const { return accum / base_type::get_unit(); }
+
+    double get_display() const { return get(); }
+
+    void set_prefix();
+
+    /// nbytes is passed to malloc
+    void audit(audit::incoming, size_t nbytes)
+    {
+        DEBUG_PRINT_HERE("%s(%i)", m_prefix, (int) nbytes);
+        // malloc
+        value = (nbytes);
+        DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+    }
+
+    /// nmemb and size is passed to calloc
+    void audit(audit::incoming, size_t nmemb, size_t size)
+    {
+        DEBUG_PRINT_HERE("%s(%i, %i)", m_prefix, (int) nmemb, (int) size);
+        // calloc
+        value = (nmemb * size);
+        DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+    }
+
+    /// void* is returned from malloc and calloc
+    void audit(audit::outgoing, void* ptr)
+    {
+        DEBUG_PRINT_HERE("%s(%p)", m_prefix, ptr);
+        if(ptr)
+        {
+            get_allocation_map()[ptr] = value;
+            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+        }
+    }
+
+    /// void* is passed to free
+    void audit(audit::incoming, void* ptr)
+    {
+        DEBUG_PRINT_HERE("%s(%p)", m_prefix, ptr);
+        auto itr = get_allocation_map().find(ptr);
+        if(itr != get_allocation_map().end())
+        {
+            value = itr->second;
+            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+            get_allocation_map().erase(itr);
+        }
+        else
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> free of unknown pointer size: %p\n",
+                       this_type::get_label().c_str(), ptr);
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_CUDA)
+
+    //----------------------------------------------------------------------------------//
+    // cudaMalloc, cudaMallocHost
+    void audit(audit::incoming, void** devPtr, size_t size)
+    {
+        DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
+        // malloc
+        value = (size);
+        m_last_addr = devPtr;
+        DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // cudaHostAlloc / cudaMallocManaged
+    void audit(audit::incoming, void** hostPtr, size_t size, unsigned int flags)
+    {
+        DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
+        value = (size);
+        m_last_addr = hostPtr;
+        DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+        consume_parameters(flags);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // cudaMalloc and cudaHostAlloc
+    void audit(audit::outgoing, cuda::error_t err)
+    {
+        if(m_last_addr)
+        {
+            void* ptr                 = (void*) ((char**) (m_last_addr)[0]);
+            get_allocation_map()[ptr] = value;
+            if(err != cuda::success_v && (settings::debug() || settings::verbose() > 1))
+            {
+                PRINT_HERE("%s did not return cudaSuccess, values may be corrupted");
+            }
+        }
+    }
+
+#endif
+
+    //----------------------------------------------------------------------------------//
+
+    void set_prefix(const char* _prefix) { m_prefix = _prefix; }
+
+    //----------------------------------------------------------------------------------//
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        value += rhs.value;
+        accum += rhs.accum;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
+        return *this;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        value -= rhs.value;
+        accum -= rhs.accum;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
+        return *this;
+    }
+
+private:
+    using alloc_map_t  = std::unordered_map<void*, size_t>;
+    using clean_list_t = std::vector<std::function<void()>>;
+
+    static clean_list_t& get_cleanup_list()
+    {
+        static clean_list_t _instance{};
+        return _instance;
+    }
+
+    static alloc_map_t& get_allocation_map()
+    {
+        static thread_local alloc_map_t _instance{};
+        return _instance;
+    }
+
+private:
+    const char* m_prefix = nullptr;
+#if defined(TIMEMORY_USE_CUDA)
+    void** m_last_addr = nullptr;
+#endif
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_GOTCHA)
+//
+template <typename Tp>
+inline void
+malloc_gotcha::configure()
+{
+    // static_assert(!std::is_same<Type, malloc_gotcha>::value,
+    //              "Error! Cannot configure with self as the type!");
+
+    using tuple_t           = push_back_t<Tp, this_type>;
+    using local_gotcha_type = gotcha<data_size, tuple_t, type_list<this_type>>;
+
+    local_gotcha_type::get_default_ready() = false;
+    local_gotcha_type::get_initializer()   = []() {
+        TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
+        TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
+        TIMEMORY_C_GOTCHA(local_gotcha_type, 2, free);
+#    if defined(TIMEMORY_USE_CUDA)
+        local_gotcha_type::template configure<3, cudaError_t, void**, size_t>(
+            "cudaMalloc");
+        local_gotcha_type::template configure<4, cudaError_t, void**, size_t>(
+            "cudaMallocHost");
+        local_gotcha_type::template configure<5, cudaError_t, void**, size_t,
+                                              unsigned int>("cudaMallocManaged");
+        local_gotcha_type::template configure<6, cudaError_t, void**, size_t,
+                                              unsigned int>("cudaHostAlloc");
+        local_gotcha_type::template configure<7, cudaError_t, void*>("cudaFree");
+        local_gotcha_type::template configure<8, cudaError_t, void*>("cudaFreeHost");
+#    endif
+    };
+
+    get_cleanup_list().emplace_back([]() { malloc_gotcha::tear_down<Tp>(); });
+}
+//
+template <typename Tp>
+inline void
+malloc_gotcha::tear_down()
+{
+    // static_assert(!std::is_same<Type, malloc_gotcha>::value,
+    //              "Error! Cannot configure with self as the type!");
+
+    using tuple_t           = push_back_t<Tp, this_type>;
+    using local_gotcha_type = gotcha<data_size, tuple_t, type_list<this_type>>;
+
+    local_gotcha_type::get_default_ready() = false;
+    local_gotcha_type::get_initializer()   = []() {};
+    local_gotcha_type::disable();
+}
+//
+#endif
+//
 /// \struct memory_allocations
 /// \brief This component wraps malloc, calloc, free, cudaMalloc, cudaFree via
 /// GOTCHA and tracks the number of bytes requested/freed in each call.
@@ -79,7 +362,7 @@ struct memory_allocations
         auto _cnt = tracker_type::start();
         if(_cnt.first == 0 && _cnt.second == 0 && !get_data())
         {
-            get_data().reset(new malloc_bundle_t{});
+            get_data() = std::make_unique<malloc_bundle_t>();
             get_data()->start();
         }
     }
@@ -104,5 +387,9 @@ private:
 //
 }  // namespace component
 }  // namespace tim
+
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+#    pragma GCC diagnostic pop
+#endif
 
 #include "timemory/variadic/component_tuple.cpp"

@@ -13,11 +13,11 @@ set(Python3_FIND_VIRTUALENV "FIRST" CACHE STRING
     "Virtual environment is used before any other standard paths")
 set_property(CACHE Python3_FIND_VIRTUALENV PROPERTY STRINGS "FIRST;LAST;NEVER")
 
-# if(APPLE)
-#    set(Python3_FIND_FRAMEWORK "STANDARD" CACHE STRING
-#        "Order of preference between Apple-style and unix-style package components")
-#    set_property(CACHE Python3_FIND_FRAMEWORK PROPERTY STRINGS "FIRST;ONLY;STANDARD")
-# endif()
+if(APPLE)
+    set(Python3_FIND_FRAMEWORK "LAST" CACHE STRING
+        "Order of preference between Apple-style and unix-style package components")
+    set_property(CACHE Python3_FIND_FRAMEWORK PROPERTY STRINGS "FIRST;LAST;NEVER")
+endif()
 
 # PyPy does not support embedding the interpreter
 set(Python3_FIND_IMPLEMENTATIONS "CPython" CACHE STRING
@@ -42,6 +42,12 @@ set(Python3_ARTIFACTS_INTERACTIVE ON CACHE BOOL
 # else()
 #    unset(Python3_USE_STATIC_LIBS)
 # endif()
+
+foreach(_VAR FIND_STRATEGY FIND_VIRTUALENV FIND_FRAMEWORK FIND_IMPLEMENTATIONS ARTIFACTS_INTERACTIVE)
+    set(Python_${_VAR} "${Python3_${_VAR}}" CACHE STRING "Set via Python3_${_VAR} setting (timemory)")
+    mark_as_advanced(Python_${_VAR})
+    mark_as_advanced(Python3_${_VAR})
+endforeach()
 
 # display version
 add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory" DOC)
@@ -231,7 +237,8 @@ else()
         set(_REMOVE ON)
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E make_directory ${Python3_SITEARCH}/timemory
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+            ERROR_QUIET)
     endif()
     # figure out if we can install to Python3_SITEARCH
     execute_process(
@@ -243,7 +250,8 @@ else()
     if(_REMOVE)
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E remove_directory ${Python3_SITEARCH}/timemory
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+            ERROR_QUIET)
     endif()
     # check the error code of the touch command
     if(ERR_CODE)

@@ -51,7 +51,7 @@ extern "C"
     bool timemory_enable_pthread_gotcha_wrapper()
     {
         return tim::get_env("TIMEMORY_ENABLE_PTHREAD_GOTCHA_WRAPPER", false);
-    };
+    }
 }
 
 //--------------------------------------------------------------------------------------//

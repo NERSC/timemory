@@ -9,7 +9,8 @@ set(timemory_FIND_COMPONENTS_INTERFACE timemory-array-of-bundles-example)
 
 # find the timemory package and specify you want the C++ library (cxx)
 find_package(timemory REQUIRED
-    COMPONENTS cxx)
+    COMPONENTS cxx
+    OPTIONAL_COMPONENTS compile-options)
 
 # create your executable
 add_executable(ex_array_of_bundles

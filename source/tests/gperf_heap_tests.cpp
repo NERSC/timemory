@@ -22,7 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "gtest/gtest.h"
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/timemory.hpp"
 
@@ -46,9 +48,8 @@ using tuple_t =
     tim::component_tuple_t<wall_clock, gperftools_cpu_profiler, gperftools_heap_profiler>;
 using list_t =
     tim::component_list_t<wall_clock, gperftools_cpu_profiler, gperftools_heap_profiler>;
-using auto_tuple_t  = typename tuple_t::auto_type;
-using auto_list_t   = typename list_t::auto_type;
-using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
+using auto_tuple_t = typename tuple_t::auto_type;
+using auto_list_t  = typename list_t::auto_type;
 
 //--------------------------------------------------------------------------------------//
 
@@ -103,6 +104,9 @@ allocate(int64_t nfactor)
 class gperf_heap_tests : public ::testing::Test
 {
 protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+
     void SetUp() override
     {
         setenv("MALLOCSTATS", "1", 1);
@@ -130,30 +134,6 @@ TEST_F(gperf_heap_tests, heap_profile)
         details::allocate(50);
     }
     details::allocate(500);
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
-    auto ret = RUN_ALL_TESTS();
-
-    tim::timemory_finalize();
-    tim::dmp::finalize();
-    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -188,27 +188,55 @@ configure(const int ncomponents, const int* components, Args&&... args);
 namespace runtime
 {
 //
-template <typename Tp, typename... Args>
+template <typename Tp, typename Arg, typename... Args>
 void
-initialize(Tp& obj, int idx, Args&&...);
+initialize(Tp& obj, int idx, Arg&&, Args&&...);
 //
-template <typename Tp, typename... Args>
+template <typename Tp, typename Arg, typename... Args>
 void
-insert(Tp& obj, int idx, Args&&...);
+insert(Tp& obj, int idx, Arg&&, Args&&...);
 //
-template <typename Tp, typename... Args>
+template <typename Tp, typename Arg, typename... Args>
 void
-configure(int idx, Args&&... args);
+configure(int idx, Arg&&, Args&&... args);
 //
-template <typename Tp, typename... Args>
+template <typename Tp, typename Arg, typename... Args>
 void
-configure(Tp& obj, int idx, Args&&... args);
+configure(Tp& obj, int idx, Arg&&, Args&&... args);
 //
 int
 enumerate(const std::string& key);
 //
 int
 enumerate(const char* key);
+//
+template <typename Tp>
+void
+initialize(Tp& obj, int idx);
+//
+template <typename Tp>
+void
+insert(Tp& obj, int idx);
+//
+template <typename Tp>
+void
+configure(int idx);
+//
+template <typename Tp>
+void
+configure(Tp& obj, int idx);
+//
+template <typename Tp>
+void
+insert(Tp& obj, int idx, scope::config _scope);
+//
+template <typename Tp>
+void
+configure(int idx, scope::config _scope);
+//
+template <typename Tp>
+void
+configure(Tp& obj, int idx, scope::config _scope);
 //
 }  // namespace runtime
 

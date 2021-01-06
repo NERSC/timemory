@@ -29,8 +29,6 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/components/base/declaration.hpp"
-#include "timemory/components/base/templates.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/stl.hpp"
@@ -39,24 +37,19 @@
 
 #include "timemory/components/timing/backends.hpp"
 #include "timemory/components/timing/types.hpp"
-
-#include <utility>
-
-//======================================================================================//
-
 #include "timemory/components/timing/wall_clock.hpp"
 
-//======================================================================================//
+#include <utility>
 
 namespace tim
 {
 namespace component
 {
 //--------------------------------------------------------------------------------------//
-// uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesn't work that way.
-//
-// this component extracts only the CPU time spent in kernel-mode
+/// \struct tim::component::system_clock
+/// \brief this component extracts only the CPU time spent in kernel-mode.
+/// Only relevant as a time when a different is computed
+/// Do not use a single CPU time as an amount of time; it doesn't work that way.
 struct system_clock : public base<system_clock>
 {
     using ratio_t    = std::nano;
@@ -85,11 +78,10 @@ struct system_clock : public base<system_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-// uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesn't work that way.
-// units are reported in number of clock ticks per second
-//
-// this component extracts only the CPU time spent in user-mode
+/// \struct tim::component::user_clock
+/// \brief this component extracts only the CPU time spent in user-mode.
+/// Only relevant as a time when a different is computed
+/// Do not use a single CPU time as an amount of time; it doesn't work that way.
 struct user_clock : public base<user_clock>
 {
     using ratio_t    = std::nano;
@@ -118,11 +110,10 @@ struct user_clock : public base<user_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-// uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesn't work that way.
-// units are reported in number of clock ticks per second
-//
-// this component extracts only the CPU time spent in both user- and kernel- mode
+/// \struct tim::component::cpu_clock
+/// \brief this component extracts only the CPU time spent in both user- and kernel- mode.
+/// Only relevant as a time when a different is computed
+/// Do not use a single CPU time as an amount of time; it doesn't work that way.
 struct cpu_clock : public base<cpu_clock>
 {
     using ratio_t    = std::nano;
@@ -154,8 +145,9 @@ struct cpu_clock : public base<cpu_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-// clock that increments monotonically, tracking the time since an arbitrary point,
-// and will continue to increment while the system is asleep.
+/// \struct tim::component::monotonic_clock
+/// \brief clock that increments monotonically, tracking the time since an arbitrary
+/// point, and will continue to increment while the system is asleep.
 struct monotonic_clock : public base<monotonic_clock>
 {
     using ratio_t    = std::nano;
@@ -188,9 +180,10 @@ struct monotonic_clock : public base<monotonic_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-// clock that increments monotonically, tracking the time since an arbitrary point like
-// CLOCK_MONOTONIC.  However, this clock is unaffected by frequency or time adjustments.
-// It should not be compared to other system time sources.
+/// \struct tim::component::monotonic_raw_clock
+/// \brief clock that increments monotonically, tracking the time since an arbitrary point
+/// like CLOCK_MONOTONIC.  However, this clock is unaffected by frequency or time
+/// adjustments. It should not be compared to other system time sources.
 struct monotonic_raw_clock : public base<monotonic_raw_clock>
 {
     using ratio_t    = std::nano;
@@ -223,10 +216,11 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-// this clock measures the CPU time within the current thread (excludes sibling/child
-// threads)
-// clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
-// thread.
+/// \struct tim::component::thread_cpu_clock
+/// \brief this clock measures the CPU time within the current thread (excludes
+/// sibling/child threads).
+/// Only relevant as a time when a different is computed
+/// Do not use a single CPU time as an amount of time; it doesn't work that way.
 struct thread_cpu_clock : public base<thread_cpu_clock>
 {
     using ratio_t    = std::nano;
@@ -255,9 +249,11 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-// this clock measures the CPU time within the current process (excludes child processes)
-// clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
-// process.
+/// \struct tim::component::process_cpu_clock
+/// \brief this clock measures the CPU time within the current process (excludes child
+/// processes).
+/// Only relevant as a time when a different is computed
+/// Do not use a single CPU time as an amount of time; it doesn't work that way.
 struct process_cpu_clock : public base<process_cpu_clock>
 {
     using ratio_t    = std::nano;
@@ -289,13 +285,11 @@ struct process_cpu_clock : public base<process_cpu_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-// this computes the CPU utilization percentage for the calling process and child
-// processes.
-// uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesn't work that way.
-//
-// this component extracts only the CPU time spent in both user- and kernel- mode
-// and divides by wall clock time
+/// \struct tim::component::cpu_util
+/// \brief  this computes the CPU utilization percentage for the calling process and child
+/// processes.
+/// Only relevant as a time when a different is computed
+/// Do not use a single CPU time as an amount of time; it doesn't work that way.
 struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
 {
     using ratio_t    = std::nano;
@@ -403,11 +397,11 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
-// this computes the CPU utilization percentage for ONLY the calling process (excludes
-// child processes)
-//
-// this component extracts only the CPU time spent in both user- and kernel- mode
-// and divides by wall clock time
+/// \struct tim::component::process_cpu_util
+/// \brief this computes the CPU utilization percentage for ONLY the calling process
+/// (excludes child processes).
+/// Only relevant as a time when a different is computed
+/// Do not use a single CPU time as an amount of time; it doesn't work that way.
 struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64_t>>
 {
     using ratio_t    = std::nano;
@@ -494,11 +488,11 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
-// this computes the CPU utilization percentage for ONLY the calling thread (excludes
-// sibling and child threads)
-//
-// this component extracts only the CPU time spent in both user- and kernel- mode
-// and divides by wall clock time
+/// \struct tim::component::thread_cpu_util
+/// \brief this computes the CPU utilization percentage for ONLY the calling thread
+/// (excludes sibling and child threads).
+/// Only relevant as a time when a different is computed
+/// Do not use a single CPU time as an amount of time; it doesn't work that way.
 struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t>>
 {
     using ratio_t    = std::nano;

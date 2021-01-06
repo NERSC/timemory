@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "test_macros.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN
@@ -106,27 +108,12 @@ random_entry(const std::vector<Tp>& v)
 class derived_tests : public ::testing::Test
 {
 protected:
-    static void SetUpTestSuite()
-    {
-        tim::settings::verbose()     = 0;
-        tim::settings::debug()       = false;
-        tim::settings::json_output() = true;
-        tim::settings::mpi_thread()  = false;
-        tim::dmp::initialize(_argc, _argv);
-        tim::timemory_init(_argc, _argv);
-        tim::settings::dart_output() = true;
-        tim::settings::dart_count()  = 1;
-        tim::settings::banner()      = false;
-        tim::enable_signal_detection();
-        metric().start();
-    }
+    static void config() { tim::settings::mpi_thread() = false; }
+    TIMEMORY_TEST_SUITE_SETUP(config())
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
 
-    static void TearDownTestSuite()
-    {
-        metric().stop();
-        tim::timemory_finalize();
-        tim::dmp::finalize();
-    }
+    TIMEMORY_TEST_DEFAULT_SETUP
+    TIMEMORY_TEST_DEFAULT_TEARDOWN
 };
 
 //--------------------------------------------------------------------------------------//
@@ -259,14 +246,14 @@ TEST_F(derived_tests, cpu_util_list_wc)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(derived_tests, cpu_util_hybrid_wc_cc)
+TEST_F(derived_tests, cpu_util_bundle_wc_cc)
 {
     std::cout << '\n';
-    using list_type = tim::component_list<cpu_clock, cpu_util>;
-    using toolset_t = tim::component_hybrid<tim::component_tuple<wall_clock>, list_type>;
+    using toolset_t =
+        tim::component_bundle<TIMEMORY_API, wall_clock, cpu_clock*, cpu_util*>;
 
-    list_type::get_initializer() = [](list_type& cl) {
-        cl.initialize<cpu_clock, cpu_util>();
+    toolset_t::get_initializer() = [](auto& cl) {
+        cl.template initialize<cpu_clock, cpu_util>();
     };
 
     toolset_t obj(details::get_test_name());
@@ -276,23 +263,24 @@ TEST_F(derived_tests, cpu_util_hybrid_wc_cc)
 
     std::cout << obj << "\n";
 
-    ASSERT_TRUE(obj.get_component<cpu_util>()->is_derived());
+    ASSERT_TRUE(obj.get_component<cpu_clock>() != nullptr);
+    ASSERT_TRUE(obj.get_component<cpu_util>() != nullptr);
+    EXPECT_TRUE(obj.get_component<cpu_util>()->is_derived());
     auto manual_calc = 100. * obj.get_component<cpu_clock>()->get() /
                        obj.get_component<wall_clock>()->get();
-    ASSERT_NEAR(obj.get_component<cpu_util>()->get(), manual_calc, 1.0e-6);
+    EXPECT_NEAR(obj.get_component<cpu_util>()->get(), manual_calc, 1.0e-6);
     std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(derived_tests, cpu_util_hybrid_wc_uc_sc)
+TEST_F(derived_tests, cpu_util_bundle_wc_uc_sc)
 {
     std::cout << '\n';
-    using toolset_t = tim::auto_hybrid<tim::component_tuple<wall_clock, user_clock>,
-                                       tim::component_list<system_clock, cpu_util>>;
-    using list_type = typename toolset_t::list_t;
+    using toolset_t =
+        tim::auto_bundle<TIMEMORY_API, wall_clock, user_clock, system_clock*, cpu_util*>;
 
-    list_type::get_initializer() = [](list_type& cl) {
+    toolset_t::get_initializer() = [](toolset_t& cl) {
         cl.initialize<system_clock, cpu_util>();
     };
 
@@ -313,14 +301,12 @@ TEST_F(derived_tests, cpu_util_hybrid_wc_uc_sc)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(derived_tests, cpu_util_hybrid_wc)
+TEST_F(derived_tests, cpu_util_bundle_wc)
 {
     std::cout << '\n';
-    using toolset_t =
-        tim::auto_hybrid<tim::component_tuple<wall_clock>, tim::component_list<cpu_util>>;
-    using list_type = typename toolset_t::list_t;
+    using toolset_t = tim::auto_bundle<tim::project::timemory, wall_clock, cpu_util*>;
 
-    list_type::get_initializer() = [](list_type& cl) { cl.initialize<cpu_util>(); };
+    toolset_t::get_initializer() = [](toolset_t& cl) { cl.initialize<cpu_util>(); };
 
     toolset_t obj(details::get_test_name());
     details::consume(1000);

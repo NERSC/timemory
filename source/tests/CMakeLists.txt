@@ -2,8 +2,10 @@
 # include the current directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-set(CTEST_TEST_TIMEOUT 180)
 set(CMAKE_UNITY_BUILD OFF)
+if(NOT DEFINED CTEST_TEST_TIMEOUT OR "${CTEST_TEST_TIMEOUT}" STREQUAL "")
+    set(CTEST_TEST_TIMEOUT 180)
+endif()
 
 set(_EXCLUDE)
 if(NOT TIMEMORY_BUILD_TESTING)
@@ -52,8 +54,8 @@ endif()
 # add_library(no-store-merge INTERFACE)
 # add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
 add_library(test-opt-flags INTERFACE)
-string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
 if(NOT TIMEMORY_USE_COVERAGE)
+    string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
     target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
     if(NOT TIMEMORY_USE_ARCH)
         add_target_flag_if_avail(test-opt-flags "-march=native")
@@ -218,7 +220,6 @@ if(_LIBRARY_TARGET)
         SOURCES         trace_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         ${_LIBRARY_TARGET}
-                        timemory::timemory-dmp
                         timemory::timemory-plotting
                         timemory::timemory-mpip-library
                         timemory::timemory-ompt-library
@@ -254,7 +255,8 @@ add_timemory_google_test(socket_tests
     SOURCES         socket_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
-                    test-werror-flags)
+                    test-werror-flags
+    TIMEOUT         15)
 
 add_timemory_google_test(settings_tests
     DISCOVER_TESTS
@@ -281,7 +283,8 @@ list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
 
 add_timemory_google_test(traits_tests
     SOURCES         traits_tests.cpp
-    LINK_LIBRARIES  common-test-libs)
+    LINK_LIBRARIES  common-test-libs
+                    ${_LIBRARY})
 
 add_timemory_google_test(component_bundle_tests
     MPI
@@ -350,11 +353,13 @@ add_timemory_google_test(threading_tests
                     ${_LIBRARY} ${_OPENMP})
 
 if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
+    list(APPEND ptl_tests_env "TIMEMORY_ENABLE_PTHREAD_GOTCHA_WRAPPER=ON")
     add_timemory_google_test(ptl_tests
         SOURCES         ptl_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         ${_LIBRARY}
-                        PTL::ptl)
+                        PTL::ptl
+        ENVIRONMENT     ${ptl_tests_env})
 endif()
 
 add_timemory_google_test(stl_overload_tests
@@ -604,7 +609,8 @@ endif()
 add_timemory_google_test(gperf_fake_cpu_tests
     DISCOVER_TESTS
     SOURCES         gperf_cpu_tests.cpp
-    LINK_LIBRARIES  timemory::timemory-headers
+    LINK_LIBRARIES  common-test-libs
+                    timemory::timemory-headers
                     timemory::timemory-plotting
                     timemory::timemory-analysis-tools
                     timemory::timemory-core
@@ -615,7 +621,8 @@ if(TIMEMORY_USE_GOTCHA)
     add_timemory_google_test(gotcha_tests
         DISCOVER_TESTS
         SOURCES         gotcha_tests.cpp
-        LINK_LIBRARIES  gotcha-tests-lib
+        LINK_LIBRARIES  common-test-libs
+                        gotcha-tests-lib
                         timemory::timemory-headers
                         timemory::timemory-analysis-tools
                         timemory::timemory-plotting
@@ -733,6 +740,26 @@ if(TIMEMORY_BUILD_ERT)
 endif()
 
 if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
+    # test showing linked libraries of python module
+    if(APPLE)
+        find_program(OTOOL_EXE NAMES otool)
+        if(OTOOL_EXE)
+            set(LINKAGE_COMMAND ${OTOOL_EXE} -L)
+        endif()
+    elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+        find_program(LDD_EXE NAMES ldd)
+        if(LDD_EXE)
+            set(LINKAGE_COMMAND ${LDD_EXE})
+        endif()
+    endif()
+
+    if(LINKAGE_COMMAND)
+        add_test(
+            NAME                python_module_linkage
+            COMMAND             ${LINKAGE_COMMAND} $<TARGET_FILE:libpytimemory>
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+    endif()
+
     add_test(
         NAME                python_tests
         COMMAND             ${PYTHON_EXECUTABLE} -m timemory.test
@@ -805,32 +832,38 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
         ${CMAKE_CURRENT_LIST_DIR}/scripts/common.sh.in
         ${CMAKE_CURRENT_BINARY_DIR}/dynamic/common.sh @ONLY)
 
+    # the executable being instrumented
     set(_DYNAMIC_TARGETS
         dynamic_instrument_tests
         dynamic_instrument_timemory_tests)
+
+    # skip these types when timemory exists in the source
+    set(_SKIP_DYNAMIC_WITH_TIMEMORY
+        "launch-process"
+        "binary-rewrite-stubs")
 
     foreach(_TARGET ${_DYNAMIC_TARGETS})
         set(COMMAND
             ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET})
 
-        foreach(_file ${_scripts})
+        foreach(_FILE ${_scripts})
             # do not run launch-process + timemory
-            if("${_file}" STREQUAL "launch-process" AND
-                "${_TARGET}" STREQUAL "dynamic_instrument_timemory_tests")
+            if("${_TARGET}" STREQUAL "dynamic_instrument_timemory_tests" AND
+               "${_FILE}" IN_LIST _SKIP_DYNAMIC_WITH_TIMEMORY)
                 continue()
             endif()
-            set(TEST_NAME ${_TARGET}-${_file})
+            set(TEST_NAME ${_TARGET}-${_FILE})
             configure_file(
-                ${CMAKE_CURRENT_LIST_DIR}/scripts/${_file}.sh.in
-                ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_file}.sh @ONLY)
+                ${CMAKE_CURRENT_LIST_DIR}/scripts/${_FILE}.sh.in
+                ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_FILE}.sh @ONLY)
             add_test(
-                NAME                ${_TARGET}-${_file}
-                COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_file}.sh
+                NAME                ${_TARGET}-${_FILE}
+                COMMAND             ${CMAKE_CURRENT_BINARY_DIR}/dynamic/${_TARGET}-${_FILE}.sh
                 WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR}/dynamic)
             set_tests_properties(${TEST_NAME} PROPERTIES
                 ENVIRONMENT "${TEST_ENVIRON}"
                 TIMEOUT     480)
-            set_property(TEST ${_TARGET}-${_file} APPEND PROPERTY
+            set_property(TEST ${_TARGET}-${_FILE} APPEND PROPERTY
                 DEPENDS ${_TARGET} timemory-run)
         endforeach()
     endforeach()

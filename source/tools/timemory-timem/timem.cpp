@@ -60,7 +60,6 @@ main(int argc, char** argv)
     tim::settings::width()            = 16;
     tim::settings::precision()        = 6;
     tim::settings::enabled()          = true;
-    tim::settings::suppress_parsing() = true;
     // ensure manager never writes metadata
     tim::manager::instance()->set_write_metadata(-1);
 
@@ -131,15 +130,21 @@ main(int argc, char** argv)
         .count(1)
         .action([](parser_t& p) { sample_delay() = p.get<double>("sample-delay"); });
     parser
-        .add_argument({ "-f", "--sample-freq" },
-                      "Set the frequency of the sampler (number of interrupts per second")
+        .add_argument(
+            { "-f", "--sample-freq" },
+            "Set the frequency of the sampler (number of interrupts per second)")
         .count(1)
         .action([](parser_t& p) {
             sample_freq() = p.get<double>("sample-freq");
             if(sample_freq() <= 0.0)
                 use_sample() = false;
         });
-    parser.add_argument({ "--disable-sample" }, "Disable sampling completely")
+    parser
+        .add_argument(
+            { "--disable-sample" },
+            "Disable UNIX signal-based sampling.\n%{INDENT}% Sampling is the most common "
+            "culprit for timem hanging (i.e. failing to exit after the child "
+            "process exits)")
         .count(0)
         .action([](parser_t&) { use_sample() = false; });
     parser.add_argument({ "-e", "--events", "--papi-events" },
@@ -149,11 +154,16 @@ main(int argc, char** argv)
         .count(0)
         .action([](parser_t&) { use_papi() = false; });
     parser
-        .add_argument(
-            { "-o", "--output" },
-            "Write intermediate data to an output process-specific file. Some metrics, "
-            "such as those associated with timers, may report intermediate values (e.g. "
-            "starting timestamps as number of \"seconds\")")
+        .add_argument({ "-o", "--output" },
+                      // indented 35 spaces
+                      R"(Write results to JSON output file.
+%{INDENT}% Use:
+%{INDENT}% - '%p' to encode the process ID
+%{INDENT}% - '%j' to encode the slurm job ID
+%{INDENT}% - '%r' to encode the MPI comm rank
+%{INDENT}% - '%s' to encode the MPI comm size
+%{INDENT}% E.g. '-o timem-output-%p'.
+%{INDENT}% If verbosity >= 2 or debugging is enabled, will also write sampling data to log file.)")
         .max_count(1);
     parser
         .add_argument({ "-s", "--shell" }, "Enable launching command via a shell command "
@@ -300,6 +310,7 @@ main(int argc, char** argv)
     //          Create subprocesses
     //
     //----------------------------------------------------------------------------------//
+
     pid_t pid = (use_mpi()) ? master_pid() : fork();
 
     // SIGCHLD notifies the parent process when a child process exits, is interrupted, or
@@ -449,8 +460,8 @@ main(int argc, char** argv)
         return cond;
     };
 
-    int  ec  = 0;
-    auto ofs = std::unique_ptr<std::ofstream>{};
+    // exit code
+    int ec = 0;
 
     if(failed_fork())
     {
@@ -463,13 +474,16 @@ main(int argc, char** argv)
     }
     else
     {
-        // ensure always enabled
+        // output file
+        auto ofs = std::unique_ptr<std::ofstream>{};
+
+        // ensure always disabled
         tim::settings::enabled() = true;
+
         if(!output_file().empty() && (debug() || verbose() > 1))
         {
-            auto fname = output_file();
-            fname += "-" + std::to_string(worker_pid()) + ".log";
-            ofs = std::make_unique<std::ofstream>(fname.c_str());
+            auto fname = get_config().get_output_filename();
+            ofs        = std::make_unique<std::ofstream>(fname.c_str());
         }
 
         // means parent process
@@ -493,10 +507,9 @@ main(int argc, char** argv)
 
         sampler_t::configure(signal_types(), verbose());
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
-        // tim::mpi::barrier(comm_world_v);
-
 #if defined(TIMEMORY_USE_MPI)
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "pausing");
+        // tim::mpi::barrier(comm_world_v);
         sampler_t::pause();
 #endif
 
@@ -520,13 +533,13 @@ main(int argc, char** argv)
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "stopping sampler");
         get_sampler()->stop();
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "ignoring signals");
         sampler_t::ignore(signal_types());
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
         tim::mpi::barrier(comm_world_v);
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "processing");
         parent_process(pid);
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "exit code = %i", status);
@@ -595,7 +608,9 @@ parent_process(pid_t pid)
     std::vector<timem_bundle_t> _measurements;
 
     if(use_mpi() || tim::mpi::size() > 1)
+    {
         _measurements = get_measure()->mpi_get();
+    }
     else
     {
         if(get_measure())
@@ -603,22 +618,35 @@ parent_process(pid_t pid)
         else
             _measurements = {};
     }
+
     if(_measurements.empty())
+    {
+        CONDITIONAL_PRINT_HERE(debug(), "%s", "No measurements. Returning");
         return;
+    }
 
     stringstream_t _oss;
     for(size_t i = 0; i < _measurements.size(); ++i)
     {
         auto& itr = _measurements.at(i);
         if(itr.empty())
+        {
+            CONDITIONAL_PRINT_HERE(debug(), "%s (iteration: %lu)",
+                                   "Empty measurement. Continuing", (unsigned long) i);
             continue;
+        }
         if(!_measurements.empty() && (use_mpi() || tim::mpi::size() > 1))
             itr.set_rank(i);
+
+        CONDITIONAL_PRINT_HERE(debug(), "streaming iteration: %lu", (unsigned long) i);
         _oss << itr << std::flush;
     }
 
     if(_oss.str().empty())
+    {
+        CONDITIONAL_PRINT_HERE(debug(), "%s", "Empty output. Returning");
         return;
+    }
 
     if(output_file().empty())
         std::cerr << '\n';
@@ -631,15 +659,23 @@ parent_process(pid_t pid)
                tim::cereal::make_nvp("config", get_config()));
         };
 
-        auto job_id = tim::get_env("SLURM_JOB_ID", worker_pid());
-        auto fname  = output_file();
-        fname += "-" + std::to_string(job_id) + ".json";
+        auto fname = get_config().get_output_filename();
+        fname += ".json";
         fprintf(stderr, "\n[%s]> Outputting '%s'...\n", command().c_str(), fname.c_str());
         tim::generic_serialization<json_type>(fname, _measurements, "timemory", "timem",
                                               _cmdline);
     }
 
-    std::cerr << _oss.str() << std::endl;
+    auto quiet = !output_file().empty() && verbose() < 0 && !debug();
+    if(!quiet)
+    {
+        CONDITIONAL_PRINT_HERE(debug(), "%s", "reporting");
+        std::cerr << _oss.str() << std::endl;
+    }
+    else
+    {
+        CONDITIONAL_PRINT_HERE(debug(), "%s", "reporting skipped (quiet)");
+    }
 
     // tim::mpi::barrier();
     // tim::mpi::finalize();

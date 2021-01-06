@@ -461,6 +461,17 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 #
+#                           Deprecated code
+#
+#----------------------------------------------------------------------------------------#
+
+
+if(TIMEMORY_USE_DEPRECATED)
+    timemory_target_compile_definitions(timemory-headers INTERFACE TIMEMORY_USE_DEPRECATED)
+endif()
+
+#----------------------------------------------------------------------------------------#
+#
 #                           Cereal (serialization library)
 #
 #----------------------------------------------------------------------------------------#
@@ -671,8 +682,8 @@ if(TIMEMORY_BUILD_GOOGLE_TEST)
     checkout_git_submodule(RECURSIVE
         RELATIVE_PATH external/google-test
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        REPO_URL https://github.com/google/googletest.git
-        REPO_BRANCH master)
+        REPO_URL https://github.com/jrmadsen/googletest.git
+        REPO_BRANCH timemory)
 
     # add google-test
     set(INSTALL_GTEST OFF CACHE BOOL "Install gtest")

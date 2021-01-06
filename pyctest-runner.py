@@ -27,6 +27,7 @@ available_tools = {
     "mpip": "TIMEMORY_BUILD_MPIP_LIBRARY",
     "ompt": "TIMEMORY_BUILD_OMPT_LIBRARY",
     "ncclp": "TIMEMORY_BUILD_NCCLP_LIBRARY",
+    "mallocp": "TIMEMORY_BUILD_MALLOCP_LIBRARY",
     "compiler": "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION",
 }
 argparse_defaults = {}
@@ -281,7 +282,13 @@ def configure():
     )
     parser.add_argument(
         "--quick",
-        help="Only run unit tests (not examples)",
+        help="Only build the library",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--minimal",
+        help="Only build unit tests (not examples)",
         default=False,
         action="store_true",
     )
@@ -368,7 +375,9 @@ def configure():
                 # ignore all else except for the C++ standard
                 build_name = "-".join([build_name, f"cxx{itr}"])
 
-    build_name = build_name.strip("-")
+    build_name = "-".join(sorted(build_name.strip("-").split("-"))).replace(
+        "kokkos-kokkos", "kokkos-config"
+    )
 
     return args
 
@@ -451,7 +460,7 @@ def run_pyctest():
         "TIMEMORY_BUILD_DEVELOPER": "ON" if args.developer else "OFF",
         "TIMEMORY_BUILD_TESTING": "ON" if not args.quick else "OFF",
         "TIMEMORY_BUILD_EXAMPLES": "OFF"
-        if args.quick or args.coverage
+        if args.quick or args.minimal
         else "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON"
         if args.extra_optimizations
@@ -476,10 +485,13 @@ def run_pyctest():
         "TIMEMORY_USE_COMPILE_TIMING": "ON" if args.timing else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
-        "PYTHON_EXECUTABLE": "{}".format(sys.executable),
     }
 
-    if args.coverage or (args.quick and args.python):
+    if args.minimal:
+        build_opts["TIMEMORY_BUILD_MINIMAL_TESTING"] = "ON"
+        build_opts["TIMEMORY_BUILD_EXAMPLES"] = "OFF"
+
+    if args.quick and args.python:
         build_opts["TIMEMORY_BUILD_MINIMAL_TESTING"] = "ON"
 
     if args.papi:
@@ -562,15 +574,15 @@ def run_pyctest():
     )
 
     # default options
-    cmake_args = "-DCMAKE_BUILD_TYPE={} -DTIMEMORY_BUILD_EXAMPLES=ON".format(
-        pyct.BUILD_TYPE
-    )
+    cmake_args = "-DCMAKE_BUILD_TYPE={}".format(pyct.BUILD_TYPE)
 
     # customized from args
     for key, val in build_opts.items():
         cmake_args = "{} -D{}={}".format(cmake_args, key, val)
 
-    cmake_args = "{} {}".format(cmake_args, " ".join(pycm.ARGUMENTS))
+    cmake_args = "-DPYTHON_EXECUTABLE={} {} {}".format(
+        sys.executable, cmake_args, " ".join(pycm.ARGUMENTS)
+    )
 
     # how to build the code
     #
@@ -712,85 +724,65 @@ def run_pyctest():
         )
 
     if "timem" in args.tools:
-        pyct.test(
-            "timemory-timem",
-            ["./timem", "--", "sleep", "2"],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "30",
-                "ENVIRONMENT": base_env,
-            },
-        )
 
-        pyct.test(
-            "timemory-timem-shell",
-            ["./timem", "-s", "--", "sleep", "2"],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "30",
-                "ENVIRONMENT": base_env,
-            },
-        )
+        def add_timem_test(name, cmd):
+            if len(cmd) > 1:
+                cmd.append("--")
+            cmd.append("sleep")
 
-        pyct.test(
+            pyct.test(
+                "{}-zero".format(name),
+                cmd + ["0"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "10",
+                    "ENVIRONMENT": base_env,
+                },
+            )
+
+            pyct.test(
+                name,
+                cmd + ["2"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "10",
+                    "ENVIRONMENT": base_env,
+                },
+            )
+
+        add_timem_test("timemory-timem", ["./timem"])
+
+        add_timem_test("timemory-timem-shell", ["./timem", "-s"])
+
+        add_timem_test(
             "timemory-timem-no-sample",
-            ["./timem", "--disable-sample", "--", "sleep", "2"],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "30",
-                "ENVIRONMENT": base_env,
-            },
+            ["./timem", "--disable-sample"],
         )
 
-        pyct.test(
+        add_timem_test(
             "timemory-timem-json",
-            ["./timem", "-o", "timem-output", "--", "sleep", "2"],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "30",
-                "ENVIRONMENT": base_env,
-            },
+            ["./timem", "-o", "timem-output"],
         )
 
         if args.mpi and dmprun is not None:
-            pyct.test(
+            add_timem_test(
                 "timemory-timem-mpi",
-                [dmprun] + dmpargs + ["./timem-mpi", "sleep", "2"],
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "30",
-                    "ENVIRONMENT": base_env,
-                },
+                [dmprun] + dmpargs + ["./timem-mpi"],
             )
 
-            pyct.test(
+            add_timem_test(
                 "timemory-timem-mpi-shell",
-                [dmprun] + dmpargs + ["./timem-mpi", "-s", "--", "sleep", "2"],
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "30",
-                    "ENVIRONMENT": base_env,
-                },
+                [dmprun] + dmpargs + ["./timem-mpi", "-s"],
             )
 
-            pyct.test(
+            add_timem_test(
                 "timemory-timem-mpi-individual",
-                [dmprun] + dmpargs + ["./timem-mpi", "-i", "--", "sleep", "2"],
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "30",
-                    "ENVIRONMENT": base_env,
-                },
+                [dmprun] + dmpargs + ["./timem-mpi", "-i"],
             )
 
-            pyct.test(
+            add_timem_test(
                 "timemory-timem-mpi-individual-json",
                 [dmprun]
                 + dmpargs
@@ -799,16 +791,7 @@ def run_pyctest():
                     "-i",
                     "-o",
                     "timem-mpi-output",
-                    "--",
-                    "sleep",
-                    "2",
                 ],
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "30",
-                    "ENVIRONMENT": base_env,
-                },
             )
 
     if args.python:
@@ -817,7 +800,7 @@ def run_pyctest():
             [
                 sys.executable,
                 "-c",
-                '"import timemory; print(timemory.__file__)"',
+                "import timemory; print(timemory.__file__)",
             ],
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -1002,11 +985,27 @@ def run_pyctest():
             },
         )
 
-        pyunittests = ["flat", "rusage", "throttle", "timeline", "timing", "hatchet"]
+        pyunittests = [
+            "flat",
+            "rusage",
+            "throttle",
+            "timeline",
+            "timing",
+            "hatchet",
+        ]
         pyusempi = {"hatchet": True}
         for t in pyunittests:
-            pyunitcmd = [sys.executable, "-m", "timemory.test.test_{}".format(t)]
-            if t in pyusempi and pyusempi[t] and args.mpi and dmprun is not None:
+            pyunitcmd = [
+                sys.executable,
+                "-m",
+                "timemory.test.test_{}".format(t),
+            ]
+            if (
+                t in pyusempi
+                and pyusempi[t]
+                and args.mpi
+                and dmprun is not None
+            ):
                 pyunitcmd = [dmprun] + dmpargs + pyunitcmd
             pyct.test(
                 "python-unittest-{}".format(t),
@@ -1019,7 +1018,7 @@ def run_pyctest():
                 },
             )
 
-    if not args.quick and not args.coverage:
+    if not args.quick and not args.coverage and not args.minimal:
 
         pyct.test(
             construct_name("ex-derived"),

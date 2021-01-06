@@ -26,12 +26,19 @@
 #    define TIMEMORY_PYCOMPONENTS_SOURCE
 #endif
 
+#if !defined(TIMEMORY_USE_EXTERN)
+#    define TIMEMORY_USE_EXTERN
+#endif
+
+#if !defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#    define TIMEMORY_USE_COMPONENT_EXTERN
+#endif
+
 #include "libpytimemory-components.hpp"
+#include "timemory/components/extern.hpp"
 #include "timemory/enum.h"
 #include "timemory/timemory.hpp"
 
-//======================================================================================//
-//
 namespace pyinternal
 {
 //
@@ -454,68 +461,48 @@ operations(py::class_<TupleT<T>>& _pyclass, std::index_sequence<Idx...>)
 //
 template <size_t Idx, typename T>
 static void
-generate_properties(py::class_<pytuple_t<T>>& _pycomp)
+generate_properties(py::class_<pytuple_t<T>>& /*_pycomp*/)
 {
-    using property_t = tim::component::properties<T>;
-
-    //----------------------------------------------------------------------------------//
-    //
-    //      Component
-    //
-    //----------------------------------------------------------------------------------//
-
-    _pycomp.def_static("index",
-                       []() { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
-                       "Enumeration ID for the component");
-
-    _pycomp.def_static("id", []() { return property_t::id(); },
-                       "(Primary) String ID for the component");
-
+    /*
     //----------------------------------------------------------------------------------//
     //
     //      Properties
     //
     //----------------------------------------------------------------------------------//
+    using property_t = tim::component::properties<T>;
 
     py::class_<property_t> _pyprop(_pycomp, "Properties", "Static properties class");
 
-    _pyprop.def_property_readonly_static("enum_string",
-                                         [](py::object) {
-                                             static std::string _val =
-                                                 property_t::enum_string();
-                                             return _val;
-                                         },
-                                         "Get the string version of the enumeration ID");
 
-    _pyprop.def_property_readonly_static(
-        "enum_value",
-        [](py::object) { return static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx); },
-        "Get the enumeration ID for the component");
-
-    _pyprop.def_property_readonly_static("id",
-                                         [](py::object) {
-                                             static std::string _val = property_t::id();
-                                             return _val;
-                                         },
-                                         "Get the primary string ID for the component");
-
-    _pyprop.def_property_readonly_static(
-        "ids",
-        [](py::object) {
-            static auto _val = []() {
-                py::list _ret{};
-                for(const auto& itr : property_t::ids())
-                    _ret.append(itr);
-                return _ret;
-            }();
-            return _val;
-        },
-        "Get the secondary string IDs for the component");
-
+    static auto        _id_idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
+    static std::string _id_str = property_t::id();
+    static std::string _enum_str = property_t::enum_string();
+    static auto        _ids_set  = []() {
+        py::list _ret{};
+        for(const auto& itr : property_t::ids())
+            _ret.append(itr);
+        return _ret;
+    }();
     auto _match_int = [](TIMEMORY_NATIVE_COMPONENT eid) {
         return property_t::matches(static_cast<int>(eid));
     };
     auto _match_str = [](const std::string& str) { return property_t::matches(str); };
+
+    _pyprop.def_property_readonly_static(
+        "enum_string", [](py::object) { return _enum_str; },
+        "Get the string version of the enumeration ID");
+
+    _pyprop.def_property_readonly_static(
+        "enum_value", [](py::object) { return _id_idx; },
+        "Get the enumeration ID for the component");
+
+    _pyprop.def_property_readonly_static(
+        "id", [](py::object) { return _id_str; },
+        "Get the primary string ID for the component");
+
+    _pyprop.def_property_readonly_static(
+        "ids", [](py::object) { return _ids_set; },
+        "Get the secondary string IDs for the component");
 
     _pyprop.def_static(
         "matches", _match_int,
@@ -539,6 +526,7 @@ generate_properties(py::class_<pytuple_t<T>>& _pycomp)
     };
 
     _pyprop.def_static("as_json", _as_json, "Get the properties as a JSON dictionary");
+    */
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -560,20 +548,12 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     using bundle_t   = pytuple_t<T>;
     std::string id   = get_class_name(property_t::enum_string());
 
-    auto _init       = []() { return new bundle_t{}; };
-    auto _sinit      = [](std::string key) { return new bundle_t(key); };
-    auto _push       = [](bundle_t* obj) { obj->push(); };
-    auto _pop        = [](bundle_t* obj) { obj->pop(); };
-    auto _start      = [](bundle_t* obj) { obj->start(); };
-    auto _stop       = [](bundle_t* obj) { obj->stop(); };
-    auto _measure    = [](bundle_t* obj) { obj->measure(); };
-    auto _reset      = [](bundle_t* obj) { obj->reset(); };
-    auto _mark_begin = [](bundle_t* obj) { obj->mark_begin(); };
-    auto _mark_end   = [](bundle_t* obj) { obj->mark_end(); };
-    auto _hash       = [](bundle_t* obj) { return obj->hash(); };
-    auto _key        = [](bundle_t* obj) { return obj->key(); };
-    auto _laps       = [](bundle_t* obj) { return obj->laps(); };
-    auto _rekey      = [](bundle_t* obj, std::string _key) { obj->rekey(_key); };
+    auto _init  = []() { return new bundle_t{}; };
+    auto _sinit = [](std::string key) { return new bundle_t(key); };
+    auto _hash  = [](bundle_t* obj) { return obj->hash(); };
+    auto _key   = [](bundle_t* obj) { return obj->key(); };
+    auto _laps  = [](bundle_t* obj) { return obj->laps(); };
+    auto _rekey = [](bundle_t* obj, std::string _key) { obj->rekey(_key); };
 
     auto _isub = [](bundle_t* lhs, bundle_t* rhs) {
         if(lhs && rhs)
@@ -592,14 +572,14 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     // these have direct mappings to the component
     _pycomp.def(py::init(_init), "Creates component");
     _pycomp.def(py::init(_sinit), "Creates component with a label");
-    _pycomp.def("push", _push, "Push into the call-graph");
-    _pycomp.def("pop", _pop, "Pop off the call-graph");
-    _pycomp.def("start", _start, "Start measurement");
-    _pycomp.def("stop", _stop, "Stop measurement");
-    _pycomp.def("measure", _measure, "Take a measurement");
-    _pycomp.def("reset", _reset, "Reset the values");
-    _pycomp.def("mark_begin", _mark_begin, "Mark an begin point");
-    _pycomp.def("mark_end", _mark_end, "Mark an end point");
+    _pycomp.def("push", &bundle_t::push, "Push into the call-graph");
+    _pycomp.def("pop", &bundle_t::pop, "Pop off the call-graph");
+    _pycomp.def("start", &bundle_t::template start<>, "Start measurement");
+    _pycomp.def("stop", &bundle_t::template stop<>, "Stop measurement");
+    _pycomp.def("measure", &bundle_t::template measure<>, "Take a measurement");
+    _pycomp.def("reset", &bundle_t::template reset<>, "Reset the values");
+    _pycomp.def("mark_begin", &bundle_t::template mark_begin<>, "Mark an begin point");
+    _pycomp.def("mark_end", &bundle_t::template mark_end<>, "Mark an end point");
 
     // these require further evaluation
     pyinternal::get(_pycomp);
@@ -637,9 +617,11 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
         return T::description();
     };
 
+    auto _true = [](py::object) { return true; };
+
     _pycomp.def_static("label", _label, "Get the label for the type");
     _pycomp.def_static("description", _desc, "Get the description for the type");
-    _pycomp.def_property_readonly_static("available", [](py::object) { return true; },
+    _pycomp.def_property_readonly_static("available", _true,
                                          "Whether the component is available");
 
     std::set<std::string> _keys = property_t::ids();
@@ -647,7 +629,14 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _boolgen[Idx] = true;
     _keygen[Idx]  = { _keys, []() { return py::cast(new bundle_t{}); } };
 
-    generate_properties<Idx, T>(_pycomp);
+    auto idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
+    _pycomp.def_static("index", [idx]() { return idx; },
+                       "Enumeration ID for the component");
+
+    _pycomp.def_static("id", [id]() { return id; },
+                       "(Primary) String ID for the component");
+
+    // generate_properties<Idx, T>(_pycomp);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -669,67 +658,62 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     std::string id    = get_class_name(property_t::enum_string());
     std::string _desc = "not available";
 
-    auto _init       = []() { return new bundle_t{}; };
-    auto _sinit      = [](std::string) { return new bundle_t{}; };
-    auto _push       = [](bundle_t*) {};
-    auto _pop        = [](bundle_t*) {};
-    auto _start      = [](bundle_t*) {};
-    auto _stop       = [](bundle_t*) {};
-    auto _measure    = [](bundle_t*) {};
-    auto _reset      = [](bundle_t*) {};
-    auto _mark_begin = [](bundle_t*) {};
-    auto _mark_end   = [](bundle_t*) {};
-    auto _hash       = [](bundle_t*) { return py::none{}; };
-    auto _key        = [](bundle_t*) { return py::none{}; };
-    auto _laps       = [](bundle_t*) { return py::none{}; };
-    auto _rekey      = [](bundle_t*, std::string) {};
-    auto _add        = [](bundle_t*, bundle_t*) { return py::none{}; };
-    auto _sub        = [](bundle_t*, bundle_t*) { return py::none{}; };
-    auto _iadd       = [](bundle_t*, bundle_t*) { return py::none{}; };
-    auto _isub       = [](bundle_t*, bundle_t*) { return py::none{}; };
-    auto _repr       = [](bundle_t*) { return std::string(""); };
-    auto _get        = [](bundle_t*) { return py::none{}; };
+    auto _init  = []() { return new bundle_t{}; };
+    auto _sinit = [](std::string) { return new bundle_t{}; };
+    auto _noop  = [](bundle_t*) {};
+    auto _none  = [](bundle_t*) { return py::none{}; };
+    auto _rekey = [](bundle_t*, std::string) {};
+    auto _repr  = [](bundle_t*) { return std::string(""); };
 
     py::class_<bundle_t> _pycomp(_pymod, id.c_str(), _desc.c_str());
 
     _pycomp.def(py::init(_init), "Creates component");
     _pycomp.def(py::init(_sinit), "Creates component with a label");
-    _pycomp.def("push", _push, "Push into the call-graph");
-    _pycomp.def("pop", _pop, "Pop off the call-graph");
-    _pycomp.def("start", _start, "Start measurement");
-    _pycomp.def("stop", _stop, "Stop measurement");
-    _pycomp.def("measure", _measure, "Take a measurement");
-    _pycomp.def("reset", _reset, "Reset the values");
-    _pycomp.def("mark_begin", _mark_begin, "Mark an begin point");
-    _pycomp.def("mark_end", _mark_end, "Mark an end point");
-    _pycomp.def("get", _get, "No value available");
+    _pycomp.def("push", _noop, "Push into the call-graph");
+    _pycomp.def("pop", _noop, "Pop off the call-graph");
+    _pycomp.def("start", _noop, "Start measurement");
+    _pycomp.def("stop", _noop, "Stop measurement");
+    _pycomp.def("measure", _noop, "Take a measurement");
+    _pycomp.def("reset", _noop, "Reset the values");
+    _pycomp.def("mark_begin", _noop, "Mark an begin point");
+    _pycomp.def("mark_end", _noop, "Mark an end point");
+    _pycomp.def("get", _none, "No value available");
 
     // these are operations on the bundler
-    _pycomp.def("hash", _hash, "Get the current hash");
-    _pycomp.def("key", _key, "Get the identifier");
+    _pycomp.def("hash", _none, "Get the current hash");
+    _pycomp.def("key", _none, "Get the identifier");
     _pycomp.def("rekey", _rekey, "Change the identifier");
-    _pycomp.def("laps", _laps, "Get the number of laps");
+    _pycomp.def("laps", _none, "Get the number of laps");
 
     // operators
-    _pycomp.def("__add__", _add, "Get addition of two components", py::is_operator());
-    _pycomp.def("__sub__", _sub, "Get difference between two components",
+    _pycomp.def("__add__", _none, "Get addition of two components", py::is_operator());
+    _pycomp.def("__sub__", _none, "Get difference between two components",
                 py::is_operator());
-    _pycomp.def("__iadd__", _iadd, "Add rhs to lhs", py::is_operator());
-    _pycomp.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
+    _pycomp.def("__iadd__", _none, "Add rhs to lhs", py::is_operator());
+    _pycomp.def("__isub__", _none, "Subtract rhs from lhs", py::is_operator());
     _pycomp.def("__repr__", _repr, "String representation");
+
+    auto _false = [](py::object) { return false; };
 
     _pycomp.def_static("unit", []() { return 1; }, "Get the units for the type");
     _pycomp.def_static("display_unit", []() { return ""; },
                        "Get the unit repr for the type");
-    _pycomp.def_property_readonly_static("available", [](py::object) { return false; },
+    _pycomp.def_property_readonly_static("available", _false,
                                          "Whether the component is available");
-    _pycomp.def_property_readonly_static("has_value", [](py::object) { return false; },
+    _pycomp.def_property_readonly_static("has_value", _false,
                                          "Whether the component has an accessible value");
 
     _boolgen[Idx] = false;
     _keygen[Idx]  = { {}, []() { return py::none{}; } };
 
-    generate_properties<Idx, T>(_pycomp);
+    auto idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
+    _pycomp.def_static("index", [idx]() { return idx; },
+                       "Enumeration ID for the component");
+
+    _pycomp.def_static("id", [id]() { return id; },
+                       "(Primary) String ID for the component");
+
+    // generate_properties<Idx, T>(_pycomp);
 }
 //
 //--------------------------------------------------------------------------------------//

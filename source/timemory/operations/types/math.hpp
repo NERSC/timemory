@@ -50,8 +50,7 @@ namespace operation
 template <typename Tp>
 struct plus
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     template <typename U>
     using base_t = typename U::base_type;
@@ -106,8 +105,7 @@ private:
 template <typename Tp>
 struct minus
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     template <typename U>
     using base_t = typename U::base_type;
@@ -162,8 +160,7 @@ private:
 template <typename Tp>
 struct multiply
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(multiply)
 
@@ -204,8 +201,7 @@ struct multiply
 template <typename Tp>
 struct divide
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(divide)
 

@@ -24,6 +24,12 @@
 
 #pragma once
 
+#include "timemory/macros/compiler.hpp"
+#include "timemory/macros/os.hpp"
+#include "timemory/storage/types.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/units.hpp"
+
 #include <cassert>
 #include <cstddef>
 #include <deque>
@@ -36,11 +42,6 @@
 #include <set>
 #include <stdexcept>
 #include <vector>
-
-#include "timemory/macros/compiler.hpp"
-#include "timemory/macros/os.hpp"
-#include "timemory/tpls/cereal/cereal.hpp"
-#include "timemory/units.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -327,8 +328,7 @@ private:
 /// \brief Arbitrary Graph / Tree (i.e. binary-tree but not binary)
 ///
 template <typename T,
-          typename AllocatorT =
-              std::allocator<tgraph_node<T>>>  // graph_allocator<tgraph_node<T>>>
+          typename AllocatorT>  // graph_allocator<tgraph_node<T>>>
 class graph
 {
 protected:

@@ -309,6 +309,8 @@ define_default_option(_NCCL ${_USE_CUDA})
 define_default_option(_LIKWID_NVMON ${_LIKWID} ${_NON_APPLE_UNIX} ${_CUDA})
 
 # timemory options
+add_option(TIMEMORY_USE_DEPRECATED
+    "Enable deprecated code" OFF CMAKE_DEFINE)
 add_option(TIMEMORY_USE_STATISTICS
     "Enable statistics by default" ON CMAKE_DEFINE)
 add_option(TIMEMORY_USE_MPI

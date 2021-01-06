@@ -22,12 +22,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+#if defined(TIMEMORY_USE_PAPI)
+#    undef TIMEMORY_USE_PAPI
+#endif
+
+#if defined(TIMEMORY_USE_CUPTI)
+#    undef TIMEMORY_USE_CUPTI
+#endif
+
 #include "test_macros.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
+#include "timemory/variadic/auto_hybrid.hpp"
+#include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/functional.hpp"
 
 #include "gtest/gtest.h"
@@ -150,24 +162,22 @@ TEST_F(variadic_tests, variadic)
 
     for(size_t i = 3; i < nz; ++i)
     {
-        ASSERT_LE(sizes[0], sizes[i]);
-        ASSERT_LE(sizes[1], sizes[i]);
-        ASSERT_LE(sizes[2], sizes[i]);
+        ASSERT_LE(sizes[0], sizes[i]) << "i = " << i;
+        ASSERT_LE(sizes[1], sizes[i]) << "i = " << i;
+        ASSERT_LE(sizes[2], sizes[i]) << "i = " << i;
     }
 
-    using tup_t     = tim::component_tuple<wall_clock>;
-    using tup_add_t = tim::component_tuple<cpu_clock>;
-    using lst_t     = tim::component_list<peak_rss>;
-    using lst_add_t = tim::component_list<page_rss>;
-    using hybrid_t  = tim::concat<tim::auto_hybrid<tup_t, lst_t>, tup_add_t, lst_add_t>;
+    using tup_t    = tim::component_tuple<wall_clock, cpu_clock>;
+    using lst_t    = tim::component_list<peak_rss, page_rss>;
+    using hybrid_t = tim::auto_hybrid<tup_t, lst_t>;
 
     auto hsize = hybrid_t::size();
-    auto tsize = hybrid_t::tuple_t::size();
-    auto lsize = hybrid_t::list_t::size();
+    // auto tsize = hybrid_t::tuple_t::size();
+    // auto lsize = hybrid_t::list_t::size();
 
     std::cout << "\nhybrid        : " << tim::demangle<hybrid_t>() << "\n";
-    std::cout << "\nhybrid tuple  : " << tim::demangle<typename hybrid_t::tuple_t>();
-    std::cout << "\nhybrid list   : " << tim::demangle<typename hybrid_t::list_t>();
+    // std::cout << "\nhybrid tuple  : " << tim::demangle<typename hybrid_t::tuple_t>();
+    // std::cout << "\nhybrid list   : " << tim::demangle<typename hybrid_t::list_t>();
     std::cout << "\n";
     {
         hybrid_t hybrid(details::get_test_name());
@@ -176,8 +186,8 @@ TEST_F(variadic_tests, variadic)
     }
 
     EXPECT_EQ(hsize, 4);
-    EXPECT_EQ(tsize, 2);
-    EXPECT_EQ(lsize, 2);
+    // EXPECT_EQ(tsize, 2);
+    // EXPECT_EQ(lsize, 2);
 }
 
 //--------------------------------------------------------------------------------------//

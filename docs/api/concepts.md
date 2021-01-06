@@ -67,6 +67,9 @@ perform a template specialization (which overrides the inheritance) is the need 
 .. doxygenstruct:: tim::concepts::is_external_function_wrapper
    :members:
    :undoc-members:
+.. doxygenstruct:: tim::concepts::is_phase_id
+   :members:
+   :undoc-members:
 ```
 
 ## Non-Inheritable Concepts

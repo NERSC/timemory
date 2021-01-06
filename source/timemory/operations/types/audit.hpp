@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/components/gotcha/backends.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -57,18 +58,60 @@ namespace operation
 template <typename Tp>
 struct audit
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type          = Tp;
+    using gotcha_data_t = component::gotcha_data;
 
     TIMEMORY_DELETED_OBJECT(audit)
 
     template <typename... Args>
     audit(type& obj, Args&&... args)
     {
+        (*this)(obj, std::forward<Args>(args)...);
+    }
+
+    auto operator()(type& obj) const
+    {
         if(!trait::runtime_enabled<type>::get())
             return;
 
-        sfinae(obj, 0, 0, std::forward<Args>(args)...);
+        bool _called = false;
+        sfinae(obj, _called, 0, 0, 0);
+    }
+
+    template <typename Up, typename... Args,
+              enable_if_t<concepts::is_phase_id<Up>::value> = 0>
+    auto operator()(type& obj, const gotcha_data_t& _data, Up&& _phase,
+                    Args&&... args) const
+    {
+        if(!trait::runtime_enabled<type>::get())
+            return;
+
+        bool _called = false;
+        sfinae(obj, _called, 0, 0, 0, _data, std::forward<Up>(_phase),
+               std::forward<Args>(args)...);
+        if(!_called)
+        {
+            sfinae(obj, _called, 0, 0, 0, _data, std::forward<Args>(args)...);
+            if(!_called)
+            {
+                sfinae(obj, _called, 0, 0, 0, std::forward<Up>(_phase),
+                       std::forward<Args>(args)...);
+                if(!_called)
+                    sfinae(obj, _called, 0, 0, 0, std::forward<Args>(args)...);
+            }
+        }
+    }
+
+    template <typename Arg, typename... Args,
+              enable_if_t<!std::is_same<decay_t<Arg>, gotcha_data_t>::value> = 0>
+    auto operator()(type& obj, Arg&& arg, Args&&... args) const
+    {
+        if(!trait::runtime_enabled<type>::get())
+            return;
+
+        bool _called = false;
+        sfinae(obj, _called, 0, 0, 0, std::forward<Arg>(arg),
+               std::forward<Args>(args)...);
     }
 
 private:
@@ -77,29 +120,53 @@ private:
     // operation is supported with given arguments
     //
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, Args&&... args)
-        -> decltype(obj.audit(std::forward<Args>(args)...), void())
+    auto sfinae(Up& obj, bool& _called, int, int, int, const gotcha_data_t& _data,
+                Args&&... args) const
+        -> decltype(obj.audit(_data, std::forward<Args>(args)...))
     {
-        obj.audit(std::forward<Args>(args)...);
+        _called = true;
+        return obj.audit(_data, std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, bool& _called, int, int, int, Args&&... args) const
+        -> decltype(obj.audit(std::forward<Args>(args)...))
+    {
+        _called = true;
+        return obj.audit(std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // resolution #2
-    // operation is supported with first argument only
+    // converts gotcha_data to string
     //
-    template <typename Up, typename Arg, typename... Args>
-    auto sfinae(Up& obj, int, long, Arg&& arg, Args&&...)
-        -> decltype(obj.audit(std::forward<Arg>(arg)), void())
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, bool& _called, int, int, long, const gotcha_data_t& _data,
+                Args&&... args) const
+        -> decltype(obj.audit(_data.tool_id, std::forward<Args>(args)...))
     {
-        obj.audit(std::forward<Arg>(arg));
+        _called = true;
+        return obj.audit(_data.tool_id, std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // resolution #3
+    // operation is supported with first argument only
+    //
+    template <typename Up, typename Arg, typename... Args>
+    auto sfinae(Up& obj, bool& _called, int, long, long, Arg&& arg, Args&&...) const
+        -> decltype(obj.audit(std::forward<Arg>(arg)))
+    {
+        _called = true;
+        return obj.audit(std::forward<Arg>(arg));
+    }
+
+    //----------------------------------------------------------------------------------//
+    // resolution #4
     // operation is not supported
     //
     template <typename Up, typename... Args>
-    auto sfinae(Up&, long, long, Args&&...) -> decltype(void(), void())
+    void sfinae(Up&, bool&, long, long, long, Args&&...) const
     {}
     //
     //----------------------------------------------------------------------------------//

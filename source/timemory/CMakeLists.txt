@@ -84,13 +84,6 @@ if(TIMEMORY_USE_COVERAGE)
     endif()
 endif()
 
-# core
-# add_subdirectory(utility)
-# add_subdirectory(hash)
-# add_subdirectory(environment)
-# add_subdirectory(settings)
-# add_subdirectory(plotting)
-
 # global
 add_subdirectory(manager)
 add_subdirectory(ert)
@@ -100,14 +93,18 @@ add_subdirectory(operations)
 add_subdirectory(backends)
 add_subdirectory(variadic)
 
+# deprecated
+add_subdirectory(deprecated)
+
+# fake libraries
+# add_subdirectory(mpl)
+# add_subdirectory(data)
+# add_subdirectory(general)
+# add_subdirectory(compat)
+# add_subdirectory(tpls)
+
 # components
 add_subdirectory(components)
 
 add_subdirectory(runtime)
 add_subdirectory(containers)
-
-# add_subdirectory(compat)
-# add_subdirectory(data)
-# add_subdirectory(general)
-# add_subdirectory(mpl)
-# add_subdirectory(utility)

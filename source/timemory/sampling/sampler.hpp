@@ -214,6 +214,9 @@ public:
     const auto& get_good() const { return m_good; }
     const auto& get_bad() const { return m_bad; }
 
+    auto backtrace_enabled() const { return m_backtrace; }
+    void enable_backtrace(bool val) { m_backtrace = val; }
+
     components_t*& get_last() { return m_last; }
     components_t*  get_last() const { return m_last; }
 
@@ -342,6 +345,7 @@ public:
     static bool check_itimer(int _stat, bool _throw_exception = false);
 
 protected:
+    bool          m_backtrace = false;
     size_t        m_idx  = 0;
     components_t* m_last = nullptr;
     signal_set_t  m_good = {};
@@ -452,8 +456,11 @@ sampler<CompT<Types...>, N, SigIds...>::sample()
     // if(!base_type::get_is_running())
     //    return;
     m_last = &(m_data.at((m_idx++) % N));
-    // print last 4 of 7 backtrace entries (i.e. offset by 3)
-    m_last->sample(get_demangled_backtrace<4, 3>());
+    // get last 4 of 7 backtrace entries (i.e. offset by 3)
+    if(m_backtrace)
+        m_last->sample(get_backtrace<4, 3>());
+    else
+        m_last->sample();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -467,8 +474,11 @@ sampler<CompT<Types...>, N, SigIds...>::sample()
     //    return;
     m_last = &m_data.back();
     m_data.emplace_back(components_t(m_last->hash()));
-    // print last 4 of 7 backtrace entries (i.e. offset by 3)
-    m_last->sample(get_demangled_backtrace<4, 3>());
+    // get last 4 of 7 backtrace entries (i.e. offset by 3)
+    if(m_backtrace)
+        m_last->sample(get_backtrace<4, 3>());
+    else
+        m_last->sample();
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -143,7 +143,7 @@ TEST_F(kokkosp_tests, profiling_routines)
 
     details::consume(100);
 
-    kokkosp_begin_parallel_scan("fence", 0, &idx.at(3));
+    kokkosp_begin_fence("fence", 0, &idx.at(3));
 
     details::consume(100);
 

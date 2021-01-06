@@ -339,6 +339,7 @@ extern "C"
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_allocate_data(
         const SpaceHandle space, const char* label, const void* const ptr,
         const uint64_t size) TIMEMORY_KOKKOSP_POSTFIX;
+
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_deallocate_data(
         const SpaceHandle space, const char* label, const void* const ptr,
         const uint64_t size) TIMEMORY_KOKKOSP_POSTFIX;

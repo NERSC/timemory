@@ -49,19 +49,24 @@ namespace operation
 template <typename Tp>
 struct print_storage
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
+    using type = Tp;
 
+    print_storage() { (*this)(); }
+
+    void operator()() const { this->sfinae<type>(0); }
+
+private:
     //----------------------------------------------------------------------------------//
-    // only if components are available
+    // only if component is available
     //
-    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
-    print_storage()
+    template <typename Up, typename Vp = typename Up::value_type,
+              enable_if_t<is_enabled<Up>::value, char> = 0>
+    auto sfinae(int) const
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;
 
-        auto _storage = storage<Tp, value_type>::noninit_instance();
+        auto _storage = storage<Tp, Vp>::noninit_instance();
         if(_storage)
         {
             _storage->stack_clear();
@@ -72,8 +77,8 @@ struct print_storage
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
-    print_storage()
+    template <typename Up>
+    void sfinae(long) const
     {}
 };
 //

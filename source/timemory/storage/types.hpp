@@ -191,4 +191,38 @@ using storage_singleton =
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename NodeT>
+class graph_data;
+//
+template <typename T>
+class tgraph_node;
+//
+template <typename Tp>
+class graph_allocator;
+//
+template <typename T, typename AllocatorT = std::allocator<tgraph_node<T>>>
+class graph;
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace node
+{
+template <typename Tp, typename StatT>
+struct entry;
+//
+template <typename Tp>
+struct data;
+//
+template <typename Tp>
+struct graph;
+//
+template <typename Tp>
+struct result;
+//
+template <typename Tp>
+struct tree;
+}  // namespace node
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim

@@ -67,7 +67,6 @@ public:
 public:
     // Constructor and Destructors
     singleton();
-    singleton(pointer);
     ~singleton();
 
     singleton(const singleton&) = delete;
@@ -78,8 +77,6 @@ public:
 public:
     // public member function
     void initialize();
-    void initialize(pointer);
-    void destroy();
 
     // instance functions that initialize if nullptr
     static pointer instance();
@@ -306,14 +303,6 @@ singleton<Type, Pointer, Tag>::singleton()
 //--------------------------------------------------------------------------------------//
 
 template <typename Type, typename Pointer, typename Tag>
-singleton<Type, Pointer, Tag>::singleton(pointer ptr)
-{
-    initialize(ptr);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, typename Pointer, typename Tag>
 singleton<Type, Pointer, Tag>::~singleton()
 {
     auto& del = get_deleter();
@@ -331,36 +320,6 @@ singleton<Type, Pointer, Tag>::initialize()
     {
         f_master_thread()   = std::this_thread::get_id();
         f_master_instance() = new Type();
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, typename Pointer, typename Tag>
-void
-singleton<Type, Pointer, Tag>::initialize(pointer ptr)
-{
-    if(!f_master_instance())
-    {
-        f_master_thread()   = std::this_thread::get_id();
-        f_master_instance() = ptr;
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, typename Pointer, typename Tag>
-void
-singleton<Type, Pointer, Tag>::destroy()
-{
-    if(std::this_thread::get_id() == f_master_thread() && f_master_instance())
-    {
-        delete f_master_instance();
-        f_master_instance() = nullptr;
-    }
-    else
-    {
-        remove(_local_instance().get());
     }
 }
 

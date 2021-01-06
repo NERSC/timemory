@@ -48,27 +48,33 @@ namespace operation
 template <typename Tp>
 struct base_printer : public common_utils
 {
-    using type       = Tp;
-    using value_type = typename type::value_type;
-    using widths_t   = std::vector<int64_t>;
+    using type     = Tp;
+    using widths_t = std::vector<int64_t>;
 
-    template <typename Up                                      = value_type,
-              enable_if_t<!std::is_same<Up, void>::value, int> = 0>
-    explicit base_printer(std::ostream& _os, const type& _obj)
+    base_printer(std::ostream& _os, const type& _obj) { (*this)(_os, _obj); }
+
+    std::ostream& operator()(std::ostream& _os, const type& _obj) const
     {
-        auto _value = static_cast<const type&>(_obj).get_display();
-        auto _disp  = type::get_display_unit();
-        auto _label = type::get_label();
+        (*this)(_os, _obj, 0);
+        return _os;
+    }
+
+private:
+    template <typename Up>
+    auto operator()(std::ostream& _os, const Up& _obj, int) const
+        -> decltype(_obj.get_display(), _obj.get_display_unit(), _obj.get_label(), void())
+    {
+        auto _value = _obj.get_display();
+        auto _disp  = _obj.get_display_unit();
+        auto _label = _obj.get_label();
 
         sfinae(_os, 0, _value, _disp, _label);
     }
 
-    template <typename Up                                     = value_type,
-              enable_if_t<std::is_same<Up, void>::value, int> = 0>
-    explicit base_printer(std::ostream&, const type&)
+    template <typename Up>
+    void operator()(std::ostream&, const Up&, long) const
     {}
 
-private:
     template <typename Up>
     auto label_sfinae(const Up& _obj, int)
         -> decltype(_obj.label_array(), std::vector<std::string>())
@@ -80,13 +86,13 @@ private:
     }
 
     template <typename Up>
-    auto label_sfinae(const Up& _obj, long)
+    auto label_sfinae(const Up& _obj, long) const
     {
         return _obj.label();
     }
 
     template <typename Up>
-    auto disp_sfinae(const Up& _obj, int)
+    auto disp_sfinae(const Up& _obj, int) const
         -> decltype(_obj.display_unit_array(), std::vector<std::string>())
     {
         auto                     arr = _obj.display_unit_array();
@@ -96,7 +102,7 @@ private:
     }
 
     template <typename Up>
-    auto disp_sfinae(const Up& _obj, long)
+    auto disp_sfinae(const Up& _obj, long) const
     {
         return _obj.display_unit();
     }
@@ -111,7 +117,8 @@ private:
               enable_if_t<!std::is_same<decay_t<ValueT>, std::string>::value, int> = 0,
               enable_if_t<!std::is_same<decay_t<LabelT>, std::string>::value, int> = 0,
               enable_if_t<!std::is_same<decay_t<DispT>, std::string>::value, int>  = 0>
-    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label)
+    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp,
+                LabelT& _label) const
         -> decltype((_value.size() + _disp.size() + _label.size()), void())
     {
         auto _prec  = type::get_precision();
@@ -161,8 +168,8 @@ private:
               enable_if_t<!std::is_same<decay_t<ValueT>, std::string>::value, int> = 0,
               enable_if_t<!std::is_same<decay_t<LabelT>, std::string>::value, int> = 0,
               enable_if_t<std::is_same<decay_t<DispT>, std::string>::value, int>   = 0>
-    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label)
-        -> decltype((_value.size() + _label.size()), void())
+    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp,
+                LabelT& _label) const -> decltype((_value.size() + _label.size()), void())
     {
         auto _prec  = type::get_precision();
         auto _width = type::get_width();
@@ -211,8 +218,8 @@ private:
               enable_if_t<!std::is_same<decay_t<ValueT>, std::string>::value, int> = 0,
               enable_if_t<std::is_same<decay_t<LabelT>, std::string>::value, int>  = 0,
               enable_if_t<std::is_same<decay_t<DispT>, std::string>::value, int>   = 0>
-    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label)
-        -> decltype((_value.size() + _label.size()), void())
+    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp,
+                LabelT& _label) const -> decltype((_value.size() + _label.size()), void())
     {
         auto _prec  = type::get_precision();
         auto _width = type::get_width();
@@ -260,7 +267,8 @@ private:
     //----------------------------------------------------------------------------------//
     //
     template <typename ValueT, typename DispT, typename LabelT>
-    auto sfinae(std::ostream& _os, long, ValueT& _value, DispT& _disp, LabelT& _label)
+    auto sfinae(std::ostream& _os, long, ValueT& _value, DispT& _disp,
+                LabelT& _label) const
     {
         auto _prec  = type::get_precision();
         auto _width = type::get_width();

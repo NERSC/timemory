@@ -22,12 +22,5 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//======================================================================================//
-// clang-format off
-//
-#include "timemory/runtime/types.hpp"
-//
 #include "timemory/runtime/extern.hpp"
-//
-// clang-format on
-//======================================================================================//
+#include "timemory/runtime/types.hpp"
