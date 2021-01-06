@@ -54,9 +54,9 @@ struct malloc_gotcha
 , public concepts::external_function_wrapper
 {
 #if defined(TIMEMORY_USE_CUDA)
-    static constexpr uintmax_t data_size = 9;
+    static constexpr size_t data_size = 9;
 #else
-    static constexpr uintmax_t data_size = 3;
+    static constexpr size_t data_size = 3;
 #endif
 
     using value_type   = double;

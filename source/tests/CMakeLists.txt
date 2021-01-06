@@ -220,7 +220,6 @@ if(_LIBRARY_TARGET)
         SOURCES         trace_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         ${_LIBRARY_TARGET}
-                        timemory::timemory-dmp
                         timemory::timemory-plotting
                         timemory::timemory-mpip-library
                         timemory::timemory-ompt-library
@@ -741,6 +740,26 @@ if(TIMEMORY_BUILD_ERT)
 endif()
 
 if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
+    # test showing linked libraries of python module
+    if(APPLE)
+        find_program(OTOOL_EXE NAMES otool)
+        if(OTOOL_EXE)
+            set(LINKAGE_COMMAND ${OTOOL_EXE} -L)
+        endif()
+    elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+        find_program(LDD_EXE NAMES ldd)
+        if(LDD_EXE)
+            set(LINKAGE_COMMAND ${LDD_EXE})
+        endif()
+    endif()
+
+    if(LINKAGE_COMMAND)
+        add_test(
+            NAME                python_module_linkage
+            COMMAND             ${LINKAGE_COMMAND} $<TARGET_FILE:libpytimemory>
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+    endif()
+
     add_test(
         NAME                python_tests
         COMMAND             ${PYTHON_EXECUTABLE} -m timemory.test
