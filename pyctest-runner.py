@@ -374,7 +374,9 @@ def configure():
                 # ignore all else except for the C++ standard
                 build_name = "-".join([build_name, f"cxx{itr}"])
 
-    build_name = build_name.strip("-")
+    build_name = "-".join(sorted(build_name.strip("-").split("-"))).replace(
+        "kokkos-kokkos", "kokkos-config"
+    )
 
     return args
 

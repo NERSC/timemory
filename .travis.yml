@@ -65,7 +65,7 @@ jobs:
         - CC=clang-6.0
         - CXX=clang++-6.0
         - BUILD_TYPE=Debug
-        - BUILD_ARGS='--quick --build-libs shared static --stats --tools kokkos --cxx-standard=14'
+        - BUILD_ARGS='--quick --build-libs shared static --stats --tools kokkos-config --cxx-standard=14'
     # Clang 7
     - os: linux
       dist: bionic
@@ -82,7 +82,7 @@ jobs:
         - CC=clang-7
         - CXX=clang++-7
         - BUILD_TYPE=Debug
-        - BUILD_ARGS='--quick --build-libs shared static --python --mpi --gotcha --caliper --stats --tools mpip --cxx-standard=17'
+        - BUILD_ARGS='--quick --build-libs shared static --python --mpi --gotcha --caliper --stats --tools mallocp mpip --cxx-standard=17'
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.6 / Linux
