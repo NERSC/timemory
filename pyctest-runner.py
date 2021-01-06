@@ -27,6 +27,7 @@ available_tools = {
     "mpip": "TIMEMORY_BUILD_MPIP_LIBRARY",
     "ompt": "TIMEMORY_BUILD_OMPT_LIBRARY",
     "ncclp": "TIMEMORY_BUILD_NCCLP_LIBRARY",
+    "mallocp": "TIMEMORY_BUILD_MALLOCP_LIBRARY",
     "compiler": "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION",
 }
 argparse_defaults = {}
