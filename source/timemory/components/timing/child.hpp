@@ -79,7 +79,7 @@ struct derivation_types<component::child_cpu_util>
 //
 namespace component
 {
-/// \struct child_system_clock
+/// \struct tim::component::child_system_clock
 /// \brief Similar to \ref system_clock except only reports values for child processes
 struct child_system_clock : public base<child_system_clock>
 {
@@ -107,7 +107,7 @@ struct child_system_clock : public base<child_system_clock>
         accum += value;
     }
 };
-/// \struct child_user_clock
+/// \struct tim::component::child_user_clock
 /// \brief Similar to \ref user_clock except only reports values for child processes
 struct child_user_clock : public base<child_user_clock>
 {
@@ -135,7 +135,7 @@ struct child_user_clock : public base<child_user_clock>
         accum += value;
     }
 };
-/// \struct child_cpu_clock
+/// \struct tim::component::child_cpu_clock
 /// \brief Similar to \ref cpu_clock except only reports values for child processes
 struct child_cpu_clock : public base<child_cpu_clock>
 {
@@ -166,7 +166,7 @@ struct child_cpu_clock : public base<child_cpu_clock>
         accum += value;
     }
 };
-/// \struct child_cpu_util
+/// \struct tim::component::child_cpu_util
 /// \brief Similar to \ref cpu_util except only reports values for child processes
 struct child_cpu_util : public base<child_cpu_util, std::pair<int64_t, int64_t>>
 {

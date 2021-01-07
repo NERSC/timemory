@@ -59,8 +59,8 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
-/// \class tim::component_tuple<Types...>
-/// \tparam Types... Specification of the component types to bundle together
+/// \class tim::component_tuple
+/// \tparam Types Specification of the component types to bundle together
 ///
 /// \brief This is a variadic component wrapper where all components are allocated
 /// on the stack and cannot be disabled at runtime. This bundler has the lowest

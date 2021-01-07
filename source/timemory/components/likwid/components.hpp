@@ -50,7 +50,7 @@ namespace component
 //
 //======================================================================================//
 //
-/// \struct likwid_marker
+/// \struct tim::component::likwid_marker
 /// \brief Provides likwid perfmon marker forwarding. Requires \def LIKWID_PERFMON to
 /// be defined before including <likwid-marker.h>
 struct likwid_marker : public base<likwid_marker, void>
@@ -147,7 +147,7 @@ private:
 //
 //======================================================================================//
 //
-/// \struct likwid_nvmarker
+/// \struct tim::component::likwid_nvmarker
 /// \brief Provides likwid nvmon marker forwarding. Requires \def LIKWID_NVMON to
 /// be defined before including <likwid-marker.h>
 struct likwid_nvmarker : public base<likwid_nvmarker, void>

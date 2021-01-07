@@ -43,12 +43,12 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-/// \class tim::auto_bundle<typename Tag, Types...>
+/// \class tim::auto_bundle
 /// \tparam Tag unique identifying type for the bundle which when \ref
 /// tim::trait::is_available<Tag> is false at compile-time or \ref
 /// tim::trait::runtime_enabled<Tag>() is false at runtime, then none of the components
 /// will be collected
-/// \tparam Types... Specification of the component types to bundle together
+/// \tparam Types Specification of the component types to bundle together
 ///
 /// \brief This is a variadic component wrapper which combines the features of \ref
 /// tim::auto_tuple<T...> and \ref tim::auto_list<U..>. The "T" types (compile-time fixed,

@@ -36,7 +36,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::cleanup
+/// \struct tim::operation::cleanup
 /// \brief This class executes a cleanup routine at the end of the application
 ///
 //

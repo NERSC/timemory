@@ -41,7 +41,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::measure
+/// \struct tim::operation::measure
 /// \brief This operation class is used for a single measurement for a component
 ///
 //

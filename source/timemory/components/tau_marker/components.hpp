@@ -43,6 +43,8 @@ namespace tim
 {
 namespace component
 {
+/// \struct tim::component::tau_marker
+/// \brief Forwards timemory labels to the TAU (Tuning and Analysis Utilities)
 //
 struct tau_marker : public base<tau_marker, void>
 {

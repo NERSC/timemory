@@ -41,7 +41,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::plus
+/// \struct tim::operation::plus
 /// \brief Define addition operations
 ///
 //
@@ -96,7 +96,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::minus
+/// \struct tim::operation::minus
 /// \brief Define subtraction operations
 ///
 //
@@ -151,7 +151,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::multipy
+/// \struct tim::operation::multipy
 /// \brief This operation class is used for multiplication of a component
 ///
 //
@@ -192,7 +192,7 @@ struct multiply
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::divide
+/// \struct tim::operation::divide
 /// \brief This operation class is used for division of a component
 ///
 //

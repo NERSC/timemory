@@ -75,7 +75,7 @@ public:
 
 public:
     //! Construct, outputting to the provided stream
-    /// @param stream The array of output data
+    /// \param stream The array of output data
     SettingsTextArchive(array_type& stream, unique_set exclude)
     : OutputArchive<SettingsTextArchive>(this)
     , output_stream(&stream)

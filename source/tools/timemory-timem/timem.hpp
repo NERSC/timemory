@@ -350,7 +350,7 @@ papi_array_t::get_display() const
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class timem_tuple
+/// \class tim::timem_tuple
 /// \brief A specialized variadic component wrapper which inherits from the
 /// lightweight_tuple which does not automatically push and pop to storage
 ///

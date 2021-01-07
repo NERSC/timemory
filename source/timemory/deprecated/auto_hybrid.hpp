@@ -43,9 +43,9 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-/// \class auto_hybrid<CompT, CompL>
-/// \tparam CompT a component_tuple specification
-/// \tparam CompL a component_list specification
+/// \class tim::auto_hybrid
+/// \tparam CompTuple a component_tuple specification
+/// \tparam CompList a component_list specification
 ///
 ///  \deprecated See \ref tim::auto_bundle
 template <typename CompTuple, typename CompList>

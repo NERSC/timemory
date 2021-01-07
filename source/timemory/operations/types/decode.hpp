@@ -36,7 +36,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::decode
+/// \struct tim::operation::decode
 /// \tparam ApiT Timemory project API, e.g. \ref tim::project::timemory
 ///
 /// \brief This class post-processes strings for a given API

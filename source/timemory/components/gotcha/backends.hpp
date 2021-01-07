@@ -113,7 +113,7 @@ public:
 //
 //======================================================================================//
 ///
-/// \struct component::gotcha_invoker
+/// \struct tim::component::gotcha_invoker
 ///
 ///
 template <typename Tp, typename Ret>

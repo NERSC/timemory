@@ -41,7 +41,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::fini
+/// \struct tim::operation::fini
 /// \brief This operation class is used for invoking the static initializer and
 /// thread-local initializer of a component.
 ///

@@ -38,7 +38,7 @@
 namespace tim
 {
 ///
-/// \struct conditional
+/// \struct tim::conditional
 /// \brief This provides a conditional generator
 ///
 /// \code{.cpp}

@@ -133,8 +133,16 @@ EXCLUDE_PATTERNS       = */.git/* \
                          @PROJECT_SOURCE_DIR@/source/tools/* \
                          @PROJECT_SOURCE_DIR@/source/python/* \
                          @PROJECT_SOURCE_DIR@/source/timemory/backends/* \
-                         @PROJECT_SOURCE_DIR@/source/timemory/*/backends.hpp
-EXCLUDE_SYMBOLS        =
+                         @PROJECT_SOURCE_DIR@/source/timemory/tpls/* \
+                         @PROJECT_SOURCE_DIR@/source/timemory/*/backends.hpp \
+                         @PROJECT_SOURCE_DIR@/source/timemory/deprecated/*
+EXCLUDE_SYMBOLS        = "tim::*internal*" \
+                         "tim::impl*" \
+                         "tim::*helpers*" \
+                         "std::*" \
+                         "_TIM_*" \
+                         "tim::type_list_only*" \
+                         "tim::type_list_element*"
 EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples
 EXAMPLE_PATTERNS       = *.h \
                          *.hh \
@@ -292,12 +300,23 @@ PERLMOD_MAKEVAR_PREFIX =
 # Configuration options related to the preprocessor
 #---------------------------------------------------------------------------
 ENABLE_PREPROCESSING   = YES
-MACRO_EXPANSION        = NO
-EXPAND_ONLY_PREDEF     = NO
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_PATH           =
 INCLUDE_FILE_PATTERNS  =
-PREDEFINED             = @TIMEMORY_DOXYGEN_DEFINE@
+PREDEFINED             = TIMEMORY_VISIBLE= \
+                         TIMEMORY_NEVER_INSTRUMENT= \
+                         TIMEMORY_ALWAYS_INLINE= \
+                         TIMEMORY_HOT_INLINE= \
+                         TIMEMORY_NOINLINE= \
+                         TIMEMORY_INLINE= \
+                         TIMEMORY_HOT= \
+                         TIMEMORY_DLL= \
+                         TIMEMORY_CDLL= \
+                         "TIMEMORY_VISIBILITY(...)=" \
+                         "__attribute__(x)=" \
+                         "__declspec(x)="
 EXPAND_AS_DEFINED      =
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------

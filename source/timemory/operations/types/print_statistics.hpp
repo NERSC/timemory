@@ -48,7 +48,7 @@ namespace operation
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct print_statistics
+/// \struct tim::operation::print_statistics
 /// \brief prints the statistics for a type
 //
 //--------------------------------------------------------------------------------------//

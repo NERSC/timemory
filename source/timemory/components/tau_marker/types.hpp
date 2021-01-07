@@ -29,8 +29,6 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-/// \struct tau_marker
-/// \brief Forwards timemory labels to the TAU (Tuning and Analysis Utilities)
 TIMEMORY_DECLARE_COMPONENT(tau_marker)
 
 //--------------------------------------------------------------------------------------//

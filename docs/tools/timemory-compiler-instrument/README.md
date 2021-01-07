@@ -26,23 +26,20 @@ via the `TIMEMORY_COMPILER_COMPONENTS` environment variable or synchronized with
 instrumentation present in the target code via `TIMEMORY_GLOBAL_COMPONENTS`.
 Timemory compiler instrumentation is fully compatible with codes that are instrumented with timemory
 but, in order to prevent expensive checks for recursion, the data is collected separately --
-resulting in an entirely separate set of outputs. Although most traditional environment
-variables are respected, there are a few exceptions:
+resulting in an entirely separate set of outputs.
 
-- The output folder for the compiler instrumentation defaults to `"timemory-compiler-instrumentation-output"`
-  - This can be exclusively controlled via the `TIMEMORY_COMPILER_OUTPUT_PATH` environment variable
-  - If `TIMEMORY_OUTPUT_PATH` is set, the compiler instrumentation uses this path but uses the `TIMEMORY_COMPILER_OUTPUT_PREFIX`
-    environment variable, which defaults to `"compiler-"`, e.g. compiler instrumentation for the wall-clock
-    timers with `TIMEMORY_OUTPUT_PATH` set would be `${TIMEMORY_OUTPUT_PATH}/compiler-wall.txt`
-- `"TIMEMORY_THROTTLE_COUNT"` is ignored, use `"TIMEMORY_COMPILER_THROTTLE_COUNT"`
-  - defaults to checking whether to throttle every 1,000 invocations
-- `"TIMEMORY_THROTTLE_VALUE"` is ignored, use `"TIMEMORY_COMPILER_THROTTLE_VALUE"`
-  - defaults to enabling throttling functions averaging less than 10,000 nanoseconds (i.e. 10 microseconds) in the last N invocations
-  (where N is the throttle-count)
+## Compiler Instrumentation Settings
 
-## Usage
+All traditional settings are available for the compiler instrumentation (see `timemory-avail -S`), however,
+the settings are only configurable via environment variables. Additionally, the **compiler instrumentation
+uses `"TIMEMORY_COMPILER"` as the prefix for the environment variables instead of `"TIMEMORY"`**,
+with the sole exception of `"TIMEMORY_GLOBAL_COMPONENTS"`.
 
-### Build
+In other words, `"TIMEMORY_FLAT_PROFILE=ON"` will not be applied to the compiler instrumentation; in order
+to enable flat profiling for the compiler instrumentation, set `"TIMEMORY_COMPILER_FLAT_PROFILE=ON"`,
+and so on for `"TIMEMORY_COMPILER_OUTPUT_PATH=..."`, etc.
+
+## Build
 
 Timemory provides a `timemory::timemory-compiler-instrument` target in CMake which provides the necessary
 libraries and the compiler flags for the best resolution of the instrumented function names.
@@ -82,7 +79,7 @@ else()
 endif()
 ```
 
-#### CMake Example
+### CMake Example
 
 ```cmake
 #########################
@@ -135,7 +132,7 @@ add_executable(bar bar.c)
 target_link_libraries(bar PRIVATE foo)
 ```
 
-#### Makefile Example
+### Makefile Example
 
 ```makefile
 CC = gcc
@@ -157,7 +154,7 @@ In order to reduce this with GCC, refer to the compiler documentation for the ad
 [-finstrument-functions-exclude-function-list=sym,sym,...](https://gcc.gnu.org/onlinedocs/gcc-4.4.4/gcc/Code-Gen-Options.html).
 In order to reduce the profiling information with Clang, set the `TIMEMORY_INLINE_COMPILER_INSTRUMENTATION=OFF`
 
-## Examples
+## Example
 
 ### Code
 
@@ -205,12 +202,21 @@ main(int argc, char** argv)
 }
 ```
 
-### Expected Output
+### Building Example
 
 ```console
-$ cmake -DTIMEMORY_BUILD_EXAMPLES=ON -DTIMEMORY_BUILD_TOOLS=ON -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=ON ...
-$ make ex_compiler_instrument
-$ TIMEMORY_MAX_WIDTH=60 ./ex_compiler_instrument
+git clone https://github.com/NERSC/timemory.git timemory-compiler-instrument-example
+cd timemory-compiler-instrument-example
+mkdir build
+cd build
+cmake -DTIMEMORY_BUILD_EXAMPLES=ON -DTIMEMORY_BUILD_TOOLS=ON -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=ON ..
+cmake --build . --target ex_compiler_instrument
+```
+
+### Expected Example Output
+
+```console
+$ TIMEMORY_COMPILER_MAX_WIDTH=60 ./ex_compiler_instrument
 [12301]> timemory-compiler-instrument will close after 'main' returns
 [12301]> timemory-compiler-instrument: 47 results
 [wall]|0> Outputting 'timemory-compiler-instrumentation-output/wall.flamegraph.json'...

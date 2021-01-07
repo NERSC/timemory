@@ -12,6 +12,7 @@
    tools/timemory-jump/README
    tools/timemory-mpip/README
    tools/timemory-ncclp/README
+   tools/timemory-mallocp/README
    tools/timemory-ompt/README
    tools/timemory-compiler-instrument/README
    tools/kokkos-connector/README
@@ -36,6 +37,8 @@ This section covers the executables and libraries that are distributed as part o
         - Provide MPI profiling via GOTCHA
     - [timemory-ncclp](tools/timemory-ncclp/README.md)
         - Provide NCCL profiling via GOTCHA
+    - [timemory-mallocp](tools/timemory-mallocp/README.md)
+        - Records amount of memory allocated and freed on the CPU and GPU via GOTCHA wrappers around malloc, free, cudaMalloc, etc.
     - [timemory-ompt](tools/timemory-ompt/README.md)
         - Provide OpenMP profiling via OMPT (OpenMP Tools)
     - [timemory-compiler-instrument](tools/timemory-compiler-instrument/README.md)

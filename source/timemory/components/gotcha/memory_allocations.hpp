@@ -326,7 +326,7 @@ malloc_gotcha::tear_down()
 //
 #endif
 //
-/// \struct memory_allocations
+/// \struct tim::component::memory_allocations
 /// \brief This component wraps malloc, calloc, free, cudaMalloc, cudaFree via
 /// GOTCHA and tracks the number of bytes requested/freed in each call.
 /// This component is useful for detecting the locations where memory re-use

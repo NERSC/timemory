@@ -2,6 +2,27 @@
 
 Dynamic instrumentation and binary re-writing command-line tool.
 
+## Build Requirements
+
+timemory-run requires [DynInst](https://github.com/dyninst/dyninst), which must be externally installed. Dyninst has several 3rd-party library dependencies so it is highly recommended to use a package manager such as [spack](https://github.com/spack/spack) to install it. 
+
+### Dyninst Installation via Spack
+
+Quick start to installing [DynInst](https://github.com/dyninst/dyninst) via [spack](https://github.com/spack/spack):
+
+```console
+git clone https://github.com/spack/spack.git
+source ${PWD}/spack/share/spack/setup-env.sh
+spack compiler find
+spack external find
+spack install dyninst
+spack load -r dyninst
+```
+
+### CMake Option
+
+Once [DynInst](https://github.com/dyninst/dyninst) is installed, enable `-DTIMEMORY_BUILD_TOOLS=ON -DTIMEMORY_USE_DYNINST=ON` in CMake.
+
 ## Dynamic Instrumentation Modes
 
 There are two execution modes: (1) runtime-instrumentation and (2) binary rewriting. Runtime instrumentation

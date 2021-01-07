@@ -43,6 +43,13 @@ namespace tim
 {
 namespace component
 {
+/// \struct tim::component::trip_count
+/// \brief Records the number of invocations. This is the most lightweight metric
+/// available since it only increments an integer and never records any statistics.
+/// If dynamic instrumentation is used and the overhead is significant, it is recommended
+/// to set this as the only component (-d trip_count) and then use the regex exclude
+/// option (-E) to remove any non-critical function calls which have very high
+/// trip-counts.
 //
 struct trip_count : public base<trip_count>
 {

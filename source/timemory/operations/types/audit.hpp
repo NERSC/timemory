@@ -42,14 +42,14 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::audit
+/// \struct tim::operation::audit
 ///
 /// \brief The purpose of this operation class is for a component to provide some extra
 /// customization within a GOTCHA function. It allows a GOTCHA component to inspect
 /// the arguments and the return type of a wrapped function. To add support to a
 /// component, define `void audit(std::string, context, <Args...>)`. The first argument is
-/// the function name (possibly mangled), the second is either type \struct
-/// audit::incoming or \struct audit::outgoing, and the remaining arguments are the
+/// the function name (possibly mangled), the second is either type \ref
+/// tim::audit::incoming or \ref tim::audit::outgoing, and the remaining arguments are the
 /// corresponding types
 ///
 /// One such purpose may be to create a custom component that intercepts a malloc and

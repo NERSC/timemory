@@ -41,7 +41,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::print_storage
+/// \struct tim::operation::print_storage
 /// \brief Print the storage for a component
 //
 //--------------------------------------------------------------------------------------//
