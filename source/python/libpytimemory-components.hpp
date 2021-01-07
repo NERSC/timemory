@@ -94,17 +94,21 @@ get_enum(py::object _obj)
 {
     try
     {
-        std::string _sitr = _obj.cast<std::string>();
-        if(_sitr.length() > 0)
-            return tim::runtime::enumerate(_sitr);
+        auto _sitr = _obj.cast<std::string>();
+        // return native components end so that message isn't delivered
+        if(_sitr.length() == 0)
+            return TIMEMORY_NATIVE_COMPONENTS_END;
+        return tim::runtime::enumerate(_sitr);
     } catch(py::cast_error&)
     {}
 
     try
     {
         return _obj.cast<TIMEMORY_COMPONENT>();
-    } catch(py::cast_error&)
-    {}
+    } catch(py::cast_error& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
 
     return TIMEMORY_COMPONENTS_END;
 }
@@ -121,14 +125,34 @@ get_enum_set(py::list _args)
 
     for(auto itr : _args)
     {
-        TIMEMORY_COMPONENT _citr = get_enum(itr.cast<py::object>());
+        TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
+        try
+        {
+            _citr = get_enum(itr.cast<py::object>());
+        } catch(py::cast_error& e)
+        {
+            std::cerr << e.what() << std::endl;
+        }
 
         if(_citr != TIMEMORY_COMPONENTS_END)
             components.insert(_citr);
-        else
+        else if(_citr != TIMEMORY_NATIVE_COMPONENTS_END)
         {
-            PRINT_HERE("%s", "ignoring argument that failed casting to either "
-                             "'timemory.component' and string");
+            std::string obj_repr = "";
+            try
+            {
+                auto locals = py::dict("obj"_a = itr.cast<py::object>());
+                py::exec(R"(
+                     obj_repr = "'{}' [type: {}]".format(obj, type(obj).__name__)
+                     )",
+                         py::globals(), locals);
+                obj_repr = locals["obj_repr"].cast<std::string>();
+            } catch(py::cast_error&)
+            {}
+
+            PRINT_HERE("ignoring argument that failed casting to either "
+                       "'timemory.component' and string: %s",
+                       obj_repr.c_str());
         }
     }
     return components;

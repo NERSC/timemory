@@ -774,6 +774,32 @@ if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
         WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
 endif()
 
+# Tests recording the symbols of each compiled library
+find_program(NM_EXE NAMES nm)
+if(NM_EXE)
+    set(_COMPILED_LIBS
+        ${TIMEMORY_TOOL_LIBRARIES}
+        ${TIMEMORY_COMPILED_LIBRARIES}
+        ${TIMEMORY_INTERMEDIATE_LIBRARIES})
+    list(REMOVE_DUPLICATES _COMPILED_LIBS)
+    if(TARGET libpytimemory AND NOT "libpytimemory" IN_LIST _COMPILED_LIBS)
+        list(APPEND _COMPILED_LIBS "libpytimemory")
+    endif()
+    foreach(_LIB ${_COMPILED_LIBS})
+        if(NOT TARGET ${_LIB})
+            continue()
+        endif()
+        add_test(
+            NAME                nm-mangled-${_LIB}
+            COMMAND             ${NM_EXE} -g $<TARGET_FILE:${_LIB}>
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+        add_test(
+            NAME                nm-demangled-${_LIB}
+            COMMAND             ${NM_EXE} -g --demangle $<TARGET_FILE:${_LIB}>
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+    endforeach()
+endif()
+
 if(TIMEMORY_BUILD_GOOGLE_TEST)
     add_executable(dynamic_instrument_tests ${_EXCLUDE} instrumentation_tests.cpp)
     target_compile_definitions(dynamic_instrument_tests PRIVATE DISABLE_TIMEMORY)
