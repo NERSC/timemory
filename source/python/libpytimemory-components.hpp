@@ -84,6 +84,35 @@ try_cast_seq(FuncT&& f, ValT&& v)
 //
 using pyenum_set_t = std::set<TIMEMORY_COMPONENT>;
 //
+/// \fn TIMEMORY_COMPONENT get_enum(py::object args)
+/// \param[in] args String or component enumeration for component
+/// \param[out] component_enum Return TIMEMORY_COMPONENT enum
+///
+/// \brief Converts a python specification of component into a C++ enum type
+inline TIMEMORY_COMPONENT
+get_enum(py::object _obj)
+{
+    try
+    {
+        auto _sitr = _obj.cast<std::string>();
+        // return native components end so that message isn't delivered
+        if(_sitr.length() == 0)
+            return TIMEMORY_NATIVE_COMPONENTS_END;
+        return tim::runtime::enumerate(_sitr);
+    } catch(py::cast_error&)
+    {}
+
+    try
+    {
+        return _obj.cast<TIMEMORY_COMPONENT>();
+    } catch(py::cast_error& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+
+    return TIMEMORY_COMPONENTS_END;
+}
+//
 /// \fn auto get_enum_set(py::list args)
 /// \param[in] args Python list of strings or component enumerations
 /// \param[out] components Return a set of TIMEMORY_COMPONENT enums
@@ -96,34 +125,34 @@ get_enum_set(py::list _args)
 
     for(auto itr : _args)
     {
-        std::string        _sitr = "";
         TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
-
         try
         {
-            _sitr = itr.cast<std::string>();
-            if(_sitr.length() > 0)
-                _citr = tim::runtime::enumerate(_sitr);
-            else
-                continue;
-        } catch(py::cast_error&)
-        {}
-
-        if(_citr == TIMEMORY_COMPONENTS_END)
+            _citr = get_enum(itr.cast<py::object>());
+        } catch(py::cast_error& e)
         {
-            try
-            {
-                _citr = itr.cast<TIMEMORY_COMPONENT>();
-            } catch(py::cast_error&)
-            {}
+            std::cerr << e.what() << std::endl;
         }
 
         if(_citr != TIMEMORY_COMPONENTS_END)
             components.insert(_citr);
-        else
+        else if(_citr != TIMEMORY_NATIVE_COMPONENTS_END)
         {
-            PRINT_HERE("%s", "ignoring argument that failed casting to either "
-                             "'timemory.component' and string");
+            std::string obj_repr = "";
+            try
+            {
+                auto locals = py::dict("obj"_a = itr.cast<py::object>());
+                py::exec(R"(
+                     obj_repr = "'{}' [type: {}]".format(obj, type(obj).__name__)
+                     )",
+                         py::globals(), locals);
+                obj_repr = locals["obj_repr"].cast<std::string>();
+            } catch(py::cast_error&)
+            {}
+
+            PRINT_HERE("ignoring argument that failed casting to either "
+                       "'timemory.component' and string: %s",
+                       obj_repr.c_str());
         }
     }
     return components;

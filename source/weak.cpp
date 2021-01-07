@@ -157,6 +157,7 @@ enum TOOL_STUB_IDS
     mpip_idx = 0,
     ompt_idx,
     ncclp_idx,
+    mallocp_idx,
 };
 
 template <int Idx>
@@ -179,6 +180,7 @@ get_tool_stubs();
 TOOL_DLSYM_SPECIALIZAITON(mpip_idx, "mpip", "TIMEMORY_MPIP_LIBRARY")
 TOOL_DLSYM_SPECIALIZAITON(ompt_idx, "ompt", "TIMEMORY_OMPT_LIBRARY")
 TOOL_DLSYM_SPECIALIZAITON(ncclp_idx, "ncclp", "TIMEMORY_NCCLP_LIBRARY")
+TOOL_DLSYM_SPECIALIZAITON(mallocp_idx, "mallocp", "TIMEMORY_MALLOCP_LIBRARY")
 
 #define TOOL_INDEX(NAME) NAME##_idx
 #define TOOL_DLSYM(NAME) get_tool_stubs<TOOL_INDEX(NAME)>()
@@ -210,6 +212,7 @@ extern "C"
     TOOL_STUBS(mpip)
     TOOL_STUBS(ompt)
     TOOL_STUBS(ncclp)
+    TOOL_STUBS(mallocp)
     //
     //----------------------------------------------------------------------------------//
     //

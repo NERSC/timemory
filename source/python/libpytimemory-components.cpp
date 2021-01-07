@@ -736,6 +736,21 @@ components(py::module& _pymod, std::array<bool, N>& _boolgen,
     TIMEMORY_FOLD_EXPRESSION(pyinternal::generate<Idx>(_pymod, _boolgen, _keygen));
 }
 //
+//--------------------------------------------------------------------------------------//
+//
+template <size_t... Idx>
+static auto get_available(std::index_sequence<Idx...>)
+{
+    constexpr size_t    N = sizeof...(Idx);
+    std::array<bool, N> _avail_array;
+    _avail_array.fill(false);
+    TIMEMORY_FOLD_EXPRESSION(
+        _avail_array[Idx] =
+            tim::component::enumerator<Idx>::value &&
+            !tim::concepts::is_placeholder<tim::component::enumerator_t<Idx>>::value);
+    return _avail_array;
+}
+//
 }  // namespace pyinternal
 //
 //======================================================================================//
@@ -759,6 +774,15 @@ generate(py::module& _pymod)
 
     pyinternal::components(_pycomp, _boolgen, _keygen,
                            std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+
+    auto _is_available = [](py::object _obj) {
+        auto _enum_val = pytim::get_enum(_obj);
+        if(_enum_val >= TIMEMORY_COMPONENTS_END)
+            return false;
+        static auto _available = pyinternal::get_available(
+            tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+        return _available.at(static_cast<size_t>(_enum_val));
+    };
 
     auto _keygenerator = [_keygen, _boolgen](std::string _key) {
         DEBUG_PRINT_HERE("pycomponents::get_generator :: looking for %s", _key.c_str());
@@ -785,6 +809,9 @@ generate(py::module& _pymod)
         return _keygen[i].second;
     };
 
+    _pycomp.def("is_available", _is_available,
+                "Query whether a component type is available. Accepts string IDs and "
+                "enumerations, e.g. \"wall_clock\" or timemory.component.wall_clock");
     _pycomp.def("get_generator", _keygenerator,
                 "Get a functor for generating the component whose class name or string "
                 "IDs (see `timemory-avail -s`) match the given key");

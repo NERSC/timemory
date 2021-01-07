@@ -28,29 +28,11 @@
 #include "timemory/enum.h"
 #include "timemory/library.h"
 #include "timemory/timemory.hpp"
+#include "timemory/tools/timemory-mallocp.h"
+#include "timemory/tools/timemory-mpip.h"
+#include "timemory/tools/timemory-ncclp.h"
+#include "timemory/tools/timemory-ompt.h"
 #include "timemory/utility/socket.hpp"
-
-//======================================================================================//
-
-extern "C"
-{
-#if defined(TIMEMORY_USE_MPIP_LIBRARY)
-    extern uint64_t timemory_start_mpip();
-    extern uint64_t timemory_stop_mpip(uint64_t);
-#endif
-
-#if defined(TIMEMORY_USE_NCCLP_LIBRARY)
-    extern uint64_t timemory_start_ncclp();
-    extern uint64_t timemory_stop_ncclp(uint64_t);
-#endif
-
-#if defined(TIMEMORY_USE_OMPT_LIBRARY)
-    extern uint64_t                  timemory_start_ompt();
-    extern uint64_t                  timemory_stop_ompt(uint64_t);
-    extern ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_ver,
-                                                     const char*  run_ver);
-#endif
-}
 
 //======================================================================================//
 
@@ -524,69 +506,6 @@ PYBIND11_MODULE(libpytimemory, tim)
         tim::get_rusage_type() = RUSAGE_SELF;
 #endif
     };
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    auto _start_mpip = []() {
-#if defined(TIMEMORY_USE_MPIP_LIBRARY)
-        return timemory_start_mpip();
-#else
-        return 0;
-#endif
-    };
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    auto _stop_mpip = [](uint64_t id) {
-#if defined(TIMEMORY_USE_MPIP_LIBRARY)
-        return timemory_stop_mpip(id);
-#else
-        tim::consume_parameters(id);
-        return 0;
-#endif
-    };
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    auto _start_ompt = []() {
-#if defined(TIMEMORY_USE_OMPT_LIBRARY)
-        return timemory_start_ompt();
-#else
-        return 0;
-#endif
-    };
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    auto _stop_ompt = [](uint64_t id) {
-#if defined(TIMEMORY_USE_OMPT_LIBRARY)
-        return timemory_stop_ompt(id);
-#else
-        tim::consume_parameters(id);
-        return 0;
-#endif
-    };
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    auto _start_ncclp = []() {
-#if defined(TIMEMORY_USE_NCCLP_LIBRARY)
-        return timemory_start_ncclp();
-#else
-        return 0;
-#endif
-    };
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    auto _stop_ncclp = [](uint64_t id) {
-#if defined(TIMEMORY_USE_NCCLP_LIBRARY)
-        return timemory_stop_ncclp(id);
-#else
-        tim::consume_parameters(id);
-        return 0;
-#endif
-    };
     //----------------------------------------------------------------------------------//
     auto _get_argv = []() {
         py::module sys = py::module::import("sys");
@@ -816,18 +735,6 @@ PYBIND11_MODULE(libpytimemory, tim)
             "argument will return the size for all available types",
             py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
-    tim.def(
-        "init_mpip", _start_mpip,
-        "Activate MPIP profiling (function name deprecated -- use start_mpip instead)");
-    //----------------------------------------------------------------------------------//
-    tim.def(
-        "init_ompt", _start_ompt,
-        "Activate OMPT profiling (function name deprecated -- use start_ompt instead)");
-    //----------------------------------------------------------------------------------//
-    tim.def("start_mpip", _start_mpip, "Activate MPIP profiling");
-    //----------------------------------------------------------------------------------//
-    tim.def("stop_mpip", _stop_mpip, "Deactivate MPIP profiling", py::arg("id"));
-    //----------------------------------------------------------------------------------//
     tim.def("mpi_init", _init_mpi, "Initialize MPI");
     //----------------------------------------------------------------------------------//
     tim.def("mpi_finalize", _finalize_mpi, "Finalize MPI");
@@ -840,14 +747,31 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("dmp_finalize", _finalize_dmp, "Finalize MPI and/or UPC++");
     //----------------------------------------------------------------------------------//
-    tim.def("start_ompt", _start_ompt, "Activate OMPT (OpenMP tools) profiling");
+    tim.def("init_mpip", &timemory_start_mpip,
+            "Activate MPIP profiling (deprecated -- use start_mpip instead)");
     //----------------------------------------------------------------------------------//
-    tim.def("stop_ompt", _stop_ompt, "Deactivate OMPT (OpenMP tools)  profiling",
+    tim.def("init_ompt", &timemory_start_ompt,
+            "Activate OMPT profiling (deprecated -- use start_ompt instead)");
+    //----------------------------------------------------------------------------------//
+    tim.def("start_mpip", &timemory_start_mpip, "Activate MPIP profiling");
+    //----------------------------------------------------------------------------------//
+    tim.def("stop_mpip", &timemory_stop_mpip, "Deactivate MPIP profiling", py::arg("id"));
+    //----------------------------------------------------------------------------------//
+    tim.def("start_ompt", &timemory_start_ompt, "Activate OMPT (OpenMP tools) profiling");
+    //----------------------------------------------------------------------------------//
+    tim.def("stop_ompt", &timemory_stop_ompt, "Deactivate OMPT (OpenMP tools)  profiling",
             py::arg("id"));
     //----------------------------------------------------------------------------------//
-    tim.def("start_ncclp", _start_ncclp, "Activate NCCL profiling");
+    tim.def("start_ncclp", &timemory_start_ncclp, "Activate NCCL profiling");
     //----------------------------------------------------------------------------------//
-    tim.def("stop_ncclp", _stop_ncclp, "Deactivate NCCL profiling", py::arg("id"));
+    tim.def("stop_ncclp", &timemory_stop_ncclp, "Deactivate NCCL profiling",
+            py::arg("id"));
+    //----------------------------------------------------------------------------------//
+    tim.def("start_mallocp", &timemory_start_mallocp,
+            "Activate Memory Allocation profiling");
+    //----------------------------------------------------------------------------------//
+    tim.def("stop_mallocp", &timemory_stop_mallocp,
+            "Deactivate Memory Allocation profiling", py::arg("id"));
 
     //==================================================================================//
     //

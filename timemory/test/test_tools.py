@@ -28,7 +28,7 @@ from __future__ import absolute_import
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
-__credits__ = ["Muhammad Haseeb"]
+__credits__ = ["Jonathan Madsen"]
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
 __maintainer__ = "Jonathan Madsen"
@@ -50,23 +50,11 @@ import threading
 import inspect
 import numpy as np
 import timemory as tim
-from timemory import component as comp
-from timemory.profiler import profile, config
-from timemory.bundle import auto_timer, auto_tuple, marker
-
-
-# --------------------------- helper functions ----------------------------------------- #
-# compute fibonacci
-def fibonacci(n, with_arg=True):
-    mode = "full" if not with_arg else "defer"
-    with marker(["wall_clock", "peak_rss", "current_peak_rss"],
-                "fib({})".format(n) if with_arg else "", mode=mode):
-        return n if n < 2 else (fibonacci(n - 1, with_arg) + fibonacci(n - 2, with_arg))
 
 
 # --------------------------- Hatchet Tests set ---------------------------------------- #
 # Hatchet tests class
-class TimemoryHatchetTests(unittest.TestCase):
+class TimemoryToolsTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
@@ -82,11 +70,8 @@ class TimemoryHatchetTests(unittest.TestCase):
         tim.settings.dart_output = True
         tim.settings.dart_count = 1
         tim.settings.banner = False
+        tim.settings.memory_units = "KiB"
         tim.settings.parse()
-
-        # generate data
-        fibonacci(10, False)
-        fibonacci(8)
 
     def setUp(self):
         pass
@@ -100,41 +85,51 @@ class TimemoryHatchetTests(unittest.TestCase):
 
     # ---------------------------------------------------------------------------------- #
     # test handling wall-clock data from hatchet
-    def test_hatchet_1D_data(self):
-        """hatchet_1D_data"""
+    def test_mallocp(self):
+        """mallocp"""
 
         try:
-            import hatchet as ht
+            import numpy as np
+            import gc
         except ImportError:
             return
 
-        data = tim.get(hierarchy=True, components=["wall_clock"])
-        gf = ht.GraphFrame.from_timemory(data)
+        from timemory.component import MallocGotcha
 
-        print(gf.dataframe)
-        print(gf.tree("sum"))
-        print(gf.tree("sum.inc"))
-
-    # ---------------------------------------------------------------------------------- #
-    # test handling multi-dimensional data from hatchet
-    def test_hatchet_2D_data(self):
-        """hatchet_2d_data"""
-
-        try:
-            import hatchet as ht
-        except ImportError:
+        if not tim.component.is_available("malloc_gotcha"):
             return
 
-        from timemory.component import CurrentPeakRss
-        data = tim.get(hierarchy=True, components=[CurrentPeakRss.id()])
-        gf = ht.GraphFrame.from_timemory(data)
+        _idx = tim.start_mallocp()
+        _arr = np.ones([1000, 1000], dtype=np.float64)
+        _sum = np.sum(_arr)
+        del _arr
+        gc.collect()
+        _idx = tim.stop_mallocp(_idx)
 
-        print(gf.dataframe)
-        print(gf.tree("sum.start-peak-rss"))
-        print(gf.tree("sum.stop-peak-rss.inc"))
+        self.assertTrue(_sum == 1000 * 1000)
+        self.assertTrue(_idx == 0)
 
-        self.assertTrue(gf.tree("sum.start-peak-rss.inc") is not None)
-        self.assertTrue(gf.tree("sum.stop-peak-rss") is not None)
+        _data = tim.get(components=[MallocGotcha.id()])
+        _alloc = 0.0
+        _dealloc = 0.0
+
+        print("{}\n".format(json.dumps(_data, indent=4)))
+
+        _data = _data["timemory"]["malloc_gotcha"]
+        unit_v = _data["unit_value"]
+        unit_r = _data["unit_repr"]
+        for itr in _data["ranks"][0]["graph"]:
+            if "malloc" in itr["prefix"] or "calloc" in itr["prefix"]:
+                _alloc += itr["entry"]["accum"]
+            if "free" in itr["prefix"]:
+                _dealloc += itr["entry"]["accum"]
+
+        _minsz = 1000 * 1000 * 64 / unit_v
+        print(f"Minimum size     : {_minsz} {unit_r}")
+        print(f"Allocated size   : {_alloc} {unit_r}")
+        print(f"Deallocated size : {_alloc} {unit_r}")
+
+        self.assertTrue(_alloc > _minsz)
 
 
 # ----------------------------- main test runner ---------------------------------------- #

@@ -134,6 +134,7 @@ if(TIMEMORY_BUILD_PYTHON)
         timemory::timemory-mpip-library
         timemory::timemory-ompt-library
         timemory::timemory-ncclp-library
+        timemory::timemory-mallocp-library
         timemory::timemory-python-compile-options
         ${_visibility})
 
