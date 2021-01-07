@@ -41,7 +41,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::mark
+/// \struct tim::operation::mark
 /// \brief This operation class is used for marking some event (usually in some external
 /// profiler)
 ///
@@ -85,7 +85,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::mark_begin
+/// \struct tim::operation::mark_begin
 /// \brief This operation class is used for asynchronous routines such as \ref cuda_event
 /// and \ref nvtx_marker which are passed cudaStream_t instances
 ///
@@ -127,7 +127,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::mark_end
+/// \struct tim::operation::mark_end
 /// \brief This operation class is used for asynchronous routines such as \ref cuda_event
 /// and \ref nvtx_marker which are passed cudaStream_t instances
 ///

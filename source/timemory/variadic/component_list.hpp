@@ -54,8 +54,8 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
-/// \class tim::component_list<Types...>
-/// \tparam Types... Specification of the component types to bundle together
+/// \class tim::component_list
+/// \tparam Types Specification of the component types to bundle together
 ///
 /// \brief This is a variadic component wrapper where all components are optional
 /// at runtime. Accept unlimited number of parameters. The default behavior is

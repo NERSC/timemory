@@ -46,11 +46,6 @@
 //
 //======================================================================================//
 
-namespace priv
-{
-using apply = tim::apply<std::string>;
-}
-
 namespace tim
 {
 // e.g. tim::string::join(...)

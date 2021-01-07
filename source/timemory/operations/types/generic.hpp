@@ -43,7 +43,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::generic_operator
+/// \struct tim::operation::generic_operator
 /// \brief This operation class is similar to pointer_operator but can handle non-pointer
 /// types
 ///

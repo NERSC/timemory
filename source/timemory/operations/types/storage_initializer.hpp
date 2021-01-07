@@ -40,7 +40,7 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct storage_initializer
+/// \struct tim::storage_initializer
 /// \brief This operation class is used for generic storage initalization
 ///
 //

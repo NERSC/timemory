@@ -34,7 +34,7 @@
 
 namespace tim
 {
-/// \struct basic_tree
+/// \struct tim::basic_tree
 /// \brief Basic hierarchical tree implementation. Expects population from
 /// \ref tim::graph
 template <typename Tp>

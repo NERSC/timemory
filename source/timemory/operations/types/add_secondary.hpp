@@ -217,7 +217,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::add_secondary
+/// \struct tim::operation::add_secondary
 /// \brief
 /// component contains secondary data resembling the original data
 /// but should be another node entry in the graph. These types

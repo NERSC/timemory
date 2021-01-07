@@ -38,7 +38,6 @@ were not available when timemory was installed.
 | `timemory::timemory-arch` | Adds architecture-specific compiler flags |
 | `timemory::timemory-bounds-sanitizer` | Adds compiler flags to enable bounds sanitizer (-fsanitize=bounds) |
 | `timemory::timemory-caliper` | Enables Caliper support |
-| `timemory::timemory-cereal-xml` | Enables XML serialization output |
 | `timemory::timemory-compile-debuginfo` | Attempts to set best flags for more expressive profiling information in debug or optimized binaries |
 | `timemory::timemory-compile-extra` | Extra optimization flags |
 | `timemory::timemory-compile-options` | Adds the standard set of compiler flags used by timemory |
@@ -72,6 +71,7 @@ were not available when timemory was installed.
 | `timemory::timemory-leak-sanitizer` | Adds compiler flags to enable leak sanitizer (-fsanitize=leak) |
 | `timemory::timemory-likwid` | Enables LIKWID support |
 | `timemory::timemory-lto` | Adds link-time-optimization flags |
+| `timemory::timemory-mallocp-library` | Provides MALLOCP library for tracking memory allocations |
 | `timemory::timemory-memory-sanitizer` | Adds compiler flags to enable memory sanitizer (-fsanitize=memory) |
 | `timemory::timemory-mpi` | Enables MPI support |
 | `timemory::timemory-mpip-library` | Provides MPIP library for MPI performance analysis |
@@ -99,6 +99,7 @@ were not available when timemory was installed.
 | `timemory::timemory-upcxx` | Enables UPC++ support |
 | `timemory::timemory-vector` | Adds pre-processor definition of the max vectorization width in bytes |
 | `timemory::timemory-vtune` | Enables VTune support (ittnotify) |
+| `timemory::timemory-xml` | Enables XML serialization support |
 | `timemory::timemory-xray` | Adds compiler flags to enable xray-instrumentation (Clang only) |
 
 ### `find_package` Approach with COMPONENTS
@@ -174,4 +175,140 @@ of the targets which the library depends on.
 
 ```console
 g++ $(TIMEMORY_PAPI_DEFS) $(TIMEMORY_PAPI_INCLUDE) $(TIMEMORY_PAPI_CPPFLAGS) foo.cpp -o foo $(TIMEMORY_PAPI_LIBS)
+```
+
+## Compilation with the Template Interface
+
+It has been noted elsewhere that direct use of the template interface can introduce
+long compile-times. However, this interface is extremely powerful and one
+might be tempted to use it directly.
+The 2011 standard of C++ introduced the concept of an `extern template`
+and it is highly recommended to use this feature if the template interface
+is used. In general, a project using the template interface should have
+a header which declares the component bundle as an `extern template` at the end.
+Here is example of what this might look like:
+
+```cpp
+#include <timemory/variadic/component_bundle.hpp>
+#include <timemory/variadic/auto_bundle.hpp>
+#include <timemory/components/types.hpp>
+#include <timemory/macros.hpp>
+
+// create an API for your project
+TIMEMORY_DEFINE_API(FooBenchmarking)
+
+#if defined(DISABLE_BENCHMARKING)
+// this will elimiate all components from the component_bundle or auto_bundle
+// with 'api::FooBenchmarking' as the first template parameter
+// e.g. bundle<Foo, ...> turns into bundle<Foo> (no components)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, api::FooBenchmarking, false_type)
+#endif
+
+// this structure will:
+//  - Always record:
+//      - wall-clock timer
+//      - cpu-clock timer
+//      - cpu utilization
+//      - Any tools which downstream users inject into the user_global_bundle
+//          - E.g. 'user_global_bundle::configure<peak_rss>()'
+//  - Optionally enable activating (at runtime):
+//      - PAPI hardware counters
+//      - GPU kernel tracing
+//      - GPU hardware counters
+//      - The '*' at the end is what designates the component as optional
+#if !defined(FOO_TOOLSET)
+#define FOO_TOOLSET                             \
+    tim::component_bundle<                      \
+        tim::api::FooBenchmarking,              \
+        tim::component::wall_clock,             \
+        tim::component::cpu_clock,              \
+        tim::component::cpu_util,               \
+        tim::component::user_global_bundle,     \
+        tim::component::papi_vector*,           \
+        tim::component::cupti_activity*,        \
+        tim::component::cupti_counters*>
+#endif
+
+namespace foo
+{
+namespace benchmark
+{
+using bundle_t = FOO_TOOLSET;
+using auto_bundle_t = typename FOO_TOOLSET::auto_type;
+}
+}
+
+//  THIS WILL MAKE SURE THE TEMPLATE NEVER GETS INSTANTIATED
+//  LEADING TO SIGNIFICANTLY REDUCED COMPILE TIMES
+#if !defined(FOO_BENCHMARKING_SOURCE)
+extern template class FOO_TOOLSET;
+#endif
+```
+
+And then in the __*one*__ source file:
+
+```cpp
+// avoid the extern template declaration
+// make sure this is defined before inclusing the header
+#define FOO_BENCHMARKING_SOURCE
+
+// include the header with the code from the previous block
+#include "/path/to/header/file"
+
+// pull in all the definitions required to instantiate the template
+#include <timemory/timemory.hpp>
+
+// provide an instantiation
+template class FOO_TOOLSET;
+```
+
+A similar scheme to the above is used extensively internally by timemory --
+the source code contains many _almost_ empty `.cpp` files which contain
+only a single line of code: `#include "timemory/<some-path>/extern.hpp`.
+These source files are part of the scheme for pre-compiling many of the expensive
+template instantiations (the templated storage class, in particular), not junk
+files that were accidentally committed. In this
+scheme, when the `.cpp` file is compiled a macro is used to transform the
+statement in the header into a template instantiation but when included
+from other headers, the macro transforms the statement into an extern
+template declaration. In general, this is how it is implemented:
+
+```cmake
+#
+# source/timemory/components/foo/CMakeLists.txt
+#
+add_library(foo SHARED <OTHER_FILES> extern.cpp)
+target_compile_definitions(foo
+    #  extern.cpp will be compiled with -DTIMEMORY_FOO_SOURCE
+    PRIVATE     TIMEMORY_FOO_SOURCE
+    #  When the "foo" target part of a 'target_link_libraries(...)'
+    #  command by another target downstream, CMake will add
+    #  -DTIMEMORY_USE_FOO_EXTERN to the compile definitions
+    INTERFACE   TIMEMORY_USE_FOO_EXTERN)
+````
+
+```cpp
+//
+// source/timemory/components/foo/extern.hpp
+//
+#if defined(TIMEMORY_FOO_SOURCE)
+#   define FOO_EXTERN_TEMPLATE(...) template __VA_ARGS__;
+#elif defined(TIMEMORY_USE_FOO_EXTERN)
+#   define FOO_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
+#else
+#   define FOO_EXTERN_TEMPLATE(...)
+#endif
+
+// in header-only mode, the macro makes the code disappear
+FOO_EXTERN_TEMPLATE(tim::component::base<Foo>)
+FOO_EXTERN_TEMPLATE(tim::operation::start<Foo>)
+FOO_EXTERN_TEMPLATE(tim::operation::stop<Foo>)
+FOO_EXTERN_TEMPLATE(tim::storage<Foo>)
+```
+
+```cpp
+//
+// source/timemory/components/foo/extern.cpp
+//
+#include "timemory/components/foo/extern.hpp"
 ```

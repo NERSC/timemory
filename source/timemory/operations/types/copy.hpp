@@ -41,7 +41,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::copy
+/// \struct tim::operation::copy
 /// \brief This operation class is used for copying the object generically
 ///
 //

@@ -51,9 +51,9 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
-/// \class component_hybrid<CompT, CompL>
-/// \tparam CompT a component_tuple specification
-/// \tparam CompL a component_list specification
+/// \class tim::component_hybrid
+/// \tparam CompTuple a component_tuple specification
+/// \tparam CompList a component_list specification
 ///
 ///  \deprecated See \ref tim::component_bundle
 template <typename CompTuple, typename CompList>

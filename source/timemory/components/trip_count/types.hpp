@@ -34,13 +34,6 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-/// \struct trip_count
-/// \brief Records the number of invocations. This is the most lightweight metric
-/// available since it only increments an integer and never records any statistics.
-/// If dynamic instrumentation is used and the overhead is significant, it is recommended
-/// to set this as the only component (-d trip_count) and then use the regex exclude
-/// option (-E) to remove any non-critical function calls which have very high
-/// trip-counts.
 TIMEMORY_DECLARE_COMPONENT(trip_count)
 //
 TIMEMORY_SET_COMPONENT_API(component::trip_count, project::timemory, os::agnostic)

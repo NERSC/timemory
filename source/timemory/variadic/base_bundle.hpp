@@ -46,7 +46,7 @@
 namespace tim
 {
 //
-/// \class base_bundle
+/// \class tim::base_bundle<typename Tag, typename... Types>
 /// \brief This is the generic structure for a variadic bundle of components
 ///
 template <typename Tag, typename... Types>

@@ -265,7 +265,7 @@ struct is_initializing_container
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct argument_vector
+/// \struct tim::argparse::argument_vector
 /// \brief This class exists to simplify creating argument arrays compatible with execv*
 /// routines and MPI_Comm_spawn/MPI_Comm_spawn_multiple
 ///

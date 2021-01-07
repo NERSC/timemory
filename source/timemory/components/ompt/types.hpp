@@ -142,19 +142,19 @@ namespace openmp
 //
 namespace mode
 {
-/// \struct openmp::mode::begin_callback
+/// \struct tim::openmp::mode::begin_callback
 /// \brief This is the beginning of a paired callback
 struct begin_callback
 {};
-/// \struct openmp::mode::end_callback
+/// \struct tim::openmp::mode::end_callback
 /// \brief This is the end of a paired callback
 struct end_callback
 {};
-/// \struct openmp::mode::store_callback
+/// \struct tim::openmp::mode::store_callback
 /// \brief This is a callback that just stores some data
 struct store_callback
 {};
-/// \struct openmp::mode::endpoint_callback
+/// \struct tim::openmp::mode::endpoint_callback
 /// \brief This is a callback whose first argument designates an endpoint
 struct endpoint_callback
 {};
@@ -162,7 +162,7 @@ struct endpoint_callback
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct openmp::context_handler
+/// \struct tim::openmp::context_handler
 /// \brief this struct provides the methods through which a unique identifier and
 /// a label are generated for each OMPT callback.
 ///
@@ -171,7 +171,7 @@ struct context_handler;
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct openmp::callback_connector
+/// \struct tim::openmp::callback_connector
 /// \brief this struct provides the routines through which timemory components
 /// are applied to the callbacks
 ///
@@ -287,7 +287,7 @@ user_context_callback(Handler& handle, mode::endpoint_callback, Arg arg,
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct openmp::ompt_wrapper
+/// \struct tim::openmp::ompt_wrapper
 /// \brief this struct provides the static callback function for OMPT which creates
 /// a temporary instance of the connector, e.g. \ref openmp::callback_connector,
 /// whose constructor creates a temporary instance of the context handler

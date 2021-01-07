@@ -117,6 +117,7 @@ def copy_doxy_docs():
         "timemory-mpip",
         "timemory-ompt",
         "timemory-ncclp",
+        "timemory-mallocp",
         "timemory-avail",
         "timemory-jump",
         "timemory-stubs",
@@ -148,26 +149,28 @@ if develop is None:
     clean_doxy_docs()
 
 # remove known issues
-# sp.run(["sed", "-i", "'s/ TIMEMORY_VISIBLE//g'", "*"], shell=True)
-os.chdir(_xmldir)
-for file in glob.glob("*.xml"):
-    for line in fileinput.input(file, inplace=True):
-        for key in [
-            " TIMEMORY_VISIBLE",
-            "TIMEMORY_NEVER_INSTRUMENT"
-            "TIMEMORY_ALWAYS_INLINE",
-            "TIMEMORY_NOINLINE"
-            "TIMEMORY_INLINE"
-            "TIMEMORY_HOT",
-            "TIMEMORY_DLL ",
-            "TIMEMORY_CDLL ",
-        ]:
-            if key in line:
-                line = line.replace(key, "")
-        if "TIMEMORY_VISIBILITY" in line:
-            line = re.sub(r"TIMEMORY_VISIBILITY\((\S+)\)", "", line)
-        print(line, end="")
-os.chdir(_docdir)
+if False:
+    os.chdir(_xmldir)
+    for file in glob.glob("*.xml"):
+        print(f"cleaning macros from {file}...")
+        for line in fileinput.input(file, inplace=True):
+            for key in [
+                " TIMEMORY_VISIBLE",
+                "TIMEMORY_NEVER_INSTRUMENT"
+                "TIMEMORY_ALWAYS_INLINE",
+                "TIMEMORY_HOT_INLINE"
+                "TIMEMORY_NOINLINE"
+                "TIMEMORY_INLINE"
+                "TIMEMORY_HOT",
+                "TIMEMORY_DLL ",
+                "TIMEMORY_CDLL ",
+            ]:
+                if key in line:
+                    line = line.replace(key, "")
+            if "TIMEMORY_VISIBILITY" in line:
+                line = re.sub(r"TIMEMORY_VISIBILITY\((\S+)\)", "", line)
+            print(line, end="")
+    os.chdir(_docdir)
 
 
 # -- General configuration ---------------------------------------------------

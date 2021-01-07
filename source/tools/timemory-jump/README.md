@@ -83,14 +83,13 @@ Flags:               fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cm
 /home/mhaseeb/repos/spack/opt/spack/linux-ubuntu18.04-broadwell/gcc-8.4.0/python-3.7.7-2dybrjceqs3qc4k7ci56t56bvzb4csxc/bin/python: Error while finding module specification for 'timemory.plotting' (ModuleNotFoundError: No module named 'timemory')
 [timemory]> Command: '/home/mhaseeb/repos/spack/opt/spack/linux-ubuntu18.04-broadwell/gcc-8.4.0/python-3.7.7-2dybrjceqs3qc4k7ci56t56bvzb4csxc/bin/python -m timemory.plotting -f timemory-lscpu.inst-output/wall.json -t "wall " -o timemory-lscpu.inst-output' returned a non-zero exit code: 256... plot/definition.hpp:77 plot generation failed
 
-|----------------------------------------------------------------------------------------------------|
-| REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                                                             |
-| ---------------------------------------------------------------------------------------------------- |
-| LABEL                                                                                                | COUNT    | DEPTH    | METRIC   | UNITS    | SUM      | MEAN     | MIN      | MAX      | STDDEV   | % SELF   |
-| ----------                                                                                           | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
-| >>> main                                                                                             | 1        | 0        | wall     | sec      | 0.026    | 0.026    | 0.026    | 0.026    | 0.000    | 100.0    |
-| ---------------------------------------------------------------------------------------------------- |
-
+|------------------------------------------------------------------------------------------------------------------------|
+|                                            REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                                    |
+| ---------------------------------------------------------------------------------------------------------------------- |
+|   LABEL  | COUNT    | DEPTH    | METRIC   | UNITS    | SUM      | MEAN     | MIN      | MAX      | STDDEV   | % SELF   |
+| ---------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
+| >>> main | 1        | 0        | wall     | sec      | 0.026    | 0.026    | 0.026    | 0.026    | 0.000    | 100.0    |
+|------------------------------------------------------------------------------------------------------------------------|
 
 [metadata::manager::finalize]> Outputting 'timemory-lscpu.inst-output/metadata.json'...
 ```

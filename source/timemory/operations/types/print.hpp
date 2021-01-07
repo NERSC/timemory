@@ -49,7 +49,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct operation::print
+/// \struct tim::operation::print
 /// \brief print routines for individual components
 //
 //--------------------------------------------------------------------------------------//

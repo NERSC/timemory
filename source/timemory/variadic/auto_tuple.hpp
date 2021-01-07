@@ -44,8 +44,8 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-/// \class tim::auto_tuple<Types...>
-/// \tparam Types... Specification of the component types to bundle together
+/// \class tim::auto_tuple
+/// \tparam Types Specification of the component types to bundle together
 ///
 /// \brief This is a variadic component wrapper where all components are allocated
 /// on the stack and cannot be disabled at runtime. This bundler has the lowest

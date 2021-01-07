@@ -51,7 +51,7 @@ namespace component
 //          CUPTI activity tracing component (high-precisin kernel timers)
 //
 //--------------------------------------------------------------------------------------//
-/// \struct cupti_activity
+/// \struct tim::component::cupti_activity
 /// \brief CUPTI activity tracing component for high-precision kernel timing. For
 /// low-precision kernel timing, use \ref tim::component::cuda_event component.
 ///

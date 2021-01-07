@@ -44,8 +44,8 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-/// \class tim::auto_list<Types...>
-/// \tparam Types... Specification of the component types to bundle together
+/// \class tim::auto_list
+/// \tparam Types Specification of the component types to bundle together
 ///
 /// \brief This is a variadic component wrapper where all components are optional
 /// at runtime. Accept unlimited number of parameters. The constructor starts the
