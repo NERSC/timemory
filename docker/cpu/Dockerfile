@@ -13,7 +13,6 @@ RUN mkdir /opt/environment \
     &&   echo "  specs:" \
     &&   echo "  - papi" \
     &&   echo "  - mpich" \
-    &&   echo "  - upcxx" \
     &&   echo "  - gotcha" \
     &&   echo "  - dyninst" \
     &&   echo "  - caliper~papi" \

@@ -19,7 +19,6 @@ RUN mkdir /opt/environment \
     &&   echo "  - nccl cuda_arch=${CUDA_ARCH}" \
     &&   echo "  - papi" \
     &&   echo "  - mpich" \
-    &&   echo "  - upcxx" \
     &&   echo "  - gotcha" \
     &&   echo "  - dyninst" \
     &&   echo "  - caliper~papi" \
