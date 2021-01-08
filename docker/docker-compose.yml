@@ -7,58 +7,62 @@ version: "3.3"
 
 services:
   #--------------------------------------------------------------------------#
-  # timemory development container w/ CUDA 10.0
+  # timemory development container for CPU
   #
-  timemory-dev-10-0:
-    image: nersc/timemory:cuda-10.0
+  timemory-cpu-dev:
+    image: nersc/timemory:dev-cpu
     stdin_open: true
     tty: true
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ./cpu
+      dockerfile: Dockerfile.dev
       args:
-        BASE_IMG: "nvidia/cuda"
-        BASE_TAG: "10.0-devel-ubuntu18.04"
         COMPILER_TYPE: "gcc"
-        GCC_VERSION: "7"
-        CLANG_VERSION: "9"
-        REQUIRE_CUDA_VERSION: "10.0"
-        ENABLE_DISPLAY: "1"
+        GCC_VERSION: "9"
+        CLANG_VERSION: "11"
 
   #--------------------------------------------------------------------------#
-  # timemory development container w/ CUDA 10.1
+  # timemory development container for GPU
   #
-  timemory-dev-10-1:
-    image: nersc/timemory:cuda-10.1
+  timemory-gpu-dev:
+    image: nersc/timemory:dev-gpu
     stdin_open: true
     tty: true
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ./gpu
+      dockerfile: Dockerfile.dev
       args:
-        BASE_IMG: "nvidia/cuda"
-        BASE_TAG: "10.1-devel-ubuntu18.04"
         COMPILER_TYPE: "gcc"
         GCC_VERSION: "8"
-        CLANG_VERSION: "9"
-        REQUIRE_CUDA_VERSION: "10.1"
-        ENABLE_DISPLAY: "1"
+        CLANG_VERSION: "11"
+        CUDA_ARCH: "70"
 
   #--------------------------------------------------------------------------#
-  # timemory development container w/ CUDA 10.2
+  # timemory release container for CPU
   #
-  timemory-latest:
-    image: nersc/timemory:latest
+  timemory-cpu:
+    image: nersc/timemory:cpu
     stdin_open: true
     tty: true
     build:
-      context: .
+      context: ./cpu
       dockerfile: Dockerfile
       args:
-        BASE_IMG: "nvidia/cuda"
-        BASE_TAG: "10.2-devel-ubuntu18.04"
-        COMPILER_TYPE: "gcc"
-        GCC_VERSION: "8"
-        CLANG_VERSION: "9"
-        REQUIRE_CUDA_VERSION: "10.1"
-        ENABLE_DISPLAY: "1"
+        COMPILER_SPEC: "gcc"
+        PYTHON_VERSION: "3.7"
+
+  #--------------------------------------------------------------------------#
+  # timemory release container for GPU
+  #
+  timemory-gpu:
+    image: nersc/timemory:gpu
+    stdin_open: true
+    tty: true
+    build:
+      context: ./gpu
+      dockerfile: Dockerfile
+      args:
+        COMPILER_SPEC: "gcc"
+        PYTHON_VERSION: "3.7"
+        CUDA_ARCH: "70"
+        CUDA_ARCH_NAME: "volta"

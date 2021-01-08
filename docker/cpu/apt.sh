@@ -8,7 +8,7 @@ run-verbose()
 }
 
 # enable manpages to be installed
-sed -i 's/path-exclude/# path-exclude/g' /etc/dpkg/dpkg.cfg.d/excludes
+# sed -i 's/path-exclude/# path-exclude/g' /etc/dpkg/dpkg.cfg.d/excludes
 DISTRIB_CODENAME=$(cat /etc/lsb-release | grep DISTRIB_CODENAME | awk -F '=' '{print $NF}')
 
 #-----------------------------------------------------------------------------#
@@ -36,6 +36,9 @@ deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENA
 # 10
 deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-10 main
 deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-10 main
+# 11
+deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-11 main
+deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-11 main
 # dev
 deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME} main
 EOF
@@ -49,7 +52,7 @@ run-verbose apt-get dist-upgrade -y
 #
 #-----------------------------------------------------------------------------#
 
-run-verbose apt-get install -y build-essential cmake git-core ssed bash-completion
+run-verbose apt-get install -y build-essential git-core ssed bash-completion gdb
 
 #-----------------------------------------------------------------------------#
 #
@@ -59,7 +62,7 @@ run-verbose apt-get install -y build-essential cmake git-core ssed bash-completi
 
 # install compilers
 run-verbose apt-get -y install {gcc,g++,gfortran}-{7,8,${GCC_VERSION}} gcc-{7,8,${GCC_VERSION}}-multilib
-run-verbose apt-get -y install clang-{8,9,10,11,${CLANG_VERSION}} clang-{tidy,tools,format}-{8,9,10,11,${CLANG_VERSION}} libc++-dev libc++abi-dev
+run-verbose apt-get -y install clang-{7,8,9,10,11,${CLANG_VERSION}} clang-{tidy,tools,format}-{6.0,7,8,9,10,11,${CLANG_VERSION}} libc++-dev libc++abi-dev
 
 DISPLAY_PACKAGES="xserver-xorg freeglut3-dev libx11-dev libx11-xcb-dev libxpm-dev libxft-dev libxmu-dev libxv-dev libxrandr-dev \
     libglew-dev libftgl-dev libxkbcommon-x11-dev libxrender-dev libxxf86vm-dev libxinerama-dev qt5-default \
@@ -82,10 +85,7 @@ fi
 #
 #-----------------------------------------------------------------------------#
 
-run-verbose apt-get install -y \
-    libxerces-c-dev libexpat1-dev libhdf5-dev libhdf5-mpich-dev libmpich-dev mpich \
-    python python-dev ninja-build clang-tidy clang-format environment-modules tcl \
-    manpages manpages-dev cppman manpages-posix manpages-posix-dev man-db
+run-verbose apt-get install -y cmake ninja-build clang-tidy clang-format
 
 if [ "${ENABLE_DISPLAY}" -gt 0 ]; then
     run-verbose apt-get install -y ${DISPLAY_PACKAGES}
@@ -177,13 +177,13 @@ run-verbose rm -rf /var/lib/apt/lists/*
 #-----------------------------------------------------------------------------#
 #   CONDA
 #-----------------------------------------------------------------------------#
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-bash miniconda.sh -b -p /opt/conda
-export PATH="/opt/conda/bin:${PATH}"
-conda config --set always_yes yes --set changeps1 yes
-conda update -c defaults -n base conda
-conda install -n base -c defaults -c conda-forge python=3.6 pyctest cmake scikit-build numpy matplotlib pillow ipykernel jupyter
-source activate
-python -m ipykernel install --name base --display-name base
-conda clean -a -y
-conda config --set always_yes no
+# wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+# bash miniconda.sh -b -p /opt/conda
+# export PATH="/opt/conda/bin:${PATH}"
+# conda config --set always_yes yes --set changeps1 yes
+# conda update -c defaults -n base conda
+# conda install -n base -c defaults -c conda-forge python=3.6 pyctest cmake scikit-build numpy matplotlib pillow ipykernel jupyter
+# source activate
+# python -m ipykernel install --name base --display-name base
+# conda clean -a -y
+# conda config --set always_yes no
