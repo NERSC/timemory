@@ -739,7 +739,8 @@ components(py::module& _pymod, std::array<bool, N>& _boolgen,
 //--------------------------------------------------------------------------------------//
 //
 template <size_t... Idx>
-static auto get_available(std::index_sequence<Idx...>)
+static auto
+get_available(std::index_sequence<Idx...>)
 {
     constexpr size_t    N = sizeof...(Idx);
     std::array<bool, N> _avail_array;
