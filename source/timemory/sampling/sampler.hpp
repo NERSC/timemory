@@ -155,7 +155,7 @@ using fixed_sig_t = typename fixed_sig<Ids...>::type;
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 struct sampler<CompT<Types...>, N, SigIds...>
 : component::base<sampler<CompT<Types...>, N, SigIds...>, void>
-, policy::instance_tracker<sampler<CompT<Types...>, N, SigIds...>, false>
+, private policy::instance_tracker<sampler<CompT<Types...>, N, SigIds...>, false>
 {
     using this_type    = sampler<CompT<Types...>, N, SigIds...>;
     using base_type    = component::base<this_type, void>;
@@ -683,9 +683,9 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
             auto _itimer = get_itimer(itr);
             if(_itimer < 0)
             {
-                throw std::runtime_error(TIMEMORY_JOIN(
+                TIMEMORY_EXCEPTION(TIMEMORY_JOIN(
                     " ", "Error! Alarm cannot be set for signal", itr,
-                    "because the signal does not map to a known itimer value"));
+                    "because the signal does not map to a known itimer value\n"));
             }
 
             // configure the sigaction
@@ -694,7 +694,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
                 get_persistent_data().m_signals.insert(itr);
             else
             {
-                throw std::runtime_error(TIMEMORY_JOIN(
+                TIMEMORY_EXCEPTION(TIMEMORY_JOIN(
                     " ", "Error! sigaction could not be set for signal", itr));
             }
 
@@ -977,9 +977,13 @@ sampler<CompT<Types...>, N, SigIds...>::check_itimer(int _stat, bool _throw_exce
             TIMEMORY_JOIN(" ", "Warning! setitimer returned EFAULT.",
                           "Either the new itimerval or the old itimerval was invalid");
         if(_throw_exception)
-            throw std::runtime_error(msg);
+        {
+            TIMEMORY_EXCEPTION(msg)
+        }
         else
+        {
             std::cerr << msg << '\n';
+        }
     }
     else if(_stat == EINVAL)
     {
@@ -988,9 +992,13 @@ sampler<CompT<Types...>, N, SigIds...>::check_itimer(int _stat, bool _throw_exce
                                  "'ITIMER_VIRTUAL', "
                                  "'ITIMER_PROF'] or the old itimerval was invalid");
         if(_throw_exception)
-            throw std::runtime_error(msg);
+        {
+            TIMEMORY_EXCEPTION(msg)
+        }
         else
+        {
             std::cerr << msg << '\n';
+        }
     }
     return (_stat != EFAULT && _stat != EINVAL);
 }

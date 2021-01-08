@@ -112,10 +112,9 @@ public:
     using reference_type    = typename bundle_type::reference_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
 
-    using apply_v     = apply<void>;
-    using size_type   = typename bundle_type::size_type;
-    using string_t    = typename bundle_type::string_t;
-    using string_hash = typename bundle_type::string_hash;
+    using apply_v   = apply<void>;
+    using size_type = typename bundle_type::size_type;
+    using string_t  = typename bundle_type::string_t;
 
     template <template <typename> class Op, typename Tuple = impl_type>
     using operation_t = typename bundle_type::template generic_operation<Op, Tuple>::type;

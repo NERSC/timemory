@@ -23,11 +23,4 @@
 // SOFTWARE.
 //
 
-/**
- * \file timemory/components/trip_count/backends.hpp
- * \brief Implementation of the trip_count functions/utilities
- */
-
 #pragma once
-
-#include "timemory/backends/gperf.hpp"

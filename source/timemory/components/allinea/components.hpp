@@ -53,7 +53,7 @@ namespace component
 ///
 struct allinea_map
 : public base<allinea_map, void>
-, policy::instance_tracker<allinea_map, false>
+, private policy::instance_tracker<allinea_map, false>
 {
     using value_type   = void;
     using this_type    = allinea_map;

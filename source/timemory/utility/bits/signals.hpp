@@ -241,10 +241,12 @@ signal_settings::str(bool report_disabled)
         for(const auto& itr : f_signals().signals_disabled)
             ss << spacer() << spacer() << signal_settings::str(itr) << '\n';
     }
+
 #else
 
     ss << std::endl << spacer() << "Signal detection not available" << std::endl;
 
+    (void) report_disabled;
 #endif
 
     return ss.str();

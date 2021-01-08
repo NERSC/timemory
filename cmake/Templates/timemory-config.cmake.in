@@ -219,18 +219,11 @@ if(TIMEMORY_INSTALL_TREE)
 
 else() # build tree
 
-    set(timemory_ROOT_DIR "@PROJECT_BINARY_DIR@")
-    set(timemory_INCLUDE_DIRS "@PROJECT_SOURCE_DIR@/source")
-    set(timemory_LIB_DIR "@PROJECT_BINARY_DIR@")
-
-    if(@TIMEMORY_USE_PYTHON@)
-        set(timemory_PYTHON_DIR "@PROJECT_BINARY_DIR@")
+    set(_TIMEMORY_BUILD_CONFIG ${CMAKE_CURRENT_LIST_DIR}/timemory-config-build.cmake)
+    if(EXISTS ${_TIMEMORY_BUILD_CONFIG})
+        include(${_TIMEMORY_BUILD_CONFIG})
     endif()
-
-    # if TIMEMORY_USE_COVERAGE, always link to library
-    if(@TIMEMORY_USE_COVERAGE@)
-        list(APPEND timemory_FIND_COMPONENTS cxx)
-    endif()
+    unset(_TIMEMORY_BUILD_CONFIG)
 
 endif()
 

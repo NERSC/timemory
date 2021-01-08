@@ -123,9 +123,8 @@ public:
     {};
 
 public:
-    using size_type   = int64_t;
-    using string_t    = std::string;
-    using string_hash = std::hash<string_t>;
+    using size_type = int64_t;
+    using string_t  = string_view_t;
 
     using impl_type      = std::tuple<Types...>;
     using type_bundler   = bundle<impl_type>;
@@ -162,30 +161,51 @@ private:
                       contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
 
+    static constexpr size_t bundle_size = sizeof...(Types);
+
 public:
-    explicit base_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),
-                         scope::config _scope = scope::get_default())
+    template <typename U = impl_type>
+    explicit base_bundle(hash_result_type _hash = 0, bool _store = settings::enabled(),
+                         scope::config _scope = scope::get_default(),
+                         enable_if_t<std::tuple_size<U>::value != 0, int> = 0)
     : m_scope(_scope + get_scope_config())
     , m_hash(_hash)
     {
         m_store(_store && settings::enabled() && get_store_config());
     }
 
-    template <typename... T>
-    explicit base_bundle(uint64_t hash, bool store, quirk::config<T...>)
+    template <typename... T, typename U = impl_type>
+    explicit base_bundle(hash_result_type hash, bool store, quirk::config<T...>,
+                         enable_if_t<std::tuple_size<U>::value != 0, int> = 0)
     : m_scope(get_scope_config<T...>())
     , m_hash(hash)
     {
         m_store(store && settings::enabled() && get_store_config<T...>());
     }
 
-    template <typename... T>
-    explicit base_bundle(uint64_t hash, quirk::config<T...>)
+    template <typename... T, typename U = impl_type>
+    explicit base_bundle(hash_result_type hash, quirk::config<T...>,
+                         enable_if_t<std::tuple_size<U>::value != 0, int> = 0)
     : m_scope(get_scope_config<T...>())
     , m_hash(hash)
     {
         m_store(settings::enabled() && get_store_config<T...>());
     }
+
+    template <typename U = impl_type>
+    explicit base_bundle(hash_result_type = 0, bool = false, scope::config = {},
+                         enable_if_t<std::tuple_size<U>::value == 0, int> = 0)
+    {}
+
+    template <typename... T, typename U = impl_type>
+    explicit base_bundle(hash_result_type, bool, quirk::config<T...>,
+                         enable_if_t<std::tuple_size<U>::value == 0, int> = 0)
+    {}
+
+    template <typename... T, typename U = impl_type>
+    explicit base_bundle(hash_result_type, quirk::config<T...>,
+                         enable_if_t<std::tuple_size<U>::value == 0, int> = 0)
+    {}
 
     ~base_bundle()                      = default;
     base_bundle(const base_bundle&)     = default;
@@ -199,11 +219,11 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    std::string key() const { return get_hash_ids()->find(m_hash)->second; }
+    std::string key() const { return std::string{ get_hash_identifier_fast(m_hash) }; }
 
     //----------------------------------------------------------------------------------//
     //
-    uint64_t hash() const { return m_hash; }
+    auto hash() const { return m_hash; }
 
     //----------------------------------------------------------------------------------//
     //
@@ -215,16 +235,16 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    void            store(bool v) { m_store(v); }
-    bool            store() const { return m_store(); }
-    const string_t& prefix() const { return get_persistent_data().prefix; }
+    void        store(bool v) { m_store(v); }
+    bool        store() const { return m_store(); }
+    const auto& prefix() const { return get_persistent_data().prefix; }
 
     //----------------------------------------------------------------------------------//
     //
-    auto&           get_scope() { return m_scope; }
-    bool            get_store() const { return m_store(); }
-    const string_t& get_prefix() const { return prefix(); }
-    const auto&     get_scope() const { return m_scope; }
+    auto&       get_scope() { return m_scope; }
+    bool        get_store() const { return m_store(); }
+    const auto& get_prefix() const { return prefix(); }
+    const auto& get_scope() const { return m_scope; }
 
     //----------------------------------------------------------------------------------//
 
@@ -265,10 +285,10 @@ protected:
 
 protected:
     // objects
-    std::bitset<3> m_config = {};
-    scope::config  m_scope  = scope::get_default();
-    int64_t        m_laps   = 0;
-    uint64_t       m_hash   = 0;
+    std::bitset<3>   m_config = {};
+    scope::config    m_scope  = scope::get_default();
+    int64_t          m_laps   = 0;
+    hash_result_type m_hash   = 0;
 
     enum ConfigIdx
     {
@@ -295,35 +315,45 @@ protected:
     {
         int64_t get_width(int64_t _w)
         {
-            auto&&  memorder_v = std::memory_order_relaxed;
-            int64_t propose_width, current_width;
-            auto    compute = [&]() { return std::max(width.load(memorder_v), _w); };
-            while((propose_width = compute()) > (current_width = width.load(memorder_v)))
+            IF_CONSTEXPR(bundle_size > 0)
             {
-                width.compare_exchange_strong(current_width, propose_width, memorder_v);
+                auto&&  memorder_v = std::memory_order_relaxed;
+                int64_t propose_width, current_width;
+                auto    compute = [&]() { return std::max(width.load(memorder_v), _w); };
+                while((propose_width = compute()) >
+                      (current_width = width.load(memorder_v)))
+                {
+                    width.compare_exchange_strong(current_width, propose_width,
+                                                  memorder_v);
+                }
+                return width.load(memorder_v);
             }
-            return width.load(memorder_v);
+            else { return 0; }
         }
 
         std::atomic<int64_t> width{ 0 };
-        string_t             prefix = []() {
-            if(!dmp::is_initialized())
-                return string_t(">>> ");
+        std::string          prefix = []() -> std::string {
+            IF_CONSTEXPR(bundle_size > 0)
+            {
+                if(!dmp::is_initialized())
+                    return std::string(">>> ");
 
-            // prefix spacing
-            static uint16_t _width = 1;
-            if(dmp::size() > 9)
-                _width = std::max(_width, (uint16_t)(log10(dmp::size()) + 1));
-            std::stringstream ss;
-            ss.fill('0');
-            ss << "|" << std::setw(_width) << dmp::rank() << ">>> ";
-            return ss.str();
+                // prefix spacing
+                static uint16_t _width = 1;
+                if(dmp::size() > 9)
+                    _width = std::max(_width, (uint16_t)(log10(dmp::size()) + 1));
+                std::stringstream ss;
+                ss.fill('0');
+                ss << "|" << std::setw(_width) << dmp::rank() << ">>> ";
+                return ss.str();
+            }
+            else { return std::string{}; }
         }();
     };
 
     static persistent_data& get_persistent_data()
     {
-        static persistent_data _instance;
+        static persistent_data _instance{};
         return _instance;
     }
 };

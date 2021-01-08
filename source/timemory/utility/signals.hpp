@@ -106,7 +106,7 @@ timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context 
     {
         std::stringstream ss;
         ss << "signal " << sig << " not caught";
-        throw std::runtime_error(ss.str());
+        TIMEMORY_EXCEPTION(ss.str());
     }
 
     tim::termination_signal_message(sig, sinfo, std::cerr);

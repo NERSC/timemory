@@ -103,10 +103,9 @@ public:
     using user_bundle_types = typename bundle_type::user_bundle_types;
     using value_type        = data_type;
 
-    using apply_v     = apply<void>;
-    using size_type   = typename bundle_type::size_type;
-    using string_t    = typename bundle_type::string_t;
-    using string_hash = typename bundle_type::string_hash;
+    using apply_v   = apply<void>;
+    using size_type = typename bundle_type::size_type;
+    using string_t  = typename bundle_type::string_t;
 
     template <template <typename> class Op, typename Tuple = data_type>
     using operation_t = typename bundle_type::template generic_operation<Op, Tuple>::type;

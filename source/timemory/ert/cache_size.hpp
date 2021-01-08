@@ -32,6 +32,7 @@
 
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <array>
 #include <cstddef>
@@ -153,7 +154,10 @@ cache_size(const int& _level)
         }
         else
         {
-            throw std::runtime_error("Unable to open file: " + fname);
+            fprintf(stderr, "Unable to open file: %s\n", fname.c_str());
+#    if defined(TIMEMORY_INTERNAL_TESTING)
+            exit(EXIT_FAILURE);
+#    endif
         }
         ifs.close();
     }
@@ -202,10 +206,12 @@ get(const int& _level)
     // only enable queries 1, 2, 3
     if(_level < 1 || _level > 3)
     {
-        std::stringstream ss;
-        ss << "tim::ert::cache_size::get(" << _level << ") :: "
-           << "Requesting invalid cache level";
-        throw std::runtime_error(ss.str());
+        fprintf(stderr,
+                "im::ert::cache_size::get(%i) :: Requesting invalid cache level\n",
+                _level);
+#if defined(TIMEMORY_INTERNAL_TESTING)
+        exit(EXIT_FAILURE);
+#endif
     }
     // avoid multiple queries
     static std::vector<size_t> _values(

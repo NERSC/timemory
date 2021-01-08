@@ -152,7 +152,7 @@ private:
 ///
 struct caliper_config
 : public base<caliper_config, void>
-, public policy::instance_tracker<caliper_config, false>
+, private policy::instance_tracker<caliper_config, false>
 {
     using value_type         = void;
     using instance_tracker_t = policy::instance_tracker<caliper_config, false>;

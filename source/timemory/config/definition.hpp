@@ -96,8 +96,8 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
                 }
                 else if(_dcfg.find(citr) == _dcfg.end())
                 {
-                    throw std::runtime_error(
-                        std::string("Error reading configuration file: ") + citr);
+                    TIMEMORY_EXCEPTION(std::string("Error reading configuration file: ") +
+                                       citr);
                 }
             }
         }

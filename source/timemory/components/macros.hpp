@@ -43,6 +43,11 @@
 #    define TIMEMORY_USE_COMPONENT_EXTERN
 #endif
 
+#if !defined(TIMEMORY_USE_COMPONENT_EXTERN) && !defined(TIMEMORY_COMPONENT_SOURCE) &&    \
+    !defined(TIMEMORY_COMPONENT_HEADER_MODE)
+#    define TIMEMORY_COMPONENT_HEADER_MODE
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 /**

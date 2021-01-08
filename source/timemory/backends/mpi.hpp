@@ -281,16 +281,12 @@ initialize(int& argc, char**& argv)
         bool success_v = false;
         if(use_mpi_thread())
         {
-            auto _init = [&](int itr) {
+            auto _init = [&argc, &argv](int itr, const std::string& _type) {
                 int  _actual = -1;
                 auto ret     = MPI_Init_thread(&argc, &argv, itr, &_actual);
                 if(_actual != itr)
-                {
-                    std::stringstream ss;
-                    ss << "Warning! MPI_Init_thread does not support " << itr;
-                    std::cerr << ss.str() << std::flush;
-                    throw std::runtime_error(ss.str().c_str());
-                }
+                    fprintf(stderr, "Warning! MPI_Init_thread does not support: %s\n",
+                            _type.c_str());
                 return TIMEMORY_MPI_ERROR_CHECK(ret);
             };
 
@@ -300,15 +296,15 @@ initialize(int& argc, char**& argv)
 
             auto _mpi_type = use_mpi_thread_type();
             if(_mpi_type == "single")
-                success_v = _init(single);
+                success_v = _init(single, _mpi_type);
             else if(_mpi_type == "serialized")
-                success_v = _init(serialized);
+                success_v = _init(serialized, _mpi_type);
             else if(_mpi_type == "funneled")
-                success_v = _init(funneled);
+                success_v = _init(funneled, _mpi_type);
             else if(_mpi_type == "multiple")
-                success_v = _init(multiple);
+                success_v = _init(multiple, _mpi_type);
             else
-                success_v = _init(multiple);
+                success_v = _init(multiple, "multiple");
         }
 
         if(!success_v)

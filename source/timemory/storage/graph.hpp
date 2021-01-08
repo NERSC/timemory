@@ -71,8 +71,6 @@ public:
 
     tgraph_node(tgraph_node&&) = default;
     tgraph_node& operator=(tgraph_node&&) = default;
-    // tgraph_node(tgraph_node&&) noexcept = default;
-    // tgraph_node& operator=(tgraph_node&&) noexcept = default;
 
     tgraph_node<T>* parent       = nullptr;
     tgraph_node<T>* first_child  = nullptr;
@@ -105,9 +103,11 @@ tgraph_node<T>::tgraph_node(T&& val) noexcept
 {}
 
 //======================================================================================//
-//  graph allocator that counts the size of the allocation
+//  graph allocator that counts the size of the allocation (unused)
 //
 //
+#if defined(TIMEMORY_GRAPH_ALLOCATOR)
+
 template <typename Tp>
 class graph_allocator : public std::allocator<Tp>
 {
@@ -322,13 +322,14 @@ private:
     mutable voidvec_t              m_allocations    = {};
 };
 
+#endif  // defined(TIMEMORY_GRAPH_ALLOCATOR)
+
 //======================================================================================//
 
 /// \class tim::graph
 /// \brief Arbitrary Graph / Tree (i.e. binary-tree but not binary)
 ///
-template <typename T,
-          typename AllocatorT>  // graph_allocator<tgraph_node<T>>>
+template <typename T, typename AllocatorT>
 class graph
 {
 protected:
@@ -664,14 +665,6 @@ public:
                            sibling_iterator rhs) { return (*lhs == *rhs); },
         ReducePred&&  = [](sibling_iterator lhs, sibling_iterator rhs) { *lhs += *rhs; });
 
-    /// Sort (std::sort only moves values of nodes, this one moves children as
-    /// well).
-    inline void sort(const sibling_iterator& from, const sibling_iterator& to,
-                     bool deep = false);
-    template <typename StrictWeakOrdering>
-    inline void sort(sibling_iterator from, const sibling_iterator& to,
-                     StrictWeakOrdering comp, bool deep = false);
-
     /// Compare two ranges of nodes (compares nodes as well as graph structure).
     template <typename IterT>
     inline bool equal(const IterT& one, const IterT& two, const IterT& three) const;
@@ -735,11 +728,6 @@ public:
     /// level, i.e. has no parent.
     static bool is_head(const iterator_base&);
 
-    /// Find the lowest common ancestor of two nodes, that is, the deepest node
-    /// such that both nodes are descendants of it.
-    inline iterator lowest_common_ancestor(const iterator_base&,
-                                           const iterator_base&) const;
-
     /// Determine the index of a node in the range of siblings to which it
     /// belongs.
     inline unsigned int index(sibling_iterator it) const;
@@ -749,23 +737,6 @@ public:
 
     /// Return iterator to the sibling indicated by index
     inline sibling_iterator sibling(const iterator_base& position, unsigned int) const;
-
-    /// For debugging only: verify internal consistency by inspecting all
-    /// pointers in the graph (which will also trigger a valgrind error in case
-    /// something got corrupted).
-    inline void debug_verify_consistency() const;
-
-    /// Comparator class for iterators (compares pointer values; why doesn't
-    /// this work automatically?)
-    class iterator_base_less
-    {
-    public:
-        bool operator()(const typename graph<T, AllocatorT>::iterator_base& one,
-                        const typename graph<T, AllocatorT>::iterator_base& two) const
-        {
-            return one.node < two.node;
-        }
-    };
 
     graph_node* head;  // head/feet are always dummy; if an iterator
     graph_node* feet;  // points to them it is invalid
@@ -783,24 +754,6 @@ private:
     AllocatorT  m_alloc;
     inline void m_head_initialize();
     inline void m_copy(const graph<T, AllocatorT>& other);
-
-    /// Comparator class for two nodes of a graph (used for sorting and searching).
-    template <typename StrictWeakOrdering>
-    class compare_nodes
-    {
-    public:
-        explicit compare_nodes(StrictWeakOrdering comp)
-        : m_comp(comp)
-        {}
-
-        bool operator()(const graph_node* a, const graph_node* b)
-        {
-            return m_comp(a->data, b->data);
-        }
-
-    private:
-        StrictWeakOrdering m_comp;
-    };
 };
 
 //======================================================================================//
@@ -2261,97 +2214,6 @@ graph<T, AllocatorT>::reduce(const sibling_iterator&     lhs, const sibling_iter
         }
         // reduce(litr.begin(), feet, _erase, _compare, _reduce);
     }
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-void
-graph<T, AllocatorT>::sort(const sibling_iterator& from, const sibling_iterator& to,
-                           bool deep)
-{
-    std::less<T> comp;
-    sort(from, to, comp, deep);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-template <typename StrictWeakOrdering>
-void
-graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
-                           StrictWeakOrdering /*comp*/, bool /*deep*/)
-{
-    if(from == to)
-        return;
-    throw std::runtime_error("Not implemented!");
-    /*
-    // make list of sorted nodes
-    // CHECK: if multiset stores equivalent nodes in the order in which they
-    // are inserted, then this routine should be called 'stable_sort'.
-    std::multiset<graph_node*, compare_nodes<StrictWeakOrdering>> _nodes(
-        compare_nodes<StrictWeakOrdering>(comp));
-    sibling_iterator it = from, it2 = to;
-    while(it != to)
-    {
-        _nodes.insert(it.node);
-        ++it;
-    }
-    // reassemble
-    --it2;
-
-    // prev and next are the nodes before and after the sorted range
-    graph_node* prev = from.node->prev_sibling;
-    graph_node* next = it2.node->next_sibling;
-    typename std::multiset<graph_node*, compare_nodes<StrictWeakOrdering>>::iterator
-        nit = _nodes.begin(),
-        eit = _nodes.end();
-    if(prev == nullptr)
-    {
-        if((*nit)->parent != nullptr)  // to catch "sorting the head" situations, when
-                                 // there is no parent
-            (*nit)->parent->first_child = (*nit);
-    }
-    else
-        prev->next_sibling = (*nit);
-
-    --eit;
-    while(nit != eit)
-    {
-        (*nit)->prev_sibling = prev;
-        if(prev)
-            prev->next_sibling = (*nit);
-        prev = (*nit);
-        ++nit;
-    }
-    // prev now points to the last-but-one node in the sorted range
-    if(prev)
-        prev->next_sibling = (*eit);
-
-    // eit points to the last node in the sorted range.
-    (*eit)->next_sibling = next;
-    (*eit)->prev_sibling = prev;  // missed in the loop above
-    if(next == nullptr)
-    {
-        if((*eit)->parent != nullptr)  // to catch "sorting the head" situations, when
-                                 // there is no parent
-            (*eit)->parent->last_child = (*eit);
-    }
-    else
-        next->prev_sibling = (*eit);
-
-    if(deep)
-    {  // sort the children of each node too
-        sibling_iterator bcs(*_nodes.begin());
-        sibling_iterator ecs(*eit);
-        ++ecs;
-        while(bcs != ecs)
-        {
-            sort(begin(bcs), end(bcs), comp, deep);
-            ++bcs;
-        }
-    }
-    */
 }
 
 //--------------------------------------------------------------------------------------//

@@ -80,10 +80,9 @@ public:
     using reference_type    = typename bundle_type::reference_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
 
-    using apply_v     = apply<void>;
-    using size_type   = typename bundle_type::size_type;
-    using string_t    = typename bundle_type::string_t;
-    using string_hash = typename bundle_type::string_hash;
+    using apply_v   = apply<void>;
+    using size_type = typename bundle_type::size_type;
+    using string_t  = typename bundle_type::string_t;
 
     template <template <typename> class Op, typename Tuple = impl_type>
     using operation_t = typename bundle_type::template generic_operation<Op, Tuple>::type;
@@ -519,14 +518,14 @@ public:
     }
 
 public:
-    int64_t         laps() const { return bundle_type::laps(); }
-    std::string     key() const { return bundle_type::key(); }
-    uint64_t        hash() const { return bundle_type::hash(); }
-    void            rekey(const string_t& _key) { bundle_type::rekey(_key); }
-    bool&           store() { return bundle_type::store(); }
-    const bool&     store() const { return bundle_type::store(); }
-    const string_t& prefix() const { return bundle_type::prefix(); }
-    const string_t& get_prefix() const { return bundle_type::get_prefix(); }
+    int64_t     laps() const { return bundle_type::laps(); }
+    std::string key() const { return bundle_type::key(); }
+    uint64_t    hash() const { return bundle_type::hash(); }
+    void        rekey(const string_t& _key) { bundle_type::rekey(_key); }
+    bool&       store() { return bundle_type::store(); }
+    const bool& store() const { return bundle_type::store(); }
+    auto        prefix() const { return bundle_type::prefix(); }
+    auto        get_prefix() const { return bundle_type::get_prefix(); }
 
 protected:
     static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }

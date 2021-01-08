@@ -52,7 +52,7 @@ namespace component
 ///
 struct craypat_record
 : base<craypat_record, void>
-, policy::instance_tracker<craypat_record>
+, private policy::instance_tracker<craypat_record>
 {
     using this_type    = craypat_record;
     using value_type   = void;
@@ -91,7 +91,7 @@ struct craypat_record
 ///
 struct craypat_region
 : base<craypat_region, void>
-, policy::instance_tracker<craypat_region, false>
+, private policy::instance_tracker<craypat_region, false>
 {
     using tracker_type = policy::instance_tracker<craypat_region, false>;
 

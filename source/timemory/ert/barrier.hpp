@@ -79,7 +79,13 @@ public:
     void spin_wait()
     {
         if(is_master())
-            throw std::runtime_error("master thread calling worker wait function");
+        {
+#if defined(TIMEMORY_INTERNAL_TESTING)
+            TIMEMORY_EXCEPTION("master thread calling worker wait function\n");
+#else
+            return;
+#endif
+        }
 
         {
             lock_t lk(m_mutex);
@@ -106,7 +112,13 @@ public:
     void cv_wait()
     {
         if(is_master())
-            throw std::runtime_error("master thread calling worker wait function");
+        {
+#if defined(TIMEMORY_INTERNAL_TESTING)
+            TIMEMORY_EXCEPTION("master thread calling worker wait function\n");
+#else
+            return;
+#endif
+        }
 
         lock_t lk(m_mutex);
         ++m_counter;

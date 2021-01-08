@@ -63,7 +63,7 @@ component_bundle<Tag, Types...>::component_bundle(const string_t&     _key,
     if(m_store())
     {
         IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { _init_func(*this); }
-        set_prefix(get_hash_ids()->find(m_hash)->second);
+        set_prefix(get_hash_identifier_fast(m_hash));
         invoke::set_scope<Tag>(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
@@ -531,7 +531,7 @@ void
 component_bundle<Tag, Types...>::set_prefix(T* obj) const
 {
     using PrefixOpT = operation::generic_operator<T, operation::set_prefix<T>, Tag>;
-    auto _key       = get_hash_ids()->find(m_hash)->second;
+    auto _key       = get_hash_identifier_fast(m_hash);
     PrefixOpT(obj, m_hash, _key);
 }
 

@@ -44,7 +44,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HASH_LINKAGE(graph_hash_map_ptr_t)
+TIMEMORY_HASH_LINKAGE(graph_hash_map_ptr_t&)
 get_hash_ids()
 {
     static thread_local auto _inst =
@@ -54,7 +54,7 @@ get_hash_ids()
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HASH_LINKAGE(graph_hash_alias_ptr_t)
+TIMEMORY_HASH_LINKAGE(graph_hash_alias_ptr_t&)
 get_hash_aliases()
 {
     static thread_local auto _inst =
@@ -76,12 +76,12 @@ get_hash_id(const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(hash_result_type)
-add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
+add_hash_id(graph_hash_map_ptr_t& _hash_map, const string_view_t& _prefix)
 {
-    hash_result_type _hash_id = get_hash_id(prefix);
+    hash_result_type _hash_id = get_hash_id(_prefix);
     if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
     {
-        (*_hash_map)[_hash_id] = prefix;
+        (*_hash_map)[_hash_id] = std::string{ _prefix };
     }
     return _hash_id;
 }
@@ -89,11 +89,7 @@ add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(hash_result_type)
-add_hash_id(const std::string& prefix)
-{
-    static thread_local auto _hash_map = get_hash_ids();
-    return add_hash_id(_hash_map, prefix);
-}
+add_hash_id(const string_view_t& _prefix) { return add_hash_id(get_hash_ids(), _prefix); }
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -119,6 +115,21 @@ add_hash_id(hash_result_type _hash_id, hash_result_type _alias_hash_id)
 //
 //--------------------------------------------------------------------------------------//
 //
+// this does not check other threads or aliases. Only call this function when
+// you know that the hash exists on the thread and is not an alias
+//
+TIMEMORY_HASH_LINKAGE(string_view_t)
+get_hash_identifier_fast(hash_result_type _hash)
+{
+    auto& _hash_ids = get_hash_ids();
+    auto  itr       = _hash_ids->find(_hash);
+    if(itr != _hash_ids->end())
+        return itr->second;
+    return "";
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 TIMEMORY_HASH_LINKAGE(std::string)
 get_hash_identifier(const graph_hash_map_ptr_t&   _hash_map,
                     const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id)
@@ -139,7 +150,7 @@ get_hash_identifier(const graph_hash_map_ptr_t&   _hash_map,
     {
         std::stringstream ss;
         ss << "Error! node with hash " << _hash_id
-           << " did not have an associated prefix!";
+           << " does not have an associated string!";
 #    if defined(DEBUG)
         ss << "\nHash map:\n";
         auto _w = 30;

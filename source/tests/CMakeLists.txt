@@ -280,6 +280,9 @@ endif()
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_THREADS=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
+list(APPEND component_bundle_tests_env "TIMEMORY_WIDTH=80")
+list(APPEND component_bundle_tests_env "TIMEMORY_PRECISION=6")
+list(APPEND component_bundle_tests_env "TIMEMORY_SCIENTIFIC=ON")
 
 add_timemory_google_test(traits_tests
     SOURCES         traits_tests.cpp
@@ -298,6 +301,12 @@ add_timemory_google_test(component_bundle_tests
 list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
 list(APPEND kokkosp_tests_env "TIMEMORY_NODE_COUNT=1")
 list(APPEND kokkosp_tests_env "TIMEMORY_MPI_THREAD=OFF")
+list(APPEND kokkosp_tests_env "TIMEMORY_TIMING_WIDTH=80")
+list(APPEND kokkosp_tests_env "TIMEMORY_TIMING_PRECISION=6")
+list(APPEND kokkosp_tests_env "TIMEMORY_TIMING_SCIENTIFIC=ON")
+list(APPEND kokkosp_tests_env "TIMEMORY_MEMORY_WIDTH=80")
+list(APPEND kokkosp_tests_env "TIMEMORY_MEMORY_PRECISION=6")
+list(APPEND kokkosp_tests_env "TIMEMORY_MEMORY_SCIENTIFIC=ON")
 
 add_timemory_google_test(kokkosp_tests
     MPI

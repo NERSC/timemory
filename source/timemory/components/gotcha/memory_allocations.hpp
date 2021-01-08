@@ -336,7 +336,7 @@ malloc_gotcha::tear_down()
 struct memory_allocations
 : base<memory_allocations, void>
 , public concepts::external_function_wrapper
-, public policy::instance_tracker<memory_allocations, true>
+, private policy::instance_tracker<memory_allocations, true>
 {
     using value_type   = void;
     using this_type    = memory_allocations;

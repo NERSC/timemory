@@ -78,7 +78,7 @@ component_list<Types...>::component_list(const string_t& _key, const bool& _stor
     if(settings::enabled())
     {
         IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
-        set_prefix(get_hash_ids()->find(m_hash)->second);
+        set_prefix(get_hash_identifier_fast(m_hash));
         invoke::set_scope(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }

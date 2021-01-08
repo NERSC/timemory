@@ -43,17 +43,17 @@ namespace tim
 //
 template <typename... Types>
 template <typename... T, typename Func>
-lightweight_tuple<Types...>::lightweight_tuple(const string_t&     key,
+lightweight_tuple<Types...>::lightweight_tuple(const string_t&     _key,
                                                quirk::config<T...> config,
                                                const Func&         init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), false,
+: bundle_type(((settings::enabled()) ? add_hash_id(_key) : 0), false,
               quirk::config<T...>{})
-, m_data(invoke::construct<data_type>(key, config))
+, m_data(invoke::construct<data_type>(_key, config))
 {
     if(settings::enabled())
     {
         IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
-        set_prefix(get_hash_ids()->find(m_hash)->second);
+        set_prefix(get_hash_identifier_fast(m_hash));
         invoke::set_scope(m_data, m_scope);
         IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
@@ -121,9 +121,9 @@ lightweight_tuple<Types...>::lightweight_tuple(size_t _hash, scope::config _scop
 //
 template <typename... Types>
 template <typename Func>
-lightweight_tuple<Types...>::lightweight_tuple(const string_t& key, scope::config _scope,
+lightweight_tuple<Types...>::lightweight_tuple(const string_t& _key, scope::config _scope,
                                                const Func& init_func)
-: lightweight_tuple(((settings::enabled()) ? add_hash_id(key) : 0), _scope, init_func)
+: lightweight_tuple(((settings::enabled()) ? add_hash_id(_key) : 0), _scope, init_func)
 {}
 
 //--------------------------------------------------------------------------------------//

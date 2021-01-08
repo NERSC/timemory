@@ -233,6 +233,7 @@ add_connector_config(timers_memory
     TARGETS timemory::timemory-headers)
 
 add_connector_config(io
+    CONDITION "UNIX AND NOT APPLE"
     COMPONENTS read_bytes read_char written_bytes written_char
     TARGETS timemory::timemory-headers)
 

@@ -261,7 +261,7 @@ generate(py::module& _pymod)
             auto sitr = _obj->find(itr);
             if(sitr != _obj->end() && sitr->second)
             {
-                DEBUG_PRINT_HERE("adding args for %s", sitr->first.c_str());
+                DEBUG_PRINT_HERE("adding args for %s", sitr->first.data());
                 _argparse(sitr->second, _parser, _use_subparser);
             }
         }
