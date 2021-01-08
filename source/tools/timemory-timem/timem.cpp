@@ -52,14 +52,14 @@ main(int argc, char** argv)
     tim::settings::upcxx_init()     = false;
     tim::settings::upcxx_finalize() = false;
     // other settings
-    tim::settings::banner()           = false;
-    tim::settings::auto_output()      = false;
-    tim::settings::file_output()      = false;
-    tim::settings::ctest_notes()      = false;
-    tim::settings::scientific()       = false;
-    tim::settings::width()            = 16;
-    tim::settings::precision()        = 6;
-    tim::settings::enabled()          = true;
+    tim::settings::banner()      = false;
+    tim::settings::auto_output() = false;
+    tim::settings::file_output() = false;
+    tim::settings::ctest_notes() = false;
+    tim::settings::scientific()  = false;
+    tim::settings::width()       = 16;
+    tim::settings::precision()   = 6;
+    tim::settings::enabled()     = true;
     // ensure manager never writes metadata
     tim::manager::instance()->set_write_metadata(-1);
 

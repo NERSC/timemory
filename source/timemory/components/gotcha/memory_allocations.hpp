@@ -191,7 +191,7 @@ public:
     {
         DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
         // malloc
-        value = (size);
+        value       = (size);
         m_last_addr = devPtr;
         DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
     }
@@ -201,7 +201,7 @@ public:
     void audit(audit::incoming, void** hostPtr, size_t size, unsigned int flags)
     {
         DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
-        value = (size);
+        value       = (size);
         m_last_addr = hostPtr;
         DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
         consume_parameters(flags);
@@ -217,7 +217,8 @@ public:
             get_allocation_map()[ptr] = value;
             if(err != cuda::success_v && (settings::debug() || settings::verbose() > 1))
             {
-                PRINT_HERE("%s did not return cudaSuccess, values may be corrupted");
+                PRINT_HERE("%s did not return cudaSuccess, values may be corrupted",
+                           m_prefix);
             }
         }
     }

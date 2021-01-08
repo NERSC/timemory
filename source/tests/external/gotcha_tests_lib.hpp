@@ -50,8 +50,8 @@ class DoWork
 public:
     DoWork(const std::pair<float, double>&);
 
-    void                      execute_fp4(int64_t);
-    void                      execute_fp8(int64_t);
+    void execute_fp4(int64_t);
+    void execute_fp8(int64_t);
     void execute_fp(int64_t, std::vector<float>, const std::deque<double>&);
     std::tuple<float, double> get() const;
 

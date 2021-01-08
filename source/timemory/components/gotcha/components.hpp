@@ -939,8 +939,8 @@ private:
             static thread_local bool _recursive = false;
             if(!_recursive && _data.debug && *_data.debug)
             {
-                _recursive             = true;
-                auto              _tid = threading::get_id();
+                _recursive = true;
+                auto _tid  = threading::get_id();
                 fprintf(stderr,
                         "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
                         "suppressed (suppressed=%s)\n",
@@ -1043,8 +1043,8 @@ private:
             static thread_local bool _recursive = false;
             if(!_recursive && _data.debug && *_data.debug)
             {
-                _recursive             = true;
-                auto              _tid = threading::get_id();
+                _recursive = true;
+                auto _tid  = threading::get_id();
                 fprintf(stderr,
                         "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
                         "suppressed (suppressed=%s)\n",

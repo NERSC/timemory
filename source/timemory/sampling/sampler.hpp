@@ -346,11 +346,11 @@ public:
 
 protected:
     bool          m_backtrace = false;
-    size_t        m_idx  = 0;
-    components_t* m_last = nullptr;
-    signal_set_t  m_good = {};
-    signal_set_t  m_bad  = {};
-    array_t       m_data = {};
+    size_t        m_idx       = 0;
+    components_t* m_last      = nullptr;
+    signal_set_t  m_good      = {};
+    signal_set_t  m_bad       = {};
+    array_t       m_data      = {};
 
 private:
     using sigaction_t = struct sigaction;
