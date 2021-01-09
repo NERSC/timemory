@@ -56,17 +56,11 @@ template <typename... T, typename Func>
 component_bundle<Tag, Types...>::component_bundle(const string_t&     _key,
                                                   quirk::config<T...> _config,
                                                   const Func&         _init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(_key) : 0), quirk::config<T...>{})
+: bundle_type(bundle_type::handle(type_list_type{}, _key, true_type{}, _config))
 , m_data(invoke::construct<data_type, Tag>(_key, _config))
 {
     apply_v::set_value(m_data, nullptr);
-    if(m_store())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { _init_func(*this); }
-        set_prefix(get_hash_identifier_fast(m_hash));
-        invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -76,17 +70,11 @@ template <typename... T, typename Func>
 component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _loc,
                                                   quirk::config<T...>        _config,
                                                   const Func&                _init_func)
-: bundle_type(_loc.get_hash(), quirk::config<T...>{})
+: bundle_type(bundle_type::handle(type_list_type{}, _loc, true_type{}, _config))
 , m_data(invoke::construct<data_type, Tag>(_loc, _config))
 {
     apply_v::set_value(m_data, nullptr);
-    if(m_store() && trait::runtime_enabled<Tag>::get())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { _init_func(*this); }
-        set_prefix(_loc.get_hash());
-        invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -96,20 +84,11 @@ template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(size_t _hash, bool _store,
                                                   scope::config _scope,
                                                   const Func&   _init_func)
-: bundle_type(_hash, _store,
-              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
-                                     quirk_config<quirk::timeline_scope>::value,
-                                     quirk_config<quirk::tree_scope>::value))
+: bundle_type(bundle_type::handle(type_list_type{}, _hash, _store, _scope))
 , m_data(invoke::construct<data_type, Tag>(_hash, m_scope))
 {
     // apply_v::set_value(m_data, nullptr);
-    if(m_store() && trait::runtime_enabled<Tag>::get())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
-        set_prefix(_hash);
-        invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -119,9 +98,10 @@ template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(const string_t& _key, bool _store,
                                                   scope::config _scope,
                                                   const Func&   _init_func)
-: component_bundle((settings::enabled()) ? add_hash_id(_key) : 0, _store, _scope,
-                   _init_func)
-{}
+: bundle_type(bundle_type::handle(type_list_type{}, _key, _store, _scope))
+{
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+}
 
 //--------------------------------------------------------------------------------------//
 //
@@ -130,8 +110,10 @@ template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _loc,
                                                   bool _store, scope::config _scope,
                                                   const Func& _init_func)
-: component_bundle(_loc.get_hash(), _store, _scope, _init_func)
-{}
+: bundle_type(bundle_type::handle(type_list_type{}, _loc, _store, _scope))
+{
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+}
 
 //--------------------------------------------------------------------------------------//
 //
@@ -139,8 +121,10 @@ template <typename Tag, typename... Types>
 template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(size_t _hash, scope::config _scope,
                                                   const Func& _init_func)
-: component_bundle(_hash, true, _scope, _init_func)
-{}
+: bundle_type(bundle_type::handle(type_list_type{}, _hash, true_type{}, _scope))
+{
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+}
 
 //--------------------------------------------------------------------------------------//
 //
@@ -149,9 +133,10 @@ template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(const string_t& _key,
                                                   scope::config   _scope,
                                                   const Func&     _init_func)
-: component_bundle((settings::enabled()) ? add_hash_id(_key) : 0, true, _scope,
-                   _init_func)
-{}
+: bundle_type(bundle_type::handle(type_list_type{}, _key, true_type{}, _scope))
+{
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+}
 
 //--------------------------------------------------------------------------------------//
 //
@@ -160,8 +145,10 @@ template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _loc,
                                                   scope::config              _scope,
                                                   const Func&                _init_func)
-: component_bundle(_loc.get_hash(), true, _scope, _init_func)
-{}
+: bundle_type(bundle_type::handle(type_list_type{}, _loc, true_type{}, _scope))
+{
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+}
 
 //--------------------------------------------------------------------------------------//
 //

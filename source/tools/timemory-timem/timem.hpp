@@ -359,7 +359,7 @@ class timem_tuple : public lightweight_tuple<Types...>
 {
 public:
     using base_type = lightweight_tuple<Types...>;
-    using apply_v   = typename base_type::apply_v;
+    using apply_v   = tim::apply<void>;
     using data_type = typename base_type::impl_type;
     using this_type = timem_tuple<Types...>;
 

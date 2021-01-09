@@ -129,7 +129,7 @@ add_subdirectory(external)
 
 set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON")
 
-if(TARGET timemory::timemory-compiler-instrument-sh)
+if(TARGET timemory::timemory-compiler-instrument-shared)
     add_timemory_google_test(compiler_instrument_shared_tests
         SOURCES         instrumentation_tests.cpp
         DEFINITIONS     DISABLE_TIMEMORY

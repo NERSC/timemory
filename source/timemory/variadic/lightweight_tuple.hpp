@@ -65,22 +65,26 @@ class lightweight_tuple
 : public stack_bundle<available_t<type_list<Types...>>>
 , public concepts::comp_wrapper
 {
-    // manager is friend so can use above
-    friend class manager;
+protected:
+    using apply_v     = apply<void>;
+    using bundle_type = stack_bundle<available_t<type_list<Types...>>>;
+    using impl_type   = typename bundle_type::impl_type;
+
+    template <typename T, typename... U>
+    friend class base_bundle;
 
 public:
-    using bundle_type         = stack_bundle<available_t<type_list<Types...>>>;
-    using this_type           = lightweight_tuple<Types...>;
     using captured_location_t = source_location::captured;
 
+    using this_type      = lightweight_tuple<Types...>;
+    using type_list_type = type_list<Types...>;
+
     using data_type         = typename bundle_type::data_type;
-    using impl_type         = typename bundle_type::impl_type;
     using tuple_type        = typename bundle_type::tuple_type;
     using sample_type       = typename bundle_type::sample_type;
     using reference_type    = typename bundle_type::reference_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
 
-    using apply_v   = apply<void>;
     using size_type = typename bundle_type::size_type;
     using string_t  = typename bundle_type::string_t;
 
@@ -106,15 +110,8 @@ public:
         return _instance;
     }
 
-public:
     template <typename T, typename... U>
-    struct quirk_config
-    {
-        static constexpr bool value =
-            is_one_of<T, type_list<Types..., U...>>::value ||
-            is_one_of<T,
-                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
-    };
+    using quirk_config = mpl::impl::quirk_config<T, type_list<Types...>, U...>;
 
 public:
     lightweight_tuple() = default;
@@ -466,7 +463,7 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using printer_t = typename bundle_type::print_t;
+        using printer_t = typename bundle_type::print_type;
         if(size() == 0 || m_hash == 0)
             return;
         std::stringstream ss_data;

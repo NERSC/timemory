@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/macros/language.hpp"
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -36,10 +37,10 @@ template <typename Tools, typename Func, typename... Args,
           typename Ret = std::result_of_t<Func(Args...)>,
           std::enable_if_t<!std::is_same<Ret, void>::value, int> = 0>
 Ret
-invoke(std::string&& label, Func&& func, Args&&... args)
+invoke(string_view_t&& label, Func&& func, Args&&... args)
 {
     using tool_t = typename Tools::component_type;
-    tool_t _obj(std::forward<std::string>(label), true);
+    tool_t _obj{ std::forward<string_view_t>(label) };
     _obj.construct(std::forward<Args>(args)...);
     _obj.start();
     Ret ret = func(std::forward<Args>(args)...);
@@ -51,10 +52,10 @@ template <typename Tools, typename Func, typename... Args,
           typename Ret = std::result_of_t<Func(Args...)>,
           std::enable_if_t<std::is_same<Ret, void>::value, int> = 0>
 Ret
-invoke(std::string&& label, Func&& func, Args&&... args)
+invoke(string_view_t&& label, Func&& func, Args&&... args)
 {
     using tool_t = typename Tools::component_type;
-    tool_t _obj(std::forward<std::string>(label), true);
+    tool_t _obj{ std::forward<string_view_t>(label) };
     _obj.construct(std::forward<Args>(args)...);
     _obj.start();
     func(std::forward<Args>(args)...);

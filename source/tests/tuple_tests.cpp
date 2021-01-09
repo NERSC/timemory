@@ -301,12 +301,12 @@ TEST_F(tuple_tests, all_threads)
         printf("\n");
         size_t w = 0;
         for(const auto& itr : rc_storage)
-            w = std::max<size_t>(w, std::get<2>(itr).length());
+            w = std::max<size_t>(w, std::get<5>(itr).length());
         for(const auto& itr : rc_storage)
         {
-            std::cout << std::setw(w) << std::left << std::get<2>(itr) << " : "
-                      << std::get<1>(itr);
-            auto _hierarchy = std::get<5>(itr);
+            std::cout << std::setw(w) << std::left << std::get<5>(itr) << " : "
+                      << std::get<7>(itr);
+            auto _hierarchy = std::get<6>(itr);
             for(size_t i = 0; i < _hierarchy.size(); ++i)
             {
                 if(i == 0)
@@ -422,12 +422,12 @@ TEST_F(tuple_tests, collapsed_threads)
         printf("\n");
         size_t w = 0;
         for(const auto& itr : rc_storage)
-            w = std::max<size_t>(w, std::get<2>(itr).length());
+            w = std::max<size_t>(w, std::get<5>(itr).length());
         for(const auto& itr : rc_storage)
         {
-            std::cout << std::setw(w) << std::left << std::get<2>(itr) << " : "
-                      << std::get<1>(itr);
-            auto _hierarchy = std::get<5>(itr);
+            std::cout << std::setw(w) << std::left << std::get<5>(itr) << " : "
+                      << std::get<7>(itr);
+            auto _hierarchy = std::get<6>(itr);
             for(size_t i = 0; i < _hierarchy.size(); ++i)
             {
                 if(i == 0)

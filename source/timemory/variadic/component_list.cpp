@@ -68,20 +68,11 @@ template <typename... Types>
 template <typename FuncT>
 component_list<Types...>::component_list(const string_t& _key, const bool& _store,
                                          scope::config _scope, const FuncT& _init_func)
-: bundle_type((settings::enabled()) ? add_hash_id(_key) : 0, _store,
-              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
-                                     quirk_config<quirk::timeline_scope>::value,
-                                     quirk_config<quirk::tree_scope>::value))
+: bundle_type(bundle_type::handle(type_list_type{}, _key, _store, _scope))
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
-    if(settings::enabled())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
-        set_prefix(get_hash_identifier_fast(m_hash));
-        invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -91,20 +82,11 @@ template <typename FuncT>
 component_list<Types...>::component_list(const captured_location_t& _loc,
                                          const bool& _store, scope::config _scope,
                                          const FuncT& _init_func)
-: bundle_type(_loc.get_hash(), _store,
-              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
-                                     quirk_config<quirk::timeline_scope>::value,
-                                     quirk_config<quirk::tree_scope>::value))
+: bundle_type(bundle_type::handle(type_list_type{}, _loc, _store, _scope))
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
-    if(settings::enabled())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
-        set_prefix(_loc.get_hash());
-        invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -113,20 +95,11 @@ template <typename... Types>
 template <typename FuncT>
 component_list<Types...>::component_list(size_t _hash, const bool& _store,
                                          scope::config _scope, const FuncT& _init_func)
-: bundle_type(_hash, _store,
-              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
-                                     quirk_config<quirk::timeline_scope>::value,
-                                     quirk_config<quirk::tree_scope>::value))
+: bundle_type(bundle_type::handle(type_list_type{}, _hash, _store, _scope))
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
-    if(settings::enabled())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { _init_func(*this); }
-        set_prefix(_hash);
-        invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
 }
 
 //--------------------------------------------------------------------------------------//

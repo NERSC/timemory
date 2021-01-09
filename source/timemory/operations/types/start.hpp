@@ -100,8 +100,10 @@ private:
     void do_sfinae(Up&, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
-        PRINT_HERE("No support for arguments: start(%s)",
-                   tim::apply<std::string>::join(", ", demangle<Args>()...).c_str());
+        DEBUG_PRINT_HERE(
+            "No support for arguments: start(%s)",
+            tim::apply<std::string>::join(", ", try_demangle<Up>(), demangle<Args>()...)
+                .c_str());
     }
 };
 //
