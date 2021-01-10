@@ -14,7 +14,7 @@ mkdir -p ${DIR}
 
 # rendering settings
 : ${INTERACTIVE:=0}
-: ${IMG_FORMAT:="jpeg"}
+: ${IMG_FORMAT:="png"}
 #: ${DOT_ARGS:='-Gsize=24,24\! -Gdpi=200'}
 : ${DOT_ARGS:=""}
 : ${PPROF_ARGS:="--no_strip_temp --functions"}
@@ -74,29 +74,30 @@ ADD_PRELOAD()
 }
 
 # configure pre-loading of profiler library
-PROJECT_LIBRARIES="$(find $PWD | egrep 'libtimemory|libctimemory' | egrep -v '\.a$|\.dSYM')"
-ADD_LIBS ${PROJECT_LIBRARIES}
-ADD_PRELOAD ${PROJECT_LIBRARIES}
+PROJECT_LIBRARIES="$(find $PWD | egrep 'libtimemory|libctimemory' | egrep -v '\.a$|\.dSYM' | egrep '\.so$|\.dylib$')"
+run-verbose ADD_LIBS ${PROJECT_LIBRARIES}
 if [ "$(uname)" = "Darwin" ]; then
-    ADD_PRELOAD $(otool -L ${1} | egrep 'profiler' | awk '{print $1}')
+    run-verbose ADD_PRELOAD $(otool -L ${1} | egrep 'profiler' | awk '{print $1}')
     LIBS=$(echo ${LIBS} | sed 's/^://g')
     if [ -n "${LIBS}" ]; then
         export DYLD_FORCE_FLAT_NAMESPACE=1
-        export DYLD_INSERT_LIBRARIES=${LIBS}
-        echo "DYLD_INSERT_LIBRARIES=${DYLD_INSERT_LIBRARIES}"
+        echo "DYLD_INSERT_LIBRARIES=${LIBS}"
     fi
 else
     ADD_PRELOAD $(ldd ${1} | egrep 'profiler' | awk '{print $(NF-1)}')
     LIBS=$(echo ${LIBS} | sed 's/^://g')
     if [ -n "${LIB}" ]; then
-        export LD_PRELOAD=${LIBS}
-        echo "LD_PRELOAD=${LD_PRELOAD}"
+        echo "LD_PRELOAD=${LIBS}"
     fi
 fi
 
 set -e
 # run the application
-eval CPUPROFILE_FREQUENCY=${CPUPROFILE_FREQUENCY} CPUPROFILE=${GPERF_PROFILE} $@ | tee ${GPERF_PROFILE}.log
+if [ "$(uname)" = "Darwin" ]; then
+    eval DYLD_INSERT_LIBRARIES=${LIBS} CPUPROFILE_FREQUENCY=${CPUPROFILE_FREQUENCY} CPUPROFILE=${GPERF_PROFILE} $@ | tee ${GPERF_PROFILE}.log
+else
+    eval LD_PRELOAD=${LIBS} CPUPROFILE_FREQUENCY=${CPUPROFILE_FREQUENCY} CPUPROFILE=${GPERF_PROFILE} $@ | tee ${GPERF_PROFILE}.log
+fi
 set +e
 
 echo-dart-measurement()
@@ -118,7 +119,7 @@ if [ -f "${GPERF_PROFILE}" ]; then
         run-verbose cat ${GPERF_PROFILE}.txt.tmp | c++filt -n -t &> ${GPERF_PROFILE}.txt
         run-verbose ${PPROF} --text --cum ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.cum.txt.tmp
         run-verbose cat ${GPERF_PROFILE}.cum.txt.tmp | c++filt -n -t &> ${GPERF_PROFILE}.cum.txt
-        rm *.txt.tmp
+        rm -f *.txt.tmp
         # if dot is available
         if [ -n "$(which dot)" ]; then
             run-verbose ${PPROF} --dot ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.dot
@@ -139,4 +140,5 @@ if [ -f "${GPERF_PROFILE}" ]; then
     fi
 else
     echo -e "profile file \"${GPERF_PROFILE}\" not found!"
+    ls -la
 fi

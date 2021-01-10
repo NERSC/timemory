@@ -517,7 +517,8 @@ private:
                 }
                 return width.load(memorder_v);
             }
-            else { return 0; }
+            (void) _w;  // unused parameter warning when 'if constexpr' available
+            return 0;
         }
 
         std::atomic<int64_t> width{ 0 };
