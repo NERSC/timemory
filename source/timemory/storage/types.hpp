@@ -113,8 +113,8 @@ public:
     const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
     const graph_hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
 
-    hash_result_type add_hash_id(const std::string& _prefix);
-    void             add_hash_id(uint64_t _lhs, uint64_t _rhs);
+    hash_value_type add_hash_id(const std::string& _prefix);
+    void            add_hash_id(uint64_t _lhs, uint64_t _rhs);
 
     bool    is_initialized() const { return m_initialized; }
     int64_t instance_id() const { return m_instance_id; }

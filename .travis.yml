@@ -202,6 +202,9 @@ jobs:
 
 before_install:
   # only run macOS if a pull-request
+  - which -a ${CC}
+  - which -a ${CXX}
+  - env
   - export TIMEMORY_SOURCE_DIRECTORY=${PWD}
   - if [[ "$TRAVIS_PULL_REQUEST" != "false" || "${CONDA_OS}" != "MacOSX" ]]; then EXECUTE=1; else EXECUTE=0; fi;
   - if [ -z "${CONDA_OS}" ]; then CONDA_OS=Linux; fi

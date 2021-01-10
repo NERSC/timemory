@@ -436,10 +436,10 @@ template <typename Archive>
 void
 settings::load(Archive& ar, const unsigned int version)
 {
-    using map_type = std::map<string_view_t, std::shared_ptr<vsettings>>;
+    using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
     for(const auto& itr : m_data)
-        _data.insert({ itr.first, itr.second->clone() });
+        _data.insert({ std::string{ itr.first }, itr.second->clone() });
     auto _map = get_serialize_map<Archive>(data_type_list_t{});
     for(const auto& itr : _data)
     {
@@ -451,11 +451,15 @@ settings::load(Archive& ar, const unsigned int version)
        cereal::make_nvp("environment", m_environment));
     for(const auto& itr : _data)
     {
-        if(m_data.find(itr.first) != m_data.end())
-            m_data[itr.first]->clone(itr.second);
+        auto ditr = m_data.find(itr.first);
+        if(ditr != m_data.end())
+        {
+            ditr->second->clone(itr.second);
+        }
         else
         {
-            m_data.insert({ itr.first, itr.second });
+            m_order.push_back(itr.first);
+            m_data.insert({ m_order.back(), itr.second });
         }
     }
     consume_parameters(version);
@@ -467,10 +471,10 @@ template <typename Archive>
 void
 settings::save(Archive& ar, const unsigned int) const
 {
-    using map_type = std::map<string_view_t, std::shared_ptr<vsettings>>;
+    using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
     for(const auto& itr : m_data)
-        _data.insert({ itr.first, itr.second->clone() });
+        _data.insert({ std::string{ itr.first }, itr.second->clone() });
 
     auto _map = get_serialize_map<Archive>(data_type_list_t{});
     for(const auto& itr : _data)

@@ -260,13 +260,12 @@ public:
     }
 
 protected:
-    using ctor_params_t = std::tuple<hash_result_type, bool, scope::config>;
+    using ctor_params_t = std::tuple<hash_value_type, bool, scope::config>;
 
     // protected construction / destruction section
     template <typename U = impl_type>
-    explicit base_bundle(ctor_params_t _params = { 0, settings::enabled(),
-                                                   scope::get_default() },
-                         enable_if_t<std::tuple_size<U>::value != 0, int> = 0)
+    base_bundle(ctor_params_t _params = { 0, settings::enabled(), scope::get_default() },
+                enable_if_t<std::tuple_size<U>::value != 0, int> = 0)
     : m_scope(std::get<2>(_params) + get_scope_config())
     , m_hash(std::get<0>(_params))
     {
@@ -274,8 +273,7 @@ protected:
     }
 
     template <typename U = impl_type>
-    explicit base_bundle(ctor_params_t                                    = {},
-                         enable_if_t<std::tuple_size<U>::value == 0, int> = 0)
+    base_bundle(ctor_params_t = {}, enable_if_t<std::tuple_size<U>::value == 0, int> = 0)
     {}
 
     ~base_bundle()                      = default;
@@ -321,22 +319,22 @@ protected:
 protected:
     // protected static function section [HANDLERS]
     template <typename... T>
-    static hash_result_type handle_key(type_list<T...>, hash_result_type _hash)
+    static hash_value_type handle_key(type_list<T...>, hash_value_type _hash)
     {
         return _hash;
     }
 
     // HAS SIZE
     template <typename... T>
-    static hash_result_type handle_key(type_list<T...>, const string_t& _key,
-                                       enable_if_t<sizeof...(T) != 0, int> = {})
+    static hash_value_type handle_key(type_list<T...>, const string_t& _key,
+                                      enable_if_t<sizeof...(T) != 0, int> = {})
     {
         return (settings::enabled()) ? add_hash_id(_key) : 0;
     }
 
     template <typename... T>
-    static hash_result_type handle_key(type_list<T...>, const captured_location_t& _loc,
-                                       enable_if_t<sizeof...(T) != 0, int> = {})
+    static hash_value_type handle_key(type_list<T...>, const captured_location_t& _loc,
+                                      enable_if_t<sizeof...(T) != 0, int> = {})
     {
         return _loc.get_hash();
     }
@@ -381,15 +379,15 @@ protected:
 
     // ZERO SIZE
     template <typename... T>
-    static hash_result_type handle_key(type_list<T...>, const string_t&,
-                                       enable_if_t<sizeof...(T) == 0, int> = {})
+    static hash_value_type handle_key(type_list<T...>, const string_t&,
+                                      enable_if_t<sizeof...(T) == 0, int> = {})
     {
         return 0;
     }
 
     template <typename... T>
-    static hash_result_type handle_key(type_list<T...>, const captured_location_t&,
-                                       enable_if_t<sizeof...(T) == 0, int> = {})
+    static hash_value_type handle_key(type_list<T...>, const captured_location_t&,
+                                      enable_if_t<sizeof...(T) == 0, int> = {})
     {
         return 0;
     }
@@ -488,10 +486,10 @@ protected:
 
 protected:
     // protected member data section
-    std::bitset<3>   m_config = {};
-    scope::config    m_scope  = scope::get_default();
-    int64_t          m_laps   = 0;
-    hash_result_type m_hash   = 0;
+    std::bitset<3>  m_config = {};
+    scope::config   m_scope  = scope::get_default();
+    int64_t         m_laps   = 0;
+    hash_value_type m_hash   = 0;
 
 private:
     // private alias section

@@ -154,7 +154,7 @@ storage::add_hash_id(uint64_t _lhs, uint64_t _rhs)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_STORAGE_LINKAGE hash_result_type
+TIMEMORY_STORAGE_LINKAGE hash_value_type
                          storage::add_hash_id(const std::string& _prefix)
 {
     return ::tim::add_hash_id(m_hash_ids, _prefix);

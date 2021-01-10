@@ -64,8 +64,8 @@ get_hash_aliases()
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HASH_LINKAGE(hash_result_type)
-get_hash_id(const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id)
+TIMEMORY_HASH_LINKAGE(hash_value_type)
+get_hash_id(const graph_hash_alias_ptr_t& _hash_alias, hash_value_type _hash_id)
 {
     auto _alias_itr = _hash_alias->find(_hash_id);
     if(_alias_itr != _hash_alias->end())
@@ -75,10 +75,10 @@ get_hash_id(const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HASH_LINKAGE(hash_result_type)
+TIMEMORY_HASH_LINKAGE(hash_value_type)
 add_hash_id(graph_hash_map_ptr_t& _hash_map, const string_view_t& _prefix)
 {
-    hash_result_type _hash_id = get_hash_id(_prefix);
+    hash_value_type _hash_id = get_hash_id(_prefix);
     if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
     {
         (*_hash_map)[_hash_id] = std::string{ _prefix };
@@ -88,15 +88,15 @@ add_hash_id(graph_hash_map_ptr_t& _hash_map, const string_view_t& _prefix)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HASH_LINKAGE(hash_result_type)
+TIMEMORY_HASH_LINKAGE(hash_value_type)
 add_hash_id(const string_view_t& _prefix) { return add_hash_id(get_hash_ids(), _prefix); }
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(void)
 add_hash_id(const graph_hash_map_ptr_t&   _hash_map,
-            const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id,
-            hash_result_type _alias_hash_id)
+            const graph_hash_alias_ptr_t& _hash_alias, hash_value_type _hash_id,
+            hash_value_type _alias_hash_id)
 {
     if(_hash_alias->find(_alias_hash_id) == _hash_alias->end() &&
        _hash_map->find(_hash_id) != _hash_map->end())
@@ -108,7 +108,7 @@ add_hash_id(const graph_hash_map_ptr_t&   _hash_map,
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(void)
-add_hash_id(hash_result_type _hash_id, hash_result_type _alias_hash_id)
+add_hash_id(hash_value_type _hash_id, hash_value_type _alias_hash_id)
 {
     add_hash_id(get_hash_ids(), get_hash_aliases(), _hash_id, _alias_hash_id);
 }
@@ -119,7 +119,7 @@ add_hash_id(hash_result_type _hash_id, hash_result_type _alias_hash_id)
 // you know that the hash exists on the thread and is not an alias
 //
 TIMEMORY_HASH_LINKAGE(string_view_t)
-get_hash_identifier_fast(hash_result_type _hash)
+get_hash_identifier_fast(hash_value_type _hash)
 {
     auto& _hash_ids = get_hash_ids();
     auto  itr       = _hash_ids->find(_hash);
@@ -132,7 +132,7 @@ get_hash_identifier_fast(hash_result_type _hash)
 //
 TIMEMORY_HASH_LINKAGE(std::string)
 get_hash_identifier(const graph_hash_map_ptr_t&   _hash_map,
-                    const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id)
+                    const graph_hash_alias_ptr_t& _hash_alias, hash_value_type _hash_id)
 {
     auto _map_itr   = _hash_map->find(_hash_id);
     auto _alias_itr = _hash_alias->find(_hash_id);
@@ -172,7 +172,7 @@ get_hash_identifier(const graph_hash_map_ptr_t&   _hash_map,
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(std::string)
-get_hash_identifier(hash_result_type _hash_id)
+get_hash_identifier(hash_value_type _hash_id)
 {
     return get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id);
 }

@@ -55,7 +55,7 @@ struct push_node
 
     TIMEMORY_DELETED_OBJECT(push_node)
 
-    push_node(type& obj, scope::config _scope, hash_result_type _hash)
+    push_node(type& obj, scope::config _scope, hash_value_type _hash)
     {
         (*this)(obj, _scope, _hash);
     }
@@ -64,7 +64,7 @@ struct push_node
     : push_node(obj, _scope, get_hash_id(_key))
     {}
 
-    auto operator()(type& obj, scope::config _scope, hash_result_type _hash) const
+    auto operator()(type& obj, scope::config _scope, hash_value_type _hash) const
     {
         if(!trait::runtime_enabled<type>::get())
             return;
@@ -84,7 +84,7 @@ private:
               typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
     auto sfinae(Up& _obj, int, int, int, scope::config _scope,
-                hash_result_type _hash) const
+                hash_value_type _hash) const
         -> decltype(_obj.get_is_on_stack() && _obj.get_is_flat() && _obj.get_storage() &&
                         _obj.get_depth_change(),
                     void())
