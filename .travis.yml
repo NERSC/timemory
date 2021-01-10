@@ -163,7 +163,6 @@ jobs:
             - ubuntu-toolchain-r-test
           packages:
             - clang-6.0
-            - clang++-6.0
             - build-essential
       env:
         - CC=clang-6.0
@@ -176,9 +175,11 @@ jobs:
       python: "3.7"
       addons:
         apt:
+          sources:
+            - llvm-toolchain-bionic-7
+            - ubuntu-toolchain-r-test
           packages:
             - clang-7
-            - clang++-7
             - build-essential
       env:
         - CC=clang-7
@@ -204,6 +205,8 @@ before_install:
   # only run macOS if a pull-request
   - which -a ${CC}
   - which -a ${CXX}
+  - export CC=/usr/bin/${CC}
+  - export CXX=/usr/bin/${CXX}
   - env
   - export TIMEMORY_SOURCE_DIRECTORY=${PWD}
   - if [[ "$TRAVIS_PULL_REQUEST" != "false" || "${CONDA_OS}" != "MacOSX" ]]; then EXECUTE=1; else EXECUTE=0; fi;

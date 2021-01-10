@@ -385,7 +385,7 @@ endif()
 
 # minimum: C++14
 target_compile_features(timemory-headers INTERFACE
-    cxx_std_14
+    cxx_std_${CMAKE_CXX_STANDARD}
     cxx_auto_type
     cxx_alias_templates
     cxx_constexpr
