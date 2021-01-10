@@ -389,8 +389,9 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     if(_nitr != m_node_ids[_depth].end())
     {
         // if so, then update
-        _nitr->second->obj() += std::get<2>(_secondary);
-        _nitr->second->obj().laps += 1;
+        auto& _obj = _nitr->second->obj();
+        _obj += std::get<2>(_secondary);
+        _obj.set_laps(_nitr->second->obj().get_laps() + 1);
         auto& _stats = _nitr->second->stats();
         operation::add_statistics<Type>(_nitr->second->obj(), _stats);
         return _nitr->second;
@@ -400,7 +401,7 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
         // else, create a new entry
         auto&& _tmp = Type{};
         _tmp += std::get<2>(_secondary);
-        _tmp.laps = 1;
+        _tmp.set_laps(_tmp.get_laps() + 1);
         graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
         _node.stats() += _tmp.get();
         auto& _stats = _node.stats();
