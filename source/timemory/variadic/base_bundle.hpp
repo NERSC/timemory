@@ -264,7 +264,8 @@ protected:
 
     // protected construction / destruction section
     template <typename U = impl_type>
-    base_bundle(ctor_params_t _params = { 0, settings::enabled(), scope::get_default() },
+    base_bundle(ctor_params_t _params = ctor_params_t(0, settings::enabled(),
+                                                      scope::get_default()),
                 enable_if_t<std::tuple_size<U>::value != 0, int> = 0)
     : m_scope(std::get<2>(_params) + get_scope_config())
     , m_hash(std::get<0>(_params))
@@ -273,7 +274,8 @@ protected:
     }
 
     template <typename U = impl_type>
-    base_bundle(ctor_params_t = {}, enable_if_t<std::tuple_size<U>::value == 0, int> = 0)
+    base_bundle(ctor_params_t                                    = ctor_params_t(),
+                enable_if_t<std::tuple_size<U>::value == 0, int> = 0)
     {}
 
     ~base_bundle()                      = default;
