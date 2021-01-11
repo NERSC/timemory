@@ -65,9 +65,6 @@ struct malloc_gotcha
     using storage_type = typename base_type::storage_type;
     using string_hash  = std::hash<std::string>;
 
-    // formatting
-    static const short precision = 3;
-    static const short width     = 12;
 
     // required static functions
     static std::string label() { return "malloc_gotcha"; }
@@ -81,9 +78,6 @@ struct malloc_gotcha
         return "GOTCHA wrapper for memory allocation functions: malloc, calloc, free";
 #endif
     }
-    static std::string display_unit() { return "MB"; }
-    static int64_t     unit() { return units::megabyte; }
-    static value_type  record() { return value_type{ 0.0 }; }
 
     using base_type::accum;
     using base_type::is_transient;

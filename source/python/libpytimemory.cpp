@@ -262,9 +262,11 @@ PYBIND11_MODULE(libpytimemory, tim)
     pycomponent_list::generate(tim);
     pycomponent_bundle::generate(tim);
     pyhardware_counters::generate(tim);
-    auto pysettings = pysettings::generate(tim);
-    auto pyunit     = pyunits::generate(tim);
-    auto pycomp     = pycomponents::generate(tim);
+    pystatistics::generate(tim);
+    pysettings::generate(tim);
+    auto pyunit = pyunits::generate(tim);
+    auto pycomp = pycomponents::generate(tim);
+    pystorage::generate(tim);
     pyrss_usage::generate(tim, pyunit);
     pyenumeration::generate(pycomp);
     pyprofile::generate(tim);

@@ -401,18 +401,25 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                                       \
-        TIMEMORY_EXTERN_STORAGE_ALIASES                                                      \
-        namespace tim                                                                        \
-        {                                                                                    \
-        extern template class impl::storage<TYPE,                                            \
-                                            trait::uses_value_storage<TYPE>::value>;         \
-        extern template class storage<TYPE, typename TYPE::value_type>;                      \
-        extern template class singleton<alias::storage_impl_t<TYPE>,                         \
-                                        alias::storage_pointer_t<TYPE>, TIMEMORY_API>;       \
-        extern template storage_singleton<alias::storage_t<TYPE>>*                           \
-                                            get_storage_singleton<alias::storage_t<TYPE>>(); \
-        extern template storage_initializer storage_initializer::get<TYPE>();                \
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                                   \
+        TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
+        namespace tim                                                                    \
+        {                                                                                \
+        extern template class impl::storage<TYPE,                                        \
+                                            trait::uses_value_storage<TYPE>::value>;     \
+        extern template class storage<TYPE, typename TYPE::value_type>;                  \
+        extern template class singleton<alias::storage_impl_t<TYPE>,                     \
+                                        alias::storage_pointer_t<TYPE>, TIMEMORY_API>;   \
+        extern template storage_singleton<alias::storage_t<TYPE>>*                       \
+        get_storage_singleton<alias::storage_t<TYPE>>();                                 \
+        extern template storage_initializer storage_initializer::get<TYPE>();            \
+        namespace node                                                                   \
+        {                                                                                \
+        extern template struct data<TYPE>;                                               \
+        extern template struct graph<TYPE>;                                              \
+        extern template struct result<TYPE>;                                             \
+        extern template struct tree<TYPE>;                                               \
+        }                                                                                \
         }
 #endif
 //
@@ -430,6 +437,13 @@
         template storage_singleton<alias::storage_t<TYPE>>*                              \
                                      get_storage_singleton<alias::storage_t<TYPE>>();    \
         template storage_initializer storage_initializer::get<TYPE>();                   \
+        namespace node                                                                   \
+        {                                                                                \
+        template struct data<TYPE>;                                                      \
+        template struct graph<TYPE>;                                                     \
+        template struct result<TYPE>;                                                    \
+        template struct tree<TYPE>;                                                      \
+        }                                                                                \
         }                                                                                \
         namespace                                                                        \
         {                                                                                \

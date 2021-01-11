@@ -103,11 +103,75 @@ get(py::class_<pytuple_t<T>>& _pyclass)
     -> decltype(std::get<0>(std::declval<pytuple_t<T>>().get()), void())
 {
     using bundle_t = pytuple_t<T>;
-    auto _get      = [](bundle_t* obj) { return std::get<0>(obj->get()); };
-    _pyclass.def("get", _get, "Get the current value");
+    auto _get      = [](bundle_t* obj) { return obj->template get<T>()->get(); };
+    auto _get_raw  = [](bundle_t* obj) {
+        if(tim::trait::base_has_accum<T>::value)
+            return obj->template get<T>()->get_accum();
+        else
+            return obj->template get<T>()->get_value();
+    };
+
     _pyclass.def_property_readonly_static(
         "has_value", [](py::object) { return true; },
         "Whether the component has an accessible value");
+    _pyclass.def("get", _get,
+                 R"(
+Get the value for the component in the units designated by the component and
+the current settings, e.g. if settings.timing_units = "msec" and the
+component has the type-trait 'uses_timing_units' set to true, this will return
+the time in milliseconds. Use get_raw() to avoid unit-conversion.
+)");
+    _pyclass.def("get_raw", _get_raw,
+                 R"(
+Get the value without any unit conversions.
+This may be the identical to get_value() or get_accum() depending on the
+type-traits of the component.
+)");
+
+    auto _get_value = [](bundle_t* obj) { return obj->template get<T>()->get_value(); };
+    _pyclass.def("get_value", _get_value,
+                 R"(
+Get the current value.
+Use with care: depending on the design of the component, this may just be an
+incomplete/intermediate representation of the raw value, such as the starting
+time-stamp or the starting values of the hardware counters, when start() was
+called and stop() was not called.
+)");
+
+    IF_CONSTEXPR(tim::trait::base_has_accum<T>::value)
+    {
+        auto _get_accum = [](bundle_t* obj) {
+            return obj->template get<T>()->get_accum();
+        };
+        _pyclass.def("get_accum", _get_accum,
+                     R"(
+Get the accumulated value of the component.
+When this function is available, this is generally safer than calling get_value()
+since the accumulated value is typically only updated during the stop() member
+function whereas the value returned from get_value() is typically updated
+during both start() and stop(), e.g.:
+
+    start() { value = record(); }
+    stop()
+    {
+        value = (record() - value);
+        accum += value;
+    }
+)");
+    }
+
+    IF_CONSTEXPR(tim::trait::base_has_last<T>::value)
+    {
+        auto _get_last = [](bundle_t* obj) { return obj->template get<T>()->get_last(); };
+        _pyclass.def("get_last", _get_last,
+                     R"(
+Get the latest recorded value.
+This may or may not differ from get_value() depending on the component and when it is
+called. Generally this function is made available when the value returned by get_value()
+is used to record an intermediate value between start() and stop() but it is worthwhile to
+make the latest updated value available.
+)");
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -118,8 +182,8 @@ static inline void
 get(py::class_<pytuple_t<T>>& _pyclass)
 {
     using bundle_t = pytuple_t<T>;
-    auto _get      = [](bundle_t*) { return py::none{}; };
-    _pyclass.def("get", _get, "Component does not return value");
+    auto _none     = [](bundle_t*) { return py::none{}; };
+    _pyclass.def("get", _none, "Component does not return value");
     _pyclass.def_property_readonly_static(
         "has_value", [](py::object) { return false; },
         "Whether the component has an accessible value");
@@ -198,7 +262,7 @@ static inline auto
 get_unit(py::class_<pytuple_t<T>>& _pyclass, int, int) -> decltype(T::get_unit(), void())
 {
     auto _get_unit = []() { return T::get_unit(); };
-    _pyclass.def_static("unit", _get_unit, "Get the display units for the type");
+    _pyclass.def_static("unit", _get_unit, "Get the units for the type");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -561,9 +625,10 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
         return lhs;
     };
     auto _repr = [](bundle_t* obj) {
+        if(!obj)
+            return std::string{};
         std::stringstream ss;
-        if(obj)
-            ss << *obj;
+        obj->template print<true, true>(ss, false);
         return ss.str();
     };
 
@@ -678,6 +743,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def("mark_begin", _noop, "Mark an begin point");
     _pycomp.def("mark_end", _noop, "Mark an end point");
     _pycomp.def("get", _none, "No value available");
+    _pycomp.def("value", _none, "No value available");
 
     // these are operations on the bundler
     _pycomp.def("hash", _none, "Get the current hash");
