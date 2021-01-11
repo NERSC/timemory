@@ -84,7 +84,7 @@ if [ "$(uname)" = "Darwin" ]; then
         echo "DYLD_INSERT_LIBRARIES=${LIBS}"
     fi
 else
-    ADD_PRELOAD $(ldd ${1} | egrep 'profiler' | awk '{print $(NF-1)}')
+    run-verbose ADD_PRELOAD $(ldd ${1} | egrep 'profiler' | awk '{print $(NF-1)}')
     LIBS=$(echo ${LIBS} | sed 's/^://g')
     if [ -n "${LIB}" ]; then
         echo "LD_PRELOAD=${LIBS}"
