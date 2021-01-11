@@ -1254,7 +1254,7 @@ if(TIMEMORY_USE_DYNINST)
         "Boost components used by Dyninst in timemory")
     if(Dyninst_FOUND)
         set(Boost_NO_BOOST_CMAKE ON)
-        find_package(Boost ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT}
+        find_package(Boost QUIET ${TIMEMORY_FIND_REQUIREMENT}
             COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
         # install the revision of FindBoost.cmake which is quiet
         install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/FindBoost.cmake

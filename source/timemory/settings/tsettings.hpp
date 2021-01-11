@@ -84,7 +84,13 @@ struct tsettings : public vsettings
         ss << m_value;
         return ss.str();
     }
-    virtual void parse() final { m_value = get_env<decay_t<Tp>>(m_env_name, m_value); }
+
+    virtual void parse() final
+    {
+        if(!m_env_name.empty())
+            m_value = get_env<decay_t<Tp>>(m_env_name, m_value);
+    }
+
     virtual void parse(const std::string& v) final
     {
         m_value = get_value<decay_t<Tp>>(v);
