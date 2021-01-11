@@ -506,8 +506,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
     EXPECT_GE(_data.size(), 2);
     for(auto& itr : _data)
     {
-        std::cerr << std::setw(12) << itr.prefix() << " : " << itr.data() << std::endl;
-        EXPECT_GT(itr.data().get(), 240000.) << itr.prefix() << ": " << itr.data();
+        EXPECT_GE(itr.data().get(), 240000.) << itr.prefix() << ": " << itr.data();
     }
 }
 

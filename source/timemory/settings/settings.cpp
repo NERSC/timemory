@@ -318,18 +318,14 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::parse(settings* _settings)
 {
-    puts("checking settings pointer...");
     if(!_settings)
         return;
 
-    puts("checking whether to suppress...");
     if(_settings->get_suppress_parsing())
         return;
 
-    puts("parsing settings...");
     for(const auto& itr : *_settings)
     {
-        fprintf(stderr, "parsing %s...\n", itr.first.data());
         itr.second->parse();
     }
 }

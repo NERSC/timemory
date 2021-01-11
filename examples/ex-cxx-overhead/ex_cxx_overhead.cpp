@@ -283,6 +283,10 @@ main(int argc, char** argv)
     if(argc > 3)
         nitr = atoi(argv[3]);
 
+    int nwarmup = 1;
+    if(argc > 4)
+        nwarmup = atoi(argv[4]);
+
     auto env_tool = tim::get_env<std::string>("EX_CXX_OVERHEAD_COMPONENTS", "");
     auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
     env_enum.erase(std::remove_if(env_enum.begin(), env_enum.end(),
@@ -299,8 +303,11 @@ main(int argc, char** argv)
     tim::auto_tuple<> empty_test("test");
     tim::consume_parameters(empty_test);
 
-    auto warmup = run<mode::none>(nfib, nfib, false);
-    std::cout << "[warmup]" << std::get<0>(warmup) << std::endl;
+    for(int i = 0; i < nwarmup; ++i)
+    {
+        auto warmup = run<mode::none>(nfib, nfib, false);
+        std::cout << "[warmup]" << std::get<0>(warmup) << std::endl;
+    }
 
     int64_t ex_measure = 0;
     int64_t ex_unique  = 0;

@@ -58,15 +58,12 @@ TIMEMORY_CONFIG_LINKAGE(void)
 timemory_init(int argc, char** argv, const std::string& _prefix,
               const std::string& _suffix)
 {
-    puts("[timemory_init]> initializing timemory...");
     static auto _settings = settings::shared_instance();
     if(_settings)
     {
-        puts("[timemory_init:0]> handling initial settings...");
         if(_settings->get_debug() || _settings->get_verbose() > 3)
             PRINT_HERE("%s", "");
 
-        puts("[timemory_init:1]> handling initial settings...");
         if(_settings->get_enable_signal_handler())
         {
             auto default_signals = signal_settings::get_default();
@@ -77,7 +74,6 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
             enable_signal_detection(enabled_signals);
         }
 
-        puts("[timemory_init:2]> handling initial settings...");
         auto _ncfg = _settings->get_suppress_config();
         if(!_ncfg)
         {
@@ -89,12 +85,10 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
                 get_env<string_t>("HOME") + std::string("/.config/timemory.json")
             };
 
-            puts("[timemory_init:2.0]> handling initial settings...");
             auto _cfg   = _settings->get_config_file();
             auto _files = tim::delimit(_cfg, ",;");
             for(const auto& citr : _files)
             {
-                puts("[timemory_init:2.1]> handling initial settings...");
                 std::ifstream ifs(citr);
                 if(ifs)
                 {
@@ -109,7 +103,6 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
         }
     }
 
-    puts("[timemory_init]> configuring exe_name...");
     std::string exe_name = (argc > 0) ? argv[0] : "";
 
     while(exe_name.find('\\') != std::string::npos)
@@ -139,20 +132,15 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
     if(exe_name.empty())
         exe_name = "timemory-output";
 
-    puts("[timemory_init]> handling exe_name...");
     if(_settings)
     {
-        puts("[timemory_init]> setting output path...");
         _settings->get_output_path() = exe_name;
 
         // allow environment overrides
-        puts("[timemory_init]> parsing environment settings...");
         settings::parse(_settings);
 
-        puts("[timemory_init]> checking if should enable signal handler...");
         if(_settings->get_enable_signal_handler())
         {
-            puts("[timemory_init]> enabling signal handler...");
             auto _exit_action = [](int nsig) {
                 auto _manager = manager::master_instance();
                 if(_manager)
@@ -166,19 +154,14 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
             signal_settings::set_exit_action(_exit_action);
         }
 
-        puts("[timemory_init]> storing command line...");
         settings::store_command_line(argc, argv);
     }
 
-    puts("[timemory_init]> instantiating manager...");
     static auto _manager = manager::instance();
     if(_manager)
     {
-        puts("[timemory_init]> updating manager metadata prefix...");
         _manager->update_metadata_prefix();
     }
-
-    puts("[timemory_init]> timemory initialized");
 }
 //
 //--------------------------------------------------------------------------------------//
