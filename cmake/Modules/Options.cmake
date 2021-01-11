@@ -15,8 +15,10 @@ set(TIMEMORY_REQUIRE_PACKAGES ON CACHE BOOL
 
 # advanced options not using the "add_option" macro
 option(SPACK_BUILD "Tweak some installation directories when building via spack" OFF)
+option(TIMEMORY_CI "Timemory continuous integration" OFF)
 option(TIMEMORY_SOURCE_GROUP "Enable source_group" OFF)
 mark_as_advanced(SPACK_BUILD)
+mark_as_advanced(TIMEMORY_CI)
 mark_as_advanced(TIMEMORY_SOURCE_GROUP)
 
 function(DEFINE_DEFAULT_OPTION VAR VAL)

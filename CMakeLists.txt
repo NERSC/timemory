@@ -306,10 +306,20 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 if(TIMEMORY_BUILD_EXAMPLES)
     message(STATUS "Adding examples...")
     add_subdirectory(examples)
-elseif(TIMEMORY_BUILD_TESTING AND TIMEMORY_USE_PYTHON)
+elseif(TIMEMORY_USE_PYTHON AND TIMEMORY_CI)
     message(STATUS "Adding examples/ex-python...")
     # copies over some python scripts
     add_subdirectory(examples/ex-python)
+    function(CONFIGURE_PYTHON_SCRIPT)
+        foreach(_TYPE ${ARGN})
+            set(FILENAME ex_python_${_TYPE})
+            configure_file(
+                ${PROJECT_SOURCE_DIR}/examples/ex-python/ex_${_TYPE}.py
+                ${PROJECT_BINARY_DIR}/ex_python_${_TYPE}
+                @ONLY)
+        endforeach()
+    endfunction()
+    configure_python_script(sample tracer profiler general builtin external)
 endif()
 
 #----------------------------------------------------------------------------------------#

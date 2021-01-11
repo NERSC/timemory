@@ -456,6 +456,7 @@ def run_pyctest():
         "BUILD_STATIC_LIBS": "ON" if "static" in args.build_libs else "OFF",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON" if args.ipo else "OFF",
         "CMAKE_CXX_STANDARD": "{}".format(args.cxx_standard),
+        "TIMEMORY_CI": "ON",
         "TIMEMORY_TLS_MODEL": "{}".format(args.tls_model),
         "TIMEMORY_CCACHE_BUILD": "OFF",
         "TIMEMORY_BUILD_C": "ON",
