@@ -52,7 +52,7 @@ run-verbose apt-get dist-upgrade -y
 #
 #-----------------------------------------------------------------------------#
 
-run-verbose apt-get install -y build-essential git-core ssed bash-completion
+run-verbose apt-get install -y build-essential git-core ssed bash-completion gdb
 
 #-----------------------------------------------------------------------------#
 #
@@ -62,7 +62,7 @@ run-verbose apt-get install -y build-essential git-core ssed bash-completion
 
 # install compilers
 run-verbose apt-get -y install {gcc,g++,gfortran}-{7,8,${GCC_VERSION}} gcc-{7,8,${GCC_VERSION}}-multilib
-run-verbose apt-get -y install clang-{8,9,10,11,${CLANG_VERSION}} clang-{tidy,tools,format}-{8,9,10,11,${CLANG_VERSION}} libc++-dev libc++abi-dev
+run-verbose apt-get -y install clang-{7,8,9,10,11,${CLANG_VERSION}} clang-{tidy,tools,format}-{6.0,7,8,9,10,11,${CLANG_VERSION}} libc++-dev libc++abi-dev
 
 DISPLAY_PACKAGES="xserver-xorg freeglut3-dev libx11-dev libx11-xcb-dev libxpm-dev libxft-dev libxmu-dev libxv-dev libxrandr-dev \
     libglew-dev libftgl-dev libxkbcommon-x11-dev libxrender-dev libxxf86vm-dev libxinerama-dev qt5-default \
@@ -161,7 +161,7 @@ fi
 #   UPDATE ALTERNATIVES -- CUDA compilers
 #-----------------------------------------------------------------------------#
 priority=10
-for i in clang++-6.0 clang++-7.0 nvcc
+for i in clang++-{7.0,7,8,9,10,11,${CLANG_VERSION}} nvcc
 do
     if [ -n "$(which ${i})" ]; then
         run-verbose update-alternatives --install /usr/bin/cu cu $(which ${i}) ${priority}

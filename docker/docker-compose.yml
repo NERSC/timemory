@@ -17,7 +17,9 @@ services:
       context: ./cpu
       dockerfile: Dockerfile.dev
       args:
-        COMPILER_TYPE: "gcc"
+        COMPILER_SPEC: "gcc@9.3.0"
+        VERSION: "develop"
+        PYTHON_VERSION: "3.7.9"
         GCC_VERSION: "9"
         CLANG_VERSION: "11"
 
@@ -32,10 +34,13 @@ services:
       context: ./gpu
       dockerfile: Dockerfile.dev
       args:
-        COMPILER_TYPE: "gcc"
+        COMPILER_SPEC: "gcc@8.4.0"
+        VERSION: "develop"
+        PYTHON_VERSION: "3.7.9"
+        CUDA_ARCH: "70"
+        CUDA_ARCH_NAME: "volta"
         GCC_VERSION: "8"
         CLANG_VERSION: "11"
-        CUDA_ARCH: "70"
 
   #--------------------------------------------------------------------------#
   # timemory release container for CPU
@@ -49,7 +54,7 @@ services:
       dockerfile: Dockerfile
       args:
         COMPILER_SPEC: "gcc"
-        PYTHON_VERSION: "3.7"
+        PYTHON_VERSION: "3.7.9"
 
   #--------------------------------------------------------------------------#
   # timemory release container for GPU
@@ -62,7 +67,7 @@ services:
       context: ./gpu
       dockerfile: Dockerfile
       args:
-        COMPILER_SPEC: "gcc"
-        PYTHON_VERSION: "3.7"
+        COMPILER_SPEC: "gcc@7.5.0"
+        PYTHON_VERSION: "3.7.9"
         CUDA_ARCH: "70"
         CUDA_ARCH_NAME: "volta"

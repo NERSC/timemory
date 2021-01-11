@@ -161,7 +161,7 @@ fi
 #   UPDATE ALTERNATIVES -- CUDA compilers
 #-----------------------------------------------------------------------------#
 priority=10
-for i in clang++-6.0 clang++-7.0 nvcc
+for i in clang++-{7.0,7,8,9,10,11,${CLANG_VERSION}} nvcc
 do
     if [ -n "$(which ${i})" ]; then
         run-verbose update-alternatives --install /usr/bin/cu cu $(which ${i}) ${priority}

@@ -54,6 +54,7 @@ RUN cd /opt/environment && \
     spack gpg trust e4s.pub && \
     spack mirror add E4S https://cache.e4s.io/e4s && \
     rm e4s.pub && \
+    spack compiler find && \
     spack external find && \
     spack --env . install && \
     spack gc -y
