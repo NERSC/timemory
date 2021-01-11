@@ -722,6 +722,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     using property_t  = tim::component::properties<T>;
     using bundle_t    = pytuple_t<T>;
     std::string id    = get_class_name(property_t::enum_string());
+    std::string cid   = property_t::id();
     std::string _desc = "not available";
 
     auto _init  = []() { return new bundle_t{}; };
@@ -777,8 +778,8 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def_static("index", [idx]() { return idx; },
                        "Enumeration ID for the component");
 
-    _pycomp.def_static("id", [id]() { return id; },
-                       "(Primary) String ID for the component");
+    _pycomp.def_static(
+        "id", [cid]() { return cid; }, "(Primary) String ID for the component");
 
     // generate_properties<Idx, T>(_pycomp);
 }
