@@ -68,8 +68,14 @@ struct serialization
         try_catch("is_transient", obj.get_is_transient());
         try_catch("laps", obj.get_laps());
         try_catch("value", obj.get_value());
-        try_catch("accum", obj.get_accum());
-        try_catch("last", obj.get_last());
+        IF_CONSTEXPR(trait::base_has_accum<Tp>::value)
+        {
+            try_catch("accum", obj.get_accum());
+        }
+        IF_CONSTEXPR(trait::base_has_last<Tp>::value)
+        {
+            try_catch("last", obj.get_last());
+        }
         try_catch("repr_data", obj.get());
         try_catch("repr_display", obj.get_display());
         // try_catch("units", type::get_unit());

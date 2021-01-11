@@ -81,19 +81,6 @@ TIMEMORY_SET_COMPONENT_API(component::thread_cpu_util, project::timemory,
 //
 //--------------------------------------------------------------------------------------//
 //
-//                              AVAILABLE
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(_WINDOWS)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::thread_cpu_clock, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::process_cpu_clock, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::thread_cpu_util, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::process_cpu_util, false_type)
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
 //                              STATISTICS
 //
 //--------------------------------------------------------------------------------------//
