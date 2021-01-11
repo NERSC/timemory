@@ -106,12 +106,40 @@ struct state
 //
 //--------------------------------------------------------------------------------------//
 //
+//  single specialization
+//
+template <>
+struct static_properties<void, false>
+{
+    static bool matches(const char* _key, const char* _enum_str, const idset_t& _ids)
+    {
+        const auto regex_consts = std::regex_constants::ECMAScript |
+                                  std::regex_constants::icase |
+                                  std::regex_constants::optimize;
+
+        auto get_pattern = [](const std::string& _option) {
+            return std::string("^(.*[,;: \t\n\r]+|)") + _option + "([,;: \t\n\r]+.*|$)";
+        };
+        if(std::regex_match(_key, std::regex(get_pattern(_enum_str), regex_consts)))
+            return true;
+        for(const auto& itr : _ids)
+        {
+            if(std::regex_match(_key, std::regex(get_pattern(itr), regex_consts)))
+                return true;
+        }
+        return false;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 //  non-placeholder types
 //
 template <typename Tp>
 struct static_properties<Tp, false>
 {
     using ptype = properties<Tp>;
+    using vtype = static_properties<void, false>;
 
     static bool matches(int _idx) { return (_idx == ptype{}()); }
     static bool matches(const std::string& _key) { return matches(_key.c_str()); }
@@ -121,22 +149,7 @@ struct static_properties<Tp, false>
         static_assert(!concepts::is_placeholder<Tp>::value,
                       "static_properties is instantiating a placeholder type");
 
-        const auto regex_consts = std::regex_constants::ECMAScript |
-                                  std::regex_constants::icase |
-                                  std::regex_constants::optimize;
-
-        auto get_pattern = [](const std::string& _option) {
-            return std::string("^(.*[,;: \t\n\r]+|)") + _option + "([,;: \t\n\r]+.*|$)";
-        };
-        if(std::regex_match(_key,
-                            std::regex(get_pattern(ptype::enum_string()), regex_consts)))
-            return true;
-        for(const auto& itr : ptype::ids())
-        {
-            if(std::regex_match(_key, std::regex(get_pattern(itr), regex_consts)))
-                return true;
-        }
-        return false;
+        return vtype::matches(_key, ptype::enum_string(), ptype::ids());
     }
 };
 //

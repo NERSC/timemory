@@ -109,16 +109,21 @@ print_dart(dummy&)
     protected:                                                                           \
         static void SetUpTestSuite()                                                     \
         {                                                                                \
+            puts("[SetupTestSuite] setup starting");                                     \
             tim::settings::verbose()     = 0;                                            \
             tim::settings::debug()       = false;                                        \
             tim::settings::json_output() = true;                                         \
             tim::settings::mpi_thread()  = false;                                        \
+            puts("[SetupTestSuite] initializing dmp");                                   \
             tim::dmp::initialize(_argc, _argv);                                          \
+            puts("[SetupTestSuite] initializing timemory");                              \
             tim::timemory_init(_argc, _argv);                                            \
+            puts("[SetupTestSuite] timemory initialized");                               \
             tim::settings::dart_output() = false;                                        \
             tim::settings::dart_count()  = 1;                                            \
             tim::settings::banner()      = false;                                        \
             __VA_ARGS__;                                                                 \
+            puts("[SetupTestSuite] setup completed");                                    \
             metric().start();                                                            \
         }
 

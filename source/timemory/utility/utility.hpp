@@ -111,6 +111,17 @@ using pid_t = int;
 
 namespace tim
 {
+// alias here for common string type
+// there is also a string_view_t alias in macros/language.hpp which is std::string in
+// c++14 and std::string_view in c++17 and newer
+using string_t = std::string;
+
+// thread synchronization aliases. Recursive mutex is used for convenience since the
+// performance penalty vs. a regular mutex is not really an issue since there are not
+// many locks in general.
+using mutex_t     = std::recursive_mutex;
+using auto_lock_t = std::unique_lock<mutex_t>;
+
 //--------------------------------------------------------------------------------------//
 // definition in popen.hpp
 bool
@@ -133,13 +144,6 @@ isfinite(const Tp& arg)
 #endif
 }
 
-//--------------------------------------------------------------------------------------//
-
-using string_t    = std::string;
-using str_list_t  = std::vector<string_t>;
-using mutex_t     = std::recursive_mutex;
-using auto_lock_t = std::unique_lock<mutex_t>;
-
 //======================================================================================//
 //
 //  General functions
@@ -147,7 +151,7 @@ using auto_lock_t = std::unique_lock<mutex_t>;
 //======================================================================================//
 
 template <typename Tp, typename ApiT = TIMEMORY_API>
-mutex_t&
+auto&
 type_mutex(const uint64_t& _n = 0)
 {
     static std::vector<mutex_t*> _mutexes{};
@@ -565,36 +569,25 @@ demangle_backtrace(const std::string& str)
 //  delimit a string into a set
 //
 template <typename ContainerT = std::vector<std::string>,
-          typename PredicateT = std::function<string_t(string_t)>>
+          typename PredicateT = std::function<std::string(const std::string&)>>
 inline ContainerT
-delimit(const string_t& line, const string_t& delimiters = "\"',;: ",
-        PredicateT&& predicate = [](const string_t& s) -> string_t { return s; })
+delimit(const std::string& line, const std::string& delimiters = "\"',;: ",
+        PredicateT&& predicate = [](const std::string& s) -> std::string { return s; })
 {
-    auto _get_first_not_of = [&delimiters](const string_t& _string, const size_t& _beg) {
-        return _string.find_first_not_of(delimiters, _beg);
-    };
-
-    auto _get_first_of = [&delimiters](const string_t& _string, const size_t& _beg) {
-        return _string.find_first_of(delimiters, _beg);
-    };
-
-    ContainerT _result;
+    ContainerT _result{};
     size_t     _beginp = 0;  // position that is the beginning of the new string
     size_t     _delimp = 0;  // position of the delimiter in the string
     while(_beginp < line.length() && _delimp < line.length())
     {
-        // find the first character (starting at _end) that is not a delimiter
-        _beginp = _get_first_not_of(line, _delimp);
+        // find the first character (starting at _delimp) that is not a delimiter
+        _beginp = line.find_first_not_of(delimiters, _delimp);
         // if no a character after or at _end that is not a delimiter is not found
         // then we are done
-        if(_beginp == string_t::npos)
-        {
+        if(_beginp == std::string::npos)
             break;
-        }
         // starting at the position of the new string, find the next delimiter
-        _delimp = _get_first_of(line, _beginp);
-        // if(d2 == string_t::npos) { d2 = string_t::npos; }
-        string_t _tmp;
+        _delimp = line.find_first_of(delimiters, _beginp);
+        std::string _tmp{};
         try
         {
             // starting at the position of the new string, get the characters
@@ -603,9 +596,7 @@ delimit(const string_t& line, const string_t& delimiters = "\"',;: ",
         } catch(std::exception& e)
         {
             // print the exception but don't fail, unless maybe it should?
-            std::stringstream ss;
-            ss << e.what();
-            fprintf(stderr, "%s\n", ss.str().c_str());
+            fprintf(stderr, "%s\n", e.what());
         }
         // don't add empty strings
         if(!_tmp.empty())
@@ -614,52 +605,6 @@ delimit(const string_t& line, const string_t& delimiters = "\"',;: ",
         }
     }
     return _result;
-}
-
-//--------------------------------------------------------------------------------------//
-//  delimit line : e.g. delimit_line("a B\t c", " \t") --> { "a", "B", "c"}
-inline str_list_t
-delimit(std::string _str, const std::string& _delims)
-{
-    str_list_t _list;
-    while(_str.length() > 0)
-    {
-        size_t _end = 0;
-        size_t _beg = _str.find_first_not_of(_delims, _end);
-        if(_beg == std::string::npos)
-            break;
-        _end = _str.find_first_of(_delims, _beg);
-        if(_beg < _end)
-        {
-            _list.push_back(_str.substr(_beg, _end - _beg));
-            _str.erase(_beg, _end - _beg);
-        }
-    }
-    return _list;
-}
-
-//--------------------------------------------------------------------------------------//
-//  delimit line : e.g. delimit_line("a B\t c", " \t") --> { "a", "B", "c"}
-template <typename FuncT>
-inline str_list_t
-delimit(std::string _str, const std::string& _delims,
-        const FuncT& strop = [](const std::string& s) { return s; })
-{
-    str_list_t _list;
-    while(_str.length() > 0)
-    {
-        size_t _end = 0;
-        size_t _beg = _str.find_first_not_of(_delims, _end);
-        if(_beg == std::string::npos)
-            break;
-        _end = _str.find_first_of(_delims, _beg);
-        if(_beg < _end)
-        {
-            _list.push_back(strop(_str.substr(_beg, _end - _beg)));
-            _str.erase(_beg, _end - _beg);
-        }
-    }
-    return _list;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -789,220 +734,35 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
-inline size_t
-unaligned_load(const char* p)
-{
-    size_t result;
-    std::memcpy(&result, p, sizeof(result));
-    return result;
-}
-
-//--------------------------------------------------------------------------------------//
-
-#if __SIZEOF_SIZE_T__ == 8
-
-// Loads n bytes, where 1 <= n < 8.
-inline size_t
-load_bytes(const char* p, int n)
-{
-    size_t result = 0;
-    --n;
-    do
-        result = (result << 8) + static_cast<unsigned char>(p[n]);
-    while(--n >= 0);
-    return result;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline size_t
-shift_mix(size_t v)
-{
-    return v ^ (v >> 47);
-}
-
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if __SIZEOF_SIZE_T__ == 4
-
-//--------------------------------------------------------------------------------------//
-// Implementation of Murmur hash for 32-bit size_t.
-//
-inline size_t
-hash_bytes(const void* ptr, size_t len, size_t seed)
-{
-    const size_t m    = 0x5bd1e995;
-    size_t       hash = seed ^ len;
-    const char*  buf  = static_cast<const char*>(ptr);
-
-    // Mix 4 bytes at a time into the hash.
-    while(len >= 4)
-    {
-        size_t k = unaligned_load(buf);
-        k *= m;
-        k ^= k >> 24;
-        k *= m;
-        hash *= m;
-        hash ^= k;
-        buf += 4;
-        len -= 4;
-    }
-
-    // Handle the last few bytes of the input array.
-    switch(len)
-    {
-        case 3: hash ^= static_cast<unsigned char>(buf[2]) << 16; [[gnu::fallthrough]];
-        case 2: hash ^= static_cast<unsigned char>(buf[1]) << 8; [[gnu::fallthrough]];
-        case 1: hash ^= static_cast<unsigned char>(buf[0]); hash *= m;
-    };
-
-    // Do a few final mixes of the hash.
-    hash ^= hash >> 13;
-    hash *= m;
-    hash ^= hash >> 15;
-    return hash;
-}
-
-//--------------------------------------------------------------------------------------//
-// Implementation of FNV hash for 32-bit size_t.
-// N.B. This function should work on unsigned char, otherwise it does not
-// correctly implement the FNV-1a algorithm (see PR59406).
-// The existing behaviour is retained for backwards compatibility.
-//
-inline size_t
-fnv_hash_bytes(const void* ptr, size_t len, size_t hash)
-{
-    const char* cptr = static_cast<const char*>(ptr);
-    for(; len > 0U; --len)
-    {
-        hash ^= static_cast<size_t>(*cptr++);
-        hash *= static_cast<size_t>(16777619UL);
-    }
-    return hash;
-}
-
-#elif __SIZEOF_SIZE_T__ == 8
-
-//--------------------------------------------------------------------------------------//
-// Implementation of Murmur hash for 64-bit size_t.
-//
-inline size_t
-hash_bytes(const void* ptr, size_t len, size_t seed)
-{
-    static constexpr size_t mul =
-        (((size_t) 0xc6a4a793UL) << 32UL) + (size_t) 0x5bd1e995UL;
-    const char* const buf = static_cast<const char*>(ptr);
-
-    // Remove the bytes not divisible by the sizeof(size_t).  This
-    // allows the main loop to process the data as 64-bit integers.
-    const size_t      len_aligned = len & ~(size_t) 0x7;
-    const char* const end         = buf + len_aligned;
-    size_t            hash        = seed ^ (len * mul);
-    for(const char* p = buf; p != end; p += 8)
-    {
-        const size_t data = shift_mix(unaligned_load(p) * mul) * mul;
-        hash ^= data;
-        hash *= mul;
-    }
-    if((len & 0x7) != 0)
-    {
-        const size_t data = load_bytes(end, len & 0x7);
-        hash ^= data;
-        hash *= mul;
-    }
-    hash = shift_mix(hash) * mul;
-    hash = shift_mix(hash);
-    return hash;
-}
-
-//--------------------------------------------------------------------------------------//
-// Implementation of FNV hash for 64-bit size_t.
-// N.B. This function should work on unsigned char, otherwise it does not
-// correctly implement the FNV-1a algorithm (see PR59406).
-// The existing behaviour is retained for backwards compatibility.
-//
-inline size_t
-fnv_hash_bytes(const void* ptr, size_t len, size_t hash)
-{
-    const char* cptr = static_cast<const char*>(ptr);
-    for(; len > 0U; --len)
-    {
-        hash ^= static_cast<size_t>(*cptr++);
-        hash *= static_cast<size_t>(1099511628211ULL);
-    }
-    return hash;
-}
-
-#else
-
-//--------------------------------------------------------------------------------------//
-// Dummy hash implementation for unusual sizeof(size_t).
-//
-inline size_t
-hash_bytes(const void* ptr, size_t len, size_t seed)
-{
-    size_t      hash = seed;
-    const char* cptr = reinterpret_cast<const char*>(ptr);
-    for(; len > 0U; --len)
-        hash = (hash * 131) + *cptr++;
-    return hash;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-inline size_t
-fnv_hash_bytes(const void* ptr, size_t len, size_t seed)
-{
-    return hash_bytes(ptr, len, seed);
-}
-
-#endif /* __SIZEOF_SIZE_T__ */
-
-//--------------------------------------------------------------------------------------//
-
 template <typename T>
-inline size_t
-get_hash(T&& obj)
+TIMEMORY_INLINE size_t
+                get_hash(T&& obj)
 {
-    return std::hash<T>()(std::forward<T>(obj));
+    return std::hash<decay_t<T>>()(std::forward<T>(obj));
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline size_t
-get_hash(const std::string& str)
+TIMEMORY_INLINE size_t
+                get_hash(const string_view_t& str)
 {
-    static constexpr auto seed = static_cast<size_t>(0xc70f6907UL);
-    return hash_bytes(static_cast<const void*>(str.data()), str.length(), seed);
+    return std::hash<string_view_t>{}(str);
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline size_t
-get_hash(std::string&& str)
+TIMEMORY_INLINE size_t
+                get_hash(const char* cstr)
 {
-    static constexpr auto seed = static_cast<size_t>(0xc70f6907UL);
-    return hash_bytes(static_cast<const void*>(str.data()), str.length(), seed);
+    return std::hash<string_view_t>{}(cstr);
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline size_t
-get_hash(const char* cstr)
+TIMEMORY_HOT_INLINE size_t
+                    get_hash(char* cstr)
 {
-    static constexpr auto seed = static_cast<size_t>(0xc70f6907UL);
-    return hash_bytes(static_cast<const void*>(cstr), strlen(cstr), seed);
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline size_t
-get_hash(char* cstr)
-{
-    static constexpr auto seed = static_cast<size_t>(0xc70f6907UL);
-    return hash_bytes(static_cast<const void*>(cstr), strlen(cstr), seed);
+    return std::hash<string_view_t>{}(cstr);
 }
 
 //--------------------------------------------------------------------------------------//

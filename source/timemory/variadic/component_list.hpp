@@ -106,35 +106,35 @@ class component_list
 : public heap_bundle<available_t<concat<Types...>>>
 , public concepts::comp_wrapper
 {
-    static const std::size_t num_elements = sizeof...(Types);
+    using apply_v     = apply<void>;
+    using bundle_type = heap_bundle<available_t<concat<Types...>>>;
+    using impl_type   = typename bundle_type::impl_type;
 
-    // manager is friend so can use above
-    friend class manager;
+    template <typename T, typename... U>
+    friend class base_bundle;
+
+    template <typename... Tp>
+    friend class auto_list;
 
 #if defined(TIMEMORY_USE_DEPRECATED)
     template <typename TupleC, typename ListC>
     friend class component_hybrid;
 #endif
 
-    template <typename... Tp>
-    friend class auto_list;
-
 public:
-    using bundle_type         = heap_bundle<available_t<concat<Types...>>>;
-    using this_type           = component_list<Types...>;
     using captured_location_t = source_location::captured;
 
+    using this_type      = component_list<Types...>;
+    using type_list_type = type_list<Types...>;
+
     using data_type         = typename bundle_type::data_type;
-    using impl_type         = typename bundle_type::impl_type;
     using tuple_type        = typename bundle_type::tuple_type;
     using sample_type       = typename bundle_type::sample_type;
     using reference_type    = typename bundle_type::reference_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
 
-    using apply_v     = apply<void>;
-    using size_type   = typename bundle_type::size_type;
-    using string_t    = typename bundle_type::string_t;
-    using string_hash = typename bundle_type::string_hash;
+    using size_type = typename bundle_type::size_type;
+    using string_t  = typename bundle_type::string_t;
 
     template <template <typename> class Op, typename Tuple = impl_type>
     using operation_t = typename bundle_type::template generic_operation<Op, Tuple>::type;
@@ -155,15 +155,8 @@ public:
 public:
     static initializer_type& get_initializer();
 
-public:
     template <typename T, typename... U>
-    struct quirk_config
-    {
-        static constexpr bool value =
-            is_one_of<T, type_list<Types..., U...>>::value ||
-            is_one_of<T,
-                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
-    };
+    using quirk_config = mpl::impl::quirk_config<T, type_list<Types...>, U...>;
 
 public:
     component_list();
@@ -198,31 +191,47 @@ public:
 
 public:
     //----------------------------------------------------------------------------------//
-    // get the size
+    // public static functions
     //
-    static constexpr std::size_t size() { return num_elements; }
-    static void                  print_storage();
-    static void                  init_storage();
+    /// requests the components to output their storage
+    static void print_storage();
+    /// requests the component initialize their storage
+    static void init_storage();
 
+    //----------------------------------------------------------------------------------//
+    // public member functions
+    //
+    /// tells each component to push itself into the call-stack hierarchy
     void push();
+    /// tells each component to pop itself off of the call-stack hierarchy
     void pop();
+    /// requests each component record a measurment
     template <typename... Args>
     void measure(Args&&...);
+    /// requests each component take a sample (if supported)
     template <typename... Args>
     void sample(Args&&...);
+    /// invokes start on all the components
     template <typename... Args>
     void start(Args&&...);
+    /// invokes stop on all the components
     template <typename... Args>
     void stop(Args&&...);
+    /// requests each component performs a measurement
     template <typename... Args>
     this_type& record(Args&&...);
+    /// invokes reset member function on all the components
     template <typename... Args>
     void reset(Args&&...);
+    /// returns a tuple of invoking get() on all the components
     template <typename... Args>
     auto get(Args&&...) const;
+    /// returns a tuple of the component label + invoking get() on all the components
     template <typename... Args>
-    auto             get_labeled(Args&&...) const;
-    data_type&       data();
+    auto get_labeled(Args&&...) const;
+    /// returns a reference to the underlying tuple of components
+    data_type& data();
+    /// returns a const reference to the underlying tuple of components
     const data_type& data() const;
 
     using bundle_type::get_prefix;
@@ -233,6 +242,7 @@ public:
     using bundle_type::laps;
     using bundle_type::prefix;
     using bundle_type::rekey;
+    using bundle_type::size;
     using bundle_type::store;
 
     //----------------------------------------------------------------------------------//
@@ -418,7 +428,7 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using printer_t       = typename bundle_type::print_t;
+        using printer_t       = typename bundle_type::print_type;
         using pointer_count_t = operation_t<operation::generic_counter>;
 
         uint64_t count = 0;

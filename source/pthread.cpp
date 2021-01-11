@@ -140,15 +140,17 @@ using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
 auto
 setup_pthread_gotcha()
 {
+#    if defined(TIMEMORY_USE_GOTCHA)
     if(timemory_enable_pthread_gotcha_wrapper())
     {
-#    if defined(TIMEMORY_USE_GOTCHA)
         pthread_gotcha_t::get_initializer() = []() {
             TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
         };
-#    endif
     }
     return std::make_shared<pthread_bundle_t>("pthread");
+#    else
+    return std::shared_ptr<pthread_bundle_t>{};
+#    endif
 }
 
 //--------------------------------------------------------------------------------------//

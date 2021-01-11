@@ -48,41 +48,48 @@ template <typename Tp>
 struct set_prefix
 {
     using type     = Tp;
-    using string_t = std::string;
+    using string_t = string_view_t;
 
     TIMEMORY_DELETED_OBJECT(set_prefix)
 
-    TIMEMORY_HOT_INLINE set_prefix(type& obj, const string_t& prefix);
-    TIMEMORY_HOT_INLINE set_prefix(type& obj, uint64_t nhash, const string_t& prefix);
+    TIMEMORY_HOT_INLINE set_prefix(type& obj, const string_t& _prefix);
+    TIMEMORY_HOT_INLINE set_prefix(type& obj, uint64_t _nhash, const string_t& _prefix);
 
 private:
     //  If the component has a set_prefix(const string_t&) member function
     template <typename U>
-    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, int, const string_t& prefix)
-        -> decltype(obj.set_prefix(prefix), void())
+    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, int, int, const string_t& _prefix)
+        -> decltype(obj.set_prefix(_prefix))
     {
-        obj.set_prefix(prefix);
+        return obj.set_prefix(_prefix);
     }
 
-    template <typename U>
-    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, long, const string_t& prefix)
-        -> decltype(obj.set_prefix(prefix.c_str()), void())
+    template <typename U, typename S>
+    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, int, long, const S& _prefix)
+        -> decltype(obj.set_prefix(_prefix.c_str()))
     {
-        obj.set_prefix(prefix.c_str());
+        return obj.set_prefix(_prefix.c_str());
+    }
+
+    template <typename U, typename S>
+    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, long, long, const S& _prefix)
+        -> decltype(obj.set_prefix(_prefix.data()))
+    {
+        return obj.set_prefix(_prefix.data());
     }
 
     //  If the component does not have a set_prefix(const string_t&) member function
     template <typename U>
-    TIMEMORY_INLINE void sfinae_str(U&, long, long, const string_t&)
+    TIMEMORY_INLINE void sfinae_str(U&, long, long, long, const string_t&)
     {}
 
 private:
     //  If the component has a set_prefix(uint64_t) member function
     template <typename U>
-    TIMEMORY_HOT_INLINE auto sfinae_hash(U& obj, int, uint64_t nhash)
-        -> decltype(obj.set_prefix(nhash), void())
+    TIMEMORY_HOT_INLINE auto sfinae_hash(U& obj, int, uint64_t _nhash)
+        -> decltype(obj.set_prefix(_nhash))
     {
-        obj.set_prefix(nhash);
+        return obj.set_prefix(_nhash);
     }
 
     //  If the component does not have a set_prefix(uint64_t) member function
@@ -111,38 +118,38 @@ private:
     //  If the component has a set_scope(...) member function
     template <typename T>
     TIMEMORY_HOT_INLINE auto sfinae(T& obj, int, scope::config _data)
-        -> decltype(obj.set_scope(_data), void())
+        -> decltype(obj.set_scope(_data))
     {
-        obj.set_scope(_data);
+        return obj.set_scope(_data);
     }
 
     //  If the component does not have a set_scope(...) member function
     template <typename T>
-    TIMEMORY_INLINE auto sfinae(T&, long, scope::config) -> decltype(void(), void())
+    TIMEMORY_INLINE void sfinae(T&, long, scope::config)
     {}
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-set_prefix<Tp>::set_prefix(type& obj, const string_t& prefix)
+set_prefix<Tp>::set_prefix(type& obj, const string_t& _prefix)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
 
-    sfinae_str(obj, 0, 0, prefix);
+    sfinae_str(obj, 0, 0, 0, _prefix);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-set_prefix<Tp>::set_prefix(type& obj, uint64_t nhash, const string_t& prefix)
+set_prefix<Tp>::set_prefix(type& obj, uint64_t _nhash, const string_t& _prefix)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
 
-    sfinae_hash(obj, 0, nhash);
-    sfinae_str(obj, 0, 0, prefix);
+    sfinae_hash(obj, 0, _nhash);
+    sfinae_str(obj, 0, 0, 0, _prefix);
 }
 //
 //--------------------------------------------------------------------------------------//

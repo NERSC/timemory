@@ -61,15 +61,10 @@ struct trip_count : public base<trip_count>
     static std::string description() { return "Counts number of invocations"; }
     static value_type  record() { return 1; }
 
-    value_type get() const { return accum; }
+    value_type get() const { return value; }
     value_type get_display() const { return get(); }
 
-    void start()
-    {
-        value = record();
-        accum += value;
-    }
-
+    void start() { value += 1; }
     void stop() {}
 };
 //

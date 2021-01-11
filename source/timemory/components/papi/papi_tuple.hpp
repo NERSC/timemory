@@ -64,7 +64,7 @@ namespace component
 template <int... EventTypes>
 struct papi_tuple
 : public base<papi_tuple<EventTypes...>, std::array<long long, sizeof...(EventTypes)>>
-, policy::instance_tracker<papi_tuple<EventTypes...>>
+, private policy::instance_tracker<papi_tuple<EventTypes...>>
 , private papi_common
 {
     using size_type    = std::size_t;

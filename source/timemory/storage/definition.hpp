@@ -89,7 +89,7 @@ storage::storage(bool _is_master, int64_t _instance_id, const std::string& _labe
         if(m_instance_id > 10)
         {
             // at this point we have a recursive loop
-            throw std::runtime_error("duplication!");
+            TIMEMORY_EXCEPTION("Duplication!")
         }
     }
 
@@ -135,10 +135,10 @@ storage::stop_profiler()
     try
     {
         if(storage_once_flag()++ == 0)
-            gperf::profiler_stop();
+            gperftools::profiler_stop();
     } catch(std::exception& e)
     {
-        std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
+        std::cerr << "Error calling gperftools::profiler_stop(): " << e.what()
                   << ". Continuing..." << std::endl;
     }
 #    endif
@@ -154,7 +154,7 @@ storage::add_hash_id(uint64_t _lhs, uint64_t _rhs)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_STORAGE_LINKAGE hash_result_type
+TIMEMORY_STORAGE_LINKAGE hash_value_type
                          storage::add_hash_id(const std::string& _prefix)
 {
     return ::tim::add_hash_id(m_hash_ids, _prefix);
@@ -676,8 +676,10 @@ storage<Type, true>::get_prefix(const graph_node& node)
     }
 
 #if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
-    if(_ret.find("unknown-hash=") == 0)
-        throw std::runtime_error("Hash-lookup error!");
+    if(_ret.empty() || _ret.find("unknown-hash=") == 0)
+    {
+        TIMEMORY_EXCEPTION("Hash-lookup error!")
+    }
 #endif
 
     return _ret;
@@ -704,8 +706,10 @@ storage<Type, true>::get_prefix(const uint64_t& id)
     }
 
 #if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
-    if(_ret.find("unknown-hash=") == 0)
-        throw std::runtime_error("Hash-lookup error!");
+    if(_ret.empty() || _ret.find("unknown-hash=") == 0)
+    {
+        TIMEMORY_EXCEPTION("Hash-lookup error!")
+    }
 #endif
 
     return _ret;

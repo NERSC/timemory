@@ -85,6 +85,12 @@ def configure():
     )
 
     parser.add_argument(
+        "--quiet",
+        help="Disable reporting memory usage",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--arch",
         help="TIMEMORY_USE_ARCH=ON",
         default=False,
@@ -353,6 +359,8 @@ def configure():
         # ignore all pyctest args except the build type
         if "pyctest_" in key and key != "pyctest_build_type":
             continue
+        if "quiet" in key:
+            continue
         # get the current value
         curr = args.__getattribute__(key)
         # if the value is true
@@ -448,6 +456,7 @@ def run_pyctest():
         "BUILD_STATIC_LIBS": "ON" if "static" in args.build_libs else "OFF",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON" if args.ipo else "OFF",
         "CMAKE_CXX_STANDARD": "{}".format(args.cxx_standard),
+        "TIMEMORY_CI": "ON",
         "TIMEMORY_TLS_MODEL": "{}".format(args.tls_model),
         "TIMEMORY_CCACHE_BUILD": "OFF",
         "TIMEMORY_BUILD_C": "ON",
@@ -490,9 +499,6 @@ def run_pyctest():
     if args.minimal:
         build_opts["TIMEMORY_BUILD_MINIMAL_TESTING"] = "ON"
         build_opts["TIMEMORY_BUILD_EXAMPLES"] = "OFF"
-
-    if args.quick and args.python:
-        build_opts["TIMEMORY_BUILD_MINIMAL_TESTING"] = "ON"
 
     if args.papi:
         build_opts["USE_PAPI"] = "ON"
@@ -993,6 +999,7 @@ def run_pyctest():
             "timing",
             "hatchet",
         ]
+
         pyusempi = {"hatchet": True}
         for t in pyunittests:
             pyunitcmd = [
@@ -1270,6 +1277,19 @@ def run_pyctest():
                 },
             )
 
+            pyct.test(
+                construct_name("ex-python-minimal"),
+                construct_command(
+                    [sys.executable, "./ex_python_minimal"], args
+                ),
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "480",
+                    "ENVIRONMENT": test_env,
+                },
+            )
+
         if args.caliper:
             pyct.test(
                 construct_name("ex-caliper"),
@@ -1326,20 +1346,6 @@ def run_pyctest():
             },
         )
 
-        if args.python:
-            pyct.test(
-                construct_name("ex-python-minimal"),
-                construct_command(
-                    [sys.executable, "./ex_python_minimal"], args
-                ),
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "480",
-                    "ENVIRONMENT": test_env,
-                },
-            )
-
         if args.likwid:
             pyct.test(
                 construct_name("ex-likwid"),
@@ -1366,7 +1372,7 @@ def run_pyctest():
                     },
                 )
 
-        if not args.python:
+        if args.papi:
             pyct.test(
                 construct_name("ex-cpu-roofline"),
                 construct_roofline_command(
@@ -1397,26 +1403,46 @@ def run_pyctest():
                 },
             )
 
-            if args.cupti:
-                pyct.test(
-                    construct_name("ex-gpu-roofline"),
-                    construct_roofline_command(
-                        ["./ex_gpu_roofline"],
-                        "gpu-roofline",
-                        ["-t", "gpu_roofline"],
-                    ),
-                    {
-                        "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                        "LABELS": pyct.PROJECT_NAME,
-                        "TIMEOUT": "900",
-                        "ENVIRONMENT": test_env,
-                    },
-                )
+        if args.cupti:
+            pyct.test(
+                construct_name("ex-gpu-roofline"),
+                construct_roofline_command(
+                    ["./ex_gpu_roofline"],
+                    "gpu-roofline",
+                    ["-t", "gpu_roofline"],
+                ),
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "900",
+                    "ENVIRONMENT": test_env,
+                },
+            )
 
     pyct.generate_config(pyct.BINARY_DIRECTORY)
     pyct.generate_test_file(os.path.join(pyct.BINARY_DIRECTORY, "tests"))
     if not args.generate:
+        mem = None
+        fname = "._report-memory.tmp"
+        if not args.quiet and platform.system() in ["Darwin", "Linux"]:
+            import subprocess as sp
+
+            f = open(fname, "w")
+            f.write("\n")
+            f.close()
+            script = os.path.join(
+                pyct.SOURCE_DIRECTORY, "scripts", "report-memory.sh"
+            )
+            mem = sp.Popen([script, fname])
+
         ret = pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
+
+        if os.path.exists(fname):
+            os.remove(fname)
+
+        if mem is not None:
+            mem.terminate()
+
         if ret is not None and ret is False:
             sys.exit(1)
         if args.coverage:

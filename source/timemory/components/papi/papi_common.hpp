@@ -243,9 +243,13 @@ public:
                     std::stringstream ss;
                     ss << "[papi_common] Error creating event with ID: " << itr;
                     if(settings::papi_fail_on_error())
-                        throw std::runtime_error(ss.str());
+                    {
+                        TIMEMORY_EXCEPTION(ss.str());
+                    }
                     else
+                    {
                         fprintf(stderr, "%s\n", ss.str().c_str());
+                    }
                 }
                 else
                 {

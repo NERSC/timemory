@@ -60,13 +60,13 @@ struct decode
     }
 
     auto operator()(const graph_hash_map_ptr_t&   _hash_map,
-                    const graph_hash_alias_ptr_t& _hash_alias, hash_result_type _hash_id)
+                    const graph_hash_alias_ptr_t& _hash_alias, hash_value_type _hash_id)
     {
         return demangle_hash_identifier(
             get_hash_identifier(_hash_map, _hash_alias, _hash_id));
     }
 
-    auto operator()(hash_result_type _hash_id)
+    auto operator()(hash_value_type _hash_id)
     {
         return demangle_hash_identifier(get_hash_identifier(_hash_id));
     }

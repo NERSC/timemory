@@ -43,57 +43,38 @@ namespace tim
 //
 template <typename... Types>
 template <typename... T, typename Func>
-lightweight_tuple<Types...>::lightweight_tuple(const string_t&     key,
-                                               quirk::config<T...> config,
-                                               const Func&         init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), false,
-              quirk::config<T...>{})
-, m_data(invoke::construct<data_type>(key, config))
+lightweight_tuple<Types...>::lightweight_tuple(const string_t&     _key,
+                                               quirk::config<T...> _config,
+                                               const Func&         _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _key, false_type{}, _config))
+, m_data(invoke::construct<data_type>(_key, _config))
 {
-    if(settings::enabled())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
-        set_prefix(get_hash_ids()->find(m_hash)->second);
-        invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 template <typename... T, typename Func>
-lightweight_tuple<Types...>::lightweight_tuple(const captured_location_t& loc,
-                                               quirk::config<T...>        config,
-                                               const Func&                init_func)
-: bundle_type(loc.get_hash(), false, quirk::config<T...>{})
-, m_data(invoke::construct<data_type>(loc, config))
+lightweight_tuple<Types...>::lightweight_tuple(const captured_location_t& _loc,
+                                               quirk::config<T...>        _config,
+                                               const Func&                _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _loc, false_type{}, _config))
+, m_data(invoke::construct<data_type>(_loc, _config))
 {
-    if(settings::enabled())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
-        set_prefix(loc.get_hash());
-        invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 template <typename... T, typename Func>
-lightweight_tuple<Types...>::lightweight_tuple(size_t _hash, quirk::config<T...> config,
-                                               const Func& init_func)
-: bundle_type(_hash, false, quirk::config<T...>{})
-, m_data(invoke::construct<data_type>(_hash, config))
+lightweight_tuple<Types...>::lightweight_tuple(size_t _hash, quirk::config<T...> _config,
+                                               const Func& _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _hash, false_type{}, _config))
+, m_data(invoke::construct<data_type>(_hash, _config))
 {
-    if(settings::enabled())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
-        set_prefix(_hash);
-        invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -101,30 +82,23 @@ lightweight_tuple<Types...>::lightweight_tuple(size_t _hash, quirk::config<T...>
 template <typename... Types>
 template <typename Func>
 lightweight_tuple<Types...>::lightweight_tuple(size_t _hash, scope::config _scope,
-                                               const Func& init_func)
-: bundle_type(_hash, false,
-              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
-                                     quirk_config<quirk::timeline_scope>::value,
-                                     quirk_config<quirk::tree_scope>::value))
+                                               const Func& _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _hash, false_type{}, _scope))
 , m_data(invoke::construct<data_type>(_hash, m_scope))
 {
-    if(settings::enabled())
-    {
-        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
-        set_prefix(_hash);
-        invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
-    }
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 template <typename Func>
-lightweight_tuple<Types...>::lightweight_tuple(const string_t& key, scope::config _scope,
-                                               const Func& init_func)
-: lightweight_tuple(((settings::enabled()) ? add_hash_id(key) : 0), _scope, init_func)
-{}
+lightweight_tuple<Types...>::lightweight_tuple(const string_t& _key, scope::config _scope,
+                                               const Func& _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _key, false_type{}, _scope))
+{
+    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+}
 
 //--------------------------------------------------------------------------------------//
 //
@@ -132,8 +106,8 @@ template <typename... Types>
 template <typename Func>
 lightweight_tuple<Types...>::lightweight_tuple(const captured_location_t& loc,
                                                scope::config              _scope,
-                                               const Func&                init_func)
-: lightweight_tuple(loc.get_hash(), _scope, init_func)
+                                               const Func&                _init_func)
+: lightweight_tuple(loc.get_hash(), _scope, _init_func)
 {}
 
 //--------------------------------------------------------------------------------------//

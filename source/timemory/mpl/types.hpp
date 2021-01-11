@@ -334,7 +334,7 @@ namespace policy
 /// \code{.cpp}
 /// struct foo
 /// : public base<foo, void>
-/// , public policy::instance_tracker<foo, false>
+/// , private policy::instance_tracker<foo, false>
 /// {
 ///     using value_type         = void;
 ///     using instance_tracker_t = policy::instance_tracker<foo, false>;

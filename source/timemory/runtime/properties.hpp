@@ -53,7 +53,7 @@ template <int I>
 using make_int_sequence = std::make_integer_sequence<int, I>;
 template <int... Ints>
 using int_sequence         = std::integer_sequence<int, Ints...>;
-using hash_type            = std::hash<std::string>;
+using hash_type            = std::hash<string_view_t>;
 using component_key_set_t  = std::set<std::string>;
 using component_hash_map_t = std::unordered_map<std::string, int, hash_type>;
 using opaque_pair_t        = std::pair<component::opaque, std::set<size_t>>;

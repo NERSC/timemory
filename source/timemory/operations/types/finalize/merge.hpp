@@ -153,7 +153,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         PRINT_HERE("%s", ss.str().c_str());
 
 #if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
-        throw std::runtime_error(ss.str());
+        TIMEMORY_EXCEPTION(ss.str());
 #endif
     }
 

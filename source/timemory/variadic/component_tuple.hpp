@@ -89,33 +89,36 @@ class component_tuple
 : public stack_bundle<available_t<concat<Types...>>>
 , public concepts::comp_wrapper
 {
-    // manager is friend so can use above
-    friend class manager;
+protected:
+    using apply_v     = apply<void>;
+    using bundle_type = stack_bundle<available_t<concat<Types...>>>;
+    using impl_type   = typename bundle_type::impl_type;
+
+    template <typename T, typename... U>
+    friend class base_bundle;
+
+    template <typename... Tp>
+    friend class auto_tuple;
 
 #if defined(TIMEMORY_USE_DEPRECATED)
     template <typename TupleC, typename ListC>
     friend class component_hybrid;
 #endif
 
-    template <typename... Tp>
-    friend class auto_tuple;
-
 public:
-    using bundle_type         = stack_bundle<available_t<concat<Types...>>>;
-    using this_type           = component_tuple<Types...>;
     using captured_location_t = source_location::captured;
 
+    using this_type      = component_tuple<Types...>;
+    using type_list_type = type_list<Types...>;
+
     using data_type         = typename bundle_type::data_type;
-    using impl_type         = typename bundle_type::impl_type;
     using tuple_type        = typename bundle_type::tuple_type;
     using sample_type       = typename bundle_type::sample_type;
     using reference_type    = typename bundle_type::reference_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
 
-    using apply_v     = apply<void>;
-    using size_type   = typename bundle_type::size_type;
-    using string_t    = typename bundle_type::string_t;
-    using string_hash = typename bundle_type::string_hash;
+    using size_type = typename bundle_type::size_type;
+    using string_t  = typename bundle_type::string_t;
 
     template <template <typename> class Op, typename Tuple = impl_type>
     using operation_t = typename bundle_type::template generic_operation<Op, Tuple>::type;
@@ -134,24 +137,14 @@ public:
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
 public:
-    //
-    //----------------------------------------------------------------------------------//
-    //
     static initializer_type& get_initializer()
     {
         static initializer_type _instance = [](this_type&) {};
         return _instance;
     }
 
-public:
     template <typename T, typename... U>
-    struct quirk_config
-    {
-        static constexpr bool value =
-            is_one_of<T, type_list<Types..., U...>>::value ||
-            is_one_of<T,
-                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
-    };
+    using quirk_config = mpl::impl::quirk_config<T, type_list<Types...>, U...>;
 
 public:
     component_tuple();
@@ -196,7 +189,6 @@ public:
     //----------------------------------------------------------------------------------//
     // public static functions
     //
-    static constexpr std::size_t size() { return std::tuple_size<tuple_type>::value; }
     /// requests the components to output their storage
     static void print_storage();
     /// requests the component initialize their storage
@@ -253,6 +245,7 @@ public:
     using bundle_type::laps;
     using bundle_type::prefix;
     using bundle_type::rekey;
+    using bundle_type::size;
     using bundle_type::store;
 
     //----------------------------------------------------------------------------------//
@@ -539,7 +532,7 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using printer_t = typename bundle_type::print_t;
+        using printer_t = typename bundle_type::print_type;
         if(size() == 0 || m_hash == 0)
             return;
         std::stringstream ss_data;

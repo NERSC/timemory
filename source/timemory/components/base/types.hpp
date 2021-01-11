@@ -106,12 +106,11 @@ namespace quirk
 //
 template <typename... Types>
 struct config
-: component::base<config<Types...>, void>
-, type_list<Types...>
 {
-    using type = type_list<Types...>;
-    void start() {}
-    void stop() {}
+    using type       = type_list<Types...>;
+    using value_type = void;
+
+    friend std::ostream& operator<<(std::ostream& _os, const config&) { return _os; }
 };
 //
 }  // namespace quirk

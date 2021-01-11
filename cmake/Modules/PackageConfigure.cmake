@@ -48,6 +48,11 @@ write_basic_package_version_file(
     COMPATIBILITY SameMajorVersion)
 
 configure_file(
+    ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config-build.cmake.in
+    ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-build.cmake
+    @ONLY)
+
+configure_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config-components.cmake.in
     ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
     @ONLY)

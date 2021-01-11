@@ -193,13 +193,13 @@ TEST_F(mpi_tests, general)
         size_t w = 0;
         for(const auto& ritr : rc_storage)
             for(const auto& itr : ritr)
-                w = std::max<size_t>(w, std::get<2>(itr).length());
+                w = std::max<size_t>(w, std::get<5>(itr).length());
         for(const auto& ritr : rc_storage)
             for(const auto& itr : ritr)
             {
-                std::cout << std::setw(w) << std::left << std::get<2>(itr) << " : "
-                          << std::get<1>(itr);
-                auto _hierarchy = std::get<5>(itr);
+                std::cout << std::setw(w) << std::left << std::get<5>(itr) << " : "
+                          << std::get<7>(itr);
+                auto _hierarchy = std::get<6>(itr);
                 for(size_t i = 0; i < _hierarchy.size(); ++i)
                 {
                     if(i == 0)
@@ -316,13 +316,13 @@ TEST_F(mpi_tests, per_thread)
         size_t w = 0;
         for(const auto& ritr : rc_storage)
             for(const auto& itr : ritr)
-                w = std::max<size_t>(w, std::get<2>(itr).length());
+                w = std::max<size_t>(w, std::get<5>(itr).length());
         for(const auto& ritr : rc_storage)
             for(const auto& itr : ritr)
             {
-                std::cout << std::setw(w) << std::left << std::get<2>(itr) << " : "
-                          << std::get<1>(itr);
-                auto _hierarchy = std::get<5>(itr);
+                std::cout << std::setw(w) << std::left << std::get<5>(itr) << " : "
+                          << std::get<7>(itr);
+                auto _hierarchy = std::get<6>(itr);
                 for(size_t i = 0; i < _hierarchy.size(); ++i)
                 {
                     if(i == 0)

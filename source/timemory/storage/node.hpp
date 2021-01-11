@@ -107,9 +107,9 @@ struct data
     using stats_policy = policy::record_statistics<Tp, type>;
     using stats_type   = typename stats_policy::statistics_type;
     using node_type =
-        std::tuple<uint64_t, Tp, int64_t, stats_type, uint16_t, uint16_t, bool>;
-    using result_type = std::tuple<uint64_t, Tp, string_t, int64_t, uint64_t,
-                                   uintvector_t, stats_type, uint16_t, uint16_t>;
+        std::tuple<bool, uint16_t, uint16_t, uint64_t, int64_t, Tp, stats_type>;
+    using result_type = std::tuple<uint16_t, uint16_t, int64_t, uint64_t, uint64_t,
+                                   string_t, uintvector_t, Tp, stats_type>;
     using idset_type  = std::set<int64_t>;
     using entry_type  = entry<Tp, stats_type>;
     using tree_type   = std::tuple<bool, uint64_t, int64_t, idset_type, idset_type,
@@ -131,13 +131,12 @@ struct graph : private data<Tp>::node_type
 public:
     // ctor, dtor
     graph();
-    explicit graph(base_type&& _base) noexcept;
+    graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint16_t _tid,
+          uint16_t _pid = process::get_id(), bool _is_dummy = false);
 
     ~graph()                = default;
     graph(const graph&)     = default;
     graph(graph&&) noexcept = default;
-    graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint16_t _tid,
-          uint16_t _pid = process::get_id(), bool _is_dummy = false);
 
     graph& operator=(const graph&) = default;
     graph& operator=(graph&&) noexcept = default;
@@ -162,21 +161,21 @@ public:
 
 public:
     // data access
-    uint64_t&   id() { return std::get<0>(*this); }
-    Tp&         obj() { return std::get<1>(*this); }
-    int64_t&    depth() { return std::get<2>(*this); }
-    stats_type& stats() { return std::get<3>(*this); }
-    uint16_t&   tid() { return std::get<4>(*this); }
-    uint16_t&   pid() { return std::get<5>(*this); }
-    bool&       is_dummy() { return std::get<6>(*this); }
+    bool&       is_dummy() { return std::get<0>(*this); }
+    uint16_t&   tid() { return std::get<1>(*this); }
+    uint16_t&   pid() { return std::get<2>(*this); }
+    uint64_t&   id() { return std::get<3>(*this); }
+    int64_t&    depth() { return std::get<4>(*this); }
+    Tp&         obj() { return std::get<5>(*this); }
+    stats_type& stats() { return std::get<6>(*this); }
 
-    const uint64_t&   id() const { return std::get<0>(*this); }
-    const Tp&         obj() const { return std::get<1>(*this); }
-    const int64_t&    depth() const { return std::get<2>(*this); }
-    const stats_type& stats() const { return std::get<3>(*this); }
-    const uint16_t&   tid() const { return std::get<4>(*this); }
-    const uint16_t&   pid() const { return std::get<5>(*this); }
-    const bool&       is_dummy() const { return std::get<6>(*this); }
+    const bool&       is_dummy() const { return std::get<0>(*this); }
+    const uint16_t&   tid() const { return std::get<1>(*this); }
+    const uint16_t&   pid() const { return std::get<2>(*this); }
+    const uint64_t&   id() const { return std::get<3>(*this); }
+    const int64_t&    depth() const { return std::get<4>(*this); }
+    const Tp&         obj() const { return std::get<5>(*this); }
+    const stats_type& stats() const { return std::get<6>(*this); }
 
     auto&       data() { return this->obj(); }
     auto&       hash() { return this->id(); }
@@ -209,36 +208,36 @@ struct result : public data<Tp>::result_type
            uint64_t _rolling, const uintvector_t& _hierarchy, const stats_type& _stats,
            uint16_t _tid, uint16_t _pid);
 
-    uint64_t&     hash() { return std::get<0>(*this); }
-    Tp&           data() { return std::get<1>(*this); }
-    string_t&     prefix() { return std::get<2>(*this); }
-    int64_t&      depth() { return std::get<3>(*this); }
+    uint16_t&     tid() { return std::get<0>(*this); }
+    uint16_t&     pid() { return std::get<1>(*this); }
+    int64_t&      depth() { return std::get<2>(*this); }
+    uint64_t&     hash() { return std::get<3>(*this); }
     uint64_t&     rolling_hash() { return std::get<4>(*this); }
-    uintvector_t& hierarchy() { return std::get<5>(*this); }
-    stats_type&   stats() { return std::get<6>(*this); }
-    uint16_t&     tid() { return std::get<7>(*this); }
-    uint16_t&     pid() { return std::get<8>(*this); }
+    string_t&     prefix() { return std::get<5>(*this); }
+    uintvector_t& hierarchy() { return std::get<6>(*this); }
+    Tp&           data() { return std::get<7>(*this); }
+    stats_type&   stats() { return std::get<8>(*this); }
 
-    const uint64_t&     hash() const { return std::get<0>(*this); }
-    const Tp&           data() const { return std::get<1>(*this); }
-    const string_t&     prefix() const { return std::get<2>(*this); }
-    const int64_t&      depth() const { return std::get<3>(*this); }
+    const uint16_t&     tid() const { return std::get<0>(*this); }
+    const uint16_t&     pid() const { return std::get<1>(*this); }
+    const int64_t&      depth() const { return std::get<2>(*this); }
+    const uint64_t&     hash() const { return std::get<3>(*this); }
     const uint64_t&     rolling_hash() const { return std::get<4>(*this); }
-    const uintvector_t& hierarchy() const { return std::get<5>(*this); }
-    const stats_type&   stats() const { return std::get<6>(*this); }
-    const uint16_t&     tid() const { return std::get<7>(*this); }
-    const uint16_t&     pid() const { return std::get<8>(*this); }
+    const string_t&     prefix() const { return std::get<5>(*this); }
+    const uintvector_t& hierarchy() const { return std::get<6>(*this); }
+    const Tp&           data() const { return std::get<7>(*this); }
+    const stats_type&   stats() const { return std::get<8>(*this); }
 
-    uint64_t&       id() { return std::get<0>(*this); }
-    const uint64_t& id() const { return std::get<0>(*this); }
+    uint64_t&       id() { return std::get<3>(*this); }
+    const uint64_t& id() const { return std::get<3>(*this); }
 
-    Tp&       obj() { return std::get<1>(*this); }
-    const Tp& obj() const { return std::get<1>(*this); }
+    Tp&       obj() { return std::get<7>(*this); }
+    const Tp& obj() const { return std::get<7>(*this); }
 
     bool operator==(const this_type& rhs) const
     {
-        return (hash() == rhs.hash() && prefix() == rhs.prefix() &&
-                depth() == rhs.depth() && rolling_hash() == rhs.rolling_hash());
+        return (depth() == rhs.depth() && hash() == rhs.hash() &&
+                rolling_hash() == rhs.rolling_hash() && prefix() == rhs.prefix());
     }
 
     bool operator!=(const this_type& rhs) const { return !(*this == rhs); }
@@ -337,14 +336,7 @@ public:
 //
 template <typename Tp>
 graph<Tp>::graph()
-: base_type(0, Tp{}, 0, stats_type{}, threading::get_id(), process::get_id(), false)
-{}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-graph<Tp>::graph(base_type&& _base) noexcept
-: base_type(std::forward<base_type>(_base))
+: base_type(false, threading::get_id(), process::get_id(), 0, 0, Tp{}, stats_type{})
 {}
 //
 //--------------------------------------------------------------------------------------//
@@ -352,7 +344,7 @@ graph<Tp>::graph(base_type&& _base) noexcept
 template <typename Tp>
 graph<Tp>::graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint16_t _tid,
                  uint16_t _pid, bool _is_dummy)
-: base_type(_id, _obj, _depth, stats_type{}, _tid, _pid, _is_dummy)
+: base_type(_is_dummy, _tid, _pid, _id, _depth, _obj, stats_type{})
 {}
 //
 //--------------------------------------------------------------------------------------//
@@ -385,10 +377,10 @@ graph<Tp>::get_dummy()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-result<Tp>::result(uint64_t _hash, const Tp& _data, const string_t& _prefix,
-                   int64_t _depth, uint64_t _rolling, const uintvector_t& _hierarchy,
+result<Tp>::result(uint64_t _id, const Tp& _data, const string_t& _prefix, int64_t _depth,
+                   uint64_t _rolling, const uintvector_t& _hierarchy,
                    const stats_type& _stats, uint16_t _tid, uint16_t _pid)
-: base_type(_hash, _data, _prefix, _depth, _rolling, _hierarchy, _stats, _tid, _pid)
+: base_type(_tid, _pid, _depth, _id, _rolling, _prefix, _hierarchy, _data, _stats)
 {}
 //--------------------------------------------------------------------------------------//
 //

@@ -82,7 +82,7 @@ public:
     using data_type           = typename component_type::data_type;
     using sample_type         = typename component_type::sample_type;
     using type                = convert_t<typename component_type::type, auto_tuple<>>;
-    using string_t            = std::string;
+    using string_t            = string_view_t;
     using initializer_type    = std::function<void(this_type&)>;
     using captured_location_t = typename component_type::captured_location_t;
     using value_type          = component_type;
@@ -92,13 +92,7 @@ public:
 
 public:
     template <typename T, typename... U>
-    struct quirk_config
-    {
-        static constexpr bool value =
-            is_one_of<T, type_list<Types..., U...>>::value ||
-            is_one_of<T,
-                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
-    };
+    using quirk_config = mpl::impl::quirk_config<T, type_list<Types...>, U...>;
 
 public:
     //
@@ -338,25 +332,22 @@ public:
     }
 
 protected:
-    bool            m_enabled        = true;
-    bool            m_report_at_exit = false;
-    component_type  m_temporary;
+    bool            m_enabled          = true;
+    bool            m_report_at_exit   = false;
     component_type* m_reference_object = nullptr;
+    component_type  m_temporary;
 };
 
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 template <typename... T, typename Init>
-auto_tuple<Types...>::auto_tuple(const string_t& key, quirk::config<T...>,
-                                 const Init&     init_func)
+auto_tuple<Types...>::auto_tuple(const string_t& _key, quirk::config<T...> _config,
+                                 const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(quirk_config<quirk::exit_report, T...>::value)
-, m_temporary(m_enabled ? component_type(key, m_enabled,
-                                         quirk_config<quirk::flat_scope, T...>::value)
-                        : component_type{})
 , m_reference_object(nullptr)
-
+, m_temporary(_key, m_enabled, _config)
 {
     if(m_enabled)
     {
@@ -372,15 +363,12 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, quirk::config<T...>,
 
 template <typename... Types>
 template <typename... T, typename Init>
-auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, quirk::config<T...>,
-                                 const Init&                init_func)
+auto_tuple<Types...>::auto_tuple(const captured_location_t& loc,
+                                 quirk::config<T...> _config, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(quirk_config<quirk::exit_report, T...>::value)
-, m_temporary(m_enabled ? component_type(loc, m_enabled,
-                                         quirk_config<quirk::flat_scope, T...>::value)
-                        : component_type{})
 , m_reference_object(nullptr)
-
+, m_temporary(loc, m_enabled, _config)
 {
     if(m_enabled)
     {
@@ -396,13 +384,12 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, quirk::config<T
 
 template <typename... Types>
 template <typename Init>
-auto_tuple<Types...>::auto_tuple(const string_t& key, scope::config _scope,
+auto_tuple<Types...>::auto_tuple(const string_t& _key, scope::config _scope,
                                  bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
-, m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
+, m_temporary(_key, m_enabled, _scope)
 {
     if(m_enabled)
     {
@@ -419,9 +406,8 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, scope::config _
                                  bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
-, m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
+, m_temporary(loc, m_enabled, _scope)
 {
     if(m_enabled)
     {
@@ -438,9 +424,8 @@ auto_tuple<Types...>::auto_tuple(size_t hash, scope::config _scope, bool report_
                                  const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
-, m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
+, m_temporary(hash, m_enabled, _scope)
 {
     if(m_enabled)
     {
@@ -456,8 +441,8 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, scope::config _scope,
                                  bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
-, m_temporary(component_type(tmp.clone(true, _scope)))
 , m_reference_object(&tmp)
+, m_temporary(tmp.clone(true, _scope))
 {
     if(m_enabled)
     {
@@ -469,14 +454,13 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, scope::config _scope,
 
 template <typename... Types>
 template <typename Init, typename Arg, typename... Args>
-auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, scope::config _scope,
+auto_tuple<Types...>::auto_tuple(const string_t& _key, bool store, scope::config _scope,
                                  const Init& init_func, Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() ||
                    quirk_config<quirk::exit_report>::value)
-, m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
+, m_temporary(_key, m_enabled, _scope)
 {
     if(m_enabled)
     {
@@ -495,9 +479,8 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store,
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() ||
                    quirk_config<quirk::exit_report>::value)
-, m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
+, m_temporary(loc, m_enabled, _scope)
 {
     if(m_enabled)
     {
@@ -515,9 +498,8 @@ auto_tuple<Types...>::auto_tuple(size_t hash, bool store, scope::config _scope,
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() ||
                    quirk_config<quirk::exit_report>::value)
-, m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
-
+, m_temporary(hash, m_enabled, _scope)
 {
     if(m_enabled)
     {

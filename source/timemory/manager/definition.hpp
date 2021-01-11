@@ -91,7 +91,7 @@ manager::manager()
 
     if(_first)
     {
-        settings::parse();
+        // settings::parse();
         // papi::init();
         // std::atexit(manager::exit_hook);
     }

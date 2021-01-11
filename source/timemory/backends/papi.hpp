@@ -120,7 +120,9 @@ check_papi_thread()
     auto                               tid         = PAPI_thread_id();
     static constexpr unsigned long int invalid_tid = static_cast<unsigned long int>(-1);
     if(tid == invalid_tid)
-        throw std::runtime_error("PAPI_thread_id() returned unknown thread");
+    {
+        TIMEMORY_EXCEPTION("PAPI_thread_id() returned unknown thread");
+    }
 #endif
 }
 
@@ -171,7 +173,9 @@ check(int retval, const std::string& mesg, bool quiet = false)
         static char       buf[BUFFER_SIZE];
         sprintf(buf, "%s : PAPI_error %d: %s\n", mesg.c_str(), retval, error_str);
         if(settings::papi_fail_on_error())
-            throw std::runtime_error(buf);
+        {
+            TIMEMORY_EXCEPTION(buf);
+        }
         else
         {
             if(working() && !settings::papi_quiet())

@@ -345,7 +345,7 @@ auto_list<Types...>::auto_list(const string_t& key, scope::config _scope,
                                bool report_at_exit, const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
+, m_temporary(key, m_enabled, _scope)
 , m_reference_object(nullptr)
 {
     if(m_enabled)
@@ -363,7 +363,7 @@ auto_list<Types...>::auto_list(const captured_location_t& loc, scope::config _sc
                                bool report_at_exit, const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
+, m_temporary(loc, m_enabled, _scope)
 , m_reference_object(nullptr)
 {
     if(m_enabled)
@@ -381,7 +381,7 @@ auto_list<Types...>::auto_list(size_t _hash, scope::config _scope, bool report_a
                                const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary(m_enabled ? component_type(_hash, m_enabled, _scope) : component_type{})
+, m_temporary(_hash, m_enabled, _scope)
 , m_reference_object(nullptr)
 {
     if(m_enabled)

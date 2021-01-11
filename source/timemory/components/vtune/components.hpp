@@ -160,7 +160,7 @@ private:
 //
 struct vtune_profiler
 : public base<vtune_profiler, void>
-, public policy::instance_tracker<vtune_profiler, false>
+, private policy::instance_tracker<vtune_profiler, false>
 {
     using value_type   = void;
     using this_type    = vtune_profiler;

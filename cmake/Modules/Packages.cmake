@@ -385,7 +385,7 @@ endif()
 
 # minimum: C++14
 target_compile_features(timemory-headers INTERFACE
-    cxx_std_14
+    cxx_std_${CMAKE_CXX_STANDARD}
     cxx_auto_type
     cxx_alias_templates
     cxx_constexpr
@@ -1254,7 +1254,7 @@ if(TIMEMORY_USE_DYNINST)
         "Boost components used by Dyninst in timemory")
     if(Dyninst_FOUND)
         set(Boost_NO_BOOST_CMAKE ON)
-        find_package(Boost ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT}
+        find_package(Boost QUIET ${TIMEMORY_FIND_REQUIREMENT}
             COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
         # install the revision of FindBoost.cmake which is quiet
         install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/FindBoost.cmake

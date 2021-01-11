@@ -324,7 +324,7 @@ settings::parse(settings* _settings)
     if(_settings->get_suppress_parsing())
         return;
 
-    for(auto& itr : *_settings)
+    for(const auto& itr : *_settings)
     {
         itr.second->parse();
     }
@@ -357,7 +357,9 @@ settings::settings(const settings& rhs)
         {
             auto ritr = rhs.m_data.find(itr);
             if(ritr == rhs.m_data.end())
-                throw std::runtime_error("Error! Missing ordered entry: " + itr);
+            {
+                TIMEMORY_EXCEPTION(string_t("Error! Missing ordered entry: ") + itr)
+            }
             else
             {
                 m_data.insert({ itr, ritr->second->clone() });
@@ -387,7 +389,9 @@ settings::operator=(const settings& rhs)
         {
             auto ritr = rhs.m_data.find(itr);
             if(ritr == rhs.m_data.end())
-                throw std::runtime_error("Error! Missing ordered entry: " + itr);
+            {
+                TIMEMORY_EXCEPTION(string_t("Error! Missing ordered entry: ") + itr)
+            }
             else
             {
                 m_data.insert({ itr, ritr->second->clone() });
@@ -1092,9 +1096,9 @@ settings::read(const string_t& inp)
 {
     std::ifstream ifs(inp);
     if(!ifs)
-        throw std::runtime_error(
-            TIMEMORY_JOIN(" ", "Error reading configuration file:", inp));
-
+    {
+        TIMEMORY_EXCEPTION(string_t("Error reading configuration file: ") + inp)
+    }
     return read(ifs, inp);
 }
 //

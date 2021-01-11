@@ -45,6 +45,7 @@
 #include <atomic>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #if defined(_UNIX)
@@ -77,9 +78,8 @@ struct settings
                        uint64_t, size_t, float, double>;
     friend class manager;
     using strvector_t    = std::vector<std::string>;
-    using strmap_t       = std::map<std::string, std::string>;
     using value_type     = std::shared_ptr<vsettings>;
-    using data_type      = std::unordered_map<std::string, value_type>;
+    using data_type      = std::unordered_map<string_view_t, value_type>;
     using iterator       = typename data_type::iterator;
     using const_iterator = typename data_type::const_iterator;
     using pointer_t      = std::shared_ptr<settings>;
@@ -288,7 +288,6 @@ public:
 
 public:
     auto           ordering() const { return m_order; }
-    auto           find(const std::string& _key, bool _exact = true);
     iterator       begin() { return m_data.begin(); }
     iterator       end() { return m_data.end(); }
     const_iterator begin() const { return m_data.cbegin(); }
@@ -296,11 +295,14 @@ public:
     const_iterator cbegin() const { return m_data.cbegin(); }
     const_iterator cend() const { return m_data.cend(); }
 
-    template <typename Tp>
-    Tp get(const std::string& _key, bool _exact = true);
+    template <typename Sp = string_t>
+    auto find(Sp&& _key, bool _exact = true);
 
-    template <typename Tp>
-    bool set(const std::string& _key, Tp&& _val, bool _exact = true);
+    template <typename Tp, typename Sp = string_t>
+    Tp get(Sp&& _key, bool _exact = true);
+
+    template <typename Tp, typename Sp = string_t>
+    bool set(Sp&& _key, Tp&& _val, bool _exact = true);
 
     /// \fn bool update(const std::string& key, const std::string& val, bool exact)
     /// \param key Identifier for the setting. Either name, env-name, or command-line opt
@@ -311,12 +313,18 @@ public:
     /// for the identifier was found (NOT whether the value was actually updated)
     bool update(const std::string& _key, const std::string& _val, bool _exact = false);
 
-    template <typename Tp, typename Vp = Tp, typename... Args>
-    auto insert(const std::string& _env, const std::string& _name,
-                const std::string& _desc, Vp _init, Args&&... _args);
+    /// \tparam Tp Data-type of the setting
+    /// \tparam Vp Value-type of the setting (Tp or Tp&)
+    /// \tparam Sp String-type
+    template <typename Tp, typename Vp, typename Sp, typename... Args>
+    auto insert(Sp&& _env, const std::string& _name, const std::string& _desc, Vp _init,
+                Args&&... _args);
 
-    template <typename Tp, typename Vp>
-    auto insert(tsetting_pointer_t<Tp, Vp> _ptr, std::string _env = {});
+    /// \tparam Tp Data-type of the setting
+    /// \tparam Vp Value-type of the setting (Tp or Tp&)
+    /// \tparam Sp String-type
+    template <typename Tp, typename Vp, typename Sp = string_t>
+    auto insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env = {});
 
 protected:
     template <typename Tp>
@@ -431,7 +439,7 @@ settings::load(Archive& ar, const unsigned int version)
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
     for(const auto& itr : m_data)
-        _data.insert({ itr.first, itr.second->clone() });
+        _data.insert({ std::string{ itr.first }, itr.second->clone() });
     auto _map = get_serialize_map<Archive>(data_type_list_t{});
     for(const auto& itr : _data)
     {
@@ -443,11 +451,15 @@ settings::load(Archive& ar, const unsigned int version)
        cereal::make_nvp("environment", m_environment));
     for(const auto& itr : _data)
     {
-        if(m_data.find(itr.first) != m_data.end())
-            m_data[itr.first]->clone(itr.second);
+        auto ditr = m_data.find(itr.first);
+        if(ditr != m_data.end())
+        {
+            ditr->second->clone(itr.second);
+        }
         else
         {
-            m_data.insert({ itr.first, itr.second });
+            m_order.push_back(itr.first);
+            m_data.insert({ m_order.back(), itr.second });
         }
     }
     consume_parameters(version);
@@ -462,7 +474,7 @@ settings::save(Archive& ar, const unsigned int) const
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
     for(const auto& itr : m_data)
-        _data.insert({ itr.first, itr.second->clone() });
+        _data.insert({ std::string{ itr.first }, itr.second->clone() });
 
     auto _map = get_serialize_map<Archive>(data_type_list_t{});
     for(const auto& itr : _data)
@@ -477,18 +489,19 @@ settings::save(Archive& ar, const unsigned int) const
 //
 //----------------------------------------------------------------------------------//
 //
+template <typename Sp>
 inline auto
-settings::find(const std::string& _key, bool _exact)
+settings::find(Sp&& _key, bool _exact)
 {
     // exact match to map key
-    auto itr = m_data.find(_key);
+    auto itr = m_data.find(std::forward<Sp>(_key));
     if(itr != m_data.end())
         return itr;
 
     // match against env_name, name, command-line options
     for(auto ditr = begin(); ditr != end(); ++ditr)
     {
-        if(ditr->second && ditr->second->matches(_key, _exact))
+        if(ditr->second && ditr->second->matches(std::forward<Sp>(_key), _exact))
             return ditr;
     }
 
@@ -498,11 +511,11 @@ settings::find(const std::string& _key, bool _exact)
 //
 //----------------------------------------------------------------------------------//
 //
-template <typename Tp>
+template <typename Tp, typename Sp>
 Tp
-settings::get(const std::string& _key, bool _exact)
+settings::get(Sp&& _key, bool _exact)
 {
-    auto itr = find(_key, _exact);
+    auto itr = find(std::forward<Sp>(_key), _exact);
     if(itr != m_data.end() && itr->second)
     {
         auto _vptr = itr->second;
@@ -518,11 +531,11 @@ settings::get(const std::string& _key, bool _exact)
 //
 //----------------------------------------------------------------------------------//
 //
-template <typename Tp>
+template <typename Tp, typename Sp>
 bool
-settings::set(const std::string& _key, Tp&& _val, bool _exact)
+settings::set(Sp&& _key, Tp&& _val, bool _exact)
 {
-    auto itr = find(_key, _exact);
+    auto itr = find(std::forward<Sp>(_key), _exact);
     if(itr != m_data.end() && itr->second)
     {
         using Up   = decay_t<Tp>;
@@ -561,35 +574,41 @@ settings::update(const std::string& _key, const std::string& _val, bool _exact)
 //
 //----------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Vp, typename... Args>
+template <typename Tp, typename Vp, typename Sp, typename... Args>
 auto
-settings::insert(const std::string& _env, const std::string& _name,
-                 const std::string& _desc, Vp _init, Args&&... _args)
+settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, Vp _init,
+                 Args&&... _args)
 {
     static_assert(is_one_of<Tp, data_type_list_t>::value,
                   "Error! Data type is not supported. See settings::data_type_list_t");
-    set_env(_env, _init, 0);
-    m_order.push_back(_env);
+    auto _sid = std::string{ std::forward<Sp>(_env) };
+    set_env(_sid, _init, 0);
+    m_order.push_back(_sid);
     return m_data.insert(
-        { _env, std::make_shared<tsettings<Tp, Vp>>(_init, _name, _env, _desc,
-                                                    std::forward<Args>(_args)...) });
+        { string_view_t{ m_order.back() },
+          std::make_shared<tsettings<Tp, Vp>>(_init, _name, _env, _desc,
+                                              std::forward<Args>(_args)...) });
 }
 //
 //----------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Vp>
+template <typename Tp, typename Vp, typename Sp>
 auto
-settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, std::string _env)
+settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env)
 {
     static_assert(is_one_of<Tp, data_type_list_t>::value,
                   "Error! Data type is not supported. See settings::data_type_list_t");
     if(_ptr)
     {
-        if(_env.empty())
-            _env = _ptr->get_env_name();
-        set_env(_env, _ptr->as_string(), 0);
-        m_order.push_back(_env);
-        return m_data.insert({ _env, _ptr });
+        auto _sid = std::string{ std::forward<Sp>(_env) };
+        if(_sid.empty())
+            _sid = _ptr->get_env_name();
+        if(!_sid.empty())
+        {
+            set_env(_sid, _ptr->as_string(), 0);
+            m_order.push_back(_sid);
+            return m_data.insert({ string_view_t{ m_order.back() }, _ptr });
+        }
     }
 
     return std::make_pair(m_data.end(), false);
