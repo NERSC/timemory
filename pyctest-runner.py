@@ -1437,7 +1437,7 @@ def run_pyctest():
         ret = pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
 
         if os.path.exists(fname):
-            os.remove(".report-memory.tmp")
+            os.remove(fname)
 
         if mem is not None:
             mem.terminate()
