@@ -78,7 +78,8 @@ auto
 construct(py::module& _pymod, int, tim::enable_if_t<valid_statistics_type<Tp>::value> = 0)
     -> decltype(tim::demangle<Tp>(), void())
 {
-    using statistics_type = tim::statistics<Tp>;
+    using value_type        = Tp;
+    using statistics_type   = tim::statistics<Tp>;
     using pystatistics_type = py::class_<statistics_type>;
 
     static std::set<std::string> _created{};
@@ -91,10 +92,50 @@ construct(py::module& _pymod, int, tim::enable_if_t<valid_statistics_type<Tp>::v
         return;
     _created.insert(_name);
 
-    // PRINT_HERE("Constructing %s", _name.c_str());
-
     pystatistics_type _pystat(_pymod, _name.c_str(), _desc.str().c_str());
-    statistics_type::construct(tim::project::python{}, _pystat);
+
+    auto _init  = []() { return new statistics_type{}; };
+    auto _vinit = [](const Tp& _val) { return new statistics_type(_val); };
+
+    _pystat.def(py::init(_init), "Creates statistics type");
+    _pystat.def(py::init(_vinit), "Creates statistics type with initial value");
+    _pystat.def("reset", &statistics_type::reset, "Reset all values");
+    _pystat.def("count", &statistics_type::get_count, "Get the total number of values");
+    _pystat.def("min", &statistics_type::get_min, "Get the minimum value");
+    _pystat.def("max", &statistics_type::get_max, "Get the maximum value");
+    _pystat.def("mean", &statistics_type::get_mean, "Get the mean value");
+    _pystat.def("sum", &statistics_type::get_sum, "Get the sum of the values");
+    _pystat.def("sqr", &statistics_type::get_sqr,
+                "Get the sum of the square of the values");
+    _pystat.def("variance", &statistics_type::get_variance,
+                "Get the variance of the values");
+    _pystat.def("stddev", &statistics_type::get_stddev,
+                "Get the standard deviation of the values");
+
+    auto _add = [](statistics_type* lhs, value_type rhs) { return (*lhs += rhs); };
+    auto _sub = [](statistics_type* lhs, value_type rhs) { return (*lhs -= rhs); };
+
+    auto _isub = [](statistics_type* lhs, statistics_type* rhs) {
+        if(lhs && rhs)
+            *lhs -= *rhs;
+        return lhs;
+    };
+
+    auto _repr = [](statistics_type* obj) {
+        std::stringstream ss;
+        if(obj)
+            ss << *obj;
+        return ss.str();
+    };
+
+    // operators
+    _pystat.def(py::self + py::self);
+    _pystat.def(py::self - py::self);
+    _pystat.def(py::self += py::self);
+    _pystat.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
+    _pystat.def("__iadd__", _add, "Add value", py::is_operator());
+    _pystat.def("__isub__", _sub, "Subtract value", py::is_operator());
+    _pystat.def("__repr__", _repr, "String representation");
 }
 //
 //--------------------------------------------------------------------------------------//

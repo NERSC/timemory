@@ -23,12 +23,6 @@
 // SOFTWARE.
 //
 
-/** \file timemory/data/statistics.hpp
- * \headerfile timemory/data/statistics.hpp "timemory/data/statistics.hpp"
- * This provides accumulation capabilities
- *
- */
-
 #pragma once
 
 #include "timemory/data/functional.hpp"
@@ -38,12 +32,6 @@
 #include "timemory/mpl/stl.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
-
-#if defined(TIMEMORY_PYBIND11_SOURCE)
-#    include "pybind11/cast.h"
-#    include "pybind11/pybind11.h"
-#    include "pybind11/stl.h"
-#endif
 
 #include <cmath>
 #include <fstream>
@@ -75,6 +63,12 @@ struct StaticVersion<::tim::statistics<Tp>>
 
 namespace tim
 {
+/// \struct tim::statistics
+/// \tparam Tp data type for statistical accumulation
+///
+/// \brief A generic class for statistical accumulation. It uses the timemory math
+/// overloads to enable statistics for containers such as `std::vector<double>`, etc.
+///
 template <typename Tp>
 struct statistics
 {
@@ -266,8 +260,9 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const statistics& obj)
     {
         using namespace tim::stl::ostream;
-        os << "[sum: " << obj.get_sum() << "] [min: " << obj.get_min()
-           << "] [max: " << obj.get_max() << "] [sqr: " << obj.get_sqr()
+        os << "[sum: " << obj.get_sum() << "] [mean: " << obj.get_mean()
+           << "] [min: " << obj.get_min() << "] [max: " << obj.get_max()
+           << "] [var: " << obj.get_variance() << "] [stddev: " << obj.get_stddev()
            << "] [count: " << obj.get_count() << "]";
         return os;
     }
@@ -300,62 +295,6 @@ public:
            cereal::make_nvp("max", m_max), cereal::make_nvp("sqr", m_sqr),
            cereal::make_nvp("count", m_cnt));
     }
-
-#if defined(TIMEMORY_PYBIND11_SOURCE)
-    //
-    /// this is called by python api
-    ///
-    ///     Use this to add customizations to the python module. The instance
-    ///     of the component is within in a variadic wrapper which is used
-    ///     elsewhere to ensure that calling mark_begin(...) on a component
-    ///     without that member function is not invalid
-    ///
-    static void construct(project::python, pybind11::class_<this_type>& _pyclass)
-    {
-        auto _init  = []() { return new this_type{}; };
-        auto _vinit = [](const Tp& _val) { return new this_type(_val); };
-
-        _pyclass.def(py::init(_init), "Creates statistics type");
-        _pyclass.def(py::init(_vinit), "Creates statistics type with initial value");
-        _pyclass.def("reset", &this_type::reset, "Reset all values");
-        _pyclass.def("count", &this_type::get_count, "Get the total number of values");
-        _pyclass.def("min", &this_type::get_min, "Get the minimum value");
-        _pyclass.def("max", &this_type::get_max, "Get the maximum value");
-        _pyclass.def("mean", &this_type::get_mean, "Get the mean value");
-        _pyclass.def("sum", &this_type::get_sum, "Get the sum of the values");
-        _pyclass.def("sqr", &this_type::get_sqr,
-                     "Get the sum of the square of the values");
-        _pyclass.def("variance", &this_type::get_variance,
-                     "Get the variance of the values");
-        _pyclass.def("stddev", &this_type::get_stddev,
-                     "Get the standard deviation of the values");
-
-        auto _add = [](this_type* lhs, value_type rhs) { return (*lhs += rhs); };
-        auto _sub = [](this_type* lhs, value_type rhs) { return (*lhs -= rhs); };
-
-        auto _isub = [](this_type* lhs, this_type* rhs) {
-            if(lhs && rhs)
-                *lhs -= *rhs;
-            return lhs;
-        };
-
-        auto _repr = [](this_type* obj) {
-            std::stringstream ss;
-            if(obj)
-                ss << *obj;
-            return ss.str();
-        };
-
-        // operators
-        _pyclass.def(py::self + py::self);
-        _pyclass.def(py::self - py::self);
-        _pyclass.def(py::self += py::self);
-        _pyclass.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
-        _pyclass.def("__iadd__", _add, "Add value", py::is_operator());
-        _pyclass.def("__isub__", _sub, "Subtract value", py::is_operator());
-        _pyclass.def("__repr__", _repr, "String representation");
-    }
-#endif
 };
 
 //======================================================================================//
