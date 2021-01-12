@@ -65,7 +65,6 @@ struct malloc_gotcha
     using storage_type = typename base_type::storage_type;
     using string_hash  = std::hash<std::string>;
 
-
     // required static functions
     static std::string label() { return "malloc_gotcha"; }
     static std::string description()

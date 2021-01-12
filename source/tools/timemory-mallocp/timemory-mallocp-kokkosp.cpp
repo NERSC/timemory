@@ -92,16 +92,16 @@ extern "C"
 
     void kokkosp_begin_parallel_for(const char* name, uint32_t, uint64_t*)
     {
-        timemory_push_mallocp(name);
+        timemory_push_mallocp(TIMEMORY_JOIN('/', __FUNCTION__, name).substr(14).c_str());
     }
 
-    void kokkosp_end_parallel_for(uint64_t kernid) { timemory_pop_mallocp(""); }
+    void kokkosp_end_parallel_for(uint64_t) { timemory_pop_mallocp(""); }
 
     //----------------------------------------------------------------------------------//
 
     void kokkosp_begin_parallel_reduce(const char* name, uint32_t, uint64_t*)
     {
-        timemory_push_mallocp(name);
+        timemory_push_mallocp(TIMEMORY_JOIN('/', __FUNCTION__, name).substr(14).c_str());
     }
 
     void kokkosp_end_parallel_reduce(uint64_t kernid) { timemory_pop_mallocp(""); }
@@ -110,16 +110,16 @@ extern "C"
 
     void kokkosp_begin_parallel_scan(const char* name, uint32_t, uint64_t*)
     {
-        timemory_push_mallocp(name);
+        timemory_push_mallocp(TIMEMORY_JOIN('/', __FUNCTION__, name).substr(14).c_str());
     }
 
-    void kokkosp_end_parallel_scan(uint64_t) { timemory_pop_mallocp(""); }
+    void kokkosp_end_parallel_scan(uint64_t) {}
 
     //----------------------------------------------------------------------------------//
 
     void kokkosp_begin_fence(const char* name, uint32_t, uint64_t*)
     {
-        timemory_push_mallocp(name);
+        timemory_push_mallocp(TIMEMORY_JOIN('/', __FUNCTION__, name).substr(14).c_str());
     }
 
     void kokkosp_end_fence(uint64_t) { timemory_pop_mallocp(""); }
@@ -135,14 +135,14 @@ extern "C"
     void kokkosp_begin_deep_copy(SpaceHandle, const char* dst_name, const void*,
                                  SpaceHandle, const char* src_name, const void*, uint64_t)
     {
-        timemory_push_mallocp(src_name);
-        timemory_push_mallocp(dst_name);
+        // timemory_push_mallocp(src_name);
+        // timemory_push_mallocp(dst_name);
     }
 
     void kokkosp_end_deep_copy()
     {
-        timemory_pop_mallocp("");
-        timemory_pop_mallocp("");
+        // timemory_pop_mallocp("");
+        // timemory_pop_mallocp("");
     }
 
     //----------------------------------------------------------------------------------//

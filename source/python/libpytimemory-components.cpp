@@ -699,8 +699,8 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def_static("index", [idx]() { return idx; },
                        "Enumeration ID for the component");
 
-    _pycomp.def_static(
-        "id", [cid]() { return cid; }, "(Primary) String ID for the component");
+    _pycomp.def_static("id", [cid]() { return cid; },
+                       "(Primary) String ID for the component");
 
     // generate_properties<Idx, T>(_pycomp);
 }
@@ -778,8 +778,8 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def_static("index", [idx]() { return idx; },
                        "Enumeration ID for the component");
 
-    _pycomp.def_static(
-        "id", [cid]() { return cid; }, "(Primary) String ID for the component");
+    _pycomp.def_static("id", [cid]() { return cid; },
+                       "(Primary) String ID for the component");
 
     // generate_properties<Idx, T>(_pycomp);
 }
