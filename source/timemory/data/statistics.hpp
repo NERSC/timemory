@@ -23,15 +23,7 @@
 // SOFTWARE.
 //
 
-/** \file timemory/data/statistics.hpp
- * \headerfile timemory/data/statistics.hpp "timemory/data/statistics.hpp"
- * This provides accumulation capabilities
- *
- */
-
 #pragma once
-
-//----------------------------------------------------------------------------//
 
 #include "timemory/data/functional.hpp"
 #include "timemory/data/stream.hpp"
@@ -71,11 +63,18 @@ struct StaticVersion<::tim::statistics<Tp>>
 
 namespace tim
 {
+/// \struct tim::statistics
+/// \tparam Tp data type for statistical accumulation
+///
+/// \brief A generic class for statistical accumulation. It uses the timemory math
+/// overloads to enable statistics for containers such as `std::vector<double>`, etc.
+///
 template <typename Tp>
 struct statistics
 {
 public:
     using value_type   = Tp;
+    using this_type    = statistics<Tp>;
     using compute_type = math::compute<Tp>;
     template <typename Vp>
     using compute_value_t = math::compute<Tp, Vp>;
@@ -151,7 +150,14 @@ public:
     }
 
     // Modifications
-    inline void reset();
+    inline void reset()
+    {
+        m_cnt = 0;
+        m_sum = value_type{};
+        m_sqr = value_type{};
+        m_min = value_type{};
+        m_max = value_type{};
+    }
 
 public:
     // Operators (value_type)
@@ -254,8 +260,9 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const statistics& obj)
     {
         using namespace tim::stl::ostream;
-        os << "[sum: " << obj.get_sum() << "] [min: " << obj.get_min()
-           << "] [max: " << obj.get_max() << "] [sqr: " << obj.get_sqr()
+        os << "[sum: " << obj.get_sum() << "] [mean: " << obj.get_mean()
+           << "] [min: " << obj.get_min() << "] [max: " << obj.get_max()
+           << "] [var: " << obj.get_variance() << "] [stddev: " << obj.get_stddev()
            << "] [count: " << obj.get_count() << "]";
         return os;
     }

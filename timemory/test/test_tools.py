@@ -70,8 +70,6 @@ class TimemoryToolsTests(unittest.TestCase):
         tim.settings.dart_output = True
         tim.settings.dart_count = 1
         tim.settings.banner = False
-        tim.settings.memory_units = "KiB"
-        tim.settings.parse()
 
     def setUp(self):
         pass
@@ -95,6 +93,7 @@ class TimemoryToolsTests(unittest.TestCase):
             return
 
         from timemory.component import MallocGotcha
+        from timemory.storage import MallocGotchaStorage
 
         if not tim.component.is_available("malloc_gotcha"):
             return
@@ -109,27 +108,31 @@ class TimemoryToolsTests(unittest.TestCase):
         self.assertTrue(_sum == 1000 * 1000)
         self.assertTrue(_idx == 0)
 
-        _data = tim.get(components=[MallocGotcha.id()])
+        _json = tim.get(components=[MallocGotcha.id()])
+        _data = MallocGotchaStorage.get()
         _alloc = 0.0
         _dealloc = 0.0
 
-        print("{}\n".format(json.dumps(_data, indent=4)))
+        print("{}\n".format(json.dumps(_json, indent=4)))
 
-        _data = _data["timemory"]["malloc_gotcha"]
-        unit_v = _data["unit_value"]
-        unit_r = _data["unit_repr"]
-        for itr in _data["ranks"][0]["graph"]:
-            if "malloc" in itr["prefix"] or "calloc" in itr["prefix"]:
-                _alloc += itr["entry"]["accum"]
-            if "free" in itr["prefix"]:
-                _dealloc += itr["entry"]["accum"]
+        for itr in _data:
+            if "malloc" in itr.prefix() or "calloc" in itr.prefix():
+                _alloc += itr.data().get_raw()
+            if "free" in itr.prefix():
+                _dealloc += itr.data().get_raw()
 
-        _minsz = 1000 * 1000 * 64 / unit_v
-        print(f"Minimum size     : {_minsz} {unit_r}")
-        print(f"Allocated size   : {_alloc} {unit_r}")
-        print(f"Deallocated size : {_alloc} {unit_r}")
+        _minsz = 1000 * 1000 * 8
+        print(f"Minimum size     : {_minsz}")
+        print(f"Allocated size   : {_alloc}")
+        print(f"Deallocated size : {_alloc}")
 
         self.assertTrue(_alloc > _minsz)
+
+        unit_v = _json["timemory"]["malloc_gotcha"]["unit_value"]
+        unit_r = _json["timemory"]["malloc_gotcha"]["unit_repr"]
+
+        self.assertEqual(unit_v, MallocGotcha.unit())
+        self.assertEqual(unit_r, MallocGotcha.display_unit())
 
 
 # ----------------------------- main test runner ---------------------------------------- #

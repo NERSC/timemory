@@ -461,25 +461,35 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <bool PrintPrefix = true, bool PrintLaps = true>
-    void print(std::ostream& os) const
+    void print(std::ostream& os, bool skip_wo_hash = true) const
     {
         using printer_t = typename bundle_type::print_type;
-        if(size() == 0 || m_hash == 0)
+        if(size() == 0)
+            return;
+        if(m_hash == 0 && skip_wo_hash)
             return;
         std::stringstream ss_data;
         apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
-        if(PrintPrefix)
+        IF_CONSTEXPR(PrintPrefix)
         {
             update_width();
-            std::stringstream ss_prefix;
-            std::stringstream ss_id;
-            ss_id << get_prefix() << " " << std::left << key();
-            ss_prefix << std::setw(output_width()) << std::left << ss_id.str() << " : ";
-            os << ss_prefix.str();
+            auto _key = key();
+            if(_key.length() > 0)
+            {
+                std::stringstream ss_prefix;
+                std::stringstream ss_id;
+                ss_id << get_prefix() << " " << std::left << _key;
+                ss_prefix << std::setw(output_width()) << std::left << ss_id.str()
+                          << " : ";
+                os << ss_prefix.str();
+            }
         }
-        os << ss_data.str();
-        if(m_laps > 0 && PrintLaps)
-            os << " [laps: " << m_laps << "]";
+        if(ss_data.str().length() > 0)
+        {
+            os << ss_data.str();
+            if(m_laps > 0 && PrintLaps)
+                os << " [laps: " << m_laps << "]";
+        }
     }
 
     //----------------------------------------------------------------------------------//

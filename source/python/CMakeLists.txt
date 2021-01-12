@@ -95,7 +95,7 @@ if(TIMEMORY_BUILD_PYTHON)
 
     file(GLOB_RECURSE pybind_headers ${PROJECT_SOURCE_DIR}/external/pybind11/include/*.h)
     file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.hpp)
-    file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.cpp)
+    # file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.cpp)
     set(pysources
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-api.cpp
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-auto-timer.cpp
@@ -108,6 +108,8 @@ if(TIMEMORY_BUILD_PYTHON)
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-rss-usage.cpp
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-settings.cpp
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-signals.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-statistics.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-storage.cpp
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-trace.cpp
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-units.cpp
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory.cpp)

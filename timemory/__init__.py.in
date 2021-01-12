@@ -196,6 +196,7 @@ else:
             # units,
             scope,
             settings,
+            storage,
             # region,
             # options,
         )
@@ -230,6 +231,7 @@ else:
         sys.modules["timemory.component"] = component
         sys.modules["timemory.region"] = region
         sys.modules["timemory.profiler"] = profiler
+        sys.modules["timemory.storage"] = storage
         sys.modules["timemory.trace"] = trace
         sys.modules["timemory.api"] = api
         sys.modules["timemory.hardware_counters"] = hardware_counters

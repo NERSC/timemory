@@ -428,9 +428,11 @@ public:
     TIMEMORY_INLINE void get(void*& ptr, size_t _typeid_hash) const;
     TIMEMORY_INLINE void get_opaque_data(void*& ptr, size_t _typeid_hash) const;
 
-    // used by operation::finalize::print<Type>
-    TIMEMORY_INLINE void operator-=(const base_type&) {}
-    TIMEMORY_INLINE void operator-=(const Type&) {}
+    void operator+=(const base_type&) {}
+    void operator-=(const base_type&) {}
+
+    void operator+=(const Type&) {}
+    void operator-=(const Type&) {}
 
     using base_state::get_depth_change;
     using base_state::get_is_flat;
