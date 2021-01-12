@@ -340,6 +340,7 @@ struct memory_allocations
     using malloc_gotcha_t = typename malloc_gotcha::gotcha_type<component_tuple_t<>>;
     using malloc_bundle_t = component_tuple_t<malloc_gotcha_t>;
     using data_pointer_t  = std::unique_ptr<malloc_bundle_t>;
+    using gotcha_type     = malloc_gotcha_t;
 
     static std::string label() { return "memory_allocations"; }
     static std::string description()

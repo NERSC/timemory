@@ -71,6 +71,9 @@ struct tools_stubs_dlsym
     using deregister_function_t = void (*)();
     using start_function_t      = uint64_t (*)();
     using stop_function_t       = uint64_t (*)(uint64_t);
+    using reserve_function_t    = uint64_t (*)(uint64_t);
+    using push_function_t       = void (*)(const char*);
+    using pop_function_t        = void (*)(const char*);
 
     TIMEMORY_DEFAULT_OBJECT(tools_stubs_dlsym)
 
@@ -102,6 +105,9 @@ struct tools_stubs_dlsym
         auto deregister_name = TIMEMORY_JOIN("", "timemory_deregister_", id);
         auto start_name      = TIMEMORY_JOIN("", "timemory_start_", id);
         auto stop_name       = TIMEMORY_JOIN("", "timemory_stop_", id);
+        auto reserve_name    = TIMEMORY_JOIN("", "timemory_reserve_", id);
+        auto push_name       = TIMEMORY_JOIN("", "timemory_push_", id);
+        auto pop_name        = TIMEMORY_JOIN("", "timemory_pop_", id);
 
         // Initialize all pointers
         DLSYM_FUNCTION(m_ctor, libhandle, ctor_name);
@@ -109,6 +115,9 @@ struct tools_stubs_dlsym
         DLSYM_FUNCTION(m_deregister, libhandle, deregister_name);
         DLSYM_FUNCTION(m_start, libhandle, start_name);
         DLSYM_FUNCTION(m_stop, libhandle, stop_name);
+        DLSYM_FUNCTION(m_reserve, libhandle, reserve_name);
+        DLSYM_FUNCTION(m_push, libhandle, push_name);
+        DLSYM_FUNCTION(m_pop, libhandle, pop_name);
 #endif
     }
 
@@ -144,12 +153,34 @@ struct tools_stubs_dlsym
         return 0;
     }
 
+    uint64_t invoke_reserve(uint64_t val)
+    {
+        if(m_reserve)
+            return (*m_reserve)(val);
+        return 0;
+    }
+
+    void invoke_push(const char* v)
+    {
+        if(m_push)
+            (*m_push)(v);
+    }
+
+    void invoke_pop(const char* v)
+    {
+        if(m_pop)
+            (*m_pop)(v);
+    }
+
 private:
     ctor_function_t       m_ctor       = nullptr;
     register_function_t   m_register   = nullptr;
     deregister_function_t m_deregister = nullptr;
     start_function_t      m_start      = nullptr;
     stop_function_t       m_stop       = nullptr;
+    reserve_function_t    m_reserve    = nullptr;
+    push_function_t       m_push       = nullptr;
+    pop_function_t        m_pop        = nullptr;
 };
 
 enum TOOL_STUB_IDS
@@ -197,12 +228,27 @@ TOOL_DLSYM_SPECIALIZAITON(mallocp_idx, "mallocp", "TIMEMORY_MALLOCP_LIBRARY")
     uint64_t timemory_start_##NAME() TOOL_SUFFIX;                                        \
     TOOL_PREFIX                                                                          \
     uint64_t timemory_stop_##NAME(uint64_t) TOOL_SUFFIX;                                 \
+    TOOL_PREFIX                                                                          \
+    uint64_t timemory_reserve_##NAME(uint64_t) TOOL_SUFFIX;                              \
+    TOOL_PREFIX                                                                          \
+    void timemory_push_##NAME(const char*) TOOL_SUFFIX;                                  \
+    TOOL_PREFIX                                                                          \
+    void timemory_pop_##NAME(const char*) TOOL_SUFFIX;                                   \
                                                                                          \
     void     timemory_##NAME##_library_ctor() { TOOL_DLSYM(NAME)->invoke_ctor(); }       \
     void     timemory_register_##NAME() { TOOL_DLSYM(NAME)->invoke_register(); }         \
     void     timemory_deregister_##NAME() { TOOL_DLSYM(NAME)->invoke_deregister(); }     \
     uint64_t timemory_start_##NAME() { return TOOL_DLSYM(NAME)->invoke_start(); }        \
-    uint64_t timemory_stop_##NAME(uint64_t v) { return TOOL_DLSYM(NAME)->invoke_stop(v); }
+    uint64_t timemory_stop_##NAME(uint64_t v)                                            \
+    {                                                                                    \
+        return TOOL_DLSYM(NAME)->invoke_stop(v);                                         \
+    }                                                                                    \
+    uint64_t timemory_reserve_##NAME(uint64_t v)                                         \
+    {                                                                                    \
+        return TOOL_DLSYM(NAME)->invoke_reserve(v);                                      \
+    }                                                                                    \
+    void timemory_push_##NAME(const char* v) { TOOL_DLSYM(NAME)->invoke_push(v); }       \
+    void timemory_pop_##NAME(const char* v) { TOOL_DLSYM(NAME)->invoke_pop(v); }
 
 extern "C"
 {

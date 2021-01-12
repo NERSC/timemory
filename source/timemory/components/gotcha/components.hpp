@@ -249,6 +249,10 @@ struct gotcha
     }
 
     //----------------------------------------------------------------------------------//
+    /// suppression for the whole set of gotcha wrappers
+    static bool& get_suppression() { return get_persistent_data().m_suppression; }
+
+    //----------------------------------------------------------------------------------//
 
     static bool& get_default_ready()
     {
@@ -332,6 +336,10 @@ struct gotcha
             {
                 _data.suppression = &gotcha_suppression::get();
                 _data.ready       = false;
+            }
+            else
+            {
+                _data.suppression = &get_suppression();
             }
 
             _data.constructor = [_func, _priority, _tool]() {
@@ -618,6 +626,7 @@ private:
         TIMEMORY_DELETE_COPY_MOVE_OBJECT(persistent_data)
 
         bool                  m_is_configured = false;
+        bool                  m_suppression   = false;
         std::atomic<int64_t>  m_started{ 0 };
         array_t<gotcha_data>  m_data;
         std::mutex            m_mutex;
@@ -932,8 +941,8 @@ private:
         if(_data.is_finalized)
             return (_orig) ? (*_orig)(_args...) : Ret{};
 
-        auto _suppress =
-            gotcha_suppression::get() || (_data.suppression && *_data.suppression);
+        auto _suppress = gotcha_suppression::get() || get_suppression() ||
+                         (_data.suppression && *_data.suppression);
         if(!_data.ready || _suppress)
         {
             static thread_local bool _recursive = false;
@@ -942,10 +951,12 @@ private:
                 _recursive = true;
                 auto _tid  = threading::get_id();
                 fprintf(stderr,
-                        "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
-                        "suppressed (suppressed=%s)\n",
+                        "[T%i][%s]> %s is either not ready (ready=%s), is type "
+                        "suppressed (type=%s), or is globally suppressed (global=%s)\n",
                         (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
-                        (_data.ready) ? "true" : "false", (_suppress) ? "true" : "false");
+                        (_data.ready) ? "true" : "false",
+                        get_suppression() ? "true" : "false",
+                        (_suppress) ? "true" : "false");
                 fflush(stderr);
                 _recursive = false;
             }

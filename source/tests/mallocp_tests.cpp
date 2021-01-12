@@ -63,6 +63,7 @@ random_entry(const std::vector<Tp>& v)
 auto
 foo()
 {
+    tim::mallocp::region    _reg{ __FUNCTION__ };
     uint64_t                n = 0;
     std::vector<value_type> _data(nelements, 0);
     std::generate(_data.begin(), _data.end(), [&n]() { return ++n; });
@@ -72,7 +73,8 @@ foo()
 auto
 bar(size_t n)
 {
-    uint64_t mallocp_idx = UINT64_MAX;
+    tim::mallocp::region _reg{ __FUNCTION__ };
+    uint64_t             mallocp_idx = UINT64_MAX;
     if(n % 2 == 1)
         mallocp_idx = timemory_start_mallocp();
 
@@ -106,16 +108,23 @@ TEST_F(mallocp_tests, registration)
 {
     ASSERT_EQ(tim::storage<malloc_gotcha>::instance()->size(), 0);
 
-    tim::settings::memory_units() = "KiB";
     size_t                    idx = 0;
     std::array<value_type, 4> ret{};
+    auto                      _name = details::get_test_name();
 
+    timemory_reserve_mallocp(64);
     timemory_register_mallocp();
+    //
+    timemory_push_mallocp(_name.c_str());
+
     ret.at(idx++) = details::foo();
     ret.at(idx++) = details::bar(1);
     ret.at(idx++) = details::bar(2);
     ret.at(idx++) = details::foo();
-    timemory_register_mallocp();
+
+    timemory_pop_mallocp(_name.c_str());
+    //
+    timemory_deregister_mallocp();
 
     for(auto& itr : ret)
     {
@@ -157,14 +166,18 @@ TEST_F(mallocp_tests, start_stop)
 {
     ASSERT_EQ(tim::storage<malloc_gotcha>::instance()->size(), 0);
 
-    tim::settings::memory_units() = "KiB";
     size_t                    idx = 0;
     std::array<value_type, 4> ret{};
+    auto                      _name = details::get_test_name();
 
+    timemory_push_mallocp(_name.c_str());
+    //
     ret.at(idx++) = details::foo();
     ret.at(idx++) = details::bar(3);
     ret.at(idx++) = details::bar(2);
     ret.at(idx++) = details::foo();
+    //
+    timemory_pop_mallocp(_name.c_str());
 
     for(auto& itr : ret)
     {

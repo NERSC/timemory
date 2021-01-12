@@ -774,6 +774,15 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("stop_mallocp", &timemory_stop_mallocp,
             "Deactivate Memory Allocation profiling", py::arg("id"));
+    //----------------------------------------------------------------------------------//
+    tim.def("reserve_mallocp", &timemory_reserve_mallocp,
+            "Reserve memory for mallocp region");
+    //----------------------------------------------------------------------------------//
+    tim.def("push_mallocp", &timemory_push_mallocp,
+            "Push a region onto the mallocp hierarchy");
+    //----------------------------------------------------------------------------------//
+    tim.def("pop_mallocp", &timemory_pop_mallocp,
+            "Push the last region off the mallocp hierarchy", py::arg("ignored") = "");
 
     //==================================================================================//
     //

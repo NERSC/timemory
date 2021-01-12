@@ -98,12 +98,14 @@ class TimemoryToolsTests(unittest.TestCase):
         if not tim.component.is_available("malloc_gotcha"):
             return
 
+        tim.push_mallocp("python-unittest")
         _idx = tim.start_mallocp()
         _arr = np.ones([1000, 1000], dtype=np.float64)
         _sum = np.sum(_arr)
         del _arr
         gc.collect()
         _idx = tim.stop_mallocp(_idx)
+        tim.pop_mallocp()
 
         self.assertTrue(_sum == 1000 * 1000)
         self.assertTrue(_idx == 0)

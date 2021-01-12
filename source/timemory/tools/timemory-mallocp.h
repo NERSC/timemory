@@ -25,6 +25,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdio.h>
 
 #if defined(__cplusplus)
 extern "C"
@@ -40,6 +41,9 @@ extern "C"
     static inline uint64_t timemory_stop_mallocp(uint64_t) { return 0; }
     static inline void     timemory_register_mallocp() {}
     static inline void     timemory_deregister_mallocp() {}
+    static inline uint64_t timemory_reserve_mallocp(uint64_t) {}
+    static inline void     timemory_push_mallocp(const char*) {}
+    static inline void     timemory_pop_mallocp(const char*) {}
 
 #else
 
@@ -49,10 +53,39 @@ extern "C"
     extern uint64_t timemory_stop_mallocp(uint64_t);
     extern void timemory_register_mallocp();
     extern void timemory_deregister_mallocp();
+    extern uint64_t timemory_reserve_mallocp(uint64_t);
+    extern void timemory_push_mallocp(const char*);
+    extern void timemory_pop_mallocp(const char*);
 // clang-format on
 
 #endif
 
 #if defined(__cplusplus)
 }
+
+namespace tim
+{
+namespace mallocp
+{
+struct region
+{
+    region(const char* _key)
+    : m_key(_key)
+    {
+        timemory_push_mallocp(m_key);
+    }
+
+    ~region() { timemory_pop_mallocp(m_key); }
+
+    region(const region&) = delete;
+    region(region&&)      = default;
+
+    region& operator=(const region&) = delete;
+    region& operator=(region&&) = default;
+
+private:
+    const char* m_key = nullptr;
+};
+}  // namespace mallocp
+}  // namespace tim
 #endif
