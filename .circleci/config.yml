@@ -4,7 +4,7 @@ orbs:
   docker: circleci/docker@1.4.0
 
 jobs:
-  user-build:
+  quick-build:
     docker:
       - image: jrmadsen/timemory:dev-cpu
     steps:
@@ -127,5 +127,6 @@ workflows:
   version: 2
   build:
     jobs:
-      - user-build
-      - dev-build
+      - quick-build
+      - cpu-dev-build
+      - gpu-dev-build
