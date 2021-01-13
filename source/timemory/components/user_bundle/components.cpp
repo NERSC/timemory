@@ -26,6 +26,7 @@
 
 #if !defined(TIMEMORY_USER_BUNDLE_HEADER_MODE)
 #    include "timemory/components/user_bundle/components.hpp"
+#    include "timemory/runtime/properties.hpp"
 #endif
 
 namespace tim
