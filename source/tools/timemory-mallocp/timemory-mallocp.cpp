@@ -32,7 +32,8 @@
 
 using namespace tim::component;
 
-using malloc_toolset_t     = tim::component_tuple<memory_allocations>;
+using cuda_malloc_gotcha_t = gotcha<1, tim::component_tuple<>, cuda_malloc_gotcha>;
+using malloc_toolset_t = tim::component_tuple<memory_allocations, cuda_malloc_gotcha_t>;
 using malloc_region_t      = tim::lightweight_tuple<malloc_gotcha>;
 using malloc_region_pair_t = std::pair<const char*, malloc_region_t>;
 using malloc_region_vec_t  = std::vector<malloc_region_pair_t>;
@@ -71,6 +72,10 @@ extern "C"
             auto& _handle = get_toolset();
             if(!_handle)
             {
+                cuda_malloc_gotcha_t::get_initializer() = []() {
+                    cuda_malloc_gotcha_t::template configure<0, cudaError_t, void**,
+                                                             size_t>("cudaMalloc");
+                };
                 _handle       = std::make_shared<malloc_toolset_t>("timemory-mallocp");
                 auto _cleanup = []() {
                     auto& _handle = get_toolset();

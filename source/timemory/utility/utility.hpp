@@ -382,17 +382,30 @@ get_max_threads()
 static inline auto
 demangle_backtrace(const char* cstr)
 {
+    if(!cstr)
+        return std::string{};
+
     auto _trim = [](std::string& _sub, size_t& _len) {
-        size_t _pos = 0;
+        size_t _pos  = 0;
+        size_t _n    = 0;
+        size_t _nmax = _sub.length();
         while((_pos = _sub.find_first_of(' ')) == 0)
         {
             _sub = _sub.erase(_pos, 1);
             --_len;
+            if(_len == 0 || ++_n == _nmax)
+                break;
         }
+        _n    = 0;
+        _nmax = _sub.length();
+        if(_nmax == 0)
+            return _sub;
         while((_pos = _sub.find_last_of(' ')) == _sub.length() - 1)
         {
             _sub = _sub.substr(0, _sub.length() - 1);
             --_len;
+            if(_len == 0 || ++_n == _nmax)
+                break;
         }
         return _sub;
     };

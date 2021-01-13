@@ -36,6 +36,8 @@
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/variadic/types.hpp"
 
+#include "timemory/backends/cuda.hpp"
+
 #include <memory>
 #include <string>
 
@@ -267,6 +269,46 @@ private:
 #endif
 };
 //
+#if defined(TIMEMORY_USE_CUDA)
+//
+struct cuda_malloc_gotcha : base<cuda_malloc_gotcha, void>
+{
+    using bundle_t = component_tuple<malloc_gotcha>;
+    cuda::error_t operator()(void** devPtr, size_t size)
+    {
+        static auto _hash  = get_hash_id("cudaMalloc");
+        static bool _every = get_env("EVERY_BACKTRACE", false);
+        bundle_t    _mg{ _hash };
+        _mg.start();
+        _mg.audit("cudaMalloc", audit::incoming{}, devPtr, size);
+
+        // call original cudaMalloc
+        auto _err = cudaMalloc(devPtr, size);
+
+        if(_err != cuda::success_v || _every)
+        {
+            std::cerr << "\nBacktrace to cudaMalloc:\n";
+            // get previous 8 frames before the last by 3 frames
+            // (which just report the gotcha)
+            auto _bt = tim::get_demangled_backtrace<7, 3>();
+            for(const auto& itr : _bt)
+            {
+                if(itr.empty())
+                    break;
+                std::cerr << "    " << itr << '\n';
+            }
+            std::cerr << '\n' << std::flush;
+        }
+
+        _mg.audit("cudaMalloc", audit::outgoing{}, _err);
+        _mg.stop();
+
+        return _err;
+    }
+};
+//
+#endif
+//
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_GOTCHA)
@@ -287,8 +329,8 @@ malloc_gotcha::configure()
         TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
         TIMEMORY_C_GOTCHA(local_gotcha_type, 2, free);
 #    if defined(TIMEMORY_USE_CUDA)
-        local_gotcha_type::template configure<3, cudaError_t, void**, size_t>(
-            "cudaMalloc");
+        // local_gotcha_type::template configure<3, cudaError_t, void**, size_t>(
+        //    "cudaMalloc");
         local_gotcha_type::template configure<4, cudaError_t, void**, size_t>(
             "cudaMallocHost");
         local_gotcha_type::template configure<5, cudaError_t, void**, size_t,
