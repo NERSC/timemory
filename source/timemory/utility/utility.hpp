@@ -411,7 +411,7 @@ get_bool(const std::string& strbool, bool _default = false) noexcept
     for(const auto& itr : { "on", "true", "yes", "y", "t" })
     {
         if(_val == itr)
-            return false;
+            return true;
     }
 
     return _default;

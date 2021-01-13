@@ -44,7 +44,7 @@ jobs:
             cd build-examples &&
             cmake .. &&
             make ex_array_of_bundles
-  dev-build:
+  cpu-dev-build:
     docker:
       - image: jrmadsen/timemory:dev-cpu
     steps:
@@ -72,6 +72,45 @@ jobs:
             python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j 1
             --build-libs shared --mpi --papi --gotcha --tools mpip mallocp dyninst --cxx-standard=17
             -- -V --output-on-failure
+            -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
+      - run:
+          name: install
+          command: >
+            cd build-timemory/Linux &&
+            make install -j &&
+            export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
+            cd ../../examples &&
+            mkdir build-examples &&
+            cd build-examples &&
+            cmake ..
+  gpu-dev-build:
+    docker:
+      - image: jrmadsen/timemory:dev-gpu
+    steps:
+      - run:
+          name: apt-fixes
+          command: >
+            apt-get update &&
+            apt-get install -y git ssh
+      - checkout
+      - run:
+          name: conda-installation
+          command: >
+            wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ${HOME}/miniconda.sh &&
+            bash ${HOME}/miniconda.sh -b -p ${HOME}/miniconda &&
+            export PATH="${HOME}/miniconda/bin:${PATH}" &&
+            conda config --set always_yes yes --set changeps1 no &&
+            conda create -c defaults -c conda-forge -n pyctest python=3.7.8 pyctest &&
+            source activate pyctest
+      - run:
+          name: build
+          command: >
+            export PATH="${HOME}/miniconda/bin:${PATH}" &&
+            source activate &&
+            conda activate pyctest &&
+            python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j 1
+            --build-libs shared --mpi --cuda --gotcha --gperftools --profile=cpu --tools avail kokkos timem dyninst mpip mallocp --cxx-standard=17
+            -- -V --output-on-failure -E cuda
             -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:
           name: install

@@ -61,111 +61,30 @@ using user_bundle_spec_t = std::function<std::string()>;
 using user_bundle_variables_t =
     std::unordered_map<size_t, std::vector<user_bundle_spec_t>>;
 //
-/// static so that projects cannot globally change this
-template <typename ApiT>
-static inline std::enable_if_t<std::is_same<ApiT, TIMEMORY_API>::value,
-                               user_bundle_variables_t&>
-    get_user_bundle_variables(ApiT)
-{
-    static user_bundle_variables_t _instance = {
-        { component::global_bundle_idx,
-          { []() { return settings::global_components(); } } },
-        { component::ompt_bundle_idx,
-          { []() { return settings::ompt_components(); },
-            []() { return settings::trace_components(); },
-            []() { return settings::profiler_components(); },
-            []() { return settings::components(); },
-            []() { return settings::global_components(); } } },
-        { component::mpip_bundle_idx,
-          { []() { return settings::mpip_components(); },
-            []() { return settings::trace_components(); },
-            []() { return settings::profiler_components(); },
-            []() { return settings::components(); },
-            []() { return settings::global_components(); } } },
-        { component::ncclp_bundle_idx,
-          { []() { return settings::ncclp_components(); },
-            []() { return settings::mpip_components(); },
-            []() { return settings::trace_components(); },
-            []() { return settings::profiler_components(); },
-            []() { return settings::components(); },
-            []() { return settings::global_components(); } } },
-        { component::trace_bundle_idx,
-          { []() { return settings::trace_components(); },
-            []() { return settings::components(); },
-            []() { return settings::global_components(); } } },
-        { component::profiler_bundle_idx,
-          { []() { return settings::profiler_components(); },
-            []() { return settings::components(); },
-            []() { return settings::global_components(); } } },
-    };
-    return _instance;
-}
-//
 //--------------------------------------------------------------------------------------//
 /// non-static so that projects can globally change this for their project/API
 template <typename ApiT>
-inline std::enable_if_t<!std::is_same<ApiT, TIMEMORY_API>::value,
-                        user_bundle_variables_t&>
-    get_user_bundle_variables(ApiT)
+inline user_bundle_variables_t& get_user_bundle_variables(ApiT)
 {
     static user_bundle_variables_t _instance{};
     return _instance;
 }
 //
-//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_USER_BUNDLE_HEADER_MODE)
 /// static so that projects cannot globally change this
-static inline user_bundle_variables_t& get_user_bundle_variables(project::kokkosp)
-{
-    static user_bundle_variables_t _instance = {
-        { component::kokkosp_bundle_idx,
-          { []() { return settings::kokkos_components(); },
-            []() { return get_env<std::string>("TIMEMORY_KOKKOSP_COMPONENTS", ""); },
-            []() { return get_env<std::string>("KOKKOS_TIMEMORY_COMPONENTS", ""); },
-            []() { return settings::trace_components(); },
-            []() { return settings::profiler_components(); },
-            []() { return settings::components(); },
-            []() { return settings::global_components(); } } }
-    };
-    return _instance;
-}
+static inline user_bundle_variables_t& get_user_bundle_variables(TIMEMORY_API);
+static inline user_bundle_variables_t& get_user_bundle_variables(project::kokkosp);
 //
-//--------------------------------------------------------------------------------------//
+inline std::vector<TIMEMORY_COMPONENT>
+get_bundle_components(const std::vector<user_bundle_spec_t>& _priority);
+#else
+/// static so that projects cannot globally change this
+user_bundle_variables_t& get_user_bundle_variables(TIMEMORY_API);
+user_bundle_variables_t& get_user_bundle_variables(project::kokkosp);
 //
-template <typename VecT>
-auto
-get_bundle_components(const VecT& _priority)
-{
-    using string_t = std::string;
-    static const auto regex_constants =
-        std::regex_constants::optimize | std::regex_constants::icase;
-    string_t _custom{};
-    bool     fallthrough = false;
-    auto     _replace    = [&fallthrough](const std::string& _key) {
-        const auto pattern = std::string("^(.*)[,;: \t]*fallthrough[,;: \t]*(.*)$");
-        if(std::regex_match(_key, std::regex(pattern, regex_constants)))
-        {
-            fallthrough = true;
-            return std::regex_replace(_key, std::regex(pattern, regex_constants),
-                                      ",$1,$2");
-        }
-        return _key;
-    };
-
-    for(const auto& itr : _priority)
-    {
-        auto _spec = itr();
-        if(_spec.length() > 0)
-        {
-            if(!std::regex_match(_spec, std::regex("^none$", regex_constants)))
-                _custom += _replace(_spec);
-            else
-                fallthrough = false;
-            if(!fallthrough)
-                break;
-        }
-    }
-    return tim::enumerate_components(tim::delimit(_custom));
-}
+std::vector<TIMEMORY_COMPONENT>
+get_bundle_components(const std::vector<user_bundle_spec_t>& _priority);
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -587,3 +506,7 @@ user_bundle<Idx, Tag>::get_persistent_data()
 }  // namespace tim
 //
 //======================================================================================//
+
+#if defined(TIMEMORY_USER_BUNDLE_HEADER_MODE)
+#    include "timemory/components/user_bundle/components.cpp"
+#endif

@@ -29,7 +29,6 @@
 
 #pragma once
 
-// #include "timemory/components/extern.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"

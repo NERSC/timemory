@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/enum.h"
+#include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
 
 #include <cstring>
@@ -108,20 +109,45 @@ struct state
 template <>
 struct static_properties<void, false>
 {
-    static bool matches(const char* _key, const char* _enum_str, const idset_t& _ids)
+    static bool matches(const char* _ckey, const char* _enum_str, const idset_t& _ids)
     {
-        const auto regex_consts = std::regex_constants::ECMAScript |
-                                  std::regex_constants::icase |
-                                  std::regex_constants::optimize;
+        std::string _key{ _ckey };
+        // convert to lower-case
+        for(auto& itr : _key)
+            itr = tolower(itr);
 
-        auto get_pattern = [](const std::string& _option) {
-            return std::string("^(.*[,;: \t\n\r]+|)") + _option + "([,;: \t\n\r]+.*|$)";
+        auto _matches = [_key](std::string _option) {
+            // convert to lower-case
+            for(auto& itr : _option)
+                itr = tolower(itr);
+            // see if there is a match
+            auto _pos = _key.find(_option);
+            if(_pos == std::string::npos)
+                return false;
+            // ^option
+            if(_pos == 0)
+                return true;
+            auto _bpos = _pos - 1;
+            auto _epos = _pos + _option.length() + 1;
+            if(_epos >= _key.length())
+                return true;
+            bool _beg = false;
+            bool _end = false;
+            for(auto&& itr : { ',', ' ', ';', ':' })
+            {
+                _beg |= (_key[_bpos] == itr);
+                _end |= (_key[_epos] == itr);
+                if(_beg && _end)
+                    return true;
+            }
+            return false;
         };
-        if(std::regex_match(_key, std::regex(get_pattern(_enum_str), regex_consts)))
+
+        if(_matches(_enum_str))
             return true;
         for(const auto& itr : _ids)
         {
-            if(std::regex_match(_key, std::regex(get_pattern(itr), regex_consts)))
+            if(_matches(itr))
                 return true;
         }
         return false;
