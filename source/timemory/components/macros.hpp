@@ -401,32 +401,32 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                                   \
-        TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
-        namespace tim                                                                    \
-        {                                                                                \
-        extern template class impl::storage<TYPE,                                        \
-                                            trait::uses_value_storage<TYPE>::value>;     \
-        extern template class storage<TYPE, typename TYPE::value_type>;                  \
-        extern template class singleton<alias::storage_impl_t<TYPE>,                     \
-                                        alias::storage_pointer_t<TYPE>, TIMEMORY_API>;   \
-        extern template storage_singleton<alias::storage_t<TYPE>>*                       \
-        get_storage_singleton<alias::storage_t<TYPE>>();                                 \
-        extern template storage_initializer storage_initializer::get<TYPE>();            \
-        namespace node                                                                   \
-        {                                                                                \
-        extern template struct data<TYPE>;                                               \
-        extern template struct graph<TYPE>;                                              \
-        extern template struct result<TYPE>;                                             \
-        extern template struct tree<TYPE>;                                               \
-        }                                                                                \
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                            \
+        TIMEMORY_EXTERN_STORAGE_ALIASES                                                      \
+        namespace tim                                                                        \
+        {                                                                                    \
+        extern template class impl::storage<TYPE,                                            \
+                                            trait::uses_value_storage<TYPE>::value>;         \
+        extern template class storage<TYPE, typename TYPE::value_type>;                      \
+        extern template class singleton<alias::storage_impl_t<TYPE>,                         \
+                                        alias::storage_pointer_t<TYPE>, TIMEMORY_API>;       \
+        extern template storage_singleton<alias::storage_t<TYPE>>*                           \
+                                            get_storage_singleton<alias::storage_t<TYPE>>(); \
+        extern template storage_initializer storage_initializer::get<TYPE>();                \
+        namespace node                                                                       \
+        {                                                                                    \
+        extern template struct data<TYPE>;                                                   \
+        extern template struct graph<TYPE>;                                                  \
+        extern template struct result<TYPE>;                                                 \
+        extern template struct tree<TYPE>;                                                   \
+        }                                                                                    \
         }
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_INSTANTIATE_EXTERN_STORAGE)
-#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, ...)                               \
+#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE)                                    \
         TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
         namespace tim                                                                    \
         {                                                                                \
@@ -607,8 +607,8 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_STORAGE)
-#        define TIMEMORY_EXTERN_STORAGE(COMPONENT_NAME, VAR)                             \
-            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(COMPONENT_NAME), VAR)
+#        define TIMEMORY_EXTERN_STORAGE(...)                                             \
+            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(__VA_ARGS__)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -631,8 +631,7 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_STORAGE)
-#        define TIMEMORY_EXTERN_STORAGE(COMPONENT_NAME, VAR)                             \
-            TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(COMPONENT_NAME), VAR)
+#        define TIMEMORY_EXTERN_STORAGE(...) TIMEMORY_DECLARE_EXTERN_STORAGE(__VA_ARGS__)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -675,7 +674,7 @@
             struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
                                         __VA_ARGS__>)                                    \
         TIMEMORY_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)              \
-        TIMEMORY_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+        TIMEMORY_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME))
 #endif
 
 //======================================================================================//
@@ -686,7 +685,7 @@
             struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
                                         __VA_ARGS__>)                                    \
         TIMEMORY_DECLARE_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)      \
-        TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+        TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME))
 #endif
 
 //======================================================================================//
@@ -697,7 +696,7 @@
             struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
                                         __VA_ARGS__>)                                    \
         TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)  \
-        TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+        TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME))
 #endif
 
 //======================================================================================//

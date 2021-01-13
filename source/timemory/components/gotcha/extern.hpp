@@ -36,3 +36,16 @@
 
 TIMEMORY_EXTERN_COMPONENT(malloc_gotcha, true, double)
 TIMEMORY_EXTERN_COMPONENT(memory_allocations, false, void)
+
+namespace tim
+{
+namespace alias
+{
+// this component is indirectly referenced in malloc_gotcha
+using malloc_gotcha_type = component::gotcha<component::malloc_gotcha::data_size,
+                                             component_tuple<component::malloc_gotcha>,
+                                             type_list<component::malloc_gotcha>>;
+}  // namespace alias
+}  // namespace tim
+
+TIMEMORY_EXTERN_STORAGE(tim::alias::malloc_gotcha_type)
