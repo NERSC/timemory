@@ -140,9 +140,9 @@ construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value>
         pyentry_type _pyentry(_pymod, _id.c_str(), _desc.c_str());
 
         auto _data = [](entry_type* _obj) {
-            using lwtuple_t          = tim::lightweight_tuple<Tp>;
-            auto     _itr            = _obj->data().get_iterator();
-            uint64_t _hash           = 0;
+            using lwtuple_t = tim::lightweight_tuple<Tp>;
+            auto     _itr   = _obj->data().get_iterator();
+            uint64_t _hash  = 0;
             if(_itr)
                 _hash = _itr->id();
             auto* _lw                = new lwtuple_t{ _hash };
@@ -167,11 +167,11 @@ construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value>
         auto _dummy = [](tree_type* _obj) {
             return (_obj->depth() == 0 || _obj->hash() == 0) ? true : _obj->is_dummy();
         };
-        auto _tid       = [](tree_type* _obj) { return _obj->tid(); };
-        auto _pid       = [](tree_type* _obj) { return _obj->pid(); };
-        auto _depth     = [](tree_type* _obj) { return _obj->depth() - 1; };
-        auto _hash      = [](tree_type* _obj) { return _obj->hash(); };
-        auto _prefix    = [](tree_type* _obj) {
+        auto _tid    = [](tree_type* _obj) { return _obj->tid(); };
+        auto _pid    = [](tree_type* _obj) { return _obj->pid(); };
+        auto _depth  = [](tree_type* _obj) { return _obj->depth() - 1; };
+        auto _hash   = [](tree_type* _obj) { return _obj->hash(); };
+        auto _prefix = [](tree_type* _obj) {
             return tim::get_hash_identifier(_obj->hash());
         };
         auto _inclusive = [](tree_type* _obj) { return _obj->inclusive(); };
@@ -302,7 +302,8 @@ construct(py::module&, long)
 //--------------------------------------------------------------------------------------//
 //
 template <size_t... Idx>
-constexpr auto construct(std::index_sequence<Idx...>)
+constexpr auto
+construct(std::index_sequence<Idx...>)
 {
     return tim::available_t<tim::type_list<tim::component::enumerator_t<Idx>...>>{};
 }

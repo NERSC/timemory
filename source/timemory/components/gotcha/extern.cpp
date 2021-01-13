@@ -23,17 +23,3 @@
 // SOFTWARE.
 
 #include "timemory/components/gotcha/extern.hpp"
-
-#if defined(TIMEMORY_USE_CUDA)
-static constexpr uintmax_t data_size = 9;
-#else
-static constexpr uintmax_t data_size = 3;
-#endif
-
-namespace tim
-{
-template struct storage<
-    component::gotcha<data_size, component_tuple<component::malloc_gotcha>,
-                      type_list<component::malloc_gotcha>>,
-    void>;
-}
