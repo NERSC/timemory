@@ -24,6 +24,10 @@
 
 #pragma once
 
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
+#include "timemory/utility/utility.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <cctype>
@@ -44,10 +48,6 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
-
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
 
 namespace tim
 {
@@ -577,17 +577,7 @@ struct argument_parser
             if(inp.empty())
                 return found();
 
-            namespace regex_const             = std::regex_constants;
-            const auto        regex_constants = regex_const::egrep | regex_const::icase;
-            const std::string y_pattern       = "^(on|true|yes|y|t|[1-9]+)$";
-            const std::string n_pattern       = "^(off|false|no|n|f|0)$";
-            auto is_y = std::regex_match(inp, std::regex(y_pattern, regex_constants));
-            auto is_n = std::regex_match(inp, std::regex(n_pattern, regex_constants));
-            if(is_y)
-                return true;
-            if(is_n)
-                return false;
-            return found();
+            return get_bool(inp, found());
         }
 
         size_t size() const { return m_values.size(); }

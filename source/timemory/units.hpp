@@ -188,39 +188,34 @@ get_memory_unit(std::string _unit)
 {
     using string_t    = std::string;
     using return_type = std::tuple<string_t, int64_t>;
+    using inner_t     = std::tuple<string_t, string_t, int64_t>;
 
     if(_unit.length() == 0)
-        return return_type("MB", tim::units::megabyte);
+        return return_type{ "MB", tim::units::megabyte };
 
-    auto to_lower = [](string_t _str) {
-        for(auto& itr : _str)
-            itr = tolower(itr);
-        return _str;
-    };
+    for(auto& itr : _unit)
+        itr = tolower(itr);
 
-    using inner_t          = std::tuple<string_t, string_t, int64_t>;
-    using pair_vector_t    = std::vector<inner_t>;
-    pair_vector_t matching = { inner_t("byte", "B", tim::units::byte),
-                               inner_t("kilobyte", "KB", tim::units::kilobyte),
-                               inner_t("megabyte", "MB", tim::units::megabyte),
-                               inner_t("gigabyte", "GB", tim::units::gigabyte),
-                               inner_t("terabyte", "TB", tim::units::terabyte),
-                               inner_t("petabyte", "PB", tim::units::petabyte),
-                               inner_t("kibibyte", "KiB", tim::units::KiB),
-                               inner_t("mebibyte", "MiB", tim::units::MiB),
-                               inner_t("gibibyte", "GiB", tim::units::GiB),
-                               inner_t("tebibyte", "TiB", tim::units::TiB),
-                               inner_t("pebibyte", "PiB", tim::units::PiB) };
-
-    _unit = to_lower(_unit);
-    for(const auto& itr : matching)
-        if(_unit == to_lower(std::get<0>(itr)) || _unit == to_lower(std::get<1>(itr)))
+    for(const auto& itr : { inner_t{ "byte", "b", tim::units::byte },
+                            inner_t{ "kilobyte", "kb", tim::units::kilobyte },
+                            inner_t{ "megabyte", "mb", tim::units::megabyte },
+                            inner_t{ "gigabyte", "gb", tim::units::gigabyte },
+                            inner_t{ "terabyte", "tb", tim::units::terabyte },
+                            inner_t{ "petabyte", "pb", tim::units::petabyte },
+                            inner_t{ "kibibyte", "kib", tim::units::KiB },
+                            inner_t{ "mebibyte", "mib", tim::units::MiB },
+                            inner_t{ "gibibyte", "gib", tim::units::GiB },
+                            inner_t{ "tebibyte", "tib", tim::units::TiB },
+                            inner_t{ "pebibyte", "pib", tim::units::PiB } })
+    {
+        if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr))
             return return_type(std::get<1>(itr), std::get<2>(itr));
+    }
 
     std::cerr << "Warning!! No memory unit matching \"" << _unit << "\". Using default..."
               << std::endl;
 
-    return return_type("MB", tim::units::megabyte);
+    return return_type{ "MB", tim::units::megabyte };
 }
 
 //--------------------------------------------------------------------------------------//
@@ -230,38 +225,31 @@ get_timing_unit(std::string _unit)
 {
     using string_t    = std::string;
     using return_type = std::tuple<string_t, int64_t>;
+    using inner_t     = std::tuple<string_t, string_t, int64_t>;
 
     if(_unit.length() == 0)
-        return return_type("sec", tim::units::sec);
+        return return_type{ "sec", tim::units::sec };
 
-    auto to_lower = [](string_t _str) {
-        for(auto& itr : _str)
-            itr = tolower(itr);
-        return _str;
-    };
+    for(auto& itr : _unit)
+        itr = tolower(itr);
 
-    using inner_t          = std::tuple<string_t, string_t, int64_t>;
-    using pair_vector_t    = std::vector<inner_t>;
-    pair_vector_t matching = { inner_t("ps", "picosecond", tim::units::psec),
-                               inner_t("ns", "nanosecond", tim::units::nsec),
-                               inner_t("us", "microsecond", tim::units::usec),
-                               inner_t("ms", "millisecond", tim::units::msec),
-                               inner_t("cs", "centisecond", tim::units::csec),
-                               inner_t("ds", "decisecond", tim::units::dsec),
-                               inner_t("s", "second", tim::units::sec) };
-
-    _unit = to_lower(_unit);
-    for(const auto& itr : matching)
+    for(const auto& itr : { inner_t{ "ps", "picosecond", tim::units::psec },
+                            inner_t{ "ns", "nanosecond", tim::units::nsec },
+                            inner_t{ "us", "microsecond", tim::units::usec },
+                            inner_t{ "ms", "millisecond", tim::units::msec },
+                            inner_t{ "cs", "centisecond", tim::units::csec },
+                            inner_t{ "ds", "decisecond", tim::units::dsec },
+                            inner_t{ "s", "second", tim::units::sec } })
         if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr) ||
            _unit == (std::get<0>(itr) + "ec") || _unit == (std::get<1>(itr) + "s"))
         {
-            return return_type(std::get<0>(itr) + "ec", std::get<2>(itr));
+            return return_type{ std::get<0>(itr) + "ec", std::get<2>(itr) };
         }
 
     std::cerr << "Warning!! No timing unit matching \"" << _unit << "\". Using default..."
               << std::endl;
 
-    return return_type("sec", tim::units::sec);
+    return return_type{ "sec", tim::units::sec };
 }
 
 //--------------------------------------------------------------------------------------//

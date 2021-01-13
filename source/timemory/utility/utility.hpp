@@ -65,6 +65,7 @@
 // general
 #include <functional>
 #include <limits>
+#include <regex>
 #include <typeindex>
 #include <utility>
 // container
@@ -375,6 +376,45 @@ get_max_threads()
 #else
     return _fallback;
 #endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+get_bool(const std::string& strbool, bool _default = false) noexcept
+{
+    // empty string returns default
+    if(strbool.empty())
+        return _default;
+
+    // check if numeric
+    if(strbool.find_first_not_of("0123456789") == std::string::npos)
+    {
+        if(strbool.length() > 1 || strbool[0] != '0')
+            return true;
+        return false;
+    }
+
+    // convert to lowercase
+    auto _val = std::string{ strbool };
+    for(auto& itr : _val)
+        itr = tolower(itr);
+
+    // check for matches to acceptable forms of false
+    for(const auto& itr : { "off", "false", "no", "n", "f" })
+    {
+        if(_val == itr)
+            return false;
+    }
+
+    // check for matches to acceptable forms of true
+    for(const auto& itr : { "on", "true", "yes", "y", "t" })
+    {
+        if(_val == itr)
+            return false;
+    }
+
+    return _default;
 }
 
 //--------------------------------------------------------------------------------------//

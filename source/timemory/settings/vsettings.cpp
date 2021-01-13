@@ -55,7 +55,7 @@ vsettings::matches(const std::string& inp, bool exact) const
     }
     else
     {
-        const auto cre = std::regex_constants::icase | std::regex_constants::optimize;
+        const auto       cre = std::regex_constants::icase;
         const std::regex re(inp, cre);
 
         if(std::regex_search(m_env_name, re) || std::regex_search(m_name, re))

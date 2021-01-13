@@ -780,7 +780,7 @@ if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
 
     add_test(
         NAME                python_tests
-        COMMAND             ${PYTHON_EXECUTABLE} -m timemory.test
+        COMMAND             ${PYTHON_EXECUTABLE} -m timemory.test -v -v
         WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
 endif()
 
