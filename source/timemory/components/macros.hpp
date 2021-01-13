@@ -401,7 +401,7 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                                       \
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                            \
         TIMEMORY_EXTERN_STORAGE_ALIASES                                                      \
         namespace tim                                                                        \
         {                                                                                    \
@@ -426,7 +426,7 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_INSTANTIATE_EXTERN_STORAGE)
-#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, ...)                               \
+#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE)                                    \
         TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
         namespace tim                                                                    \
         {                                                                                \
@@ -607,8 +607,8 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_STORAGE)
-#        define TIMEMORY_EXTERN_STORAGE(COMPONENT_NAME, VAR)                             \
-            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(COMPONENT_NAME), VAR)
+#        define TIMEMORY_EXTERN_STORAGE(...)                                             \
+            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(__VA_ARGS__)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -631,8 +631,7 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_STORAGE)
-#        define TIMEMORY_EXTERN_STORAGE(COMPONENT_NAME, VAR)                             \
-            TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(COMPONENT_NAME), VAR)
+#        define TIMEMORY_EXTERN_STORAGE(...) TIMEMORY_DECLARE_EXTERN_STORAGE(__VA_ARGS__)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -675,7 +674,7 @@
             struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
                                         __VA_ARGS__>)                                    \
         TIMEMORY_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)              \
-        TIMEMORY_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+        TIMEMORY_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME))
 #endif
 
 //======================================================================================//
@@ -686,7 +685,7 @@
             struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
                                         __VA_ARGS__>)                                    \
         TIMEMORY_DECLARE_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)      \
-        TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+        TIMEMORY_DECLARE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME))
 #endif
 
 //======================================================================================//
@@ -697,7 +696,7 @@
             struct tim::component::base<TIMEMORY_ESC(tim::component::NAME),              \
                                         __VA_ARGS__>)                                    \
         TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(TIMEMORY_ESC(component::NAME), HAS_DATA)  \
-        TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+        TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TIMEMORY_ESC(component::NAME))
 #endif
 
 //======================================================================================//

@@ -61,8 +61,8 @@
 #    endif
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_STORAGE)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(NAME, ARG)                           \
-            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(NAME, ARG)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(...)                                 \
+            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(__VA_ARGS__)
 #    endif
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
@@ -81,8 +81,8 @@
 #    endif
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_STORAGE)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(NAME, ARG)                           \
-            TIMEMORY_DECLARE_EXTERN_STORAGE(NAME, ARG)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(...)                                 \
+            TIMEMORY_DECLARE_EXTERN_STORAGE(__VA_ARGS__)
 #    endif
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
@@ -113,7 +113,7 @@
         TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(                                            \
             struct tim::component::base<TIMEMORY_ESC(tim::component::NAME), void>)       \
         TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(TIMEMORY_ESC(component::NAME), false)     \
-        TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(TIMEMORY_ESC(component::NAME), NAME)
+        TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(TIMEMORY_ESC(component::NAME))
 #endif
 
 TIMEMORY_EXTERN_USER_BUNDLE(user_global_bundle)
