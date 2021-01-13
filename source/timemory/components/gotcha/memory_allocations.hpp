@@ -287,10 +287,10 @@ struct cuda_malloc_gotcha : base<cuda_malloc_gotcha, void>
 
         if(_err != cuda::success_v || _every)
         {
-            std::cerr << "\nBacktrace to cudaMalloc:\n";
-            // get previous 8 frames before the last by 3 frames
+            std::cerr << "\nBacktrace to cudaMalloc(" << devPtr << ", " << size << "):\n";
+            // get previous 12 frames before the last by 3 frames
             // (which just report the gotcha)
-            auto _bt = tim::get_demangled_backtrace<7, 3>();
+            auto _bt = tim::get_demangled_backtrace<12, 3>();
             for(const auto& itr : _bt)
             {
                 if(itr.empty())
