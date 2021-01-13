@@ -760,7 +760,9 @@ def run_pyctest():
 
         add_timem_test("timemory-timem", ["./timem"])
 
-        add_timem_test("timemory-timem-shell", ["./timem", "-s"])
+        add_timem_test(
+            "timemory-timem-shell", ["./timem", "-s", "-v", "2", "--debug"]
+        )
 
         add_timem_test(
             "timemory-timem-no-sample",
