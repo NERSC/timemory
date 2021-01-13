@@ -278,9 +278,10 @@ struct cuda_malloc_gotcha : base<cuda_malloc_gotcha, void>
     {
         static auto _hash  = get_hash_id("cudaMalloc");
         static bool _every = get_env("EVERY_BACKTRACE", false);
+        static gotcha_data _data{};  // dummy
         bundle_t    _mg{ _hash };
         _mg.start();
-        _mg.audit("cudaMalloc", audit::incoming{}, devPtr, size);
+        _mg.audit(_data, audit::incoming{}, devPtr, size);
 
         // call original cudaMalloc
         auto _err = cudaMalloc(devPtr, size);
@@ -300,7 +301,7 @@ struct cuda_malloc_gotcha : base<cuda_malloc_gotcha, void>
             std::cerr << '\n' << std::flush;
         }
 
-        _mg.audit("cudaMalloc", audit::outgoing{}, _err);
+        _mg.audit(_data, audit::outgoing{}, _err);
         _mg.stop();
 
         return _err;
