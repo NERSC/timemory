@@ -105,7 +105,7 @@ struct malloc_gotcha
 
 public:
     template <typename Tp>
-    static void configure();
+    static void configure(const std::set<std::string>& = {});
 
     template <typename Tp>
     static void tear_down();
@@ -278,55 +278,13 @@ private:
 #endif
 };
 //
-#if defined(TIMEMORY_USE_CUDA)
-//
-struct cuda_malloc_gotcha : base<cuda_malloc_gotcha, void>
-{
-    using bundle_t = component_tuple<malloc_gotcha>;
-    cuda::error_t operator()(void** devPtr, size_t size)
-    {
-        static auto        _hash  = get_hash_id("cudaMalloc");
-        static bool        _every = get_env("EVERY_BACKTRACE", false);
-        static gotcha_data _data{};  // dummy
-        bundle_t           _mg{ _hash };
-        _mg.start();
-        _mg.audit(_data, audit::incoming{}, devPtr, size);
-
-        // call original cudaMalloc
-        auto _err = cudaMalloc(devPtr, size);
-
-        if(_err != cuda::success_v || _every)
-        {
-            std::cerr << "\nBacktrace to cudaMalloc(" << (char**) (devPtr)[0] << ", "
-                      << size << "):\n";
-            // get previous 12 frames before the last by 3 frames
-            // (which just report the gotcha)
-            auto _bt = tim::get_demangled_backtrace<12, 3>();
-            for(const auto& itr : _bt)
-            {
-                if(itr.empty())
-                    break;
-                std::cerr << "    " << itr << '\n';
-            }
-            std::cerr << '\n' << std::flush;
-        }
-
-        _mg.audit(_data, audit::outgoing{}, _err);
-        _mg.stop();
-
-        return _err;
-    }
-};
-//
-#endif
-//
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_GOTCHA)
 //
 template <typename Tp>
 inline void
-malloc_gotcha::configure()
+malloc_gotcha::configure(const std::set<std::string>& _exclude)
 {
     // static_assert(!std::is_same<Type, malloc_gotcha>::value,
     //              "Error! Cannot configure with self as the type!");
@@ -335,21 +293,30 @@ malloc_gotcha::configure()
     using local_gotcha_type = gotcha<data_size, tuple_t, type_list<this_type>>;
 
     local_gotcha_type::get_default_ready() = false;
-    local_gotcha_type::get_initializer()   = []() {
-    // TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
-    // TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
-    // TIMEMORY_C_GOTCHA(local_gotcha_type, 2, free);
+    local_gotcha_type::get_initializer()   = [_exclude]() {
+        if(_exclude.count("malloc") == 0)
+            TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
+        if(_exclude.count("calloc") == 0)
+            TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
+        if(_exclude.count("free") == 0)
+            TIMEMORY_C_GOTCHA(local_gotcha_type, 2, free);
 #    if defined(TIMEMORY_USE_CUDA)
-        // local_gotcha_type::template configure<3, cudaError_t, void**, size_t>(
-        //    "cudaMalloc");
-        local_gotcha_type::template configure<4, cudaError_t, void**, size_t>(
-            "cudaMallocHost");
-        local_gotcha_type::template configure<5, cudaError_t, void**, size_t,
-                                              unsigned int>("cudaMallocManaged");
-        local_gotcha_type::template configure<6, cudaError_t, void**, size_t,
-                                              unsigned int>("cudaHostAlloc");
-        local_gotcha_type::template configure<7, cudaError_t, void*>("cudaFree");
-        local_gotcha_type::template configure<8, cudaError_t, void*>("cudaFreeHost");
+        if(_exclude.count("cudaMalloc") == 0)
+            local_gotcha_type::template configure<3, cudaError_t, void**, size_t>(
+                "cudaMalloc");
+        if(_exclude.count("cudaMallocHost") == 0)
+            local_gotcha_type::template configure<4, cudaError_t, void**, size_t>(
+                "cudaMallocHost");
+        if(_exclude.count("cudaMallocManaged") == 0)
+            local_gotcha_type::template configure<5, cudaError_t, void**, size_t,
+                                                  unsigned int>("cudaMallocManaged");
+        if(_exclude.count("cudaHostAlloc") == 0)
+            local_gotcha_type::template configure<6, cudaError_t, void**, size_t,
+                                                  unsigned int>("cudaHostAlloc");
+        if(_exclude.count("cudaFree") == 0)
+            local_gotcha_type::template configure<7, cudaError_t, void*>("cudaFree");
+        if(_exclude.count("cudaFreeHost") == 0)
+            local_gotcha_type::template configure<8, cudaError_t, void*>("cudaFreeHost");
 #    endif
     };
 
@@ -402,7 +369,17 @@ struct memory_allocations
                "report 20 bytes";
     }
 
-    static void global_init() { malloc_gotcha::configure<component_tuple_t<>>(); }
+    static auto& get_exclude()
+    {
+        static std::set<std::string> _instance = {};
+        return _instance;
+    }
+
+    static void global_init()
+    {
+        malloc_gotcha::configure<component_tuple_t<>>(get_exclude());
+    }
+
     static void global_finalize() { malloc_gotcha::tear_down<component_tuple_t<>>(); }
 
     void start()

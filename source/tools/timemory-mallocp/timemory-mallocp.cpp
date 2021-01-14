@@ -32,9 +32,19 @@
 
 using namespace tim::component;
 
-using cuda_malloc_gotcha_t = gotcha<1, tim::component_tuple<>, cuda_malloc_gotcha>;
-using malloc_toolset_t = tim::component_tuple<cuda_malloc_gotcha_t, memory_allocations>;
-using malloc_region_t  = tim::lightweight_tuple<malloc_gotcha>;
+struct cuda_malloc_gotcha;
+struct cuda_free_gotcha;
+
+using empty_t = tim::component_tuple<>;
+// N + empty tuple + component == replace function
+// if 2nd param is not empty, wrap function with components in 2nd param
+using cuda_malloc_gotcha_t = gotcha<1, empty_t, cuda_malloc_gotcha>;
+using cuda_free_gotcha_t   = gotcha<1, empty_t, cuda_free_gotcha>;
+// the bundle that is used to activate the gotchas
+using malloc_toolset_t =
+    tim::component_tuple<cuda_malloc_gotcha_t, cuda_free_gotcha_t, memory_allocations>;
+// used to create empty hierarchy entries
+using malloc_region_t      = tim::lightweight_tuple<malloc_gotcha>;
 using malloc_region_pair_t = std::pair<const char*, malloc_region_t>;
 using malloc_region_vec_t  = std::vector<malloc_region_pair_t>;
 //
@@ -45,6 +55,83 @@ uint64_t                                global_id  = std::numeric_limits<uint64_
 static thread_local malloc_region_vec_t regions    = {};
 static thread_local int64_t             region_idx = 0;
 }  // namespace
+//
+#if defined(TIMEMORY_USE_CUDA)
+//
+struct cuda_malloc_gotcha : base<cuda_malloc_gotcha, void>
+{
+    using bundle_t = tim::component_tuple<malloc_gotcha>;
+    tim::cuda::error_t operator()(void** devPtr, size_t size)
+    {
+        static auto _hash  = tim::get_hash_id("cudaMalloc");
+        static bool _every = tim::get_env("EVERY_BACKTRACE", false);
+        bundle_t    _mg{ _hash };
+        _mg.start();
+        _mg.audit(tim::audit::incoming{}, devPtr, size);
+
+        // call original cudaMalloc
+        auto _err = cudaMalloc(devPtr, size);
+
+        if(_err != tim::cuda::success_v || _every)
+        {
+            std::cerr << "\nBacktrace to cudaMalloc(" << (char**) (devPtr)[0] << ", "
+                      << size << "):\n";
+            // get previous 12 frames before the last by 3 frames
+            // (which just report the gotcha)
+            auto _bt = tim::get_demangled_backtrace<12, 3>();
+            for(const auto& itr : _bt)
+            {
+                if(itr.empty())
+                    break;
+                std::cerr << "    " << itr << '\n';
+            }
+            std::cerr << '\n' << std::flush;
+        }
+
+        _mg.audit(tim::audit::outgoing{}, _err);
+        _mg.stop();
+
+        return _err;
+    }
+};
+//
+struct cuda_free_gotcha : base<cuda_free_gotcha, void>
+{
+    using bundle_t = tim::component_tuple<malloc_gotcha>;
+    tim::cuda::error_t operator()(void* devPtr)
+    {
+        static auto _hash  = tim::get_hash_id("cudaFree");
+        static bool _every = tim::get_env("EVERY_BACKTRACE", false);
+        bundle_t    _mg{ _hash };
+        _mg.start();
+        _mg.audit(tim::audit::incoming{}, devPtr);
+
+        // call original cudaMalloc
+        auto _err = cudaFree(devPtr);
+
+        if(_err != tim::cuda::success_v || _every)
+        {
+            std::cerr << "\nBacktrace to cudaFree(" << devPtr << "):\n";
+            // get previous 12 frames before the last by 3 frames
+            // (which just report the gotcha)
+            auto _bt = tim::get_demangled_backtrace<12, 3>();
+            for(const auto& itr : _bt)
+            {
+                if(itr.empty())
+                    break;
+                std::cerr << "    " << itr << '\n';
+            }
+            std::cerr << '\n' << std::flush;
+        }
+
+        _mg.audit(tim::audit::outgoing{}, _err);
+        _mg.stop();
+
+        return _err;
+    }
+};
+//
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -72,10 +159,33 @@ extern "C"
             auto& _handle = get_toolset();
             if(!_handle)
             {
+                // exclude these bindings by default
+                auto _exclude = tim::get_env<std::string>(
+                    "TIMEMORY_MALLOCP_EXCLUDE",
+                    "malloc, calloc, free, cudaMalloc, cudaFree");
+
+#if defined(TIMEMORY_USE_CUDA)
+                // add the env spec to the exclude set
+                for(auto&& itr : tim::delimit(_exclude))
+                    memory_allocations::get_exclude().insert(itr);
+
+                // set up the bindings for cuda functions being replaced
                 cuda_malloc_gotcha_t::get_initializer() = []() {
+                    // first is array index, 2nd is return type, rest are arg types
+                    // string is name in binary (if C++ function, must be mangled name)
                     cuda_malloc_gotcha_t::template configure<0, cudaError_t, void**,
                                                              size_t>("cudaMalloc");
                 };
+
+                cuda_free_gotcha_t::get_initializer() = []() {
+                    // first is array index, 2nd is return type, rest are arg types
+                    // string is name in binary (if C++ function, must be mangled name)
+                    cuda_free_gotcha_t::template configure<0, cudaError_t, void*>(
+                        "cudaFree");
+                };
+#endif
+
+                // create a handle for all the gotchas
                 _handle       = std::make_shared<malloc_toolset_t>("timemory-mallocp");
                 auto _cleanup = []() {
                     auto& _handle = get_toolset();
@@ -86,9 +196,11 @@ extern "C"
                     }
                 };
 
+                // add a cleanup function in case finalization is called before stopped
                 tim::manager::instance()->add_cleanup("timemory-mallocp", _cleanup);
                 global_id = global_cnt;
             }
+            // activate all the gotchas
             _handle->start();
             return global_cnt++;
         }
