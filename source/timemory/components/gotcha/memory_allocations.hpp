@@ -152,6 +152,7 @@ public:
         DEBUG_PRINT_HERE("%s(%p)", m_prefix, ptr);
         if(ptr)
         {
+            auto_lock_t _lk{ get_allocation_lock() };
             get_allocation_map()[ptr] = value;
             DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
         }
@@ -166,6 +167,7 @@ public:
         {
             value = itr->second;
             DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+            auto_lock_t _lk{ get_allocation_lock() };
             get_allocation_map().erase(itr);
         }
         else
@@ -208,13 +210,14 @@ public:
     {
         if(m_last_addr)
         {
-            void* ptr                 = (void*) ((char**) (m_last_addr)[0]);
-            get_allocation_map()[ptr] = value;
             if(err != cuda::success_v && (settings::debug() || settings::verbose() > 1))
             {
                 PRINT_HERE("%s did not return cudaSuccess, values may be corrupted",
                            m_prefix);
             }
+            void*       ptr = (void*) ((char**) (m_last_addr)[0]);
+            auto_lock_t _lk{ get_allocation_lock() };
+            get_allocation_map()[ptr] = value;
         }
     }
 
@@ -258,7 +261,13 @@ private:
 
     static alloc_map_t& get_allocation_map()
     {
-        static thread_local alloc_map_t _instance{};
+        static alloc_map_t _instance{};
+        return _instance;
+    }
+
+    static mutex_t& get_allocation_lock()
+    {
+        static mutex_t _instance{};
         return _instance;
     }
 
@@ -276,10 +285,10 @@ struct cuda_malloc_gotcha : base<cuda_malloc_gotcha, void>
     using bundle_t = component_tuple<malloc_gotcha>;
     cuda::error_t operator()(void** devPtr, size_t size)
     {
-        static auto _hash  = get_hash_id("cudaMalloc");
-        static bool _every = get_env("EVERY_BACKTRACE", false);
+        static auto        _hash  = get_hash_id("cudaMalloc");
+        static bool        _every = get_env("EVERY_BACKTRACE", false);
         static gotcha_data _data{};  // dummy
-        bundle_t    _mg{ _hash };
+        bundle_t           _mg{ _hash };
         _mg.start();
         _mg.audit(_data, audit::incoming{}, devPtr, size);
 
@@ -288,7 +297,8 @@ struct cuda_malloc_gotcha : base<cuda_malloc_gotcha, void>
 
         if(_err != cuda::success_v || _every)
         {
-            std::cerr << "\nBacktrace to cudaMalloc(" << devPtr << ", " << size << "):\n";
+            std::cerr << "\nBacktrace to cudaMalloc(" << (char**) (devPtr)[0] << ", "
+                      << size << "):\n";
             // get previous 12 frames before the last by 3 frames
             // (which just report the gotcha)
             auto _bt = tim::get_demangled_backtrace<12, 3>();
@@ -326,9 +336,9 @@ malloc_gotcha::configure()
 
     local_gotcha_type::get_default_ready() = false;
     local_gotcha_type::get_initializer()   = []() {
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 2, free);
+    // TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
+    // TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
+    // TIMEMORY_C_GOTCHA(local_gotcha_type, 2, free);
 #    if defined(TIMEMORY_USE_CUDA)
         // local_gotcha_type::template configure<3, cudaError_t, void**, size_t>(
         //    "cudaMalloc");

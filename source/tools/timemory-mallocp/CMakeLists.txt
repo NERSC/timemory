@@ -17,8 +17,10 @@ add_library(timemory::timemory-mallocp-shared ALIAS timemory-mallocp-shared)
 # public link targets
 target_link_libraries(timemory-mallocp-shared PUBLIC
     timemory::timemory-headers
+    timemory::timemory-gotcha
+    timemory::timemory-cuda
     timemory::timemory-cxx-shared
-    timemory::timemory-gotcha)
+)
 
 # private link targets
 target_link_libraries(timemory-mallocp-shared PRIVATE

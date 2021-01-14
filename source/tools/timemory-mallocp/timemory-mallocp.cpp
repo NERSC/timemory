@@ -33,8 +33,8 @@
 using namespace tim::component;
 
 using cuda_malloc_gotcha_t = gotcha<1, tim::component_tuple<>, cuda_malloc_gotcha>;
-using malloc_toolset_t = tim::component_tuple<memory_allocations, cuda_malloc_gotcha_t>;
-using malloc_region_t      = tim::lightweight_tuple<malloc_gotcha>;
+using malloc_toolset_t = tim::component_tuple<cuda_malloc_gotcha_t, memory_allocations>;
+using malloc_region_t  = tim::lightweight_tuple<malloc_gotcha>;
 using malloc_region_pair_t = std::pair<const char*, malloc_region_t>;
 using malloc_region_vec_t  = std::vector<malloc_region_pair_t>;
 //
