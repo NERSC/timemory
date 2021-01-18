@@ -815,14 +815,24 @@ if(CUPTI_FOUND)
         INTERFACE_INSTALL_RPATH                 ""
         INTERFACE_INSTALL_RPATH_USE_LINK_PATH   ${HAS_CUDA_DRIVER_LIBRARY})
 
-    if(CUPTI_nvperf_host_LIBRARY AND CUPTI_nvperf_target_LIBRARY)
+    if(CUPTI_nvperf_host_FOUND AND CUPTI_nvperf_target_FOUND)
         timemory_target_compile_definitions(timemory-cupti INTERFACE
             TIMEMORY_USE_CUPTI_NVPERF)
-        add_rpath(${CUPTI_cupti_LIBRARY} ${CUPTI_nvperf_host_LIBRARY}
-            ${CUPTI_nvperf_target_LIBRARY})
-    else()
-        add_rpath(${CUPTI_cupti_LIBRARY})
+        add_rpath(${CUPTI_nvperf_host_LIBRARY} ${CUPTI_nvperf_target_LIBRARY})
     endif()
+
+    if(CUPTI_pcsampling_FOUND)
+        timemory_target_compile_definitions(timemory-cupti INTERFACE
+            TIMEMORY_USE_CUPTI_PCSAMPLING)
+    endif()
+
+    if(CUPTI_pcsampling_util_FOUND)
+        timemory_target_compile_definitions(timemory-cupti INTERFACE
+            TIMEMORY_USE_CUPTI_PCSAMPLING_UTIL)
+        add_rpath(${CUPTI_pcsampling_util_LIBRARY})
+    endif()
+
+    add_rpath(${CUPTI_cupti_LIBRARY})
 
 else()
     set(TIMEMORY_USE_CUPTI OFF)

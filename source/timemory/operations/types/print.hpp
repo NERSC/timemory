@@ -121,18 +121,19 @@ struct print
         }
         else
         {
+            std::vector<std::string> _empty_data(_labels.size(), " ");
             if(trait::report<type>::count())
                 utility::write_entry(_os, "COUNT", " ");
             if(trait::report<type>::depth())
                 utility::write_entry(_os, "DEPTH", " ");
             if(trait::report<type>::metric())
-                utility::write_entry(_os, "METRIC", " ");
+                utility::write_entry(_os, "METRIC", _empty_data);
             if(trait::report<type>::units())
-                utility::write_entry(_os, "UNITS", " ");
+                utility::write_entry(_os, "UNITS", _empty_data);
             if(trait::report<type>::sum())
-                utility::write_entry(_os, "SUM", " ");
+                utility::write_entry(_os, "SUM", _empty_data);
             if(trait::report<type>::mean())
-                utility::write_entry(_os, "MEAN", " ");
+                utility::write_entry(_os, "MEAN", _empty_data);
             if(trait::report<type>::stats())
             {
                 bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
@@ -141,16 +142,16 @@ struct print
                 bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
 
                 if(use_min)
-                    utility::write_entry(_os, "MIN", " ");
+                    utility::write_entry(_os, "MIN", _empty_data);
                 if(use_max)
-                    utility::write_entry(_os, "MAX", " ");
+                    utility::write_entry(_os, "MAX", _empty_data);
                 if(use_var)
-                    utility::write_entry(_os, "VAR", " ");
+                    utility::write_entry(_os, "VAR", _empty_data);
                 if(use_stddev)
-                    utility::write_entry(_os, "STDDEV", " ");
+                    utility::write_entry(_os, "STDDEV", _empty_data);
             }
             if(trait::report<type>::self())
-                utility::write_entry(_os, "% SELF", " ");
+                utility::write_entry(_os, "% SELF", _empty_data);
         }
     }
 
