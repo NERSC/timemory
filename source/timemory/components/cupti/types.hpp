@@ -22,12 +22,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/cupti/types.hpp
- * \brief Declare the cupti component types
- */
-
 #pragma once
+
+#if !defined(TIMEMORY_CUPTI_SOURCE) && !defined(TIMEMORY_USE_CUPTI_EXTERN) &&            \
+    !defined(TIMEMORY_CUPTI_HEADER_MODE)
+#    define TIMEMORY_CUPTI_HEADER_MODE 1
+#endif
+
+#if !defined(TIMEMORY_CUPTI_INLINE)
+#    if defined(TIMEMORY_CUPTI_HEADER_MODE)
+#        define TIMEMORY_CUPTI_INLINE inline
+#    else
+#        define TIMEMORY_CUPTI_INLINE
+#    endif
+#endif
 
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
@@ -42,6 +50,7 @@
 TIMEMORY_DECLARE_COMPONENT(cupti_activity)
 TIMEMORY_DECLARE_COMPONENT(cupti_counters)
 TIMEMORY_DECLARE_COMPONENT(cupti_profiler)
+TIMEMORY_DECLARE_COMPONENT(cupti_pcsampling)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -55,6 +64,8 @@ TIMEMORY_SET_COMPONENT_API(component::cupti_counters, tpls::nvidia, device::gpu,
                            category::external, category::hardware_counter, os::agnostic)
 TIMEMORY_SET_COMPONENT_API(component::cupti_profiler, tpls::nvidia, device::gpu,
                            category::external, category::hardware_counter, os::agnostic)
+TIMEMORY_SET_COMPONENT_API(component::cupti_pcsampling, tpls::nvidia, device::gpu,
+                           category::external, os::agnostic)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -65,6 +76,7 @@ TIMEMORY_SET_COMPONENT_API(component::cupti_profiler, tpls::nvidia, device::gpu,
 TIMEMORY_STATISTICS_TYPE(component::cupti_activity, double)
 TIMEMORY_STATISTICS_TYPE(component::cupti_counters, std::vector<double>)
 TIMEMORY_STATISTICS_TYPE(component::cupti_profiler, std::vector<double>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_statistics, component::cupti_pcsampling, false_type)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -72,14 +84,21 @@ TIMEMORY_STATISTICS_TYPE(component::cupti_profiler, std::vector<double>)
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA)
+#if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA) ||                       \
+    defined(TIMEMORY_COMPILER_INSTRUMENTATION)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_counters, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_activity, false_type)
 #endif
 //
 #if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA) ||                       \
-    !defined(TIMEMORY_USE_CUPTI_NVPERF)
+    !defined(TIMEMORY_USE_CUPTI_NVPERF) || defined(TIMEMORY_COMPILER_INSTRUMENTATION)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_profiler, false_type)
+#endif
+//
+#if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA) ||                       \
+    !defined(TIMEMORY_USE_CUPTI_PCSAMPLING) ||                                           \
+    defined(TIMEMORY_COMPILER_INSTRUMENTATION)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_pcsampling, false_type)
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -147,6 +166,23 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_serialization, component::cupti_profiler, 
 //
 //--------------------------------------------------------------------------------------//
 //
+//                                BASE HAS ACCUM
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(base_has_accum, component::cupti_pcsampling, false_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                                  REPORTING
+//
+//--------------------------------------------------------------------------------------//
+//
+// collection method has no use for separating value from accum
+// mean values have no meaning here
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_mean, component::cupti_pcsampling, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_self, component::cupti_pcsampling, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::cupti_pcsampling, false_type)
 //
 //======================================================================================//
 //
@@ -155,6 +191,9 @@ TIMEMORY_PROPERTY_SPECIALIZATION(cupti_activity, TIMEMORY_CUPTI_ACTIVITY,
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(cupti_counters, TIMEMORY_CUPTI_COUNTERS,
                                  "cupti_counters", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(cupti_pcsampling, TIMEMORY_CUPTI_PCSAMPLING,
+                                 "cupti_pcsampling", "cuda_pcsampling")
 //
 // TIMEMORY_PROPERTY_SPECIALIZATION(cupti_profiler, TIMEMORY_CUPTI_PROFILER,
 // "cupti_profiler", "")

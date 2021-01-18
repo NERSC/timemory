@@ -77,6 +77,7 @@
     component::cuda_profiler,                   \
     component::cupti_activity,                  \
     component::cupti_counters,                  \
+    component::cupti_pcsampling,                \
     component::current_peak_rss,                \
     component::data_tracker_integer,            \
     component::data_tracker_unsigned,           \

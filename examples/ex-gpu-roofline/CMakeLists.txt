@@ -24,6 +24,14 @@ add_library(gpu-roofline-compile-options INTERFACE)
 target_compile_options(gpu-roofline-compile-options INTERFACE
     $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--default-stream=per-thread>>)
 
+if(CUDA_VERSION VERSION_LESS 11.0)
+    target_compile_options(gpu-roofline-compile-options INTERFACE
+        $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--expt-extended-lambda>>)
+else()
+    target_compile_options(gpu-roofline-compile-options INTERFACE
+        $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--extended-lambda>>)
+endif()
+
 set(EXE_NAME ex_gpu_roofline)
 set_source_files_properties(${EXE_NAME}.cpp PROPERTIES
     LANGUAGE CUDA

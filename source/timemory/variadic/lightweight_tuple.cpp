@@ -22,10 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/variadic/lightweight_tuple.cpp
- * \brief Implementation for various lightweight_tuple member functions
- *
- */
+#ifndef TIMEMORY_VARIADIC_LIGHTWEIGHT_TUPLE_CPP_
+#define TIMEMORY_VARIADIC_LIGHTWEIGHT_TUPLE_CPP_ 1
 
 #include "timemory/variadic/lightweight_tuple.hpp"
 #include "timemory/mpl/filters.hpp"
@@ -375,3 +373,5 @@ lightweight_tuple<Types...>::init_storage()
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+
+#endif

@@ -687,6 +687,9 @@ settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, 
 {
     static_assert(is_one_of<Tp, data_type_list_t>::value,
                   "Error! Data type is not supported. See settings::data_type_list_t");
+    static_assert(std::is_same<decay_t<Tp>, decay_t<Vp>>::value,
+                  "Error! Initializing value is not the same as the declared type");
+
     auto _sid = std::string{ std::forward<Sp>(_env) };
     set_env(_sid, _init, 0);
     m_order.push_back(_sid);
