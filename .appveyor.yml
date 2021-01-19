@@ -137,15 +137,15 @@ build_script:
           ctest . --output-on-failure
       }
       elseif ($env:EXAMPLES -eq "ON") {
-        "./outputs/runtime/%CONFIG%/ex_optional_off.exe"
-        "./outputs/runtime/%CONFIG%/ex_cxx_basic.exe"
-        "./outputs/runtime/%CONFIG%/ex_optional_on.exe"
-        "./outputs/runtime/%CONFIG%/ex_cxx_overhead.exe"
-        "./outputs/runtime/%CONFIG%/ex_cxx_tuple.exe"
+        iex ".\outputs\runtime\$env:CONFIG\ex_optional_off.exe"
+        iex ".\outputs\runtime\$env:CONFIG\ex_cxx_basic.exe"
+        iex ".\outputs\runtime\$env:CONFIG\ex_optional_on.exe"
+        iex ".\outputs\runtime\$env:CONFIG\ex_cxx_overhead.exe"
+        iex ".\outputs\runtime\$env:CONFIG\ex_cxx_tuple.exe"
         if ($env:BUILD_C -eq "ON") {
-          "./outputs/runtime/%CONFIG%/ex_c_minimal.exe"
-          "./outputs/runtime/%CONFIG%/ex_c_minimal_library.exe"
-          "./outputs/runtime/%CONFIG%/ex_c_timing.exe"
+          iex ".\outputs\runtime\$env:CONFIG\ex_c_minimal.exe"
+          iex ".\outputs\runtime\$env:CONFIG\ex_c_minimal_library.exe"
+          iex ".\outputs\runtime\$env:CONFIG\ex_c_timing.exe"
         }
       }
   - ps: |

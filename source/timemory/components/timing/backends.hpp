@@ -80,6 +80,7 @@ gettimeofday(struct timeval* t, void* timezone) noexcept
 
 #    define __need_clock_t
 
+#    include <processthreadsapi.h>
 #    include <time.h>
 
 // Structure describing CPU time used by a process and its children.
@@ -270,13 +271,13 @@ template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
                     get_clock_now(clockid_t clock_id) noexcept
 {
-    constexpr Tp factor = static_cast<Tp>(std::nano::den) / Precision::den;
+    constexpr Tp factor = Precision::den / static_cast<Tp>(std::nano::den);
 #if defined(_MACOS)
-    return clock_gettime_nsec_np(clock_id) / factor;
+    return clock_gettime_nsec_np(clock_id) * factor;
 #else
     struct timespec ts;
     clock_gettime(clock_id, &ts);
-    return (ts.tv_sec * std::nano::den + ts.tv_nsec) / factor;
+    return (ts.tv_sec * std::nano::den + ts.tv_nsec) * factor;
 #endif
 }
 
@@ -321,23 +322,77 @@ TIMEMORY_HOT_INLINE Tp
 // threads)
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // thread.
+#if defined(_WINDOWS)
+template <typename Tp = double, typename Precision = std::ratio<1>>
+TIMEMORY_HOT_INLINE Tp
+get_clock_thread_now() noexcept
+{
+    auto _get_thr_time = [](const FILETIME& kernel_time,
+                            const FILETIME& user_time) -> Tp {
+        // values are provided in 100 ns units
+        constexpr Tp   factor = Precision::den / static_cast<Tp>(std::nano::den / 100);
+        ULARGE_INTEGER kernel;
+        ULARGE_INTEGER user;
+        kernel.HighPart = kernel_time.dwHighDateTime;
+        kernel.LowPart  = kernel_time.dwLowDateTime;
+        user.HighPart   = user_time.dwHighDateTime;
+        user.LowPart    = user_time.dwLowDateTime;
+        return (kernel.QuadPart + user.QuadPart) * factor;
+    };
+    HANDLE   this_thread = GetCurrentThread();
+    FILETIME creation_time;
+    FILETIME exit_time;
+    FILETIME kernel_time;
+    FILETIME user_time;
+    GetThreadTimes(this_thread, &creation_time, &exit_time, &kernel_time, &user_time);
+    return _get_thr_time(kernel_time, user_time);
+}
+#else
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
                     get_clock_thread_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_THREAD_CPUTIME_ID);
 }
+#endif
 
 //--------------------------------------------------------------------------------------//
 // this clock measures the CPU time within the current process (excludes child processes)
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // process.
+#if defined(_WINDOWS)
+template <typename Tp = double, typename Precision = std::ratio<1>>
+TIMEMORY_HOT_INLINE Tp
+get_clock_process_now() noexcept
+{
+    auto _get_proc_time = [](const FILETIME& kernel_time,
+                             const FILETIME& user_time) -> Tp {
+        // values are provided in 100 ns units
+        constexpr Tp   factor = Precision::den / static_cast<Tp>(std::nano::den / 100);
+        ULARGE_INTEGER kernel;
+        ULARGE_INTEGER user;
+        kernel.HighPart = kernel_time.dwHighDateTime;
+        kernel.LowPart  = kernel_time.dwLowDateTime;
+        user.HighPart   = user_time.dwHighDateTime;
+        user.LowPart    = user_time.dwLowDateTime;
+        return (kernel.QuadPart + user.QuadPart) * factor;
+    };
+    HANDLE   this_proc = GetCurrentProcess();
+    FILETIME creation_time;
+    FILETIME exit_time;
+    FILETIME kernel_time;
+    FILETIME user_time;
+    GetProcessTimes(this_proc, &creation_time, &exit_time, &kernel_time, &user_time);
+    return _get_proc_time(kernel_time, user_time);
+}
+#else
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
                     get_clock_process_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_PROCESS_CPUTIME_ID);
 }
+#endif
 
 //--------------------------------------------------------------------------------------//
 // this function extracts only the CPU time spent in user-mode
