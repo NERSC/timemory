@@ -607,6 +607,55 @@ delimit(const std::string& line, const std::string& delimiters = "\"',;: ",
     return _result;
 }
 
+//
+//--------------------------------------------------------------------------------------//
+///  \brief apply a string transformation to substring inbetween a common delimiter.
+///  e.g.
+//
+template <typename PredicateT = std::function<std::string(const std::string&)>>
+inline std::string
+str_transform(const std::string& input, const std::string& _begin, const std::string& _end,
+              PredicateT&& predicate)
+{
+    size_t      _beg_pos = 0;  // position that is the beginning of the new string
+    size_t      _end_pos = 0;  // position of the delimiter in the string
+    std::string _result  = input;
+    while(_beg_pos < _result.length() && _end_pos < _result.length())
+    {
+        // find the first sequence of characters after the end-position
+        _beg_pos = _result.find(_begin, _end_pos);
+
+        // if sequence wasn't found, we are done
+        if(_beg_pos == std::string::npos)
+            break;
+
+        // starting after the position of the first delimiter, find the end sequence
+        _end_pos = _result.find(_end, _beg_pos + 1);
+
+        // break if not found
+        if(_end_pos == std::string::npos)
+            break;
+
+        // length of the substr being operated on
+        auto _len = _end_pos - _beg_pos;
+
+        // get the substring between the two delimiters (including first delimiter)
+        auto _sub = _result.substr(_beg_pos, _len);
+
+        // apply the transform
+        auto _transformed = predicate(_sub);
+
+        // only replace if necessary
+        if(_sub != _transformed)
+        {
+            _result = _result.replace(_beg_pos, _len, _transformed);
+            // move end to the end of transformed string
+            _end_pos = _beg_pos + _transformed.length();
+        }
+    }
+    return _result;
+}
+
 //--------------------------------------------------------------------------------------//
 //
 inline std::vector<std::string>

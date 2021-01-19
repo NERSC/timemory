@@ -128,6 +128,14 @@
 
 //======================================================================================//
 //
+#if !defined(TIMEMORY_TUPLE_ACCESSOR)
+#    define TIMEMORY_TUPLE_ACCESSOR(INDEX, TUPLE, NAME)                                  \
+        auto& NAME() { return std::get<INDEX>(TUPLE); }                                  \
+        const auto& NAME() const { return std::get<INDEX>(TUPLE); }
+#endif
+
+//======================================================================================//
+//
 namespace tim
 {
 //

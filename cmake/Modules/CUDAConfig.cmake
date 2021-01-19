@@ -21,7 +21,7 @@ if("CUDA" IN_LIST LANGUAGES)
         INTERFACE_CUDA_SEPARABLE_COMPILATION    ON)
 
     set(CUDA_AUTO_ARCH "auto")
-    set(CUDA_ARCHITECTURES auto kepler tesla maxwell pascal volta turing)
+    set(CUDA_ARCHITECTURES auto kepler tesla maxwell pascal volta turing ampere)
     set(TIMEMORY_CUDA_ARCH "${CUDA_AUTO_ARCH}" CACHE STRING
         "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
     add_feature(TIMEMORY_CUDA_ARCH "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
@@ -33,6 +33,7 @@ if("CUDA" IN_LIST LANGUAGES)
     set(cuda_pascal_arch    60 CACHE STRING "")
     set(cuda_volta_arch     70 CACHE STRING "")
     set(cuda_turing_arch    75 CACHE STRING "")
+    set(cuda_ampere_arch    80 CACHE STRING "")
 
     foreach(_type kepler tesla maxwell pascal volta turing)
         mark_as_advanced(cuda_${_type}_arch)
@@ -69,6 +70,7 @@ if("CUDA" IN_LIST LANGUAGES)
         #   60, 61, 62  + Pascal support
         #   70, 72      + Volta support
         #   75          + Turing support
+        #   80          + Ampere support
 
         # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
         #    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
@@ -77,13 +79,19 @@ if("CUDA" IN_LIST LANGUAGES)
         # target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
         #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
 
-        target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-            $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+        if("${CUDA_VERSION}" VERSION_LESS 11.0)
+            target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
+                $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+        else()
+            target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
+                $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+        endif()
 
         if(NOT WIN32)
             get_filename_component(_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
             target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${_COMPILER_DIR}>)
+                $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${_COMPILER_DIR}>
+                $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>)
         endif()
     endif()
 
