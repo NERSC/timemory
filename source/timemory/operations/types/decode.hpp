@@ -49,26 +49,36 @@ struct decode
 {
     TIMEMORY_DEFAULT_OBJECT(decode)
 
+    static auto tokenized_demangle(std::string inp)
+    {
+        using pair_t = std::pair<std::string, std::string>;
+        for(auto&& itr : { pair_t{ "_Z", " " }, pair_t{ " ", " " } })
+            inp = str_transform(inp, itr.first, itr.second,
+                                [](const std::string& _s) { return demangle(_s); });
+        return inp;
+    }
+
     auto operator()(const char* inp)
     {
-        return demangle_backtrace(demangle_hash_identifier(inp));
+        return tokenized_demangle(demangle_backtrace(demangle_hash_identifier(inp)));
     }
 
     auto operator()(const std::string& inp)
     {
-        return demangle_backtrace(demangle_hash_identifier(inp));
+        return tokenized_demangle(demangle_backtrace(demangle_hash_identifier(inp)));
     }
 
     auto operator()(const graph_hash_map_ptr_t&   _hash_map,
                     const graph_hash_alias_ptr_t& _hash_alias, hash_value_type _hash_id)
     {
-        return demangle_hash_identifier(
-            get_hash_identifier(_hash_map, _hash_alias, _hash_id));
+        return tokenized_demangle(demangle_hash_identifier(
+            get_hash_identifier(_hash_map, _hash_alias, _hash_id)));
     }
 
     auto operator()(hash_value_type _hash_id)
     {
-        return demangle_hash_identifier(get_hash_identifier(_hash_id));
+        return tokenized_demangle(
+            demangle_hash_identifier(get_hash_identifier(_hash_id)));
     }
 };
 //

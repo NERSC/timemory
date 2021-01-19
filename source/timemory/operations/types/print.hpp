@@ -125,7 +125,7 @@ struct print
             if(trait::report<type>::count())
                 utility::write_entry(_os, "COUNT", " ");
             if(trait::report<type>::depth())
-                utility::write_entry(_os, "DEPTH", " ");
+                utility::write_entry(_os, "DEPTH", _depth);
             if(trait::report<type>::metric())
                 utility::write_entry(_os, "METRIC", _empty_data);
             if(trait::report<type>::units())
