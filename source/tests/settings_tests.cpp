@@ -310,3 +310,20 @@ TEST_F(settings_tests, insert_via_pointer)
 }
 
 //--------------------------------------------------------------------------------------//
+
+TEST_F(settings_tests, metadata)
+{
+    tim::manager::add_metadata("lucky-number", 7);
+    std::vector<std::string> _data = { "dogs", "and", "cats", "are", "good" };
+    tim::manager::add_metadata("things-you-should-know", _data);
+    tim::manager::instance()->set_write_metadata(1);
+    tim::manager::instance()->write_metadata(details::get_test_name().c_str());
+    auto          fname = tim::settings::compose_output_filename("metadata", "json");
+    std::ifstream ifs(fname);
+    EXPECT_TRUE(ifs.is_open());
+    std::string line;
+    while(std::getline(ifs, line) && ifs)
+        std::cout << line << std::endl;
+}
+
+//--------------------------------------------------------------------------------------//

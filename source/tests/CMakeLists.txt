@@ -12,7 +12,6 @@ if(NOT TIMEMORY_BUILD_TESTING)
     set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
-
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY )
 unset(CMAKE_LIBRARY_OUTPUT_DIRECTORY )
 unset(CMAKE_ARCHIVE_OUTPUT_DIRECTORY )
@@ -274,6 +273,7 @@ if(UNIX)
     add_timemory_google_test(backtrace_tests
         SOURCES         backtrace_tests.cpp
         LINK_LIBRARIES  common-test-libs
+                        test-debug-flags
                         timemory::timemory-core)
 endif()
 

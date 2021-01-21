@@ -48,6 +48,8 @@
 #    endif
 #endif
 
+#include "timemory/backends/cpu.hpp"
+
 // clang-format off
 namespace tim { namespace component { struct ert_timer; } }
 // clang-format on
@@ -74,17 +76,6 @@ struct executor;
 template <typename ExecutorT>
 struct callback;
 
-namespace cache_size
-{
-template <size_t Level>
-size_t
-get();
-
-size_t
-get(const int&);
-
-size_t
-get_max();
-}  // namespace cache_size
+namespace cache_size = cpu::cache_size;
 }  // namespace ert
 }  // namespace tim

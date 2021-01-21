@@ -24,16 +24,9 @@
 
 #pragma once
 
-#include "timemory/manager/declaration.hpp"
-#include "timemory/manager/macros.hpp"
-#include "timemory/manager/types.hpp"
-#include "timemory/settings/declaration.hpp"
+#include "timemory/manager/manager.hpp"
+#include "timemory/settings/settings.hpp"
 
-#if defined(TIMEMORY_MANAGER_SOURCE)
-// source requirements
-#    include "timemory/settings/definition.hpp"
-#elif !defined(TIMEMORY_USE_MANAGER_EXTERN)
-// header-only requirements
-#    include "timemory/manager/definition.hpp"
-#    include "timemory/settings/definition.hpp"
+#if !defined(TIMEMORY_USE_MANAGER_EXTERN) && !defined(TIMEMORY_MANAGER_SOURCE)
+#    include "timemory/manager/manager.cpp"
 #endif

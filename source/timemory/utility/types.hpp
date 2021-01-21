@@ -121,16 +121,31 @@
 #if !defined(TIMEMORY_EXCEPTION)
 #    define TIMEMORY_EXCEPTION(...)                                                      \
         {                                                                                \
-            std::cerr << __VA_ARGS__ << std::endl;                                       \
+            std::stringstream _errmsg;                                                   \
+            _errmsg << __VA_ARGS__;                                                      \
+            perror(_errmsg.str().c_str());                                               \
+            std::cerr << _errmsg.str() << std::endl;                                     \
             std::exit(EXIT_FAILURE);                                                     \
         }
 #endif
 
 //======================================================================================//
 //
+#if !defined(TIMEMORY_TESTING_EXCEPTION) && defined(TIMEMORY_INTERNAL_TESTING)
+#    define TIMEMORY_TESTING_EXCEPTION(...)                                              \
+        {                                                                                \
+            TIMEMORY_EXCEPTION(__VA_ARGS__)                                              \
+        }
+#elif !defined(TIMEMORY_TESTING_EXCEPTION)
+#    define TIMEMORY_TESTING_EXCEPTION(...)                                              \
+        {}
+#endif
+
+//======================================================================================//
+//
 #if !defined(TIMEMORY_TUPLE_ACCESSOR)
 #    define TIMEMORY_TUPLE_ACCESSOR(INDEX, TUPLE, NAME)                                  \
-        auto& NAME() { return std::get<INDEX>(TUPLE); }                                  \
+        auto&       NAME() { return std::get<INDEX>(TUPLE); }                            \
         const auto& NAME() const { return std::get<INDEX>(TUPLE); }
 #endif
 

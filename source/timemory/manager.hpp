@@ -34,5 +34,6 @@
 #pragma once
 
 #include "timemory/manager/declaration.hpp"
-//
-#include "timemory/manager/definition.hpp"
+#if !defined(TIMEMORY_USE_MANAGER_EXTERN)
+#    include "timemory/manager/manager.cpp"
+#endif

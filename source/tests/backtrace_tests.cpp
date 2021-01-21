@@ -33,7 +33,7 @@ TIMEMORY_TEST_DEFAULT_MAIN
 TIMEMORY_NOINLINE auto
 foo()
 {
-    return tim::get_backtrace<4>();
+    return tim::get_backtrace<4, 1>();
 }
 
 TIMEMORY_NOINLINE auto

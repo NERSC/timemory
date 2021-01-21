@@ -23,8 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/manager/extern.hpp"
-#include "timemory/manager/declaration.hpp"
-#include "timemory/manager/definition.hpp"
+#include "timemory/manager/manager.hpp"
 #include "timemory/manager/types.hpp"
 //
 #include "timemory/environment.hpp"

@@ -22,12 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/version.h
- * \headerfile timemory/version.h "timemory/version.h"
- * Versioning header
- *
- */
-
 #pragma once
 
 //
@@ -47,3 +41,6 @@
 
 #define TIMEMORY_VERSION @TIMEMORY_VERSION_CODE@
 #define TIMEMORY_VERSION_STRING "@TIMEMORY_VERSION_STRING@"
+
+#define TIMEMORY_GIT_DESCRIBE "@TIMEMORY_GIT_DESCRIBE@"
+#define TIMEMORY_GIT_REVISION "@TIMEMORY_GIT_REVISION@"

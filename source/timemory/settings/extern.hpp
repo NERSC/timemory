@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "timemory/settings.hpp"
+#include "timemory/settings/settings.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
 
 TIMEMORY_SETTINGS_EXTERN_TEMPLATE(TIMEMORY_API)
