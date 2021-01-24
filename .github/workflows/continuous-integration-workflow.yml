@@ -16,7 +16,7 @@ jobs:
           - build_type: 'Debug'
             compiler: 'gcc-7'
             standard: '17'
-            tools: ['dyninst mpip ncclp mallocp']
+            tools: 'dyninst mpip ncclp mallocp'
             extra_args: '--coverage'
     runs-on: self-hosted
     steps:
