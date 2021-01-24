@@ -1,12 +1,12 @@
-name: continuous-integration-workflow
+name: continuous-integration
 on: [push, pull_request]
 
 jobs:
   maeve-ci:
-    continue-on-error: true
+    continue-on-error: false
     strategy:
       max-parallel: 2
-      fail-fast: false
+      fail-fast: true
       matrix:
         # compiler: ['gcc-6', 'gcc-7', 'gcc-8', 'gcc-9', 'gcc-10', 'clang-6.0', 'clang-7', 'clang-8', 'clang-9', 'clang-10', 'clang-11', 'clang-12']
         build_type: ['Release']

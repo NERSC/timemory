@@ -92,11 +92,11 @@ class TimemoryToolsTests(unittest.TestCase):
         except ImportError:
             return
 
-        from timemory.component import MallocGotcha
-        from timemory.storage import MallocGotchaStorage
-
         if not tim.component.is_available("malloc_gotcha"):
             return
+
+        from timemory.component import MallocGotcha
+        from timemory.storage import MallocGotchaStorage
 
         _idx = tim.start_mallocp()
         _arr = np.ones([1000, 1000], dtype=np.float64)
