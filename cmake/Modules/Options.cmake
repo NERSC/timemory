@@ -190,7 +190,7 @@ if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     # standard
     set(CMAKE_C_STANDARD 11 CACHE STRING "C language standard")
     set(CMAKE_CXX_STANDARD 14 CACHE STRING "CXX language standard")
-    set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "CUDA language standard")
+    set(CMAKE_CUDA_STANDARD 14 CACHE STRING "CUDA language standard")
 
     # standard required
     add_option(CMAKE_C_STANDARD_REQUIRED "Require C language standard" ON)
