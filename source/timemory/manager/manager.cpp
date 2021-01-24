@@ -91,11 +91,16 @@ manager::manager()
     f_thread_counter()++;
 
     static bool _once = [=] {
-        auto _datetime =
-            get_local_datetime("%F_%I.%M_%p", settings::get_launch_time(TIMEMORY_API{}));
+        auto _launch_date =
+            get_local_datetime("%D", settings::get_launch_time(TIMEMORY_API{}));
+        auto _launch_time =
+            get_local_datetime("%H:%M", settings::get_launch_time(TIMEMORY_API{}));
         auto _cpu_info = cpu::get_info();
+        auto _user     = get_env<std::string>("USER", "nobody");
 
-        add_metadata("launch_time", _datetime);
+        add_metadata("USER", _user);
+        add_metadata("LAUNCH_DATE", _launch_date);
+        add_metadata("LAUNCH_TIME", _launch_time);
         add_metadata("TIMEMORY_API", demangle<TIMEMORY_API>());
         add_metadata("TIMEMORY_VERSION", TIMEMORY_VERSION_STRING);
         add_metadata("TIMEMORY_GIT_DESCRIBE", TIMEMORY_GIT_DESCRIBE);
@@ -454,12 +459,11 @@ manager::write_metadata(const char* context)
             oa->startNode();
             // user
             {
-                // "%F_%I.%M_%p"
-                auto& _user_metadata = f_manager_persistent_data().user_metadata;
+                auto& _info_metadata = f_manager_persistent_data().info_metadata;
                 auto& _func_metadata = f_manager_persistent_data().func_metadata;
-                oa->setNextName("user");
+                oa->setNextName("info");
                 oa->startNode();
-                for(const auto& itr : _user_metadata)
+                for(const auto& itr : _info_metadata)
                     (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
                 for(const auto& itr : _func_metadata)
                     itr(static_cast<void*>(oa.get()));
@@ -616,7 +620,7 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::add_metadata(const std::string& _key, const char* _value)
 {
     auto_lock_t _lk(type_mutex<manager>());
-    f_manager_persistent_data().user_metadata.insert({ _key, std::string{ _value } });
+    f_manager_persistent_data().info_metadata.insert({ _key, std::string{ _value } });
 }
 //
 //----------------------------------------------------------------------------------//
@@ -625,7 +629,7 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::add_metadata(const std::string& _key, const std::string& _value)
 {
     auto_lock_t _lk(type_mutex<manager>());
-    f_manager_persistent_data().user_metadata.insert({ _key, _value });
+    f_manager_persistent_data().info_metadata.insert({ _key, _value });
 }
 //
 //----------------------------------------------------------------------------------//

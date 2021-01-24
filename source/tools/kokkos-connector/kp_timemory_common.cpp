@@ -122,6 +122,6 @@ kokkosp_end_deep_copy()
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_STORAGE_INITIALIZER(KokkosMemoryTracker, kokkos_memory_tracker)
+TIMEMORY_INITIALIZE_STORAGE(KokkosMemoryTracker)
 
 //--------------------------------------------------------------------------------------//

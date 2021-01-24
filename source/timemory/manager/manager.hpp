@@ -82,7 +82,7 @@ public:
     using settings_ptr_t   = std::shared_ptr<settings>;
     using filemap_t        = std::map<string_t, std::map<string_t, std::set<string_t>>>;
     using metadata_func_t  = std::vector<std::function<void(void*)>>;
-    using metadata_user_t  = std::multimap<string_t, string_t>;
+    using metadata_info_t  = std::multimap<string_t, string_t>;
     using enum_set_t       = std::set<TIMEMORY_COMPONENT>;
     template <typename Tp>
     using enum_map_t = std::map<TIMEMORY_COMPONENT, Tp>;
@@ -137,14 +137,10 @@ public:
     static void      exit_hook();
     static int32_t   get_thread_count() { return f_thread_counter().load(); }
 
+    template <typename Tp>
+    static void add_metadata(const std::string&, const Tp&);
     static void add_metadata(const std::string&, const char*);
     static void add_metadata(const std::string&, const std::string&);
-    template <typename Tp>
-    static void add_metadata(const std::string&, const Tp&,
-                             enable_if_t<std::is_arithmetic<Tp>::value, int> = {});
-    template <typename Tp>
-    static void add_metadata(const std::string&, const Tp&,
-                             enable_if_t<!std::is_arithmetic<Tp>::value, long> = {});
 
 private:
     template <typename Tp>
@@ -320,7 +316,7 @@ private:
         bool&                     debug         = settings::debug();
         int&                      verbose       = settings::verbose();
         metadata_func_t           func_metadata = {};
-        metadata_user_t           user_metadata = {};
+        metadata_info_t           info_metadata = {};
         std::shared_ptr<settings> config        = settings::shared_instance();
     };
 
@@ -418,19 +414,7 @@ manager::add_finalizer(const std::string& _key, StackFunc&& _stack_func,
 //
 template <typename Tp>
 void
-manager::add_metadata(const std::string& _key, const Tp& _value,
-                      enable_if_t<std::is_arithmetic<Tp>::value, int>)
-{
-    auto_lock_t _lk(type_mutex<manager>());
-    f_manager_persistent_data().user_metadata.insert({ _key, std::to_string(_value) });
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-void
-manager::add_metadata(const std::string& _key, const Tp& _value,
-                      enable_if_t<!std::is_arithmetic<Tp>::value, long>)
+manager::add_metadata(const std::string& _key, const Tp& _value)
 {
     auto_lock_t _lk(type_mutex<manager>());
     f_manager_persistent_data().func_metadata.push_back([_key, _value](void* _varchive) {
