@@ -25,7 +25,7 @@ jobs:
           spack load boost dyninst
           spack load /p6k245n
           TOOLS="avail kokkos kokkos-config dyninst mpip ncclp mallocp compiler"
-          BASE_ARGS="--papi --python --likwid --mpi --cuda --cupti --nvtx --gotcha --caliper --extra-optimizations --tools ${TOOLS} -SF --pyctest-model=continuous -j 6"
+          BASE_ARGS="--papi --python --likwid --mpi --cuda --cupti --nvtx --gotcha --caliper --extra-optimizations --tools ${TOOLS} -SF --pyctest-model=Continuous -j 6"
           CTEST_ARGS="-V"
           CMAKE_ARGS="-DPYTHON_EXECUTABLE=$(which python) -G Ninja"
           export CC=${{ matrix.compiler }}
