@@ -28,6 +28,8 @@ jobs:
           submodules: true
       - name: Build and Test
         run: |
+          module load anaconda
+          module list
           source activate timemory
           spack load boost dyninst papi
           BASE_ARGS="--papi --likwid --mpi --cuda --cupti --gotcha --caliper --extra-optimizations --tools ${{ matrix.tools }} -SF --pyctest-model=Continuous -j 6"
