@@ -117,13 +117,38 @@ get_hash_id(const graph_hash_alias_ptr_t& _hash_alias,
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \fn hash_value_type add_hash_id(graph_hash_map_ptr_t&, const string_view_t&)
+/// \brief add an string to the given hash-map (if it doesn't already exist) and return
+/// the hash
+///
 hash_value_type
 add_hash_id(graph_hash_map_ptr_t& _hash_map, const string_view_t& _prefix) TIMEMORY_HOT;
 //
+inline hash_value_type
+add_hash_id(graph_hash_map_ptr_t& _hash_map, const string_view_t& _prefix)
+{
+    hash_value_type _hash_id = get_hash_id(_prefix);
+    if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
+    {
+        (*_hash_map)[_hash_id] = std::string{ _prefix };
+    }
+    return _hash_id;
+}
+//
 //--------------------------------------------------------------------------------------//
 //
+/// \fn hash_value_type add_hash_id(const string_view_t&)
+/// \brief add an string to the default hash-map (if it doesn't already exist) and return
+/// the hash
+///
 hash_value_type
 add_hash_id(const string_view_t& _prefix) TIMEMORY_HOT;
+//
+inline hash_value_type
+add_hash_id(const string_view_t& _prefix)
+{
+    return add_hash_id(get_hash_ids(), _prefix);
+}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -143,10 +168,22 @@ add_hash_id(hash_value_type _hash_id, hash_value_type _alias_hash_id) TIMEMORY_H
 //
 //--------------------------------------------------------------------------------------//
 //
-// this does not check other threads or aliases. Only call this function when
-// you know that the hash exists on the thread and is not an alias
+/// \fn string_view_t get_hash_identifier_fast(hash_value_type)
+/// \brief this does not check other threads or aliases. Only call this function when
+/// you know that the hash exists on the thread and is not an alias
+//
 string_view_t
 get_hash_identifier_fast(hash_value_type _hash) TIMEMORY_HOT;
+//
+inline string_view_t
+get_hash_identifier_fast(hash_value_type _hash)
+{
+    auto& _hash_ids = get_hash_ids();
+    auto  itr       = _hash_ids->find(_hash);
+    if(itr != _hash_ids->end())
+        return itr->second;
+    return "";
+}
 //
 //--------------------------------------------------------------------------------------//
 //
