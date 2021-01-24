@@ -22,16 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file "timemory/component/metadata.hpp"
- * Provides metadata attributes for components
- *
- */
-
 #pragma once
 
 #include "timemory/enum.h"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/variadic/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <string>
 

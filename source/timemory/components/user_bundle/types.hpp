@@ -22,23 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/user_bundle/types.hpp
- * \brief Declare the user_bundle component types
- */
-
 #pragma once
 
 #include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/components/ompt/types.hpp"
-#include "timemory/dll.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/concepts.hpp"
-#include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/operations/types.hpp"
 
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
 #    define TIMEMORY_USE_USER_BUNDLE_EXTERN
@@ -201,6 +193,9 @@ struct has_user_bundle<Tuple<T...>>
 //
 namespace operation
 {
+template <typename T>
+struct reset;
+//
 template <size_t Idx, typename Type>
 struct reset<component::user_bundle<Idx, Type>>
 {

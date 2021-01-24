@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/macros.hpp
- * Define common macros for the components
- */
-
 #pragma once
 
 #include "timemory/components/metadata.hpp"

@@ -23,25 +23,6 @@
 // SOFTWARE.
 //
 
-/**
- * \file timemory/components/vtune/backends.hpp
- * \brief Implementation of the vtune functions/utilities
- */
-
 #pragma once
 
 #include "timemory/backends/ittnotify.hpp"
-
-//======================================================================================//
-//
-namespace tim
-{
-namespace backend
-{
-//
-//
-//
-}  // namespace backend
-}  // namespace tim
-//
-//======================================================================================//

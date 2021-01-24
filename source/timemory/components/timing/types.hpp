@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/timing/types.hpp
- * \brief Declare the component types
- */
-
 #pragma once
 
 #include "timemory/api.hpp"

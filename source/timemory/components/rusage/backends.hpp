@@ -23,11 +23,6 @@
 // SOFTWARE.
 //
 
-/**
- * \file timemory/components/rusage/backends.hpp
- * \brief Implementation of the rusage functions/utilities
- */
-
 #pragma once
 
 #include "timemory/backends/process.hpp"
@@ -38,9 +33,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
-#include <iomanip>
-#include <ios>
-#include <iostream>
+#include <sstream>
 #include <string>
 
 #if defined(_UNIX)

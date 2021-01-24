@@ -254,8 +254,8 @@ get_trace_vec()
 static unsigned long
 get_trace_size()
 {
-    using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
-    return tim::manager::get_storage<tuple_type>::size();
+    using types_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
+    return tim::manager::get_storage<types_type>::size();
 }
 
 //--------------------------------------------------------------------------------------//

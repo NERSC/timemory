@@ -29,8 +29,12 @@ jobs:
       - name: Build and Test
         run: |
           module load anaconda
+          module load likwid
+          module load cuda
           module list
-          source activate timemory
+          source activate
+          conda activate timemory
+          echo "python: $(which python)"
           spack load boost dyninst papi
           BASE_ARGS="--papi --likwid --mpi --cuda --cupti --gotcha --caliper --extra-optimizations --tools ${{ matrix.tools }} -SF --pyctest-model=Continuous -j 6"
           CTEST_ARGS="-V"

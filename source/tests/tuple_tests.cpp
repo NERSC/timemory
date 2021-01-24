@@ -227,10 +227,11 @@ TEST_F(tuple_tests, usage)
 
 TEST_F(tuple_tests, all_threads)
 {
+    using auto_types_t                = tim::convert_t<auto_tuple_t, tim::type_list<>>;
     tim::settings::collapse_threads() = false;
     auto manager                      = tim::manager::instance();
-    tim::manager::get_storage<auto_tuple_t>::clear(manager);
-    auto starting_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    tim::manager::get_storage<auto_types_t>::clear(manager);
+    auto starting_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto data_size             = auto_tuple_t::size();
 
     using pair_t = std::pair<std::string, measurement_t>;
@@ -320,7 +321,7 @@ TEST_F(tuple_tests, all_threads)
         printf("\n");
     }
 
-    auto final_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    auto final_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto expected           = (final_storage_size - starting_storage_size);
 
     EXPECT_EQ(expected, 13 * data_size);
@@ -367,10 +368,11 @@ TEST_F(tuple_tests, all_threads)
 
 TEST_F(tuple_tests, collapsed_threads)
 {
+    using auto_types_t                = tim::convert_t<auto_tuple_t, tim::type_list<>>;
     tim::settings::collapse_threads() = true;
     auto manager                      = tim::manager::instance();
-    tim::manager::get_storage<auto_tuple_t>::clear(manager);
-    auto starting_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    tim::manager::get_storage<auto_types_t>::clear(manager);
+    auto starting_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto data_size             = auto_tuple_t::size();
 
     std::atomic<int64_t> ret;
@@ -441,7 +443,7 @@ TEST_F(tuple_tests, collapsed_threads)
         printf("\n");
     }
 
-    auto final_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    auto final_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto expected           = (final_storage_size - starting_storage_size);
 
     EXPECT_EQ(expected, 19 * data_size);

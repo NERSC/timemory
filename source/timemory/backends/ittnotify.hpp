@@ -22,12 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file backends/ittnotify.hpp
- * \headerfile backends/ittnotify.hpp "timemory/backends/ittnotify.hpp"
- * Defines ittnotify backend for VTune
- *
- */
-
 #pragma once
 
 #if defined(TIMEMORY_USE_VTUNE)

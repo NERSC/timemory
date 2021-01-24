@@ -22,32 +22,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file components/placeholder.hpp
- * \headerfile components/placeholder.hpp "timemory/components/placeholder.hpp"
- *
- * This is a wrapper around skeletons that inherits from the base type with a void
- * value type and will ensure that the component is always unavailable during
- * template filtering. Also, the placeholder type inherits from the provided
- * types in the event the skeleton type needs to provide callbacks, etc. that
- * may be defined in a project but never use when wrapped in a skeleton type
- *
- */
-
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/mpl/types.hpp"
 
 #include <cstdint>
-
-//======================================================================================//
+#include <string>
 
 namespace tim
 {
 namespace component
 {
-//--------------------------------------------------------------------------------------//
-// provides nothing, useful to inherit from if a component is not available
-//
+/// \struct tim::component::placeholder
+/// \brief provides nothing, used for dummy types in enum
+///
 template <typename... Types>
 struct placeholder
 : public base<placeholder<Types...>, void>
@@ -63,20 +52,12 @@ struct placeholder
     void               start() {}
     void               stop() {}
 
-    template <typename Tp, typename Func>
-    static void set_executor_callback(Func&&)
-    {}
-
-    //----------------------------------------------------------------------------------//
-    // generic configuration
-    //
+    /// generic configuration
     template <typename... Args>
     static void configure(Args&&...)
     {}
 
-    //----------------------------------------------------------------------------------//
-    // specific to gotcha
-    //
+    /// specific to gotcha
     template <size_t N, typename... Ret, typename... Args>
     static void configure(Args&&...)
     {}
@@ -91,5 +72,4 @@ template <typename... Types>
 struct is_available<component::placeholder<Types...>> : std::false_type
 {};
 }  // namespace trait
-
 }  // namespace tim

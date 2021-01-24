@@ -22,24 +22,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file policy.hpp
- * \headerfile policy.hpp "timemory/mpl/policy.hpp"
- * Provides the template meta-programming policy types
- *
- */
-
 #pragma once
 
-#include "timemory/data/statistics.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/runtime/types.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
+
+#include <atomic>
+#include <iosfwd>
+#include <memory>
+#include <tuple>
 
 namespace tim
 {
+//
+template <typename Tp>
+struct statistics;
+//
 namespace policy
 {
 //======================================================================================//

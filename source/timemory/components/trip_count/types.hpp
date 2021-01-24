@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/trip_count/types.hpp
- * \brief Declare the trip_count component types
- */
-
 #pragma once
 
 #include "timemory/components/macros.hpp"
