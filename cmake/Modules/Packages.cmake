@@ -407,13 +407,13 @@ target_compile_features(timemory-headers INTERFACE
     cxx_template_template_parameters)
 
 # Set CUDA at end in case we end up disabling it
-if(NOT CMAKE_VERSION VERSION_LESS 3.17 AND TIMEMORY_USE_CUDA)
-    if(DEFINED CMAKE_CUDA_KNOWN_FEATURES AND
-       "cuda_std_${CMAKE_CUDA_STANDARD}" IN_LIST CMAKE_CUDA_KNOWN_FEATURES)
-        target_compile_features(timemory-headers INTERFACE
-            cuda_std_${CMAKE_CUDA_STANDARD})
-    endif()
-endif()
+#if(NOT CMAKE_VERSION VERSION_LESS 3.17 AND TIMEMORY_USE_CUDA)
+#    if(DEFINED CMAKE_CUDA_KNOWN_FEATURES AND
+#       "cuda_std_${CMAKE_CUDA_STANDARD}" IN_LIST CMAKE_CUDA_KNOWN_FEATURES)
+#        target_compile_features(timemory-headers INTERFACE
+#            cuda_std_${CMAKE_CUDA_STANDARD})
+#    endif()
+#endif()
 
 if(NOT TIMEMORY_PRECOMPILE_HEADERS)
     inform_empty_interface(timemory-precompiled-headers "Precompiled-headers for timemory")
