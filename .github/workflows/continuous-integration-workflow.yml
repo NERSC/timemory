@@ -1,0 +1,32 @@
+name: continuous-integration-workflow
+on: [push, pull_request]
+
+jobs:
+  maeve-ci:
+    continue-on-error: false
+    strategy:
+      matrix:
+        compiler: ['gcc-9', 'gcc-10', 'clang-8', 'clang-9', 'clang-10', 'clang-11', 'clang-12']
+        # compiler: ['gcc-6', 'gcc-7', 'gcc-8', 'gcc-9', 'gcc-10', 'clang-6.0', 'clang-7', 'clang-8', 'clang-9', 'clang-10', 'clang-11', 'clang-12']
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2.2.0
+      - name: Build and Test
+        run: |
+          module use /opt/modulefiles/compilers
+          module use /opt/modulefiles/python
+          module load cuda
+          module load likwid
+          module load tau
+          module load anaconda
+          source activate timemory
+          spack load boost dyninst
+          spack load /p6k245n
+          TOOLS="avail kokkos kokkos-config dyninst mpip ncclp mallocp compiler"
+          BASE_ARGS="--papi --python --likwid --mpi --cuda --cupti --nvtx --gotcha --caliper --extra-optimizations --tools ${TOOLS} -SF --pyctest-model=${MODEL} -j 6"
+          CTEST_ARGS="-V"
+          CMAKE_ARGS="-DPYTHON_EXECUTABLE=$(which python) -G Ninja"
+          export CC=${{ matrix.compiler }}
+          export CXX="$(echo '${{ matrix.compiler }}' | sed 's/gcc/g++/1' | sed 's/clang/clang++/1')"
+          python ./pyctest-runner.py --cxx-standard=${CXXSTD} ${BASE_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}

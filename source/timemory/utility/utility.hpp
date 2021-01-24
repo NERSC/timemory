@@ -203,7 +203,9 @@ template <typename Tp>
 inline auto
 demangle()
 {
-    return demangle(typeid(Tp).name());
+    // a type demangle will always be the same
+    static auto _value = demangle(typeid(Tp).name());
+    return _value;
 }
 
 //--------------------------------------------------------------------------------------//
