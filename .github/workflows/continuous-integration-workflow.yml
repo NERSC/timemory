@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2.2.0
+        with:
+          submodules: true
       - name: Build and Test
         run: |
           module use /opt/modulefiles/compilers
@@ -31,3 +33,4 @@ jobs:
           export CC=${{ matrix.compiler }}
           export CXX="$(echo '${{ matrix.compiler }}' | sed 's/gcc/g++/1' | sed 's/clang/clang++/1')"
           python ./pyctest-runner.py --cxx-standard=${{ matrix.standard }} ${BASE_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
+          cmake --build build-timemory/Linux --target install --parallel 8
