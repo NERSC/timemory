@@ -134,7 +134,11 @@ if(NOT DEFINED TIMEMORY_INLINE_COMPILER_INSTRUMENTATION)
     set(TIMEMORY_INLINE_COMPILER_INSTRUMENTATION @TIMEMORY_INLINE_COMPILER_INSTRUMENTATION@)
 endif()
 
-get_property(ENABLED_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+# get the enabled languages for the project to check if we need to enable them
+get_property(ENABLED_LANGUAGES
+             DIRECTORY ${PROJECT_SOURCE_DIR}
+             PROPERTY ENABLED_LANGUAGES)
+
 foreach(_LANG ${TIMEMORY_LANGUAGES})
     if(NOT "${_LANG}" IN_LIST ENABLED_LANGUAGES)
         message(STATUS "Timemory was built with ${_LANG} support. Enabling the ${_LANG} language...")
