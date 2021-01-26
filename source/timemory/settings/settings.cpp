@@ -22,20 +22,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/settings/settings.hpp"
-#include "timemory/backends/dmp.hpp"
-#include "timemory/mpl/policy.hpp"
-#include "timemory/settings/macros.hpp"
-#include "timemory/settings/types.hpp"
-#include "timemory/tpls/cereal/archives.hpp"
-#include "timemory/utility/argparse.hpp"
-#include "timemory/utility/bits/signals.hpp"
-#include "timemory/utility/declaration.hpp"
-#include "timemory/utility/filepath.hpp"
-#include "timemory/utility/utility.hpp"
-#include "timemory/variadic/macros.hpp"
+#ifndef TIMEMORY_SETTINGS_SETTINGS_CPP_
+#    define TIMEMORY_SETTINGS_SETTINGS_CPP_
 
-#include <fstream>
+#    include "timemory/settings/settings.hpp"
+#    include "timemory/backends/dmp.hpp"
+#    include "timemory/mpl/policy.hpp"
+#    include "timemory/settings/macros.hpp"
+#    include "timemory/settings/types.hpp"
+#    include "timemory/tpls/cereal/archives.hpp"
+#    include "timemory/utility/argparse.hpp"
+#    include "timemory/utility/bits/signals.hpp"
+#    include "timemory/utility/declaration.hpp"
+#    include "timemory/utility/filepath.hpp"
+#    include "timemory/utility/utility.hpp"
+#    include "timemory/variadic/macros.hpp"
+
+#    include <fstream>
 
 namespace tim
 {
@@ -103,7 +106,7 @@ TIMEMORY_SETTINGS_INLINE
 settings::strvector_t
 settings::get_global_environment()
 {
-#if defined(_UNIX)
+#    if defined(_UNIX)
     strvector_t _environ;
     if(environ != nullptr)
     {
@@ -112,25 +115,24 @@ settings::get_global_environment()
             _environ.push_back(environ[idx++]);
     }
     return _environ;
-#else
+#    else
     return std::vector<std::string>();
-#endif
+#    endif
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
-get_local_datetime(const char* dt_format)
+get_local_datetime(const char* dt_format, std::time_t* dt_curr)
 {
-    std::stringstream ss;
-    std::time_t       t = std::time(nullptr);
-    char              mbstr[100];
-    if(std::strftime(mbstr, sizeof(mbstr), dt_format, std::localtime(&t)))
-    {
-        ss << mbstr;
-    }
-    return ss.str();
+    char mbstr[100];
+    if(!dt_curr)
+        dt_curr = settings::get_launch_time(TIMEMORY_API{});
+
+    if(std::strftime(mbstr, sizeof(mbstr), dt_format, std::localtime(dt_curr)))
+        return std::string{ mbstr };
+    return std::string{};
 }
 //
 //----------------------------------------------------------------------------------//
@@ -1131,7 +1133,7 @@ settings::read(std::istream& ifs, std::string inp)
         ia->finishNode();
         return true;
     }
-#if defined(TIMEMORY_USE_XML)
+#    if defined(TIMEMORY_USE_XML)
     else if(inp.find(".xml") != std::string::npos || inp == "xml")
     {
         using policy_type = policy::input_archive<cereal::XMLInputArchive, TIMEMORY_API>;
@@ -1155,7 +1157,7 @@ settings::read(std::istream& ifs, std::string inp)
         ia->finishNode();
         return true;
     }
-#endif
+#    endif
     else
     {
         if(inp.empty())
@@ -1416,4 +1418,10 @@ TIMEMORY_SETTINGS_REFERENCE_DEF(process::id_t, target_pid,
 //
 }  // namespace tim
 
-#include "timemory/settings/extern.hpp"
+#    include "timemory/tpls/cereal/archives.hpp"
+
+TIMEMORY_SETTINGS_EXTERN_TEMPLATE(TIMEMORY_API)
+
+#endif  // TIMEMORY_SETTINGS_SETTINGS_CPP_
+
+// #include "timemory/settings/extern.hpp"

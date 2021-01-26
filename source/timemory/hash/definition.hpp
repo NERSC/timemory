@@ -75,24 +75,6 @@ get_hash_id(const graph_hash_alias_ptr_t& _hash_alias, hash_value_type _hash_id)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HASH_LINKAGE(hash_value_type)
-add_hash_id(graph_hash_map_ptr_t& _hash_map, const string_view_t& _prefix)
-{
-    hash_value_type _hash_id = get_hash_id(_prefix);
-    if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
-    {
-        (*_hash_map)[_hash_id] = std::string{ _prefix };
-    }
-    return _hash_id;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_HASH_LINKAGE(hash_value_type)
-add_hash_id(const string_view_t& _prefix) { return add_hash_id(get_hash_ids(), _prefix); }
-//
-//--------------------------------------------------------------------------------------//
-//
 TIMEMORY_HASH_LINKAGE(void)
 add_hash_id(const graph_hash_map_ptr_t&   _hash_map,
             const graph_hash_alias_ptr_t& _hash_alias, hash_value_type _hash_id,
@@ -111,21 +93,6 @@ TIMEMORY_HASH_LINKAGE(void)
 add_hash_id(hash_value_type _hash_id, hash_value_type _alias_hash_id)
 {
     add_hash_id(get_hash_ids(), get_hash_aliases(), _hash_id, _alias_hash_id);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-// this does not check other threads or aliases. Only call this function when
-// you know that the hash exists on the thread and is not an alias
-//
-TIMEMORY_HASH_LINKAGE(string_view_t)
-get_hash_identifier_fast(hash_value_type _hash)
-{
-    auto& _hash_ids = get_hash_ids();
-    auto  itr       = _hash_ids->find(_hash);
-    if(itr != _hash_ids->end())
-        return itr->second;
-    return "";
 }
 //
 //--------------------------------------------------------------------------------------//

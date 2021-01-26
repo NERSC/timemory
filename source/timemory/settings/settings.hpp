@@ -43,6 +43,7 @@
 #include "timemory/tpls/cereal/cereal.hpp"
 
 #include <atomic>
+#include <ctime>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -87,6 +88,8 @@ struct settings
     template <typename Tp, typename Vp>
     using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
 
+    template <typename Tag = TIMEMORY_API>
+    static std::time_t* get_launch_time(Tag = {});
     template <typename Tag>
     static TIMEMORY_HOT pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
     template <typename Tag>
@@ -372,6 +375,16 @@ private:
     void initialize_ert() TIMEMORY_VISIBILITY("hidden");
     void initialize_dart() TIMEMORY_VISIBILITY("hidden");
 };
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag>
+std::time_t* settings::get_launch_time(Tag)
+{
+    // record the time
+    static std::time_t _time = std::time(nullptr);
+    return &_time;
+}
 //
 //----------------------------------------------------------------------------------//
 //

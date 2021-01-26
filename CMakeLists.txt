@@ -125,6 +125,20 @@ else()
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
+find_package(Git QUIET)
+if(Git_FOUND)
+    execute_process(
+        COMMAND             ${GIT_EXECUTABLE} describe --tags
+        WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE     TIMEMORY_GIT_DESCRIBE
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+        COMMAND             ${GIT_EXECUTABLE} rev-parse HEAD
+        WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE     TIMEMORY_GIT_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+
 # install directories
 include(GNUInstallDirs)
 # cmake installation folder -- change CMAKE_INSTALL_DATAROOTDIR to tweak this

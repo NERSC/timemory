@@ -1,133 +1,145 @@
 # KokkosP Profiling Tools
 
-## Quick Start for Kokkos
+Kokkos tools support is built into the main library (`libtimemory.so` or `libtimemory.dylib`) and can be
+enabled in any Kokkos application by settings the environment variable `KOKKOS_PROFILE_LIBRARY` to the path
+to this library or via the command-line `--kokkos-tools-library=/path/to/libtimemory.<ext>` if the application
+passes the arguments from `main(...)` to Kokkos during initialization, i.e. `Kokkos::Initialize(argc, argv);`.
+Selecting which components are collected can be done via the kokkos-tools specific environment variable
+`TIMEMORY_KOKKOS_COMPONENTS` or the generic environment variable `TIMEMORY_GLOBAL_COMPONENTS`. If timemory
+is not directly used anywhere in your application, it does not matter which environment variable is used.
+If timemory is used elsewhere and you would like the kokkos-tools component selection to not be applied
+globally, use the former.
 
-### Build
+If you would prefer to avoid setting several environment variables, it maybe useful to create a timemory
+config file in `~/.timemory.cfg` or `~/.config/timemory.cfg` or specify the location of the config
+file via the environment variable `TIMEMORY_CONFIG=/path/to/file`. The format is simple: `setting = value [values...]`.
+Additionally, timemory provides several zero-config libraries when cmake is configured with `TIMEMORY_BUILD_KOKKOS_TOOLS=ON`
+and `TIMEMORY_BUILD_KOKKOS_CONFIG=ON`. The exact set of libraries built are subject to which components are
+available and will be installed in `${CMAKE_PREFIX_PATH}/${CMAKE_INSTALL_LIBDIR}/timemory/kokkos-tools/`.
+These libraries have a default output path to `timemory-@LIB_NAME@-output/@TIMESTAMP@`, where `@LIB_NAME@` is the
+basename of the library and `@TIMESTAMP@` is the time-stamp from when timemory was initialized.
+Use `timemory-avail -S` to see how to disable time-stamping and customize other settings.
+
+Configuring cmake with `TIMEMORY_BUILD_KOKKOS_TOOLS=ON` and `TIMEMORY_BUILD_KOKKOS_CONFIG=OFF` will install just
+two libraries in `${CMAKE_PREFIX_PATH}/${CMAKE_INSTALL_LIBDIR}/timemory/kokkos-tools/`: `kp_timemory.<ext>`
+and `kp_timemory_filter.<ext>`. In most cases, using `kp_timemory.<ext>` is not necessary, it is essentially
+the same as using `libtimemory.<ext>` except it has hidden symbols so that separate data can be collected
+when timemory is used in the main application. `kp_timemory_filter.<ext>` ensures that all external
+profiler controller components (currently: vtune_profiler, cuda_profiler, craypat_record, and allinea_map)
+are disabled outside of the Kokkos regions matching the regex values of the `KOKKOS_PROFILE_REGEX` environment
+variable. The default value of `KOKKOS_PROFILE_REGEX` is `"^[A-Za-z]"` (i.e. any Kokkos label starting with a letter).
+
+## Build
 
 ```bash
-mkdir build && cd build
-cmake -DTIMEMORY_BUILD_KOKKOS_TOOLS=ON -DTIMEMORY_KOKKOS_BUILD_CONFIG=ON ..
-make
+git clone https://github.com/NERSC/timemory.git timemory
+cmake -B build-timemory -DTIMEMORY_BUILD_KOKKOS_TOOLS=ON -DTIMEMORY_BUILD_KOKKOS_CONFIG=ON timemory
+cmake --build build-timemory --target install --parallel 8
 ```
 
-### Using Different Components
+> Specify `-DCMAKE_INSTALL_PREFIX=/path/to/install/dir` and add any additional options, e.g. `-DTIMEMORY_USE_GOTCHA=ON`
 
-Use the command-line tool provided by timemory to find the alias for the tool desired. Use `-d` to get a
+## Running Kokkos application with timemory enabled
+
+Before executing the Kokkos application you have to set the environment variable `KOKKOS_PROFILE_LIBRARY`
+to point to the path to the installed `libtimemory.<ext>` or pre-built component configuration library.
+Here are several examples:
+
+```console
+export KOKKOS_PROFILE_LIBRARY=/opt/timemory/lib/libtimemory.so
+export KOKKOS_PROFILE_LIBRARY=/opt/timemory/lib/timemory/kokkos-tools/kp_timemory.so
+export KOKKOS_PROFILE_LIBRARY=/opt/timemory/lib/timemory/kokkos-tools/kp_timemory_context_switch.so
+./myexe --kokkos-tools-library=/opt/timemory/lib/libtimemory.so
+```
+
+## Selecting Different Components
+
+Use the `timemory-avail` command-line tool provided by timemory to find the alias for the tool desired. Use `-d` to get a
 description of the tool or `-h` to see all options. Once the desired components have been identified, place
-the components in a comma-delimited list in the environment variable `KOKKOS_TIMEMORY_COMPONENTS`, e.g.
+the components in a comma-delimited list in the environment variable `TIMEMORY_KOKKOS_COMPONENTS`, e.g.
 
 ```console
-export KOKKOS_TIMEMORY_COMPONENTS="wall_clock, peak_rss, cpu_roofline_dp_flops"
+export TIMEMORY_KOKKOS_COMPONENTS="wall_clock, peak_rss, cpu_roofline_dp_flops"
 ```
 
-## Run kokkos application with timemory enabled
+## Filtering Kokkos Labels
 
-Before executing the Kokkos application you have to set the environment variable `KOKKOS_PROFILE_LIBRARY` to point to the name of the dynamic library. Also add the library path of PAPI and PAPI connector to `LD_LIBRARY_PATH`.
-The kokkos profiling libraries will be installed to `${CMAKE_INSTALL_LIBDIR}/timemory/kokkos`.
+The following will filter out any Kokkos profiling label which was not specifically given a name
+(and thus was labeled with the demangled function name):
 
 ```console
-export KOKKOS_PROFILE_LIBRARY=kp_timemory.so
-```
-
-## Run kokkos application with PAPI recording enabled
-
-Internally, timemory uses the `TIMEMORY_PAPI_EVENTS` environment variable for specifying arbitrary events.
-However, this library will attempt to read `PAPI_EVENTS` and set `TIMEMORY_PAPI_EVENTS` before the PAPI
-component is initialized, if using `PAPI_EVENTS` does not provide the desired events, use `TIMEMORY_PAPI_EVENTS`.
-
-Example enabling (1) total instructions, (2) total cycles, (3) total load/stores
-
-```console
-export PAPI_EVENTS="PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_LST_INS"
-export TIMEMORY_PAPI_EVENTS="PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_LST_INS"
-```
-
-## Run kokkos application with Roofline recording enabled
-
-[Roofline Performance Model](https://docs.nersc.gov/programming/performance-debugging-tools/roofline/)
-
-On both the CPU and GPU, calculating the roofline requires two executions of the application.
-It is recommended to use the timemory python interface to generate the roofline because
-the `timemory.roofline` submodule provides a mode that will handle executing the application
-twice and generating the plot. For advanced usage, see the
-[timemory Roofline Documentation](https://timemory.readthedocs.io/en/latest/getting_started/roofline/).
-
-```console
-export KOKKOS_ROOFLINE=ON
-export OMP_NUM_THREADS=4
-export KOKKOS_TIMEMORY_COMPONENTS="cpu_roofline_dp_flops"
-timemory-roofline -n 4 -t cpu_roofline -- ./sample
-```
-
-## Building Sample
-
-```shell
-cmake -DBUILD_SAMPLE=ON ..
-make -j2
+export KOKKOS_PROFILE_LIBRARY=/opt/timemory/lib/timemory/kokkos-tools/kp_timemory_filter.so
+export KOKKOS_PROFILE_REGEX="(?!Kokkos::)"
 ```
 
 ## Sample Output
 
 ```console
-#---------------------------------------------------------------------------#
-# KokkosP: TiMemory Connector (sequence is 0, version: 0)
-#---------------------------------------------------------------------------#
+$ export TIMEMORY_KOKKOS_COMPONENTS="wall_clock, peak_rss"
+$ export TIMEMORY_TIMING_PRECISION=6
+$ export TIMEMORY_MEMORY_UNITS=kb
+$ export KOKKOS_PROFILE_LIBRARY=/opt/timemory/lib/timemory/kokkos-tools/kp_timemory.so
+$ ./sample
 
-#--------------------- tim::manager initialized [0][0] ---------------------#
-
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-fibonacci(47) = 2971215073
-
+libgomp: Affinity not supported on this configuration
+  Total size S = 4194304 N = 4096 M = 1024
 #---------------------------------------------------------------------------#
-KokkosP: Finalization of TiMemory Connector. Complete.
+# KokkosP: timemory Connector (sequence is 0, version: 20200625)
 #---------------------------------------------------------------------------#
 
+  Computed result for 4096 x 1024 is 4194304.000000
+  N( 4096 ) M( 1024 ) nrepeat ( 100 ) problem( 33.5954 MB ) time( 0.155611 s ) bandwidth( 21.5893 GB/s )
 
-[peak_rss]|0> Outputting 'docker-desktop_26927/peak_rss.json'...
-[peak_rss]|0> Outputting 'docker-desktop_26927/peak_rss.txt'...
+#---------------------------------------------------------------------------#
+KokkosP: Finalization of timemory Connector. Complete.
+#---------------------------------------------------------------------------#
 
->>> sample                              :  214.9 MB peak_rss,  1 laps, depth 0
->>> |_kokkos/dev0/thread_creation       :    0.3 MB peak_rss,  1 laps, depth 1
->>> |_kokkos/dev0/fibonacci             : 2142.2 MB peak_rss, 10 laps, depth 1 (exclusive:  39.8%)
->>>   |_kokkos/dev0/fibonacci_runtime_0 :  209.8 MB peak_rss,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_1 :  202.7 MB peak_rss,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_2 :  191.2 MB peak_rss,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_3 :  175.8 MB peak_rss,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_4 :  156.3 MB peak_rss,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_5 :  133.0 MB peak_rss,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_6 :  105.8 MB peak_rss,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_7 :   74.7 MB peak_rss,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_8 :   39.7 MB peak_rss,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_9 :    0.8 MB peak_rss,  1 laps, depth 2
+[kokkos_memory]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/kokkos_memory.json'...
+[kokkos_memory]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/kokkos_memory.tree.json'...
+[kokkos_memory]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/kokkos_memory.txt'...
 
-[wall]|0> Outputting 'docker-desktop_26927/wall.json'...
-[wall]|0> Outputting 'docker-desktop_26927/wall.txt'...
+[wall]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/wall.flamegraph.json'...
+[wall]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/wall.json'...
+[wall]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/wall.tree.json'...
+[wall]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/wall.txt'...
 
->>> sample                              :   21.612 sec wall,  1 laps, depth 0
->>> |_kokkos/dev0/thread_creation       :    0.007 sec wall,  1 laps, depth 1
->>> |_kokkos/dev0/fibonacci             :  200.820 sec wall, 10 laps, depth 1 (exclusive:   2.8%)
->>>   |_kokkos/dev0/fibonacci_runtime_0 :   19.136 sec wall,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_1 :   19.368 sec wall,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_2 :   19.497 sec wall,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_3 :   19.537 sec wall,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_4 :   19.555 sec wall,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_5 :   19.621 sec wall,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_6 :   19.650 sec wall,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_7 :   19.621 sec wall,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_8 :   19.621 sec wall,  1 laps, depth 2
->>>   |_kokkos/dev0/fibonacci_runtime_9 :   19.558 sec wall,  1 laps, depth 2
+[peak_rss]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/peak_rss.json'...
+[peak_rss]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/peak_rss.tree.json'...
+[peak_rss]|0> Outputting 'timemory-kokkosp-output/2021-01-21_03.10_PM/peak_rss.txt'...
 
-[metadata::manager::finalize]> Outputting 'docker-desktop_26927/metadata.json'...
+$ cat timemory-kokkosp-output/2021-01-21_03.10_PM/peak_rss.txt
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|                              MEASURES CHANGES IN THE HIGH-WATER MARK FOR THE AMOUNT OF MEMORY ALLOCATED IN RAM. MAY FLUCTUATE IF SWAP IS ENABLED                            |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|                               LABEL                                 | COUNT  | DEPTH  | METRIC   | UNITS  |   SUM     |   MEAN    |   MIN     |   MAX     | STDDEV | % SELF |
+|---------------------------------------------------------------------|--------|--------|----------|--------|-----------|-----------|-----------|-----------|--------|--------|
+| >>> kokkos/allocate/Host/y                                          |      1 |      0 | peak_rss | KB     | 34013.184 | 34013.184 | 34013.184 | 34013.184 |  0.000 |    0.7 |
+| >>> |_kokkos/dev0/Kokkos::View::initialization [unsigned long long] |      1 |      1 | peak_rss | KB     |   143.360 |   143.360 |   143.360 |   143.360 |  0.000 |  100.0 |
+| >>> |_kokkos/allocate/Host/x                                        |      1 |      1 | peak_rss | KB     | 33619.968 | 33619.968 | 33619.968 | 33619.968 |  0.000 |    0.0 |
+| >>>   |_kokkos/dev0/Kokkos::View::initialization [long long]        |      1 |      2 | peak_rss | KB     |     8.192 |     8.192 |     8.192 |     8.192 |  0.000 |  100.0 |
+| >>>   |_kokkos/allocate/Host/A                                      |      1 |      2 | peak_rss | KB     | 33603.584 | 33603.584 | 33603.584 | 33603.584 |  0.000 |    0.1 |
+| >>>     |_kokkos/dev0/Kokkos::View::initialization [A]              |      1 |      3 | peak_rss | KB     | 33554.432 | 33554.432 | 33554.432 | 33554.432 |  0.000 |  100.0 |
+| >>>     |_kokkos/deep_copy/Host=y/Host=y                            |      1 |      3 | peak_rss | KB     |     4.096 |     4.096 |     4.096 |     4.096 |  0.000 |  100.0 |
+| >>>     |_kokkos/deep_copy/Host=x/Host=x                            |      1 |      3 | peak_rss | KB     |     0.000 |     0.000 |     0.000 |     0.000 |  0.000 |    0.0 |
+| >>>     |_kokkos/deep_copy/Host=A/Host=A                            |      1 |      3 | peak_rss | KB     |     0.000 |     0.000 |     0.000 |     0.000 |  0.000 |    0.0 |
+| >>>     |_kokkos/dev0/yAx                                           |    100 |      3 | peak_rss | KB     |    12.288 |     0.123 |    12.288 |    12.288 |  1.229 |  100.0 |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
-
-#---------------------- tim::manager destroyed [0][0] ----------------------#
+$ cat timemory-kokkosp-output/2021-01-21_03.10_PM/wall.txt
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|                                                                 REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                                                                |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|                               LABEL                                 | COUNT  | DEPTH  | METRIC | UNITS  |   SUM    |   MEAN   |   MIN    |   MAX    | STDDEV   | % SELF |
+|---------------------------------------------------------------------|--------|--------|--------|--------|----------|----------|----------|----------|----------|--------|
+| >>> kokkos/allocate/Host/y                                          |      1 |      0 | wall   | sec    | 0.173479 | 0.173479 | 0.173479 | 0.173479 | 0.000000 |    0.5 |
+| >>> |_kokkos/dev0/Kokkos::View::initialization [unsigned long long] |      1 |      1 | wall   | sec    | 0.000148 | 0.000148 | 0.000148 | 0.000148 | 0.000000 |  100.0 |
+| >>> |_kokkos/allocate/Host/x                                        |      1 |      1 | wall   | sec    | 0.172399 | 0.172399 | 0.172399 | 0.172399 | 0.000000 |    1.7 |
+| >>>   |_kokkos/dev0/Kokkos::View::initialization [long long]        |      1 |      2 | wall   | sec    | 0.000009 | 0.000009 | 0.000009 | 0.000009 | 0.000000 |  100.0 |
+| >>>   |_kokkos/allocate/Host/A                                      |      1 |      2 | wall   | sec    | 0.169482 | 0.169482 | 0.169482 | 0.169482 | 0.000000 |    2.5 |
+| >>>     |_kokkos/dev0/Kokkos::View::initialization [A]              |      1 |      3 | wall   | sec    | 0.011172 | 0.011172 | 0.011172 | 0.011172 | 0.000000 |  100.0 |
+| >>>     |_kokkos/deep_copy/Host=y/Host=y                            |      1 |      3 | wall   | sec    | 0.000006 | 0.000006 | 0.000006 | 0.000006 | 0.000000 |  100.0 |
+| >>>     |_kokkos/deep_copy/Host=x/Host=x                            |      1 |      3 | wall   | sec    | 0.000001 | 0.000001 | 0.000001 | 0.000001 | 0.000000 |  100.0 |
+| >>>     |_kokkos/deep_copy/Host=A/Host=A                            |      1 |      3 | wall   | sec    | 0.000001 | 0.000001 | 0.000001 | 0.000001 | 0.000000 |  100.0 |
+| >>>     |_kokkos/dev0/yAx                                           |    100 |      3 | wall   | sec    | 0.154131 | 0.001541 | 0.001471 | 0.001471 | 0.000113 |  100.0 |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 ```
-

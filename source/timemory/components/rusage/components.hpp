@@ -22,26 +22,15 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/**
- * \file timemory/components/rusage/components.hpp
- * \brief Implementation of the rusage component(s)
- */
-
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/data/statistics.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/units.hpp"
-
 #include "timemory/components/rusage/backends.hpp"
 #include "timemory/components/rusage/types.hpp"
 #include "timemory/components/timing/backends.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/units.hpp"
 
-//======================================================================================//
-//
 namespace tim
 {
 namespace component

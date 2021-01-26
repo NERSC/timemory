@@ -25,7 +25,9 @@
 #pragma once
 
 #include "timemory/hash/declaration.hpp"
-#include "timemory/hash/definition.hpp"
-#include "timemory/hash/extern.hpp"
 #include "timemory/hash/macros.hpp"
 #include "timemory/hash/types.hpp"
+
+#if !defined(TIMEMORY_USE_HASH_EXTERN)
+#    include "timemory/hash/definition.hpp"
+#endif

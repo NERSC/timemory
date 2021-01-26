@@ -216,6 +216,9 @@ else()
     add_feature(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)")
 endif()
 
+# set it to the same because of string_view
+# set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD})
+
 add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 
 # Build settings

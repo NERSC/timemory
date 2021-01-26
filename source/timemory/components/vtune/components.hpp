@@ -22,31 +22,21 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/**
- * \file timemory/components/vtune/components.hpp
- * \brief Implementation of the vtune component(s)
- */
-
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/units.hpp"
-
 #include "timemory/components/vtune/backends.hpp"
 #include "timemory/components/vtune/types.hpp"
+#include "timemory/units.hpp"
 
-//======================================================================================//
-//
 namespace tim
 {
 namespace component
 {
 //
-//--------------------------------------------------------------------------------------//
-// create VTune events
-//
+/// \struct tim::component::vtune_event
+/// \brief Implements `__itt_event`
+///
 struct vtune_event : public base<vtune_event, void>
 {
     using value_type = void;
@@ -102,8 +92,10 @@ private:
 };
 //
 //--------------------------------------------------------------------------------------//
-// create VTune frames
 //
+/// \struct tim::component::vtune_frame
+/// \brief Implements `__itt_domain`
+///
 struct vtune_frame : public base<vtune_frame, void>
 {
     using value_type = void;
@@ -156,8 +148,11 @@ private:
 };
 //
 //--------------------------------------------------------------------------------------//
-// control VTune profiler
 //
+/// \struct tim::component::vtune_profiler
+/// \brief Implements `__itt_pause()` and `__itt_resume()` to control where the vtune
+/// profiler is active
+///
 struct vtune_profiler
 : public base<vtune_profiler, void>
 , private policy::instance_tracker<vtune_profiler, false>
@@ -198,5 +193,3 @@ struct vtune_profiler
 //
 }  // namespace component
 }  // namespace tim
-//
-//======================================================================================//

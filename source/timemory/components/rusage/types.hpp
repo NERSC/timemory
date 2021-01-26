@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/rusage/types.hpp
- * \brief Declare the rusage component types
- */
-
 #pragma once
 
 #include "timemory/components/macros.hpp"

@@ -37,14 +37,14 @@
 #if !defined(TIMEMORY_USE_EXTERN)
 //
 #    if !defined(TIMEMORY_USE_MANAGER_EXTERN)
-#        include "timemory/manager/definition.hpp"
+#        include "timemory/manager.hpp"
 #    endif
 
 #    if !defined(TIMEMORY_USE_CORE_EXTERN)
-#        include "timemory/environment/definition.hpp"
-#        include "timemory/hash/definition.hpp"
-#        include "timemory/plotting/definition.hpp"
-#        include "timemory/settings/definition.hpp"
+#        include "timemory/environment.hpp"
+#        include "timemory/hash.hpp"
+#        include "timemory/plotting.hpp"
+#        include "timemory/settings.hpp"
 #    endif
 //
 #endif

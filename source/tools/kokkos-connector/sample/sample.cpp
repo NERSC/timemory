@@ -1,144 +1,252 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
 
-#include <chrono>
-#include <iostream>
-#include <mutex>
-#include <random>
-#include <string>
-#include <thread>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <limits>
+#include <sys/time.h>
 
-using auto_lock_t = std::unique_lock<std::mutex>;
+#include <Kokkos_Core.hpp>
 
-extern "C"
-{
-    void kokkosp_init_library(const int, const uint64_t, const uint32_t, void*);
-    void kokkosp_finalize_library();
-    void kokkosp_begin_parallel_for(const char*, uint32_t, uint64_t*);
-    void kokkosp_end_parallel_for(uint64_t);
-    void kokkosp_begin_parallel_scan(const char*, uint32_t, uint64_t*);
-    void kokkosp_end_parallel_scan(uint64_t);
-    void kokkosp_begin_parallel_reduce(const char*, uint32_t, uint64_t*);
-    void kokkosp_end_parallel_reduce(uint64_t);
-
-    void kokkosp_push_profile_region(const char* name);
-    void kokkosp_pop_profile_region();
-    void kokkosp_create_profile_section(const char* name, uint32_t* sec_id);
-    void kokkosp_destroy_profile_section(uint32_t sec_id);
-    void kokkosp_start_profile_section(uint32_t sec_id);
-    void kokkosp_stop_profile_section(uint32_t sec_id);
-}
-
-template <typename Tp>
-Tp
-random_entry(const std::vector<Tp>& v)
-{
-    std::mt19937 rng;
-    rng.seed(std::random_device()());
-    std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
-    return v.at(dist(rng));
-}
-
-long
-fibonacci(long n)
-{
-    return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
-}
+void
+checkSizes(int& N, int& M, int& S, int& nrepeat);
 
 int
-main(int argc, char** argv)
+main(int argc, char* argv[])
 {
-    kokkosp_init_library(0, 0, 0, nullptr);
+    int N       = -1;   // number of rows 2^12
+    int M       = -1;   // number of columns 2^10
+    int S       = -1;   // total size 2^22
+    int nrepeat = 100;  // number of repeats of the test
 
-    std::string exe = argv[0];
-    if(exe.find('/') != std::string::npos)
-        exe = exe.substr(exe.find_last_of('/') + 1);
-
-    // start recording application
-    kokkosp_push_profile_region(exe.c_str());
-
-    long nfib = 47;
-    if(argc > 1)
-        nfib = atol(argv[1]);
-
-    // some data
-    std::vector<std::vector<int64_t>> vv(10);
-    std::vector<std::thread>          threads;
-    std::mutex                        _mutex;
-
-    // vary the time slightly
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-
-    // create "reduce" over thread creation
-    uint64_t r_id;
-    kokkosp_begin_parallel_reduce("thread_creation", 0, &r_id);
-
-    // launch the threads
-    for(int j = 0; j < 10; ++j)
+    // Read command line arguments.
+    for(int i = 0; i < argc; i++)
     {
-        // create a profile for the memory
-        uint32_t psec_id;
-        kokkosp_create_profile_section("memory_section", &psec_id);
-
-        auto _function = [&](int i) {
-            uint64_t id = 0;
-            kokkosp_begin_parallel_for("fibonacci", 0, &id);
-
-            // vary the time slightly
-            if(i % 3 == 2)
-                std::this_thread::sleep_for(std::chrono::seconds((i + 1)));
-
-            // create some memory and use it so it can't be optimized away
-            auto                 n    = 500000 * (i + 1);
-            long                 cfib = 0;
-            std::vector<int64_t> v(0);
-            {
-                // for consistent memory allocation results
-                auto_lock_t lk(_mutex);
-                // start profiling memory
-                kokkosp_start_profile_section(psec_id);
-                v    = std::vector<int64_t>(n, nfib);
-                cfib = random_entry(v);
-                // stop profile memory
-                kokkosp_stop_profile_section(psec_id);
-            }
-
-            uint64_t s_id;
-            // start the collection
-            auto label = std::string("fibonacci_runtime_") + std::to_string(i);
-            kokkosp_begin_parallel_scan(label.c_str(), 0, &s_id);
-            auto ret = fibonacci(cfib);
-            // end the collection
-            kokkosp_end_parallel_scan(s_id);
-
-            // use the return value of function so it can't be optimized away
-            printf("fibonacci(%li) = %li\n", cfib, ret);
-
-            // for consistent memory allocation results
-            {
-                auto_lock_t lk(_mutex);
-                // clear some memory so the memory fields change
-                if(i % 4 == 3)
-                    vv[i] = std::vector<int64_t>(0);
-                else
-                    vv[i] = std::move(v);
-            }
-            kokkosp_end_parallel_for(id);
-        };
-        // destroy the memory profile section
-        kokkosp_destroy_profile_section(psec_id);
-
-        threads.emplace_back(std::thread(_function, j));
-        // threads.back().join();
+        if((strcmp(argv[i], "-N") == 0) || (strcmp(argv[i], "-Rows") == 0))
+        {
+            N = pow(2, atoi(argv[++i]));
+            printf("  User N is %d\n", N);
+        }
+        else if((strcmp(argv[i], "-M") == 0) || (strcmp(argv[i], "-Columns") == 0))
+        {
+            M = pow(2, atof(argv[++i]));
+            printf("  User M is %d\n", M);
+        }
+        else if((strcmp(argv[i], "-S") == 0) || (strcmp(argv[i], "-Size") == 0))
+        {
+            S = pow(2, atof(argv[++i]));
+            printf("  User S is %d\n", S);
+        }
+        else if(strcmp(argv[i], "-nrepeat") == 0)
+        {
+            nrepeat = atoi(argv[++i]);
+        }
+        else if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "-help") == 0))
+        {
+            printf("  y^T*A*x Options:\n");
+            printf("  -Rows (-N) <int>:      exponent num, determines number of rows "
+                   "2^num (default: 2^12 = 4096)\n");
+            printf("  -Columns (-M) <int>:   exponent num, determines number of columns "
+                   "2^num (default: 2^10 = 1024)\n");
+            printf("  -Size (-S) <int>:      exponent num, determines total matrix size "
+                   "2^num (default: 2^22 = 4096*1024 )\n");
+            printf("  -nrepeat <int>:        number of repetitions (default: 100)\n");
+            printf("  -help (-h):            print this message\n\n");
+            exit(1);
+        }
     }
 
-    // end "reduction" over the thread-creation
-    kokkosp_end_parallel_reduce(r_id);
+    // Check sizes.
+    checkSizes(N, M, S, nrepeat);
 
-    for(auto& itr : threads)
-        itr.join();
-    threads.clear();
+    setenv("KOKKOS_PROFILE_LIBRARY", KOKKOS_PROFILE_LIBRARY, 0);
 
-    // end the profile region
-    kokkosp_pop_profile_region();
+    Kokkos::initialize(argc, argv);
+    {
+        // Allocate y, x vectors and Matrix A on device.
+        typedef Kokkos::View<double*>  ViewVectorType;
+        typedef Kokkos::View<double**> ViewMatrixType;
+        ViewVectorType                 y("y", N);
+        ViewVectorType                 x("x", M);
+        ViewMatrixType                 A("A", N, M);
 
-    kokkosp_finalize_library();
+        // Create host mirrors of device views.
+        ViewVectorType::HostMirror h_y = Kokkos::create_mirror_view(y);
+        ViewVectorType::HostMirror h_x = Kokkos::create_mirror_view(x);
+        ViewMatrixType::HostMirror h_A = Kokkos::create_mirror_view(A);
+
+        // Initialize y vector on host.
+        for(int i = 0; i < N; ++i)
+        {
+            h_y(i) = 1;
+        }
+
+        // Initialize x vector on host.
+        for(int i = 0; i < M; ++i)
+        {
+            h_x(i) = 1;
+        }
+
+        // Initialize A matrix on host.
+        for(int j = 0; j < N; ++j)
+        {
+            for(int i = 0; i < M; ++i)
+            {
+                h_A(j, i) = 1;
+            }
+        }
+
+        // Deep copy host views to device views.
+        Kokkos::deep_copy(y, h_y);
+        Kokkos::deep_copy(x, h_x);
+        Kokkos::deep_copy(A, h_A);
+
+        // Timer products.
+        Kokkos::Timer timer;
+
+        for(int repeat = 0; repeat < nrepeat; repeat++)
+        {
+            // Application: <y,Ax> = y^T*A*x
+            double result = 0;
+
+            Kokkos::parallel_reduce("yAx", N,
+                                    KOKKOS_LAMBDA(int j, double& update) {
+                                        double temp2 = 0;
+
+                                        for(int i = 0; i < M; ++i)
+                                        {
+                                            temp2 += A(j, i) * x(i);
+                                        }
+
+                                        update += y(j) * temp2;
+                                    },
+                                    result);
+
+            // Output result.
+            if(repeat == (nrepeat - 1))
+            {
+                printf("  Computed result for %d x %d is %lf\n", N, M, result);
+            }
+
+            const double solution = (double) N * (double) M;
+
+            if(result != solution)
+            {
+                printf("  Error: result( %lf ) != solution( %lf )\n", result, solution);
+            }
+        }
+
+        // Calculate time.
+        double time = timer.seconds();
+
+        // Calculate bandwidth.
+        // Each matrix A row (each of length M) is read once.
+        // The x vector (of length M) is read N times.
+        // The y vector (of length N) is read once.
+        // double Gbytes = 1.0e-9 * double( sizeof(double) * ( 2 * M * N + N ) );
+        double Gbytes = 1.0e-9 * double(sizeof(double) * (M + M * N + N));
+
+        // Print results (problem size, time and bandwidth in GB/s).
+        printf("  N( %d ) M( %d ) nrepeat ( %d ) problem( %g MB ) time( %g s ) "
+               "bandwidth( %g GB/s )\n",
+               N, M, nrepeat, Gbytes * 1000, time, Gbytes * nrepeat / time);
+    }
+    Kokkos::finalize();
+
+    return 0;
+}
+
+void
+checkSizes(int& N, int& M, int& S, int& nrepeat)
+{
+    // If S is undefined and N or M is undefined, set S to 2^22 or the bigger of N and M.
+    if(S == -1 && (N == -1 || M == -1))
+    {
+        S = pow(2, 22);
+        if(S < N)
+            S = N;
+        if(S < M)
+            S = M;
+    }
+
+    // If S is undefined and both N and M are defined, set S = N * M.
+    if(S == -1)
+        S = N * M;
+
+    // If both N and M are undefined, fix row length to the smaller of S and 2^10 = 1024.
+    if(N == -1 && M == -1)
+    {
+        if(S > 1024)
+        {
+            M = 1024;
+        }
+        else
+        {
+            M = S;
+        }
+    }
+
+    // If only M is undefined, set it.
+    if(M == -1)
+        M = S / N;
+
+    // If N is undefined, set it.
+    if(N == -1)
+        N = S / M;
+
+    printf("  Total size S = %d N = %d M = %d\n", S, N, M);
+
+    // Check sizes.
+    if((S < 0) || (N < 0) || (M < 0) || (nrepeat < 0))
+    {
+        printf("  Sizes must be greater than 0.\n");
+        exit(1);
+    }
+
+    if((N * M) != S)
+    {
+        printf("  N * M != S\n");
+        exit(1);
+    }
 }

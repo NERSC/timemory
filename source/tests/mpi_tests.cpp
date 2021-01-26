@@ -148,10 +148,11 @@ protected:
 
 TEST_F(mpi_tests, general)
 {
+    using auto_types_t                = tim::convert_t<auto_tuple_t, tim::type_list<>>;
     tim::settings::collapse_threads() = true;
     auto manager                      = tim::manager::instance();
     // tim::manager::get_storage<auto_tuple_t>::clear(manager);
-    auto starting_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    auto starting_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto data_size             = auto_tuple_t::size();
     std::atomic<long> ret;
 
@@ -217,7 +218,7 @@ TEST_F(mpi_tests, general)
         EXPECT_EQ(rc_storage.size(), 1);
     }
 
-    auto final_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    auto final_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto expected           = (final_storage_size - starting_storage_size);
 
     EXPECT_EQ(expected, 15 * data_size);
@@ -265,10 +266,11 @@ TEST_F(mpi_tests, general)
 
 TEST_F(mpi_tests, per_thread)
 {
+    using auto_types_t                = tim::convert_t<auto_tuple_t, tim::type_list<>>;
     tim::settings::collapse_threads() = false;
     auto manager                      = tim::manager::instance();
     // tim::manager::get_storage<auto_tuple_t>::clear(manager);
-    auto starting_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    auto starting_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto data_size             = auto_tuple_t::size();
     std::atomic<long> ret;
 
@@ -340,7 +342,7 @@ TEST_F(mpi_tests, per_thread)
         EXPECT_EQ(rc_storage.size(), 1);
     }
 
-    auto final_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    auto final_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto expected           = (final_storage_size - starting_storage_size);
 
     EXPECT_EQ(expected, 19 * data_size);

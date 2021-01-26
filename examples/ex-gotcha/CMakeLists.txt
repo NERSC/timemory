@@ -11,7 +11,7 @@ include(GNUInstallDirs)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-gotcha-example)
 set(COMPONENTS compile-options vector gotcha analysis-tools
-    OPTIONAL_COMPONENTS arch component)
+    OPTIONAL_COMPONENTS arch component manager config cxx)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_library(ex_gotcha_lib SHARED ex_gotcha_lib.hpp ex_gotcha_lib.cpp)

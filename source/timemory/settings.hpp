@@ -22,16 +22,15 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/**
- * \headerfile "timemory/settings.hpp"
- * Handles timemory settings, parses environment
- *
- */
-
 #pragma once
 
 #include "timemory/settings/definition.hpp"
+#include "timemory/settings/macros.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/settings/tsettings.hpp"
 #include "timemory/settings/types.hpp"
 #include "timemory/settings/vsettings.hpp"
+
+#if defined(TIMEMORY_SETTINGS_HEADER_MODE)
+#    include "timemory/settings/settings.cpp"
+#endif

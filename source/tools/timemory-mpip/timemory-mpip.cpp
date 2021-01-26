@@ -307,7 +307,6 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_STORAGE_INITIALIZER(mpi_comm_data, mpi_comm_data)
-TIMEMORY_STORAGE_INITIALIZER(mpi_data_tracker_t, mpi_data_tracker_t)
+TIMEMORY_INITIALIZE_STORAGE(mpi_comm_data, mpi_data_tracker_t)
 //
 //--------------------------------------------------------------------------------------//

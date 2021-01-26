@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/macros.hpp
- * Define common macros for the components
- */
-
 #pragma once
 
 #include "timemory/components/metadata.hpp"
@@ -354,29 +349,32 @@
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(TIMEMORY_STORAGE_INITIALIZER)
-#    define TIMEMORY_STORAGE_INITIALIZER(TYPE, ...)                                      \
-        namespace                                                                        \
-        {                                                                                \
-        using namespace ::tim::component;                                                \
-        namespace component                 = ::tim::component;                          \
-        auto _TIM_STORAGE_INIT(__COUNTER__) = ::tim::storage_initializer::get<TYPE>();   \
-        }
-#endif
-
-//--------------------------------------------------------------------------------------//
-
 #if !defined(TIMEMORY_INITIALIZE_STORAGE)
 #    define TIMEMORY_INITIALIZE_STORAGE(...)                                             \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace internal                                                               \
+        {                                                                                \
+        namespace initialization                                                         \
+        {                                                                                \
         namespace                                                                        \
         {                                                                                \
         using namespace ::tim::component;                                                \
         namespace component = ::tim::component;                                          \
         auto _TIM_STORAGE_INIT(__COUNTER__) =                                            \
             ::tim::storage_initializer::get<__VA_ARGS__>();                              \
+        }                                                                                \
+        }                                                                                \
+        }                                                                                \
         }
 #endif
-//
+
+//--------------------------------------------------------------------------------------//
+// backwards compatibility
+#if !defined(TIMEMORY_STORAGE_INITIALIZER)
+#    define TIMEMORY_STORAGE_INITIALIZER(...) TIMEMORY_INITIALIZE_STORAGE(__VA_ARGS__)
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_EXTERN_STORAGE_ALIASES)

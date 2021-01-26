@@ -30,20 +30,9 @@
 #include "timemory/utility/macros.hpp"
 
 #include <chrono>
-#include <cmath>
 #include <cstdint>
 #include <ctime>
-#include <iomanip>
-#include <iostream>
-#include <mutex>
 #include <ratio>
-#include <sstream>
-#include <stdexcept>
-#include <time.h>
-#include <tuple>
-#include <type_traits>
-#include <unordered_map>
-#include <vector>
 
 #if defined(_UNIX)
 
@@ -252,7 +241,8 @@ TIMEMORY_HOT_INLINE int64_t
 #if defined(_WINDOWS)
     return CLOCKS_PER_SEC;
 #else
-    return ::sysconf(_SC_CLK_TCK);
+    static int64_t _val = ::sysconf(_SC_CLK_TCK);
+    return _val;
 #endif
 }
 
@@ -325,7 +315,7 @@ TIMEMORY_HOT_INLINE Tp
 #if defined(_WINDOWS)
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
-get_clock_thread_now() noexcept
+                    get_clock_thread_now() noexcept
 {
     auto _get_thr_time = [](const FILETIME& kernel_time,
                             const FILETIME& user_time) -> Tp {
@@ -363,7 +353,7 @@ TIMEMORY_HOT_INLINE Tp
 #if defined(_WINDOWS)
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
-get_clock_process_now() noexcept
+                    get_clock_process_now() noexcept
 {
     auto _get_proc_time = [](const FILETIME& kernel_time,
                              const FILETIME& user_time) -> Tp {
@@ -505,5 +495,3 @@ TIMEMORY_HOT_INLINE Tp
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
-
-//======================================================================================//

@@ -128,10 +128,11 @@ protected:
 
 TEST_F(upcxx_tests, general)
 {
+    using auto_types_t                = tim::convert_t<auto_tuple_t, tim::type_list<>>;
     tim::settings::collapse_threads() = true;
     auto manager                      = tim::manager::instance();
-    tim::manager::get_storage<auto_tuple_t>::clear(manager);
-    auto starting_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    tim::manager::get_storage<auto_types_t>::clear(manager);
+    auto starting_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto data_size             = auto_tuple_t::size();
     std::atomic<long> ret;
 
@@ -212,7 +213,7 @@ TEST_F(upcxx_tests, general)
         rc_print(rc_storage);
     }
 
-    auto final_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    auto final_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto expected           = (final_storage_size - starting_storage_size);
 
     EXPECT_EQ(expected, 15 * data_size);

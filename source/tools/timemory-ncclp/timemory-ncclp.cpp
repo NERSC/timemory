@@ -245,7 +245,6 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_STORAGE_INITIALIZER(nccl_comm_data, nccl_comm_data)
-TIMEMORY_STORAGE_INITIALIZER(nccl_data_tracker_t, nccl_data_tracker_t)
+TIMEMORY_INITIALIZE_STORAGE(nccl_comm_data, nccl_data_tracker_t)
 //
 //--------------------------------------------------------------------------------------//

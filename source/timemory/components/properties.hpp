@@ -37,9 +37,6 @@
 #include <regex>
 #include <set>
 #include <string>
-#include <typeindex>
-#include <typeinfo>
-#include <unordered_map>
 
 namespace tim
 {

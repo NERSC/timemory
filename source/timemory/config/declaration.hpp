@@ -48,8 +48,8 @@ template <typename... Types, typename... Args,
 inline void
 timemory_init(Args&&... _args)
 {
-    using tuple_type = tuple_concat_t<Types...>;
-    manager::get_storage<tuple_type>::initialize();
+    using types_type = tim::convert_t<tuple_concat_t<Types...>, tim::type_list<>>;
+    manager::get_storage<types_type>::initialize();
     timemory_init(std::forward<Args>(_args)...);
 }
 //

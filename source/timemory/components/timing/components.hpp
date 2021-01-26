@@ -22,16 +22,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file timemory/components/timing/components.hpp
- * \brief Provides components for timing-related components
- */
-
 #pragma once
 
-#include "timemory/components/base.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/math.hpp"
-#include "timemory/mpl/stl.hpp"
+#include "timemory/components/base/declaration.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 

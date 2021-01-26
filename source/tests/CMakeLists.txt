@@ -12,7 +12,6 @@ if(NOT TIMEMORY_BUILD_TESTING)
     set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
-
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY )
 unset(CMAKE_LIBRARY_OUTPUT_DIRECTORY )
 unset(CMAKE_ARCHIVE_OUTPUT_DIRECTORY )
@@ -274,13 +273,15 @@ if(UNIX)
     add_timemory_google_test(backtrace_tests
         SOURCES         backtrace_tests.cpp
         LINK_LIBRARIES  common-test-libs
+                        test-debug-flags
                         timemory::timemory-core)
 endif()
 
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_THREADS=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
-list(APPEND component_bundle_tests_env "TIMEMORY_WIDTH=80")
+list(APPEND component_bundle_tests_env "TIMEMORY_MAX_WIDTH=140")
+list(APPEND component_bundle_tests_env "TIMEMORY_WIDTH=16")
 list(APPEND component_bundle_tests_env "TIMEMORY_PRECISION=6")
 list(APPEND component_bundle_tests_env "TIMEMORY_SCIENTIFIC=ON")
 

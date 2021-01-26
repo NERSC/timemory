@@ -29,12 +29,13 @@
 namespace tim
 {
 //
+/*
 template auto
 get_backtrace<2, 1>();
 template auto
 get_backtrace<3, 1>();
-template auto
-get_backtrace<4, 1>();
+    //template auto
+//get_backtrace<4, 1>();
 template auto
 get_backtrace<8, 1>();
 template auto
@@ -72,6 +73,7 @@ template auto
 get_demangled_backtrace<16, 3>();
 template auto
 get_demangled_backtrace<32, 3>();
+*/
 //
 }  // namespace tim
 //

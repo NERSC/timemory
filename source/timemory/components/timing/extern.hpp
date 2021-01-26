@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/timing/extern.hpp
- * \brief Include the extern declarations for timing components
- */
-
 #pragma once
 
 #include "timemory/components/extern/common.hpp"

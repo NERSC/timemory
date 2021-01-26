@@ -203,7 +203,9 @@ template <typename Tp>
 inline auto
 demangle()
 {
-    return demangle(typeid(Tp).name());
+    // a type demangle will always be the same
+    static auto _value = demangle(typeid(Tp).name());
+    return _value;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -614,8 +616,8 @@ delimit(const std::string& line, const std::string& delimiters = "\"',;: ",
 //
 template <typename PredicateT = std::function<std::string(const std::string&)>>
 inline std::string
-str_transform(const std::string& input, const std::string& _begin, const std::string& _end,
-              PredicateT&& predicate)
+str_transform(const std::string& input, const std::string& _begin,
+              const std::string& _end, PredicateT&& predicate)
 {
     size_t      _beg_pos = 0;  // position that is the beginning of the new string
     size_t      _end_pos = 0;  // position of the delimiter in the string
@@ -824,7 +826,7 @@ struct hasher
 };
 
 //--------------------------------------------------------------------------------------//
-
+/*
 #if defined(_UNIX) &&                                                                    \
     (defined(TIMEMORY_UTILITY_SOURCE) || defined(TIMEMORY_USE_UTILITY_EXTERN))
 //
@@ -873,7 +875,7 @@ extern template auto
 get_demangled_backtrace<32, 3>();
 //
 #endif
-
+*/
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim

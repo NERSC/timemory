@@ -107,9 +107,19 @@ set(timemory_COMMON_SOURCES
 #
 #   Build generic library
 #
-add_library(kp_timemory SHARED ${PROJECT_SOURCE_DIR}/kp_timemory.cpp
-    ${timemory_COMMON_SOURCES})
+add_library(kp_timemory SHARED
+    ${PROJECT_SOURCE_DIR}/kp_timemory.cpp
+    ${PROJECT_SOURCE_DIR}/kp_timemory.hpp
+    ${PROJECT_SOURCE_DIR}/kp_timemory_common.cpp)
 configure_library(kp_timemory)
+target_link_libraries(kp_timemory PRIVATE
+    timemory::timemory-dmp
+    timemory::timemory-threading
+    timemory::timemory-headers
+    timemory::timemory-compile-options
+    timemory::timemory-develop-options
+    timemory::timemory-hidden-visibility)
+target_compile_definitions(kp_timemory PRIVATE FORCE_HIDDEN_VISIBILITY)
 
 #
 #   Build regex filtering library
@@ -122,8 +132,10 @@ configure_library(kp_timemory_filter)
 #   Build the sample (test executable)
 #
 if(TIMEMORY_KOKKOS_BUILD_SAMPLE)
+    find_package(Kokkos REQUIRED)
     add_executable(sample sample/sample.cpp)
-    target_link_libraries(sample PRIVATE kp_timemory)
+    target_compile_definitions(sample PRIVATE -DKOKKOS_PROFILE_LIBRARY="$<TARGET_FILE:kp_timemory>")
+    target_link_libraries(sample PRIVATE Kokkos::kokkos)
 endif()
 
 ##--------------------------------------------------------------------------------------##

@@ -31,5 +31,9 @@
 #pragma once
 
 #include "timemory/plotting/declaration.hpp"
-#include "timemory/plotting/definition.hpp"
+#include "timemory/plotting/macros.hpp"
 #include "timemory/plotting/types.hpp"
+
+#if !defined(TIMEMORY_USE_PLOTTING_EXTERN)
+#    include "timemory/plotting/definition.hpp"
+#endif

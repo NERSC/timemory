@@ -22,23 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/ompt/types.hpp
- * \brief Declare the ompt component types
- */
-
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/components/data_tracker/types.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/components/ompt/backends.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
-//
-#include "timemory/components/data_tracker/types.hpp"
-#include "timemory/components/ompt/backends.hpp"
 
-//======================================================================================//
-//
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx, typename Tag = TIMEMORY_API)
 //
 TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)

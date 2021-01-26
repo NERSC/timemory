@@ -52,7 +52,7 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 std::string
-get_local_datetime(const char* dt_format);
+get_local_datetime(const char* dt_format, std::time_t* dt_curr = nullptr);
 //
 //--------------------------------------------------------------------------------------//
 //

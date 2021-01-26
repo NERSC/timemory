@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/ompt.hpp
- * \brief Implements the OpenMP tools
- */
-
 #pragma once
 
 #if defined(TIMEMORY_USE_OMPT)

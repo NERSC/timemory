@@ -430,7 +430,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         auto _path   = tim::settings::output_path();
         auto _prefix = tim::settings::output_prefix();
 
-        using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
+        using tuple_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
         tim::manager::get_storage<tuple_type>::print();
 
         if(fname.length() > 0)
@@ -444,18 +444,20 @@ PYBIND11_MODULE(libpytimemory, tim)
         auto _types = pytim::get_enum_set(_list);
         if(_types.empty())
             _types = pytim::get_type_enums<tim::available_types_t>();
-        manager_t::get_storage<tim::available_types_t>::clear(_types);
+        using tuple_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
+        manager_t::get_storage<tuple_type>::clear(_types);
     };
     //----------------------------------------------------------------------------------//
     auto _get_size = [](py::list _list) {
         auto _types = pytim::get_enum_set(_list);
         if(_types.empty())
             _types = pytim::get_type_enums<tim::available_types_t>();
-        return manager_t::get_storage<tim::available_types_t>::size(_types);
+        using tuple_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
+        return manager_t::get_storage<tuple_type>::size(_types);
     };
     //----------------------------------------------------------------------------------//
     auto _as_json_classic = [](const pytim::pyenum_set_t& _types) -> std::string {
-        using tuple_type = tim::convert_t<tim::available_types_t, std::tuple<>>;
+        using tuple_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
         auto json_str    = manager_t::get_storage<tuple_type>::serialize(_types);
         if(tim::settings::debug())
             std::cout << "JSON CLASSIC:\n" << json_str << std::endl;
