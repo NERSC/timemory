@@ -227,8 +227,11 @@ void
 component_tuple<Types...>::start(Args&&... args)
 {
     // push components into the call-stack
-    if(m_store())
-        push();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value)
+    {
+        if(m_store())
+            push();
+    }
 
     // start components
     start(mpl::lightweight{}, std::forward<Args>(args)...);
@@ -245,8 +248,11 @@ component_tuple<Types...>::stop(Args&&... args)
     stop(mpl::lightweight{}, std::forward<Args>(args)...);
 
     // pop components off of the call-stack stack
-    if(m_store())
-        pop();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value)
+    {
+        if(m_store())
+            pop();
+    }
 }
 
 //--------------------------------------------------------------------------------------//

@@ -432,9 +432,9 @@ namespace mpl
 {
 template <template <typename> class PrioT, typename Tuple, typename BegT = type_list<>,
           typename EndT = type_list<>>
-using sort = convert_t<typename impl::sortT<PrioT, convert_t<Tuple, type_list<>>,
-                                            convert_t<BegT, type_list<>>,
-                                            convert_t<EndT, type_list<>>>::type,
+using sort = convert_t<typename ::tim::impl::sortT<PrioT, convert_t<Tuple, type_list<>>,
+                                                   convert_t<BegT, type_list<>>,
+                                                   convert_t<EndT, type_list<>>>::type,
                        std::tuple<>>;
 
 template <typename... Types>

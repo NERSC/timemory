@@ -165,67 +165,6 @@ struct apply<void>
     };
 
     //----------------------------------------------------------------------------------//
-
-    template <typename Tp, typename Up, size_t N>
-    struct out_of_order_T;
-
-    template <template <typename, typename...> class Operator, typename TypeU,
-              typename Type, typename... Types>
-    struct out_of_order_T<Operator<Type, Types...>, TypeU, 1>
-    {
-        template <typename Tuple, typename... Args>
-        static void access(Tuple&& __t, Args&&... __args)
-        {
-            using TupleT = decay_t<Tuple>;
-            static_assert(std::tuple_size<TupleT>::value != 0, "Error! tuple_size = 0");
-            constexpr int N = get_index_of<Type, TupleT>::value;
-            using Tp        = decltype(std::get<N>(__t));
-            Operator<Type, Types...>(std::forward<Tp>(std::get<N>(__t)),
-                                     std::forward<Args>(__args)...);
-        }
-    };
-
-    template <template <typename, typename...> class Operator, typename TypeU,
-              typename Type, typename... Types>
-    struct out_of_order_T<Operator<Type, Types...>, TypeU, 2>
-    {
-        template <typename TupleA, typename TupleB, typename... Args>
-        static void access(TupleA&& __a, TupleB&& __b, Args&&... __args)
-        {
-            using TypeA = decay_t<TupleA>;
-            using TypeB = decay_t<TupleB>;
-
-            static_assert(std::tuple_size<TypeA>::value != 0, "Error! tuple_size = 0");
-            static_assert(std::tuple_size<TypeB>::value != 0, "Error! tuple_size = 0");
-
-            constexpr auto Na = get_index_of<Type, TypeA>::value;
-            constexpr auto Nb = get_index_of<Type, TypeU>::value;
-            using Ap          = decltype(std::get<Na>(__a));
-            using Bp          = decltype(std::get<Nb>(__b));
-            Operator<Type, Types...>(std::forward<Ap>(std::get<Na>(__a)),
-                                     std::forward<Bp>(std::get<Nb>(__b)),
-                                     std::forward<Args>(__args)...);
-        }
-    };
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename Access, typename U, size_t N>
-    struct out_of_order;
-
-    template <typename AccessU, size_t N, typename... Access>
-    struct out_of_order<std::tuple<Access...>, AccessU, N>
-    {
-        template <typename Tuple, typename... Args>
-        static void access(Tuple&& __t, Args&&... __args)
-        {
-            TIMEMORY_FOLD_EXPRESSION(
-                out_of_order_T<Access, AccessU, N>::template access<Tuple, Args...>(
-                    std::forward<Tuple>(__t), std::forward<Args>(__args)...));
-        }
-    };
-
-    //----------------------------------------------------------------------------------//
     //  invoke a function with a tuple
     //
     template <typename Fn, typename Tuple, size_t... Idx>
@@ -713,19 +652,6 @@ struct apply<void>
 
     //----------------------------------------------------------------------------------//
 
-    template <typename Access, typename Mapper, size_t R, typename Tuple,
-              typename... Args, size_t N = std::tuple_size<decay_t<Access>>::value,
-              size_t Nt = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N > 0 && Nt > 0), int> = 0>
-    static TIMEMORY_HOT_INLINE void out_of_order(Tuple&& __t, Args&&... __args) noexcept
-    {
-        using OutOfOrder_t = internal::apply<void>::out_of_order<Access, Mapper, R>;
-        OutOfOrder_t::template access<Tuple, Args...>(std::forward<Tuple>(__t),
-                                                      std::forward<Args>(__args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-
     template <typename Access, typename Tuple, typename... Args>
     static TIMEMORY_HOT_INLINE void access_with_indices(Tuple&& __t,
                                                         Args&&... __args) noexcept
@@ -771,19 +697,6 @@ struct apply<void>
         internal::apply<void>::template type_access<Access, Tuple, Args...>(
             make_index_sequence<N>{}, std::forward<Args>(__args)...);
     }
-
-    //----------------------------------------------------------------------------------//
-    //
-    //      N == 0
-    //
-    //----------------------------------------------------------------------------------//
-
-    template <typename Access, typename Mapper, size_t R, typename Tuple,
-              typename... Args, size_t N = std::tuple_size<decay_t<Access>>::value,
-              size_t Nt = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<N == 0 || Nt == 0, int> = 0>
-    static TIMEMORY_HOT_INLINE void out_of_order(Tuple&&, Args&&...) noexcept
-    {}
 
     //----------------------------------------------------------------------------------//
 };

@@ -67,6 +67,20 @@ struct unknown
 
 //--------------------------------------------------------------------------------------//
 
+template <typename T, typename U = typename T::value_type>
+constexpr bool
+available_value_type_alias(int)
+{
+    return true;
+}
+
+template <typename T, typename U = unknown>
+constexpr bool
+available_value_type_alias(long)
+{
+    return false;
+}
+
 template <typename Type, bool>
 struct component_value_type;
 
@@ -84,7 +98,7 @@ struct component_value_type<Type, false>
 
 template <typename Type>
 using component_value_type_t =
-    typename component_value_type<Type, tim::trait::is_available<Type>::value>::type;
+    typename component_value_type<Type, available_value_type_alias<Type>(0)>::type;
 
 //--------------------------------------------------------------------------------------//
 
@@ -97,6 +111,20 @@ struct get_availability
 
     static info_type get_info()
     {
+        auto _cleanup = [](std::string _type, const std::string& _pattern) {
+            auto _pos = std::string::npos;
+            while((_pos = _type.find(_pattern)) != std::string::npos)
+                _type.erase(_pos, _pattern.length());
+            return _type;
+        };
+        auto _replace = [](std::string _type, const std::string& _pattern,
+                           const std::string& _with) {
+            auto _pos = std::string::npos;
+            while((_pos = _type.find(_pattern)) != std::string::npos)
+                _type.replace(_pos, _pattern.length(), _with);
+            return _type;
+        };
+
         bool has_metadata = metadata_t::value != TIMEMORY_COMPONENTS_END;
         bool is_available = trait::is_available<Type>::value;
         bool file_output  = trait::generates_output<Type>::value;
@@ -126,32 +154,22 @@ struct get_availability
                 ids_str = TIMEMORY_JOIN("  ", ids_str, TIMEMORY_JOIN("", db, *itr, de));
         }
 
+        data_type = _replace(_cleanup(data_type, "::__1"), "> >", ">>");
         return info_type{ name, is_available,
                           str_vec_t{ data_type, enum_type, id_type, ids_str, label,
                                      description } };
     }
-
-    explicit get_availability(info_type& _info) { _info = this_type::get_info(); }
 };
 
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-struct get_availability<component_list<Types...>>
+struct get_availability<type_list<Types...>>
 {
-    using this_type = get_availability<component_list<Types...>>;
-
-    static constexpr size_t size() { return sizeof...(Types); }
-    static constexpr size_t nelem = sizeof...(Types);
-
-    using info_vec_t  = array_t<info_type, nelem>;
-    using avail_types = std::tuple<get_availability<Types>...>;
-
-    static info_vec_t get_info()
+    static auto get_info()
     {
-        info_vec_t _info;
-        apply<void>::access<avail_types>(_info);
-        return _info;
+        constexpr auto N = sizeof...(Types);
+        return TIMEMORY_FOLD_EXPANSION(info_type, N, get_availability<Types>::get_info());
     }
 };
 
@@ -483,7 +501,7 @@ struct enumerated_list;
 template <template <typename...> class TupT, typename... T>
 struct enumerated_list<TupT<T...>, int_sequence<>>
 {
-    using type = tim::component_list<T...>;
+    using type = type_list<T...>;
 };
 
 using tim::component::nothing;
@@ -493,10 +511,9 @@ template <template <typename...> class TupT, int I, typename... T, int... Idx>
 struct enumerated_list<TupT<T...>, int_sequence<I, Idx...>>
 {
     using Tp                         = component::enumerator_t<I>;
-    static constexpr bool is_nothing = std::is_same<Tp, placeholder<nothing>>::value;
+    static constexpr bool is_nothing = concepts::is_placeholder<Tp>::value;
     using type                       = typename enumerated_list<
-        tim::conditional_t<(is_nothing), tim::component_list<T...>,
-                           tim::component_list<T..., Tp>>,
+        tim::conditional_t<is_nothing, type_list<T...>, type_list<T..., Tp>>,
         int_sequence<Idx...>>::type;
 };
 

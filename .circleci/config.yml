@@ -36,14 +36,10 @@ jobs:
       - run:
           name: install
           command: >
-            cd build-timemory/Linux &&
-            make install -j &&
+            cmake --build build-timemory/Linux --target install --parallel 2 &&
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
-            cd ../../examples &&
-            mkdir build-examples &&
-            cd build-examples &&
-            cmake .. &&
-            make ex_array_of_bundles
+            cmake -B build-examples -DUSE_MPI=ON examples &&
+            cmake --build build-examples --target ex_array_of_bundles
   cpu-dev-build:
     docker:
       - image: jrmadsen/timemory:dev-cpu
@@ -76,13 +72,9 @@ jobs:
       - run:
           name: install
           command: >
-            cd build-timemory/Linux &&
-            make install -j &&
+            cmake --build build-timemory/Linux --target install --parallel 2 &&
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
-            cd ../../examples &&
-            mkdir build-examples &&
-            cd build-examples &&
-            cmake ..
+            cmake -B build-examples -DUSE_MPI=ON examples
   gpu-dev-build:
     docker:
       - image: jrmadsen/timemory:dev-gpu
@@ -116,13 +108,9 @@ jobs:
       - run:
           name: install
           command: >
-            cd build-timemory/Linux &&
-            make install -j &&
+            cmake --build build-timemory/Linux --target install --parallel 2 &&
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
-            cd ../../examples &&
-            mkdir build-examples &&
-            cd build-examples &&
-            cmake ..
+            cmake -B build-examples -DUSE_MPI=OFF examples
 
 workflows:
   version: 2

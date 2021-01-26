@@ -27,7 +27,7 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <iostream>
+#include <iosfwd>
 #include <string>
 #include <utility>
 
@@ -194,8 +194,12 @@ _DBG(const char* msg)
 //
 #if defined(TIMEMORY_UTILITY_SOURCE)
 #    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
+#    define TIMEMORY_UTILITY_INLINE
 #elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_UTILITY_EXTERN)
 #    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
+#    define TIMEMORY_UTILITY_INLINE
 #else
 #    define TIMEMORY_UTILITY_LINKAGE(...) inline __VA_ARGS__
+#    define TIMEMORY_UTILITY_INLINE inline
+#    define TIMEMORY_UTILITY_HEADER_MODE
 #endif

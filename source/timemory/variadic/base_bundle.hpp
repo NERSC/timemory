@@ -125,6 +125,14 @@ struct quirk_config<T, type_list<F...>, U...>
         is_one_of<T, type_list<F..., U...>>::value ||
         is_one_of<T, contains_one_of_t<quirk::is_config, concat<F..., U...>>>::value;
 };
+
+TIMEMORY_HOT_INLINE
+bool
+global_enabled()
+{
+    static bool& _value = settings::enabled();
+    return _value;
+}
 }  // namespace impl
 }  // namespace mpl
 //
@@ -360,16 +368,14 @@ protected:
     static bool handle_store(type_list<T...>, bool _enable, quirk::config<U...>,
                              enable_if_t<sizeof...(T) != 0, int> = {})
     {
-        static auto& _global_enabled = settings::enabled();
-        return get_store_config<T..., U...>() && _enable && _global_enabled;
+        return get_store_config<T..., U...>() && _enable && mpl::impl::global_enabled();
     }
 
     template <typename... T, typename... U>
     static bool handle_store(type_list<T...>, std::true_type, quirk::config<U...>,
                              enable_if_t<sizeof...(T) != 0, int> = {})
     {
-        static auto& _global_enabled = settings::enabled();
-        return get_store_config<T..., U...>() && _global_enabled;
+        return get_store_config<T..., U...>() && mpl::impl::global_enabled();
     }
 
     template <typename... T, typename... U>
@@ -464,8 +470,7 @@ protected:
                      quirk::config<U...>                 = quirk::config<>{},
                      enable_if_t<sizeof...(T) != 0, int> = {})
     {
-        static auto& _global_enabled = settings::enabled();
-        if(_global_enabled)
+        if(mpl::impl::global_enabled())
         {
             IF_CONSTEXPR(!quirk_config<quirk::no_init, T..., U...>::value)
             {

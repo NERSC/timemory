@@ -297,17 +297,19 @@ template <typename... Tp, typename... Args>
 void
 component_bundle<Tag, Types...>::start(mpl::piecewise_select<Tp...>, Args&&... args)
 {
-    using standard_tuple_t = mpl::sort<trait::start_priority, std::tuple<Tp...>>;
-    using standard_start_t = operation_t<operation::standard_start, standard_tuple_t>;
+    using select_tuple_t = mpl::sort<trait::start_priority, std::tuple<Tp...>>;
 
     TIMEMORY_FOLD_EXPRESSION(
         operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
-    TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
-        std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value)
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
+            std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+    }
 
     // start components
-    apply_v::out_of_order<standard_start_t, standard_tuple_t, 1>(
-        m_data, std::forward<Args>(args)...);
+    auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
+    invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -317,15 +319,17 @@ template <typename... Tp, typename... Args>
 void
 component_bundle<Tag, Types...>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
 {
-    using standard_tuple_t = mpl::sort<trait::stop_priority, std::tuple<Tp...>>;
-    using standard_stop_t  = operation_t<operation::standard_stop, standard_tuple_t>;
+    using select_tuple_t = mpl::sort<trait::stop_priority, std::tuple<Tp...>>;
 
     // stop components
-    apply_v::out_of_order<standard_stop_t, standard_tuple_t, 1>(
-        m_data, std::forward<Args>(args)...);
+    auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
+    invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
 
-    TIMEMORY_FOLD_EXPRESSION(
-        operation::pop_node<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value)
+    {
+        TIMEMORY_FOLD_EXPRESSION(
+            operation::pop_node<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -340,8 +344,11 @@ component_bundle<Tag, Types...>::start(Args&&... args)
         return;
 
     // push components into the call-stack
-    if(m_store())
-        push();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value)
+    {
+        if(m_store())
+            push();
+    }
 
     // start components
     start(mpl::lightweight{}, std::forward<Args>(args)...);
@@ -361,8 +368,11 @@ component_bundle<Tag, Types...>::stop(Args&&... args)
     stop(mpl::lightweight{}, std::forward<Args>(args)...);
 
     // pop components off of the call-stack stack
-    if(m_store())
-        pop();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value)
+    {
+        if(m_store())
+            pop();
+    }
 }
 
 //--------------------------------------------------------------------------------------//

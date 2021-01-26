@@ -91,10 +91,16 @@ extern "C"
 
 using namespace tim::component;
 
+struct main_gotcha;
 struct pthread_gotcha;
 static int64_t primary_tidx   = 0;
 static size_t  throttle_count = 1000;
 static size_t  throttle_value = 10000;
+
+#if !defined(TIMEMORY_USE_GOTCHA)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, main_gotcha, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, pthread_gotcha, false_type)
+#endif
 
 template <typename Tp>
 using uomap_t     = std::unordered_map<const void*, std::unordered_map<const void*, Tp>>;
@@ -107,6 +113,9 @@ using trace_vec_t =
 using empty_tuple_t    = tim::component_tuple<>;
 using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
 using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
+using main_gotcha_t    = tim::component::gotcha<2, tim::component_tuple<main_gotcha>,
+                                             tim::type_list<main_gotcha>>;
+using main_bundle_t    = tim::auto_tuple<main_gotcha_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -118,6 +127,8 @@ template <size_t Idx, size_t N>
 static void
 get_storage_impl(std::array<std::function<void()>, N>&) TIMEMORY_INTERNAL_NO_INSTRUMENT;
 //
+static bool&
+get_main_wrapped() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static bool&
 get_enabled() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static auto&
@@ -136,14 +147,14 @@ static auto
 get_label(void*, void*) TIMEMORY_INTERNAL_NO_INSTRUMENT;
 //
 static void
-initialize() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+initialize(const char* = nullptr) TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static void
 allocate() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static void
 finalize() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 //
-static std::shared_ptr<pthread_bundle_t>
-setup_pthread_gotcha() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto
+setup_gotcha() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 
 //--------------------------------------------------------------------------------------//
 
@@ -183,6 +194,15 @@ get_storage(tim::index_sequence<Idx...>)
     TIMEMORY_FOLD_EXPRESSION(get_storage_impl<Idx>(_data));
     // return the array of finalization functions
     return _data;
+}
+
+//--------------------------------------------------------------------------------------//
+
+bool&
+get_main_wrapped()
+{
+    static auto _instance = false;
+    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -293,7 +313,7 @@ get_label(void* this_fn, void* call_site)
         return _hash;
     }
 
-    if(get_first().first == nullptr)
+    if(!get_main_wrapped() && get_first().first == nullptr)
     {
         constexpr auto _rc = std::regex_constants::optimize | std::regex_constants::egrep;
         if(std::regex_match(finfo.dli_sname, std::regex("^[_]*main$", _rc)))
@@ -313,11 +333,24 @@ get_label(void* this_fn, void* call_site)
 //--------------------------------------------------------------------------------------//
 
 static void
-initialize()
+initialize(const char* _exe_name)
 {
     static bool _first = true;
     if(!_first)
+    {
+        if(_exe_name)
+        {
+            auto _name = TIMEMORY_JOIN('-', "compiler-instrumentation", _exe_name);
+            for(auto& itr : _name)
+            {
+                if(itr == '_')
+                    itr = '-';
+            }
+            tim::settings::output_path() =
+                TIMEMORY_JOIN('-', "timemory", _name, "output");
+        }
         return;
+    }
     _first = false;
 
     // ensure a static holds a reference count to the manager
@@ -331,10 +364,20 @@ initialize()
         tim::settings::cout_output() = false;
 
     // initialization
-    char* argv = new char[128];
-    strcpy(argv, "compiler-instrumentation");
-    tim::timemory_init(1, &argv);
-    delete[] argv;
+    if(_exe_name)
+    {
+        auto _name = TIMEMORY_JOIN('-', "compiler-instrumentation", _exe_name);
+        for(auto& itr : _name)
+        {
+            if(itr == '_')
+                itr = '-';
+        }
+        tim::timemory_init(_name);
+    }
+    else
+    {
+        tim::timemory_init(std::string{ "compiler-instrumentation" });
+    }
 
     // parse environment
     tim::settings::parse();
@@ -532,8 +575,8 @@ extern "C"
                         .substr(0, 120)
                         .c_str());
 
-        const bool _is_first =
-            (get_first().first == this_fn && get_first().second == call_site);
+        const bool _is_first = (!get_main_wrapped() && get_first().first == this_fn &&
+                                get_first().second == call_site);
 
         if(_is_first)
         {
@@ -689,20 +732,57 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-std::shared_ptr<pthread_bundle_t>
-setup_pthread_gotcha()
+struct main_gotcha : tim::component::base<main_gotcha, void>
+{
+    // beginning of main
+    void audit(tim::audit::incoming)
+    {
+        puts("[timemory-compiler-instrument]> wrapped main");
+        get_main_wrapped() = true;
+        initialize();
+    }
+
+    // beginning of main
+    void audit(tim::audit::incoming, int argc, char** argv)
+    {
+        puts("[timemory-compiler-instrument]> wrapped main");
+        get_main_wrapped() = true;
+        if(argc > 0)
+            initialize(argv[0]);
+        else
+            initialize();
+    }
+
+    // end of main
+    void audit(tim::audit::outgoing, int)
+    {
+        get_thread_enabled() = false;
+        get_enabled()        = false;
+        finalize();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+auto
+setup_gotcha()
 {
 #if defined(TIMEMORY_USE_GOTCHA)
     pthread_gotcha_t::get_initializer() = []() {
         TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
     };
+
+    main_gotcha_t::get_initializer() = []() {
+        main_gotcha_t::template configure<0, int, int, char**>("main");
+    };
 #endif
-    return std::make_shared<pthread_bundle_t>("pthread");
+    return std::make_tuple(std::make_shared<pthread_bundle_t>("pthread"),
+                           std::make_shared<main_bundle_t>("main"));
 }
 
 namespace
 {
-static auto pthread_gotcha_handle = setup_pthread_gotcha();
+static auto internal_gotcha_handle = setup_gotcha();
 }  // namespace
 
 //--------------------------------------------------------------------------------------//

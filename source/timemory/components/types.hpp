@@ -125,6 +125,20 @@ struct explicit_start : concepts::quirk_type
 struct explicit_stop : concepts::quirk_type
 {};
 
+/// \struct tim::quirk::explicit_push
+/// \brief a dummy type intended to be included in a \ref tim::quirk::config object
+/// and included as template parameter of the component bundler. It will suppress the
+/// implicit `push()` within `start()` for the bundlers with this characteristic
+struct explicit_push : concepts::quirk_type
+{};
+
+/// \struct tim::quirk::explicit_pop
+/// \brief a dummy type intended to be included in a \ref tim::quirk::config object
+/// and included as template parameter of the component bundler. It will suppress the
+/// implicit `pop()` within `stop()` for the bundlers with this characteristic
+struct explicit_pop : concepts::quirk_type
+{};
+
 /// \struct tim::quirk::exit_report
 /// \brief a dummy type intended to be included in a \ref tim::quirk::config object
 /// and passed to the constructor of a component bundler or included as template parameter

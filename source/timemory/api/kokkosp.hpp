@@ -24,9 +24,20 @@
 
 #pragma once
 
-#include "timemory/timemory.hpp"
+#include "timemory/api.hpp"
+#include "timemory/compat/macros.h"
+#include "timemory/components/data_tracker/components.hpp"
+#include "timemory/components/user_bundle/types.hpp"
+#include "timemory/variadic/component_bundle.hpp"
 
 #include <cstdint>
+#include <functional>
+#include <map>
+#include <mutex>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
 
 #if defined(TIMEMORY_SOURCE)
 #    define TIMEMORY_KOKKOSP_PREFIX TIMEMORY_WEAK_PREFIX

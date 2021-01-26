@@ -22,10 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if !defined(TIMEMORY_SOURCE)
-#    define TIMEMORY_SOURCE
-#endif
-
 #include "timemory/api/kokkosp.hpp"
 #include "timemory/timemory.hpp"
 

@@ -220,8 +220,11 @@ void
 component_list<Types...>::start(Args&&... args)
 {
     // push components into the call-stack
-    if(m_store())
-        push();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value)
+    {
+        if(m_store())
+            push();
+    }
     assemble(*this);
     invoke::start(m_data, std::forward<Args>(args)...);
     m_is_active(true);
@@ -237,8 +240,11 @@ component_list<Types...>::stop(Args&&... args)
     invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
     derive(*this);
-    if(m_store())
-        pop();
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value)
+    {
+        if(m_store())
+            pop();
+    }
     m_is_active(false);
 }
 
