@@ -32,14 +32,14 @@ jobs:
           module load likwid
           module load cuda
           module list
+          spack load boost dyninst papi
           source activate
           conda activate timemory
           echo "python: $(which python)"
-          spack load boost dyninst papi
           BASE_ARGS="--papi --likwid --mpi --cuda --cupti --gotcha --caliper --extra-optimizations --tools ${{ matrix.tools }} -SF --pyctest-model=Continuous -j 6"
           CTEST_ARGS="-V"
-          CMAKE_ARGS="-DPYTHON_EXECUTABLE=$(which python) -G Ninja"
+          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory -G Ninja"
           export CC=${{ matrix.compiler }}
           export CXX="$(echo '${{ matrix.compiler }}' | sed 's/gcc/g++/1' | sed 's/clang/clang++/1')"
-          python ./pyctest-runner.py --cxx-standard=${{ matrix.standard }} --pyctest-build-type=${{ matrix.build_type }} ${{ matrix.extra_args }} ${BASE_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory
-          cmake --build build-timemory/Linux --target all --parallel 8
+          python ./pyctest-runner.py --cxx-standard=${{ matrix.standard }} --pyctest-build-type=${{ matrix.build_type }} ${{ matrix.extra_args }} ${BASE_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
+          cmake --build build-timemory/Linux --target all --parallel 6
