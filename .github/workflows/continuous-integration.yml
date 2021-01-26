@@ -28,6 +28,7 @@ jobs:
           submodules: true
       - name: Build and Test
         run: |
+          git submodule update .
           module load anaconda
           module load likwid
           module load cuda
