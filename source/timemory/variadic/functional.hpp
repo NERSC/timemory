@@ -110,8 +110,7 @@ invoke(TupleT<Tp&...>&& _obj, Args&&... _args)
 //
 template <template <typename> class OpT, typename Tag,
           template <typename...> class TupleT, typename... Tp,
-          template <typename...> class ValueT, typename... Vp, size_t... Idx,
-          typename... Args>
+          template <typename...> class ValueT, typename... Vp, typename... Args>
 TIMEMORY_INLINE void
 invoke_data(TupleT<Tp...>& _obj, ValueT<Vp...>& _val, Args&&... _args)
 {

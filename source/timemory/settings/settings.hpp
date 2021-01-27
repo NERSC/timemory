@@ -598,7 +598,7 @@ settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, 
     m_order.push_back(_sid);
     return m_data.insert(
         { string_view_t{ m_order.back() },
-          std::make_shared<tsettings<Tp, Vp>>(_init, _name, _env, _desc,
+          std::make_shared<tsettings<Tp, Vp>>(_init, _name, _sid, _desc,
                                               std::forward<Args>(_args)...) });
 }
 //
