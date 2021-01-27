@@ -516,8 +516,8 @@ str_transform(const std::string& input, const std::string& _begin,
 
 //--------------------------------------------------------------------------------------//
 //
-std::vector<std::string>
-read_command_line(pid_t _pid);
+TIMEMORY_UTILITY_INLINE std::vector<std::string>
+                        read_command_line(pid_t _pid);
 
 //======================================================================================//
 //
