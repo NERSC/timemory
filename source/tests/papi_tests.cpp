@@ -48,9 +48,16 @@ using device_t  = tim::device::cpu;
 static constexpr uint64_t FLOPS  = 16;
 static constexpr uint64_t TRIALS = 2;
 static constexpr uint64_t SIZE   = 1024 * 1024 * 64;
+
+#if defined(__GNUG__) && !defined(__OPTIMIZE__)
+// for code coverage (always GNU C++), allow very high differences in debug mode
+static const int64_t ops_tolerance = (TRIALS * SIZE * FLOPS) * 2000;
+static const int64_t lst_tolerance = (TRIALS * SIZE * FLOPS) * 2000;
+#else
 // tolerance of 5.0e-5
 static const int64_t ops_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
 static const int64_t lst_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
+#endif
 
 static std::function<void()> begin_cb = [] {};
 static std::function<void()> end_cb   = [] {};

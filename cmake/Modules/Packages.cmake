@@ -1061,7 +1061,7 @@ if(UNIX AND NOT APPLE)
             RELATIVE_PATH external/gotcha
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             REPO_URL https://github.com/jrmadsen/GOTCHA.git
-            REPO_BRANCH cmake-updates)
+            REPO_BRANCH timemory)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
         foreach(_TARGET gotcha gotcha-include Gotcha)
             if(TARGET ${_TARGET})
@@ -1403,7 +1403,7 @@ if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
         RELATIVE_PATH external/ptl
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         REPO_URL https://github.com/jrmadsen/PTL.git
-        REPO_BRANCH timemory)
+        REPO_BRANCH master)
 
     message(STATUS "Adding external/ptl")
     option(PTL_USE_TBB "Enable TBB backend support in PTL" OFF)

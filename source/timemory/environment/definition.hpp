@@ -119,6 +119,10 @@ env_settings::print(std::ostream& os) const
 
     auto _data = get();
 
+    size_t _w = 35;
+    for(const auto& itr : _data)
+        _w = std::max<size_t>(itr.first.length(), _w);
+
     std::stringstream filler;
     filler.fill('-');
     filler << '#';
@@ -130,7 +134,7 @@ env_settings::print(std::ostream& os) const
     ss << "# Environment settings:\n";
     for(const auto& itr : _data)
     {
-        ss << "# " << std::setw(35) << std::right << itr.first << "\t = \t" << std::left
+        ss << "# " << std::setw(_w) << std::right << itr.first << "\t = \t" << std::left
            << itr.second << '\n';
     }
     ss << filler.str();
