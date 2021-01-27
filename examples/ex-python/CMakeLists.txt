@@ -48,7 +48,7 @@ if(NOT MPI_FOUND)
 endif()
 
 set(_OMP)
-find_package(OpenMP QUIET)
+find_package(OpenMP)
 if(OpenMP_FOUND)
     set(_OMP OpenMP::OpenMP_CXX)
 endif()
@@ -87,6 +87,9 @@ target_link_libraries(libex_python_bindings PRIVATE
     ${_OMP}
     ${_COMPILE_OPTS}
     libex_python_bindings_flags)
+
+set_target_properties(libex_python_bindings PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH ON)
 
 configure_file(${PROJECT_SOURCE_DIR}/ex_bindings.py
     ${TARGET_BINARY_DIR}/ex_python_bindings @ONLY)
