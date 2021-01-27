@@ -55,7 +55,6 @@ import timemory as tim
 # --------------------------- Hatchet Tests set ---------------------------------------- #
 # Hatchet tests class
 class TimemoryToolsTests(unittest.TestCase):
-
     @classmethod
     def setUpClass(self):
         # set up environment variables

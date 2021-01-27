@@ -710,8 +710,8 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
             if verbosity > 0:
                 print("Opening '{}' for output...".format(imgfname))
             else:
-                lbl = os.path.basename(imgfname).strip(
-                    ".{}".format(params.img_type)
+                lbl = os.path.basename(imgfname).replace(
+                    ".{}".format(params.img_type), ""
                 )
                 print("[{}]|0> Outputting '{}'...".format(lbl, imgfname))
             plt.savefig(imgfname, dpi=params.img_dpi)

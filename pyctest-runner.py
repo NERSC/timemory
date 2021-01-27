@@ -1210,6 +1210,30 @@ def run_pyctest():
         if args.python:
             if dmprun is not None:
                 pyct.test(
+                    construct_name("ex-python-bindings-ref"),
+                    construct_command(
+                        [dmprun]
+                        + dmpargs
+                        + [
+                            sys.executable,
+                            "./ex_python_bindings",
+                        ],
+                        args,
+                    ),
+                    {
+                        "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                        "LABELS": pyct.PROJECT_NAME,
+                        "TIMEOUT": "120",
+                        "ENVIRONMENT": ";".join(
+                            [
+                                base_env,
+                                "TIMEMORY_OUTPUT_PATH=timemory-ex-python-bindings-output-ref",
+                            ]
+                        ),
+                    },
+                )
+
+                pyct.test(
                     construct_name("ex-python-bindings"),
                     construct_command(
                         [dmprun]
@@ -1224,7 +1248,14 @@ def run_pyctest():
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                         "LABELS": pyct.PROJECT_NAME,
                         "TIMEOUT": "120",
-                        "ENVIRONMENT": base_env,
+                        "DEPENDS": construct_name("ex-python-bindings-ref"),
+                        "ENVIRONMENT": ";".join(
+                            [
+                                base_env,
+                                "TIMEMORY_INPUT_PATH=timemory-ex-python-bindings-output-ref",
+                                "TIMEMORY_DIFF_OUTPUT=ON",
+                            ]
+                        ),
                     },
                 )
 

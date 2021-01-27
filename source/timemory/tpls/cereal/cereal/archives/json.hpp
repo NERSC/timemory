@@ -670,7 +670,7 @@ private:
     inline void search()
     {
         // The name an NVP provided with setNextName()
-        if(itsNextName)
+        if(itsNextName && !itsIteratorStack.empty())
         {
             // The actual name of the current node
             auto const actualName = itsIteratorStack.back().name();

@@ -634,9 +634,6 @@ print<Tp, true>::read_json()
                 ia->startNode();
                 ia->loadSize(num_ranks);
 
-                if(_nranks > num_ranks)
-                    num_ranks = _nranks;
-
                 node_input.resize(num_ranks);
                 for(uint64_t i = 0; i < node_input.size(); ++i)
                 {
