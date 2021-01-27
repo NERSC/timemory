@@ -126,7 +126,7 @@ add_timemory_test_target()
 
 add_subdirectory(external)
 
-set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON")
+set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON;TIMEMORY_COMPILER_COUT_OUTPUT=ON")
 
 if(TARGET timemory::timemory-compiler-instrument-shared)
     add_timemory_google_test(compiler_instrument_shared_tests
