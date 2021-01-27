@@ -34,7 +34,7 @@ jobs:
           module load likwid
           module load cuda
           module list
-          spack load boost dyninst papi
+          spack env activate timemory-ci
           source activate
           conda activate timemory
           echo "python: $(which python)"

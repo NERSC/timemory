@@ -448,6 +448,14 @@ else()
         FILES ${timemory_precompiled_headers})
 endif()
 
+# find modules
+file(GLOB TIMEMORY_FIND_MODULES ${PROJECT_SOURCE_DIR}/cmake/Modules/Find*.cmake)
+list(REMOVE_ITEM TIMEMORY_FIND_MODULES
+    ${PROJECT_SOURCE_DIR}/cmake/Modules/FindPython3.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/Modules/FindPythonLibs.cmake)
+install(FILES ${TIMEMORY_FIND_MODULES}
+    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules)
+
 #----------------------------------------------------------------------------------------#
 #
 #                        timemory extern initializaiton
@@ -732,8 +740,6 @@ if(PAPI_FOUND)
     target_include_directories(timemory-papi-static SYSTEM INTERFACE ${PAPI_INCLUDE_DIRS})
     timemory_target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
     timemory_target_compile_definitions(timemory-papi-static INTERFACE TIMEMORY_USE_PAPI)
-    install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/FindPAPI.cmake
-        DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules)
 else()
     set(TIMEMORY_USE_PAPI OFF)
     inform_empty_interface(timemory-papi "PAPI (shared libraries)")
@@ -1273,9 +1279,6 @@ if(TIMEMORY_USE_DYNINST)
         set(Boost_NO_BOOST_CMAKE ON)
         find_package(Boost QUIET ${TIMEMORY_FIND_REQUIREMENT}
             COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
-        # install the revision of FindBoost.cmake which is quiet
-        install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/FindBoost.cmake
-            DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules)
     endif()
 endif()
 

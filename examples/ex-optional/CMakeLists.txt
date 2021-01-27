@@ -5,7 +5,7 @@ project(timemory-Optional-Example LANGUAGES C CXX)
 find_package(timemory REQUIRED COMPONENTS compile-options analysis-tools
     OPTIONAL_COMPONENTS cxx shared)
 
-option(USE_OPENMP "Enable OpenMP in timemory example" ON)
+option(USE_OPENMP "Enable OpenMP in timemory example" OFF)
 option(USE_MPI "Enable MPI in timemory example" ON)
 
 find_package(OpenMP QUIET)
