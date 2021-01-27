@@ -170,15 +170,8 @@ class papi_tests : public ::testing::Test
 protected:
     TIMEMORY_TEST_DEFAULT_SUITE_SETUP
     TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
-
-    void SetUp() override
-    {
-        static std::atomic<int> once(0);
-        if(once++ == 0)
-        {
-            tim::papi::init();
-        }
-    }
+    TIMEMORY_TEST_DEFAULT_SETUP
+    TIMEMORY_TEST_DEFAULT_TEARDOWN
 };
 
 //--------------------------------------------------------------------------------------//
@@ -422,6 +415,7 @@ TEST_F(papi_tests, tuple_load_store_ins_rate)
     auto _sr_ins  = sr_ins_rate * _wc_val;
     auto _lst_ins = lst_ins_rate * _wc_val;
 
+    std::cout << "\n";
     std::cout << "RATE_TUPLE : " << *obj << std::endl;
     std::cout << "TUPLE      : " << *pt << std::endl;
     std::cout << "WALL-CLOCK : " << *wc << std::endl;
@@ -450,6 +444,6 @@ using instruction_rate_t =
     papi_rate_tuple<wall_clock, PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
 using instruction_tuple_t = papi_tuple<PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
 
-TIMEMORY_INITIALIZE_STORAGE(instruction_rate_t, instruction_tuple_t)
+TIMEMORY_INITIALIZE_STORAGE(instruction_rate_t, instruction_tuple_t);
 
 //--------------------------------------------------------------------------------------//
