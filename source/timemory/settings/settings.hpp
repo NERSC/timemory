@@ -380,9 +380,9 @@ private:
 template <typename Tag>
 std::time_t* settings::get_launch_time(Tag)
 {
-    // record the time
-    static std::time_t _time = std::time(nullptr);
-    return &_time;
+    // statically store the launch time, intentional memory leak
+    static std::time_t* _time = new std::time_t{ std::time(nullptr) };
+    return _time;
 }
 //
 //----------------------------------------------------------------------------------//

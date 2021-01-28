@@ -147,7 +147,7 @@ _default_font_size = 11
 plotted_files = []
 """ A list of all files that have been plotted """
 
-verbosity = os.environ.get("TIMEMORY_VERBOSE", 0)
+verbosity = int(os.environ.get("TIMEMORY_VERBOSE", 0))
 
 # -------------------------------------------------------------------------------------- #
 
@@ -687,6 +687,9 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
         title = title.replace("_", " ").title()
         plt.suptitle("{}".format(title), **font)
         if _desc:
+            # just the first sentence
+            if "." in _desc:
+                _desc = _desc.split(".")[0]
             plt.title("{}".format(_desc.title()), **subfont)
 
         if disp:
@@ -702,10 +705,6 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
             while ".." in imgfname:
                 imgfname = imgfname.replace("..", ".")
 
-            add_plotted_files(
-                imgfname, os.path.join(output_dir, imgfname), echo_dart
-            )
-
             imgfname = os.path.join(output_dir, imgfname)
             if verbosity > 0:
                 print("Opening '{}' for output...".format(imgfname))
@@ -718,6 +717,10 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
             plt.close()
             if verbosity > 0:
                 print("Closed '{}'...".format(imgfname))
+
+            add_plotted_files(
+                imgfname, os.path.join(output_dir, imgfname), echo_dart
+            )
 
 
 def plot_maximums(

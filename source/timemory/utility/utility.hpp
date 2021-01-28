@@ -108,7 +108,8 @@ using auto_lock_t = std::unique_lock<mutex_t>;
 //--------------------------------------------------------------------------------------//
 // definition in popen.hpp
 bool
-launch_process(const char* cmd, const std::string& extra = "");
+launch_process(const char* cmd, const std::string& extra = "",
+               std::ostream* os = nullptr);
 
 //--------------------------------------------------------------------------------------//
 

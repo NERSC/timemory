@@ -93,6 +93,8 @@ if __name__ == "__main__":
     timemory.enable_signal_detection()
     timemory.settings.width = 12
     timemory.settings.precision = 6
+    timemory.settings.plot_output = True
+    timemory.settings.dart_output = True
 
     with profile(
         [
