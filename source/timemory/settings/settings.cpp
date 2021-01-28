@@ -177,12 +177,12 @@ settings::get_global_output_prefix(bool fake)
 {
     static auto _settings = instance();
 
-    auto _dir         = (_settings)
-                            ? _settings->get_output_path()
-                            : get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"), ".");
-    auto _prefix      = (_settings)
-                            ? _settings->get_output_prefix()
-                            : get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"), "");
+    auto _dir = (_settings)
+                    ? _settings->get_output_path()
+                    : get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"), ".");
+    auto _prefix = (_settings)
+                       ? _settings->get_output_prefix()
+                       : get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"), "");
     auto _time_output = (_settings)
                             ? _settings->get_time_output()
                             : get_env<bool>(TIMEMORY_SETTINGS_KEY("TIME_OUTPUT"), false);
