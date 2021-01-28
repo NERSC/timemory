@@ -14,12 +14,14 @@ jobs:
         standard: ['17']
         tools: ['avail kokkos kokkos-config dyninst mpip ncclp mallocp compiler']
         extra_args: ['--python']
+        generator: ['Ninja']
         include:
           - build_type: 'Debug'
             compiler: 'gcc-7'
             standard: '17'
             tools: 'dyninst mpip ncclp mallocp'
             extra_args: '--coverage --minimal'
+            generator: 'Unix\ Makefiles'
     runs-on: self-hosted
     steps:
       - name: Checkout Code
@@ -42,7 +44,7 @@ jobs:
           if [ -z "$(echo ${LD_LIBRARY_PATH} | grep timemory-ci)" ]; then echo "Warning: incorrect LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"; fi
           BASE_ARGS="--papi --likwid --mpi --cuda --cupti --gotcha --caliper --extra-optimizations --tools ${{ matrix.tools }} -SF --pyctest-model=Continuous -j 6"
           CTEST_ARGS="-V"
-          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory -G Ninja"
+          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory -G ${{ matrix.generator }}"
           export CC=${{ matrix.compiler }}
           export CXX="$(echo '${{ matrix.compiler }}' | sed 's/gcc/g++/1' | sed 's/clang/clang++/1')"
           python ./pyctest-runner.py --cxx-standard=${{ matrix.standard }} --pyctest-build-type=${{ matrix.build_type }} ${{ matrix.extra_args }} ${BASE_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
