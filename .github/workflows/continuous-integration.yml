@@ -38,6 +38,8 @@ jobs:
           source activate
           conda activate timemory
           echo "python: $(which python)"
+          env
+          if [ -z "$(echo ${LD_LIBRARY_PATH} | grep timemory-ci)" ]; then echo "Warning: incorrect LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"; fi
           BASE_ARGS="--papi --likwid --mpi --cuda --cupti --gotcha --caliper --extra-optimizations --tools ${{ matrix.tools }} -SF --pyctest-model=Continuous -j 6"
           CTEST_ARGS="-V"
           CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory -G Ninja"
