@@ -61,6 +61,8 @@ static inline void
 print_dart(
     tim::lightweight_tuple<tim::component::wall_clock, tim::component::peak_rss>& ct)
 {
+    if(tim::dmp::rank() > 0)
+        return;
     using namespace tim::component;
     auto* wc = ct.get<wall_clock>();
     if(wc)
