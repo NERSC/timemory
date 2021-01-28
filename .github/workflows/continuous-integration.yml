@@ -23,7 +23,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2.2.0
+        uses: actions/checkout@v2
         with:
           submodules: true
           clean: true
