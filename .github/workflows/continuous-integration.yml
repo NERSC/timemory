@@ -8,13 +8,6 @@ jobs:
       max-parallel: 2
       fail-fast: true
       matrix:
-        # compiler: ['gcc-6', 'gcc-7', 'gcc-8', 'gcc-9', 'gcc-10', 'clang-6.0', 'clang-7', 'clang-8', 'clang-9', 'clang-10', 'clang-11', 'clang-12']
-        build_type: ['Release']
-        compiler: ['gcc-9', 'gcc-10', 'clang-10', 'clang-11', 'clang-12']
-        standard: ['17']
-        tools: ['avail kokkos kokkos-config dyninst mpip ncclp mallocp compiler']
-        extra_args: ['--python']
-        generator: ['Ninja']
         include:
           - build_type: 'Debug'
             compiler: 'gcc-7'
@@ -22,6 +15,13 @@ jobs:
             tools: 'dyninst mpip ncclp mallocp'
             extra_args: '--coverage --minimal'
             generator: 'Unix\ Makefiles'
+        # compiler: ['gcc-6', 'gcc-7', 'gcc-8', 'gcc-9', 'gcc-10', 'clang-6.0', 'clang-7', 'clang-8', 'clang-9', 'clang-10', 'clang-11', 'clang-12']
+        build_type: ['Release']
+        compiler: ['gcc-9', 'gcc-10', 'clang-10', 'clang-11', 'clang-12']
+        standard: ['17']
+        tools: ['avail kokkos kokkos-config dyninst mpip ncclp mallocp compiler']
+        extra_args: ['--python']
+        generator: ['Ninja']
     runs-on: self-hosted
     steps:
       - name: Checkout Code
