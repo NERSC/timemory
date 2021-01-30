@@ -64,6 +64,24 @@ static auto env_configured = (configure_environment(), true);
 
 extern "C"
 {
+    void kokkosp_print_help(char* argv)
+    {
+        std::vector<std::string> _args = { argv, "--help" };
+        tim::timemory_argparse(_args);
+    }
+
+    void kokkosp_parse_args(int argc, char** argv)
+    {
+        tim::timemory_init(argc, argv);
+
+        std::vector<std::string> _args{};
+        _args.reserve(argc);
+        for(int i = 0; i < argc; ++i)
+            _args.emplace_back(argv[i]);
+
+        tim::timemory_argparse(_args);
+    }
+
     void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                               const uint32_t devInfoCount, void* deviceInfo)
     {
