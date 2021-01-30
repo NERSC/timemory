@@ -11,6 +11,12 @@ endif()
 
 project(timemory-GPU-Roofline-Example LANGUAGES C CXX CUDA)
 
+if(NOT CUDA_VERSION VERSION_LESS 11.0)
+    message(STATUS "[${PROJECT_NAME}] Skipping GPU roofline for CUDA ${CUDA_VERSION} (>= 11.0)")
+    message(WARNING "[${PROJECT_NAME}] CUPTI profiling API for HW counters not supported yet")
+    return()
+endif()
+
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()
