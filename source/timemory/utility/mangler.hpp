@@ -70,9 +70,13 @@ struct mangler
         if(addE || nsp)
             ret += "E";
         if(nargs == 0)
+        {
             ret += "v";
+        }
         else
+        {
             ret += apply<std::string>::join("", type_id<Args>::name()...);
+        }
 
         return ret;
     }

@@ -103,7 +103,7 @@ struct cupti_activity : public base<cupti_activity, intmax_t>
             {
                 return _kinds;
             }
-            else if(lvl == 0)
+            if(lvl == 0)
             {
                 // general settings for kernels, runtime, overhead
                 _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL };
@@ -193,7 +193,7 @@ public:
         auto kernels = cupti::activity::get_receiver().get_named(m_kernels_index, true);
 
         accum += (tmp - value);
-        value = std::move(tmp);
+        value = tmp;
         for(const auto& itr : kernels)
             m_kernels_accum[itr.first] += itr.second;
         m_kernels_value = std::move(kernels);
@@ -201,7 +201,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    double get_display() const
+    TIMEMORY_NODISCARD double get_display() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
@@ -210,7 +210,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    double get() const
+    TIMEMORY_NODISCARD double get() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
@@ -219,7 +219,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    kernel_elapsed_t get_secondary() const
+    TIMEMORY_NODISCARD kernel_elapsed_t get_secondary() const
     {
         return (is_transient) ? m_kernels_accum : m_kernels_value;
     }

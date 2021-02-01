@@ -132,9 +132,13 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
     std::stringstream _log{};
     auto _success = launch_process(cmd.c_str(), _info + " plot generation failed", &_log);
     if(_success)
+    {
         std::cout << _log.str() << '\n';
+    }
     else
+    {
         std::cerr << _log.str() << '\n';
+    }
 
 #    endif
 

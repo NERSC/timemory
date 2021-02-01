@@ -194,13 +194,13 @@ struct range
     {}
 
     HOST_DEVICE_CALLABLE Intp& begin() { return m_begin; }
-    HOST_DEVICE_CALLABLE Intp begin() const { return m_begin; }
+    HOST_DEVICE_CALLABLE TIMEMORY_NODISCARD Intp begin() const { return m_begin; }
     HOST_DEVICE_CALLABLE Intp& end() { return m_end; }
-    HOST_DEVICE_CALLABLE Intp end() const { return m_end; }
+    HOST_DEVICE_CALLABLE TIMEMORY_NODISCARD Intp end() const { return m_end; }
     HOST_DEVICE_CALLABLE Intp& stride() { return m_stride; }
-    HOST_DEVICE_CALLABLE Intp stride() const { return m_stride; }
+    HOST_DEVICE_CALLABLE TIMEMORY_NODISCARD Intp stride() const { return m_stride; }
 
-    HOST_DEVICE_CALLABLE const char* c_str() const
+    HOST_DEVICE_CALLABLE TIMEMORY_NODISCARD const char* c_str() const
     {
         using llu = long long unsigned;
         char desc[512];
@@ -208,7 +208,7 @@ struct range
         return std::move(desc);  // NOLINT
     }
 
-protected:
+private:
     Intp m_begin;
     Intp m_end;
     Intp m_stride;
@@ -248,12 +248,6 @@ struct params
         return ((size + block_size - 1) / block_size);
     }
 
-    uint32_t block   = 32;
-    uint32_t grid    = 0;  // 0 == compute
-    uint32_t shmem   = 0;
-    stream_t stream  = 0;
-    bool     dynamic = true;  // allow the grid size to be dynamically computed
-
     friend std::ostream& operator<<(std::ostream& os, const params& obj)
     {
         std::stringstream ss;
@@ -262,6 +256,13 @@ struct params
         os << ss.str();
         return os;
     }
+
+    // these should not be linted
+    uint32_t block   = 32;    // NOLINT
+    uint32_t grid    = 0;     // NOLINT: 0 == compute
+    uint32_t shmem   = 0;     // NOLINT
+    stream_t stream  = 0;     // NOLINT
+    bool     dynamic = true;  // NOLINT: allow the grid size to be dynamically computed
 };
 
 //======================================================================================//

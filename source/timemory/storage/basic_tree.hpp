@@ -190,7 +190,7 @@ struct basic_tree
         // this is for backward compatiblity
         children_base _children{};
         for(const auto& itr : m_children)
-            _children.push_back(*itr.get());
+            _children.push_back(*itr);
         ar(cereal::make_nvp("node", m_value), cereal::make_nvp("children", _children));
     }
 
@@ -207,8 +207,8 @@ struct basic_tree
     auto& get_value() { return m_value; }
     auto& get_children() { return m_children; }
 
-    const auto& get_value() const { return m_value; }
-    const auto& get_children() const { return m_children; }
+    TIMEMORY_NODISCARD const auto& get_value() const { return m_value; }
+    TIMEMORY_NODISCARD const auto& get_children() const { return m_children; }
 
 private:
     value_type    m_value    = {};

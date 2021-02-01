@@ -126,9 +126,13 @@ base<Tp, Value>::get_width()
         _instance = settings::width();
 
     if(timing_category_v && settings::timing_width() >= 0)
+    {
         _instance = settings::timing_width();
+    }
     else if(memory_category_v && settings::memory_width() >= 0)
+    {
         _instance = settings::memory_width();
+    }
 
     return _instance;
 }
@@ -144,9 +148,13 @@ base<Tp, Value>::get_precision()
         _instance = settings::precision();
 
     if(timing_category_v && settings::timing_precision() >= 0)
+    {
         _instance = settings::timing_precision();
+    }
     else if(memory_category_v && settings::memory_precision() >= 0)
+    {
         _instance = settings::memory_precision();
+    }
 
     return _instance;
 }

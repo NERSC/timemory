@@ -144,12 +144,12 @@ struct message_t
 
 struct event_attributes_t
 {
-    uint32_t  version     = NVTX_VERSION;
-    uint32_t  size        = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    uint32_t  colorType   = NVTX_COLOR_ARGB;
-    uint32_t  color       = 0xff00ff;
-    uint32_t  messageType = NVTX_MESSAGE_TYPE_ASCII;
-    message_t message;
+    uint32_t  version     = NVTX_VERSION;                   // NOLINT
+    uint32_t  size        = NVTX_EVENT_ATTRIB_STRUCT_SIZE;  // NOLINT
+    uint32_t  colorType   = NVTX_COLOR_ARGB;                // NOLINT
+    uint32_t  color       = 0xff00ff;                       // NOLINT
+    uint32_t  messageType = NVTX_MESSAGE_TYPE_ASCII;        // NOLINT
+    message_t message;                                      // NOLINT
 
     event_attributes_t()                          = default;
     ~event_attributes_t()                         = default;
@@ -193,7 +193,7 @@ init_marker(const std::string& _msg, color::color_t _color = 0)
     attrib.size                                 = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
     attrib.messageType                          = NVTX_MESSAGE_TYPE_ASCII;
     attrib.colorType                            = NVTX_COLOR_ARGB;
-    attrib.message.ascii                        = _msg.c_str();
+    attrib.message.ascii                        = _msg.c_str();  // NOLINT
     attrib.color                                = (_color == 0)
                        ? (color::available().at((_counter++) % color::available().size()))
                        : _color;

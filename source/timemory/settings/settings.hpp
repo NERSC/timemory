@@ -245,14 +245,13 @@ public:
         TIMEMORY_VISIBILITY("default");
     static void store_command_line(int argc, char** argv) TIMEMORY_VISIBILITY("default");
     static string_t compose_output_filename(const string_t& _tag, string_t _ext,
-                                            bool          _mpi_init = false,
-                                            const int32_t _mpi_rank = -1,
-                                            bool fake = false, std::string _explicit = "")
+                                            bool    _mpi_init = false,
+                                            int32_t _mpi_rank = -1, bool fake = false,
+                                            std::string _explicit = "")
         TIMEMORY_VISIBILITY("default");
     static string_t compose_input_filename(const string_t& _tag, string_t _ext,
-                                           bool          _mpi_init = false,
-                                           const int32_t _mpi_rank = -1,
-                                           std::string   _explicit = "")
+                                           bool _mpi_init = false, int32_t _mpi_rank = -1,
+                                           std::string _explicit = "")
         TIMEMORY_VISIBILITY("default");
 
     static void parse(settings* = instance<TIMEMORY_API>())
@@ -262,10 +261,10 @@ public:
 
 public:
     template <typename Archive>
-    void load(Archive& ar, const unsigned int);
+    void load(Archive& ar, unsigned int);
 
     template <typename Archive>
-    void save(Archive& ar, const unsigned int) const;
+    void save(Archive& ar, unsigned int) const;
 
     template <typename Archive>
     static void serialize_settings(Archive&);
@@ -290,13 +289,13 @@ public:
     static size_t data_width(int64_t _idx, int64_t _w) TIMEMORY_VISIBILITY("default");
 
 public:
-    auto           ordering() const { return m_order; }
-    iterator       begin() { return m_data.begin(); }
-    iterator       end() { return m_data.end(); }
-    const_iterator begin() const { return m_data.cbegin(); }
-    const_iterator end() const { return m_data.cend(); }
-    const_iterator cbegin() const { return m_data.cbegin(); }
-    const_iterator cend() const { return m_data.cend(); }
+    TIMEMORY_NODISCARD auto ordering() const { return m_order; }
+    iterator                begin() { return m_data.begin(); }
+    iterator                end() { return m_data.end(); }
+    TIMEMORY_NODISCARD const_iterator begin() const { return m_data.cbegin(); }
+    TIMEMORY_NODISCARD const_iterator end() const { return m_data.cend(); }
+    TIMEMORY_NODISCARD const_iterator cbegin() const { return m_data.cbegin(); }
+    TIMEMORY_NODISCARD const_iterator cend() const { return m_data.cend(); }
 
     template <typename Sp = string_t>
     auto find(Sp&& _key, bool _exact = true);
@@ -331,7 +330,7 @@ public:
 
 protected:
     template <typename Archive, typename Tp>
-    auto get_serialize_pair() const
+    TIMEMORY_NODISCARD auto get_serialize_pair() const  // NOLINT
     {
         using serialize_func_t = std::function<void(Archive&, value_type)>;
         using serialize_pair_t = std::pair<std::type_index, serialize_func_t>;
@@ -346,7 +345,7 @@ protected:
     }
 
     template <typename Archive, typename... Tail>
-    auto get_serialize_map(tim::type_list<Tail...>) const
+    TIMEMORY_NODISCARD auto get_serialize_map(tim::type_list<Tail...>) const  // NOLINT
     {
         using serialize_func_t = std::function<void(Archive&, value_type)>;
         using serialize_map_t  = std::map<std::type_index, serialize_func_t>;
@@ -356,7 +355,7 @@ protected:
         return _val;
     }
 
-protected:
+private:
     data_type   m_data         = {};
     strvector_t m_order        = {};
     strvector_t m_command_line = {};
@@ -446,7 +445,7 @@ settings::data_width(int64_t _idx, int64_t _w)
 //
 template <typename Archive>
 void
-settings::load(Archive& ar, const unsigned int version)
+settings::load(Archive& ar, unsigned int version)
 {
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
@@ -481,7 +480,7 @@ settings::load(Archive& ar, const unsigned int version)
 //
 template <typename Archive>
 void
-settings::save(Archive& ar, const unsigned int) const
+settings::save(Archive& ar, unsigned int) const
 {
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
@@ -555,14 +554,18 @@ settings::set(Sp&& _key, Tp&& _val, bool _exact)
         auto _vidx = std::type_index(typeid(Up&));
         if(itr->second->get_type_index() == _tidx &&
            itr->second->get_value_index() == _tidx)
+        {
             return (static_cast<tsettings<Tp>*>(itr->second.get())->get() =
                         std::forward<Tp>(_val),
                     true);
+        }
         if(itr->second->get_type_index() == _tidx &&
            itr->second->get_value_index() == _vidx)
+        {
             return (static_cast<tsettings<Tp, Tp&>*>(itr->second.get())->get() =
                         std::forward<Tp>(_val),
                     true);
+        }
     }
     return false;
 }

@@ -565,14 +565,17 @@ public:
 public:
     static constexpr size_t size = 2;
 
-    bool empty() const
+    TIMEMORY_NODISCARD bool empty() const
     {
         return (m_key.empty() || (m_data[0] == nullptr && m_data[1] == nullptr));
     }
 
-    const std::string& key() const { return m_key; }
+    TIMEMORY_NODISCARD const std::string& key() const { return m_key; }
 
-    ompt_data_t* data(size_t idx = 0) const { return m_data[idx % size]; }
+    TIMEMORY_NODISCARD ompt_data_t* data(size_t idx = 0) const
+    {
+        return m_data[idx % size];
+    }
 
     template <size_t Idx, typename Tp, typename Func = std::function<void(Tp*)>>
     auto construct(Func&& f = [](Tp*) {})

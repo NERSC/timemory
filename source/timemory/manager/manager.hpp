@@ -120,13 +120,13 @@ public:
 
     /// \fn void set_write_metadata(short)
     /// \brief Set to 0 for yes if other output, -1 for never, or 1 for yes
-    void    set_write_metadata(short v) { m_write_metadata = v; }
-    void    write_metadata(const char* = "");
-    void    update_metadata_prefix();
-    int32_t get_rank() const { return m_rank; }
-    bool    is_finalizing() const { return m_is_finalizing; }
-    void    is_finalizing(bool v) { m_is_finalizing = v; }
-    void    add_entries(uint64_t n) { m_num_entries += n; }
+    void               set_write_metadata(short v) { m_write_metadata = v; }
+    void               write_metadata(const char* = "");
+    void               update_metadata_prefix();
+    TIMEMORY_NODISCARD int32_t get_rank() const { return m_rank; }
+    TIMEMORY_NODISCARD bool    is_finalizing() const { return m_is_finalizing; }
+    void                       is_finalizing(bool v) { m_is_finalizing = v; }
+    void                       add_entries(uint64_t n) { m_num_entries += n; }
 
 public:
     // Public static functions
@@ -256,8 +256,8 @@ private:
 
 public:
     // Public member functions
-    int32_t instance_count() const { return m_instance_count; }
-    int64_t get_tid() const { return m_thread_index; }
+    TIMEMORY_NODISCARD int32_t instance_count() const { return m_instance_count; }
+    TIMEMORY_NODISCARD int64_t get_tid() const { return m_thread_index; }
 
 protected:
     // protected static functions
@@ -265,7 +265,7 @@ protected:
 
 protected:
     // protected functions
-    string_t get_prefix() const;
+    TIMEMORY_NODISCARD string_t get_prefix() const;
 
 private:
     /// notifies that it is finalizing
@@ -346,7 +346,7 @@ public:
 
     static void update_settings(const settings& _settings)
     {
-        f_settings().reset(new settings(_settings));
+        f_settings() = std::make_shared<settings>(_settings);
     }
 
     static settings swap_settings(settings _settings)
@@ -441,10 +441,12 @@ manager::do_init_storage()
                 ret->initialize();
 
             if(f_debug())
+            {
                 printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
                        demangle<Tp>().c_str(), (void*) ret,
                        (component::state<Tp>::has_storage()) ? "true" : "false",
                        (ret) ? ((ret->empty()) ? "true" : "false") : "false");
+            }
         }
         return true;
     }();
@@ -467,10 +469,12 @@ manager::do_print_storage(const enum_set_t& _types)
         ret->print();
 
     if(f_debug())
+    {
         printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
                demangle<Tp>().c_str(), (void*) ret,
                (component::state<Tp>::has_storage()) ? "true" : "false",
                (ret) ? ((ret->empty()) ? "true" : "false") : "false");
+    }
 }
 //
 //----------------------------------------------------------------------------------//
@@ -489,10 +493,12 @@ manager::do_clear(const enum_set_t& _types)
         ret->reset();
 
     if(f_debug())
+    {
         printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
                demangle<Tp>().c_str(), (void*) ret,
                (component::state<Tp>::has_storage()) ? "true" : "false",
                (ret) ? ((ret->empty()) ? "true" : "false") : "false");
+    }
 }
 //
 //----------------------------------------------------------------------------------//
@@ -511,10 +517,12 @@ manager::do_serialize(Archive& ar, const enum_set_t& _types)
         ret->do_serialize(ar);
 
     if(f_debug())
+    {
         printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
                demangle<Tp>().c_str(), (void*) ret,
                (component::state<Tp>::has_storage()) ? "true" : "false",
                (ret) ? ((ret->empty()) ? "true" : "false") : "false");
+    }
 }
 //
 //----------------------------------------------------------------------------------//
@@ -532,10 +540,12 @@ manager::do_size(uint64_t& _sz)
         _sz += ret->size();
 
     if(f_debug())
+    {
         printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
                demangle<Tp>().c_str(), (void*) ret,
                (component::state<Tp>::has_storage()) ? "true" : "false",
                (ret) ? ((ret->empty()) ? "true" : "false") : "false");
+    }
 }
 //
 //----------------------------------------------------------------------------------//

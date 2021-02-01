@@ -43,9 +43,11 @@
    and /boost/serialization/void_cast.hpp for their implementation. Additional details
    found in other files split across serialization and archive.
 */
+
 #ifndef TIMEMORY_CEREAL_DETAILS_POLYMORPHIC_IMPL_HPP_
 #define TIMEMORY_CEREAL_DETAILS_POLYMORPHIC_IMPL_HPP_
 
+#include "timemory/macros/attributes.hpp"
 #include "timemory/tpls/cereal/cereal/details/polymorphic_impl_fwd.hpp"
 #include "timemory/tpls/cereal/cereal/details/static_object.hpp"
 #include "timemory/tpls/cereal/cereal/details/util.hpp"
@@ -126,11 +128,12 @@ struct PolymorphicCaster
     virtual ~PolymorphicCaster() TIMEMORY_CEREAL_NOEXCEPT = default;
 
     //! Downcasts to the proper derived type
-    virtual void const* downcast(void const* const ptr) const = 0;
+    virtual void const* downcast(void const* ptr) const = 0;
     //! Upcast to proper base type
-    virtual void* upcast(void* const ptr) const = 0;
+    virtual void* upcast(void* ptr) const = 0;
     //! Upcast to proper base type, shared_ptr version
-    virtual std::shared_ptr<void> upcast(std::shared_ptr<void> const& ptr) const = 0;
+    TIMEMORY_NODISCARD virtual std::shared_ptr<void> upcast(
+        std::shared_ptr<void> const& ptr) const = 0;
 };
 
 //! Holds registered mappings between base and derived types for casting
@@ -317,8 +320,8 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
                     auto const& path = result.second;
                     return { path.size(), path };
                 }
-                else
-                    return { (std::numeric_limits<size_t>::max)(), {} };
+
+                return { (std::numeric_limits<size_t>::max)(), {} };
             };
 
             std::stack<std::type_index>
@@ -332,8 +335,10 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
             auto isDirty = [&](std::type_index const& c) {
                 auto const dirtySetSize = dirtySet.size();
                 for(size_t i = 0; i < dirtySetSize; ++i)
+                {
                     if(dirtySet[i] == c)
                         return true;
+                }
 
                 return false;
             };
@@ -388,8 +393,10 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
                                     unregisteredRelations.equal_range(parent);
                                 auto hint = hintRange.first;
                                 for(; hint != hintRange.second; ++hint)
+                                {
                                     if(hint->second.first == finalChild)
                                         break;
+                                }
 
                                 const bool uncommittedExists =
                                     hint != unregisteredRelations.end();
@@ -439,7 +446,7 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
                 for(auto pIter = parentRange.first; pIter != parentRange.second; ++pIter)
                 {
                     const auto pParent = pIter->second;
-                    if(!processedParents.count(pParent))
+                    if(processedParents.count(pParent) == 0u)
                     {
                         parentStack.push(pParent);
                         processedParents.insert(pParent);
@@ -464,7 +471,8 @@ struct PolymorphicVirtualCaster : PolymorphicCaster
     }
 
     //! Performs the proper upcast with the templated types (shared_ptr version)
-    std::shared_ptr<void> upcast(std::shared_ptr<void> const& ptr) const override
+    TIMEMORY_NODISCARD std::shared_ptr<void> upcast(
+        std::shared_ptr<void> const& ptr) const override
     {
         return std::dynamic_pointer_cast<Base>(std::static_pointer_cast<Derived>(ptr));
     }
@@ -645,7 +653,7 @@ struct OutputBindingCreator
 
         // If the msb of the id is 1, then the type name is new, and we should serialize
         // it
-        if(id & detail::msb_32bit)
+        if((id & detail::msb_32bit) != 0u)
         {
             std::string namestring(name);
             ar(TIMEMORY_CEREAL_NVP_("polymorphic_name", namestring));
@@ -669,8 +677,7 @@ struct OutputBindingCreator
 
             @param dptr A void pointer to the contents of the shared_ptr to serialize */
         PolymorphicSharedPointerWrapper(T const* dptr)
-        : refCount()
-        , wrappedPtr(refCount, dptr)
+        : wrappedPtr(refCount, dptr)
         {}
 
         //! Get the wrapped shared_ptr */
@@ -756,7 +763,7 @@ struct OutputBindingCreator
             ar(TIMEMORY_CEREAL_NVP_("ptr_wrapper", memory_detail::make_ptr_wrapper(ptr)));
         };
 
-        map.insert({ std::move(key), std::move(serializers) });
+        map.insert({ key, std::move(serializers) });
     }
 };
 

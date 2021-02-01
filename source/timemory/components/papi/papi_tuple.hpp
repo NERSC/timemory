@@ -261,7 +261,7 @@ public:
         return val;
     }
 
-    string_t get_display() const
+    TIMEMORY_NODISCARD string_t get_display() const
     {
         auto val          = (is_transient) ? accum : value;
         auto _get_display = [&](std::ostream& os, size_type idx) {
@@ -273,13 +273,19 @@ public:
             auto     _width     = base_type::get_width();
             auto     _flags     = base_type::get_format_flags();
 
-            std::stringstream ss, ssv, ssi;
+            std::stringstream ss;
+            std::stringstream ssv;
+            std::stringstream ssi;
             ssv.setf(_flags);
             ssv << std::setw(_width) << std::setprecision(_prec) << _obj_value;
             if(!_disp.empty())
+            {
                 ssv << " " << _disp;
+            }
             else if(!_label.empty())
+            {
                 ssi << " " << _label;
+            }
             ss << ssv.str() << ssi.str();
             os << ss.str();
         };

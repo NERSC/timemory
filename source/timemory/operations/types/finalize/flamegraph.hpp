@@ -84,10 +84,12 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)  // NOLINT
 
     result_type results;
     for(auto&& itr : node_results)
+    {
         for(auto&& nitr : itr)
         {
             results.emplace_back(std::move(nitr));
         }
+    }
 
     if(results.empty())
         return;

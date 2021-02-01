@@ -225,7 +225,7 @@ struct gotcha
         return "Generates GOTCHA wrappers which can be used to wrap or replace "
                "dynamically linked function calls";
     }
-    static value_type record() { return; }
+    static value_type record() {}
 
     //----------------------------------------------------------------------------------//
 
@@ -278,8 +278,10 @@ struct gotcha
     static auto set_ready(bool val)
     {
         for(size_t i = 0; i < Nt; ++i)
+        {
             if(get_data().at(i).filled)
                 get_data().at(i).ready = val;
+        }
         return get_ready();
     }
 
@@ -288,8 +290,10 @@ struct gotcha
     static auto set_ready(const std::array<bool, Nt>& values)
     {
         for(size_t i = 0; i < Nt; ++i)
+        {
             if(get_data().at(i).filled)
                 get_data().at(i).ready = values.at(i);
+        }
         return get_ready();
     }
 
@@ -399,9 +403,13 @@ struct gotcha
             check_error<N>(ret_prio, "get priority");
 
             if(get_suppresses().find(_data.tool_id) != get_suppresses().end())
+            {
                 _data.ready = false;
+            }
             else
+            {
                 _data.ready = get_default_ready();
+            }
         }
 
         return _data.filled;
@@ -697,13 +705,17 @@ private:
 
             // if function matches a reject_listed entry, do not construct wrapper
             for(const auto& itr : mpi_reject_list)
+            {
                 if(_func == itr || _func == tofortran(itr))
                 {
                     if(settings::debug())
+                    {
                         printf("[gotcha]> Skipping gotcha binding for %s...\n",
                                _func.c_str());
+                    }
                     return false;
                 }
+            }
         }
 
         const select_list_t& _permit_list = get_permit_list()();
@@ -713,22 +725,26 @@ private:
         if(_reject_list.count(_func) > 0)
         {
             if(settings::debug())
+            {
                 printf(
                     "[gotcha]> GOTCHA binding for function '%s' is in reject list...\n",
                     _func.c_str());
+            }
             return false;
         }
 
         // if a permit_list was provided, then do not construct wrapper if not in permit
         // list
-        if(_permit_list.size() > 0)
+        if(!_permit_list.empty())
         {
             if(_permit_list.count(_func) == 0)
             {
                 if(settings::debug())
+                {
                     printf("[gotcha]> GOTCHA binding for function '%s' is not in permit "
                            "list...\n",
                            _func.c_str());
+                }
                 return false;
             }
         }

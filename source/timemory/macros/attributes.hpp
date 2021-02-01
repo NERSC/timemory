@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/macros/compiler.hpp"
+#include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
 
 //======================================================================================//
@@ -53,26 +54,42 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_FLATTEN) && !defined(_TIMEMORY_MSVC)
-#    define TIMEMORY_FLATTEN [[gnu::flatten]]
-#else
-#    define TIMEMORY_FLATTEN
+#if !defined(TIMEMORY_NODISCARD)
+#    if defined(CXX17)
+#        define TIMEMORY_NODISCARD [[nodiscard]]
+#    else
+#        define TIMEMORY_NODISCARD
+#    endif
 #endif
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_HOT) && !defined(_TIMEMORY_MSVC)
-#    define TIMEMORY_HOT TIMEMORY_ATTRIBUTE(hot)
-#else
-#    define TIMEMORY_HOT
+#if !defined(TIMEMORY_FLATTEN)
+#    if !defined(_TIMEMORY_MSVC)
+#        define TIMEMORY_FLATTEN [[gnu::flatten]]
+#    else
+#        define TIMEMORY_FLATTEN
+#    endif
 #endif
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_COLD) && !defined(_TIMEMORY_MSVC)
-#    define TIMEMORY_COLD TIMEMORY_ATTRIBUTE(cold)
-#else
-#    define TIMEMORY_COLD
+#if !defined(TIMEMORY_HOT)
+#    if !defined(_TIMEMORY_MSVC)
+#        define TIMEMORY_HOT TIMEMORY_ATTRIBUTE(hot)
+#    else
+#        define TIMEMORY_HOT
+#    endif
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_COLD)
+#    if !defined(_TIMEMORY_MSVC)
+#        define TIMEMORY_COLD TIMEMORY_ATTRIBUTE(cold)
+#    else
+#        define TIMEMORY_COLD
+#    endif
 #endif
 
 //======================================================================================//

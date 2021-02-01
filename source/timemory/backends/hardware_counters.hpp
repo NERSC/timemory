@@ -88,7 +88,7 @@ struct info
     //
 #undef TIMEMORY_HWCOUNTER_INFO_ACCESSOR
 
-    auto id() const { return (this->index() | this->offset()); }
+    TIMEMORY_NODISCARD auto id() const { return (this->index() | this->offset()); }
 };
 //
 //--------------------------------------------------------------------------------------//

@@ -48,9 +48,7 @@ template <typename InitF, typename StartF, typename StopF, typename GetF, typena
 opaque::opaque(bool _valid, size_t _typeid, InitF&& _init, StartF&& _start, StopF&& _stop,
                GetF&& _get, DelF&& _del, SetupF&& _setup, PushF&& _push, PopF&& _pop)
 : m_valid(_valid)
-, m_copy(false)
 , m_typeid(_typeid)
-, m_data(nullptr)
 , m_init(std::move(_init))
 , m_setup(std::move(_setup))
 , m_push(std::move(_push))

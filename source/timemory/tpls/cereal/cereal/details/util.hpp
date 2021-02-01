@@ -71,13 +71,13 @@ namespace util
 //! Demangles the type encoded in a string
 /*! @internal */
 inline std::string
-demangle(std::string mangledName)
+demangle(const std::string& mangledName)
 {
     int         status        = 0;
     char*       demangledName = nullptr;
     std::size_t len;
 
-    demangledName = abi::__cxa_demangle(mangledName.c_str(), 0, &len, &status);
+    demangledName = abi::__cxa_demangle(mangledName.c_str(), nullptr, &len, &status);
 
     std::string retName(demangledName);
     free(demangledName);

@@ -49,7 +49,8 @@ struct PtrWrapper
     PtrWrapper(T&& p)
     : ptr(std::forward<T>(p))
     {}
-    T& ptr;
+
+    T& ptr;  // NOLINT
 
     PtrWrapper(PtrWrapper const&) = default;
     PtrWrapper& operator=(PtrWrapper const&) = delete;
@@ -86,7 +87,7 @@ struct LoadAndConstructLoadWrapper
         ::tim::cereal::detail::Construct<T, Archive>::load_andor_construct(ar, construct);
     }
 
-    ::tim::cereal::construct<T> construct;
+    ::tim::cereal::construct<T> construct;  // NOLINT
 };
 
 //! A helper struct for saving and restoring the state of types that derive from
@@ -373,7 +374,9 @@ TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(
     // 1 == not null
 
     if(!ptr)
+    {
         ar(TIMEMORY_CEREAL_NVP_("valid", uint8_t(0)));
+    }
     else
     {
         ar(TIMEMORY_CEREAL_NVP_("valid", uint8_t(1)));

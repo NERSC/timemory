@@ -189,9 +189,11 @@ TEST_F(trace_tests, add_hash_ids)
     EXPECT_GE(wc_end.size(), 4);
 
     for(size_t i = 0; i < wc_end.size(); ++i)
+    {
         EXPECT_FALSE(wc_end.at(i).prefix().find(cxx_hash_ids.at(i)) == npos)
             << "prefix: " << wc_end.at(i).prefix() << ", key: " << cxx_hash_ids.at(i)
             << std::endl;
+    }
 
     EXPECT_NE(wc_beg.size(), wc_end.size());
     EXPECT_EQ(wc_end.size() - wc_beg.size(), 4);
@@ -243,13 +245,17 @@ TEST_F(trace_tests, modify_components)
     EXPECT_EQ(wc_end.size(), cc_end.size());
 
     for(size_t i = 0; i < wc_end.size(); ++i)
+    {
         EXPECT_FALSE(wc_end.at(i).prefix().find(cxx_hash_ids.at(i)) == npos)
             << "prefix: " << wc_end.at(i).prefix() << ", key: " << cxx_hash_ids.at(i)
             << std::endl;
+    }
     for(size_t i = 0; i < cc_end.size(); ++i)
+    {
         EXPECT_FALSE(cc_end.at(i).prefix().find(cxx_hash_ids.at(i)) == npos)
             << "prefix: " << cc_end.at(i).prefix() << ", key: " << cxx_hash_ids.at(i)
             << std::endl;
+    }
 
     EXPECT_EQ(wc_beg.size(), wc_end.size());
     EXPECT_NE(cc_beg.size(), cc_end.size());

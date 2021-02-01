@@ -187,8 +187,10 @@ auto
 abs(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
+    {
         itr.second = ::tim::math::abs(
             itr.second, get_index_sequence<decay_t<decltype(itr.second)>>::value);
+    }
     return _val;
 }
 
@@ -232,8 +234,10 @@ auto
 sqrt(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
+    {
         itr.second = ::tim::math::sqrt(
             itr.second, get_index_sequence<decay_t<decltype(itr.second)>>::value);
+    }
     return _val;
 }
 
@@ -268,8 +272,10 @@ auto
 pow(Tp _val, double _m, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
+    {
         itr =
             ::tim::math::pow(itr, _m, get_index_sequence<decay_t<decltype(itr)>>::value);
+    }
     return _val;
 }
 
@@ -279,8 +285,10 @@ auto
 pow(Tp _val, double _m, type_list<>) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
+    {
         itr.second = ::tim::math::pow(
             itr.second, _m, get_index_sequence<decay_t<decltype(itr.second)>>::value);
+    }
     return _val;
 }
 

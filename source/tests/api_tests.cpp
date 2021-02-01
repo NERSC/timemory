@@ -105,12 +105,10 @@ protected:
 };
 
 namespace os       = ::tim::os;
-namespace api      = ::tim::api;
 namespace project  = ::tim::project;
 namespace category = ::tim::category;
 namespace tpls     = ::tim::tpls;
 namespace trait    = ::tim::trait;
-namespace concepts = ::tim::concepts;
 
 using namespace tim::component;
 

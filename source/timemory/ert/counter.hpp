@@ -97,7 +97,7 @@ public:
                      uint64_t _align = 8 * sizeof(Tp))
     : params(_params)
     , align(_align)
-    , data(_exec_data)
+    , data(std::move(_exec_data))
     {
         compute_internal();
     }
@@ -105,12 +105,12 @@ public:
     //----------------------------------------------------------------------------------//
     // overload how to create the counter with a callback function
     //
-    counter(const exec_params& _params, const callback_type& _func, data_ptr_t _exec_data,
+    counter(const exec_params& _params, callback_type _func, data_ptr_t _exec_data,
             uint64_t _align = 8 * sizeof(Tp))
     : params(_params)
     , align(_align)
-    , data(_exec_data)
-    , configure_callback(_func)
+    , data(std::move(_exec_data))
+    , configure_callback(std::move(_func))
     {
         compute_internal();
     }
@@ -182,7 +182,7 @@ public:
     // execute the callback that may customize the thread before returning the object
     // that provides the measurement
     //
-    counter_type get_counter() const { return counter_type(); }
+    TIMEMORY_NODISCARD counter_type get_counter() const { return counter_type(); }
 
     //----------------------------------------------------------------------------------//
     // record the data from a thread/process. Extra exec_params (_itrp) should contain
@@ -201,9 +201,13 @@ public:
         if(label.length() == 0)
         {
             if(nops > 1)
+            {
                 ss << "vector_op";
+            }
             else
+            {
                 ss << "scalar_op";
+            }
         }
 
         auto      _label = tim::demangle<Tp>();
@@ -262,8 +266,8 @@ public:
     //----------------------------------------------------------------------------------//
     //  Get the data pointer
     //
-    data_ptr_t&       get_data() { return data; }
-    const data_ptr_t& get_data() const { return data; }
+    data_ptr_t&              get_data() { return data; }
+    TIMEMORY_NODISCARD const data_ptr_t& get_data() const { return data; }
 
     //----------------------------------------------------------------------------------//
     //  Skip the flop counts
@@ -282,16 +286,16 @@ public:
     //----------------------------------------------------------------------------------//
     //  public data members, modify as needed
     //
-    exec_params params                      = exec_params();
-    int         bytes_per_element           = 0;
-    int         memory_accesses_per_element = 0;
-    uint64_t    align                       = sizeof(Tp);
-    uint64_t    nsize                       = 0;
-    data_ptr_t  data                        = std::make_shared<ert_data_t>();
-    std::string label                       = "";
-    skip_ops_t  skip_ops                    = skip_ops_t();
+    exec_params params                      = exec_params();                   // NOLINT
+    int         bytes_per_element           = 0;                               // NOLINT
+    int         memory_accesses_per_element = 0;                               // NOLINT
+    uint64_t    align                       = sizeof(Tp);                      // NOLINT
+    uint64_t    nsize                       = 0;                               // NOLINT
+    data_ptr_t  data                        = std::make_shared<ert_data_t>();  // NOLINT
+    std::string label                       = "";                              // NOLINT
+    skip_ops_t  skip_ops                    = skip_ops_t();                    // NOLINT
 
-protected:
+private:
     callback_type configure_callback = [](uint64_t, this_type&) {};
 
 private:

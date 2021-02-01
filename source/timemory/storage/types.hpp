@@ -88,7 +88,7 @@ public:
     using this_type = storage;
 
 public:
-    storage(bool _is_master, int64_t _instance_id, const std::string& _label);
+    storage(bool _is_master, int64_t _instance_id, std::string _label);
     virtual ~storage();
 
     explicit storage(const this_type&) = delete;
@@ -110,15 +110,21 @@ public:
     static this_type* base_instance();
 
 public:
-    const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
-    const graph_hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
+    TIMEMORY_NODISCARD const graph_hash_map_ptr_t& get_hash_ids() const
+    {
+        return m_hash_ids;
+    }
+    TIMEMORY_NODISCARD const graph_hash_alias_ptr_t& get_hash_aliases() const
+    {
+        return m_hash_aliases;
+    }
 
     hash_value_type add_hash_id(const std::string& _prefix);
     void            add_hash_id(uint64_t _lhs, uint64_t _rhs);
 
-    bool    is_initialized() const { return m_initialized; }
-    int64_t instance_id() const { return m_instance_id; }
-    void    free_shared_manager();
+    TIMEMORY_NODISCARD bool is_initialized() const { return m_initialized; }
+    TIMEMORY_NODISCARD int64_t instance_id() const { return m_instance_id; }
+    void                       free_shared_manager();
 
 protected:
     void add_file_output(const string_t& _category, const string_t& _label,
@@ -136,22 +142,22 @@ protected:
     static void              stop_profiler();
 
 protected:
-    bool                      m_initialized  = false;
-    bool                      m_finalized    = false;
-    bool                      m_global_init  = false;
-    bool                      m_thread_init  = false;
-    bool                      m_data_init    = false;
-    bool                      m_is_master    = false;
-    bool                      m_node_init    = dmp::is_initialized();
-    int32_t                   m_node_rank    = dmp::rank();
-    int32_t                   m_node_size    = dmp::size();
-    int64_t                   m_instance_id  = -1;
-    int64_t                   m_thread_idx   = threading::get_id();
-    string_t                  m_label        = "";
-    graph_hash_map_ptr_t      m_hash_ids     = ::tim::get_hash_ids();
-    graph_hash_alias_ptr_t    m_hash_aliases = ::tim::get_hash_aliases();
-    std::shared_ptr<manager>  m_manager      = {};
-    std::shared_ptr<settings> m_settings     = {};
+    bool                      m_initialized  = false;                      // NOLINT
+    bool                      m_finalized    = false;                      // NOLINT
+    bool                      m_global_init  = false;                      // NOLINT
+    bool                      m_thread_init  = false;                      // NOLINT
+    bool                      m_data_init    = false;                      // NOLINT
+    bool                      m_is_master    = false;                      // NOLINT
+    bool                      m_node_init    = dmp::is_initialized();      // NOLINT
+    int32_t                   m_node_rank    = dmp::rank();                // NOLINT
+    int32_t                   m_node_size    = dmp::size();                // NOLINT
+    int64_t                   m_instance_id  = -1;                         // NOLINT
+    int64_t                   m_thread_idx   = threading::get_id();        // NOLINT
+    string_t                  m_label        = "";                         // NOLINT
+    graph_hash_map_ptr_t      m_hash_ids     = ::tim::get_hash_ids();      // NOLINT
+    graph_hash_alias_ptr_t    m_hash_aliases = ::tim::get_hash_aliases();  // NOLINT
+    std::shared_ptr<manager>  m_manager      = {};                         // NOLINT
+    std::shared_ptr<settings> m_settings     = {};                         // NOLINT
 };
 //
 //--------------------------------------------------------------------------------------//

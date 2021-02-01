@@ -33,7 +33,7 @@ struct timemory_settings
 
 namespace
 {
-static const char* empty_str = "";
+const char* empty_str = "";
 }
 
 //======================================================================================//

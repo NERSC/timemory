@@ -45,6 +45,7 @@ TIMEMORY_DEFINE_NS_API(project, compiler_instrument)
 #include "timemory/mpl/types.hpp"
 
 // forward declare components to disable
+// NOLINTNEXTLINE
 namespace tim
 {
 namespace component
@@ -452,9 +453,11 @@ finalize()
 
     bool _remove_manager = false;
     if(get_trace_vec())
+    {
         printf("[pid=%i][tid=%i]> timemory-compiler-instrument: %lu results\n",
                (int) tim::process::get_id(), (int) tim::threading::get_id(),
                (unsigned long) get_trace_size());
+    }
     else
     {
         printf("[pid=%i][tid=%i]> timemory-compiler-instrument: finalizing...\n",
@@ -501,8 +504,8 @@ finalize()
         //
         tim::invoke::disjoint::stop(std::forward_as_tuple(wc, pr));
         std::stringstream ss;
-        ss << "required " << wc.get() << " " << wc.display_unit() << " and " << pr.get()
-           << " " << pr.display_unit();
+        ss << "required " << wc.get() << " " << tim::component::wall_clock::display_unit()
+           << " and " << pr.get() << " " << tim::component::peak_rss::display_unit();
         std::string msg = ss.str();
         printf("[pid=%i][tid=%i]> timemory-compiler-instrument: finalization %s\n",
                (int) tim::process::get_id(), (int) tim::threading::get_id(), msg.c_str());
@@ -539,10 +542,12 @@ extern "C"
 
         auto _label = get_label(this_fn, call_site);
         if(get_debug())
+        {
             fprintf(
                 stderr, "[%i][%i][timemory-compiler-inst]> %s\n",
                 (int) tim::process::get_id(), (int) tim::threading::get_id(),
                 tim::operation::decode<TIMEMORY_API>{}(_label).substr(0, 120).c_str());
+        }
 
         const auto& _overhead = get_overhead();
         const auto& _throttle = get_throttle();
@@ -569,11 +574,13 @@ extern "C"
             return;
 
         if(get_debug())
+        {
             fprintf(stderr, "[%i][%i][timemory-compiler-inst]> %s\n",
                     (int) tim::process::get_id(), (int) tim::threading::get_id(),
                     tim::operation::decode<TIMEMORY_API>{}(get_label(this_fn, call_site))
                         .substr(0, 120)
                         .c_str());
+        }
 
         const bool _is_first = (!get_main_wrapped() && get_first().first == this_fn &&
                                 get_first().second == call_site);
@@ -592,7 +599,7 @@ extern "C"
         const auto& _overhead = get_overhead();
         const auto& _throttle = get_throttle();
 
-        if(_throttle && (*_throttle)[CALL_SITE][this_fn])
+        if((_throttle != nullptr) && (*_throttle)[CALL_SITE][this_fn])
             return;
 
         if(_trace_vec->empty())
@@ -668,7 +675,7 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
 
         void* operator()() const { return m_routine(m_arg); }
 
-        bool debug() const { return m_debug; }
+        TIMEMORY_NODISCARD bool debug() const { return m_debug; }
 
         static void* wrap(void* _arg)
         {
@@ -735,7 +742,7 @@ private:
 struct main_gotcha : tim::component::base<main_gotcha, void>
 {
     // beginning of main
-    void audit(tim::audit::incoming)
+    static void audit(tim::audit::incoming)
     {
         puts("[timemory-compiler-instrument]> wrapped main");
         get_main_wrapped() = true;
@@ -743,18 +750,22 @@ struct main_gotcha : tim::component::base<main_gotcha, void>
     }
 
     // beginning of main
-    void audit(tim::audit::incoming, int argc, char** argv)
+    static void audit(tim::audit::incoming, int argc, char** argv)
     {
         puts("[timemory-compiler-instrument]> wrapped main");
         get_main_wrapped() = true;
         if(argc > 0)
+        {
             initialize(argv[0]);
+        }
         else
+        {
             initialize();
+        }
     }
 
     // end of main
-    void audit(tim::audit::outgoing, int)
+    static void audit(tim::audit::outgoing, int)
     {
         get_thread_enabled() = false;
         get_enabled()        = false;
@@ -782,7 +793,7 @@ setup_gotcha()
 
 namespace
 {
-static auto internal_gotcha_handle = setup_gotcha();
+auto internal_gotcha_handle = setup_gotcha();
 }  // namespace
 
 //--------------------------------------------------------------------------------------//

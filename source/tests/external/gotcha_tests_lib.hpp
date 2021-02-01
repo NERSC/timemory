@@ -48,12 +48,12 @@ do_puts(const char*);
 class DoWork
 {
 public:
-    DoWork(const std::pair<float, double>&);
+    DoWork(std::pair<float, double>);
 
     void execute_fp4(int64_t);
     void execute_fp8(int64_t);
-    void execute_fp(int64_t, std::vector<float>, const std::deque<double>&);
-    std::tuple<float, double> get() const;
+    void execute_fp(int64_t, const std::vector<float>&, const std::deque<double>&);
+    std::tuple<float, double> get() const;  // NOLINT
 
     friend std::ostream& operator<<(std::ostream& os, const DoWork& obj)
     {

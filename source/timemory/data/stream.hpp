@@ -75,15 +75,15 @@ struct stream_entry
     stream_entry& operator=(const stream_entry&) = default;
     stream_entry& operator=(stream_entry&&) = default;
 
-    string_t get() const { return m_value; }
+    TIMEMORY_NODISCARD string_t get() const { return m_value; }
 
-    bool         center() const { return m_center; }
-    bool         left() const { return m_left; }
-    int          row() const { return m_row; }
-    int          width() const { return m_width; }
-    int          column() const { return m_column; }
-    int          precision() const { return m_precision; }
-    format_flags flags() const { return m_format; }
+    TIMEMORY_NODISCARD bool center() const { return m_center; }
+    TIMEMORY_NODISCARD bool left() const { return m_left; }
+    TIMEMORY_NODISCARD int  row() const { return m_row; }
+    TIMEMORY_NODISCARD int  width() const { return m_width; }
+    TIMEMORY_NODISCARD int  column() const { return m_column; }
+    TIMEMORY_NODISCARD int  precision() const { return m_precision; }
+    TIMEMORY_NODISCARD format_flags flags() const { return m_format; }
 
     void center(bool v) { m_center = v; }
     void left(bool v) { m_left = v; }
@@ -218,7 +218,7 @@ struct entry : base::stream_entry
     explicit entry(Tp&& _val, header& _hdr, bool _center = false, bool _left = false)
     : base::stream_entry(_hdr)
     , m_hdr(&_hdr)
-    , m_permit_empty(false)
+
     {
         m_center = _center;
         m_left   = _left;
@@ -246,18 +246,18 @@ struct entry : base::stream_entry
     entry& operator=(const entry&) = default;
     entry& operator=(entry&&) = default;
 
-    bool         permit_empty() const { return m_permit_empty; }
-    int          width() const { return m_hdr->width(); }
-    int          precision() const { return m_hdr->precision(); }
-    format_flags flags() const { return m_hdr->flags(); }
+    TIMEMORY_NODISCARD bool permit_empty() const { return m_permit_empty; }
+    TIMEMORY_NODISCARD int  width() const { return m_hdr->width(); }
+    TIMEMORY_NODISCARD int  precision() const { return m_hdr->precision(); }
+    TIMEMORY_NODISCARD format_flags flags() const { return m_hdr->flags(); }
 
     void permit_empty(bool v) { m_permit_empty = v; }
     void width(int v) { m_hdr->width(v); }
     void precision(int v) { m_hdr->precision(v); }
     void setf(format_flags v) { m_hdr->setf(v); }
 
-    const header& get_header() const { return *m_hdr; }
-    header&       get_header() { return *m_hdr; }
+    TIMEMORY_NODISCARD const header& get_header() const { return *m_hdr; }
+    header&                          get_header() { return *m_hdr; }
 
 private:
     header* m_hdr          = nullptr;
@@ -306,19 +306,15 @@ public:
     , m_delim(_delim)
     , m_width(_width)
     , m_precision(_prec)
-    , m_rows(0)
-    , m_cols(0)
-    , m_prefix_begin(0)
-    , m_prefix_end(0)
     , m_format(_fmt)
     {}
 
-    bool         center() const { return m_center; }
-    int          precision() const { return m_precision; }
-    int          width() const { return m_width; }
-    char         delim() const { return m_delim; }
-    format_flags flags() const { return m_format; }
-    int64_t      freq() const { return m_separator_freq; }
+    TIMEMORY_NODISCARD bool center() const { return m_center; }
+    TIMEMORY_NODISCARD int  precision() const { return m_precision; }
+    TIMEMORY_NODISCARD int  width() const { return m_width; }
+    TIMEMORY_NODISCARD char delim() const { return m_delim; }
+    TIMEMORY_NODISCARD format_flags flags() const { return m_format; }
+    TIMEMORY_NODISCARD int64_t freq() const { return m_separator_freq; }
 
     void center(bool v) { m_center = v; }
     void precision(int v) { m_precision = v; }
@@ -335,8 +331,10 @@ public:
     static int64_t index(const string_t& _val, const vector_t<string_t>& _obj)
     {
         for(size_t i = 0; i < _obj.size(); ++i)
+        {
             if(_obj.at(i) == _val)
                 return static_cast<int64_t>(i);
+        }
         return -1;
     }
 
@@ -358,8 +356,10 @@ public:
                          const vector_t<pair_t<string_t, vector_t<Tp>>>& _obj)
     {
         for(size_t i = 0; i < _obj.size(); ++i)
+        {
             if(_obj.at(i).first == _val)
                 return static_cast<int64_t>(i);
+        }
         return -1;
     }
 
@@ -466,11 +466,10 @@ public:
             {
                 throw std::runtime_error("Error! indexing issue!");
             }
-            else
-            {
-                const auto& hitr = obj.m_headers[_idx].second.at(_offset);
-                base::write_entry(_ss, hitr);
-            }
+
+            const auto& hitr = obj.m_headers[_idx].second.at(_offset);
+            base::write_entry(_ss, hitr);
+
             ss << obj.delim() << ' ' << _ss.str() << ' ';
 
             if(obj.m_break.count(col) > 0)
@@ -572,9 +571,13 @@ public:
             const auto& _hdr   = _hitr.at(_offset % _hsize);
             auto        _w     = _hdr.width();
             if(col == 1)
+            {
                 ss << m_delim << std::setw(_w) << "";
+            }
             else
+            {
                 ss << _delim << std::setw(_w) << "";
+            }
             if(m_break.count(col) > 0)
                 break;
         }
@@ -628,11 +631,15 @@ public:
             itr       = _trim(itr);
             auto nlen = r_banner.back().length() + itr.length() + 2;
             if(nlen >= static_cast<size_t>(tot_w))
-                r_banner.push_back("");
+                r_banner.emplace_back("");
             if(r_banner.back().empty())
+            {
                 r_banner.back() += itr;
+            }
             else
+            {
                 r_banner.back() += " " + itr;
+            }
         }
 
         stringstream_t ss;
@@ -702,8 +709,10 @@ public:
     {
         // if no keys were provided, add all of them
         if(keys.empty())
+        {
             for(const auto& itr : m_order)
                 keys.push_back(itr);
+        }
 
         // the new headers
         order_map_t _order{};
@@ -727,8 +736,10 @@ public:
                 }
             }
             if(!found)
+            {
                 PRINT_HERE("Warning! Expected header tag '%s' not found when sorting",
                            itr.c_str());
+            }
         }
 
         // insert any remaining not excluded

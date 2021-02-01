@@ -86,9 +86,12 @@ std::vector<TIMEMORY_COMPONENT>
 enumerate_components(const std::string& names, const StringT& env_id = "")
 {
     if(std::string(env_id).length() > 0)
+    {
         return enumerate_components(tim::delimit(get_env<std::string>(env_id, names)));
-    else
+    }
+    {
         return enumerate_components(tim::delimit(names));
+    }
 }
 
 //======================================================================================//

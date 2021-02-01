@@ -499,7 +499,7 @@ macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)
             message(WARNING "TIMEMORY_USE_CLANG_TIDY is ON but clang-tidy is not found!")
             set(TIMEMORY_USE_CLANG_TIDY OFF)
         else()
-            set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+            set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_COMMAND})
 
             # Create a preprocessor definition that depends on .clang-tidy content so
             # the compile command will change when .clang-tidy changes.  This ensures
@@ -510,7 +510,6 @@ macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)
             file(SHA1 ${PROJECT_SOURCE_DIR}/.clang-tidy clang_tidy_sha1)
             set(CLANG_TIDY_DEFINITIONS "CLANG_TIDY_SHA1=${clang_tidy_sha1}")
             unset(clang_tidy_sha1)
-            # configure_file(${PROJECT_SOURCE_DIR}/.clang-tidy ${PROJECT_SOURCE_DIR}/.clang-tidy COPYONLY)
         endif()
     endif()
 endmacro()

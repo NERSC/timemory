@@ -233,20 +233,20 @@ struct gotcha_data
     gotcha_data& operator=(const gotcha_data&) = delete;
     gotcha_data& operator=(gotcha_data&&) = delete;
 
-    bool          ready        = false;        /// ready to be used
-    bool          filled       = false;        /// structure is populated
-    bool          is_active    = false;        /// is currently wrapping
-    bool          is_finalized = false;        /// no more wrapping is allowed
-    int           priority     = 0;            /// current priority
-    binding_t     binding      = binding_t{};  /// hold the binder set
-    wrappee_t     wrapper      = 0x0;          /// the func pointer doing wrapping
-    wrappee_t     wrappee      = 0x0;          /// the func pointer being wrapped
-    wrappid_t     wrap_id      = "";           /// the function name (possibly mangled)
-    wrappid_t     tool_id      = "";           /// the function name (unmangled)
-    constructor_t constructor  = []() {};      /// wrap the function
-    destructor_t  destructor   = []() {};      /// unwrap the function
-    bool*         suppression  = nullptr;      /// turn on/off some suppression variable
-    bool*         debug        = &settings::debug();
+    bool          ready        = false;        /// ready to be used NOLINT
+    bool          filled       = false;        /// structure is populated NOLINT
+    bool          is_active    = false;        /// is currently wrapping NOLINT
+    bool          is_finalized = false;        /// no more wrapping is allowed NOLINT
+    int           priority     = 0;            /// current priority NOLINT
+    binding_t     binding      = binding_t{};  /// hold the binder set NOLINT
+    wrappee_t     wrapper      = nullptr;      /// the func pointer doing wrapping NOLINT
+    wrappee_t     wrappee      = nullptr;      /// the func pointer being wrapped NOLINT
+    wrappid_t     wrap_id      = "";           /// function name (possibly mangled) NOLINT
+    wrappid_t     tool_id      = "";           /// function name (unmangled) NOLINT
+    constructor_t constructor  = []() {};      /// wrap the function NOLINT
+    destructor_t  destructor   = []() {};      /// unwrap the function NOLINT
+    bool*         suppression  = nullptr;      /// turn on/off some suppression var NOLINT
+    bool*         debug        = &settings::debug();  //  NOLINT
 };
 }  // namespace component
 }  // namespace tim

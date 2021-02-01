@@ -29,6 +29,7 @@
 #ifndef TIMEMORY_CEREAL_ARCHIVES_JSON_HPP_
 #define TIMEMORY_CEREAL_ARCHIVES_JSON_HPP_
 
+#include "timemory/macros/attributes.hpp"
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/tpls/cereal/cereal/details/util.hpp"
 
@@ -228,12 +229,16 @@ public:
     }
 
     //! Destructor, flushes the JSON
-    ~BaseJSONOutputArchive() TIMEMORY_CEREAL_NOEXCEPT
+    ~BaseJSONOutputArchive() TIMEMORY_CEREAL_NOEXCEPT override
     {
         if(itsNodeStack.top() == NodeType::InObject)
+        {
             itsWriter.EndObject();
+        }
         else if(itsNodeStack.top() == NodeType::InArray)
+        {
             itsWriter.EndArray();
+        }
     }
 
     //! Saves some binary data, encoded as a base64 string, with an optional name
@@ -528,13 +533,17 @@ public:
     {
         itsDocument.ParseStream<>(itsReadStream);
         if(itsDocument.IsArray())
+        {
             itsIteratorStack.emplace_back(itsDocument.Begin(), itsDocument.End());
+        }
         else
+        {
             itsIteratorStack.emplace_back(itsDocument.MemberBegin(),
                                           itsDocument.MemberEnd());
+        }
     }
 
-    ~JSONInputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
+    ~JSONInputArchive() TIMEMORY_CEREAL_NOEXCEPT override = default;
 
     //! Loads some binary data, encoded as a base64 string
     /*! This will automatically start and finish a node to load the data, and can be
@@ -570,10 +579,7 @@ private:
     class Iterator
     {
     public:
-        Iterator()
-        : itsIndex(0)
-        , itsType(Null_)
-        {}
+        Iterator() = default;
 
         Iterator(MemberIterator begin, MemberIterator end)
         : itsMemberItBegin(begin)
@@ -615,12 +621,15 @@ private:
         }
 
         //! Get the name of the current node, or nullptr if it has no name
-        const char* name() const
+        TIMEMORY_NODISCARD const char* name() const
         {
             if(itsType == Member && (itsMemberItBegin + itsIndex) != itsMemberItEnd)
+            {
                 return itsMemberItBegin[itsIndex].name.GetString();
-            else
+            }
+            {
                 return nullptr;
+            }
         }
 
         //! Adjust our position such that we are at the node with the given name
@@ -645,16 +654,17 @@ private:
         }
 
     private:
-        MemberIterator itsMemberItBegin,
-            itsMemberItEnd;             //!< The member iterator (object)
-        ValueIterator itsValueItBegin;  //!< The value iterator (array)
-        size_t        itsIndex;         //!< The current index of this iterator
+        MemberIterator itsMemberItBegin;  //!< The member iterator (object)
+        MemberIterator itsMemberItEnd;    //!< The member iterator (object)
+        ValueIterator  itsValueItBegin;   //!< The value iterator (array)
+        size_t         itsIndex{ 0 };     //!< The current index of this iterator
         enum Type
         {
             Value,
             Member,
             Null_
-        } itsType;  //!< Whether this holds values (array) or members (objects) or nothing
+        } itsType{ Null_ };
+        //!< Whether this holds values (array) or members (objects) or nothing
     };
 
     //! Searches for the expectedName node if it doesn't match the actualName
@@ -702,11 +712,15 @@ public:
         search();
 
         if(itsIteratorStack.back().value().IsArray())
+        {
             itsIteratorStack.emplace_back(itsIteratorStack.back().value().Begin(),
                                           itsIteratorStack.back().value().End());
+        }
         else
+        {
             itsIteratorStack.emplace_back(itsIteratorStack.back().value().MemberBegin(),
                                           itsIteratorStack.back().value().MemberEnd());
+        }
     }
 
     //! Finishes the most recently started node
@@ -718,7 +732,10 @@ public:
 
     //! Retrieves the current node name
     /*! @return nullptr if no name exists */
-    const char* getNodeName() const { return itsIteratorStack.back().name(); }
+    TIMEMORY_NODISCARD const char* getNodeName() const
+    {
+        return itsIteratorStack.back().name();
+    }
 
     //! Sets the name for the next node created with startNode
     void setNextName(const char* name) { itsNextName = name; }
@@ -863,14 +880,17 @@ public:
 
 private:
     //! Convert a string to a long long
-    void stringToNumber(std::string const& str, long long& val) { val = std::stoll(str); }
+    static void stringToNumber(std::string const& str, long long& val)
+    {
+        val = std::stoll(str);
+    }
     //! Convert a string to an unsigned long long
-    void stringToNumber(std::string const& str, unsigned long long& val)
+    static void stringToNumber(std::string const& str, unsigned long long& val)
     {
         val = std::stoull(str);
     }
     //! Convert a string to a long double
-    void stringToNumber(std::string const& str, long double& val)
+    static void stringToNumber(std::string const& str, long double& val)
     {
         val = std::stold(str);
     }
@@ -896,9 +916,13 @@ public:
     void loadSize(size_type& size)
     {
         if(itsIteratorStack.size() == 1)
+        {
             size = itsDocument.Size();
+        }
         else
+        {
             size = (itsIteratorStack.rbegin() + 1)->value().Size();
+        }
     }
 
     //! @}

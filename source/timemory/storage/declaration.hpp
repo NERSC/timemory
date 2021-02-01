@@ -163,7 +163,7 @@ private:
 public:
 public:
     storage();
-    ~storage();
+    ~storage() override;
 
     storage(const this_type&) = delete;
     storage(this_type&&)      = delete;
@@ -174,15 +174,15 @@ public:
 public:
     void get_shared_manager();
 
-    virtual void print() final { internal_print(); }
-    virtual void cleanup() final { operation::cleanup<Type>{}; }
-    virtual void disable() final { trait::runtime_enabled<component_type>::set(false); }
-    virtual void initialize() final;
-    virtual void finalize() final;
-    virtual void stack_clear() final;
-    virtual bool global_init() final;
-    virtual bool thread_init() final;
-    virtual bool data_init() final;
+    void print() final { internal_print(); }
+    void cleanup() final { operation::cleanup<Type>{}; }
+    void disable() final { trait::runtime_enabled<component_type>::set(false); }
+    void initialize() final;
+    void finalize() final;
+    void stack_clear() final;
+    bool global_init() final;
+    bool thread_init() final;
+    bool data_init() final;
 
     const graph_data_t& data() const;
     const graph_t&      graph() const;
@@ -225,7 +225,7 @@ public:
 
     std::shared_ptr<printer_t> get_printer() const { return m_printer; }
 
-    const iterator_hash_map_t get_node_ids() const { return m_node_ids; }
+    iterator_hash_map_t get_node_ids() const { return m_node_ids; }
 
     void stack_push(Type* obj) { m_stack.insert(obj); }
     void stack_pop(Type* obj);
@@ -243,7 +243,7 @@ public:
     iterator append(const secondary_data_t<Vp>& _secondary);
 
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int version);
+    void serialize(Archive& ar, unsigned int version);
 
     void add_sample(Type&& _obj) { m_samples.emplace_back(std::forward<Type>(_obj)); }
 
@@ -301,7 +301,9 @@ storage<Type, true>::reset()
     {
         auto _depth = ditr.first;
         if(_depth != 0)
+        {
             ditr.second.clear();
+        }
         else
         {
             for(auto itr = ditr.second.begin(); itr != ditr.second.end(); ++itr)
@@ -396,21 +398,19 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
         operation::add_statistics<Type>(_nitr->second->obj(), _stats);
         return _nitr->second;
     }
-    else
-    {
-        // else, create a new entry
-        auto&& _tmp = Type{};
-        _tmp += std::get<2>(_secondary);
-        _tmp.set_laps(_tmp.get_laps() + 1);
-        graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
-        _node.stats() += _tmp.get();
-        auto& _stats = _node.stats();
-        operation::add_statistics<Type>(_tmp, _stats);
-        auto itr = _data().emplace_child(_itr, _node);
-        itr->obj().set_iterator(itr);
-        m_node_ids[_depth][_hash] = itr;
-        return itr;
-    }
+
+    // else, create a new entry
+    auto&& _tmp = Type{};
+    _tmp += std::get<2>(_secondary);
+    _tmp.set_laps(_tmp.get_laps() + 1);
+    graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
+    _node.stats() += _tmp.get();
+    auto& _stats = _node.stats();
+    operation::add_statistics<Type>(_tmp, _stats);
+    auto itr = _data().emplace_child(_itr, _node);
+    itr->obj().set_iterator(itr);
+    m_node_ids[_depth][_hash] = itr;
+    return itr;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -444,16 +444,14 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
         _nitr->second->obj() += std::get<2>(_secondary);
         return _nitr->second;
     }
-    else
-    {
-        // else, create a new entry
-        auto&&       _tmp = std::get<2>(_secondary);
-        graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
-        auto         itr = _data().emplace_child(_itr, _node);
-        itr->obj().set_iterator(itr);
-        m_node_ids[_depth][_hash] = itr;
-        return itr;
-    }
+
+    // else, create a new entry
+    auto&&       _tmp = std::get<2>(_secondary);
+    graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
+    auto         itr = _data().emplace_child(_itr, _node);
+    itr->obj().set_iterator(itr);
+    m_node_ids[_depth][_hash] = itr;
+    return itr;
 }
 //
 //----------------------------------------------------------------------------------//
@@ -493,7 +491,9 @@ storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t has
     {
         _first = false;
         if(_current.begin())
+        {
             _current = _current.begin();
+        }
         else
         {
             graph_node_t node(hash_id, obj, hash_depth, m_thread_idx);
@@ -528,7 +528,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
     auto  tid    = m_thread_idx;
 
     // if first instance
-    if(!has_head || (m_is_master && m_node_ids.size() == 0))
+    if(!has_head || (m_is_master && m_node_ids.empty()))
     {
         graph_node_t node(hash_id, obj, hash_depth, tid);
         auto         itr                = m_data->append_child(node);
@@ -750,26 +750,26 @@ private:
 
 public:
     storage();
-    ~storage();
+    ~storage() override;
 
     explicit storage(const this_type&) = delete;
     explicit storage(this_type&&)      = delete;
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = delete;
 
-    virtual void print() final { finalize(); }
-    virtual void cleanup() final { operation::cleanup<Type>{}; }
-    virtual void stack_clear() final;
-    virtual void disable() final { trait::runtime_enabled<component_type>::set(false); }
+    void print() final { finalize(); }
+    void cleanup() final { operation::cleanup<Type>{}; }
+    void stack_clear() final;
+    void disable() final { trait::runtime_enabled<component_type>::set(false); }
 
     void initialize() final;
     void finalize() final;
 
-    void          reset() {}
-    bool          empty() const { return true; }
-    inline size_t size() const { return 0; }
-    inline size_t true_size() const { return 0; }
-    inline size_t depth() const { return 0; }
+    void                             reset() {}
+    TIMEMORY_NODISCARD bool          empty() const { return true; }
+    TIMEMORY_NODISCARD inline size_t size() const { return 0; }
+    TIMEMORY_NODISCARD inline size_t true_size() const { return 0; }
+    TIMEMORY_NODISCARD inline size_t depth() const { return 0; }
 
     iterator pop() { return nullptr; }
     iterator insert(int64_t, const Type&, const string_t&) { return nullptr; }
@@ -781,7 +781,10 @@ public:
     void stack_push(Type* obj) { m_stack.insert(obj); }
     void stack_pop(Type* obj);
 
-    std::shared_ptr<printer_t> get_printer() const { return m_printer; }
+    TIMEMORY_NODISCARD std::shared_ptr<printer_t> get_printer() const
+    {
+        return m_printer;
+    }
 
 protected:
     void get_shared_manager();

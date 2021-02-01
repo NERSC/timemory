@@ -201,8 +201,10 @@ TEST_F(archive_storage_tests, vector_hierarchy)
         std::stringstream ss;
         ss << "  [size: " << arr.size() << "]\n";
         for(const auto& itr : arr)
+        {
             ss << "  [" << tim::get_hash_identifier(itr->get_value().hash()) << "]["
                << itr->get_value().inclusive().stats() << "]\n";
+        }
         return ss.str();
     };
     EXPECT_EQ(wc_vec.size(), 1);
@@ -263,9 +265,13 @@ TEST_F(archive_storage_tests, mpi_archive_hierarchy)
     auto fname = tim::settings::compose_output_filename(details::get_test_name(), "json");
     std::ofstream ofs(fname.c_str());
     if(ofs)
+    {
         ofs << ss.str() << std::endl;
+    }
     else
+    {
         std::cout << ss.str() << std::endl;
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -288,9 +294,13 @@ TEST_F(archive_storage_tests, upc_archive_hierarchy)
     auto fname = tim::settings::compose_output_filename(details::get_test_name(), "json");
     std::ofstream ofs(fname.c_str());
     if(ofs)
+    {
         ofs << ss.str() << std::endl;
+    }
     else
+    {
         std::cout << ss.str() << std::endl;
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -313,9 +323,13 @@ TEST_F(archive_storage_tests, dmp_archive_hierarchy)
     auto fname = tim::settings::compose_output_filename(details::get_test_name(), "json");
     std::ofstream ofs(fname.c_str());
     if(ofs)
+    {
         ofs << ss.str() << std::endl;
+    }
     else
+    {
         std::cout << ss.str() << std::endl;
+    }
 }
 
 //--------------------------------------------------------------------------------------//

@@ -39,17 +39,17 @@ inline fini_storage<Tp>::fini_storage()
 }
 //
 template <typename Tp>
-template <typename Up, enable_if_t<trait::is_available<Up>::value, char>>
+template <typename Up>
 void
-fini_storage<Tp>::sfinae(int) const
+fini_storage<Tp>::sfinae(int, enable_if_t<trait::is_available<Up>::value, int>) const
 {
     // reserved for a "timemory_at_thread_exit" callback
 }
 //
 template <typename Tp>
-template <typename Up, enable_if_t<!trait::is_available<Up>::value, char>>
+template <typename Up>
 void
-fini_storage<Tp>::sfinae(long) const
+fini_storage<Tp>::sfinae(long, enable_if_t<!trait::is_available<Up>::value, int>) const
 {}
 //
 }  // namespace operation

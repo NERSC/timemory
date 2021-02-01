@@ -56,21 +56,21 @@
 class jump
 {
 public:
-    void (*timemory_push_components_jump)(const char*);
-    void (*timemory_pop_components_jump)(void);
+    void (*timemory_push_components_jump)(const char*);  // NOLINT
+    void (*timemory_pop_components_jump)(void);          // NOLINT
 
-    void (*timemory_push_region_jump)(const char*);
-    void (*timemory_pop_region_jump)(const char*);
+    void (*timemory_push_region_jump)(const char*);  // NOLINT
+    void (*timemory_pop_region_jump)(const char*);   // NOLINT
 
-    void (*timemory_add_hash_id_jump)(uint64_t, const char*);
-    void (*timemory_push_trace_jump)(const char*);
-    void (*timemory_pop_trace_jump)(const char*);
-    void (*timemory_push_trace_hash_jump)(uint64_t);
-    void (*timemory_pop_trace_hash_jump)(uint64_t);
-    void (*timemory_trace_init_jump)(const char*, bool, const char*);
-    void (*timemory_trace_finalize_jump)(void);
-    void (*timemory_trace_set_env_jump)(const char*, const char*);
-    void (*timemory_trace_set_mpi_jump)(bool, bool);
+    void (*timemory_add_hash_id_jump)(uint64_t, const char*);          // NOLINT
+    void (*timemory_push_trace_jump)(const char*);                     // NOLINT
+    void (*timemory_pop_trace_jump)(const char*);                      // NOLINT
+    void (*timemory_push_trace_hash_jump)(uint64_t);                   // NOLINT
+    void (*timemory_pop_trace_hash_jump)(uint64_t);                    // NOLINT
+    void (*timemory_trace_init_jump)(const char*, bool, const char*);  // NOLINT
+    void (*timemory_trace_finalize_jump)(void);                        // NOLINT
+    void (*timemory_trace_set_env_jump)(const char*, const char*);     // NOLINT
+    void (*timemory_trace_set_mpi_jump)(bool, bool);                   // NOLINT
 
     explicit jump(std::string&& libpath)
     {

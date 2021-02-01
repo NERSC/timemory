@@ -76,7 +76,7 @@ struct io_cache
                       "Error! Number of indexes to read exceeds the array size");
         if(ifs)
         {
-            std::string label = "";
+            std::string label{};
             TIMEMORY_FOLD_EXPRESSION(ifs >> label >> std::get<Idx>(_data));
         }
         else
@@ -132,21 +132,39 @@ public:
 
 #if !defined(_LINUX)
 
-    inline int64_t get_char_read() const { return 0; }
-    inline int64_t get_char_written() const { return 0; }
-    inline int64_t get_syscall_read() const { return 0; }
-    inline int64_t get_syscall_written() const { return 0; }
-    inline int64_t get_bytes_read() const { return 0; }
-    inline int64_t get_bytes_written() const { return 0; }
+    TIMEMORY_NODISCARD inline int64_t get_char_read() const { return 0; }        // NOLINT
+    TIMEMORY_NODISCARD inline int64_t get_char_written() const { return 0; }     // NOLINT
+    TIMEMORY_NODISCARD inline int64_t get_syscall_read() const { return 0; }     // NOLINT
+    TIMEMORY_NODISCARD inline int64_t get_syscall_written() const { return 0; }  // NOLINT
+    TIMEMORY_NODISCARD inline int64_t get_bytes_read() const { return 0; }       // NOLINT
+    TIMEMORY_NODISCARD inline int64_t get_bytes_written() const { return 0; }    // NOLINT
 
 #else
 
-    inline int64_t get_char_read() const { return std::get<0>(m_data); }
-    inline int64_t get_char_written() const { return std::get<1>(m_data); }
-    inline int64_t get_syscall_read() const { return std::get<2>(m_data); }
-    inline int64_t get_syscall_written() const { return std::get<3>(m_data); }
-    inline int64_t get_bytes_read() const { return std::get<4>(m_data); }
-    inline int64_t get_bytes_written() const { return std::get<5>(m_data); }
+    TIMEMORY_NODISCARD inline int64_t get_char_read() const
+    {
+        return std::get<0>(m_data);
+    }
+    TIMEMORY_NODISCARD inline int64_t get_char_written() const
+    {
+        return std::get<1>(m_data);
+    }
+    TIMEMORY_NODISCARD inline int64_t get_syscall_read() const
+    {
+        return std::get<2>(m_data);
+    }
+    TIMEMORY_NODISCARD inline int64_t get_syscall_written() const
+    {
+        return std::get<3>(m_data);
+    }
+    TIMEMORY_NODISCARD inline int64_t get_bytes_read() const
+    {
+        return std::get<4>(m_data);
+    }
+    TIMEMORY_NODISCARD inline int64_t get_bytes_written() const
+    {
+        return std::get<5>(m_data);
+    }
 
 private:
     std::array<int64_t, 6> m_data{};

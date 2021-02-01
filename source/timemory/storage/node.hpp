@@ -77,8 +77,8 @@ struct entry : std::tuple<Tp, StatT>
     Tp&    data() { return std::get<0>(*this); }
     StatT& stats() { return std::get<1>(*this); }
 
-    const Tp&    data() const { return std::get<0>(*this); }
-    const StatT& stats() const { return std::get<1>(*this); }
+    TIMEMORY_NODISCARD const Tp& data() const { return std::get<0>(*this); }
+    TIMEMORY_NODISCARD const StatT& stats() const { return std::get<1>(*this); }
 
     this_type& operator+=(const this_type& rhs)
     {
@@ -170,18 +170,18 @@ public:
     Tp&         obj() { return std::get<5>(*this); }
     stats_type& stats() { return std::get<6>(*this); }
 
-    const bool&       is_dummy() const { return std::get<0>(*this); }
-    const uint16_t&   tid() const { return std::get<1>(*this); }
-    const uint16_t&   pid() const { return std::get<2>(*this); }
-    const uint64_t&   id() const { return std::get<3>(*this); }
-    const int64_t&    depth() const { return std::get<4>(*this); }
-    const Tp&         obj() const { return std::get<5>(*this); }
-    const stats_type& stats() const { return std::get<6>(*this); }
+    TIMEMORY_NODISCARD const bool& is_dummy() const { return std::get<0>(*this); }
+    TIMEMORY_NODISCARD const uint16_t& tid() const { return std::get<1>(*this); }
+    TIMEMORY_NODISCARD const uint16_t& pid() const { return std::get<2>(*this); }
+    TIMEMORY_NODISCARD const uint64_t& id() const { return std::get<3>(*this); }
+    TIMEMORY_NODISCARD const int64_t& depth() const { return std::get<4>(*this); }
+    TIMEMORY_NODISCARD const Tp& obj() const { return std::get<5>(*this); }
+    TIMEMORY_NODISCARD const stats_type& stats() const { return std::get<6>(*this); }
 
-    auto&       data() { return this->obj(); }
-    auto&       hash() { return this->id(); }
-    const auto& data() const { return this->obj(); }
-    const auto& hash() const { return this->id(); }
+    auto&                          data() { return this->obj(); }
+    auto&                          hash() { return this->id(); }
+    TIMEMORY_NODISCARD const auto& data() const { return this->obj(); }
+    TIMEMORY_NODISCARD const auto& hash() const { return this->id(); }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -219,21 +219,24 @@ struct result : public data<Tp>::result_type
     Tp&           data() { return std::get<7>(*this); }
     stats_type&   stats() { return std::get<8>(*this); }
 
-    const uint16_t&     tid() const { return std::get<0>(*this); }
-    const uint16_t&     pid() const { return std::get<1>(*this); }
-    const int64_t&      depth() const { return std::get<2>(*this); }
-    const uint64_t&     hash() const { return std::get<3>(*this); }
-    const uint64_t&     rolling_hash() const { return std::get<4>(*this); }
-    const string_t&     prefix() const { return std::get<5>(*this); }
-    const uintvector_t& hierarchy() const { return std::get<6>(*this); }
-    const Tp&           data() const { return std::get<7>(*this); }
-    const stats_type&   stats() const { return std::get<8>(*this); }
+    TIMEMORY_NODISCARD const uint16_t& tid() const { return std::get<0>(*this); }
+    TIMEMORY_NODISCARD const uint16_t& pid() const { return std::get<1>(*this); }
+    TIMEMORY_NODISCARD const int64_t& depth() const { return std::get<2>(*this); }
+    TIMEMORY_NODISCARD const uint64_t& hash() const { return std::get<3>(*this); }
+    TIMEMORY_NODISCARD const uint64_t& rolling_hash() const { return std::get<4>(*this); }
+    TIMEMORY_NODISCARD const string_t& prefix() const { return std::get<5>(*this); }
+    TIMEMORY_NODISCARD const uintvector_t& hierarchy() const
+    {
+        return std::get<6>(*this);
+    }
+    TIMEMORY_NODISCARD const Tp& data() const { return std::get<7>(*this); }
+    TIMEMORY_NODISCARD const stats_type& stats() const { return std::get<8>(*this); }
 
-    uint64_t&       id() { return std::get<3>(*this); }
-    const uint64_t& id() const { return std::get<3>(*this); }
+    uint64_t&                id() { return std::get<3>(*this); }
+    TIMEMORY_NODISCARD const uint64_t& id() const { return std::get<3>(*this); }
 
-    Tp&       obj() { return std::get<7>(*this); }
-    const Tp& obj() const { return std::get<7>(*this); }
+    Tp&                      obj() { return std::get<7>(*this); }
+    TIMEMORY_NODISCARD const Tp& obj() const { return std::get<7>(*this); }
 
     bool operator==(const this_type& rhs) const
     {
@@ -320,13 +323,13 @@ public:
     entry_type& inclusive() { return std::get<5>(*this); }
     entry_type& exclusive() { return std::get<6>(*this); }
 
-    const bool&       is_dummy() const { return std::get<0>(*this); }
-    const uint64_t&   hash() const { return std::get<1>(*this); }
-    const int64_t&    depth() const { return std::get<2>(*this); }
-    const idset_type& tid() const { return std::get<3>(*this); }
-    const idset_type& pid() const { return std::get<4>(*this); }
-    const entry_type& inclusive() const { return std::get<5>(*this); }
-    const entry_type& exclusive() const { return std::get<6>(*this); }
+    TIMEMORY_NODISCARD const bool& is_dummy() const { return std::get<0>(*this); }
+    TIMEMORY_NODISCARD const uint64_t& hash() const { return std::get<1>(*this); }
+    TIMEMORY_NODISCARD const int64_t& depth() const { return std::get<2>(*this); }
+    TIMEMORY_NODISCARD const idset_type& tid() const { return std::get<3>(*this); }
+    TIMEMORY_NODISCARD const idset_type& pid() const { return std::get<4>(*this); }
+    TIMEMORY_NODISCARD const entry_type& inclusive() const { return std::get<5>(*this); }
+    TIMEMORY_NODISCARD const entry_type& exclusive() const { return std::get<6>(*this); }
 };
 //
 //--------------------------------------------------------------------------------------//

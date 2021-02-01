@@ -73,13 +73,16 @@ public:
     template <typename Tp>
     void insert(const std::string& env_id, Tp val);
 
-    env_map_t      get() const;
-    iterator       get(const string_t& _entry) { return m_env->find(_entry); }
-    const_iterator get(const string_t& _entry) const { return m_env->find(_entry); }
-    iterator       begin() { return m_env->begin(); }
-    iterator       end() { return m_env->end(); }
-    const_iterator begin() const { return m_env->begin(); }
-    const_iterator end() const { return m_env->end(); }
+    TIMEMORY_NODISCARD env_map_t get() const;
+    iterator           get(const string_t& _entry) { return m_env->find(_entry); }
+    TIMEMORY_NODISCARD const_iterator get(const string_t& _entry) const
+    {
+        return m_env->find(_entry);
+    }
+    iterator           begin() { return m_env->begin(); }
+    iterator           end() { return m_env->end(); }
+    TIMEMORY_NODISCARD const_iterator begin() const { return m_env->begin(); }
+    TIMEMORY_NODISCARD const_iterator end() const { return m_env->end(); }
 
     void                 print(std::ostream&) const;
     friend std::ostream& operator<<(std::ostream& os, const env_settings& env)
@@ -92,7 +95,7 @@ public:
     // serialization
     //
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int);
+    void serialize(Archive& ar, unsigned int);
 
     template <typename Archive>
     static void serialize_environment(Archive& ar)

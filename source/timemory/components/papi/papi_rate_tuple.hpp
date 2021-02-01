@@ -239,9 +239,13 @@ public:
             ss_value.setf(_flags);
             ss_value << std::setw(_width) << std::setprecision(_prec) << _value.at(i);
             if(!_disp.at(i).empty())
+            {
                 ss_extra << " " << _disp.at(i);
+            }
             else if(!_label.at(i).empty())
+            {
                 ss_extra << " " << _label.at(i);
+            }
             os << ss_value.str() << ss_extra.str();
             if(i + 1 < _value.size())
                 os << ", ";

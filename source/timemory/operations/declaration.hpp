@@ -511,8 +511,10 @@ public:
     static bool is_empty(const std::vector<Tp, _Extra...>& obj)
     {
         for(const auto& itr : obj)
+        {
             if(!itr.empty())
                 return false;
+        }
         return true;
     }
 
@@ -557,21 +559,18 @@ struct init_storage
     using pointer_t = tim::base::storage*;
     using get_type  = std::tuple<pointer_t, bool, bool, bool>;
 
-    template <typename Up                                             = Tp,
-              enable_if_t<trait::uses_value_storage<Up>::value, char> = 0>
-    init_storage();
+    template <typename Up = Tp>
+    init_storage(enable_if_t<trait::uses_value_storage<Up>::value, int> = 0);
 
-    template <typename Up                                              = Tp,
-              enable_if_t<!trait::uses_value_storage<Up>::value, char> = 0>
-    init_storage();
+    template <typename Up = Tp>
+    init_storage(enable_if_t<!trait::uses_value_storage<Up>::value, int> = 0)
+    {}
 
-    template <typename U = Tp, typename V = typename U::value_type,
-              enable_if_t<trait::uses_value_storage<U, V>::value, int> = 0>
-    static get_type get();
+    template <typename U = Tp, typename V = typename U::value_type>
+    static get_type get(enable_if_t<trait::uses_value_storage<U, V>::value, int> = 0);
 
-    template <typename U = Tp, typename V = typename U::value_type,
-              enable_if_t<!trait::uses_value_storage<U, V>::value, int> = 0>
-    static get_type get();
+    template <typename U = Tp, typename V = typename U::value_type>
+    static get_type get(enable_if_t<!trait::uses_value_storage<U, V>::value, int> = 0);
 
     static void init();
 };
@@ -585,11 +584,13 @@ struct fini_storage
 
 private:
     // first check if type is available
-    template <typename Up = Tp, enable_if_t<trait::is_available<Up>::value, char> = 0>
-    TIMEMORY_INLINE void sfinae(int) const;
+    template <typename Up = Tp>
+    TIMEMORY_INLINE void sfinae(
+        int, enable_if_t<trait::is_available<Up>::value, int> = 0) const;
     //
-    template <typename Up = Tp, enable_if_t<!trait::is_available<Up>::value, char> = 0>
-    TIMEMORY_INLINE void sfinae(long) const;
+    template <typename Up = Tp>
+    TIMEMORY_INLINE void sfinae(
+        long, enable_if_t<!trait::is_available<Up>::value, int> = 0) const;
     //
     // second check for whether storage has finalize function
     template <typename StorageT>

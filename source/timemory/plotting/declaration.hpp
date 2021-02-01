@@ -199,11 +199,17 @@ echo_dart_file(const string_t& filepath, attributes_t attributes)
     if(attributes.find("type") == attributes.end())
     {
         if(contains(filepath, { ".jpeg", ".jpg" }))
+        {
             attributes["type"] = "image/jpeg";
+        }
         else if(contains(filepath, { ".png" }))
+        {
             attributes["type"] = "image/png";
+        }
         else if(contains(filepath, { ".tiff", ".tif" }))
+        {
             attributes["type"] = "image/tiff";
+        }
         else if(contains(filepath, { ".txt" }))
         {
             bool          numeric_file = true;
@@ -226,9 +232,13 @@ echo_dart_file(const string_t& filepath, attributes_t attributes)
             }
             ifs.close();
             if(numeric_file)
+            {
                 attributes["type"] = "numeric/double";
+            }
             else
+            {
                 attributes["type"] = "text/string";
+            }
         }
     }
 

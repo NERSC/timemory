@@ -573,18 +573,17 @@ public:
             set_scope(_obj);
             return true;
         }
-        else
+
+        static std::atomic<int> _count(0);
+        if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
         {
-            static std::atomic<int> _count(0);
-            if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
-            {
-                std::string _id = demangle<T>();
-                fprintf(stderr,
-                        "[component_bundle::init]> skipping re-initialization of type"
-                        " \"%s\"...\n",
-                        _id.c_str());
-            }
+            std::string _id = demangle<T>();
+            fprintf(stderr,
+                    "[component_bundle::init]> skipping re-initialization of type"
+                    " \"%s\"...\n",
+                    _id.c_str());
         }
+
         return false;
     }
 
@@ -614,17 +613,16 @@ public:
             set_scope(_obj);
             return true;
         }
-        else
+
+        static std::atomic<int> _count(0);
+        if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
         {
-            static std::atomic<int> _count(0);
-            if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
-            {
-                fprintf(stderr,
-                        "[component_bundle::init]> skipping re-initialization of type "
-                        "\"%s\"...\n",
-                        demangle<T>().c_str());
-            }
+            fprintf(stderr,
+                    "[component_bundle::init]> skipping re-initialization of type "
+                    "\"%s\"...\n",
+                    demangle<T>().c_str());
         }
+
         return false;
     }
 
@@ -866,7 +864,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        std::string _key   = "";
+        std::string _key   = {};
         auto        keyitr = get_hash_ids()->find(m_hash);
         if(keyitr != get_hash_ids()->end())
             _key = keyitr->second;
@@ -878,8 +876,10 @@ public:
         {
             auto _hash = add_hash_id(_key);
             if(_hash != m_hash)
+            {
                 PRINT_HERE("Warning! Hash for '%s' (%llu) != %llu", _key.c_str(),
                            (unsigned long long) _hash, (unsigned long long) m_hash);
+            }
         }
 
         ar(cereal::make_nvp("data", m_data));

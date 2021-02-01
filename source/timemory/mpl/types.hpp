@@ -880,8 +880,10 @@ assign(Tp& _targ, const Vp& _val, type_list<>) -> decltype(_targ[0], void())
     auto _n = get_size(_val);
     resize(_targ, _n);
     for(decltype(_n) i = 0; i < _n; ++i)
+    {
         assign(_targ[i], *(_val.begin() + i),
                get_index_sequence<decay_t<ValueType>>::value);
+    }
 }
 
 template <typename Tp, size_t... Idx>

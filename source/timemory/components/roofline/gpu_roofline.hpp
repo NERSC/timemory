@@ -214,7 +214,7 @@ public:
             // integer
             if(is_one_of_integral<types_tuple>::value || settings::instruction_roofline())
             {
-                for(string_t itr :
+                for(const string_t& itr :
                     { "ipc", "inst_executed", "inst_integer", "inst_fp_64", "inst_fp_32",
                       "inst_fp_16", "local_load_transactions_per_request",
                       "local_store_transactions_per_request",
@@ -299,11 +299,15 @@ public:
     static void global_init()
     {
         if(event_mode() == MODE::ACTIVITY)
+        {
             operation::init<activity_type>{}(
                 operation::mode_constant<operation::init_mode::global>{});
+        }
         else
+        {
             operation::init<counters_type>{}(
                 operation::mode_constant<operation::init_mode::global>{});
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -320,11 +324,15 @@ public:
     {
         // disable the activity/counters before running ERT
         if(event_mode() == MODE::ACTIVITY)
+        {
             operation::fini<activity_type>{}(
                 operation::mode_constant<operation::fini_mode::global>{});
+        }
         else
+        {
             operation::fini<counters_type>{}(
                 operation::mode_constant<operation::fini_mode::global>{});
+        }
 
         // run ERT
         if(_store && _store->size() > 0)
@@ -350,9 +358,9 @@ public:
     static void extra_serialization(Archive& ar)
     {
         auto& _ert_data = get_ert_data();
-        if(!_ert_data.get())  // for input
-            _ert_data.reset(new ert_data_t());
-        ar(cereal::make_nvp("roofline", *_ert_data.get()));
+        if(!_ert_data)  // for input
+            _ert_data = std::make_shared<ert_data_t>();
+        ar(cereal::make_nvp("roofline", *_ert_data));
     }
 
     //----------------------------------------------------------------------------------//
@@ -375,8 +383,8 @@ public:
                 ret.erase(ret.find("__"), 1);
             return ret;
         }
-        else
-            return std::string("gpu_roofline_") + get_mode_string();
+
+        return std::string("gpu_roofline_") + get_mode_string();
     }
 
     static std::string description()
@@ -419,7 +427,7 @@ public:
     //----------------------------------------------------------------------------------//
 
     gpu_roofline() { configure(); }
-    ~gpu_roofline() {}
+    ~gpu_roofline() = default;
 
     gpu_roofline(const gpu_roofline& rhs)
     : base_type(rhs)
@@ -441,7 +449,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    result_type get() const
+    TIMEMORY_NODISCARD result_type get() const
     {
         switch(event_mode())
         {
@@ -582,7 +590,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    secondary_type get_secondary() const
+    TIMEMORY_NODISCARD secondary_type get_secondary() const
     {
         secondary_type ret;
         switch(event_mode())
@@ -591,16 +599,20 @@ public:
             {
                 auto&& _tmp = m_data.activity->get_secondary();
                 for(auto&& itr : _tmp)
+                {
                     ret.insert(
                         { itr.first, value_type{ itr.second, counters_value_type{} } });
+                }
                 break;
             }
             case MODE::COUNTERS:
             {
                 auto&& _tmp = m_data.counters->get_secondary();
                 for(auto&& itr : _tmp)
+                {
                     ret.insert(
                         { itr.first, value_type{ activity_value_type{}, itr.second } });
+                }
                 break;
             }
         }
@@ -628,13 +640,16 @@ public:
     //
     //==================================================================================//
     //
-    string_t get_display() const
+    TIMEMORY_NODISCARD string_t get_display() const
     {
         std::stringstream ss;
         if(event_mode() == MODE::COUNTERS)
+        {
             return m_data.counters->get_display();
-        else
+        }
+        {
             ss << m_data.activity->get_display();
+        }
         return ss.str();
     }
 
@@ -809,18 +824,26 @@ public:
         ar.startNode();
         ar.makeArray();
         if(event_mode() == MODE::ACTIVITY)
+        {
             ar(std::get<0>(value));
+        }
         else
+        {
             ar(std::get<1>(value));
+        }
         ar.finishNode();
 
         ar.setNextName("accum");
         ar.startNode();
         ar.makeArray();
         if(event_mode() == MODE::ACTIVITY)
+        {
             ar(std::get<0>(accum));
+        }
         else
+        {
             ar(std::get<1>(accum));
+        }
         ar.finishNode();
     }
 
@@ -840,9 +863,13 @@ public:
            cereal::make_nvp("type", _type_str), cereal::make_nvp("labels", _labels));
 
         if(_mode_str == "counters")
+        {
             event_mode() = MODE::COUNTERS;
+        }
         else if(_mode_str == "activity")
+        {
             event_mode() = MODE::ACTIVITY;
+        }
 
         _data.resize(_labels.size());
 
@@ -857,17 +884,25 @@ public:
         ar.setNextName("value");
         ar.startNode();
         if(event_mode() == MODE::ACTIVITY)
+        {
             ar(std::get<0>(value));
+        }
         else
+        {
             ar(std::get<1>(value));
+        }
         ar.finishNode();
 
         ar.setNextName("accum");
         ar.startNode();
         if(event_mode() == MODE::ACTIVITY)
+        {
             ar(std::get<0>(accum));
+        }
         else
+        {
             ar(std::get<1>(accum));
+        }
         ar.finishNode();
     }
 };
@@ -915,6 +950,7 @@ struct gpu_roofline<cuda::fp16_t>
     using ert_executor_t = std::tuple<ert_executor_type<cuda::fp16_t>>;
     using ert_callback_t = std::tuple<ert_callback_type<cuda::fp16_t>>;
 
+    // NOLINTNEXTLINE
     static_assert(std::tuple_size<ert_config_t>::value ==
                       std::tuple_size<types_tuple>::value,
                   "Error! ert_config_t size does not match types_tuple size!");
@@ -1047,8 +1083,8 @@ public:
                 ret.erase(ret.find("__"), 1);
             return ret;
         }
-        else
-            return std::string("gpu_roofline_") + get_mode_string();
+
+        return std::string("gpu_roofline_") + get_mode_string();
     }
 
     //----------------------------------------------------------------------------------//
@@ -1082,7 +1118,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    result_type get() const { return result_type{}; }
+    TIMEMORY_NODISCARD result_type get() const { return result_type{}; }  // NOLINT
 
     //----------------------------------------------------------------------------------//
 
@@ -1102,11 +1138,17 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    secondary_type get_secondary() const { return secondary_type{}; }
+    TIMEMORY_NODISCARD secondary_type get_secondary() const  // NOLINT
+    {
+        return secondary_type{};
+    }
 
     //----------------------------------------------------------------------------------//
 
-    string_t get_display() const { return ""; }
+    TIMEMORY_NODISCARD string_t get_display() const  // NOLINT
+    {
+        return "";
+    }
 
     //----------------------------------------------------------------------------------//
     //

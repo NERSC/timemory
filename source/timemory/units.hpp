@@ -240,11 +240,13 @@ get_timing_unit(std::string _unit)
                             inner_t{ "cs", "centisecond", tim::units::csec },
                             inner_t{ "ds", "decisecond", tim::units::dsec },
                             inner_t{ "s", "second", tim::units::sec } })
+    {
         if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr) ||
            _unit == (std::get<0>(itr) + "ec") || _unit == (std::get<1>(itr) + "s"))
         {
             return return_type{ std::get<0>(itr) + "ec", std::get<2>(itr) };
         }
+    }
 
     std::cerr << "Warning!! No timing unit matching \"" << _unit << "\". Using default..."
               << std::endl;

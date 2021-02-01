@@ -83,7 +83,7 @@ private:
         return t;
     }
 
-    StaticObject(StaticObject const& /*other*/) {}
+    StaticObject(StaticObject const& /*other*/) = default;
 
 public:
     static T& getInstance() { return create(); }

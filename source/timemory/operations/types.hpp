@@ -41,6 +41,7 @@
 #include <functional>
 #include <iosfwd>
 #include <type_traits>
+#include <utility>
 
 namespace std
 {
@@ -721,7 +722,7 @@ struct print
 
     explicit print(bool       _forced_json = false,
                    settings_t _settings    = settings::shared_instance())
-    : m_settings(_settings)
+    : m_settings(std::move(_settings))
     , json_forced(_forced_json)
     {
         if(m_settings)
@@ -732,11 +733,11 @@ struct print
         }
     }
 
-    print(const std::string& _label, bool _forced_json,
+    print(std::string _label, bool _forced_json,
           settings_t _settings = settings::shared_instance())
-    : m_settings(_settings)
+    : m_settings(std::move(_settings))
     , json_forced(_forced_json)
-    , label(_label)
+    , label(std::move(_label))
     {
         if(m_settings)
         {
@@ -756,22 +757,22 @@ struct print
     virtual void write(std::ostream& os, stream_type stream);
     virtual void print_cout(stream_type stream);
     virtual void print_text(const std::string& fname, stream_type stream);
-    virtual void print_plot(const std::string& fname, const std::string suffix);
+    virtual void print_plot(const std::string& fname, std::string suffix);
 
-    auto get_label() const { return label; }
-    auto get_text_output_name() const { return text_outfname; }
-    auto get_tree_output_name() const { return tree_outfname; }
-    auto get_json_output_name() const { return json_outfname; }
-    auto get_json_input_name() const { return json_inpfname; }
-    auto get_text_diff_name() const { return text_diffname; }
-    auto get_json_diff_name() const { return json_diffname; }
+    TIMEMORY_NODISCARD auto get_label() const { return label; }
+    TIMEMORY_NODISCARD auto get_text_output_name() const { return text_outfname; }
+    TIMEMORY_NODISCARD auto get_tree_output_name() const { return tree_outfname; }
+    TIMEMORY_NODISCARD auto get_json_output_name() const { return json_outfname; }
+    TIMEMORY_NODISCARD auto get_json_input_name() const { return json_inpfname; }
+    TIMEMORY_NODISCARD auto get_text_diff_name() const { return text_diffname; }
+    TIMEMORY_NODISCARD auto get_json_diff_name() const { return json_diffname; }
 
     void set_debug(bool v) { debug = v; }
     void set_update(bool v) { update = v; }
     void set_verbose(int32_t v) { verbose = v; }
     void set_max_call_stack(int64_t v) { max_call_stack = v; }
 
-    int64_t get_max_depth() const
+    TIMEMORY_NODISCARD int64_t get_max_depth() const
     {
         return (max_depth > 0)
                    ? max_depth
@@ -855,31 +856,29 @@ struct print
     }
 
 protected:
-    // default initialized
-    settings_t m_settings     = settings::shared_instance();
-    bool       debug          = false;
-    bool       update         = true;
-    bool       json_forced    = false;
-    bool       node_init      = dmp::is_initialized();
-    int32_t    node_rank      = dmp::rank();
-    int32_t    node_size      = dmp::size();
-    int32_t    verbose        = 0;
-    int64_t    max_depth      = 0;
-    int64_t    max_call_stack = std::numeric_limits<int64_t>::max();
-
-protected:
-    int64_t     data_concurrency  = 1;
-    int64_t     input_concurrency = 1;
-    std::string label             = "";
-    std::string description       = "";
-    std::string text_outfname     = "";
-    std::string tree_outfname     = "";
-    std::string json_outfname     = "";
-    std::string json_inpfname     = "";
-    std::string text_diffname     = "";
-    std::string json_diffname     = "";
-    stream_type data_stream       = stream_type{};
-    stream_type diff_stream       = stream_type{};
+    // do not lint misc-non-private-member-variables-in-classes
+    settings_t  m_settings        = settings::shared_instance();          // NOLINT
+    bool        debug             = false;                                // NOLINT
+    bool        update            = true;                                 // NOLINT
+    bool        json_forced       = false;                                // NOLINT
+    bool        node_init         = dmp::is_initialized();                // NOLINT
+    int32_t     node_rank         = dmp::rank();                          // NOLINT
+    int32_t     node_size         = dmp::size();                          // NOLINT
+    int32_t     verbose           = 0;                                    // NOLINT
+    int64_t     max_depth         = 0;                                    // NOLINT
+    int64_t     max_call_stack    = std::numeric_limits<int64_t>::max();  // NOLINT
+    int64_t     data_concurrency  = 1;                                    // NOLINT
+    int64_t     input_concurrency = 1;                                    // NOLINT
+    std::string label             = "";                                   // NOLINT
+    std::string description       = "";                                   // NOLINT
+    std::string text_outfname     = "";                                   // NOLINT
+    std::string tree_outfname     = "";                                   // NOLINT
+    std::string json_outfname     = "";                                   // NOLINT
+    std::string json_inpfname     = "";                                   // NOLINT
+    std::string text_diffname     = "";                                   // NOLINT
+    std::string json_diffname     = "";                                   // NOLINT
+    stream_type data_stream       = stream_type{};                        // NOLINT
+    stream_type diff_stream       = stream_type{};                        // NOLINT
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -913,26 +912,30 @@ struct print<Tp, true> : public base::print
         return _instance;
     }
 
-    explicit print(storage_type* _data,
-                   settings_t    _settings = settings::shared_instance());
+    explicit print(storage_type*     _data,
+                   const settings_t& _settings = settings::shared_instance());
 
     print(const std::string& _label, storage_type* _data,
-          settings_t _settings = settings::shared_instance())
+          const settings_t& _settings = settings::shared_instance())
     : base_type(_label, trait::requires_json<Tp>::value, _settings)
     , data(_data)
     {}
 
-    virtual ~print() {}
+    virtual ~print() = default;
 
-    virtual void execute()
+    void execute() override
     {
         if(!data)
             return;
 
         if(update)
+        {
             update_data();
+        }
         else
+        {
             setup();
+        }
 
         if(node_init && node_rank > 0)
             return;
@@ -950,9 +953,13 @@ struct print<Tp, true> : public base::print
         }
 
         if(cout_output())
+        {
             print_cout(data_stream);
+        }
         else
+        {
             printf("\n");
+        }
 
         if(dart_output())
             print_dart();
@@ -980,20 +987,24 @@ struct print<Tp, true> : public base::print
             }
 
             if(cout_output())
+            {
                 print_cout(diff_stream);
+            }
             else
+            {
                 printf("\n");
+            }
         }
 
         print_custom();
     }
 
-    virtual void update_data();
-    virtual void setup();
-    virtual void read_json();
+    void update_data() override;
+    void setup() override;
+    void read_json() override;
 
-    virtual void print_dart();
-    virtual void print_custom()
+    void print_dart() override;
+    void print_custom() override
     {
         try
         {
@@ -1007,10 +1018,10 @@ struct print<Tp, true> : public base::print
 
     void write_stream(stream_type& stream, result_type& results);
     void print_json(const std::string& fname, result_type& results, int64_t concurrency);
-    const auto& get_data() const { return data; }
-    const auto& get_node_results() const { return node_results; }
-    const auto& get_node_input() const { return node_input; }
-    const auto& get_node_delta() const { return node_delta; }
+    TIMEMORY_NODISCARD const auto& get_data() const { return data; }
+    TIMEMORY_NODISCARD const auto& get_node_results() const { return node_results; }
+    TIMEMORY_NODISCARD const auto& get_node_input() const { return node_input; }
+    TIMEMORY_NODISCARD const auto& get_node_delta() const { return node_delta; }
 
     template <typename Archive>
     void print_metadata(Archive& ar, const Tp& obj);
@@ -1019,20 +1030,23 @@ struct print<Tp, true> : public base::print
     {
         std::vector<result_node*> flat;
         for(auto& ritr : results)
+        {
             for(auto& itr : ritr)
             {
                 flat.push_back(&itr);
             }
+        }
         return flat;
     }
 
 protected:
-    storage_type* data         = nullptr;
-    callback_type callback     = get_default_callback();
-    result_type   node_results = {};
-    result_type   node_input   = {};
-    result_type   node_delta   = {};
-    result_tree   node_tree    = {};
+    // do not lint misc-non-private-member-variables-in-classes
+    storage_type* data         = nullptr;                 // NOLINT
+    callback_type callback     = get_default_callback();  // NOLINT
+    result_type   node_results = {};                      // NOLINT
+    result_type   node_input   = {};                      // NOLINT
+    result_type   node_delta   = {};                      // NOLINT
+    result_tree   node_tree    = {};                      // NOLINT
 };
 //
 //--------------------------------------------------------------------------------------//

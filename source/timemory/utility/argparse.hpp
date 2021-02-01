@@ -43,6 +43,7 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace tim
@@ -57,7 +58,7 @@ namespace helpers
 static inline bool
 not_is_space(int ch)
 {
-    return !std::isspace(ch);
+    return std::isspace(ch) == 0;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -167,13 +168,13 @@ find_equiv(const std::string& s)
         // if find graph symbol before equal, end search
         // i.e. don't accept --asd)f=0 arguments
         // but allow --asd_f and --asd-f arguments
-        if(std::ispunct(static_cast<int>(s[i])))
+        if(std::ispunct(static_cast<int>(s[i])) != 0)
         {
             if(s[i] == '=')
             {
                 return static_cast<int>(i);
             }
-            else if(s[i] == '_' || s[i] == '-')
+            if(s[i] == '_' || s[i] == '-')
             {
                 continue;
             }
@@ -191,7 +192,7 @@ find_punct(const std::string& s)
     size_t i;
     for(i = 0; i < s.length(); ++i)
     {
-        if(std::ispunct(static_cast<int>(s[i])) && s[i] != '-')
+        if((std::ispunct(static_cast<int>(s[i])) != 0) && s[i] != '-')
         {
             break;
         }
@@ -279,9 +280,9 @@ struct argument_vector : std::vector<std::string>
         auto& argv() { return std::get<1>(*this); }
         auto& args() { return std::get<2>(*this); }
 
-        const auto& argc() const { return std::get<0>(*this); }
-        const auto& argv() const { return std::get<1>(*this); }
-        const auto& args() const { return std::get<2>(*this); }
+        TIMEMORY_NODISCARD const auto& argc() const { return std::get<0>(*this); }
+        TIMEMORY_NODISCARD const auto& argv() const { return std::get<1>(*this); }
+        TIMEMORY_NODISCARD const auto& args() const { return std::get<2>(*this); }
 
         void clear()
         {
@@ -303,10 +304,11 @@ struct argument_vector : std::vector<std::string>
     explicit argument_vector(int& argc, char**& argv);
     explicit argument_vector(int& argc, const char**& argv);
     explicit argument_vector(int& argc, const char* const*& argv);
-    cargs_t get_execv(const base_type& _prepend, size_t _beg = 0,
-                      size_t _end = std::numeric_limits<size_t>::max()) const;
-    cargs_t get_execv(size_t _beg = 0,
-                      size_t _end = std::numeric_limits<size_t>::max()) const;
+    TIMEMORY_NODISCARD cargs_t
+                       get_execv(const base_type& _prepend, size_t _beg = 0,
+                                 size_t _end = std::numeric_limits<size_t>::max()) const;
+    TIMEMORY_NODISCARD cargs_t
+                       get_execv(size_t _beg = 0, size_t _end = std::numeric_limits<size_t>::max()) const;
 
     // helper function to free the memory created by get_execv, pass by reference
     // so that we can set values to nullptr and avoid multiple delete errors
@@ -340,14 +342,14 @@ struct argument_parser
         arg_result() = default;
         arg_result(std::string err) noexcept
         : m_error(true)
-        , m_what(err)
+        , m_what(std::move(err))
         {}
 
         operator bool() const { return m_error; }
 
         friend std::ostream& operator<<(std::ostream& os, const arg_result& dt);
 
-        const std::string& what() const { return m_what; }
+        TIMEMORY_NODISCARD const std::string& what() const { return m_what; }
 
     private:
         bool        m_error = false;
@@ -377,9 +379,9 @@ struct argument_parser
             return *this;
         }
 
-        argument& names(std::vector<std::string> names)
+        argument& names(const std::vector<std::string>& names)
         {
-            for(auto itr : names)
+            for(const auto& itr : names)
                 m_names.push_back(itr);
             return *this;
         }
@@ -476,7 +478,7 @@ struct argument_parser
             return *this;
         }
 
-        bool found() const { return m_found; }
+        TIMEMORY_NODISCARD bool found() const { return m_found; }
 
         template <typename T>
         std::enable_if_t<helpers::is_container<T>::value, T> get()
@@ -517,9 +519,9 @@ struct argument_parser
             return get_bool(inp, found());
         }
 
-        size_t size() const { return m_values.size(); }
+        TIMEMORY_NODISCARD size_t size() const { return m_values.size(); }
 
-        std::string get_name() const
+        TIMEMORY_NODISCARD std::string get_name() const
         {
             std::stringstream ss;
             for(auto& itr : m_names)
@@ -528,18 +530,18 @@ struct argument_parser
         }
 
     private:
-        argument(const std::string& name, const std::string& desc, bool required = false)
-        : m_desc(desc)
+        argument(const std::string& name, std::string desc, bool required = false)
+        : m_desc(std::move(desc))
         , m_required(required)
         {
             m_names.push_back(name);
         }
 
-        argument() {}
+        argument() = default;
 
         arg_result check_choice(const std::string& value)
         {
-            if(m_choices.size() > 0)
+            if(!m_choices.empty())
             {
                 if(m_choices.find(value) == m_choices.end())
                 {
@@ -563,14 +565,14 @@ struct argument_parser
         {
             std::stringstream ss;
             ss << "names: ";
-            for(auto itr : arg.m_names)
+            for(const auto& itr : arg.m_names)
                 ss << itr << " ";
             ss << ", index: " << arg.m_index << ", count: " << arg.m_count
                << ", min count: " << arg.m_min_count << ", max count: " << arg.m_max_count
                << ", found: " << std::boolalpha << arg.m_found
                << ", required: " << std::boolalpha << arg.m_required
                << ", position: " << arg.m_position << ", values: ";
-            for(auto itr : arg.m_values)
+            for(const auto& itr : arg.m_values)
                 ss << itr << " ";
             os << ss.str();
             return os;
@@ -595,8 +597,8 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
-    argument_parser(const std::string& desc)
-    : m_desc(desc)
+    argument_parser(std::string desc)
+    : m_desc(std::move(desc))
     {}
     //
     //----------------------------------------------------------------------------------//
@@ -746,8 +748,9 @@ struct argument_parser
     arg_result parse(int argc, char** argv, int verbose_level = 0)
     {
         std::vector<std::string> _args;
+        _args.reserve(argc);
         for(int i = 0; i < argc; ++i)
-            _args.push_back(std::string((const char*) argv[i]));
+            _args.emplace_back((const char*) argv[i]);
         return parse(_args, verbose_level);
     }
     //
@@ -807,7 +810,7 @@ struct argument_parser
     ///     // ...
     /// }
     /// \endcode
-    bool exists(const std::string& name) const
+    TIMEMORY_NODISCARD bool exists(const std::string& name) const
     {
         std::string n = helpers::ltrim(
             name, [](int c) -> bool { return c != static_cast<int>('-'); });
@@ -865,7 +868,7 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
-    int64_t get_count(argument& a) { return a.m_values.size(); }
+    static int64_t get_count(argument& a) { return a.m_values.size(); }
     //
     //----------------------------------------------------------------------------------//
     //
@@ -909,11 +912,15 @@ private:
         else
         {
             if(_checks.test(1))
+            {
                 msg << "\n[" << a.get_name() << "]> Requires less than " << _max + 1
                     << " values.";
+            }
             if(_checks.test(2))
+            {
                 msg << "\n[" << a.get_name() << "]> Requires more than " << _min - 1
                     << " values.";
+            }
         }
         return arg_result(msg.str());
     }
@@ -958,14 +965,14 @@ private:
     //
     //----------------------------------------------------------------------------------//
     //
-protected:
-    bool                       m_help_enabled         = false;
-    int                        m_current              = -1;
-    int                        m_width                = 30;
-    std::string                m_desc                 = {};
-    std::string                m_bin                  = {};
-    error_func_t               m_error_func           = [](this_type&, result_type) {};
-    std::vector<argument>      m_arguments            = {};
+private:
+    bool                       m_help_enabled = false;
+    int                        m_current      = -1;
+    int                        m_width        = 30;
+    std::string                m_desc         = {};
+    std::string                m_bin          = {};
+    error_func_t               m_error_func   = [](this_type&, const result_type&) {};
+    std::vector<argument>      m_arguments    = {};
     std::map<int, int>         m_positional_arguments = {};
     std::map<std::string, int> m_name_map             = {};
     std::vector<action_pair_t> m_actions              = {};

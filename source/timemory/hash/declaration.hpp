@@ -55,7 +55,7 @@ PtrT
 get_shared_ptr_pair_instance()
 {
     static thread_local auto& _pinst = get_shared_ptr_pair<Tp, Tag>();
-    static thread_local auto& _inst  = _pinst.second.get() ? _pinst.second : _pinst.first;
+    static thread_local auto& _inst  = _pinst.second ? _pinst.second : _pinst.first;
     return _inst;
 }
 //

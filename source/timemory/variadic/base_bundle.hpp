@@ -248,18 +248,21 @@ public:
 
 public:
     // public member function section
-    auto hash() const { return m_hash; }
-    auto get_hash() const { return m_hash; }
+    TIMEMORY_NODISCARD auto hash() const { return m_hash; }
+    TIMEMORY_NODISCARD auto get_hash() const { return m_hash; }
 
-    int64_t     laps() const { return m_laps; }
-    std::string key() const { return std::string{ get_hash_identifier_fast(m_hash) }; }
+    TIMEMORY_NODISCARD int64_t laps() const { return m_laps; }
+    TIMEMORY_NODISCARD std::string key() const
+    {
+        return std::string{ get_hash_identifier_fast(m_hash) };
+    }
 
-    void store(bool v) { m_store(v); }
-    bool store() const { return m_store(); }
-    bool get_store() const { return m_store(); }
+    void                    store(bool v) { m_store(v); }
+    TIMEMORY_NODISCARD bool store() const { return m_store(); }
+    TIMEMORY_NODISCARD bool get_store() const { return m_store(); }
 
-    auto&       get_scope() { return m_scope; }
-    const auto& get_scope() const { return m_scope; }
+    auto&                          get_scope() { return m_scope; }
+    TIMEMORY_NODISCARD const auto& get_scope() const { return m_scope; }
 
     void rekey(const string_t& _key)
     {
@@ -301,12 +304,21 @@ protected:
         ActiveIdx = 2
     };
 
-    const auto& prefix() const { return get_persistent_data().prefix; }
-    const auto& get_prefix() const { return prefix(); }
+    TIMEMORY_NODISCARD const auto& prefix() const { return get_persistent_data().prefix; }
+    TIMEMORY_NODISCARD const auto& get_prefix() const { return prefix(); }
 
-    TIMEMORY_ALWAYS_INLINE bool m_store() const { return m_config.test(StoreIdx); }
-    TIMEMORY_ALWAYS_INLINE bool m_is_pushed() const { return m_config.test(PushedIdx); }
-    TIMEMORY_ALWAYS_INLINE bool m_is_active() const { return m_config.test(ActiveIdx); }
+    TIMEMORY_NODISCARD TIMEMORY_ALWAYS_INLINE bool m_store() const
+    {
+        return m_config.test(StoreIdx);
+    }
+    TIMEMORY_NODISCARD TIMEMORY_ALWAYS_INLINE bool m_is_pushed() const
+    {
+        return m_config.test(PushedIdx);
+    }
+    TIMEMORY_NODISCARD TIMEMORY_ALWAYS_INLINE bool m_is_active() const
+    {
+        return m_config.test(ActiveIdx);
+    }
 
     TIMEMORY_ALWAYS_INLINE void m_store(bool v) { m_config.set(StoreIdx, v); }
     TIMEMORY_ALWAYS_INLINE void m_is_pushed(bool v) { m_config.set(PushedIdx, v); }
@@ -512,7 +524,8 @@ private:
             IF_CONSTEXPR(!empty())
             {
                 auto&&  memorder_v = std::memory_order_relaxed;
-                int64_t propose_width, current_width;
+                int64_t propose_width;
+                int64_t current_width;
                 auto    compute = [&]() { return std::max(width.load(memorder_v), _w); };
                 while((propose_width = compute()) >
                       (current_width = width.load(memorder_v)))

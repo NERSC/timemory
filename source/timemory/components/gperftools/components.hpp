@@ -84,8 +84,10 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
                 label() + "_" + std::to_string(index), ".dat", _dmp_init, _dmp_rank);
             auto ret = gperf::cpu::profiler_start(fname);
             if(ret == 0)
+            {
                 fprintf(stderr, "[gperftools_cpu_profiler]> Error starting %s...",
                         fname.c_str());
+            }
         }
     }
 
@@ -98,7 +100,7 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
         }
     }
 
-protected:
+private:
     int32_t index = -1;  // if this is >= zero, then we flush and stop
 
 private:
@@ -150,8 +152,10 @@ struct gperftools_heap_profiler : public base<gperftools_heap_profiler, void>
             auto fname = settings::compose_output_filename(label(), ".dat");
             auto ret   = gperf::heap::profiler_start(fname);
             if(ret > 0)
+            {
                 fprintf(stderr, "[gperftools_heap_profiler]> Error starting %s...",
                         prefix.c_str());
+            }
         }
     }
 

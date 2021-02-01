@@ -120,9 +120,9 @@ public:
         accum += value;
     }
 
-    double get() const { return accum / base_type::get_unit(); }
+    TIMEMORY_NODISCARD double get() const { return accum / base_type::get_unit(); }
 
-    double get_display() const { return get(); }
+    TIMEMORY_NODISCARD double get_display() const { return get(); }
 
     void set_prefix();
 
@@ -169,8 +169,10 @@ public:
         else
         {
             if(settings::verbose() > 1 || settings::debug())
+            {
                 printf("[%s]> free of unknown pointer size: %p\n",
                        this_type::get_label().c_str(), ptr);
+            }
         }
     }
 

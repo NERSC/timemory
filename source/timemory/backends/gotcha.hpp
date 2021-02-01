@@ -53,9 +53,12 @@
 ///
 typedef struct __gotcha_binding_timemory
 {
-    const char* name            = nullptr;  //!< The name of the function being wrapped
-    void*       wrapper_pointer = nullptr;  //!< A pointer to the wrapper function
-    void*       function_handle = nullptr;  //!< A pointer to the function being wrapped
+    // NOLINTNEXTLINE
+    const char* name = nullptr;  //!< The name of the function being wrapped
+    // NOLINTNEXTLINE
+    void* wrapper_pointer = nullptr;  //!< A pointer to the wrapper function
+    // NOLINTNEXTLINE
+    void* function_handle = nullptr;  //!< A pointer to the function being wrapped
 
     __gotcha_binding_timemory(const char* _name, void* _wrap, void* _handle)
     : name(_name)
@@ -133,8 +136,10 @@ inline error_t
 set_priority(const std::string& _tool, int _priority = 0)
 {
     if(settings::debug())
+    {
         printf("[gotcha::%s]> Setting priority for tool: %s to %i...\n", __FUNCTION__,
                _tool.c_str(), _priority);
+    }
 #if defined(TIMEMORY_USE_GOTCHA)
     // return GOTCHA_SUCCESS;
     error_t _ret = gotcha_set_priority(_tool.c_str(), _priority);
@@ -156,8 +161,10 @@ inline error_t
 get_priority(const std::string& _tool, int& _priority)
 {
     if(settings::debug())
+    {
         printf("[gotcha::%s]> Getting priority for tool: %s to %i...\n", __FUNCTION__,
                _tool.c_str(), _priority);
+    }
 #if defined(TIMEMORY_USE_GOTCHA)
     // return GOTCHA_SUCCESS;
     error_t _ret = gotcha_get_priority(_tool.c_str(), &_priority);
@@ -206,9 +213,13 @@ wrap(std::array<binding_t, N>& _arr, const std::array<bool, N>& _filled,
     for(size_t i = 0; i < N; ++i)
     {
         if(_filled[i])
+        {
             _ret[i] = wrap(_arr[i], _labels[i]);
+        }
         else
+        {
             _ret[i] = GOTCHA_SUCCESS;
+        }
     }
     return _ret;
 }

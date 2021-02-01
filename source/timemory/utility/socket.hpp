@@ -82,7 +82,7 @@ public:
                 int64_t _max_packets = 0)
         -> decltype(callback(_channel_name), listen_info_t())
     {
-        if(this->init() != 0)
+        if(tim::socket::manager::init() != 0)
         {
             std::cerr << "Can't start socket!" << std::endl;
             return { -1, -1 };
@@ -131,7 +131,7 @@ public:
             std::cout << _host << " connected on port " << ntohs(_client.sin_port)
                       << std::endl;
         }
-        this->close(_listening);
+        tim::socket::manager::close(_listening);
         char          _buff[buffer_size];
         listen_info_t _nrecv = { 0, 0 };
         while(true)
@@ -165,8 +165,8 @@ public:
             }
         }
 
-        this->close(_client_socket);
-        this->quit();
+        tim::socket::manager::close(_client_socket);
+        tim::socket::manager::quit();
         return _nrecv;
     }
 
@@ -188,7 +188,7 @@ public:
 
     bool connect(const std::string& _channel_name, const std::string& _ip, int _port)
     {
-        if(this->init() != 0)
+        if(tim::socket::manager::init() != 0)
         {
             std::cerr << "Can't start socket!" << std::endl;
             return false;
@@ -198,7 +198,7 @@ public:
         if(_sock == invalid_socket)
         {
             std::cerr << "Can't create socket!" << std::endl;
-            this->quit();
+            tim::socket::manager::quit();
             return false;
         }
 
@@ -211,8 +211,8 @@ public:
         if(_conn_result == socket_error)
         {
             std::cerr << "Can't connect to server!" << std::endl;
-            this->close(_sock);
-            this->quit();
+            tim::socket::manager::close(_sock);
+            tim::socket::manager::quit();
             return false;
         }
         m_client_sockets[_channel_name] = _sock;
@@ -224,15 +224,15 @@ public:
         if(m_client_sockets.find(_channel_name) != m_client_sockets.end())
         {
             socket_t s = m_client_sockets.at(_channel_name);
-            this->close(s);
-            this->quit();
+            tim::socket::manager::close(s);
+            tim::socket::manager::quit();
             return true;
         }
         return false;
     }
 
 private:
-    int init()
+    static int init()
     {
 #if defined(_WINDOWS)
         WSADATA _wsa_data;
@@ -242,7 +242,7 @@ private:
 #endif
     }
 
-    int quit()
+    static int quit()
     {
 #if defined(_WINDOWS)
         return WSACleanup();
@@ -251,7 +251,7 @@ private:
 #endif
     }
 
-    int close(socket_t _sock)
+    static int close(socket_t _sock)
     {
         int status = 0;
 #if defined(_WINDOWS)

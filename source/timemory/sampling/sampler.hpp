@@ -41,6 +41,7 @@
 #include <iostream>
 #include <thread>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 // C includes
@@ -201,8 +202,8 @@ public:
     void stop();
 
 public:
-    bool is_good(int v) const { return m_good.count(v) > 0; }
-    bool is_bad(int v) const { return m_bad.count(v) > 0; }
+    TIMEMORY_NODISCARD bool is_good(int v) const { return m_good.count(v) > 0; }
+    TIMEMORY_NODISCARD bool is_bad(int v) const { return m_bad.count(v) > 0; }
 
     auto good_count() const { return m_good.size(); }
     auto bad_count() const { return m_bad.size(); }
@@ -404,10 +405,9 @@ template <template <typename...> class CompT, size_t N, typename... Types, int..
 template <typename Tp, enable_if_t<Tp::value>>
 sampler<CompT<Types...>, N, SigIds...>::sampler(const std::string& _label,
                                                 signal_set_t _good, signal_set_t _bad)
-: m_idx(0)
-, m_last(nullptr)
-, m_good(_good)
-, m_bad(_bad)
+: m_last(nullptr)
+, m_good(std::move(_good))
+, m_bad(std::move(_bad))
 {
     TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
     m_data.fill(components_t(_label));
@@ -422,10 +422,9 @@ template <template <typename...> class CompT, size_t N, typename... Types, int..
 template <typename Tp, enable_if_t<!Tp::value>>
 sampler<CompT<Types...>, N, SigIds...>::sampler(const std::string& _label,
                                                 signal_set_t _good, signal_set_t _bad)
-: m_idx(0)
-, m_last(nullptr)
-, m_good(_good)
-, m_bad(_bad)
+: m_last(nullptr)
+, m_good(std::move(_good))
+, m_bad(std::move(_bad))
 {
     TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
     m_data.emplace_back(components_t(_label));
@@ -458,9 +457,13 @@ sampler<CompT<Types...>, N, SigIds...>::sample()
     m_last = &(m_data.at((m_idx++) % N));
     // get last 4 of 7 backtrace entries (i.e. offset by 3)
     if(m_backtrace)
+    {
         m_last->sample(get_backtrace<4, 3>());
+    }
     else
+    {
         m_last->sample();
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -476,9 +479,13 @@ sampler<CompT<Types...>, N, SigIds...>::sample()
     m_data.emplace_back(components_t(m_last->hash()));
     // get last 4 of 7 backtrace entries (i.e. offset by 3)
     if(m_backtrace)
+    {
         m_last->sample(get_backtrace<4, 3>());
+    }
     else
+    {
         m_last->sample();
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -582,8 +589,10 @@ void
 sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
 {
     if(settings::debug())
+    {
         printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
                (int) threading::get_id(), demangle<this_type>().c_str());
+    }
 
     for(auto& itr : get_samplers())
     {
@@ -610,8 +619,10 @@ void
 sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
 {
     if(settings::debug())
+    {
         printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
                (int) threading::get_id(), demangle<this_type>().c_str());
+    }
 
     for(auto& itr : get_samplers())
     {
@@ -651,11 +662,13 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
     if(wait_count == 0)
     {
         if(_verbose > 0)
+        {
             fprintf(
                 stderr,
                 "[sampler::configure]> No existing sampler has been configured to "
                 "sample at a specific signal or fail at a specific signal. itimer "
                 "for will not be set. Sampler will only wait for target pid to exit\n");
+        }
         _signals.clear();
     }
     else
@@ -663,7 +676,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
         TIMEMORY_FOLD_EXPRESSION(_signals.insert(SigIds));
     }
 
-    if(_signals.size() > 0)
+    if(!_signals.empty())
     {
         auto& _custom_sa   = get_persistent_data().m_custom_sigaction;
         auto& _custom_it   = get_persistent_data().m_custom_itimerval;
@@ -691,7 +704,9 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
             // configure the sigaction
             int _sret = sigaction(itr, &_custom_sa, &_original_sa);
             if(_sret == 0)
+            {
                 get_persistent_data().m_signals.insert(itr);
+            }
             else
             {
                 TIMEMORY_EXCEPTION(TIMEMORY_JOIN(
@@ -764,8 +779,10 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         if(WIFEXITED(status) && WEXITSTATUS(status) == EXIT_SUCCESS)
         {
             if(_verbose > 2 || (_debug && _verbose > 0))
+            {
                 fprintf(stderr, "[%i]> program terminated normally with exit code: %i\n",
                         _pid, WEXITSTATUS(status));
+            }
             // normal terminatation
             return 0;
         }
@@ -776,35 +793,45 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
             int sig = WSTOPSIG(status);
             // stopped with signal 'sig'
             if(_debug || _verbose > 3)
+            {
                 fprintf(stderr, "[%i]> program stopped with signal %i. Exit code: %i\n",
                         _pid, sig, ret);
+            }
         }
         else if(WCOREDUMP(status))
         {
             if(_debug || _verbose > 3)
+            {
                 fprintf(stderr,
                         "[%i]> program terminated and produced a core dump. Exit "
                         "code: %i\n",
                         _pid, ret);
+            }
         }
         else if(WIFSIGNALED(status))
         {
             ret = WTERMSIG(status);
             if(_debug || _verbose > 3)
+            {
                 fprintf(stderr,
                         "[%i]> program terminated because it received a signal "
                         "(%i) that was not handled. Exit code: %i\n",
                         _pid, WTERMSIG(status), ret);
+            }
         }
         else if(WIFEXITED(status) && WEXITSTATUS(status))
         {
             if(ret == 127 && (_debug || _verbose > 3))
+            {
                 fprintf(stderr, "[%i]> execv failed\n", _pid);
+            }
             else if(_debug || _verbose > 3)
+            {
                 fprintf(stderr,
                         "[%i]> program terminated with a non-zero status. Exit "
                         "code: %i\n",
                         _pid, ret);
+            }
         }
         else
         {

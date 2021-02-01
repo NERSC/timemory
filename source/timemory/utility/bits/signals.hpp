@@ -135,8 +135,10 @@ signal_settings::check_environment()
     }
 
     if(disable_all())
+    {
         for(const auto& itr : _list)
             signal_settings::disable(itr.second);
+    }
 }
 
 //======================================================================================//
@@ -193,11 +195,13 @@ signal_settings::str(const sys_signal& _type)
 
     int key = (int) _type;
     for(const auto& itr : descript_data)
+    {
         if(std::get<1>(itr) == key)
         {
             _descript(itr);
             break;
         }
+    }
 
     return ss.str();
 }

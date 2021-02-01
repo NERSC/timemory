@@ -299,12 +299,12 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
     };
 
     // if argument parser was not provided
-    bool _cleanup_parser = !parser;
+    bool _cleanup_parser = parser == nullptr;
     if(_cleanup_parser)
         parser = new parser_t{ (*argv)[0] };
 
     // if settings instance was not provided
-    bool        _cleanup_settings = !_settings;
+    bool        _cleanup_settings = _settings == nullptr;
     static auto _shared_settings  = tim::settings::shared_instance();
     if(_cleanup_settings && !_shared_settings)
         return;
@@ -315,7 +315,7 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
     parser->enable_help();
     parser->on_error([=](parser_t& p, const parser_err_t& _err) {
         err_action(_err);
-        if(dmp::rank() == 0 && _settings->verbose() > 0)
+        if(dmp::rank() == 0 && _settings->get_verbose() > 0)
             p.print_help("-- <NON_TIMEMORY_ARGS>");
     });
 
@@ -341,7 +341,7 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
             {
                 // get the args
                 auto vec = tim::delimit(str, " \t;:");
-                for(auto itr : vec)
+                for(const auto& itr : vec)
                 {
                     DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
                     auto _pos = itr.find('=');
@@ -394,7 +394,7 @@ timemory_argparse(std::vector<std::string>& args, argparse::argument_parser* par
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_CONFIG_LINKAGE(void)
+TIMEMORY_CONFIG_LINKAGE(void)  // NOLINT
 timemory_finalize()
 {
     auto _settings = settings::instance();

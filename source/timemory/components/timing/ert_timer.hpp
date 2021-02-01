@@ -63,14 +63,14 @@ struct ert_timer
         return tim::get_clock_real_now<int64_t, ratio_t>();
     }
 
-    auto load() const { return value; }
+    TIMEMORY_NODISCARD auto load() const { return value; }
 
-    double get() const noexcept
+    TIMEMORY_NODISCARD double get() const noexcept
     {
         return static_cast<double>(load()) / ratio_t::den * units::sec;
     }
 
-    auto get_display() const noexcept { return get(); }
+    TIMEMORY_NODISCARD auto get_display() const noexcept { return get(); }
 
     void start() noexcept { value = record(); }
     void stop() noexcept
@@ -95,7 +95,7 @@ struct ert_timer
 
     void print(std::ostream& os) const { operation::base_printer<this_type>(os, *this); }
 
-protected:
+private:
     int64_t    laps  = 0;
     value_type value = 0;
 };

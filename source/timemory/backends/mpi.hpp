@@ -285,8 +285,10 @@ initialize(int& argc, char**& argv)
                 int  _actual = -1;
                 auto ret     = MPI_Init_thread(&argc, &argv, itr, &_actual);
                 if(_actual != itr)
+                {
                     fprintf(stderr, "Warning! MPI_Init_thread does not support: %s\n",
                             _type.c_str());
+                }
                 return TIMEMORY_MPI_ERROR_CHECK(ret);
             };
 
@@ -296,15 +298,25 @@ initialize(int& argc, char**& argv)
 
             auto _mpi_type = use_mpi_thread_type();
             if(_mpi_type == "single")
+            {
                 success_v = _init(single, _mpi_type);
+            }
             else if(_mpi_type == "serialized")
+            {
                 success_v = _init(serialized, _mpi_type);
+            }
             else if(_mpi_type == "funneled")
+            {
                 success_v = _init(funneled, _mpi_type);
+            }
             else if(_mpi_type == "multiple")
+            {
                 success_v = _init(multiple, _mpi_type);
+            }
             else
+            {
                 success_v = _init(multiple, "multiple");
+            }
         }
 
         if(!success_v)
@@ -428,8 +440,10 @@ comm_split_type(comm_t comm, int split_size, int key, info_t info, comm_t* local
 {
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
+    {
         TIMEMORY_MPI_ERROR_CHECK(
             MPI_Comm_split_type(comm, split_size, key, info, local_comm));
+    }
 #else
     consume_parameters(comm, split_size, key, info, local_comm);
 #endif
@@ -493,8 +507,10 @@ send(const std::string& str, int dest, int tag, comm_t comm = mpi::comm_world_v)
     unsigned long long len = str.size();
     TIMEMORY_MPI_ERROR_CHECK(MPI_Send(&len, 1, MPI_UNSIGNED_LONG_LONG, dest, tag, comm));
     if(len != 0)
+    {
         TIMEMORY_MPI_ERROR_CHECK(
             MPI_Send(const_cast<char*>(str.data()), len, MPI_CHAR, dest, tag, comm));
+    }
 #else
     consume_parameters(str, dest, tag, comm);
 #endif
@@ -533,8 +549,10 @@ gather(const void* sendbuf, int sendcount, data_type_t sendtype, void* recvbuf,
 {
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
+    {
         TIMEMORY_MPI_ERROR_CHECK(MPI_Gather(sendbuf, sendcount, sendtype, recvbuf,
                                             recvcount, recvtype, root, comm));
+    }
 #else
     consume_parameters(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root,
                        comm);
@@ -550,8 +568,10 @@ comm_spawn_multiple(int count, char** commands, char*** argv, const int* maxproc
 {
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
+    {
         TIMEMORY_MPI_ERROR_CHECK(MPI_Comm_spawn_multiple(
             count, commands, argv, maxprocs, info, root, comm, intercomm, errcodes));
+    }
 #else
     consume_parameters(count, commands, argv, maxprocs, info, root, comm, intercomm,
                        errcodes);

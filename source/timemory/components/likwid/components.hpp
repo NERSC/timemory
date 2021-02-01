@@ -115,7 +115,7 @@ struct likwid_marker : public base<likwid_marker, void>
 #endif
     }
 
-    likwid_data get() const
+    likwid_data get() const  // NOLINT
     {
         likwid_data _data{};
 #if defined(TIMEMORY_USE_LIKWID_PERFMON)

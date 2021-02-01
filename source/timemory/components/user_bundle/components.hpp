@@ -44,6 +44,7 @@
 #include <regex>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 //======================================================================================//
@@ -189,20 +190,19 @@ public:
     , m_bundle(get_data())
     {}
 
-    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
-                const typeid_vec_t& _typeids, scope::config _scope = scope::get_default())
+    user_bundle(const char* _prefix, opaque_array_t _bundle_vec, typeid_vec_t _typeids,
+                scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
-    , m_typeids(_typeids)
-    , m_bundle(_bundle_vec)
+    , m_typeids(std::move(_typeids))
+    , m_bundle(std::move(_bundle_vec))
     {}
 
-    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
+    user_bundle(const char* _prefix, opaque_array_t _bundle_vec,
                 const typeid_set_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
-    , m_typeids()
-    , m_bundle(_bundle_vec)
+    , m_bundle(std::move(_bundle_vec))
     {
         m_typeids.reserve(_typeids.size());
         for(const auto& itr : _typeids)
@@ -373,12 +373,14 @@ public:
     void get(void*& ptr, size_t _hash) const
     {
         if(ptr == nullptr)
+        {
             for(const auto& itr : m_bundle)
             {
                 itr.get(ptr, _hash);
                 if(ptr)
                     break;
             }
+        }
     }
 
     void get() {}
@@ -395,7 +397,7 @@ public:
         m_setup = false;
     }
 
-    size_t size() const { return m_bundle.size(); }
+    TIMEMORY_NODISCARD size_t size() const { return m_bundle.size(); }
 
 public:
     //  Configure the tool for a specific component
@@ -444,8 +446,10 @@ protected:
     static bool contains(size_t _val, const typeid_vec_t& _targ)
     {
         for(const auto& _itr : _targ)
+        {
             if(_itr == _val)
                 return true;
+        }
         return false;
     }
 

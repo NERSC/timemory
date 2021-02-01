@@ -38,6 +38,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -113,7 +114,7 @@ base::print::print_text(const std::string& outfname, stream_type stream)  // NOL
 #endif  // !defined(TIMEMORY_OPERATIONS_SOURCE)
 //
 template <typename Tp>
-print<Tp, true>::print(storage_type* _data, settings_t _settings)
+print<Tp, true>::print(storage_type* _data, const settings_t& _settings)
 : base_type(trait::requires_json<Tp>::value, _settings)
 , data(_data)
 {
@@ -229,8 +230,10 @@ print<Tp, true>::setup()
         json_diffname = settings::compose_output_filename(label, dext);
         text_diffname = settings::compose_output_filename(label, ".diff.txt");
         if(m_settings->get_debug())
+        {
             printf("difference filenames: '%s' and '%s'\n", json_diffname.c_str(),
                    text_diffname.c_str());
+        }
     }
 
     if(!(file_output() && text_output()) && !cout_output())
@@ -239,7 +242,7 @@ print<Tp, true>::setup()
     write_stream(data_stream, node_results);
     data_stream->set_banner(description);
 
-    if(node_delta.size() > 0)
+    if(!node_delta.empty())
     {
         write_stream(diff_stream, node_delta);
         std::stringstream ss;
@@ -264,7 +267,8 @@ print<Tp, true>::write_stream(stream_type& stream, result_type& result_array)
     auto stream_width = Tp::get_width();
     auto stream_prec  = Tp::get_precision();
 
-    stream.reset(new utility::stream('|', '-', stream_fmt, stream_width, stream_prec));
+    stream = std::make_shared<utility::stream>('|', '-', stream_fmt, stream_width,
+                                               stream_prec);
 
     using get_return_type = decltype(std::declval<const Tp>().get());
     using compute_type    = math::compute<get_return_type>;
@@ -314,9 +318,13 @@ print<Tp, true>::write_stream(stream_type& stream, result_type& result_array)
                     {
                         // if first exclusive value encountered: assign; else: combine
                         if(nexclusive == 0)
+                        {
                             exclusive_values = eitr_obj.get();
+                        }
                         else
+                        {
                             compute_type::plus(exclusive_values, eitr_obj.get());
+                        }
                         // increment. beyond 0 vs. 1, this value plays no role
                         ++nexclusive;
                     }
@@ -360,14 +368,16 @@ print<Tp, true>::update_data()
     dmp::barrier();
 
     if(m_settings->get_debug())
+    {
         printf("[%s]|%i> dmp results size: %i\n", label.c_str(), node_rank,
                (int) node_results.size());
+    }
 
     setup();
 
     read_json();
 
-    if(node_input.size() > 0 && node_rank == 0)
+    if(!node_input.empty() && node_rank == 0)
     {
         node_delta.resize(node_input.size());
 
@@ -519,7 +529,7 @@ print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
 
     if(outfname.length() > 0)
     {
-        auto fext = outfname.substr(outfname.find_last_of(".") + 1);
+        auto fext = outfname.substr(outfname.find_last_of('.') + 1);
         if(fext.empty())
             fext = "unknown";
         manager::instance()->add_file_output(fext, label, outfname);
@@ -537,7 +547,9 @@ print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
             oa->startNode();
             get_type{}(*oa, metadata_t{});
             if(rt.find("process") != rt.end())
+            {
                 (*oa)(cereal::make_nvp("graph", rt["process"]));
+            }
             else
             {
                 for(const auto& itr : rt)

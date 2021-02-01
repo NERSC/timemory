@@ -75,7 +75,7 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
             ss << "LIST(APPEND CTEST_NOTES_FILES \"" << str << "\")\n";
         }
 
-        if(data->size() > 0)
+        if(!data->empty())
             ss << "LIST(REMOVE_DUPLICATES CTEST_NOTES_FILES)\n";
 
         auto fname = settings::compose_output_filename("CTestNotes", "txt", false, -1,
@@ -84,8 +84,10 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
         if(ofs)
         {
             if(settings::debug() || settings::verbose() > 1)
+            {
                 std::cout << "[ctest_notes]> Outputting '" << fname << "'..."
                           << std::endl;
+            }
             ofs << ss.str() << std::endl;
         }
         delete data;

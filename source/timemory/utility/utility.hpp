@@ -318,7 +318,9 @@ get_backtrace()
 
     // report errors
     if(bsym == nullptr)
+    {
         perror("backtrace_symbols");
+    }
     else
     {
         for(decltype(n) i = 0; i < n; ++i)
@@ -350,7 +352,9 @@ get_backtrace(Func&& func = [](const char* inp) { return std::string(inp); })
 
     // report errors
     if(bsym == nullptr)
+    {
         perror("backtrace_symbols");
+    }
     else
     {
         for(decltype(n) i = 0; i < n; ++i)

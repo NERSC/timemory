@@ -399,7 +399,7 @@ public:
     inline std::uint32_t registerSharedPointer(void const* addr)
     {
         // Handle null pointers by just returning 0
-        if(addr == 0)
+        if(addr == nullptr)
             return 0;
 
         auto id = itsSharedPointerMap.find(addr);
@@ -409,8 +409,8 @@ public:
             itsSharedPointerMap.insert({ addr, ptrId });
             return ptrId | detail::msb_32bit;  // mask MSB to be 1
         }
-        else
-            return id->second;
+
+        return id->second;
     }
 
     //! Registers a polymorphic type name with the archive
@@ -430,8 +430,8 @@ public:
             itsPolymorphicTypeMap.insert({ name, polyId });
             return polyId | detail::msb_32bit;  // mask MSB to be 1
         }
-        else
-            return id->second;
+
+        return id->second;
     }
 
 private:
@@ -732,10 +732,7 @@ public:
      * archive) */
     InputArchive(ArchiveType* const derived)
     : self(derived)
-    , itsBaseClassSet()
-    , itsSharedPointerMap()
-    , itsPolymorphicTypeMap()
-    , itsVersionedTypes()
+
     {}
 
     InputArchive& operator=(InputArchive const&) = delete;
@@ -818,9 +815,11 @@ public:
 
         auto iter = itsSharedPointerMap.find(id);
         if(iter == itsSharedPointerMap.end())
+        {
             throw Exception(
                 "Error while trying to deserialize a smart pointer. Could not find id " +
                 std::to_string(id));
+        }
 
         return iter->second;
     }
@@ -832,7 +831,8 @@ public:
         @internal
         @param id The unique identifier for the shared pointer
         @param ptr The actual shared pointer */
-    inline void registerSharedPointer(std::uint32_t const id, std::shared_ptr<void> ptr)
+    inline void registerSharedPointer(std::uint32_t const          id,
+                                      const std::shared_ptr<void>& ptr)
     {
         std::uint32_t const stripped_id  = id & ~detail::msb_32bit;
         itsSharedPointerMap[stripped_id] = ptr;
@@ -1058,19 +1058,19 @@ private:
         static const auto hash         = std::type_index(typeid(T)).hash_code();
         auto              lookupResult = itsVersionedTypes.find(hash);
 
-        if(lookupResult != itsVersionedTypes.end())  // already exists
+        if(lookupResult != itsVersionedTypes.end())
+        {  // already exists
             return lookupResult->second;
-        else  // need to load
-        {
-            std::uint32_t version = 0;
+        }  // need to load
+
+        std::uint32_t version = 0;
 
 #if !defined(TIMEMORY_DISABLE_CEREAL_CLASS_VERSION)
-            process(make_nvp<ArchiveType>("cereal_class_version", version));
+        process(make_nvp<ArchiveType>("cereal_class_version", version));
 #endif
-            itsVersionedTypes.emplace_hint(lookupResult, hash, version);
+        itsVersionedTypes.emplace_hint(lookupResult, hash, version);
 
-            return version;
-        }
+        return version;
     }
 
     //! Member serialization

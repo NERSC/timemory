@@ -64,20 +64,20 @@ struct tsettings : public vsettings
     {}
 
     template <typename... Args>
-    tsettings(Vp _value, Args&&... _args)
+    tsettings(Vp _value, Args&&... _args)  // NOLINT
     : base_type(std::forward<Args>(_args)...)
-    , m_value(_value)
+    , m_value(_value)  // NOLINT
     {
         m_type_index  = std::type_index(typeid(type));
         m_value_index = std::type_index(typeid(value_type));
     }
 
-    Tp&       get() { return m_value; }
-    const Tp& get() const { return m_value; }
-    void      set(const Tp& _value) { m_value = _value; }
+    Tp&                      get() { return m_value; }
+    TIMEMORY_NODISCARD const Tp& get() const { return m_value; }
+    void                         set(const Tp& _value) { m_value = _value; }
     // void      set(Tp&& _value) { m_value = std::forward<Tp>(_value); }
 
-    virtual std::string as_string() const override
+    TIMEMORY_NODISCARD std::string as_string() const override
     {
         std::stringstream ss;
         ss << std::boolalpha;
@@ -85,18 +85,15 @@ struct tsettings : public vsettings
         return ss.str();
     }
 
-    virtual void parse() final
+    void parse() final
     {
         if(!m_env_name.empty())
             m_value = get_env<decay_t<Tp>>(m_env_name, m_value);
     }
 
-    virtual void parse(const std::string& v) final
-    {
-        m_value = get_value<decay_t<Tp>>(v);
-    }
+    void parse(const std::string& v) final { m_value = get_value<decay_t<Tp>>(v); }
 
-    virtual void add_argument(argparse::argument_parser& p) final
+    void add_argument(argparse::argument_parser& p) final
     {
         if(!m_cmdline.empty())
         {
@@ -110,23 +107,27 @@ struct tsettings : public vsettings
         }
     }
 
-    virtual std::shared_ptr<vsettings> clone() final
+    std::shared_ptr<vsettings> clone() final
     {
         return std::make_shared<tsettings<Tp>>(m_value, m_name, m_env_name, m_description,
                                                m_cmdline, m_count, m_max_count);
     }
 
-    virtual void clone(std::shared_ptr<vsettings> rhs) final
+    void clone(std::shared_ptr<vsettings> rhs) final
     {
         vsettings::clone(rhs);
         if(dynamic_cast<tsettings<Tp>*>(rhs.get()))
+        {
             set(dynamic_cast<tsettings<Tp>*>(rhs.get())->get());
+        }
         else if(dynamic_cast<tsettings<Tp, Tp&>*>(rhs.get()))
+        {
             set(dynamic_cast<tsettings<Tp, Tp&>*>(rhs.get())->get());
+        }
     }
 
-    virtual display_map_t get_display(std::ios::fmtflags fmt = {}, int _w = -1,
-                                      int _p = -1) override
+    display_map_t get_display(std::ios::fmtflags fmt = {}, int _w = -1,
+                              int _p = -1) override
     {
         auto _data   = vsettings::get_display(fmt, _w, _p);
         auto _as_str = [&](auto _val) {
@@ -165,7 +166,7 @@ struct tsettings : public vsettings
     {
         try
         {
-            std::string _dtype = "";
+            std::string _dtype{};
             ar(cereal::make_nvp("name", m_name));
             ar(cereal::make_nvp("environ", m_env_name));
             ar(cereal::make_nvp("description", m_description));
@@ -205,7 +206,7 @@ struct tsettings : public vsettings
         return val;
     }
 
-    virtual parser_func_t get_action(TIMEMORY_API) override { return get_action(); }
+    parser_func_t get_action(TIMEMORY_API) override { return get_action(); }
 
 private:
     template <typename Up = decay_t<Tp>, enable_if_t<std::is_same<Up, bool>::value> = 0>
@@ -218,9 +219,13 @@ private:
                 id = id.substr(pos);
             auto val = p.get<std::string>(id);
             if(val.empty())
+            {
                 m_value = true;
+            }
             else
+            {
                 m_value = get_bool(val, true);
+            }
         };
     }
 
@@ -249,7 +254,9 @@ private:
                 id = id.substr(pos);
             auto _vec = p.get<std::vector<std::string>>(id);
             if(_vec.empty())
+            {
                 m_value = "";
+            }
             else
             {
                 std::stringstream ss;

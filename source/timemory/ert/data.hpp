@@ -83,16 +83,6 @@ struct exec_params
     exec_params& operator=(const exec_params&) = default;
     exec_params& operator=(exec_params&&) noexcept = default;
 
-    uint64_t working_set_min = 16;
-    uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
-    uint64_t nthreads        = 1;
-    uint64_t nrank           = tim::dmp::rank();
-    uint64_t nproc           = tim::dmp::size();
-    uint64_t nstreams        = 1;
-    uint64_t grid_size       = 0;
-    uint64_t block_size      = 32;
-    uint64_t shmem_size      = 0;
-
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
@@ -120,6 +110,16 @@ struct exec_params
         os << ss.str();
         return os;
     }
+
+    uint64_t working_set_min = 16;                         // NOLINT NOLINTNEXTLINE
+    uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
+    uint64_t nthreads        = 1;                          // NOLINT
+    uint64_t nrank           = tim::dmp::rank();           // NOLINT
+    uint64_t nproc           = tim::dmp::size();           // NOLINT
+    uint64_t nstreams        = 1;                          // NOLINT
+    uint64_t grid_size       = 0;                          // NOLINT
+    uint64_t block_size      = 32;                         // NOLINT
+    uint64_t shmem_size      = 0;                          // NOLINT
 };
 
 //--------------------------------------------------------------------------------------//
@@ -140,34 +140,24 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    exec_data() {}
-    ~exec_data() {}
+    exec_data()                     = default;
+    ~exec_data()                    = default;
+    exec_data(const exec_data&)     = delete;
+    exec_data(exec_data&&) noexcept = default;
 
-    exec_data(const exec_data&) = delete;
     exec_data& operator=(const exec_data&) = delete;
-
-    exec_data(this_type&& rhs)
-    : m_labels(std::move(rhs.m_labels))
-    , m_values(std::move(rhs.m_values))
-    {}
-
-    this_type& operator=(this_type&& rhs)
-    {
-        m_labels = std::move(rhs.m_labels);
-        m_values = std::move(rhs.m_values);
-        return *this;
-    }
+    exec_data& operator=(exec_data&&) noexcept = default;
 
 public:
     //----------------------------------------------------------------------------------//
     //
-    void           set_labels(const labels_type& _labels) { m_labels = _labels; }
-    labels_type    get_labels() const { return m_labels; }
-    size_type      size() { return m_values.size(); }
-    iterator       begin() { return m_values.begin(); }
-    const_iterator begin() const { return m_values.begin(); }
-    iterator       end() { return m_values.end(); }
-    const_iterator end() const { return m_values.end(); }
+    void               set_labels(const labels_type& _labels) { m_labels = _labels; }
+    TIMEMORY_NODISCARD labels_type get_labels() const { return m_labels; }
+    size_type                      size() { return m_values.size(); }
+    iterator                       begin() { return m_values.begin(); }
+    TIMEMORY_NODISCARD const_iterator begin() const { return m_values.begin(); }
+    iterator                          end() { return m_values.end(); }
+    TIMEMORY_NODISCARD const_iterator end() const { return m_values.end(); }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -256,7 +246,7 @@ public:
         ar.finishNode();
     }
 
-protected:
+private:
     labels_type m_labels = { { "label", "working-set", "trials", "total-bytes",
                                "total-ops", "ops-per-set", "counter", "device", "dtype",
                                "exec-params" } };

@@ -120,15 +120,15 @@ struct rusage_cache
     rusage_cache(rusage_cache&&) noexcept = default;
     rusage_cache& operator=(rusage_cache&&) noexcept = default;
 
-    inline int64_t get_peak_rss() const;
-    inline int64_t get_num_io_in() const;
-    inline int64_t get_num_io_out() const;
-    inline int64_t get_num_minor_page_faults() const;
-    inline int64_t get_num_major_page_faults() const;
-    inline int64_t get_num_voluntary_context_switch() const;
-    inline int64_t get_num_priority_context_switch() const;
-    inline int64_t get_user_mode_time() const;
-    inline int64_t get_kernel_mode_time() const;
+    TIMEMORY_NODISCARD inline int64_t get_peak_rss() const;
+    TIMEMORY_NODISCARD inline int64_t get_num_io_in() const;
+    TIMEMORY_NODISCARD inline int64_t get_num_io_out() const;
+    TIMEMORY_NODISCARD inline int64_t get_num_minor_page_faults() const;
+    TIMEMORY_NODISCARD inline int64_t get_num_major_page_faults() const;
+    TIMEMORY_NODISCARD inline int64_t get_num_voluntary_context_switch() const;
+    TIMEMORY_NODISCARD inline int64_t get_num_priority_context_switch() const;
+    TIMEMORY_NODISCARD inline int64_t get_user_mode_time() const;
+    TIMEMORY_NODISCARD inline int64_t get_kernel_mode_time() const;
 
 #if defined(_UNIX)
 private:

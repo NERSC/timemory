@@ -84,9 +84,13 @@ struct print
         std::stringstream ss;
         ss << _obj;
         if(N + 1 < Ntot)
+        {
             ss << ", ";
+        }
         else if(N + 1 == Ntot && _endline)
+        {
             ss << '\n';
+        }
         _os << ss.str();
     }
 

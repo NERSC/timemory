@@ -159,8 +159,6 @@ private:
     static_assert(!std::is_base_of<detail::NameValuePairCore, T>::value,
                   "Cannot pair a name to a NameValuePair");
 
-    NameValuePair& operator=(NameValuePair const&) = delete;
-
 public:
     //! Constructs a new NameValuePair
     /*! @param n The name of the pair
@@ -175,8 +173,10 @@ public:
     , value(std::forward<T>(v))
     {}
 
-    char const* name;
-    Type        value;
+    NameValuePair& operator=(NameValuePair const&) = delete;
+
+    char const* name;   // NOLINT(misc-non-private-member-variables-in-classes)
+    Type        value;  // NOLINT(misc-non-private-member-variables-in-classes)
 };
 
 //! A specialization of make_nvp<> that simply forwards the value for binary archives
@@ -233,7 +233,9 @@ struct BinaryData
     , size(s)
     {}
 
-    PT       data;  //!< pointer to beginning of data
+    // NOLINTNEXTLINE
+    PT data;  //!< pointer to beginning of data
+    // NOLINTNEXTLINE
     uint64_t size;  //!< size in bytes
 };
 
@@ -259,8 +261,6 @@ private:
     static_assert(!std::is_base_of<detail::DeferredDataCore, T>::value,
                   "Cannot defer DeferredData");
 
-    DeferredData& operator=(DeferredData const&) = delete;
-
 public:
     //! Constructs a new NameValuePair
     /*! @param v The value to defer.  Ideally this should be an l-value reference so that
@@ -273,7 +273,9 @@ public:
     : value(std::forward<T>(v))
     {}
 
-    Type value;
+    DeferredData& operator=(DeferredData const&) = delete;
+
+    Type value;  // NOLINT
 };
 
 // ######################################################################
@@ -341,14 +343,14 @@ private:
     using Type = typename std::conditional<std::is_lvalue_reference<T>::value, T,
                                            typename std::decay<T>::type>::type;
 
-    SizeTag& operator=(SizeTag const&) = delete;
-
 public:
     SizeTag(T&& sz)
     : size(std::forward<T>(sz))
     {}
 
-    Type size;
+    SizeTag& operator=(SizeTag const&) = delete;
+
+    Type size;  // NOLINT
 };
 
 // ######################################################################
@@ -391,8 +393,8 @@ struct MapItem
 
     MapItem& operator=(MapItem const&) = delete;
 
-    KeyType   key;
-    ValueType value;
+    KeyType   key;    // NOLINT
+    ValueType value;  // NOLINT
 
     //! Serialize the MapItem with the NVPs "key" and "value"
     template <class Archive>

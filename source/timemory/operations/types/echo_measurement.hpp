@@ -150,8 +150,10 @@ struct echo_measurement<Tp, true> : public common_utils
     {
         string_t ret;
         for(auto& itr : _unit)
+        {
             return join(",", ret,
                         generate_name(_prefix, itr, std::forward<Args>(_args)...));
+        }
         return ret;
     }
 
@@ -164,8 +166,10 @@ struct echo_measurement<Tp, true> : public common_utils
     {
         string_t ret;
         for(auto& itr : _unit)
+        {
             return join(",", ret,
                         generate_name(_prefix, itr, std::forward<Args>(_args)...));
+        }
         return ret;
     }
 
@@ -230,8 +234,8 @@ struct echo_measurement<Tp, true> : public common_utils
         if(settings::dart_label())
             return string_t("");
 
-        string_t              ret_prefix = "";
-        string_t              add_prefix = "";
+        string_t              ret_prefix{};
+        string_t              add_prefix{};
         static const strset_t repl_chars = { "\t", "\n", "<", ">" };
         for(const auto& itr : hierarchy)
         {

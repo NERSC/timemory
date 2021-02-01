@@ -213,10 +213,14 @@ get_opaque(scope::config _scope, Args&&... args)
         DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset_t* _result = static_cast<Toolset_t*>(v_result);
         if(!_result)
+        {
             _result = create_heap_variadic<Toolset_t>(_prefix, _scope + arg_scope,
                                                       std::forward<Args>(args)...);
+        }
         else
+        {
             _result->rekey(_prefix);
+        }
         return (void*) _result;
     };
 
