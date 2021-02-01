@@ -59,15 +59,21 @@ from timemory.bundle import auto_timer, auto_tuple, marker
 # compute fibonacci
 def fibonacci(n, with_arg=True):
     mode = "full" if not with_arg else "defer"
-    with marker(["wall_clock", "peak_rss", "current_peak_rss"],
-                "fib({})".format(n) if with_arg else "", mode=mode):
-        return n if n < 2 else (fibonacci(n - 1, with_arg) + fibonacci(n - 2, with_arg))
+    with marker(
+        ["wall_clock", "peak_rss", "current_peak_rss"],
+        "fib({})".format(n) if with_arg else "",
+        mode=mode,
+    ):
+        return (
+            n
+            if n < 2
+            else (fibonacci(n - 1, with_arg) + fibonacci(n - 2, with_arg))
+        )
 
 
 # --------------------------- Hatchet Tests set ---------------------------------------- #
 # Hatchet tests class
 class TimemoryHatchetTests(unittest.TestCase):
-
     @classmethod
     def setUpClass(self):
         # set up environment variables
@@ -126,6 +132,7 @@ class TimemoryHatchetTests(unittest.TestCase):
             return
 
         from timemory.component import CurrentPeakRss
+
         data = tim.get(hierarchy=True, components=[CurrentPeakRss.id()])
         gf = ht.GraphFrame.from_timemory(data)
 

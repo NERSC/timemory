@@ -644,7 +644,7 @@ struct timem_config
     int      verbose          = tim::get_env("TIMEM_VERBOSE", 0);
     string_t shell =
         tim::get_env("TIMEM_SHELL", tim::get_env<string_t>("SHELL", getusershell()));
-    string_t      shell_flags  = tim::get_env<string_t>("TIMEM_SHELL_FLAGS", "-i");
+    string_t      shell_flags  = tim::get_env<string_t>("TIMEM_SHELL_FLAGS", "");
     string_t      output_file  = tim::get_env<string_t>("TIMEM_OUTPUT", "");
     double        sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 5.0);
     double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 1.0e-6);

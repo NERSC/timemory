@@ -48,9 +48,18 @@ using device_t  = tim::device::cpu;
 static constexpr uint64_t FLOPS  = 16;
 static constexpr uint64_t TRIALS = 2;
 static constexpr uint64_t SIZE   = 1024 * 1024 * 64;
+
+#if defined(__GNUG__) && !defined(__OPTIMIZE__)
+// for code coverage (always GNU C++), allow very high differences in debug mode
+static const int64_t ops_tolerance  = (TRIALS * SIZE * FLOPS) * 2000;
+static const int64_t lst_tolerance  = (TRIALS * SIZE * FLOPS) * 2000;
+static const double  rate_tolerance = 500.0;
+#else
 // tolerance of 5.0e-5
-static const int64_t ops_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
-static const int64_t lst_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
+static const int64_t ops_tolerance  = (TRIALS * SIZE * FLOPS) / 2000;
+static const int64_t lst_tolerance  = (TRIALS * SIZE * FLOPS) / 2000;
+static const double  rate_tolerance = 0.05;
+#endif
 
 static std::function<void()> begin_cb = [] {};
 static std::function<void()> end_cb   = [] {};
@@ -114,12 +123,12 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, ArgsT&&... _args)
     ptr_t<ComponentT> _obj;
     {
         using measure_t = tim::auto_bundle<TIMEMORY_API, ComponentT>;
-        begin_cb();
         measure_t obj(std::forward<ArgsT>(_args)...);
+        begin_cb();
         tim::ert::ops_kernel<Nunroll, device_t>(ntrials, nsize, array.data(), op_func,
                                                 store_func);
-        obj.stop();
         end_cb();
+        obj.stop();
         _obj = std::make_shared<ComponentT>(*obj.template get<ComponentT>());
     }
 
@@ -163,15 +172,8 @@ class papi_tests : public ::testing::Test
 protected:
     TIMEMORY_TEST_DEFAULT_SUITE_SETUP
     TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
-
-    void SetUp() override
-    {
-        static std::atomic<int> once(0);
-        if(once++ == 0)
-        {
-            tim::papi::init();
-        }
-    }
+    TIMEMORY_TEST_DEFAULT_SETUP
+    TIMEMORY_TEST_DEFAULT_TEARDOWN
 };
 
 //--------------------------------------------------------------------------------------//
@@ -415,6 +417,7 @@ TEST_F(papi_tests, tuple_load_store_ins_rate)
     auto _sr_ins  = sr_ins_rate * _wc_val;
     auto _lst_ins = lst_ins_rate * _wc_val;
 
+    std::cout << "\n";
     std::cout << "RATE_TUPLE : " << *obj << std::endl;
     std::cout << "TUPLE      : " << *pt << std::endl;
     std::cout << "WALL-CLOCK : " << *wc << std::endl;
@@ -429,12 +432,13 @@ TEST_F(papi_tests, tuple_load_store_ins_rate)
     EXPECT_GT(indiv, 0);
     EXPECT_GT(accum, 0);
 
-    auto total_expected = std::get<2>(ret) / _wc_val;
-    auto total_measured = obj->get<double>().at(2);
+    auto total_expected  = std::get<2>(ret) / _wc_val;
+    auto total_measured  = obj->get<double>().at(2);
+    auto total_tolerance = rate_tolerance * total_expected;
     details::report<double>(total_measured, total_expected,
-                            static_cast<double>(ops_tolerance), "PAPI load/store rate");
+                            static_cast<double>(total_tolerance), "PAPI load/store rate");
 
-    EXPECT_NEAR(total_measured, total_expected, 0.05 * total_expected);
+    EXPECT_NEAR(total_measured, total_expected, total_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -443,6 +447,6 @@ using instruction_rate_t =
     papi_rate_tuple<wall_clock, PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
 using instruction_tuple_t = papi_tuple<PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
 
-TIMEMORY_INITIALIZE_STORAGE(instruction_rate_t, instruction_tuple_t)
+TIMEMORY_INITIALIZE_STORAGE(instruction_rate_t, instruction_tuple_t);
 
 //--------------------------------------------------------------------------------------//

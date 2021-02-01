@@ -47,6 +47,17 @@
 #    define TIMEMORY_ESC(...) __VA_ARGS__
 #endif
 
+// stringify some macro -- uses TIMEMORY_STRINGIZE2 which does the actual
+//   "stringify-ing" after the macro has been substituted by it's result
+#if !defined(TIMEMORY_STRINGIZE)
+#    define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
+#endif
+
+// actual stringifying
+#if !defined(TIMEMORY_STRINGIZE2)
+#    define TIMEMORY_STRINGIZE2(X) #    X
+#endif
+
 //======================================================================================//
 //
 //                              COMPONENTS

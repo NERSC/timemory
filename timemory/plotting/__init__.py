@@ -355,13 +355,15 @@ def embedded_plot(
                         "plot_params": params,
                     }
 
-                    for j in range(0, nranks):
-                        rdata = _json["ranks"][j]
+                    rdata = _json["ranks"]
+                    for j in range(0, len(rdata)):
 
-                        _data = read(rdata, **_dict)
-                        _rtag = "" if nranks == 1 else "_{}".format(j)
+                        _data = read(rdata[j], **_dict)
+                        _rtag = "" if len(rdata) == 1 else "_{}".format(j)
                         _rtitle = (
-                            "" if nranks == 1 else " (MPI rank: {})".format(j)
+                            ""
+                            if len(rdata) == 1
+                            else " (MPI rank: {})".format(j)
                         )
 
                         _data.filename = args.files[i].replace(".json", _rtag)

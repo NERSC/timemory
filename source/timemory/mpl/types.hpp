@@ -933,6 +933,80 @@ struct push_back<Hybrid<Lhs<LhsTypes...>, Rhs<RhsTypes...>>, T>
 
 //--------------------------------------------------------------------------------------//
 
+template <typename... T>
+struct union_index_of;
+
+template <typename T, template <typename...> class TupleT, typename... Types>
+struct union_index_of<T, TupleT<Types...>>
+{
+    template <typename U = T>
+    static constexpr auto value(
+        int, enable_if_t<is_one_of<U, TupleT<Types...>>::value, int> = 0)
+    {
+        return index_of<T, TupleT<Types...>>::value;
+    }
+
+    template <typename U = T>
+    static constexpr auto value(
+        long, enable_if_t<is_one_of<U*, TupleT<Types...>>::value, int> = 0)
+    {
+        return index_of<T*, TupleT<Types...>>::value;
+    }
+};
+
+template <typename T, template <typename...> class TupleT, typename... Types>
+struct union_index_of<T*, TupleT<Types...>>
+{
+    template <typename U = T>
+    static constexpr auto value(
+        long, enable_if_t<is_one_of<U, TupleT<Types...>>::value, int> = 0)
+    {
+        return index_of<T, TupleT<Types...>>::value;
+    }
+
+    template <typename U = T>
+    static constexpr auto value(
+        int, enable_if_t<is_one_of<U*, TupleT<Types...>>::value, int> = 0)
+    {
+        return index_of<T*, TupleT<Types...>>::value;
+    }
+};
+
+template <typename... T>
+struct union_index_sequence;
+
+template <template <typename...> class LhsT, typename... Lhs,
+          template <typename...> class RhsT, typename... Rhs>
+struct union_index_sequence<LhsT<Lhs...>, RhsT<Rhs...>>
+{
+    using type =
+        index_sequence<union_index_of<decay_t<Lhs>, RhsT<decay_t<Rhs>...>>::value(0)...>;
+};
+
+template <typename... T>
+using union_index_sequence_t = typename union_index_sequence<T...>::type;
+
+namespace impl
+{
+template <typename Tp, size_t... Idx>
+TIMEMORY_INLINE decltype(auto)
+get_reference_tuple(Tp&& _tuple, index_sequence<Idx...>)
+{
+    return std::tie(std::get<Idx>(_tuple)...);
+}
+}  // namespace impl
+
+template <typename Rp, typename Tp>
+TIMEMORY_INLINE decltype(auto)
+get_reference_tuple(Tp&& _tuple)
+{
+    // static_assert(concepts::is_variadic<Tp>::value, "Requires variadic type");
+    using sequence_type = union_index_sequence_t<Rp, decay_t<Tp>>;
+    return impl::get_reference_tuple(std::forward<Tp>(_tuple), sequence_type{});
+}
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace mpl
 
 template <typename Tuple, typename T>

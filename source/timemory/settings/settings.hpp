@@ -330,29 +330,28 @@ public:
     auto insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env = {});
 
 protected:
-    template <typename Tp>
-    using serialize_func_t = std::function<void(Tp&, value_type)>;
-    template <typename Tp>
-    using serialize_pair_t = std::pair<std::type_index, serialize_func_t<Tp>>;
-    template <typename Tp>
-    using serialize_map_t = std::map<std::type_index, serialize_func_t<Tp>>;
-
     template <typename Archive, typename Tp>
-    serialize_pair_t<Archive> get_serialize_pair() const
+    auto get_serialize_pair() const
     {
+        using serialize_func_t = std::function<void(Archive&, value_type)>;
+        using serialize_pair_t = std::pair<std::type_index, serialize_func_t>;
+
         auto _func = [](Archive& _ar, value_type _val) {
             using Up = tsettings<Tp>;
             if(!_val)
                 _val = std::make_shared<Up>();
             _ar(cereal::make_nvp(_val->get_env_name(), *static_cast<Up*>(_val.get())));
         };
-        return serialize_pair_t<Archive>{ std::type_index(typeid(Tp)), _func };
+        return serialize_pair_t{ std::type_index(typeid(Tp)), _func };
     }
 
     template <typename Archive, typename... Tail>
-    serialize_map_t<Archive> get_serialize_map(tim::type_list<Tail...>) const
+    auto get_serialize_map(tim::type_list<Tail...>) const
     {
-        serialize_map_t<Archive> _val;
+        using serialize_func_t = std::function<void(Archive&, value_type)>;
+        using serialize_map_t  = std::map<std::type_index, serialize_func_t>;
+
+        serialize_map_t _val{};
         TIMEMORY_FOLD_EXPRESSION(_val.insert(get_serialize_pair<Archive, Tail>()));
         return _val;
     }
@@ -381,9 +380,9 @@ private:
 template <typename Tag>
 std::time_t* settings::get_launch_time(Tag)
 {
-    // record the time
-    static std::time_t _time = std::time(nullptr);
-    return &_time;
+    // statically store the launch time, intentional memory leak
+    static std::time_t* _time = new std::time_t{ std::time(nullptr) };
+    return _time;
 }
 //
 //----------------------------------------------------------------------------------//
@@ -599,7 +598,7 @@ settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, 
     m_order.push_back(_sid);
     return m_data.insert(
         { string_view_t{ m_order.back() },
-          std::make_shared<tsettings<Tp, Vp>>(_init, _name, _env, _desc,
+          std::make_shared<tsettings<Tp, Vp>>(_init, _name, _sid, _desc,
                                               std::forward<Args>(_args)...) });
 }
 //

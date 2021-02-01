@@ -24,7 +24,7 @@ export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 emit-separator "Performing runtime instrumentation"
 
 # launch
-@PROJECT_BINARY_DIR@/timemory-run --label args return -v 1 -ME '(^libm|^libc|^libz|\.c$)' -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run --label args return -v 1 -ME '(^libm|^libc|^libz|^libicu|^liblzma|^libxml|\.c$)' -- @COMMAND@
 
 emit-separator "Analyzing results in ${TIMEMORY_OUTPUT_PATH}"
 

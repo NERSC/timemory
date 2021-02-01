@@ -22,14 +22,6 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file timemory_c.cpp
- * This is the C++ proxy for the C interface. Compilation of this file is not
- * required for C++ codes but is compiled into "libtimemory.*"
- * so that the "libctimemory.*" can be linked during the timemory build and
- * "libctimemory.*" can be stand-alone linked to C code.
- *
- */
-
 #if !defined(MAX_STR_LEN)
 #    define MAX_STR_LEN 512
 #endif

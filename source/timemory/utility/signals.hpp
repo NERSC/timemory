@@ -267,7 +267,7 @@ enable_signal_detection(signal_settings::signal_set_t operations)
         return false;
 
     if(operations.empty())
-        operations = signal_settings::enabled();
+        operations = signal_settings::get_enabled();
     else
     {
         auto _enabled = signal_settings::get_enabled();

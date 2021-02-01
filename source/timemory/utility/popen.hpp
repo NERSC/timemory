@@ -115,6 +115,26 @@ read_fork(TIMEMORY_PIPE* ldd)
     return linked_libraries;
 }
 //
+inline std::ostream&
+flush_output(std::ostream& os, TIMEMORY_PIPE* ldd, int max_counter = 5000)
+{
+    int counter = 0;
+    while(ldd)
+    {
+        char buffer[4096];
+        auto ret = fgets(buffer, 4096, ldd->read_fd);
+        if(ret == nullptr || strlen(buffer) == 0)
+        {
+            if(counter++ > max_counter)
+                break;
+            continue;
+        }
+        os << string_t{ buffer };
+    }
+
+    return os;
+}
+//
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace popen
@@ -132,7 +152,7 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 inline bool
-launch_process(const char* cmd, const std::string& extra)
+launch_process(const char* cmd, const std::string& extra, std::ostream* os)
 {
 #if !defined(_WINDOWS)
     auto                       delim = tim::delimit(cmd, " \t");
@@ -152,12 +172,17 @@ launch_process(const char* cmd, const std::string& extra)
         _args.at(2)        = (char*) cmd;
         fp                 = tim::popen::popen(_args.at(0), _args.data());
     }
+
     if(fp == nullptr)
     {
         std::stringstream ss;
         ss << "[timemory]> Error launching command: '" << cmd << "'... " << extra;
         perror(ss.str().c_str());
         return false;
+    }
+    else if(os)
+    {
+        popen::flush_output(*os, fp);
     }
 
     auto ec = tim::popen::pclose(fp);

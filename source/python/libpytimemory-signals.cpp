@@ -53,7 +53,7 @@ signal_list_to_set(py::list signal_list)
 signal_set_t
 get_default_signal_set()
 {
-    return tim::signal_settings::enabled();
+    return tim::signal_settings::get_enabled();
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -129,7 +129,13 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
     if(settings::verbose() > 2 || settings::debug())
         PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
 
-    launch_process(cmd.c_str(), _info + " plot generation failed");
+    std::stringstream _log{};
+    auto _success = launch_process(cmd.c_str(), _info + " plot generation failed", &_log);
+    if(_success)
+        std::cout << _log.str() << '\n';
+    else
+        std::cerr << _log.str() << '\n';
+
 #    endif
 
     // revert the environment

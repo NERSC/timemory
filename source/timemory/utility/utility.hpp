@@ -59,16 +59,17 @@
 // I/O
 #include <fstream>
 #include <iomanip>
+#include <iosfwd>
 #include <iostream>
 #include <sstream>
 #include <string>
 // general
 #include <functional>
 #include <limits>
+#include <regex>
 #include <typeindex>
 #include <utility>
 // container
-#include <map>
 #include <vector>
 // threading
 #include <atomic>
@@ -91,24 +92,6 @@ using pid_t = int;
 
 //--------------------------------------------------------------------------------------//
 
-// stringify some macro -- uses TIMEMORY_STRINGIZE2 which does the actual
-//   "stringify-ing" after the macro has been substituted by it's result
-#if !defined(TIMEMORY_STRINGIZE)
-#    define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
-#endif
-
-// actual stringifying
-#if !defined(TIMEMORY_STRINGIZE2)
-#    define TIMEMORY_STRINGIZE2(X) #    X
-#endif
-
-// stringify the __LINE__ macro
-#if !defined(TIMEMORY_TIM_LINESTR)
-#    define TIMEMORY_TIM_LINESTR TIMEMORY_STRINGIZE(__LINE__)
-#endif
-
-//--------------------------------------------------------------------------------------//
-
 namespace tim
 {
 // alias here for common string type
@@ -125,7 +108,8 @@ using auto_lock_t = std::unique_lock<mutex_t>;
 //--------------------------------------------------------------------------------------//
 // definition in popen.hpp
 bool
-launch_process(const char* cmd, const std::string& extra = "");
+launch_process(const char* cmd, const std::string& extra = "",
+               std::ostream* os = nullptr);
 
 //--------------------------------------------------------------------------------------//
 
@@ -288,155 +272,28 @@ from_string(const char* cstr)
 
 //--------------------------------------------------------------------------------------//
 
-inline std::string
-dirname(std::string _fname)
-{
-#if defined(_UNIX)
-    char* _cfname = realpath(_fname.c_str(), nullptr);
-    _fname        = std::string(_cfname);
-    free(_cfname);
-
-    while(_fname.find("\\\\") != std::string::npos)
-        _fname.replace(_fname.find("\\\\"), 2, "/");
-    while(_fname.find('\\') != std::string::npos)
-        _fname.replace(_fname.find('\\'), 1, "/");
-
-    return _fname.substr(0, _fname.find_last_of('/'));
-#elif defined(_WINDOWS)
-    while(_fname.find('/') != std::string::npos)
-        _fname.replace(_fname.find('/'), 1, "\\");
-
-    _fname = _fname.substr(0, _fname.find_last_of('\\'));
-    return (_fname.at(_fname.length() - 1) == '\\')
-               ? _fname.substr(0, _fname.length() - 1)
-               : _fname;
-#endif
-}
+TIMEMORY_UTILITY_INLINE std::string
+                        dirname(std::string _fname);
 
 //--------------------------------------------------------------------------------------//
 
-inline int
-makedir(std::string _dir, int umask = DEFAULT_UMASK)
-{
-#if defined(_UNIX)
-    while(_dir.find("\\\\") != std::string::npos)
-        _dir.replace(_dir.find("\\\\"), 2, "/");
-    while(_dir.find('\\') != std::string::npos)
-        _dir.replace(_dir.find('\\'), 1, "/");
-
-    if(_dir.length() == 0)
-        return 0;
-
-    int ret = mkdir(_dir.c_str(), umask);
-    if(ret != 0)
-    {
-        int err = errno;
-        if(err != EEXIST)
-        {
-            std::cerr << "mkdir(" << _dir.c_str() << ", " << umask
-                      << ") returned: " << ret << std::endl;
-            std::stringstream _sdir;
-            _sdir << "/bin/mkdir -p " << _dir;
-            return (launch_process(_sdir.str().c_str())) ? 0 : 1;
-        }
-    }
-#elif defined(_WINDOWS)
-    consume_parameters(umask);
-    while(_dir.find('/') != std::string::npos)
-        _dir.replace(_dir.find('/'), 1, "\\");
-
-    if(_dir.length() == 0)
-        return 0;
-
-    int ret = _mkdir(_dir.c_str());
-    if(ret != 0)
-    {
-        int err = errno;
-        if(err != EEXIST)
-        {
-            std::cerr << "_mkdir(" << _dir.c_str() << ") returned: " << ret << std::endl;
-            std::stringstream _sdir;
-            _sdir << "mkdir " << _dir;
-            return (launch_process(_sdir.str().c_str())) ? 0 : 1;
-        }
-    }
-#endif
-    return 0;
-}
+TIMEMORY_UTILITY_INLINE int
+makedir(std::string _dir, int umask = DEFAULT_UMASK);
 
 //--------------------------------------------------------------------------------------//
 
-inline int32_t
-get_max_threads()
-{
-    int32_t _fallback = std::thread::hardware_concurrency();
-#ifdef ENV_NUM_THREADS_PARAM
-    return get_env<int32_t>(TIMEMORY_STRINGIZE(ENV_NUM_THREADS_PARAM), _fallback);
-#else
-    return _fallback;
-#endif
-}
+TIMEMORY_UTILITY_INLINE bool
+get_bool(const std::string& strbool, bool _default = false) noexcept;
 
 //--------------------------------------------------------------------------------------//
 //
 #if defined(_UNIX)
 //
-static inline auto
-demangle_backtrace(const char* cstr)
-{
-    auto _trim = [](std::string& _sub, size_t& _len) {
-        size_t _pos = 0;
-        while((_pos = _sub.find_first_of(' ')) == 0)
-        {
-            _sub = _sub.erase(_pos, 1);
-            --_len;
-        }
-        while((_pos = _sub.find_last_of(' ')) == _sub.length() - 1)
-        {
-            _sub = _sub.substr(0, _sub.length() - 1);
-            --_len;
-        }
-        return _sub;
-    };
-
-    auto str = demangle(std::string(cstr));
-    auto beg = str.find("(");
-    if(beg == std::string::npos)
-    {
-        beg = str.find("_Z");
-        if(beg != std::string::npos)
-            beg -= 1;
-    }
-    auto end = str.find("+", beg);
-    if(beg != std::string::npos && end != std::string::npos)
-    {
-        auto len = end - (beg + 1);
-        auto sub = str.substr(beg + 1, len);
-        auto dem = demangle(_trim(sub, len));
-        str      = str.replace(beg + 1, len, dem);
-    }
-    else if(beg != std::string::npos)
-    {
-        auto len = str.length() - (beg + 1);
-        auto sub = str.substr(beg + 1, len);
-        auto dem = demangle(_trim(sub, len));
-        str      = str.replace(beg + 1, len, dem);
-    }
-    else if(end != std::string::npos)
-    {
-        auto len = end;
-        auto sub = str.substr(beg, len);
-        auto dem = demangle(_trim(sub, len));
-        str      = str.replace(beg, len, dem);
-    }
-    return str;
-}
+TIMEMORY_UTILITY_INLINE std::string
+                        demangle_backtrace(const char* cstr);
 //
-static inline auto
-demangle_backtrace(const std::string& str)
-{
-    return demangle_backtrace(str.c_str());
-}
+TIMEMORY_UTILITY_INLINE std::string
+                        demangle_backtrace(const std::string& str);
 //
 template <size_t Depth, size_t Offset = 1>
 TIMEMORY_NOINLINE auto
@@ -660,42 +517,8 @@ str_transform(const std::string& input, const std::string& _begin,
 
 //--------------------------------------------------------------------------------------//
 //
-inline std::vector<std::string>
-read_command_line(pid_t _pid)
-{
-    std::vector<std::string> _cmdline;
-#if defined(_LINUX)
-    std::stringstream fcmdline;
-    fcmdline << "/proc/" << _pid << "/cmdline";
-    std::ifstream ifs(fcmdline.str().c_str());
-    if(ifs)
-    {
-        char        cstr;
-        std::string sarg;
-        while(!ifs.eof())
-        {
-            ifs >> cstr;
-            if(!ifs.eof())
-            {
-                if(cstr != '\0')
-                {
-                    sarg += cstr;
-                }
-                else
-                {
-                    _cmdline.push_back(sarg);
-                    sarg = "";
-                }
-            }
-        }
-        ifs.close();
-    }
-
-#else
-    consume_parameters(_pid);
-#endif
-    return _cmdline;
-}
+TIMEMORY_UTILITY_INLINE std::vector<std::string>
+                        read_command_line(pid_t _pid);
 
 //======================================================================================//
 //
@@ -706,81 +529,23 @@ read_command_line(pid_t _pid)
 class path_t : public std::string
 {
 public:
-    using string_t   = std::string;
-    using size_type  = string_t::size_type;
-    using stl_string = std::basic_string<char>;
+    using size_type = std::string::size_type;
 
 public:
-    path_t(const std::string& _path)
-    : string_t(osrepr(_path))
-    {}
-    path_t(char* _path)
-    : string_t(osrepr(string_t(_path)))
-    {}
-    path_t(const path_t& rhs)
-    : string_t(osrepr(rhs))
-    {}
-    path_t(const char* _path)
-    : string_t(osrepr(string_t(const_cast<char*>(_path))))
-    {}
+    TIMEMORY_UTILITY_INLINE path_t(const std::string& _path);
+    TIMEMORY_UTILITY_INLINE path_t(char* _path);
+    TIMEMORY_UTILITY_INLINE path_t(const path_t& rhs);
+    TIMEMORY_UTILITY_INLINE path_t(const char* _path);
 
-    path_t& operator=(const string_t& rhs)
-    {
-        string_t::operator=(osrepr(rhs));
-        return *this;
-    }
-
-    path_t& operator=(const path_t& rhs)
-    {
-        if(this != &rhs)
-            string_t::operator=(osrepr(rhs));
-        return *this;
-    }
-
-    path_t& insert(size_type __pos, const stl_string& __s)
-    {
-        string_t::operator=(osrepr(string_t::insert(__pos, __s)));
-        return *this;
-    }
-
-    path_t& insert(size_type __pos, const path_t& __s)
-    {
-        string_t::operator=(osrepr(string_t::insert(__pos, __s)));
-        return *this;
-    }
-
-    static string_t os()
-    {
-#if defined(_WINDOWS)
-        return "\\";
-#elif defined(_UNIX)
-        return "/";
-#endif
-    }
-
-    static string_t inverse()
-    {
-#if defined(_WINDOWS)
-        return "/";
-#elif defined(_UNIX)
-        return "\\";
-#endif
-    }
+    TIMEMORY_UTILITY_INLINE path_t& operator=(const std::string& rhs);
+    TIMEMORY_UTILITY_INLINE path_t& operator=(const path_t& rhs);
+    TIMEMORY_UTILITY_INLINE path_t& insert(size_type __pos, const std::string& __s);
+    TIMEMORY_UTILITY_INLINE path_t& insert(size_type __pos, const path_t& __s);
 
     // OS-dependent representation
-    static string_t osrepr(string_t _path)
-    {
-#if defined(_WINDOWS)
-        while(_path.find('/') != std::string::npos)
-            _path.replace(_path.find('/'), 1, "\\");
-#elif defined(_UNIX)
-        while(_path.find("\\\\") != std::string::npos)
-            _path.replace(_path.find("\\\\"), 2, "/");
-        while(_path.find('\\') != std::string::npos)
-            _path.replace(_path.find('\\'), 1, "/");
-#endif
-        return _path;
-    }
+    static std::string osrepr(std::string _path);
+    static std::string os();
+    static std::string inverse();
 };
 
 //--------------------------------------------------------------------------------------//
@@ -881,3 +646,7 @@ get_demangled_backtrace<32, 3>();
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_UTILITY_HEADER_MODE)
+#    include "timemory/utility/utility.cpp"
+#endif

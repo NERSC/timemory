@@ -175,15 +175,27 @@ TIMEMORY_SETTINGS_INLINE
 std::string
 settings::get_global_output_prefix(bool fake)
 {
-    auto _dir         = output_path();
-    auto _prefix      = output_prefix();
-    auto _time_output = time_output();
-    auto _time_format = time_format();
+    static auto _settings = instance();
+
+    auto _dir = (_settings)
+                    ? _settings->get_output_path()
+                    : get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"), ".");
+    auto _prefix = (_settings)
+                       ? _settings->get_output_prefix()
+                       : get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"), "");
+    auto _time_output = (_settings)
+                            ? _settings->get_time_output()
+                            : get_env<bool>(TIMEMORY_SETTINGS_KEY("TIME_OUTPUT"), false);
+    auto _time_format =
+        (_settings)
+            ? _settings->get_time_format()
+            : get_env<std::string>(TIMEMORY_SETTINGS_KEY("TIME_FORMAT"), "%F_%I.%M_%p");
 
     if(_time_output)
     {
-        // ensure that all output files use same local datetime
-        static auto _local_datetime = get_local_datetime(_time_format.c_str());
+        // get the statically stored launch time
+        auto* _launch_time    = get_launch_time(TIMEMORY_API{});
+        auto  _local_datetime = get_local_datetime(_time_format.c_str(), _launch_time);
         if(_dir.find(_local_datetime) == std::string::npos)
         {
             if(_dir.length() > 0 && _dir[_dir.length() - 1] != '/')
@@ -192,6 +204,7 @@ settings::get_global_output_prefix(bool fake)
         }
     }
 
+    // always return zero if fake. if makedir failed, don't prefix with directory
     auto ret = (fake) ? 0 : makedir(_dir);
     return (ret == 0) ? filepath::osrepr(_dir + std::string("/") + _prefix)
                       : filepath::osrepr(std::string("./") + _prefix);
@@ -220,8 +233,8 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
     // if there isn't an explicit prefix, get the <OUTPUT_PATH>/<OUTPUT_PREFIX>
     auto _prefix = (!_explicit.empty()) ? _explicit : get_global_output_prefix(fake);
 
-    // if just caching this static variable return
-    if(fake)
+    // return on empty
+    if(_prefix.empty())
         return "";
 
     auto only_ascii = [](char c) { return !isascii(c); };
@@ -250,14 +263,15 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
     if(!_prefix.empty() && _prefix[plast] != '/' && isalnum(_prefix[plast]))
         _prefix += "-";
     // create the path
-    auto fpath         = path_t(_prefix + _tag + _rank_suffix + _ext);
+    std::string fpath  = _prefix + _tag + _rank_suffix + _ext;
     using strpairvec_t = std::vector<std::pair<std::string, std::string>>;
     for(auto&& itr : strpairvec_t{ { "--", "-" }, { "__", "_" }, { "//", "/" } })
     {
-        while(fpath.find(itr.first) != std::string::npos)
-            fpath.replace(fpath.find(itr.first), itr.first.length(), itr.second);
+        auto pos = std::string::npos;
+        while((pos = fpath.find(itr.first)) != std::string::npos)
+            fpath.replace(pos, itr.first.length(), itr.second);
     }
-    return std::move(fpath);
+    return filepath::osrepr(fpath);
 }
 //
 //----------------------------------------------------------------------------------//

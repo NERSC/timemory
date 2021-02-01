@@ -152,13 +152,13 @@ public:
 
     static MODE& event_mode()
     {
-        auto aslc = [](std::string str) {
-            for(auto& itr : str)
-                itr = tolower(itr);
-            return str;
-        };
+        auto&& _get = [=]() {
+            auto&& aslc = [](std::string str) {
+                for(auto& itr : str)
+                    itr = tolower(itr);
+                return str;
+            };
 
-        auto _get = [=]() {
             // check the standard variable
             std::string _env = aslc(settings::gpu_roofline_mode());
             if(_env.empty())
@@ -171,6 +171,8 @@ public:
         };
 
         static MODE _instance = _get();
+        if(!is_configured())
+            _instance = _get();
         return _instance;
     }
 

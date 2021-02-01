@@ -125,6 +125,14 @@ except ImportError:
 
 
 #
+_is_ci = (
+    False if os.environ.get("CONTINUOUS_INTEGRATION", None) is None else True
+)
+
+#
+_default_scale = 1.0 if not _is_ci else 0.6
+""" Scale the image down during continuous integration """
+
 #
 _default_min_percent = 0.05  # 5% of max
 """ Default minimum percent of max when reducing # of timing functions plotted """
@@ -132,7 +140,10 @@ _default_min_percent = 0.05  # 5% of max
 _default_img_dpi = 60
 """ Default image dots-per-square inch """
 
-_default_img_size = {"w": 1000, "h": 600}
+_default_img_size = {
+    "w": int(1000 / _default_scale),
+    "h": int(600 / _default_scale),
+}
 """ Default image size """
 
 _default_img_type = "png"
@@ -141,13 +152,13 @@ _default_img_type = "png"
 _default_log_x = False
 """Log scaled X axis"""
 
-_default_font_size = 11
+_default_font_size = 11 if not _is_ci else 8
 """Font size for y-axis labels"""
 
 plotted_files = []
 """ A list of all files that have been plotted """
 
-verbosity = os.environ.get("TIMEMORY_VERBOSE", 0)
+verbosity = int(os.environ.get("TIMEMORY_VERBOSE", 0))
 
 # -------------------------------------------------------------------------------------- #
 
@@ -565,6 +576,10 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     stds = []
 
     for func, obj in _plot_data.items():
+        func = func.strip(">")
+        _len = len(func)
+        if _len > 30:
+            func = "{}...{}".join(func[:10], func[(_len - 20) :])
         ytics.append("{} x [ {} counts ]".format(func, obj.laps))
         avgs.append(get_obj_idx(obj.data, idx))
         stds.append(0.0)
@@ -673,20 +688,25 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
         subfont = {
             "family": "serif",
             "color": "black",
-            "size": 16,
+            "size": _plot_data.plot_params.font_size + 2,
         }
 
         font = {
             "family": "serif",
             "color": "black",
             "weight": "bold",
-            "size": 22,
+            "size": _plot_data.plot_params.font_size + 5,
         }
 
         plt.xlabel(_xlabel, **font)
         title = title.replace("_", " ").title()
         plt.suptitle("{}".format(title), **font)
         if _desc:
+            # just the first sentence
+            if "." in _desc:
+                _desc = _desc.split(".")[0]
+            if "(" in _desc:
+                _desc = _desc.split("(")[0]
             plt.title("{}".format(_desc.title()), **subfont)
 
         if disp:
@@ -702,22 +722,20 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
             while ".." in imgfname:
                 imgfname = imgfname.replace("..", ".")
 
-            add_plotted_files(
-                imgfname, os.path.join(output_dir, imgfname), echo_dart
-            )
-
             imgfname = os.path.join(output_dir, imgfname)
             if verbosity > 0:
                 print("Opening '{}' for output...".format(imgfname))
             else:
-                lbl = os.path.basename(imgfname).strip(
-                    ".{}".format(params.img_type)
+                lbl = os.path.basename(imgfname).replace(
+                    ".{}".format(params.img_type), ""
                 )
                 print("[{}]|0> Outputting '{}'...".format(lbl, imgfname))
             plt.savefig(imgfname, dpi=params.img_dpi)
             plt.close()
             if verbosity > 0:
                 print("Closed '{}'...".format(imgfname))
+
+            add_plotted_files(imgfname, imgfname, echo_dart)
 
 
 def plot_maximums(

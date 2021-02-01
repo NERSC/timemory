@@ -42,15 +42,21 @@ if(NOT TARGET pybind11::module)
     endif()
 endif()
 
-find_package(MPI QUIET)
-if(NOT MPI_FOUND)
-    return()
+option(USE_MPI "Enable MPI in timemory example" ON)
+if(USE_MPI)
+    find_package(MPI QUIET)
+    if(NOT MPI_FOUND)
+        return()
+    endif()
 endif()
 
 set(_OMP)
-find_package(OpenMP QUIET)
-if(OpenMP_FOUND)
-    set(_OMP OpenMP::OpenMP_CXX)
+option(USE_OPENMP "Enable OpenMP in timemory example" OFF)
+if(TIMEMORY_USE_OMPT OR USE_OPENMP)
+    find_package(OpenMP)
+    if(OpenMP_FOUND)
+        set(_OMP OpenMP::OpenMP_CXX)
+    endif()
 endif()
 
 configure_python_script(bindings)
@@ -87,6 +93,9 @@ target_link_libraries(libex_python_bindings PRIVATE
     ${_OMP}
     ${_COMPILE_OPTS}
     libex_python_bindings_flags)
+
+set_target_properties(libex_python_bindings PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH ON)
 
 configure_file(${PROJECT_SOURCE_DIR}/ex_bindings.py
     ${TARGET_BINARY_DIR}/ex_python_bindings @ONLY)

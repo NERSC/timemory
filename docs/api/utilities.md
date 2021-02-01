@@ -87,6 +87,8 @@ void bar()
 .. doxygenstruct:: tim::quirk::auto_stop
 .. doxygenstruct:: tim::quirk::explicit_start
 .. doxygenstruct:: tim::quirk::explicit_stop
+.. doxygenstruct:: tim::quirk::explicit_push
+.. doxygenstruct:: tim::quirk::explicit_pop
 .. doxygenstruct:: tim::quirk::exit_report
 .. doxygenstruct:: tim::quirk::no_init
 .. doxygenstruct:: tim::quirk::no_store

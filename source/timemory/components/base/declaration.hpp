@@ -542,28 +542,14 @@ public:
     {}
 
 public:
-    TIMEMORY_INLINE void reset();  // reset the values
-    TIMEMORY_INLINE void start();
-    TIMEMORY_INLINE void stop();
-
-    TIMEMORY_INLINE auto start(crtp::base) {}
-    TIMEMORY_INLINE auto stop(crtp::base) {}
-
-    template <typename CacheT                                     = cache_type,
-              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
-    TIMEMORY_INLINE void start(const CacheT&)
-    {}
-    template <typename CacheT                                     = cache_type,
-              enable_if_t<!concepts::is_null_type<CacheT>::value> = 0>
-    TIMEMORY_INLINE void stop(const CacheT&)
-    {}
-
-    TIMEMORY_INLINE void set_started() {}
-    TIMEMORY_INLINE void set_stopped() {}
+    TIMEMORY_INLINE void reset()
+    {
+        laps      = 0;
+        graph_itr = nullptr;
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const base_type&) { return os; }
 
-    TIMEMORY_INLINE void get() {}
     TIMEMORY_INLINE void get(void*&, size_t) const {}
     TIMEMORY_INLINE void get_opaque_data(void*&, size_t) const {}
 
@@ -592,24 +578,13 @@ public:
     TIMEMORY_INLINE auto load() { return Tp{}; }
 
 protected:
-    TIMEMORY_INLINE void plus(const base_type&) {}
-    TIMEMORY_INLINE void minus(const base_type&) {}
-
     using base_state::depth_change;
     using base_state::is_flat;
     using base_state::is_on_stack;
     using base_state::is_running;
     using base_state::is_transient;
 
-public:
-    TIMEMORY_INLINE auto plus(crtp::base, const base_type&) {}
-    TIMEMORY_INLINE auto minus(crtp::base, const base_type&) {}
-
-protected:
     int64_t        laps      = 0;
-    value_type     value     = value_type{};
-    accum_type     accum     = accum_type{};
-    last_type      last      = last_type{};
     graph_iterator graph_itr = nullptr;
 
 public:

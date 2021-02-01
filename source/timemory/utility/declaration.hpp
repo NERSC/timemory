@@ -113,13 +113,11 @@ public:
     static void        set_exit_action(signal_function_t _f);
     static void        exit_action(int errcode);
 
-    static const signal_set_t& enabled();
-    static const signal_set_t& disabled();
-    static const signal_set_t& get_enabled();
-    static const signal_set_t& get_disabled();
-    static const signal_set_t& get_default();
-    static bool&               enable_all();
-    static bool&               disable_all();
+    static signal_set_t get_enabled();
+    static signal_set_t get_disabled();
+    static signal_set_t get_default();
+    static bool&        enable_all();
+    static bool&        disable_all();
 
 protected:
     struct signals_data
@@ -134,14 +132,20 @@ protected:
         bool              signals_active    = false;
         bool              enable_all        = false;
         bool              disable_all       = false;
-        signal_set_t      signals_enabled   = {};
-        signal_set_t      signals_disabled  = {};
         signal_function_t signals_exit_func = [](int) {};
-        signal_set_t      signals_default   = {
-            // default signals to catch
-            sys_signal::Quit, sys_signal::Illegal, sys_signal::Abort, sys_signal::Bus,
-            sys_signal::SegFault
+        signal_set_t      signals_enabled   = {};
+        signal_set_t      signals_disabled  = {
+            sys_signal::Hangup,       sys_signal::Interrupt, sys_signal::Trap,
+            sys_signal::Emulate,      sys_signal::FPE,       sys_signal::Kill,
+            sys_signal::System,       sys_signal::Pipe,      sys_signal::Alarm,
+            sys_signal::Terminate,    sys_signal::Urgent,    sys_signal::Stop,
+            sys_signal::CPUtime,      sys_signal::FileSize,  sys_signal::VirtualAlarm,
+            sys_signal::ProfileAlarm, sys_signal::User1,     sys_signal::User2
         };
+        // default signals to catch
+        signal_set_t signals_default = { sys_signal::Quit, sys_signal::Illegal,
+                                         sys_signal::Abort, sys_signal::Bus,
+                                         sys_signal::SegFault };
     };
 
     static signals_data& f_signals()

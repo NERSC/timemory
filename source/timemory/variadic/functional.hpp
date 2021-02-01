@@ -46,32 +46,6 @@ namespace invoke
 namespace invoke_impl
 {
 //
-template <typename Tag, template <typename> class Op, typename... Tp>
-struct OperatorT
-{
-    using type = std::tuple<operation::generic_operator<Tp, Op<Tp>, Tag>...>;
-};
-//
-template <typename Tag, template <typename> class Op, typename... Tp>
-struct OperatorT<Tag, Op, std::tuple<Tp...>> : OperatorT<Tag, Op, Tp...>
-{};
-//
-template <typename Tag, template <typename> class Op, typename TupleT>
-using operation_t = typename OperatorT<Tag, Op, TupleT>::type;
-//
-template <typename Tag, template <typename, typename> class Op, typename... Tp>
-struct OperatorTT
-{
-    using type = std::tuple<operation::generic_operator<Tp, Op<Tp, Tag>, Tag>...>;
-};
-//
-template <typename Tag, template <typename, typename> class Op, typename... Tp>
-struct OperatorTT<Tag, Op, std::tuple<Tp...>> : OperatorTT<Tag, Op, Tp...>
-{};
-//
-template <typename Tag, template <typename, typename> class Op, typename TupleT>
-using operation_tt = typename OperatorTT<Tag, Op, TupleT>::type;
-//
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename> class OpT, typename Tag,
@@ -134,50 +108,36 @@ invoke(TupleT<Tp&...>&& _obj, Args&&... _args)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename> class OpT, typename OpTupleT, size_t Idx, typename Tag,
-          template <typename...> class TupleT, typename... Tp, typename... Args>
+template <template <typename> class OpT, typename Tag,
+          template <typename...> class TupleT, typename... Tp,
+          template <typename...> class ValueT, typename... Vp, typename... Args>
 TIMEMORY_INLINE void
-invoke_out_of_order(TupleT<Tp...>& _obj, Args&&... _args)
+invoke_data(TupleT<Tp...>& _obj, ValueT<Vp...>& _val, Args&&... _args)
 {
-    using OperT = operation_t<Tag, OpT, OpTupleT>;
-    apply<void>::out_of_order<OperT, OpTupleT, Idx>(_obj, std::forward<Args>(_args)...);
+    using data_type = std::tuple<Tp...>;
+    TIMEMORY_FOLD_EXPRESSION(
+        operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
+                                    OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
+            std::get<index_of<Tp, data_type>::value>(_obj),
+            std::get<index_of<Tp, data_type>::value>(_val),
+            std::forward<Args>(_args)...));
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename, typename> class OpT, typename OpTupleT, size_t Idx,
-          typename Tag, template <typename...> class TupleT, typename... Tp,
-          typename... Args>
+template <template <typename> class OpT, typename Tag,
+          template <typename...> class TupleT, typename... Tp,
+          template <typename...> class ValueT, typename... Vp, typename... Args>
 TIMEMORY_INLINE void
-invoke_out_of_order(TupleT<Tp...>& _obj, Args&&... _args)
+invoke_data(TupleT<Tp&...>&& _obj, ValueT<Vp...>& _val, Args&&... _args)
 {
-    using OperT = operation_tt<Tag, OpT, OpTupleT>;
-    apply<void>::out_of_order<OperT, OpTupleT, Idx>(_obj, std::forward<Args>(_args)...);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename> class OpT, typename OpTupleT, size_t Idx, typename Tag,
-          template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_INLINE void
-invoke_out_of_order(TupleT<Tp&...>&& _obj, Args&&... _args)
-{
-    using OperT = operation_t<Tag, OpT, OpTupleT>;
-    apply<void>::out_of_order<OperT, OpTupleT, Idx>(std::forward<TupleT<Tp&...>>(_obj),
-                                                    std::forward<Args>(_args)...);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename, typename> class OpT, typename OpTupleT, size_t Idx,
-          typename Tag, template <typename...> class TupleT, typename... Tp,
-          typename... Args>
-TIMEMORY_INLINE void
-invoke_out_of_order(TupleT<Tp&...>&& _obj, Args&&... _args)
-{
-    using OperT = operation_tt<Tag, OpT, OpTupleT>;
-    apply<void>::out_of_order<OperT, OpTupleT, Idx>(std::forward<TupleT<Tp&...>>(_obj),
-                                                    std::forward<Args>(_args)...);
+    using data_type = std::tuple<Tp...>;
+    TIMEMORY_FOLD_EXPRESSION(
+        operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
+                                    OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
+            std::get<index_of<Tp, data_type>::value>(_obj),
+            std::get<index_of<Tp, data_type>::value>(_val),
+            std::forward<Args>(_args)...));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -317,23 +277,23 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT_INLINE void
 start(TupleT<Tp...>& obj, Args&&... args)
 {
-    {
-        using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
-        using priority_types_t = filter_false_t<negative_start_priority, data_type>;
-        using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
-        using delayed_types_t  = filter_false_t<positive_start_priority, data_type>;
-        using delayed_tuple_t  = mpl::sort<trait::start_priority, delayed_types_t>;
+    using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+    using priority_types_t = filter_false_t<negative_start_priority, data_type>;
+    using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
+    using delayed_types_t  = filter_false_t<positive_start_priority, data_type>;
+    using delayed_tuple_t  = mpl::sort<trait::start_priority, delayed_types_t>;
 
-        // start high priority components
-        invoke_impl::invoke_out_of_order<operation::priority_start, priority_tuple_t, 1,
-                                         ApiT>(obj, std::forward<Args>(args)...);
-        // start non-prioritized components
-        invoke_impl::invoke<operation::standard_start, ApiT>(obj,
-                                                             std::forward<Args>(args)...);
-        // start low prioritized components
-        invoke_impl::invoke_out_of_order<operation::delayed_start, delayed_tuple_t, 1,
-                                         ApiT>(obj, std::forward<Args>(args)...);
-    }
+    // start high priority components
+    auto&& _priority_start = mpl::get_reference_tuple<priority_tuple_t>(obj);
+    invoke_impl::invoke<operation::priority_start, ApiT>(_priority_start,
+                                                         std::forward<Args>(args)...);
+    // start non-prioritized components
+    invoke_impl::invoke<operation::standard_start, ApiT>(obj,
+                                                         std::forward<Args>(args)...);
+    // start low prioritized components
+    auto&& _delayed_start = mpl::get_reference_tuple<delayed_tuple_t>(obj);
+    invoke_impl::invoke<operation::delayed_start, ApiT>(_delayed_start,
+                                                        std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
@@ -348,25 +308,27 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT_INLINE void
 start(TupleT<Tp&...>&& obj, Args&&... args)
 {
-    {
-        using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
-        using priority_types_t = filter_false_t<negative_start_priority, data_type>;
-        using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
-        using delayed_types_t  = filter_false_t<positive_start_priority, data_type>;
-        using delayed_tuple_t  = mpl::sort<trait::start_priority, delayed_types_t>;
+    using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+    using priority_types_t = filter_false_t<negative_start_priority, data_type>;
+    using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
+    using delayed_types_t  = filter_false_t<positive_start_priority, data_type>;
+    using delayed_tuple_t  = mpl::sort<trait::start_priority, delayed_types_t>;
 
-        // start high priority components
-        invoke_impl::invoke_out_of_order<operation::priority_start, priority_tuple_t, 1,
-                                         ApiT>(std::forward<TupleT<Tp&...>>(obj),
-                                               std::forward<Args>(args)...);
-        // start non-prioritized components
-        invoke_impl::invoke<operation::standard_start, ApiT>(
-            std::forward<TupleT<Tp&...>>(obj), std::forward<Args>(args)...);
-        // start low prioritized components
-        invoke_impl::invoke_out_of_order<operation::delayed_start, delayed_tuple_t, 1,
-                                         ApiT>(std::forward<TupleT<Tp&...>>(obj),
-                                               std::forward<Args>(args)...);
-    }
+    // start high priority components
+    auto&& _priority_start =
+        mpl::get_reference_tuple<priority_tuple_t>(std::forward<TupleT<Tp&...>>(obj));
+    invoke_impl::invoke<operation::priority_start, ApiT>(_priority_start,
+                                                         std::forward<Args>(args)...);
+
+    // start non-prioritized components
+    invoke_impl::invoke<operation::standard_start, ApiT>(
+        std::forward<TupleT<Tp&...>>(obj), std::forward<Args>(args)...);
+
+    // start low prioritized components
+    auto&& _delayed_start =
+        mpl::get_reference_tuple<delayed_tuple_t>(std::forward<TupleT<Tp&...>>(obj));
+    invoke_impl::invoke<operation::delayed_start, ApiT>(_delayed_start,
+                                                        std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
@@ -385,23 +347,24 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT_INLINE void
 stop(TupleT<Tp...>& obj, Args&&... args)
 {
-    {
-        using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
-        using priority_types_t = filter_false_t<negative_stop_priority, data_type>;
-        using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
-        using delayed_types_t  = filter_false_t<positive_stop_priority, data_type>;
-        using delayed_tuple_t  = mpl::sort<trait::stop_priority, delayed_types_t>;
+    using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+    using priority_types_t = filter_false_t<negative_stop_priority, data_type>;
+    using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
+    using delayed_types_t  = filter_false_t<positive_stop_priority, data_type>;
+    using delayed_tuple_t  = mpl::sort<trait::stop_priority, delayed_types_t>;
 
-        // stop high priority components
-        invoke_impl::invoke_out_of_order<operation::priority_stop, priority_tuple_t, 1,
-                                         ApiT>(obj, std::forward<Args>(args)...);
-        // stop non-prioritized components
-        invoke_impl::invoke<operation::standard_stop, ApiT>(obj,
-                                                            std::forward<Args>(args)...);
-        // stop low prioritized components
-        invoke_impl::invoke_out_of_order<operation::delayed_stop, delayed_tuple_t, 1,
-                                         ApiT>(obj, std::forward<Args>(args)...);
-    }
+    // stop high priority components
+    auto&& _priority_stop = mpl::get_reference_tuple<priority_tuple_t>(obj);
+    invoke_impl::invoke<operation::priority_stop, ApiT>(_priority_stop,
+                                                        std::forward<Args>(args)...);
+
+    // stop non-prioritized components
+    invoke_impl::invoke<operation::standard_stop, ApiT>(obj, std::forward<Args>(args)...);
+
+    // stop low prioritized components
+    auto&& _delayed_stop = mpl::get_reference_tuple<delayed_tuple_t>(obj);
+    invoke_impl::invoke<operation::delayed_stop, ApiT>(_delayed_stop,
+                                                       std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
@@ -416,25 +379,27 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 TIMEMORY_HOT_INLINE void
 stop(TupleT<Tp&...>&& obj, Args&&... args)
 {
-    {
-        using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
-        using priority_types_t = filter_false_t<negative_stop_priority, data_type>;
-        using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
-        using delayed_types_t  = filter_false_t<positive_stop_priority, data_type>;
-        using delayed_tuple_t  = mpl::sort<trait::stop_priority, delayed_types_t>;
+    using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+    using priority_types_t = filter_false_t<negative_stop_priority, data_type>;
+    using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
+    using delayed_types_t  = filter_false_t<positive_stop_priority, data_type>;
+    using delayed_tuple_t  = mpl::sort<trait::stop_priority, delayed_types_t>;
 
-        // stop high priority components
-        invoke_impl::invoke_out_of_order<operation::priority_stop, priority_tuple_t, 1,
-                                         ApiT>(std::forward<TupleT<Tp&...>>(obj),
-                                               std::forward<Args>(args)...);
-        // stop non-prioritized components
-        invoke_impl::invoke<operation::standard_stop, ApiT>(
-            std::forward<TupleT<Tp&...>>(obj), std::forward<Args>(args)...);
-        // stop low prioritized components
-        invoke_impl::invoke_out_of_order<operation::delayed_stop, delayed_tuple_t, 1,
-                                         ApiT>(std::forward<TupleT<Tp&...>>(obj),
-                                               std::forward<Args>(args)...);
-    }
+    // stop high priority components
+    auto&& _priority_stop =
+        mpl::get_reference_tuple<priority_tuple_t>(std::forward<TupleT<Tp&...>>(obj));
+    invoke_impl::invoke<operation::priority_stop, ApiT>(_priority_stop,
+                                                        std::forward<Args>(args)...);
+
+    // stop non-prioritized components
+    invoke_impl::invoke<operation::standard_stop, ApiT>(std::forward<TupleT<Tp&...>>(obj),
+                                                        std::forward<Args>(args)...);
+
+    // stop low prioritized components
+    auto&& _delayed_stop =
+        mpl::get_reference_tuple<delayed_tuple_t>(std::forward<TupleT<Tp&...>>(obj));
+    invoke_impl::invoke<operation::delayed_stop, ApiT>(_delayed_stop,
+                                                       std::forward<Args>(args)...);
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
@@ -989,8 +954,9 @@ get(TupleT<Tp...>& obj, Args&&... args)
     using data_value_type   = get_data_value_t<data_type>;
 
     data_value_type _data{};
-    invoke_impl::invoke_out_of_order<operation::get_data, data_collect_type, 2, ApiT>(
-        obj, _data, std::forward<Args>(args)...);
+    auto&&          _obj = mpl::get_reference_tuple<data_collect_type>(obj);
+    invoke_impl::invoke_data<operation::get_data, ApiT>(_obj, _data,
+                                                        std::forward<Args>(args)...);
     return _data;
 }
 //
@@ -1011,8 +977,9 @@ get(TupleT<Tp&...>&& obj, Args&&... args)
     using data_value_type   = get_data_value_t<data_type>;
 
     data_value_type _data{};
-    invoke_impl::invoke_out_of_order<operation::get_data, data_collect_type, 2, ApiT>(
-        std::forward<TupleT<Tp&...>>(obj), _data, std::forward<Args>(args)...);
+    auto&&          _obj = mpl::get_reference_tuple<data_collect_type>(obj);
+    invoke_impl::invoke_data<operation::get_data, ApiT>(_obj, _data,
+                                                        std::forward<Args>(args)...);
     return _data;
 }
 //
@@ -1052,8 +1019,9 @@ get_labeled(TupleT<Tp...>& obj, Args&&... args)
     using data_label_type   = get_data_label_t<data_type>;
 
     data_label_type _data{};
-    invoke_impl::invoke_out_of_order<operation::get_labeled_data, data_collect_type, 2,
-                                     ApiT>(obj, _data, std::forward<Args>(args)...);
+    auto&&          _obj = mpl::get_reference_tuple<data_collect_type>(obj);
+    invoke_impl::invoke_data<operation::get_labeled_data, ApiT>(
+        _obj, _data, std::forward<Args>(args)...);
     return _data;
 }
 //
@@ -1074,8 +1042,9 @@ get_labeled(TupleT<Tp&...>&& obj, Args&&... args)
     using data_label_type   = get_data_label_t<data_type>;
 
     data_label_type _data{};
-    invoke_impl::invoke_out_of_order<operation::get_labeled_data, data_collect_type, 2,
-                                     ApiT>(obj, _data, std::forward<Args>(args)...);
+    auto&&          _obj = mpl::get_reference_tuple<data_collect_type>(obj);
+    invoke_impl::invoke_data<operation::get_labeled_data, ApiT>(
+        _obj, _data, std::forward<Args>(args)...);
     return _data;
 }
 //

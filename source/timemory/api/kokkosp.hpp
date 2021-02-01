@@ -24,9 +24,20 @@
 
 #pragma once
 
-#include "timemory/timemory.hpp"
+#include "timemory/api.hpp"
+#include "timemory/compat/macros.h"
+#include "timemory/components/data_tracker/components.hpp"
+#include "timemory/components/user_bundle/types.hpp"
+#include "timemory/variadic/component_bundle.hpp"
 
 #include <cstdint>
+#include <functional>
+#include <map>
+#include <mutex>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
 
 #if defined(TIMEMORY_SOURCE)
 #    define TIMEMORY_KOKKOSP_PREFIX TIMEMORY_WEAK_PREFIX
@@ -289,9 +300,14 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, kokkosp::memory_tracker,
 
 extern "C"
 {
+    TIMEMORY_KOKKOSP_PREFIX void kokkosp_print_help(char* argv0) TIMEMORY_KOKKOSP_POSTFIX;
+
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_init_library(
         const int loadSeq, const uint64_t interfaceVer, const uint32_t devInfoCount,
         void* deviceInfo) TIMEMORY_KOKKOSP_POSTFIX;
+
+    TIMEMORY_KOKKOSP_PREFIX void kokkosp_parse_args(int    argc,
+                                                    char** argv) TIMEMORY_KOKKOSP_POSTFIX;
 
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_finalize_library() TIMEMORY_KOKKOSP_POSTFIX;
 

@@ -6,8 +6,11 @@ codecov:
 
 coverage:
   precision: 2
-  round: down
+  round: up
   range: "70...100"
+  status:
+    project: on
+    patch: off
 
 ignore:
   - "external"

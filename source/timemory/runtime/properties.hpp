@@ -52,11 +52,11 @@ namespace runtime
 template <int I>
 using make_int_sequence = std::make_integer_sequence<int, I>;
 template <int... Ints>
-using int_sequence         = std::integer_sequence<int, Ints...>;
-using hash_type            = std::hash<string_view_t>;
-using component_key_set_t  = std::set<std::string>;
-using component_hash_map_t = std::unordered_map<std::string, int, hash_type>;
-using opaque_pair_t        = std::pair<component::opaque, std::set<size_t>>;
+using int_sequence             = std::integer_sequence<int, Ints...>;
+using component_match_set_t    = std::set<std::string>;
+using component_match_vector_t = std::vector<bool (*)(const char*)>;
+using component_match_index_t  = std::vector<TIMEMORY_COMPONENT>;
+using opaque_pair_t            = std::pair<component::opaque, std::set<size_t>>;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -127,8 +127,9 @@ do_enumerator_init(Tp&, int, Args&&...)
 //--------------------------------------------------------------------------------------//
 //
 template <int I>
-void
-do_enumerator_enumerate(component_hash_map_t& _map, component_key_set_t& _set)
+inline void
+do_enumerator_enumerate(component_match_vector_t& _vec, component_match_index_t& _idx,
+                        component_match_set_t& _set)
 {
     using type            = component::enumerator_t<I>;
     constexpr auto _is_ph = concepts::is_placeholder<type>::value;
@@ -138,18 +139,13 @@ do_enumerator_enumerate(component_hash_map_t& _map, component_key_set_t& _set)
         std::string _id = component::properties<type>::id();
         if(_id != "TIMEMORY_COMPONENTS_END")
         {
-            auto _add = [&](std::string _str) {
-                if(_str.length() > 0)
-                {
-                    _str = settings::tolower(_str);
-                    _map.insert({ _str, I });
-                    _set.insert(_str);
-                }
-            };
-
-            _add(_id);
+            using match_func_t = bool (*)(const char*);
+            match_func_t _func = &component::properties<type>::matches;
+            _vec.emplace_back(_func);
+            _idx.emplace_back(I);
+            _set.insert(_id);
             for(const auto& itr : component::properties<type>::ids())
-                _add(itr);
+                _set.insert(itr);
         }
     }
 }
@@ -211,10 +207,10 @@ enumerator_configure(Tp& obj, int idx, int_sequence<Ints...>, Args&&... args)
 //
 template <int... Ints>
 void
-enumerator_enumerate(component_hash_map_t& _map, component_key_set_t& _set,
-                     int_sequence<Ints...>)
+enumerator_enumerate(component_match_vector_t& _vec, component_match_index_t& _idx,
+                     component_match_set_t& _set, int_sequence<Ints...>)
 {
-    TIMEMORY_FOLD_EXPRESSION(do_enumerator_enumerate<Ints>(_map, _set));
+    TIMEMORY_FOLD_EXPRESSION(do_enumerator_enumerate<Ints>(_vec, _idx, _set));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -266,11 +262,14 @@ configure(Tp& obj, int idx, Arg&& arg, Args&&... args)
 inline int
 enumerate(const std::string& key)
 {
-    using data_t = std::tuple<component_hash_map_t, std::function<void(const char*)>>;
+    using data_t      = std::tuple<component_match_vector_t, component_match_index_t,
+                              std::function<void(const char*)>>;
     static auto _data = []() {
-        component_hash_map_t _map;
-        component_key_set_t  _set;
-        enumerator_enumerate(_map, _set, make_int_sequence<TIMEMORY_COMPONENTS_END>{});
+        component_match_vector_t _vec;
+        component_match_index_t  _idx;
+        component_match_set_t    _set;
+        enumerator_enumerate(_vec, _idx, _set,
+                             make_int_sequence<TIMEMORY_COMPONENTS_END>{});
         std::stringstream ss;
         ss << "Valid choices are: [";
         for(auto itr = _set.begin(); itr != _set.end(); ++itr)
@@ -285,14 +284,17 @@ enumerate(const std::string& key)
         auto _msg     = [_choices](const char* itr) {
             fprintf(stderr, "Unknown component: '%s'. %s\n", itr, _choices.c_str());
         };
-        return data_t(_map, _msg);
+        return data_t(_vec, _idx, _msg);
     }();
 
-    auto itr = std::get<0>(_data).find(settings::tolower(key));
-    if(itr != std::get<0>(_data).end())
-        return itr->second;
+    auto& _vec  = std::get<0>(_data);
+    auto& _enum = std::get<1>(_data);
+    auto  _key  = settings::tolower(key);
+    for(size_t i = 0; i < _vec.size(); ++i)
+        if(_vec[i](_key.c_str()))
+            return _enum[i];
 
-    std::get<1>(_data)(key.c_str());
+    std::get<2>(_data)(key.c_str());
     return TIMEMORY_COMPONENTS_END;
 }
 //

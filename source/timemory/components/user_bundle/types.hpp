@@ -36,6 +36,11 @@
 #    define TIMEMORY_USE_USER_BUNDLE_EXTERN
 #endif
 
+#if !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN) &&                                         \
+    !defined(TIMEMORY_USER_BUNDLE_SOURCE) && !defined(TIMEMORY_USER_BUNDLE_HEADER_MODE)
+#    define TIMEMORY_USER_BUNDLE_HEADER_MODE
+#endif
+
 //======================================================================================//
 //
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx, typename Tag)
@@ -100,6 +105,7 @@ using user_profiler_bundle = user_bundle<profiler_bundle_idx, project::timemory>
 /// \brief Bundle used for Kokkos runtime callbacks that are built into the core library.
 /// Environment variable: `TIMEMORY_KOKKOS_COMPONENTS`
 using user_kokkosp_bundle = user_bundle<kokkosp_bundle_idx, project::kokkosp>;
+
 //
 }  // namespace component
 }  // namespace tim
@@ -155,19 +161,9 @@ namespace tim
 namespace trait
 {
 //
-//--------------------------------------------------------------------------------------//
-//
 template <size_t Idx, typename Type>
 struct is_user_bundle<component::user_bundle<Idx, Type>> : true_type
 {};
-//
-//--------------------------------------------------------------------------------------//
-//
-template <size_t Idx, typename Type>
-struct requires_prefix<component::user_bundle<Idx, Type>> : true_type
-{};
-//
-//--------------------------------------------------------------------------------------//
 //
 }  // namespace trait
 //

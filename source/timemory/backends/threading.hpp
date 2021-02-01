@@ -36,13 +36,13 @@
 
 #include <atomic>
 #include <cstdint>
-#include <fstream>
 #include <functional>
 #include <map>
 #include <set>
 #include <thread>
 
 #if defined(_LINUX)
+#    include <fstream>
 #    include <pthread.h>
 #    include <sys/syscall.h>
 #    include <unistd.h>

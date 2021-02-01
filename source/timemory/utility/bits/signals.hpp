@@ -42,22 +42,6 @@ namespace tim
 {
 //======================================================================================//
 
-namespace internal
-{
-//--------------------------------------------------------------------------------------//
-
-inline void
-dummy_func(int)
-{
-    return;
-}
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace internal
-
-//======================================================================================//
-
 inline signal_settings::signals_data::signals_data()
 {
 #if defined(DEBUG)
@@ -145,12 +129,14 @@ signal_settings::check_environment()
     }
 
     if(enable_all())
-        for(const auto& itr : f_signals().signals_disabled)
-            signal_settings::enable(itr);
+    {
+        for(const auto& itr : _list)
+            signal_settings::enable(itr.second);
+    }
 
     if(disable_all())
-        for(const auto& itr : f_signals().signals_enabled)
-            signal_settings::disable(itr);
+        for(const auto& itr : _list)
+            signal_settings::disable(itr.second);
 }
 
 //======================================================================================//
@@ -162,8 +148,8 @@ signal_settings::str(const sys_signal& _type)
 
     std::stringstream ss;
     auto              _descript = [&](const descript_tuple_t& _data) {
-        ss << " Signal: " << std::setw(8) << std::get<0>(_data)
-           << " (error code: " << std::setw(4) << std::get<1>(_data) << ") "
+        ss << " Signal: " << std::setw(10) << std::get<0>(_data)
+           << " (error code: " << std::setw(3) << std::get<1>(_data) << ") "
            << std::setw(40) << std::get<2>(_data);
     };
 
@@ -302,25 +288,7 @@ signal_settings::exit_action(int errcode)
 
 //======================================================================================//
 
-inline const signal_settings::signal_set_t&
-signal_settings::enabled()
-{
-    check_environment();
-    return f_signals().signals_enabled;
-}
-
-//======================================================================================//
-
-inline const signal_settings::signal_set_t&
-signal_settings::disabled()
-{
-    check_environment();
-    return f_signals().signals_disabled;
-}
-
-//======================================================================================//
-
-inline const signal_settings::signal_set_t&
+inline signal_settings::signal_set_t
 signal_settings::get_enabled()
 {
     return f_signals().signals_enabled;
@@ -328,7 +296,7 @@ signal_settings::get_enabled()
 
 //======================================================================================//
 
-inline const signal_settings::signal_set_t&
+inline signal_settings::signal_set_t
 signal_settings::get_disabled()
 {
     return f_signals().signals_disabled;
@@ -336,7 +304,7 @@ signal_settings::get_disabled()
 
 //======================================================================================//
 
-inline const signal_settings::signal_set_t&
+inline signal_settings::signal_set_t
 signal_settings::get_default()
 {
     return f_signals().signals_default;

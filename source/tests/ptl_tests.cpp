@@ -129,6 +129,9 @@ protected:
         tim::settings::dart_output() = false;
         tim::settings::dart_count()  = 1;
 
+        tim::enable_signal_detection(
+            { tim::sys_signal::SegFault, tim::sys_signal::Illegal });
+
         std::cout << "Initializing thread-pool... " << std::flush;
         manager.Initialize(tim::get_env<uint64_t>("NUM_THREADS", 4));
         std::cout << "Done" << std::endl;

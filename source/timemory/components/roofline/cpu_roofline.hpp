@@ -163,25 +163,33 @@ struct cpu_roofline
 
     static MODE& event_mode()
     {
-        auto aslc = [](std::string str) {
-            for(auto& itr : str)
-                itr = tolower(itr);
-            return str;
-        };
-
-        auto _get = [=]() {
+        auto&& _get = []() {
+            auto&& aslc = [](std::string str) {
+                for(auto& itr : str)
+                    itr = tolower(itr);
+                return str;
+            };
             // check the standard variable
             std::string _env = aslc(settings::cpu_roofline_mode());
             if(_env.empty())
                 _env = aslc(settings::roofline_mode());
-            return (_env == "op" || _env == "hw" || _env == "counters")
-                       ? MODE::OP
-                       : ((_env == "ai" || _env == "ac" || _env == "activity")
-                              ? MODE::AI
-                              : MODE::OP);
+            auto _val =
+                (_env == "op" || _env == "hw" || _env == "counters")
+                    ? MODE::OP
+                    : ((_env == "ai" || _env == "ac" || _env == "activity") ? MODE::AI
+                                                                            : MODE::OP);
+            if(settings::verbose() > 1 || settings::debug())
+            {
+                std::cerr << "[" << demangle<this_type>()
+                          << "]> roofline mode: " << ((_val == MODE::OP) ? "op" : "ai")
+                          << std::endl;
+            }
+            return _val;
         };
 
         static MODE _instance = _get();
+        if(!is_configured())
+            _instance = _get();
         return _instance;
     }
 
@@ -207,13 +215,14 @@ struct cpu_roofline
     {
         static auto _instance = []() {
             event_type _events;
-            if(event_mode() == MODE::OP)
+            auto       _mode = event_mode();
+            if(_mode == MODE::OP)
             {
                 //
                 // add in user callback events BEFORE presets based on type so that
                 // the user can override the counters being used
                 //
-                auto _extra_events = get_events_callback()(event_mode());
+                auto _extra_events = get_events_callback()(_mode);
                 for(const auto& itr : _extra_events)
                     _events.push_back(itr);
 
@@ -228,7 +237,7 @@ struct cpu_roofline
                         _events.push_back(PAPI_DP_OPS);
                 }
             }
-            else if(event_mode() == MODE::AI)
+            else if(_mode == MODE::AI)
             {
                 //
                 //  add the load/store hardware counter
@@ -244,7 +253,7 @@ struct cpu_roofline
                 // add in user callback events AFTER load/store so that load/store
                 // instructions are always counted
                 //
-                auto _extra_events = get_events_callback()(event_mode());
+                auto _extra_events = get_events_callback()(_mode);
                 for(const auto& itr : _extra_events)
                     _events.push_back(itr);
             }
@@ -264,8 +273,11 @@ struct cpu_roofline
             if(settings::debug() || settings::verbose() > 1)
                 PRINT_HERE("%s", "configuring cpu_roofline");
 
+            // do this BEFORE setting is_configured to true to ensure mode is updated
+            // properly
+            auto _events    = get_events();
             is_configured() = true;
-            for(auto itr : get_events())
+            for(auto&& itr : _events)
                 papi_vector::add_event(itr);
             papi_vector::configure();
         }

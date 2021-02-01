@@ -43,6 +43,7 @@
 #    include "timemory/utility/signals.hpp"
 #    include "timemory/utility/utility.hpp"
 
+#    include <fstream>
 #    include <string>
 
 namespace tim

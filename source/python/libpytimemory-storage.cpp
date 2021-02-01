@@ -56,6 +56,12 @@ get_class_name(std::string id)
 
     id = tim::settings::tolower(id);
 
+    if(id.find("_idx") == id.length() - 4)
+        id = id.substr(0, id.length() - 4);
+
+    if(id.find("timemory_") == 0)
+        id = id.substr(9);
+
     // capitalize after every delimiter
     for(size_t i = 0; i < id.size(); ++i)
     {

@@ -11,6 +11,12 @@ endif()
 
 project(timemory-GPU-Roofline-Example LANGUAGES C CXX CUDA)
 
+if(NOT CUDA_VERSION VERSION_LESS 11.0)
+    message(STATUS "[${PROJECT_NAME}] Skipping GPU roofline for CUDA ${CUDA_VERSION} (>= 11.0)")
+    message(WARNING "[${PROJECT_NAME}] CUPTI profiling API for HW counters not supported yet")
+    return()
+endif()
+
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()
@@ -22,7 +28,7 @@ target_compile_options(gpu-roofline-compile-options INTERFACE
     $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
 
 set(EXE_NAME ex_gpu_roofline)
-set(COMPONENTS compile-options analysis-tools roofline)
+set(COMPONENTS compile-options analysis-tools roofline cxx)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-gpu-roofline-example)
 set_source_files_properties(${EXE_NAME}.cpp PROPERTIES
     LANGUAGE CUDA

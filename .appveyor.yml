@@ -14,6 +14,7 @@ platform:
   - x64
 
 environment:
+  CONTINUOUS_INTEGRATION: "true"
   matrix:
     - PYTHON: 36
       CPP: 14

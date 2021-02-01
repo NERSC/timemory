@@ -4,14 +4,15 @@
 #     include(CaliperDepends)
 #
 
+set(CALIPER_OPTION_PREFIX ON CACHE INTERNAL "Prefix caliper options with CALIPER_")
+
 # caliper uses PAPI high-level API so do not enable by default
-set(WITH_PAPI       OFF     CACHE BOOL "Enable PAPI in Caliper")
-set(WITH_MPI        OFF     CACHE BOOL "Enable MPI in Caliper")
-set(WITH_CUPTI      OFF     CACHE BOOL "Enable CUPTI in Caliper")
-set(WITH_CALLPATH   OFF     CACHE BOOL "Enable libunwind in Caliper")
+set(CALIPER_WITH_PAPI       OFF     CACHE BOOL "Enable PAPI in Caliper")
+set(CALIPER_WITH_MPI        OFF     CACHE BOOL "Enable MPI in Caliper")
+set(CALIPER_WITH_CUPTI      OFF     CACHE BOOL "Enable CUPTI in Caliper")
 
 if(TIMEMORY_USE_CUPTI)
-    set(WITH_CUPTI OFF)
+    set(CALIPER_WITH_CUPTI OFF CACHE BOOL "Enable cupti in Caliper")
 endif()
 
 find_path(LIBUNWIND_INCLUDE_DIR
@@ -27,11 +28,11 @@ find_library(LIBUNWIND_STATIC_LIBRARY
     PATH_SUFFIXES   lib lib64)
 
 if(LIBUNWIND_INCLUDE_DIR AND LIBUNWIND_LIBRARY)
-    set(WITH_CALLPATH ON  CACHE BOOL "Enable libunwind in Caliper")
+    set(CALIPER_WITH_CALLPATH ON  CACHE BOOL "Enable libunwind in Caliper")
 else()
-    set(WITH_CALLPATH OFF CACHE BOOL "Enable libunwind in Caliper")
+    set(CALIPER_WITH_CALLPATH OFF CACHE BOOL "Enable libunwind in Caliper")
 endif()
 
 if(APPLE)
-    set(WITH_GOTCHA OFF)
+    set(CALIPER_WITH_GOTCHA OFF CACHE BOOL "Enable gotcha in Caliper")
 endif()

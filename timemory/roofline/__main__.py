@@ -41,6 +41,10 @@ import timemory
 import timemory.roofline as _roofline
 
 
+# error code
+_errc = 0
+
+
 def parse_args(add_run_args=False):
     parser = argparse.ArgumentParser(
         add_help=False,
@@ -261,8 +265,12 @@ def plot(args):
         print("Exception - {}".format(e))
         sys.exit(1)
 
-    print("Done - {}".format(sys.argv[0]))
-    sys.exit(0)
+    if _errc != 0:
+        print(f"Done (with errors) - {sys.argv[0]} (exit code: {_errc})")
+    else:
+        print(f"Done - {sys.argv[0]}")
+
+    sys.exit(_errc)
 
 
 def plot_impl(args, ai_data, op_data, rank=None, label=None):
@@ -300,6 +308,8 @@ def plot_impl(args, ai_data, op_data, rank=None, label=None):
 
 
 def run(args, cmd):
+    global _errc
+
     if len(cmd) == 0:
         return
 
@@ -311,7 +321,11 @@ def run(args, cmd):
         else:
             return dtype(val)
 
-    output_path = get_environ("TIMEMORY_OUTPUT_PATH", "timemory-output", str)
+    _base_output_path = os.path.basename(cmd[0]).replace("_", "-")
+    _default_output_path = "-".join(
+        ["timemory", _base_output_path, "output"]
+    ).replace("--", "-")
+    output_path = get_environ("TIMEMORY_OUTPUT_PATH", _default_output_path, str)
     output_prefix = get_environ("TIMEMORY_OUTPUT_PREFIX", "", str)
     os.environ["TIMEMORY_JSON_OUTPUT"] = "ON"
 
@@ -361,6 +375,8 @@ def run(args, cmd):
             )
 
     def handle_error(ret, cmd, keep_going):
+        global _errc
+
         err_msg = "Error executing: '{}'".format(" ".join(cmd))
         if ret != 0 and not keep_going:
             raise RuntimeError(err_msg)
@@ -377,6 +393,7 @@ def run(args, cmd):
             )
             sys.stderr.write(err_msg)
             sys.stderr.flush()
+            _errc = ret
 
     import subprocess as sp
 
@@ -414,6 +431,8 @@ def run(args, cmd):
 
 
 def try_plot():
+    global _errc
+
     try:
         # look for "--" and interpret anything after that
         # to be a command to execute
@@ -448,7 +467,11 @@ def try_plot():
     except Exception as e:
         msg = "\nCommand line argument error:\n\t{}\n".format(e)
         warnings.warn(msg)
+        _errc = 1
+
+    sys.exit(_errc)
 
 
 if __name__ == "__main__":
     try_plot()
+    sys.exit(_errc)

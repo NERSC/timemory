@@ -101,6 +101,9 @@ struct papi_rate_tuple
 
 public:
     static void configure() { tuple_type::configure(); }
+    static void initialize() { tuple_type::initialize(); }
+    static void finalize() { tuple_type::finalize(); }
+
     static void global_init()
     {
         operation::init<tuple_type>{}(
@@ -110,11 +113,12 @@ public:
     }
     static void global_finalize()
     {
-        operation::fini<tuple_type>{}(
+        /*operation::fini<tuple_type>{}(
             operation::mode_constant<operation::fini_mode::global>{});
         operation::fini<rate_type>{}(
-            operation::mode_constant<operation::fini_mode::global>{});
+            operation::mode_constant<operation::fini_mode::global>{});*/
     }
+
     static void thread_init()
     {
         operation::init<tuple_type>{}(
@@ -124,15 +128,11 @@ public:
     }
     static void thread_finalize()
     {
-        /*
-        operation::fini<tuple_type>{}(
+        /*operation::fini<tuple_type>{}(
             operation::mode_constant<operation::fini_mode::thread>{});
         operation::fini<rate_type>{}(
-            operation::mode_constant<operation::fini_mode::thread>{});
-        */
+            operation::mode_constant<operation::fini_mode::thread>{});*/
     }
-    static void initialize() { tuple_type::initialize(); }
-    static void finalize() { tuple_type::finalize(); }
 
     static std::string label()
     {
@@ -153,6 +153,7 @@ public:
         value.first.start();
         value.second.start();
     }
+
     void stop()
     {
         value.second.stop();

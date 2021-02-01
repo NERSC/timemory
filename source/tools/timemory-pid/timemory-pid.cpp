@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/environment.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/utility/argparse.hpp"
 
 #include <csignal>

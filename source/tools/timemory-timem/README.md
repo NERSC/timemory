@@ -236,7 +236,7 @@ following environment variables:
 | -------------------- | ----------------------- | ---------------------------------------- |
 | `TIMEM_OUTPUT`       | `""`                    | `-o`, `--output` (with argument)         |
 | `TIMEM_USE_SHELL`    | `"OFF"`                 | `-s`, `--shell` (with no argument)       |
-| `TIMEM_SHELL_FLAGS`  | `-i`                    | `--shell-flags`                          |
+| `TIMEM_SHELL_FLAGS`  | `""`                    | `--shell-flags`                          |
 | `TIMEM_SHELL`        | `$SHELL`                | `-s`, `--shell` (with argument)          |
 | `TIMEM_SAMPLE`       | `"ON"`                  | `--disable-sample` (if value is `"OFF"`) |
 | `TIMEM_SAMPLE_FREQ`  | `5.0`                   | `-f`, `--sample-freq`                    |
