@@ -23,6 +23,5 @@ build_intermediate_library(
     SOURCES             ${source_files}
     DEPENDS             timemory-vector
                         timemory-cuda
-                        timemory-timing-component
     PRIVATE_LINK        timemory-roofline-options
     PROPERTY_DEPENDS    GLOBAL)
