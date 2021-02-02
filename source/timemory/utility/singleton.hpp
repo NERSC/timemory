@@ -155,7 +155,9 @@ public:
         if(is_master(ptr))
         {
             if(_master_instance().get())
+            {
                 _master_instance().reset();
+            }
             else if(f_master_instance())
             {
                 auto& del = get_deleter();
@@ -330,8 +332,10 @@ typename singleton<Type, Pointer, Tag>::pointer
 singleton<Type, Pointer, Tag>::instance()
 {
     if(std::this_thread::get_id() == f_master_thread())
+    {
         return master_instance();
-    else if(!_local_instance().get())
+    }
+    if(!_local_instance().get())
     {
         _local_instance().reset(new Type());
         insert(_local_instance().get());

@@ -116,8 +116,8 @@ public:
     // copy and move
     auto_hybrid(const this_type&)     = default;
     auto_hybrid(this_type&&) noexcept = default;
-    this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) noexcept = default;
+    auto_hybrid& operator=(const auto_hybrid&) = default;
+    auto_hybrid& operator=(auto_hybrid&&) noexcept = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 
@@ -223,16 +223,16 @@ public:
         return m_temporary.get_labeled(std::forward<Args>(args)...);
     }
 
-    bool enabled() const { return m_enabled; }
-    void report_at_exit(bool val) { m_report_at_exit = val; }
-    bool report_at_exit() const { return m_report_at_exit; }
+    TIMEMORY_NODISCARD bool enabled() const { return m_enabled; }
+    void                    report_at_exit(bool val) { m_report_at_exit = val; }
+    TIMEMORY_NODISCARD bool report_at_exit() const { return m_report_at_exit; }
 
-    bool      store() const { return m_temporary.store(); }
-    data_type data() const { return m_temporary.data(); }
-    int64_t   laps() const { return m_temporary.laps(); }
-    string_t  key() const { return m_temporary.key(); }
-    uint64_t  hash() const { return m_temporary.hash(); }
-    void      rekey(const string_t& _key) { m_temporary.rekey(_key); }
+    TIMEMORY_NODISCARD bool store() const { return m_temporary.store(); }
+    data_type               data() const { return m_temporary.data(); }
+    TIMEMORY_NODISCARD int64_t laps() const { return m_temporary.laps(); }
+    TIMEMORY_NODISCARD string_t key() const { return m_temporary.key(); }
+    TIMEMORY_NODISCARD uint64_t hash() const { return m_temporary.hash(); }
+    void                        rekey(const string_t& _key) { m_temporary.rekey(_key); }
 
 public:
     tuple_t&       get_tuple() { return m_temporary.get_tuple(); }
@@ -360,8 +360,7 @@ auto_hybrid<CompTuple, CompList>::auto_hybrid(size_t _hash, scope::config _scope
 template <typename CompTuple, typename CompList>
 auto_hybrid<CompTuple, CompList>::auto_hybrid(component_type& tmp, scope::config _scope,
                                               bool report_at_exit)
-: m_enabled(true)
-, m_report_at_exit(report_at_exit)
+: m_report_at_exit(report_at_exit)
 , m_temporary(tmp.clone(true, _scope))
 , m_reference_object(&tmp)
 {

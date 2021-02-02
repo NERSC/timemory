@@ -181,7 +181,7 @@ configure(const Container<const char*, ExtraArgs...>& components, Args&&... args
 
 template <typename Bundle, typename... Args>
 void
-configure(const int ncomponents, const int* components, Args&&... args);
+configure(int ncomponents, const int* components, Args&&... args);
 
 //======================================================================================//
 

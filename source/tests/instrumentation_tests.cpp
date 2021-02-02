@@ -184,6 +184,7 @@ TEST_F(INSTRUMENTATION_TESTS_NAME, mt_consume)
     };
 
     std::vector<std::thread> _threads;
+    _threads.reserve(4);
     for(int i = 0; i < 4; ++i)
         _threads.emplace_back(std::thread(_consume));
     for(auto& itr : _threads)

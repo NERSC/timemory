@@ -169,12 +169,16 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
         printf("[%s] Executing %li ops...\n", __FUNCTION__, (long int) Nops);
 
     if(_counter.bytes_per_element == 0)
+    {
         fprintf(stderr, "[%s:%i]> bytes-per-element is not set!\n", __FUNCTION__,
                 __LINE__);
+    }
 
     if(_counter.memory_accesses_per_element == 0)
+    {
         fprintf(stderr, "[%s:%i]> memory-accesses-per-element is not set!\n",
                 __FUNCTION__, __LINE__);
+    }
 
     // list of streams
     stream_list_t streams;

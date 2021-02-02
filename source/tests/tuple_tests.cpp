@@ -259,14 +259,15 @@ TEST_F(tuple_tests, all_threads)
             _tm.stop();
 
             lock_t lk(mtx);
-            measurements.push_back(pair_t(ss.str(), _tm));
+            measurements.emplace_back(ss.str(), _tm);
             lambda_ss << _tm << std::endl;
         };
 
         runtime_printed.start();
         runtime.start();
         {
-            std::promise<void> _p1, _p2;
+            std::promise<void> _p1;
+            std::promise<void> _p2;
             std::future<void>  _f1 = _p1.get_future();
             std::future<void>  _f2 = _p2.get_future();
             std::thread        _t1(run_fib, 42, &_p1);

@@ -156,7 +156,7 @@ struct papi_vector
     //
     void start()
     {
-        if(tracker_type::get_thread_started() == 0 || events.size() == 0)
+        if(tracker_type::get_thread_started() == 0 || events.empty())
         {
             configure();
         }
@@ -225,7 +225,7 @@ public:
         return "Dynamically allocated array of PAPI HW counters";
     }
 
-    entry_type get_display(int evt_type) const
+    TIMEMORY_NODISCARD entry_type get_display(int evt_type) const
     {
         auto val = (is_transient) ? accum.at(evt_type) : value.at(evt_type);
         return val;
@@ -263,7 +263,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    vector_t<std::string> label_array() const
+    TIMEMORY_NODISCARD vector_t<std::string> label_array() const
     {
         vector_t<std::string> arr(events.size(), "");
         for(size_type i = 0; i < events.size(); ++i)
@@ -286,7 +286,7 @@ public:
         for(auto& itr : arr)
         {
             size_t n = std::string::npos;
-            while((n = itr.find(" ")) != std::string::npos)
+            while((n = itr.find(' ')) != std::string::npos)
                 itr.replace(n, 1, "_");
 
             while((n = itr.find("__")) != std::string::npos)
@@ -299,7 +299,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    vector_t<std::string> description_array() const
+    TIMEMORY_NODISCARD vector_t<std::string> description_array() const
     {
         vector_t<std::string> arr(events.size(), "");
         for(size_type i = 0; i < events.size(); ++i)
@@ -310,7 +310,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit
     //
-    vector_t<std::string> display_unit_array() const
+    TIMEMORY_NODISCARD vector_t<std::string> display_unit_array() const
     {
         vector_t<std::string> arr(events.size(), "");
         for(size_type i = 0; i < events.size(); ++i)
@@ -321,7 +321,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    vector_t<int64_t> unit_array() const
+    TIMEMORY_NODISCARD vector_t<int64_t> unit_array() const
     {
         vector_t<int64_t> arr(events.size(), 0);
         for(size_type i = 0; i < events.size(); ++i)
@@ -331,9 +331,9 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    string_t get_display() const
+    TIMEMORY_NODISCARD string_t get_display() const
     {
-        if(events.size() == 0)
+        if(events.empty())
             return "";
         auto val          = (is_transient) ? accum : value;
         auto _get_display = [&](std::ostream& os, size_type idx) {
@@ -345,7 +345,9 @@ public:
             auto     _width     = base_type::get_width();
             auto     _flags     = base_type::get_format_flags();
 
-            std::stringstream ss, ssv, ssi;
+            std::stringstream ss;
+            std::stringstream ssv;
+            std::stringstream ssi;
             ssv.setf(_flags);
             ssv << std::setw(_width) << std::setprecision(_prec) << _obj_value;
             if(!_disp.empty())
@@ -370,7 +372,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        if(obj.events.size() == 0)
+        if(obj.events.empty())
             return os;
         // output the metrics
         auto _value = obj.get_display();
@@ -385,9 +387,13 @@ public:
         ss_value.setf(_flags);
         ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
         if(!_disp.empty())
+        {
             ss_extra << " " << _disp;
+        }
         else if(!_label.empty())
+        {
             ss_extra << " " << _label;
+        }
         os << ss_value.str() << ss_extra.str();
         return os;
     }

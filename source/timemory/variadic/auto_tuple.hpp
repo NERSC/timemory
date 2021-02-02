@@ -157,10 +157,10 @@ public:
     ~auto_tuple();
 
     // copy and move
-    auto_tuple(const this_type&)     = default;
-    auto_tuple(this_type&&) noexcept = default;
-    this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) noexcept = default;
+    auto_tuple(const auto_tuple&)     = default;
+    auto_tuple(auto_tuple&&) noexcept = default;
+    auto_tuple& operator=(const auto_tuple&) = default;
+    auto_tuple& operator=(auto_tuple&&) noexcept = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 
@@ -272,17 +272,17 @@ public:
         return m_temporary.get_labeled(std::forward<Args>(args)...);
     }
 
-    bool enabled() const { return m_enabled; }
-    void report_at_exit(bool val) { m_report_at_exit = val; }
-    bool report_at_exit() const { return m_report_at_exit; }
+    TIMEMORY_NODISCARD bool enabled() const { return m_enabled; }
+    void                    report_at_exit(bool val) { m_report_at_exit = val; }
+    TIMEMORY_NODISCARD bool report_at_exit() const { return m_report_at_exit; }
 
-    bool             store() const { return m_temporary.store(); }
-    data_type&       data() { return m_temporary.data(); }
-    const data_type& data() const { return m_temporary.data(); }
-    int64_t          laps() const { return m_temporary.laps(); }
-    auto             key() const { return m_temporary.key(); }
-    uint64_t         hash() const { return m_temporary.hash(); }
-    void             rekey(const string_t& _key) { m_temporary.rekey(_key); }
+    TIMEMORY_NODISCARD bool store() const { return m_temporary.store(); }
+    data_type&              data() { return m_temporary.data(); }
+    const data_type&        data() const { return m_temporary.data(); }
+    TIMEMORY_NODISCARD int64_t laps() const { return m_temporary.laps(); }
+    auto                       key() const { return m_temporary.key(); }
+    TIMEMORY_NODISCARD uint64_t hash() const { return m_temporary.hash(); }
+    void                        rekey(const string_t& _key) { m_temporary.rekey(_key); }
 
 public:
     template <typename Tp>
@@ -439,8 +439,7 @@ auto_tuple<Types...>::auto_tuple(size_t hash, scope::config _scope, bool report_
 template <typename... Types>
 auto_tuple<Types...>::auto_tuple(component_type& tmp, scope::config _scope,
                                  bool report_at_exit)
-: m_enabled(true)
-, m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
+: m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_reference_object(&tmp)
 , m_temporary(tmp.clone(true, _scope))
 {

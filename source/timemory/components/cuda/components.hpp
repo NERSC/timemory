@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "timemory/components/base.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
@@ -70,12 +72,7 @@ struct cuda_event : public base<cuda_event, float>
         cuda::event_t second  = cuda::event_t{};
 
         marker() { valid = (cuda::event_create(first) && cuda::event_create(second)); }
-
-        ~marker()
-        {
-            // cuda::event_destroy(first);
-            // cuda::event_destroy(second);
-        }
+        ~marker() = default;
 
         void start(cuda::stream_t& stream)
         {
@@ -129,7 +126,7 @@ public:
 
     explicit cuda_event(cuda::stream_t _stream)
     : m_stream(_stream)
-    , m_global(marker{})
+
     {}
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
@@ -138,14 +135,14 @@ public:
     //{}
 #endif
 
-    float get_display() const
+    TIMEMORY_NODISCARD float get_display() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
 
-    float get() const
+    TIMEMORY_NODISCARD float get() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
@@ -176,7 +173,7 @@ public:
                 float tmp       = m_global.sync();
                 m_global_synced = true;
                 accum += tmp;
-                value = std::move(tmp);
+                value = tmp;
             }
         }
         else if(m_current_marker > m_synced_markers)
@@ -186,7 +183,7 @@ public:
                 tmp += m_markers[i].sync();
             m_markers_synced = true;
             accum += tmp;
-            value = std::move(tmp);
+            value = tmp;
         }
     }
 
@@ -427,31 +424,25 @@ struct nvtx_marker : public base<nvtx_marker, void>
 
     static void thread_init() { nvtx::name_thread(threading::get_id()); }
 
-    explicit nvtx_marker()
-    : m_color(0)
-    , m_stream(0)
-    , m_prefix(nullptr)
-    {}
+    nvtx_marker() = default;
 
     /// construct with an specific color
     explicit nvtx_marker(const nvtx::color::color_t& _color)
     : m_color(_color)
-    , m_stream(0)
-    , m_prefix(nullptr)
+
     {}
 
     /// construct with an specific CUDA stream
     explicit nvtx_marker(cuda::stream_t _stream)
-    : m_color(0)
-    , m_stream(_stream)
-    , m_prefix(nullptr)
+    : m_stream(_stream)
+
     {}
 
     /// construct with an specific color and CUDA stream
     nvtx_marker(const nvtx::color::color_t& _color, cuda::stream_t _stream)
     : m_color(_color)
     , m_stream(_stream)
-    , m_prefix(nullptr)
+
     {}
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
@@ -474,9 +465,13 @@ struct nvtx_marker : public base<nvtx_marker, void>
     void stop()
     {
         if(use_device_sync())
+        {
             cuda::device_sync();
+        }
         else
+        {
             cuda::stream_sync(m_stream);
+        }
         nvtx::range_stop(m_range_id);
     }
 
@@ -528,7 +523,7 @@ private:
         using map_t     = std::map<cuda::stream_t, int32_t>;
         using map_ptr_t = std::unique_ptr<map_t>;
 
-        static thread_local map_ptr_t _instance = map_ptr_t(new map_t);
+        static thread_local map_ptr_t _instance = std::make_unique<map_t>();
         if(_instance->find(_stream) == _instance->end())
             _instance->insert(pair_t(_stream, _instance->size()));
         return _instance->find(_stream)->second;

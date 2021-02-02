@@ -30,6 +30,7 @@
 #include <cstdio>
 #include <string>
 #include <thread>
+#include <utility>
 
 extern "C"
 {
@@ -86,8 +87,8 @@ do_work(int64_t nitr, const std::pair<float, double>& p)
 
 //--------------------------------------------------------------------------------------//
 
-DoWork::DoWork(const std::pair<float, double>& pair)
-: m_pair(pair)
+DoWork::DoWork(std::pair<float, double> pair)
+: m_pair(std::move(pair))
 , m_tuple{ 0.0f, 0.0 }
 {}
 
@@ -114,7 +115,7 @@ DoWork::execute_fp8(int64_t nitr)
 //--------------------------------------------------------------------------------------//
 
 void
-DoWork::execute_fp(int64_t nitr, std::vector<float> fvals,
+DoWork::execute_fp(int64_t nitr, const std::vector<float>& fvals,
                    const std::deque<double>& dvals)
 {
     float fret = 0.0;

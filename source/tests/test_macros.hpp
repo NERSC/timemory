@@ -50,14 +50,14 @@ using stringstream_t = std::stringstream;
 namespace
 {
 #if !defined(TIMEMORY_TEST_NO_METRIC) && !defined(DISABLE_TIMEMORY)
-static inline auto&
+inline auto&
 metric()
 {
     static tim::lightweight_tuple<tim::component::wall_clock, tim::component::peak_rss>
         _instance{ ::testing::UnitTest::GetInstance()->current_test_suite()->name() };
     return _instance;
 }
-static inline void
+inline void
 print_dart(
     tim::lightweight_tuple<tim::component::wall_clock, tim::component::peak_rss>& ct)
 {
@@ -77,13 +77,13 @@ struct dummy
     void start() {}
     void stop() {}
 };
-static inline auto&
+inline auto&
 metric()
 {
     static dummy _instance{};
     return _instance;
 }
-static inline void
+inline void
 print_dart(dummy&)
 {}
 #endif

@@ -60,10 +60,7 @@ public:
     explicit thread_barrier(const size_t& nthreads)
     : m_master(std::this_thread::get_id())
     , m_num_threads(nthreads)
-    , m_waiting(0)
-    , m_counter(0)
     , m_notify(0)
-    , m_promise(std::promise<void>())
     , m_future(m_promise.get_future().share())
     {}
 

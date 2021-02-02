@@ -131,7 +131,7 @@ TIMEMORY_TEMPLATE_TRAIT_TYPE(data, component::variadic_component,
                              TIMEMORY_ESC(typename T, size_t... N), TIMEMORY_ESC(T, N...),
                              std::tuple<std::array<T, N>...>)
 
-namespace tim
+namespace tim  // NOLINT
 {
 namespace component
 {

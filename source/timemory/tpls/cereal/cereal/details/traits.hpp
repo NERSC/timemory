@@ -1477,9 +1477,9 @@ struct base_class_id
         return (type == other.type) && (ptr == other.ptr);
     }
 
-    std::type_index type;
-    void const*     ptr;
-    size_t          hash;
+    std::type_index type;  // NOLINT
+    void const*     ptr;   // NOLINT
+    size_t          hash;  // NOLINT
 };
 struct base_class_id_hash
 {

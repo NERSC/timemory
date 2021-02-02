@@ -334,9 +334,11 @@ inline typename std::enable_if<(!traits::is_default_constructible<T>::value &&
 serialize_wrapper(Archive&, std::shared_ptr<T>&, std::uint32_t const nameid)
 {
     if(nameid & detail::msb2_32bit)
+    {
         throw cereal::Exception(
             "Cannot load a polymorphic type that is not default constructable and does "
             "not have a load_and_construct function");
+    }
     return false;
 }
 
@@ -356,9 +358,11 @@ inline typename std::enable_if<(!traits::is_default_constructible<T>::value &&
 serialize_wrapper(Archive&, std::unique_ptr<T, D>&, std::uint32_t const nameid)
 {
     if(nameid & detail::msb2_32bit)
+    {
         throw cereal::Exception(
             "Cannot load a polymorphic type that is not default constructable and does "
             "not have a load_and_construct function");
+    }
     return false;
 }
 }  // namespace polymorphic_detail

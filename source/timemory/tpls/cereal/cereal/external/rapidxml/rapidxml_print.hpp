@@ -96,9 +96,10 @@ namespace rapidxml
         template<class Ch, Ch ch>
         inline bool find_char(const Ch *begin, const Ch *end)
         {
-            while (begin != end)
+            while (begin != end) {
                 if (*begin++ == ch)
                     return true;
+}
             return false;
         }
 
@@ -214,7 +215,7 @@ namespace rapidxml
                     // If node has no children, only print its value without indenting
                     out = copy_and_expand_chars(node->value(), node->value() + node->value_size(), Ch(0), out);
                 }
-                else if (child->next_sibling() == 0 && child->type() == node_data)
+                else if (child->next_sibling() == nullptr && child->type() == node_data)
                 {
                     // If node has a sole data child, only print its value without indenting
                     out = copy_and_expand_chars(child->value(), child->value() + child->value_size(), Ch(0), out);

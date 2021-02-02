@@ -43,6 +43,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -230,9 +231,9 @@ union metric_u
 
 struct metric
 {
-    metric_u data  = {};
-    uint64_t count = 1;
-    uint64_t index = 0;
+    metric_u data  = {};  // NOLINT
+    uint64_t count = 1;   // NOLINT
+    uint64_t index = 0;   // NOLINT
 
     metric()              = default;
     ~metric()             = default;
@@ -669,18 +670,14 @@ struct result
 {
     using data_t = data::metric;
 
-    bool        is_event_value = true;
-    std::string name           = "unk";
-    data_t      data           = {};
+    bool        is_event_value = true;   // NOLINT
+    std::string name           = "unk";  // NOLINT
+    data_t      data           = {};     // NOLINT
 
     result()  = default;
     ~result() = default;
 
-    result(const result& rhs)
-    : is_event_value(rhs.is_event_value)
-    , name(rhs.name)
-    , data(rhs.data)
-    {}
+    result(const result& rhs) = default;
 
     result& operator=(const result& rhs)
     {
@@ -709,9 +706,9 @@ struct result
         return *this;
     }
 
-    explicit result(const std::string& _name, const data_t& _data, bool _is = true)
+    explicit result(std::string _name, const data_t& _data, bool _is = true)
     : is_event_value(_is)
-    , name(_name)
+    , name(std::move(_name))
     , data(_data)
     {}
 
@@ -825,26 +822,26 @@ struct profiler
 
     profiler(const strvec_t&, const strvec_t&, const int = 0, bool = true) {}
 
-    ~profiler() {}
+    ~profiler() = default;
 
-    int  passes() { return 0; }
-    void start() {}
+    static int passes() { return 0; }
+    void       start() {}
 
-    void      stop() {}
-    void      print_event_values(std::ostream&, bool = true, const char* = ";\n") {}
-    void      print_metric_values(std::ostream&, bool = true, const char* = ";\n") {}
-    void      print_events_and_metrics(std::ostream&, bool = true, const char* = ";\n") {}
-    results_t get_events_and_metrics(const std::vector<std::string>&)
+    void stop() {}
+    void print_event_values(std::ostream&, bool = true, const char* = ";\n") {}
+    void print_metric_values(std::ostream&, bool = true, const char* = ";\n") {}
+    void print_events_and_metrics(std::ostream&, bool = true, const char* = ";\n") {}
+    static results_t get_events_and_metrics(const std::vector<std::string>&)
     {
         return results_t{};
     }
-    strvec_t        get_kernel_names() { return strvec_t{}; }
-    event_val_t     get_event_values(const char*) { return event_val_t{}; }
-    metric_val_t    get_metric_values(const char*) { return metric_val_t{}; }
-    const strvec_t& get_event_names() const { return m_event_names; }
-    const strvec_t& get_metric_names() const { return m_metric_names; }
+    static strvec_t          get_kernel_names() { return strvec_t{}; }
+    static event_val_t       get_event_values(const char*) { return event_val_t{}; }
+    static metric_val_t      get_metric_values(const char*) { return metric_val_t{}; }
+    TIMEMORY_NODISCARD const strvec_t& get_event_names() const { return m_event_names; }
+    TIMEMORY_NODISCARD const strvec_t& get_metric_names() const { return m_metric_names; }
 
-    kernel_results_t get_kernel_events_and_metrics(const strvec_t&)
+    static kernel_results_t get_kernel_events_and_metrics(const strvec_t&)
     {
         return kernel_results_t{};
     }
@@ -1126,7 +1123,7 @@ protected:
         return end();
     }
 
-protected:
+private:
     using atomic_u64_t        = std::atomic<uint64_t>;
     using shared_atomic_u64_t = std::shared_ptr<atomic_u64_t>;
 

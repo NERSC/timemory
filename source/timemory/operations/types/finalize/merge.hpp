@@ -73,11 +73,15 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 
     auto _copy_hash_ids = [&]() {
         for(const auto& itr : (*rhs.get_hash_ids()))
+        {
             if(lhs.m_hash_ids->find(itr.first) == lhs.m_hash_ids->end())
                 (*lhs.m_hash_ids)[itr.first] = itr.second;
+        }
         for(const auto& itr : (*rhs.get_hash_aliases()))
+        {
             if(lhs.m_hash_aliases->find(itr.first) == lhs.m_hash_aliases->end())
                 (*lhs.m_hash_aliases)[itr.first] = itr.second;
+        }
     };
 
     // if self is not initialized but itr is, copy data
@@ -91,12 +95,10 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         _copy_hash_ids();
         return;
     }
-    else
-    {
-        _copy_hash_ids();
-    }
 
-    if(rhs.size() == 0 || !rhs.data().has_head())
+    _copy_hash_ids();
+
+    if(rhs.empty() || !rhs.data().has_head())
         return;
 
     int64_t num_merged     = 0;
@@ -112,9 +114,11 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
             if(rhs.graph().is_valid(pitr) && pitr)
             {
                 if(settings::debug() || settings::verbose() > 2)
+                {
                     PRINT_HERE("[%s]> worker is merging %i records into %i records",
                                Type::get_label().c_str(), (int) rhs.size(),
                                (int) lhs.size());
+                }
 
                 pre_order_iterator pos = master_entry;
 
@@ -132,8 +136,10 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
                 }
 
                 if(settings::debug() || settings::verbose() > 2)
+                {
                     PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
                                (int) lhs.size());
+                }
 
                 // remove the entry from this graph since it has been added
                 rhs.graph().erase(entry.second);
@@ -231,14 +237,18 @@ merge<Type, true>::merge(result_type& dst, result_type& src)
     auto   _verbose  = (_settings) ? _settings->get_verbose() : 1;
 
     if(_debug || _verbose > 0)
+    {
         fprintf(stderr, "Merging %lu new records into %lu existing records\n",
                 (unsigned long) src.size(), (unsigned long) dst.size());
+    }
 
     for(auto& itr : src)
     {
         if(_debug || _verbose > 3)
+        {
             fprintf(stderr, "Checking %lu of %lu...", (unsigned long) cnt++,
                     (unsigned long) src.size());
+        }
 
         auto idx = _get_index(itr);
         if(idx < 0)
@@ -261,8 +271,10 @@ merge<Type, true>::merge(result_type& dst, result_type& src)
     }
 
     if(_debug || _verbose > 0)
+    {
         fprintf(stderr, "Merged %lu duplicates into %lu records\n", (unsigned long) ndup,
                 (unsigned long) dst.size());
+    }
 
     // shrink the reserved memory
     dst.shrink_to_fit();
@@ -479,11 +491,15 @@ merge<Type, false>::merge(storage_type& lhs, storage_type& rhs)
         l.lock();
 
     for(const auto& itr : *rhs.get_hash_ids())
+    {
         if(lhs.m_hash_ids->find(itr.first) == lhs.m_hash_ids->end())
             (*lhs.m_hash_ids)[itr.first] = itr.second;
+    }
     for(const auto& itr : (*rhs.get_hash_aliases()))
+    {
         if(lhs.m_hash_aliases->find(itr.first) == lhs.m_hash_aliases->end())
             (*lhs.m_hash_aliases)[itr.first] = itr.second;
+    }
 }
 //
 //--------------------------------------------------------------------------------------//

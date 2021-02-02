@@ -115,13 +115,13 @@ public:
 
 public:
     // Accumulated values
-    inline int64_t           get_count() const { return m_cnt; }
-    inline const value_type& get_min() const { return m_min; }
-    inline const value_type& get_max() const { return m_max; }
-    inline const value_type& get_sum() const { return m_sum; }
-    inline const value_type& get_sqr() const { return m_sqr; }
-    inline value_type        get_mean() const { return m_sum / m_cnt; }
-    inline value_type        get_variance() const
+    TIMEMORY_NODISCARD inline int64_t           get_count() const { return m_cnt; }
+    TIMEMORY_NODISCARD inline const value_type& get_min() const { return m_min; }
+    TIMEMORY_NODISCARD inline const value_type& get_max() const { return m_max; }
+    TIMEMORY_NODISCARD inline const value_type& get_sum() const { return m_sum; }
+    TIMEMORY_NODISCARD inline const value_type& get_sqr() const { return m_sqr; }
+    TIMEMORY_NODISCARD inline value_type        get_mean() const { return m_sum / m_cnt; }
+    TIMEMORY_NODISCARD inline value_type        get_variance() const
     {
         if(m_cnt < 2)
         {
@@ -144,7 +144,7 @@ public:
         return compute_variance();
     }
 
-    inline value_type get_stddev() const
+    TIMEMORY_NODISCARD inline value_type get_stddev() const
     {
         return compute_type::sqrt(compute_type::abs(get_variance()));
     }

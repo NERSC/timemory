@@ -44,24 +44,36 @@ struct base_data<Tp, 0>
 {
     using value_type = null_type;
 
-    TIMEMORY_INLINE value_type get_value() const { return value_type{}; }
-    TIMEMORY_INLINE value_type get_accum() const { return value_type{}; }
-    TIMEMORY_INLINE value_type get_last() const { return value_type{}; }
-    TIMEMORY_INLINE void       set_value(value_type) {}
-    TIMEMORY_INLINE void       set_accum(value_type) {}
-    TIMEMORY_INLINE void       set_last(value_type) {}
+    TIMEMORY_NODISCARD TIMEMORY_INLINE value_type get_value() const
+    {
+        return value_type{};
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE value_type get_accum() const
+    {
+        return value_type{};
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE value_type get_last() const
+    {
+        return value_type{};
+    }
+    TIMEMORY_INLINE void set_value(value_type) {}
+    TIMEMORY_INLINE void set_accum(value_type) {}
+    TIMEMORY_INLINE void set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
 
-    base_data& operator=(base_data&&) = default;
-    base_data(base_data&&)            = default;
+    base_data& operator=(base_data&&) = default;  // NOLINT
+    base_data(base_data&&)            = default;  // NOLINT
 
     base_data(const base_data&) = default;
     base_data& operator=(const base_data&) = default;
 
     TIMEMORY_INLINE value_type load(bool) { return value_type{}; }
-    TIMEMORY_INLINE value_type load(bool) const { return value_type{}; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE value_type load(bool) const
+    {
+        return value_type{};
+    }
 
     void plus(const value_type&) {}
     void minus(const value_type&) {}
@@ -85,9 +97,9 @@ struct base_data<Tp, 0>
     {}
 
 protected:
-    value_type value = {};
-    value_type accum = {};
-    value_type last  = {};
+    value_type value = {};  // NOLINT
+    value_type accum = {};  // NOLINT
+    value_type last  = {};  // NOLINT
 };
 //
 template <typename Tp>
@@ -98,18 +110,27 @@ struct base_data<Tp, 1>
     using accum_type = empty_type;
     using last_type  = empty_type;
 
-    TIMEMORY_INLINE const value_type& get_value() const { return value; }
-    TIMEMORY_INLINE const value_type& get_accum() const { return value; }
-    TIMEMORY_INLINE const value_type& get_last() const { return value; }
-    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void              set_accum(value_type) {}
-    TIMEMORY_INLINE void              set_last(value_type) {}
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_value() const
+    {
+        return value;
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_accum() const
+    {
+        return value;
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_last() const
+    {
+        return value;
+    }
+    TIMEMORY_INLINE void set_value(value_type v) { value = v; }
+    TIMEMORY_INLINE void set_accum(value_type) {}
+    TIMEMORY_INLINE void set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
 
-    base_data& operator=(base_data&&) = default;
-    base_data(base_data&&)            = default;
+    base_data& operator=(base_data&&) = default;  // NOLINT
+    base_data(base_data&&)            = default;  // NOLINT
 
     base_data(const base_data&) = default;
     base_data& operator=(const base_data&) = default;
@@ -121,7 +142,10 @@ struct base_data<Tp, 1>
     }
 
     TIMEMORY_INLINE value_type& load(bool) { return value; }
-    TIMEMORY_INLINE const value_type& load(bool) const { return value; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& load(bool) const
+    {
+        return value;
+    }
 
     void plus(const value_type& lhs)
     {
@@ -144,27 +168,27 @@ struct base_data<Tp, 1>
     }
 
     template <typename Up>
-    auto plus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(), void())
+    auto plus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(), void())
     {
         value = math::compute<value_type>::plus(value, std::forward<Up>(rhs).get_value());
     }
 
     template <typename Up>
-    auto minus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(), void())
+    auto minus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(), void())
     {
         value =
             math::compute<value_type>::minus(value, std::forward<Up>(rhs).get_value());
     }
 
     template <typename Up>
-    auto multiply(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(), void())
+    auto multiply(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(), void())
     {
         value =
             math::compute<value_type>::multiply(value, std::forward<Up>(rhs).get_value());
     }
 
     template <typename Up>
-    auto divide(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(), void())
+    auto divide(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(), void())
     {
         value =
             math::compute<value_type>::divide(value, std::forward<Up>(rhs).get_value());
@@ -180,7 +204,7 @@ protected:
     void reset() { value = Tp{}; }
 
 protected:
-    value_type value = Tp{};
+    value_type value = Tp{};  // NOLINT
 };
 //
 template <typename Tp>
@@ -194,18 +218,27 @@ struct base_data<Tp, 2>
     using accum_type = Tp;
     using last_type  = empty_type;
 
-    TIMEMORY_INLINE const value_type& get_value() const { return value; }
-    TIMEMORY_INLINE const value_type& get_accum() const { return accum; }
-    TIMEMORY_INLINE const value_type& get_last() const { return value; }
-    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void              set_accum(value_type v) { accum = v; }
-    TIMEMORY_INLINE void              set_last(value_type) {}
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_value() const
+    {
+        return value;
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_accum() const
+    {
+        return accum;
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_last() const
+    {
+        return value;
+    }
+    TIMEMORY_INLINE void set_value(value_type v) { value = v; }
+    TIMEMORY_INLINE void set_accum(value_type v) { accum = v; }
+    TIMEMORY_INLINE void set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
 
-    base_data& operator=(base_data&&) = default;
-    base_data(base_data&&)            = default;
+    base_data& operator=(base_data&&) = default;  // NOLINT
+    base_data(base_data&&)            = default;  // NOLINT
 
     base_data(const base_data& rhs) = default;
     base_data& operator=(const base_data& rhs) = default;
@@ -220,7 +253,7 @@ struct base_data<Tp, 2>
     {
         return (is_transient) ? accum : value;
     }
-    TIMEMORY_INLINE const value_type& load(bool is_transient) const
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& load(bool is_transient) const
     {
         return (is_transient) ? accum : value;
     }
@@ -250,16 +283,16 @@ struct base_data<Tp, 2>
     }
 
     template <typename Up>
-    auto plus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                    std::forward<Up>(rhs).get_accum(), void())
+    auto plus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                    (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value = math::compute<value_type>::plus(value, std::forward<Up>(rhs).get_value());
         accum = math::compute<value_type>::plus(accum, std::forward<Up>(rhs).get_accum());
     }
 
     template <typename Up>
-    auto minus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                     std::forward<Up>(rhs).get_accum(), void())
+    auto minus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                     (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::minus(value, std::forward<Up>(rhs).get_value());
@@ -268,8 +301,8 @@ struct base_data<Tp, 2>
     }
 
     template <typename Up>
-    auto multiply(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                        std::forward<Up>(rhs).get_accum(), void())
+    auto multiply(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                        (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::multiply(value, std::forward<Up>(rhs).get_value());
@@ -278,8 +311,8 @@ struct base_data<Tp, 2>
     }
 
     template <typename Up>
-    auto divide(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                      std::forward<Up>(rhs).get_accum(), void())
+    auto divide(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                      (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::divide(value, std::forward<Up>(rhs).get_value());
@@ -298,8 +331,8 @@ protected:
     }
 
 protected:
-    value_type value = Tp{};
-    value_type accum = Tp{};
+    value_type value = Tp{};  // NOLINT
+    value_type accum = Tp{};  // NOLINT
 };
 //
 template <typename Tp>
@@ -312,18 +345,24 @@ struct base_data<Tp, 3>
     using accum_type = Tp;
     using last_type  = Tp;
 
-    TIMEMORY_INLINE const value_type& get_value() const { return value; }
-    TIMEMORY_INLINE const value_type& get_accum() const { return accum; }
-    TIMEMORY_INLINE const value_type& get_last() const { return last; }
-    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void              set_accum(value_type v) { accum = v; }
-    TIMEMORY_INLINE void              set_last(value_type v) { last = v; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_value() const
+    {
+        return value;
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_accum() const
+    {
+        return accum;
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_last() const { return last; }
+    TIMEMORY_INLINE void set_value(value_type v) { value = v; }
+    TIMEMORY_INLINE void set_accum(value_type v) { accum = v; }
+    TIMEMORY_INLINE void set_last(value_type v) { last = v; }
 
     base_data()  = default;
     ~base_data() = default;
 
-    base_data& operator=(base_data&&) = default;
-    base_data(base_data&&)            = default;
+    base_data& operator=(base_data&&) = default;  // NOLINT
+    base_data(base_data&&)            = default;  // NOLINT
 
     base_data(const base_data& rhs) = default;
     base_data& operator=(const base_data& rhs) = default;
@@ -339,7 +378,7 @@ struct base_data<Tp, 3>
     {
         return (is_transient) ? accum : value;
     }
-    TIMEMORY_INLINE const value_type& load(bool is_transient) const
+    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& load(bool is_transient) const
     {
         return (is_transient) ? accum : value;
     }
@@ -369,16 +408,16 @@ struct base_data<Tp, 3>
     }
 
     template <typename Up>
-    auto plus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                    std::forward<Up>(rhs).get_accum(), void())
+    auto plus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                    (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value = math::compute<value_type>::plus(value, std::forward<Up>(rhs).get_value());
         accum = math::compute<value_type>::plus(accum, std::forward<Up>(rhs).get_accum());
     }
 
     template <typename Up>
-    auto minus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                     std::forward<Up>(rhs).get_accum(), void())
+    auto minus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                     (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::minus(value, std::forward<Up>(rhs).get_value());
@@ -387,8 +426,8 @@ struct base_data<Tp, 3>
     }
 
     template <typename Up>
-    auto multiply(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                        std::forward<Up>(rhs).get_accum(), void())
+    auto multiply(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                        (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::multiply(value, std::forward<Up>(rhs).get_value());
@@ -397,8 +436,8 @@ struct base_data<Tp, 3>
     }
 
     template <typename Up>
-    auto divide(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                      std::forward<Up>(rhs).get_accum(), void())
+    auto divide(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                      (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::divide(value, std::forward<Up>(rhs).get_value());
@@ -415,24 +454,35 @@ protected:
     }
 
 protected:
-    value_type value = Tp{};
-    value_type accum = Tp{};
-    value_type last  = Tp{};
+    value_type value = Tp{};  // NOLINT
+    value_type accum = Tp{};  // NOLINT
+    value_type last  = Tp{};  // NOLINT
 };
 //
 struct base_state
 {
+    TIMEMORY_DEFAULT_OBJECT(base_state)
+
     TIMEMORY_INLINE auto& get_is_running() { return is_running; }
     TIMEMORY_INLINE auto& get_is_on_stack() { return is_on_stack; }
     TIMEMORY_INLINE auto& get_is_transient() { return is_transient; }
     TIMEMORY_INLINE auto& get_is_flat() { return is_flat; }
     TIMEMORY_INLINE auto& get_depth_change() { return depth_change; }
 
-    TIMEMORY_INLINE auto get_is_running() const { return is_running; }
-    TIMEMORY_INLINE auto get_is_on_stack() const { return is_on_stack; }
-    TIMEMORY_INLINE auto get_is_transient() const { return is_transient; }
-    TIMEMORY_INLINE auto get_is_flat() const { return is_flat; }
-    TIMEMORY_INLINE auto get_depth_change() const { return depth_change; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_running() const { return is_running; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_on_stack() const
+    {
+        return is_on_stack;
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_transient() const
+    {
+        return is_transient;
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_flat() const { return is_flat; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_depth_change() const
+    {
+        return depth_change;
+    }
 
     TIMEMORY_INLINE void set_is_running(bool v) { is_running = v; }
     TIMEMORY_INLINE void set_is_on_stack(bool v) { is_on_stack = v; }
@@ -450,11 +500,11 @@ struct base_state
     }
 
 protected:
-    bool is_running   = false;
-    bool is_on_stack  = false;
-    bool is_transient = false;
-    bool is_flat      = false;
-    bool depth_change = false;
+    bool is_running   = false;  // NOLINT
+    bool is_on_stack  = false;  // NOLINT
+    bool is_transient = false;  // NOLINT
+    bool is_flat      = false;  // NOLINT
+    bool depth_change = false;  // NOLINT
 };
 //
 namespace internal

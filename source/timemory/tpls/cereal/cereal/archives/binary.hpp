@@ -62,7 +62,7 @@ public:
     , itsStream(stream)
     {}
 
-    ~BinaryOutputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
+    ~BinaryOutputArchive() TIMEMORY_CEREAL_NOEXCEPT override = default;
 
     //! Writes size bytes of data to the output stream
     void saveBinary(const void* data, std::streamsize size)
@@ -100,7 +100,7 @@ public:
     , itsStream(stream)
     {}
 
-    ~BinaryInputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
+    ~BinaryInputArchive() TIMEMORY_CEREAL_NOEXCEPT override = default;
 
     //! Reads size bytes of data from the input stream
     void loadBinary(void* const data, std::streamsize size)

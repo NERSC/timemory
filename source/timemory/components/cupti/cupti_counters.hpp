@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <numeric>
 #include <set>
 #include <string>
@@ -173,7 +174,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         }
     }
 
-    ~cupti_counters() {}
+    ~cupti_counters()                         = default;
     cupti_counters(const cupti_counters&)     = default;
     cupti_counters(cupti_counters&&) noexcept = default;
     cupti_counters& operator                  =(const cupti_counters& rhs)
@@ -199,11 +200,11 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         configure();
         value_type tmp;
         auto&      _profiler = _get_profiler();
-        if(!_profiler.get() || !_get_labels())
+        if(!_profiler || !_get_labels())
             return tmp;
         auto& _labels = *_get_labels();
         _profiler->stop();
-        if(tmp.size() == 0)
+        if(tmp.empty())
         {
             tmp = _profiler->get_events_and_metrics(_labels);
         }
@@ -229,7 +230,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     {
         value           = record();
         auto& _profiler = _get_profiler();
-        if(_profiler.get())
+        if(_profiler)
         {
             m_kernel_value = _profiler->get_kernel_events_and_metrics(*_get_labels());
             _profiler->start();
@@ -243,14 +244,14 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
 
         value_type tmp       = record();
         auto&      _profiler = _get_profiler();
-        if(!_profiler.get())
+        if(!_profiler)
             return;
 
         kernel_results_t kernel_data =
             _profiler->get_kernel_events_and_metrics(*_get_labels());
         kernel_results_t kernel_tmp = kernel_data;
 
-        if(accum.size() == 0)
+        if(accum.empty())
         {
             accum = tmp;
             for(size_type i = 0; i < tmp.size(); ++i)
@@ -267,16 +268,20 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         for(size_t i = 0; i < kernel_tmp.size(); ++i)
         {
             if(i >= m_kernel_accum.size())
+            {
                 m_kernel_accum.resize(i + 1, kernel_tmp[i]);
+            }
             else
+            {
                 m_kernel_accum[i].second += kernel_tmp[i].second;
+            }
         }
 
         value          = std::move(tmp);
         m_kernel_value = std::move(kernel_data);
     }
 
-    string_t get_display() const
+    TIMEMORY_NODISCARD string_t get_display() const
     {
         auto _get_display = [&](std::ostream& os, const cupti::result& obj) {
             auto _label = obj.name;
@@ -284,7 +289,9 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
             auto _width = base_type::get_width();
             auto _flags = base_type::get_format_flags();
 
-            std::stringstream ss, ssv, ssi;
+            std::stringstream ss;
+            std::stringstream ssv;
+            std::stringstream ssi;
             ssv.setf(_flags);
             ssv << std::setw(_width) << std::setprecision(_prec);
             cupti::print(ssv, obj.data);
@@ -305,18 +312,19 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         return ss.str();
     }
 
-    std::vector<double> get() const
+    TIMEMORY_NODISCARD std::vector<double> get() const
     {
         std::vector<double> values;
         const auto&         _data = (is_transient) ? accum : value;
-        for(auto itr : _data)
+        values.reserve(_data.size());
+        for(const auto& itr : _data)
             values.push_back(cupti::get<double>(itr.data));
         return values;
     }
 
     using secondary_type = std::unordered_multimap<std::string, value_type>;
 
-    secondary_type get_secondary() const
+    TIMEMORY_NODISCARD secondary_type get_secondary() const
     {
         secondary_type _data;
         for(const auto& itr : (is_transient) ? m_kernel_accum : m_kernel_value)
@@ -380,7 +388,9 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         auto _combine = [](value_type& _data, const value_type& _other) {
             auto& _labels = *_get_labels();
             if(_data.empty())
+            {
                 _data = _other;
+            }
             else
             {
                 for(size_type i = 0; i < _labels.size(); ++i)
@@ -418,7 +428,9 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     {
         auto _combine = [](value_type& _data, const value_type& _other) {
             if(_data.empty())
+            {
                 _data = _other;
+            }
             else
             {
                 for(size_type i = 0; i < _other.size(); ++i)
@@ -440,7 +452,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     {
         auto _get = [&](const value_type& _data) {
             std::vector<double> values;
-            for(auto itr : _data)
+            for(const auto& itr : _data)
                 values.push_back(cupti::get<double>(itr.data));
             return values;
         };
@@ -480,8 +492,8 @@ private:
         : obj(_obj)
         {}
 
-        const_iterator begin() const { return obj.begin(); }
-        const_iterator end() const { return obj.end(); }
+        TIMEMORY_NODISCARD const_iterator begin() const { return obj.begin(); }
+        TIMEMORY_NODISCARD const_iterator end() const { return obj.end(); }
 
         friend std::ostream& operator<<(std::ostream& os, const writer<Tp>& _obj)
         {
@@ -603,9 +615,9 @@ private:
             auto& _evt = std::get<1>(_dev_init);
             auto& _met = std::get<2>(_dev_init);
 
-            if(_evt.size() > 0 || _met.size() > 0)
+            if(!_evt.empty() || !_met.empty())
             {
-                _profiler.reset(new cupti::profiler(_evt, _met, _dev, _init_cb));
+                _profiler = std::make_shared<cupti::profiler>(_evt, _met, _dev, _init_cb);
                 _used_devs.insert(_dev);
                 for(const auto& itr : _evt)
                     _used_evts.insert(itr);
@@ -623,7 +635,7 @@ private:
             fprintf(stderr, "[cupti_counters]> Warning! No devices available!\n");
         }
 
-        if(_used_devs.size() > 0)
+        if(!_used_devs.empty())
         {
             // if(settings::verbose() > 0 || settings::debug())
             {
@@ -743,7 +755,9 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     {
         bool is_metric = !(_not_metric(itr));
         if(is_metric)
+        {
             _metrics.push_back(itr);
+        }
         else
         {
             fprintf(stderr,
@@ -757,7 +771,9 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     {
         bool is_event = !(_not_event(itr));
         if(is_event)
+        {
             _events.push_back(itr);
+        }
         else
         {
             fprintf(

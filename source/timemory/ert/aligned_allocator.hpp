@@ -180,13 +180,13 @@ public:
 
 public:
     // constructors and destructors
-    aligned_allocator() {}
-    aligned_allocator(const aligned_allocator&) {}
+    aligned_allocator()                         = default;
+    aligned_allocator(const aligned_allocator&) = default;
     aligned_allocator(aligned_allocator&&) noexcept {}
     template <typename U>
     aligned_allocator(const aligned_allocator<U, _Align_v>&)
     {}
-    ~aligned_allocator() {}
+    ~aligned_allocator() = default;
 
 public:
     // operators
@@ -196,10 +196,10 @@ public:
     bool operator==(const aligned_allocator&) const { return true; }
 
 public:
-    Tp*       address(Tp& r) const { return &r; }
-    const Tp* address(const Tp& s) const { return &s; }
+    TIMEMORY_NODISCARD Tp*   address(Tp& r) const { return &r; }
+    TIMEMORY_NODISCARD const Tp* address(const Tp& s) const { return &s; }
 
-    std::size_t max_size() const
+    TIMEMORY_NODISCARD std::size_t max_size() const
     {
         // avoid signed/unsigned warnings independent of size_t definition
         return (static_cast<std::size_t>(0) - static_cast<std::size_t>(1)) / sizeof(Tp);
@@ -226,7 +226,7 @@ public:
 
     void destroy(Tp* const p) const { p->~Tp(); }
 
-    Tp* allocate(const std::size_t n) const
+    TIMEMORY_NODISCARD Tp* allocate(const std::size_t n) const
     {
         if(n == 0)
             return nullptr;
@@ -260,7 +260,7 @@ public:
 
     // same for all allocators that ignore hints.
     template <typename U>
-    Tp* allocate(const std::size_t n, const U* /* const hint */) const
+    TIMEMORY_NODISCARD Tp* allocate(const std::size_t n, const U* /* const hint */) const
     {
         return allocate(n);
     }

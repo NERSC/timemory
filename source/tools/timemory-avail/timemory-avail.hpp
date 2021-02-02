@@ -45,6 +45,7 @@
 #include <stack>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #if !defined(TIMEMORY_CEREAL_EPILOGUE_FUNCTION_NAME)
@@ -79,12 +80,12 @@ public:
     SettingsTextArchive(array_type& stream, unique_set exclude)
     : OutputArchive<SettingsTextArchive>(this)
     , output_stream(&stream)
-    , exclude_stream(exclude)
+    , exclude_stream(std::move(exclude))
     {
         name_counter.push(0);
     }
 
-    ~SettingsTextArchive() {}
+    ~SettingsTextArchive() override = default;
 
     void saveBinaryValue(const void* data, size_t size, const char* name = nullptr)
     {
@@ -106,13 +107,13 @@ public:
         if(exclude_stream.count(name) > 0)
             return;
 
-        if(current_entry && value_keys.count(name) > 0)
+        if((current_entry != nullptr) && value_keys.count(name) > 0)
         {
             current_entry->insert({ name, "" });
             current_value = &((*current_entry)[name]);
             return;
         }
-        else if(value_keys.count(name) > 0)
+        if(value_keys.count(name) > 0)
         {
             return;
         }
@@ -262,9 +263,13 @@ TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(SettingsTextArchive& ar, const NameValuePair<
 {
     ar.setNextName(t.name);
     if(std::is_same<T, std::string>::value)
+    {
         ar.setNextType("string");
+    }
     else
+    {
         ar.setNextType(tim::demangle<T>().c_str());
+    }
     ar(t.value);
 }
 

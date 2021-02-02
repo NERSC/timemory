@@ -105,8 +105,10 @@ get_hash_identifier(const graph_hash_map_ptr_t&   _hash_map,
     auto _alias_itr = _hash_alias->find(_hash_id);
 
     if(_map_itr != _hash_map->end())
+    {
         return _map_itr->second;
-    else if(_alias_itr != _hash_alias->end())
+    }
+    if(_alias_itr != _hash_alias->end())
     {
         _map_itr = _hash_map->find(_alias_itr->second);
         if(_map_itr != _hash_map->end())

@@ -336,9 +336,9 @@ struct cpu_roofline
     static void extra_serialization(Archive& ar)
     {
         auto _ert_data = get_ert_data();
-        if(!_ert_data.get())  // for input
-            _ert_data.reset(new ert_data_t());
-        ar(cereal::make_nvp("roofline", *_ert_data.get()));
+        if(!_ert_data)  // for input
+            _ert_data = std::make_shared<ert_data_t>();
+        ar(cereal::make_nvp("roofline", *_ert_data));
     }
 
     //----------------------------------------------------------------------------------//
@@ -384,10 +384,13 @@ struct cpu_roofline
     static std::string label()
     {
         if(settings::roofline_type_labels_cpu() || settings::roofline_type_labels())
+        {
             return std::string("cpu_roofline_") + get_type_string() + "_" +
                    get_mode_string();
-        else
+        }
+        {
             return std::string("cpu_roofline_") + get_mode_string();
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -424,12 +427,12 @@ public:
     ~cpu_roofline()                           = default;
     cpu_roofline(const cpu_roofline& rhs)     = default;
     cpu_roofline(cpu_roofline&& rhs) noexcept = default;
-    this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) noexcept = default;
+    cpu_roofline& operator=(const cpu_roofline&) = default;
+    cpu_roofline& operator=(cpu_roofline&&) noexcept = default;
 
     //----------------------------------------------------------------------------------//
 
-    std::vector<double> get() const
+    TIMEMORY_NODISCARD std::vector<double> get() const
     {
         auto _data = m_papi_vector->get();
         _data.push_back(m_wall_clock->get());
@@ -504,7 +507,7 @@ public:
     //
     //==================================================================================//
 
-    std::vector<double> get_display() const { return get(); }
+    TIMEMORY_NODISCARD std::vector<double> get_display() const { return get(); }
 
     //----------------------------------------------------------------------------------//
 
@@ -558,9 +561,13 @@ public:
             ss_value.setf(_flags);
             ss_value << std::setw(_width) << std::setprecision(_prec) << _value.at(i);
             if(!_disp.at(i).empty())
+            {
                 ss_extra << " " << _disp.at(i);
+            }
             else if(!_label.at(i).empty())
+            {
                 ss_extra << " " << _label.at(i);
+            }
             os << sst.str() << ss_value.str() << ss_extra.str();
             if(i + 1 < n)
                 os << ", ";
@@ -617,7 +624,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    strvec_t label_array() const
+    TIMEMORY_NODISCARD strvec_t label_array() const
     {
         strvec_t arr = m_papi_vector->label_array();
         arr.push_back("Runtime");
@@ -627,7 +634,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    strvec_t description_array() const
+    TIMEMORY_NODISCARD strvec_t description_array() const
     {
         strvec_t arr = m_papi_vector->description_array();
         arr.push_back("Runtime");
@@ -636,7 +643,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    strvec_t display_unit_array() const
+    TIMEMORY_NODISCARD strvec_t display_unit_array() const
     {
         strvec_t arr = m_papi_vector->display_unit_array();
         arr.push_back(count_type::get_display_unit());
@@ -646,7 +653,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    std::vector<int64_t> unit_array() const
+    TIMEMORY_NODISCARD std::vector<int64_t> unit_array() const
     {
         auto arr = m_papi_vector->unit_array();
         arr.push_back(count_type::get_unit());

@@ -73,8 +73,10 @@ main(int argc, char** argv)
     fname << monitoring_pid;
     std::ofstream ofs(fname.str().c_str());
     if(!ofs)
+    {
         return (fprintf(stderr, "Error opening '%s'...\n", fname.str().c_str()),
                 EXIT_FAILURE);
+    }
 
     // we need to shift args by 2, e.g. ignore 'timem-pid <PID>'
     auto argpv = tim::argparse::argument_vector(argc, argv);

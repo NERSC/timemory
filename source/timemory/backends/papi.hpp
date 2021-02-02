@@ -302,7 +302,7 @@ get_event_info(int evt_type)
 #if defined(TIMEMORY_USE_PAPI)
     PAPI_get_event_info(evt_type, &evt_info);
 #else
-    consume_parameters(std::move(evt_type));
+    consume_parameters(evt_type);
 #endif
     return evt_info;
 }
@@ -846,7 +846,7 @@ available_events_info()
     {
         for(int i = 0; i < TIMEMORY_PAPI_PRESET_EVENTS; ++i)
         {
-            if(get_timemory_papi_presets()[i].symbol == NULL)
+            if(get_timemory_papi_presets()[i].symbol == nullptr)
                 continue;
 
             string_t _sym   = get_timemory_papi_presets()[i].symbol;
@@ -888,11 +888,9 @@ get_hwcounter_info(const std::string& event_code_str)
         return hardware_counters::info(_avail, hardware_counters::api::papi, idx, _off,
                                        _sym, _pysym, _short_desc, _long_desc);
     }
-    else
-    {
-        return hardware_counters::info(false, hardware_counters::api::papi, -1, 0,
-                                       event_code_str, "", "", "");
-    }
+
+    return hardware_counters::info(false, hardware_counters::api::papi, -1, 0,
+                                   event_code_str, "", "", "");
 }
 
 //--------------------------------------------------------------------------------------//

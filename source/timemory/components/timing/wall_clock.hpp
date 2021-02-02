@@ -57,11 +57,11 @@ struct wall_clock : public base<wall_clock, int64_t>
         return tim::get_clock_real_now<int64_t, ratio_t>();
     }
 
-    double get() const noexcept
+    TIMEMORY_NODISCARD double get() const noexcept
     {
         return static_cast<double>(load()) / ratio_t::den * get_unit();
     }
-    auto get_display() const noexcept { return get(); }
+    TIMEMORY_NODISCARD auto get_display() const noexcept { return get(); }
 
     void start() noexcept { value = record(); }
     void stop() noexcept { accum += (value = (record() - value)); }

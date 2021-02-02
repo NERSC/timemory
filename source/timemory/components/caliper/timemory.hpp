@@ -168,9 +168,9 @@ struct caliper_config
         return _instance;
     }
 
-    void configure(const arg_vec_t& _args, const arg_map_t& _kwargs = {})
+    static void configure(const arg_vec_t& _args, const arg_map_t& _kwargs = {})
     {
-        std::string cmd = "";
+        std::string cmd{};
         {
             std::stringstream ss;
             for(auto& itr : _args)
@@ -184,7 +184,9 @@ struct caliper_config
             {
                 auto _arg = itr.second;
                 if(_arg.empty())
+                {
                     ss << "," << itr.first;
+                }
                 else
                 {
                     ss << "," << itr.first << "=(" << _arg << ")";
@@ -203,8 +205,10 @@ struct caliper_config
                 std::cerr << "Configuring caliper with :: " << cmd << std::endl;
             get_manager().add(cmd.c_str());
             if(get_manager().error())
+            {
                 std::cerr << "Caliper config error: " << get_manager().error_msg()
                           << std::endl;
+            }
         }
         else
         {

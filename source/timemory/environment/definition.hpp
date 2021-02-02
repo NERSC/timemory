@@ -143,6 +143,7 @@ env_settings::print(std::ostream& os) const
 //
 //--------------------------------------------------------------------------------------//
 //
+// NOLINTNEXTLINE
 TIMEMORY_ENVIRONMENT_LINKAGE(void)
 env_settings::collapse()
 {
@@ -231,7 +232,9 @@ get_env(const std::string& env_id, bool _default)
         std::string var = std::string(env_var);
         bool        val = true;
         if(var.find_first_not_of("0123456789") == std::string::npos)
+        {
             val = (bool) atoi(var.c_str());
+        }
         else
         {
             for(auto& itr : var)

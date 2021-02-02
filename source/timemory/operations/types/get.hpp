@@ -63,7 +63,7 @@ struct get
 private:
     template <typename U = type>
     auto get_sfinae(const U& obj, int, int, void*& ptr, size_t nhash)
-        -> decltype(obj.get(ptr, nhash), void())
+        -> decltype((void) obj.get(ptr, nhash), void())
     {
         if(!ptr)
             obj.get(ptr, nhash);
@@ -71,7 +71,7 @@ private:
 
     template <typename U = type, typename base_type = typename U::base_type>
     auto get_sfinae(const U& obj, int, long, void*& ptr, size_t nhash)
-        -> decltype(static_cast<const base_type&>(obj).get(ptr, nhash), void())
+        -> decltype((void) static_cast<const base_type&>(obj).get(ptr, nhash), void())
     {
         if(!ptr)
             static_cast<const base_type&>(obj).get(ptr, nhash);
@@ -99,16 +99,25 @@ struct get_data
     using type      = Tp;
     using data_type = decltype(std::declval<type>().get());
 
-    TIMEMORY_DELETED_OBJECT(get_data)
+    TIMEMORY_DEFAULT_OBJECT(get_data)
 
     //----------------------------------------------------------------------------------//
     // SFINAE
     //
+    get_data(const type& obj, data_type& dst) { sfinae(obj, 0, 0, dst); }
+
     template <typename Dp, typename... Args>
     get_data(const type& obj, Dp& dst, Args&&... args)
     {
         static_assert(std::is_same<Dp, data_type>::value, "Error! Dp != type::get()");
         sfinae(obj, 0, 0, dst, std::forward<Args>(args)...);
+    }
+
+    data_type operator()(const type& _obj)
+    {
+        data_type _data{};
+        sfinae(_obj, 0, 0, _data);
+        return _data;
     }
 
 private:
@@ -118,7 +127,7 @@ private:
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
     auto sfinae(const Up& obj, int, int, Dp& dst, Args&&... args)
-        -> decltype(obj.get(std::forward<Args>(args)...), void())
+        -> decltype((void) obj.get(std::forward<Args>(args)...), void())
     {
         dst = obj.get(std::forward<Args>(args)...);
     }
@@ -129,7 +138,7 @@ private:
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
     auto sfinae(const Up& obj, int, long, Dp& dst, Args&&...)
-        -> decltype(obj.get(), void())
+        -> decltype((void) obj.get(), void())
     {
         dst = obj.get();
     }
@@ -168,17 +177,26 @@ struct get_labeled_data
     using type      = Tp;
     using data_type = std::tuple<std::string, decltype(std::declval<type>().get())>;
 
-    TIMEMORY_DELETED_OBJECT(get_labeled_data)
+    TIMEMORY_DEFAULT_OBJECT(get_labeled_data)
 
     //----------------------------------------------------------------------------------//
     // SFINAE
     //
+    get_labeled_data(const type& obj, data_type& dst) { sfinae(obj, 0, 0, dst); }
+
     template <typename Dp, typename... Args>
     get_labeled_data(const type& obj, Dp& dst, Args&&... args)
     {
         static_assert(std::is_same<Dp, data_type>::value,
                       "Error! Dp != tuple<string, type::get()>");
         sfinae(obj, 0, 0, dst, std::forward<Args>(args)...);
+    }
+
+    data_type operator()(const type& _obj)
+    {
+        data_type _data{};
+        sfinae(_obj, 0, 0, _data);
+        return _data;
     }
 
 private:
@@ -188,7 +206,7 @@ private:
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
     auto sfinae(const Up& obj, int, int, Dp& dst, Args&&... args)
-        -> decltype(obj.get(std::forward<Args>(args)...), void())
+        -> decltype((void) obj.get(std::forward<Args>(args)...), void())
     {
         dst = data_type(type::get_label(), obj.get(std::forward<Args>(args)...));
     }
@@ -199,7 +217,7 @@ private:
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
     auto sfinae(const Up& obj, int, long, Dp& dst, Args&&...)
-        -> decltype(obj.get(), void())
+        -> decltype((void) obj.get(), void())
     {
         dst = data_type(type::get_label(), obj.get());
     }

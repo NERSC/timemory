@@ -291,8 +291,10 @@ enumerate(const std::string& key)
     auto& _enum = std::get<1>(_data);
     auto  _key  = settings::tolower(key);
     for(size_t i = 0; i < _vec.size(); ++i)
+    {
         if(_vec[i](_key.c_str()))
             return _enum[i];
+    }
 
     std::get<2>(_data)(key.c_str());
     return TIMEMORY_COMPONENTS_END;

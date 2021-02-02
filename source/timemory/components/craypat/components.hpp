@@ -224,8 +224,8 @@ struct craypat_counters : base<craypat_counters, std::vector<unsigned long>>
         return strvector_t(get_persistent_data().m_events, "");
     }
 
-    value_type get() const { return base_type::load(); }
-    value_type get_display() const { return base_type::load(); }
+    TIMEMORY_NODISCARD value_type get() const { return base_type::load(); }
+    TIMEMORY_NODISCARD value_type get_display() const { return base_type::load(); }
 
     void start() { value = record(); }
 
@@ -269,8 +269,8 @@ struct craypat_heap_stats : base<craypat_heap_stats, void>
     static std::string label() { return "craypat_heap_stats"; }
     static std::string description() { return "Undocumented by 'pat_api.h'"; }
 
-    void start() {}
-    void stop() { backend::craypat::heap_stats(); }
+    void        start() {}
+    static void stop() { backend::craypat::heap_stats(); }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -299,10 +299,10 @@ struct craypat_flush_buffer : base<craypat_flush_buffer, unsigned long>
         return _nbytes;
     }
 
-    double get() const { return m_nbytes; }
-    auto   get_display() const { return get(); }
-    void   start() {}
-    void   stop()
+    TIMEMORY_NODISCARD double get() const { return m_nbytes; }
+    TIMEMORY_NODISCARD auto   get_display() const { return get(); }
+    void                      start() {}
+    void                      stop()
     {
         value = record();
         accum += record();

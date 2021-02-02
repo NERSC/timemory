@@ -1,15 +1,16 @@
 // Tencent is pleased to support the open source community by making RapidJSON available.
-// 
-// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip. All rights reserved.
+//
+// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip. All rights
+// reserved.
 //
 // Licensed under the MIT License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
 //
 // http://opensource.org/licenses/MIT
 //
-// Unless required by applicable law or agreed to in writing, software distributed 
-// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
 #ifndef TIMEMORY_CEREAL_RAPIDJSON_TIMEMORY_CEREAL_RAPIDJSON_H_
@@ -456,9 +457,19 @@ TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 //!@cond TIMEMORY_CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
 #    endif
 TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
-template <bool x> struct STATIC_ASSERTION_FAILURE;
-template <> struct STATIC_ASSERTION_FAILURE<true> { enum { value = 1 }; };
-template <size_t x> struct StaticAssertTest {};
+template <bool x>
+struct STATIC_ASSERTION_FAILURE;
+template <>
+struct STATIC_ASSERTION_FAILURE<true>
+{
+    enum
+    {
+        value = 1
+    };
+};
+template <size_t x>
+struct StaticAssertTest
+{};
 TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 
 #    if defined(__GNUC__) || defined(__clang__)
@@ -469,7 +480,7 @@ TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 #    endif
 #    ifndef __clang__
 //!@endcond
-#endif
+#    endif
 
 /*! \def TIMEMORY_CEREAL_RAPIDJSON_STATIC_ASSERT
     \brief (Internal) macro to check for conditions at compile-time
@@ -707,14 +718,15 @@ TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END
 TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_BEGIN
 
 //! Type of JSON value
-enum Type {
-    kNullType = 0,      //!< null
-    kFalseType = 1,     //!< false
-    kTrueType = 2,      //!< true
-    kObjectType = 3,    //!< object
-    kArrayType = 4,     //!< array 
-    kStringType = 5,    //!< string
-    kNumberType = 6     //!< number
+enum Type
+{
+    kNullType   = 0,  //!< null
+    kFalseType  = 1,  //!< false
+    kTrueType   = 2,  //!< true
+    kObjectType = 3,  //!< object
+    kArrayType  = 4,  //!< array
+    kStringType = 5,  //!< string
+    kNumberType = 6   //!< number
 };
 
 TIMEMORY_CEREAL_RAPIDJSON_NAMESPACE_END

@@ -69,9 +69,15 @@ public:
     struct captured
     {
     public:
-        const std::string&     get_id() const { return std::get<0>(m_result); }
-        const hash_value_type& get_hash() const { return std::get<1>(m_result); }
-        const result_type&     get() const { return m_result; }
+        TIMEMORY_NODISCARD const std::string& get_id() const
+        {
+            return std::get<0>(m_result);
+        }
+        TIMEMORY_NODISCARD const hash_value_type& get_hash() const
+        {
+            return std::get<1>(m_result);
+        }
+        TIMEMORY_NODISCARD const result_type& get() const { return m_result; }
 
         explicit captured(result_type _result)
         : m_result(std::move(_result))
@@ -79,7 +85,7 @@ public:
 
         TIMEMORY_DEFAULT_OBJECT(captured)
 
-    protected:
+    private:
         friend class source_location;
         result_type m_result = result_type("", 0);
 
@@ -100,7 +106,9 @@ public:
                 {
                     auto&& _suffix = join_type::join("", std::forward<ArgsT>(_args)...);
                     if(_suffix.empty())
+                    {
                         m_result = result_type(obj.m_prefix, add_hash_id(obj.m_prefix));
+                    }
                     else
                     {
                         auto _tmp = join_type::join('/', obj.m_prefix.c_str(), _suffix);
@@ -268,16 +276,24 @@ protected:
         if(_line < 0)
         {
             if(_filename.length() > 0)
+            {
                 m_prefix = join_type::join("", _func, '@', _filename);
+            }
             else
+            {
                 m_prefix = _func;
+            }
         }
         else
         {
             if(_filename.length() > 0)
+            {
                 m_prefix = join_type::join("", _func, '@', _filename, ':', _line);
+            }
             else
+            {
                 m_prefix = join_type::join("", _func, ':', _line);
+            }
         }
     }
 

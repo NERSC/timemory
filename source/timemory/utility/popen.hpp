@@ -72,7 +72,7 @@ pclose(TIMEMORY_PIPE* p);
 TIMEMORY_UTILITY_LINKAGE(pid_t)
 fork();
 //
-TIMEMORY_UTILITY_LINKAGE(void)
+TIMEMORY_UTILITY_LINKAGE(void)  // NOLINT
 sanitize_files();
 //
 TIMEMORY_UTILITY_LINKAGE(int)
@@ -81,7 +81,7 @@ open_devnull(int fd);
 TIMEMORY_UTILITY_LINKAGE(void)
 drop_privileges(int permanent);
 //
-TIMEMORY_UTILITY_LINKAGE(void)
+TIMEMORY_UTILITY_LINKAGE(void)  // NOLINT
 restore_privileges();
 //
 inline strvec_t
@@ -158,7 +158,9 @@ launch_process(const char* cmd, const std::string& extra, std::ostream* os)
     auto                       delim = tim::delimit(cmd, " \t");
     tim::popen::TIMEMORY_PIPE* fp    = nullptr;
     if(delim.size() < 2)
+    {
         fp = tim::popen::popen(cmd, nullptr, nullptr);
+    }
     else
     {
         static std::string   _c = "-c";
@@ -180,7 +182,7 @@ launch_process(const char* cmd, const std::string& extra, std::ostream* os)
         perror(ss.str().c_str());
         return false;
     }
-    else if(os)
+    if(os)
     {
         popen::flush_output(*os, fp);
     }

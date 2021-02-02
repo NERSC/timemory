@@ -66,9 +66,13 @@ struct copy
         if(rhs)
         {
             if(!obj)
+            {
                 obj = new type(*rhs);
+            }
             else
+            {
                 *obj = type(*rhs);
+            }
         }
     }
 

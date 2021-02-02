@@ -445,7 +445,7 @@ typedef enum ompt_state_t {
     ompt_state_undefined                        = 0x102
 } ompt_state_t;
 
-typedef uint64_t (*ompt_get_unique_id_t) (void);
+typedef uint64_t (*ompt_get_unique_id_t) (void);  // NOLINT
 
 typedef uint64_t ompd_size_t;
 
@@ -484,7 +484,7 @@ typedef enum ompd_scope_t {
         ompd_rc_nomem = 10,
         } ompd_rc_t;
 
-typedef void (*ompt_interface_fn_t) (void);
+typedef void (*ompt_interface_fn_t) (void);  // NOLINT
 
 typedef ompt_interface_fn_t (*ompt_function_lookup_t) (
     const char *interface_function_name
@@ -502,7 +502,7 @@ typedef struct ompt_frame_t {
     int enter_frame_flags;
 } ompt_frame_t;
 
-typedef void (*ompt_callback_t) (void);
+typedef void (*ompt_callback_t) (void);  // NOLINT
 
 typedef void ompt_device_t;
 
@@ -573,11 +573,11 @@ typedef int (*ompt_get_callback_t) (
     ompt_callback_t *callback
     );
 
-typedef ompt_data_t *(*ompt_get_thread_data_t) (void);
+typedef ompt_data_t *(*ompt_get_thread_data_t) (void);  // NOLINT
 
-typedef int (*ompt_get_num_procs_t) (void);
+typedef int (*ompt_get_num_procs_t) (void);  // NOLINT
 
-typedef int (*ompt_get_num_places_t) (void);
+typedef int (*ompt_get_num_places_t) (void);  // NOLINT
 
 typedef int (*ompt_get_place_proc_ids_t) (
     int place_num,
@@ -585,14 +585,14 @@ typedef int (*ompt_get_place_proc_ids_t) (
     int *ids
     );
 
-typedef int (*ompt_get_place_num_t) (void);
+typedef int (*ompt_get_place_num_t) (void);  // NOLINT
 
 typedef int (*ompt_get_partition_place_nums_t) (
     int place_nums_size,
     int *place_nums
     );
 
-typedef int (*ompt_get_proc_id_t) (void);
+typedef int (*ompt_get_proc_id_t) (void);  // NOLINT
 
 typedef int (*ompt_get_state_t) (
     ompt_wait_id_t *wait_id
@@ -625,9 +625,9 @@ typedef int (*ompt_get_target_info_t) (
     ompt_id_t *host_op_id
     );
 
-typedef int (*ompt_get_num_devices_t) (void);
+typedef int (*ompt_get_num_devices_t) (void);  // NOLINT
 
-typedef void (*ompt_finalize_tool_t) (void);
+typedef void (*ompt_finalize_tool_t) (void);  // NOLINT
 
 typedef int (*ompt_get_device_num_procs_t) (
     ompt_device_t *device

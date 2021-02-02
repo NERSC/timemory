@@ -61,7 +61,7 @@ private:
     //
     template <typename Up, typename Vp = typename Up::value_type,
               enable_if_t<is_enabled<Up>::value, char> = 0>
-    auto sfinae(int) const
+    void sfinae(int) const
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;

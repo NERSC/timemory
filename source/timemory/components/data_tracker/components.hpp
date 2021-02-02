@@ -219,8 +219,11 @@ struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
         handler_type::end(*this, compute_type::divide(val, get_unit()));
     }
 
-    auto get() const { return handler_type::get(*this); }
-    auto get_display() const { return handler_type::get_display(*this); }
+    TIMEMORY_NODISCARD auto get() const { return handler_type::get(*this); }
+    TIMEMORY_NODISCARD auto get_display() const
+    {
+        return handler_type::get_display(*this);
+    }
 
     void set_value(const value_type& v) { value = v; }
 

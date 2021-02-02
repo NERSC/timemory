@@ -62,7 +62,8 @@ struct base_printer : public common_utils
 private:
     template <typename Up>
     auto operator()(std::ostream& _os, const Up& _obj, int) const
-        -> decltype(_obj.get_display(), _obj.get_display_unit(), _obj.get_label(), void())
+        -> decltype((void) _obj.get_display(), (void) _obj.get_display_unit(),
+                    (void) _obj.get_label(), void())
     {
         auto _value = _obj.get_display();
         auto _disp  = _obj.get_display_unit();

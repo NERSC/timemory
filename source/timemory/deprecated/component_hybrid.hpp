@@ -118,8 +118,7 @@ public:
 
 public:
     explicit component_hybrid()
-    : m_store(false)
-    , m_tuple()
+    : m_tuple()
     , m_list()
     {}
 
@@ -156,7 +155,7 @@ public:
         _func(*this);
     }
 
-    ~component_hybrid() {}
+    ~component_hybrid() = default;
 
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
@@ -195,11 +194,11 @@ public:
     const list_t&  get_rhs() const { return m_list; }
 
 public:
-    int64_t  laps() const { return m_tuple.laps(); }
-    string_t key() const { return m_tuple.key(); }
-    uint64_t hash() const { return m_tuple.hash(); }
-    bool     store() const { return m_tuple.store(); }
-    void     rekey(const string_t& _key)
+    TIMEMORY_NODISCARD int64_t laps() const { return m_tuple.laps(); }
+    TIMEMORY_NODISCARD string_t key() const { return m_tuple.key(); }
+    TIMEMORY_NODISCARD uint64_t hash() const { return m_tuple.hash(); }
+    TIMEMORY_NODISCARD bool     store() const { return m_tuple.store(); }
+    void                        rekey(const string_t& _key)
     {
         m_tuple.rekey(_key);
         m_list.rekey(_key);

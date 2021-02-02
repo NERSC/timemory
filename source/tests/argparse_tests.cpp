@@ -637,8 +637,8 @@ TEST_F(argparse_tests, timemory_argparse_vec)
     };
 
     std::cout << "Argument: ";
-    for(size_t i = 0; i < args.size(); ++i)
-        std::cout << args[i] << " ";
+    for(const auto& arg : args)
+        std::cout << arg << " ";
     std::cout << std::endl;
 
     tim::timemory_argparse(args);

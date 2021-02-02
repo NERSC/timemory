@@ -373,7 +373,7 @@ get<Type, true>::operator()(result_type& ret)
     // fix up the prefix based on the actual depth
     auto _compute_modified_prefix = [&](const graph_node& itr) {
         std::string _prefix      = data.get_prefix(itr);
-        std::string _indent      = "";
+        std::string _indent      = {};
         std::string _node_prefix = _get_node_prefix(itr);
 
         int64_t _depth = itr.depth() - 1;

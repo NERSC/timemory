@@ -89,7 +89,7 @@ template <size_t T>
 struct tuple_element_name
 {
     using type = typename to_string_impl<T / 10, T % 10>::type;
-    static const typename type::arr_type c_str() { return type::str; }
+    static typename type::arr_type c_str() { return type::str; }
 };
 
 // unwinds a tuple to save it

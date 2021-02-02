@@ -57,7 +57,7 @@ bool     alphabetical = false;
 bool     all_info     = false;
 bool     force_brief  = false;
 int      padding      = 4;
-string_t regex_key    = "";
+string_t regex_key    = {};
 bool     regex_hl     = false;
 
 //--------------------------------------------------------------------------------------//
@@ -145,7 +145,7 @@ struct get_availability
             description += ". " + metadata_t::extra_description();
         while(itr->empty())
             ++itr;
-        string_t ids_str = "";
+        string_t ids_str = {};
         if(itr != ids_set.end())
             ids_str = TIMEMORY_JOIN("", TIMEMORY_JOIN("", db, *itr++, de));
         for(; itr != ids_set.end(); ++itr)
@@ -196,7 +196,9 @@ template <typename Tp>
 void
 write_entry(std::ostream& os, const Tp& _entry, int64_t _w, bool center, bool mark)
 {
-    stringstream_t ssentry, ssbeg, ss;
+    stringstream_t ssentry;
+    stringstream_t ssbeg;
+    stringstream_t ss;
     ssentry << std::boolalpha << _entry;
     auto _sentry = remove(ssentry.str(), { "tim::", "component::" });
     auto wbeg    = (_w / 2) - (_sentry.length() / 2) - 1;
@@ -204,9 +206,13 @@ write_entry(std::ostream& os, const Tp& _entry, int64_t _w, bool center, bool ma
         wbeg = 1;
     ssbeg << std::setw(wbeg) << "";
     if(mark && markdown)
+    {
         ssbeg << '`' << _sentry << '`';
+    }
     else
+    {
         ssbeg << _sentry;
+    }
 
     ss << std::left << std::setw(_w - 1) << ssbeg.str() << global_delim;
     os << ss.str();
@@ -239,8 +245,10 @@ banner(IntArrayT _breaks, std::array<bool, N> _use, char filler = '-', char deli
     }
     ss << "\n";
     if(_remain != 0)
+    {
         printf("[banner]> non-zero remainder: %i with total: %i\n", (int) _remain,
                (int) _total);
+    }
     return ss.str();
 }
 
@@ -338,7 +346,7 @@ main(int argc, char** argv)
     bool include_components  = false;
     bool include_hw_counters = false;
 
-    std::string file = "";
+    std::string file = {};
 
     using parser_t = tim::argparse::argument_parser;
     parser_t parser("timemory-avail");
@@ -457,9 +465,13 @@ main(int argc, char** argv)
     {
         ofs.open(file.c_str());
         if(ofs)
+        {
             os = &ofs;
+        }
         else
+        {
             std::cerr << "Error opening output file: " << file << std::endl;
+        }
     }
 
     if(!os)
@@ -481,8 +493,10 @@ main(int argc, char** argv)
         write_settings_info(*os, { options[VAL], options[LANG], options[DESC] });
 
     if(include_hw_counters)
+    {
         write_hw_counter_info(
             *os, { true, !force_brief, options[LANG], !options[DESC], options[DESC] });
+    }
 
     return 0;
 }
@@ -503,9 +517,6 @@ struct enumerated_list<TupT<T...>, int_sequence<>>
 {
     using type = type_list<T...>;
 };
-
-using tim::component::nothing;
-using tim::component::placeholder;
 
 template <template <typename...> class TupT, int I, typename... T, int... Idx>
 struct enumerated_list<TupT<T...>, int_sequence<I, Idx...>>
@@ -875,8 +886,10 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
             {
                 os << global_delim;
                 if(options[0])
+                {
                     write_entry(os, subcategories.at(idx), _widths.at(0) - 1, true,
                                 _mark.at(0));
+                }
                 for(size_t i = 1; i < N; ++i)
                 {
                     if(options[i])
@@ -898,11 +911,15 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
             std::stringstream ss;
 
             if(options[0])
+            {
                 write_entry(ss, itr.symbol(), _widths.at(0) - 1, _center.at(0),
                             _mark.at(0));
+            }
             if(options[1])
+            {
                 write_entry(ss, itr.available(), _widths.at(1), _center.at(1),
                             _mark.at(1));
+            }
 
             array_t<string_t, N> _e = { { "", "", itr.python_symbol(),
                                           itr.short_description(),

@@ -169,11 +169,11 @@ public:
     TIMEMORY_INLINE void get(void*& ptr, size_t _typeid_hash) const;
 
     /// retrieve the current measurement value in the units for the type
-    TIMEMORY_INLINE auto get() const { return this->load(); }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get() const { return this->load(); }
 
     /// retrieve the current measurement value in the units for the type in a format
     /// that can be piped to the output stream operator ('<<')
-    TIMEMORY_INLINE auto get_display() const { return this->load(); }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_display() const { return this->load(); }
 
     TIMEMORY_INLINE bool operator<(const base_type& rhs) const
     {
@@ -218,22 +218,22 @@ public:
     /// serialization load (input)
     template <typename Archive, typename Up = Type,
               enable_if_t<!trait::custom_serialization<Up>::value, int> = 0>
-    void load(Archive& ar, const unsigned int);
+    void load(Archive& ar, unsigned int);
 
     /// serialization store (output)
     template <typename Archive, typename Up = Type,
               enable_if_t<!trait::custom_serialization<Up>::value, int> = 0>
-    void save(Archive& ar, const unsigned int version) const;
+    void save(Archive& ar, unsigned int version) const;
 
     template <typename Vp, typename Up = Tp,
               enable_if_t<trait::sampler<Up>::value, int> = 0>
     static void add_sample(Vp&&);  /// add a sample
 
     /// get number of measurement
-    TIMEMORY_INLINE int64_t get_laps() const { return laps; }
-    TIMEMORY_INLINE auto    get_iterator() const { return graph_itr; }
-    TIMEMORY_INLINE void    set_laps(int64_t v) { laps = v; }
-    TIMEMORY_INLINE void    set_iterator(graph_iterator itr) { graph_itr = itr; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE int64_t get_laps() const { return laps; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_iterator() const { return graph_itr; }
+    TIMEMORY_INLINE void                    set_laps(int64_t v) { laps = v; }
+    TIMEMORY_INLINE void set_iterator(graph_iterator itr) { graph_itr = itr; }
 
     using base_state::get_depth_change;
     using base_state::get_is_flat;
@@ -257,7 +257,7 @@ protected:
     static base_storage_type* get_storage();
 
     TIMEMORY_INLINE decltype(auto) load() { return data_type::load(get_is_transient()); }
-    TIMEMORY_INLINE decltype(auto) load() const
+    TIMEMORY_NODISCARD TIMEMORY_INLINE decltype(auto) load() const
     {
         return data_type::load(get_is_transient());
     }
@@ -416,8 +416,8 @@ public:
     TIMEMORY_INLINE void set_started();
     TIMEMORY_INLINE void set_stopped();
     TIMEMORY_INLINE void reset();
-    TIMEMORY_INLINE int64_t get_laps() const { return 0; }
-    TIMEMORY_INLINE void*   get_iterator() const { return nullptr; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE int64_t get_laps() const { return 0; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE void* get_iterator() const { return nullptr; }
 
     TIMEMORY_INLINE void set_laps(int64_t) {}
     TIMEMORY_INLINE void set_iterator(void*) {}
@@ -553,8 +553,11 @@ public:
     TIMEMORY_INLINE void get(void*&, size_t) const {}
     TIMEMORY_INLINE void get_opaque_data(void*&, size_t) const {}
 
-    TIMEMORY_INLINE int64_t get_laps() const { return laps; }
-    TIMEMORY_INLINE graph_iterator get_iterator() const { return graph_itr; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE int64_t get_laps() const { return laps; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE graph_iterator get_iterator() const
+    {
+        return graph_itr;
+    }
 
     TIMEMORY_INLINE void set_laps(int64_t v) { laps = v; }
     TIMEMORY_INLINE void set_iterator(graph_iterator v) { graph_itr = v; }

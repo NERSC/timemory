@@ -113,12 +113,9 @@ template <typename Up, typename Unit,
 int64_t
 base<Tp, Value>::unit()
 {
-    if(timing_units_v)
-        return units::sec;
-    else if(memory_units_v)
-        return units::megabyte;
-    else if(percent_units_v)
-        return 1;
+    IF_CONSTEXPR(timing_units_v) { return units::sec; }
+    IF_CONSTEXPR(memory_units_v) { return units::megabyte; }
+    IF_CONSTEXPR(percent_units_v) { return 1; }
 
     return 1;
 }
@@ -131,13 +128,9 @@ template <typename Up, typename Unit,
 std::string
 base<Tp, Value>::display_unit()
 {
-    if(timing_units_v)
-        return units::time_repr(unit());
-    else if(memory_units_v)
-        return units::mem_repr(unit());
-    else if(percent_units_v)
-        return "%";
-
+    IF_CONSTEXPR(timing_units_v) { return units::time_repr(unit()); }
+    IF_CONSTEXPR(memory_units_v) { return units::mem_repr(unit()); }
+    IF_CONSTEXPR(percent_units_v) { return "%"; }
     return "";
 }
 //
@@ -151,10 +144,20 @@ base<Tp, Value>::get_unit()
 {
     static int64_t _instance = []() {
         auto _value = Type::unit();
-        if(timing_units_v && settings::timing_units().length() > 0)
-            _value = std::get<1>(units::get_timing_unit(settings::timing_units()));
-        else if(memory_units_v && settings::memory_units().length() > 0)
-            _value = std::get<1>(units::get_memory_unit(settings::memory_units()));
+        IF_CONSTEXPR(timing_units_v)
+        {
+            if(!settings::timing_units().empty())
+            {
+                _value = std::get<1>(units::get_timing_unit(settings::timing_units()));
+            }
+        }
+        IF_CONSTEXPR(memory_units_v)
+        {
+            if(!settings::memory_units().empty())
+            {
+                _value = std::get<1>(units::get_memory_unit(settings::memory_units()));
+            }
+        }
         return _value;
     }();
     return _instance;
@@ -170,10 +173,25 @@ base<Tp, Value>::get_display_unit()
 {
     static std::string _instance = Type::display_unit();
 
-    if(timing_units_v && settings::timing_units().length() > 0)
-        _instance = std::get<0>(units::get_timing_unit(settings::timing_units()));
-    else if(memory_units_v && settings::memory_units().length() > 0)
-        _instance = std::get<0>(units::get_memory_unit(settings::memory_units()));
+    IF_CONSTEXPR(timing_units_v)
+    {
+        // _instance = std::get<0>(units::get_timing_unit(Type::unit()));
+        auto&& _unit_setting = settings::timing_units();
+        if(!_unit_setting.empty())
+        {
+            _instance = std::get<0>(units::get_timing_unit(_unit_setting));
+        }
+    }
+
+    IF_CONSTEXPR(memory_units_v)
+    {
+        // _instance = std::get<0>(units::get_memory_unit(Type::unit()));
+        auto&& _unit_setting = settings::memory_units();
+        if(!_unit_setting.empty())
+        {
+            _instance = std::get<0>(units::get_memory_unit(_unit_setting));
+        }
+    }
 
     return _instance;
 }

@@ -180,7 +180,7 @@ TEST_F(throttle_tests, multithreaded)
 
     std::vector<std::thread> threads;
     for(uint64_t i = 0; i < nthreads; ++i)
-        threads.push_back(std::thread(_run, i));
+        threads.emplace_back(_run, i);
     for(auto& itr : threads)
         itr.join();
 
@@ -240,7 +240,7 @@ TEST_F(throttle_tests, region_multithreaded)
 
     std::vector<std::thread> threads;
     for(uint64_t i = 0; i < nthreads; ++i)
-        threads.push_back(std::thread(_run));
+        threads.emplace_back(_run);
     for(auto& itr : threads)
         itr.join();
 }
@@ -281,7 +281,7 @@ TEST_F(throttle_tests, tuple_multithreaded)
 
     std::vector<std::thread> threads;
     for(uint64_t i = 0; i < nthreads; ++i)
-        threads.push_back(std::thread(_run));
+        threads.emplace_back(_run);
     for(auto& itr : threads)
         itr.join();
 }

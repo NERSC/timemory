@@ -69,13 +69,17 @@ get_info()
     };
 
     if(sysctlbyname("machdep.cpu.brand_string", _buf.data(), &_len, nullptr, 0) == 0)
+    {
         _info.model = _buf.data();
+    }
     else
         TIMEMORY_TESTING_EXCEPTION("'machdep.cpu.brand_string' failed");
 
     _reset();
     if(sysctlbyname("machdep.cpu.vendor", _buf.data(), &_len, nullptr, 0) == 0)
+    {
         _info.vendor = _buf.data();
+    }
     else
         TIMEMORY_TESTING_EXCEPTION("'sysctl machdep.cpu.vendor' failed");
 
@@ -91,7 +95,9 @@ get_info()
         _reset();
         if(sysctlbyname("machdep.cpu.leaf7_features", _buf.data(), &_len, nullptr, 0) ==
            0)
+        {
             _info.features += " " + std::string{ _buf.data() };
+        }
         else
             TIMEMORY_TESTING_EXCEPTION("'sysctl machdep.cpu.leaf7_features' failed");
     }
@@ -169,7 +175,7 @@ cache_size(const int& level)
                        ((level == 1) ? "d" : "") + "cachesize";
     size_t line_size        = 0;
     size_t sizeof_line_size = sizeof(line_size);
-    sysctlbyname(query.c_str(), &line_size, &sizeof_line_size, 0, 0);
+    sysctlbyname(query.c_str(), &line_size, &sizeof_line_size, nullptr, 0);
     return line_size;
 
 #elif defined(_WINDOWS)

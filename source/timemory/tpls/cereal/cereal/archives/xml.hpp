@@ -26,8 +26,11 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #ifndef TIMEMORY_CEREAL_ARCHIVES_XML_HPP_
 #define TIMEMORY_CEREAL_ARCHIVES_XML_HPP_
+
+#include "timemory/macros/attributes.hpp"
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/tpls/cereal/cereal/details/util.hpp"
 
@@ -67,7 +70,7 @@ isWhitespace(char c)
 }
 }  // namespace xml_detail
 
-// ######################################################################
+//======================================================================================//
 //! An output archive designed to save data to XML
 /*! This archive uses RapidXML to build an in memory XML tree of the
     data it serializes before outputting it to its stream upon destruction.
@@ -210,7 +213,7 @@ public:
     }
 
     //! Destructor, flushes the XML
-    ~XMLOutputArchive() TIMEMORY_CEREAL_NOEXCEPT
+    ~XMLOutputArchive() TIMEMORY_CEREAL_NOEXCEPT override
     {
         const int flags = itsIndent ? 0x0 : rapidxml::print_no_indenting;
         rapidxml::print(itsStream, itsXML, flags);
@@ -232,8 +235,10 @@ public:
         saveValue(base64string);
 
         if(itsOutputType)
+        {
             itsNodes.top().node->append_attribute(
                 itsXML.allocate_attribute("type", "cereal binary data"));
+        }
 
         finishNode();
     }
@@ -346,15 +351,12 @@ protected:
     //! A struct that contains metadata about a node
     struct NodeInfo
     {
+        friend class XMLOutputArchive;
+
         NodeInfo(rapidxml::xml_node<>* n = nullptr, const char* nm = nullptr)
         : node(n)
-        , counter(0)
         , name(nm)
         {}
-
-        rapidxml::xml_node<>* node;     //!< A pointer to this node
-        size_t                counter;  //!< The counter for naming child nodes
-        const char*           name;     //!< The name for the next child node
 
         //! Gets the name for the next child node created from this node
         /*! The name will be automatically generated using the counter if
@@ -368,9 +370,15 @@ protected:
                 name   = nullptr;
                 return { n };
             }
-            else
-                return "value" + std::to_string(counter++) + "\0";
+
+            return "value" + std::to_string(counter++) + "\0";
         }
+
+    private:
+        rapidxml::xml_node<>* node;          //!< A pointer to this node
+        size_t                counter{ 0 };  //!< The counter for naming child nodes
+        const char*           name;          //!< The name for the next child node
+
     };  // NodeInfo
 
     //! @}
@@ -385,7 +393,7 @@ private:
     bool itsSizeAttributes;              //!< Controls whether lists have a size attribute
 };                                       // XMLOutputArchive
 
-// ######################################################################
+//======================================================================================//
 //! An output archive designed to load data from XML
 /*! This archive uses RapidXML to build an in memory XML tree of the
     data in the stream it is given before loading any types serialized.
@@ -468,13 +476,16 @@ public:
         // Parse the root
         auto root = itsXML.first_node(xml_detail::TIMEMORY_CEREAL_XML_STRING);
         if(root == nullptr)
+        {
             throw Exception("Could not detect cereal root node - likely due to empty or "
                             "invalid input");
-        else
+        }
+        {
             itsNodes.emplace(root);
+        }
     }
 
-    ~XMLInputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
+    ~XMLInputArchive() TIMEMORY_CEREAL_NOEXCEPT override = default;
 
     //! Loads some binary data, encoded as a base64 string, optionally specified by some
     //! name
@@ -537,8 +548,10 @@ public:
             next = itsNodes.top().search(expectedName);
 
             if(next == nullptr)
+            {
                 throw Exception("XML Parsing failed - provided NVP (" +
                                 std::string(expectedName) + ") not found");
+            }
         }
 
         itsNodes.emplace(next);
@@ -559,7 +572,10 @@ public:
 
     //! Retrieves the current node name
     //! will return @c nullptr if the node does not have a name
-    const char* getNodeName() const { return itsNodes.top().getChildName(); }
+    TIMEMORY_NODISCARD const char* getNodeName() const
+    {
+        return itsNodes.top().getChildName();
+    }
 
     //! Sets the name for the next node created with startNode
     void setNextName(const char* name) { itsNodes.top().name = name; }
@@ -734,11 +750,13 @@ protected:
         remaining children, and the current active child node */
     struct NodeInfo
     {
+        friend class XMLInputArchive;
+
         NodeInfo(rapidxml::xml_node<>* n = nullptr)
         : node(n)
         , child(n->first_node())
         , size(XMLInputArchive::getNumChildren(n))
-        , name(nullptr)
+
         {}
 
         //! Advances to the next sibling node of the child
@@ -782,13 +800,17 @@ protected:
         }
 
         //! Returns the actual name of the next child node, if it exists
-        const char* getChildName() const { return child ? child->name() : nullptr; }
+        TIMEMORY_NODISCARD const char* getChildName() const
+        {
+            return child ? child->name() : nullptr;
+        }
 
+    private:
         rapidxml::xml_node<>* node;   //!< A pointer to this node
         rapidxml::xml_node<>* child;  //!< A pointer to its current child
         size_t                size;   //!< The remaining number of children for this node
-        const char*           name;   //!< The NVP name for next child node
-    };                                // NodeInfo
+        const char*           name{ nullptr };  //!< The NVP name for next child node
+    };                                          // NodeInfo
 
     //! @}
 
@@ -798,11 +820,11 @@ private:
     std::stack<NodeInfo>     itsNodes;  //!< A stack of nodes read from the document
 };
 
-// ######################################################################
+//======================================================================================//
 // XMLArchive prologue and epilogue functions
-// ######################################################################
+//======================================================================================//
 
-// ######################################################################
+//======================================================================================//
 //! Prologue for NVPs for XML output archives
 /*! NVPs do not start or finish nodes - they just set up the names */
 template <class T>
@@ -816,7 +838,7 @@ inline void
 prologue(XMLInputArchive&, NameValuePair<T> const&)
 {}
 
-// ######################################################################
+//======================================================================================//
 //! Epilogue for NVPs for XML output archives
 /*! NVPs do not start or finish nodes - they just set up the names */
 template <class T>
@@ -830,7 +852,7 @@ inline void
 epilogue(XMLInputArchive&, NameValuePair<T> const&)
 {}
 
-// ######################################################################
+//======================================================================================//
 //! Prologue for deferred data for XML archives
 /*! Do nothing for the defer wrapper */
 template <class T>
@@ -844,7 +866,7 @@ inline void
 prologue(XMLInputArchive&, DeferredData<T> const&)
 {}
 
-// ######################################################################
+//======================================================================================//
 //! Epilogue for deferred for XML archives
 /*! NVPs do not start or finish nodes - they just set up the names */
 template <class T>
@@ -859,7 +881,7 @@ inline void
 epilogue(XMLInputArchive&, DeferredData<T> const&)
 {}
 
-// ######################################################################
+//======================================================================================//
 //! Prologue for SizeTags for XML output archives
 /*! SizeTags do not start or finish nodes */
 template <class T>
@@ -889,7 +911,7 @@ inline void
 epilogue(XMLInputArchive&, SizeTag<T> const&)
 {}
 
-// ######################################################################
+//======================================================================================//
 //! Prologue for all other types for XML output archives (except minimal types)
 /*! Starts a new node, named either automatically or by some NVP,
     that may be given data by the type about to be archived
@@ -921,7 +943,7 @@ prologue(XMLInputArchive& ar, T const&)
     ar.startNode();
 }
 
-// ######################################################################
+//======================================================================================//
 //! Epilogue for all other types other for XML output archives (except minimal types)
 /*! Finishes the node created in the prologue
 
@@ -951,9 +973,9 @@ epilogue(XMLInputArchive& ar, T const&)
     ar.finishNode();
 }
 
-// ######################################################################
+//======================================================================================//
 // Common XMLArchive serialization functions
-// ######################################################################
+//======================================================================================//
 
 //! Saving NVP types to XML
 template <class T>
@@ -973,7 +995,7 @@ TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, NameValuePair<T>& t)
     ar(t.value);
 }
 
-// ######################################################################
+//======================================================================================//
 //! Saving SizeTags to XML
 template <class T>
 inline void
@@ -988,7 +1010,7 @@ TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, SizeTag<T>& st)
     ar.loadSize(st.size);
 }
 
-// ######################################################################
+//======================================================================================//
 //! Saving for POD types to xml
 template <class T, traits::EnableIf<std::is_arithmetic<T>::value> = traits::sfinae>
 inline void
@@ -1005,7 +1027,7 @@ TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(XMLInputArchive& ar, T& t)
     ar.loadValue(t);
 }
 
-// ######################################################################
+//======================================================================================//
 //! saving string to xml
 template <class CharT, class Traits, class Alloc>
 inline void

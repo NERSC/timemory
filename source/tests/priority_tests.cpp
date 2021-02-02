@@ -70,14 +70,14 @@ struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
     static string_t   display_unit() { return wall_clock::display_unit(); }
     static value_type record() { return wall_clock::record(); }
 
-    double get_display() const
+    TIMEMORY_NODISCARD double get_display() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    wall_clock::get_unit());
     }
 
-    double get() const { return get_display(); }
+    TIMEMORY_NODISCARD double get() const { return get_display(); }
 
     void start()
     {

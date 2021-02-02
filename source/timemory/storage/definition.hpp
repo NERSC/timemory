@@ -44,6 +44,7 @@
 
 #include <fstream>
 #include <memory>
+#include <utility>
 
 namespace tim
 {
@@ -62,19 +63,14 @@ namespace base
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_STORAGE_LINKAGE
-storage::storage(bool _is_master, int64_t _instance_id, const std::string& _label)
-: m_initialized(false)
-, m_finalized(false)
-, m_global_init(false)
-, m_thread_init(false)
-, m_data_init(false)
-, m_is_master(_is_master)
+storage::storage(bool _is_master, int64_t _instance_id, std::string _label)
+: m_is_master(_is_master)
 , m_node_init(dmp::is_initialized())
 , m_node_rank(dmp::rank())
 , m_node_size(dmp::size())
 , m_instance_id(_instance_id)
 , m_thread_idx(threading::get_id())
-, m_label(_label)
+, m_label(std::move(_label))
 , m_hash_ids(::tim::get_hash_ids())
 , m_hash_aliases(::tim::get_hash_aliases())
 , m_manager(::tim::manager::instance())
@@ -102,8 +98,10 @@ storage::storage(bool _is_master, int64_t _instance_id, const std::string& _labe
     }
 
     if(m_settings->get_debug())
+    {
         PRINT_HERE("%s: %i (%s)", "base::storage instance created", (int) m_instance_id,
                    m_label.c_str());
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -111,8 +109,10 @@ storage::storage(bool _is_master, int64_t _instance_id, const std::string& _labe
 TIMEMORY_STORAGE_LINKAGE storage::~storage()
 {
     if(m_settings->get_debug())
+    {
         PRINT_HERE("%s: %i (%s)", "base::storage instance deleted", (int) m_instance_id,
                    m_label.c_str());
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -442,7 +442,7 @@ template <typename Type>
 void
 storage<Type, true>::stack_clear()
 {
-    if(m_stack.size() > 0 && m_settings->get_stack_clearing())
+    if(!m_stack.empty() && m_settings->get_stack_clearing())
     {
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
@@ -461,6 +461,7 @@ bool
 storage<Type, true>::global_init()
 {
     if(!m_global_init)
+    {
         return [&]() {
             m_global_init = true;
             if(!m_is_master && master_instance())
@@ -474,6 +475,7 @@ storage<Type, true>::global_init()
             }
             return m_global_init;
         }();
+    }
     return m_global_init;
 }
 //
@@ -484,6 +486,7 @@ bool
 storage<Type, true>::thread_init()
 {
     if(!m_thread_init)
+    {
         return [&]() {
             m_thread_init = true;
             if(!m_is_master && master_instance())
@@ -496,6 +499,7 @@ storage<Type, true>::thread_init()
             init_t(upcast, operation::mode_constant<operation::init_mode::thread>{});
             return m_thread_init;
         }();
+    }
     return m_thread_init;
 }
 //
@@ -506,6 +510,7 @@ bool
 storage<Type, true>::data_init()
 {
     if(!m_data_init)
+    {
         return [&]() {
             m_data_init = true;
             if(!m_is_master && master_instance())
@@ -516,6 +521,7 @@ storage<Type, true>::data_init()
             check_consistency();
             return m_data_init;
         }();
+    }
     return m_data_init;
 }
 //
@@ -651,7 +657,7 @@ storage<Type, true>::insert_init()
     bool _data_init   = data_init();
     consume_parameters(_global_init, _thread_init, _data_init);
     // check this now to ensure everything is initialized
-    if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
+    if(m_node_ids.empty() || m_graph_data_instance == nullptr)
         initialize();
 }
 //
@@ -669,10 +675,8 @@ storage<Type, true>::get_prefix(const graph_node& node)
             auto _master = singleton_t::master_instance();
             return _master->get_prefix(node);
         }
-        else
-        {
-            return operation::decode<TIMEMORY_API>{}(node.id());
-        }
+
+        return operation::decode<TIMEMORY_API>{}(node.id());
     }
 
 #if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
@@ -699,10 +703,8 @@ storage<Type, true>::get_prefix(const uint64_t& id)
             auto _master = singleton_t::master_instance();
             return _master->get_prefix(id);
         }
-        else
-        {
-            return get_hash_identifier(id);
-        }
+
+        return get_hash_identifier(id);
     }
 
 #if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
@@ -775,7 +777,7 @@ storage<Type, true>::_data()
                              (int) m_thread_idx, (void*) m_graph_data_instance);
         }
 
-        if(m_node_ids.size() == 0)
+        if(m_node_ids.empty())
             m_node_ids[0][0] = m_graph_data_instance->current();
     }
 
@@ -793,7 +795,7 @@ storage<Type, true>::merge()
         return;
 
     auto m_children = singleton_t::children();
-    if(m_children.size() == 0)
+    if(m_children.empty())
         return;
 
     for(auto& itr : m_children)
@@ -805,8 +807,10 @@ storage<Type, true>::merge()
         l.lock();
 
     for(auto& itr : m_children)
+    {
         if(itr != this)
             itr->data().clear();
+    }
 
     stack_clear();
 }
@@ -1011,8 +1015,10 @@ storage<Type, true>::get_shared_manager()
                 auto _debug_v = m_settings->get_debug();
                 auto _verb_v  = m_settings->get_verbose();
                 if(_debug_v || _verb_v > 1)
+                {
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
+                }
                 _instance->reset(this);
                 // if(_debug_v || _verb_v > 1)
                 //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
@@ -1021,8 +1027,10 @@ storage<Type, true>::get_shared_manager()
                 if(_is_master && _instance)
                 {
                     if(_debug_v || _verb_v > 1)
+                    {
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                    "calling _instance->reset()");
+                    }
                     _instance->reset();
                     // _instance->smart_master_instance().reset();
                 }
@@ -1074,7 +1082,7 @@ template <typename Type>
 void
 storage<Type, false>::stack_clear()
 {
-    if(m_stack.size() > 0 && m_settings->get_stack_clearing())
+    if(!m_stack.empty() && m_settings->get_stack_clearing())
     {
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
@@ -1171,8 +1179,10 @@ storage<Type, false>::merge()
         return;
 
     if(m_settings->get_stack_clearing())
+    {
         for(auto& itr : m_children)
             merge(itr);
+    }
 
     stack_clear();
 }
@@ -1220,8 +1230,10 @@ storage<Type, false>::get_shared_manager()
                 auto _debug_v = m_settings->get_debug();
                 auto _verb_v  = m_settings->get_verbose();
                 if(_debug_v || _verb_v > 1)
+                {
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
+                }
                 _instance->reset(this);
                 // if(_debug_v || _verb_v > 1)
                 //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
@@ -1230,8 +1242,10 @@ storage<Type, false>::get_shared_manager()
                 if(_is_master && _instance)
                 {
                     if(_debug_v || _verb_v > 1)
+                    {
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                    "calling _instance->reset()");
+                    }
                     _instance->reset();
                     // _instance->smart_master_instance().reset();
                 }

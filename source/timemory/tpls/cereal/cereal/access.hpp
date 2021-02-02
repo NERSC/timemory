@@ -33,6 +33,7 @@
 #include <functional>
 #include <iostream>
 #include <type_traits>
+#include <utility>
 
 #include "timemory/tpls/cereal/cereal/details/helpers.hpp"
 #include "timemory/tpls/cereal/cereal/macros.hpp"
@@ -216,6 +217,9 @@ public:
         @return A raw pointer to the initialized type */
     T* ptr() { return operator->(); }
 
+    construct(construct const&) = delete;
+    construct& operator=(construct const&) = delete;
+
 private:
     template <class Ar, class TT>
     friend struct ::tim::cereal::memory_detail::LoadAndConstructLoadWrapper;
@@ -227,14 +231,13 @@ private:
     , itsEnableSharedRestoreFunction([]() {})
     , itsValid(false)
     {}
+
     construct(T* p, std::function<void()> enableSharedFunc)
     :  // g++4.7 ice with default lambda to std func
         itsPtr(p)
-    , itsEnableSharedRestoreFunction(enableSharedFunc)
+    , itsEnableSharedRestoreFunction(std::move(enableSharedFunc))
     , itsValid(false)
     {}
-    construct(construct const&) = delete;
-    construct& operator=(construct const&) = delete;
 
     T*                    itsPtr;
     std::function<void()> itsEnableSharedRestoreFunction;
@@ -315,29 +318,28 @@ public:
 
     // ####### Versioned Serialization #######################################
     template <class Archive, class T>
-    inline static auto member_serialize(Archive& ar, T& t, const std::uint32_t version)
+    inline static auto member_serialize(Archive& ar, T& t, std::uint32_t version)
         -> decltype(t.TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(ar, version))
     {
         return t.TIMEMORY_CEREAL_SERIALIZE_FUNCTION_NAME(ar, version);
     }
 
     template <class Archive, class T>
-    inline static auto member_save(Archive& ar, T const& t, const std::uint32_t version)
+    inline static auto member_save(Archive& ar, T const& t, std::uint32_t version)
         -> decltype(t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar, version))
     {
         return t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar, version);
     }
 
     template <class Archive, class T>
-    inline static auto member_save_non_const(Archive& ar, T& t,
-                                             const std::uint32_t version)
+    inline static auto member_save_non_const(Archive& ar, T& t, std::uint32_t version)
         -> decltype(t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar, version))
     {
         return t.TIMEMORY_CEREAL_SAVE_FUNCTION_NAME(ar, version);
     }
 
     template <class Archive, class T>
-    inline static auto member_load(Archive& ar, T& t, const std::uint32_t version)
+    inline static auto member_load(Archive& ar, T& t, std::uint32_t version)
         -> decltype(t.TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(ar, version))
     {
         return t.TIMEMORY_CEREAL_LOAD_FUNCTION_NAME(ar, version);

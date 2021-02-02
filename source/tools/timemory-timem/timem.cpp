@@ -111,9 +111,13 @@ main(int argc, char** argv)
         .max_count(1)
         .action([](parser_t& p) {
             if(p.get_count("verbose") == 0)
+            {
                 verbose() = 1;
+            }
             else
+            {
                 verbose() = p.get<int>("verbose");
+            }
         });
     parser.add_argument({ "-q", "--quiet" }, "Suppress as much reporting as possible")
         .count(0)
@@ -245,11 +249,17 @@ main(int argc, char** argv)
         stringstream_t ss;
         ss << "[" << command().c_str() << "]> Measurement totals";
         if(use_mpi())
+        {
             ss << " (# ranks = " << tim::mpi::size() << "):";
+        }
         else if(tim::dmp::size() > 1)
+        {
             ss << " (# ranks = " << tim::dmp::size() << "):";
+        }
         else
+        {
             ss << ":";
+        }
         return ss.str();
     };
 
@@ -287,9 +297,13 @@ main(int argc, char** argv)
     if(tim::settings::papi_events().empty())
     {
         if(use_papi())
+        {
             tim::settings::papi_events() = "PAPI_TOT_CYC,PAPI_TOT_INS";
+        }
         else
+        {
             tim::trait::runtime_enabled<papi_array_t>::set(false);
+        }
     }
 
     tim::get_rusage_type() = RUSAGE_CHILDREN;
@@ -357,11 +371,13 @@ main(int argc, char** argv)
         else
         {
             if(verbose() > -1)
+            {
                 fprintf(
                     stderr,
                     "Warning! Executable '%s' was expected to be 'timem'. Using "
                     "'timemory-pid' instead of adding 'ory-pid' to name of executable",
                     argv[0]);
+            }
             // otherwise, assume it can find 'timemory-pid'
             pidexe = "timemory-pid";
         }
@@ -399,8 +415,10 @@ main(int argc, char** argv)
             cargv_arg0.push_back(_cargv.argv()[0]);
             cargv_argv.push_back(_cargv.argv() + 1);
             if(debug() && comm_rank == 0)
+            {
                 fprintf(stderr, "[%s][rank=%i]> cmd :: %s\n", command().c_str(), (int) i,
                         _cargv.args().c_str());
+            }
         }
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
@@ -428,8 +446,10 @@ main(int argc, char** argv)
         {
             CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
             if(!signal_delivered())
+            {
                 // wait for timemory-pid to signal
                 pause();
+            }
             worker_pid() = read_pid(master_pid());
         }
         else
@@ -568,9 +588,13 @@ read_pid(pid_t _master)
               << _master;
         std::ifstream ifs(fname.str().c_str());
         if(ifs)
+        {
             ifs >> _worker;
+        }
         else
+        {
             fprintf(stderr, "Error opening '%s'...\n", fname.str().c_str());
+        }
         ifs.close();
     }
     if(debug())
@@ -589,9 +613,11 @@ childpid_catcher(int sig)
     worker_pid()                  = _worker;
     tim::process::get_target_id() = _worker;
     if(debug())
+    {
         printf("[%s][pid=%i]> worker_pid() = %i, worker = %i, target_id() = %i\n",
                __FUNCTION__, getpid(), worker_pid(), _worker,
                tim::process::get_target_id());
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -614,9 +640,13 @@ parent_process(pid_t pid)
     else
     {
         if(get_measure())
+        {
             _measurements = { *get_measure() };
+        }
         else
+        {
             _measurements = {};
+        }
     }
 
     if(_measurements.empty())
@@ -649,7 +679,9 @@ parent_process(pid_t pid)
     }
 
     if(output_file().empty())
+    {
         std::cerr << '\n';
+    }
     else
     {
         using json_type = tim::cereal::PrettyJSONOutputArchive;
@@ -712,8 +744,10 @@ child_process(int argc, char** argv)
             auto shellc = argpv.get_execv(shellp);
 
             if(debug())
+            {
                 CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "[%s]> command :: %s",
                                        command().c_str(), shellc.args().c_str());
+            }
 
             explain(0, shellc.argv()[0], shellc.argv());
 
@@ -737,8 +771,10 @@ child_process(int argc, char** argv)
             }
 
             if(debug())
+            {
                 CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "return code: %i",
                                        ret);
+            }
         }
         else
         {
@@ -757,8 +793,10 @@ child_process(int argc, char** argv)
         auto argpv = tim::argparse::argument_vector(argc, argv);
         auto argpc = argpv.get_execv(1);
         if(debug())
+        {
             CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "[%s]> command :: '%s'",
                                    command().c_str(), argpc.args().c_str());
+        }
         int ret = execvp(argpc.argv()[0], argpc.argv());
         // explain error if enabled
         explain(ret, argpc.argv()[0], argpc.argv());

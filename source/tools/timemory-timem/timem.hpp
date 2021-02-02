@@ -194,7 +194,10 @@ struct custom_base_printer
     explicit custom_base_printer(std::ostream& _os, const type& _obj, int32_t _rank,
                                  const std::string& _label)
     {
-        stringstream_t ss, ssv, ssr, ssrank;
+        stringstream_t ss;
+        stringstream_t ssv;
+        stringstream_t ssr;
+        stringstream_t ssrank;
         auto           _prec  = base_type::get_precision();
         auto           _width = base_type::get_width();
         auto           _flags = base_type::get_format_flags();
@@ -405,8 +408,10 @@ public:
             stop();
             base_type::sample(std::forward<Args>(args)...);
             if(m_ofs)
+            {
                 (*m_ofs) << get_local_datetime("[===== %r %F =====]\n") << *this
                          << std::endl;
+            }
             start();
         }
     }
@@ -436,8 +441,10 @@ public:
         os << ssp.str() << ssd.str();
 
         if(&os != obj.m_ofs && obj.m_ofs)
+        {
             *(obj.m_ofs) << get_local_datetime("[===== %r %F =====]\n") << ssp.str()
                          << ssd.str() << std::endl;
+        }
 
         return os;
     }
@@ -448,7 +455,7 @@ public:
             this->m_data, operation::set_print_rank{}, _rank);
     }
 
-    bool empty() const { return m_empty; }
+    TIMEMORY_NODISCARD bool empty() const { return m_empty; }
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
@@ -470,7 +477,7 @@ public:
                 _name = _name.substr(_pos + std::string(itr).length());
             }
         }
-        _name = _name.substr(0, _name.find("<"));
+        _name = _name.substr(0, _name.find('<'));
         return _name;
     }
 
@@ -531,6 +538,7 @@ private:
         TIMEMORY_FOLD_EXPRESSION(mpi_get<Idx>(_vec, _data));
         // convert the vector of tuples into a vector of this_tupe
         std::vector<this_type> _ret;
+        _ret.reserve(_vec.size());
         for(auto&& itr : _vec)
             _ret.emplace_back(this_type(this->key(), std::move(itr)));
         return _ret;
@@ -655,7 +663,7 @@ struct timem_config
     std::vector<std::string> argvector = {};
 
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
+    void serialize(Archive& ar, unsigned int)
     {
         ar(tim::cereal::make_nvp("use_shell", use_shell),
            tim::cereal::make_nvp("use_mpi", use_mpi),
@@ -675,7 +683,7 @@ struct timem_config
             inp = output_file;
 
         using pair_t = std::pair<std::string, int64_t>;
-        for(auto itr :
+        for(const auto& itr :
             { pair_t{ "%p", worker_pid }, pair_t{ "%j", tim::get_env("SLURM_JOB_ID", 0) },
               pair_t{ "%r", tim::mpi::rank() }, pair_t{ "%s", tim::mpi::size() } })
         {

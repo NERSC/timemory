@@ -152,8 +152,10 @@ mpi_get<Type, true>::operator()(distrib_type& results)
                 policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
             (*ia)(cereal::make_nvp("data", ret));
             if(settings::debug())
+            {
                 printf("[RECV: %i]> data size: %lli\n", comm_rank,
                        (long long int) ret.size());
+            }
         }
         return ret;
     };
@@ -221,10 +223,14 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         while(!results.empty())
         {
             if(_collapsed.empty())
+            {
                 _collapsed.emplace_back(std::move(results.back()));
+            }
             else
+            {
                 operation::finalize::merge<Type, true>(_collapsed.front(),
                                                        results.back());
+            }
             results.pop_back();
         }
 
@@ -249,10 +255,12 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         int32_t bins  = comm_size / bsize;
 
         if(settings::debug() || settings::verbose() > 3)
+        {
             PRINT_HERE("[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "
                        "%i, bin size = %i",
                        demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
                        comm_rank, settings::node_count(), comm_size, bins, bsize);
+        }
 
         // generate a map of the ranks to the node ids
         int32_t                              ncnt = 0;  // current count
@@ -261,9 +269,11 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         for(int32_t i = 0; i < comm_size; ++i)
         {
             if(settings::debug())
+            {
                 PRINT_HERE("[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
                            demangle<mpi_get<Type, true>>().c_str(),
                            (int) process::get_id(), comm_rank, i, midx);
+            }
 
             binmap[midx].insert(i);
             // check to see if we reached the bin size
@@ -277,10 +287,12 @@ mpi_get<Type, true>::operator()(distrib_type& results)
 
         auto init_size = get_num_records(results);
         if(settings::debug() || settings::verbose() > 3)
+        {
             PRINT_HERE(
                 "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into %i bins",
                 demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
                 comm_rank, init_size, comm_size, (int) binmap.size());
+        }
 
         assert((int32_t) binmap.size() <= (int32_t) settings::node_count());
 
@@ -379,8 +391,10 @@ mpi_get<Type, true>::operator()(basic_tree_vector_type& bt)
                 policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
             (*ia)(cereal::make_nvp("data", ret));
             if(settings::debug())
+            {
                 printf("[RECV: %i]> data size: %lli\n", comm_rank,
                        (long long int) ret.size());
+            }
         }
         return ret;
     };
@@ -463,7 +477,6 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using MPI");
     consume_parameters(dst, inp, functor);
-    return;
 #else
     if(settings::debug())
         PRINT_HERE("%s", "timemory using MPI");
@@ -555,9 +568,13 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         for(auto& itr : dst)
         {
             if(_dst.empty())
+            {
                 _dst.emplace_back(std::move(itr));
+            }
             else
+            {
                 _dst.front() = functor(_dst.front(), itr);
+            }
         }
 
         // assign dst to collapsed entry
@@ -581,10 +598,12 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         int32_t bins  = comm_size / bsize;
 
         if(settings::debug() || settings::verbose() > 3)
+        {
             PRINT_HERE("[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "
                        "%i, bin size = %i",
                        demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
                        comm_rank, settings::node_count(), comm_size, bins, bsize);
+        }
 
         // generate a map of the ranks to the node ids
         int32_t                              ncnt = 0;  // current count
@@ -593,9 +612,11 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         for(int32_t i = 0; i < comm_size; ++i)
         {
             if(settings::debug())
+            {
                 PRINT_HERE("[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
                            demangle<mpi_get<Type, true>>().c_str(),
                            (int) process::get_id(), comm_rank, i, midx);
+            }
 
             binmap[midx].insert(i);
             // check to see if we reached the bin size
@@ -609,10 +630,12 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
 
         auto init_size = get_num_records(dst);
         if(settings::debug() || settings::verbose() > 3)
+        {
             PRINT_HERE(
                 "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into %i bins",
                 demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
                 (int) comm_rank, (int) init_size, (int) comm_size, (int) binmap.size());
+        }
 
         assert((int32_t) binmap.size() <= (int32_t) settings::node_count());
 

@@ -29,6 +29,7 @@
 #ifndef TIMEMORY_CEREAL_ARCHIVES_PORTABLE_BINARY_HPP_
 #define TIMEMORY_CEREAL_ARCHIVES_PORTABLE_BINARY_HPP_
 
+#include "timemory/macros/attributes.hpp"
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include <limits>
 #include <sstream>
@@ -45,7 +46,7 @@ inline std::uint8_t
 is_little_endian()
 {
     static std::int32_t test = 1;
-    return *reinterpret_cast<std::int8_t*>(&test) == 1;
+    return static_cast<std::uint8_t>(*reinterpret_cast<std::int8_t*>(&test) == 1);
 }
 
 //! Swaps the order of bytes for some chunk of memory
@@ -114,14 +115,14 @@ public:
         //! Gets the endianness of the system
         inline static Endianness getEndianness()
         {
-            return portable_binary_detail::is_little_endian() ? Endianness::little
-                                                              : Endianness::big;
+            return portable_binary_detail::is_little_endian() != 0u ? Endianness::little
+                                                                    : Endianness::big;
         }
 
         //! Checks if Options is set for little endian
-        inline std::uint8_t is_little_endian() const
+        TIMEMORY_NODISCARD inline std::uint8_t is_little_endian() const
         {
-            return itsOutputEndianness == Endianness::little;
+            return static_cast<std::uint8_t>(itsOutputEndianness == Endianness::little);
         }
 
         friend class PortableBinaryOutputArchive;
@@ -143,7 +144,7 @@ public:
         this->operator()(options.is_little_endian());
     }
 
-    ~PortableBinaryOutputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
+    ~PortableBinaryOutputArchive() TIMEMORY_CEREAL_NOEXCEPT override = default;
 
     //! Writes size bytes of data to the output stream
     template <std::streamsize DataSize>
@@ -234,14 +235,14 @@ public:
         //! Gets the endianness of the system
         inline static Endianness getEndianness()
         {
-            return portable_binary_detail::is_little_endian() ? Endianness::little
-                                                              : Endianness::big;
+            return portable_binary_detail::is_little_endian() != 0u ? Endianness::little
+                                                                    : Endianness::big;
         }
 
         //! Checks if Options is set for little endian
-        inline std::uint8_t is_little_endian() const
+        TIMEMORY_NODISCARD inline std::uint8_t is_little_endian() const
         {
-            return itsInputEndianness == Endianness::little;
+            return static_cast<std::uint8_t>(itsInputEndianness == Endianness::little);
         }
 
         friend class PortableBinaryInputArchive;
@@ -257,14 +258,14 @@ public:
                                Options const& options = Options::Default())
     : InputArchive<PortableBinaryInputArchive, AllowEmptyClassElision>(this)
     , itsStream(stream)
-    , itsConvertEndianness(false)
+    , itsConvertEndianness(0u)
     {
         uint8_t streamLittleEndian;
         this->  operator()(streamLittleEndian);
         itsConvertEndianness = options.is_little_endian() ^ streamLittleEndian;
     }
 
-    ~PortableBinaryInputArchive() TIMEMORY_CEREAL_NOEXCEPT = default;
+    ~PortableBinaryInputArchive() TIMEMORY_CEREAL_NOEXCEPT override = default;
 
     //! Reads size bytes of data from the input stream
     /*! @param data The data to save

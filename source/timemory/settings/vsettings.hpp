@@ -36,6 +36,7 @@
 #include <string>
 #include <typeindex>
 #include <typeinfo>
+#include <utility>
 #include <vector>
 
 namespace tim
@@ -54,27 +55,27 @@ struct vsettings
     using parser_func_t = std::function<void(parser_t&)>;
     using display_map_t = std::map<std::string, std::string>;
 
-    vsettings(const std::string& _name = "", const std::string& _env_name = "",
-              const std::string& _descript = "", std::vector<std::string> _cmdline = {},
+    vsettings(std::string _name = "", std::string _env_name = "",
+              std::string _descript = "", std::vector<std::string> _cmdline = {},
               int32_t _count = -1, int32_t _max_count = -1,
               std::vector<std::string> _choices = {})
     : m_count(_count)
     , m_max_count(_max_count)
-    , m_name(_name)
-    , m_env_name(_env_name)
-    , m_description(_descript)
-    , m_cmdline(_cmdline)
-    , m_choices(_choices)
+    , m_name(std::move(_name))
+    , m_env_name(std::move(_env_name))
+    , m_description(std::move(_descript))
+    , m_cmdline(std::move(_cmdline))
+    , m_choices(std::move(_choices))
     {}
 
     virtual ~vsettings() = default;
 
-    virtual std::string                as_string() const                        = 0;
-    virtual void                       parse()                                  = 0;
-    virtual void                       parse(const std::string&)                = 0;
-    virtual void                       add_argument(argparse::argument_parser&) = 0;
-    virtual std::shared_ptr<vsettings> clone()                                  = 0;
-    virtual void                       clone(std::shared_ptr<vsettings> rhs);
+    TIMEMORY_NODISCARD virtual std::string as_string() const                        = 0;
+    virtual void                           parse()                                  = 0;
+    virtual void                           parse(const std::string&)                = 0;
+    virtual void                           add_argument(argparse::argument_parser&) = 0;
+    virtual std::shared_ptr<vsettings>     clone()                                  = 0;
+    virtual void                           clone(std::shared_ptr<vsettings> rhs);
 
     virtual display_map_t get_display(std::ios::fmtflags fmt = {}, int _w = -1,
                                       int _p = -1)
@@ -110,36 +111,37 @@ struct vsettings
         return _data;
     }
 
-    const auto& get_name() const { return m_name; }
-    const auto& get_env_name() const { return m_env_name; }
-    const auto& get_description() const { return m_description; }
-    const auto& get_command_line() const { return m_cmdline; }
-    const auto& get_choices() const { return m_choices; }
-    const auto& get_count() const { return m_count; }
-    const auto& get_max_count() const { return m_max_count; }
+    TIMEMORY_NODISCARD const auto& get_name() const { return m_name; }
+    TIMEMORY_NODISCARD const auto& get_env_name() const { return m_env_name; }
+    TIMEMORY_NODISCARD const auto& get_description() const { return m_description; }
+    TIMEMORY_NODISCARD const auto& get_command_line() const { return m_cmdline; }
+    TIMEMORY_NODISCARD const auto& get_choices() const { return m_choices; }
+    TIMEMORY_NODISCARD const auto& get_count() const { return m_count; }
+    TIMEMORY_NODISCARD const auto& get_max_count() const { return m_max_count; }
 
     void set_count(int32_t v) { m_count = v; }
     void set_max_count(int32_t v) { m_max_count = v; }
     void set_choices(const std::vector<std::string>& v) { m_choices = v; }
     void set_command_line(const std::vector<std::string>& v) { m_cmdline = v; }
 
-    auto get_type_index() const { return m_type_index; }
-    auto get_value_index() const { return m_value_index; }
+    TIMEMORY_NODISCARD auto get_type_index() const { return m_type_index; }
+    TIMEMORY_NODISCARD auto get_value_index() const { return m_value_index; }
 
-    virtual bool matches(const std::string&, bool exact = true) const;
+    TIMEMORY_NODISCARD virtual bool matches(const std::string&, bool exact = true) const;
 
     template <typename Tp>
-    std::pair<bool, Tp> get() const
+    TIMEMORY_NODISCARD std::pair<bool, Tp> get() const
     {
         auto _ref = dynamic_cast<const tsettings<Tp, Tp&>*>(this);
         if(_ref)
-            return { true, _ref->get() };
-        else
         {
-            auto _nref = dynamic_cast<const tsettings<Tp, Tp>*>(this);
-            if(_nref)
-                return { true, _nref->get() };
+            return { true, _ref->get() };
         }
+
+        auto _nref = dynamic_cast<const tsettings<Tp, Tp>*>(this);
+        if(_nref)
+            return { true, _nref->get() };
+
         return { false, Tp{} };
     }
 
@@ -161,15 +163,14 @@ struct vsettings
             _ref->set(_val);
             return true;
         }
-        else
+
+        auto _nref = dynamic_cast<tsettings<Tp, Tp>*>(this);
+        if(_nref)
         {
-            auto _nref = dynamic_cast<tsettings<Tp, Tp>*>(this);
-            if(_nref)
-            {
-                _nref->set(_val);
-                return true;
-            }
+            _nref->set(_val);
+            return true;
         }
+
         return false;
     }
 
@@ -178,15 +179,15 @@ struct vsettings
     virtual parser_func_t get_action(TIMEMORY_API) = 0;
 
 protected:
-    std::type_index          m_type_index  = std::type_index(typeid(void));
-    std::type_index          m_value_index = std::type_index(typeid(void));
-    int32_t                  m_count       = -1;
-    int32_t                  m_max_count   = -1;
-    std::string              m_name        = "";
-    std::string              m_env_name    = "";
-    std::string              m_description = "";
-    std::vector<std::string> m_cmdline     = {};
-    std::vector<std::string> m_choices     = {};
+    std::type_index          m_type_index  = std::type_index(typeid(void));  // NOLINT
+    std::type_index          m_value_index = std::type_index(typeid(void));  // NOLINT
+    int32_t                  m_count       = -1;                             // NOLINT
+    int32_t                  m_max_count   = -1;                             // NOLINT
+    std::string              m_name        = "";                             // NOLINT
+    std::string              m_env_name    = "";                             // NOLINT
+    std::string              m_description = "";                             // NOLINT
+    std::vector<std::string> m_cmdline     = {};                             // NOLINT
+    std::vector<std::string> m_choices     = {};                             // NOLINT
 };
 //
 }  // namespace tim

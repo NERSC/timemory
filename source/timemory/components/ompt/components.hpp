@@ -202,7 +202,7 @@ struct ompt_data_tracker : public base<ompt_data_tracker<Api>, void>
     }
 
     void store(ompt_id_t target_id, unsigned int nitems, void** host_addr,
-               void** device_addr, size_t* bytes, unsigned int* mapping_flags)
+               void** device_addr, const size_t* bytes, unsigned int* mapping_flags)
     {
         size_t _tot = 0;
         for(unsigned int i = 0; i < nitems; ++i)

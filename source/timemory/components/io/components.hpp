@@ -110,9 +110,11 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
         return _value;
     }
 
-    std::string get_display() const
+    TIMEMORY_NODISCARD std::string get_display() const
     {
-        std::stringstream ss, ssv, ssr;
+        std::stringstream ss;
+        std::stringstream ssv;
+        std::stringstream ssr;
         auto              _prec  = base_type::get_precision();
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
@@ -135,7 +137,7 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
         return ss.str();
     }
 
-    result_type get() const
+    TIMEMORY_NODISCARD result_type get() const
     {
         auto val = base_type::load();
 
@@ -318,9 +320,11 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
         return _value;
     }
 
-    std::string get_display() const
+    TIMEMORY_NODISCARD std::string get_display() const
     {
-        std::stringstream ss, ssv, ssr;
+        std::stringstream ss;
+        std::stringstream ssv;
+        std::stringstream ssr;
         auto              _prec  = base_type::get_precision();
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
@@ -343,7 +347,7 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
         return ss.str();
     }
 
-    result_type get() const
+    TIMEMORY_NODISCARD result_type get() const
     {
         auto val = base_type::load();
 
@@ -523,9 +527,11 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
         return _value;
     }
 
-    std::string get_display() const
+    TIMEMORY_NODISCARD std::string get_display() const
     {
-        std::stringstream ss, ssv, ssr;
+        std::stringstream ss;
+        std::stringstream ssv;
+        std::stringstream ssr;
         auto              _prec  = base_type::get_precision();
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
@@ -548,7 +554,7 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
         return ss.str();
     }
 
-    result_type get() const
+    TIMEMORY_NODISCARD result_type get() const
     {
         auto val = base_type::load();
 
@@ -729,9 +735,11 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
         return _value;
     }
 
-    std::string get_display() const
+    TIMEMORY_NODISCARD std::string get_display() const
     {
-        std::stringstream ss, ssv, ssr;
+        std::stringstream ss;
+        std::stringstream ssv;
+        std::stringstream ssr;
         auto              _prec  = base_type::get_precision();
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
@@ -754,7 +762,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
         return ss.str();
     }
 
-    result_type get() const
+    TIMEMORY_NODISCARD result_type get() const
     {
         auto val = base_type::load();
 

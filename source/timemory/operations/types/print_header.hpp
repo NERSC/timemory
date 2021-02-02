@@ -111,7 +111,7 @@ struct print_header : public common_utils
             utility::write_header(_os, "% SELF", f_self, w_self, p_self);
 
         _os.insert_break();
-        if(_labels.size() > 0)
+        if(!_labels.empty())
         {
             for(size_t i = 0; i < _labels.size() - 1; ++i)
             {

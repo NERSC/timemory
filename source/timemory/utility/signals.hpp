@@ -267,7 +267,9 @@ enable_signal_detection(signal_settings::signal_set_t operations)
         return false;
 
     if(operations.empty())
+    {
         operations = signal_settings::get_enabled();
+    }
     else
     {
         auto _enabled = signal_settings::get_enabled();
@@ -282,8 +284,8 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     }
 
     std::set<int> _signals;
-    for(auto itr = operations.cbegin(); itr != operations.cend(); ++itr)
-        _signals.insert(static_cast<int>(*itr));
+    for(auto operation : operations)
+        _signals.insert(static_cast<int>(operation));
 
     sigfillset(&tim_signal_termaction().sa_mask);
     for(auto& itr : _signals)
@@ -328,10 +330,10 @@ disable_signal_detection()
     tim_signal_termaction().sa_handler = SIG_DFL;
 
     auto _disable = [](const signal_settings::signal_set_t& _set) {
-        for(auto itr = _set.cbegin(); itr != _set.cend(); ++itr)
+        for(auto itr : _set)
         {
-            int _itr = static_cast<int>(*itr);
-            sigaction(_itr, &tim_signal_termaction(), 0);
+            int _itr = static_cast<int>(itr);
+            sigaction(_itr, &tim_signal_termaction(), nullptr);
         }
     };
 

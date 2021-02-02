@@ -144,9 +144,12 @@ struct configuration
                 return settings::ert_max_data_size();
             static constexpr bool is_gpu = device::is_gpu<DeviceT>::value;
             if(is_gpu)
+            {
                 return settings::ert_max_data_size_gpu();
-            else
+            }
+            {
                 return 2 * ert::cache_size::get_max();
+            }
         };
         return _instance;
     }
@@ -247,14 +250,14 @@ struct configuration
     }
 
 public:
-    get_uint64_t    num_threads      = this_type::get_num_threads();
-    get_uint64_t    num_streams      = this_type::get_num_streams();
-    get_uint64_t    min_working_size = this_type::get_min_working_size();
-    get_uint64_t    max_data_size    = this_type::get_max_data_size();
-    get_uint64_t    alignment        = this_type::get_alignment();
-    get_uint64_t    grid_size        = this_type::get_grid_size();
-    get_uint64_t    block_size       = this_type::get_block_size();
-    executor_func_t executor;
+    get_uint64_t    num_threads      = this_type::get_num_threads();       // NOLINT
+    get_uint64_t    num_streams      = this_type::get_num_streams();       // NOLINT
+    get_uint64_t    min_working_size = this_type::get_min_working_size();  // NOLINT
+    get_uint64_t    max_data_size    = this_type::get_max_data_size();     // NOLINT
+    get_uint64_t    alignment        = this_type::get_alignment();         // NOLINT
+    get_uint64_t    grid_size        = this_type::get_grid_size();         // NOLINT
+    get_uint64_t    block_size       = this_type::get_block_size();        // NOLINT
+    executor_func_t executor;                                              // NOLINT
 
 public:
     configuration()
@@ -337,7 +340,7 @@ public:
 public:
     //----------------------------------------------------------------------------------//
     //
-    callback_type callback = get_callback();
+    callback_type callback = get_callback();  // NOLINT
 
 public:
     //----------------------------------------------------------------------------------//
@@ -504,7 +507,7 @@ public:
 public:
     //----------------------------------------------------------------------------------//
     //
-    callback_type callback = get_callback();
+    callback_type callback = get_callback();  // NOLINT
 
 public:
     //----------------------------------------------------------------------------------//
