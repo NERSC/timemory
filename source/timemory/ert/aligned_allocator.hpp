@@ -196,8 +196,8 @@ public:
     bool operator==(const aligned_allocator&) const { return true; }
 
 public:
-    Tp*       address(Tp& r) const { return &r; }
-    const Tp* address(const Tp& s) const { return &s; }
+    TIMEMORY_NODISCARD Tp*   address(Tp& r) const { return &r; }
+    TIMEMORY_NODISCARD const Tp* address(const Tp& s) const { return &s; }
 
     TIMEMORY_NODISCARD std::size_t max_size() const
     {
@@ -226,7 +226,7 @@ public:
 
     void destroy(Tp* const p) const { p->~Tp(); }
 
-    Tp* allocate(const std::size_t n) const
+    TIMEMORY_NODISCARD Tp* allocate(const std::size_t n) const
     {
         if(n == 0)
             return nullptr;
@@ -260,7 +260,7 @@ public:
 
     // same for all allocators that ignore hints.
     template <typename U>
-    Tp* allocate(const std::size_t n, const U* /* const hint */) const
+    TIMEMORY_NODISCARD Tp* allocate(const std::size_t n, const U* /* const hint */) const
     {
         return allocate(n);
     }

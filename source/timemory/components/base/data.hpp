@@ -168,27 +168,27 @@ struct base_data<Tp, 1>
     }
 
     template <typename Up>
-    auto plus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(), void())
+    auto plus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(), void())
     {
         value = math::compute<value_type>::plus(value, std::forward<Up>(rhs).get_value());
     }
 
     template <typename Up>
-    auto minus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(), void())
+    auto minus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(), void())
     {
         value =
             math::compute<value_type>::minus(value, std::forward<Up>(rhs).get_value());
     }
 
     template <typename Up>
-    auto multiply(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(), void())
+    auto multiply(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(), void())
     {
         value =
             math::compute<value_type>::multiply(value, std::forward<Up>(rhs).get_value());
     }
 
     template <typename Up>
-    auto divide(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(), void())
+    auto divide(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(), void())
     {
         value =
             math::compute<value_type>::divide(value, std::forward<Up>(rhs).get_value());
@@ -283,16 +283,16 @@ struct base_data<Tp, 2>
     }
 
     template <typename Up>
-    auto plus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                    std::forward<Up>(rhs).get_accum(), void())
+    auto plus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                    (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value = math::compute<value_type>::plus(value, std::forward<Up>(rhs).get_value());
         accum = math::compute<value_type>::plus(accum, std::forward<Up>(rhs).get_accum());
     }
 
     template <typename Up>
-    auto minus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                     std::forward<Up>(rhs).get_accum(), void())
+    auto minus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                     (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::minus(value, std::forward<Up>(rhs).get_value());
@@ -301,8 +301,8 @@ struct base_data<Tp, 2>
     }
 
     template <typename Up>
-    auto multiply(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                        std::forward<Up>(rhs).get_accum(), void())
+    auto multiply(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                        (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::multiply(value, std::forward<Up>(rhs).get_value());
@@ -311,8 +311,8 @@ struct base_data<Tp, 2>
     }
 
     template <typename Up>
-    auto divide(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                      std::forward<Up>(rhs).get_accum(), void())
+    auto divide(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                      (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::divide(value, std::forward<Up>(rhs).get_value());
@@ -408,16 +408,16 @@ struct base_data<Tp, 3>
     }
 
     template <typename Up>
-    auto plus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                    std::forward<Up>(rhs).get_accum(), void())
+    auto plus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                    (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value = math::compute<value_type>::plus(value, std::forward<Up>(rhs).get_value());
         accum = math::compute<value_type>::plus(accum, std::forward<Up>(rhs).get_accum());
     }
 
     template <typename Up>
-    auto minus(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                     std::forward<Up>(rhs).get_accum(), void())
+    auto minus(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                     (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::minus(value, std::forward<Up>(rhs).get_value());
@@ -426,8 +426,8 @@ struct base_data<Tp, 3>
     }
 
     template <typename Up>
-    auto multiply(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                        std::forward<Up>(rhs).get_accum(), void())
+    auto multiply(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                        (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::multiply(value, std::forward<Up>(rhs).get_value());
@@ -436,8 +436,8 @@ struct base_data<Tp, 3>
     }
 
     template <typename Up>
-    auto divide(Up&& rhs) -> decltype(std::forward<Up>(rhs).get_value(),
-                                      std::forward<Up>(rhs).get_accum(), void())
+    auto divide(Up&& rhs) -> decltype((void) std::forward<Up>(rhs).get_value(),
+                                      (void) std::forward<Up>(rhs).get_accum(), void())
     {
         value =
             math::compute<value_type>::divide(value, std::forward<Up>(rhs).get_value());

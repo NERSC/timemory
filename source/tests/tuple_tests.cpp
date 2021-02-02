@@ -259,7 +259,7 @@ TEST_F(tuple_tests, all_threads)
             _tm.stop();
 
             lock_t lk(mtx);
-            measurements.push_back(pair_t(ss.str(), _tm));
+            measurements.emplace_back({ ss.str(), _tm });
             lambda_ss << _tm << std::endl;
         };
 

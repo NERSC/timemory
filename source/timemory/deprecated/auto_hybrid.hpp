@@ -116,8 +116,8 @@ public:
     // copy and move
     auto_hybrid(const this_type&)     = default;
     auto_hybrid(this_type&&) noexcept = default;
-    this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) noexcept = default;
+    auto_hybrid& operator=(const auto_hybrid&) = default;
+    auto_hybrid& operator=(auto_hybrid&&) noexcept = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 
