@@ -57,6 +57,10 @@ __all__ = [
     "FUNC",
     "LINE",
     "FRAME",
+    "popen",
+    "dart_measurement",
+    "dart_measurement_file",
+    "write_ctest_notes",
 ]
 
 CO_GENERATOR = 0x0020
@@ -162,3 +166,75 @@ else:
 
     def is_coroutine(f):
         return False
+
+
+def popen(cmd, outf=None, keep_going=True, timeout=None):
+    """Execute a command"""
+
+    def handle_error(ret, cmd, keep_going):
+        """Handle error messaging for executed command"""
+        err_msg = "Error executing: '{}'".format(" ".join(cmd))
+        if ret != 0 and not keep_going:
+            raise RuntimeError(err_msg)
+        elif ret != 0 and keep_going:
+            barrier = "=" * 80
+            err_msg = (
+                "\n\n"
+                + barrier
+                + "\n\n    ERROR: "
+                + err_msg
+                + "\n\n"
+                + barrier
+                + "\n\n"
+            )
+            sys.stderr.write(err_msg)
+            sys.stderr.flush()
+
+    import subprocess as sp
+
+    p = sp.Popen(cmd)
+    outs = None
+    errs = None
+    try:
+        if timeout is not None:
+            outs, errs = p.communicate(timeout=timeout)
+        else:
+            outs, errs = p.communicate()
+    except sp.TimeoutExpired:
+        p.kill()
+
+    handle_error(p.returncode, cmd, keep_going)
+
+    if errs is not None:
+        print("{}".format(outs.decode("utf-8")))
+
+    if outs is not None and outf is not None:
+        f = open(outf, "w")
+        f.write(outs)
+
+
+def dart_measurement(name, value):
+    """Prints out an XML tag which gets detected by CTest and recorded by CDash"""
+    print(
+        f'<DartMeasurement name="{name}" type="numeric/double">{value}</DartMeasurementFile>'
+    )
+
+
+def dart_measurement_file(name, path, format="png"):
+    """Prints out an XML tag which gets detected by CTest and uploaded to CDash"""
+    _path = os.path.abspath(path)
+    print(
+        f'<DartMeasurementFile name="{name}" type="image/{format}">{_path}</DartMeasurementFile>'
+    )
+
+
+def write_ctest_notes(fname, path=None, mode="a"):
+    """Writes or appends to a CTestNotes.txt file"""
+
+    if path is None:
+        path = os.path.abspath(os.path.dirname(fname))
+    if not os.path.exists(path):
+        os.makedirs(path)
+    fname = os.path.abspath(fname)
+    with open(os.path.join(path, "CTestNotes.txt"), "a") as ofs:
+        ofs.write(f'\nlist(APPEND CTEST_NOTES_FILES "{fname}")\n')

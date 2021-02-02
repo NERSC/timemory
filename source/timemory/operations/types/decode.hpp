@@ -52,7 +52,7 @@ struct decode
     static auto tokenized_demangle(std::string inp)
     {
         using pair_t = std::pair<std::string, std::string>;
-        for(auto&& itr : { pair_t{ "_Z", " " }, pair_t{ " ", " " } })
+        for(auto&& itr : { pair_t{ "_Z", " " }, pair_t{ "_Z", "]" }, pair_t{ " ", " " } })
         {
             inp = str_transform(inp, itr.first, itr.second,
                                 [](const std::string& _s) { return demangle(_s); });

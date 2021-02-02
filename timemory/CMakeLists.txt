@@ -24,7 +24,7 @@ file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
 #----------------------------------------------------------------------------
 
 set(PYTHON_SUBMODULE_FOLDERS
-    api ert mpi mpi_support plotting profiler roofline
+    analyze api ert mpi mpi_support plotting profiler roofline
     util bundle component hardware_counters test trace region)
 
 file(GLOB PYTHON_SUBMODULE_FILES ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/*.py)
@@ -138,6 +138,7 @@ endfunction()
 
 timemory_python_console_script("timemory-plotter" "timemory.plotting" "try_plot")
 timemory_python_console_script("timemory-roofline" "timemory.roofline" "try_plot")
+timemory_python_console_script("timemory-analyze" "timemory.analyze" "try_analyze")
 
 timemory_python_console_script("timemory-python-profiler" "timemory.profiler" "main")
 timemory_python_console_script("timemory-python-trace" "timemory.trace" "main")
