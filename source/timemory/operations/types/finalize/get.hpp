@@ -127,8 +127,7 @@ public:
 
 private:
     template <typename Tp>
-    static auto get_identifier_sfinae(const Tp& _data, int)
-        -> decltype((void) _data.label())
+    static auto get_identifier_sfinae(const Tp& _data, int) -> decltype(_data.label())
     {
         return _data.label();
     }
@@ -142,14 +141,13 @@ private:
 private:
     template <typename Tp>
     static auto get_label_sfinae(const Tp& _data, int, int)
-        -> decltype((void) _data.label_array())
+        -> decltype(_data.label_array())
     {
         return _data.label_array();
     }
 
     template <typename Tp>
-    static auto get_label_sfinae(const Tp& _data, int, long)
-        -> decltype((void) _data.label())
+    static auto get_label_sfinae(const Tp& _data, int, long) -> decltype(_data.label())
     {
         return _data.label();
     }
@@ -163,14 +161,14 @@ private:
 private:
     template <typename Tp>
     static auto get_description_sfinae(const Tp& _data, int, int)
-        -> decltype((void) _data.description_array())
+        -> decltype(_data.description_array())
     {
         return _data.description_array();
     }
 
     template <typename Tp>
     static auto get_description_sfinae(const Tp& _data, int, long)
-        -> decltype((void) _data.description())
+        -> decltype(_data.description())
     {
         return _data.description();
     }
@@ -183,15 +181,13 @@ private:
 
 private:
     template <typename Tp>
-    static auto get_unit_sfinae(const Tp& _data, int, int)
-        -> decltype((void) _data.unit_array())
+    static auto get_unit_sfinae(const Tp& _data, int, int) -> decltype(_data.unit_array())
     {
         return _data.unit_array();
     }
 
     template <typename Tp>
-    static auto get_unit_sfinae(const Tp& _data, int, long)
-        -> decltype((void) _data.unit())
+    static auto get_unit_sfinae(const Tp& _data, int, long) -> decltype(_data.unit())
 
     {
         return _data.unit();
@@ -206,14 +202,14 @@ private:
 private:
     template <typename Tp>
     static auto get_display_unit_sfinae(const Tp& _data, int, int)
-        -> decltype((void) _data.display_unit_array())
+        -> decltype(_data.display_unit_array())
     {
         return _data.display_unit_array();
     }
 
     template <typename Tp>
     static auto get_display_unit_sfinae(const Tp& _data, int, long)
-        -> decltype((void) _data.display_unit())
+        -> decltype(_data.display_unit())
 
     {
         return _data.display_unit();
