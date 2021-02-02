@@ -309,7 +309,7 @@ public:
 private:
     template <typename Tp>
     static auto get_labels_size_sfinae(const Tp& _data, int)
-        -> decltype(_data.label_array(), int64_t())
+        -> decltype((void) _data.label_array(), int64_t())
     {
         return _data.label_array().size();
     }
@@ -330,7 +330,7 @@ public:
 private:
     template <typename Tp>
     static auto get_labels_sfinae(const Tp& _data, int, int)
-        -> decltype(_data.label_array(), strvec_t{})
+        -> decltype((void) _data.label_array(), strvec_t{})
     {
         strvec_t _ret;
         for(const auto& itr : _data.label_array())
@@ -340,7 +340,7 @@ private:
 
     template <typename Tp>
     static auto get_labels_sfinae(const Tp& _data, int, long)
-        -> decltype(_data.get_label(), strvec_t{})
+        -> decltype((void) _data.get_label(), strvec_t{})
     {
         return strvec_t{ _data.get_label() };
     }
@@ -391,7 +391,7 @@ public:
 private:
     template <typename Tp>
     static auto get_display_units_sfinae(const Tp& _data, int, int)
-        -> decltype(_data.display_unit_array(), strvec_t{})
+        -> decltype((void) _data.display_unit_array(), strvec_t{})
     {
         strvec_t _ret;
         for(const auto& itr : _data.display_unit_array())
@@ -401,7 +401,7 @@ private:
 
     template <typename Tp>
     static auto get_display_units_sfinae(const Tp& _data, int, long)
-        -> decltype(_data.get_display_unit(), strvec_t{})
+        -> decltype((void) _data.get_display_unit(), strvec_t{})
 
     {
         return as_string_vec(Tp::get_display_unit());
@@ -425,7 +425,7 @@ public:
 private:
     template <typename Tp>
     static auto get_widths_sfinae(const Tp& _data, int)
-        -> decltype(_data.width_array(), sizevector_t())
+        -> decltype((void) _data.width_array(), sizevector_t())
     {
         return _data.width_array();
     }
