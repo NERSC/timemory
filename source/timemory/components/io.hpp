@@ -22,4 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/io/extern/written_char.hpp"
+#pragma once
+
+#include "timemory/components/io/components.hpp"
+#include "timemory/components/io/extern.hpp"
+#include "timemory/storage/definition.hpp"

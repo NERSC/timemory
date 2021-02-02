@@ -31,7 +31,6 @@
 #pragma once
 
 #include "timemory/macros/os.hpp"
-#include "timemory/utility/macros.hpp"
 
 #include <cctype>
 #include <cstdint>

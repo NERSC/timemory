@@ -35,7 +35,7 @@
 #include "timemory/api.hpp"
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/tpls/cereal/fwd.hpp"
 //
 #include <type_traits>
 

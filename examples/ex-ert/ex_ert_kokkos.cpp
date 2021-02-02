@@ -32,6 +32,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, std::fa
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ExecPolicy.hpp>

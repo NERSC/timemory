@@ -27,7 +27,10 @@
 #endif
 
 #include "timemory/compat/library.h"
-#include "timemory/timemory.hpp"
+#include "timemory/config.hpp"
+#include "timemory/library.h"
+#include "timemory/runtime.hpp"
+#include "timemory/trace.hpp"
 
 #include <iostream>
 #include <unordered_map>

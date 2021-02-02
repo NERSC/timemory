@@ -47,10 +47,6 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-namespace regex_const = std::regex_constants;
-//
-//--------------------------------------------------------------------------------------//
-//
 #if !defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
@@ -301,6 +297,7 @@ load_env(const std::string& env_id, bool _default)
     auto  itr           = _env_settings->get(env_id);
     if(itr != _env_settings->end())
     {
+        namespace regex_const             = std::regex_constants;
         auto              val             = itr->second;
         const auto        regex_constants = regex_const::egrep | regex_const::icase;
         const std::string pattern         = "^(off|false|no|n|f|0)$";

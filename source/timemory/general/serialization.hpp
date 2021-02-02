@@ -26,7 +26,12 @@
 
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/policy.hpp"
-#include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/tpls/cereal/fwd.hpp"
+
+#include <fstream>
+#include <iosfwd>
+#include <string>
 
 #include <fstream>
 #include <string>

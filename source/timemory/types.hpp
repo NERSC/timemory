@@ -41,7 +41,7 @@
 #include "timemory/manager/types.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/operations/types.hpp"
+// #include "timemory/operations/types.hpp"
 #include "timemory/plotting/types.hpp"
 #include "timemory/runtime/types.hpp"
 #include "timemory/settings/types.hpp"

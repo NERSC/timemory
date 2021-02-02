@@ -31,10 +31,6 @@
 #pragma once
 
 #include "timemory/api.hpp"
-#include "timemory/data/types.hpp"
-#include "timemory/mpl/math.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/settings/declaration.hpp"
 
 #include <sstream>
 #include <string>

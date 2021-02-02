@@ -28,6 +28,7 @@
 #include "timemory/components/properties.hpp"
 #include "timemory/dll.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/variadic/macros.hpp"
 
 #include <string>
 #include <unordered_set>

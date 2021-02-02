@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "timemory/compat/macros.h"
+#include "timemory/macros/attributes.hpp"
 #include "timemory/plotting/macros.hpp"
 
 #include <map>
@@ -56,6 +58,13 @@ namespace plotting
 //
 using string_t     = std::string;
 using attributes_t = std::map<string_t, string_t>;
+//
+void
+plot(const std::string& _label, const std::string& _prefix, const std::string& _dir,
+     bool _echo_dart, const std::string& _json_file);
+//
+void
+echo_dart_file(const string_t& filepath, attributes_t attributes);
 //
 //--------------------------------------------------------------------------------------//
 //

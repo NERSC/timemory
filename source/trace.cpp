@@ -28,10 +28,11 @@
 
 #include "timemory/trace.hpp"
 #include "timemory/compat/library.h"
+#include "timemory/components.hpp"
 #include "timemory/library.h"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/timemory.hpp"
+#include "timemory/runtime.hpp"
 #include "timemory/utility/bits/signals.hpp"
+#include "timemory/variadic.hpp"
 
 #if defined(TIMEMORY_USE_MPI)
 #    include "timemory/backends/types/mpi/extern.hpp"

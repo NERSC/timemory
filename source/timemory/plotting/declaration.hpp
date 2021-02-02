@@ -24,12 +24,17 @@
 
 #pragma once
 
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/plotting/macros.hpp"
 #include "timemory/plotting/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <algorithm>
 #include <initializer_list>
+#include <set>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -47,20 +52,10 @@ namespace tim
 namespace plotting
 {
 //
-//--------------------------------------------------------------------------------------//
-//
-void
-plot(const std::string& _label, const std::string& _prefix, const std::string& _dir,
-     bool _echo_dart, const std::string& _json_file) TIMEMORY_VISIBILITY("default");
-//
-void
-echo_dart_file(const string_t& filepath, attributes_t attributes)
-    TIMEMORY_VISIBILITY("default");
-//
 template <typename... Types>
 std::enable_if_t<(sizeof...(Types) > 0), void>
-plot(std::string _prefix = "", const std::string& _dir = settings::output_path(),
-     bool _echo_dart = settings::dart_output(), std::string _json_file = "");
+plot(std::string _prefix, const std::string& _dir, bool _echo_dart,
+     std::string _json_file);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -87,24 +82,18 @@ void
 plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_file)
 {
     if(std::is_same<typename Tp::value_type, void>::value)
-    {
-        if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("%s", "");
         return;
-    }
-
-    if(!settings::json_output() && !trait::requires_json<Tp>::value)
-    {
-        if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("%s", "");
-        return;
-    }
 
     if(_prefix.empty())
         _prefix = Tp::get_description();
 
     if(_json_file.empty())
-        _json_file = settings::compose_output_filename(Tp::get_label(), ".json");
+    {
+        PRINT_HERE("%s", "Cannot plot without a JSON file!");
+#if defined(TIMEMORY_INTERNAL_TESTING)
+        exit(EXIT_FAILURE);
+#endif
+    }
 
     auto _label = demangle<Tp>();
 

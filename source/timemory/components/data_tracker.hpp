@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include "timemory/components/extern/common.hpp"
-#include "timemory/components/io/components.hpp"
-#include "timemory/components/macros.hpp"
-
-TIMEMORY_EXTERN_COMPONENT(read_bytes, true, std::pair<int64_t, int64_t>)
+#include "timemory/components/data_tracker/components.hpp"
+#include "timemory/components/data_tracker/extern.hpp"
+#include "timemory/storage/definition.hpp"

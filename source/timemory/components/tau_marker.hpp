@@ -22,49 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/settings/types.hpp
- * \brief Declare the settings types
- */
-
 #pragma once
 
-#include "timemory/compat/macros.h"
-#include "timemory/settings/macros.hpp"
-#include "timemory/utility/argparse.hpp"
-
-#include <functional>
-#include <map>
-#include <set>
-#include <string>
-#include <typeindex>
-#include <typeinfo>
-#include <vector>
-
-namespace tim
-{
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              settings
-//
-//--------------------------------------------------------------------------------------//
-//
-std::string
-get_local_datetime(const char* dt_format, std::time_t* dt_curr = nullptr);
-//
-//--------------------------------------------------------------------------------------//
-//
-struct TIMEMORY_VISIBILITY("default") vsettings;
-//
-template <typename Tp, typename Vp = Tp>
-struct TIMEMORY_VISIBILITY("default") tsettings;
-//
-struct TIMEMORY_VISIBILITY("default") settings;
-//
-//--------------------------------------------------------------------------------------//
-//
-}  // namespace tim
-
-TIMEMORY_SET_CLASS_VERSION(2, ::tim::settings)
-TIMEMORY_SET_CLASS_VERSION(0, ::tim::vsettings)
+#include "timemory/components/tau_marker/components.hpp"
+#include "timemory/components/tau_marker/extern.hpp"
+#include "timemory/storage/definition.hpp"

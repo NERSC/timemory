@@ -1098,9 +1098,8 @@ struct merge<Type, true>
     using singleton_t              = typename storage_type::singleton_type;
     using graph_t                  = typename storage_type::graph_type;
     using result_type              = typename storage_type::result_array_t;
-
-    template <typename Tp>
-    using vector_t = std::vector<Tp>;
+    using node_type                = node::tree<Type>;
+    using basic_tree_type          = basic_tree<node_type>;
 
     TIMEMORY_DEFAULT_OBJECT(merge)
 
@@ -1108,24 +1107,19 @@ struct merge<Type, true>
     TIMEMORY_COLD merge(result_type& lhs, result_type& rhs);
 
     // unary
-    template <typename Tp>
-    TIMEMORY_COLD basic_tree<Tp> operator()(const basic_tree<Tp>& _bt);
+    basic_tree_type operator()(const basic_tree_type& _bt) const;
 
-    template <typename Tp>
-    TIMEMORY_COLD vector_t<basic_tree<Tp>> operator()(
-        const vector_t<basic_tree<Tp>>& _bt);
+    std::vector<basic_tree_type> operator()(
+        const std::vector<basic_tree_type>& _bt) const;
 
-    template <typename Tp>
-    TIMEMORY_COLD vector_t<basic_tree<Tp>> operator()(
-        const vector_t<vector_t<basic_tree<Tp>>>& _bt, size_t _root = 0);
+    std::vector<basic_tree_type> operator()(
+        const std::vector<std::vector<basic_tree_type>>& _bt, size_t _root = 0) const;
 
     // binary
-    template <typename Tp>
-    TIMEMORY_COLD basic_tree<Tp> operator()(const basic_tree<Tp>&, const basic_tree<Tp>&);
+    basic_tree_type operator()(const basic_tree_type&, const basic_tree_type&) const;
 
-    template <typename Tp>
-    TIMEMORY_COLD vector_t<basic_tree<Tp>> operator()(const vector_t<basic_tree<Tp>>&,
-                                                      const vector_t<basic_tree<Tp>>&);
+    std::vector<basic_tree_type> operator()(const std::vector<basic_tree_type>&,
+                                            const std::vector<basic_tree_type>&) const;
 };
 //
 //--------------------------------------------------------------------------------------//

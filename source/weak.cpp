@@ -27,6 +27,7 @@
 #endif
 
 #include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/compat/library.h"
 #include "timemory/components/ompt/types.hpp"
 #include "timemory/environment.hpp"

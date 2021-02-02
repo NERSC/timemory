@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/timemory.hpp"
+#include "timemory/utility/socket.hpp"
 
 #include "gtest/gtest.h"
 

@@ -340,28 +340,37 @@ struct dummy
 //
 #    include "timemory/version.h"
 //
-#    include "timemory/extern.hpp"
-//
 #    include "timemory/api.hpp"
 #    include "timemory/config.hpp"
 #    include "timemory/enum.h"
-#    include "timemory/general.hpp"
-#    include "timemory/plotting.hpp"
+#    include "timemory/extern.hpp"
 #    include "timemory/types.hpp"
 #    include "timemory/units.hpp"
-//
-#    include "timemory/components.hpp"
-#    include "timemory/containers.hpp"
-#    include "timemory/ert.hpp"
-#    include "timemory/settings.hpp"
 #    include "timemory/utility.hpp"
 #    include "timemory/variadic.hpp"
 //
-#    include "timemory/definition.hpp"
-#    include "timemory/runtime.hpp"
+#    if !defined(TIMEMORY_USE_EXTERN)
+#        include "timemory/components.hpp"
+#        include "timemory/environment.hpp"
+#        include "timemory/general.hpp"
+#        include "timemory/manager.hpp"
+#        include "timemory/operations/definition.hpp"
+#        include "timemory/plotting.hpp"
+#        include "timemory/settings.hpp"
+#        include "timemory/utility.hpp"
+#    endif
 //
-//======================================================================================//
+#    include "timemory/storage/definition.hpp"
+//
+// #    include "timemory/general.hpp"
+// #    include "timemory/plotting.hpp"
+// #    include "timemory/components.hpp"
+// #    include "timemory/containers.hpp"
+// #    include "timemory/ert.hpp"
+// #    include "timemory/settings.hpp"
+// #    include "timemory/definition.hpp"
+// #    include "timemory/runtime.hpp"
+// #    include "timemory/variadic/definition.hpp"
 //
 
-#    include "timemory/variadic/definition.hpp"
 #endif  // ! defined(DISABLE_TIMEMORY)

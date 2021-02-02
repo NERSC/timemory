@@ -28,7 +28,7 @@
 #include "timemory/environment/types.hpp"
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/os.hpp"
-#include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/tpls/cereal/fwd.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 

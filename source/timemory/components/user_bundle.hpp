@@ -28,3 +28,4 @@
 #include "timemory/components/user_bundle/components.hpp"
 #include "timemory/components/user_bundle/overloads.hpp"
 #include "timemory/components/user_bundle/types.hpp"
+#include "timemory/storage/definition.hpp"

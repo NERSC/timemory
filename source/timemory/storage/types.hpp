@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/backends/dmp.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/storage/macros.hpp"
