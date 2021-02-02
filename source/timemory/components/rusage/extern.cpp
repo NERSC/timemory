@@ -22,10 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include "timemory/components/extern/common.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/components/rusage/components.hpp"
-
-TIMEMORY_EXTERN_COMPONENT(peak_rss, true, int64_t)
+#include "timemory/components/rusage/extern.hpp"

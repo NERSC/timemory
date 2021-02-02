@@ -57,23 +57,29 @@ file(GLOB_RECURSE header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.hpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/backends/*.hpp)
 file(GLOB_RECURSE source_files
     ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp)
+file(GLOB backend_header_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/backends/*.hpp)
+file(GLOB backend_source_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/backends/*.cpp)
+
 
 build_intermediate_library(
     USE_INTERFACE
     INSTALL_SOURCE
     NAME                core
     TARGET              core
-    CATEGORY            GLOBAL
+    CATEGORY            CORE
     FOLDER              components
-    HEADERS             ${header_files}
-    SOURCES             ${source_files})
+    HEADERS             ${header_files} ${backend_header_files}
+    SOURCES             ${source_files} ${backend_source_files})
 
 if(TIMEMORY_USE_COVERAGE)
     if(TARGET timemory-core-shared)

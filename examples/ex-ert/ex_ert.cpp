@@ -25,6 +25,7 @@
 
 #include "timemory/ert.hpp"
 #include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
 
 #include <cstdint>
 #include <set>

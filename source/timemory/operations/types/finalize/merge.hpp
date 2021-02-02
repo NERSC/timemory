@@ -283,11 +283,10 @@ merge<Type, true>::merge(result_type& dst, result_type& src)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Tp>
-basic_tree<Tp>
-merge<Type, true>::operator()(const basic_tree<Tp>& _bt)
+typename merge<Type, true>::basic_tree_type
+merge<Type, true>::operator()(const basic_tree_type& _bt) const
 {
-    using children_type = typename basic_tree<Tp>::children_type;
+    using children_type = typename basic_tree_type::children_type;
 
     // do nothing if no children
     if(_bt.get_children().empty())
@@ -325,19 +324,18 @@ merge<Type, true>::operator()(const basic_tree<Tp>& _bt)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Tp>
-basic_tree<Tp>
-merge<Type, true>::operator()(const basic_tree<Tp>& _lhs, const basic_tree<Tp>& _rhs)
+typename merge<Type, true>::basic_tree_type
+merge<Type, true>::operator()(const basic_tree_type& _lhs,
+                              const basic_tree_type& _rhs) const
 {
-    return basic_tree<Tp>{ _lhs } += _rhs;
+    return basic_tree_type{ _lhs } += _rhs;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Tp>
-std::vector<basic_tree<Tp>>
-merge<Type, true>::operator()(const std::vector<basic_tree<Tp>>& _bt)
+std::vector<typename merge<Type, true>::basic_tree_type>
+merge<Type, true>::operator()(const std::vector<basic_tree_type>& _bt) const
 {
     auto _ret = _bt;
     for(auto& itr : _ret)
@@ -348,12 +346,11 @@ merge<Type, true>::operator()(const std::vector<basic_tree<Tp>>& _bt)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Tp>
-std::vector<basic_tree<Tp>>
-merge<Type, true>::operator()(const std::vector<basic_tree<Tp>>& _lhs,
-                              const std::vector<basic_tree<Tp>>& _rhs)
+std::vector<typename merge<Type, true>::basic_tree_type>
+merge<Type, true>::operator()(const std::vector<basic_tree_type>& _lhs,
+                              const std::vector<basic_tree_type>& _rhs) const
 {
-    using basic_t      = basic_tree<Tp>;
+    using basic_t      = basic_tree_type;
     using basic_vec_t  = std::vector<basic_t>;
     using basic_map_t  = std::map<size_t, basic_t>;
     using basic_bool_t = std::vector<bool>;
@@ -415,22 +412,21 @@ merge<Type, true>::operator()(const std::vector<basic_tree<Tp>>& _lhs,
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Tp>
-std::vector<basic_tree<Tp>>
-merge<Type, true>::operator()(const std::vector<std::vector<basic_tree<Tp>>>& _bt,
-                              size_t                                          _root)
+std::vector<typename merge<Type, true>::basic_tree_type>
+merge<Type, true>::operator()(const std::vector<std::vector<basic_tree_type>>& _bt,
+                              size_t _root) const
 {
     if(_bt.empty())
-        return _bt;
+        return std::vector<basic_tree_type>{};
 
     if(_root >= _bt.size())
         _root = 0;
     auto _ret = _bt.at(_root);
-    for(size_t i = 0; i < _ret.size(); ++i)
+    for(size_t i = 0; i < _bt.size(); ++i)
     {
         if(i == _root)
             continue;
-        _ret = (*this)(_ret, _ret.at(i));
+        _ret = (*this)(_ret, _bt.at(i));
     }
 
     return (*this)(_ret);
@@ -439,7 +435,6 @@ merge<Type, true>::operator()(const std::vector<std::vector<basic_tree<Tp>>>& _b
 //--------------------------------------------------------------------------------------//
 //
 /*template <typename Type>
-template <typename Tp>
 void
 merge<Type, true>::operator()(GraphT& _g, ItrT _root, ItrT _rhs)
 {

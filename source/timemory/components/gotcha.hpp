@@ -22,4 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/timing/extern/util.hpp"
+#pragma once
+
+#include "timemory/components/gotcha/components.hpp"
+#include "timemory/components/gotcha/extern.hpp"
+#include "timemory/storage/definition.hpp"

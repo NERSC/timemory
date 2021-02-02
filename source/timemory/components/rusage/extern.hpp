@@ -22,22 +22,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/rusage/extern.hpp
- * \brief Include the extern declarations for rusage components
- */
-
 #pragma once
 
-#include "timemory/components/rusage/extern/current_peak_rss.hpp"
-#include "timemory/components/rusage/extern/kernel_mode_time.hpp"
-#include "timemory/components/rusage/extern/num_io_in.hpp"
-#include "timemory/components/rusage/extern/num_io_out.hpp"
-#include "timemory/components/rusage/extern/num_major_page_faults.hpp"
-#include "timemory/components/rusage/extern/num_minor_page_faults.hpp"
-#include "timemory/components/rusage/extern/page_rss.hpp"
-#include "timemory/components/rusage/extern/peak_rss.hpp"
-#include "timemory/components/rusage/extern/priority_context_switch.hpp"
-#include "timemory/components/rusage/extern/user_mode_time.hpp"
-#include "timemory/components/rusage/extern/virtual_memory.hpp"
-#include "timemory/components/rusage/extern/voluntary_context_switch.hpp"
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/components/rusage/components.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(current_peak_rss, true, std::pair<int64_t, int64_t>)
+TIMEMORY_EXTERN_COMPONENT(kernel_mode_time, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(num_io_in, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(num_io_out, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(num_major_page_faults, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(num_minor_page_faults, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(page_rss, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(peak_rss, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(priority_context_switch, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(user_mode_time, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(virtual_memory, true, int64_t)
+TIMEMORY_EXTERN_COMPONENT(voluntary_context_switch, true, int64_t)

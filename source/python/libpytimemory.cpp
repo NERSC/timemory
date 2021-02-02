@@ -32,6 +32,7 @@
 #include "timemory/tools/timemory-mpip.h"
 #include "timemory/tools/timemory-ncclp.h"
 #include "timemory/tools/timemory-ompt.h"
+#include "timemory/utility/signals.hpp"
 #include "timemory/utility/socket.hpp"
 
 //======================================================================================//

@@ -56,8 +56,9 @@
 namespace tim
 {
 //
-bool enable_signal_detection(
-    signal_settings::signal_set_t = signal_settings::get_default());
+bool
+enable_signal_detection(signal_settings::signal_set_t = signal_settings::get_default(),
+                        bool verbose                  = false);
 //
 template <typename Tp,
           enable_if_t<!std::is_enum<Tp>::value && std::is_integral<Tp>::value> = 0>
@@ -253,7 +254,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 //--------------------------------------------------------------------------------------//
 
 inline bool
-enable_signal_detection(signal_settings::signal_set_t operations)
+enable_signal_detection(signal_settings::signal_set_t operations, bool verbose)
 {
     if(!signal_settings::allow())
     {
@@ -298,8 +299,8 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     }
     signal_settings::set_active(true);
 
-    if(settings::verbose() > 0 || settings::debug())
-        std::cout << signal_settings::str() << std::endl;
+    if(verbose)
+        std::cerr << signal_settings::str() << std::endl;
 
     return true;
 }

@@ -22,4 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/rusage/extern/num_major_page_faults.hpp"
+#pragma once
+
+#include "timemory/components/data_tracker/components.hpp"
+#include "timemory/components/data_tracker/extern.hpp"
+#include "timemory/storage/definition.hpp"

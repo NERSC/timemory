@@ -34,6 +34,7 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/available.hpp"
 #include "timemory/operations/types/cache.hpp"
+#include "timemory/operations/types/construct.hpp"
 #include "timemory/operations/types/generic.hpp"
 #include "timemory/utility/types.hpp"
 

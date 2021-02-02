@@ -24,19 +24,20 @@
 
 #pragma once
 
-#include "timemory/utility/argparse.hpp"
-#include "timemory/utility/conditional.hpp"
-#include "timemory/utility/declaration.hpp"
+// #include "timemory/utility/argparse.hpp"
+// #include "timemory/utility/conditional.hpp"
+// #include "timemory/utility/declaration.hpp"
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/mangler.hpp"
+// #include "timemory/utility/mangler.hpp"
 #include "timemory/utility/popen.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/singleton.hpp"
-#if !defined(_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
-#    include "timemory/utility/socket.hpp"
-#endif
+// #include "timemory/utility/serializer.hpp"
+// #include "timemory/utility/signals.hpp"
+// #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/type_id.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
+//
+#if !defined(_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
+// #    include "timemory/utility/socket.hpp"
+#endif

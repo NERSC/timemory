@@ -24,10 +24,6 @@
 
 #pragma once
 
-#include "timemory/components/extern/common.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/components/timing/components.hpp"
-
-TIMEMORY_EXTERN_COMPONENT(cpu_util, true, std::pair<int64_t, int64_t>)
-TIMEMORY_EXTERN_COMPONENT(process_cpu_util, true, std::pair<int64_t, int64_t>)
-TIMEMORY_EXTERN_COMPONENT(thread_cpu_util, true, std::pair<int64_t, int64_t>)
+#include "timemory/components/rusage/components.hpp"
+#include "timemory/components/rusage/extern.hpp"
+#include "timemory/storage/definition.hpp"

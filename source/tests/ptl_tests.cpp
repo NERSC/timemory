@@ -35,6 +35,7 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include <vector>
 
 #include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
 
 #include "PTL/TaskGroup.hh"
 #include "PTL/TaskRunManager.hh"

@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include "timemory/components/extern/common.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/components/rusage/components.hpp"
-
-TIMEMORY_EXTERN_COMPONENT(priority_context_switch, true, int64_t)
+#include "timemory/components/trip_count/components.hpp"
+#include "timemory/components/trip_count/extern.hpp"
+#include "timemory/storage/definition.hpp"

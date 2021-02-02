@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include "timemory/components/extern/common.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/components/rusage/components.hpp"
-
-TIMEMORY_EXTERN_COMPONENT(voluntary_context_switch, true, int64_t)
+#include "timemory/components/caliper/components.hpp"
+#include "timemory/components/caliper/extern.hpp"
+#include "timemory/storage/definition.hpp"

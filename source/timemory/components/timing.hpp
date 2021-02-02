@@ -22,4 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/rusage/extern/user_mode_time.hpp"
+#pragma once
+
+#include "timemory/components/timing/components.hpp"
+#include "timemory/components/timing/extern.hpp"
+#include "timemory/components/timing/wall_clock.hpp"
+#include "timemory/storage/definition.hpp"

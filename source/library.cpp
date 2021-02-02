@@ -25,8 +25,7 @@
 #include "timemory/compat/library.h"
 #include "timemory/config.hpp"
 #include "timemory/library.h"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/timemory.hpp"
+#include "timemory/runtime.hpp"
 #include "timemory/trace.hpp"
 
 #include <cstdarg>

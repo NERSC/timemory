@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/components/placeholder.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"

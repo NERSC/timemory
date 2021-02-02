@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include "timemory/components/extern/common.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/components/rusage/components.hpp"
-
-TIMEMORY_EXTERN_COMPONENT(num_major_page_faults, true, int64_t)
+#include "timemory/components/likwid/components.hpp"
+#include "timemory/components/likwid/extern.hpp"
+#include "timemory/storage/definition.hpp"

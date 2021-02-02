@@ -90,6 +90,7 @@ struct RapidJSONException : Exception
 #include "timemory/tpls/cereal/cereal/external/rapidjson/ostreamwrapper.h"
 #include "timemory/tpls/cereal/cereal/external/rapidjson/prettywriter.h"
 #include "timemory/tpls/cereal/cereal/external/rapidjson/writer.h"
+#include "timemory/tpls/cereal/fwd.hpp"
 
 #include <limits>
 #include <sstream>
@@ -148,7 +149,7 @@ struct PrettyJsonWriter
     that the container is variable sized and may be edited.
 
     \ingroup Archives */
-template <typename WriterType = PrettyJsonWriter>
+template <typename WriterType>
 class BaseJSONOutputArchive
 : public OutputArchive<BaseJSONOutputArchive<WriterType>>
 , public traits::TextArchive

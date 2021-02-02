@@ -62,6 +62,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::monotonic_raw_clock, fal
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mode_time, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::kernel_mode_time, false_type)
 
+#include "timemory/runtime.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
 

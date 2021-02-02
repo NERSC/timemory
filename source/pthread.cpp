@@ -24,11 +24,11 @@
 
 #include "timemory/backends/threading.hpp"
 #include "timemory/compat/library.h"
+#include "timemory/components/extern.hpp"
 #include "timemory/library.h"
 #include "timemory/manager.hpp"
 #include "timemory/operations/types/storage_initializer.hpp"
 #include "timemory/runtime/configure.hpp"
-#include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
 #include "timemory/utility/bits/signals.hpp"
 

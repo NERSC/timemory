@@ -31,6 +31,8 @@
 
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/components/properties.hpp"
+#include "timemory/enum.h"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/macros/compiler.hpp"

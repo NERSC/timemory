@@ -22,4 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/timing/extern/cpu.hpp"
+#pragma once
+
+#include "timemory/components/cuda/components.hpp"
+#include "timemory/components/cuda/extern.hpp"
+#include "timemory/storage/definition.hpp"

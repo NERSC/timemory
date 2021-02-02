@@ -32,7 +32,6 @@
 #include "timemory/compat/macros.h"
 #include "timemory/settings/macros.hpp"
 #include "timemory/utility/argparse.hpp"
-#include "timemory/utility/serializer.hpp"
 
 #include <functional>
 #include <map>

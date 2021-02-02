@@ -24,22 +24,45 @@
 
 #pragma once
 
-#include "timemory/tpls/cereal/cereal.hpp"
-#include "timemory/tpls/cereal/fwd.hpp"
-#include "timemory/tpls/cereal/types.hpp"
+#include <string>
+#include <type_traits>
 
-// cereal will cause some -Wclass-memaccess warnings that are quite annoying
-#if defined(__GNUC__) && (__GNUC__ > 7)
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wclass-memaccess"
-#endif
+// forward decls
+namespace tim
+{
+namespace cereal
+{
+class BinaryInputArchive;
+class BinaryOutputArchive;
+class PortableBinaryInputArchive;
+class PortableBinaryOutputArchive;
+class XMLInputArchive;
+class XMLOutputArchive;
+//
+struct MinimalJsonWriter;
+struct PrettyJsonWriter;
+//
+template <typename WriterType = PrettyJsonWriter>
+class BaseJSONOutputArchive;
+//
+using JSONOutputArchive        = BaseJSONOutputArchive<PrettyJsonWriter>;
+using PrettyJSONOutputArchive  = BaseJSONOutputArchive<PrettyJsonWriter>;
+using MinimalJSONOutputArchive = BaseJSONOutputArchive<MinimalJsonWriter>;
+//
+class JSONInputArchive;
+//
+template <class T>
+class NameValuePair;
+//
+template <class T>
+NameValuePair<T>
+make_nvp(const std::string& name, T&& value);
+//
+template <class T>
+NameValuePair<T>
+make_nvp(const char* name, T&& value);
+// json are always included so no forward decl necessary
+}  // namespace cereal
+}  // namespace tim
 
-// archives
-#include "timemory/tpls/cereal/cereal/archives/json.hpp"
-#if defined(TIMEMORY_USE_XML)
-#    include "timemory/tpls/cereal/cereal/archives/xml.hpp"
-#endif
-
-#if defined(__GNUC__) && (__GNUC__ > 7)
-#    pragma GCC diagnostic pop
-#endif
+#include "timemory/tpls/cereal/cereal/details/helpers.hpp"

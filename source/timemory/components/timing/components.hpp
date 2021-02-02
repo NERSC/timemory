@@ -25,12 +25,9 @@
 #pragma once
 
 #include "timemory/components/base/declaration.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/units.hpp"
-
-#include "timemory/components/timing/backends.hpp"
 #include "timemory/components/timing/types.hpp"
 #include "timemory/components/timing/wall_clock.hpp"
+#include "timemory/defines.h"
 
 #include <utility>
 
@@ -49,25 +46,13 @@ struct system_clock : public base<system_clock>
     using value_type = int64_t;
     using base_type  = base<system_clock, value_type>;
 
-    static std::string label() { return "sys"; }
-    static std::string description() { return "CPU time spent in kernel-mode"; }
-    static value_type  record() noexcept
-    {
-        return tim::get_clock_system_now<int64_t, ratio_t>();
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
-    {
-        value = (record() - value);
-        accum += value;
-    }
+    static std::string        label();
+    static std::string        description();
+    static value_type         record() noexcept;
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
+    void                      start() noexcept;
+    void                      stop() noexcept;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -81,25 +66,13 @@ struct user_clock : public base<user_clock>
     using value_type = int64_t;
     using base_type  = base<user_clock, value_type>;
 
-    static std::string label() { return "user"; }
-    static std::string description() { return "CPU time spent in user-mode"; }
-    static value_type  record() noexcept
-    {
-        return tim::get_clock_user_now<int64_t, ratio_t>();
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
-    {
-        value = (record() - value);
-        accum += value;
-    }
+    static std::string        label();
+    static std::string        description();
+    static value_type         record() noexcept;
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
+    void                      start() noexcept;
+    void                      stop() noexcept;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -113,28 +86,13 @@ struct cpu_clock : public base<cpu_clock>
     using value_type = int64_t;
     using base_type  = base<cpu_clock, value_type>;
 
-    static std::string label() { return "cpu"; }
-    static std::string description()
-    {
-        return "Total CPU time spent in both user- and kernel-mode";
-    }
-    static value_type record() noexcept
-    {
-        return tim::get_clock_cpu_now<int64_t, ratio_t>();
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
-    {
-        value = (record() - value);
-        accum += value;
-    }
+    static std::string        label();
+    static std::string        description();
+    static value_type         record() noexcept;
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
+    void                      start() noexcept;
+    void                      stop() noexcept;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -147,29 +105,13 @@ struct monotonic_clock : public base<monotonic_clock>
     using value_type = int64_t;
     using base_type  = base<monotonic_clock, value_type>;
 
-    static std::string label() { return "monotonic_clock"; }
-    static std::string description()
-    {
-        return "Wall-clock timer which will continue to increment even while the system "
-               "is asleep";
-    }
-    static value_type record()
-    {
-        return tim::get_clock_monotonic_now<int64_t, ratio_t>();
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
-    {
-        value = (record() - value);
-        accum += value;
-    }
+    static std::string        label();
+    static std::string        description();
+    static value_type         record() noexcept;
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
+    void                      start() noexcept;
+    void                      stop() noexcept;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -183,29 +125,13 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     using value_type = int64_t;
     using base_type  = base<monotonic_raw_clock, value_type>;
 
-    static std::string label() { return "monotonic_raw_clock"; }
-    static std::string description()
-    {
-        return "Wall-clock timer unaffected by frequency or time adjustments in system "
-               "time-of-day clock";
-    }
-    static value_type record()
-    {
-        return tim::get_clock_monotonic_raw_now<int64_t, ratio_t>();
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
-    {
-        value = (record() - value);
-        accum += value;
-    }
+    static std::string        label();
+    static std::string        description();
+    static value_type         record() noexcept;
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
+    void                      start() noexcept;
+    void                      stop() noexcept;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -220,25 +146,13 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     using value_type = int64_t;
     using base_type  = base<thread_cpu_clock, value_type>;
 
-    static std::string label() { return "thread_cpu"; }
-    static std::string description() { return "CPU-clock timer for the calling thread"; }
-    static value_type  record() noexcept
-    {
-        return tim::get_clock_thread_now<int64_t, ratio_t>();
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
-    {
-        value = (record() - value);
-        accum += value;
-    }
+    static std::string        label();
+    static std::string        description();
+    static value_type         record() noexcept;
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
+    void                      start() noexcept;
+    void                      stop() noexcept;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -253,28 +167,13 @@ struct process_cpu_clock : public base<process_cpu_clock>
     using value_type = int64_t;
     using base_type  = base<process_cpu_clock, value_type>;
 
-    static std::string label() { return "process_cpu"; }
-    static std::string description()
-    {
-        return "CPU-clock timer for the calling process (all threads)";
-    }
-    static value_type record() noexcept
-    {
-        return tim::get_clock_process_now<int64_t, ratio_t>();
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
-    {
-        value = (record() - value);
-        accum += value;
-    }
+    static std::string        label();
+    static std::string        description();
+    static value_type         record() noexcept;
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
+    void                      start() noexcept;
+    void                      stop() noexcept;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -290,98 +189,25 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     using base_type  = base<cpu_util, value_type>;
     using this_type  = cpu_util;
 
-    static std::string label() { return "cpu_util"; }
-    static std::string description()
-    {
-        return "Percentage of CPU-clock time divided by wall-clock time";
-    }
-    static value_type record()
-    {
-        return value_type(cpu_clock::record(), wall_clock::record());
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        const auto& _data = (is_transient) ? accum : value;
-        double      denom = (_data.second > 0) ? _data.second : 1;
-        double      numer = (_data.second > 0) ? _data.first : 0;
-        return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
-    }
-    double                    serialization() noexcept { return get_display(); }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
+    static std::string label();
+    static std::string description();
+    static value_type  record();
 
-    void start() noexcept
-    {
-        if(!m_derive)
-            value = record();
-    }
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
 
-    void stop() noexcept
-    {
-        using namespace tim::component::operators;
-        if(!m_derive)
-        {
-            value = (record() - value);
-            accum += value;
-        }
-    }
+    void start() noexcept;
+    void stop() noexcept;
 
-    this_type& operator+=(const this_type& rhs) noexcept
-    {
-        accum += rhs.accum;
-        value += rhs.value;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return *this;
-    }
+    this_type& operator+=(const this_type& rhs) noexcept;
+    this_type& operator-=(const this_type& rhs) noexcept;
 
-    this_type& operator-=(const this_type& rhs) noexcept
-    {
-        accum -= rhs.accum;
-        value -= rhs.value;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return *this;
-    }
-
-    bool assemble(const wall_clock* wc, const cpu_clock* cc) noexcept
-    {
-        if(wc && cc)
-            m_derive = true;
-        return m_derive;
-    }
-
+    bool assemble(const wall_clock* wc, const cpu_clock* cc) noexcept;
     bool assemble(const wall_clock* wc, const user_clock* uc,
-                  const system_clock* sc) noexcept
-    {
-        if(wc && uc && sc)
-            m_derive = true;
-        return m_derive;
-    }
-
-    bool derive(const wall_clock* wc, const cpu_clock* cc) noexcept
-    {
-        if(m_derive && wc && cc)
-        {
-            value.first  = cc->get_value();
-            value.second = wc->get_value();
-            accum += value;
-            return true;
-        }
-        return false;
-    }
-
+                  const system_clock* sc) noexcept;
+    bool derive(const wall_clock* wc, const cpu_clock* cc) noexcept;
     bool derive(const wall_clock* wc, const user_clock* uc,
-                const system_clock* sc) noexcept
-    {
-        if(m_derive && wc && uc && sc)
-        {
-            value.first  = uc->get_value() + sc->get_value();
-            value.second = wc->get_value();
-            accum += value;
-            return true;
-        }
-        return false;
-    }
+                const system_clock* sc) noexcept;
 
     TIMEMORY_NODISCARD bool is_derived() const noexcept { return m_derive; }
 
@@ -402,77 +228,21 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     using base_type  = base<process_cpu_util, value_type>;
     using this_type  = process_cpu_util;
 
-    static std::string label() { return "proc_cpu_util"; }
-    static std::string description()
-    {
-        return "Percentage of CPU-clock time divided by wall-clock time for calling "
-               "process (all threads)";
-    }
-    static value_type record()
-    {
-        return value_type(process_cpu_clock::record(), wall_clock::record());
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        const auto& _data =
-            (is_transient) ? static_cast<const value_type&>(accum) : value;
-        double denom = (_data.second > 0) ? _data.second : 1;
-        double numer = (_data.second > 0) ? _data.first : 0;
-        return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
-    }
-    double                    serialization() noexcept { return get_display(); }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept
-    {
-        if(!m_derive)
-            value = record();
-    }
-    void stop() noexcept
-    {
-        using namespace tim::component::operators;
-        if(!m_derive)
-        {
-            value = (record() - value);
-            accum += value;
-        }
-    }
+    static std::string label();
+    static std::string description();
+    static value_type  record();
 
-    this_type& operator+=(const this_type& rhs) noexcept
-    {
-        accum += rhs.accum;
-        value += rhs.value;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return *this;
-    }
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
 
-    this_type& operator-=(const this_type& rhs) noexcept
-    {
-        accum -= rhs.accum;
-        value -= rhs.value;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return *this;
-    }
+    void start() noexcept;
+    void stop() noexcept;
 
-    bool assemble(const wall_clock* wc, const process_cpu_clock* cc) noexcept
-    {
-        if(wc && cc)
-            m_derive = true;
-        return m_derive;
-    }
+    this_type& operator+=(const this_type& rhs) noexcept;
+    this_type& operator-=(const this_type& rhs) noexcept;
 
-    bool derive(const wall_clock* wc, const process_cpu_clock* cc) noexcept
-    {
-        if(m_derive && wc && cc)
-        {
-            value.first  = cc->get_value();
-            value.second = wc->get_value();
-            accum += value;
-            return true;
-        }
-        return false;
-    }
+    bool assemble(const wall_clock* wc, const process_cpu_clock* cc) noexcept;
+    bool derive(const wall_clock* wc, const process_cpu_clock* cc) noexcept;
 
     TIMEMORY_NODISCARD bool is_derived() const noexcept { return m_derive; }
 
@@ -493,77 +263,21 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     using base_type  = base<thread_cpu_util, value_type>;
     using this_type  = thread_cpu_util;
 
-    static std::string label() { return "thread_cpu_util"; }
-    static std::string description()
-    {
-        return "Percentage of CPU-clock time divided by wall-clock time for calling "
-               "thread";
-    }
-    static value_type record()
-    {
-        return value_type(thread_cpu_clock::record(), wall_clock::record());
-    }
-    TIMEMORY_NODISCARD double get() const noexcept
-    {
-        const auto& _data =
-            (is_transient) ? static_cast<const value_type&>(accum) : value;
-        double denom = (_data.second > 0) ? _data.second : 1;
-        double numer = (_data.second > 0) ? _data.first : 0;
-        return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
-    }
-    double                    serialization() noexcept { return get_display(); }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept
-    {
-        if(!m_derive)
-            value = record();
-    }
-    void stop() noexcept
-    {
-        using namespace tim::component::operators;
-        if(!m_derive)
-        {
-            value = (record() - value);
-            accum += value;
-        }
-    }
+    static std::string label();
+    static std::string description();
+    static value_type  record();
 
-    this_type& operator+=(const this_type& rhs) noexcept
-    {
-        accum += rhs.accum;
-        value += rhs.value;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return *this;
-    }
+    TIMEMORY_NODISCARD double get() const noexcept;
+    TIMEMORY_NODISCARD double get_display() const noexcept;
 
-    this_type& operator-=(const this_type& rhs) noexcept
-    {
-        accum -= rhs.accum;
-        value -= rhs.value;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return *this;
-    }
+    void start() noexcept;
+    void stop() noexcept;
 
-    bool assemble(const wall_clock* wc, const thread_cpu_clock* cc) noexcept
-    {
-        if(wc && cc)
-            m_derive = true;
-        return m_derive;
-    }
+    this_type& operator+=(const this_type& rhs) noexcept;
+    this_type& operator-=(const this_type& rhs) noexcept;
 
-    bool derive(const wall_clock* wc, const thread_cpu_clock* cc) noexcept
-    {
-        if(m_derive && wc && cc)
-        {
-            value.first  = cc->get_value();
-            value.second = wc->get_value();
-            accum += value;
-            return true;
-        }
-        return false;
-    }
+    bool assemble(const wall_clock* wc, const thread_cpu_clock* cc) noexcept;
+    bool derive(const wall_clock* wc, const thread_cpu_clock* cc) noexcept;
 
     TIMEMORY_NODISCARD bool is_derived() const noexcept { return m_derive; }
 
@@ -571,9 +285,9 @@ private:
     bool m_derive = false;
 };
 
-//--------------------------------------------------------------------------------------//
 }  // namespace component
 }  // namespace tim
-//
-//--------------------------------------------------------------------------------------//
-//
+
+#if !defined(TIMEMORY_COMPONENT_SOURCE) && !defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#    include "timemory/components/timing/components.cpp"
+#endif

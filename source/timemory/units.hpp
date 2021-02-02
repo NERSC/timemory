@@ -31,11 +31,11 @@
 #pragma once
 
 #include "timemory/macros/os.hpp"
-#include "timemory/utility/macros.hpp"
 
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
+#include <iostream>
 #include <ratio>
 #include <string>
 #include <tuple>

@@ -112,8 +112,6 @@
 //
 #if defined(TIMEMORY_USE_TIMING_EXTERN)
 #    include "timemory/components/timing/extern.hpp"
-#    include "timemory/components/timing/extern/cpu.hpp"
-#    include "timemory/components/timing/extern/util.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//

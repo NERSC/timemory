@@ -22,4 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/rusage/extern/current_peak_rss.hpp"
+#pragma once
+
+#include "timemory/components/cupti/components.hpp"
+#include "timemory/components/cupti/extern.hpp"
+#include "timemory/storage/definition.hpp"

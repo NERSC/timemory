@@ -31,6 +31,7 @@
 //======================================================================================//
 // disables a bunch of warnings
 //
+#include "timemory/backends.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
