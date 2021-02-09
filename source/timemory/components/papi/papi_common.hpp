@@ -219,7 +219,8 @@ public:
                        events_str.c_str());
             }
 
-            vector_t<string_t> events_str_list = delimit(events_str);
+            // don't delimit colons!
+            vector_t<string_t> events_str_list = delimit(events_str, "\"',; ");
             vector_t<int>      events_list;
 
             auto& pevents = private_events();
