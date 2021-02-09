@@ -114,8 +114,9 @@ struct is_available<component::ompt_native_data_tracker> : false_type
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<TIMEMORY_API>, OMPT_HANDLE, "ompt_handle",
-                                 "ompt", "ompt_handle", "openmp", "openmp_tools")
+TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<TIMEMORY_API>, TIMEMORY_OMPT_HANDLE,
+                                 "ompt_handle", "ompt", "ompt_handle", "openmp",
+                                 "openmp_tools")
 //
 //======================================================================================//
 //

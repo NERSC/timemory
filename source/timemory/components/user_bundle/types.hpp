@@ -211,27 +211,27 @@ struct reset<component::user_bundle<Idx, Type>>
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_global_bundle, USER_GLOBAL_BUNDLE,
+TIMEMORY_PROPERTY_SPECIALIZATION(user_global_bundle, TIMEMORY_USER_GLOBAL_BUNDLE,
                                  "user_global_bundle", "global_bundle",
                                  "user_tuple_bundle", "tuple_bundle", "user_list_bundle",
                                  "list_bundle")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
-                                 "ompt_bundle")
+TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, TIMEMORY_USER_OMPT_BUNDLE,
+                                 "user_ompt_bundle", "ompt_bundle")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE, "user_mpip_bundle",
-                                 "mpip", "mpi_tools", "mpi")
+TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, TIMEMORY_USER_MPIP_BUNDLE,
+                                 "user_mpip_bundle", "mpip", "mpi_tools", "mpi")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_ncclp_bundle, USER_NCCLP_BUNDLE,
+TIMEMORY_PROPERTY_SPECIALIZATION(user_ncclp_bundle, TIMEMORY_USER_NCCLP_BUNDLE,
                                  "user_ncclp_bundle", "ncclp", "nccl_tools", "nccl")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_trace_bundle, USER_TRACE_BUNDLE,
+TIMEMORY_PROPERTY_SPECIALIZATION(user_trace_bundle, TIMEMORY_USER_TRACE_BUNDLE,
                                  "user_trace_bundle", "trace_bundle")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_profiler_bundle, USER_PROFILER_BUNDLE,
+TIMEMORY_PROPERTY_SPECIALIZATION(user_profiler_bundle, TIMEMORY_USER_PROFILER_BUNDLE,
                                  "user_profiler_bundle", "profiler_bundle")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_kokkosp_bundle, USER_KOKKOSP_BUNDLE,
+TIMEMORY_PROPERTY_SPECIALIZATION(user_kokkosp_bundle, TIMEMORY_USER_KOKKOSP_BUNDLE,
                                  "user_kokkos_bundle", "kokkos_bundle",
                                  "user_kokkosp_bundle", "kokkosp_bundle")
 //

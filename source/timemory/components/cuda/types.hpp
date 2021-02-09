@@ -239,8 +239,9 @@ struct python_args<TIMEMORY_MARK_END, component::cuda_event>
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(cuda_event, CUDA_EVENT, "cuda_event", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(cuda_event, TIMEMORY_CUDA_EVENT, "cuda_event", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(cuda_profiler, CUDA_PROFILER, "cuda_profiler", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(cuda_profiler, TIMEMORY_CUDA_PROFILER, "cuda_profiler",
+                                 "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(nvtx_marker, NVTX_MARKER, "nvtx_marker", "nvtx")
+TIMEMORY_PROPERTY_SPECIALIZATION(nvtx_marker, TIMEMORY_NVTX_MARKER, "nvtx_marker", "nvtx")

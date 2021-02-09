@@ -132,11 +132,11 @@ struct python_args<TIMEMORY_RECORD, component::data_tracker_floating>
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(data_tracker_integer, DATA_TRACKER_INTEGER,
+TIMEMORY_PROPERTY_SPECIALIZATION(data_tracker_integer, TIMEMORY_DATA_TRACKER_INTEGER,
                                  "data_tracker_integer", "integer_data_tracker")
-TIMEMORY_PROPERTY_SPECIALIZATION(data_tracker_unsigned, DATA_TRACKER_UNSIGNED,
+TIMEMORY_PROPERTY_SPECIALIZATION(data_tracker_unsigned, TIMEMORY_DATA_TRACKER_UNSIGNED,
                                  "data_tracker_unsigned", "unsigned_data_tracker")
-TIMEMORY_PROPERTY_SPECIALIZATION(data_tracker_floating, DATA_TRACKER_FLOATING,
+TIMEMORY_PROPERTY_SPECIALIZATION(data_tracker_floating, TIMEMORY_DATA_TRACKER_FLOATING,
                                  "data_tracker_floating", "floating_data_tracker")
 //
 //--------------------------------------------------------------------------------------//

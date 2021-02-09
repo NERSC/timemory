@@ -249,29 +249,29 @@ struct units<component::cpu_roofline<Types...>>
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_dp_flops, CPU_ROOFLINE_DP_FLOPS,
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_dp_flops, TIMEMORY_CPU_ROOFLINE_DP_FLOPS,
                                  "cpu_roofline_dp_flops", "cpu_roofline_dp",
                                  "cpu_roofline_double")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_flops, CPU_ROOFLINE_FLOPS,
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_flops, TIMEMORY_CPU_ROOFLINE_FLOPS,
                                  "cpu_roofline_flops", "cpu_roofline")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_sp_flops, CPU_ROOFLINE_SP_FLOPS,
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_sp_flops, TIMEMORY_CPU_ROOFLINE_SP_FLOPS,
                                  "cpu_roofline_sp_flops", "cpu_roofline_sp",
                                  "cpu_roofline_single")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_dp_flops, GPU_ROOFLINE_DP_FLOPS,
+TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_dp_flops, TIMEMORY_GPU_ROOFLINE_DP_FLOPS,
                                  "gpu_roofline_dp_flops", "gpu_roofline_dp",
                                  "gpu_roofline_double")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_flops, GPU_ROOFLINE_FLOPS,
+TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_flops, TIMEMORY_GPU_ROOFLINE_FLOPS,
                                  "gpu_roofline_flops", "gpu_roofline")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_hp_flops, GPU_ROOFLINE_HP_FLOPS,
+TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_hp_flops, TIMEMORY_GPU_ROOFLINE_HP_FLOPS,
                                  "gpu_roofline_hp_flops", "gpu_roofline_hp",
                                  "gpu_roofline_half")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_sp_flops, GPU_ROOFLINE_SP_FLOPS,
+TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_sp_flops, TIMEMORY_GPU_ROOFLINE_SP_FLOPS,
                                  "gpu_roofline_sp_flops", "gpu_roofline_sp",
                                  "gpu_roofline_single")
 //
