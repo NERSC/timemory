@@ -872,7 +872,7 @@ if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
     target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
 else()
     set(TIMEMORY_USE_NVTX OFF)
-    inform_empty_interface(timemory-cuda "NVTX")
+    # inform_empty_interface(timemory-cuda "NVTX")
 endif()
 
 
