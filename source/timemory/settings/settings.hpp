@@ -301,6 +301,9 @@ public:
     Tp get(Sp&& _key, bool _exact = true);
 
     template <typename Tp, typename Sp = string_t>
+    bool get(Sp&& _key, Tp& _val, bool _exact);
+
+    template <typename Tp, typename Sp = string_t>
     bool set(Sp&& _key, Tp&& _val, bool _exact = true);
 
     /// \fn bool update(const std::string& key, const std::string& val, bool exact)
@@ -632,6 +635,26 @@ settings::get(Sp&& _key, bool _exact)
 }
 //
 //--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Sp>
+bool
+settings::get(Sp&& _key, Tp& _val, bool _exact)
+{
+    auto itr = find(std::forward<Sp>(_key), _exact);
+    if(itr != m_data.end() && itr->second)
+    {
+        auto _vptr = itr->second;
+        auto _tidx = std::type_index(typeid(Tp));
+        auto _vidx = std::type_index(typeid(Tp&));
+        if(_vptr->get_type_index() == _tidx && _vptr->get_value_index() == _tidx)
+            return ((_val = static_cast<tsettings<Tp, Tp>*>(_vptr.get())->get()), true);
+        if(_vptr->get_type_index() == _tidx && _vptr->get_value_index() == _vidx)
+            return ((_val = static_cast<tsettings<Tp, Tp&>*>(_vptr.get())->get()), true);
+    }
+    return false;
+}
+//
+//----------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Sp>
 bool

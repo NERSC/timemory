@@ -116,6 +116,12 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_NETWORK_EXTERN)
+#    include "timemory/components/network/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #if defined(TIMEMORY_USE_TRIP_COUNT_EXTERN)
 #    include "timemory/components/trip_count/extern.hpp"
 #endif

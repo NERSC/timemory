@@ -1026,6 +1026,11 @@ settings::initialize_miscellaneous()
         bool, banner, TIMEMORY_SETTINGS_KEY("BANNER"),
         "Notify about tim::manager creation and destruction",
         (get_env<bool>(TIMEMORY_SETTINGS_KEY("LIBRARY_CTOR"), false)));
+
+    TIMEMORY_SETTINGS_HIDDEN_MEMBER_ARG_IMPL(
+        std::string, TIMEMORY_SETTINGS_KEY("NETWORK_INTERFACE"),
+        "Default network interface", std::string{},
+        strvector_t({ "--timemory-network-interface" }), -1, 1);
 }
 //
 //--------------------------------------------------------------------------------------//

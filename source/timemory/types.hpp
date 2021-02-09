@@ -95,6 +95,7 @@
     component::memory_allocations,              \
     component::monotonic_clock,                 \
     component::monotonic_raw_clock,             \
+    component::network_stats,                   \
     component::num_io_in,                       \
     component::num_io_out,                      \
     component::num_major_page_faults,           \

@@ -309,24 +309,22 @@ struct sortT<PrioT, type_list<In, InT...>, type_list<BegTT...>, type_list<Tp, En
 //
 namespace internal
 {
+template <typename... Ts>
+using tuple_cat_t = decltype(std::tuple_cat(std::declval<Ts>()...));
+
+template <typename T, typename... Ts>
+using remove_t =
+    tuple_cat_t<typename std::conditional<std::is_same<T, Ts>::value, std::tuple<>,
+                                          std::tuple<Ts>>::type...>;
+
 template <typename Tp, typename In, typename Out>
 struct remove_type;
 
-template <typename Tp, template <typename...> class Tuple, typename Out>
-struct remove_type<Tp, Tuple<>, Out>
-{
-    using type = Out;
-};
-
 template <typename Tp, template <typename...> class InTuple,
-          template <typename...> class OutTuple, typename In, typename... InTail,
-          typename... Out>
-struct remove_type<Tp, InTuple<In, InTail...>, OutTuple<Out...>>
+          template <typename...> class OutTuple, typename... InTail, typename... Out>
+struct remove_type<Tp, InTuple<InTail...>, OutTuple<Out...>>
 {
-    using type = conditional_t<
-        std::is_same<Tp, In>::value,
-        typename remove_type<Tp, type_list<InTail...>, OutTuple<Out...>>::type,
-        typename remove_type<Tp, type_list<InTail...>, OutTuple<Out..., In>>::type>;
+    using type = convert_t<remove_t<Tp, InTail...>, OutTuple<Out...>>;
 };
 }  // namespace internal
 

@@ -92,26 +92,72 @@ struct add_statistics
     TIMEMORY_DEFAULT_OBJECT(add_statistics)
 
     //----------------------------------------------------------------------------------//
-    // if statistics is enabled
+    // if statistics is not enabled
     //
-    template <typename StatsT, typename U = type>
-    TIMEMORY_HOT add_statistics(
-        const U& rhs, StatsT& stats,
-        enable_if_t<enabled_statistics<U, StatsT>::value, int> = 0);
+    template <typename StatsT>
+    TIMEMORY_INLINE add_statistics(const type& _obj, StatsT& _stats)
+    {
+        (*this)(_obj, _stats);
+    }
 
     //----------------------------------------------------------------------------------//
     // if statistics is not enabled
     //
-    template <typename StatsT, typename U>
-    TIMEMORY_INLINE add_statistics(
-        const U&, StatsT&, enable_if_t<!enabled_statistics<U, StatsT>::value, int> = 0)
+    TIMEMORY_INLINE add_statistics(const type& _obj) { (*this)(_obj); }
+
+    //----------------------------------------------------------------------------------//
+    // generic operator
+    //
+    template <typename U>
+    TIMEMORY_INLINE auto operator()(const U& rhs) const
+    {
+        return sfinae(rhs, 0);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // if statistics is enabled
+    //
+    template <typename StatsT, typename U = type>
+    TIMEMORY_INLINE void operator()(
+        const U& rhs, StatsT& stats,
+        enable_if_t<enabled_statistics<U, StatsT>::value, int> = 0) const;
+
+    //----------------------------------------------------------------------------------//
+    // if statistics is not enabled
+    //
+    template <typename StatsT, typename U = type>
+    TIMEMORY_INLINE void operator()(
+        const U&, StatsT&,
+        enable_if_t<!enabled_statistics<U, StatsT>::value, int> = 0) const
+    {}
+
+private:
+    template <typename U>
+    TIMEMORY_INLINE auto sfinae(const U& rhs, int) const
+        -> decltype(rhs.get_iterator()->stats(),
+                    decay_t<decltype(rhs.get_iterator()->stats())>{})
+    {
+        using stats_type = decay_t<decltype(rhs.get_iterator()->stats())>;
+        auto itr         = rhs.get_iterator();
+        if(itr)
+        {
+            (*this)(rhs, itr->stats());
+            return itr->stats();
+        }
+        return stats_type{};
+    }
+
+    template <typename U>
+    TIMEMORY_INLINE void sfinae(const U&, long) const
     {}
 };
 //
 template <typename T>
 template <typename StatsT, typename U>
-add_statistics<T>::add_statistics(const U& rhs, StatsT& stats,
-                                  enable_if_t<enabled_statistics<U, StatsT>::value, int>)
+void
+add_statistics<T>::operator()(
+    const U& rhs, StatsT& stats,
+    enable_if_t<enabled_statistics<U, StatsT>::value, int>) const
 {
     // for type comparison
     using incoming_t = decay_t<typename StatsT::value_type>;
@@ -119,8 +165,8 @@ add_statistics<T>::add_statistics(const U& rhs, StatsT& stats,
     // check the incomming stat type against declared stat type
     // but allow for permissive_statistics when there is an acceptable
     // implicit conversion
-    static_assert((!trait::permissive_statistics<U>::value &&
-                   std::is_same<incoming_t, expected_t>::value),
+    static_assert(trait::permissive_statistics<U>::value ||
+                      std::is_same<incoming_t, expected_t>::value,
                   "add_statistics was passed a data type different than declared "
                   "trait::statistics type. To disable this error, e.g. permit "
                   "implicit conversion, set trait::permissive_statistics "

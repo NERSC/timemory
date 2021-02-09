@@ -63,6 +63,7 @@ main(int argc, char** argv)
     // ensure manager never writes metadata
     tim::manager::instance()->set_write_metadata(-1);
 
+    bool _use_net  = false;
     auto _mpi_argc = 1;
     auto _mpi_argv = argv;
     tim::mpi::initialize(_mpi_argc, _mpi_argv);
@@ -197,6 +198,11 @@ main(int argc, char** argv)
                       "string as leading dashes can confuse parser) [default: -i]")
         .count(1)
         .action([](parser_t& p) { shell_flags() = p.get<std::string>("shell-flags"); });
+    parser.add_argument()
+        .names({ "--network-stats" })
+        .description("Enable sampling network usage statistics (Linux only)")
+        .max_count(1)
+        .action([&](parser_t& p) { _use_net = p.get<bool>("network-stats"); });
 #if defined(TIMEMORY_USE_MPI)
     parser
         .add_argument(
@@ -226,6 +232,9 @@ main(int argc, char** argv)
 
     // make sure config is instantiated
     tim::consume_parameters(get_config());
+
+    // configure the network stats
+    tim::trait::apply<tim::trait::runtime_enabled>::set<network_stats>(_use_net);
 
     // sample_delay() = std::max<double>(sample_delay(), 1.0e-6);
     sample_freq() = std::min<double>(sample_freq(), 5000.);
