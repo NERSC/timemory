@@ -286,7 +286,7 @@ manager::finalize()
     if(m_instance_count == 0 && m_rank == 0)
     {
         operation::finalize::ctest_notes<manager>::get_notes().reset();
-        write_metadata("manager::finalize");
+        internal_write_metadata("manager::finalize");
     }
 
     m_is_finalized = true;
@@ -312,7 +312,7 @@ manager::exit_hook()
                 get_shared_ptr_pair_master_instance<manager, TIMEMORY_API>();
             if(master_manager)
             {
-                master_manager->write_metadata("manager::exit_hook");
+                master_manager->internal_write_metadata("manager::exit_hook");
                 master_manager.reset();
             }
         }
@@ -344,7 +344,139 @@ manager::update_metadata_prefix()
 //----------------------------------------------------------------------------------//
 //
 TIMEMORY_MANAGER_LINKAGE(void)
-manager::write_metadata(const char* context)
+manager::write_metadata(const std::string& _output_dir, const char* context)
+{
+    if(m_rank != 0)
+    {
+        if(f_debug())
+            PRINT_HERE("[%s]> metadata disabled for rank %i", context, (int) m_rank);
+        return;
+    }
+
+    if(tim::get_env<bool>("TIMEMORY_CXX_PLOT_MODE", false))
+    {
+        if(f_debug())
+            PRINT_HERE("[%s]> plot mode enabled. Skipping metadata", context);
+        return;
+    }
+
+    auto fname = settings::compose_output_filename("metadata", "json", false, -1, false,
+                                                   _output_dir);
+    auto hname = settings::compose_output_filename("functions", "json", false, -1, false,
+                                                   _output_dir);
+
+    auto _settings = f_settings();
+    bool _banner   = (_settings) ? _settings->get_banner() : false;
+    if(f_verbose() > 0 || _banner || f_debug())
+        printf("\n[metadata::%s]> Outputting '%s' and '%s'...\n", context, fname.c_str(),
+               hname.c_str());
+
+    auto_lock_t _lk(type_mutex<manager>());
+
+    std::ofstream ofs(fname.c_str());
+    if(ofs)
+    {
+        // ensure json write final block during destruction before the file is closed
+        using policy_type = policy::output_archive_t<manager>;
+        auto oa           = policy_type::get(ofs);
+        oa->setNextName("timemory");
+        oa->startNode();
+        {
+            oa->setNextName("metadata");
+            oa->startNode();
+            // user
+            {
+                auto& _info_metadata = f_manager_persistent_data().info_metadata;
+                auto& _func_metadata = f_manager_persistent_data().func_metadata;
+                oa->setNextName("info");
+                oa->startNode();
+                for(const auto& itr : _info_metadata)
+                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
+                for(const auto& itr : _func_metadata)
+                    itr(static_cast<void*>(oa.get()));
+                oa->finishNode();
+            }
+            // settings
+            if(_settings)
+            {
+                settings::serialize_settings(*oa, *(_settings.get()));
+            }
+            // output
+            {
+                oa->setNextName("output");
+                oa->startNode();
+                for(const auto& itr : m_output_files)
+                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
+                oa->finishNode();
+            }
+            // environment
+            {
+                env_settings::serialize_environment(*oa);
+            }
+            //
+            oa->finishNode();
+        }
+        oa->finishNode();
+    }
+    if(ofs)
+        ofs << std::endl;
+    else
+        printf("[manager]> Warning! Error opening '%s'...\n", fname.c_str());
+    ofs.close();
+
+    std::map<std::string, std::set<size_t>> _hashes{};
+    if(m_hash_ids && m_hash_aliases)
+    {
+        for(const auto& itr : (*m_hash_aliases))
+        {
+            auto hitr = m_hash_ids->find(itr.second);
+            if(hitr != m_hash_ids->end())
+            {
+                _hashes[operation::decode<TIMEMORY_API>{}(hitr->second)].insert(
+                    itr.first);
+                _hashes[operation::decode<TIMEMORY_API>{}(hitr->second)].insert(
+                    hitr->first);
+            }
+        }
+        for(const auto& itr : (*m_hash_ids))
+            _hashes[operation::decode<TIMEMORY_API>{}(itr.second)].insert(itr.first);
+    }
+    if(_hashes.empty())
+        return;
+
+    std::ofstream hfs(hname.c_str());
+    if(hfs)
+    {
+        // ensure json write final block during destruction before the file is closed
+        using policy_type = policy::output_archive_t<manager>;
+        auto oa           = policy_type::get(hfs);
+        oa->setNextName("timemory");
+        oa->startNode();
+        {
+            oa->setNextName("functions");
+            oa->startNode();
+            // hash-keys
+            {
+                for(const auto& itr : _hashes)
+                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
+            }
+            //
+            oa->finishNode();
+        }
+        oa->finishNode();
+    }
+    if(hfs)
+        hfs << std::endl;
+    else
+        printf("[manager]> Warning! Error opening '%s'...\n", hname.c_str());
+
+    hfs.close();
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_MANAGER_LINKAGE(void)
+manager::internal_write_metadata(const char* context)
 {
     if(m_rank != 0)
     {
@@ -375,7 +507,6 @@ manager::write_metadata(const char* context)
         return;
     }
 
-    bool _banner      = _settings->get_banner();
     bool _auto_output = _settings->get_auto_output();
     bool _file_output = _settings->get_file_output();
     auto _outp_prefix = _settings->get_global_output_prefix();
@@ -435,114 +566,7 @@ manager::write_metadata(const char* context)
     if(f_debug())
         PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
-    auto fname = settings::compose_output_filename("metadata", "json", false, -1, false,
-                                                   m_metadata_prefix);
-    auto hname = settings::compose_output_filename("functions", "json", false, -1, false,
-                                                   m_metadata_prefix);
-
-    if(f_verbose() > 0 || _banner || f_debug())
-        printf("\n[metadata::%s]> Outputting '%s' and '%s'...\n", context, fname.c_str(),
-               hname.c_str());
-
-    auto_lock_t _lk(type_mutex<manager>());
-
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
-    {
-        // ensure json write final block during destruction before the file is closed
-        using policy_type = policy::output_archive_t<manager>;
-        auto oa           = policy_type::get(ofs);
-        oa->setNextName("timemory");
-        oa->startNode();
-        {
-            oa->setNextName("metadata");
-            oa->startNode();
-            // user
-            {
-                auto& _info_metadata = f_manager_persistent_data().info_metadata;
-                auto& _func_metadata = f_manager_persistent_data().func_metadata;
-                oa->setNextName("info");
-                oa->startNode();
-                for(const auto& itr : _info_metadata)
-                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
-                for(const auto& itr : _func_metadata)
-                    itr(static_cast<void*>(oa.get()));
-                oa->finishNode();
-            }
-            // settings
-            {
-                settings::serialize_settings(*oa, *(_settings.get()));
-            }
-            // output
-            {
-                oa->setNextName("output");
-                oa->startNode();
-                for(const auto& itr : m_output_files)
-                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
-                oa->finishNode();
-            }
-            // environment
-            {
-                env_settings::serialize_environment(*oa);
-            }
-            //
-            oa->finishNode();
-        }
-        oa->finishNode();
-    }
-    if(ofs)
-        ofs << std::endl;
-    else
-        printf("[manager]> Warning! Error opening '%s'...\n", fname.c_str());
-    ofs.close();
-
-    std::map<std::string, std::set<size_t>> _hashes;
-    if(m_hash_ids && m_hash_aliases)
-    {
-        for(const auto& itr : (*m_hash_aliases))
-        {
-            auto hitr = m_hash_ids->find(itr.second);
-            if(hitr != m_hash_ids->end())
-            {
-                _hashes[operation::decode<TIMEMORY_API>{}(hitr->second)].insert(
-                    itr.first);
-                _hashes[operation::decode<TIMEMORY_API>{}(hitr->second)].insert(
-                    hitr->first);
-            }
-        }
-        for(const auto& itr : (*m_hash_ids))
-            _hashes[operation::decode<TIMEMORY_API>{}(itr.second)].insert(itr.first);
-    }
-    if(_hashes.empty())
-        return;
-
-    std::ofstream hfs(hname.c_str());
-    if(hfs)
-    {
-        // ensure json write final block during destruction before the file is closed
-        using policy_type = policy::output_archive_t<manager>;
-        auto oa           = policy_type::get(hfs);
-        oa->setNextName("timemory");
-        oa->startNode();
-        {
-            oa->setNextName("functions");
-            oa->startNode();
-            // hash-keys
-            {
-                for(const auto& itr : _hashes)
-                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
-            }
-            //
-            oa->finishNode();
-        }
-        oa->finishNode();
-    }
-    if(hfs)
-        hfs << std::endl;
-    else
-        printf("[manager]> Warning! Error opening '%s'...\n", hname.c_str());
-
-    hfs.close();
+    write_metadata(m_metadata_prefix, context);
 }
 //
 //--------------------------------------------------------------------------------------//

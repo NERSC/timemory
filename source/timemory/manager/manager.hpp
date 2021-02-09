@@ -120,9 +120,9 @@ public:
 
     /// \fn void set_write_metadata(short)
     /// \brief Set to 0 for yes if other output, -1 for never, or 1 for yes
-    void               set_write_metadata(short v) { m_write_metadata = v; }
-    void               write_metadata(const char* = "");
-    void               update_metadata_prefix();
+    void                       set_write_metadata(short v) { m_write_metadata = v; }
+    void                       write_metadata(const std::string&, const char* = "");
+    void                       update_metadata_prefix();
     TIMEMORY_NODISCARD int32_t get_rank() const { return m_rank; }
     TIMEMORY_NODISCARD bool    is_finalizing() const { return m_is_finalizing; }
     void                       is_finalizing(bool v) { m_is_finalizing = v; }
@@ -266,6 +266,7 @@ protected:
 protected:
     // protected functions
     TIMEMORY_NODISCARD string_t get_prefix() const;
+    void                        internal_write_metadata(const char* = "");
 
 private:
     /// notifies that it is finalizing

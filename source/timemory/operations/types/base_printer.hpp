@@ -76,50 +76,15 @@ private:
     void operator()(std::ostream&, const Up&, long) const
     {}
 
-    template <typename Up>
-    auto label_sfinae(const Up& _obj, int)
-        -> decltype(_obj.label_array(), std::vector<std::string>())
-    {
-        auto                     arr = _obj.label_array();
-        std::vector<std::string> ret;
-        ret.assign(arr.begin(), arr.end());
-        return ret;
-    }
-
-    template <typename Up>
-    auto label_sfinae(const Up& _obj, long) const
-    {
-        return _obj.label();
-    }
-
-    template <typename Up>
-    auto disp_sfinae(const Up& _obj, int) const
-        -> decltype(_obj.display_unit_array(), std::vector<std::string>())
-    {
-        auto                     arr = _obj.display_unit_array();
-        std::vector<std::string> ret;
-        ret.assign(arr.begin(), arr.end());
-        return ret;
-    }
-
-    template <typename Up>
-    auto disp_sfinae(const Up& _obj, long) const
-    {
-        return _obj.display_unit();
-    }
-
     //----------------------------------------------------------------------------------//
     //
     //      Array of values + Array of labels + Array of display units
     //
     //----------------------------------------------------------------------------------//
     //
-    template <typename ValueT, typename DispT, typename LabelT,
-              enable_if_t<!std::is_same<decay_t<ValueT>, std::string>::value, int> = 0,
-              enable_if_t<!std::is_same<decay_t<LabelT>, std::string>::value, int> = 0,
-              enable_if_t<!std::is_same<decay_t<DispT>, std::string>::value, int>  = 0>
-    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp,
-                LabelT& _label) const
+    template <typename ValueT, typename DispT, typename LabelT>
+    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label,
+                enable_if_t<not_string<ValueT, LabelT, DispT>(), int> = 0) const
         -> decltype((_value.size() + _disp.size() + _label.size()), void())
     {
         auto _prec  = type::get_precision();
@@ -165,12 +130,10 @@ private:
     //
     //----------------------------------------------------------------------------------//
     //
-    template <typename ValueT, typename DispT, typename LabelT,
-              enable_if_t<!std::is_same<decay_t<ValueT>, std::string>::value, int> = 0,
-              enable_if_t<!std::is_same<decay_t<LabelT>, std::string>::value, int> = 0,
-              enable_if_t<std::is_same<decay_t<DispT>, std::string>::value, int>   = 0>
-    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp,
-                LabelT& _label) const -> decltype((_value.size() + _label.size()), void())
+    template <typename ValueT, typename DispT, typename LabelT>
+    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label,
+                enable_if_t<not_string<ValueT, LabelT>() && is_string<DispT>(), int> =
+                    0) const -> decltype((_value.size() + _label.size()), void())
     {
         auto _prec  = type::get_precision();
         auto _width = type::get_width();
@@ -215,12 +178,10 @@ private:
     //
     //----------------------------------------------------------------------------------//
     //
-    template <typename ValueT, typename DispT, typename LabelT,
-              enable_if_t<!std::is_same<decay_t<ValueT>, std::string>::value, int> = 0,
-              enable_if_t<std::is_same<decay_t<LabelT>, std::string>::value, int>  = 0,
-              enable_if_t<std::is_same<decay_t<DispT>, std::string>::value, int>   = 0>
-    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp,
-                LabelT& _label) const -> decltype((_value.size() + _label.size()), void())
+    template <typename ValueT, typename DispT, typename LabelT>
+    auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label,
+                enable_if_t<not_string<ValueT>() && is_string<LabelT, DispT>(), int> =
+                    0) const -> decltype((_value.size() + _label.size()), void())
     {
         auto _prec  = type::get_precision();
         auto _width = type::get_width();

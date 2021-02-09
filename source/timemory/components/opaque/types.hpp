@@ -52,11 +52,14 @@ struct opaque
     using pop_func_t    = std::function<void(void*)>;
     using get_func_t    = std::function<void(void*, void*&, size_t)>;
     using delete_func_t = std::function<void(void*)>;
+    using sample_func_t = std::function<void(void*)>;
 
     template <typename InitF, typename StartF, typename StopF, typename GetF,
-              typename DelF, typename SetupF, typename PushF, typename PopF>
+              typename DelF, typename SetupF, typename PushF, typename PopF,
+              typename SampleF>
     opaque(bool _valid, size_t _typeid, InitF&& _init, StartF&& _start, StopF&& _stop,
-           GetF&& _get, DelF&& _del, SetupF&& _setup, PushF&& _push, PopF&& _pop);
+           GetF&& _get, DelF&& _del, SetupF&& _setup, PushF&& _push, PopF&& _pop,
+           SampleF&& _sample);
     ~opaque();
     opaque()              = default;
     opaque(const opaque&) = default;
@@ -69,6 +72,7 @@ struct opaque
     void init();
     void setup(const string_t& _prefix, scope::config _scope);
     void push(const string_t& _prefix, scope::config _scope);
+    void sample();
     void start();
     void stop();
     void pop();
@@ -88,6 +92,7 @@ struct opaque
     pop_func_t    m_pop   = [](void*) {};
     get_func_t    m_get   = [](void*, void*&, size_t) {};
     delete_func_t m_del   = [](void*) {};
+    sample_func_t m_sample = [](void*) {};
 };
 //
 template <typename Toolset>
