@@ -37,14 +37,10 @@ In other words, timemory provides many pre-built tools, libraries, and interface
 codes can re-use only individual pieces -- such as the classes for measuring different timing intervals, memory usage,
 and hardware counters -- without the timemory "runtime management".
 
-## Versioning
+## Building and Installing
 
-Timemory originated as a very simple tool for recording timing and memory measurements (hence the name) in C, C++, and Python and only supported
-three modes prior to the 3.0.0 release: a fixed set of timers, a pair of memory measurements, and the combination of the two.
-__Prior to the 3.0.0 release, timemory was almost completely rewritten from scratch__ with the sole exceptions of some C/C++ macro, e.g.
-`TIMEMORY_AUTO_TIMER`, and some Python decorators and context-manager, e.g. `timemory.util.auto_timer`, whose behavior were
-able to be fully replicated in the new release. Thus, while it may appear that timemory is a mature project at v3.0+, it
-is essentially still in it's first major release.
+Timemory uses a standard CMake installation.
+Several installation examples can be found in the [Wiki](https://github.com/NERSC/timemory/wiki/Installation-Examples). See the [installation documentation](https://timemory.readthedocs.io/en/develop/installation.html) for detailed information on the CMake options.
 
 ## Documentation
 
@@ -55,12 +51,27 @@ Tutorials are available in the [github.com/NERSC/timemory-tutorials](https://git
 
 ## Overview
 
-Timemory is designed, first and foremost, to be a portable, modular, and fully customizable toolkit
-for performance measurement and analysis of serial and parallel programs written in C, C++, Fortran, Python, and CUDA.
+__*The primary objective of the timemory is the development of a common framework for binding together software
+monitoring code (i.e. performance analysis, debugging, logging) into a compact and highly-efficient interface.*__
 
-Timemory arose out of the need for a universal
-adapator kit for the various APIs provided several existing tools and a straight-forward and intuitive method
-for user-defined expression of performance measurements which can easily encapsulated in a generic structure.
+Timemory arose out of the need for a universal adapator kit for the various APIs provided several existing tools
+and a straight-forward and intuitive method for creating new tools. Timemory makes it possible to bundle
+together deterministic performance measurements, statistical performance
+measurements (i.e. sampling), debug messages, data logging, and data validation into the same interface for
+custom application-specific software monitoring interfaces, easily building tools like `time`,
+`netstat`, instrumentation profilers, sampling profilers, and writing implementations for MPI-P, MPI-T, OMPT,
+KokkosP, etc.
+
+Timemory provides a front-end [C/C++/Fortran API](https://timemory.readthedocs.io/en/develop/api/library.html)
+and [Python API](https://timemory.readthedocs.io/en/develop/api/python.html) which allows arbitrary selection
+of 50+ different components from timers to hardware counters to interfaces with third-party tools. This is all
+built generically from the toolkit API with type-safe bundles of tools such as:
+`component_tuple<wall_clock, papi_vector, nvtx_marker, user_bundle>`
+where `wall_clock` is a wall-clock timer,
+`papi_vector` is a handle for hardware counters,
+`nvxt_marker` creates notations in the NVIDIA CUDA profilers, and
+`user_bundle` is a generic component which downstream users can insert more components into at runtime.
+
 Performance measurement components written with timemory are arbitrarily scalable up to any number of threads and
 processes and fully support intermixing different measurements at different locations within the program -- this
 uniquely enables timemory to be deployed to collect performance data at scale in HPC because highly detailed collection can
@@ -74,6 +85,18 @@ which encapsulates some performance analysis operation. The structure might enca
 calls to another tool, record timestamps for timing, log values provided by the application,
 provide a operator for replacing a function in the code dynamically, audit the incoming arguments
 and/or outgoing return value from function, or just provide stubs which can be overloaded by the linker.
+
+### Visualization and Analysis
+
+The native output format of timemory is JSON and text; other output formats such as XML are also supported.
+The text format is intended to be human readable. The JSON data
+is intended for analysis and comes in two flavors: hierarchical and flat. Basic plotting capabilities are
+available via `timemory-plotting` but users are highly encouraged to use [hatchet](https://github.com/hatchet/hatchet)
+for analyzing the heirarchical JSON data in pandas dataframes. [Hatchet](https://github.com/hatchet/hatchet) supports
+filtering, unions, addition, subtractions, output to `dot` and flamegraph formats, and an interactive Jupyter notebook.
+At present, timemory supports 45+ metric types for analysis in Hatchet.
+
+### Categories
 
 There are 4 primary categories in timemory: components, operations, bundlers, and storage. Components provide
 the specifics of how to perform a particular behavior, operations provide the scaffold for requesting that
@@ -181,6 +204,21 @@ storage from the equation and, in doing so, transforms timemory into a toolkit f
     - [timemory-ompt](source/tools/timemory-ompt/README.md): OpenMP Profiling Library
     - [timemory-compiler-instrument](source/tools/timemory-compiler-instrument/README.md): Compiler instrumentation Library
     - [kokkos-connector](source/tools/kokkos-connector/README.md): Kokkos Profiling Libraries
+
+## Versioning
+
+Timemory originated as a very simple tool for recording timing and memory measurements (hence the name) in C, C++, and Python and only supported
+three modes prior to the 3.0.0 release: a fixed set of timers, a pair of memory measurements, and the combination of the two.
+__Prior to the 3.0.0 release, timemory was almost completely rewritten from scratch__ with the sole exceptions of some C/C++ macro, e.g.
+`TIMEMORY_AUTO_TIMER`, and some Python decorators and context-manager, e.g. `timemory.util.auto_timer`, whose behavior were
+able to be fully replicated in the new release. Thus, while it may appear that timemory is a mature project at v3.0+, it
+is essentially still in it's first major release.
+
+## Citing timemory
+
+To reference timemory in a publication, please cite the following paper:
+
+- Madsen, J.R. et al. (2020) Timemory: Modular Performance Analysis for HPC. In: Sadayappan P., Chamberlain B., Juckeland G., Ltaief H. (eds) High Performance Computing. ISC High Performance 2020. Lecture Notes in Computer Science, vol 12151. Springer, Cham
 
 ## Additional Information
 

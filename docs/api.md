@@ -28,7 +28,7 @@ Timemory can be quite useful as the backend for creating your own profiling inte
 but a frontend interface is also provided for those who want to do quick performance
 analysis. The following is an example in many languages for collecting the total cache misses
 in the L1, L2, and L3 cache levels. The particular hardware counters can be set
-in the environment or directly in C++ or Python. See [timemory-avail](source/tools/timemory-avail/README.md)
+in the environment or directly in C++ or Python. See [timemory-avail](tools/timemory-avail/README.md)
 documentation for more settings and descriptions.
 
 - Environment:

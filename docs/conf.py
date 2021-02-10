@@ -134,6 +134,11 @@ def copy_doxy_docs():
         os.path.join(_docdir, "api", "python.md"),
     )
 
+    shutil.copyfile(
+        os.path.join(_srcdir, "CONTRIBUTING.md"),
+        os.path.join(_docdir, "CONTRIBUTING.md"),
+    )
+
 
 # set to avoid rebuilding doxygen every time
 develop = os.environ.get("TIMEMORY_DOCS_DEV", None)

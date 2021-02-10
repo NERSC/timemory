@@ -105,13 +105,15 @@ set(timemory_COMMON_SOURCES
     $<TARGET_OBJECTS:kp_timemory_common>)
 
 #
-#   Build generic library
+#   Build generic library with hidden symbols
 #
 add_library(kp_timemory SHARED
     ${PROJECT_SOURCE_DIR}/kp_timemory.cpp
     ${PROJECT_SOURCE_DIR}/kp_timemory.hpp
     ${PROJECT_SOURCE_DIR}/kp_timemory_common.cpp)
-configure_library(kp_timemory)
+target_include_directories(kp_timemory PRIVATE ${PROJECT_SOURCE_DIR})
+target_link_libraries(kp_timemory PRIVATE
+    ${timemory_INTERFACE_LIBRARY})
 target_link_libraries(kp_timemory PRIVATE
     timemory::timemory-dmp
     timemory::timemory-threading
@@ -119,7 +121,15 @@ target_link_libraries(kp_timemory PRIVATE
     timemory::timemory-compile-options
     timemory::timemory-develop-options
     timemory::timemory-hidden-visibility)
-target_compile_definitions(kp_timemory PRIVATE FORCE_HIDDEN_VISIBILITY)
+if(UNIX AND NOT APPLE)
+    # Linux: helps ensure kp_timemory symbols override timemory-cxx-shared symbols
+    # macOS: causes kp_timemory to load symbols from timemory-cxx-shared
+    target_compile_definitions(kp_timemory PRIVATE FORCE_HIDDEN_VISIBILITY)
+endif()
+set_target_properties(kp_timemory PROPERTIES
+    PREFIX          ""
+    LINKER_LANGUAGE ${LINKER_LANGUAGE})
+install(TARGETS kp_timemory DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
 
 #
 #   Build regex filtering library

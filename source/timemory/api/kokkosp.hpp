@@ -39,12 +39,21 @@
 #include <unordered_map>
 #include <vector>
 
-#if defined(TIMEMORY_SOURCE)
-#    define TIMEMORY_KOKKOSP_PREFIX TIMEMORY_WEAK_PREFIX
-#    define TIMEMORY_KOKKOSP_POSTFIX TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default")
-#else
-#    define TIMEMORY_KOKKOSP_PREFIX
-#    define TIMEMORY_KOKKOSP_POSTFIX TIMEMORY_VISIBILITY("default")
+#if !defined(TIMEMORY_KOKKOSP_PREFIX)
+#    if defined(TIMEMORY_SOURCE)
+#        define TIMEMORY_KOKKOSP_PREFIX TIMEMORY_WEAK_PREFIX
+#    else
+#        define TIMEMORY_KOKKOSP_PREFIX
+#    endif
+#endif
+
+#if !defined(TIMEMORY_KOKKOSP_POSTFIX)
+#    if defined(TIMEMORY_SOURCE)
+#        define TIMEMORY_KOKKOSP_POSTFIX                                                 \
+            TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default")
+#    else
+#        define TIMEMORY_KOKKOSP_POSTFIX TIMEMORY_VISIBILITY("default")
+#    endif
 #endif
 
 struct SpaceHandle
@@ -185,21 +194,75 @@ cleanup()
 
 //--------------------------------------------------------------------------------------//
 
+struct kernel_logger : component::base<kernel_logger, void>
+{
+public:
+    TIMEMORY_DEFAULT_OBJECT(kernel_logger)
+
+    template <typename... Args>
+    void mark(int64_t _inc_depth, Args&&... _args)
+    {
+        if(_inc_depth < 0)
+            get_depth() += _inc_depth;
+        {
+            auto        _msg = TIMEMORY_JOIN('/', std::forward<Args>(_args)...);
+            auto_lock_t _lk{ type_mutex<decltype(std::cerr)>() };
+            std::cerr << get_indent() << get_message(_msg) << std::endl;
+        }
+        if(_inc_depth > 0)
+            get_depth() += _inc_depth;
+    }
+
+public:
+    static std::string get_message(const string_view_t& _msg)
+    {
+        std::stringstream ss;
+        ss << "[kokkos_kernel_logger]> " << _msg;
+        return ss.str();
+    }
+
+    static int64_t& get_depth()
+    {
+        static int64_t _value = 0;
+        return _value;
+    }
+
+    static std::string get_indent()
+    {
+        auto _depth = get_depth();
+        if(_depth < 1)
+            return "";
+        std::stringstream ss;
+        ss << std::right << std::setw(_depth * 2) << "";
+        return ss.str();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
 using memory_tracker = component::data_tracker<int64_t, project::kokkosp>;
 using kokkos_bundle  = component::user_kokkosp_bundle;
 
+using logger_t = tim::component_bundle_t<project::kokkosp, kokkosp::kernel_logger*>;
+
 template <typename... Tail>
-using profiler_t = tim::component_bundle_t<project::kokkosp, memory_tracker, Tail...>;
+using profiler_t =
+    tim::component_bundle_t<project::kokkosp, kokkosp::memory_tracker, Tail...>;
 
 template <typename... Tail>
 using profiler_section_t = std::tuple<std::string, profiler_t<Tail...>>;
+
+template <typename... Tail>
+using profiler_alloc_t = tim::auto_tuple<kokkosp::memory_tracker, Tail...>;
 
 // various data structurs used
 template <typename... Tail>
 using profiler_stack_t = std::vector<profiler_t<Tail...>>;
 
 template <typename... Tail>
-using profiler_memory_map_t = std::map<const void* const, profiler_t<Tail...>>;
+using profiler_memory_map_t =
+    std::unordered_map<string_view_t,
+                       std::unordered_map<string_view_t, profiler_t<Tail...>>>;
 
 template <typename... Tail>
 using profiler_index_map_t = std::unordered_map<uint64_t, profiler_t<Tail...>>;
@@ -232,6 +295,15 @@ inline profiler_memory_map_t<Tail...>&
 get_profiler_memory_map()
 {
     return get_tl_static<profiler_memory_map_t<Tail...>>();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Tail>
+inline auto&
+get_profiler_memory_map(SpaceHandle _space)
+{
+    return get_profiler_memory_map<Tail...>()[tim::string_view_t{ _space.name }];
 }
 
 //--------------------------------------------------------------------------------------//

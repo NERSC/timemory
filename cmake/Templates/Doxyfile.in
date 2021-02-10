@@ -306,6 +306,7 @@ SEARCH_INCLUDES        = YES
 INCLUDE_PATH           =
 INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = TIMEMORY_VISIBLE= \
+                         TIMEMORY_NODISCARD= \
                          TIMEMORY_NEVER_INSTRUMENT= \
                          TIMEMORY_ALWAYS_INLINE= \
                          TIMEMORY_HOT_INLINE= \

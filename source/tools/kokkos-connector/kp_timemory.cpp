@@ -49,7 +49,8 @@ static std::string spacer =
 using KokkosUserBundle = tim::component::user_kokkosp_bundle;
 
 // set up the configuration of tools
-using profile_entry_t = tim::component_tuple<KokkosUserBundle>;
+using profile_entry_t =
+    tim::component_bundle<tim::project::kokkosp, KokkosUserBundle, KokkosKernelLogger*>;
 
 // various data structurs used
 using section_entry_t = std::tuple<std::string, profile_entry_t>;
@@ -165,15 +166,8 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     auto papi_events             = tim::get_env<std::string>("PAPI_EVENTS", "");
     tim::settings::papi_events() = papi_events;
 
-    printf("%s\n", spacer.c_str());
-    printf("# KokkosP: timemory Connector (sequence is %d, version: %llu)\n", loadSeq,
-           (unsigned long long) interfaceVer);
-    printf("%s\n\n", spacer.c_str());
-
     // timemory_init is expecting some args so generate some
-    std::array<char*, 1> cstr = { { strdup("kp_timemory") } };
-    tim::timemory_init(1, cstr.data());
-    free(cstr.at(0));
+    tim::timemory_init(std::string{ "kp_timemory" });
     assert(env_configured);
 
     std::string default_components =

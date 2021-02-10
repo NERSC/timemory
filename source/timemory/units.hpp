@@ -209,7 +209,11 @@ get_memory_unit(std::string _unit)
                             inner_t{ "pebibyte", "pib", tim::units::PiB } })
     {
         if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr))
+        {
+            if(std::get<0>(itr) == "byte")
+                return return_type(std::get<0>(itr), std::get<2>(itr));
             return return_type(std::get<1>(itr), std::get<2>(itr));
+        }
     }
 
     std::cerr << "Warning!! No memory unit matching \"" << _unit << "\". Using default..."
