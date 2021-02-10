@@ -76,7 +76,6 @@ TIMEMORY_STATISTICS_TYPE(component::cupti_profiler, std::vector<double>)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_counters, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_activity, false_type)
 #elif defined(CUDART_VERSION) && CUDART_VERSION >= 11000
-#    error "Check"
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_counters, false_type)
 #endif
 //
