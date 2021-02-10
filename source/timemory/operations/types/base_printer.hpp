@@ -132,8 +132,8 @@ private:
     //
     template <typename ValueT, typename DispT, typename LabelT>
     auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label,
-                enable_if_t<not_string<ValueT, LabelT>() && is_string<DispT>(), int> =
-                    0) const -> decltype((_value.size() + _label.size()), void())
+                enable_if_t<not_string<ValueT, LabelT>() && is_string<DispT>(), long> =
+                    0L) const -> decltype((_value.size() + _label.size()), void())
     {
         auto _prec  = type::get_precision();
         auto _width = type::get_width();
@@ -180,8 +180,8 @@ private:
     //
     template <typename ValueT, typename DispT, typename LabelT>
     auto sfinae(std::ostream& _os, int, ValueT& _value, DispT& _disp, LabelT& _label,
-                enable_if_t<not_string<ValueT>() && is_string<LabelT, DispT>(), int> =
-                    0) const -> decltype((_value.size() + _label.size()), void())
+                enable_if_t<not_string<ValueT>() && is_string<LabelT, DispT>(), double> =
+                    0.0) const -> decltype((_value.size() + _label.size()), void())
     {
         auto _prec  = type::get_precision();
         auto _width = type::get_width();
