@@ -30,6 +30,7 @@
 #include "timemory/hash.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/operations/types/decode.hpp"
 #include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
 
@@ -437,8 +438,8 @@ template <typename Archive, typename Tp>
 void
 save(Archive& ar, const tim::node::graph<Tp>& d)
 {
-    ar(cereal::make_nvp("hash", d.id()),
-       cereal::make_nvp("prefix", ::tim::get_hash_identifier(d.id())),
+    auto _prefix = operation::decode<TIMEMORY_API>{}(::tim::get_hash_identifier(d.id()));
+    ar(cereal::make_nvp("hash", d.id()), cereal::make_nvp("prefix", _prefix),
        cereal::make_nvp("entry", d.obj()), cereal::make_nvp("depth", d.depth()),
        cereal::make_nvp("stats", d.stats()), cereal::make_nvp("tid", d.tid()),
        cereal::make_nvp("pid", d.pid()), cereal::make_nvp("dummy", d.is_dummy()));
@@ -500,8 +501,9 @@ template <typename Archive, typename Tp>
 void
 save(Archive& ar, const tim::node::tree<Tp>& t)
 {
-    ar(cereal::make_nvp("hash", t.hash()),
-       cereal::make_nvp("prefix", ::tim::get_hash_identifier(t.hash())),
+    auto _prefix =
+        operation::decode<TIMEMORY_API>{}(::tim::get_hash_identifier(t.hash()));
+    ar(cereal::make_nvp("hash", t.hash()), cereal::make_nvp("prefix", _prefix),
        cereal::make_nvp("tid", t.tid()), cereal::make_nvp("pid", t.pid()),
        cereal::make_nvp("depth", t.depth()), cereal::make_nvp("is_dummy", t.is_dummy()));
     ar(cereal::make_nvp("inclusive", t.inclusive()));

@@ -455,6 +455,7 @@ with warnings.catch_warnings():
             "console_scripts": [
                 "timemory-plotter=timemory.plotting.__main__:try_plot",
                 "timemory-roofline=timemory.roofline.__main__:try_plot",
+                "timemory-analyze=timemory.analyze.__main__:try_analyze",
                 "timemory-python-line-profiler=timemory.line_profiler.__main__:main",
                 "timemory-python-profiler=timemory.profiler.__main__:main",
                 "timemory-python-trace=timemory.trace.__main__:main",

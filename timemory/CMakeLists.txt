@@ -24,7 +24,7 @@ file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
 #----------------------------------------------------------------------------
 
 set(PYTHON_SUBMODULE_FOLDERS
-    api ert mpi mpi_support plotting profiler roofline
+    analyze api ert mpi mpi_support plotting profiler roofline
     util bundle component hardware_counters test trace region)
 
 file(GLOB PYTHON_SUBMODULE_FILES ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/*.py)
@@ -93,6 +93,16 @@ if(CMAKE_INSTALL_PYTHONDIR)
     endforeach(_TYPE exe c cxx)
 endif()
 
+file(GLOB BIN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/*)
+foreach(_FILE ${BIN_FILES})
+    get_filename_component(_NAME ${_FILE} NAME)
+    configure_file(${_FILE} ${CMAKE_CURRENT_BINARY_DIR}/bin/${_NAME} COPYONLY)
+    if(CMAKE_INSTALL_PYTHONDIR)
+        install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/bin/${_NAME}
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/bin)
+    endif()
+endforeach()
+
 #----------------------------------------------------------------------------
 # Install the python stuff
 #
@@ -127,17 +137,14 @@ function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNC
         ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} @ONLY)
 
     if(CMAKE_INSTALL_PYTHONDIR)
-        install(FILES ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME}
-            DESTINATION ${CMAKE_INSTALL_BINDIR}
-            PERMISSIONS
-            OWNER_EXECUTE OWNER_READ OWNER_WRITE
-            GROUP_EXECUTE GROUP_READ
-            WORLD_EXECUTE WORLD_READ)
+        install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME}
+            DESTINATION ${CMAKE_INSTALL_BINDIR})
     endif()
 endfunction()
 
 timemory_python_console_script("timemory-plotter" "timemory.plotting" "try_plot")
 timemory_python_console_script("timemory-roofline" "timemory.roofline" "try_plot")
+timemory_python_console_script("timemory-analyze" "timemory.analyze" "try_analyze")
 
 timemory_python_console_script("timemory-python-profiler" "timemory.profiler" "main")
 timemory_python_console_script("timemory-python-trace" "timemory.trace" "main")

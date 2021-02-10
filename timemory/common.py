@@ -57,6 +57,11 @@ __all__ = [
     "FUNC",
     "LINE",
     "FRAME",
+    "popen",
+    "dart_measurement",
+    "dart_measurement_file",
+    "write_ctest_notes",
+    "get_bin_script",
 ]
 
 CO_GENERATOR = 0x0020
@@ -162,3 +167,112 @@ else:
 
     def is_coroutine(f):
         return False
+
+
+def popen(cmd, outf=None, keep_going=True, timeout=None, shell=False):
+    """Execute a command and write to a file or get the output"""
+
+    def handle_error(ret, cmd, keep_going):
+        """Handle error messaging for executed command"""
+        err_msg = "Error executing: '{}'".format(" ".join(cmd))
+        if ret != 0 and not keep_going:
+            raise RuntimeError(err_msg)
+        elif ret != 0 and keep_going:
+            barrier = "=" * 80
+            err_msg = (
+                "\n\n"
+                + barrier
+                + "\n\n    ERROR: "
+                + err_msg
+                + "\n\n"
+                + barrier
+                + "\n\n"
+            )
+            sys.stderr.write(err_msg)
+            sys.stderr.flush()
+
+    import subprocess as sp
+
+    p = None
+    outs = None
+    errs = None
+    if shell:
+        p = sp.run(
+            " ".join(cmd),
+            shell=True,
+            check=False,
+            capture_output=True,
+        )
+    else:
+        p = sp.Popen(cmd)
+        try:
+            if timeout is not None:
+                outs, errs = p.communicate(timeout=timeout)
+            else:
+                outs, errs = p.communicate()
+        except sp.TimeoutExpired:
+            p.kill()
+
+    if p.returncode != 0:
+        if errs is not None:
+            print("{}".format(errs.decode("utf-8")))
+        elif p.stderr is not None:
+            print("{}".format(p.stderr.decode("utf-8")))
+
+    handle_error(p.returncode, cmd, keep_going)
+
+    if outf is not None:
+        with open(outf, "w") as f:
+            if outs is not None:
+                f.write(outs)
+            elif p.stdout is not None:
+                f.write(p.stdout)
+
+    if outs is None and p.stdout is not None:
+        outs = "{}".format(p.stdout.decode("utf-8"))
+
+    if errs is None and p.stderr is not None:
+        errs = "{}".format(p.stderr.decode("utf-8"))
+
+    return (outs, errs)
+
+
+def dart_measurement(name, value):
+    """Prints out an XML tag which gets detected by CTest and recorded by CDash"""
+    print(
+        f'<DartMeasurement name="{name}" type="numeric/double">{value}</DartMeasurement>'
+    )
+
+
+def dart_measurement_file(name, path, format="png", type="image"):
+    """Prints out an XML tag which gets detected by CTest and uploaded to CDash"""
+    _path = os.path.abspath(path)
+    print(
+        f'<DartMeasurementFile name="{name}" type="{type}/{format}">{_path}</DartMeasurementFile>'
+    )
+
+
+def write_ctest_notes(fname, path=None, mode="a"):
+    """Writes or appends to a CTestNotes.txt file"""
+
+    if path is None:
+        path = os.path.abspath(os.path.dirname(fname))
+    if not os.path.exists(path):
+        os.makedirs(path)
+    fname = os.path.abspath(fname)
+    with open(os.path.join(path, "CTestNotes.txt"), "a") as ofs:
+        ofs.write(f'\nlist(APPEND CTEST_NOTES_FILES "{fname}")\n')
+
+
+def get_bin_script(fname):
+    """ Returns the path to a script in the internal bin folder """
+    _this_dir = os.path.dirname(__file__)
+    _fpath = os.path.join(_this_dir, "bin", fname)
+    if os.path.exists(_fpath):
+        return _fpath
+    import glob
+
+    for itr in glob.glob(f"{_fpath}*"):
+        if os.path.exists(itr):
+            return itr
+    return None

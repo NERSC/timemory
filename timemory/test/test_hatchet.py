@@ -121,6 +121,12 @@ class TimemoryHatchetTests(unittest.TestCase):
         print(gf.tree("sum"))
         print(gf.tree("sum.inc"))
 
+        fbase = os.path.join(tim.settings.output_prefix, "wall")
+        with open(f"{fbase}.dot", "w") as ofs:
+            ofs.write(gf.to_dot())
+        with open(f"{fbase}.fg", "w") as ofs:
+            ofs.write(gf.to_flamegraph())
+
     # ---------------------------------------------------------------------------------- #
     # test handling multi-dimensional data from hatchet
     def test_hatchet_2D_data(self):
