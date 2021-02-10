@@ -216,7 +216,7 @@ def popen(cmd, outf=None, keep_going=True, timeout=None, shell=False):
     if p.returncode != 0:
         if errs is not None:
             print("{}".format(errs.decode("utf-8")))
-        else:
+        elif p.stderr is not None:
             print("{}".format(p.stderr.decode("utf-8")))
 
     handle_error(p.returncode, cmd, keep_going)
@@ -225,13 +225,13 @@ def popen(cmd, outf=None, keep_going=True, timeout=None, shell=False):
         with open(outf, "w") as f:
             if outs is not None:
                 f.write(outs)
-            else:
+            elif p.stdout is not None:
                 f.write(p.stdout)
 
-    if outs is None:
+    if outs is None and p.stdout is not None:
         outs = "{}".format(p.stdout.decode("utf-8"))
 
-    if errs is None:
+    if errs is None and p.stderr is not None:
         errs = "{}".format(p.stderr.decode("utf-8"))
 
     return (outs, errs)

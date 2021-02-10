@@ -367,8 +367,8 @@ def dump_dot(data, metric, file=None, echo_dart=False):
     for itr in _files:
         if itr is not None:
             lbl = _get_label(itr)
-            pitr = _get_filename(itr, ".png")
             oitr = _get_filename(itr, ".dot")
+            pitr = _get_filename(itr, ".dot.png")
             print(f"[{lbl}]|0> Outputting '{pitr}'...")
             popen(["dot", "-Tpng", f"-o{pitr}", f"{oitr}"])
             if echo_dart:
