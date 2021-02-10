@@ -47,6 +47,7 @@ template <typename Tag, typename... Types>
 component_bundle<Tag, Types...>::component_bundle()
 {
     apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, *this, m_data, get_initializer());
 }
 
 //--------------------------------------------------------------------------------------//

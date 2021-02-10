@@ -60,6 +60,7 @@ template <typename... Types>
 component_list<Types...>::component_list()
 {
     apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, *this, m_data, get_initializer());
 }
 //
 //--------------------------------------------------------------------------------------//

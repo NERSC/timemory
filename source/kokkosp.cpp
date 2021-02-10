@@ -56,7 +56,34 @@ configure_environment()
     return true;
 }
 
-static auto env_configured = (configure_environment(), true);
+static auto env_configured       = (configure_environment(), true);
+static bool enable_kernel_logger = false;
+
+inline void
+add_kernel_logger()
+{
+    static bool _first = true;
+    if(!_first)
+        return;
+    _first         = false;
+    using strvec_t = std::vector<std::string>;
+
+    tim::settings::instance()->insert<bool, bool&>(
+        std::string{ "TIMEMORY_KOKKOS_KERNEL_LOGGER" }, std::string{},
+        std::string{ "Enables kernel logging" }, enable_kernel_logger,
+        strvec_t({ "--timemory-kokkos-kernel-logger" }));
+}
+
+inline void
+setup_kernel_logger()
+{
+    if(tim::settings::debug() || tim::settings::verbose() > 3 || enable_kernel_logger)
+    {
+        kokkosp::logger_t::get_initializer() = [](kokkosp::logger_t& _obj) {
+            _obj.initialize<kokkosp::kernel_logger>();
+        };
+    }
+}
 
 }  // namespace
 
@@ -66,12 +93,15 @@ extern "C"
 {
     void kokkosp_print_help(char* argv)
     {
+        add_kernel_logger();
         std::vector<std::string> _args = { argv, "--help" };
         tim::timemory_argparse(_args);
     }
 
     void kokkosp_parse_args(int argc, char** argv)
     {
+        add_kernel_logger();
+
         tim::timemory_init(argc, argv);
 
         std::vector<std::string> _args{};
@@ -80,11 +110,15 @@ extern "C"
             _args.emplace_back(argv[i]);
 
         tim::timemory_argparse(_args);
+
+        setup_kernel_logger();
     }
 
     void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                               const uint32_t devInfoCount, void* deviceInfo)
     {
+        add_kernel_logger();
+
         tim::consume_parameters(devInfoCount, deviceInfo);
 
         tim::set_env("TIMEMORY_TIME_OUTPUT", "ON", 0);
@@ -113,6 +147,8 @@ extern "C"
         // add at least one
         if(kokkosp::kokkos_bundle::bundle_size() == 0)
             kokkosp::kokkos_bundle::configure<tim::component::wall_clock>();
+
+        setup_kernel_logger();
     }
 
     void kokkosp_finalize_library()
@@ -132,12 +168,14 @@ extern "C"
     {
         auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
         *kernid    = kokkosp::get_unique_id();
+        kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
         kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *kernid);
         kokkosp::start_profiler<kokkosp::kokkos_bundle>(*kernid);
     }
 
     void kokkosp_end_parallel_for(uint64_t kernid)
     {
+        kokkosp::logger_t{}.mark(-1, __FUNCTION__, kernid);
         kokkosp::stop_profiler<kokkosp::kokkos_bundle>(kernid);
         kokkosp::destroy_profiler<kokkosp::kokkos_bundle>(kernid);
     }
@@ -148,12 +186,14 @@ extern "C"
     {
         auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
         *kernid    = kokkosp::get_unique_id();
+        kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
         kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *kernid);
         kokkosp::start_profiler<kokkosp::kokkos_bundle>(*kernid);
     }
 
     void kokkosp_end_parallel_reduce(uint64_t kernid)
     {
+        kokkosp::logger_t{}.mark(-1, __FUNCTION__, kernid);
         kokkosp::stop_profiler<kokkosp::kokkos_bundle>(kernid);
         kokkosp::destroy_profiler<kokkosp::kokkos_bundle>(kernid);
     }
@@ -164,12 +204,14 @@ extern "C"
     {
         auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
         *kernid    = kokkosp::get_unique_id();
+        kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
         kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *kernid);
         kokkosp::start_profiler<kokkosp::kokkos_bundle>(*kernid);
     }
 
     void kokkosp_end_parallel_scan(uint64_t kernid)
     {
+        kokkosp::logger_t{}.mark(-1, __FUNCTION__, kernid);
         kokkosp::stop_profiler<kokkosp::kokkos_bundle>(kernid);
         kokkosp::destroy_profiler<kokkosp::kokkos_bundle>(kernid);
     }
@@ -180,12 +222,14 @@ extern "C"
     {
         auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
         *kernid    = kokkosp::get_unique_id();
+        kokkosp::logger_t{}.mark(1, __FUNCTION__, name, *kernid);
         kokkosp::create_profiler<kokkosp::kokkos_bundle>(pname, *kernid);
         kokkosp::start_profiler<kokkosp::kokkos_bundle>(*kernid);
     }
 
     void kokkosp_end_fence(uint64_t kernid)
     {
+        kokkosp::logger_t{}.mark(-1, __FUNCTION__, kernid);
         kokkosp::stop_profiler<kokkosp::kokkos_bundle>(kernid);
         kokkosp::destroy_profiler<kokkosp::kokkos_bundle>(kernid);
     }
@@ -194,6 +238,7 @@ extern "C"
 
     void kokkosp_push_profile_region(const char* name)
     {
+        kokkosp::logger_t{}.mark(1, __FUNCTION__, name);
         kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().push_back(
             kokkosp::profiler_t<kokkosp::kokkos_bundle>(name));
         kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().back().start();
@@ -201,6 +246,7 @@ extern "C"
 
     void kokkosp_pop_profile_region()
     {
+        kokkosp::logger_t{}.mark(-1, __FUNCTION__);
         if(kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().empty())
             return;
         kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().back().stop();
@@ -226,11 +272,13 @@ extern "C"
 
     void kokkosp_start_profile_section(uint32_t secid)
     {
+        kokkosp::logger_t{}.mark(1, __FUNCTION__, secid);
         kokkosp::start_profiler<kokkosp::kokkos_bundle>(secid);
     }
 
     void kokkosp_stop_profile_section(uint32_t secid)
     {
+        kokkosp::logger_t{}.mark(-1, __FUNCTION__, secid);
         kokkosp::start_profiler<kokkosp::kokkos_bundle>(secid);
     }
 
@@ -239,30 +287,21 @@ extern "C"
     void kokkosp_allocate_data(const SpaceHandle space, const char* label,
                                const void* const ptr, const uint64_t size)
     {
-        if(!tim::settings::enabled())
-            return;
-        auto itr = kokkosp::get_profiler_memory_map<kokkosp::kokkos_bundle>().insert(
-            { ptr, kokkosp::profiler_t<kokkosp::kokkos_bundle>(
-                       TIMEMORY_JOIN('/', "kokkos/allocate", space.name, label)) });
-        if(itr.second)
-        {
-            itr.first->second.audit(space, label, ptr, size);
-            itr.first->second.store(std::plus<int64_t>{}, size);
-            itr.first->second.start();
-        }
+        kokkosp::logger_t{}.mark(0, __FUNCTION__, space.name, label,
+                                 TIMEMORY_JOIN("", '[', ptr, ']'), size);
+        kokkosp::profiler_alloc_t<>{ TIMEMORY_JOIN('/', "kokkos/allocate", space.name,
+                                                   label) }
+            .store(std::plus<int64_t>{}, size);
     }
 
     void kokkosp_deallocate_data(const SpaceHandle space, const char* label,
                                  const void* const ptr, const uint64_t size)
     {
-        auto itr = kokkosp::get_profiler_memory_map<kokkosp::kokkos_bundle>().find(ptr);
-        if(itr != kokkosp::get_profiler_memory_map<kokkosp::kokkos_bundle>().end())
-        {
-            itr->second.stop();
-            itr->second.store(std::minus<int64_t>{}, 0);
-            itr->second.audit(space, label, ptr, size);
-            kokkosp::get_profiler_memory_map<kokkosp::kokkos_bundle>().erase(itr);
-        }
+        kokkosp::logger_t{}.mark(0, __FUNCTION__, space.name, label,
+                                 TIMEMORY_JOIN("", '[', ptr, ']'), size);
+        kokkosp::profiler_alloc_t<>{ TIMEMORY_JOIN('/', "kokkos/deallocate", space.name,
+                                                   label) }
+            .store(std::plus<int64_t>{}, size);
     }
 
     //----------------------------------------------------------------------------------//
@@ -271,28 +310,31 @@ extern "C"
                                  const void* dst_ptr, SpaceHandle src_handle,
                                  const char* src_name, const void* src_ptr, uint64_t size)
     {
-        if(!tim::settings::enabled())
-            return;
+        kokkosp::logger_t{}.mark(1, __FUNCTION__, dst_handle.name, dst_name,
+                                 TIMEMORY_JOIN("", '[', dst_ptr, ']'), src_handle.name,
+                                 src_name, TIMEMORY_JOIN("", '[', src_ptr, ']'), size);
+
         auto name = TIMEMORY_JOIN('/', "kokkos/deep_copy",
                                   TIMEMORY_JOIN('=', dst_handle.name, dst_name),
                                   TIMEMORY_JOIN('=', src_handle.name, src_name));
-        kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().emplace_back(
-            kokkosp::profiler_t<kokkosp::kokkos_bundle>(name));
-        kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().back().audit(
-            dst_handle, dst_name, dst_ptr, src_handle, src_name, src_ptr, size);
-        kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().back().store(
-            std::plus<int64_t>{}, size);
-        kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().back().start();
+
+        auto& _data = kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>();
+        _data.emplace_back(name);
+        _data.back().audit(dst_handle, dst_name, dst_ptr, src_handle, src_name, src_ptr,
+                           size);
+        _data.back().start();
+        _data.back().store(std::plus<int64_t>{}, size);
     }
 
     void kokkosp_end_deep_copy()
     {
-        if(kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().empty())
+        kokkosp::logger_t{}.mark(-1, __FUNCTION__);
+        auto& _data = kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>();
+        if(_data.empty())
             return;
-        kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().back().stop();
-        kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().back().store(
-            std::minus<int64_t>{}, 0);
-        kokkosp::get_profiler_stack<kokkosp::kokkos_bundle>().pop_back();
+        _data.back().store(std::minus<int64_t>{}, 0);
+        _data.back().stop();
+        _data.pop_back();
     }
 
     //----------------------------------------------------------------------------------//

@@ -30,62 +30,15 @@
 #    define TIMEMORY_VISIBILITY(...)
 #endif
 
+#include "timemory/api/kokkosp.hpp"
 #include "timemory/timemory.hpp"
 
 #include <cstdint>
 
-//--------------------------------------------------------------------------------------//
-
 using namespace tim::component;
-
-using empty_t = tim::component_tuple<>;
-
-//--------------------------------------------------------------------------------------//
-
-struct SpaceHandle
-{
-    char name[64];
-};
-
-struct KokkosPDeviceInfo
-{
-    uint32_t deviceID;
-};
-
-enum Space
-{
-    SPACE_HOST,
-    SPACE_CUDA
-};
-
-enum
-{
-    NSPACES = 2
-};
-
-inline Space
-get_space(SpaceHandle const& handle)
-{
-    switch(handle.name[0])
-    {
-        case 'H': return SPACE_HOST;
-        case 'C': return SPACE_CUDA;
-    }
-    abort();
-    return SPACE_HOST;
-}
-
-inline const char*
-get_space_name(int space)
-{
-    switch(space)
-    {
-        case SPACE_HOST: return "HOST";
-        case SPACE_CUDA: return "CUDA";
-    }
-    abort();
-    return nullptr;
-}
+using tim::kokkosp::get_space;
+using tim::kokkosp::get_space_name;
+using tim::kokkosp::Space;
 
 //--------------------------------------------------------------------------------------//
 
@@ -93,14 +46,19 @@ get_space_name(int space)
 struct KokkosMemory
 {};
 using KokkosMemoryTracker = data_tracker<int64_t, KokkosMemory>;
+using KokkosKernelLogger  = tim::kokkosp::kernel_logger;
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, KokkosMemoryTracker, std::true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, KokkosMemoryTracker, std::true_type)
 
+using alloc_entry_t = tim::auto_tuple<KokkosMemoryTracker>;
 using memory_entry_t =
     tim::component_tuple<wall_clock, user_global_bundle, KokkosMemoryTracker>;
-using memory_map_t   = std::map<const void* const, memory_entry_t>;
+using memory_map_t =
+    std::unordered_map<tim::string_view_t,
+                       std::unordered_map<tim::string_view_t, memory_entry_t>>;
 using memory_stack_t = std::vector<memory_entry_t>;
+using logger_entry_t = tim::component_list<KokkosKernelLogger>;
 
 //--------------------------------------------------------------------------------------//
 

@@ -14,5 +14,6 @@
    api
    components
    tutorials
+   CONTRIBUTING
    doxygen
 ```
