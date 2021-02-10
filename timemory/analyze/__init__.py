@@ -88,6 +88,7 @@ def embedded_analyze(
                 "html",
                 "markdown_grid",
             ),
+            nargs="*",
             default=None,
         )
         parser.add_argument(
@@ -181,14 +182,14 @@ def embedded_analyze(
         )
         parser.add_argument(
             "--exit-on-failure",
-            help="Call exit if failed",
+            help="Abort with non-zero exit code if errors arise",
             action="store_true",
         )
 
         args = parser.parse_args(_argv)
 
         if args.group is None and args.format is None:
-            args.format = "tree"
+            args.format = ["tree"]
         if args.group is not None and args.format not in ("table", None):
             raise RuntimeError("Invalid data format for group")
 
@@ -263,9 +264,10 @@ def embedded_analyze(
                 field=args.group,
                 ascending=(args.sort == "ascending"),
             )
-            args.format = None
+            args.format = [None]
 
-        dump(gfs, args.metric, args.format, files, args.echo_dart)
+        for fmt in args.format:
+            dump(gfs, args.metric, fmt, files, args.echo_dart)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

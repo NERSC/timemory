@@ -57,7 +57,7 @@ def _get_label(_fname):
     """ Generates a label for log messages """
     _lbl = os.path.basename(_fname)
     if "." in _lbl:
-        return _lbl[0:(_lbl.find("."))]
+        return _lbl[0 : (_lbl.find("."))]
     return _lbl
 
 
@@ -65,9 +65,36 @@ def _get_filename(_file, _fext):
     """ Ensures an output file has a certain extension """
     if _file is None or _fext is None:
         return _file
-    elif not _file.endswith(_fext):
-        return _file + _fext
+    else:
+        if _fext[0] != ".":
+            _fext = f".{_fext}"
+        if not _file.endswith(_fext):
+            return os.path.splitext(_file)[0] + _fext
     return _file
+
+
+def _svg_to_png(out, svg_code=None, svg_file=None):
+    """ Writes an SVG to a PNG """
+    try:
+        from cairosvg import svg2png
+
+        lbl = _get_label(out)
+        if svg_code is not None:
+            print(f"[{lbl}]|0> Outputting '{out}'...")
+            svg2png(svg_code, write_to=out)
+            return out
+        elif svg_file is not None:
+            print(f"[{lbl}]|0> Outputting '{out}'...")
+            with open(svg_file, "r") as fin:
+                svg2png(fin, write_to=out)
+        else:
+            raise RuntimeError("Error! No svg_code or svg_file")
+
+    except ImportError as e:
+        print(e)
+        print("Install 'cairosvg' for conversion from SVG to PNG")
+
+    return None
 
 
 def load(data, *_args, **_kwargs):
@@ -324,9 +351,12 @@ def dump_tree(data, metric, file=None, echo_dart=False):
     _files = dump_entity(data, lambda x: x.tree(metric), file, ".txt")
     for itr in _files:
         if itr is not None and echo_dart is True:
-            from timemory.common import write_ctest_notes
+            from timemory.common import dart_measurement_file
 
-            write_ctest_notes(itr)
+            dart_measurement_file(
+                os.path.basename(itr), itr, format="string", type="text"
+            )
+            # write_ctest_notes(itr)
 
 
 def dump_dot(data, metric, file=None, echo_dart=False):
@@ -347,14 +377,68 @@ def dump_dot(data, metric, file=None, echo_dart=False):
 
 def dump_flamegraph(data, metric, file=None, echo_dart=False):
     """ Dumps a flamegraph file """
+    from timemory.common import (
+        popen,
+        get_bin_script,
+        dart_measurement_file,
+    )
+
     _files = dump_entity(
         data, lambda x: x.to_flamegraph(metric), file, ".flamegraph.txt"
     )
     for itr in _files:
-        if itr is not None and echo_dart is True:
-            from timemory.common import write_ctest_notes
+        flamegrapher = get_bin_script("flamegraph.pl")
+        if itr is not None:
+            if flamegrapher is None:
+                if echo_dart is True:
+                    # write_ctest_notes(itr)
+                    dart_measurement_file(
+                        os.path.basename(itr), itr, format="string", type="text"
+                    )
+            else:
+                (outs, errs) = popen(
+                    [
+                        flamegrapher,
+                        "--hash",
+                        "--inverted",
+                        "--bgcolors",
+                        "'#FFFFFF'",
+                        itr,
+                    ],
+                    shell=True,
+                )
 
-            write_ctest_notes(itr)
+                if outs is not None:
+                    lbl = _get_label(itr)
+                    sitr = _get_filename(itr, ".svg")
+                    pitr = _get_filename(itr, ".png")
+
+                    # write the SVG file
+                    print(f"[{lbl}]|0> Outputting '{sitr}'...")
+                    with open(sitr, "w") as fout:
+                        fout.write(f"{outs}\n")
+
+                    # generate png
+                    pfile = _svg_to_png(pitr, svg_code=outs)
+
+                    # echo svg and png
+                    if echo_dart:
+                        # write_ctest_notes(sitr)
+                        dart_measurement_file(
+                            os.path.basename(itr),
+                            itr,
+                            format="string",
+                            type="text",
+                        )
+                        dart_measurement_file(
+                            os.path.basename(sitr), sitr, "svg"
+                        )
+                        if pfile is not None:
+                            dart_measurement_file(
+                                os.path.basename(pitr), pitr, "png"
+                            )
+        else:
+            pass
 
 
 def dump_tabulate(dtype, data, metric, file=None, echo_dart=False):
@@ -386,9 +470,12 @@ def dump_tabulate(dtype, data, metric, file=None, echo_dart=False):
     _files = dump_entity(data, _functors[dtype], file, _extensions[dtype])
     for itr in _files:
         if itr is not None and echo_dart is True:
-            from timemory.common import write_ctest_notes
+            from timemory.common import dart_measurement_file
 
-            write_ctest_notes(itr)
+            dart_measurement_file(
+                os.path.basename(itr), itr, format="string", type="text"
+            )
+            # write_ctest_notes(itr)
 
 
 def dump_unknown(data, metric, file=None, echo_dart=False):
@@ -396,9 +483,12 @@ def dump_unknown(data, metric, file=None, echo_dart=False):
     _files = dump_entity(data, lambda x: x, file, ".txt")
     for itr in _files:
         if itr is not None and echo_dart is True:
-            from timemory.common import write_ctest_notes
+            from timemory.common import dart_measurement_file
 
-            write_ctest_notes(itr)
+            dart_measurement_file(
+                os.path.basename(itr), itr, format="string", type="text"
+            )
+            # write_ctest_notes(itr)
 
 
 def dump(data, metric, dtype, file=None, echo_dart=False):
