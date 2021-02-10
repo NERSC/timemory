@@ -280,9 +280,12 @@ malloc_gotcha::configure()
 
     local_gotcha_type::get_default_ready() = false;
     local_gotcha_type::get_initializer()   = []() {
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 2, free);
+        local_gotcha_type::template configure<0, void*, size_t>("malloc");
+        local_gotcha_type::template configure<1, void*, size_t, size_t>("calloc");
+        local_gotcha_type::template configure<2, void, void*>("free");
+        // TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
+        // TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
+        // TIMEMORY_C_GOTCHA(local_gotcha_type, 2, free);
 #    if defined(TIMEMORY_USE_CUDA)
         local_gotcha_type::template configure<3, cudaError_t, void**, size_t>(
             "cudaMalloc");

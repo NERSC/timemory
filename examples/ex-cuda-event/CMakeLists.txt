@@ -34,6 +34,12 @@ find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cu)
 target_link_libraries(${EXE_NAME} timemory-cuda-event-example logging)
-target_compile_options(${EXE_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+if("${CUDA_VERSION}" VERSION_LESS 11.0)
+    target_compile_options(${EXE_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--expt-extended-lambda>>)
+else()
+    target_compile_options(${EXE_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--extended-lambda>>)
+endif()
 
 install(TARGETS ${EXE_NAME} DESTINATION bin OPTIONAL)

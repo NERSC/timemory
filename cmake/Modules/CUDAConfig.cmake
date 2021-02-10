@@ -132,23 +132,23 @@ if("CUDA" IN_LIST LANGUAGES)
     if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
         if("${CUDA_VERSION}" VERSION_LESS 11.0)
             target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+                $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--expt-extended-lambda>>)
         else()
             target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+                $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--extended-lambda>>)
         endif()
 
         if(NOT WIN32)
             get_filename_component(_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
             target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${_COMPILER_DIR}>
-                $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>)
+                $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--compiler-bindir=${_COMPILER_DIR}>>
+                $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:-lineinfo>>)
         endif()
     endif()
 
     add_user_flags(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda "CUDA")
 
-    if(DEFINED PROJECT_CUDA_USE_HALF_OPTION AND PROJECT_CUDA_USE_HALF_OPTION)
+    if(DEFINED PROJECT_CUDA_USE_HALF_OPTION AND ${PROJECT_CUDA_USE_HALF_OPTION})
         target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
             ${PROJECT_CUDA_USE_HALF_DEFINITION})
     endif()

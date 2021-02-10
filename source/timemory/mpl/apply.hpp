@@ -36,16 +36,6 @@
 #include <tuple>
 #include <type_traits>
 
-#if defined(__NVCC__)
-#    define TIMEMORY_LAMBDA __host__ __device__
-#    define TIMEMORY_HOST_LAMBDA __host__
-#    define TIMEMORY_DEVICE_LAMBDA __device__
-#else
-#    define TIMEMORY_LAMBDA
-#    define TIMEMORY_HOST_LAMBDA
-#    define TIMEMORY_DEVICE_LAMBDA
-#endif
-
 //======================================================================================//
 
 namespace tim

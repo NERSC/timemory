@@ -34,6 +34,11 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
+#if defined(TIMEMORY_USE_CUDA)
+#    include <cuda.h>
+#    include <cuda_runtime_api.h>
+#endif
+
 TIMEMORY_DECLARE_COMPONENT(cupti_activity)
 TIMEMORY_DECLARE_COMPONENT(cupti_counters)
 TIMEMORY_DECLARE_COMPONENT(cupti_profiler)
@@ -70,6 +75,9 @@ TIMEMORY_STATISTICS_TYPE(component::cupti_profiler, std::vector<double>)
 #if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_counters, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_activity, false_type)
+#elif defined(CUDART_VERSION) && CUDART_VERSION >= 11000
+#    error "Check"
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_counters, false_type)
 #endif
 //
 #if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA) ||                       \

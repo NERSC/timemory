@@ -236,13 +236,20 @@ struct configuration
 
             auto dtype = demangle(typeid(Tp).name());
 
+            std::string _dev_name{};
+            if(std::is_same<DeviceT, device::cpu>::value)
+                _dev_name = "[device::cpu]";
+            else if(std::is_same<DeviceT, device::gpu>::value)
+                _dev_name = "[device::gpu]";
+
             printf(
-                "\n[ert::executor]> "
+                "\n[ert::executor]%s> "
                 "working-set = %lli, max-size = %lli, num-thread = %lli, num-stream = "
                 "%lli, grid-size = %lli, block-size = %lli, align-size = %lli, data-type "
                 "= %s\n",
-                (lli) _mws_size, (lli) _max_size, (lli) _num_thread, (lli) _num_stream,
-                (lli) _grid_size, (lli) _block_size, (lli) _align_size, dtype.c_str());
+                _dev_name.c_str(), (lli) _mws_size, (lli) _max_size, (lli) _num_thread,
+                (lli) _num_stream, (lli) _grid_size, (lli) _block_size, (lli) _align_size,
+                dtype.c_str());
 
             return _counter;
         };

@@ -581,7 +581,7 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
         "TIMEMORY_CUPTI_ACTIVITY_LEVEL=2;TIMEMORY_TIMING_PRECISION=9;TIMEMORY_TIMING_UNITS=msec")
     add_library(cupti-compile-options INTERFACE)
     target_compile_options(cupti-compile-options INTERFACE
-        $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
+        $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--default-stream=per-thread>>)
 
     add_timemory_google_test(cupti_tests
         DISCOVER_TESTS

@@ -33,22 +33,36 @@
 //======================================================================================//
 
 //  clang compiler
-#if defined(__clang__)
-#    define _TIMEMORY_CLANG
+#if defined(__clang__) && !defined(_TIMEMORY_CLANG)
+#    define _TIMEMORY_CLANG 1
 #endif
 
 //--------------------------------------------------------------------------------------//
 
 //  nvcc compiler
-#if defined(__NVCC__)
-#    define _TIMEMORY_NVCC
+#if defined(__NVCC__) && !defined(_TIMEMORY_NVCC)
+#    define _TIMEMORY_NVCC 1
 #endif
 
 //--------------------------------------------------------------------------------------//
 
+//  nvcc compiler
+#if defined(__CUDACC__) && !defined(_TIMEMORY_CUDACC)
+#    define _TIMEMORY_CUDACC 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+//  assume openmp target is enabled
+// #if defined(_TIMEMORY_CUDACC) && defined(_OPENMP) && !defined(_TIMEMORY_OPENMP_TARGET)
+// #    define _TIMEMORY_OPENMP_TARGET 1
+// #endif
+
+//--------------------------------------------------------------------------------------//
+
 //  Intel compiler
-#if defined(__INTEL_COMPILER)
-#    define _TIMEMORY_INTEL
+#if defined(__INTEL_COMPILER) && !defined(_TIMEMORY_INTEL)
+#    define _TIMEMORY_INTEL 1
 #    if __INTEL_COMPILER < 1500
 #        warning "Intel compilers < 1500 have been known to have compiler errors"
 #    endif
@@ -57,10 +71,10 @@
 //--------------------------------------------------------------------------------------//
 
 // GNU compiler
-#if defined(__GNUC__) && !defined(_TIMEMORY_CLANG)
+#if defined(__GNUC__) && !defined(_TIMEMORY_CLANG) && !defined(_TIMEMORY_GNU)
 #    if(__GNUC__ <= 4 && __GNUC_MINOR__ < 9)
 #        warning "GCC compilers < 4.9 have been known to have compiler errors"
-#        define _TIMEMORY_GNU
+#        define _TIMEMORY_GNU 1
 #    elif(__GNUC__ >= 4 && __GNUC_MINOR__ >= 9) || __GNUC__ >= 5
 #        define _TIMEMORY_GNU
 #    endif
@@ -70,7 +84,7 @@
 
 //  MSVC compiler
 #if defined(_MSC_VER) && _MSC_VER > 0 && !defined(_TIMEMORY_MSVC)
-#    define _TIMEMORY_MSVC
+#    define _TIMEMORY_MSVC 1
 #endif
 
 //======================================================================================//

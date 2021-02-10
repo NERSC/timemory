@@ -31,23 +31,12 @@
 
 #pragma once
 
-#if defined(__NVCC__)
+#include "timemory/macros/attributes.hpp"
+#include "timemory/macros/compiler.hpp"
+
+#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
 #    include <cuda.h>
 #    include <cuda_runtime_api.h>
-
-#    define HOST_DEVICE_CALLABLE __host__ __device__
-#    define DEVICE_CALLABLE __device__
-#    define GLOBAL_CALLABLE __global__
-#    define HOST_DEVICE_CALLABLE_INLINE __host__ __device__ __inline__
-#    define DEVICE_CALLABLE_INLINE __device__ __inline__
-#    define GLOBAL_CALLABLE_INLINE __global__ __inline__
-#else
-#    define HOST_DEVICE_CALLABLE
-#    define DEVICE_CALLABLE
-#    define GLOBAL_CALLABLE
-#    define HOST_DEVICE_CALLABLE_INLINE inline
-#    define DEVICE_CALLABLE_INLINE inline
-#    define GLOBAL_CALLABLE_INLINE inline
 #endif
 
 #include <cstdint>
@@ -136,7 +125,7 @@ struct gpu
 
 //--------------------------------------------------------------------------------------//
 
-#if defined(__NVCC__)
+#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
 using default_device = gpu;
 #else
 using default_device = cpu;
@@ -187,20 +176,26 @@ struct range
 {
     using this_type = range<Intp>;
 
-    HOST_DEVICE_CALLABLE range(Intp _begin, Intp _end, Intp _stride)
+    TIMEMORY_HOST_DEVICE_FUNCTION range(Intp _begin, Intp _end, Intp _stride)
     : m_begin(_begin)
     , m_end(_end)
     , m_stride(_stride)
     {}
 
-    HOST_DEVICE_CALLABLE Intp& begin() { return m_begin; }
-    HOST_DEVICE_CALLABLE TIMEMORY_NODISCARD Intp begin() const { return m_begin; }
-    HOST_DEVICE_CALLABLE Intp& end() { return m_end; }
-    HOST_DEVICE_CALLABLE TIMEMORY_NODISCARD Intp end() const { return m_end; }
-    HOST_DEVICE_CALLABLE Intp& stride() { return m_stride; }
-    HOST_DEVICE_CALLABLE TIMEMORY_NODISCARD Intp stride() const { return m_stride; }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp& begin() { return m_begin; }
+    TIMEMORY_HOST_DEVICE_FUNCTION TIMEMORY_NODISCARD Intp begin() const
+    {
+        return m_begin;
+    }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp& end() { return m_end; }
+    TIMEMORY_HOST_DEVICE_FUNCTION TIMEMORY_NODISCARD Intp end() const { return m_end; }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp& stride() { return m_stride; }
+    TIMEMORY_HOST_DEVICE_FUNCTION TIMEMORY_NODISCARD Intp stride() const
+    {
+        return m_stride;
+    }
 
-    HOST_DEVICE_CALLABLE TIMEMORY_NODISCARD const char* c_str() const
+    TIMEMORY_HOST_DEVICE_FUNCTION TIMEMORY_NODISCARD const char* c_str() const
     {
         using llu = long long unsigned;
         char desc[512];
@@ -321,7 +316,7 @@ template <typename DeviceT, typename FuncT, typename... ArgsT,
 void
 launch(params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 {
-#if defined(__NVCC__)
+#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0)
         _p.grid = 1;
     std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
@@ -343,7 +338,7 @@ template <typename Intp, typename DeviceT, typename FuncT, typename... ArgsT,
 void
 launch(const Intp& _nsize, params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 {
-#if defined(__NVCC__)
+#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0 && _nsize > 0)
         _p.grid = _p.compute(_nsize);
     else if(_p.grid == 0)
@@ -369,7 +364,7 @@ void
 launch(const Intp& _nsize, StreamT _stream, params<DeviceT>& _p, FuncT&& _func,
        ArgsT&&... _args)
 {
-#if defined(__NVCC__)
+#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0 && _nsize > 0)
         _p.grid = _p.compute(_nsize);
     else if(_p.grid == 0)
@@ -408,10 +403,10 @@ struct grid_strided_range<DeviceT, 0, Intp> : impl::range<Intp>
 {
     using base_type = impl::range<Intp>;
 
-#if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
+#if defined(TIMEMORY_USE_CUDA) && defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
     template <typename DevT                                       = DeviceT,
               enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
-    DEVICE_CALLABLE explicit grid_strided_range(Intp max_iter)
+    TIMEMORY_DEVICE_FUNCTION explicit grid_strided_range(Intp max_iter)
     : base_type(blockIdx.x * blockDim.x + threadIdx.x, max_iter, blockDim.x * gridDim.x)
     {}
 
@@ -435,10 +430,10 @@ struct grid_strided_range<DeviceT, 1, Intp> : impl::range<Intp>
 {
     using base_type = impl::range<Intp>;
 
-#if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
+#if defined(TIMEMORY_USE_CUDA) && defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
     template <typename DevT                                       = DeviceT,
               enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
-    DEVICE_CALLABLE explicit grid_strided_range(Intp max_iter)
+    TIMEMORY_DEVICE_FUNCTION explicit grid_strided_range(Intp max_iter)
     : base_type(blockIdx.y * blockDim.y + threadIdx.y, max_iter, blockDim.y * gridDim.y)
     {}
 
@@ -462,10 +457,10 @@ struct grid_strided_range<DeviceT, 2, Intp> : impl::range<Intp>
 {
     using base_type = impl::range<Intp>;
 
-#if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
+#if defined(TIMEMORY_USE_CUDA) && defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
     template <typename DevT                                       = DeviceT,
               enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
-    DEVICE_CALLABLE explicit grid_strided_range(Intp max_iter)
+    TIMEMORY_DEVICE_FUNCTION explicit grid_strided_range(Intp max_iter)
     : base_type(blockIdx.z * blockDim.z + threadIdx.z, max_iter, blockDim.z * gridDim.z)
     {}
 

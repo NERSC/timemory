@@ -62,7 +62,7 @@ get_test_name()
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
 //
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 saxpy(int64_t n, float a, float* x, float* y)
 {
     auto range = tim::device::grid_strided_range<default_device, 0>(n);

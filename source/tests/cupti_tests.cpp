@@ -67,7 +67,7 @@ get_test_name()
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
 //
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 saxpy(int64_t n, float a, float* x, float* y)
 {
     auto range = tim::device::grid_strided_range<default_device, 0>(n);
@@ -79,7 +79,7 @@ saxpy(int64_t n, float a, float* x, float* y)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-DEVICE_CALLABLE inline void
+TIMEMORY_DEVICE_FUNCTION inline void
 add_func(Tp& a, const Tp& b, const Tp& c)
 {
     a = b + c;
@@ -87,7 +87,7 @@ add_func(Tp& a, const Tp& b, const Tp& c)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-DEVICE_CALLABLE inline void
+TIMEMORY_DEVICE_FUNCTION inline void
 fma_func(Tp& a, const Tp& b, const Tp& c)
 {
     a = a * b + c;
@@ -118,7 +118,7 @@ array_to_string(const Tp& arr, const std::string& delimiter = ", ",
 namespace impl
 {
 template <typename T>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 KERNEL_A(T* begin, int n)
 {
     auto range = tim::device::grid_strided_range<default_device, 0>(n);
@@ -132,7 +132,7 @@ KERNEL_A(T* begin, int n)
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 KERNEL_B(T* begin, int n)
 {
     auto range = tim::device::grid_strided_range<default_device, 0>(n);

@@ -36,7 +36,7 @@ jobs:
           git submodule update .
           module load anaconda
           module load likwid
-          module load cuda/10.2
+          if [ -n "$(echo ${{ matrix.compiler }} | grep 'clang-12')" ]; then module load cuda/10.0; CUDA_CLANG=1; else module load cuda; CUDA_CLANG=0; fi
           module list
           spack env activate timemory-ci
           spack load dyninst boost
@@ -50,5 +50,6 @@ jobs:
           CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory ${{ matrix.generator }}"
           export CC=${{ matrix.compiler }}
           export CXX="$(echo '${{ matrix.compiler }}' | sed 's/gcc/g++/1' | sed 's/clang/clang++/1')"
+          if [ "${CUDA_CLANG}" -eq 1 ]; then export CUDACXX=${CXX}; fi
           python ./pyctest-runner.py --cxx-standard=${{ matrix.standard }} --pyctest-build-type=${{ matrix.build_type }} ${{ matrix.extra_args }} ${BASE_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
           cmake --build build-timemory/Linux --target all --parallel 6
