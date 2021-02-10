@@ -80,7 +80,7 @@ public:
     template <typename CallbackT>
     auto listen(const std::string& _channel_name, int _port, CallbackT&& callback,
                 int64_t _max_packets = 0)
-        -> decltype(callback(_channel_name), listen_info_t())
+        -> decltype(callback(_channel_name), listen_info_t{})
     {
         if(tim::socket::manager::init() != 0)
         {

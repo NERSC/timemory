@@ -171,5 +171,6 @@ struct base_has_accum<component::papi_rate_tuple<RateT, EventTypes...>> : false_
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(papi_vector, PAPI_VECTOR, "papi_vector", "papi")
-TIMEMORY_PROPERTY_SPECIALIZATION(papi_array_t, PAPI_ARRAY, "papi_array_t", "papi_array")
+TIMEMORY_PROPERTY_SPECIALIZATION(papi_vector, TIMEMORY_PAPI_VECTOR, "papi_vector", "papi")
+TIMEMORY_PROPERTY_SPECIALIZATION(papi_array_t, TIMEMORY_PAPI_ARRAY, "papi_array_t",
+                                 "papi_array")

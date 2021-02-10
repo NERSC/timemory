@@ -221,28 +221,31 @@ struct derivation_types<component::thread_cpu_util>
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
-                                 "virtual_clock")
+TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, TIMEMORY_WALL_CLOCK, "wall_clock",
+                                 "real_clock", "virtual_clock")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(system_clock, SYS_CLOCK, "system_clock", "sys_clock")
+TIMEMORY_PROPERTY_SPECIALIZATION(system_clock, TIMEMORY_SYS_CLOCK, "system_clock",
+                                 "sys_clock")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(user_clock, USER_CLOCK, "user_clock", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(user_clock, TIMEMORY_USER_CLOCK, "user_clock", "")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_clock, CPU_CLOCK, "cpu_clock", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_clock, TIMEMORY_CPU_CLOCK, "cpu_clock", "")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_clock, MONOTONIC_CLOCK, "monotonic_clock", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_clock, TIMEMORY_MONOTONIC_CLOCK,
+                                 "monotonic_clock", "")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_raw_clock, MONOTONIC_RAW_CLOCK,
+TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_raw_clock, TIMEMORY_MONOTONIC_RAW_CLOCK,
                                  "monotonic_raw_clock", "")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_clock, THREAD_CPU_CLOCK, "thread_cpu_clock",
-                                 "")
-TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_clock, PROCESS_CPU_CLOCK,
+TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_clock, TIMEMORY_THREAD_CPU_CLOCK,
+                                 "thread_cpu_clock", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_clock, TIMEMORY_PROCESS_CPU_CLOCK,
                                  "process_cpu_clock", "")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_util, CPU_UTIL, "cpu_util", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_util, TIMEMORY_CPU_UTIL, "cpu_util", "")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_util, PROCESS_CPU_UTIL, "process_cpu_util",
-                                 "")
+TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_util, TIMEMORY_PROCESS_CPU_UTIL,
+                                 "process_cpu_util", "")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_util, THREAD_CPU_UTIL, "thread_cpu_util", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_util, TIMEMORY_THREAD_CPU_UTIL,
+                                 "thread_cpu_util", "")

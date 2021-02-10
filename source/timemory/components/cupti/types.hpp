@@ -145,8 +145,11 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_serialization, component::cupti_profiler, 
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(cupti_activity, CUPTI_ACTIVITY, "cupti_activity", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(cupti_activity, TIMEMORY_CUPTI_ACTIVITY,
+                                 "cupti_activity", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(cupti_counters, CUPTI_COUNTERS, "cupti_counters", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(cupti_counters, TIMEMORY_CUPTI_COUNTERS,
+                                 "cupti_counters", "")
 //
-// TIMEMORY_PROPERTY_SPECIALIZATION(cupti_profiler, CUPTI_PROFILER, "cupti_profiler", "")
+// TIMEMORY_PROPERTY_SPECIALIZATION(cupti_profiler, TIMEMORY_CUPTI_PROFILER,
+// "cupti_profiler", "")

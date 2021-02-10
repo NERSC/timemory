@@ -164,9 +164,10 @@ struct has_gotcha<Tuple<T...>>
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(malloc_gotcha, MALLOC_GOTCHA, "malloc_gotcha", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(malloc_gotcha, TIMEMORY_MALLOC_GOTCHA, "malloc_gotcha",
+                                 "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(memory_allocations, MEMORY_ALLOCATIONS,
+TIMEMORY_PROPERTY_SPECIALIZATION(memory_allocations, TIMEMORY_MEMORY_ALLOCATIONS,
                                  "memory_allocations", "")
 //
 //======================================================================================//

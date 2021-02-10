@@ -90,13 +90,15 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::craypat_flush_buffer, fa
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(craypat_record, CRAYPAT_RECORD, "craypat_record", "")
-TIMEMORY_PROPERTY_SPECIALIZATION(craypat_region, CRAYPAT_REGION, "craypat_region", "")
-TIMEMORY_PROPERTY_SPECIALIZATION(craypat_counters, CRAYPAT_COUNTERS, "craypat_counters",
-                                 "")
-TIMEMORY_PROPERTY_SPECIALIZATION(craypat_heap_stats, CRAYPAT_HEAP_STATS,
+TIMEMORY_PROPERTY_SPECIALIZATION(craypat_record, TIMEMORY_CRAYPAT_RECORD,
+                                 "craypat_record", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(craypat_region, TIMEMORY_CRAYPAT_REGION,
+                                 "craypat_region", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(craypat_counters, TIMEMORY_CRAYPAT_COUNTERS,
+                                 "craypat_counters", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(craypat_heap_stats, TIMEMORY_CRAYPAT_HEAP_STATS,
                                  "craypat_heap_stats", "")
-TIMEMORY_PROPERTY_SPECIALIZATION(craypat_flush_buffer, CRAYPAT_FLUSH_BUFFER,
+TIMEMORY_PROPERTY_SPECIALIZATION(craypat_flush_buffer, TIMEMORY_CRAYPAT_FLUSH_BUFFER,
                                  "craypat_flush_buffer", "")
 //
 //--------------------------------------------------------------------------------------//

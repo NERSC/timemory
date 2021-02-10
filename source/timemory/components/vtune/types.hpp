@@ -72,8 +72,9 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::vtune_frame, true_typ
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(vtune_event, VTUNE_EVENT, "vtune_event", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_event, TIMEMORY_VTUNE_EVENT, "vtune_event", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(vtune_frame, VTUNE_FRAME, "vtune_frame", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_frame, TIMEMORY_VTUNE_FRAME, "vtune_frame", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(vtune_profiler, VTUNE_PROFILER, "vtune_profiler", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_profiler, TIMEMORY_VTUNE_PROFILER,
+                                 "vtune_profiler", "")

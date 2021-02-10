@@ -231,9 +231,13 @@
             using type                        = TYPE;                                    \
             using value_type                  = TIMEMORY_COMPONENT;                      \
             static constexpr value_type value = ENUM;                                    \
-            static const char*          enum_string() { return #ENUM; }                  \
-            static const char*          id() { return ID; }                              \
-            static const idset_t&       ids()                                            \
+            static const char*          enum_string()                                    \
+            {                                                                            \
+                static const char* _enum = #ENUM;                                        \
+                return static_cast<const char*>(&_enum[9]);                              \
+            }                                                                            \
+            static const char*    id() { return ID; }                                    \
+            static const idset_t& ids()                                                  \
             {                                                                            \
                 static auto _instance = []() {                                           \
                     auto _val = idset_t{ ID, __VA_ARGS__ };                              \

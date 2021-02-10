@@ -50,7 +50,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::allinea_map, false_type)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(allinea_map, ALLINEA_MAP, "allinea_map", "allinea",
-                                 "forge")
+TIMEMORY_PROPERTY_SPECIALIZATION(allinea_map, TIMEMORY_ALLINEA_MAP, "allinea_map",
+                                 "allinea", "forge")
 //
 //--------------------------------------------------------------------------------------//

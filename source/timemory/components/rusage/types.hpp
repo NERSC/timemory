@@ -324,34 +324,38 @@ struct units<component::current_peak_rss>
 
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(peak_rss, PEAK_RSS, "peak_rss", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(peak_rss, TIMEMORY_PEAK_RSS, "peak_rss", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(page_rss, PAGE_RSS, "page_rss", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(page_rss, TIMEMORY_PAGE_RSS, "page_rss", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(num_io_in, NUM_IO_IN, "num_io_in", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_io_in, TIMEMORY_NUM_IO_IN, "num_io_in", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(num_io_out, NUM_IO_OUT, "num_io_out", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_io_out, TIMEMORY_NUM_IO_OUT, "num_io_out", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(num_minor_page_faults, NUM_MINOR_PAGE_FAULTS,
+TIMEMORY_PROPERTY_SPECIALIZATION(num_minor_page_faults, TIMEMORY_NUM_MINOR_PAGE_FAULTS,
                                  "num_minor_page_faults", "minor_page_faults")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(num_major_page_faults, NUM_MAJOR_PAGE_FAULTS,
+TIMEMORY_PROPERTY_SPECIALIZATION(num_major_page_faults, TIMEMORY_NUM_MAJOR_PAGE_FAULTS,
                                  "num_major_page_faults", "major_page_faults")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(voluntary_context_switch, VOLUNTARY_CONTEXT_SWITCH,
+TIMEMORY_PROPERTY_SPECIALIZATION(voluntary_context_switch,
+                                 TIMEMORY_VOLUNTARY_CONTEXT_SWITCH,
                                  "voluntary_context_switch", "vol_ctx_switch")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(priority_context_switch, PRIORITY_CONTEXT_SWITCH,
+TIMEMORY_PROPERTY_SPECIALIZATION(priority_context_switch,
+                                 TIMEMORY_PRIORITY_CONTEXT_SWITCH,
                                  "priority_context_switch", "prio_ctx_switch")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(virtual_memory, VIRTUAL_MEMORY, "virtual_memory", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(virtual_memory, TIMEMORY_VIRTUAL_MEMORY,
+                                 "virtual_memory", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_mode_time, USER_MODE_TIME, "user_mode_time", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(user_mode_time, TIMEMORY_USER_MODE_TIME,
+                                 "user_mode_time", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(kernel_mode_time, KERNEL_MODE_TIME, "kernel_mode_time",
-                                 "")
+TIMEMORY_PROPERTY_SPECIALIZATION(kernel_mode_time, TIMEMORY_KERNEL_MODE_TIME,
+                                 "kernel_mode_time", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(current_peak_rss, CURRENT_PEAK_RSS, "current_peak_rss",
-                                 "")
+TIMEMORY_PROPERTY_SPECIALIZATION(current_peak_rss, TIMEMORY_CURRENT_PEAK_RSS,
+                                 "current_peak_rss", "")
 //
 //======================================================================================//

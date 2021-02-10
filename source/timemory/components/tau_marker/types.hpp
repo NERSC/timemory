@@ -60,4 +60,4 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::tau_marker, true_type
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(tau_marker, TAU_MARKER, "tau_marker", "tau")
+TIMEMORY_PROPERTY_SPECIALIZATION(tau_marker, TIMEMORY_TAU_MARKER, "tau_marker", "tau")

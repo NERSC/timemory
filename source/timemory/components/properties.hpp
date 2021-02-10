@@ -201,8 +201,8 @@ struct static_properties<Tp, true>
 /// A macro is provides to simplify this specialization:
 ///
 /// \code{.cpp}
-/// TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
-///                                 "virtual_clock")
+/// TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, TIMEMORY_WALL_CLOCK, "wall_clock",
+///                                  "real_clock", "virtual_clock")
 /// \endcode
 ///
 /// In the above, the first parameter is the C++ type, the second is the enumeration

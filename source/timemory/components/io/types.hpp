@@ -246,9 +246,9 @@ struct units<component::written_bytes>
 }  // namespace trait
 }  // namespace tim
 
-TIMEMORY_PROPERTY_SPECIALIZATION(read_char, READ_CHAR, "read_char", "rchar")
-TIMEMORY_PROPERTY_SPECIALIZATION(written_char, WRITTEN_CHAR, "written_char", "write_char",
-                                 "wchar")
-TIMEMORY_PROPERTY_SPECIALIZATION(read_bytes, READ_BYTES, "read_bytes", "")
-TIMEMORY_PROPERTY_SPECIALIZATION(written_bytes, WRITTEN_BYTES, "written_bytes",
+TIMEMORY_PROPERTY_SPECIALIZATION(read_char, TIMEMORY_READ_CHAR, "read_char", "rchar")
+TIMEMORY_PROPERTY_SPECIALIZATION(written_char, TIMEMORY_WRITTEN_CHAR, "written_char",
+                                 "write_char", "wchar")
+TIMEMORY_PROPERTY_SPECIALIZATION(read_bytes, TIMEMORY_READ_BYTES, "read_bytes", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(written_bytes, TIMEMORY_WRITTEN_BYTES, "written_bytes",
                                  "write_bytes")

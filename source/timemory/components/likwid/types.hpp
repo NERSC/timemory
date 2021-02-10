@@ -124,11 +124,11 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_nvmarker, true
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(likwid_marker, LIKWID_MARKER, "likwid_marker",
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_marker, TIMEMORY_LIKWID_MARKER, "likwid_marker",
                                  "likwid_perfmon_marker")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(likwid_nvmarker, LIKWID_NVMARKER, "likwid_nvmarker",
-                                 "likwid_nvmon_marker")
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_nvmarker, TIMEMORY_LIKWID_NVMARKER,
+                                 "likwid_nvmarker", "likwid_nvmon_marker")
 //
 //--------------------------------------------------------------------------------------//
 //
