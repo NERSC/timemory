@@ -328,6 +328,13 @@ public:
             itr.push(m_prefix, m_scope);
     }
 
+    void sample()
+    {
+        setup();
+        for(auto& itr : m_bundle)
+            itr.sample();
+    }
+
     void start()
     {
         setup();

@@ -32,6 +32,7 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/sample.hpp"
 #include "timemory/variadic/functional.hpp"
 
 #include <cassert>
@@ -136,6 +137,15 @@ get_opaque(scope::config _scope)
         }
     };
 
+    auto _sample = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Sampling %s", demangle<Toolset>().c_str());
+            Toolset* _result = static_cast<Toolset*>(v_result);
+            invoke::invoke<operation::sample, TIMEMORY_API>(std::tie(*_result));
+        }
+    };
+
     auto _start = [](void* v_result) {
         if(v_result)
         {
@@ -184,7 +194,7 @@ get_opaque(scope::config _scope)
     };
 
     return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del, _setup, _push,
-                  _pop);
+                  _pop, _sample);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -235,6 +245,15 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
+    auto _sample = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Sampling %s", demangle<Toolset_t>().c_str());
+            Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+            _result->sample();
+        }
+    };
+
     auto _start = [](void* v_result) {
         if(v_result)
         {
@@ -281,7 +300,7 @@ get_opaque(scope::config _scope, Args&&... args)
     };
 
     return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del, _setup, _push,
-                  _pop);
+                  _pop, _sample);
 }
 //
 //--------------------------------------------------------------------------------------//

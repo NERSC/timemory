@@ -189,6 +189,31 @@ struct common_utils
     using strvec_t       = std::vector<string_t>;
 
 public:
+    template <typename Head, typename... Tail>
+    static constexpr bool not_string(enable_if_t<sizeof...(Tail) == 0, int> = 0)
+    {
+        return !std::is_same<decay_t<Head>, std::string>::value;
+    }
+
+    template <typename Head, typename... Tail>
+    static constexpr bool not_string(enable_if_t<sizeof...(Tail) != 0, int> = 0)
+    {
+        return !std::is_same<decay_t<Head>, std::string>::value && not_string<Tail...>();
+    }
+
+    template <typename Head, typename... Tail>
+    static constexpr bool is_string(enable_if_t<sizeof...(Tail) == 0, int> = 0)
+    {
+        return std::is_same<decay_t<Head>, std::string>::value;
+    }
+
+    template <typename Head, typename... Tail>
+    static constexpr bool is_string(enable_if_t<sizeof...(Tail) != 0, int> = 0)
+    {
+        return std::is_same<decay_t<Head>, std::string>::value && is_string<Tail...>();
+    }
+
+public:
     template <typename Tp>
     static size_t get_distance(const Tp& _data)
     {
@@ -318,6 +343,48 @@ private:
     static auto get_labels_size_sfinae(const Tp&, long) -> int64_t
     {
         return 1;
+    }
+
+public:
+    template <typename Tp>
+    static auto get_data_array(const Tp& _data)
+    {
+        return get_data_sfinae(_data, 0, 0, 0, 0);
+    }
+
+private:
+    template <typename Tp>
+    static auto get_data_sfinae(const Tp& _data, int, int, int, int)
+        -> decltype(_data.data_array(_data.get()))
+    {
+        return _data.data_array(_data.get());
+    }
+
+    template <typename Tp>
+    static auto get_data_sfinae(const Tp& _data, int, int, int, long)
+        -> decltype(_data.data_array())
+    {
+        return _data.data_array();
+    }
+
+    template <typename Tp>
+    static auto get_data_sfinae(const Tp& _data, int, int, long, long)
+        -> decltype(_data.get())
+    {
+        return _data.get();
+    }
+
+    template <typename Tp>
+    static auto get_data_sfinae(const Tp& _data, int, long, long, long)
+        -> decltype(_data.get_data())
+    {
+        return _data.get_data();
+    }
+
+    template <typename Tp>
+    static decltype(auto) get_data_sfinae(Tp&& _data, long, long, long, long)
+    {
+        return std::forward<Tp>(_data);
     }
 
 public:

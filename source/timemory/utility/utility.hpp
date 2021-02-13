@@ -493,7 +493,10 @@ str_transform(const std::string& input, const std::string& _begin,
             break;
 
         // starting after the position of the first delimiter, find the end sequence
-        _end_pos = _result.find(_end, _beg_pos + 1);
+        if(!_end.empty())
+            _end_pos = _result.find(_end, _beg_pos + 1);
+        else
+            _end_pos = _beg_pos + _begin.length();
 
         // break if not found
         if(_end_pos == std::string::npos)

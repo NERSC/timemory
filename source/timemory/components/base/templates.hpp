@@ -29,8 +29,6 @@
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
-#include "timemory/operations/types/add_secondary.hpp"
-#include "timemory/operations/types/add_statistics.hpp"
 #include "timemory/operations/types/base_printer.hpp"
 #include "timemory/operations/types/serialization.hpp"
 #include "timemory/settings/declaration.hpp"
