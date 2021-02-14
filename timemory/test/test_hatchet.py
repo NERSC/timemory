@@ -91,7 +91,7 @@ class TimemoryHatchetTests(unittest.TestCase):
         tim.settings.parse()
 
         # generate data
-        fibonacci(10, False)
+        fibonacci(15, False)
         fibonacci(8)
 
     def setUp(self):
@@ -121,12 +121,6 @@ class TimemoryHatchetTests(unittest.TestCase):
         print(gf.tree("sum"))
         print(gf.tree("sum.inc"))
 
-        fbase = os.path.join(tim.settings.output_prefix, "wall")
-        with open(f"{fbase}.dot", "w") as ofs:
-            ofs.write(gf.to_dot())
-        with open(f"{fbase}.fg", "w") as ofs:
-            ofs.write(gf.to_flamegraph())
-
     # ---------------------------------------------------------------------------------- #
     # test handling multi-dimensional data from hatchet
     def test_hatchet_2D_data(self):
@@ -148,6 +142,34 @@ class TimemoryHatchetTests(unittest.TestCase):
 
         self.assertTrue(gf.tree("sum.start-peak-rss.inc") is not None)
         self.assertTrue(gf.tree("sum.stop-peak-rss") is not None)
+
+    def test_hatchet_analyze(self):
+        """test_hatchet_analyze"""
+
+        try:
+            import hatchet as ht
+        except ImportError:
+            return
+
+        from timemory.analyze import embedded_analyze
+        from timemory import settings
+        import timemory
+
+        outpath = os.path.join(
+            settings.output_path,
+            "analysis",
+        )
+
+        args = ["--expression", "x > 0"] + "-f dot flamegraph tree -o {} --per-thread --per-rank --select peak_rss --search fibonacci -e".format(
+            outpath
+        ).split()
+
+        print(f"arguments: {args}")
+
+        embedded_analyze(
+            args,
+            data=[timemory.get(hierarchy=True)],
+        )
 
 
 # ----------------------------- main test runner ---------------------------------------- #

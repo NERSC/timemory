@@ -22,62 +22,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#include "test_macros.hpp"
 
-#include "timemory/enum.h"
-#include "timemory/utility/utility.hpp"
+TIMEMORY_TEST_DEFAULT_MAIN
 
-#include <string>
+#include "gtest/gtest.h"
 
-namespace tim
+#include "timemory/timemory.hpp"
+
+
+//--------------------------------------------------------------------------------------//
+namespace details
 {
-namespace component
+//--------------------------------------------------------------------------------------//
+//  Get the current tests name
+//
+inline std::string
+get_test_name()
 {
-/// \struct tim::component::metadata
-/// \brief Provides forward declaration support for assigning static metadata properties.
-/// This is most useful for specialization of template components. If this class
-/// is specialized for component, then the component does not need to provide
-/// the static member functions `label()` and `description()`.
-///
-template <typename Tp>
-struct metadata
+    return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
+           "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
+}
+}  // namespace details
+
+//--------------------------------------------------------------------------------------//
+
+class chained_tests : public ::testing::Test
 {
-    using type                                = Tp;
-    using value_type                          = TIMEMORY_COMPONENT;
-    static constexpr TIMEMORY_COMPONENT value = TIMEMORY_COMPONENTS_END;
-    static std::string                  name();
-    static std::string                  label();
-    static std::string                  description();
-    static std::string                  extra_description() { return ""; }
-    static constexpr bool               specialized() { return false; }
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
 };
-//
+
 //--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-std::string
-metadata<Tp>::name()
-{
-    return try_demangle<Tp>();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-std::string
-metadata<Tp>::label()
-{
-    return try_demangle<Tp>();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-std::string
-metadata<Tp>::description()
-{
-    return try_demangle<Tp>();
-}
-//
-}  // namespace component
-}  // namespace tim

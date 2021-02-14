@@ -463,11 +463,11 @@ struct base_state
 {
     TIMEMORY_DEFAULT_OBJECT(base_state)
 
-    TIMEMORY_INLINE auto& get_is_running() { return is_running; }
-    TIMEMORY_INLINE auto& get_is_on_stack() { return is_on_stack; }
-    TIMEMORY_INLINE auto& get_is_transient() { return is_transient; }
-    TIMEMORY_INLINE auto& get_is_flat() { return is_flat; }
-    TIMEMORY_INLINE auto& get_depth_change() { return depth_change; }
+    TIMEMORY_INLINE auto get_is_running() { return is_running; }
+    TIMEMORY_INLINE auto get_is_on_stack() { return is_on_stack; }
+    TIMEMORY_INLINE auto get_is_transient() { return is_transient; }
+    TIMEMORY_INLINE auto get_is_flat() { return is_flat; }
+    TIMEMORY_INLINE auto get_depth_change() { return depth_change; }
 
     TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_running() const { return is_running; }
     TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_on_stack() const

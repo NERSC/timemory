@@ -671,13 +671,13 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def("__repr__", _repr, "String representation");
 
     auto _label = []() {
-        if(metadata_t::value != TIMEMORY_COMPONENTS_END)
+        if(metadata_t::specialized())
             return metadata_t::label();
         return T::label();
     };
 
     auto _desc = []() {
-        if(metadata_t::value != TIMEMORY_COMPONENTS_END)
+        if(metadata_t::specialized())
             return TIMEMORY_JOIN("", metadata_t::description(), ". ",
                                  metadata_t::extra_description());
         return T::description();

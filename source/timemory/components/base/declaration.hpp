@@ -253,14 +253,14 @@ public:
     using data_type::set_last;
     using data_type::set_value;
 
-protected:
-    static base_storage_type* get_storage();
-
     TIMEMORY_INLINE decltype(auto) load() { return data_type::load(get_is_transient()); }
     TIMEMORY_NODISCARD TIMEMORY_INLINE decltype(auto) load() const
     {
         return data_type::load(get_is_transient());
     }
+
+protected:
+    static base_storage_type* get_storage();
 
     TIMEMORY_INLINE Type& plus_oper(const base_type& rhs);
     TIMEMORY_INLINE Type& minus_oper(const base_type& rhs);

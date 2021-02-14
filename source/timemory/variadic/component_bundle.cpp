@@ -53,102 +53,96 @@ component_bundle<Tag, Types...>::component_bundle()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
-template <typename... T, typename Func>
+template <typename... T>
 component_bundle<Tag, Types...>::component_bundle(const string_t&     _key,
                                                   quirk::config<T...> _config,
-                                                  const Func&         _init_func)
+                                                  transient_func_t    _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _key, true_type{}, _config))
 , m_data(invoke::construct<data_type, Tag>(_key, _config))
 {
     apply_v::set_value(m_data, nullptr);
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func), _config);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
-template <typename... T, typename Func>
+template <typename... T>
 component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _loc,
                                                   quirk::config<T...>        _config,
-                                                  const Func&                _init_func)
+                                                  transient_func_t           _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _loc, true_type{}, _config))
 , m_data(invoke::construct<data_type, Tag>(_loc, _config))
 {
     apply_v::set_value(m_data, nullptr);
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func), _config);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
-template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(size_t _hash, bool _store,
-                                                  scope::config _scope,
-                                                  const Func&   _init_func)
+                                                  scope::config    _scope,
+                                                  transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _hash, _store, _scope))
 , m_data(invoke::construct<data_type, Tag>(_hash, m_scope))
 {
     // apply_v::set_value(m_data, nullptr);
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func));
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
-template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(const string_t& _key, bool _store,
-                                                  scope::config _scope,
-                                                  const Func&   _init_func)
+                                                  scope::config    _scope,
+                                                  transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _key, _store, _scope))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func));
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
-template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _loc,
                                                   bool _store, scope::config _scope,
-                                                  const Func& _init_func)
+                                                  transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _loc, _store, _scope))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func));
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
-template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(size_t _hash, scope::config _scope,
-                                                  const Func& _init_func)
+                                                  transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _hash, true_type{}, _scope))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func));
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
-template <typename Func>
-component_bundle<Tag, Types...>::component_bundle(const string_t& _key,
-                                                  scope::config   _scope,
-                                                  const Func&     _init_func)
+component_bundle<Tag, Types...>::component_bundle(const string_t&  _key,
+                                                  scope::config    _scope,
+                                                  transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _key, true_type{}, _scope))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func));
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
-template <typename Func>
 component_bundle<Tag, Types...>::component_bundle(const captured_location_t& _loc,
                                                   scope::config              _scope,
-                                                  const Func&                _init_func)
+                                                  transient_func_t           _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _loc, true_type{}, _scope))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -206,7 +200,7 @@ component_bundle<Tag, Types...>::clone(bool _store, scope::config _scope)
 // insert into graph
 //
 template <typename Tag, typename... Types>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::push()
 {
     if(!m_is_pushed())
@@ -218,13 +212,46 @@ component_bundle<Tag, Types...>::push()
         // insert node or find existing node
         invoke::push<Tag>(m_data, m_scope, m_hash);
     }
+    return *this;
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename Tag, typename... Types>
+template <typename... Tp>
+component_bundle<Tag, Types...>&
+component_bundle<Tag, Types...>::push(mpl::piecewise_select<Tp...>)
+{
+    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    // reset the data
+    invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
+    // insert node or find existing node
+    invoke::invoke<operation::push_node, Tag>(pw_type{}, m_data, m_scope, m_hash);
+    return *this;
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename Tag, typename... Types>
+template <typename... Tp>
+component_bundle<Tag, Types...>&
+component_bundle<Tag, Types...>::push(mpl::piecewise_select<Tp...>, scope::config _scope)
+{
+    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    // reset the data
+    invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
+    // insert node or find existing node
+    invoke::invoke<operation::push_node, Tag>(pw_type{}, m_data, _scope, m_hash);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 // pop out of graph
 //
 template <typename Tag, typename... Types>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::pop()
 {
     if(m_is_pushed())
@@ -234,6 +261,21 @@ component_bundle<Tag, Types...>::pop()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed(false);
     }
+    return *this;
+}
+
+//--------------------------------------------------------------------------------------//
+// pop out of graph
+//
+template <typename Tag, typename... Types>
+template <typename... Tp>
+component_bundle<Tag, Types...>&
+component_bundle<Tag, Types...>::pop(mpl::piecewise_select<Tp...>)
+{
+    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    // set the current node to the parent node
+    invoke::invoke<operation::pop_node, Tag>(pw_type{}, m_data);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -241,12 +283,13 @@ component_bundle<Tag, Types...>::pop()
 //
 template <typename Tag, typename... Types>
 template <typename... Args>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::measure(Args&&... args)
 {
     if(!trait::runtime_enabled<Tag>::get())
-        return;
+        return *this;
     invoke::measure<Tag>(m_data, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -254,10 +297,11 @@ component_bundle<Tag, Types...>::measure(Args&&... args)
 //
 template <typename Tag, typename... Types>
 template <typename... Args>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::sample(Args&&... args)
 {
     invoke::invoke<operation::sample, Tag>(m_data, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -265,29 +309,31 @@ component_bundle<Tag, Types...>::sample(Args&&... args)
 //
 template <typename Tag, typename... Types>
 template <typename... Args>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::start(mpl::lightweight, Args&&... args)
 {
     if(!trait::runtime_enabled<Tag>::get())
-        return;
+        return *this;
     assemble(*this);
     invoke::start<Tag>(m_data, std::forward<Args>(args)...);
     m_is_active(true);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
 template <typename... Args>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::stop(mpl::lightweight, Args&&... args)
 {
     if(!trait::runtime_enabled<Tag>::get())
-        return;
+        return *this;
     invoke::stop<Tag>(m_data, std::forward<Args>(args)...);
     ++m_laps;
     derive(*this);
     m_is_active(false);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -295,7 +341,7 @@ component_bundle<Tag, Types...>::stop(mpl::lightweight, Args&&... args)
 //
 template <typename Tag, typename... Types>
 template <typename... Tp, typename... Args>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::start(mpl::piecewise_select<Tp...>, Args&&... args)
 {
     using select_tuple_t = mpl::sort<trait::start_priority, std::tuple<Tp...>>;
@@ -311,13 +357,14 @@ component_bundle<Tag, Types...>::start(mpl::piecewise_select<Tp...>, Args&&... a
     // start components
     auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
     invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
 template <typename... Tp, typename... Args>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
 {
     using select_tuple_t = mpl::sort<trait::stop_priority, std::tuple<Tp...>>;
@@ -331,6 +378,7 @@ component_bundle<Tag, Types...>::stop(mpl::piecewise_select<Tp...>, Args&&... ar
         TIMEMORY_FOLD_EXPRESSION(
             operation::pop_node<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
     }
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -338,11 +386,11 @@ component_bundle<Tag, Types...>::stop(mpl::piecewise_select<Tp...>, Args&&... ar
 //
 template <typename Tag, typename... Types>
 template <typename... Args>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::start(Args&&... args)
 {
     if(!trait::runtime_enabled<Tag>::get())
-        return;
+        return *this;
 
     // push components into the call-stack
     IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value)
@@ -353,17 +401,18 @@ component_bundle<Tag, Types...>::start(Args&&... args)
 
     // start components
     start(mpl::lightweight{}, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
 template <typename... Args>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::stop(Args&&... args)
 {
     if(!trait::runtime_enabled<Tag>::get())
-        return;
+        return *this;
 
     // stop components
     stop(mpl::lightweight{}, std::forward<Args>(args)...);
@@ -374,6 +423,7 @@ component_bundle<Tag, Types...>::stop(Args&&... args)
         if(m_store())
             pop();
     }
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -397,11 +447,12 @@ component_bundle<Tag, Types...>::record(Args&&... args)
 //
 template <typename Tag, typename... Types>
 template <typename... Args>
-void
+component_bundle<Tag, Types...>&
 component_bundle<Tag, Types...>::reset(Args&&... args)
 {
     invoke::reset<Tag>(m_data, std::forward<Args>(args)...);
     m_laps = 0;
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//

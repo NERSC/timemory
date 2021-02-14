@@ -22,25 +22,16 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file timemory/variadic/types.hpp
- * \headerfile timemory/variadic/types.hpp "timemory/variadic/types.hpp"
- *
- * This is a declaration of all the variadic wrappers.
- * Care should be taken to make sure that this includes a minimal
- * number of additional headers. Also provides concat of types
- *
- */
-
 #pragma once
+
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <cstdint>
 #include <iostream>
 #include <string>
 #include <type_traits>
-
-#include "timemory/mpl/concepts.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/utility/macros.hpp"
 
 ///
 /// \macro TSTAG
@@ -71,10 +62,6 @@ class lightweight_tuple;
 template <typename... Types>
 class component_bundle;
 
-// actual definition:
-template <typename ApiT, typename... Types>
-class component_bundle<ApiT, Types...>;
-
 template <typename... Types>
 class component_tuple;
 
@@ -82,11 +69,10 @@ template <typename... Types>
 class component_list;
 
 template <typename... Types>
-class auto_bundle;
+class auto_base_bundle;
 
-// actual definition:
-template <typename ApiT, typename... Types>
-class auto_bundle<ApiT, Types...>;
+template <typename... Types>
+class auto_bundle;
 
 template <typename... Types>
 class auto_tuple;
@@ -100,6 +86,119 @@ class component_hybrid;
 template <typename TupleT, typename ListT>
 class auto_hybrid;
 
+//
+// actual definition of various bundles
+//
+template <typename Tag, typename CompT, typename BundleT>
+class auto_base_bundle<Tag, CompT, BundleT>;
+
+template <typename ApiT, typename... Types>
+class auto_bundle<ApiT, Types...>;
+
+template <typename ApiT, typename... Types>
+class component_bundle<ApiT, Types...>;
+
+//
+//  concepts for conversion
+//
+namespace concepts
+{
+//
+template <typename... Types>
+struct component_type<auto_tuple<Types...>>
+{
+    using type = component_tuple<Types...>;
+};
+//
+template <typename... Types>
+struct component_type<auto_list<Types...>>
+{
+    using type = component_list<Types...>;
+};
+//
+template <typename... Types>
+struct component_type<auto_bundle<Types...>>
+{
+    using type = component_bundle<Types...>;
+};
+//
+template <typename... Types>
+struct component_type<auto_hybrid<Types...>>
+{
+    using type = component_hybrid<Types...>;
+};
+//
+}  // namespace concepts
+//
+namespace bundle
+{
+#if !defined(CXX17)
+template <typename F, typename... Args>
+struct is_invocable
+: std::is_constructible<std::function<void(Args...)>,
+                        std::reference_wrapper<std::remove_reference_t<F>>>
+{};
+
+template <typename R, typename F, typename... Args>
+struct is_invocable_r
+: std::is_constructible<std::function<R(Args...)>,
+                        std::reference_wrapper<std::remove_reference_t<F>>>
+{};
+#else
+template <typename F, typename... Args>
+using is_invocable = std::is_invocable<F, Args...>;
+
+template <typename R, typename F, typename... Args>
+using is_invocable_r = std::is_invocable<R, F, Args...>;
+#endif
+/// \class execution_handler
+/// \tparam BundleT A component bundler, e.g. component_bundle
+/// \tparam DataT The data type returned from a function that was executed inside
+/// the chained member functions calls of BundleT
+///
+/// \brief This is an intermediate type that permits operations such as:
+///
+/// \code{.cpp}
+/// long fibonacci(long);
+///
+/// long run(long n)
+/// {
+///     using bundle_t = tim::component_tuple<wall_clock>;
+///
+///     return bundle_t{ "run" }.start().execute(fibonacci, n).stop().return_result();
+/// }
+///
+/// long fibonacci(long n)
+/// {
+///     using bundle_t = tim::component_tuple<wall_clock>;
+///
+///     return (n < 2) ? n :
+/// }
+/// \endcode
+template <typename BundleT, typename DataT>
+class execution_handler;
+
+template <typename BundleT, typename FuncT, typename... Args>
+auto
+execute(BundleT&& _bundle, FuncT&& _func, Args&&... _args,
+        enable_if_t<is_invocable<FuncT, Args...>::value &&
+                        !std::is_void<std::result_of_t<FuncT(Args...)>>::value,
+                    int> = 0);
+//
+template <typename BundleT, typename FuncT, typename... Args>
+auto
+execute(BundleT&& _bundle, FuncT&& _func, Args&&... _args,
+        enable_if_t<is_invocable<FuncT, Args...>::value &&
+                        std::is_void<std::result_of_t<FuncT(Args...)>>::value,
+                    int> = 0);
+//
+//
+template <typename BundleT, typename ValueT>
+auto
+execute(BundleT&& _bundle, ValueT&& _value,
+        enable_if_t<!is_invocable<ValueT>::value, long> = 0);
+//
+}  // namespace bundle
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//

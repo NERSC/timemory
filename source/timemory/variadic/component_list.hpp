@@ -114,12 +114,18 @@ class component_list
     friend class base_bundle;
 
     template <typename... Tp>
+    friend class auto_base_bundle;
+
+    template <typename... Tp>
     friend class auto_list;
 
 #if defined(TIMEMORY_USE_DEPRECATED)
     template <typename TupleC, typename ListC>
     friend class component_hybrid;
 #endif
+
+    struct internal_tag
+    {};
 
 public:
     using captured_location_t = source_location::captured;
@@ -202,27 +208,27 @@ public:
     // public member functions
     //
     /// tells each component to push itself into the call-stack hierarchy
-    void push();
+    this_type& push();
     /// tells each component to pop itself off of the call-stack hierarchy
-    void pop();
+    this_type& pop();
     /// requests each component record a measurment
     template <typename... Args>
-    void measure(Args&&...);
+    this_type& measure(Args&&...);
     /// requests each component take a sample (if supported)
     template <typename... Args>
-    void sample(Args&&...);
+    this_type& sample(Args&&...);
     /// invokes start on all the components
     template <typename... Args>
-    void start(Args&&...);
+    this_type& start(Args&&...);
     /// invokes stop on all the components
     template <typename... Args>
-    void stop(Args&&...);
+    this_type& stop(Args&&...);
     /// requests each component performs a measurement
     template <typename... Args>
     this_type& record(Args&&...);
     /// invokes reset member function on all the components
     template <typename... Args>
-    void reset(Args&&...);
+    this_type& reset(Args&&...);
     /// returns a tuple of invoking get() on all the components
     template <typename... Args>
     auto get(Args&&...) const;
@@ -246,40 +252,54 @@ public:
     using bundle_type::store;
 
     //----------------------------------------------------------------------------------//
+    /// when chaining together operations, this function enables executing a function
+    /// inside the chain
+    template <typename FuncT, typename... Args>
+    decltype(auto) execute(FuncT&& func, Args&&... args)
+    {
+        return bundle::execute(*this,
+                               std::forward<FuncT>(func)(std::forward<Args>(args)...));
+    }
+
+    //----------------------------------------------------------------------------------//
     /// construct the objects that have constructors with matching arguments
     //
     template <typename... Args>
-    void construct(Args&&... _args)
+    this_type& construct(Args&&... _args)
     {
         using construct_t = operation_t<operation::construct>;
         apply_v::access<construct_t>(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// provide preliminary info to the objects with matching arguments
     //
     template <typename... Args>
-    void assemble(Args&&... _args)
+    this_type& assemble(Args&&... _args)
     {
         invoke::assemble(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// provide conclusive info to the objects with matching arguments
     //
     template <typename... Args>
-    void derive(Args&&... _args)
+    this_type& derive(Args&&... _args)
     {
         invoke::derive(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// mark an atomic event
     //
     template <typename... Args>
-    void mark(Args&&... _args)
+    this_type& mark(Args&&... _args)
     {
         invoke::mark(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -287,9 +307,10 @@ public:
     /// structures)
     //
     template <typename... Args>
-    void mark_begin(Args&&... _args)
+    this_type& mark_begin(Args&&... _args)
     {
         invoke::mark_begin(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -297,36 +318,40 @@ public:
     /// structures)
     //
     template <typename... Args>
-    void mark_end(Args&&... _args)
+    this_type& mark_end(Args&&... _args)
     {
         invoke::mark_end(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// store a value
     //
     template <typename... Args>
-    void store(Args&&... _args)
+    this_type& store(Args&&... _args)
     {
         invoke::store(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// perform a audit operation (typically for GOTCHA)
     //
     template <typename... Args>
-    void audit(Args&&... _args)
+    this_type& audit(Args&&... _args)
     {
         invoke::audit(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// perform an add_secondary operation
     //
     template <typename... Args>
-    void add_secondary(Args&&... _args)
+    this_type& add_secondary(Args&&... _args)
     {
         invoke::add_secondary(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -334,9 +359,10 @@ public:
     /// \tparam OpT Operation struct
     //
     template <template <typename> class OpT, typename... Args>
-    void invoke(Args&&... _args)
+    this_type& invoke(Args&&... _args)
     {
         invoke::invoke<OpT>(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -345,10 +371,11 @@ public:
     /// \tparam OpT Operation struct
     //
     template <template <typename> class OpT, typename... Tp, typename... Args>
-    void invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
+    this_type& invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
     {
         TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, TIMEMORY_API>(
             this->get<Tp>(), std::forward<Args>(_args)...));
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -426,7 +453,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <bool PrintPrefix = true, bool PrintLaps = true>
-    void print(std::ostream& os) const
+    this_type& print(std::ostream& os) const
     {
         using printer_t       = typename bundle_type::print_type;
         using pointer_count_t = operation_t<operation::generic_counter>;
@@ -434,7 +461,7 @@ public:
         uint64_t count = 0;
         apply_v::access<pointer_count_t>(m_data, std::ref(count));
         if(count < 1 || m_hash == 0)
-            return;
+            return const_cast<this_type&>(*this);
         std::stringstream ss_data;
         apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(ss_data.str().length() > 0)
@@ -453,6 +480,7 @@ public:
             if(laps() > 0 && PrintLaps)
                 os << " [laps: " << m_laps << "]";
         }
+        return const_cast<this_type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//
@@ -488,6 +516,9 @@ public:
         ar(cereal::make_nvp("data", m_data));
     }
 
+    void set_scope(scope::config);
+    void set_prefix(const string_t&) const;
+
 public:
     // get member functions taking a type
     /// return pointer to component instance
@@ -522,10 +553,11 @@ public:
     }
 
     /// generic get routine for opaque types
-    void get(void*& ptr, size_t _hash)
+    this_type& get(void*& ptr, size_t _hash) const
     {
         using get_t = operation_t<operation::get>;
         apply_v::access<get_t>(m_data, ptr, _hash);
+        return const_cast<this_type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//
@@ -569,7 +601,7 @@ public:
                        demangle(typeid(T).name()).c_str());
             }
             _obj = new T(std::forward<Args>(_args)...);
-            set_prefix(_obj);
+            set_prefix(_obj, internal_tag{});
         }
         else
         {
@@ -674,11 +706,9 @@ protected:
     // protected member functions
     data_type&       get_data();
     const data_type& get_data() const;
-    void             set_scope(scope::config);
 
     template <typename T>
-    void set_prefix(T* obj) const;
-    void set_prefix(const string_t&) const;
+    void set_prefix(T* obj, internal_tag) const;
     void set_prefix(size_t) const;
 
 protected:
@@ -690,7 +720,7 @@ protected:
     using bundle_type::m_laps;
     using bundle_type::m_scope;
     using bundle_type::m_store;
-    mutable data_type m_data = data_type();
+    mutable data_type m_data = data_type{};
 };
 
 //--------------------------------------------------------------------------------------//

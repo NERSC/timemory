@@ -218,6 +218,7 @@ struct properties : static_properties<Tp>
     using value_type                          = TIMEMORY_COMPONENT;
     static constexpr TIMEMORY_COMPONENT value = TIMEMORY_COMPONENTS_END;
 
+    static constexpr bool        specialized() { return false; }
     static constexpr const char* enum_string() { return "TIMEMORY_COMPONENTS_END"; }
     static constexpr const char* id() { return ""; }
     static idset_t               ids() { return idset_t{}; }

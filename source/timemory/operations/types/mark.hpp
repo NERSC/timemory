@@ -106,16 +106,16 @@ private:
     //  The equivalent of supports args
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, int, int, Args&&... args)
-        -> decltype(obj.mark_begin(std::forward<Args>(args)...), void())
+        -> decltype(obj.mark_begin(std::forward<Args>(args)...))
     {
-        obj.mark_begin(std::forward<Args>(args)...);
+        return obj.mark_begin(std::forward<Args>(args)...);
     }
 
     //  Member function is provided
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.mark_begin(), void())
+    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.mark_begin())
     {
-        obj.mark_begin();
+        return obj.mark_begin();
     }
 
     //  No member function
@@ -148,16 +148,16 @@ private:
     //  The equivalent of supports args
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, int, int, Args&&... args)
-        -> decltype(obj.mark_end(std::forward<Args>(args)...), void())
+        -> decltype(obj.mark_end(std::forward<Args>(args)...))
     {
-        obj.mark_end(std::forward<Args>(args)...);
+        return obj.mark_end(std::forward<Args>(args)...);
     }
 
     //  Member function is provided
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.mark_end(), void())
+    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.mark_end())
     {
-        obj.mark_end();
+        return obj.mark_end();
     }
 
     //  No member function

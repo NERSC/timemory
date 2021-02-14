@@ -74,7 +74,7 @@ public:
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
               enable_if_t<std::is_pointer<Up>::value, int>     = 0>
-    TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up obj, Args&&... args)
+    TIMEMORY_INLINE explicit generic_operator(Up obj, Args&&... args)
     {
         check<Up>();
         if(obj)
@@ -84,7 +84,7 @@ public:
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
               enable_if_t<std::is_pointer<Up>::value, int>     = 0>
-    TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up obj, Up rhs, Args&&... args)
+    TIMEMORY_INLINE explicit generic_operator(Up obj, Up rhs, Args&&... args)
     {
         check<Up>();
         if(obj && rhs)
@@ -94,41 +94,41 @@ public:
     //----------------------------------------------------------------------------------//
 private:
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE auto pointer_sfinae(Up obj, int, int, Args&&... args)
+    TIMEMORY_INLINE auto pointer_sfinae(Up obj, int, int, Args&&... args)
         -> decltype(Op(*obj, std::forward<Args>(args)...), void())
     {
         Op _tmp(*obj, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE auto pointer_sfinae(Up obj, int, long, Args&&...)
+    TIMEMORY_INLINE auto pointer_sfinae(Up obj, int, long, Args&&...)
         -> decltype(Op{ *obj }, void())
     {
         Op _tmp{ *obj };
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE void pointer_sfinae(Up, long, long, Args&&...)
+    TIMEMORY_INLINE void pointer_sfinae(Up, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
 
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE auto pointer_sfinae(Up obj, Up rhs, int, int, Args&&... args)
+    TIMEMORY_INLINE auto pointer_sfinae(Up obj, Up rhs, int, int, Args&&... args)
         -> decltype(Op(*obj, *rhs, std::forward<Args>(args)...), void())
     {
         Op(*obj, *rhs, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE auto pointer_sfinae(Up obj, Up rhs, int, long, Args&&...)
+    TIMEMORY_INLINE auto pointer_sfinae(Up obj, Up rhs, int, long, Args&&...)
         -> decltype(Op(*obj, *rhs), void())
     {
         Op(*obj, *rhs);
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE void pointer_sfinae(Up, Up, long, long, Args&&...)
+    TIMEMORY_INLINE void pointer_sfinae(Up, Up, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -140,7 +140,7 @@ public:
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
               enable_if_t<!std::is_pointer<Up>::value, int>    = 0>
-    TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up& obj, Args&&... args)
+    TIMEMORY_INLINE explicit generic_operator(Up& obj, Args&&... args)
     {
         check<Up>();
         sfinae(obj, 0, 0, std::forward<Args>(args)...);
@@ -149,7 +149,7 @@ public:
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
               enable_if_t<!std::is_pointer<Up>::value, int>    = 0>
-    TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
+    TIMEMORY_INLINE explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
     {
         check<Up>();
         sfinae(obj, rhs, 0, 0, std::forward<Args>(args)...);
@@ -158,14 +158,14 @@ public:
     //----------------------------------------------------------------------------------//
 private:
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE auto sfinae(Up& obj, int, int, Args&&... args)
+    TIMEMORY_INLINE auto sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(Op(obj, std::forward<Args>(args)...), void())
     {
         Op _tmp(obj, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE auto sfinae(Up& obj, int, long, Args&&...)
+    TIMEMORY_INLINE auto sfinae(Up& obj, int, long, Args&&...)
         -> decltype(Op{ obj }, void())
     {
         Op _tmp{ obj };
@@ -173,7 +173,7 @@ private:
 
     template <typename Up, typename... Args,
               enable_if_t<std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_ALWAYS_INLINE void sfinae(Up& obj, long, long, Args&&... args)
+    TIMEMORY_INLINE void sfinae(Up& obj, long, long, Args&&... args)
     {
         // some operations want a raw pointer, e.g. generic_deleter
         pointer_sfinae(obj, 0, 0, std::forward<Args>(args)...);
@@ -181,20 +181,20 @@ private:
 
     template <typename Up, typename... Args,
               enable_if_t<!std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_ALWAYS_INLINE void sfinae(Up&, long, long, Args&&...)
+    TIMEMORY_INLINE void sfinae(Up&, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
 
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE auto sfinae(Up& obj, Up& rhs, int, int, Args&&... args)
+    TIMEMORY_INLINE auto sfinae(Up& obj, Up& rhs, int, int, Args&&... args)
         -> decltype(Op(obj, rhs, std::forward<Args>(args)...), void())
     {
         Op(obj, rhs, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_ALWAYS_INLINE auto sfinae(Up& obj, Up& rhs, int, long, Args&&...)
+    TIMEMORY_INLINE auto sfinae(Up& obj, Up& rhs, int, long, Args&&...)
         -> decltype(Op(obj, rhs), void())
     {
         Op(obj, rhs);
@@ -202,7 +202,7 @@ private:
 
     template <typename Up, typename... Args,
               enable_if_t<std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_ALWAYS_INLINE void sfinae(Up& obj, Up& rhs, long, long, Args&&... args)
+    TIMEMORY_INLINE void sfinae(Up& obj, Up& rhs, long, long, Args&&... args)
     {
         // some operations want a raw pointer, e.g. generic_deleter
         pointer_sfinae(obj, rhs, 0, 0, std::forward<Args>(args)...);
@@ -210,7 +210,7 @@ private:
 
     template <typename Up, typename... Args,
               enable_if_t<!std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_ALWAYS_INLINE void sfinae(Up&, Up&, long, long, Args&&...)
+    TIMEMORY_INLINE void sfinae(Up&, Up&, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -222,7 +222,7 @@ public:
     // if the type is not available, never do anything
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<!trait::is_available<Rp>::value, int> = 0>
-    TIMEMORY_ALWAYS_INLINE generic_operator(Up&, Args&&...)
+    TIMEMORY_INLINE generic_operator(Up&, Args&&...)
     {}
 };
 //
@@ -239,7 +239,7 @@ struct generic_deleter
 
     TIMEMORY_DELETED_OBJECT(generic_deleter)
 
-    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(type*& obj)
+    TIMEMORY_INLINE explicit generic_deleter(type*& obj)
     {
         DEBUG_PRINT_HERE("%s %s :: %p", "deleting pointer lvalue",
                          demangle<type>().c_str(), (void*) obj);
@@ -248,7 +248,7 @@ struct generic_deleter
     }
 
     template <typename Up, enable_if_t<std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(Up&& obj)
+    TIMEMORY_INLINE explicit generic_deleter(Up&& obj)
     {
         DEBUG_PRINT_HERE("%s %s :: %p", "deleting pointer rvalue",
                          demangle<type>().c_str(), (void*) obj);
@@ -257,15 +257,14 @@ struct generic_deleter
     }
 
     template <typename... Deleter>
-    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(
-        std::unique_ptr<type, Deleter...>& obj)
+    TIMEMORY_INLINE explicit generic_deleter(std::unique_ptr<type, Deleter...>& obj)
     {
         DEBUG_PRINT_HERE("%s %s :: %p", "deleting unique_ptr", demangle<type>().c_str(),
                          (void*) obj.get());
         obj.reset();
     }
 
-    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(std::shared_ptr<type> obj)
+    TIMEMORY_INLINE explicit generic_deleter(std::shared_ptr<type> obj)
     {
         DEBUG_PRINT_HERE("%s %s :: %p", "deleting shared_ptr", demangle<type>().c_str(),
                          (void*) obj.get());
@@ -273,7 +272,7 @@ struct generic_deleter
     }
 
     template <typename Up, enable_if_t<!std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_ALWAYS_INLINE explicit generic_deleter(Up&&)
+    TIMEMORY_INLINE explicit generic_deleter(Up&&)
     {
         DEBUG_PRINT_HERE("%s %s", "type is not deleted", demangle<type>().c_str());
     }
@@ -293,14 +292,14 @@ struct generic_counter
     TIMEMORY_DELETED_OBJECT(generic_counter)
 
     template <typename Up, enable_if_t<std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_ALWAYS_INLINE explicit generic_counter(const Up& obj, uint64_t& count)
+    TIMEMORY_INLINE explicit generic_counter(const Up& obj, uint64_t& count)
     {
         // static_assert(std::is_same<Up, type>::value, "Error! Up != type");
         count += (trait::runtime_enabled<type>::get() && obj) ? 1 : 0;
     }
 
     template <typename Up, enable_if_t<!std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_ALWAYS_INLINE explicit generic_counter(const Up&, uint64_t& count)
+    TIMEMORY_INLINE explicit generic_counter(const Up&, uint64_t& count)
     {
         // static_assert(std::is_same<Up, type>::value, "Error! Up != type");
         count += (trait::runtime_enabled<type>::get()) ? 1 : 0;

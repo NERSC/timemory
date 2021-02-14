@@ -53,39 +53,129 @@ struct handler
 {
     using value_type = V;
 
+public:
+    /// this function is returns the current value
+    template <typename T>
+    static decltype(auto) get(const T& obj)
+    {
+        return handler::get(obj, 0);
+    }
+
+    /// this function is returns the current value in a form suitable for display.
+    /// It may be necessary to specialize this function downstream.
+    template <typename T>
+    static decltype(auto) get_display(const T& obj)
+    {
+        return handler::get(obj);
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+    // const ref semantics
+    //----------------------------------------------------------------------------------//
+    /// this function is used to store a value
     template <typename T>
     static void store(T& obj, const value_type& v)
     {
         obj.set_value(v);
     }
 
-    template <typename T, typename Func>
-    static auto store(T& obj, Func&& f, const value_type& v)
+    /// \tparam FuncT Should be binary operation which takes two inputs and returns one
+    /// this function is used to store the current value after performing some operation.
+    template <typename T, typename FuncT>
+    static auto store(T& obj, FuncT&& f, const value_type& v)
         -> decltype(obj.set_value(f(obj.get_value(), v)), void())
     {
         obj.set_value(f(obj.get_value(), v));
     }
 
-    template <typename T>
-    static void begin(T& obj, const value_type& v)
+    /// this function sets the value of the temporary in `mark_begin`.
+    static void begin(value_type& obj, const value_type& v) { obj = v; }
+
+    /// this function sets the value of the temporary in `mark_begin`.
+    template <typename FuncT>
+    static void begin(value_type& obj, FuncT&& f, const value_type& v)
     {
-        store(obj, v);
+        obj = f(obj, v);
     }
 
+    /// this function computes the difference between the provided value and the
+    /// temporary from `mark_begin` and then updates the current value
     template <typename T>
     static void end(T& obj, const value_type& v)
     {
-        obj.set_value(v - obj.get_value());
+        auto _v = v;
+        _v      = math::minus(_v, obj.get_temporary());
+        store(obj, std::move(_v));
     }
 
-    template <typename T>
-    static auto get(const T& obj)
+    /// this function computes the difference between the provided value and the
+    /// temporary from `mark_begin` and then updates the current value
+    template <typename T, typename FuncT>
+    static void end(T& obj, FuncT&& f, const value_type& v)
     {
-        return obj.load();
+        auto _v = v;
+        _v      = math::minus(_v, obj.get_temporary());
+        store(obj, std::forward<FuncT>(f), std::move(_v));
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+    // move semantics
+    //----------------------------------------------------------------------------------//
+    /// overload with move semantics
+    template <typename T>
+    static void store(T& obj, value_type&& v)
+    {
+        obj.set_value(std::move(v));
+    }
+
+    /// overload with move semantics
+    template <typename T, typename FuncT>
+    static auto store(T& obj, FuncT&& f, value_type&& v)
+        -> decltype(obj.set_value(f(obj.get_value(), std::move(v))), void())
+    {
+        obj.set_value(f(obj.get_value(), std::move(v)));
+    }
+
+    /// overload with move semantics
+    static void begin(value_type& obj, value_type&& v) { obj = v; }
+
+    /// overload with move semantics
+    template <typename T, typename FuncT>
+    static auto begin(value_type& obj, FuncT&& f, value_type&& v)
+    {
+        obj = f(obj, v);
+    }
+
+    /// overload with move semantics
+    template <typename T>
+    static void end(T& obj, value_type&& v)
+    {
+        auto&& _v = std::move(v);
+        math::minus(_v, obj.get_temporary());
+        obj.set_value(std::move(_v));
+    }
+
+    /// overload with move semantics
+    template <typename T, typename FuncT>
+    static void end(T& obj, FuncT&& f, value_type&& v)
+    {
+        auto&& _v = std::move(v);
+        _v        = math::minus(_v, obj.get_temporary());
+        store(obj, std::forward<FuncT>(f), std::move(_v));
+    }
+
+private:
+    // prefer the get_value version since value is updated by default
+    template <typename T>
+    static auto get(const T& obj, int) -> decltype(obj.get_value())
+    {
+        return obj.get_value();
     }
 
     template <typename T>
-    static auto get_display(const T& obj)
+    static decltype(auto) get(const T& obj, long)
     {
         return obj.load();
     }

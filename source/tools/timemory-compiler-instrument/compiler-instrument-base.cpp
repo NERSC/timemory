@@ -498,11 +498,11 @@ finalize()
     {
         wall_clock wc{};
         peak_rss   pr{};
-        tim::invoke::disjoint::start(std::forward_as_tuple(wc, pr));
+        tim::invoke::start(std::tie(wc, pr));
         //
         tim::timemory_finalize();
         //
-        tim::invoke::disjoint::stop(std::forward_as_tuple(wc, pr));
+        tim::invoke::stop(std::tie(wc, pr));
         std::stringstream ss;
         ss << "required " << wc.get() << " " << tim::component::wall_clock::display_unit()
            << " and " << pr.get() << " " << tim::component::peak_rss::display_unit();
