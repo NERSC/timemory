@@ -222,7 +222,7 @@ fibonacci(int64_t n, int64_t cutoff,
         auto labeler = [](int _n) { return TIMEMORY_JOIN("", "fibonacci[", _n, "]"); };
         auto fib     = [](int _n, int _cutoff) {
             return (_n < 2) ? _n
-                                : (fibonacci<Tp>(_n - 1, _cutoff) +
+                            : (fibonacci<Tp>(_n - 1, _cutoff) +
                                fibonacci<Tp>(_n - 2, _cutoff));
         };
         return tim::runtime::invoke<auto_tuple_t>(labeler(n), fib, n, cutoff);

@@ -30,7 +30,6 @@ TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/timemory.hpp"
 
-
 //--------------------------------------------------------------------------------------//
 namespace details
 {
