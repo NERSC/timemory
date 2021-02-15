@@ -73,8 +73,8 @@ public:
     using component_type = typename base_type::component_type;
     using type           = convert_t<available_t<concat<Types...>>, auto_tuple<>>;
 
-    template <typename Tp, typename... Args>
-    explicit auto_tuple(Tp&&, Args&&... args);
+    template <typename... Args>
+    explicit auto_tuple(Args&&... args);
 
     // copy and move
     ~auto_tuple()                     = default;
@@ -95,9 +95,9 @@ public:
 };
 //
 template <typename... Types>
-template <typename Tp, typename... Args>
-auto_tuple<Types...>::auto_tuple(Tp&& inp, Args&&... args)
-: poly_base{ std::forward<Tp>(inp), std::forward<Args>(args)... }
+template <typename... Args>
+auto_tuple<Types...>::auto_tuple(Args&&... args)
+: poly_base{ std::forward<Args>(args)... }
 {}
 //
 template <typename... Types>

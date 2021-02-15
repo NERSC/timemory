@@ -100,24 +100,24 @@ public:
 public:
     template <typename... T>
     explicit auto_base_bundle(const std::string&, quirk::config<T...>,
-                              transient_func_t = this_type::get_initializer());
+                              transient_func_t = get_initializer());
 
     template <typename... T>
     explicit auto_base_bundle(const captured_location_t&, quirk::config<T...>,
-                              transient_func_t = this_type::get_initializer());
+                              transient_func_t = get_initializer());
 
     explicit auto_base_bundle(const std::string&, scope::config = scope::get_default(),
                               bool report_at_exit = settings::destructor_report(),
-                              transient_func_t    = this_type::get_initializer());
+                              transient_func_t    = get_initializer());
 
     explicit auto_base_bundle(const captured_location_t&,
                               scope::config       = scope::get_default(),
                               bool report_at_exit = settings::destructor_report(),
-                              transient_func_t    = this_type::get_initializer());
+                              transient_func_t    = get_initializer());
 
     explicit auto_base_bundle(size_t, scope::config = scope::get_default(),
                               bool report_at_exit = settings::destructor_report(),
-                              transient_func_t    = this_type::get_initializer());
+                              transient_func_t    = get_initializer());
 
     explicit auto_base_bundle(component_type& tmp, scope::config = scope::get_default(),
                               bool report_at_exit = settings::destructor_report());
