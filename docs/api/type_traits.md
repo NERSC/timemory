@@ -23,6 +23,9 @@ user code.
 .. doxygenstruct:: tim::trait::python_args
    :members:
    :undoc-members:
+.. doxygenstruct:: tim::trait::default_runtime_enabled
+   :members:
+   :undoc-members:
 .. doxygenstruct:: tim::trait::runtime_enabled
    :members:
    :undoc-members:

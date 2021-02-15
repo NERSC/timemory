@@ -25,7 +25,6 @@
 #pragma once
 
 #include "timemory/macros/language.hpp"
-#include "timemory/mpl/function_traits.hpp"
 #include "timemory/utility/types.hpp"
 
 namespace tim

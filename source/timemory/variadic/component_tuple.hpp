@@ -98,6 +98,9 @@ protected:
     friend class base_bundle;
 
     template <typename... Tp>
+    friend class auto_base_bundle;
+
+    template <typename... Tp>
     friend class auto_tuple;
 
 #if defined(TIMEMORY_USE_DEPRECATED)
@@ -198,27 +201,27 @@ public:
     // public member functions
     //
     /// tells each component to push itself into the call-stack hierarchy
-    void push();
+    this_type& push();
     /// tells each component to pop itself off of the call-stack hierarchy
-    void pop();
+    this_type& pop();
     /// requests each component record a measurment
     template <typename... Args>
-    void measure(Args&&...);
+    this_type& measure(Args&&...);
     /// requests each component take a sample (if supported)
     template <typename... Args>
-    void sample(Args&&...);
+    this_type& sample(Args&&...);
     /// invokes start on all the components
     template <typename... Args>
-    void start(Args&&...);
+    this_type& start(Args&&...);
     /// invokes stop on all the components
     template <typename... Args>
-    void stop(Args&&...);
+    this_type& stop(Args&&...);
     /// requests each component performs a measurement
     template <typename... Args>
     this_type& record(Args&&...);
     /// invokes reset member function on all the components
     template <typename... Args>
-    void reset(Args&&...);
+    this_type& reset(Args&&...);
     /// returns a tuple of invoking get() on all the components
     template <typename... Args>
     auto get(Args&&...) const;
@@ -232,10 +235,10 @@ public:
 
     /// variant of start() which excludes push()
     template <typename... Args>
-    void start(mpl::lightweight, Args&&...);
+    this_type& start(mpl::lightweight, Args&&...);
     /// variant of stop() which excludes pop()
     template <typename... Args>
-    void stop(mpl::lightweight, Args&&...);
+    this_type& stop(mpl::lightweight, Args&&...);
 
     using bundle_type::get_prefix;
     using bundle_type::get_scope;
@@ -249,13 +252,24 @@ public:
     using bundle_type::store;
 
     //----------------------------------------------------------------------------------//
+    /// when chaining together operations, this function enables executing a function
+    /// inside the chain
+    template <typename FuncT, typename... Args>
+    decltype(auto) execute(FuncT&& func, Args&&... args)
+    {
+        return bundle::execute(*this,
+                               std::forward<FuncT>(func)(std::forward<Args>(args)...));
+    }
+
+    //----------------------------------------------------------------------------------//
     /// construct the objects that have constructors with matching arguments
     //
     template <typename... Args>
-    void construct(Args&&... _args)
+    this_type& construct(Args&&... _args)
     {
         using construct_t = operation_t<operation::construct>;
         apply_v::access<construct_t>(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -264,9 +278,10 @@ public:
     /// that it can extract data from.
     //
     template <typename... Args>
-    void assemble(Args&&... _args)
+    this_type& assemble(Args&&... _args)
     {
         invoke::assemble(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -276,18 +291,20 @@ public:
     /// tim::component::wall_clock and \ref tim::component::cpu_clock
     //
     template <typename... Args>
-    void derive(Args&&... _args)
+    this_type& derive(Args&&... _args)
     {
         invoke::derive(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// mark an atomic event
     //
     template <typename... Args>
-    void mark(Args&&... _args)
+    this_type& mark(Args&&... _args)
     {
         invoke::mark(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -295,9 +312,10 @@ public:
     /// structures)
     //
     template <typename... Args>
-    void mark_begin(Args&&... _args)
+    this_type& mark_begin(Args&&... _args)
     {
         invoke::mark_begin(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -305,18 +323,25 @@ public:
     /// structures)
     //
     template <typename... Args>
-    void mark_end(Args&&... _args)
+    this_type& mark_end(Args&&... _args)
     {
         invoke::mark_end(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// store a value
     //
     template <typename... Args>
-    void store(Args&&... _args)
+    this_type& store(Args&&... _args)
     {
+        auto _active = m_is_active();
+        m_is_active(true);
         invoke::store(m_data, std::forward<Args>(_args)...);
+        if(!_active)
+            ++m_laps;
+        m_is_active(false);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -324,17 +349,19 @@ public:
     /// or out-going return value before returning (typically using in GOTCHA components)
     //
     template <typename... Args>
-    void audit(Args&&... _args)
+    this_type& audit(Args&&... _args)
     {
         invoke::audit(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// perform an add_secondary operation
     template <typename... Args>
-    void add_secondary(Args&&... _args)
+    this_type& add_secondary(Args&&... _args)
     {
         invoke::add_secondary(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -342,9 +369,10 @@ public:
     /// \tparam OpT Operation struct
     //
     template <template <typename> class OpT, typename... Args>
-    void invoke(Args&&... _args)
+    this_type& invoke(Args&&... _args)
     {
         invoke::invoke<OpT>(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -353,10 +381,11 @@ public:
     /// \tparam OpT Operation struct
     //
     template <template <typename> class OpT, typename... Tp, typename... Args>
-    void invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
+    this_type& invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
     {
         TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, TIMEMORY_API>(
             this->get<Tp>(), std::forward<Args>(_args)...));
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -382,10 +411,11 @@ public:
         return static_cast<T*>(ptr);
     }
 
-    void get(void*& ptr, size_t _hash) const
+    this_type& get(void*& ptr, size_t _hash) const
     {
         using get_t = operation_t<operation::get>;
         apply_v::access<get_t>(m_data, ptr, _hash);
+        return const_cast<this_type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//
@@ -407,12 +437,13 @@ public:
         typename T, typename... Args,
         enable_if_t<is_one_of<T, reference_type>::value == false && has_user_bundle_v,
                     int> = 0>
-    void init(Args&&...)
+    this_type& init(Args&&...)
     {
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
         this->init<bundle_t>();
         this->get<bundle_t>()->insert(component::factory::get_opaque<T>(m_scope),
                                       component::factory::get_typeids<T>());
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -421,39 +452,46 @@ public:
         typename T, typename... Args,
         enable_if_t<is_one_of<T, reference_type>::value == false && !has_user_bundle_v,
                     int> = 0>
-    void init(Args&&...)
-    {}
+    this_type& init(Args&&...)
+    {
+        return *this;
+    }
 
     //----------------------------------------------------------------------------------//
     //  variadic initialization
     //
     template <typename T, typename... Tail, enable_if_t<sizeof...(Tail) == 0, int> = 0>
-    void initialize()
+    this_type& initialize()
     {
         this->init<T>();
+        return *this;
     }
 
     template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
-    void initialize()
+    this_type& initialize()
     {
         this->init<T>();
         this->initialize<Tail...>();
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     // apply a member function to a type that is in variadic list AND is available
     template <typename T, typename Func, typename... Args,
               enable_if_t<is_one_of<T, data_type>::value == true, int> = 0>
-    void type_apply(Func&& _func, Args&&... _args)
+    this_type& type_apply(Func&& _func, Args&&... _args)
     {
         auto* _obj = get<T>();
         ((*_obj).*(_func))(std::forward<Args>(_args)...);
+        return *this;
     }
 
     template <typename T, typename Func, typename... Args,
               enable_if_t<is_one_of<T, data_type>::value == false, int> = 0>
-    void type_apply(Func&&, Args&&...)
-    {}
+    this_type& type_apply(Func&&, Args&&...)
+    {
+        return *this;
+    }
 
     //----------------------------------------------------------------------------------//
     // this_type operators
@@ -530,11 +568,11 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <bool PrintPrefix = true, bool PrintLaps = true>
-    void print(std::ostream& os) const
+    this_type& print(std::ostream& os, bool _endline = false) const
     {
         using printer_t = typename bundle_type::print_type;
         if(size() == 0 || m_hash == 0)
-            return;
+            return const_cast<this_type&>(*this);
         std::stringstream ss_data;
         apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(PrintPrefix)
@@ -549,6 +587,9 @@ public:
         os << ss_data.str();
         if(m_laps > 0 && PrintLaps)
             os << " [laps: " << m_laps << "]";
+        if(_endline)
+            os << '\n';
+        return const_cast<this_type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//

@@ -447,8 +447,12 @@ storage<Type, true>::stack_clear()
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
-            operation::stop<Type>{ *itr };
-            operation::pop_node<Type>{ *itr };
+            operation::generic_operator<Type, operation::start<Type>, TIMEMORY_API>{
+                *itr
+            };
+            operation::generic_operator<Type, operation::pop_node<Type>, TIMEMORY_API>{
+                *itr
+            };
         }
     }
     m_stack.clear();

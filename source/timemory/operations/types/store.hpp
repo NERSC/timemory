@@ -45,10 +45,10 @@ struct store
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(store)
+    TIMEMORY_DEFAULT_OBJECT(store)
 
     template <typename... Args>
-    explicit store(type& obj, Args&&... args)
+    TIMEMORY_HOT_INLINE explicit store(type& obj, Args&&... args)
     {
         if(!trait::runtime_enabled<type>::get())
             return;
@@ -56,29 +56,36 @@ struct store
         sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
 
+    template <typename... Args>
+    TIMEMORY_HOT_INLINE auto operator()(type& obj, Args&&... args)
+    {
+        return sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    }
+
 private:
     //----------------------------------------------------------------------------------//
     //  The equivalent of supports args and an implementation provided
     //
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, Args&&... args)
-        -> decltype(obj.store(std::forward<Args>(args)...), void())
+    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int, int, Args&&... args)
+        -> decltype(obj.store(std::forward<Args>(args)...))
     {
-        obj.store(std::forward<Args>(args)...);
+        return obj.store(std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.store(), void())
+    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int, long, Args&&...)
+        -> decltype(obj.store())
     {
-        obj.store();
+        return obj.store();
     }
 
     //----------------------------------------------------------------------------------//
     //
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, Args&&...)
+    TIMEMORY_INLINE void sfinae(Up&, long, long, Args&&...)
     {}
 };
 //

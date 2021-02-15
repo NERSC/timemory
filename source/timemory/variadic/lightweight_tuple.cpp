@@ -42,72 +42,69 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename... T, typename Func>
+template <typename... T>
 lightweight_tuple<Types...>::lightweight_tuple(const string_t&     _key,
                                                quirk::config<T...> _config,
-                                               const Func&         _init_func)
+                                               transient_func_t    _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _key, false_type{}, _config))
 , m_data(invoke::construct<data_type>(_key, _config))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func), _config);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename... T, typename Func>
+template <typename... T>
 lightweight_tuple<Types...>::lightweight_tuple(const captured_location_t& _loc,
                                                quirk::config<T...>        _config,
-                                               const Func&                _init_func)
+                                               transient_func_t           _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _loc, false_type{}, _config))
 , m_data(invoke::construct<data_type>(_loc, _config))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func), _config);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename... T, typename Func>
+template <typename... T>
 lightweight_tuple<Types...>::lightweight_tuple(size_t _hash, quirk::config<T...> _config,
-                                               const Func& _init_func)
+                                               transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _hash, false_type{}, _config))
 , m_data(invoke::construct<data_type>(_hash, _config))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func, _config);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func), _config);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename Func>
 lightweight_tuple<Types...>::lightweight_tuple(size_t _hash, scope::config _scope,
-                                               const Func& _init_func)
+                                               transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _hash, false_type{}, _scope))
 , m_data(invoke::construct<data_type>(_hash, m_scope))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func));
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename Func>
 lightweight_tuple<Types...>::lightweight_tuple(const string_t& _key, scope::config _scope,
-                                               const Func& _init_func)
+                                               transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _key, false_type{}, _scope))
 {
-    bundle_type::init(type_list_type{}, *this, m_data, _init_func);
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_init_func));
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename Func>
 lightweight_tuple<Types...>::lightweight_tuple(const captured_location_t& loc,
                                                scope::config              _scope,
-                                               const Func&                _init_func)
-: lightweight_tuple(loc.get_hash(), _scope, _init_func)
+                                               transient_func_t           _init_func)
+: lightweight_tuple(loc.get_hash(), _scope, std::move(_init_func))
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -138,7 +135,7 @@ lightweight_tuple<Types...>::clone(bool _store, scope::config _scope)
 // insert into graph
 //
 template <typename... Types>
-void
+lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::push()
 {
     if(!m_is_pushed())
@@ -150,13 +147,14 @@ lightweight_tuple<Types...>::push()
         // insert node or find existing node
         invoke::push(m_data, m_scope, m_hash);
     }
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 // pop out of graph
 //
 template <typename... Types>
-void
+lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::pop()
 {
     if(m_is_pushed())
@@ -166,6 +164,7 @@ lightweight_tuple<Types...>::pop()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed(false);
     }
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -173,10 +172,11 @@ lightweight_tuple<Types...>::pop()
 //
 template <typename... Types>
 template <typename... Args>
-void
+lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::measure(Args&&... args)
 {
     invoke::measure(m_data, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -184,10 +184,11 @@ lightweight_tuple<Types...>::measure(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::sample(Args&&... args)
 {
     invoke::invoke<operation::sample, TIMEMORY_API>(m_data, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -195,23 +196,25 @@ lightweight_tuple<Types...>::sample(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::start(Args&&... args)
 {
     invoke::start(m_data, std::forward<Args>(args)...);
     m_is_active(true);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 template <typename... Args>
-void
+lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::stop(Args&&... args)
 {
     invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
     m_is_active(false);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -232,11 +235,12 @@ lightweight_tuple<Types...>::record(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::reset(Args&&... args)
 {
     invoke::reset(m_data, std::forward<Args>(args)...);
     m_laps = 0;
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -347,11 +351,12 @@ lightweight_tuple<Types...>::set_prefix(size_t _hash) const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-void
+lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::set_scope(scope::config val)
 {
     m_scope = val;
     invoke::set_scope(m_data, m_scope);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//

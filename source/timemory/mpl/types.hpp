@@ -126,6 +126,9 @@ template <typename T>
 using runtime_configurable = concepts::is_runtime_configurable<T>;
 
 template <typename T = void>
+struct default_runtime_enabled;
+
+template <typename T = void>
 struct runtime_enabled;
 
 template <typename T>

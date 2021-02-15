@@ -125,7 +125,7 @@ struct get_availability
             return _type;
         };
 
-        bool has_metadata = metadata_t::value != TIMEMORY_COMPONENTS_END;
+        bool has_metadata = metadata_t::specialized();
         bool is_available = trait::is_available<Type>::value;
         bool file_output  = trait::generates_output<Type>::value;
         auto name         = component::metadata<Type>::name();

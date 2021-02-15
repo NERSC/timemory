@@ -93,9 +93,12 @@ template <typename T = std::mt19937>
 T&
 get_rng(size_t initial_seed = 0)
 {
-    static T _instance = [=]() {
+    static std::atomic<int> _cnt{ 0 };
+    auto                    _tid      = ++_cnt;
+    static thread_local T   _instance = [=]() {
         T _rng;
-        _rng.seed((initial_seed == 0) ? std::random_device()() : initial_seed);
+        _rng.seed(((initial_seed == 0) ? std::random_device()() : initial_seed) *
+                  (10 * _tid));
         return _rng;
     }();
     return _instance;
@@ -187,5 +190,220 @@ TEST_F(data_tracker_tests, iteration_tracker)
     ASSERT_TRUE(t.get<iteration_value_tracker_t>()->get() < tol);
     EXPECT_NEAR(t.get<iteration_value_tracker_t>()->get(), err, 1.0e-6);
 }
+
+//--------------------------------------------------------------------------------------//
+
+struct myproject : tim::concepts::api
+{};
+struct myproject_debug : tim::concepts::api
+{};
+
+using itr_tracker_type   = data_tracker<int64_t, myproject>;
+using err_tracker_type   = data_tracker<double, myproject>;
+using err_tracker_type_d = data_tracker<double, myproject_debug>;
+
+TIMEMORY_DECLARE_COMPONENT(myproject_logger)
+
+// set the label and descriptions
+TIMEMORY_METADATA_SPECIALIZATION(itr_tracker_type, "myproject_iterations",
+                                 "Number of iterations", "Iteration count in loops")
+
+TIMEMORY_METADATA_SPECIALIZATION(err_tracker_type, "myproject_error",
+                                 "Iteration error delta", "Amount of error reduced")
+
+TIMEMORY_METADATA_SPECIALIZATION(err_tracker_type_d, "myproject_error_timeline",
+                                 "Timeline of all iteration errors",
+                                 "Value of error over time")
+
+TIMEMORY_METADATA_SPECIALIZATION(myproject_logger, "myproject_logger", "Logs messages",
+                                 "")
+
+// add statistics capabilities
+TIMEMORY_STATISTICS_TYPE(itr_tracker_type, int64_t)
+TIMEMORY_STATISTICS_TYPE(err_tracker_type, double)
+
+#if defined(NDEBUG)
+#    undef NDEBUG
+#endif
+
+// always uses timeline storage
+TIMEMORY_DEFINE_CONCRETE_TRAIT(timeline_storage, err_tracker_type_d, true_type)
+// never instantiate err_tracker_type_d when NDEBUG is defined
+#if defined(NDEBUG)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, err_tracker_type_d, false_type)
+#else
+// default to turned off at runtime
+TIMEMORY_DEFINE_CONCRETE_TRAIT(default_runtime_enabled, err_tracker_type_d, false_type)
+#endif
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(base_has_accum, myproject_logger, false_type)
+// TIMEMORY_DEFINE_CONCRETE_TRAIT(report_depth, myproject_logger, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, myproject_logger, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_mean, myproject_logger, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_self, myproject_logger, false_type)
+// TIMEMORY_DEFINE_CONCRETE_TRAIT(report_sum, myproject_logger, false_type)
+
+namespace tim
+{
+namespace component
+{
+struct myproject_logger : base<myproject_logger, short>
+{
+    void start() {}
+    void stop() {}
+};
+}  // namespace component
+//
+namespace operation
+{
+// disable starting and stopping err_tracker_type_d completely
+template <typename ApiT>
+struct generic_operator<err_tracker_type_d, start<err_tracker_type_d>, ApiT>
+{
+    template <typename... Args>
+    generic_operator(Args&&...)
+    {}
+    template <typename... Args>
+    void operator()(Args&&...)
+    {}
+};
+template <typename ApiT>
+struct generic_operator<err_tracker_type_d, stop<err_tracker_type_d>, ApiT>
+{
+    template <typename... Args>
+    generic_operator(Args&&...)
+    {}
+    template <typename... Args>
+    void operator()(Args&&...)
+    {}
+};
+}  // namespace operation
+}  // namespace tim
+
+// this is the generic bundle pairing a timer with an iteration tracker
+// using this and not updating the iteration tracker will create entries
+// in the call-graph with zero iterations.
+using bundle_t = tim::auto_tuple<wall_clock, itr_tracker_type>;
+
+// this is a dedicated bundle for adding data-tracker entries. This style
+// can also be used with the iteration tracker or you can bundle
+// both trackers together. The auto_tuple will call start on construction
+// and stop on destruction so once can construct a nameless temporary of the
+// this bundle type and call store(...) on the nameless tmp. This will
+// ensure that the statistics are updated for each entry
+//
+using err_bundle_t   = tim::component_bundle_t<myproject, err_tracker_type>;
+using err_bundle_t_d = tim::component_bundle_t<myproject_debug, err_tracker_type_d>;
+using log_bundle_t   = tim::component_bundle_t<myproject, wall_clock, myproject_logger>;
+
+TEST_F(data_tracker_tests, convergence_test)
+{
+    tim::settings::timing_precision()         = 9;
+    size_t                           nthreads = 4;
+    std::vector<std::thread>         threads{};
+    std::vector<std::vector<double>> err_diffs(nthreads);
+    std::vector<int64_t>             num_iters(nthreads, 0);
+
+    // if NDEBUG is defined, this does nothing.
+    if(tim::settings::debug() || tim::get_env<bool>("DEBUG", false))
+        tim::trait::runtime_enabled<err_tracker_type_d>::set(true);
+
+    auto _run = [&err_diffs, &num_iters, nthreads](size_t i, auto lbl, size_t nitr,
+                                                   size_t modulo) {
+        details::get_rng().seed(1000 * i);
+        auto _name = TIMEMORY_JOIN('/', details::get_test_name(), lbl);
+
+        for(size_t j = 0; j < nitr; ++j)
+        {
+            double            err      = 5.e3;
+            const double      tol      = 1.0e-3;
+            int64_t           num_iter = 0;
+            std::stringstream _tcout{};  // thread output
+            auto&             _err_diff = err_diffs.at(i);
+
+            bundle_t _bundle{ _name };
+            while(err > tol)
+            {
+                // this will get optimized away when NDEBUG is defined
+                err_bundle_t_d{ _name }.store(err);
+                // mark the starting number of iterations
+                _bundle.mark_begin(num_iter++);
+
+                tim::auto_tuple<wall_clock> _compute_timer{ "compute" };
+
+                log_bundle_t{ _name + "/ignore" }
+                    .push(tim::mpl::piecewise_select<myproject_logger>{},
+                          tim::scope::flat{})
+                    .push(tim::mpl::piecewise_select<myproject_logger>{})
+                    .start()
+                    .stop()
+                    .pop(tim::mpl::piecewise_select<myproject_logger>{});
+
+                auto initial_err = err;
+                err -= details::get_random_value<double>(
+                    0.0, std::min<double>(nthreads - i, err));
+
+                // mark the ending number of iterations
+                _bundle.mark_end(std::plus<int64_t>{}, num_iter);
+
+                // compute the change in error
+                auto _err_delta = initial_err - err;
+                err_bundle_t{ _name }.push().store(_err_delta).print(_tcout, true).pop();
+                _err_diff.emplace_back(_err_delta);
+            }
+            num_iters.at(i) += num_iter;
+            _bundle.stop();
+
+            if(j % modulo == (modulo - 1))
+            {
+                tim::auto_lock_t _lk{ tim::type_mutex<decltype(std::cout)>() };
+                if(tim::settings::debug())
+                    std::cout << "\niteration " << i << "\n" << _tcout.str() << std::endl;
+                std::cout << "\niteration " << i << "\n\t" << _bundle
+                          << "\n\tnum_iter : " << num_iter << "\n\terror    : " << err
+                          << "\n"
+                          << std::endl;
+            }
+        }
+    };
+
+    for(size_t i = 0; i < nthreads; ++i)
+    {
+        threads.emplace_back(_run, i, i, 10, 10);
+    }
+
+    for(auto& itr : threads)
+        itr.join();
+
+    auto&& _compare = [](auto& lhs, auto& rhs) {
+        return [](const std::string& lhs, const std::string& rhs) {
+            auto lidx = lhs.find_last_of("0123456789");
+            auto ridx = rhs.find_last_of("0123456789");
+            if(lidx == std::string::npos || ridx == std::string::npos)
+                return (lidx == ridx) ? (lhs < rhs) : (lidx < ridx);
+            return std::stoi(lhs.substr(lidx, lidx + 1)) <
+                   std::stoi(rhs.substr(ridx, ridx + 1));
+        }(lhs.prefix(), rhs.prefix());
+    };
+
+    auto itr_storage = tim::storage<itr_tracker_type>::instance()->get();
+    auto err_storage = tim::storage<err_tracker_type>::instance()->get();
+
+    ASSERT_EQ(itr_storage.size(), nthreads);
+    ASSERT_EQ(err_storage.size(), nthreads);
+
+    std::sort(itr_storage.begin(), itr_storage.end(), _compare);
+    std::sort(err_storage.begin(), err_storage.end(), _compare);
+
+    for(size_t i = 0; i < nthreads; ++i)
+    {
+        auto _calc_iter   = num_iters.at(i);
+        auto _expect_iter = itr_storage.at(i).data().get();
+        EXPECT_EQ(_calc_iter, _expect_iter) << itr_storage.at(i).data();
+    }
+}
+
+TIMEMORY_INITIALIZE_STORAGE(wall_clock, itr_tracker_type, err_tracker_type,
+                            myproject_logger)
 
 //--------------------------------------------------------------------------------------//

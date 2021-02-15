@@ -53,27 +53,32 @@ struct push_node
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(push_node)
+    TIMEMORY_DEFAULT_OBJECT(push_node)
 
-    push_node(type& obj, scope::config _scope, hash_value_type _hash)
+    TIMEMORY_HOT_INLINE push_node(type& obj, scope::config _scope, hash_value_type _hash)
     {
         (*this)(obj, _scope, _hash);
     }
 
-    push_node(type& obj, scope::config _scope, const std::string& _key)
+    TIMEMORY_HOT_INLINE push_node(type& obj, scope::config _scope,
+                                  const string_view_t& _key)
     : push_node(obj, _scope, get_hash_id(_key))
     {}
 
-    auto operator()(type& obj, scope::config _scope, hash_value_type _hash) const
+    TIMEMORY_HOT_INLINE auto operator()(type& obj, scope::config _scope,
+                                        hash_value_type _hash) const
     {
+        // using return_type = decltype(sfinae(obj, 0, 0, 0, _scope, _hash));
+
         if(!trait::runtime_enabled<type>::get())
             return;
 
         init_storage<Tp>::init();
-        return sfinae(obj, 0, 0, 0, _scope, _hash);
+        sfinae(obj, 0, 0, 0, _scope, _hash);
     }
 
-    auto operator()(type& obj, scope::config _scope, const std::string& _key) const
+    TIMEMORY_HOT_INLINE auto operator()(type& obj, scope::config _scope,
+                                        const string_view_t& _key) const
     {
         return (*this)(obj, _scope, get_hash_id(_key));
     }
@@ -83,11 +88,10 @@ private:
     template <typename Up, typename Vp = typename Up::value_type,
               typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
-    auto sfinae(Up& _obj, int, int, int, scope::config _scope,
-                hash_value_type _hash) const
+    TIMEMORY_HOT auto sfinae(Up& _obj, int, int, int, scope::config _scope,
+                             hash_value_type _hash) const
         -> decltype(_obj.get_is_on_stack() && _obj.get_is_flat() && _obj.get_storage() &&
-                        _obj.get_depth_change(),
-                    void())
+                    _obj.get_depth_change())
     {
         using storage_type          = StorageT;
         constexpr bool force_flat_v = trait::flat_storage<Tp>::value;
@@ -107,6 +111,7 @@ private:
                 _storage->stack_push(&_obj);
             }
         }
+        return _obj.get_iterator();
     }
 
     //  typical resolution: variadic bundle of components
@@ -141,12 +146,26 @@ struct pop_node
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(pop_node)
+    TIMEMORY_DEFAULT_OBJECT(pop_node)
 
-    template <typename... Args>
-    explicit pop_node(type& obj, Args&&... args)
+    TIMEMORY_HOT_INLINE explicit pop_node(type& obj) { (*this)(obj); }
+
+    template <typename Arg, typename... Args>
+    TIMEMORY_HOT_INLINE explicit pop_node(type& obj, Arg&& arg, Args&&... args)
     {
-        sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
+        (*this)(obj, std::forward<Arg>(arg), std::forward<Args>(args)...);
+    }
+
+    TIMEMORY_HOT_INLINE auto operator()(type& obj) const
+    {
+        return sfinae(obj, 0, 0, 0, 0);
+    }
+
+    template <typename Arg, typename... Args>
+    TIMEMORY_HOT_INLINE auto operator()(type& obj, Arg&& arg, Args&&... args) const
+    {
+        return sfinae(obj, 0, 0, 0, 0, std::forward<Arg>(arg),
+                      std::forward<Args>(args)...);
     }
 
 private:
@@ -154,10 +173,9 @@ private:
     template <typename Up, typename Vp = typename Up::value_type,
               typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
-    auto sfinae(Up& _obj, int, int, int, int)
+    TIMEMORY_HOT auto sfinae(Up& _obj, int, int, int, int) const
         -> decltype(_obj.get_is_on_stack() && _obj.get_depth_change() &&
-                        _obj.get_storage() && _obj.get_iterator(),
-                    void())
+                    _obj.get_storage() && _obj.get_iterator())
     {
         using storage_type = StorageT;
         // obj.pop_node(std::forward<Args>(args)...);
@@ -203,34 +221,34 @@ private:
             }
             targ.set_is_running(false);
         }
+        return _obj.get_iterator();
     }
 
     //  typical resolution: component
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, int, long, Args&&...)
-        -> decltype(obj.pop_node(), void())
+    auto sfinae(Up& obj, int, int, int, long, Args&&...) const -> decltype(obj.pop_node())
     {
-        obj.pop_node();
+        return obj.pop_node();
     }
 
     //  typical resolution: variadic bundle of components
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, long, long, Args&&... args)
-        -> decltype(obj.pop(std::forward<Args>(args)...), void())
+    auto sfinae(Up& obj, int, int, long, long, Args&&... args) const
+        -> decltype(obj.pop(std::forward<Args>(args)...))
     {
-        obj.pop(std::forward<Args>(args)...);
+        return obj.pop(std::forward<Args>(args)...);
     }
 
     //  typical resolution: variadic bundle of components
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, long, long, Args&&...) -> decltype(obj.pop(), void())
+    auto sfinae(Up& obj, int, long, long, long, Args&&...) const -> decltype(obj.pop())
     {
-        obj.pop();
+        return obj.pop();
     }
 
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, long, long, Args&&...)
+    void sfinae(Up&, long, long, long, long, Args&&...) const
     {}
 };
 //

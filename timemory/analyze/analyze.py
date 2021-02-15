@@ -43,9 +43,12 @@ __all__ = [
     "add",
     "subtract",
     "unify",
+    "dump_entity",
     "dump_tree",
     "dump_dot",
     "dump_flamegraph",
+    "dump_tabulate",
+    "dump_unknown",
     "dump",
 ]
 
@@ -102,6 +105,8 @@ def load(data, *_args, **_kwargs):
     from timemory import hatchet
     import hatchet as ht
 
+    #print("data: {}".format(data))
+    #print("data_type: {}".format(type(data).__name__))
     return ht.GraphFrame.from_timemory(data, *_args, **_kwargs)
 
 
@@ -341,6 +346,8 @@ def dump_entity(data, functor, file=None, fext=None):
             print(f"[{lbl}]|0> Outputting '{_file}'...")
         for itr in data:
             _dump_entity(functor(itr), ofs)
+        if ofs is not None:
+            ofs.close()
         if _file is not None:
             files.append(_file)
     return files

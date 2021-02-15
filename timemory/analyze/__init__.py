@@ -57,13 +57,18 @@ from .analyze import (
 
 
 def embedded_analyze(
-    _argv, _call_exit=False, _verbose=os.environ.get("TIMEMORY_VERBOSE", 0)
+    args=None,
+    data=[],
+    call_exit=False,
+    verbose=os.environ.get("TIMEMORY_VERBOSE", 0),
 ):
     """This is intended to be called from the embedded python interpreter"""
-    _call_exit = False
-    if _argv is None:
-        _argv = sys.argv
-        _call_exit = True
+    call_exit = False
+    cmd_line = False
+    if args is None:
+        args = sys.argv[:]
+        call_exit = True
+        cmd_line = True
 
     try:
         parser = argparse.ArgumentParser()
@@ -71,8 +76,9 @@ def embedded_analyze(
             "files",
             metavar="file",
             type=str,
-            nargs="+",
+            nargs="*" if not cmd_line else "+",
             help="Files to analyze",
+            default=[],
         )
         parser.add_argument(
             "-f",
@@ -186,21 +192,40 @@ def embedded_analyze(
             action="store_true",
         )
 
-        args = parser.parse_args(_argv)
+        _args = parser.parse_args(args)
 
-        if args.group is None and args.format is None:
-            args.format = ["tree"]
-        if args.group is not None and args.format not in ("table", None):
+        if _args.exit_on_failure:
+            call_exit = True
+
+        if _args.group is None and _args.format is None:
+            _args.format = ["tree"]
+        if _args.group is not None and _args.format not in ("table", None):
             raise RuntimeError("Invalid data format for group")
 
+        if isinstance(_args.select, str):
+            _args.select = _args.select.split()
+
         gfs = []
-        for f in args.files:
+        for itr in data:
+            if not isinstance(itr, dict):
+                print("data: {}\ndata-type: {}".format(itr, type(itr).__name__))
             gfs.append(
                 load(
-                    f,
-                    select=args.select,
-                    per_thread=args.per_thread,
-                    per_rank=args.per_rank,
+                    itr,
+                    select=_args.select,
+                    per_thread=_args.per_thread,
+                    per_rank=_args.per_rank,
+                )
+            )
+        for itr in _args.files:
+            if not os.path.exists(itr):
+                print("file: {}\nfile-type: {}".format(itr, type(itr).__name__))
+            gfs.append(
+                load(
+                    itr,
+                    select=_args.select,
+                    per_thread=_args.per_thread,
+                    per_rank=_args.per_rank,
                 )
             )
 
@@ -223,55 +248,60 @@ def embedded_analyze(
                 return group(_input, *_args, **_kwargs)
 
         # apply search before match since this is less restrictive
-        if args.search is not None:
-            gfs = apply(gfs, "search", pattern=args.search, field=args.field)
+        if _args.search is not None:
+            gfs = apply(gfs, "search", pattern=_args.search, field=_args.field)
 
         # apply match after search since this is more restrictive
-        if args.match is not None:
-            gfs = apply(gfs, "match", pattern=args.match, field=args.field)
+        if _args.match is not None:
+            gfs = apply(gfs, "match", pattern=_args.match, field=_args.field)
 
         # apply numerical expression last
-        if args.expression is not None:
+        if _args.expression is not None:
             gfs = apply(
-                gfs, "expression", math_expr=args.expression, metric=args.metric
+                gfs,
+                "expression",
+                math_expr=_args.expression,
+                metric=_args.metric,
             )
 
         # apply the mutating operations
-        if "add" in args.mode:
+        if "add" in _args.mode:
             gfs = apply(gfs, "add")
-        elif "subtract" in args.mode:
+        elif "subtract" in _args.mode:
             gfs = apply(gfs, "subtract")
-        elif "unify" in args.mode:
+        elif "unify" in _args.mode:
             gfs = apply(gfs, "unify")
 
-        if args.sort is not None:
+        if _args.sort is not None:
             gfs = apply(
                 gfs,
                 "sort",
-                metric=args.metric,
-                ascending=(args.sort == "ascending"),
+                metric=_args.metric,
+                ascending=(_args.sort == "ascending"),
             )
 
-        files = args.output
+        files = _args.output
         if files is not None and len(files) == 1:
             files = files[0]
 
-        if args.group is not None:
+        if _args.group is not None:
             gfs = apply(
                 gfs,
                 "group",
-                metric=args.metric,
-                field=args.group,
-                ascending=(args.sort == "ascending"),
+                metric=_args.metric,
+                field=_args.group,
+                ascending=(_args.sort == "ascending"),
             )
-            args.format = [None]
+            _args.format = [None]
 
-        for fmt in args.format:
-            dump(gfs, args.metric, fmt, files, args.echo_dart)
+        for fmt in _args.format:
+            dump(gfs, _args.metric, fmt, files, _args.echo_dart)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=10)
         print("Exception - {}".format(e))
-        if _call_exit or args.exit_on_failure:
+        if call_exit or _args.exit_on_failure:
             sys.exit(1)
+        elif not cmd_line:
+            raise

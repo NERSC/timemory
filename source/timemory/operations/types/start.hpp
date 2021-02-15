@@ -128,7 +128,7 @@ private:
     template <typename Up, typename... Args>
     TIMEMORY_HOT_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        start<Tp> _tmp(obj, std::forward<Args>(args)...);
+        start<Tp>{ obj, std::forward<Args>(args)... };
     }
 
     //  does not satisfy mpl condition
@@ -158,7 +158,7 @@ private:
     template <typename Up, typename... Args>
     TIMEMORY_HOT_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        start<Tp> _tmp(obj, std::forward<Args>(args)...);
+        start<Tp>{ obj, std::forward<Args>(args)... };
     }
 
     //  does not satisfy mpl condition
@@ -188,7 +188,7 @@ private:
     template <typename Up, typename... Args>
     TIMEMORY_HOT_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        start<Tp> _tmp(obj, std::forward<Args>(args)...);
+        start<Tp>{ obj, std::forward<Args>(args)... };
     }
 
     //  does not satisfy mpl condition

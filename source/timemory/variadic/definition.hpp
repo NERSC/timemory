@@ -24,9 +24,11 @@
 
 #pragma once
 
+#include "timemory/variadic/bundle_execute.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
 //
+#include "timemory/variadic/auto_base_bundle.hpp"
 #include "timemory/variadic/auto_bundle.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
@@ -44,9 +46,11 @@
 //
 //  Implementations
 //
+#include "timemory/variadic/auto_base_bundle.cpp"
 #include "timemory/variadic/component_bundle.cpp"
 #include "timemory/variadic/component_list.cpp"
 #include "timemory/variadic/component_tuple.cpp"
+#include "timemory/variadic/functional.cpp"
 #include "timemory/variadic/lightweight_tuple.cpp"
 //
 #if defined(TIMEMORY_USE_DEPRECATED)

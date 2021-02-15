@@ -46,6 +46,7 @@
 
 namespace tim
 {
+//
 namespace mpl
 {
 namespace impl
@@ -133,6 +134,146 @@ global_enabled()
     static bool& _value = settings::enabled();
     return _value;
 }
+
+//----------------------------------------------------------------------------------//
+//  type is not explicitly listed so redirect to opaque search
+//
+template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
+          typename... Types>
+void
+get(TupleT<Types...>&& m_data, void*& ptr, size_t _hash)
+{
+    using data_type = type_list<Types...>;
+    TIMEMORY_FOLD_EXPRESSION(
+        operation::generic_operator<Types, operation::get<Types>, ApiT>{
+            std::get<index_of<Types, data_type>::value>(m_data), ptr, _hash });
+
+    // using data_type = TupleT<Types...>;
+    // using get_type =
+    //    std::tuple<operation::generic_operator<Types, operation::get<Types>, ApiT>...>;
+    // apply<void>::access<get_type>(std::forward<data_type>(m_data), ptr, _hash);
+}
+
+//----------------------------------------------------------------------------------//
+//  type is not explicitly listed so redirect to opaque search
+//
+template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
+          typename... Types>
+void
+get(const TupleT<Types...>& m_data, void*& ptr, size_t _hash)
+{
+    using data_type = type_list<Types...>;
+    TIMEMORY_FOLD_EXPRESSION(
+        operation::generic_operator<Types, operation::get<Types>, ApiT>{
+            std::get<index_of<Types, data_type>::value>(m_data), ptr, _hash });
+
+    // using get_type =
+    //    std::tuple<operation::generic_operator<Types, operation::get<Types>, ApiT>...>;
+    // apply<void>::access<get_type>(m_data, ptr, _hash);
+}
+
+//----------------------------------------------------------------------------------//
+//  exact type available
+//
+template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
+          typename T = decay_t<U>>
+decltype(auto)
+get(data_type&& m_data, enable_if_t<is_one_of<T, decay_t<data_type>>::value, int> = 0)
+{
+    return &(std::get<index_of<T, decay_t<data_type>>::value>(
+        std::forward<data_type>(m_data)));
+}
+
+//
+//----------------------------------------------------------------------------------//
+//  type available with add_pointer
+//
+template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
+          typename T = decay_t<U>>
+decltype(auto)
+get(data_type&& m_data, enable_if_t<is_one_of<T*, decay_t<data_type>>::value, int> = 0)
+{
+    return std::get<index_of<T*, decay_t<data_type>>::value>(m_data);
+}
+
+//
+//----------------------------------------------------------------------------------//
+//  type available with remove_pointer
+//
+template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
+          typename T = decay_t<U>, typename R = remove_pointer_t<T>>
+decltype(auto)
+get(data_type&& m_data, enable_if_t<!is_one_of<T, decay_t<data_type>>::value &&
+                                        !is_one_of<T*, decay_t<data_type>>::value &&
+                                        is_one_of<R, decay_t<data_type>>::value,
+                                    int> = 0)
+{
+    return &std::get<index_of<R, decay_t<data_type>>::value>(m_data);
+}
+
+//
+//----------------------------------------------------------------------------------//
+///  type is not explicitly listed so redirect to opaque search
+///
+template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
+          typename T = decay_t<U>, typename R = remove_pointer_t<T>>
+decltype(auto)
+get(data_type&& m_data, enable_if_t<!is_one_of<T, decay_t<data_type>>::value &&
+                                        !is_one_of<T*, decay_t<data_type>>::value &&
+                                        !is_one_of<R, decay_t<data_type>>::value,
+                                    int> = 0)
+{
+    void* ptr = nullptr;
+    get<ApiT>(std::forward<data_type>(m_data), ptr, typeid_hash<T>());
+    return static_cast<T*>(ptr);
+}
+
+//----------------------------------------------------------------------------------//
+/// this is a simple alternative to get<T>() when used from SFINAE in operation
+/// namespace which has a struct get also templated. Usage there can cause error
+/// with older compilers
+template <typename U, typename data_type, typename T = std::remove_pointer_t<decay_t<U>>>
+auto
+get_component(
+    data_type&& m_data,
+    enable_if_t<trait::is_available<T>::value && is_one_of<T, decay_t<data_type>>::value,
+                int> = 0)
+{
+    return get<T>(std::forward<data_type>(m_data));
+}
+
+template <typename U, typename data_type, typename T = std::remove_pointer_t<decay_t<U>>>
+auto
+get_component(
+    data_type&& m_data,
+    enable_if_t<trait::is_available<T>::value && is_one_of<T*, decay_t<data_type>>::value,
+                int> = 0)
+{
+    return get<T>(std::forward<data_type>(m_data));
+}
+
+/// returns a reference from a stack component instead of a pointer
+template <typename U, typename data_type, typename T = std::remove_pointer_t<decay_t<U>>>
+auto&
+get_reference(
+    data_type& m_data,
+    enable_if_t<trait::is_available<T>::value && is_one_of<T, decay_t<data_type>>::value,
+                int> = 0)
+{
+    return std::get<index_of<T, decay_t<data_type>>::value>(m_data);
+}
+
+/// returns a reference from a heap component instead of a pointer
+template <typename U, typename data_type, typename T = std::remove_pointer_t<decay_t<U>>>
+auto&
+get_reference(
+    data_type& m_data,
+    enable_if_t<trait::is_available<T>::value && is_one_of<T*, decay_t<data_type>>::value,
+                int> = 0)
+{
+    return std::get<index_of<T*, decay_t<data_type>>::value>(m_data);
+}
+
 }  // namespace impl
 }  // namespace mpl
 //
@@ -269,6 +410,9 @@ public:
         m_hash = add_hash_id(_key);
         compute_width(_key);
     }
+
+    TIMEMORY_HOT_INLINE void rekey(captured_location_t _loc) { m_hash = _loc.get_hash(); }
+    TIMEMORY_HOT_INLINE void rekey(uint64_t _hash) { m_hash = _hash; }
 
 protected:
     using ctor_params_t = std::tuple<hash_value_type, bool, scope::config>;

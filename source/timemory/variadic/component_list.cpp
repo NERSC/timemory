@@ -158,7 +158,7 @@ component_list<Types...>::clone(bool _store, scope::config _scope)
 // insert into graph
 //
 template <typename... Types>
-void
+component_list<Types...>&
 component_list<Types...>::push()
 {
     uint64_t count = 0;
@@ -172,13 +172,14 @@ component_list<Types...>::push()
         // insert node or find existing node
         invoke::push(m_data, m_scope, m_hash);
     }
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 // pop out of grapsh
 //
 template <typename... Types>
-void
+component_list<Types...>&
 component_list<Types...>::pop()
 {
     if(m_is_pushed())
@@ -188,6 +189,7 @@ component_list<Types...>::pop()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed(false);
     }
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -195,10 +197,11 @@ component_list<Types...>::pop()
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_list<Types...>&
 component_list<Types...>::measure(Args&&... args)
 {
     invoke::measure(m_data, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -206,10 +209,11 @@ component_list<Types...>::measure(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_list<Types...>&
 component_list<Types...>::sample(Args&&... args)
 {
     invoke::invoke<operation::sample, TIMEMORY_API>(m_data, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -217,7 +221,7 @@ component_list<Types...>::sample(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_list<Types...>&
 component_list<Types...>::start(Args&&... args)
 {
     // push components into the call-stack
@@ -229,13 +233,14 @@ component_list<Types...>::start(Args&&... args)
     assemble(*this);
     invoke::start(m_data, std::forward<Args>(args)...);
     m_is_active(true);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_list<Types...>&
 component_list<Types...>::stop(Args&&... args)
 {
     invoke::stop(m_data, std::forward<Args>(args)...);
@@ -247,6 +252,7 @@ component_list<Types...>::stop(Args&&... args)
             pop();
     }
     m_is_active(false);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -267,11 +273,12 @@ component_list<Types...>::record(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_list<Types...>&
 component_list<Types...>::reset(Args&&... args)
 {
     invoke::reset(m_data, std::forward<Args>(args)...);
     m_laps = 0;
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -383,13 +390,13 @@ component_list<Types...>::set_scope(scope::config val)
 template <typename... Types>
 template <typename T>
 void
-component_list<Types...>::set_prefix(T* obj) const
+component_list<Types...>::set_prefix(T* obj, internal_tag) const
 {
     using PrefixOpT =
         operation::generic_operator<T, operation::set_prefix<T>, TIMEMORY_API>;
     auto itr = get_hash_ids()->find(m_hash);
     if(itr != get_hash_ids()->end())
-        PrefixOpT(obj, m_hash, itr->second);
+        PrefixOpT{ obj, m_hash, itr->second };
 }
 
 //--------------------------------------------------------------------------------------//

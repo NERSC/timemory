@@ -119,6 +119,49 @@ generic_serialization(const std::string& fname, const Tp& obj,
         ofs << std::endl;
     ofs.close();
 }
+//
+/// \fn void generic_serialization(std::string fname, Tp obj, std::string mname,
+/// std::string dname)
+/// \tparam ArchiveT Output archive type
+/// \tparam ApiT API tag for \ref tim::policy::output_archive look-up
+/// \param[in] fname Filename
+/// \param[in] obj Object to serialize
+/// \param[in] mname Main label for archive (default: "timemory")
+/// \param[in] dname Label for the data (default: "data")
+///
+/// \brief Generic function for serializing data. Uses the \ref
+/// tim::policy::output_archive to configure settings such as spacing, indentation width,
+/// and precision.
+///
+template <typename ArchiveT, typename ApiT = TIMEMORY_API, typename Tp, typename FuncT>
+void
+generic_serialization(std::ostream& ofs, const Tp& obj,
+                      const std::string& _main_name = "timemory",
+                      const std::string& _data_name = "data",
+                      FuncT&&            _func =
+                          [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
+{
+    // ensure json write final block during destruction before the file is closed
+    using policy_type = policy::output_archive<ArchiveT, ApiT>;
+    auto oa           = policy_type::get(ofs);
+
+    if(!_main_name.empty())
+    {
+        oa->setNextName(_main_name.c_str());
+        oa->startNode();
+    }
+
+    // execute the function with extra data
+    _func(*oa);
+
+    (*oa)(cereal::make_nvp(_data_name, obj));
+
+    if(!_main_name.empty())
+    {
+        oa->finishNode();
+    }
+}
+//
 }  // namespace tim
 
 #endif

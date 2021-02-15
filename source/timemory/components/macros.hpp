@@ -231,6 +231,7 @@
             using type                        = TYPE;                                    \
             using value_type                  = TIMEMORY_COMPONENT;                      \
             static constexpr value_type value = ENUM;                                    \
+            static constexpr bool       specialized() { return true; }                   \
             static const char*          enum_string()                                    \
             {                                                                            \
                 static const char* _enum = #ENUM;                                        \
@@ -267,6 +268,8 @@
         {                                                                                \
             using type                  = TYPE;                                          \
             static constexpr bool value = ::tim::trait::is_available<TYPE>::value;       \
+                                                                                         \
+            static constexpr bool specialized() { return true; }                         \
         };                                                                               \
         }                                                                                \
         }
@@ -290,8 +293,10 @@
         template <>                                                                      \
         struct metadata<TYPE>                                                            \
         {                                                                                \
-            using type                        = TYPE;                                    \
-            using value_type                  = TIMEMORY_COMPONENT;                      \
+            using type       = TYPE;                                                     \
+            using value_type = TIMEMORY_COMPONENT;                                       \
+                                                                                         \
+            static constexpr bool       specialized() { return true; }                   \
             static constexpr value_type value = properties<TYPE>::value;                 \
             static std::string          name() { return LABEL; }                         \
             static std::string          label() { return LABEL; }                        \

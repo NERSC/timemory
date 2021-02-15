@@ -1072,7 +1072,7 @@ private:
 
     template <typename V>
     static TIMEMORY_INLINE auto min(const type& _l, const V& _r, int)
-        -> decltype(::tim::math::min(_l, _r, get_index_sequence<type>::value, 0),
+        -> decltype(::tim::math::min(_l, _r, get_index_sequence<type>::value),
                     ::tim::math::min(_l, _r))
     {
         return ::tim::math::min(_l, _r);
@@ -1080,7 +1080,7 @@ private:
 
     template <typename V>
     static TIMEMORY_INLINE auto max(const type& _l, const V& _r, int)
-        -> decltype(::tim::math::max(_l, _r, get_index_sequence<type>::value, 0),
+        -> decltype(::tim::math::max(_l, _r, get_index_sequence<type>::value),
                     ::tim::math::max(_l, _r))
     {
         return ::tim::math::max(_l, _r);

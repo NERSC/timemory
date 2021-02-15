@@ -140,7 +140,7 @@ component_tuple<Types...>::clone(bool _store, scope::config _scope)
 // insert into graph
 //
 template <typename... Types>
-void
+component_tuple<Types...>&
 component_tuple<Types...>::push()
 {
     if(!m_is_pushed())
@@ -152,13 +152,14 @@ component_tuple<Types...>::push()
         // insert node or find existing node
         invoke::push(m_data, m_scope, m_hash);
     }
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 // pop out of graph
 //
 template <typename... Types>
-void
+component_tuple<Types...>&
 component_tuple<Types...>::pop()
 {
     if(m_is_pushed())
@@ -168,6 +169,7 @@ component_tuple<Types...>::pop()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed(false);
     }
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -175,10 +177,11 @@ component_tuple<Types...>::pop()
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_tuple<Types...>&
 component_tuple<Types...>::measure(Args&&... args)
 {
     invoke::measure(m_data, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -186,10 +189,11 @@ component_tuple<Types...>::measure(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_tuple<Types...>&
 component_tuple<Types...>::sample(Args&&... args)
 {
     invoke::invoke<operation::sample, TIMEMORY_API>(m_data, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -197,25 +201,27 @@ component_tuple<Types...>::sample(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_tuple<Types...>&
 component_tuple<Types...>::start(mpl::lightweight, Args&&... args)
 {
     assemble(*this);
     invoke::start(m_data, std::forward<Args>(args)...);
     m_is_active(true);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_tuple<Types...>&
 component_tuple<Types...>::stop(mpl::lightweight, Args&&... args)
 {
     invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
     derive(*this);
     m_is_active(false);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -223,7 +229,7 @@ component_tuple<Types...>::stop(mpl::lightweight, Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_tuple<Types...>&
 component_tuple<Types...>::start(Args&&... args)
 {
     // push components into the call-stack
@@ -235,13 +241,14 @@ component_tuple<Types...>::start(Args&&... args)
 
     // start components
     start(mpl::lightweight{}, std::forward<Args>(args)...);
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_tuple<Types...>&
 component_tuple<Types...>::stop(Args&&... args)
 {
     // stop components
@@ -253,6 +260,7 @@ component_tuple<Types...>::stop(Args&&... args)
         if(m_store())
             pop();
     }
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -273,11 +281,12 @@ component_tuple<Types...>::record(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-void
+component_tuple<Types...>&
 component_tuple<Types...>::reset(Args&&... args)
 {
     invoke::reset(m_data, std::forward<Args>(args)...);
     m_laps = 0;
+    return *this;
 }
 
 //--------------------------------------------------------------------------------------//

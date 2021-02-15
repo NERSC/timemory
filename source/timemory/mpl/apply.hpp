@@ -25,7 +25,6 @@
 #pragma once
 
 #include "timemory/macros/attributes.hpp"
-#include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/stl.hpp"
 

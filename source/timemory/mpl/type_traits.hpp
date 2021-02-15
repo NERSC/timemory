@@ -178,6 +178,15 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::default_runtime_enabled
+/// \brief trait whose compile-time constant field `value` designates the default runtime
+/// value of \ref tim::trait::runtime_enabled. Standard setting is true.
+///
+template <typename T>
+struct default_runtime_enabled : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::runtime_enabled
 /// \brief trait that signifies that an implementation is enabled at runtime. The
 /// value returned from get() is for the specific setting for the type, the
@@ -221,7 +230,8 @@ struct runtime_enabled
 private:
     static TIMEMORY_HOT TIMEMORY_INLINE bool& get_runtime_value()
     {
-        static bool _instance = is_available<T>::value;
+        static bool _instance =
+            is_available<T>::value && default_runtime_enabled<T>::value;
         return _instance;
     }
 };

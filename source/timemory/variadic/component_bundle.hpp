@@ -38,7 +38,9 @@
 #include "timemory/settings/declaration.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/transient_function.hpp"
 #include "timemory/variadic/base_bundle.hpp"
+#include "timemory/variadic/bundle_execute.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"
 
@@ -87,6 +89,9 @@ class component_bundle<Tag, Types...>
                   "Error! The first template parameter of a 'component_bundle' must "
                   "statisfy the 'is_api' concept");
 
+    template <typename U>
+    using remove_pointer_decay_t = std::remove_pointer_t<decay_t<U>>;
+
 protected:
     using apply_v     = apply<void>;
     using bundle_type = api_bundle<Tag, implemented_t<Types...>>;
@@ -94,6 +99,9 @@ protected:
 
     template <typename T, typename... U>
     friend class base_bundle;
+
+    template <typename... Tp>
+    friend class auto_base_bundle;
 
     template <typename... Tp>
     friend class auto_bundle;
@@ -126,6 +134,7 @@ public:
     using auto_type        = auto_bundle<Tag, Types...>;
     using type             = convert_t<tuple_type, component_bundle<Tag>>;
     using initializer_type = std::function<void(this_type&)>;
+    using transient_func_t = utility::transient_function<void(this_type&)>;
 
     static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
@@ -139,40 +148,34 @@ public:
 public:
     component_bundle();
 
-    template <typename... T, typename Func = initializer_type>
+    template <typename... T>
     explicit component_bundle(const string_t& _key, quirk::config<T...>,
-                              const Func& = get_initializer());
+                              transient_func_t = get_initializer());
 
-    template <typename... T, typename Func = initializer_type>
+    template <typename... T>
     explicit component_bundle(const captured_location_t& _loc, quirk::config<T...>,
-                              const Func& = get_initializer());
+                              transient_func_t = get_initializer());
 
-    template <typename Func = initializer_type>
     explicit component_bundle(size_t _hash, bool _store = true,
                               scope::config _scope = scope::get_default(),
-                              const Func&          = get_initializer());
+                              transient_func_t     = get_initializer());
 
-    template <typename Func = initializer_type>
     explicit component_bundle(const string_t& _key, bool _store = true,
                               scope::config _scope = scope::get_default(),
-                              const Func&          = get_initializer());
+                              transient_func_t     = get_initializer());
 
-    template <typename Func = initializer_type>
     explicit component_bundle(const captured_location_t& _loc, bool _store = true,
                               scope::config _scope = scope::get_default(),
-                              const Func&          = get_initializer());
+                              transient_func_t     = get_initializer());
 
-    template <typename Func = initializer_type>
     explicit component_bundle(size_t _hash, scope::config _scope,
-                              const Func& = get_initializer());
+                              transient_func_t = get_initializer());
 
-    template <typename Func = initializer_type>
     explicit component_bundle(const string_t& _key, scope::config _scope,
-                              const Func& = get_initializer());
+                              transient_func_t = get_initializer());
 
-    template <typename Func = initializer_type>
     explicit component_bundle(const captured_location_t& _loc, scope::config _scope,
-                              const Func& = get_initializer());
+                              transient_func_t = get_initializer());
 
     ~component_bundle();
 
@@ -200,27 +203,36 @@ public:
     // public member functions
     //
     /// tells each component to push itself into the call-stack hierarchy
-    void push();
+    this_type& push();
     /// tells each component to pop itself off of the call-stack hierarchy
-    void pop();
+    this_type& pop();
+    /// selective push
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_select<Tp...>);
+    /// selective push with scope configuration
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_select<Tp...>, scope::config);
+    /// selective pop
+    template <typename... Tp>
+    this_type& pop(mpl::piecewise_select<Tp...>);
     /// requests each component record a measurment
     template <typename... Args>
-    void measure(Args&&...);
+    this_type& measure(Args&&...);
     /// requests each component take a sample (if supported)
     template <typename... Args>
-    void sample(Args&&...);
+    this_type& sample(Args&&...);
     /// invokes start on all the components
     template <typename... Args>
-    void start(Args&&...);
+    this_type& start(Args&&...);
     /// invokes stop on all the components
     template <typename... Args>
-    void stop(Args&&...);
-    /// requests each component performs a measurement
+    this_type& stop(Args&&...);
+    /// requests each component perform a measurement
     template <typename... Args>
     this_type& record(Args&&...);
     /// invokes reset member function on all the components
     template <typename... Args>
-    void reset(Args&&...);
+    this_type& reset(Args&&...);
     /// returns a tuple of invoking get() on all the components
     template <typename... Args>
     auto get(Args&&...) const;
@@ -234,17 +246,17 @@ public:
 
     /// variant of start() which excludes push()
     template <typename... Args>
-    void start(mpl::lightweight, Args&&...);
+    this_type& start(mpl::lightweight, Args&&...);
     /// variant of stop() which excludes pop()
     template <typename... Args>
-    void stop(mpl::lightweight, Args&&...);
+    this_type& stop(mpl::lightweight, Args&&...);
 
     /// variant of start() which only gets applied to Tp types
     template <typename... Tp, typename... Args>
-    void start(mpl::piecewise_select<Tp...>, Args&&...);
+    this_type& start(mpl::piecewise_select<Tp...>, Args&&...);
     /// variant of stop() which only gets applied to Tp types
     template <typename... Tp, typename... Args>
-    void stop(mpl::piecewise_select<Tp...>, Args&&...);
+    this_type& stop(mpl::piecewise_select<Tp...>, Args&&...);
 
     using bundle_type::get_prefix;
     using bundle_type::get_scope;
@@ -287,13 +299,24 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    /// when chaining together operations, this function enables executing a function
+    /// inside the chain
+    template <typename FuncT, typename... Args>
+    decltype(auto) execute(FuncT&& func, Args&&... args)
+    {
+        return bundle::execute(*this,
+                               std::forward<FuncT>(func)(std::forward<Args>(args)...));
+    }
+
+    //----------------------------------------------------------------------------------//
     /// construct the objects that have constructors with matching arguments
     //
     template <typename... Args>
-    void construct(Args&&... _args)
+    this_type& construct(Args&&... _args)
     {
         using construct_t = operation_t<operation::construct>;
         apply_v::access<construct_t>(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -302,9 +325,10 @@ public:
     /// that it can extract data from.
     //
     template <typename... Args>
-    void assemble(Args&&... _args)
+    this_type& assemble(Args&&... _args)
     {
         invoke::assemble(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -314,18 +338,20 @@ public:
     /// tim::component::wall_clock and \ref tim::component::cpu_clock
     //
     template <typename... Args>
-    void derive(Args&&... _args)
+    this_type& derive(Args&&... _args)
     {
         invoke::derive(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// mark an atomic event
     //
     template <typename... Args>
-    void mark(Args&&... _args)
+    this_type& mark(Args&&... _args)
     {
         invoke::mark(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -333,9 +359,10 @@ public:
     /// structures)
     //
     template <typename... Args>
-    void mark_begin(Args&&... _args)
+    this_type& mark_begin(Args&&... _args)
     {
         invoke::mark_begin(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -343,18 +370,20 @@ public:
     /// structures)
     //
     template <typename... Args>
-    void mark_end(Args&&... _args)
+    this_type& mark_end(Args&&... _args)
     {
         invoke::mark_end(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// store a value
     //
     template <typename... Args>
-    void store(Args&&... _args)
+    this_type& store(Args&&... _args)
     {
         invoke::store(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -362,9 +391,10 @@ public:
     /// or out-going return value before returning (typically using in GOTCHA components)
     //
     template <typename... Args>
-    void audit(Args&&... _args)
+    this_type& audit(Args&&... _args)
     {
         invoke::audit(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -372,9 +402,10 @@ public:
     /// additional entries to storage which are their direct descendant
     //
     template <typename... Args>
-    void add_secondary(Args&&... _args)
+    this_type& add_secondary(Args&&... _args)
     {
         invoke::add_secondary(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -382,9 +413,10 @@ public:
     /// \tparam OpT Operation struct
     //
     template <template <typename> class OpT, typename... Args>
-    void invoke(Args&&... _args)
+    this_type& invoke(Args&&... _args)
     {
         invoke::invoke<OpT, Tag>(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -393,86 +425,30 @@ public:
     /// \tparam OpT Operation struct
     //
     template <template <typename> class OpT, typename... Tp, typename... Args>
-    void invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
+    this_type& invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
     {
         TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, Tag>(
             this->get<Tp>(), std::forward<Args>(_args)...));
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
+    //
     // get member functions taking either a type
-    //
-    //
-    //----------------------------------------------------------------------------------//
-    //  exact type available
-    //
-    template <typename U, typename T = decay_t<U>,
-              enable_if_t<is_one_of<T, data_type>::value, int> = 0>
-    T* get()
-    {
-        return &(std::get<index_of<T, data_type>::value>(m_data));
-    }
-
-    template <typename U, typename T = decay_t<U>,
-              enable_if_t<is_one_of<T, data_type>::value, int> = 0>
-    const T* get() const
-    {
-        return &(std::get<index_of<T, data_type>::value>(m_data));
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //  type available with add_pointer
-    //
-    template <typename U, typename T = decay_t<U>,
-              enable_if_t<is_one_of<T*, data_type>::value, int> = 0>
-    T* get()
-    {
-        return std::get<index_of<T*, data_type>::value>(m_data);
-    }
-
-    template <typename U, typename T = decay_t<U>,
-              enable_if_t<is_one_of<T*, data_type>::value, int> = 0>
-    const T* get() const
-    {
-        return std::get<index_of<T*, data_type>::value>(m_data);
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //  type available with remove_pointer
-    //
-    template <
-        typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
-        enable_if_t<!is_one_of<T, data_type>::value && !is_one_of<T*, data_type>::value &&
-                        is_one_of<R, data_type>::value,
-                    int> = 0>
-    T* get()
-    {
-        return &std::get<index_of<R, data_type>::value>(m_data);
-    }
-
-    template <
-        typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
-        enable_if_t<!is_one_of<T, data_type>::value && !is_one_of<T*, data_type>::value &&
-                        is_one_of<R, data_type>::value,
-                    int> = 0>
-    const T* get() const
-    {
-        return &std::get<index_of<R, data_type>::value>(m_data);
-    }
     //
     //----------------------------------------------------------------------------------//
     ///  type is not explicitly listed so redirect to opaque search
     ///
-    template <
-        typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
-        enable_if_t<!is_one_of<T, data_type>::value && !is_one_of<T*, data_type>::value &&
-                        !is_one_of<R, data_type>::value,
-                    int> = 0>
-    T* get() const
+    template <typename U>
+    decltype(auto) get()
     {
-        void* ptr = nullptr;
-        get(ptr, typeid_hash<T>());
-        return static_cast<T*>(ptr);
+        return mpl::impl::get<U, Tag>(m_data);
+    }
+
+    template <typename U>
+    decltype(auto) get() const
+    {
+        return mpl::impl::get<U, Tag>(m_data);
     }
 
     /// performs an opaque search. Opaque searches are generally provided by user_bundles
@@ -502,58 +478,59 @@ public:
     /// }
     /// \endcode
     ///
-    void get(void*& ptr, size_t _hash) const
+    this_type& get(void*& ptr, size_t _hash) const
     {
-        using get_t = operation_t<operation::get>;
-        apply_v::access<get_t>(m_data, ptr, _hash);
+        mpl::impl::get<Tag>(m_data, ptr, _hash);
+        return const_cast<this_type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
     /// with older compilers
-    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              enable_if_t<trait::is_available<T>::value && is_one_of<T, data_type>::value,
-                          int> = 0>
-    auto get_component()
+    template <typename U>
+    auto get_component(
+        enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
+                        is_one_of<remove_pointer_decay_t<U>, data_type>::value,
+                    int> = 0)
     {
-        return get<T>();
+        return get<remove_pointer_decay_t<U>>();
     }
 
-    template <
-        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-        enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value,
-                    int> = 0>
-    auto get_component()
+    template <typename U>
+    auto get_component(
+        enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
+                        is_one_of<remove_pointer_decay_t<U>*, data_type>::value,
+                    int> = 0)
     {
-        return get<T>();
+        return get<remove_pointer_decay_t<U>>();
     }
 
     /// returns a reference from a stack component instead of a pointer
-    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              enable_if_t<trait::is_available<T>::value && is_one_of<T, data_type>::value,
-                          int> = 0>
-    auto& get_reference()
+    template <typename U>
+    auto& get_reference(
+        enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
+                        is_one_of<remove_pointer_decay_t<U>, data_type>::value,
+                    int> = 0)
     {
-        return std::get<index_of<T, data_type>::value>(m_data);
+        return std::get<index_of<remove_pointer_decay_t<U>, data_type>::value>(m_data);
     }
 
     /// returns a reference from a heap component instead of a pointer
-    template <
-        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-        enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value,
-                    int> = 0>
-    auto& get_reference()
+    template <typename U>
+    auto& get_reference(
+        enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
+                        is_one_of<remove_pointer_decay_t<U>*, data_type>::value,
+                    int> = 0)
     {
-        return std::get<index_of<T*, data_type>::value>(m_data);
+        return std::get<index_of<remove_pointer_decay_t<U>*, data_type>::value>(m_data);
     }
 
     //----------------------------------------------------------------------------------//
     /// create an optional type that is in variadic list AND is available AND
     /// accepts arguments
     ///
-    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args>
+    template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value &&
                     !is_one_of<T, data_type>::value &&
                     std::is_constructible<T, Args...>::value,
@@ -591,8 +568,7 @@ public:
     /// create an optional type that is in variadic list AND is available but is not
     /// constructible with provided arguments
     ///
-    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args>
+    template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value &&
                     !is_one_of<T, data_type>::value &&
                     !std::is_constructible<T, Args...>::value &&
@@ -629,8 +605,7 @@ public:
     //----------------------------------------------------------------------------------//
     /// try to re-create a stack object with provided arguments
     ///
-    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args>
+    template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<trait::is_available<T>::value && !is_one_of<T*, data_type>::value &&
                     is_one_of<T, data_type>::value,
                 bool>
@@ -646,8 +621,7 @@ public:
     //----------------------------------------------------------------------------------//
     /// try to re-create a stack object with provided arguments (ignore heap type)
     ///
-    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args>
+    template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value &&
                     is_one_of<T, data_type>::value,
                 bool>
@@ -672,8 +646,7 @@ public:
     /// if a type is not in variadic list but a \ref tim::component::user_bundle is
     /// available, add it in there
     ///
-    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args>
+    template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<trait::is_available<T>::value && !is_one_of<T, data_type>::value &&
                     !is_one_of<T*, data_type>::value && has_user_bundle_v,
                 bool>
@@ -697,8 +670,7 @@ public:
     /// do nothing if type not available, not one of the variadic types, and there
     /// is no user bundle available
     ///
-    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              typename... Args>
+    template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<!trait::is_available<T>::value ||
                     !(is_one_of<T*, data_type>::value || is_one_of<T, data_type>::value ||
                       has_user_bundle_v),
@@ -722,10 +694,11 @@ public:
 
     /// delete any optional types currently allocated
     template <typename... Tail>
-    void disable()
+    this_type& disable()
     {
         TIMEMORY_FOLD_EXPRESSION(operation::generic_deleter<remove_pointer_t<Tail>>{
             this->get_reference<Tail>() });
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -733,27 +706,31 @@ public:
     ///
     template <typename T, typename Func, typename... Args,
               enable_if_t<is_one_of<T, data_type>::value, int> = 0>
-    void type_apply(Func&& _func, Args&&... _args)
+    this_type& type_apply(Func&& _func, Args&&... _args)
     {
         auto* _obj = get<T>();
         ((*_obj).*(_func))(std::forward<Args>(_args)...);
+        return *this;
     }
 
     /// apply a member function to either a heap type or a type that is in a user_bundle
     template <typename T, typename Func, typename... Args,
               enable_if_t<trait::is_available<T>::value, int> = 0>
-    void type_apply(Func&& _func, Args&&... _args)
+    this_type& type_apply(Func&& _func, Args&&... _args)
     {
         auto* _obj = get<T>();
         if(_obj)
             ((*_obj).*(_func))(std::forward<Args>(_args)...);
+        return *this;
     }
 
     /// ignore applying a member function because the type is not present
     template <typename T, typename Func, typename... Args,
               enable_if_t<!trait::is_available<T>::value, int> = 0>
-    void type_apply(Func&&, Args&&...)
-    {}
+    this_type& type_apply(Func&&, Args&&...)
+    {
+        return *this;
+    }
 
     //----------------------------------------------------------------------------------//
     // this_type operators
@@ -830,11 +807,11 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <bool PrintPrefix = true, bool PrintLaps = true>
-    void print(std::ostream& os) const
+    this_type& print(std::ostream& os, bool _endl = false) const
     {
         using printer_t = typename bundle_type::print_type;
         if(size() == 0 || m_hash == 0)
-            return;
+            return const_cast<this_type&>(*this);
         std::stringstream ss_data;
         apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(PrintPrefix)
@@ -849,6 +826,9 @@ public:
         os << ss_data.str();
         if(m_laps > 0 && PrintLaps)
             os << " [laps: " << m_laps << "]";
+        if(_endl)
+            os << '\n';
+        return const_cast<this_type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//
@@ -913,7 +893,7 @@ protected:
     using bundle_type::m_laps;
     using bundle_type::m_scope;
     using bundle_type::m_store;
-    mutable data_type m_data = data_type{};
+    mutable data_type m_data{};
 };
 //
 //======================================================================================//

@@ -58,6 +58,10 @@ struct basic_pointer
 {};
 struct blank_pointer
 {};
+struct invoke
+{};
+struct chained
+{};
 struct measure
 {};
 }  // namespace mode
@@ -92,18 +96,20 @@ fibonacci(int64_t n)
 
 //======================================================================================//
 
-template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::none>::value, int> = 0>
+template <typename Tp>
 int64_t
-fibonacci(int64_t n, int64_t)
+fibonacci(int64_t n, int64_t,
+          tim::enable_if_t<std::is_same<Tp, mode::none>::value, int> = 0)
 {
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::measure>::value, int> = 0>
+template <typename Tp>
 int64_t
-fibonacci(int64_t n, int64_t cutoff)
+fibonacci(int64_t n, int64_t cutoff,
+          tim::enable_if_t<std::is_same<Tp, mode::measure>::value, int> = 0)
 {
     if(n > cutoff)
     {
@@ -116,9 +122,10 @@ fibonacci(int64_t n, int64_t cutoff)
 
 //======================================================================================//
 
-template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::blank>::value, int> = 0>
+template <typename Tp>
 int64_t
-fibonacci(int64_t n, int64_t cutoff)
+fibonacci(int64_t n, int64_t cutoff,
+          tim::enable_if_t<std::is_same<Tp, mode::blank>::value, int> = 0)
 {
     if(n > cutoff)
     {
@@ -131,30 +138,26 @@ fibonacci(int64_t n, int64_t cutoff)
 
 //======================================================================================//
 
-template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::basic>::value, int> = 0>
+template <typename Tp>
 int64_t
-fibonacci(int64_t n, int64_t cutoff)
+fibonacci(int64_t n, int64_t cutoff,
+          tim::enable_if_t<std::is_same<Tp, mode::basic>::value, int> = 0)
 {
     if(n > cutoff)
     {
-        // TIMEMORY_BASIC_MARKER(auto_tuple_t, "[", n, "]");
-        auto labeler = [](int _n) { return TIMEMORY_JOIN("", "fibonacci[", _n, "]"); };
-        auto fib     = [](int _n, int _cutoff) {
-            return (_n < 2) ? _n
-                            : (fibonacci<Tp>(_n - 1, _cutoff) +
-                               fibonacci<Tp>(_n - 2, _cutoff));
-        };
-        return tim::runtime::invoke<auto_tuple_t>(labeler(n), fib, n, cutoff);
+        TIMEMORY_BASIC_MARKER(auto_tuple_t, "[", n, "]");
+        return (n < 2) ? n
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename Tp,
-          tim::enable_if_t<std::is_same<Tp, mode::blank_pointer>::value, int> = 0>
+template <typename Tp>
 int64_t
-fibonacci(int64_t n, int64_t cutoff)
+fibonacci(int64_t n, int64_t cutoff,
+          tim::enable_if_t<std::is_same<Tp, mode::blank_pointer>::value, int> = 0)
 {
     if(n > cutoff)
     {
@@ -167,10 +170,10 @@ fibonacci(int64_t n, int64_t cutoff)
 
 //======================================================================================//
 
-template <typename Tp,
-          tim::enable_if_t<std::is_same<Tp, mode::basic_pointer>::value, int> = 0>
+template <typename Tp>
 int64_t
-fibonacci(int64_t n, int64_t cutoff)
+fibonacci(int64_t n, int64_t cutoff,
+          tim::enable_if_t<std::is_same<Tp, mode::basic_pointer>::value, int> = 0)
 {
     if(n > cutoff)
     {
@@ -184,14 +187,62 @@ fibonacci(int64_t n, int64_t cutoff)
 //======================================================================================//
 
 template <typename Tp>
+int64_t
+fibonacci(int64_t n, int64_t cutoff,
+          tim::enable_if_t<std::is_same<Tp, mode::chained>::value, int> = 0)
+{
+    if(n > cutoff)
+    {
+        // TIMEMORY_STATIC_BASIC_CALIPER(fib, auto_tuple_t, "");
+        // TIMEMORY_CALIPER_AUTO_SCOPE(fib);
+        static auto _srcloc =
+            TIMEMORY_SOURCE_LOCATION(TIMEMORY_CAPTURE_MODE(basic), "").get_captured();
+        return auto_tuple_t{ _srcloc }
+            .start()
+            .execute([n, cutoff]() {
+                return (n < 2) ? n
+                               : (fibonacci<Tp>(n - 1, cutoff) +
+                                  fibonacci<Tp>(n - 2, cutoff));
+            })
+            .stop()
+            .return_result();
+    }
+    return fibonacci(n);
+}
+
+//======================================================================================//
+
+template <typename Tp>
+int64_t
+fibonacci(int64_t n, int64_t cutoff,
+          tim::enable_if_t<std::is_same<Tp, mode::invoke>::value, int> = 0)
+{
+    if(n > cutoff)
+    {
+        auto labeler = [](int _n) { return TIMEMORY_JOIN("", "fibonacci[", _n, "]"); };
+        auto fib     = [](int _n, int _cutoff) {
+            return (_n < 2) ? _n
+                            : (fibonacci<Tp>(_n - 1, _cutoff) +
+                               fibonacci<Tp>(_n - 2, _cutoff));
+        };
+        return tim::runtime::invoke<auto_tuple_t>(labeler(n), fib, n, cutoff);
+    }
+    return fibonacci(n);
+}
+
+//======================================================================================//
+
+template <typename Tp>
 result_type
 run(int64_t n, int64_t cutoff, bool store = true)
 {
     // bool is_none  = std::is_same<Tp, mode::none>::value;
     bool is_blank = std::is_same<Tp, mode::blank>::value ||
-                    std::is_same<Tp, mode::blank_pointer>::value;
+                    std::is_same<Tp, mode::blank_pointer>::value ||
+                    std::is_same<Tp, mode::chained>::value;
     bool is_basic = std::is_same<Tp, mode::basic>::value ||
-                    std::is_same<Tp, mode::basic_pointer>::value;
+                    std::is_same<Tp, mode::basic_pointer>::value ||
+                    std::is_same<Tp, mode::invoke>::value;
 
     // bool        with_timing = !(is_none);
     // std::string space       = (with_timing) ? " " : "";
@@ -343,6 +394,8 @@ main(int argc, char** argv)
     launch<mode::blank_pointer>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
     launch<mode::basic>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
     launch<mode::basic_pointer>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
+    launch<mode::chained>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
+    launch<mode::invoke>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
 
     TIMEMORY_CALIPER_APPLY(global, stop);
 

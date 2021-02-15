@@ -40,6 +40,7 @@
 #include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/transient_function.hpp"
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"
@@ -53,13 +54,15 @@
 #include <iostream>
 #include <string>
 
-//======================================================================================//
-
 namespace tim
 {
-//======================================================================================//
-// variadic list of components
-//
+/// \class tim::lightweight_tuple
+/// \tparam Types Specification of the component types to bundle together
+///
+/// \brief This is a variadic component wrapper which provides the least amount of
+/// runtime and compilation overhead.
+///
+///
 template <typename... Types>
 class lightweight_tuple
 : public stack_bundle<available_t<type_list<Types...>>>
@@ -99,6 +102,7 @@ public:
     using component_type   = remove_type_t<quirk::auto_start, this_type>;
     using type             = convert_t<tuple_type, lightweight_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
+    using transient_func_t = utility::transient_function<void(this_type&)>;
 
     static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
@@ -116,29 +120,26 @@ public:
 public:
     lightweight_tuple() = default;
 
-    template <typename... T, typename Func = initializer_type>
+    template <typename... T>
     explicit lightweight_tuple(const string_t& key, quirk::config<T...> = {},
-                               const Func& = get_initializer());
+                               transient_func_t = get_initializer());
 
-    template <typename... T, typename Func = initializer_type>
+    template <typename... T>
     explicit lightweight_tuple(const captured_location_t& loc, quirk::config<T...> = {},
-                               const Func& = get_initializer());
+                               transient_func_t = get_initializer());
 
-    template <typename... T, typename Func = initializer_type>
+    template <typename... T>
     explicit lightweight_tuple(size_t _hash, quirk::config<T...> = {},
-                               const Func& = get_initializer());
+                               transient_func_t = get_initializer());
 
-    template <typename Func = initializer_type>
     explicit lightweight_tuple(size_t _hash, scope::config _scope,
-                               const Func& = get_initializer());
+                               transient_func_t = get_initializer());
 
-    template <typename Func = initializer_type>
     explicit lightweight_tuple(const string_t& key, scope::config _scope,
-                               const Func& = get_initializer());
+                               transient_func_t = get_initializer());
 
-    template <typename Func = initializer_type>
     explicit lightweight_tuple(const captured_location_t& loc, scope::config _scope,
-                               const Func& = get_initializer());
+                               transient_func_t = get_initializer());
 
     ~lightweight_tuple();
 
@@ -164,27 +165,27 @@ public:
     //----------------------------------------------------------------------------------//
     // public member functions
     //
-    void push();
-    void pop();
+    this_type& push();
+    this_type& pop();
     template <typename... Args>
-    void measure(Args&&...);
+    this_type& measure(Args&&...);
     template <typename... Args>
-    void sample(Args&&...);
+    this_type& sample(Args&&...);
     template <typename... Args>
-    void start(Args&&...);
+    this_type& start(Args&&...);
     template <typename... Args>
-    void stop(Args&&...);
+    this_type& stop(Args&&...);
     template <typename... Args>
     this_type& record(Args&&...);
     template <typename... Args>
-    void reset(Args&&...);
+    this_type& reset(Args&&...);
     template <typename... Args>
     auto get(Args&&...) const;
     template <typename... Args>
     auto             get_labeled(Args&&...) const;
     data_type&       data();
     const data_type& data() const;
-    void             set_scope(scope::config);
+    this_type&       set_scope(scope::config);
 
     using bundle_type::get_prefix;
     using bundle_type::get_scope;
@@ -196,14 +197,24 @@ public:
     using bundle_type::rekey;
     using bundle_type::store;
 
+    /// when chaining together operations, this function enables executing a function
+    /// inside the chain
+    template <typename FuncT, typename... Args>
+    decltype(auto) execute(FuncT&& func, Args&&... args)
+    {
+        return bundle::execute(*this,
+                               std::forward<FuncT>(func)(std::forward<Args>(args)...));
+    }
+
     //----------------------------------------------------------------------------------//
     /// construct the objects that have constructors with matching arguments
     //
     template <typename... Args>
-    void construct(Args&&... _args)
+    this_type& construct(Args&&... _args)
     {
         using construct_t = operation_t<operation::construct>;
         apply_v::access<construct_t>(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -211,12 +222,13 @@ public:
     /// used to notify a component that it has been bundled alongside another component
     /// that it can extract data from.
     //
-    void assemble() { invoke::assemble(m_data, *this); }
+    this_type& assemble() { invoke::assemble(m_data, *this); }
 
     template <typename... Args, size_t N = sizeof...(Args), enable_if_t<N != 0, int> = 0>
-    void assemble(Args&&... _args)
+    this_type& assemble(Args&&... _args)
     {
         invoke::assemble(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -225,12 +237,13 @@ public:
     /// alongside, e.g. the cpu_util component can extract data from \ref
     /// tim::component::wall_clock and \ref tim::component::cpu_clock
     //
-    void derive() { invoke::derive(m_data, *this); }
+    this_type& derive() { invoke::derive(m_data, *this); }
 
     template <typename... Args, size_t N = sizeof...(Args), enable_if_t<N != 0, int> = 0>
-    void derive(Args&&... _args)
+    this_type& derive(Args&&... _args)
     {
         invoke::derive(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -238,9 +251,10 @@ public:
     /// structures)
     //
     template <typename... Args>
-    void mark_begin(Args&&... _args)
+    this_type& mark_begin(Args&&... _args)
     {
         invoke::mark_begin(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -248,18 +262,20 @@ public:
     /// structures)
     //
     template <typename... Args>
-    void mark_end(Args&&... _args)
+    this_type& mark_end(Args&&... _args)
     {
         invoke::mark_end(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
     /// store a value
     //
     template <typename... Args>
-    void store(Args&&... _args)
+    this_type& store(Args&&... _args)
     {
         invoke::store(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -267,9 +283,10 @@ public:
     /// or out-going return value before returning (typically using in GOTCHA components)
     //
     template <typename... Args>
-    void audit(Args&&... _args)
+    this_type& audit(Args&&... _args)
     {
         invoke::audit(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -277,9 +294,10 @@ public:
     /// \tparam OpT Operation struct
     //
     template <template <typename> class OpT, typename... Args>
-    void invoke(Args&&... _args)
+    this_type& invoke(Args&&... _args)
     {
         invoke::invoke<OpT>(m_data, std::forward<Args>(_args)...);
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -288,10 +306,11 @@ public:
     /// \tparam OpT Operation struct
     //
     template <template <typename> class OpT, typename... Tp, typename... Args>
-    void invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
+    this_type& invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
     {
         TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, TIMEMORY_API>(
             this->get<Tp>(), std::forward<Args>(_args)...));
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -317,10 +336,11 @@ public:
         return static_cast<T*>(ptr);
     }
 
-    void get(void*& ptr, size_t _hash) const
+    this_type& get(void*& ptr, size_t _hash) const
     {
         using get_t = operation_t<operation::get>;
         apply_v::access<get_t>(m_data, ptr, _hash);
+        return const_cast<this_type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//
@@ -375,16 +395,19 @@ public:
     ///
     template <typename T, typename Func, typename... Args,
               enable_if_t<is_one_of<T, data_type>::value, int> = 0>
-    void type_apply(Func&& _func, Args&&... _args)
+    this_type& type_apply(Func&& _func, Args&&... _args)
     {
         auto&& _obj = get<T>();
         ((_obj).*(_func))(std::forward<Args>(_args)...);
+        return *this;
     }
 
     template <typename T, typename Func, typename... Args,
               enable_if_t<!is_one_of<T, data_type>::value, int> = 0>
-    void type_apply(Func&&, Args&&...)
-    {}
+    this_type& type_apply(Func&&, Args&&...)
+    {
+        return *this;
+    }
 
     //----------------------------------------------------------------------------------//
     // this_type operators
@@ -461,13 +484,13 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <bool PrintPrefix = true, bool PrintLaps = true>
-    void print(std::ostream& os, bool skip_wo_hash = true) const
+    this_type& print(std::ostream& os, bool skip_wo_hash = true) const
     {
         using printer_t = typename bundle_type::print_type;
         if(size() == 0)
-            return;
+            return const_cast<this_type&>(*this);
         if(m_hash == 0 && skip_wo_hash)
-            return;
+            return const_cast<this_type&>(*this);
         std::stringstream ss_data;
         apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         IF_CONSTEXPR(PrintPrefix)
@@ -490,6 +513,7 @@ public:
             if(m_laps > 0 && PrintLaps)
                 os << " [laps: " << m_laps << "]";
         }
+        return const_cast<this_type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//

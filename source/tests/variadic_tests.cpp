@@ -279,42 +279,30 @@ TEST_F(variadic_tests, get)
     using comp_t1 = tim::remove_duplicates_t<join_t1>;
     using comp_t2 = tim::remove_duplicates_t<join_t2>;
 
+    using comp_t2_base_type      = typename comp_t2::base_type;
+    using comp_t2_component_type = typename comp_t2::component_type;
+    using comp_t2_tuple_type     = typename comp_t2::tuple_type;
+    using comp_t2_data_type      = typename comp_t2::data_type;
+    using comp_t2_bundle_type    = typename comp_t2::bundle_type;
+    using comp_t2_this_type      = typename comp_t2::this_type;
+
+#define PRINT_TYPE(TYPE)                                                                 \
+    std::cout << std::right << std::setw(24) << #TYPE << " = " << tim::demangle<TYPE>()  \
+              << "\n";
+
+    std::cout << "\n" << std::flush;
+    PRINT_TYPE(comp_t2_base_type)
+    PRINT_TYPE(comp_t2_component_type)
+    PRINT_TYPE(comp_t2_tuple_type)
+    PRINT_TYPE(comp_t2_data_type)
+    PRINT_TYPE(comp_t2_bundle_type)
+    PRINT_TYPE(comp_t2_this_type)
+    std::cout << "\n" << std::flush;
+
     using list_t0 = tim::component_list<lhs_l, rhs_l>;
     using list_t1 = tim::auto_list<lhs_l, rhs_l, user_clock>;
     using list_t2 = tim::auto_list<rhs_l, user_clock>;
     using list_t3 = tim::auto_list<lhs_l, list_t2>;
-
-    list_t0::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
-    list_t1::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
-    list_t2::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
-    list_t3::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
-
-    auto ct0 = comp_t0("ct0");
-    auto ct1 = comp_t1("ct1");
-    auto ct2 = comp_t2("ct2");
-    auto cl0 = list_t0("cl0");
-    auto cl1 = list_t1("cl1");
-    auto cl2 = list_t2("cl2");
-    auto cl3 = list_t3("cl3");
-
-    namespace disjoint = tim::invoke::disjoint;
-
-    disjoint::start(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
-    disjoint::mark_begin(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
-
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-
-    disjoint::mark_end(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
-    disjoint::stop(std::forward_as_tuple(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
-
-    auto dt0 = ct0.get();
-    auto dt1 = ct1.get();
-    auto dt2 = ct2.get();
-
-    auto dl0 = cl0.get();
-    auto dl1 = cl1.get();
-    auto dl2 = cl2.get();
-    auto dl3 = cl3.get();
 
     std::cout << "\n" << std::flush;
 
@@ -340,6 +328,48 @@ TEST_F(variadic_tests, get)
     std::cout << "list_t3 = " << tim::demangle<list_t3>() << "\n";
     std::cout << "\n" << std::flush;
 
+    list_t0::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
+    list_t1::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
+    list_t2::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
+    list_t3::get_initializer() = [](auto& cl) { cl.template init<wall_clock>(); };
+
+    auto ct0 = comp_t0("ct0");
+    auto ct1 = comp_t1("ct1");
+    auto ct2 = comp_t2("ct2");
+    auto cl0 = list_t0("cl0");
+    auto cl1 = list_t1("cl1");
+    auto cl2 = list_t2("cl2");
+    auto cl3 = list_t3("cl3");
+
+    // auto ct3 =
+    //    tim::auto_tuple<tim::component::wall_clock, tim::component::system_clock,
+    //                    tim::component::cpu_clock, tim::component::user_clock>{ "ct3" };
+
+    namespace disjoint = tim::invoke::disjoint;
+
+    disjoint::start(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    // disjoint::mark_begin(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+
+    // disjoint::store(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3), 10);
+    // disjoint::mark(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3), 10);
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    // disjoint::record(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3), 10);
+    // disjoint::measure(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+
+    // disjoint::mark_end(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    disjoint::stop(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+
+    auto dt0 = ct0.get();
+    auto dt1 = ct1.get();
+    auto dt2 = ct2.get();
+
+    auto dl0 = cl0.get();
+    auto dl1 = cl1.get();
+    auto dl2 = cl2.get();
+    auto dl3 = cl3.get();
+
     std::cout << "dt0 = " << tim::demangle<decltype(dt0)>() << "\n";
     std::cout << "dt1 = " << tim::demangle<decltype(dt1)>() << "\n";
     std::cout << "dt2 = " << tim::demangle<decltype(dt2)>() << "\n";
@@ -353,6 +383,10 @@ TEST_F(variadic_tests, get)
 
     tim::invoke::print(std::cout, ct0, ct1, ct2, cl0, cl1, cl2, cl3);
 
+    std::cout << '\n';
+    disjoint::invoke(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3),
+                     [](auto& itr) { std::cout << itr << std::endl; });
+
     EXPECT_NEAR(std::get<0>(dt0), 1.0, 0.1);
     EXPECT_NEAR(std::get<0>(dt1), 1.0, 0.1);
     EXPECT_NEAR(std::get<0>(dt2), 1.0, 0.1);
@@ -361,6 +395,37 @@ TEST_F(variadic_tests, get)
     EXPECT_NEAR(std::get<0>(dl1), 1.0, 0.1);
     EXPECT_NEAR(std::get<0>(dl2), 1.0, 0.1);
     EXPECT_NEAR(std::get<0>(dl3), 1.0, 0.1);
+
+    disjoint::reset(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    disjoint::set_prefix(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3), "set_prefix");
+    disjoint::set_scope(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3),
+                        tim::scope::flat{} + tim::scope::timeline{});
+    disjoint::push(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+
+    disjoint::assemble(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    disjoint::audit(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3), 10);
+    disjoint::derive(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+
+    disjoint::add_secondary(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+    disjoint::pop(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
+
+    dt0 = ct0.get();
+    dt1 = ct1.get();
+    dt2 = ct2.get();
+
+    dl0 = cl0.get();
+    dl1 = cl1.get();
+    dl2 = cl2.get();
+    dl3 = cl3.get();
+
+    EXPECT_NEAR(std::get<0>(dt0), 0.0, 1.e-3);
+    EXPECT_NEAR(std::get<0>(dt1), 0.0, 1.e-3);
+    EXPECT_NEAR(std::get<0>(dt2), 0.0, 1.e-3);
+
+    EXPECT_NEAR(std::get<0>(dl0), 0.0, 1.e-3);
+    EXPECT_NEAR(std::get<0>(dl1), 0.0, 1.e-3);
+    EXPECT_NEAR(std::get<0>(dl2), 0.0, 1.e-3);
+    EXPECT_NEAR(std::get<0>(dl3), 0.0, 1.e-3);
 }
 
 //--------------------------------------------------------------------------------------//

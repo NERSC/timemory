@@ -28,6 +28,7 @@
 #define _TIM_STRINGIZE2(X) #X
 #define _TIM_VAR_NAME_COMBINE(X, Y) X##Y
 #define _TIM_VARIABLE(Y) _TIM_VAR_NAME_COMBINE(timemory_variable_, Y)
+#define _TIM_SCOPE_DTOR(Y) _TIM_VAR_NAME_COMBINE(timemory_scoped_dtor_, Y)
 #define _TIM_TYPEDEF(Y) _TIM_VAR_NAME_COMBINE(timemory_typedef_, Y)
 #define _TIM_STORAGE_INIT(Y) _TIM_VAR_NAME_COMBINE(timemory_storage_initializer_, Y)
 

@@ -147,3 +147,21 @@
 #if !defined(TIMEMORY_HOT_INLINE)
 #    define TIMEMORY_HOT_INLINE TIMEMORY_HOT TIMEMORY_INLINE
 #endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DATA_ALIGNMENT)
+#    define TIMEMORY_DATA_ALIGNMENT 8
+#endif
+
+#if !defined(TIMEMORY_PACKED_ALIGNMENT)
+#    if defined(_WIN32)  // Windows 32- and 64-bit
+#        define TIMEMORY_PACKED_ALIGNMENT __declspec(align(ACTIVITY_RECORD_ALIGNMENT))
+#    elif defined(__GNUC__)  // GCC
+#        define TIMEMORY_PACKED_ALIGNMENT                                                \
+            __attribute__((__packed__))                                                  \
+                __attribute__((aligned(ACTIVITY_RECORD_ALIGNMENT)))
+#    else  // all other compilers
+#        define TIMEMORY_PACKED_ALIGNMENT
+#    endif
+#endif
