@@ -45,6 +45,13 @@ namespace operation
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::operation::set_prefix
+/// \tparam Tp Component type
+///
+/// \brief Call the set_prefix member function. These instantiations are always inlined
+/// because of the use of string_view. Without inlining, you will get undefined symbols
+/// in C++14 code when timemory was compiled with C++17.
+///
 template <typename Tp>
 struct set_prefix
 {
@@ -53,10 +60,10 @@ struct set_prefix
 
     TIMEMORY_DEFAULT_OBJECT(set_prefix)
 
-    TIMEMORY_HOT set_prefix(type& obj, const string_t& _prefix);
-    TIMEMORY_HOT set_prefix(type& obj, uint64_t _nhash, const string_t& _prefix);
+    TIMEMORY_HOT_INLINE set_prefix(type& obj, const string_t& _prefix);
+    TIMEMORY_HOT_INLINE set_prefix(type& obj, uint64_t _nhash, const string_t& _prefix);
 
-    TIMEMORY_HOT auto operator()(type& obj, const string_t& _prefix) const
+    TIMEMORY_HOT_INLINE auto operator()(type& obj, const string_t& _prefix) const
     {
         return sfinae_str(obj, 0, 0, 0, _prefix);
     }
@@ -69,7 +76,8 @@ struct set_prefix
 private:
     //  If the component has a set_prefix(const string_t&) member function
     template <typename U>
-    TIMEMORY_HOT auto sfinae_str(U& obj, int, int, int, const string_t& _prefix) const
+    TIMEMORY_HOT_INLINE auto sfinae_str(U&              obj, int, int, int,
+                                        const string_t& _prefix) const
         -> decltype(obj.set_prefix(_prefix))
     {
         return obj.set_prefix(_prefix);

@@ -484,6 +484,8 @@ public:
         return *this;
     }
 
+    using base_type::load;
+
 protected:
     using base_type::accum;
     using base_type::laps;
