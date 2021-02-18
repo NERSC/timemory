@@ -110,6 +110,8 @@ struct papi_vector
     papi_vector& operator=(const papi_vector&) = default;
     papi_vector& operator=(papi_vector&&) noexcept = default;
 
+    using base_type::load;
+
     //----------------------------------------------------------------------------------//
 
     size_t size() { return events.size(); }
@@ -130,7 +132,7 @@ struct papi_vector
     vector_t<Tp> get() const
     {
         std::vector<Tp> values;
-        auto&           _data = (is_transient) ? accum : value;
+        auto&           _data = load();
         for(auto& itr : _data)
             values.push_back(itr);
         values.resize(events.size());
@@ -184,8 +186,6 @@ struct papi_vector
     {
         value += rhs.value;
         accum += rhs.accum;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -195,8 +195,6 @@ struct papi_vector
     {
         value -= rhs.value;
         accum -= rhs.accum;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -227,8 +225,7 @@ public:
 
     TIMEMORY_NODISCARD entry_type get_display(int evt_type) const
     {
-        auto val = (is_transient) ? accum.at(evt_type) : value.at(evt_type);
-        return val;
+        return accum.at(evt_type);
     }
 
     //----------------------------------------------------------------------------------//
@@ -237,9 +234,8 @@ public:
     template <typename Archive>
     void load(Archive& ar, const unsigned int)
     {
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
-           cereal::make_nvp("events", events));
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("value", value),
+           cereal::make_nvp("accum", accum), cereal::make_nvp("events", events));
     }
 
     //----------------------------------------------------------------------------------//
@@ -254,10 +250,9 @@ public:
         {
             _disp[i] = get_display(i);
         }
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", value),
-           cereal::make_nvp("accum", accum), cereal::make_nvp("display", _disp),
-           cereal::make_nvp("events", events));
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("repr_data", _disp),
+           cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
+           cereal::make_nvp("display", _disp), cereal::make_nvp("events", events));
     }
 
     //----------------------------------------------------------------------------------//
@@ -335,7 +330,7 @@ public:
     {
         if(events.empty())
             return "";
-        auto val          = (is_transient) ? accum : value;
+        auto val          = load();
         auto _get_display = [&](std::ostream& os, size_type idx) {
             auto     _obj_value = val.at(idx);
             auto     _evt_type  = events.at(idx);

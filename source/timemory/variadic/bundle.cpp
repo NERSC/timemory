@@ -1,0 +1,979 @@
+// MIT License
+//
+// Copyright (c) 2020, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#ifndef TIMEMORY_VARIADIC_BUNDLE_CPP_
+#define TIMEMORY_VARIADIC_BUNDLE_CPP_
+
+#include "timemory/variadic/bundle.hpp"
+#include "timemory/backends/dmp.hpp"
+#include "timemory/mpl/filters.hpp"
+#include "timemory/operations/types/set.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/variadic/bundle_execute.hpp"
+#include "timemory/variadic/functional.hpp"
+#include "timemory/variadic/types.hpp"
+
+namespace tim
+{
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+typename bundle<Tag, BundleT, TupleT>::initializer_type&
+bundle<Tag, BundleT, TupleT>::get_initializer()
+{
+    static initializer_type _instance = [](this_type&) {};
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>::bundle()
+{
+    apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, get_initializer());
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... T>
+bundle<Tag, BundleT, TupleT>::bundle(const string_t& _key, quirk::config<T...> _config,
+                                     transient_func_t _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _key, true_type{}, _config))
+, m_data(invoke::construct<data_type, Tag>(_key, _config))
+{
+    apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func),
+                      _config);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... T>
+bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc,
+                                     quirk::config<T...>        _config,
+                                     transient_func_t           _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _loc, true_type{}, _config))
+, m_data(invoke::construct<data_type, Tag>(_loc, _config))
+{
+    apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func),
+                      _config);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>::bundle(size_t _hash, bool _store, scope::config _scope,
+                                     transient_func_t _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _hash, _store, _scope))
+, m_data(invoke::construct<data_type, Tag>(_hash, m_scope))
+{
+    apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>::bundle(const string_t& _key, bool _store,
+                                     scope::config _scope, transient_func_t _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _key, _store, _scope))
+{
+    apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc, bool _store,
+                                     scope::config _scope, transient_func_t _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _loc, _store, _scope))
+{
+    apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>::bundle(size_t _hash, scope::config _scope,
+                                     transient_func_t _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _hash, true_type{}, _scope))
+{
+    apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>::bundle(const string_t& _key, scope::config _scope,
+                                     transient_func_t _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _key, true_type{}, _scope))
+{
+    apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc,
+                                     scope::config _scope, transient_func_t _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _loc, true_type{}, _scope))
+{
+    apply_v::set_value(m_data, nullptr);
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>::~bundle()
+{
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_stop>::value)
+    {
+        if(m_is_active())
+            stop();
+    }
+    DEBUG_PRINT_HERE("%s", "deleting components");
+    invoke::destroy<Tag>(m_data);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>::bundle(const bundle& rhs)
+: bundle_type(rhs)
+{
+    apply_v::set_value(m_data, nullptr);
+    invoke::invoke_impl::invoke_data<operation::copy, Tag>(m_data, rhs.m_data);
+    // apply_v::access2<operation_t<operation::copy>>(m_data, rhs.m_data);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>&
+bundle<Tag, BundleT, TupleT>::operator=(const bundle& rhs)
+{
+    if(this != &rhs)
+    {
+        bundle_type::operator=(rhs);
+        invoke::destroy<Tag>(m_data);
+        invoke::invoke_impl::invoke_data<operation::copy, Tag>(m_data, rhs.m_data);
+        // apply_v::access<operation_t<operation::copy>>(m_data);
+    }
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// this_type operators
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>&
+bundle<Tag, BundleT, TupleT>::operator-=(const bundle& rhs)
+{
+    // apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
+    invoke::invoke_impl::invoke_data<operation::minus, Tag>(m_data, rhs.m_data);
+    m_laps -= rhs.m_laps;
+    return *this;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>&
+bundle<Tag, BundleT, TupleT>::operator+=(const bundle& rhs)
+{
+    // apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
+    invoke::invoke_impl::invoke_data<operation::plus, Tag>(m_data, rhs.m_data);
+    m_laps += rhs.m_laps;
+    return *this;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename Op>
+bundle<Tag, BundleT, TupleT>&
+bundle<Tag, BundleT, TupleT>::operator-=(Op&& rhs)
+{
+    // using minus_t = operation_t<operation::minus>;
+    // apply_v::access<minus_t>(m_data, std::forward<Op>(rhs));
+    invoke::invoke<operation::minus, Tag>(m_data, std::forward<Op>(rhs));
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename Op>
+bundle<Tag, BundleT, TupleT>&
+bundle<Tag, BundleT, TupleT>::operator+=(Op&& rhs)
+{
+    // using plus_t = operation_t<operation::plus>;
+    // apply_v::access<plus_t>(m_data, std::forward<Op>(rhs));
+    invoke::invoke<operation::plus, Tag>(m_data, std::forward<Op>(rhs));
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename Op>
+bundle<Tag, BundleT, TupleT>&
+bundle<Tag, BundleT, TupleT>::operator*=(Op&& rhs)
+{
+    // using multiply_t = operation_t<operation::multiply>;
+    // apply_v::access<multiply_t>(m_data, std::forward<Op>(rhs));
+    invoke::invoke<operation::multiply, Tag>(m_data, std::forward<Op>(rhs));
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename Op>
+bundle<Tag, BundleT, TupleT>&
+bundle<Tag, BundleT, TupleT>::operator/=(Op&& rhs)
+{
+    // using divide_t = operation_t<operation::divide>;
+    // apply_v::access<divide_t>(m_data, std::forward<Op>(rhs));
+    invoke::invoke<operation::divide, Tag>(m_data, std::forward<Op>(rhs));
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+bundle<Tag, BundleT, TupleT>
+bundle<Tag, BundleT, TupleT>::clone(bool _store, scope::config _scope)
+{
+    bundle tmp(*this);
+    tmp.m_store(_store);
+    tmp.m_scope = _scope;
+    return tmp;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+void
+bundle<Tag, BundleT, TupleT>::init_storage()
+{
+    static thread_local bool _once = []() {
+        apply_v::type_access<operation::init_storage, reference_type>();
+        return true;
+    }();
+    consume_parameters(_once);
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename Tag, typename BundleT, typename TupleT>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::push()
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    if(!m_is_pushed())
+    {
+        // reset the data
+        invoke::reset<Tag>(m_data);
+        // avoid pushing/popping when already pushed/popped
+        m_is_pushed(true);
+        // insert node or find existing node
+        invoke::push<Tag>(m_data, m_scope, m_hash);
+    }
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    // reset the data
+    invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
+    // insert node or find existing node
+    invoke::invoke<operation::push_node, Tag>(pw_type{}, m_data, m_scope, m_hash);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>, scope::config _scope)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    // reset the data
+    invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
+    // insert node or find existing node
+    invoke::invoke<operation::push_node, Tag>(pw_type{}, m_data, _scope, m_hash);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// pop out of graph
+//
+template <typename Tag, typename BundleT, typename TupleT>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::pop()
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    if(m_is_pushed())
+    {
+        // set the current node to the parent node
+        invoke::pop<Tag>(m_data);
+        // avoid pushing/popping when already pushed/popped
+        m_is_pushed(false);
+    }
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// pop out of graph
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::pop(mpl::piecewise_select<Tp...>)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    // set the current node to the parent node
+    invoke::invoke<operation::pop_node, Tag>(pw_type{}, m_data);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// measure functions
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::measure(Args&&... args)
+{
+    return invoke<operation::measure>(std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+// sample functions
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::sample(Args&&... args)
+{
+    return invoke<operation::sample>(std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+// start/stop functions with no push/pop or assemble/derive
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::start(mpl::lightweight, Args&&... args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    assemble(*this);
+    invoke::start<Tag>(m_data, std::forward<Args>(args)...);
+    m_is_active(true);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::stop(mpl::lightweight, Args&&... args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    invoke::stop<Tag>(m_data, std::forward<Args>(args)...);
+    ++m_laps;
+    derive(*this);
+    m_is_active(false);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// start/stop functions with no push/pop or assemble/derive
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp, typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::start(mpl::piecewise_select<Tp...>, Args&&... args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    using select_tuple_t = mpl::sort<trait::start_priority, std::tuple<Tp...>>;
+
+    TIMEMORY_FOLD_EXPRESSION(
+        operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value)
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
+            std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+    }
+
+    // start components
+    auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
+    invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp, typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    using select_tuple_t = mpl::sort<trait::stop_priority, std::tuple<Tp...>>;
+
+    // stop components
+    auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
+    invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
+
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value)
+    {
+        TIMEMORY_FOLD_EXPRESSION(
+            operation::pop_node<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+    }
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// start/stop functions
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::start(Args&&... args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    // push components into the call-stack
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value)
+    {
+        if(m_store())
+            push();
+    }
+
+    // start components
+    start(mpl::lightweight{}, std::forward<Args>(args)...);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::stop(Args&&... args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    // stop components
+    stop(mpl::lightweight{}, std::forward<Args>(args)...);
+
+    // pop components off of the call-stack stack
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value)
+    {
+        if(m_store())
+            pop();
+    }
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// recording
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::record(Args&&... args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    ++m_laps;
+    return invoke<operation::record>(std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+// reset data
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::reset(Args&&... args)
+{
+    m_laps = 0;
+    return invoke<operation::reset>(std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+uint64_t
+bundle<Tag, BundleT, TupleT>::count()
+{
+    uint64_t _count = 0;
+    invoke::invoke<operation::generic_counter>(m_data, std::ref(_count));
+    return _count;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::construct(Args&&... _args)
+{
+    // using construct_t = operation_t<operation::construct>;
+    // apply_v::access<construct_t>(m_data, std::forward<Args>(_args)...);
+    return invoke<operation::construct>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::assemble(Args&&... _args)
+{
+    return invoke<operation::assemble>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::derive(Args&&... _args)
+{
+    return invoke<operation::derive>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::mark(Args&&... _args)
+{
+    return invoke<operation::mark>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::mark_begin(Args&&... _args)
+{
+    return invoke<operation::mark_begin>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::mark_end(Args&&... _args)
+{
+    return invoke<operation::mark_end>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::store(Args&&... _args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    // auto _active = m_is_active();
+    m_is_active(true);
+    invoke<operation::store>(std::forward<Args>(_args)...);
+    // if(!_active)
+    //    ++m_laps;
+    m_is_active(false);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::audit(Args&&... _args)
+{
+    return invoke<operation::audit>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::add_secondary(Args&&... _args)
+{
+    return invoke<operation::add_secondary>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <template <typename> class OpT, typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::invoke(Args&&... _args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    invoke::invoke<OpT, Tag>(m_data, std::forward<Args>(_args)...);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <template <typename> class OpT, typename... Tp, typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, Tag>(
+        this->get<Tp>(), std::forward<Args>(_args)...));
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// get data
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+auto
+bundle<Tag, BundleT, TupleT>::get(Args&&... args) const
+{
+    return invoke::get<Tag>(m_data, std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+// get labeled data
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+auto
+bundle<Tag, BundleT, TupleT>::get_labeled(Args&&... args) const
+{
+    return invoke::get_labeled<Tag>(m_data, std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+typename bundle<Tag, BundleT, TupleT>::data_type&
+bundle<Tag, BundleT, TupleT>::data()
+{
+    return m_data;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+const typename bundle<Tag, BundleT, TupleT>::data_type&
+bundle<Tag, BundleT, TupleT>::data() const
+{
+    return m_data;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::get(void*& ptr, size_t _hash) const
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    tim::variadic::impl::get<Tag>(m_data, ptr, _hash);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tail>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::disable()
+{
+    TIMEMORY_FOLD_EXPRESSION(operation::generic_deleter<remove_pointer_t<Tail>>{
+        this->get_reference<Tail>() });
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... T, typename... Args>
+std::array<bool, sizeof...(T)>
+bundle<Tag, BundleT, TupleT>::initialize(Args&&... args)
+{
+    if(!m_enabled())
+        return std::array<bool, sizeof...(T)>{};
+
+    constexpr auto N = sizeof...(T);
+    return TIMEMORY_FOLD_EXPANSION(bool, N, init<T>(std::forward<Args>(args)...));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename T, typename Func, typename... Args,
+          enable_if_t<trait::is_available<T>::value, int>>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::type_apply(Func&& _func, Args&&... _args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    auto* _obj = get<T>();
+    if(_obj)
+        ((*_obj).*(_func))(std::forward<Args>(_args)...);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename T, typename Func, typename... Args,
+          enable_if_t<!trait::is_available<T>::value, int>>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::type_apply(Func&&, Args&&...)
+{
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+void
+bundle<Tag, BundleT, TupleT>::set_prefix(const string_t& _key) const
+{
+    if(!m_enabled())
+        return;
+
+    invoke::set_prefix<Tag>(m_data, m_hash, _key);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::set_prefix(size_t _hash) const
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    auto itr = get_hash_ids()->find(_hash);
+    if(itr != get_hash_ids()->end())
+        invoke::set_prefix<Tag>(m_data, _hash, itr->second);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::set_prefix(captured_location_t _loc) const
+{
+    return set_prefix(_loc.get_hash());
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::set_scope(scope::config val)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    m_scope = val;
+    invoke::set_scope<Tag>(m_data, m_scope);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename T>
+void
+bundle<Tag, BundleT, TupleT>::set_prefix(T* obj, internal_tag) const
+{
+    if(!m_enabled())
+        return;
+
+    using PrefixOpT = operation::generic_operator<T, operation::set_prefix<T>, Tag>;
+    auto _key       = get_hash_identifier_fast(m_hash);
+    PrefixOpT(obj, m_hash, _key);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename T>
+void
+bundle<Tag, BundleT, TupleT>::set_scope(T* obj, internal_tag) const
+{
+    if(!m_enabled())
+        return;
+
+    using PrefixOpT = operation::generic_operator<T, operation::set_scope<T>, Tag>;
+    PrefixOpT(obj, m_scope);
+}
+
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <bool PrintPrefix, bool PrintLaps>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::print(std::ostream& os, bool _endl) const
+{
+    using printer_t = typename bundle_type::print_type;
+    if(size() == 0 || m_hash == 0)
+        return get_this_type();
+    std::stringstream ss_data;
+    apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
+    if(PrintPrefix)
+    {
+        bundle_type::update_width();
+        std::stringstream ss_prefix;
+        std::stringstream ss_id;
+        ss_id << get_prefix() << " " << std::left << key();
+        ss_prefix << std::setw(bundle_type::output_width()) << std::left << ss_id.str()
+                  << " : ";
+        os << ss_prefix.str();
+    }
+    os << ss_data.str();
+    if(m_laps > 0 && PrintLaps)
+        os << " [laps: " << m_laps << "]";
+    if(_endl)
+        os << '\n';
+    return get_this_type();
+}
+
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename Archive>
+void
+bundle<Tag, BundleT, TupleT>::serialize(Archive& ar, const unsigned int)
+{
+    std::string _key   = {};
+    auto        keyitr = get_hash_ids()->find(m_hash);
+    if(keyitr != get_hash_ids()->end())
+        _key = keyitr->second;
+
+    ar(cereal::make_nvp("hash", m_hash), cereal::make_nvp("key", _key),
+       cereal::make_nvp("laps", m_laps));
+
+    if(keyitr == get_hash_ids()->end())
+    {
+        auto _hash = add_hash_id(_key);
+        if(_hash != m_hash)
+        {
+            PRINT_HERE("Warning! Hash for '%s' (%llu) != %llu", _key.c_str(),
+                       (unsigned long long) _hash, (unsigned long long) m_hash);
+        }
+    }
+
+    ar(cereal::make_nvp("data", m_data));
+}
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace tim
+
+#endif

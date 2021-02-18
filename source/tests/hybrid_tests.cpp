@@ -22,10 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if !defined(TIMEMORY_USE_DEPRECATED)
-#    define TIMEMORY_USE_DEPRECATED
-#endif
-
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 #include "test_macros.hpp"
@@ -35,6 +31,8 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include "gtest/gtest.h"
 
 #include "timemory/timemory.hpp"
+#include "timemory/variadic/auto_hybrid.hpp"
+#include "timemory/variadic/component_hybrid.hpp"
 
 #include <chrono>
 #include <condition_variable>
@@ -69,8 +67,8 @@ static const double util_tolerance  = 5.0;
 static const double timer_tolerance = 0.075;
 
 // acceptable relative error
-static const double util_epsilon  = 0.5;
-static const double timer_epsilon = 0.02;
+// static const double util_epsilon  = 0.5;
+// static const double timer_epsilon = 0.02;
 
 // acceptable compose error
 static const double compose_tolerance = 1.0e-9;
@@ -189,12 +187,24 @@ protected:
         papi_array_t::get_initializer() = []() {
             return std::vector<int>({ PAPI_TOT_CYC, PAPI_LST_INS });
         };
+#else
+        static_assert(list_t::can_heap_init<papi_array_t>() == false,
+                      "Error! should not be able to heap initialize!");
 #endif
-        auto init = [](auto& l) {
+
+        static_assert(tuple_t::can_stack_init<wall_clock>() == true,
+                      "Error! should be able to stack initialize!");
+
+        static_assert(list_t::can_stack_init<wall_clock>() == false,
+                      "Error! should not be able to stack initialize!");
+
+        static_assert(list_t::can_heap_init<wall_clock>() == true,
+                      "Error! should be able to heap initialize!");
+
+        hybrid_t::get_initializer() = [](auto& l) {
             l.template initialize<wall_clock, cpu_clock, cpu_util, peak_rss, page_rss,
                                   papi_array_t>();
         };
-        list_t::get_initializer() = init;
     }
 };
 
@@ -205,73 +215,9 @@ using identity_type_t = typename T::type;
 
 TEST_F(hybrid_tests, type_check)
 {
-    // derived inside hybrid
-    using tuple_type = tim::available_t<typename hybrid_t::tuple_t>;
-    using list_type  = tim::available_t<typename hybrid_t::list_t>;
-    // derived inside tuple/list
-    using tuple_impl = typename tuple_t::type;
-    using list_impl  = typename list_t::type;
-    using tuple_comp = typename tuple_t::component_type;
-    using list_comp  = typename list_t::component_type;
-
-    auto clt = tim::demangle<tim::complete_list_t>();
-    auto cli = tim::demangle<identity_type_t<tim::complete_list_t>>();
-    auto att = tim::demangle<tim::auto_timer>();
-    auto ati = tim::demangle<identity_type_t<tim::auto_timer>>();
-
-    auto make_readable = [](auto& itr, const auto& _old_key, const auto& _new_key) {
-        size_t n = 0;
-        while((n = itr.find(_old_key)) != std::string::npos)
-            itr = itr.replace(n, _old_key.length(), _new_key);
-    };
-
-    auto apply_make_readable = [&](const auto& _old_key, const auto& _new_key) {
-        make_readable(clt, _old_key, _new_key);
-        make_readable(cli, _old_key, _new_key);
-        make_readable(att, _old_key, _new_key);
-        make_readable(ati, _old_key, _new_key);
-    };
-
-    auto old_key = std::string(", tim::component_");
-    auto new_key = std::string(",\n\ttim::component_");
-
-    apply_make_readable(old_key, new_key);
-
-    old_key = std::string("<tim::component_");
-    new_key = std::string("<\n\ttim::component_");
-
-    apply_make_readable(old_key, new_key);
-
-    old_key = std::string(", tim::component::");
-    new_key = std::string(",\n\t\ttim::component::");
-
-    apply_make_readable(old_key, new_key);
-
-    old_key = std::string("<tim::component::");
-    new_key = std::string("<\n\t\ttim::component::");
-
-    apply_make_readable(old_key, new_key);
-
-    printf("\n");
-    std::cout << "complete_list_type = " << clt << std::endl;
-    std::cout << "complete_list_impl = " << cli << std::endl;
-    printf("\n");
-    std::cout << "auto_timer_type = " << att << std::endl;
-    std::cout << "auto_timer_impl = " << ati << std::endl;
-    printf("\n");
-    std::cout << "tuple_impl = " << tim::demangle<tuple_impl>() << std::endl;
-    std::cout << "tuple_type = " << tim::demangle<tuple_type>() << std::endl;
-    std::cout << "tuple_comp = " << tim::demangle<tuple_comp>() << std::endl;
-    printf("\n");
-    std::cout << "list_impl  = " << tim::demangle<list_impl>() << std::endl;
-    std::cout << "list_type  = " << tim::demangle<list_type>() << std::endl;
-    std::cout << "list_comp  = " << tim::demangle<list_comp>() << std::endl;
-    printf("\n");
-
-    ASSERT_TRUE((std::is_same<tuple_type, tuple_impl>::value));
-    ASSERT_TRUE((std::is_same<list_type, list_impl>::value));
-    ASSERT_TRUE((std::is_same<tuple_comp, tuple_impl>::value));
-    ASSERT_FALSE((std::is_same<tuple_comp, list_impl>::value));
+    std::cout << tim::demangle<auto_hybrid_t>() << std::endl;
+    std::cout << tim::demangle<hybrid_t>() << std::endl;
+    std::cout << tim::demangle<typename auto_hybrid_t::base_type>() << std::endl;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -293,40 +239,40 @@ TEST_F(hybrid_tests, hybrid)
         return static_cast<double>(val.first) / val.second * 100.0;
     };
 
-    auto* t_rc   = obj.get_tuple().get<wall_clock>();
-    auto* t_cpu  = obj.get_tuple().get<cpu_clock>();
-    auto* t_util = obj.get_tuple().get<cpu_util>();
+    auto* t_rc   = obj.get<wall_clock>();
+    auto* t_cpu  = obj.get<cpu_clock>();
+    auto* t_util = obj.get<cpu_util>();
 
     details::print_info(*t_rc, 2.0, "sec", clock_convert);
     details::print_info(*t_cpu, 2.5, "sec", clock_convert);
     details::print_info(*t_util, 125.0, "%", cpu_util_convert);
 
-    ASSERT_TRUE(t_rc != nullptr);
-    ASSERT_TRUE(t_cpu != nullptr);
-    ASSERT_TRUE(t_util != nullptr);
+    ASSERT_TRUE(t_rc != nullptr) << obj;
+    ASSERT_TRUE(t_cpu != nullptr) << obj;
+    ASSERT_TRUE(t_util != nullptr) << obj;
 
-    EXPECT_NEAR(2.0, t_rc->get(), timer_tolerance);
-    EXPECT_NEAR(2.5, t_cpu->get(), timer_tolerance);
-    EXPECT_NEAR(125.0, t_util->get(), util_tolerance);
+    EXPECT_NEAR(2.0, t_rc->get(), timer_tolerance) << obj;
+    EXPECT_NEAR(2.5, t_cpu->get(), timer_tolerance) << obj;
+    EXPECT_NEAR(125.0, t_util->get(), util_tolerance) << obj;
 
-    auto* l_rc   = obj.get_list().get<wall_clock>();
-    auto* l_cpu  = obj.get_list().get<cpu_clock>();
-    auto* l_util = obj.get_list().get<cpu_util>();
+    auto* l_rc   = obj.get<wall_clock*>();
+    auto* l_cpu  = obj.get<cpu_clock*>();
+    auto* l_util = obj.get<cpu_util*>();
+    auto* l_page = obj.get<page_rss>();
 
     // std::cout << tim::demangle<hybrid_t>() << std::endl;
     // std::cout << obj << std::endl;
 
-    ASSERT_TRUE(l_rc != nullptr);
-    ASSERT_TRUE(l_cpu != nullptr);
-    ASSERT_TRUE(l_util != nullptr);
+    EXPECT_EQ(l_rc, nullptr) << obj;
+    EXPECT_EQ(l_cpu, nullptr) << obj;
+    EXPECT_EQ(l_util, nullptr) << obj;
+    ASSERT_NE(l_page, nullptr) << obj;
 
-    details::print_info(*l_rc, 2.0, "sec", clock_convert);
-    details::print_info(*l_cpu, 2.5, "sec", clock_convert);
-    details::print_info(*l_util, 125.0, "%", cpu_util_convert);
+    auto page_size = tim::units::get_page_size();
 
-    EXPECT_NEAR(t_rc->get(), l_rc->get(), timer_epsilon);
-    EXPECT_NEAR(t_cpu->get(), l_cpu->get(), timer_epsilon);
-    EXPECT_NEAR(t_util->get(), l_util->get(), util_epsilon);
+    details::print_info(*l_page, page_size, tim::settings::memory_units(), clock_convert);
+
+    EXPECT_NEAR(l_page->get(), page_size, 2.0 * page_size) << obj;
 }
 
 //--------------------------------------------------------------------------------------//

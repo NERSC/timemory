@@ -598,7 +598,7 @@ TEST_F(tuple_tests, get)
 
 TEST_F(tuple_tests, explicit_start)
 {
-    using namespace tim::variadic;
+    using namespace tim::quirk;
     using config_t     = config<explicit_start>;
     using config_type  = typename config_t::type;
     using this_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, config_t>;
@@ -638,7 +638,7 @@ TEST_F(tuple_tests, explicit_start)
 
 TEST_F(tuple_tests, auto_start)
 {
-    using namespace tim::variadic;
+    using namespace tim::quirk;
     using config_t    = config<auto_start>;
     using config_type = typename config_t::type;
     using this_tuple_t =

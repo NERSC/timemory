@@ -81,8 +81,6 @@ namespace tim
 template <typename Tag, typename... Types>
 class component_bundle<Tag, Types...>
 : public api_bundle<Tag, implemented_t<Types...>>
-, public concepts::tagged
-, public concepts::comp_wrapper
 , public concepts::mixed_wrapper
 {
     static_assert(concepts::is_api<Tag>::value,
@@ -97,8 +95,8 @@ protected:
     using bundle_type = api_bundle<Tag, implemented_t<Types...>>;
     using impl_type   = typename bundle_type::impl_type;
 
-    template <typename T, typename... U>
-    friend class base_bundle;
+    template <typename... Tp>
+    friend class impl::base_bundle;
 
     template <typename... Tp>
     friend class auto_base_bundle;
@@ -143,7 +141,7 @@ public:
     static initializer_type& get_initializer();
 
     template <typename T, typename... U>
-    using quirk_config = mpl::impl::quirk_config<T, type_list<Types...>, U...>;
+    using quirk_config = tim::variadic::impl::quirk_config<T, type_list<Types...>, U...>;
 
 public:
     component_bundle();
@@ -194,8 +192,6 @@ public:
     //----------------------------------------------------------------------------------//
     // public static functions
     //
-    /// requests the components to output their storage
-    static void print_storage();
     /// requests the component initialize their storage
     static void init_storage();
 
@@ -304,8 +300,8 @@ public:
     template <typename FuncT, typename... Args>
     decltype(auto) execute(FuncT&& func, Args&&... args)
     {
-        return bundle::execute(*this,
-                               std::forward<FuncT>(func)(std::forward<Args>(args)...));
+        return mpl::execute(*this,
+                            std::forward<FuncT>(func)(std::forward<Args>(args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -442,13 +438,13 @@ public:
     template <typename U>
     decltype(auto) get()
     {
-        return mpl::impl::get<U, Tag>(m_data);
+        return tim::variadic::impl::get<U, Tag>(m_data);
     }
 
     template <typename U>
     decltype(auto) get() const
     {
-        return mpl::impl::get<U, Tag>(m_data);
+        return tim::variadic::impl::get<U, Tag>(m_data);
     }
 
     /// performs an opaque search. Opaque searches are generally provided by user_bundles
@@ -480,7 +476,7 @@ public:
     ///
     this_type& get(void*& ptr, size_t _hash) const
     {
-        mpl::impl::get<Tag>(m_data, ptr, _hash);
+        tim::variadic::impl::get<Tag>(m_data, ptr, _hash);
         return const_cast<this_type&>(*this);
     }
 
@@ -532,10 +528,9 @@ public:
     ///
     template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value &&
-                    !is_one_of<T, data_type>::value &&
-                    std::is_constructible<T, Args...>::value,
+                    !is_one_of<T, data_type>::value,
                 bool>
-    init(Args&&... _args)
+    init(Args&&... _args, enable_if_t<std::is_constructible<T, Args...>::value, int> = 0)
     {
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
@@ -570,11 +565,11 @@ public:
     ///
     template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value &&
-                    !is_one_of<T, data_type>::value &&
-                    !std::is_constructible<T, Args...>::value &&
-                    std::is_default_constructible<T>::value,
+                    !is_one_of<T, data_type>::value,
                 bool>
-    init(Args&&...)
+    init(Args&&..., enable_if_t<!std::is_constructible<T, Args...>::value &&
+                                    std::is_default_constructible<T>::value,
+                                int> = 0)
     {
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
@@ -816,11 +811,12 @@ public:
         apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(PrintPrefix)
         {
-            update_width();
+            bundle_type::update_width();
             std::stringstream ss_prefix;
             std::stringstream ss_id;
             ss_id << get_prefix() << " " << std::left << key();
-            ss_prefix << std::setw(output_width()) << std::left << ss_id.str() << " : ";
+            ss_prefix << std::setw(bundle_type::output_width()) << std::left
+                      << ss_id.str() << " : ";
             os << ss_prefix.str();
         }
         os << ss_data.str();
@@ -865,16 +861,11 @@ public:
         ar(cereal::make_nvp("data", m_data));
     }
 
-protected:
-    static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }
-    void           update_width() const { bundle_type::update_width(); }
-    void compute_width(const string_t& _key) const { bundle_type::compute_width(_key); }
-
-protected:
     // protected member functions
-    data_type&       get_data();
-    const data_type& get_data() const;
+    // data_type&       get_data()
+    const data_type& get_data() const { return m_data; }
 
+protected:
     template <typename T>
     void set_scope(T* obj) const;
     void set_scope(scope::config);

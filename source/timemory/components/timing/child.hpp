@@ -90,7 +90,7 @@ struct child_system_clock : public base<child_system_clock>
     }
     TIMEMORY_NODISCARD double get() const noexcept
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = load();
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -118,7 +118,7 @@ struct child_user_clock : public base<child_user_clock>
     }
     TIMEMORY_NODISCARD double get() const noexcept
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = load();
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -149,7 +149,7 @@ struct child_cpu_clock : public base<child_cpu_clock>
     }
     TIMEMORY_NODISCARD double get() const noexcept
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = load();
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -253,8 +253,6 @@ public:
     {
         accum += rhs.accum;
         value += rhs.value;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -262,8 +260,6 @@ public:
     {
         accum -= rhs.accum;
         value -= rhs.value;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 

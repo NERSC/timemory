@@ -630,6 +630,39 @@ struct convert<auto_hybrid<LhsInT<LhsIn...>, RhsInT<RhsIn...>>,
 //
 #endif
 
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class CheckT, bool CheckV,
+          template <typename> class TransformT, typename... T>
+struct apply_transform;
+
+//--------------------------------------------------------------------------------------//
+
+/*template <typename In, typename Out>
+struct apply_transform<identity, true, identity, In, Out>
+{
+    using type = Out;
+};*/
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class CheckT, bool CheckV,
+          template <typename> class TransformT, typename... In, typename... Out>
+struct apply_transform<CheckT, CheckV, TransformT, type_list<In...>, type_list<Out...>>
+{
+    using type = type_list<Out..., conditional_t<CheckT<In>::value == CheckV,
+                                                 typename TransformT<In>::type, In>...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class CheckT, bool CheckV,
+          template <typename> class TransformT, typename ApiT, typename... In>
+struct apply_transform<CheckT, CheckV, TransformT, type_list<ApiT, In...>,
+                       type_list<ApiT>>
+: apply_transform<CheckT, CheckV, TransformT, type_list<In...>, type_list<ApiT>>
+{};
+
 //======================================================================================//
 // check if type is in expansion
 //
@@ -765,41 +798,15 @@ using convert_t = typename impl::convert<T, U>::type;
 template <typename T>
 using unwrap_t = typename impl::unwrapper<T>::type;
 
+template <template <typename> class CheckT, bool CheckV,
+          template <typename> class TransformT, typename T, typename U>
+using apply_transform_t =
+    typename impl::apply_transform<CheckT, CheckV, TransformT, T, U>::type;
+
 //======================================================================================//
 
 namespace mpl
 {
-//--------------------------------------------------------------------------------------//
-
-template <typename Out, typename In>
-auto
-convert(const In& _in) -> decltype(impl::convert<In, Out>::apply(_in))
-{
-    return impl::convert<In, Out>::apply(_in);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Tp, typename Func, typename End = std::function<void()>>
-auto
-iterate(Tp& _val, Func&& _func, End&& _end = []() {}) -> decltype(std::begin(_val), Tp())
-{
-    for(auto itr = std::begin(_val); itr != std::end(_val); ++itr)
-        _func(*itr);
-    _end();
-    return _val;
-}
-
-template <typename Tp, typename Func, typename End = std::function<void()>>
-auto
-iterate(Tp& _val, Func&& _func, End&& _end = []() {})
-    -> decltype(_func(_val), std::vector<Tp>())
-{
-    _func(_val);
-    _end();
-    return std::vector<Tp>({ _val });
-}
-
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp,

@@ -526,8 +526,6 @@ public:
                 break;
             }
         }
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -552,8 +550,6 @@ public:
                 break;
             }
         }
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -578,7 +574,6 @@ public:
                 break;
             }
         }
-        is_transient = true;
         return *this;
     }
 
@@ -623,7 +618,6 @@ public:
 
 protected:
     using base_type::accum;
-    using base_type::is_transient;
     using base_type::laps;
     using base_type::set_started;
     using base_type::set_stopped;
@@ -806,8 +800,7 @@ public:
         auto _data   = get();
         auto _labels = get_labels();
 
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("display", _disp),
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("display", _disp),
            cereal::make_nvp("mode", get_mode_string()),
            cereal::make_nvp("type", get_type_string()),
            cereal::make_nvp("labels", _labels));
@@ -858,9 +851,9 @@ public:
         std::string              _mode_str;
         std::string              _type_str;
 
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("display", _disp), cereal::make_nvp("mode", _mode_str),
-           cereal::make_nvp("type", _type_str), cereal::make_nvp("labels", _labels));
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("display", _disp),
+           cereal::make_nvp("mode", _mode_str), cereal::make_nvp("type", _type_str),
+           cereal::make_nvp("labels", _labels));
 
         if(_mode_str == "counters")
         {

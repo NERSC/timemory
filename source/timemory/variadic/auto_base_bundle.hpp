@@ -79,7 +79,7 @@ public:
 public:
     template <typename T, typename... U>
     using quirk_config =
-        mpl::impl::quirk_config<T, convert_t<BundleT, type_list<>>, U...>;
+        tim::variadic::impl::quirk_config<T, convert_t<BundleT, type_list<>>, U...>;
 
 public:
     //
@@ -165,8 +165,8 @@ public:
     template <typename FuncT, typename... Args>
     decltype(auto) execute(FuncT&& func, Args&&... args)
     {
-        return bundle::execute(static_cast<this_type&>(*this),
-                               std::forward<FuncT>(func)(std::forward<Args>(args)...));
+        return mpl::execute(static_cast<this_type&>(*this),
+                            std::forward<FuncT>(func)(std::forward<Args>(args)...));
     }
 
     /// push components into call-stack storage
@@ -308,7 +308,7 @@ public:
         return m_temporary.template get<Tp>();
     }
 
-    void get(void*& ptr, size_t hash) { m_temporary.get(ptr, hash); }
+    void get(void*& ptr, size_t hash) const { m_temporary.get(ptr, hash); }
 
     template <typename T>
     auto get_component()
@@ -316,6 +316,8 @@ public:
     {
         return m_temporary.template get_component<T>();
     }
+
+    decltype(auto) get_data() const { return m_temporary.get_data(); }
 
 protected:
     void internal_init(transient_func_t _init);

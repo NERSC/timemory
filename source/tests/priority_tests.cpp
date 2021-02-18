@@ -72,7 +72,7 @@ struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
 
     TIMEMORY_NODISCARD double get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = base_type::load();
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    wall_clock::get_unit());
     }

@@ -165,7 +165,7 @@ extern "C"
     /// number of new components.
     ///
     /// \code{.cpp}
-    /// timemory_push_components(WALL_CLOCK, CPU_CLOCK);
+    /// timemory_push_components(2, WALL_CLOCK, CPU_CLOCK);
     /// \endcode
     extern void timemory_push_components_enum(int args, ...) TIMEMORY_VISIBLE;
 

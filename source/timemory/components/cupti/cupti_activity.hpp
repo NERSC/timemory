@@ -178,7 +178,7 @@ public:
     //
     void start()
     {
-        cupti::activity::start_trace(this, depth_change);
+        cupti::activity::start_trace(this, m_depth_change);
         value           = cupti::activity::get_receiver().get();
         m_kernels_index = cupti::activity::get_receiver().get_named_index();
     }
@@ -203,8 +203,7 @@ public:
 
     TIMEMORY_NODISCARD double get_display() const
     {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+        return static_cast<double>(load() / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
 
@@ -212,19 +211,18 @@ public:
 
     TIMEMORY_NODISCARD double get() const
     {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+        return static_cast<double>(load() / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
 
     //----------------------------------------------------------------------------------//
 
-    TIMEMORY_NODISCARD kernel_elapsed_t get_secondary() const
-    {
-        return (is_transient) ? m_kernels_accum : m_kernels_value;
-    }
+    TIMEMORY_NODISCARD kernel_elapsed_t get_secondary() const { return m_kernels_accum; }
+
+    void set_depth_change(bool v) { m_depth_change = v; }
 
 private:
+    bool             m_depth_change  = false;
     uint64_t         m_kernels_index = 0;
     kernel_elapsed_t m_kernels_value;
     kernel_elapsed_t m_kernels_accum;

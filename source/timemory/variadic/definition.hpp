@@ -37,6 +37,7 @@
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/variadic/functional.hpp"
+#include "timemory/variadic/impl.hpp"
 #include "timemory/variadic/lightweight_tuple.hpp"
 //
 #if defined(TIMEMORY_USE_DEPRECATED)
@@ -48,11 +49,6 @@
 //
 #include "timemory/variadic/auto_base_bundle.cpp"
 #include "timemory/variadic/component_bundle.cpp"
-#include "timemory/variadic/component_list.cpp"
-#include "timemory/variadic/component_tuple.cpp"
 #include "timemory/variadic/functional.cpp"
 #include "timemory/variadic/lightweight_tuple.cpp"
 //
-#if defined(TIMEMORY_USE_DEPRECATED)
-#    include "timemory/deprecated/component_hybrid.cpp"
-#endif

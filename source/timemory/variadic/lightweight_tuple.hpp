@@ -73,8 +73,8 @@ protected:
     using bundle_type = stack_bundle<available_t<type_list<Types...>>>;
     using impl_type   = typename bundle_type::impl_type;
 
-    template <typename T, typename... U>
-    friend class base_bundle;
+    template <typename... Tp>
+    friend class impl::base_bundle;
 
 public:
     using captured_location_t = source_location::captured;
@@ -115,7 +115,7 @@ public:
     }
 
     template <typename T, typename... U>
-    using quirk_config = mpl::impl::quirk_config<T, type_list<Types...>, U...>;
+    using quirk_config = tim::variadic::impl::quirk_config<T, type_list<Types...>, U...>;
 
 public:
     lightweight_tuple() = default;
@@ -202,8 +202,8 @@ public:
     template <typename FuncT, typename... Args>
     decltype(auto) execute(FuncT&& func, Args&&... args)
     {
-        return bundle::execute(*this,
-                               std::forward<FuncT>(func)(std::forward<Args>(args)...));
+        return mpl::execute(*this,
+                            std::forward<FuncT>(func)(std::forward<Args>(args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -495,15 +495,15 @@ public:
         apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         IF_CONSTEXPR(PrintPrefix)
         {
-            update_width();
+            bundle_type::update_width();
             auto _key = key();
             if(_key.length() > 0)
             {
                 std::stringstream ss_prefix;
                 std::stringstream ss_id;
                 ss_id << get_prefix() << " " << std::left << _key;
-                ss_prefix << std::setw(output_width()) << std::left << ss_id.str()
-                          << " : ";
+                ss_prefix << std::setw(bundle_type::output_width()) << std::left
+                          << ss_id.str() << " : ";
                 os << ss_prefix.str();
             }
         }
@@ -559,11 +559,6 @@ public:
     const bool& store() const { return bundle_type::store(); }
     auto        prefix() const { return bundle_type::prefix(); }
     auto        get_prefix() const { return bundle_type::get_prefix(); }
-
-protected:
-    static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }
-    void           update_width() const { bundle_type::update_width(); }
-    void compute_width(const string_t& _key) const { bundle_type::compute_width(_key); }
 
 protected:
     // protected member functions

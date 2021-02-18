@@ -94,7 +94,7 @@ struct add_statistics
     //
     template <typename StatsT, typename U = type,
               enable_if_t<enabled_statistics<U, StatsT>::value, int> = 0>
-    TIMEMORY_HOT_INLINE add_statistics(const U& rhs, StatsT& stats);
+    TIMEMORY_HOT add_statistics(const U& rhs, StatsT& stats);
 
     //----------------------------------------------------------------------------------//
     // if statistics is not enabled

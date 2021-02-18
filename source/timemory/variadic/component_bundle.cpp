@@ -525,15 +525,6 @@ component_bundle<Tag, Types...>::operator+=(this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
-void
-component_bundle<Tag, Types...>::print_storage()
-{
-    apply_v::type_access<operation::print_storage, data_type>();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename... Types>
 typename component_bundle<Tag, Types...>::data_type&
 component_bundle<Tag, Types...>::data()
 {

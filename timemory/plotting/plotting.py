@@ -284,7 +284,6 @@ class timemory_data:
                 inst = inp[key]
             return inst
 
-        self.is_transient = process(obj, "is_transient")
         self.laps = process(obj, "laps")
         self.data = process(obj, "repr_data", ["repr"])
         self.value = process(obj, "value")
@@ -302,10 +301,7 @@ class timemory_data:
         _min = (0.01 * params.min_percent) * params.max_value
 
         # function for checking passes test
-        if self.is_transient:
-            return abs(self.accum) > _min
-        else:
-            return abs(self.value) > _min
+        return abs(self.accum) > _min
 
     # ------------------------------------------------------------------------ #
     def __str__(self):
@@ -432,9 +428,7 @@ class plot_data:
         # calc max values
         for key, obj in self.timemory_functions.items():
             _max = self.plot_params.max_value
-            _val = obj.value
-            if obj.is_transient:
-                _val = obj.accum
+            _val = obj.accum
             if isinstance(_val, list):
                 self.plot_params.max_value = max([_max] + _val)
             else:

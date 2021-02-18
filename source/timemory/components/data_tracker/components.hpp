@@ -31,6 +31,7 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/data_tracker/types.hpp"
+#include "timemory/data/handler.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
@@ -161,11 +162,11 @@ private:
     // private aliases
     template <typename T, typename U = int>
     using enable_if_acceptable_t =
-        enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value, U>;
+        enable_if_t<concepts::is_acceptable_conversion<decay_t<T>, InpT>::value, U>;
 
     template <typename FuncT, typename T, typename U = int>
     using enable_if_acceptable_and_func_t =
-        enable_if_t<concepts::is_acceptable_conversion<T, InpT>::value &&
+        enable_if_t<concepts::is_acceptable_conversion<decay_t<T>, InpT>::value &&
                         std::is_function<FuncT>::value,
                     U>;
 
@@ -215,7 +216,10 @@ public:
     /// map of the secondary entries. When TIMEMORY_ADD_SECONDARY is enabled
     /// contents of this map will be added as direct children of the current
     /// node in the call-graph.
-    auto get_secondary() { return (m_secondary) ? *m_secondary : secondary_map_t{}; }
+    auto get_secondary() const
+    {
+        return (m_secondary) ? *m_secondary : secondary_map_t{};
+    }
 
     using base_type::get_depth_change;
     using base_type::get_is_flat;
@@ -235,28 +239,27 @@ public:
     //----------------------------------------------------------------------------------//
     /// store some data. Uses \ref tim::data::handler for the type.
     template <typename T>
-    void store(const T& val, enable_if_acceptable_t<T, int> = 0);
+    void store(T&& val, enable_if_acceptable_t<T, int> = 0);
 
     /// overload which takes a handler to ensure proper overload resolution
     template <typename T>
-    void store(handler_type&&, const T& val, enable_if_acceptable_t<T, int> = 0);
+    void store(handler_type&&, T&& val, enable_if_acceptable_t<T, int> = 0);
 
     /// overload which uses a lambda to bypass the default behavior of how the
     /// handler updates the values
     template <typename FuncT, typename T>
-    auto store(FuncT&& f, const T& val, enable_if_acceptable_t<T, int> = 0)
+    auto store(FuncT&& f, T&& val, enable_if_acceptable_t<T, int> = 0)
         -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f),
-                                                       val),
+                                                       std::forward<T>(val)),
                     void());
 
     /// overload which uses a lambda to bypass the default behavior of how the
     /// handler updates the values and takes a handler to ensure proper overload
     /// resolution
     template <typename FuncT, typename T>
-    auto store(handler_type&&, FuncT&& f, const T& val,
-               enable_if_acceptable_t<T, int> = 0)
+    auto store(handler_type&&, FuncT&& f, T&& val, enable_if_acceptable_t<T, int> = 0)
         -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f),
-                                                       val),
+                                                       std::forward<T>(val)),
                     void());
 
     //----------------------------------------------------------------------------------//
@@ -269,22 +272,22 @@ public:
     /// called, the value is updated with the difference of the value provided to
     /// `mark_end` and the temporary stored during `mark_begin`.
     template <typename T>
-    void mark_begin(const T& val, enable_if_acceptable_t<T, int> = 0);
+    void mark_begin(T&& val, enable_if_acceptable_t<T, int> = 0);
 
     /// overload which takes a handler to ensure proper overload resolution
     template <typename T>
-    void mark_begin(handler_type&&, const T& val, enable_if_acceptable_t<T, int> = 0);
+    void mark_begin(handler_type&&, T&& val, enable_if_acceptable_t<T, int> = 0);
 
     /// overload which uses a lambda to bypass the default behavior of how the
     /// handler updates the values
     template <typename FuncT, typename T>
-    void mark_begin(FuncT&& f, const T& val, enable_if_acceptable_t<T, int> = 0);
+    void mark_begin(FuncT&& f, T&& val, enable_if_acceptable_t<T, int> = 0);
 
     /// overload which uses a lambda to bypass the default behavior of how the
     /// handler updates the values and takes a handler to ensure proper
     /// overload resolution
     template <typename FuncT, typename T>
-    void mark_begin(handler_type&&, FuncT&& f, const T& val,
+    void mark_begin(handler_type&&, FuncT&& f, T&& val,
                     enable_if_acceptable_t<T, int> = 0);
 
     //----------------------------------------------------------------------------------//
@@ -299,23 +302,22 @@ public:
     /// to call `mark_end` without calling `mark_begin` but the result will effectively
     /// be a more expensive version of calling `store`.
     template <typename T>
-    void mark_end(const T& val, enable_if_acceptable_t<T, int> = 0);
+    void mark_end(T&& val, enable_if_acceptable_t<T, int> = 0);
 
     /// overload which takes a handler to ensure proper overload resolution
     template <typename T>
-    void mark_end(handler_type&&, const T& val, enable_if_acceptable_t<T, int> = 0);
+    void mark_end(handler_type&&, T&& val, enable_if_acceptable_t<T, int> = 0);
 
     /// overload which uses a lambda to bypass the default behavior of how the
     /// handler updates the values
     template <typename FuncT, typename T>
-    void mark_end(FuncT&& f, const T& val, enable_if_acceptable_t<T, int> = 0);
+    void mark_end(FuncT&& f, T&& val, enable_if_acceptable_t<T, int> = 0);
 
     /// overload which uses a lambda to bypass the default behavior of how the
     /// handler updates the values and takes a handler to ensure proper
     /// overload resolution
     template <typename FuncT, typename T>
-    void mark_end(handler_type&&, FuncT&& f, const T& val,
-                  enable_if_acceptable_t<T, int> = 0);
+    void mark_end(handler_type&&, FuncT&& f, T&& val, enable_if_acceptable_t<T, int> = 0);
 
     //----------------------------------------------------------------------------------//
     //
@@ -327,18 +329,18 @@ public:
     /// direct children of the current node in the call-graph. This is useful
     /// for finer-grained details that might not always be desirable to display
     template <typename T>
-    this_type* add_secondary(const std::string& _key, const T& val,
+    this_type* add_secondary(const std::string& _key, T&& val,
                              enable_if_acceptable_t<T, int> = 0);
 
     /// overload which takes a handler to ensure proper overload resolution
     template <typename T>
-    this_type* add_secondary(const std::string& _key, handler_type&& h, const T& val,
+    this_type* add_secondary(const std::string& _key, handler_type&& h, T&& val,
                              enable_if_acceptable_t<T, int> = 0);
 
     /// overload which uses a lambda to bypass the default behavior of how the
     /// handler updates the values
     template <typename FuncT, typename T>
-    this_type* add_secondary(const std::string& _key, FuncT&& f, const T& val,
+    this_type* add_secondary(const std::string& _key, FuncT&& f, T&& val,
                              enable_if_acceptable_and_func_t<FuncT, T, int> = 0);
 
     /// overload which uses a lambda to bypass the default behavior of how the
@@ -346,8 +348,7 @@ public:
     /// overload resolution
     template <typename FuncT, typename T>
     this_type* add_secondary(const std::string& _key, handler_type&& h, FuncT&& f,
-                             const T& val,
-                             enable_if_acceptable_and_func_t<FuncT, T, int> = 0);
+                             T&& val, enable_if_acceptable_and_func_t<FuncT, T, int> = 0);
 
     //----------------------------------------------------------------------------------//
     //
@@ -448,9 +449,9 @@ data_tracker<InpT, Tag>::description()
 template <typename InpT, typename Tag>
 template <typename T>
 void
-data_tracker<InpT, Tag>::store(const T& val, enable_if_acceptable_t<T, int>)
+data_tracker<InpT, Tag>::store(T&& val, enable_if_acceptable_t<T, int>)
 {
-    handler_type::store(*this, compute_type::divide(val, get_unit()));
+    handler_type::store(*this, compute_type::divide(std::forward<T>(val), get_unit()));
     if(!get_is_running())
         ++laps;
 }
@@ -458,10 +459,9 @@ data_tracker<InpT, Tag>::store(const T& val, enable_if_acceptable_t<T, int>)
 template <typename InpT, typename Tag>
 template <typename T>
 void
-data_tracker<InpT, Tag>::store(handler_type&&, const T& val,
-                               enable_if_acceptable_t<T, int>)
+data_tracker<InpT, Tag>::store(handler_type&&, T&& val, enable_if_acceptable_t<T, int>)
 {
-    handler_type::store(*this, compute_type::divide(val, get_unit()));
+    handler_type::store(*this, compute_type::divide(std::forward<T>(val), get_unit()));
     if(!get_is_running())
         ++laps;
 }
@@ -469,12 +469,13 @@ data_tracker<InpT, Tag>::store(handler_type&&, const T& val,
 template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 auto
-data_tracker<InpT, Tag>::store(FuncT&& f, const T& val, enable_if_acceptable_t<T, int>)
-    -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f), val),
+data_tracker<InpT, Tag>::store(FuncT&& f, T&& val, enable_if_acceptable_t<T, int>)
+    -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f),
+                                                   std::forward<T>(val)),
                 void())
 {
     handler_type::store(*this, std::forward<FuncT>(f),
-                        compute_type::divide(val, get_unit()));
+                        compute_type::divide(std::forward<T>(val), get_unit()));
     if(!get_is_running())
         ++laps;
 }
@@ -482,13 +483,14 @@ data_tracker<InpT, Tag>::store(FuncT&& f, const T& val, enable_if_acceptable_t<T
 template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 auto
-data_tracker<InpT, Tag>::store(handler_type&&, FuncT&& f, const T& val,
+data_tracker<InpT, Tag>::store(handler_type&&, FuncT&& f, T&& val,
                                enable_if_acceptable_t<T, int>)
-    -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f), val),
+    -> decltype(std::declval<handler_type>().store(*this, std::forward<FuncT>(f),
+                                                   std::forward<T>(val)),
                 void())
 {
     handler_type::store(*this, std::forward<FuncT>(f),
-                        compute_type::divide(val, get_unit()));
+                        compute_type::divide(std::forward<T>(val), get_unit()));
     if(!get_is_running())
         ++laps;
 }
@@ -496,17 +498,18 @@ data_tracker<InpT, Tag>::store(handler_type&&, FuncT&& f, const T& val,
 template <typename InpT, typename Tag>
 template <typename T>
 void
-data_tracker<InpT, Tag>::mark_begin(const T& val, enable_if_acceptable_t<T, int>)
+data_tracker<InpT, Tag>::mark_begin(T&& val, enable_if_acceptable_t<T, int>)
 {
-    handler_type::begin(get_temporary(), compute_type::divide(val, get_unit()));
+    handler_type::begin(get_temporary(),
+                        compute_type::divide(std::forward<T>(val), get_unit()));
 }
 //
 template <typename InpT, typename Tag>
 template <typename T>
 void
-data_tracker<InpT, Tag>::mark_end(const T& val, enable_if_acceptable_t<T, int>)
+data_tracker<InpT, Tag>::mark_end(T&& val, enable_if_acceptable_t<T, int>)
 {
-    handler_type::end(*this, compute_type::divide(val, get_unit()));
+    handler_type::end(*this, compute_type::divide(std::forward<T>(val), get_unit()));
     if(!get_is_running())
         ++laps;
 }
@@ -514,19 +517,19 @@ data_tracker<InpT, Tag>::mark_end(const T& val, enable_if_acceptable_t<T, int>)
 template <typename InpT, typename Tag>
 template <typename T>
 void
-data_tracker<InpT, Tag>::mark_begin(handler_type&&, const T& val,
+data_tracker<InpT, Tag>::mark_begin(handler_type&&, T&& val,
                                     enable_if_acceptable_t<T, int>)
 {
-    handler_type::begin(get_temporary(), compute_type::divide(val, get_unit()));
+    handler_type::begin(get_temporary(),
+                        compute_type::divide(std::forward<T>(val), get_unit()));
 }
 //
 template <typename InpT, typename Tag>
 template <typename T>
 void
-data_tracker<InpT, Tag>::mark_end(handler_type&&, const T& val,
-                                  enable_if_acceptable_t<T, int>)
+data_tracker<InpT, Tag>::mark_end(handler_type&&, T&& val, enable_if_acceptable_t<T, int>)
 {
-    handler_type::end(*this, compute_type::divide(val, get_unit()));
+    handler_type::end(*this, compute_type::divide(std::forward<T>(val), get_unit()));
     if(!get_is_running())
         ++laps;
 }
@@ -534,42 +537,41 @@ data_tracker<InpT, Tag>::mark_end(handler_type&&, const T& val,
 template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 void
-data_tracker<InpT, Tag>::mark_begin(FuncT&& f, const T& val,
+data_tracker<InpT, Tag>::mark_begin(FuncT&& f, T&& val, enable_if_acceptable_t<T, int>)
+{
+    handler_type::begin(get_temporary(), std::forward<FuncT>(f),
+                        compute_type::divide(std::forward<T>(val), get_unit()));
+}
+//
+template <typename InpT, typename Tag>
+template <typename FuncT, typename T>
+void
+data_tracker<InpT, Tag>::mark_end(FuncT&& f, T&& val, enable_if_acceptable_t<T, int>)
+{
+    handler_type::end(*this, std::forward<FuncT>(f),
+                      compute_type::divide(std::forward<T>(val), get_unit()));
+    if(!get_is_running())
+        ++laps;
+}
+//
+template <typename InpT, typename Tag>
+template <typename FuncT, typename T>
+void
+data_tracker<InpT, Tag>::mark_begin(handler_type&&, FuncT&& f, T&& val,
                                     enable_if_acceptable_t<T, int>)
 {
     handler_type::begin(get_temporary(), std::forward<FuncT>(f),
-                        compute_type::divide(val, get_unit()));
+                        compute_type::divide(std::forward<T>(val), get_unit()));
 }
 //
 template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 void
-data_tracker<InpT, Tag>::mark_end(FuncT&& f, const T& val, enable_if_acceptable_t<T, int>)
-{
-    handler_type::end(*this, std::forward<FuncT>(f),
-                      compute_type::divide(val, get_unit()));
-    if(!get_is_running())
-        ++laps;
-}
-//
-template <typename InpT, typename Tag>
-template <typename FuncT, typename T>
-void
-data_tracker<InpT, Tag>::mark_begin(handler_type&&, FuncT&& f, const T& val,
-                                    enable_if_acceptable_t<T, int>)
-{
-    handler_type::begin(get_temporary(), std::forward<FuncT>(f),
-                        compute_type::divide(val, get_unit()));
-}
-//
-template <typename InpT, typename Tag>
-template <typename FuncT, typename T>
-void
-data_tracker<InpT, Tag>::mark_end(handler_type&&, FuncT&& f, const T& val,
+data_tracker<InpT, Tag>::mark_end(handler_type&&, FuncT&& f, T&& val,
                                   enable_if_acceptable_t<T, int>)
 {
     handler_type::end(*this, std::forward<FuncT>(f),
-                      compute_type::divide(val, get_unit()));
+                      compute_type::divide(std::forward<T>(val), get_unit()));
     if(!get_is_running())
         ++laps;
 }
@@ -577,12 +579,12 @@ data_tracker<InpT, Tag>::mark_end(handler_type&&, FuncT&& f, const T& val,
 template <typename InpT, typename Tag>
 template <typename T>
 data_tracker<InpT, Tag>*
-data_tracker<InpT, Tag>::add_secondary(const std::string& _key, const T& val,
+data_tracker<InpT, Tag>::add_secondary(const std::string& _key, T&& val,
                                        enable_if_acceptable_t<T, int>)
 {
     this_type _tmp;
     start_t   _start(_tmp);
-    _tmp.store(val);
+    _tmp.store(std::forward<T>(val));
     stop_t _stop(_tmp);
     auto&  _map = *get_secondary_map();
     _map.insert({ _key, _tmp });
@@ -592,12 +594,12 @@ data_tracker<InpT, Tag>::add_secondary(const std::string& _key, const T& val,
 template <typename InpT, typename Tag>
 template <typename T>
 data_tracker<InpT, Tag>*
-data_tracker<InpT, Tag>::add_secondary(const std::string& _key, handler_type&& h,
-                                       const T& val, enable_if_acceptable_t<T, int>)
+data_tracker<InpT, Tag>::add_secondary(const std::string& _key, handler_type&& h, T&& val,
+                                       enable_if_acceptable_t<T, int>)
 {
     this_type _tmp;
     start_t   _start(_tmp);
-    _tmp.store(std::forward<handler_type>(h), val);
+    _tmp.store(std::forward<handler_type>(h), std::forward<T>(val));
     stop_t _stop(_tmp);
     auto&  _map = *get_secondary_map();
     _map.insert({ _key, _tmp });
@@ -607,12 +609,12 @@ data_tracker<InpT, Tag>::add_secondary(const std::string& _key, handler_type&& h
 template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 data_tracker<InpT, Tag>*
-data_tracker<InpT, Tag>::add_secondary(const std::string& _key, FuncT&& f, const T& val,
+data_tracker<InpT, Tag>::add_secondary(const std::string& _key, FuncT&& f, T&& val,
                                        enable_if_acceptable_and_func_t<FuncT, T, int>)
 {
     this_type _tmp;
     start_t   _start(_tmp);
-    _tmp.store(std::forward<FuncT>(f), val);
+    _tmp.store(std::forward<FuncT>(f), std::forward<T>(val));
     stop_t _stop(_tmp);
     auto&  _map = *get_secondary_map();
     _map.insert({ _key, _tmp });
@@ -623,12 +625,13 @@ template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 data_tracker<InpT, Tag>*
 data_tracker<InpT, Tag>::add_secondary(const std::string& _key, handler_type&& h,
-                                       FuncT&& f, const T& val,
+                                       FuncT&& f, T&& val,
                                        enable_if_acceptable_and_func_t<FuncT, T, int>)
 {
     this_type _tmp;
     start_t   _start(_tmp);
-    _tmp.store(std::forward<handler_type>(h), std::forward<FuncT>(f), val);
+    _tmp.store(std::forward<handler_type>(h), std::forward<FuncT>(f),
+               std::forward<T>(val));
     stop_t _stop(_tmp);
     auto&  _map = *get_secondary_map();
     _map.insert({ _key, _tmp });

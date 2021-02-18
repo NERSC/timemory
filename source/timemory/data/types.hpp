@@ -22,40 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/variadic/component_hybrid.cpp
- * \brief Implementation for various component_hybrid member functions
- *
- */
+#pragma once
 
-#include "timemory/variadic/component_hybrid.hpp"
-#include "timemory/mpl/filters.hpp"
+#include "timemory/api.hpp"
 
-//======================================================================================//
-//
-//      tim::get functions
-//
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-
-template <typename TupleT, typename ListT>
-auto
-get(const component_hybrid<TupleT, ListT>& _obj)
+namespace data
 {
-    return _obj.get();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename TupleT, typename ListT>
-auto
-get_labeled(const component_hybrid<TupleT, ListT>& _obj)
-{
-    return _obj.get_labeled();
-}
-
-//--------------------------------------------------------------------------------------//
-
+//
+template <typename V, typename Tag = TIMEMORY_API>
+struct handler;
+//
+}  // namespace data
 }  // namespace tim
-
-//--------------------------------------------------------------------------------------//

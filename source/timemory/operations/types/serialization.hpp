@@ -65,7 +65,6 @@ struct serialization
             }
         };
 
-        try_catch("is_transient", obj.get_is_transient());
         try_catch("laps", obj.get_laps());
         try_catch("value", obj.get_value());
         IF_CONSTEXPR(trait::base_has_accum<Tp>::value)

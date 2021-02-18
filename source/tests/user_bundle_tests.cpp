@@ -281,7 +281,7 @@ TEST_F(user_bundle_tests, comp_bundle)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(user_bundle_tests, get_bundle)
+TEST_F(user_bundle_tests, get)
 {
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 
@@ -291,6 +291,53 @@ TEST_F(user_bundle_tests, get_bundle)
     peak_rss*   pr = nullptr;
 
     comp_bundle_t _instance{ details::get_test_name() };
+
+    _instance.start();
+    ret += details::fibonacci(35);
+    details::consume(250);
+    _instance.stop();
+
+    wc = _instance.get<wall_clock>();
+    cu = _instance.get<cpu_util>();
+    cc = _instance.get<cpu_clock>();
+    pr = _instance.get<peak_rss>();
+
+    // check everything succeeded
+    EXPECT_NE(wc, nullptr) << _instance;
+    EXPECT_NE(cu, nullptr) << _instance;
+    EXPECT_NE(cc, nullptr) << _instance;
+    EXPECT_NE(pr, nullptr) << _instance;
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    // use assert here to ensure we can dereference
+    ASSERT_NE(wc, nullptr) << _instance;
+    ASSERT_NE(cu, nullptr) << _instance;
+    ASSERT_NE(cc, nullptr) << _instance;
+    ASSERT_NE(pr, nullptr) << _instance;
+
+    ASSERT_GT(wc->get(), 0.0);
+    ASSERT_GT(cu->get(), 0.0);
+    ASSERT_GT(cc->get(), 0.0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(user_bundle_tests, get_bundle)
+{
+    printf("TEST_NAME: %s\n", details::get_test_name().c_str());
+
+    wall_clock* wc = nullptr;
+    cpu_util*   cu = nullptr;
+    cpu_clock*  cc = nullptr;
+    peak_rss*   pr = nullptr;
+
+    // test insert + get of a component_tuple within a user_bundle within a
+    // component_tuple
+    user_global_bundle::reset();
+    tim::component_tuple<user_global_bundle> _instance{ details::get_test_name() };
+    _instance.get<user_global_bundle>()
+        ->insert<tim::component_tuple<wall_clock, cpu_util, cpu_clock, peak_rss>>();
 
     _instance.start();
     ret += details::fibonacci(35);

@@ -61,6 +61,8 @@ namespace tim
 {
 namespace ert
 {
+using namespace memory;
+
 //--------------------------------------------------------------------------------------//
 //  measure floating-point or integer operations
 //

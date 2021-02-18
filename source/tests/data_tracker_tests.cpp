@@ -152,6 +152,10 @@ protected:
 
 TEST_F(data_tracker_tests, iteration_tracker)
 {
+    tim::settings::collapse_processes() = true;
+    tim::settings::collapse_threads()   = true;
+    tim::settings::add_secondary()      = true;
+
     struct iteration_tag
     {};
 
@@ -167,16 +171,36 @@ TEST_F(data_tracker_tests, iteration_tracker)
     using tuple_t =
         tim::auto_tuple<wall_clock, iteration_count_tracker_t, iteration_value_tracker_t>;
 
-    double       err      = std::numeric_limits<double>::max();
+    double       err      = 5.e3;
     const double tol      = 1.0e-3;
     uint64_t     num_iter = 0;
 
-    tuple_t t(details::get_test_name());
+    tuple_t t{ details::get_test_name() };
     while(err > tol)
     {
-        err = details::get_random_value<double>(0.0, 10.0);
-        t.store(std::plus<uint64_t>{}, 1);
-        t.store(iteration_value_handle_t{}, err);
+        err -= details::get_random_value<double>(0.0, err * tol);
+
+        // test that ((1 + 1 - 1) * 2) / 2 == 1
+        auto _last = t.store(std::plus<uint64_t>{}, 1)
+                         .store(std::plus<uint64_t>{}, 1)
+                         .store(std::minus<uint64_t>{}, 1)
+                         .get<iteration_count_tracker_t>()
+                         ->get();
+
+        auto _curr = t.store([](uint64_t lhs, uint64_t rhs) { return lhs * rhs; },
+                             static_cast<uint64_t>(2))
+                         .get<iteration_count_tracker_t>()
+                         ->get();
+        EXPECT_NE(_last, _curr) << "num_iter = " << num_iter << ", " << t;
+
+        uint64_t v = 2;
+        _last =
+            t.store(std::divides<uint64_t>{}, v).get<iteration_count_tracker_t>()->get();
+        EXPECT_NE(_last, _curr) << "num_iter = " << num_iter << ", " << t;
+
+        t.store(iteration_value_handle_t{}, err)
+            .add_secondary("error_per_iter", iteration_value_handle_t{},
+                           err / (num_iter + 1));
         ++num_iter;
     }
     t.stop();
@@ -185,10 +209,16 @@ TEST_F(data_tracker_tests, iteration_tracker)
     std::cout << "num_iter : " << num_iter << std::endl;
     std::cout << "error    : " << err << "\n" << std::endl;
 
-    ASSERT_TRUE(num_iter != 0);
-    ASSERT_TRUE(t.get<iteration_count_tracker_t>()->get() == num_iter);
-    ASSERT_TRUE(t.get<iteration_value_tracker_t>()->get() < tol);
+    EXPECT_NE(num_iter, 0);
+    EXPECT_EQ(t.get<iteration_count_tracker_t>()->get(), num_iter);
+    EXPECT_LT(t.get<iteration_value_tracker_t>()->get(), tol);
     EXPECT_NEAR(t.get<iteration_value_tracker_t>()->get(), err, 1.0e-6);
+
+    auto itrv_storage = tim::storage<iteration_value_tracker_t>::instance()->get();
+    EXPECT_EQ(itrv_storage.size(), 2);
+    EXPECT_EQ(itrv_storage.at(0).prefix().substr(4), details::get_test_name());
+    EXPECT_EQ(itrv_storage.at(1).prefix(), std::string{ ">>> |_error_per_iter" });
+    EXPECT_EQ(itrv_storage.at(1).depth(), 1);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -392,14 +422,19 @@ TEST_F(data_tracker_tests, convergence_test)
     ASSERT_EQ(itr_storage.size(), nthreads);
     ASSERT_EQ(err_storage.size(), nthreads);
 
+    for(size_t i = 0; i < nthreads; ++i)
+    {
+        std::cout << itr_storage.at(i).data() << std::endl;
+    }
+
     std::sort(itr_storage.begin(), itr_storage.end(), _compare);
     std::sort(err_storage.begin(), err_storage.end(), _compare);
 
     for(size_t i = 0; i < nthreads; ++i)
     {
-        auto _calc_iter   = num_iters.at(i);
-        auto _expect_iter = itr_storage.at(i).data().get();
-        EXPECT_EQ(_calc_iter, _expect_iter) << itr_storage.at(i).data();
+        auto _true_iter = num_iters.at(i);
+        auto _meas_iter = itr_storage.at(i).data().get();
+        EXPECT_EQ(_true_iter, _meas_iter) << itr_storage.at(i).data();
     }
 }
 

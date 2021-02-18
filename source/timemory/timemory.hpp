@@ -362,15 +362,6 @@ struct dummy
 //
 //======================================================================================//
 //
-namespace tim
-{
-// deprecated namespace
-namespace variadic
-{
-using namespace quirk;
-}
-//
-}  // namespace tim
 
 #    include "timemory/variadic/definition.hpp"
 #endif  // ! defined(DISABLE_TIMEMORY)

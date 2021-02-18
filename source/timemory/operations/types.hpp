@@ -259,6 +259,11 @@ struct set_scope;
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
+struct set_state;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
 struct push_node;
 //
 //--------------------------------------------------------------------------------------//
@@ -305,14 +310,14 @@ struct set_started
     TIMEMORY_DEFAULT_OBJECT(set_started)
 
     template <typename Up>
-    TIMEMORY_HOT_INLINE auto operator()(Up& obj) const
+    TIMEMORY_HOT auto operator()(Up& obj) const
     {
         return sfinae(obj, 0);
     }
 
 private:
     template <typename Up>
-    static TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int) -> decltype(obj.set_started())
+    static TIMEMORY_HOT auto sfinae(Up& obj, int) -> decltype(obj.set_started())
     {
         return obj.set_started();
     }
@@ -336,14 +341,14 @@ struct set_stopped
     TIMEMORY_DEFAULT_OBJECT(set_stopped)
 
     template <typename Up>
-    TIMEMORY_HOT_INLINE auto operator()(Up& obj) const
+    TIMEMORY_HOT auto operator()(Up& obj) const
     {
         return sfinae(obj, 0);
     }
 
 private:
     template <typename Up>
-    static TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int) -> decltype(obj.set_stopped())
+    static TIMEMORY_HOT auto sfinae(Up& obj, int) -> decltype(obj.set_stopped())
     {
         return obj.set_stopped();
     }
@@ -367,7 +372,7 @@ struct is_running
     TIMEMORY_DEFAULT_OBJECT(is_running)
 
     template <typename Up>
-    TIMEMORY_HOT_INLINE auto operator()(const Up& obj) const
+    TIMEMORY_HOT auto operator()(const Up& obj) const
     {
         return sfinae(obj, 0);
     }
@@ -391,6 +396,28 @@ private:
         return DefaultValue;
     }
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_depth_change
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not the component triggered a depth change when it
+/// was push to the call-stack or when it was popped from the call-stack
+template <typename T>
+struct set_depth_change;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_is_flat
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not the component triggered a depth change when it
+/// was push to the call-stack or when it was popped from the call-stack
+template <typename T>
+struct set_is_flat;
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -31,6 +31,7 @@
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/quirks.hpp"
 #include "timemory/mpl/stl.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"

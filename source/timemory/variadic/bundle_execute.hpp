@@ -32,7 +32,7 @@
 
 namespace tim
 {
-namespace bundle
+namespace mpl
 {
 //
 template <typename BundleT, typename FuncT, typename... Args>
@@ -365,5 +365,5 @@ private:
     BundleT& m_bundle;
 };
 //
-}  // namespace bundle
+}  // namespace mpl
 }  // namespace tim

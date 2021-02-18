@@ -25,10 +25,7 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_DEPRECATED)
-#    include "timemory/deprecated/auto_hybrid.hpp"
-#else
-#    include "timemory/variadic/auto_bundle.hpp"
+#include "timemory/variadic/auto_bundle.hpp"
 
 namespace tim
 {
@@ -44,6 +41,9 @@ class auto_hybrid<TupleT<TupleTypes...>, ListT<ListTypes...>>
 public:
     using base_type =
         auto_bundle<project::timemory, TupleTypes..., std::add_pointer_t<ListTypes>...>;
+    // using component_type = component_hybrid<TupleT<TupleTypes...>,
+    // ListT<ListTypes...>>;
+
     // ...
     template <typename... Args>
     auto_hybrid(Args&&... args)
@@ -52,5 +52,3 @@ public:
 };
 //
 }  // namespace tim
-
-#endif  // !defined(TIMEMORY_USE_DEPRECATED)

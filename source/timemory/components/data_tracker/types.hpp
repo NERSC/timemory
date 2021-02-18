@@ -25,7 +25,7 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
-#include "timemory/data/handler.hpp"
+#include "timemory/data/types.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/type_traits.hpp"
