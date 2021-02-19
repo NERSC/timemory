@@ -1010,9 +1010,23 @@ storage<Type, true>::get_shared_manager()
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 
-        bool   _is_master = singleton_t::is_master(this);
-        auto   _cleanup   = [&]() {};
-        func_t _finalize  = [&]() {
+        auto _instance_id = m_instance_id;
+        bool _is_master   = singleton_t::is_master(this);
+        auto _sync        = [&]() {
+            if(m_graph_data_instance)
+                this->data().sync_sea_level();
+        };
+        auto _cleanup = [_is_master, _instance_id]() {
+            if(_is_master)
+                return;
+            if(manager::master_instance())
+                manager::master_instance()->remove_synchronization(demangle<Type>(),
+                                                                   _instance_id);
+            if(manager::instance())
+                manager::instance()->remove_synchronization(demangle<Type>(),
+                                                            _instance_id);
+        };
+        func_t _finalize = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
@@ -1047,6 +1061,13 @@ storage<Type, true>::get_shared_manager()
                 trait::runtime_enabled<Type>::set(false);
         };
 
+        if(!_is_master)
+        {
+            manager::master_instance()->add_synchronization(
+                demangle<Type>(), m_instance_id, std::move(_sync));
+            m_manager->add_synchronization(demangle<Type>(), m_instance_id,
+                                           std::move(_sync));
+        }
         m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
                                  std::move(_finalize), _is_master);
     }

@@ -328,6 +328,22 @@ public:
     template <typename Tp, typename Vp, typename Sp = string_t>
     auto insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env = {});
 
+    /// \tparam API Tagged type
+    ///
+    /// \brief Make a copy of the current settings and return a new instance whose values
+    /// can be modified, used, and then discarded. The values modified do not change
+    /// any settings accessed through static methods or the non-templated instance method.
+    /// E.g. `tim::settings::enabled()` will not be affected by changes to settings
+    /// instance returned by this method.
+    template <typename Tag>
+    static pointer_t push();
+
+    /// \tparam API Tagged type
+    ///
+    /// \brief Restore the settings from a previous push operations.
+    template <typename Tag>
+    static pointer_t pop();
+
 protected:
     template <typename Archive, typename Tp>
     TIMEMORY_NODISCARD auto get_serialize_pair() const  // NOLINT
@@ -356,6 +372,24 @@ protected:
     }
 
 private:
+    using settings_stack_t = std::stack<pointer_t>;
+
+    template <typename Tag>
+    static TIMEMORY_HOT pointer_t& private_shared_instance(
+        enable_if_t<std::is_same<Tag, TIMEMORY_API>::value, int> = 0);
+
+    template <typename Tag>
+    static TIMEMORY_HOT pointer_t& private_shared_instance(
+        enable_if_t<!std::is_same<Tag, TIMEMORY_API>::value, long> = 0);
+
+    template <typename Tag>
+    static settings_stack_t& get_stack()
+    {
+        static auto _instance = settings_stack_t{};
+        return _instance;
+    }
+
+private:
     data_type   m_data         = {};
     strvector_t m_order        = {};
     strvector_t m_command_line = {};
@@ -374,7 +408,7 @@ private:
     void initialize_dart() TIMEMORY_VISIBILITY("hidden");
 };
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Tag>
 std::time_t* settings::get_launch_time(Tag)
@@ -384,27 +418,88 @@ std::time_t* settings::get_launch_time(Tag)
     return _time;
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag>
+std::shared_ptr<settings>&
+settings::private_shared_instance(
+    enable_if_t<std::is_same<Tag, TIMEMORY_API>::value, int>)
+{
+    // this is the original
+    static std::shared_ptr<settings> _instance = std::make_shared<settings>();
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag>
+std::shared_ptr<settings>&
+settings::private_shared_instance(
+    enable_if_t<!std::is_same<Tag, TIMEMORY_API>::value, long>)
+{
+    // make a copy of the original
+    static std::shared_ptr<settings> _instance =
+        std::make_shared<settings>(*private_shared_instance<TIMEMORY_API>());
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag>
+std::shared_ptr<settings>
+settings::push()
+{
+    // ensure the non-template methods have their own static copies
+    static auto _discard_ptr  = instance();
+    static auto _discard_sptr = instance<TIMEMORY_API>();
+    consume_parameters(_discard_ptr, _discard_sptr);
+
+    auto _old = shared_instance<Tag>();
+    get_stack<Tag>().push(_old);
+    auto _new                      = std::make_shared<settings>(*_old);
+    private_shared_instance<Tag>() = _new;
+    return _new;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag>
+std::shared_ptr<settings>
+settings::pop()
+{
+    auto& _stack = get_stack<Tag>();
+    if(_stack.empty())
+    {
+        PRINT_HERE("%s", "Ignoring settings::pop() on empty stack");
+        return shared_instance<Tag>();
+    }
+
+    auto _top                      = _stack.top();
+    private_shared_instance<Tag>() = _top;
+    _stack.pop();
+    return _top;
+}
+//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Tag>
 std::shared_ptr<settings>
 settings::shared_instance()
 {
-    static std::shared_ptr<settings> _instance = std::make_shared<settings>();
+    static std::shared_ptr<settings>& _instance = private_shared_instance<Tag>();
     return _instance;
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Tag>
 settings*
 settings::instance()
 {
-    static auto _instance = shared_instance<Tag>();
-    return _instance.get();
+    return shared_instance<Tag>().get();
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <size_t Idx>
 int64_t
@@ -415,7 +510,7 @@ settings::indent_width(int64_t _w)
     return _instance.load();
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Tp, size_t Idx>
 int64_t
@@ -426,7 +521,7 @@ settings::indent_width(int64_t _w)
     return _instance.load();
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
 size_t
@@ -498,7 +593,7 @@ settings::save(Archive& ar, unsigned int) const
        cereal::make_nvp("environment", m_environment));
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Sp>
 inline auto
@@ -520,7 +615,7 @@ settings::find(Sp&& _key, bool _exact)
     return m_data.end();
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Sp>
 Tp
@@ -540,7 +635,7 @@ settings::get(Sp&& _key, bool _exact)
     return Tp{};
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Sp>
 bool
@@ -570,7 +665,7 @@ settings::set(Sp&& _key, Tp&& _val, bool _exact)
     return false;
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 inline bool
 settings::update(const std::string& _key, const std::string& _val, bool _exact)
@@ -587,7 +682,7 @@ settings::update(const std::string& _key, const std::string& _val, bool _exact)
     return true;
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Vp, typename Sp, typename... Args>
 auto
@@ -605,7 +700,7 @@ settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, 
                                               std::forward<Args>(_args)...) });
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Vp, typename Sp>
 auto
@@ -629,6 +724,6 @@ settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env)
     return std::make_pair(m_data.end(), false);
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 }  // namespace tim

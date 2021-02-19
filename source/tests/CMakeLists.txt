@@ -822,7 +822,8 @@ if(NM_EXE)
     endforeach()
 endif()
 
-if(TIMEMORY_BUILD_GOOGLE_TEST)
+# disable during code-coverage
+if(TIMEMORY_BUILD_GOOGLE_TEST AND NOT TIMEMORY_USE_COVERAGE)
     add_executable(dynamic_instrument_tests ${_EXCLUDE} instrumentation_tests.cpp)
     target_compile_definitions(dynamic_instrument_tests PRIVATE DISABLE_TIMEMORY)
     target_link_libraries(dynamic_instrument_tests
@@ -850,7 +851,8 @@ if(TIMEMORY_BUILD_GOOGLE_TEST)
     add_dependencies(timemory-test dynamic_instrument_timemory_tests)
 endif()
 
-if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
+# disable during code-coverage
+if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST AND NOT TIMEMORY_USE_COVERAGE)
     if(NOT TARGET timemory-run)
         message(FATAL_ERROR "TIMEMORY_USE_DYNINST is ON but no target 'timemory-run'")
     endif()

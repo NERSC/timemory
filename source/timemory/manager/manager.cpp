@@ -168,21 +168,26 @@ manager::cleanup(const std::string& key)
     if(f_debug())
         PRINT_HERE("cleaning %s", key.c_str());
 
-    auto itr = m_finalizer_cleanups.begin();
-    for(; itr != m_finalizer_cleanups.end(); ++itr)
-    {
-        if(itr->first == key)
-            break;
-    }
+    auto _cleanup = [&](auto& _functors) {
+        auto _orig = _functors.size();
+        auto itr   = _functors.begin();
+        for(; itr != _functors.end(); ++itr)
+        {
+            if(itr->first == key)
+                break;
+        }
 
-    if(itr != m_finalizer_cleanups.end())
-    {
-        itr->second();
-        m_finalizer_cleanups.erase(itr);
-    }
+        if(itr != _functors.end())
+        {
+            itr->second();
+            _functors.erase(itr);
+        }
 
-    if(f_debug())
-        PRINT_HERE("%s [size: %i]", "cleaned", (int) m_finalizer_cleanups.size());
+        if(f_debug())
+            PRINT_HERE("%s [size: %i]", "cleaned", (int) (_orig - _functors.size()));
+    };
+
+    _cleanup(m_finalizer_cleanups);
 }
 //
 //----------------------------------------------------------------------------------//
@@ -191,8 +196,12 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::cleanup()
 {
     m_is_finalizing = true;
+    auto _orig_sz   = m_finalizer_cleanups.size();
+
     if(f_debug())
+    {
         PRINT_HERE("%s [size: %i]", "cleaning", (int) m_finalizer_cleanups.size());
+    }
 
     auto _cleanup = [](finalizer_list_t& _functors) {
         // reverse to delete the most recent additions first
@@ -207,7 +216,10 @@ manager::cleanup()
     _cleanup(m_finalizer_cleanups);
 
     if(f_debug())
-        PRINT_HERE("%s [size: %i]", "cleaned", (int) m_finalizer_cleanups.size());
+    {
+        PRINT_HERE("%s [size: %i]", "cleaned",
+                   (int) (_orig_sz - m_finalizer_cleanups.size()));
+    }
 }
 //
 //----------------------------------------------------------------------------------//
@@ -218,10 +230,12 @@ manager::finalize()
     m_is_finalizing = true;
     m_rank          = std::max<int32_t>(m_rank, dmp::rank());
     if(f_debug())
+    {
         PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
                    (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
                    (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
                    (int) m_pointer_fini.size());
+    }
 
     cleanup();
 
@@ -236,10 +250,12 @@ manager::finalize()
     };
 
     if(f_debug())
+    {
         PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
                    (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
                    (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
                    (int) m_pointer_fini.size());
+    }
 
     //
     //  ideally, only one of these will be populated
@@ -251,10 +267,12 @@ manager::finalize()
     _finalize(m_master_cleanup);
 
     if(f_debug())
+    {
         PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
                    (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
                    (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
                    (int) m_pointer_fini.size());
+    }
 
     //
     //  ideally, only one of these will be populated
@@ -265,10 +283,12 @@ manager::finalize()
     _finalize(m_master_finalizers);
 
     if(f_debug())
+    {
         PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
                    (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
                    (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
                    (int) m_pointer_fini.size());
+    }
 
     for(auto& itr : m_pointer_fini)
         itr.second();
@@ -278,10 +298,12 @@ manager::finalize()
     m_is_finalizing = false;
 
     if(f_debug())
+    {
         PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalized",
                    (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
                    (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
                    (int) m_pointer_fini.size());
+    }
 
     if(m_instance_count == 0 && m_rank == 0)
     {
@@ -600,6 +622,15 @@ manager::add_json_output(const string_t& _label, const string_t& _file)
 //----------------------------------------------------------------------------------//
 //
 TIMEMORY_MANAGER_LINKAGE(void)
+manager::remove_cleanup(void* _key)
+{
+    if(m_pointer_fini.find(_key) != m_pointer_fini.end())
+        m_pointer_fini.erase(_key);
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_MANAGER_LINKAGE(void)
 manager::remove_cleanup(const std::string& _key)
 {
     auto _remove_functor = [&](finalizer_list_t& _functors) {
@@ -658,7 +689,43 @@ manager::add_metadata(const std::string& _key, const std::string& _value)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(manager::comm_group_t)
+TIMEMORY_MANAGER_LINKAGE(void)
+manager::add_synchronization(const std::string& _key, int64_t _id,
+                             std::function<void()> _func)
+{
+    m_mutex.lock();
+    m_synchronize[_key].emplace(_id, std::move(_func));
+    m_mutex.unlock();
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_MANAGER_LINKAGE(void)
+manager::remove_synchronization(const std::string& _key, int64_t _id)
+{
+    m_mutex.lock();
+    if(m_synchronize[_key].find(_id) != m_synchronize[_key].end())
+        m_synchronize[_key].erase(_id);
+    m_mutex.unlock();
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_MANAGER_LINKAGE(void)
+manager::synchronize()
+{
+    for(auto& itr : m_synchronize)
+    {
+        for(auto& fitr : itr.second)
+        {
+            fitr.second();
+        }
+    }
+}
+//
+//----------------------------------------------------------------------------------//
+//
+/*TIMEMORY_MANAGER_LINKAGE(manager::comm_group_t)
 manager::get_communicator_group()
 {
     int32_t max_concurrency = std::thread::hardware_concurrency();
@@ -699,7 +766,7 @@ manager::get_communicator_group()
     assert(local_rank == mpi::get_node_index());
 
     return comm_group_t(local_mpi_comm, local_rank);
-}
+}*/
 //
 //----------------------------------------------------------------------------------//
 //

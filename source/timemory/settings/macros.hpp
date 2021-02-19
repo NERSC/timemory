@@ -109,7 +109,7 @@
                                                                                          \
         TIMEMORY_SETTINGS_INLINE TYPE& settings::FUNC()                                  \
         {                                                                                \
-            return shared_instance<TIMEMORY_API>()->get_##FUNC();                        \
+            return shared_instance()->get_##FUNC();                                      \
         }
 #endif
 //
@@ -137,7 +137,7 @@
                                                                                          \
         TIMEMORY_SETTINGS_INLINE TYPE& settings::FUNC()                                  \
         {                                                                                \
-            return shared_instance<TIMEMORY_API>()->get_##FUNC();                        \
+            return shared_instance()->get_##FUNC();                                      \
         }
 #endif
 //

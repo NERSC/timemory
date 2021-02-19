@@ -62,22 +62,26 @@ settings::serialize_settings(Archive& ar, settings& _obj)
     ar(cereal::make_nvp("settings", _obj));
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::shared_ptr<settings>
 settings::shared_instance()
 {
+    // do not take reference to ensure push/pop w/o template parameters do not change
+    // the settings
     static auto _instance = shared_instance<TIMEMORY_API>();
     return _instance;
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 settings*
 settings::instance()
 {
+    // do not take reference to ensure push/pop w/o template parameters do not change
+    // the settings
     static auto _instance = shared_instance();
     return _instance.get();
 }
@@ -135,7 +139,7 @@ get_local_datetime(const char* dt_format, std::time_t* dt_curr)
     return std::string{};
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
@@ -146,7 +150,7 @@ settings::tolower(std::string str)
     return str;
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
@@ -157,7 +161,7 @@ settings::toupper(std::string str)
     return str;
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
@@ -169,7 +173,7 @@ settings::get_global_input_prefix()
     return filepath::osrepr(_dir + std::string("/") + _prefix);
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
@@ -210,7 +214,7 @@ settings::get_global_output_prefix(bool fake)
                       : filepath::osrepr(std::string("./") + _prefix);
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 void
@@ -222,7 +226,7 @@ settings::store_command_line(int argc, char** argv)
         _cmdline.push_back(std::string(argv[i]));
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
@@ -274,7 +278,7 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
     return filepath::osrepr(fpath);
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
@@ -312,7 +316,7 @@ settings::compose_input_filename(const std::string& _tag, std::string _ext,
     return std::move(fpath);
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 void
@@ -322,7 +326,7 @@ settings::parse(std::shared_ptr<settings> _settings)
         parse(_settings.get());
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 // function to parse the environment for settings
 //
@@ -346,7 +350,7 @@ settings::parse(settings* _settings)
     }
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 settings::settings()
@@ -356,7 +360,7 @@ settings::settings()
     initialize();
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 settings::settings(const settings& rhs)
@@ -366,7 +370,7 @@ settings::settings(const settings& rhs)
 , m_environment(rhs.m_environment)
 {
     for(auto& itr : rhs.m_data)
-        m_data.insert({ itr.first, itr.second->clone() });
+        m_data.emplace(itr.first, itr.second->clone());
     for(auto& itr : m_order)
     {
         if(m_data.find(itr) == m_data.end())
@@ -378,13 +382,13 @@ settings::settings(const settings& rhs)
             }
             else
             {
-                m_data.insert({ itr, ritr->second->clone() });
+                m_data.emplace(itr, ritr->second->clone());
             }
         }
     }
 }
 //
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 settings&
@@ -410,7 +414,7 @@ settings::operator=(const settings& rhs)
             }
             else
             {
-                m_data.insert({ itr, ritr->second->clone() });
+                m_data.emplace(itr, ritr->second->clone());
             }
         }
     }

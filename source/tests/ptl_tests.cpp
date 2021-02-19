@@ -190,7 +190,8 @@ TEST_F(ptl_tests, regions)
             tg.exec(func);
         tg.join();
     }
-
+    // synchronize the sea-level threads
+    tim::manager::master_instance()->synchronize();
     {
         std::string region = "BBBBB";
         TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/master/1");

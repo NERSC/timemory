@@ -67,7 +67,7 @@ def get_branch(wd=pyct.SOURCE_DIRECTORY):
     if not branch:
         branch = pyct.GetGitBranch(wd)
 
-    return branch
+    return branch.replace("origin-", "")
 
 
 def configure():
@@ -348,6 +348,10 @@ def configure():
     pypath = [pyct.BINARY_DIRECTORY] + pypath
     os.environ["PYTHONPATH"] = ":".join(pypath)
 
+    if args.coverage or pyct.BUILD_TYPE == "Debug":
+        os.environ["TIMEMORY_DEBUG"] = "ON"
+        os.environ["TIMEMORY_VERBOSE"] = "6"
+
     global build_name
     global argparse_defaults
     # generate the defaults
@@ -423,12 +427,14 @@ def run_pyctest():
     cmd = pyct.command([os.environ["CXX"], "--version"])
     cmd.SetOutputStripTrailingWhitespace(True)
     cmd.Execute()
-    compiler_version = cmd.Output()
+    compiler_version = cmd.Output().replace("Ubuntu", "").strip()
     cn = os.environ["CXX"]
     try:
-        cn = compiler_version.split()[0]
-        cv = re.search(r"(\b)\d.\d.\d", compiler_version)
-        compiler_version = "{}{}".format(cn, cv.group()[0]).replace("++", "xx")
+        cn = compiler_version.split()
+        ci = cn.index("version")
+        cn = cn[ci - 1] if ci > 0 else ci[0]
+        cv = re.search(r"(\b)\d+.\d", compiler_version)
+        compiler_version = "{}-{}".format(cn, cv.group()).replace("++", "xx")
     except Exception as e:
         print("Exception! {}".format(e))
         cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
