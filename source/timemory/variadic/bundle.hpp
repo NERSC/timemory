@@ -573,7 +573,7 @@ public:
 
     /// try to re-create a stack object with provided arguments
     template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
-    enable_if_t<can_stack_init<T>(), bool> init(Args&&... _args)
+    bool init(Args&&... _args, enable_if_t<can_stack_init<T>(), int> = 0)
     {
         IF_CONSTEXPR(can_heap_init<T>())
         {
@@ -596,7 +596,7 @@ public:
     /// if a type is not in variadic list but a \ref tim::component::user_bundle is
     /// available, add it in there
     template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
-    enable_if_t<will_opaque_init<T>(), bool> init(Args&&...)
+    bool init(Args&&..., enable_if_t<will_opaque_init<T>(), long> = 0)
     {
         using bundle_t = decay_t<decltype(
             std::get<0>(std::declval<typename bundle_type::user_bundle_types>()))>;
