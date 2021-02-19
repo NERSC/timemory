@@ -39,10 +39,13 @@ if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
     endif()
 endif()
 
+set(_RPATH ON)
 find_package(PAPI QUIET)
 if(NOT DEFINED TIMEM_PAPI_TARGET OR NOT TIMEM_PAPI_TARGET)
     if(PAPI_STATIC_LIBRARIES OR TARGET PAPI::papi-static)
         set(TIMEM_PAPI_TARGET PAPI::papi-static)
+        set(_RPATH OFF)
+        target_compile_definitions(${TIMEM_PAPI_TARGET} INTERFACE TIMEMORY_USE_PAPI)
     else()
         set(TIMEM_PAPI_TARGET timemory::timemory-papi)
     endif()
@@ -56,14 +59,13 @@ target_link_libraries(timem PRIVATE
     timemory::timemory-develop-options
     timemory::timemory-threading
     timemory::timemory-headers
-    timemory::timemory-arch
     ${TIMEM_PAPI_TARGET}
     timem-libexplain)
 
 add_target_flag_if_avail(timem "-g")
 
 set_target_properties(timem PROPERTIES
-    INSTALL_RPATH_USE_LINK_PATH ON)
+    INSTALL_RPATH_USE_LINK_PATH ${_RPATH})
 
 # timem installation
 install(TARGETS timem
@@ -83,15 +85,14 @@ target_link_libraries(timem-mpi PRIVATE
     timemory::timemory-develop-options
     timemory::timemory-threading
     timemory::timemory-headers
-    timemory::timemory-arch
-    ${TIMEM_PAPI_TARGET}
     timemory::timemory-mpi
+    ${TIMEM_PAPI_TARGET}
     timem-libexplain)
 
 add_target_flag_if_avail(timem-mpi "-g")
 
 set_target_properties(timem-mpi PROPERTIES
-    INSTALL_RPATH_USE_LINK_PATH ON)
+    INSTALL_RPATH_USE_LINK_PATH ${_RPATH})
 
 # ensure timemory-pid is built
 if(TARGET timemory-pid)

@@ -740,7 +740,7 @@ TEST_F(argparse_tests, timemory_argparse_ptr)
     for(int i = 0; i < argc; ++i)
     {
         argv[i] = new char[args.at(i).length() + 1];
-        strlcpy(argv[i], args.at(i).c_str(), args.at(i).length() + 1);
+        strncpy(argv[i], args.at(i).c_str(), args.at(i).length() + 1);
         argv[i][args.at(i).length()] = '\0';
     }
 

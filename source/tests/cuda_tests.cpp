@@ -78,8 +78,28 @@ saxpy(int64_t n, float a, float* x, float* y)
 class cuda_tests : public ::testing::Test
 {
 protected:
-    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+    void startup()
+    {
+        tim::cuda::device_query();
+        prof = new tim::component_tuple<cuda_profiler, nvtx_marker>{ "cuda_tests" };
+        prof->start();
+    }
+
+    void shutdown()
+    {
+        prof->stop();
+        delete prof;
+    }
+
+    TIMEMORY_TEST_SUITE_SETUP(startup())
+    TIMEMORY_TEST_SUITE_TEARDOWN(shutdown())
+    TIMEMORY_TEST_DEFAULT_SETUP
+    TIMEMORY_TEST_DEFAULT_TEARDOWN
+
+    static tim::component_tuple<cuda_profiler, nvtx_marker>* prof;
 };
+
+tim::component_tuple<cuda_profiler, nvtx_marker>* cuda_tests::prof = nullptr;
 
 //--------------------------------------------------------------------------------------//
 
