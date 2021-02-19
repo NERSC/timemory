@@ -577,11 +577,12 @@ run(Args&&... args)
 }
 //
 auto
-get_offset()
+get_substr(std::string _str)
 {
-    return 4 +
-           ((tim::settings::collapse_processes() && tim::dmp::is_initialized()) ? 0 : 2) +
-           ((tim::settings::collapse_threads()) ? 0 : 2);
+    auto idx = _str.find(">>> ");
+    if(idx == std::string::npos)
+        return _str;
+    return _str.substr(idx + 4);
 }
 //
 }  // namespace details
@@ -605,7 +606,7 @@ TEST_F(component_bundle_tests, dont_stop_last_instance)
     auto wc_end = tim::storage<wall_clock>::instance()->get();
 
     EXPECT_EQ(wc_beg.size() + 2, wc_end.size());
-    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
+    EXPECT_EQ(details::get_substr(wc_end.back().prefix()),
               std::string{ "|_" } + details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 1);
     EXPECT_EQ(wc_end.back().data().get_laps(), 6);
@@ -633,8 +634,7 @@ TEST_F(component_bundle_tests, template_stop_last_instance)
     auto wc_end = tim::storage<wall_clock>::instance()->get();
 
     EXPECT_EQ(wc_beg.size() + 1, wc_end.size());
-    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
-              details::get_test_name());
+    EXPECT_EQ(details::get_substr(wc_end.back().prefix()), details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
     EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
@@ -660,8 +660,7 @@ TEST_F(component_bundle_tests, ctor_stop_last_instance)
     auto wc_end = tim::storage<wall_clock>::instance()->get();
 
     EXPECT_EQ(wc_beg.size() + 1, wc_end.size());
-    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
-              details::get_test_name());
+    EXPECT_EQ(details::get_substr(wc_end.back().prefix()), details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
     EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
@@ -691,8 +690,7 @@ TEST_F(component_bundle_tests, both_stop_last_instance)
     auto wc_end = tim::storage<wall_clock>::instance()->get();
 
     EXPECT_EQ(wc_beg.size() + 1, wc_end.size());
-    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
-              details::get_test_name());
+    EXPECT_EQ(details::get_substr(wc_end.back().prefix()), details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
     EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
@@ -741,7 +739,7 @@ TEST_F(component_bundle_tests, mixed_stop_last_instance)
     auto wc_end = tim::storage<wall_clock>::instance()->get();
 
     EXPECT_EQ(wc_beg.size() + 2, wc_end.size());
-    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
+    EXPECT_EQ(details::get_substr(wc_end.back().prefix()),
               std::string{ "|_" } + details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 1);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
