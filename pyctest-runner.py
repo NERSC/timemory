@@ -67,7 +67,7 @@ def get_branch(wd=pyct.SOURCE_DIRECTORY):
     if not branch:
         branch = pyct.GetGitBranch(wd)
 
-    return branch.replace("origin-", "")
+    return branch
 
 
 def configure():
@@ -427,12 +427,10 @@ def run_pyctest():
     cmd = pyct.command([os.environ["CXX"], "--version"])
     cmd.SetOutputStripTrailingWhitespace(True)
     cmd.Execute()
-    compiler_version = cmd.Output().replace("Ubuntu", "").strip()
+    compiler_version = cmd.Output().replace("Ubuntu", "").lower()
     cn = os.environ["CXX"]
     try:
-        cn = compiler_version.split()
-        ci = cn.index("version")
-        cn = cn[ci - 1] if ci > 0 else ci[0]
+        cn = compiler_version.split()[0]
         cv = re.search(r"(\b)\d+.\d", compiler_version)
         compiler_version = "{}-{}".format(cn, cv.group()).replace("++", "xx")
     except Exception as e:
@@ -583,7 +581,7 @@ def run_pyctest():
         "{}-{}".format(pyct.BUILD_NAME, build_name)
         .replace("/", "-")
         .replace(" ", "-")
-    )
+    ).strip("-").replace("origin-", "")
 
     # default options
     cmake_args = "-DCMAKE_BUILD_TYPE={}".format(pyct.BUILD_TYPE)
