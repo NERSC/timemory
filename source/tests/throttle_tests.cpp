@@ -113,8 +113,8 @@ protected:
 TEST_F(throttle_tests, expect_true)
 {
     tim::settings::debug() = false;
-    auto name = details::get_test_name();
-    auto n    = 2 * tim::settings::throttle_count();
+    auto name              = details::get_test_name();
+    auto n                 = 2 * tim::settings::throttle_count();
 
     for(size_t i = 0; i < n; ++i)
     {
@@ -131,8 +131,8 @@ TEST_F(throttle_tests, expect_false)
 {
     tim::settings::debug() = false;
     auto name              = details::get_test_name();
-    auto n    = 2 * tim::settings::throttle_count();
-    auto v    = 2 * tim::settings::throttle_value();
+    auto n                 = 2 * tim::settings::throttle_count();
+    auto v                 = 2 * tim::settings::throttle_value();
 
     for(size_t i = 0; i < n; ++i)
     {
@@ -256,7 +256,7 @@ TEST_F(throttle_tests, tuple_serial)
 {
     tim::settings::debug() = false;
     using tuple_t          = tim::auto_tuple<tim::component::wall_clock>;
-    auto _run     = []() {
+    auto _run              = []() {
         TIMEMORY_BLANK_MARKER(tuple_t, "thread");
         auto name = details::get_test_name();
         auto n    = 8 * tim::settings::throttle_count();
@@ -276,7 +276,7 @@ TEST_F(throttle_tests, tuple_multithreaded)
 {
     tim::settings::debug() = false;
     using tuple_t          = tim::auto_tuple<tim::component::wall_clock>;
-    auto _run     = []() {
+    auto _run              = []() {
         TIMEMORY_BLANK_MARKER(tuple_t, "thread");
         auto name = details::get_test_name();
         auto n    = 8 * tim::settings::throttle_count();
