@@ -660,8 +660,6 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     auto _key   = [](bundle_t* obj) { return obj->key(); };
     auto _laps  = [](bundle_t* obj) { return obj->laps(); };
     auto _rekey = [](bundle_t* obj, std::string _key) { obj->rekey(_key); };
-    auto _start = [](bundle_t* obj) { return obj->start(tim::quirk::unsafe{}); };
-    auto _stop  = [](bundle_t* obj) { return obj->stop(tim::quirk::unsafe{}); };
 
     auto _isub = [](bundle_t* lhs, bundle_t* rhs) {
         if(lhs && rhs)
@@ -676,8 +674,8 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def(py::init(_sinit), "Creates component with a label");
     _pycomp.def("push", &bundle_t::push, "Push into the call-graph");
     _pycomp.def("pop", &bundle_t::pop, "Pop off the call-graph");
-    _pycomp.def("start", _start, "Start measurement");
-    _pycomp.def("stop", _stop, "Stop measurement");
+    _pycomp.def("start", &bundle_t::template start<>, "Start measurement");
+    _pycomp.def("stop", &bundle_t::template stop<>, "Stop measurement");
     _pycomp.def("measure", &bundle_t::template measure<>, "Take a measurement");
     _pycomp.def("reset", &bundle_t::template reset<>, "Reset the values");
     _pycomp.def("mark_begin", &bundle_t::template mark_begin<>, "Mark an begin point");
