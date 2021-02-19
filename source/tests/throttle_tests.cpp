@@ -80,24 +80,23 @@ class throttle_tests : public ::testing::Test
 protected:
     static void SetUpTestSuite()
     {
-        static bool configured = false;
-        if(!configured)
-        {
-            tim::set_env("TIMEMORY_VERBOSE", "1", 1);
-            tim::set_env("TIMEMORY_COLLAPSE_THREADS", "OFF", 0);
-            configured                   = true;
-            tim::settings::debug()       = false;
-            tim::settings::json_output() = true;
-            tim::settings::mpi_thread()  = false;
-            tim::dmp::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
-            tim::settings::dart_output() = true;
-            tim::settings::dart_count()  = 1;
-            tim::settings::banner()      = false;
-            timemory_trace_init("wall_clock", false, "throttle_tests");
-            tim::settings::verbose() = 1;
-        }
+        tim::set_env("TIMEMORY_VERBOSE", "1", 1);
+        tim::set_env("TIMEMORY_COLLAPSE_THREADS", "OFF", 0);
+        tim::settings::debug()       = false;
+        tim::settings::json_output() = true;
+        tim::settings::mpi_thread()  = false;
+        tim::dmp::initialize(_argc, _argv);
+        tim::timemory_init(_argc, _argv);
+        tim::settings::dart_output() = true;
+        tim::settings::dart_count()  = 1;
+        tim::settings::banner()      = false;
+        timemory_trace_init("wall_clock", false, "throttle_tests");
+        tim::settings::verbose() = 1;
+        tim::settings::debug()   = false;
     }
+
+    // always disable debug
+    void SetUp() override { tim::settings::debug() = false; }
 
     static void TearDownTestSuite()
     {
@@ -113,6 +112,7 @@ protected:
 
 TEST_F(throttle_tests, expect_true)
 {
+    tim::settings::debug() = false;
     auto name = details::get_test_name();
     auto n    = 2 * tim::settings::throttle_count();
 
@@ -129,7 +129,8 @@ TEST_F(throttle_tests, expect_true)
 
 TEST_F(throttle_tests, expect_false)
 {
-    auto name = details::get_test_name();
+    tim::settings::debug() = false;
+    auto name              = details::get_test_name();
     auto n    = 2 * tim::settings::throttle_count();
     auto v    = 2 * tim::settings::throttle_value();
 
@@ -148,6 +149,7 @@ TEST_F(throttle_tests, expect_false)
 
 TEST_F(throttle_tests, multithreaded)
 {
+    tim::settings::debug() = false;
     std::array<bool, nthreads> is_throttled;
     is_throttled.fill(false);
 
@@ -197,7 +199,8 @@ TEST_F(throttle_tests, multithreaded)
 
 TEST_F(throttle_tests, do_nothing)
 {
-    auto n = tim::settings::throttle_count();
+    tim::settings::debug() = false;
+    auto n                 = tim::settings::throttle_count();
     for(size_t i = 0; i < n; ++i)
         details::do_sleep(10);
 }
@@ -206,7 +209,8 @@ TEST_F(throttle_tests, do_nothing)
 
 TEST_F(throttle_tests, region_serial)
 {
-    auto _run = []() {
+    tim::settings::debug() = false;
+    auto _run              = []() {
         timemory_push_region("thread");
         auto name = details::get_test_name();
         auto n    = 8 * tim::settings::throttle_count();
@@ -226,7 +230,8 @@ TEST_F(throttle_tests, region_serial)
 
 TEST_F(throttle_tests, region_multithreaded)
 {
-    auto _run = []() {
+    tim::settings::debug() = false;
+    auto _run              = []() {
         timemory_push_region("thread");
         auto name = details::get_test_name();
         auto n    = 8 * tim::settings::throttle_count();
@@ -249,7 +254,8 @@ TEST_F(throttle_tests, region_multithreaded)
 
 TEST_F(throttle_tests, tuple_serial)
 {
-    using tuple_t = tim::auto_tuple<tim::component::wall_clock>;
+    tim::settings::debug() = false;
+    using tuple_t          = tim::auto_tuple<tim::component::wall_clock>;
     auto _run     = []() {
         TIMEMORY_BLANK_MARKER(tuple_t, "thread");
         auto name = details::get_test_name();
@@ -268,7 +274,8 @@ TEST_F(throttle_tests, tuple_serial)
 
 TEST_F(throttle_tests, tuple_multithreaded)
 {
-    using tuple_t = tim::auto_tuple<tim::component::wall_clock>;
+    tim::settings::debug() = false;
+    using tuple_t          = tim::auto_tuple<tim::component::wall_clock>;
     auto _run     = []() {
         TIMEMORY_BLANK_MARKER(tuple_t, "thread");
         auto name = details::get_test_name();

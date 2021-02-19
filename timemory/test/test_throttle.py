@@ -126,6 +126,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # test expect_true
     def test_expect_true(self):
         """expect_true"""
+        settings.debug = False
         n = 2 * settings.throttle_count
         tim.trace.push("true")
         for i in range(n):
@@ -139,6 +140,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # test expect_false
     def test_expect_false(self):
         """expect_false"""
+        settings.debug = False
         n = 2 * settings.throttle_count
         v = 2 * settings.throttle_value
 
@@ -152,6 +154,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     def test_region_serial(self):
         """region_serial"""
+        settings.debug = False
 
         def _run(name):
             tim.region.push("rsthread")
@@ -172,6 +175,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # test region_multithreaded
     def test_region_multithreaded(self):
         """region_multithreaded"""
+        settings.debug = False
 
         def _run(name):
             tim.region.push("rthread")
@@ -196,7 +200,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # test multithreaded
     def test_multithreaded(self):
         """multithreaded"""
-        # using tuple_t = tim::auto_tuple<tim::component::wall_clock>;
+        settings.debug = False
 
         # np.array of False
         is_throttled = np.full(self.nthreads, False)
