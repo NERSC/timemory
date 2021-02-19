@@ -48,7 +48,6 @@
 //  Implementations
 //
 #include "timemory/variadic/auto_base_bundle.cpp"
-#include "timemory/variadic/component_bundle.cpp"
 #include "timemory/variadic/functional.cpp"
 #include "timemory/variadic/lightweight_tuple.cpp"
 //

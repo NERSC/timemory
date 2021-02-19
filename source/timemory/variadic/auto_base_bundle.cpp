@@ -34,9 +34,9 @@ namespace tim
 
 template <typename Tag, typename CompT, typename BundleT>
 template <typename... T>
-auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const std::string&  key,
-                                                        quirk::config<T...> _config,
-                                                        transient_func_t    init_func)
+auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const string_view_t& key,
+                                                        quirk::config<T...>  _config,
+                                                        transient_func_t     init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(quirk_config<quirk::exit_report, T...>::value)
 , m_reference_object(nullptr)
@@ -77,10 +77,10 @@ auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const captured_location_
 //--------------------------------------------------------------------------------------//
 
 template <typename Tag, typename CompT, typename BundleT>
-auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const std::string& key,
-                                                        scope::config      _scope,
-                                                        bool               report_at_exit,
-                                                        transient_func_t   init_func)
+auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const string_view_t& key,
+                                                        scope::config        _scope,
+                                                        bool             report_at_exit,
+                                                        transient_func_t init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_reference_object(nullptr)
@@ -150,7 +150,7 @@ auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(component_type& tmp,
 
 template <typename Tag, typename CompT, typename BundleT>
 template <typename Arg, typename... Args>
-auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const std::string& key,
+auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const string_view_t& key,
                                                         bool store, scope::config _scope,
                                                         transient_func_t init_func,
                                                         Arg&& arg, Args&&... args)

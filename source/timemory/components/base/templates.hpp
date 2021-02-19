@@ -68,11 +68,11 @@ base<Tp, Value>::load(Archive& ar, const unsigned int version)
         }
     };
 
-    bool _transient = get_is_transient();
-    try_catch(ar, "is_transient", _transient);
+    // bool _transient = get_is_transient();
+    // try_catch(ar, "is_transient", _transient);
     try_catch(ar, "laps", laps);
     data_type::serialize(ar, version);
-    set_is_transient(_transient);
+    set_is_transient(true);  // assume always transient
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -603,6 +603,18 @@ struct convert<InTuple<ApiT, In...>, OutTuple<ApiT>>
 {};
 
 //--------------------------------------------------------------------------------------//
+
+template <template <typename...> class InTuple, typename... T>
+struct convert_each;
+
+template <template <typename...> class OutTuple, template <typename...> class InTuple,
+          typename... In>
+struct convert_each<OutTuple, InTuple<In...>>
+{
+    using type = std::tuple<OutTuple<In>...>;
+};
+
+//--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_DEPRECATED)
 //
@@ -794,6 +806,9 @@ using get_index_sequence_t = typename get_index_sequence<decay_t<Tp>>::type;
 
 template <typename T, typename U>
 using convert_t = typename impl::convert<T, U>::type;
+
+template <template <typename...> class T, typename... U>
+using convert_each_t = typename impl::convert_each<T, U...>::type;
 
 template <typename T>
 using unwrap_t = typename impl::unwrapper<T>::type;

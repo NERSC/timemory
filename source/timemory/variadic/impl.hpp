@@ -96,7 +96,7 @@ struct heap_wrapper_types
     template <typename ApiT = TIMEMORY_API>
     using data_type = conditional_t<
         trait::is_available<ApiT>::value,
-        convert_t<non_placeholder_t<non_quirk_t<add_pointer_if_not_t<type_list_t<T...>>>>,
+        convert_t<add_pointer_if_not_t<non_placeholder_t<non_quirk_t<type_list_t<T...>>>>,
                   std::tuple<>>,
         std::tuple<>>;
 };

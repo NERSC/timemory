@@ -66,121 +66,206 @@ struct is_config<config<Types...>> : true_type
 {};
 
 /// \struct tim::quirk::auto_start
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause non-auto bundlers
-/// to invoke start() during construction. If included as a template parameter of the
-/// bundler, it will have no effect.
+/// \brief Will cause non-auto bundlers to invoke start() during construction. If
+/// included as a template parameter of the bundler, it will have no effect.
+/// Usage:
+/// - bundler constructor w/in \ref tim::quirk::config object
+/// - bundler template parameter
+///
+/// \code{.cpp}
+/// // usage as template parameter
+/// using bundle_t = tim::component_tuple<foo, tim::quirk::auto_start>;
+///
+/// void bar()
+/// {
+///     using bundle_t = tim::component_tuple<foo>;
+///
+///     // usage in constructor
+///     bundle_t obj{ "bar", tim::quirk::config<tim::quirk:auto_start>{} };
+/// }
+/// \endcode
 struct auto_start : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::auto_stop
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause non-auto bundlers
-/// to invoke stop() during destruction. If included as a template parameter of the
-/// bundler, it will have no effect.
+/// \brief This quirk is irrelevant. This is the default behavior for all bundlers. See
+/// \ref tim::quirk::explicit_stop to suppress this behavior
 struct auto_stop : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::explicit_start
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause auto bundlers
-/// to suppress calling start during construction. If included as a template parameter of
-/// the bundler, it will have no effect.
+/// \brief Will cause auto bundlers to suppress calling start during construction. If
+/// included as a template parameter of the non-auto bundler, it will have no effect.
+/// Usage:
+/// - bundler constructor w/in \ref tim::quirk::config object
+/// - bundler template parameter
+///
+/// \code{.cpp}
+/// // usage as template parameter
+/// using bundle_t = tim::auto_tuple<foo, tim::quirk::explicit_start>;
+///
+/// void bar()
+/// {
+///     using bundle_t = tim::auto_tuple<foo>;
+///
+///     // usage in constructor
+///     bundle_t obj{ "bar", tim::quirk::config<tim::quirk:explicit_start>{} };
+///     obj.start(); // now required
+/// }
+/// \endcode
 struct explicit_start : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::explicit_stop
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause auto bundlers
-/// to suppress calling stop during destruction. If included as a template parameter of
-/// the bundler, it will have no effect.
+/// \brief Will cause bundlers to suppress calling stop during destruction.
+/// Usage:
+/// - bundler template parameter
+///
+/// \code{.cpp}
+/// // usage as template parameter
+/// using foo_bundle_t = tim::auto_tuple<foo, tim::quirk::explicit_stop>;
+/// using baz_bundle_t = tim::component_tuple<foo, tim::quirk::explicit_stop>;
+/// \endcode
 struct explicit_stop : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::explicit_push
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and included as template parameter of the component bundler. It will suppress the
-/// implicit `push()` within `start()` for the bundlers with this characteristic
+/// \brief Will suppress the implicit `push()` within `start()` for the bundlers with this
+/// characteristic
+/// Usage:
+/// - constructor of bundler within a \ref tim::quirk::config object
+/// - bundler template parameter
+///
+/// \code{.cpp}
+/// // usage as template parameter
+/// using bundle_t = tim::component_tuple<foo, tim::quirk::explicit_push>;
+/// \endcode
 struct explicit_push : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::explicit_pop
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and included as template parameter of the component bundler. It will suppress the
-/// implicit `pop()` within `stop()` for the bundlers with this characteristic
+/// \brief Will suppress the implicit `pop()` within `stop()` for the bundlers with this
+/// characteristic. Combining this with \ref tim::quirk::explicit_push will effectively
+/// allow the measurements within the bundler to only be recorded locally and statistics
+/// to not be updated during intermediate measurements.
+/// Usage:
+/// - bundler template parameter
+///
+/// \code{.cpp}
+/// // usage as template parameter
+/// using bundle_t = tim::component_tuple<tim::component::wall_clock,
+///                                       tim::quirk::explicit_push,
+///                                       tim::quirk::explicit_pop>;
+///
+/// static bundle_t fibonacci_total{ "total" };
+///
+/// long fibonacci(long n)
+/// {
+///     bundle_t tmp{};
+///     tmp.start();
+///     auto result = (n < 2) ? n : (fibonacci(n-1) + fibonacci(n-2));
+///     fibonacci_total += tmp.stop();
+///     return result;
+/// }
+///
+/// long foo(long n)
+/// {
+///     // create new "fibonacci_total" entry in call-graph. Pushing will reset
+///     // any previous measurements
+///     bundle_total.push();
+///
+///     // invoke this function when foo returns
+///     tim::scope::destructor _dtor{ []() { fibonacci_total.pop(); } };
+///
+///     return fibonacci(n);
+/// }
+/// \endcode
 struct explicit_pop : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::exit_report
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause bundlers
-/// to write itself to stdout during destruction. If included as a template parameter of
-/// the bundler, it will have no effect.
+/// \brief Will cause auto-bundlers to write itself to stdout during destruction.
+/// Usage:
+/// - constructor of bundler within a \ref tim::quirk::config object
+/// - bundler template parameter
 struct exit_report : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::no_init
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause bundlers
-/// to suppress calling any routines related to initializing storage during construction.
+/// \brief Will cause bundlers to suppress calling any routines related to initializing
+/// routines during construction. This is useful to override the default-initializer for a
+/// bundler type
+/// Usage:
+/// - constructor of bundler within a \ref tim::quirk::config object
+/// - bundler template parameter
 struct no_init : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::no_store
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause bundlers
-/// to suppress any implicit entries into the component storage. This
-/// behavior is the default for tim::lightweight_bundle and is meaningless in that
-/// context.
+/// \brief Will cause bundlers to suppress any implicit entries into the component
+/// storage. This behavior is the default for tim::lightweight_bundle and is meaningless
+/// in that context. It is quite similar to adding both \ref tim::quirk::explicit_push
+/// and \ref tim::quirk::explicit_pop, however it effectively propagates \ref
+/// tim::quirk::explicit_pop when used within the constructor.
+/// Usage:
+/// - constructor of bundler within a \ref tim::quirk::config object
+/// - bundler template parameter
 struct no_store : concepts::quirk_type
 {};
 
 /// \struct tim::quirk::tree_scope
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause bundlers to ignore the global settings and
-/// enforce hierarchical storage.
+/// \brief Will cause bundlers to ignore the global settings and enforce hierarchical
+/// storage in the call-graph.
+/// Usage:
+/// - constructor of bundler within a \ref tim::quirk::config object
+/// - bundler template parameter
 struct tree_scope
 : scope::tree
 , concepts::quirk_type
 {};
 
 /// \struct tim::quirk::flat_scope
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause bundlers to ignore the global settings and
-/// enforce flat storage.
+/// \brief Will cause bundlers to ignore the global settings and enforce flat storage in
+/// the call-graph.
+/// Usage:
+/// - constructor of bundler within a \ref tim::quirk::config object
+/// - bundler template parameter
 struct flat_scope
 : scope::flat
 , concepts::quirk_type
 {};
 
 /// \struct tim::quirk::timeline_scope
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler or included as template parameter
-/// of the component bundle. It will cause bundlers to ignore the global settings and
-/// enforce timeline storage.
+/// \brief Will cause bundlers to ignore the global settings and enforce timeline storage.
+/// Usage:
+/// - constructor of bundler within a \ref tim::quirk::config object
+/// - bundler template parameter
 struct timeline_scope
 : scope::timeline
 , concepts::quirk_type
 {};
 //
 
+/// \struct tim::quirk::stop_last_bundle
+/// \brief Will cause a bundler to stop the "parent" bundler (of the same type). It can be
+/// used as template parameter but be aware that
+/// `tim::component_tuple<foo, tim::quirk::stop_last_bundle>` is NOT the same type as
+/// `tim::component_tuple<foo>`.
+/// Usage:
+/// - constructor of bundler within a \ref tim::quirk::config object
+/// - bundler template parameter
+struct stop_last_bundle : concepts::quirk_type
+{};
+
 /// \struct tim::quirk::unsafe
-/// \brief A dummy type intended to be included in a \ref tim::quirk::config object
-/// and passed to the constructor of a component bundler, included as template parameter
-/// of the component bundle, or as the first argument of bundler member function. When
-/// present, this argument instructs to skip any safety checks. Example checks include:
-/// checking whether a component is in a stop state before startings, checking whether a
-/// component has been started before stopping, checking whether push/pop has been applied
-/// before applying the inverse
+/// \brief When present, this argument instructs to skip any safety checks. Example checks
+/// include: checking whether a component is in a stop state before startings, checking
+/// whether a component has been started before stopping, checking whether push/pop has
+/// been applied before applying the inverse
+/// Usage:
+/// - constructor of bundler within a \ref tim::quirk::config object
+/// - bundler template parameter
+/// - first argument to a bundler member function
 struct unsafe : concepts::quirk_type
 {};
 //

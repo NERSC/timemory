@@ -112,7 +112,7 @@ public:
     using this_type           = typename TupleT::template this_type<BundleT>;
     using type                = typename TupleT::template type<BundleT>;
     using component_type      = typename TupleT::template component_type<BundleT>;
-    using data_type           = typename TupleT::template data_type<BundleT>;
+    using data_type           = typename TupleT::template data_type<Tag>;
     using type_list_type      = typename TupleT::type_list_type;
     using value_type          = data_type;
     using size_type           = typename bundle_type::size_type;
@@ -134,6 +134,14 @@ public:
 
     template <typename... T>
     explicit bundle(const captured_location_t& _loc, quirk::config<T...>,
+                    transient_func_t = get_initializer());
+
+    template <typename... T>
+    explicit bundle(const string_t& _key, bool _store, quirk::config<T...>,
+                    transient_func_t = get_initializer());
+
+    template <typename... T>
+    explicit bundle(const captured_location_t& _loc, bool _store, quirk::config<T...>,
                     transient_func_t = get_initializer());
 
     explicit bundle(size_t _hash, bool _store = true,
@@ -679,6 +687,21 @@ private:
         return const_cast<this_type&>(static_cast<const this_type&>(*this));
     }
 
+    static this_type*& get_last_instance()
+    {
+        static thread_local this_type* _instance = nullptr;
+        return _instance;
+    }
+
+    static void update_last_instance(this_type*  _new_instance,
+                                     this_type*& _old_instance = get_last_instance(),
+                                     bool        _stop_last    = false)
+    {
+        if(_stop_last && _old_instance && _old_instance != _new_instance)
+            _old_instance->stop();
+        _old_instance = _new_instance;
+    }
+
 public:
     // archive serialization
     template <typename Archive>
@@ -713,7 +736,8 @@ template <typename FuncT, typename... Args>
 decltype(auto)
 bundle<Tag, BundleT, TupleT>::execute(FuncT&& func, Args&&... args)
 {
-    return bundle::execute(*this, std::forward<FuncT>(func)(std::forward<Args>(args)...));
+    return mpl::execute(get_this_type(),
+                        std::forward<FuncT>(func)(std::forward<Args>(args)...));
 }
 
 //----------------------------------------------------------------------------------//

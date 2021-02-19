@@ -53,7 +53,9 @@ bundle<Tag, BundleT, TupleT>::get_initializer()
 template <typename Tag, typename BundleT, typename TupleT>
 bundle<Tag, BundleT, TupleT>::bundle()
 {
-    apply_v::set_value(m_data, nullptr);
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
     bundle_type::init(type_list_type{}, get_this_type(), m_data, get_initializer());
 }
 
@@ -66,7 +68,9 @@ bundle<Tag, BundleT, TupleT>::bundle(const string_t& _key, quirk::config<T...> _
 : bundle_type(bundle_type::handle(type_list_type{}, _key, true_type{}, _config))
 , m_data(invoke::construct<data_type, Tag>(_key, _config))
 {
-    apply_v::set_value(m_data, nullptr);
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle, T...>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
     bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func),
                       _config);
 }
@@ -81,7 +85,43 @@ bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc,
 : bundle_type(bundle_type::handle(type_list_type{}, _loc, true_type{}, _config))
 , m_data(invoke::construct<data_type, Tag>(_loc, _config))
 {
-    apply_v::set_value(m_data, nullptr);
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle, T...>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func),
+                      _config);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... T>
+bundle<Tag, BundleT, TupleT>::bundle(const string_t& _key, bool _store,
+                                     quirk::config<T...> _config,
+                                     transient_func_t    _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _key, _store, _config))
+, m_data(invoke::construct<data_type, Tag>(_key, _config))
+{
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle, T...>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func),
+                      _config);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... T>
+bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc, bool _store,
+                                     quirk::config<T...> _config,
+                                     transient_func_t    _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _loc, _store, _config))
+, m_data(invoke::construct<data_type, Tag>(_loc, _config))
+{
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle, T...>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
     bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func),
                       _config);
 }
@@ -94,7 +134,9 @@ bundle<Tag, BundleT, TupleT>::bundle(size_t _hash, bool _store, scope::config _s
 : bundle_type(bundle_type::handle(type_list_type{}, _hash, _store, _scope))
 , m_data(invoke::construct<data_type, Tag>(_hash, m_scope))
 {
-    apply_v::set_value(m_data, nullptr);
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
     bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
 }
 
@@ -105,7 +147,9 @@ bundle<Tag, BundleT, TupleT>::bundle(const string_t& _key, bool _store,
                                      scope::config _scope, transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _key, _store, _scope))
 {
-    apply_v::set_value(m_data, nullptr);
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
     bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
 }
 
@@ -116,7 +160,9 @@ bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc, bool _stor
                                      scope::config _scope, transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _loc, _store, _scope))
 {
-    apply_v::set_value(m_data, nullptr);
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
     bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
 }
 
@@ -127,7 +173,9 @@ bundle<Tag, BundleT, TupleT>::bundle(size_t _hash, scope::config _scope,
                                      transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _hash, true_type{}, _scope))
 {
-    apply_v::set_value(m_data, nullptr);
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
     bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
 }
 
@@ -138,7 +186,9 @@ bundle<Tag, BundleT, TupleT>::bundle(const string_t& _key, scope::config _scope,
                                      transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _key, true_type{}, _scope))
 {
-    apply_v::set_value(m_data, nullptr);
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
     bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
 }
 
@@ -149,7 +199,9 @@ bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc,
                                      scope::config _scope, transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _loc, true_type{}, _scope))
 {
-    apply_v::set_value(m_data, nullptr);
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
     bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func));
 }
 
@@ -158,13 +210,20 @@ bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc,
 template <typename Tag, typename BundleT, typename TupleT>
 bundle<Tag, BundleT, TupleT>::~bundle()
 {
+    if(get_last_instance() == &get_this_type())
+        update_last_instance(nullptr, get_last_instance(), false);
+
     IF_CONSTEXPR(!quirk_config<quirk::explicit_stop>::value)
     {
         if(m_is_active())
             stop();
     }
-    DEBUG_PRINT_HERE("%s", "deleting components");
-    invoke::destroy<Tag>(m_data);
+
+    IF_CONSTEXPR(optional_count() > 0)
+    {
+        DEBUG_PRINT_HERE("%s", "deleting components");
+        invoke::destroy<Tag>(m_data);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -290,7 +349,7 @@ void
 bundle<Tag, BundleT, TupleT>::init_storage()
 {
     static thread_local bool _once = []() {
-        apply_v::type_access<operation::init_storage, reference_type>();
+        apply_v::type_access<operation::init_storage, non_quirk_t<reference_type>>();
         return true;
     }();
     consume_parameters(_once);
@@ -464,7 +523,7 @@ bundle<Tag, BundleT, TupleT>::start(mpl::piecewise_select<Tp...>, Args&&... args
 
     TIMEMORY_FOLD_EXPRESSION(
         operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push, quirk::no_store>::value)
     {
         TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
             std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
@@ -492,7 +551,7 @@ bundle<Tag, BundleT, TupleT>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
     auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
     invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
 
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop, quirk::no_store>::value)
     {
         TIMEMORY_FOLD_EXPRESSION(
             operation::pop_node<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
@@ -512,7 +571,7 @@ bundle<Tag, BundleT, TupleT>::start(Args&&... args)
         return get_this_type();
 
     // push components into the call-stack
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push, quirk::no_store>::value)
     {
         if(m_store())
             push();

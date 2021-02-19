@@ -324,6 +324,7 @@ optional_count(long)
 TEST_F(component_bundle_tests, native_type_fixed_size_check)
 {
     using api_t = TIMEMORY_API;
+    EXPECT_TRUE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(fixed_count<test<api_t>::direct_auto_t>(0), 3);
     EXPECT_EQ(fixed_count<test<api_t>::direct_comp_t>(0), 3);
     EXPECT_EQ(fixed_count<test<api_t>::derive_auto_t>(0), 3);
@@ -335,6 +336,7 @@ TEST_F(component_bundle_tests, native_type_fixed_size_check)
 TEST_F(component_bundle_tests, native_data_fixed_size_check)
 {
     using api_t = TIMEMORY_API;
+    EXPECT_TRUE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(fixed_count<test<api_t>::direct_auto_data_t>(0), 3);
     EXPECT_EQ(fixed_count<test<api_t>::direct_comp_data_t>(0), 3);
     EXPECT_EQ(fixed_count<test<api_t>::derive_auto_data_t>(0), 3);
@@ -346,6 +348,7 @@ TEST_F(component_bundle_tests, native_data_fixed_size_check)
 TEST_F(component_bundle_tests, native_type_optional_size_check)
 {
     using api_t = TIMEMORY_API;
+    EXPECT_TRUE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(optional_count<test<api_t>::direct_auto_t>(0), 2);
     EXPECT_EQ(optional_count<test<api_t>::direct_comp_t>(0), 2);
     EXPECT_EQ(optional_count<test<api_t>::derive_auto_t>(0), 2);
@@ -357,6 +360,7 @@ TEST_F(component_bundle_tests, native_type_optional_size_check)
 TEST_F(component_bundle_tests, native_data_optional_size_check)
 {
     using api_t = TIMEMORY_API;
+    EXPECT_TRUE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(optional_count<test<api_t>::direct_auto_data_t>(0), 2);
     EXPECT_EQ(optional_count<test<api_t>::direct_comp_data_t>(0), 2);
     EXPECT_EQ(optional_count<test<api_t>::derive_auto_data_t>(0), 2);
@@ -377,6 +381,7 @@ TEST_F(component_bundle_tests, native_type_count_wo_init)
     auto D = test<api_t>::derive_comp_t(
         TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::derive_comp"));
 
+    EXPECT_TRUE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(A.count(), 3);
     EXPECT_EQ(B.count(), 3);
     EXPECT_EQ(C.count(), 3);
@@ -408,6 +413,7 @@ TEST_F(component_bundle_tests, native_type_count_w_init)
     auto D = test<api_t>::derive_comp_t(
         TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::derive_comp"));
 
+    EXPECT_TRUE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(A.count(), 4);
     EXPECT_EQ(B.count(), 5);
     EXPECT_EQ(C.count(), 4);
@@ -431,6 +437,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, api::custom_tag, false_type)
 TEST_F(component_bundle_tests, custom_type_fixed_size_check)
 {
     using api_t = CUSTOM_API;
+    EXPECT_FALSE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(fixed_count<test<api_t>::direct_auto_t>(0), 0);
     EXPECT_EQ(fixed_count<test<api_t>::direct_comp_t>(0), 0);
     EXPECT_EQ(fixed_count<test<api_t>::derive_auto_t>(0), 0);
@@ -442,6 +449,7 @@ TEST_F(component_bundle_tests, custom_type_fixed_size_check)
 TEST_F(component_bundle_tests, custom_data_fixed_size_check)
 {
     using api_t = CUSTOM_API;
+    EXPECT_FALSE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(fixed_count<test<api_t>::direct_auto_data_t>(0), 0);
     EXPECT_EQ(fixed_count<test<api_t>::direct_comp_data_t>(0), 0);
     EXPECT_EQ(fixed_count<test<api_t>::derive_auto_data_t>(0), 0);
@@ -464,6 +472,7 @@ TEST_F(component_bundle_tests, custom_type_optional_size_check)
 TEST_F(component_bundle_tests, custom_data_optional_size_check)
 {
     using api_t = CUSTOM_API;
+    EXPECT_FALSE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(optional_count<test<api_t>::direct_auto_data_t>(0), 0);
     EXPECT_EQ(optional_count<test<api_t>::direct_comp_data_t>(0), 0);
     EXPECT_EQ(optional_count<test<api_t>::derive_auto_data_t>(0), 0);
@@ -484,6 +493,7 @@ TEST_F(component_bundle_tests, custom_type_count_wo_init)
     auto D = test<api_t>::derive_comp_t(
         TIMEMORY_JOIN("/", details::get_test_name(), "test<CUSTOM_API>::derive_comp"));
 
+    EXPECT_FALSE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(A.count(), 0);
     EXPECT_EQ(B.count(), 0);
     EXPECT_EQ(C.count(), 0);
@@ -515,6 +525,7 @@ TEST_F(component_bundle_tests, custom_type_count_w_init)
     auto D = test<api_t>::derive_comp_t(
         TIMEMORY_JOIN("/", details::get_test_name(), "test<CUSTOM_API>::derive_comp"));
 
+    EXPECT_FALSE(tim::trait::is_available<api_t>::value);
     EXPECT_EQ(A.count(), 0);
     EXPECT_EQ(B.count(), 0);
     EXPECT_EQ(C.count(), 0);
@@ -522,6 +533,219 @@ TEST_F(component_bundle_tests, custom_type_count_w_init)
 
     test<api_t>::derive_auto_t::get_initializer() = [](auto&) {};
     test<api_t>::direct_comp_t::get_initializer() = [](auto&) {};
+}
+
+//--------------------------------------------------------------------------------------//
+
+using namespace tim::component;
+namespace quirk = tim::quirk;
+
+template <typename BundleT>
+using template_stop_last_instance_t =
+    tim::convert_t<tim::type_list<wall_clock, quirk::stop_last_bundle>, BundleT>;
+
+template <typename BundleT>
+using stop_last_instance_t = tim::convert_t<tim::type_list<wall_clock>, BundleT>;
+
+namespace details
+{
+template <typename BundleT, typename NextT = BundleT, typename... Args>
+void
+run(Args&&... args)
+{
+    BundleT foo{ details::get_test_name(), std::forward<Args>(args)... };
+    foo.start();
+
+    consume(50);
+
+    // foo should be stopped by this
+    NextT bar{ details::get_test_name(), std::forward<Args>(args)... };
+    bar.start();
+
+    consume(50);
+
+    bar.stop();
+
+    // this should not be included in any timing
+    consume(100);
+
+    // this should have no effect
+    foo.stop();
+    std::cout << tim::demangle<BundleT>() << std::endl;
+    std::cout << foo << std::endl;
+    std::cout << bar << std::endl;
+}
+//
+auto
+get_offset()
+{
+    return 4 + ((tim::settings::collapse_processes()) ? 0 : 2) +
+           ((tim::settings::collapse_threads()) ? 0 : 2);
+}
+//
+}  // namespace details
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, dont_stop_last_instance)
+{
+    auto wc_beg = tim::storage<wall_clock>::instance()->get();
+
+    auto quirk_cfg    = quirk::config<>{};
+    auto _initializer = [](auto& cl) { cl.template initialize<wall_clock>(); };
+
+    details::run<stop_last_instance_t<tim::component_tuple<>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::component_bundle<TIMEMORY_API>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::component_list<>>>(quirk_cfg, _initializer);
+    details::run<stop_last_instance_t<tim::auto_tuple<>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::auto_bundle<TIMEMORY_API>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::auto_list<>>>(quirk_cfg, _initializer);
+
+    auto wc_end = tim::storage<wall_clock>::instance()->get();
+
+    EXPECT_EQ(wc_beg.size() + 2, wc_end.size());
+    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
+              std::string{ "|_" } + details::get_test_name());
+    EXPECT_EQ(wc_end.back().depth(), 1);
+    EXPECT_EQ(wc_end.back().data().get_laps(), 6);
+    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+                300., 100.);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, template_stop_last_instance)
+{
+    auto wc_beg = tim::storage<wall_clock>::instance()->get();
+
+    auto _initializer = [](auto& cl) { cl.template initialize<wall_clock>(); };
+
+    details::run<template_stop_last_instance_t<tim::component_tuple<>>>();
+    details::run<template_stop_last_instance_t<tim::component_bundle<TIMEMORY_API>>>();
+    details::run<template_stop_last_instance_t<tim::component_list<>>>(quirk::config<>{},
+                                                                       _initializer);
+    details::run<template_stop_last_instance_t<tim::auto_tuple<>>>();
+    details::run<template_stop_last_instance_t<tim::auto_bundle<TIMEMORY_API>>>();
+    details::run<template_stop_last_instance_t<tim::auto_list<>>>(quirk::config<>{},
+                                                                  _initializer);
+
+    auto wc_end = tim::storage<wall_clock>::instance()->get();
+
+    EXPECT_EQ(wc_beg.size() + 1, wc_end.size());
+    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
+              details::get_test_name());
+    EXPECT_EQ(wc_end.back().depth(), 0);
+    EXPECT_EQ(wc_end.back().data().get_laps(), 12);
+    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+                600., 100.);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, ctor_stop_last_instance)
+{
+    auto wc_beg = tim::storage<wall_clock>::instance()->get();
+
+    auto quirk_cfg    = quirk::config<quirk::stop_last_bundle>{};
+    auto _initializer = [](auto& cl) { cl.template initialize<wall_clock>(); };
+
+    details::run<stop_last_instance_t<tim::component_tuple<>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::component_bundle<TIMEMORY_API>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::component_list<>>>(quirk_cfg, _initializer);
+    details::run<stop_last_instance_t<tim::auto_tuple<>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::auto_bundle<TIMEMORY_API>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::auto_list<>>>(quirk_cfg, _initializer);
+
+    auto wc_end = tim::storage<wall_clock>::instance()->get();
+
+    EXPECT_EQ(wc_beg.size() + 1, wc_end.size());
+    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
+              details::get_test_name());
+    EXPECT_EQ(wc_end.back().depth(), 0);
+    EXPECT_EQ(wc_end.back().data().get_laps(), 12);
+    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+                600., 100.);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, both_stop_last_instance)
+{
+    auto wc_beg = tim::storage<wall_clock>::instance()->get();
+
+    auto quirk_cfg    = quirk::config<quirk::stop_last_bundle>{};
+    auto _initializer = [](auto& cl) { cl.template initialize<wall_clock>(); };
+
+    details::run<template_stop_last_instance_t<tim::component_tuple<>>>(quirk_cfg);
+    details::run<template_stop_last_instance_t<tim::component_bundle<TIMEMORY_API>>>(
+        quirk_cfg);
+    details::run<template_stop_last_instance_t<tim::component_list<>>>(quirk_cfg,
+                                                                       _initializer);
+    details::run<template_stop_last_instance_t<tim::auto_tuple<>>>(quirk_cfg);
+    details::run<template_stop_last_instance_t<tim::auto_bundle<TIMEMORY_API>>>(
+        quirk_cfg);
+    details::run<template_stop_last_instance_t<tim::auto_list<>>>(quirk_cfg,
+                                                                  _initializer);
+
+    auto wc_end = tim::storage<wall_clock>::instance()->get();
+
+    EXPECT_EQ(wc_beg.size() + 1, wc_end.size());
+    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
+              details::get_test_name());
+    EXPECT_EQ(wc_end.back().depth(), 0);
+    EXPECT_EQ(wc_end.back().data().get_laps(), 12);
+    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+                600., 100.);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, mixed_stop_last_instance)
+{
+    auto wc_beg = tim::storage<wall_clock>::instance()->get();
+
+    auto quirk_cfg    = quirk::config<>{};
+    auto _initializer = [](auto& cl) { cl.template initialize<wall_clock>(); };
+
+    details::run<stop_last_instance_t<tim::component_tuple<>>,
+                 template_stop_last_instance_t<tim::component_tuple<>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::component_bundle<TIMEMORY_API>>,
+                 template_stop_last_instance_t<tim::component_bundle<TIMEMORY_API>>>(
+        quirk_cfg);
+    details::run<stop_last_instance_t<tim::component_list<>>,
+                 template_stop_last_instance_t<tim::component_list<>>>(quirk_cfg,
+                                                                       _initializer);
+    details::run<stop_last_instance_t<tim::auto_tuple<>>,
+                 template_stop_last_instance_t<tim::auto_tuple<>>>(quirk_cfg);
+    details::run<stop_last_instance_t<tim::auto_bundle<TIMEMORY_API>>,
+                 template_stop_last_instance_t<tim::auto_bundle<TIMEMORY_API>>>(
+        quirk_cfg);
+    details::run<stop_last_instance_t<tim::auto_list<>>,
+                 template_stop_last_instance_t<tim::auto_list<>>>(quirk_cfg,
+                                                                  _initializer);
+
+    details::run<template_stop_last_instance_t<tim::component_tuple<>>,
+                 stop_last_instance_t<tim::component_tuple<>>>(quirk_cfg);
+    details::run<template_stop_last_instance_t<tim::component_bundle<TIMEMORY_API>>,
+                 stop_last_instance_t<tim::component_bundle<TIMEMORY_API>>>(quirk_cfg);
+    details::run<template_stop_last_instance_t<tim::component_list<>>,
+                 stop_last_instance_t<tim::component_list<>>>(quirk_cfg, _initializer);
+    details::run<template_stop_last_instance_t<tim::auto_tuple<>>,
+                 stop_last_instance_t<tim::auto_tuple<>>>(quirk_cfg);
+    details::run<template_stop_last_instance_t<tim::auto_bundle<TIMEMORY_API>>,
+                 stop_last_instance_t<tim::auto_bundle<TIMEMORY_API>>>(quirk_cfg);
+    details::run<template_stop_last_instance_t<tim::auto_list<>>,
+                 stop_last_instance_t<tim::auto_list<>>>(quirk_cfg, _initializer);
+
+    auto wc_end = tim::storage<wall_clock>::instance()->get();
+
+    EXPECT_EQ(wc_beg.size() + 2, wc_end.size());
+    EXPECT_EQ(wc_end.back().prefix().substr(details::get_offset()),
+              std::string{ "|_" } + details::get_test_name());
+    EXPECT_EQ(wc_end.back().depth(), 1);
+    EXPECT_EQ(wc_end.back().data().get_laps(), 12);
+    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+                600., 100.);
 }
 
 //--------------------------------------------------------------------------------------//
