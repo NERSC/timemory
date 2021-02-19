@@ -143,15 +143,15 @@ protected:
     static void TearDownTestSuite()
     {
         metric().stop();
+        tim::enable_signal_detection(tim::signal_settings::get_default());
         auto& manager = get_manager();
-
-        std::cout << "Finalizing..." << std::endl;
-        tim::timemory_finalize();
 
         std::cout << "Terminating thread-pool... " << std::flush;
         manager->Terminate();
         std::cout << "Deleting thread-pool... " << std::flush;
         manager.reset();
+        std::cout << "Finalizing..." << std::endl;
+        tim::timemory_finalize();
         std::cout << "Done" << std::endl;
     }
 };
