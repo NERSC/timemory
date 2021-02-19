@@ -78,14 +78,14 @@ saxpy(int64_t n, float a, float* x, float* y)
 class cuda_tests : public ::testing::Test
 {
 protected:
-    void startup()
+    static void startup()
     {
         tim::cuda::device_query();
         prof = new tim::component_tuple<cuda_profiler, nvtx_marker>{ "cuda_tests" };
         prof->start();
     }
 
-    void shutdown()
+    static void shutdown()
     {
         prof->stop();
         delete prof;

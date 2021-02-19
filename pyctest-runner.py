@@ -578,10 +578,14 @@ def run_pyctest():
 
     # Use the options to create a build name with configuration
     pyct.BUILD_NAME = (
-        "{}-{}".format(pyct.BUILD_NAME, build_name)
-        .replace("/", "-")
-        .replace(" ", "-")
-    ).strip("-").replace("origin-", "")
+        (
+            "{}-{}".format(pyct.BUILD_NAME, build_name)
+            .replace("/", "-")
+            .replace(" ", "-")
+        )
+        .strip("-")
+        .replace("origin-", "")
+    )
 
     # default options
     cmake_args = "-DCMAKE_BUILD_TYPE={}".format(pyct.BUILD_TYPE)
