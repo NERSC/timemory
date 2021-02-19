@@ -579,7 +579,8 @@ run(Args&&... args)
 auto
 get_offset()
 {
-    return 4 + ((tim::settings::collapse_processes()) ? 0 : 2) +
+    return 4 +
+           ((tim::settings::collapse_processes() && tim::dmp::is_initialized()) ? 0 : 2) +
            ((tim::settings::collapse_threads()) ? 0 : 2);
 }
 //
