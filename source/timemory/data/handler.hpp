@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/data/types.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
@@ -48,7 +49,7 @@ namespace data
 /// defined for a specific data type (e.g. int) with a tag (e.g. ConvergenceIterations)
 /// and shared among multiple template types of data_tracker<T>
 ///
-template <typename V, typename Tag = TIMEMORY_API>
+template <typename V, typename Tag>
 struct handler
 {
     using value_type = V;
@@ -84,9 +85,9 @@ public:
     /// this function is used to store the current value after performing some operation.
     template <typename T, typename FuncT>
     static auto store(T& obj, FuncT&& f, const value_type& v)
-        -> decltype(obj.set_value(f(obj.get_value(), v)), void())
+        -> decltype(obj.set_value(std::forward<FuncT>(f)(obj.get_value(), v)), void())
     {
-        obj.set_value(f(obj.get_value(), v));
+        obj.set_value(std::forward<FuncT>(f)(obj.get_value(), v));
     }
 
     /// this function sets the value of the temporary in `mark_begin`.
@@ -96,7 +97,7 @@ public:
     template <typename FuncT>
     static void begin(value_type& obj, FuncT&& f, const value_type& v)
     {
-        obj = f(obj, v);
+        obj = std::forward<FuncT>(f)(obj, v);
     }
 
     /// this function computes the difference between the provided value and the
@@ -133,9 +134,10 @@ public:
     /// overload with move semantics
     template <typename T, typename FuncT>
     static auto store(T& obj, FuncT&& f, value_type&& v)
-        -> decltype(obj.set_value(f(obj.get_value(), std::move(v))), void())
+        -> decltype(obj.set_value(std::forward<FuncT>(f)(obj.get_value(), std::move(v))),
+                    void())
     {
-        obj.set_value(f(obj.get_value(), std::move(v)));
+        obj.set_value(std::forward<FuncT>(f)(obj.get_value(), std::move(v)));
     }
 
     /// overload with move semantics
@@ -145,7 +147,7 @@ public:
     template <typename T, typename FuncT>
     static auto begin(value_type& obj, FuncT&& f, value_type&& v)
     {
-        obj = f(obj, v);
+        obj = std::forward<FuncT>(f)(obj, v);
     }
 
     /// overload with move semantics

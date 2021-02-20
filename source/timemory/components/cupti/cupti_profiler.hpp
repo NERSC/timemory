@@ -254,7 +254,7 @@ public:
             os << ssv.str() << ssi.str();
         };
 
-        const auto&       _data = (is_transient) ? accum : value;
+        const auto&       _data = load();
         std::stringstream ss;
         for(size_type i = 0; i < _data.size(); ++i)
         {
@@ -298,9 +298,9 @@ public:
         std::vector<double> _disp  = _get(accum);
         std::vector<double> _value = _get(value);
         std::vector<double> _accum = _get(accum);
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
-           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp));
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("repr_data", _disp),
+           cereal::make_nvp("value", _value), cereal::make_nvp("accum", _accum),
+           cereal::make_nvp("display", _disp));
         // ar(cereal::make_nvp("units", unit_array()),
         //   cereal::make_nvp("display_units", display_unit_array()));
     }

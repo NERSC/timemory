@@ -324,7 +324,8 @@ add_timemory_google_test(flat_tests
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-plotting
                     timemory::timemory-core
-                    extern-test-templates)
+                    extern-test-templates
+                    ${_LIBRARY})
 
 add_timemory_google_test(timeline_tests
     DISCOVER_TESTS
@@ -332,14 +333,16 @@ add_timemory_google_test(timeline_tests
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-plotting
                     timemory::timemory-core
-                    extern-test-templates)
+                    extern-test-templates
+                    ${_LIBRARY})
 
 add_timemory_google_test(data_tracker_tests
     DISCOVER_TESTS
     SOURCES         data_tracker_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-plotting
-                    timemory::timemory-core)
+                    timemory::timemory-core
+                    ${_LIBRARY})
 
 add_timemory_google_test(cache_tests
     SOURCES         cache_tests.cpp
@@ -367,8 +370,8 @@ if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
     add_timemory_google_test(ptl_tests
         SOURCES         ptl_tests.cpp
         LINK_LIBRARIES  common-test-libs
-                        ${_LIBRARY}
                         PTL::ptl
+                        ${_LIBRARY}
         ENVIRONMENT     ${ptl_tests_env})
 endif()
 
@@ -513,6 +516,14 @@ endif()
 add_timemory_google_test(apply_tests
     DISCOVER_TESTS
     SOURCES         apply_tests.cpp
+    LINK_LIBRARIES  common-test-libs
+                    timemory::timemory-plotting
+                    timemory::timemory-core
+                    ${_LIBRARY})
+
+add_timemory_google_test(chained_tests
+    DISCOVER_TESTS
+    SOURCES         chained_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-plotting
                     timemory::timemory-core
@@ -705,6 +716,7 @@ add_timemory_google_test(variadic_tests
                     timemory::timemory-plotting
                     timemory::timemory-core
                     timemory::timemory-dmp
+                    test-debug-flags
                     ${_LIBRARY})
 
 add_timemory_google_test(derived_tests
@@ -810,7 +822,8 @@ if(NM_EXE)
     endforeach()
 endif()
 
-if(TIMEMORY_BUILD_GOOGLE_TEST)
+# disable during code-coverage
+if(TIMEMORY_BUILD_GOOGLE_TEST AND NOT TIMEMORY_USE_COVERAGE)
     add_executable(dynamic_instrument_tests ${_EXCLUDE} instrumentation_tests.cpp)
     target_compile_definitions(dynamic_instrument_tests PRIVATE DISABLE_TIMEMORY)
     target_link_libraries(dynamic_instrument_tests
@@ -838,7 +851,8 @@ if(TIMEMORY_BUILD_GOOGLE_TEST)
     add_dependencies(timemory-test dynamic_instrument_timemory_tests)
 endif()
 
-if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST)
+# disable during code-coverage
+if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST AND NOT TIMEMORY_USE_COVERAGE)
     if(NOT TARGET timemory-run)
         message(FATAL_ERROR "TIMEMORY_USE_DYNINST is ON but no target 'timemory-run'")
     endif()

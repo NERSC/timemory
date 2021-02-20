@@ -137,15 +137,13 @@ public:
 
     TIMEMORY_NODISCARD float get_display() const
     {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
+        return static_cast<float>(load() / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
 
     TIMEMORY_NODISCARD float get() const
     {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
+        return static_cast<float>(load() / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
 

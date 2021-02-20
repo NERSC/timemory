@@ -307,7 +307,7 @@ papi_array_t::get_display() const
 {
     if(events.size() == 0)
         return "";
-    auto val          = (is_transient) ? accum : value;
+    auto val          = load();
     auto _get_display = [&](std::ostream& os, size_type idx) {
         auto     _obj_value = val[idx];
         auto     _evt_type  = events[idx];

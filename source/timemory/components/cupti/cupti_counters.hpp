@@ -301,7 +301,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
             os << ss.str();
         };
 
-        const auto&       _data = (is_transient) ? accum : value;
+        const auto&       _data = load();
         std::stringstream ss;
         for(size_type i = 0; i < _data.size(); ++i)
         {
@@ -315,7 +315,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     TIMEMORY_NODISCARD std::vector<double> get() const
     {
         std::vector<double> values;
-        const auto&         _data = (is_transient) ? accum : value;
+        const auto&         _data = load();
         values.reserve(_data.size());
         for(const auto& itr : _data)
             values.push_back(cupti::get<double>(itr.data));
@@ -327,7 +327,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     TIMEMORY_NODISCARD secondary_type get_secondary() const
     {
         secondary_type _data;
-        for(const auto& itr : (is_transient) ? m_kernel_accum : m_kernel_value)
+        for(const auto& itr : m_kernel_accum)
             _data.insert({ itr.first, itr.second });
         return _data;
     }
@@ -400,8 +400,6 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
 
         _combine(value, rhs.value);
         _combine(accum, rhs.accum);
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -419,8 +417,6 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
 
         _combine(value, rhs.value);
         _combine(accum, rhs.accum);
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -459,9 +455,9 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         array_t<double> _disp  = _get(accum);
         array_t<double> _value = _get(value);
         array_t<double> _accum = _get(accum);
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
-           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp));
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("repr_data", _disp),
+           cereal::make_nvp("value", _value), cereal::make_nvp("accum", _accum),
+           cereal::make_nvp("display", _disp));
         // ar(cereal::make_nvp("units", unit_array()),
         //   cereal::make_nvp("display_units", display_unit_array()));
     }

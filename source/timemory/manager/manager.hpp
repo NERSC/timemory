@@ -65,25 +65,29 @@ namespace tim
 //
 class manager
 {
+    template <typename... Args>
+    using uomap_t = std::unordered_map<Args...>;
+
 public:
-    using this_type        = manager;
-    using pointer_t        = std::shared_ptr<this_type>;
-    using pointer_pair_t   = std::pair<pointer_t, pointer_t>;
-    using size_type        = std::size_t;
-    using string_t         = std::string;
-    using comm_group_t     = std::tuple<mpi::comm_t, int32_t>;
-    using mutex_t          = std::recursive_mutex;
-    using auto_lock_t      = std::unique_lock<mutex_t>;
-    using auto_lock_ptr_t  = std::shared_ptr<std::unique_lock<mutex_t>>;
-    using finalizer_func_t = std::function<void()>;
-    using finalizer_pair_t = std::pair<std::string, finalizer_func_t>;
-    using finalizer_list_t = std::deque<finalizer_pair_t>;
-    using finalizer_void_t = std::multimap<void*, finalizer_func_t>;
-    using settings_ptr_t   = std::shared_ptr<settings>;
-    using filemap_t        = std::map<string_t, std::map<string_t, std::set<string_t>>>;
-    using metadata_func_t  = std::vector<std::function<void(void*)>>;
-    using metadata_info_t  = std::multimap<string_t, string_t>;
-    using enum_set_t       = std::set<TIMEMORY_COMPONENT>;
+    using this_type          = manager;
+    using pointer_t          = std::shared_ptr<this_type>;
+    using pointer_pair_t     = std::pair<pointer_t, pointer_t>;
+    using size_type          = std::size_t;
+    using string_t           = std::string;
+    using comm_group_t       = std::tuple<mpi::comm_t, int32_t>;
+    using mutex_t            = std::recursive_mutex;
+    using auto_lock_t        = std::unique_lock<mutex_t>;
+    using auto_lock_ptr_t    = std::shared_ptr<std::unique_lock<mutex_t>>;
+    using finalizer_func_t   = std::function<void()>;
+    using finalizer_pair_t   = std::pair<std::string, finalizer_func_t>;
+    using finalizer_list_t   = std::deque<finalizer_pair_t>;
+    using synchronize_list_t = uomap_t<string_t, uomap_t<int64_t, std::function<void()>>>;
+    using finalizer_void_t   = std::multimap<void*, finalizer_func_t>;
+    using settings_ptr_t     = std::shared_ptr<settings>;
+    using filemap_t          = std::map<string_t, std::map<string_t, std::set<string_t>>>;
+    using metadata_func_t    = std::vector<std::function<void(void*)>>;
+    using metadata_info_t    = std::multimap<string_t, string_t>;
+    using enum_set_t         = std::set<TIMEMORY_COMPONENT>;
     template <typename Tp>
     using enum_map_t = std::map<TIMEMORY_COMPONENT, Tp>;
 
@@ -98,15 +102,22 @@ public:
     manager& operator=(const manager&) = delete;
     manager& operator=(manager&&) = delete;
 
-    // storage-types add functors to destroy the instances
+    /// add functors to destroy instances based on a pointer
     template <typename Func>
     void add_cleanup(void*, Func&&);
+    /// add functors to destroy instances based on a string key
     template <typename Func>
     void add_cleanup(const std::string&, Func&&);
+    /// this is used by storage classes for finalization
     template <typename StackFunc, typename FinalFunc>
     void add_finalizer(const std::string&, StackFunc&&, FinalFunc&&, bool);
+    /// remove a cleanup functor
+    void remove_cleanup(void*);
+    /// remove a cleanup functor
     void remove_cleanup(const std::string&);
+    /// remove a finalizer functor
     void remove_finalizer(const std::string&);
+    /// execute a cleanup based on a key
     void cleanup(const std::string&);
     void cleanup();
     void finalize();
@@ -118,28 +129,58 @@ public:
     void add_text_output(const string_t& _label, const string_t& _file);
     void add_json_output(const string_t& _label, const string_t& _file);
 
-    /// \fn void set_write_metadata(short)
-    /// \brief Set to 0 for yes if other output, -1 for never, or 1 for yes
-    void                       set_write_metadata(short v) { m_write_metadata = v; }
-    void                       write_metadata(const std::string&, const char* = "");
-    void                       update_metadata_prefix();
-    TIMEMORY_NODISCARD int32_t get_rank() const { return m_rank; }
-    TIMEMORY_NODISCARD bool    is_finalizing() const { return m_is_finalizing; }
-    void                       is_finalizing(bool v) { m_is_finalizing = v; }
-    void                       add_entries(uint64_t n) { m_num_entries += n; }
+    /// Set to 0 for yes if other output, -1 for never, or 1 for yes
+    void set_write_metadata(short v) { m_write_metadata = v; }
+    /// Print metadata to filename
+    void write_metadata(const std::string&, const char* = "");
+    /// Updates settings, rank, output prefix, etc.
+    void update_metadata_prefix();
+    /// Get the dmp rank. This is stored to avoid having to do MPI/UPC++ query after
+    /// finalization has been called
+    int32_t get_rank() const { return m_rank; }
+    /// Query whether finalization is currently occurring
+    bool is_finalizing() const { return m_is_finalizing; }
+    /// Sets whether finalization is currently occuring
+    void is_finalizing(bool v) { m_is_finalizing = v; }
+    /// Add number of component output data entries. If this value is zero, metadata
+    /// output is suppressed unless \ref tim::manager::set_write_metadata was assigned a
+    /// value of 1
+    void add_entries(uint64_t n) { m_num_entries += n; }
+
+    /// Add function for synchronizing data in threads
+    void add_synchronization(const std::string&, int64_t, std::function<void()>);
+    /// Remove function for synchronizing data in threads
+    void remove_synchronization(const std::string&, int64_t);
+    /// Synchronizes thread-data for storage
+    void synchronize();
 
 public:
-    // Public static functions
+    /// Get a shared pointer to the instance for the current thread
     static pointer_t instance() TIMEMORY_VISIBILITY("default");
+    /// Get a shared pointer to the instance on the primary thread
     static pointer_t master_instance() TIMEMORY_VISIBILITY("default");
-    static int32_t   total_instance_count() { return f_manager_instance_count().load(); }
-    static void      use_exit_hook(bool val) { f_use_exit_hook() = val; }
-    static void      exit_hook();
-    static int32_t   get_thread_count() { return f_thread_counter().load(); }
+    /// Get the number of instances that are currently allocated. This is decremented
+    /// during the destructor of each manager instance, unlike \ref
+    /// tim::manager::get_thread_count()
+    static int32_t total_instance_count() { return f_manager_instance_count().load(); }
+    /// Enable setting std::exit callback
+    static void use_exit_hook(bool val) { f_use_exit_hook() = val; }
+    /// The exit hook function
+    static void exit_hook();
+    /// This effectively provides the total number of threads which collected data.
+    /// It is only "decremented" when the last manager instance has been deleted, at which
+    /// point it is set to zero.
+    static int32_t get_thread_count() { return f_thread_counter().load(); }
 
+    /// Add a metadata entry of a non-string type. If this fails to serialize, either
+    /// include either the approiate header from timemory/tpls/cereal/cereal/types or
+    /// provides a serialization function for the type.
     template <typename Tp>
     static void add_metadata(const std::string&, const Tp&);
+    /// Add a metadata entry of a const character array. This only exists to avoid
+    /// the template function from serializing the pointer.
     static void add_metadata(const std::string&, const char*);
+    /// Add a metadata entry of a string
     static void add_metadata(const std::string&, const std::string&);
 
 private:
@@ -210,7 +251,12 @@ private:
 
 public:
     //----------------------------------------------------------------------------------//
-    //
+    /// This is used to apply/query storage data for multiple component types.
+    ///
+    /// \code{.cpp}
+    /// using types = tim::available_types_t;   // type-list of all enumerated types
+    /// manager_t::get_storage<types>::clear(); // clear storage for all enumerated types
+    /// \endcode
     template <typename... Types>
     struct get_storage : public filtered_get_storage<implemented_t<Types...>>
     {
@@ -223,7 +269,7 @@ public:
     };
 
     //----------------------------------------------------------------------------------//
-    //
+    /// Overload for a tuple/type-list
     template <template <typename...> class Tuple, typename... Types>
     struct get_storage<Tuple<Types...>>
     : public filtered_get_storage<implemented_t<Types...>>
@@ -236,17 +282,6 @@ public:
         using base_type::size;
     };
 
-    //----------------------------------------------------------------------------------//
-    //
-    /// used by storage classes to ensure that the singleton instance is managed
-    /// via the master thread of holding the manager instance
-    //
-    template <typename Tp>
-    auto get_singleton() -> decltype(Tp::instance())
-    {
-        return Tp::instance();
-    }
-
 private:
     template <typename... Types>
     friend struct get_storage;
@@ -255,13 +290,13 @@ private:
     friend struct filtered_get_storage;
 
 public:
-    // Public member functions
+    /// Get the instance ID for this manager instance
     TIMEMORY_NODISCARD int32_t instance_count() const { return m_instance_count; }
+    /// Get the thread-index for this manager instance
     TIMEMORY_NODISCARD int64_t get_tid() const { return m_thread_index; }
 
 protected:
-    // protected static functions
-    static comm_group_t get_communicator_group();
+    // static comm_group_t get_communicator_group();
 
 protected:
     // protected functions
@@ -291,6 +326,7 @@ private:
     finalizer_list_t       m_master_finalizers  = {};
     finalizer_list_t       m_worker_finalizers  = {};
     finalizer_void_t       m_pointer_fini       = {};
+    synchronize_list_t     m_synchronize        = {};
     filemap_t              m_output_files       = {};
     settings_ptr_t         m_settings           = settings::shared_instance();
 
@@ -340,21 +376,24 @@ private:
     static auto  f_settings() { return f_manager_persistent_data().config; }
 
 public:
+    /// This function stores the primary manager instance for the application
     static void set_persistent_master(pointer_t _pinst)
     {
         tim::manager::f_manager_persistent_data().master_instance = std::move(_pinst);
     }
 
+    /// Updates the settings instance use by the manager instance
     static void update_settings(const settings& _settings)
     {
         f_settings() = std::make_shared<settings>(_settings);
     }
 
-    static settings swap_settings(settings _settings)
+    /// swaps out the actual settings instance
+    static settings&& swap_settings(settings _settings)
     {
-        settings _tmp         = std::move(*(f_settings().get()));
+        settings&& _tmp       = std::move(*(f_settings().get()));
         *(f_settings().get()) = std::move(_settings);
-        return _tmp;
+        return std::move(_tmp);
     }
 };
 //
@@ -377,8 +416,7 @@ manager::add_cleanup(const std::string& _key, Func&& _func)
     // ensure there are no duplicates
     remove_cleanup(_key);
     // insert into map
-    auto _entry = finalizer_pair_t{ _key, std::forward<Func>(_func) };
-    m_finalizer_cleanups.push_back(_entry);
+    m_finalizer_cleanups.emplace_back(_key, std::forward<Func>(_func));
 }
 //
 //----------------------------------------------------------------------------------//

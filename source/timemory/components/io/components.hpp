@@ -144,9 +144,6 @@ struct read_char : public base<read_char, std::pair<int64_t, int64_t>>
         double data  = std::get<0>(val);
         double delta = std::get<1>(val);
 
-        if(!is_transient)
-            delta = get_timestamp() - delta;
-
         delta /= static_cast<double>(std::nano::den);
         delta *= get_timing_unit();
 
@@ -354,9 +351,6 @@ struct written_char : public base<written_char, std::array<int64_t, 2>>
         double data  = std::get<0>(val);
         double delta = std::get<1>(val);
 
-        if(!is_transient)
-            delta = get_timestamp() - delta;
-
         delta /= static_cast<double>(std::nano::den);
         delta *= get_timing_unit();
 
@@ -560,9 +554,6 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
 
         double data  = std::get<0>(val);
         double delta = std::get<1>(val);
-
-        if(!is_transient)
-            delta = get_timestamp() - delta;
 
         delta /= static_cast<double>(std::nano::den);
         delta *= get_timing_unit();
@@ -768,9 +759,6 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 
         double data  = std::get<0>(val);
         double delta = std::get<1>(val);
-
-        if(!is_transient)
-            delta = get_timestamp() - delta;
 
         delta /= static_cast<double>(std::nano::den);
         delta *= get_timing_unit();

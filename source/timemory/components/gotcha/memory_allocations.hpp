@@ -79,7 +79,6 @@ struct malloc_gotcha
     }
 
     using base_type::accum;
-    using base_type::is_transient;
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;
@@ -230,8 +229,6 @@ public:
     {
         value += rhs.value;
         accum += rhs.accum;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -241,8 +238,6 @@ public:
     {
         value -= rhs.value;
         accum -= rhs.accum;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -387,5 +382,3 @@ private:
 #if defined(__GNUC__) && (__GNUC__ >= 6)
 #    pragma GCC diagnostic pop
 #endif
-
-#include "timemory/variadic/component_tuple.cpp"

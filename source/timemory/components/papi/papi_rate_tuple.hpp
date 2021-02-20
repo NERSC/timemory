@@ -148,6 +148,8 @@ public:
 public:
     TIMEMORY_DEFAULT_OBJECT(papi_rate_tuple)
 
+    using base_type::load;
+
     void start()
     {
         value.first.start();
@@ -254,7 +256,7 @@ public:
     }
 
 protected:
-    using base_type::is_transient;
+    using base_type::accum;
     using base_type::laps;
     using base_type::set_started;
     using base_type::set_stopped;

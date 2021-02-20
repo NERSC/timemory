@@ -22,13 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/operations/types/stop.hpp
- * \brief Definition for various functions for stop in operations
- */
-
 #pragma once
 
+#include "timemory/mpl/quirks.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -52,34 +48,41 @@ struct stop
     template <typename U>
     using base_t = typename U::base_type;
 
-    TIMEMORY_DELETED_OBJECT(stop)
+    TIMEMORY_DEFAULT_OBJECT(stop)
 
-    TIMEMORY_HOT_INLINE explicit stop(type& obj) { impl(obj); }
+    TIMEMORY_HOT explicit stop(type& obj) { impl(obj); }
+    TIMEMORY_HOT explicit stop(type& obj, quirk::unsafe&&) { impl(obj, quirk::unsafe{}); }
 
     template <typename Arg, typename... Args>
-    TIMEMORY_HOT_INLINE stop(type& obj, Arg&& arg, Args&&... args)
+    TIMEMORY_HOT stop(type& obj, Arg&& arg, Args&&... args)
     {
         impl(obj, std::forward<Arg>(arg), std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    TIMEMORY_HOT_INLINE auto operator()(type& obj, Args&&... args)
+    TIMEMORY_HOT auto operator()(type& obj, Args&&... args) const
     {
-        using RetT = decltype(do_sfinae(obj, 0, 0, std::forward<Args>(args)...));
+        using RetT = decltype(sfinae(obj, 0, 0, std::forward<Args>(args)...));
         if(trait::runtime_enabled<type>::get() && is_running<Tp, true>{}(obj))
         {
-            return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
+            return sfinae(obj, 0, 0, std::forward<Args>(args)...);
         }
         return RetT{};
     }
 
+    template <typename... Args>
+    TIMEMORY_HOT auto operator()(type& obj, quirk::unsafe&&, Args&&... args) const
+    {
+        return sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    }
+
 private:
     template <typename... Args>
-    TIMEMORY_HOT_INLINE void impl(type& obj, Args&&... args);
+    TIMEMORY_HOT void impl(type& obj, Args&&... args) const;
 
     // resolution #1 (best)
     template <typename Up, typename... Args>
-    TIMEMORY_HOT_INLINE auto do_sfinae(Up& obj, int, int, Args&&... args)
+    TIMEMORY_HOT auto sfinae(Up& obj, int, int, Args&&... args) const
         -> decltype(obj.stop(std::forward<Args>(args)...))
     {
         set_stopped<Tp>{}(obj);
@@ -88,8 +91,7 @@ private:
 
     // resolution #2
     template <typename Up, typename... Args>
-    TIMEMORY_HOT_INLINE auto do_sfinae(Up& obj, int, long, Args&&...)
-        -> decltype(obj.stop())
+    TIMEMORY_HOT auto sfinae(Up& obj, int, long, Args&&...) const -> decltype(obj.stop())
     {
         set_stopped<Tp>{}(obj);
         return obj.stop();
@@ -97,7 +99,7 @@ private:
 
     // resolution #3 (worst) - no member function
     template <typename Up, typename... Args>
-    void do_sfinae(Up&, long, long, Args&&...)
+    void sfinae(Up&, long, long, Args&&...) const
     {
         SFINAE_WARNING(type);
     }
@@ -117,12 +119,12 @@ struct priority_stop
     TIMEMORY_DELETED_OBJECT(priority_stop)
 
     template <typename... Args>
-    TIMEMORY_HOT_INLINE explicit priority_stop(type& obj, Args&&... args);
+    TIMEMORY_HOT explicit priority_stop(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
+    TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
         stop<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
@@ -147,12 +149,12 @@ struct standard_stop
     TIMEMORY_DELETED_OBJECT(standard_stop)
 
     template <typename... Args>
-    TIMEMORY_HOT_INLINE explicit standard_stop(type& obj, Args&&... args);
+    TIMEMORY_HOT explicit standard_stop(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
+    TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
         stop<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
@@ -177,12 +179,12 @@ struct delayed_stop
     TIMEMORY_DELETED_OBJECT(delayed_stop)
 
     template <typename... Args>
-    TIMEMORY_HOT_INLINE explicit delayed_stop(type& obj, Args&&... args);
+    TIMEMORY_HOT explicit delayed_stop(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
+    TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
         stop<Tp> _tmp(obj, std::forward<Args>(args)...);
     }
@@ -198,14 +200,14 @@ private:
 template <typename Tp>
 template <typename... Args>
 void
-stop<Tp>::impl(type& obj, Args&&... args)
+stop<Tp>::impl(type& obj, Args&&... args) const
 {
     if(!trait::runtime_enabled<type>::get())
         return;
     if(is_running<Tp, true>{}(obj))
     {
         set_stopped<Tp>{}(obj);
-        do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
+        sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
 }
 //

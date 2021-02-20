@@ -348,6 +348,10 @@ def configure():
     pypath = [pyct.BINARY_DIRECTORY] + pypath
     os.environ["PYTHONPATH"] = ":".join(pypath)
 
+    if args.coverage or pyct.BUILD_TYPE == "Debug":
+        os.environ["TIMEMORY_DEBUG"] = "ON"
+        os.environ["TIMEMORY_VERBOSE"] = "6"
+
     global build_name
     global argparse_defaults
     # generate the defaults
@@ -423,12 +427,12 @@ def run_pyctest():
     cmd = pyct.command([os.environ["CXX"], "--version"])
     cmd.SetOutputStripTrailingWhitespace(True)
     cmd.Execute()
-    compiler_version = cmd.Output()
+    compiler_version = cmd.Output().replace("Ubuntu", "").lower()
     cn = os.environ["CXX"]
     try:
         cn = compiler_version.split()[0]
-        cv = re.search(r"(\b)\d.\d.\d", compiler_version)
-        compiler_version = "{}{}".format(cn, cv.group()[0]).replace("++", "xx")
+        cv = re.search(r"(\b)\d+.\d", compiler_version)
+        compiler_version = "{}-{}".format(cn, cv.group()).replace("++", "xx")
     except Exception as e:
         print("Exception! {}".format(e))
         cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
@@ -574,9 +578,13 @@ def run_pyctest():
 
     # Use the options to create a build name with configuration
     pyct.BUILD_NAME = (
-        "{}-{}".format(pyct.BUILD_NAME, build_name)
-        .replace("/", "-")
-        .replace(" ", "-")
+        (
+            "{}-{}".format(pyct.BUILD_NAME, build_name)
+            .replace("/", "-")
+            .replace(" ", "-")
+        )
+        .strip("-")
+        .replace("origin-", "")
     )
 
     # default options

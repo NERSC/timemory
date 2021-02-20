@@ -25,10 +25,7 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_DEPRECATED)
-#    include "timemory/deprecated/component_hybrid.hpp"
-#else
-#    include "timemory/variadic/component_bundle.hpp"
+#include "timemory/variadic/component_bundle.hpp"
 
 namespace tim
 {
@@ -102,5 +99,3 @@ template <typename... T>
 using component_hybrid_t = typename component_hybrid<T...>::type;
 //
 }  // namespace tim
-
-#endif  // !defined(TIMEMORY_USE_DEPRECATED)

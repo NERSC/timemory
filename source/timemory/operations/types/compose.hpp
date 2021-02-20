@@ -72,7 +72,7 @@ struct compose
         RetType ret;
         ret.set_is_running(false);
         ret.set_is_on_stack(false);
-        ret.set_is_transient(lhs.is_transient && rhs.is_transient);
+        ret.set_is_transient(lhs.get_is_transient() && rhs.get_is_transient());
         ret.laps  = std::min(lhs.laps, rhs.laps);
         ret.value = (lhs.value + rhs.value);
         ret.accum = (lhs.accum + rhs.accum);
@@ -86,7 +86,7 @@ struct compose
         RetType ret(std::forward<Args>(args)...);
         ret.set_is_running(false);
         ret.set_is_on_stack(false);
-        ret.set_is_transient(lhs.is_transient && rhs.is_transient);
+        ret.set_is_transient(lhs.get_is_transient() && rhs.get_is_transient());
         ret.laps  = std::min(lhs.laps, rhs.laps);
         ret.value = func(lhs.value, rhs.value);
         ret.accum = func(lhs.accum, rhs.accum);

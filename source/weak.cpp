@@ -22,9 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/backends/process.hpp"
 #include "timemory/compat/library.h"
 #include "timemory/components/ompt/types.hpp"
+#include "timemory/environment.hpp"
 #include "timemory/library.h"
+#include "timemory/settings.hpp"
 
 #include <cstdint>
 #include <limits>

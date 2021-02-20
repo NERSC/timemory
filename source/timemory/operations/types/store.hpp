@@ -48,7 +48,7 @@ struct store
     TIMEMORY_DEFAULT_OBJECT(store)
 
     template <typename... Args>
-    TIMEMORY_HOT_INLINE explicit store(type& obj, Args&&... args)
+    TIMEMORY_HOT explicit store(type& obj, Args&&... args)
     {
         if(!trait::runtime_enabled<type>::get())
             return;
@@ -57,7 +57,7 @@ struct store
     }
 
     template <typename... Args>
-    TIMEMORY_HOT_INLINE auto operator()(type& obj, Args&&... args)
+    TIMEMORY_HOT auto operator()(type& obj, Args&&... args)
     {
         return sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
@@ -67,7 +67,7 @@ private:
     //  The equivalent of supports args and an implementation provided
     //
     template <typename Up, typename... Args>
-    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int, int, Args&&... args)
+    TIMEMORY_HOT auto sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(obj.store(std::forward<Args>(args)...))
     {
         return obj.store(std::forward<Args>(args)...);
@@ -76,8 +76,7 @@ private:
     //----------------------------------------------------------------------------------//
     //
     template <typename Up, typename... Args>
-    TIMEMORY_HOT_INLINE auto sfinae(Up& obj, int, long, Args&&...)
-        -> decltype(obj.store())
+    TIMEMORY_HOT auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.store())
     {
         return obj.store();
     }

@@ -328,3 +328,139 @@ TEST_F(settings_tests, metadata)
 }
 
 //--------------------------------------------------------------------------------------//
+
+TEST_F(settings_tests, push_pop)
+{
+    auto _orig_settings          = tim::settings::instance();
+    auto _orig_add_second        = tim::settings::add_secondary();
+    auto _orig_enabled           = tim::settings::enabled();
+    auto _orig_global_components = tim::settings::global_components();
+    auto _settings               = tim::settings::push<TIMEMORY_API>();
+
+    auto _print_settings = [](const auto& _label, auto _instance) {
+        std::cout << '\n' << _label << '\n';
+        std::cout << "\tadd_secondary     : " << std::boolalpha
+                  << _instance->get_add_secondary() << '\n';
+        std::cout << "\tenabled           : " << std::boolalpha
+                  << _instance->get_enabled() << '\n';
+        std::cout << "\tglobal components : " << std::boolalpha
+                  << _instance->get_global_components() << '\n';
+    };
+
+    _print_settings("ORIGINAL BEFORE COPY", _orig_settings);
+
+    ASSERT_NE(_orig_settings, _settings.get()) << "Push did not create copy";
+
+    _print_settings("ORIGINAL BEFORE MODIFY", _orig_settings);
+    _print_settings("COPY BEFORE MODIFY", _settings);
+
+    _settings->get_add_secondary() = !_orig_add_second;
+    _settings->get_enabled()       = !_orig_enabled;
+    _settings->get_global_components() =
+        _orig_global_components + " wall_clock, monotonic_clock";
+
+    _print_settings("ORIGINAL AFTER MODIFY", _orig_settings);
+    _print_settings("COPY AFTER MODIFY", _settings);
+
+    // ensure the non-template access method was NOT updated
+    EXPECT_EQ(tim::settings::add_secondary(), _orig_add_second)
+        << "Original settings were inappropriately updated";
+    EXPECT_EQ(tim::settings::enabled(), _orig_enabled)
+        << "Original settings were inappropriately updated";
+    EXPECT_EQ(tim::settings::global_components(), _orig_global_components)
+        << "Original settings were inappropriately updated";
+
+    // ensure the non-template access method was NOT updated
+    EXPECT_NE(_settings->get_add_secondary(), tim::settings::add_secondary())
+        << "Push instance changed original settings";
+    EXPECT_NE(_settings->get_enabled(), tim::settings::enabled())
+        << "Push instance changed original settings";
+    EXPECT_NE(_settings->get_global_components(), tim::settings::global_components())
+        << "Push instance changed original settings";
+
+    // ensure the template access method was updated
+    EXPECT_EQ(_settings->get_add_secondary(),
+              tim::settings::instance<TIMEMORY_API>()->get_add_secondary())
+        << "Push instance did not propagate to static methods";
+    EXPECT_EQ(_settings->get_enabled(),
+              tim::settings::instance<TIMEMORY_API>()->get_enabled())
+        << "Push instance did not propagate to static methods";
+    EXPECT_EQ(_settings->get_global_components(),
+              tim::settings::instance<TIMEMORY_API>()->get_global_components())
+        << "Push instance did not propagate to static methods";
+
+    // ensure the template access method was updated
+    EXPECT_NE(_settings->get_add_secondary(), _orig_add_second)
+        << "Failure to change original settings";
+    EXPECT_NE(_settings->get_enabled(), _orig_enabled)
+        << "Failure to change original settings";
+    EXPECT_NE(_settings->get_global_components(), _orig_global_components)
+        << "Failure to change original settings";
+
+    _settings = tim::settings::pop<TIMEMORY_API>();
+
+    EXPECT_EQ(_settings.get(), _orig_settings);
+
+    // ensure restoration
+    EXPECT_EQ(_settings->get_add_secondary(), _orig_add_second)
+        << "Original settings were not restored";
+    EXPECT_EQ(_settings->get_enabled(), _orig_enabled)
+        << "Original settings were not restored";
+    EXPECT_EQ(_settings->get_global_components(), _orig_global_components)
+        << "Original settings were not restored";
+
+    // ensure the non-template access method was NOT updated
+    EXPECT_EQ(tim::settings::add_secondary(), _orig_add_second)
+        << "Original settings were inappropriately updated";
+    EXPECT_EQ(tim::settings::enabled(), _orig_enabled)
+        << "Original settings were inappropriately updated";
+    EXPECT_EQ(tim::settings::global_components(), _orig_global_components)
+        << "Original settings were inappropriately updated";
+}
+
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DECLARE_API(settings_copy)
+
+TEST_F(settings_tests, api_copy)
+{
+    using settings_t      = tim::settings;
+    using strvec_t        = std::vector<std::string>;
+    settings_t* _settings = settings_t::instance();
+    std::string _ref_env  = "SETTINGS_TEST_COPY";
+    std::string _ref_name = "test_copy";
+    std::string _ref_cmd  = "--test-copy";
+    std::string _ref_desc =
+        TIMEMORY_JOIN("", "Copied value for settings_tests.", details::get_test_name());
+
+    auto _ptr = std::make_shared<tim::tsettings<uint64_t>>(
+        reference_value, _ref_name, _ref_env, _ref_desc, strvec_t({ _ref_cmd }), 1, -2);
+    _settings->insert(_ptr);
+
+    auto _api_settings = tim::settings::instance<tim::api::settings_copy>();
+
+    ASSERT_EQ(_api_settings->ordering().size(), _settings->ordering().size());
+
+    bool found_ref_in_api_settings = false;
+    for(size_t i = 0; i < _api_settings->ordering().size(); ++i)
+    {
+        EXPECT_EQ(_api_settings->ordering().at(i), _settings->ordering().at(i));
+        if(_api_settings->ordering().at(i) == _ref_env)
+            found_ref_in_api_settings = true;
+    }
+
+    EXPECT_TRUE(found_ref_in_api_settings);
+
+    std::stringstream api_ss;
+    std::stringstream orig_ss;
+
+    auto api_ar  = tim::policy::output_archive_t<tim::settings>::get(api_ss);
+    auto orig_ar = tim::policy::output_archive_t<tim::settings>::get(orig_ss);
+
+    settings_t::serialize_settings(*api_ar, *_api_settings);
+    settings_t::serialize_settings(*orig_ar, *_settings);
+
+    EXPECT_EQ(api_ss.str(), orig_ss.str());
+}
+
+//--------------------------------------------------------------------------------------//

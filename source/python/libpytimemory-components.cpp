@@ -176,6 +176,47 @@ make the latest updated value available.
 //
 //--------------------------------------------------------------------------------------//
 //
+static bool print_repr_in_interactive = false;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename V = typename T::value_type>
+static inline void
+repr(py::class_<pytuple_t<T>>& _pyclass,
+     std::enable_if_t<!std::is_same<V, void>::value, int> = 0)
+{
+    auto _repr = [](pytuple_t<T>* obj) {
+        static auto _main     = py::module::import("__main__");
+        static bool _has_main = (_main) ? py::hasattr(_main, "__file__") : false;
+        if(!obj || (!_has_main && !print_repr_in_interactive))
+            return std::string{};
+        std::stringstream ss;
+        {
+            tim::cereal::MinimalJSONOutputArchive ar(ss);
+            ar(tim::cereal::make_nvp(tim::demangle<pytuple_t<T>>(), *obj));
+        }
+        return ss.str();
+    };
+    auto _str = [](pytuple_t<T>* obj) {
+        if(!obj)
+            return std::string{};
+        std::stringstream ss;
+        obj->template print<true, true>(ss, false);
+        return ss.str();
+    };
+    _pyclass.def("__repr__", _repr, "String representation");
+    _pyclass.def("__str__", _str, "String representation");
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename V = typename T::value_type>
+static inline void
+repr(py::class_<pytuple_t<T>>&, std::enable_if_t<std::is_same<V, void>::value, int> = 0)
+{}
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename T, typename V = typename T::value_type,
           std::enable_if_t<std::is_same<V, void>::value, int> = 0>
 static inline void
@@ -625,13 +666,6 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
             *lhs -= *rhs;
         return lhs;
     };
-    auto _repr = [](bundle_t* obj) {
-        if(!obj)
-            return std::string{};
-        std::stringstream ss;
-        obj->template print<true, true>(ss, false);
-        return ss.str();
-    };
 
     py::class_<bundle_t> _pycomp(_pymod, id.c_str(), T::description().c_str());
 
@@ -649,6 +683,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
 
     // these require further evaluation
     pyinternal::get(_pycomp);
+    pyinternal::repr(_pycomp);
     pyinternal::record(_pycomp, 0, 0);
     pyinternal::sample(_pycomp, 0, 0);
     pyinternal::get_unit(_pycomp, 0, 0);
@@ -668,7 +703,6 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def(py::self - py::self);
     _pycomp.def(py::self += py::self);
     _pycomp.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
-    _pycomp.def("__repr__", _repr, "String representation");
 
     auto _label = []() {
         if(metadata_t::specialized())
@@ -834,6 +868,8 @@ generate(py::module& _pymod)
         "Stand-alone classes for the components. Unless push() and pop() are called on "
         "these objects, they will not store any data in the timemory call-graph (if "
         "applicable)");
+
+    _pycomp.attr("_print_repr_in_interactive") = pyinternal::print_repr_in_interactive;
 
     constexpr size_t                    N = TIMEMORY_COMPONENTS_END;
     std::array<bool, N>                 _boolgen;

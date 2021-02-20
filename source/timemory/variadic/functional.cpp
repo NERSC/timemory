@@ -819,6 +819,28 @@ set_scope(TupleT<Tp&...>&& obj, Args&&... args)
 }
 //
 //--------------------------------------------------------------------------------------//
+//                                  set_state
+//--------------------------------------------------------------------------------------//
+//
+template <typename ApiT, template <typename...> class TupleT, typename... Tp,
+          typename... Args>
+void
+set_state(TupleT<Tp...>& obj, Args&&... args)
+{
+    invoke_impl::invoke_data<operation::set_state, ApiT>(obj,
+                                                         std::forward<Args>(args)...);
+}
+//
+template <typename ApiT, template <typename...> class TupleT, typename... Tp,
+          typename... Args>
+void
+set_state(TupleT<Tp&...>&& obj, Args&&... args)
+{
+    invoke_impl::invoke_data<operation::set_state, ApiT>(
+        std::forward<TupleT<Tp&...>>(obj), std::forward<Args>(args)...);
+}
+//
+//--------------------------------------------------------------------------------------//
 //                                  assemble
 //--------------------------------------------------------------------------------------//
 //

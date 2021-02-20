@@ -131,7 +131,6 @@ private:
 
 protected:
     using base_type::accum;
-    using base_type::is_transient;
     using base_type::laps;
     using base_type::set_started;
     using base_type::set_stopped;
@@ -149,6 +148,8 @@ public:
     //==================================================================================//
 
     TIMEMORY_DEFAULT_OBJECT(papi_tuple)
+
+    using base_type::load;
 
     //----------------------------------------------------------------------------------//
     // sample
@@ -199,8 +200,6 @@ public:
             accum[i] += rhs.accum[i];
         for(size_type i = 0; i < num_events; ++i)
             value[i] += rhs.value[i];
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -210,8 +209,6 @@ public:
             accum[i] -= rhs.accum[i];
         for(size_type i = 0; i < num_events; ++i)
             value[i] -= rhs.value[i];
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -248,22 +245,16 @@ public:
             _value[i] = value[i];
             _accum[i] = accum[i];
         }
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
-           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp));
-        // ar(cereal::make_nvp("units", unit_array()),
-        //   cereal::make_nvp("display_units", display_unit_array()));
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("repr_data", _disp),
+           cereal::make_nvp("value", _value), cereal::make_nvp("accum", _accum),
+           cereal::make_nvp("display", _disp));
     }
 
-    entry_type get_display(int evt_type) const
-    {
-        auto val = (is_transient) ? accum[evt_type] : value[evt_type];
-        return val;
-    }
+    entry_type get_display(int evt_type) const { return accum[evt_type]; }
 
     TIMEMORY_NODISCARD string_t get_display() const
     {
-        auto val          = (is_transient) ? accum : value;
+        auto val          = load();
         auto _get_display = [&](std::ostream& os, size_type idx) {
             auto     _obj_value = val[idx];
             auto     _evt_type  = std::vector<int>({ EventTypes... }).at(idx);
@@ -310,7 +301,7 @@ public:
     auto get() const
     {
         std::array<Tp, num_events> values;
-        auto&                      _data = (is_transient) ? accum : value;
+        auto&                      _data = load();
         convert(values, _data, std::make_index_sequence<num_events>{});
         return values;
     }

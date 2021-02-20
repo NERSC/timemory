@@ -398,25 +398,14 @@ TIMEMORY_CONFIG_LINKAGE(void)  // NOLINT
 timemory_finalize()
 {
     auto _settings = settings::instance();
-    if(_settings)
-    {
-        if(_settings->get_debug() || _settings->get_verbose() > 3)
-            PRINT_HERE("%s", "");
+    auto _manager  = manager::instance();
 
-        if(_settings->get_enable_signal_handler())
-        {
-            if(_settings->get_debug())
-                PRINT_HERE("%s", "disabling signal detection");
-            disable_signal_detection();
-        }
-
-        if(_settings->get_debug())
-            PRINT_HERE("%s", "finalizing manager");
-    }
-
-    auto _manager = manager::instance();
     if(_manager)
+    {
+        if(_settings && _settings->get_debug())
+            PRINT_HERE("%s", "finalizing manager");
         _manager->finalize();
+    }
 
     if(_settings)
     {
@@ -433,6 +422,16 @@ timemory_finalize()
             if(_settings->get_debug())
                 PRINT_HERE("%s", "finalizing mpi");
             mpi::finalize();
+        }
+
+        if(_settings->get_debug() || _settings->get_verbose() > 3)
+            PRINT_HERE("%s", "");
+
+        if(_settings->get_enable_signal_handler())
+        {
+            if(_settings->get_debug())
+                PRINT_HERE("%s", "disabling signal detection");
+            disable_signal_detection();
         }
 
         if(_settings->get_debug())

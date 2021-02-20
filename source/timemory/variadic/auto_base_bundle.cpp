@@ -34,9 +34,9 @@ namespace tim
 
 template <typename Tag, typename CompT, typename BundleT>
 template <typename... T>
-auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const std::string&  key,
-                                                        quirk::config<T...> _config,
-                                                        transient_func_t    init_func)
+auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const string_view_t& key,
+                                                        quirk::config<T...>  _config,
+                                                        transient_func_t     init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(quirk_config<quirk::exit_report, T...>::value)
 , m_reference_object(nullptr)
@@ -77,10 +77,10 @@ auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const captured_location_
 //--------------------------------------------------------------------------------------//
 
 template <typename Tag, typename CompT, typename BundleT>
-auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const std::string& key,
-                                                        scope::config      _scope,
-                                                        bool               report_at_exit,
-                                                        transient_func_t   init_func)
+auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const string_view_t& key,
+                                                        scope::config        _scope,
+                                                        bool             report_at_exit,
+                                                        transient_func_t init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_reference_object(nullptr)
@@ -150,7 +150,7 @@ auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(component_type& tmp,
 
 template <typename Tag, typename CompT, typename BundleT>
 template <typename Arg, typename... Args>
-auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const std::string& key,
+auto_base_bundle<Tag, CompT, BundleT>::auto_base_bundle(const string_view_t& key,
                                                         bool store, scope::config _scope,
                                                         transient_func_t init_func,
                                                         Arg&& arg, Args&&... args)
@@ -243,8 +243,7 @@ template <typename Tag, typename CompT, typename BundleT>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::push()
 {
-    if(m_enabled)
-        m_temporary.push();
+    m_temporary.push();
     return static_cast<this_type&>(*this);
 }
 
@@ -252,8 +251,7 @@ template <typename Tag, typename CompT, typename BundleT>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::pop()
 {
-    if(m_enabled)
-        m_temporary.pop();
+    m_temporary.pop();
     return static_cast<this_type&>(*this);
 }
 
@@ -262,8 +260,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::measure(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.measure(std::forward<Args>(args)...);
+    m_temporary.measure(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -272,8 +269,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::record(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.record(std::forward<Args>(args)...);
+    m_temporary.record(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -282,8 +278,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::sample(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.sample(std::forward<Args>(args)...);
+    m_temporary.sample(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -292,8 +287,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::start(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.start(std::forward<Args>(args)...);
+    m_temporary.start(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -302,8 +296,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::stop(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.stop(std::forward<Args>(args)...);
+    m_temporary.stop(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -312,8 +305,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::assemble(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.assemble(std::forward<Args>(args)...);
+    m_temporary.assemble(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -322,8 +314,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::derive(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.derive(std::forward<Args>(args)...);
+    m_temporary.derive(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -332,8 +323,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::mark(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.mark(std::forward<Args>(args)...);
+    m_temporary.mark(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -342,8 +332,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::mark_begin(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.mark_begin(std::forward<Args>(args)...);
+    m_temporary.mark_begin(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -352,8 +341,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::mark_end(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.mark_end(std::forward<Args>(args)...);
+    m_temporary.mark_end(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -362,8 +350,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::store(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.store(std::forward<Args>(args)...);
+    m_temporary.store(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -372,8 +359,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::audit(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.audit(std::forward<Args>(args)...);
+    m_temporary.audit(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -382,8 +368,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::add_secondary(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.add_secondary(std::forward<Args>(args)...);
+    m_temporary.add_secondary(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -392,8 +377,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::reset(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.reset(std::forward<Args>(args)...);
+    m_temporary.reset(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -402,8 +386,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::set_scope(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.set_scope(std::forward<Args>(args)...);
+    m_temporary.set_scope(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -412,8 +395,7 @@ template <typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::set_prefix(Args&&... args)
 {
-    if(m_enabled)
-        m_temporary.set_prefix(std::forward<Args>(args)...);
+    m_temporary.set_prefix(std::forward<Args>(args)...);
     return static_cast<this_type&>(*this);
 }
 
@@ -422,8 +404,7 @@ template <template <typename> class OpT, typename... Args>
 BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::invoke(Args&&... _args)
 {
-    if(m_enabled)
-        m_temporary.template invoke<OpT>(std::forward<Args>(_args)...);
+    m_temporary.template invoke<OpT>(std::forward<Args>(_args)...);
     return static_cast<this_type&>(*this);
 }
 

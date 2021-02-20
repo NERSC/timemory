@@ -36,6 +36,11 @@
 
 namespace tim
 {
+namespace component
+{
+struct base_state;
+}
+//
 namespace invoke
 {
 //
@@ -53,32 +58,32 @@ print(std::ostream& os, const std::string& delim, Args&&... args);
 //
 template <template <typename...> class OpT, typename ApiT,
           template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 invoke(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class OpT, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 invoke(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class OpT, typename ApiT,
           template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 invoke(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class OpT, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 invoke(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class OpT, typename ApiT = TIMEMORY_API, typename... Up,
           template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 invoke(mpl::piecewise_select<Up...>, TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class OpT, typename ApiT = TIMEMORY_API, typename... Up,
           template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 invoke(mpl::piecewise_select<Up...>, TupleT<Tp&...>& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -86,12 +91,12 @@ invoke(mpl::piecewise_select<Up...>, TupleT<Tp&...>& obj, Args&&... args);
 //--------------------------------------------------------------------------------------//
 //
 template <typename TupleT, typename ApiT, typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 construct(Args&&... args);
 //
 //
 template <typename TupleT, typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 construct(Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -99,19 +104,19 @@ construct(Args&&... args);
 //--------------------------------------------------------------------------------------//
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 destroy(TupleT<Tp...>& obj);
 //
 template <template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 destroy(TupleT<Tp...>& obj);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 destroy(TupleT<Tp&...>&& obj);
 //
 template <template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 destroy(TupleT<Tp&...>&& obj);
 //
 //--------------------------------------------------------------------------------------//
@@ -120,20 +125,20 @@ destroy(TupleT<Tp&...>&& obj);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 start(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 start(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 start(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 start(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -142,20 +147,20 @@ start(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 stop(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 stop(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 stop(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 stop(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -164,20 +169,20 @@ stop(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -186,20 +191,20 @@ mark(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark_begin(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark_begin(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark_begin(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark_begin(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -208,20 +213,20 @@ mark_begin(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark_end(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark_end(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark_end(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 mark_end(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -230,20 +235,20 @@ mark_end(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 store(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 store(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 store(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 store(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -252,20 +257,20 @@ store(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 reset(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 reset(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 reset(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 reset(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -274,20 +279,20 @@ reset(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 record(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 record(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 record(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 record(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -296,20 +301,20 @@ record(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 measure(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 measure(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 measure(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 measure(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -318,20 +323,20 @@ measure(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 push(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 push(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 push(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 push(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -340,20 +345,20 @@ push(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 pop(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 pop(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 pop(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 pop(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -362,20 +367,20 @@ pop(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 set_prefix(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 set_prefix(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 set_prefix(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 set_prefix(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -384,21 +389,35 @@ set_prefix(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 set_scope(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 set_scope(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 set_scope(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 set_scope(TupleT<Tp&...>&& obj, Args&&... args);
+//
+//--------------------------------------------------------------------------------------//
+//                                  set_state
+//--------------------------------------------------------------------------------------//
+//
+template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
+          typename... Tp, typename... Args>
+TIMEMORY_INLINE void
+set_state(TupleT<Tp...>& obj, Args&&...);
+//
+template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
+          typename... Tp, typename... Args>
+TIMEMORY_INLINE void
+set_state(TupleT<Tp&...>&& obj, Args&&...);
 //
 //--------------------------------------------------------------------------------------//
 //                                  assemble
@@ -406,20 +425,20 @@ set_scope(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 assemble(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 assemble(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 assemble(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 assemble(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -428,20 +447,20 @@ assemble(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 derive(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 derive(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 derive(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 derive(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -450,20 +469,20 @@ derive(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 audit(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 audit(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 audit(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 audit(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -472,20 +491,20 @@ audit(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 add_secondary(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 add_secondary(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 add_secondary(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE void
+TIMEMORY_INLINE void
 add_secondary(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -494,28 +513,28 @@ add_secondary(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get(TupleT<Tp...>& obj, void*& _ptr, size_t _hash);
 //
 template <template <typename...> class TupleT, typename... Tp>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get(TupleT<Tp...>& obj, void*& _ptr, size_t _hash);
 //
 //--------------------------------------------------------------------------------------//
@@ -524,20 +543,20 @@ get(TupleT<Tp...>& obj, void*& _ptr, size_t _hash);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get_labeled(TupleT<Tp...>& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get_labeled(TupleT<Tp...>& obj, Args&&... args);
 //
 template <typename ApiT, template <typename...> class TupleT, typename... Tp,
           typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get_labeled(TupleT<Tp&...>&& obj, Args&&... args);
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get_labeled(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
@@ -545,7 +564,7 @@ get_labeled(TupleT<Tp&...>&& obj, Args&&... args);
 //--------------------------------------------------------------------------------------//
 //
 template <typename... BundleT>
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 get_cache();
 //
 //--------------------------------------------------------------------------------------//

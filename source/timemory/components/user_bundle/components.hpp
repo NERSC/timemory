@@ -356,7 +356,7 @@ public:
 
     void clear()
     {
-        if(base_type::is_running)
+        if(base_type::get_is_running())
             stop();
         m_typeids.clear();
         m_bundle.clear();
@@ -372,7 +372,7 @@ public:
         {
             itr.get(void_ptr, _typeid_hash);
             if(void_ptr)
-                return void_ptr;
+                return static_cast<T*>(void_ptr);
         }
         return static_cast<T*>(void_ptr);
     }

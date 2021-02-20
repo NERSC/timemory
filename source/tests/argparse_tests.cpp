@@ -626,6 +626,9 @@ TEST_F(argparse_tests, parse_known_options_without_options)
 
 TEST_F(argparse_tests, timemory_argparse_vec)
 {
+    auto _restore_debug    = tim::settings::debug();
+    tim::settings::debug() = false;
+
     auto _enabled = tim::settings::enabled();
     auto _verbose = tim::settings::verbose();
     auto _debug   = tim::settings::debug();
@@ -654,12 +657,72 @@ TEST_F(argparse_tests, timemory_argparse_vec)
     tim::settings::verbose()    = _verbose;
     tim::settings::debug()      = _debug;
     tim::settings::python_exe() = _python;
+
+    if(_restore_debug)
+        tim::settings::debug() = true;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(argparse_tests, timemory_init_argparse_vec)
+{
+    auto _restore_debug    = tim::settings::debug();
+    tim::settings::debug() = false;
+
+    auto _enabled = tim::settings::enabled();
+    auto _verbose = tim::settings::verbose();
+    auto _debug   = tim::settings::debug();
+    auto _python  = tim::settings::python_exe();
+
+    std::vector<std::string> args = {
+        _margv[0],
+        "--timemory-enabled=false",
+        "--timemory-verbose",
+        "10",
+        "--timemory-debug",
+        "--timemory-python-exe",
+        "/fake/python",
+        "--",
+        "./test",
+        "--foo",
+    };
+
+    std::cout << "Argument: ";
+    for(const auto& arg : args)
+        std::cout << arg << " ";
+    std::cout << std::endl;
+
+    tim::argparse::argument_parser p{ _margv[0] };
+    tim::timemory_init(args, p);
+
+    EXPECT_EQ(tim::settings::verbose(), 10);
+    EXPECT_NE(tim::settings::enabled(), _enabled);
+    EXPECT_NE(tim::settings::verbose(), _verbose);
+    EXPECT_NE(tim::settings::debug(), _debug);
+    EXPECT_NE(tim::settings::python_exe(), _python);
+    EXPECT_EQ(tim::settings::python_exe(), std::string("/fake/python"));
+
+    ASSERT_EQ(args.size(), 3);
+    EXPECT_EQ(args.at(0), std::string{ _margv[0] });
+    EXPECT_EQ(args.at(1), std::string{ "./test" });
+    EXPECT_EQ(args.at(2), std::string{ "--foo" });
+
+    tim::settings::enabled()    = _enabled;
+    tim::settings::verbose()    = _verbose;
+    tim::settings::debug()      = _debug;
+    tim::settings::python_exe() = _python;
+
+    if(_restore_debug)
+        tim::settings::debug() = true;
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(argparse_tests, timemory_argparse_ptr)
 {
+    auto _restore_debug    = tim::settings::debug();
+    tim::settings::debug() = false;
+
     auto _enabled = tim::settings::enabled();
     auto _verbose = tim::settings::verbose();
     auto _debug   = tim::settings::debug();
@@ -677,7 +740,7 @@ TEST_F(argparse_tests, timemory_argparse_ptr)
     for(int i = 0; i < argc; ++i)
     {
         argv[i] = new char[args.at(i).length() + 1];
-        strcpy(argv[i], args.at(i).c_str());
+        strncpy(argv[i], args.at(i).c_str(), args.at(i).length() + 1);
         argv[i][args.at(i).length()] = '\0';
     }
 
@@ -703,6 +766,13 @@ TEST_F(argparse_tests, timemory_argparse_ptr)
     tim::settings::verbose()    = _verbose;
     tim::settings::debug()      = _debug;
     tim::settings::python_exe() = _python;
+
+    for(int i = 0; i < argc; ++i)
+        delete[] argv[i];
+    delete[] argv;
+
+    if(_restore_debug)
+        tim::settings::debug() = true;
 }
 
 //--------------------------------------------------------------------------------------//

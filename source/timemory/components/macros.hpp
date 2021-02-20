@@ -511,8 +511,11 @@
         extern template struct record<COMPONENT_NAME>;                                   \
         extern template struct reset<COMPONENT_NAME>;                                    \
         extern template struct serialization<COMPONENT_NAME>;                            \
+        extern template struct set_depth_change<COMPONENT_NAME>;                         \
+        extern template struct set_is_flat<COMPONENT_NAME>;                              \
         extern template struct set_prefix<COMPONENT_NAME>;                               \
         extern template struct set_scope<COMPONENT_NAME>;                                \
+        extern template struct set_state<COMPONENT_NAME>;                                \
         extern template struct set_started<COMPONENT_NAME>;                              \
         extern template struct set_stopped<COMPONENT_NAME>;                              \
         extern template struct store<COMPONENT_NAME>;                                    \
@@ -579,8 +582,11 @@
         template struct record<COMPONENT_NAME>;                                          \
         template struct reset<COMPONENT_NAME>;                                           \
         template struct serialization<COMPONENT_NAME>;                                   \
+        template struct set_depth_change<COMPONENT_NAME>;                                \
+        template struct set_is_flat<COMPONENT_NAME>;                                     \
         template struct set_prefix<COMPONENT_NAME>;                                      \
         template struct set_scope<COMPONENT_NAME>;                                       \
+        template struct set_state<COMPONENT_NAME>;                                       \
         template struct set_started<COMPONENT_NAME>;                                     \
         template struct set_stopped<COMPONENT_NAME>;                                     \
         template struct store<COMPONENT_NAME>;                                           \

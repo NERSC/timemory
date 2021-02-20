@@ -233,8 +233,6 @@ struct filter_if_true<Predicate, type_list<Ts...>>
                            type_list<>>;
 };
 
-//--------------------------------------------------------------------------------------//
-
 template <template <typename> class Predicate, typename Sequence>
 using filter_true = typename filter_if_true<Predicate, Sequence>::type;
 
@@ -315,7 +313,10 @@ using non_placeholder_t = impl::filter_true<concepts::is_placeholder, T>;
 /// filter out any types that are not available
 template <typename... Types>
 using implemented_t =
-    impl::filter_false_after_decay_t<trait::is_available, std::tuple<Types...>>;
+    impl::filter_false_after_decay_t<trait::is_available, type_list<Types...>>;
+
+template <typename T>
+using implemented_list_t = impl::filter_false_after_decay_t<trait::is_available, T>;
 
 template <typename T>
 using available_t = impl::filter_false<trait::is_available, T>;
@@ -326,7 +327,7 @@ template <typename... T>
 using stl_tuple_t = convert_t<available_t<concat<T...>>, std::tuple<>>;
 
 template <typename... T>
-using type_list_t = convert_t<available_t<concat<T...>>, std::tuple<>>;
+using type_list_t = convert_t<available_t<concat<T...>>, type_list<>>;
 
 template <typename Tag, typename... T>
 using component_bundle_t = convert_t<available_t<type_list<T...>>, component_bundle<Tag>>;

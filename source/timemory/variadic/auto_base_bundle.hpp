@@ -79,7 +79,7 @@ public:
 public:
     template <typename T, typename... U>
     using quirk_config =
-        mpl::impl::quirk_config<T, convert_t<BundleT, type_list<>>, U...>;
+        tim::variadic::impl::quirk_config<T, convert_t<BundleT, type_list<>>, U...>;
 
 public:
     //
@@ -99,14 +99,14 @@ public:
 
 public:
     template <typename... T>
-    explicit auto_base_bundle(const std::string&, quirk::config<T...>,
-                              transient_func_t = get_initializer());
+    auto_base_bundle(const string_view_t&, quirk::config<T...>,
+                     transient_func_t = get_initializer());
 
     template <typename... T>
-    explicit auto_base_bundle(const captured_location_t&, quirk::config<T...>,
-                              transient_func_t = get_initializer());
+    auto_base_bundle(const captured_location_t&, quirk::config<T...>,
+                     transient_func_t = get_initializer());
 
-    explicit auto_base_bundle(const std::string&, scope::config = scope::get_default(),
+    explicit auto_base_bundle(const string_view_t&, scope::config = scope::get_default(),
                               bool report_at_exit = settings::destructor_report(),
                               transient_func_t    = get_initializer());
 
@@ -123,7 +123,7 @@ public:
                               bool report_at_exit = settings::destructor_report());
 
     template <typename Arg, typename... Args>
-    auto_base_bundle(const std::string&, bool store, scope::config _scope,
+    auto_base_bundle(const string_view_t&, bool store, scope::config _scope,
                      transient_func_t, Arg&&, Args&&...);
 
     template <typename Arg, typename... Args>
@@ -165,8 +165,8 @@ public:
     template <typename FuncT, typename... Args>
     decltype(auto) execute(FuncT&& func, Args&&... args)
     {
-        return bundle::execute(static_cast<this_type&>(*this),
-                               std::forward<FuncT>(func)(std::forward<Args>(args)...));
+        return mpl::execute(static_cast<this_type&>(*this),
+                            std::forward<FuncT>(func)(std::forward<Args>(args)...));
     }
 
     /// push components into call-stack storage
@@ -308,7 +308,7 @@ public:
         return m_temporary.template get<Tp>();
     }
 
-    void get(void*& ptr, size_t hash) { m_temporary.get(ptr, hash); }
+    void get(void*& ptr, size_t hash) const { m_temporary.get(ptr, hash); }
 
     template <typename T>
     auto get_component()
@@ -316,6 +316,8 @@ public:
     {
         return m_temporary.template get_component<T>();
     }
+
+    decltype(auto) get_data() const { return m_temporary.get_data(); }
 
 protected:
     void internal_init(transient_func_t _init);

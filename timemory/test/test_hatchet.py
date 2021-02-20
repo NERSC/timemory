@@ -160,9 +160,12 @@ class TimemoryHatchetTests(unittest.TestCase):
             "analysis",
         )
 
-        args = ["--expression", "x > 0"] + "-f dot flamegraph tree -o {} --per-thread --per-rank --select peak_rss --search fibonacci -e".format(
-            outpath
-        ).split()
+        args = (
+            ["--expression", "x > 0"]
+            + "-f dot flamegraph tree -o {} --per-thread --per-rank --select peak_rss --search fibonacci -e".format(
+                outpath
+            ).split()
+        )
 
         print(f"arguments: {args}")
 

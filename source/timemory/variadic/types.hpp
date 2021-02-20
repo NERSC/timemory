@@ -130,7 +130,7 @@ struct component_type<auto_hybrid<Types...>>
 //
 }  // namespace concepts
 //
-namespace bundle
+namespace mpl
 {
 #if !defined(CXX17)
 template <typename F, typename... Args>
@@ -198,7 +198,7 @@ auto
 execute(BundleT&& _bundle, ValueT&& _value,
         enable_if_t<!is_invocable<ValueT>::value, long> = 0);
 //
-}  // namespace bundle
+}  // namespace mpl
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//

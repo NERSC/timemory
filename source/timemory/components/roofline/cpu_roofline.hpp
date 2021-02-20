@@ -468,8 +468,6 @@ public:
             accum.first.resize(rhs.accum.first.size());
         value += rhs.value;
         accum += rhs.accum;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -483,14 +481,13 @@ public:
             accum.first.resize(rhs.accum.first.size());
         value -= rhs.value;
         accum -= rhs.accum;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return *this;
     }
 
+    using base_type::load;
+
 protected:
     using base_type::accum;
-    using base_type::is_transient;
     using base_type::laps;
     using base_type::set_started;
     using base_type::set_stopped;
@@ -516,7 +513,7 @@ public:
         using namespace tim::stl::ostream;
 
         // output the time
-        auto&             _obj = (obj.is_transient) ? obj.accum : obj.value;
+        auto&             _obj = obj.load();
         std::stringstream sst;
         auto              t_value = _obj.second;
         auto              t_label = count_type::get_label();
@@ -584,8 +581,7 @@ public:
         auto _disp  = get_display();
         auto labels = label_array();
 
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("labels", labels),
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("labels", labels),
            cereal::make_nvp("papi_vector", m_papi_vector));
         ar(cereal::make_nvp("value", value));
         ar(cereal::make_nvp("accum", accum));
@@ -599,8 +595,7 @@ public:
         auto _disp  = get_display();
         auto labels = label_array();
 
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("display", _disp),
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("display", _disp),
            cereal::make_nvp("mode", get_mode_string()),
            cereal::make_nvp("type", get_type_string()),
            cereal::make_nvp("labels", labels),

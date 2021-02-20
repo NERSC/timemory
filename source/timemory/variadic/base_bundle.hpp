@@ -24,258 +24,24 @@
 
 #pragma once
 
-#include "timemory/components/base/types.hpp"
-#include "timemory/components/types.hpp"
-#include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/mpl/quirks.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
-#include "timemory/settings/declaration.hpp"
 #include "timemory/variadic/functional.hpp"
+#include "timemory/variadic/impl.hpp"
 #include "timemory/variadic/types.hpp"
 
+#include <atomic>
 #include <bitset>
 #include <cstdint>
-#include <cstdio>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <ios>
-#include <iostream>
+#include <sstream>
 #include <string>
+#include <tuple>
+#include <utility>
 
 namespace tim
 {
-//
-namespace mpl
-{
-namespace impl
-{
-template <typename... T>
-struct bundle;
-
-template <typename C, typename A, typename T>
-struct bundle_definitions;
-
-using EmptyT = std::tuple<>;
-
-template <typename U>
-using sample_type_t =
-    conditional_t<trait::sampler<U>::value, operation::sample<U>, EmptyT>;
-
-template <typename... T>
-struct bundle
-{
-    using tuple_type     = std::tuple<T...>;
-    using reference_type = std::tuple<T...>;
-    using sample_type    = std::tuple<sample_type_t<T>...>;
-    using print_type     = std::tuple<operation::print<T>...>;
-};
-
-template <typename... T>
-struct bundle<std::tuple<T...>> : bundle<T...>
-{};
-
-template <typename... T>
-struct bundle<type_list<T...>> : bundle<T...>
-{};
-
-template <template <typename...> class CompL, template <typename...> class AutoL,
-          template <typename...> class DataL, typename... L, typename... T>
-struct bundle_definitions<CompL<L...>, AutoL<L...>, DataL<T...>>
-{
-    using component_type = CompL<T...>;
-    using auto_type      = AutoL<T...>;
-};
-
-template <template <typename> class Op, typename TagT, typename... T>
-struct generic_operation;
-
-template <template <typename> class Op, typename... T>
-struct custom_operation;
-
-template <template <typename> class Op, typename TagT, typename... T>
-struct generic_operation
-{
-    using type =
-        std::tuple<operation::generic_operator<remove_pointer_t<T>,
-                                               Op<remove_pointer_t<T>>, TagT>...>;
-};
-
-template <template <typename> class Op, typename TagT, typename... T>
-struct generic_operation<Op, TagT, std::tuple<T...>> : generic_operation<Op, TagT, T...>
-{};
-
-template <template <typename> class Op, typename... T>
-struct custom_operation
-{
-    using type = std::tuple<Op<T>...>;
-};
-
-template <template <typename> class Op, typename... T>
-struct custom_operation<Op, std::tuple<T...>> : custom_operation<Op, T...>
-{};
-
-template <typename... U>
-struct quirk_config;
-
-template <typename T, typename... F, typename... U>
-struct quirk_config<T, type_list<F...>, U...>
-{
-    static constexpr bool value =
-        is_one_of<T, type_list<F..., U...>>::value ||
-        is_one_of<T, contains_one_of_t<quirk::is_config, concat<F..., U...>>>::value;
-};
-
-TIMEMORY_HOT_INLINE
-bool
-global_enabled()
-{
-    static bool& _value = settings::enabled();
-    return _value;
-}
-
-//----------------------------------------------------------------------------------//
-//  type is not explicitly listed so redirect to opaque search
-//
-template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
-          typename... Types>
-void
-get(TupleT<Types...>&& m_data, void*& ptr, size_t _hash)
-{
-    using data_type = type_list<Types...>;
-    TIMEMORY_FOLD_EXPRESSION(
-        operation::generic_operator<Types, operation::get<Types>, ApiT>{
-            std::get<index_of<Types, data_type>::value>(m_data), ptr, _hash });
-
-    // using data_type = TupleT<Types...>;
-    // using get_type =
-    //    std::tuple<operation::generic_operator<Types, operation::get<Types>, ApiT>...>;
-    // apply<void>::access<get_type>(std::forward<data_type>(m_data), ptr, _hash);
-}
-
-//----------------------------------------------------------------------------------//
-//  type is not explicitly listed so redirect to opaque search
-//
-template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
-          typename... Types>
-void
-get(const TupleT<Types...>& m_data, void*& ptr, size_t _hash)
-{
-    using data_type = type_list<Types...>;
-    TIMEMORY_FOLD_EXPRESSION(
-        operation::generic_operator<Types, operation::get<Types>, ApiT>{
-            std::get<index_of<Types, data_type>::value>(m_data), ptr, _hash });
-
-    // using get_type =
-    //    std::tuple<operation::generic_operator<Types, operation::get<Types>, ApiT>...>;
-    // apply<void>::access<get_type>(m_data, ptr, _hash);
-}
-
-//----------------------------------------------------------------------------------//
-//  exact type available
-//
-template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
-          typename T = decay_t<U>>
-decltype(auto)
-get(data_type&& m_data, enable_if_t<is_one_of<T, decay_t<data_type>>::value, int> = 0)
-{
-    return &(std::get<index_of<T, decay_t<data_type>>::value>(
-        std::forward<data_type>(m_data)));
-}
-
-//
-//----------------------------------------------------------------------------------//
-//  type available with add_pointer
-//
-template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
-          typename T = decay_t<U>>
-decltype(auto)
-get(data_type&& m_data, enable_if_t<is_one_of<T*, decay_t<data_type>>::value, int> = 0)
-{
-    return std::get<index_of<T*, decay_t<data_type>>::value>(m_data);
-}
-
-//
-//----------------------------------------------------------------------------------//
-//  type available with remove_pointer
-//
-template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
-          typename T = decay_t<U>, typename R = remove_pointer_t<T>>
-decltype(auto)
-get(data_type&& m_data, enable_if_t<!is_one_of<T, decay_t<data_type>>::value &&
-                                        !is_one_of<T*, decay_t<data_type>>::value &&
-                                        is_one_of<R, decay_t<data_type>>::value,
-                                    int> = 0)
-{
-    return &std::get<index_of<R, decay_t<data_type>>::value>(m_data);
-}
-
-//
-//----------------------------------------------------------------------------------//
-///  type is not explicitly listed so redirect to opaque search
-///
-template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
-          typename T = decay_t<U>, typename R = remove_pointer_t<T>>
-decltype(auto)
-get(data_type&& m_data, enable_if_t<!is_one_of<T, decay_t<data_type>>::value &&
-                                        !is_one_of<T*, decay_t<data_type>>::value &&
-                                        !is_one_of<R, decay_t<data_type>>::value,
-                                    int> = 0)
-{
-    void* ptr = nullptr;
-    get<ApiT>(std::forward<data_type>(m_data), ptr, typeid_hash<T>());
-    return static_cast<T*>(ptr);
-}
-
-//----------------------------------------------------------------------------------//
-/// this is a simple alternative to get<T>() when used from SFINAE in operation
-/// namespace which has a struct get also templated. Usage there can cause error
-/// with older compilers
-template <typename U, typename data_type, typename T = std::remove_pointer_t<decay_t<U>>>
-auto
-get_component(
-    data_type&& m_data,
-    enable_if_t<trait::is_available<T>::value && is_one_of<T, decay_t<data_type>>::value,
-                int> = 0)
-{
-    return get<T>(std::forward<data_type>(m_data));
-}
-
-template <typename U, typename data_type, typename T = std::remove_pointer_t<decay_t<U>>>
-auto
-get_component(
-    data_type&& m_data,
-    enable_if_t<trait::is_available<T>::value && is_one_of<T*, decay_t<data_type>>::value,
-                int> = 0)
-{
-    return get<T>(std::forward<data_type>(m_data));
-}
-
-/// returns a reference from a stack component instead of a pointer
-template <typename U, typename data_type, typename T = std::remove_pointer_t<decay_t<U>>>
-auto&
-get_reference(
-    data_type& m_data,
-    enable_if_t<trait::is_available<T>::value && is_one_of<T, decay_t<data_type>>::value,
-                int> = 0)
-{
-    return std::get<index_of<T, decay_t<data_type>>::value>(m_data);
-}
-
-/// returns a reference from a heap component instead of a pointer
-template <typename U, typename data_type, typename T = std::remove_pointer_t<decay_t<U>>>
-auto&
-get_reference(
-    data_type& m_data,
-    enable_if_t<trait::is_available<T>::value && is_one_of<T*, decay_t<data_type>>::value,
-                int> = 0)
-{
-    return std::get<index_of<T*, decay_t<data_type>>::value>(m_data);
-}
-
-}  // namespace impl
-}  // namespace mpl
 //
 namespace operation
 {
@@ -323,13 +89,10 @@ struct generic_deleter<quirk::config<Types...>>
 //
 }  // namespace operation
 //
-/// \class tim::base_bundle<typename Tag, typename... Types>
-/// \brief This is the generic structure for a variadic bundle of components
-///
-template <typename Tag, typename... Types>
-class base_bundle
-: public concepts::variadic
-, public concepts::wrapper
+namespace impl
+{
+//
+class common_base_bundle
 {
 public:
     // public alias section
@@ -337,30 +100,114 @@ public:
     using string_t            = string_view_t;
     using captured_location_t = source_location::captured;
 
-    using tag_type       = Tag;
-    using impl_type      = std::tuple<Types...>;
-    using sample_type    = typename mpl::impl::bundle<impl_type>::sample_type;
-    using tuple_type     = typename mpl::impl::bundle<impl_type>::tuple_type;
-    using reference_type = typename mpl::impl::bundle<impl_type>::reference_type;
-    using print_type     = typename mpl::impl::bundle<impl_type>::print_type;
-    using gotcha_types   = typename get_true_types<trait::is_gotcha, tuple_type>::type;
+protected:
+    // protected construction / destruction section
+    TIMEMORY_DEFAULT_OBJECT(common_base_bundle)
+
+    common_base_bundle(scope::config&& _config, hash_value_type _hash)
+    : m_scope(std::move(_config))
+    , m_hash(_hash)
+    {}
+
+public:
+    // public member function section
+    TIMEMORY_NODISCARD auto hash() const { return m_hash; }
+    TIMEMORY_NODISCARD auto get_hash() const { return m_hash; }
+
+    TIMEMORY_NODISCARD int64_t laps() const { return m_laps; }
+    TIMEMORY_NODISCARD std::string key() const
+    {
+        return std::string{ get_hash_identifier_fast(m_hash) };
+    }
+
+    void                    store(bool v) { m_store(v); }
+    TIMEMORY_NODISCARD bool store() const { return m_store(); }
+    TIMEMORY_NODISCARD bool get_store() const { return m_store(); }
+
+    auto&                          get_scope() { return m_scope; }
+    TIMEMORY_NODISCARD const auto& get_scope() const { return m_scope; }
+
+    TIMEMORY_HOT_INLINE void rekey(captured_location_t _loc) { m_hash = _loc.get_hash(); }
+    TIMEMORY_HOT_INLINE void rekey(uint64_t _hash) { m_hash = _hash; }
+
+protected:
+    scope::config   m_scope  = scope::get_default();
+    hash_value_type m_hash   = 0;
+    int64_t         m_laps   = 0;
+    std::bitset<4>  m_config = {};
+
+protected:
+    // protected member function section
+    enum ConfigIdx
+    {
+        EnabledIdx = 0,
+        StoreIdx   = 1,
+        PushedIdx  = 2,
+        ActiveIdx  = 3
+    };
+
+    TIMEMORY_NODISCARD TIMEMORY_INLINE bool m_enabled() const
+    {
+        return m_config.test(EnabledIdx);
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE bool m_store() const
+    {
+        return m_config.test(StoreIdx);
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE bool m_is_pushed() const
+    {
+        return m_config.test(PushedIdx);
+    }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE bool m_is_active() const
+    {
+        return m_config.test(ActiveIdx);
+    }
+
+    TIMEMORY_INLINE void m_enabled(bool v) { m_config.set(EnabledIdx, v); }
+    TIMEMORY_INLINE void m_store(bool v) { m_config.set(StoreIdx, v); }
+    TIMEMORY_INLINE void m_is_pushed(bool v) { m_config.set(PushedIdx, v); }
+    TIMEMORY_INLINE void m_is_active(bool v) { m_config.set(ActiveIdx, v); }
+};
+//
+template <typename... Types>
+class base_bundle;
+//
+/// \class tim::impl::base_bundle<typename Tag, typename... Types>
+/// \brief This is the generic structure for a variadic bundle of components
+///
+template <typename Tag, typename... Types>
+class base_bundle<Tag, Types...>
+: public common_base_bundle
+, public concepts::variadic
+, public concepts::wrapper
+{
+public:
+    using tag_type    = Tag;
+    using impl_type   = std::tuple<Types...>;
+    using sample_type = typename tim::variadic::impl::bundle<impl_type>::sample_type;
+    using tuple_type  = typename tim::variadic::impl::bundle<impl_type>::tuple_type;
+    using reference_type =
+        typename tim::variadic::impl::bundle<impl_type>::reference_type;
+    using print_type   = typename tim::variadic::impl::bundle<impl_type>::print_type;
+    using gotcha_types = typename get_true_types<trait::is_gotcha, tuple_type>::type;
     using user_bundle_types =
         typename get_true_types<trait::is_user_bundle, tuple_type>::type;
 
     template <template <typename> class Op, typename... T>
-    using generic_operation = mpl::impl::generic_operation<Op, tag_type, T...>;
+    using generic_operation = tim::variadic::impl::generic_operation<Op, tag_type, T...>;
 
     template <template <typename> class Op, typename... T>
-    using custom_operation = mpl::impl::custom_operation<Op, T...>;
+    using custom_operation = tim::variadic::impl::custom_operation<Op, T...>;
 
     template <template <typename> class Op, typename TupleT = tuple_type>
     using operation_t = typename generic_operation<Op, TupleT>::type;
 
     template <template <typename> class Op, typename TupleT = tuple_type>
-    using custom_operation_t = typename mpl::impl::custom_operation<Op, TupleT>::type;
+    using custom_operation_t =
+        typename tim::variadic::impl::custom_operation<Op, TupleT>::type;
 
     template <typename U>
-    using sample_type_t = mpl::impl::sample_type_t<U>;
+    using sample_type_t = tim::variadic::impl::sample_type_t<U>;
 
 public:
     // public static function section
@@ -387,45 +234,19 @@ public:
     static constexpr bool has_user_bundle_v =
         (mpl::get_tuple_size<user_bundle_types>::value != 0);
 
-public:
-    // public member function section
-    TIMEMORY_NODISCARD auto hash() const { return m_hash; }
-    TIMEMORY_NODISCARD auto get_hash() const { return m_hash; }
-
-    TIMEMORY_NODISCARD int64_t laps() const { return m_laps; }
-    TIMEMORY_NODISCARD std::string key() const
-    {
-        return std::string{ get_hash_identifier_fast(m_hash) };
-    }
-
-    void                    store(bool v) { m_store(v); }
-    TIMEMORY_NODISCARD bool store() const { return m_store(); }
-    TIMEMORY_NODISCARD bool get_store() const { return m_store(); }
-
-    auto&                          get_scope() { return m_scope; }
-    TIMEMORY_NODISCARD const auto& get_scope() const { return m_scope; }
-
-    void rekey(const string_t& _key)
-    {
-        m_hash = add_hash_id(_key);
-        compute_width(_key);
-    }
-
-    TIMEMORY_HOT_INLINE void rekey(captured_location_t _loc) { m_hash = _loc.get_hash(); }
-    TIMEMORY_HOT_INLINE void rekey(uint64_t _hash) { m_hash = _hash; }
-
 protected:
     using ctor_params_t = std::tuple<hash_value_type, bool, scope::config>;
 
     // protected construction / destruction section
     template <typename U = impl_type>
-    base_bundle(ctor_params_t _params = ctor_params_t(0, settings::enabled(),
-                                                      scope::get_default()),
+    base_bundle(ctor_params_t _params = ctor_params_t(
+                    0, tim::variadic::impl::global_enabled(), scope::get_default()),
                 enable_if_t<std::tuple_size<U>::value != 0, int> = 0)
-    : m_scope(std::get<2>(_params) + get_scope_config())
-    , m_hash(std::get<0>(_params))
+    : common_base_bundle{ std::get<2>(_params) + get_scope_config(),
+                          std::get<0>(_params) }
     {
-        m_store(std::get<1>(_params) && get_store_config());
+        m_enabled(std::get<1>(_params) && trait::runtime_enabled<Tag>::get());
+        m_store(m_enabled() && get_store_config());
     }
 
     template <typename U = impl_type>
@@ -439,41 +260,23 @@ protected:
     base_bundle& operator=(const base_bundle&) = default;
     base_bundle& operator=(base_bundle&&) noexcept = default;
 
+public:
+    void rekey(const string_t& _key)
+    {
+        m_hash = add_hash_id(_key);
+        compute_width(_key);
+    }
+
 protected:
-    // protected member function section
-    enum ConfigIdx
-    {
-        StoreIdx  = 0,
-        PushedIdx = 1,
-        ActiveIdx = 2
-    };
-
-    TIMEMORY_NODISCARD const auto& prefix() const { return get_persistent_data().prefix; }
-    TIMEMORY_NODISCARD const auto& get_prefix() const { return prefix(); }
-
-    TIMEMORY_NODISCARD TIMEMORY_ALWAYS_INLINE bool m_store() const
-    {
-        return m_config.test(StoreIdx);
-    }
-    TIMEMORY_NODISCARD TIMEMORY_ALWAYS_INLINE bool m_is_pushed() const
-    {
-        return m_config.test(PushedIdx);
-    }
-    TIMEMORY_NODISCARD TIMEMORY_ALWAYS_INLINE bool m_is_active() const
-    {
-        return m_config.test(ActiveIdx);
-    }
-
-    TIMEMORY_ALWAYS_INLINE void m_store(bool v) { m_config.set(StoreIdx, v); }
-    TIMEMORY_ALWAYS_INLINE void m_is_pushed(bool v) { m_config.set(PushedIdx, v); }
-    TIMEMORY_ALWAYS_INLINE void m_is_active(bool v) { m_config.set(ActiveIdx, v); }
-
     void compute_width(const string_t& _key) const
     {
         output_width(_key.length() + get_prefix().length() + 1);
     }
 
     void update_width() const { compute_width(key()); }
+
+    TIMEMORY_NODISCARD const auto& prefix() const { return get_persistent_data().prefix; }
+    TIMEMORY_NODISCARD const auto& get_prefix() const { return prefix(); }
 
 protected:
     // protected static function section
@@ -495,7 +298,7 @@ protected:
     static hash_value_type handle_key(type_list<T...>, const string_t& _key,
                                       enable_if_t<sizeof...(T) != 0, int> = {})
     {
-        return (settings::enabled()) ? add_hash_id(_key) : 0;
+        return (tim::variadic::impl::global_enabled()) ? add_hash_id(_key) : 0;
     }
 
     template <typename... T>
@@ -524,14 +327,15 @@ protected:
     static bool handle_store(type_list<T...>, bool _enable, quirk::config<U...>,
                              enable_if_t<sizeof...(T) != 0, int> = {})
     {
-        return get_store_config<T..., U...>() && _enable && mpl::impl::global_enabled();
+        return get_store_config<T..., U...>() && _enable &&
+               tim::variadic::impl::global_enabled();
     }
 
     template <typename... T, typename... U>
     static bool handle_store(type_list<T...>, std::true_type, quirk::config<U...>,
                              enable_if_t<sizeof...(T) != 0, int> = {})
     {
-        return get_store_config<T..., U...>() && mpl::impl::global_enabled();
+        return get_store_config<T..., U...>() && tim::variadic::impl::global_enabled();
     }
 
     template <typename... T, typename... U>
@@ -626,7 +430,7 @@ protected:
                      quirk::config<U...>                 = quirk::config<>{},
                      enable_if_t<sizeof...(T) != 0, int> = {})
     {
-        if(mpl::impl::global_enabled())
+        if(tim::variadic::impl::global_enabled())
         {
             IF_CONSTEXPR(!quirk_config<quirk::no_init, T..., U...>::value)
             {
@@ -647,19 +451,11 @@ protected:
                      enable_if_t<sizeof...(T) == 0, int> = {})
     {}
 
-protected:
-    // protected member data section
-    std::bitset<3>  m_config = {};
-    scope::config   m_scope  = scope::get_default();
-    int64_t         m_laps   = 0;
-    hash_value_type m_hash   = 0;
-
 private:
     // private alias section
     template <typename T, typename... U>
-    using quirk_config = mpl::impl::quirk_config<T, type_list<Types...>, U...>;
+    using quirk_config = tim::variadic::impl::quirk_config<T, type_list<Types...>, U...>;
 
-private:
     // private static data section
     struct persistent_data
     {
@@ -742,11 +538,13 @@ public:
     {}
 };
 //
+}  // namespace impl
+//
 //======================================================================================//
 //
 template <typename... Types>
 struct stack_bundle
-: public base_bundle<TIMEMORY_API, Types...>
+: public impl::base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
     template <typename... T>
@@ -756,13 +554,13 @@ struct stack_bundle
 
     template <typename... Args>
     stack_bundle(Args&&... args)
-    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
+    : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
 struct stack_bundle<std::tuple<Types...>>
-: public base_bundle<TIMEMORY_API, Types...>
+: public impl::base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
     template <typename... T>
@@ -772,13 +570,13 @@ struct stack_bundle<std::tuple<Types...>>
 
     template <typename... Args>
     stack_bundle(Args&&... args)
-    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
+    : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
 struct stack_bundle<type_list<Types...>>
-: public base_bundle<TIMEMORY_API, Types...>
+: public impl::base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
     template <typename... T>
@@ -788,7 +586,7 @@ struct stack_bundle<type_list<Types...>>
 
     template <typename... Args>
     stack_bundle(Args&&... args)
-    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
+    : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 //
@@ -796,7 +594,7 @@ struct stack_bundle<type_list<Types...>>
 //
 template <typename... Types>
 struct heap_bundle
-: public base_bundle<TIMEMORY_API, Types...>
+: public impl::base_bundle<TIMEMORY_API, Types...>
 , public concepts::heap_wrapper
 {
     template <typename... T>
@@ -806,13 +604,13 @@ struct heap_bundle
 
     template <typename... Args>
     heap_bundle(Args&&... args)
-    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
+    : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
 struct heap_bundle<std::tuple<Types...>>
-: public base_bundle<TIMEMORY_API, Types...>
+: public impl::base_bundle<TIMEMORY_API, Types...>
 , public concepts::heap_wrapper
 {
     template <typename... T>
@@ -822,13 +620,13 @@ struct heap_bundle<std::tuple<Types...>>
 
     template <typename... Args>
     heap_bundle(Args&&... args)
-    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
+    : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
 struct heap_bundle<type_list<Types...>>
-: public base_bundle<TIMEMORY_API, Types...>
+: public impl::base_bundle<TIMEMORY_API, Types...>
 , public concepts::heap_wrapper
 {
     template <typename... T>
@@ -838,7 +636,7 @@ struct heap_bundle<type_list<Types...>>
 
     template <typename... Args>
     heap_bundle(Args&&... args)
-    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
+    : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 //
@@ -847,19 +645,24 @@ struct heap_bundle<type_list<Types...>>
 template <typename ApiT, typename... Types>
 struct api_bundle
 : public conditional_t<trait::is_available<ApiT>::value,
-                       base_bundle<ApiT, remove_pointer_t<Types>...>,
-                       base_bundle<ApiT, std::tuple<>>>
+                       impl::base_bundle<ApiT, remove_pointer_t<Types>...>,
+                       impl::base_bundle<ApiT, std::tuple<>>>
+, public concepts::tagged
+, public concepts::comp_wrapper
 {
-    template <typename... T>
-    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+    static_assert(concepts::is_api<ApiT>::value,
+                  "Error! The first template parameter of an 'api_bundle' must "
+                  "statisfy the 'is_api' concept");
 
-    using base_bundle_type = conditional_t<trait::is_available<ApiT>::value,
-                                           base_bundle<ApiT, remove_pointer_t<Types>...>,
-                                           base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<trait::is_available<ApiT>::value,
-                                    data_tuple_t<Types...>, std::tuple<>>;
-    using tuple_type       = data_type;
-    using impl_type        = data_type;
+    using base_bundle_type =
+        conditional_t<trait::is_available<ApiT>::value,
+                      impl::base_bundle<ApiT, remove_pointer_t<Types>...>,
+                      impl::base_bundle<ApiT, std::tuple<>>>;
+    using data_type =
+        conditional_t<trait::is_available<ApiT>::value,
+                      non_placeholder_t<non_quirk_t<std::tuple<Types...>>>, std::tuple<>>;
+    using tuple_type = data_type;
+    using impl_type  = data_type;
 
     template <typename... Args>
     api_bundle(Args&&... args)
@@ -870,19 +673,24 @@ struct api_bundle
 template <typename ApiT, typename... Types>
 struct api_bundle<ApiT, std::tuple<Types...>>
 : public conditional_t<trait::is_available<ApiT>::value,
-                       base_bundle<ApiT, remove_pointer_t<Types>...>,
-                       base_bundle<ApiT, std::tuple<>>>
+                       impl::base_bundle<ApiT, remove_pointer_t<Types>...>,
+                       impl::base_bundle<ApiT, std::tuple<>>>
+, public concepts::tagged
+, public concepts::comp_wrapper
 {
-    template <typename... T>
-    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+    static_assert(concepts::is_api<ApiT>::value,
+                  "Error! The first template parameter of an 'api_bundle' must "
+                  "statisfy the 'is_api' concept");
 
-    using base_bundle_type = conditional_t<trait::is_available<ApiT>::value,
-                                           base_bundle<ApiT, remove_pointer_t<Types>...>,
-                                           base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<trait::is_available<ApiT>::value,
-                                    data_tuple_t<Types...>, std::tuple<>>;
-    using tuple_type       = data_type;
-    using impl_type        = data_type;
+    using base_bundle_type =
+        conditional_t<trait::is_available<ApiT>::value,
+                      impl::base_bundle<ApiT, remove_pointer_t<Types>...>,
+                      impl::base_bundle<ApiT, std::tuple<>>>;
+    using data_type =
+        conditional_t<trait::is_available<ApiT>::value,
+                      non_placeholder_t<non_quirk_t<std::tuple<Types...>>>, std::tuple<>>;
+    using tuple_type = data_type;
+    using impl_type  = data_type;
 
     template <typename... Args>
     api_bundle(Args&&... args)
@@ -893,19 +701,25 @@ struct api_bundle<ApiT, std::tuple<Types...>>
 template <typename ApiT, typename... Types>
 struct api_bundle<ApiT, type_list<Types...>>
 : public conditional_t<trait::is_available<ApiT>::value,
-                       base_bundle<ApiT, remove_pointer_t<Types>...>,
-                       base_bundle<ApiT, std::tuple<>>>
+                       impl::base_bundle<ApiT, remove_pointer_t<Types>...>,
+                       impl::base_bundle<ApiT, std::tuple<>>>
+, public concepts::tagged
+, public concepts::comp_wrapper
 {
-    template <typename... T>
-    using data_tuple_t = non_placeholder_t<non_quirk_t<std::tuple<T...>>>;
+    static_assert(concepts::is_api<ApiT>::value,
+                  "Error! The first template parameter of an 'api_bundle' must "
+                  "statisfy the 'is_api' concept");
 
-    using base_bundle_type = conditional_t<trait::is_available<ApiT>::value,
-                                           base_bundle<ApiT, remove_pointer_t<Types>...>,
-                                           base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<trait::is_available<ApiT>::value,
-                                    data_tuple_t<Types...>, std::tuple<>>;
-    using tuple_type       = data_type;
-    using impl_type        = data_type;
+    using base_bundle_type =
+        conditional_t<trait::is_available<ApiT>::value,
+                      impl::base_bundle<ApiT, remove_pointer_t<Types>...>,
+                      impl::base_bundle<ApiT, std::tuple<>>>;
+    using data_type =
+        conditional_t<trait::is_available<ApiT>::value,
+                      non_placeholder_t<non_quirk_t<std::tuple<Types...>>>, std::tuple<>>;
+    using type_list_type = type_list<Types...>;
+    using tuple_type     = data_type;
+    using impl_type      = data_type;
 
     template <typename... Args>
     api_bundle(Args&&... args)

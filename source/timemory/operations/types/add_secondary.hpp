@@ -82,7 +82,8 @@ struct add_secondary<Tp, true>
            !settings::add_secondary())
             return;
 
-        using value_type       = typename type::value_type;
+        using map_type         = decay_t<decltype(_rhs.get_secondary())>;
+        using value_type       = typename map_type::mapped_type;
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
         for(const auto& _data : _rhs.get_secondary())
             _storage->append(secondary_data_t{ _itr, _data.first, _data.second });
@@ -170,8 +171,7 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the component has a get_secondary() member function
     //
-    template <typename Storage, typename Iterator, typename Up,
-              typename value_type = typename type::value_type>
+    template <typename Storage, typename Iterator, typename Up>
     auto storage_sfinae(Storage* _storage, Iterator _itr, const Up& _rhs, int) const
         -> decltype(_rhs.get_secondary(), void())
     {
@@ -179,6 +179,8 @@ private:
            !settings::add_secondary())
             return;
 
+        using map_type         = decay_t<decltype(_rhs.get_secondary())>;
+        using value_type       = typename map_type::mapped_type;
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
         for(const auto& _data : _rhs.get_secondary())
             _storage->append(secondary_data_t{ _itr, _data.first, _data.second });
@@ -218,13 +220,15 @@ private:
 //
 ///
 /// \struct tim::operation::add_secondary
+/// \tparam Tp Component type
+///
 /// \brief
 /// component contains secondary data resembling the original data
 /// but should be another node entry in the graph. These types
 /// must provide a get_secondary() member function and that member function
 /// must return a pair-wise iterable container, e.g. std::map, of types:
 ///     - std::string
-///     - value_type
+///     - value_type or Tp
 ///
 //
 //--------------------------------------------------------------------------------------//

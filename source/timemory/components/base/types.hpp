@@ -32,6 +32,7 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/math.hpp"
+#include "timemory/mpl/quirks.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <type_traits>
@@ -98,22 +99,6 @@ struct base<Tp, void>;
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace component
-//
-//----------------------------------------------------------------------------------//
-//
-namespace quirk
-{
-//
-template <typename... Types>
-struct config
-{
-    using type       = type_list<Types...>;
-    using value_type = void;
-
-    friend std::ostream& operator<<(std::ostream& _os, const config&) { return _os; }
-};
-//
-}  // namespace quirk
 //
 //----------------------------------------------------------------------------------//
 //

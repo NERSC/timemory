@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/operations/types/set_prefix.hpp
- * \brief Definition for various functions for set_prefix in operations
- */
-
 #pragma once
 
 #include "timemory/operations/declaration.hpp"
@@ -35,6 +30,12 @@
 
 namespace tim
 {
+//
+namespace component
+{
+struct base_state;
+}
+//
 namespace operation
 {
 //
@@ -44,35 +45,53 @@ namespace operation
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::operation::set_prefix
+/// \tparam Tp Component type
+///
+/// \brief Call the set_prefix member function. These instantiations are always inlined
+/// because of the use of string_view. Without inlining, you will get undefined symbols
+/// in C++14 code when timemory was compiled with C++17.
+///
 template <typename Tp>
 struct set_prefix
 {
     using type     = Tp;
     using string_t = string_view_t;
 
-    TIMEMORY_DELETED_OBJECT(set_prefix)
+    TIMEMORY_DEFAULT_OBJECT(set_prefix)
 
     TIMEMORY_HOT_INLINE set_prefix(type& obj, const string_t& _prefix);
     TIMEMORY_HOT_INLINE set_prefix(type& obj, uint64_t _nhash, const string_t& _prefix);
 
+    TIMEMORY_HOT_INLINE auto operator()(type& obj, const string_t& _prefix) const
+    {
+        return sfinae_str(obj, 0, 0, 0, _prefix);
+    }
+
+    TIMEMORY_HOT auto operator()(type& obj, uint64_t _nhash) const
+    {
+        return sfinae_hash(obj, 0, _nhash);
+    }
+
 private:
     //  If the component has a set_prefix(const string_t&) member function
     template <typename U>
-    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, int, int, const string_t& _prefix)
+    TIMEMORY_HOT_INLINE auto sfinae_str(U&              obj, int, int, int,
+                                        const string_t& _prefix) const
         -> decltype(obj.set_prefix(_prefix))
     {
         return obj.set_prefix(_prefix);
     }
 
     template <typename U, typename S>
-    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, int, long, const S& _prefix)
+    TIMEMORY_HOT auto sfinae_str(U& obj, int, int, long, const S& _prefix) const
         -> decltype(obj.set_prefix(_prefix.c_str()))
     {
         return obj.set_prefix(_prefix.c_str());
     }
 
     template <typename U, typename S>
-    TIMEMORY_HOT_INLINE auto sfinae_str(U& obj, int, long, long, const S& _prefix)
+    TIMEMORY_HOT auto sfinae_str(U& obj, int, long, long, const S& _prefix) const
         -> decltype(obj.set_prefix(_prefix.data()))
     {
         return obj.set_prefix(_prefix.data());
@@ -80,13 +99,13 @@ private:
 
     //  If the component does not have a set_prefix(const string_t&) member function
     template <typename U>
-    TIMEMORY_INLINE void sfinae_str(U&, long, long, long, const string_t&)
+    TIMEMORY_INLINE void sfinae_str(U&, long, long, long, const string_t&) const
     {}
 
 private:
     //  If the component has a set_prefix(uint64_t) member function
     template <typename U>
-    TIMEMORY_HOT_INLINE auto sfinae_hash(U& obj, int, uint64_t _nhash)
+    TIMEMORY_HOT auto sfinae_hash(U& obj, int, uint64_t _nhash) const
         -> decltype(obj.set_prefix(_nhash))
     {
         return obj.set_prefix(_nhash);
@@ -94,38 +113,7 @@ private:
 
     //  If the component does not have a set_prefix(uint64_t) member function
     template <typename U>
-    TIMEMORY_INLINE void sfinae_hash(U&, long, uint64_t)
-    {}
-};
-//
-//--------------------------------------------------------------------------------------//
-//
-//
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-struct set_scope
-{
-    using type     = Tp;
-    using string_t = std::string;
-
-    TIMEMORY_DELETED_OBJECT(set_scope)
-
-    TIMEMORY_HOT_INLINE set_scope(type& obj, scope::config _data);
-
-private:
-    //  If the component has a set_scope(...) member function
-    template <typename T>
-    TIMEMORY_HOT_INLINE auto sfinae(T& obj, int, scope::config _data)
-        -> decltype(obj.set_scope(_data))
-    {
-        return obj.set_scope(_data);
-    }
-
-    //  If the component does not have a set_scope(...) member function
-    template <typename T>
-    TIMEMORY_INLINE void sfinae(T&, long, scope::config)
+    TIMEMORY_INLINE void sfinae_hash(U&, long, uint64_t) const
     {}
 };
 //
@@ -154,6 +142,41 @@ set_prefix<Tp>::set_prefix(type& obj, uint64_t _nhash, const string_t& _prefix)
 //
 //--------------------------------------------------------------------------------------//
 //
+//
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct set_scope
+{
+    using type = Tp;
+
+    TIMEMORY_DEFAULT_OBJECT(set_scope)
+
+    TIMEMORY_HOT set_scope(type& obj, scope::config _data);
+
+    TIMEMORY_HOT auto operator()(type& obj, scope::config _data) const
+    {
+        return sfinae(obj, 0, _data);
+    }
+
+private:
+    //  If the component has a set_scope(...) member function
+    template <typename T>
+    TIMEMORY_HOT auto sfinae(T& obj, int, scope::config _data) const
+        -> decltype(obj.set_scope(_data))
+    {
+        return obj.set_scope(_data);
+    }
+
+    //  If the component does not have a set_scope(...) member function
+    template <typename T>
+    TIMEMORY_INLINE void sfinae(T&, long, scope::config) const
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename Tp>
 set_scope<Tp>::set_scope(type& obj, scope::config _data)
 {
@@ -162,6 +185,133 @@ set_scope<Tp>::set_scope(type& obj, scope::config _data)
 
     sfinae(obj, 0, _data);
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+//
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct set_state
+{
+    using type = Tp;
+
+    TIMEMORY_DEFAULT_OBJECT(set_state)
+
+    TIMEMORY_HOT set_state(type& obj, component::base_state* _data);
+
+    TIMEMORY_HOT auto operator()(type& obj, component::base_state* _data)
+    {
+        return sfinae(obj, 0, _data);
+    }
+
+private:
+    //  If the component has a set_scope(...) member function
+    template <typename T>
+    TIMEMORY_HOT auto sfinae(T& obj, int, component::base_state* _data)
+        -> decltype(obj.set_state(_data))
+    {
+        return obj.set_state(_data);
+    }
+
+    //  If the component does not have a set_scope(...) member function
+    template <typename T>
+    TIMEMORY_INLINE void sfinae(T&, long, component::base_state*)
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+set_state<Tp>::set_state(type& obj, component::base_state* _data)
+{
+    if(!trait::runtime_enabled<type>::get())
+        return;
+
+    sfinae(obj, 0, _data);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct set_depth_change
+{
+    TIMEMORY_DEFAULT_OBJECT(set_depth_change)
+
+    template <typename Up>
+    TIMEMORY_HOT auto operator()(Up& obj, bool v) const
+    {
+        return sfinae(obj, 0, v);
+    }
+
+    constexpr auto operator()() const { return sfinae<Tp>(0); }
+
+private:
+    template <typename Up>
+    static TIMEMORY_HOT auto sfinae(Up& obj, int, bool v)
+        -> decltype(obj.set_depth_change(v))
+    {
+        return obj.set_depth_change(v);
+    }
+
+    template <typename Up>
+    static TIMEMORY_INLINE auto sfinae(Up&, long, bool)
+    {}
+
+    template <typename Up>
+    constexpr auto sfinae(int) const
+        -> decltype(std::declval<Up>().set_depth_change(std::declval<bool>()), bool())
+    {
+        return true;
+    }
+
+    template <typename Up>
+    constexpr bool sfinae(long) const
+    {
+        return false;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct set_is_flat
+{
+    TIMEMORY_DEFAULT_OBJECT(set_is_flat)
+
+    template <typename Up>
+    TIMEMORY_HOT auto operator()(Up& obj, bool v) const
+    {
+        return sfinae(obj, 0, v);
+    }
+
+    constexpr auto operator()() const { return sfinae<Tp>(0); }
+
+private:
+    template <typename Up>
+    static TIMEMORY_HOT auto sfinae(Up& obj, int, bool v) -> decltype(obj.set_is_flat(v))
+    {
+        return obj.set_is_flat(v);
+    }
+
+    template <typename Up>
+    static TIMEMORY_INLINE auto sfinae(Up&, long, bool)
+    {}
+
+    template <typename Up>
+    constexpr auto sfinae(int) const
+        -> decltype(std::declval<Up>().set_is_flat(std::declval<bool>()), bool())
+    {
+        return true;
+    }
+
+    template <typename Up>
+    constexpr bool sfinae(long) const
+    {
+        return false;
+    }
+};
 //
 //--------------------------------------------------------------------------------------//
 //
