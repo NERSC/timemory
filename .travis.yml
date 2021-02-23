@@ -20,6 +20,16 @@ jobs:
         - CC=clang
         - CXX=clang++
         - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_LINE_PROFILER=OFF'
+        - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=17'
+    - os: osx
+      osx_image: xcode11
+      language: shell
+      env:
+        - TRAVIS_PYTHON_VERSION=3.8
+        - CONDA_OS=MacOSX
+        - CC=clang
+        - CXX=clang++
+        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_LINE_PROFILER=OFF'
         - BUILD_ARGS='--minimal --build-libs shared --python --cxx-standard=17'
     # ------------------------------------------------------------------------ #
     #
