@@ -183,7 +183,10 @@ allocate()
 
 //--------------------------------------------------------------------------------------//
 
-bool _init = (tim::set_env("TIMEMORY_MEMORY_UNITS", "B", 1), true);
+namespace
+{
+bool _memory_units_init = (tim::set_env("TIMEMORY_MEMORY_UNITS", "B", 1), true);
+}
 
 class cache_tests : public ::testing::Test
 {
@@ -194,7 +197,7 @@ protected:
     // preform allocation only once here
     static void extra_setup()
     {
-        EXPECT_TRUE(_init);
+        EXPECT_TRUE(_memory_units_init);
         details::allocate();
     }
 

@@ -558,7 +558,7 @@ serialization<Tp, true>::impl(Archive& ar, metadata) const
     auto _num_pid_count     = dmp::size();
 
     ar(cereal::make_nvp("properties", component::properties<type>{}));
-    ar(cereal::make_nvp("label", get_label()));
+    ar(cereal::make_nvp("type", get_label()));
     ar(cereal::make_nvp("description", get_description()));
     ar(cereal::make_nvp("unit_value", get_unit()));
     ar(cereal::make_nvp("unit_repr", get_display_unit()));

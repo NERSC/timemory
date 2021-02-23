@@ -63,23 +63,28 @@ using namespace py::literals;
 namespace pytim
 {
 //
-template <typename... Tail, typename FuncT, typename ValT,
-          tim::enable_if_t<sizeof...(Tail) == 0> = 0>
-void
-try_cast_seq(FuncT&&, ValT&&)
-{}
+template <typename... Tail, typename FuncT, typename ValT>
+bool
+try_cast_seq(FuncT&&, ValT&, std::ostream* = nullptr,
+             tim::enable_if_t<sizeof...(Tail) == 0> = 0)
+{
+    return false;
+}
 //
 template <typename Tp, typename... Tail, typename FuncT, typename ValT>
-void
-try_cast_seq(FuncT&& f, ValT&& v)
+bool
+try_cast_seq(FuncT&& f, ValT& v, std::ostream* _msg = nullptr)
 {
     try
     {
-        std::forward<FuncT>(f)(*(std::forward<ValT>(v).template cast<Tp*>()));
-    } catch(py::cast_error&)
+        std::forward<FuncT>(f)(v.template cast<Tp>());
+    } catch(py::cast_error& e)
     {
-        try_cast_seq<Tail...>(std::forward<FuncT>(f), std::forward<ValT>(v));
+        if(_msg)
+            (*_msg) << e.what() << '\n';
+        return try_cast_seq<Tail...>(std::forward<FuncT>(f), v, _msg);
     }
+    return true;
 }
 //
 using pyenum_set_t = std::set<TIMEMORY_COMPONENT>;

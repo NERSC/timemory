@@ -444,11 +444,11 @@ def get_hotspots(op_data, ai_data, index=None):
 
     marker = itertools.cycle(("o", ",", "^", "+", "*", ">", "<"))
 
-    if not "label" in op_data or not "label" in ai_data:
+    if not "type" in op_data or not "type" in ai_data:
         return []
 
-    op_data_type = op_data["label"]
-    ai_data_type = ai_data["label"]
+    op_data_type = op_data["type"]
+    ai_data_type = ai_data["type"]
 
     op_type = None
     ai_type = None
@@ -632,11 +632,11 @@ def get_hotspots_integer(op_data, ai_data, index=None):
     import itertools
 
     marker = itertools.cycle(("o", ",", "^", "+", "*", ">", "<"))
-    if not "label" in op_data or not "label" in ai_data:
+    if not "type" in op_data or not "type" in ai_data:
         return []
 
-    op_data_type = op_data["label"]
-    ai_data_type = ai_data["label"]
+    op_data_type = op_data["type"]
+    ai_data_type = ai_data["type"]
 
     op_type = None
     ai_type = None

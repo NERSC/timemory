@@ -292,10 +292,7 @@ PYBIND11_MODULE(libpytimemory, tim)
                     _val->set<scope::flat>(_flat.cast<bool>());
                 } catch(py::cast_error&)
                 {
-                    auto _f = [_val](auto v) {
-                        _val->set(v);
-                        return py::none{};
-                    };
+                    auto _f = [_val](auto v) { _val->set(v); };
                     pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
                                                                                    _flat);
                 }
@@ -307,10 +304,7 @@ PYBIND11_MODULE(libpytimemory, tim)
                     _val->set<scope::timeline>(_time.cast<bool>());
                 } catch(py::cast_error&)
                 {
-                    auto _f = [_val](auto v) {
-                        _val->set(v);
-                        return py::none{};
-                    };
+                    auto _f = [_val](auto v) { _val->set(v); };
                     pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
                                                                                    _time);
                 }
@@ -799,6 +793,17 @@ PYBIND11_MODULE(libpytimemory, tim)
     man.def("write_ctest_notes", &pytim::manager::write_ctest_notes,
             "Write a CTestNotes.cmake file", py::arg("directory") = ".",
             py::arg("append") = false);
+    //----------------------------------------------------------------------------------//
+    auto _add_metadata = [](std::string _label, py::object _data) {
+        std::stringstream _msg;
+        auto _f = [_label](auto _value) { tim::manager::add_metadata(_label, _value); };
+        bool _success =
+            pytim::try_cast_seq<std::string, size_t, double, std::vector<size_t>,
+                                std::vector<double>>(_f, _data, &_msg);
+        if(!_success)
+            throw std::runtime_error(_msg.str());
+    };
+    man.def_static("add_metadata", _add_metadata, "Add metadata");
     //----------------------------------------------------------------------------------//
 
     //==================================================================================//
