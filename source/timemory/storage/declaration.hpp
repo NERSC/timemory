@@ -609,27 +609,8 @@ template <typename Archive>
 void
 storage<Type, true>::serialize(Archive& ar, const unsigned int version)
 {
-    auto   num_instances = instance_count().load();
-    auto&& _results      = dmp_get();
-    ar(cereal::make_nvp("concurrency", num_instances));
-    m_printer->print_metadata(ar, Type{});
-    operation::extra_serialization<Type>{ ar };
-    ar.setNextName("ranks");
-    ar.startNode();
-    ar.makeArray();
-    for(uint64_t i = 0; i < _results.size(); ++i)
-    {
-        if(_results.at(i).empty())
-            continue;
-
-        ar.startNode();
-
-        ar(cereal::make_nvp("rank", i));
-        save(ar, _results.at(i));
-
-        ar.finishNode();
-    }
-    ar.finishNode();  // ranks
+    auto&& _results = dmp_get();
+    operation::serialization<Type>{}(ar, _results);
     consume_parameters(version);
 }
 //
@@ -643,30 +624,8 @@ storage<Type, true>::do_serialize(Archive& ar)
     if(m_is_master)
         merge();
 
-    auto   num_instances = instance_count().load();
-    auto&& _results      = dmp_get();
-    ar.setNextName(component::properties<Type>::id());
-    ar.startNode();
-    ar(cereal::make_nvp("concurrency", num_instances));
-    m_printer->print_metadata(ar, Type{});
-    operation::extra_serialization<Type>{ ar };
-    ar.setNextName("ranks");
-    ar.startNode();
-    ar.makeArray();
-    for(uint64_t i = 0; i < _results.size(); ++i)
-    {
-        if(_results.at(i).empty())
-            continue;
-
-        ar.startNode();
-
-        ar(cereal::make_nvp("rank", i));
-        save(ar, _results.at(i));
-
-        ar.finishNode();
-    }
-    ar.finishNode();  // ranks
-    ar.finishNode();  // label
+    auto&& _results = dmp_get();
+    operation::serialization<Type>{}(ar, _results);
 }
 //
 //--------------------------------------------------------------------------------------//

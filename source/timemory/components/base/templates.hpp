@@ -197,10 +197,10 @@ base<Tp, Value>::get_display_unit()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, typename Vp,
-          enable_if_t<trait::uses_value_storage<Up, Vp>::value, int>>
+template <typename Up>
 void
-base<Tp, Value>::print(std::ostream& os) const
+base<Tp, Value>::print(
+    std::ostream& os, enable_if_t<trait::uses_value_storage<Up, Value>::value, int>) const
 {
     operation::base_printer<Up>(os, static_cast<const Up&>(*this));
 }
@@ -208,10 +208,10 @@ base<Tp, Value>::print(std::ostream& os) const
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, typename Vp,
-          enable_if_t<!trait::uses_value_storage<Up, Vp>::value, int>>
+template <typename Up>
 void
-base<Tp, Value>::print(std::ostream&) const
+base<Tp, Value>::print(
+    std::ostream&, enable_if_t<!trait::uses_value_storage<Up, Value>::value, long>) const
 {}
 //
 //--------------------------------------------------------------------------------------//

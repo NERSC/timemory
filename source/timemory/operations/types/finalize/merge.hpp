@@ -71,13 +71,15 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     if(!l.owns_lock())
         l.lock();
 
-    auto _copy_hash_ids = [&]() {
-        for(const auto& itr : (*rhs.get_hash_ids()))
+    auto _copy_hash_ids = [&lhs, &rhs]() {
+        auto _hash_ids     = *rhs.get_hash_ids();
+        auto _hash_aliases = *rhs.get_hash_aliases();
+        for(const auto& itr : _hash_ids)
         {
             if(lhs.m_hash_ids->find(itr.first) == lhs.m_hash_ids->end())
                 (*lhs.m_hash_ids)[itr.first] = itr.second;
         }
-        for(const auto& itr : (*rhs.get_hash_aliases()))
+        for(const auto& itr : _hash_aliases)
         {
             if(lhs.m_hash_aliases->find(itr.first) == lhs.m_hash_aliases->end())
                 (*lhs.m_hash_aliases)[itr.first] = itr.second;

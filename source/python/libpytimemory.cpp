@@ -71,10 +71,10 @@ manager_wrapper::get()
 namespace impl
 {
 //
-template <typename Tp, typename Archive,
-          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename Archive>
 auto
-get_json(Archive& ar, const pytim::pyenum_set_t& _types, int)
+get_json(Archive& ar, const pytim::pyenum_set_t& _types,
+         tim::enable_if_t<tim::trait::is_available<Tp>::value, int>)
     -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
 {
     if(_types.empty() || _types.count(tim::component::properties<Tp>{}()) > 0)
@@ -93,11 +93,12 @@ get_json(Archive&, const pytim::pyenum_set_t&, long)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT = typename Tp::value_type, typename StreamT,
-          tim::enable_if_t<tim::trait::is_available<Tp>::value &&
-                           !tim::concepts::is_null_type<ValueT>::value> = 0>
+template <typename Tp, typename ValueT = typename Tp::value_type, typename StreamT>
 auto
-get_stream(StreamT& strm, const pytim::pyenum_set_t& _types, int)
+get_stream(StreamT& strm, const pytim::pyenum_set_t& _types,
+           tim::enable_if_t<tim::trait::is_available<Tp>::value &&
+                                !tim::concepts::is_null_type<ValueT>::value,
+                            int>)
     -> decltype(tim::storage<Tp>::instance()->dmp_get(), void())
 {
     using printer_t = tim::operation::finalize::print<Tp, true>;
@@ -135,20 +136,20 @@ get_stream(StreamT&, const pytim::pyenum_set_t&, long)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename Archive,
-          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename Archive>
 auto
-get_json(Archive& ar, const pytim::pyenum_set_t& _types, int)
+get_json(Archive& ar, const pytim::pyenum_set_t& _types,
+         tim::enable_if_t<tim::trait::is_available<Tp>::value, int> = 0)
 {
     impl::get_json<Tp>(ar, _types, 0);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename Archive,
-          tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename Archive>
 auto
-get_json(Archive&, const pytim::pyenum_set_t&, ...)
+get_json(Archive&, const pytim::pyenum_set_t&,
+         tim::enable_if_t<!tim::trait::is_available<Tp>::value, long> = 0)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -162,20 +163,20 @@ get_json(Archive& ar, const pytim::pyenum_set_t& _types, std::index_sequence<Idx
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename StreamT,
-          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename StreamT>
 auto
-get_stream(StreamT& strm, const pytim::pyenum_set_t& _types, int)
+get_stream(StreamT& strm, const pytim::pyenum_set_t& _types,
+           tim::enable_if_t<tim::trait::is_available<Tp>::value, int> = 0)
 {
     return impl::get_stream<Tp>(strm, _types, 0);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename StreamT,
-          tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename StreamT>
 auto
-get_stream(StreamT&, const pytim::pyenum_set_t&, ...)
+get_stream(StreamT&, const pytim::pyenum_set_t&,
+           tim::enable_if_t<!tim::trait::is_available<Tp>::value, long> = 0)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -291,7 +292,10 @@ PYBIND11_MODULE(libpytimemory, tim)
                     _val->set<scope::flat>(_flat.cast<bool>());
                 } catch(py::cast_error&)
                 {
-                    auto _f = [_val](auto v) { _val->set(v); };
+                    auto _f = [_val](auto v) {
+                        _val->set(v);
+                        return py::none{};
+                    };
                     pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
                                                                                    _flat);
                 }
@@ -303,7 +307,10 @@ PYBIND11_MODULE(libpytimemory, tim)
                     _val->set<scope::timeline>(_time.cast<bool>());
                 } catch(py::cast_error&)
                 {
-                    auto _f = [_val](auto v) { _val->set(v); };
+                    auto _f = [_val](auto v) {
+                        _val->set(v);
+                        return py::none{};
+                    };
                     pytim::try_cast_seq<scope::flat, scope::timeline, scope::tree>(_f,
                                                                                    _time);
                 }

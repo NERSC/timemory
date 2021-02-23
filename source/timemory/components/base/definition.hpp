@@ -72,21 +72,6 @@ base<Tp, Value>::get(void*& ptr, size_t _typeid_hash) const
 //
 template <typename Tp, typename Value>
 void
-base<Tp, Value>::get_opaque_data(void*& ptr, size_t _typeid_hash) const
-{
-    if(!ptr && _typeid_hash == typeid_hash<Tp>())
-    {
-        auto _data   = static_cast<const Tp*>(this)->get();
-        using data_t = decay_t<decltype(_data)>;
-        auto _pdata  = new data_t(_data);
-        ptr          = reinterpret_cast<void*>(_pdata);
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-void
 base<Tp, Value>::set_started()
 {
     set_is_running(true);
@@ -216,46 +201,6 @@ base<Tp, Value>::get_description()
 {
     static std::string _instance = Type::description();
     return _instance;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-//              operator + - * /    (base_type)
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-Tp&
-base<Tp, Value>::plus_oper(const base_type& rhs)
-{
-    return operator+=(static_cast<const Type&>(rhs));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-Tp&
-base<Tp, Value>::minus_oper(const base_type& rhs)
-{
-    return operator-=(static_cast<const Type&>(rhs));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-Tp&
-base<Tp, Value>::multiply_oper(const base_type& rhs)
-{
-    return operator*=(static_cast<const Type&>(rhs));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-Tp&
-base<Tp, Value>::divide_oper(const base_type& rhs)
-{
-    return operator/=(static_cast<const Type&>(rhs));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -427,13 +372,6 @@ base<Tp, void>::get(void*& ptr, size_t _typeid_hash) const
     if(!ptr && _typeid_hash == typeid_hash<Tp>())
         ptr = reinterpret_cast<void*>(const_cast<base_type*>(this));
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-void
-base<Tp, void>::get_opaque_data(void*&, size_t) const
-{}
 //
 //--------------------------------------------------------------------------------------//
 //

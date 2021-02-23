@@ -245,8 +245,8 @@ protected:
     : common_base_bundle{ std::get<2>(_params) + get_scope_config(),
                           std::get<0>(_params) }
     {
-        m_enabled(std::get<1>(_params) && trait::runtime_enabled<Tag>::get());
-        m_store(m_enabled() && get_store_config());
+        m_enabled(trait::runtime_enabled<Tag>::get());
+        m_store(m_enabled() && std::get<1>(_params) && get_store_config());
     }
 
     template <typename U = impl_type>

@@ -146,10 +146,21 @@ protected:
         tim::enable_signal_detection(tim::signal_settings::get_default());
         auto& manager = get_manager();
 
+        std::cout << "Tweaking settings..." << std::endl;
+        auto tmp                 = tim::settings::push<TIMEMORY_API>();
+        tim::settings::debug()   = true;
+        tim::settings::verbose() = 4;
+
         std::cout << "Terminating thread-pool... " << std::flush;
         manager->Terminate();
         std::cout << "Deleting thread-pool... " << std::flush;
         manager.reset();
+        //
+        std::cout << "Restoring settings..." << std::endl;
+        tim::settings::pop<TIMEMORY_API>();
+        tim::settings::debug()   = tmp->get_debug();
+        tim::settings::verbose() = tmp->get_verbose();
+
         std::cout << "Finalizing..." << std::endl;
         tim::timemory_finalize();
         std::cout << "Done" << std::endl;

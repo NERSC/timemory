@@ -347,95 +347,12 @@ mpi_get<Type, true>::operator()(basic_tree_vector_type& bt)
         return bt;
 
     auto& data = *m_storage;
-#if !defined(TIMEMORY_USE_MPI)
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory not using MPI");
 
-    auto entry = basic_tree_type{};
-    bt         = basic_tree_vector_type(1, data.get(entry));
-#else
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory using MPI");
+    using serialization_t = serialization<Type>;
+    using mpi_data_t      = typename serialization_t::mpi_data;
 
-    // not yet implemented
-    // auto comm =
-    //    (settings::mpi_output_per_node()) ? mpi::get_node_comm() : mpi::comm_world_v;
-    auto comm = mpi::comm_world_v;
-    mpi::barrier(comm);
-
-    int comm_rank = mpi::rank(comm);
-    int comm_size = mpi::size(comm);
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert a result to a serialization
-    //
-    auto send_serialize = [&](const basic_tree_type& src) {
-        std::stringstream ss;
-        {
-            auto oa = policy::output_archive<cereal::MinimalJSONOutputArchive,
-                                             TIMEMORY_API>::get(ss);
-            (*oa)(cereal::make_nvp("data", src));
-        }
-        return ss.str();
-    };
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert the serialization to a result
-    //
-    auto recv_serialize = [&](const std::string& src) {
-        basic_tree_type   ret;
-        std::stringstream ss;
-        ss << src;
-        {
-            auto ia =
-                policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
-            (*ia)(cereal::make_nvp("data", ret));
-            if(settings::debug())
-            {
-                printf("[RECV: %i]> data size: %lli\n", comm_rank,
-                       (long long int) ret.size());
-            }
-        }
-        return ret;
-    };
-
-    bt = basic_tree_vector_type(comm_size);
-
-    auto ret = basic_tree_type{};
-    ret      = data.get(ret);
-
-    if(comm_rank == 0)
-    {
-        //
-        //  The root rank receives data from all non-root ranks and reports all data
-        //
-        for(int i = 1; i < comm_size; ++i)
-        {
-            std::string str;
-            if(settings::debug())
-                printf("[RECV: %i]> starting %i\n", comm_rank, i);
-            mpi::recv(str, i, 0, comm);
-            if(settings::debug())
-                printf("[RECV: %i]> completed %i\n", comm_rank, i);
-            bt[i] = recv_serialize(str);
-        }
-        bt[comm_rank] = ret;
-    }
-    else
-    {
-        auto str_ret = send_serialize(ret);
-        //
-        //  The non-root rank sends its data to the root rank and only reports own data
-        //
-        if(settings::debug())
-            printf("[SEND: %i]> starting\n", comm_rank);
-        mpi::send(str_ret, 0, 0, comm);
-        if(settings::debug())
-            printf("[SEND: %i]> completed\n", comm_rank);
-        bt = basic_tree_vector_type(1, ret);
-    }
-#endif
-
+    basic_tree_type _entry{};
+    bt = serialization_t{}(mpi_data_t{}, mpi::comm_world_v, data.get(_entry));
     return bt;
 }
 //
@@ -455,14 +372,9 @@ mpi_get<Type, true>::operator()(Archive& ar)
     }
     else
     {
-        auto idstr = get_type::get_identifier();
-        ar.setNextName(idstr.c_str());
-        ar.startNode();
-        get_type{}(ar, metadata_t{});
         auto bt = basic_tree_vector_type{};
         (*this)(bt);
-        ar(cereal::make_nvp("mpi", bt));
-        ar.finishNode();
+        serialization<Type>{}(ar, bt);
     }
     return ar;
 }

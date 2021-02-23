@@ -162,9 +162,6 @@ public:
     /// reset the values
     TIMEMORY_INLINE void reset();
 
-    /// assign to pointer
-    TIMEMORY_INLINE void get_opaque_data(void*& ptr, size_t _hash) const;
-
     /// assign type to a pointer
     TIMEMORY_INLINE void get(void*& ptr, size_t _typeid_hash) const;
 
@@ -174,22 +171,6 @@ public:
     /// retrieve the current measurement value in the units for the type in a format
     /// that can be piped to the output stream operator ('<<')
     TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_display() const { return this->load(); }
-
-    TIMEMORY_INLINE bool operator<(const base_type& rhs) const
-    {
-        return (load() < rhs.load());
-    }
-    TIMEMORY_INLINE bool operator>(const base_type& rhs) const
-    {
-        return (load() > rhs.load());
-    }
-    TIMEMORY_INLINE bool operator<=(const base_type& rhs) const { return !(*this > rhs); }
-    TIMEMORY_INLINE bool operator>=(const base_type& rhs) const { return !(*this < rhs); }
-
-    TIMEMORY_INLINE Type& operator+=(const base_type& rhs) { return plus_oper(rhs); }
-    TIMEMORY_INLINE Type& operator-=(const base_type& rhs) { return minus_oper(rhs); }
-    TIMEMORY_INLINE Type& operator*=(const base_type& rhs) { return multiply_oper(rhs); }
-    TIMEMORY_INLINE Type& operator/=(const base_type& rhs) { return divide_oper(rhs); }
 
     TIMEMORY_INLINE Type& operator+=(const Type& rhs) { return plus_oper(rhs); }
     TIMEMORY_INLINE Type& operator-=(const Type& rhs) { return minus_oper(rhs); }
@@ -201,13 +182,13 @@ public:
     TIMEMORY_INLINE Type& operator*=(const Value& rhs) { return multiply_oper(rhs); }
     TIMEMORY_INLINE Type& operator/=(const Value& rhs) { return divide_oper(rhs); }
 
-    template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
-    void print(std::ostream&) const;
+    template <typename Up = Tp>
+    void print(std::ostream&,
+               enable_if_t<trait::uses_value_storage<Up, Value>::value, int> = 0) const;
 
-    template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<!trait::uses_value_storage<Up, Vp>::value, int> = 0>
-    void print(std::ostream&) const;
+    template <typename Up = Tp>
+    void print(std::ostream&,
+               enable_if_t<!trait::uses_value_storage<Up, Value>::value, long> = 0) const;
 
     friend std::ostream& operator<<(std::ostream& os, const base_type& obj)
     {
@@ -261,11 +242,6 @@ public:
 
 protected:
     static base_storage_type* get_storage();
-
-    TIMEMORY_INLINE Type& plus_oper(const base_type& rhs);
-    TIMEMORY_INLINE Type& minus_oper(const base_type& rhs);
-    TIMEMORY_INLINE Type& multiply_oper(const base_type& rhs);
-    TIMEMORY_INLINE Type& divide_oper(const base_type& rhs);
 
     TIMEMORY_INLINE Type& plus_oper(const Type& rhs);
     TIMEMORY_INLINE Type& minus_oper(const Type& rhs);
@@ -426,7 +402,6 @@ public:
 
     TIMEMORY_INLINE void get() {}
     TIMEMORY_INLINE void get(void*& ptr, size_t _typeid_hash) const;
-    TIMEMORY_INLINE void get_opaque_data(void*& ptr, size_t _typeid_hash) const;
 
     void operator+=(const base_type&) {}
     void operator-=(const base_type&) {}
@@ -551,7 +526,6 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const base_type&) { return os; }
 
     TIMEMORY_INLINE void get(void*&, size_t) const {}
-    TIMEMORY_INLINE void get_opaque_data(void*&, size_t) const {}
 
     TIMEMORY_NODISCARD TIMEMORY_INLINE int64_t get_laps() const { return laps; }
     TIMEMORY_NODISCARD TIMEMORY_INLINE graph_iterator get_iterator() const

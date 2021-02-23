@@ -227,7 +227,6 @@ public:
     using base_type::get_is_running;
     using base_type::get_is_transient;
     using base_type::get_iterator;
-    using base_type::get_opaque_data;
     using base_type::get_value;
     using base_type::laps;
     using base_type::load;

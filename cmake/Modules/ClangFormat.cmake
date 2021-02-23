@@ -28,6 +28,10 @@ find_program(CLANG_FORMATTER
         clang-format-mp-6.0
         clang-format)
 
+# python formatting
+find_program(BLACK_FORMATTER
+    NAMES black)
+
 if(CLANG_FORMATTER)
     file(GLOB_RECURSE _headers
         ${PROJECT_SOURCE_DIR}/source/tools/*.hpp
@@ -98,6 +102,11 @@ if(CLANG_FORMATTER)
     if(TIMEMORY_BUILD_EXAMPLES)
         set(_COMMAND ${_COMMAND}
             COMMAND ${CLANG_FORMATTER} -i ${examples})
+    endif()
+
+    if(BLACK_FORMATTER)
+        set(_COMMAND ${_COMMAND}
+            COMMAND ${BLACK_FORMATTER} -q ${PROJECT_SOURCE_DIR})
     endif()
 
     add_custom_target(${FORMAT_NAME}

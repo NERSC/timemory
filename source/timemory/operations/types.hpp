@@ -1050,9 +1050,6 @@ struct print<Tp, true> : public base::print
     TIMEMORY_NODISCARD const auto& get_node_input() const { return node_input; }
     TIMEMORY_NODISCARD const auto& get_node_delta() const { return node_delta; }
 
-    template <typename Archive>
-    void print_metadata(Archive& ar, const Tp& obj);
-
     std::vector<result_node*> get_flattened(result_type& results)
     {
         std::vector<result_node*> flat;

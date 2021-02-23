@@ -339,7 +339,7 @@ def embedded_plot(
                         if "concurrency" in _json
                         else 1
                     )
-                    ctype = _json["type"]  # collection type
+                    ctype = _json["label"]  # collection type
                     cdesc = _json["description"]  # collection description
                     unitr = _json["unit_repr"]  # collection unit display repr
                     cid = " ".join(key.split("_")).title()

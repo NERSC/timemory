@@ -267,8 +267,10 @@ else()
 endif()
 
 if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
-    timemory_target_compile_definitions(timemory-python INTERFACE
-        TIMEMORY_USE_PYTHON)
+    if(NOT APPLE) # don't embed the interpreter on macOS
+        timemory_target_compile_definitions(timemory-python INTERFACE
+            TIMEMORY_USE_PYTHON)
+    endif()
     target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
     target_include_directories(timemory-python SYSTEM INTERFACE
         ${PYTHON_INCLUDE_DIRS}

@@ -89,6 +89,123 @@ get_class_name(std::string id)
 //
 //--------------------------------------------------------------------------------------//
 //
+static auto
+read_object(py::object _obj)
+{
+    std::stringstream iss;
+    if(py::hasattr(_obj, "read"))
+    {
+        auto _data = _obj.attr("read")();
+        iss << _data.cast<std::string>();
+    }
+    else
+    {
+        auto          _data = _obj.cast<std::string>();
+        std::ifstream ifs{ _data };
+        if(ifs)
+        {
+            std::string str{};
+            ifs.seekg(0, std::ios::end);
+            str.reserve(ifs.tellg());
+            ifs.seekg(0, std::ios::beg);
+            str.assign((std::istreambuf_iterator<char>(ifs)),
+                       std::istreambuf_iterator<char>());
+            iss = std::stringstream{ str };
+        }
+        else
+        {
+            iss = std::stringstream{ _data };
+        }
+    }
+    return iss.str();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename DataT>
+auto
+from_json(py::object _obj)
+{
+    using policy_type =
+        tim::policy::input_archive<tim::cereal::JSONInputArchive, tim::project::python>;
+    using property_t = tim::component::properties<Tp>;
+
+    DataT             _ret{};
+    std::stringstream iss{ read_object(_obj) };
+
+    {
+        auto ia = policy_type::get(iss);
+        ia->setNextName("timemory");
+        ia->startNode();
+        bool              success = false;
+        std::stringstream _msg;
+        for(const auto& itr :
+            { std::string{ property_t::enum_string() }, std::string{ property_t::id() },
+              std::string{ Tp::label() },
+              std::string{ get_class_name(property_t::enum_string()) } })
+        {
+            try
+            {
+                ia->setNextName(itr.c_str());
+                ia->startNode();
+                // add the metadata
+                // get_finalize_type{}(*ia, get_metadata_type{});
+                for(auto name : { "graph", "mpi", "upcxx", "ranks" })
+                {
+                    try
+                    {
+                        (*ia)(tim::cereal::make_nvp(name, _ret));
+                        break;
+                    } catch(tim::cereal::Exception& e)
+                    {
+                        _msg << e.what() << std::endl;
+                        continue;
+                    }
+                }
+                ia->finishNode();  // base
+                success = true;
+            } catch(tim::cereal::Exception& e)
+            {
+                _msg << e.what() << std::endl;
+                continue;
+            }
+            break;
+        }
+
+        if(!success)
+        {
+            throw std::runtime_error(_msg.str());
+        }
+        ia->finishNode();  // timemory
+    }
+    return _ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename DataT>
+auto
+to_json(DataT&& _obj)
+{
+    using policy_type = tim::policy::output_archive<tim::cereal::MinimalJSONOutputArchive,
+                                                    tim::project::python>;
+
+    std::stringstream oss;
+    {
+        auto oa = policy_type::get(oss);
+        oa->setNextName("timemory");
+        oa->startNode();
+        tim::operation::serialization<Tp>{}(*oa, std::forward<DataT>(_obj));
+        oa->finishNode();  // timemory
+    }
+    auto json_str    = oss.str();
+    auto json_module = py::module::import("json");
+    return json_module.attr("loads")(json_str);
+}
+
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename Tp>
 auto
 construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value> = 0)
@@ -230,7 +347,7 @@ construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value>
         auto _id   = TIMEMORY_JOIN("", _base, "Storage");
         auto _desc = TIMEMORY_JOIN(" ", "Storage class for", _base);
 
-        pystorage_type _pystorage(_pymod, _id.c_str(), _desc.c_str());
+        static pystorage_type _pystorage(_pymod, _id.c_str(), _desc.c_str());
 
         auto _get     = []() { return storage_type::instance()->get(); };
         auto _dmp_get = []() { return storage_type::instance()->dmp_get(); };
@@ -256,6 +373,41 @@ construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value>
             std::vector<basic_tree_vector_type> _data;
             storage_type::instance()->upc_get(_data);
             return _data;
+        };
+
+        using basic_get_vector_type =
+            tim::decay_t<decltype(storage_type::instance()->get())>;
+        using basic_dmp_get_vector_type =
+            tim::decay_t<decltype(storage_type::instance()->dmp_get())>;
+
+        auto _from_json_tree = [](py::object _obj) {
+            return from_json<Tp, basic_tree_vector_type>(_obj);
+        };
+
+        auto _from_json_tree_dmp = [](py::object _obj) {
+            return from_json<Tp, std::vector<basic_tree_vector_type>>(_obj);
+        };
+
+        auto _from_json = [](py::object _obj) {
+            return from_json<Tp, basic_get_vector_type>(_obj);
+        };
+
+        auto _from_json_dmp = [](py::object _obj) {
+            return from_json<Tp, basic_dmp_get_vector_type>(_obj);
+        };
+
+        auto _to_json_tree = [](basic_tree_vector_type _obj) {
+            return to_json<Tp>(_obj);
+        };
+
+        auto _to_json_tree_dmp = [](std::vector<basic_tree_vector_type> _obj) {
+            return to_json<Tp>(_obj);
+        };
+
+        auto _to_json = [](basic_get_vector_type _obj) { return to_json<Tp>(_obj); };
+
+        auto _to_json_dmp = [](basic_dmp_get_vector_type _obj) {
+            return to_json<Tp>(_obj);
         };
 
         _pystorage.def_static(
@@ -295,6 +447,61 @@ construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value>
         _pystorage.def_static("upcxx_get_tree", _upc_get_tree,
                               "Identical to dmp_get_tree if the distributed memory "
                               "process library is UPC++");
+
+        _pystorage.def_static("load_json", _from_json,
+                              "Load the result of get() from a JSON dictionary");
+        _pystorage.def_static("load_json_dmp", _from_json_dmp,
+                              "Load the result of dmp_get() from a JSON dictionary");
+        _pystorage.def_static("load_json_tree", _from_json_tree,
+                              "Load the result of get_tree() from a JSON dictionary");
+        _pystorage.def_static("load_json_tree_dmp", _from_json_tree_dmp,
+                              "Load the result of dmp_get_tree() from a JSON dictionary");
+
+        auto _from = [_base](py::object _obj) {
+            std::stringstream _msg;
+            py::object        _ret = py::none{};
+            std::stringstream iss{ read_object(_obj) };
+
+            for(const auto& itr :
+                { "load_json", "load_json_dmp", "load_json_tree", "load_json_tree_dmp" })
+            {
+                _msg << _base << "." << itr << ":\n";
+                try
+                {
+                    _ret = _pystorage.attr(itr)(iss.str());
+                } catch(std::exception& e)
+                {
+                    _msg << "\n" << e.what() << std::endl;
+                    continue;
+                }
+                break;
+            }
+            if(_ret.is_none())
+                throw std::runtime_error(_msg.str());
+            return _ret;
+        };
+
+        _pystorage.def_static(
+            "load", _from,
+            "Load the result of get(), {dmp,mpi,upcxx}_get(), get_tree(), or "
+            "{dmp,mpi,upcxx}_get_tree() from a JSON dictionary");
+
+        _pystorage.def_static(
+            "dumps", _to_json,
+            "Load the result of get(), {dmp,mpi,upcxx}_get(), get_tree(), or "
+            "{dmp,mpi,upcxx}_get_tree() from a JSON dictionary");
+        _pystorage.def_static(
+            "dumps", _to_json_dmp,
+            "Load the result of get(), {dmp,mpi,upcxx}_get(), get_tree(), or "
+            "{dmp,mpi,upcxx}_get_tree() from a JSON dictionary");
+        _pystorage.def_static(
+            "dumps", _to_json_tree,
+            "Load the result of get(), {dmp,mpi,upcxx}_get(), get_tree(), or "
+            "{dmp,mpi,upcxx}_get_tree() from a JSON dictionary");
+        _pystorage.def_static(
+            "dumps", _to_json_tree_dmp,
+            "Load the result of get(), {dmp,mpi,upcxx}_get(), get_tree(), or "
+            "{dmp,mpi,upcxx}_get_tree() from a JSON dictionary");
     }
 }
 //
