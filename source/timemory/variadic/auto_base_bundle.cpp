@@ -473,7 +473,7 @@ auto_base_bundle<Tag, CompT, BundleT>::report_at_exit(bool val)
 
 template <typename Tag, typename CompT, typename BundleT>
 void
-auto_base_bundle<Tag, CompT, BundleT>::rekey(const std::string& _key)
+auto_base_bundle<Tag, CompT, BundleT>::rekey(const string_view_t& _key)
 {
     m_temporary.rekey(_key);
 }

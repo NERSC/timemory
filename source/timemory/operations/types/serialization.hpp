@@ -687,8 +687,24 @@ serialization<Tp, true>::impl(
     auto idstr = get_identifier();
     ar.setNextName(idstr.c_str());
     ar.startNode();
-    ar(cereal::make_nvp("graph", data));
+    std::stringstream _msg;
+    for(auto name : { "graph", "mpi", "upcxx" })
+    {
+        try
+        {
+            std::vector<basic_tree_vector_type> _data{};
+            ar(tim::cereal::make_nvp(name, _data));
+            data.reserve(data.size() + _data.size());
+            for(auto&& itr : _data)
+                data.emplace_back(itr);
+        } catch(tim::cereal::Exception& e)
+        {
+            _msg << e.what() << '\n';
+        }
+    }
     ar.finishNode();
+    if(data.empty())
+        throw std::runtime_error(_msg.str());
 }
 //
 template <typename Tp>

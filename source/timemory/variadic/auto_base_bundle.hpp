@@ -273,7 +273,7 @@ public:
     void report_at_exit(bool val);
 
     // the string one is expensive so force hashing
-    void       rekey(const std::string& _key);
+    void       rekey(const string_view_t& _key);
     this_type& rekey(captured_location_t _loc);
     this_type& rekey(uint64_t _hash);
 
