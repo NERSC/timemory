@@ -8,6 +8,21 @@ jobs:
   include:
     # ------------------------------------------------------------------------ #
     #
+    #   Python3.8 / macOS
+    #
+    # ------------------------------------------------------------------------ #
+    - os: osx
+      osx_image: xcode11
+      language: shell
+      env:
+        - TRAVIS_PYTHON_VERSION=3.8
+        - CONDA_OS=MacOSX
+        - CC=clang
+        - CXX=clang++
+        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_LINE_PROFILER=OFF'
+        - BUILD_ARGS='--minimal --build-libs shared --python --cxx-standard=17'
+    # ------------------------------------------------------------------------ #
+    #
     #   Quick builds
     #
     # ------------------------------------------------------------------------ #
@@ -182,21 +197,6 @@ jobs:
         - CC=clang-7
         - CXX=clang++-7
         - BUILD_ARGS='--minimal --build-libs static shared --python --caliper --stats --tools ompt --cxx-standard=14'
-    # ------------------------------------------------------------------------ #
-    #
-    #   Python3.8 / macOS
-    #
-    # ------------------------------------------------------------------------ #
-    - os: osx
-      osx_image: xcode11
-      language: shell
-      env:
-        - TRAVIS_PYTHON_VERSION=3.8
-        - CONDA_OS=MacOSX
-        - CC=clang
-        - CXX=clang++
-        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_LINE_PROFILER=OFF'
-        - BUILD_ARGS='--minimal --build-libs shared --python --cxx-standard=17'
 
 before_install:
   # only run macOS if a pull-request

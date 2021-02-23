@@ -141,6 +141,22 @@ class TimemoryStorageTests(unittest.TestCase):
 
         self.assertEqual(data[0], data[1])
 
+    # ---------------------------------------------------------------------------------- #
+    # test metadata storage
+    def test_metadata_storage(self):
+        """metadata_storage"""
+
+        existing = tim.manager.get_metadata()
+        existing["info"]["FOO"] = "bar"
+        existing["info"]["BAR"] = [1.0, 2.0, 3.0]
+        tim.manager.add_metadata("FOO", "bar")
+        tim.manager.add_metadata("BAR", [1.0, 2.0, 3.0])
+
+        self.assertDictEqual(existing, tim.manager.get_metadata())
+        print("timemory metadata info:")
+        for key, item in tim.manager.get_metadata()["info"].items():
+            print(f"    {key} : {item}")
+
 
 # ----------------------------- main test runner ---------------------------------------- #
 # main runner

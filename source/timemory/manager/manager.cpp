@@ -365,6 +365,62 @@ manager::update_metadata_prefix()
 //
 //----------------------------------------------------------------------------------//
 //
+TIMEMORY_MANAGER_LINKAGE(std::ostream&)
+manager::write_metadata(std::ostream& ofs)
+{
+    auto_lock_t _lk(type_mutex<manager>(), std::defer_lock);
+
+    if(!_lk.owns_lock())
+        _lk.lock();
+
+    auto _settings = f_settings();
+
+    // ensure json write final block during destruction before the file is closed
+    using policy_type = policy::output_archive_t<manager>;
+    auto oa           = policy_type::get(ofs);
+    oa->setNextName("timemory");
+    oa->startNode();
+    {
+        oa->setNextName("metadata");
+        oa->startNode();
+        // user
+        {
+            auto& _info_metadata = f_manager_persistent_data().info_metadata;
+            auto& _func_metadata = f_manager_persistent_data().func_metadata;
+            oa->setNextName("info");
+            oa->startNode();
+            for(const auto& itr : _info_metadata)
+                (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
+            for(const auto& itr : _func_metadata)
+                itr(static_cast<void*>(oa.get()));
+            oa->finishNode();
+        }
+        // settings
+        if(_settings)
+        {
+            settings::serialize_settings(*oa, *(_settings.get()));
+        }
+        // output
+        {
+            oa->setNextName("output");
+            oa->startNode();
+            for(const auto& itr : m_output_files)
+                (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
+            oa->finishNode();
+        }
+        // environment
+        {
+            env_settings::serialize_environment(*oa);
+        }
+        //
+        oa->finishNode();
+    }
+    oa->finishNode();
+    return ofs;
+}
+//
+//----------------------------------------------------------------------------------//
+//
 TIMEMORY_MANAGER_LINKAGE(void)
 manager::write_metadata(const std::string& _output_dir, const char* context)
 {
@@ -398,47 +454,7 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
     std::ofstream ofs(fname.c_str());
     if(ofs)
     {
-        // ensure json write final block during destruction before the file is closed
-        using policy_type = policy::output_archive_t<manager>;
-        auto oa           = policy_type::get(ofs);
-        oa->setNextName("timemory");
-        oa->startNode();
-        {
-            oa->setNextName("metadata");
-            oa->startNode();
-            // user
-            {
-                auto& _info_metadata = f_manager_persistent_data().info_metadata;
-                auto& _func_metadata = f_manager_persistent_data().func_metadata;
-                oa->setNextName("info");
-                oa->startNode();
-                for(const auto& itr : _info_metadata)
-                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
-                for(const auto& itr : _func_metadata)
-                    itr(static_cast<void*>(oa.get()));
-                oa->finishNode();
-            }
-            // settings
-            if(_settings)
-            {
-                settings::serialize_settings(*oa, *(_settings.get()));
-            }
-            // output
-            {
-                oa->setNextName("output");
-                oa->startNode();
-                for(const auto& itr : m_output_files)
-                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
-                oa->finishNode();
-            }
-            // environment
-            {
-                env_settings::serialize_environment(*oa);
-            }
-            //
-            oa->finishNode();
-        }
-        oa->finishNode();
+        write_metadata(ofs);
     }
     if(ofs)
         ofs << std::endl;

@@ -798,12 +798,28 @@ PYBIND11_MODULE(libpytimemory, tim)
         std::stringstream _msg;
         auto _f = [_label](auto _value) { tim::manager::add_metadata(_label, _value); };
         bool _success =
-            pytim::try_cast_seq<std::string, size_t, double, std::vector<size_t>,
-                                std::vector<double>>(_f, _data, &_msg);
+            pytim::try_cast_seq<std::string, size_t, double, std::vector<std::string>,
+                                std::vector<size_t>, std::vector<double>>(_f, _data,
+                                                                          &_msg);
         if(!_success)
             throw std::runtime_error(_msg.str());
     };
     man.def_static("add_metadata", _add_metadata, "Add metadata");
+    //----------------------------------------------------------------------------------//
+    auto _get_metadata = []() {
+        std::stringstream _data;
+        tim::manager::master_instance()->write_metadata(_data);
+        auto     json_module = py::module::import("json");
+        py::dict _metadata   = json_module.attr("loads")(_data.str());
+        if(_metadata.contains("timemory"))
+        {
+            _metadata = _metadata["timemory"];
+            if(_metadata.contains("metadata"))
+                _metadata = _metadata["metadata"];
+        }
+        return _metadata;
+    };
+    man.def_static("get_metadata", _get_metadata, "Get the metadata dictionary");
     //----------------------------------------------------------------------------------//
 
     //==================================================================================//

@@ -133,6 +133,8 @@ public:
     void set_write_metadata(short v) { m_write_metadata = v; }
     /// Print metadata to filename
     void write_metadata(const std::string&, const char* = "");
+    /// Write metadata to ostream
+    std::ostream& write_metadata(std::ostream&);
     /// Updates settings, rank, output prefix, etc.
     void update_metadata_prefix();
     /// Get the dmp rank. This is stored to avoid having to do MPI/UPC++ query after
