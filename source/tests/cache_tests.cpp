@@ -45,7 +45,7 @@ static auto          cache          = std::array<cache_ptr_t, 2>{};
 static auto          bundle         = std::shared_ptr<bundle_t>{};
 static auto          cache_bundle   = std::shared_ptr<bundle_t>{};
 static auto          tot_size       = nelements * sizeof(int64_t);
-static const double  peak_tolerance = 1 * tim::units::MB;
+static const double  peak_tolerance = 3 * tim::units::MB;
 
 //--------------------------------------------------------------------------------------//
 
@@ -625,6 +625,9 @@ TEST_F(cache_tests, validation)
 
 TEST_F(cache_tests, complete_tuple)
 {
+    tim::settings::debug()   = false;
+    tim::settings::verbose() = 0;
+
     namespace component = tim::component;
     puts("\n>>> INITIAL CACHE <<<\n");
     puts(print_rusage_cache(*cache.at(0)).c_str());

@@ -153,6 +153,26 @@ if(TIMEMORY_BUILD_PYTHON)
     add_subdirectory(tools)
 
     if(APPLE AND "$ENV{TRAVIS}" STREQUAL "true")
+        execute_process(COMMAND
+            ${PYTHON_EXECUTABLE} -c "import sys; print('{}'.format(sys.prefix))"
+            OUTPUT_VARIABLE _SYS_PREFIX
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+        execute_process(COMMAND
+            ${PYTHON_EXECUTABLE} -c "import sys; print('{}'.format(sys.exec_prefix))"
+            OUTPUT_VARIABLE _EXEC_PREFIX
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+        #
+        file(WRITE ${PROJECT_BINARY_DIR}/.pdbrc
+"r
+bt
+q
+"
+        )
+
         file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
 "#!${PYTHON_EXECUTABLE}
 
@@ -160,14 +180,43 @@ import timemory
 "
         )
 
+        set(_IGNORE
+            --ignore-module=_bootstrap
+            --ignore-module=_bootstrap_external
+            --ignore-module=sre_parse
+            --ignore-module=sre_compile
+            --ignore-dir=${_SYS_PREFIX}
+            --ignore-dir=${_EXEC_PREFIX}
+        )
+
+        set(_FILE
+            ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
+        )
+
+        add_test(
+            NAME                python-deadlock-pdb
+            COMMAND             ${PYTHON_EXECUTABLE} -m pdb ${_FILE}
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
         add_test(
             NAME                python-deadlock-trace
-            COMMAND             ${PYTHON_EXECUTABLE} -m trace -t
-                                --ignore-module=_bootstrap
-                                --ignore-module=_bootstrap_external
-                                ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
+            COMMAND             ${PYTHON_EXECUTABLE} -m trace -t ${_IGNORE} ${_FILE}
             WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
+        add_test(
+            NAME                python-deadlock-listfuncs
+            COMMAND             ${PYTHON_EXECUTABLE} -m trace -l ${_IGNORE} ${_FILE}
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
+        add_test(
+            NAME                python-deadlock-trackcalls
+            COMMAND             ${PYTHON_EXECUTABLE} -m trace -T ${_IGNORE} ${_FILE}
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
+        set_tests_properties(python-deadlock-pdb PROPERTIES DEPENDS libpytimemory)
         set_tests_properties(python-deadlock-trace PROPERTIES DEPENDS libpytimemory)
+        set_tests_properties(python-deadlock-listfuncs PROPERTIES DEPENDS libpytimemory)
+        set_tests_properties(python-deadlock-trackcalls PROPERTIES DEPENDS libpytimemory)
     endif()
 
 endif()

@@ -273,9 +273,7 @@ struct generic_deleter
 
     template <typename Up, enable_if_t<!std::is_pointer<Up>::value, int> = 0>
     TIMEMORY_INLINE explicit generic_deleter(Up&&)
-    {
-        DEBUG_PRINT_HERE("%s %s", "type is not deleted", demangle<type>().c_str());
-    }
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//

@@ -440,6 +440,10 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
+    auto _settings           = tim::settings::push<TIMEMORY_API>();
+    tim::settings::debug()   = false;
+    tim::settings::verbose() = 0;
+
     using toolset_t =
         tim::auto_tuple_t<wall_clock, peak_rss, memory_allocations, mpi_gotcha_t>;
 
@@ -508,6 +512,10 @@ TEST_F(gotcha_tests, malloc_gotcha)
     {
         EXPECT_GE(itr.data().get(), 240000.) << itr.prefix() << ": " << itr.data();
     }
+
+    tim::settings::pop<TIMEMORY_API>();
+    tim::settings::debug()   = _settings->get_debug();
+    tim::settings::verbose() = _settings->get_verbose();
 }
 
 //======================================================================================//
