@@ -111,10 +111,8 @@ private:
 namespace internal
 {
 //
-namespace base
-{
 template <typename Tp>
-struct serialization
+struct serialization_base
 {
     using type = Tp;
 
@@ -127,7 +125,7 @@ struct serialization
     struct upcxx_data
     {};
 
-    TIMEMORY_DEFAULT_OBJECT(serialization)
+    TIMEMORY_DEFAULT_OBJECT(serialization_base)
 
 public:
     static std::string to_lower(std::string _inp)
@@ -264,8 +262,6 @@ private:
     }
 };
 //
-}  // namespace base
-//
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, bool AvailV = is_enabled<Tp>::value>
@@ -274,10 +270,10 @@ struct serialization;
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-struct serialization<Tp, false> : base::serialization<Tp>
+struct serialization<Tp, false> : public serialization_base<Tp>
 {
     using type      = Tp;
-    using base_type = base::serialization<Tp>;
+    using base_type = serialization_base<Tp>;
     using metadata  = typename base_type::metadata;
 
     TIMEMORY_DEFAULT_OBJECT(serialization)
@@ -294,11 +290,11 @@ struct serialization<Tp, false> : base::serialization<Tp>
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-struct serialization<Tp, true> : base::serialization<Tp>
+struct serialization<Tp, true> : public serialization_base<Tp>
 {
     static constexpr bool value  = true;
     using type                   = Tp;
-    using base_type              = base::serialization<Tp>;
+    using base_type              = serialization_base<Tp>;
     using tree_type              = node::tree<type>;
     using graph_node             = node::graph<type>;
     using result_node            = node::result<type>;
@@ -322,159 +318,143 @@ struct serialization<Tp, true> : base::serialization<Tp>
 
     TIMEMORY_DEFAULT_OBJECT(serialization)
 
+private:
+    static constexpr bool component_is_specialized()
+    {
+        return component::properties<Tp>::specialized();
+    }
+
+    template <typename Archive>
+    static constexpr bool is_specialized()
+    {
+        return is_one_of<
+            decay_t<Archive>,
+            type_list<cereal::JSONInputArchive, cereal::MinimalJSONOutputArchive,
+                      cereal::PrettyJSONOutputArchive>>::value;
+    }
+
+    template <typename DataT>
+    static constexpr bool is_supported_dtype()
+    {
+        return is_one_of<
+            decay_t<DataT>,
+            type_list<basic_tree_vector_type, std::vector<basic_tree_vector_type>,
+                      result_type, distrib_type, basic_tree_map_type>>::value;
+    }
+
 public:
     // template overloads -- do not get instantiated in extern template
     template <typename Archive>
-    serialization(const Tp& obj, Archive& ar, const unsigned int version);
-
-    template <typename Archive>
-    void operator()(const Tp& obj, Archive& ar, const unsigned int version) const
+    serialization(const Tp& obj, Archive& ar, const unsigned int version,
+                  enable_if_t<!is_specialized<Archive>(), int> = 0)
     {
+        static_assert(!is_specialized<Archive>(),
+                      "Error! Calling template function instead of specialized function");
         impl(obj, ar, version);
     }
 
     template <typename Archive>
-    void operator()(Archive& ar, metadata) const
+    void operator()(const Tp& obj, Archive& ar, const unsigned int version,
+                    enable_if_t<!is_specialized<Archive>(), int> = 0) const
     {
-        impl(ar, metadata{});
+        static_assert(!is_specialized<Archive>(),
+                      "Error! Calling template function instead of specialized function");
+        impl(obj, ar, version);
     }
 
     template <typename Archive>
-    void operator()(Archive& ar, const basic_tree_vector_type& data) const
+    void operator()(Archive& ar, metadata data,
+                    enable_if_t<!is_specialized<Archive>(), int> = 0) const
     {
+        static_assert(!is_specialized<Archive>(),
+                      "Error! Calling template function instead of specialized function");
         impl(ar, data);
     }
 
-    template <typename Archive>
-    void operator()(Archive& ar, const std::vector<basic_tree_vector_type>& data) const
+    template <typename Archive, typename DataT>
+    void operator()(Archive& ar, const DataT& data,
+                    enable_if_t<!is_specialized<Archive>() && is_supported_dtype<DataT>(),
+                                int> = 0) const
     {
+        static_assert(!is_specialized<Archive>(),
+                      "Error! Calling template function instead of specialized function");
         impl(ar, data);
     }
 
-    template <typename Archive>
-    void operator()(Archive& ar, const basic_tree_map_type& data) const
+    template <typename Archive, typename DataT>
+    void operator()(Archive& ar, DataT& data,
+                    enable_if_t<!is_specialized<Archive>() && is_supported_dtype<DataT>(),
+                                int> = 0) const
     {
-        impl(ar, data);
-    }
-
-    template <typename Archive>
-    void operator()(Archive& ar, const result_type& data) const
-    {
-        impl(ar, data);
-    }
-
-    template <typename Archive>
-    void operator()(Archive& ar, const distrib_type& data) const
-    {
-        impl(ar, data);
-    }
-
-    template <typename Archive>
-    void operator()(Archive& ar, distrib_type& data) const
-    {
+        static_assert(!is_specialized<Archive>(),
+                      "Error! Calling template function instead of specialized function");
+        static_assert(!(std::is_same<decay_t<DataT>, basic_tree_map_type>::value &&
+                        concepts::is_input_archive<decay_t<Archive>>::value),
+                      "Error! basic_tree_map_type does not support input serialization");
         impl(ar, data);
     }
 
 public:
     // MinimalJSONOutputArchive overloads -- get instantiated in extern template
     serialization(const Tp& obj, cereal::MinimalJSONOutputArchive& ar,
-                  const unsigned int version)
-    {
-        impl(obj, ar, version);
-    }
+                  const unsigned int version, ...);
 
     void operator()(const Tp& obj, cereal::MinimalJSONOutputArchive& ar,
-                    const unsigned int version) const
-    {
-        impl(obj, ar, version);
-    }
+                    const unsigned int version, ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive& ar, metadata) const
-    {
-        impl(ar, metadata{});
-    }
+    void operator()(cereal::MinimalJSONOutputArchive& ar, metadata, ...) const;
 
     void operator()(cereal::MinimalJSONOutputArchive& ar,
-                    const basic_tree_vector_type&     data) const
-    {
-        impl(ar, data);
-    }
+                    const basic_tree_vector_type&     data, ...) const;
 
     void operator()(cereal::MinimalJSONOutputArchive&          ar,
-                    const std::vector<basic_tree_vector_type>& data) const
-    {
-        impl(ar, data);
-    }
+                    const std::vector<basic_tree_vector_type>& data, ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive& ar,
-                    const basic_tree_map_type&        data) const
-    {
-        impl(ar, data);
-    }
+    void operator()(cereal::MinimalJSONOutputArchive& ar, const basic_tree_map_type& data,
+                    ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive& ar, const result_type& data) const
-    {
-        impl(ar, data);
-    }
+    void operator()(cereal::MinimalJSONOutputArchive& ar, const result_type& data,
+                    ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive& ar, const distrib_type& data) const
-    {
-        impl(ar, data);
-    }
+    void operator()(cereal::MinimalJSONOutputArchive& ar, const distrib_type& data,
+                    ...) const;
 
 public:
     // PrettyJSONOutputArchive overloads -- get instantiated in extern template
     serialization(const Tp& obj, cereal::PrettyJSONOutputArchive& ar,
-                  const unsigned int version)
-    {
-        impl(obj, ar, version);
-    }
+                  const unsigned int version, ...);
 
     void operator()(const Tp& obj, cereal::PrettyJSONOutputArchive& ar,
-                    const unsigned int version) const
-    {
-        impl(obj, ar, version);
-    }
+                    const unsigned int version, ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive& ar, metadata) const
-    {
-        impl(ar, metadata{});
-    }
+    void operator()(cereal::PrettyJSONOutputArchive& ar, metadata, ...) const;
 
     void operator()(cereal::PrettyJSONOutputArchive& ar,
-                    const basic_tree_vector_type&    data) const
-    {
-        impl(ar, data);
-    }
+                    const basic_tree_vector_type&    data, ...) const;
 
     void operator()(cereal::PrettyJSONOutputArchive&           ar,
-                    const std::vector<basic_tree_vector_type>& data) const
-    {
-        impl(ar, data);
-    }
+                    const std::vector<basic_tree_vector_type>& data, ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive& ar,
-                    const basic_tree_map_type&       data) const
-    {
-        impl(ar, data);
-    }
+    void operator()(cereal::PrettyJSONOutputArchive& ar, const basic_tree_map_type& data,
+                    ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive& ar, const result_type& data) const
-    {
-        impl(ar, data);
-    }
+    void operator()(cereal::PrettyJSONOutputArchive& ar, const result_type& data,
+                    ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive& ar, const distrib_type& data) const
-    {
-        impl(ar, data);
-    }
+    void operator()(cereal::PrettyJSONOutputArchive& ar, const distrib_type& data,
+                    ...) const;
 
 public:
     // JSONInputArchive overloads -- get instantiated in extern template
-    void operator()(cereal::JSONInputArchive& ar, distrib_type& data) const
-    {
-        impl(ar, data);
-    }
+    void operator()(cereal::JSONInputArchive& ar, basic_tree_vector_type& data,
+                    ...) const;
+
+    void operator()(cereal::JSONInputArchive&            ar,
+                    std::vector<basic_tree_vector_type>& data, ...) const;
+
+    void operator()(cereal::JSONInputArchive& ar, result_type& data, ...) const;
+
+    void operator()(cereal::JSONInputArchive& ar, distrib_type& data, ...) const;
 
 public:
     template <typename ValueT>
@@ -509,18 +489,23 @@ private:
     void impl(Archive& ar, const distrib_type& data,
               enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
 
+    // input
+    template <typename Archive>
+    void impl(Archive& ar, basic_tree_vector_type& data,
+              enable_if_t<concepts::is_input_archive<Archive>::value, int> = 0) const;
+
+    template <typename Archive>
+    void impl(Archive& ar, std::vector<basic_tree_vector_type>& data,
+              enable_if_t<concepts::is_input_archive<Archive>::value, int> = 0) const;
+
+    template <typename Archive>
+    void impl(Archive& ar, result_type& data,
+              enable_if_t<concepts::is_input_archive<Archive>::value, int> = 0) const;
+
     template <typename Archive>
     void impl(Archive& ar, distrib_type& data,
               enable_if_t<concepts::is_input_archive<Archive>::value, long> = 0) const;
 };
-//
-template <typename Tp>
-template <typename Archive>
-serialization<Tp, true>::serialization(const Tp& obj, Archive& ar,
-                                       const unsigned int version)
-{
-    impl(obj, ar, version);
-}
 //
 template <typename Tp>
 template <typename Archive>
@@ -581,7 +566,7 @@ serialization<Tp, true>::impl(
     auto idstr = get_identifier();
     ar.setNextName(idstr.c_str());
     ar.startNode();
-    (*this)(ar, metadata{});
+    impl(ar, metadata{});
     extra_serialization<Tp>{ ar };
     ar(cereal::make_nvp("graph", data));
     ar.finishNode();
@@ -597,7 +582,7 @@ serialization<Tp, true>::impl(
     auto idstr = get_identifier();
     ar.setNextName(idstr.c_str());
     ar.startNode();
-    (*this)(ar, metadata{});
+    impl(ar, metadata{});
     extra_serialization<Tp>{ ar };
     ar(cereal::make_nvp("graph", data));
     ar.finishNode();
@@ -613,7 +598,7 @@ serialization<Tp, true>::impl(
     auto idstr = get_identifier();
     ar.setNextName(idstr.c_str());
     ar.startNode();
-    (*this)(ar, metadata{});
+    impl(ar, metadata{});
     extra_serialization<Tp>{ ar };
     auto pitr = data.find("process");
     if(pitr != data.end())
@@ -639,7 +624,7 @@ serialization<Tp, true>::impl(
     std::string _name = get_identifier();
     ar.setNextName(_name.c_str());
     ar.startNode();
-    (*this)(ar, metadata{});
+    impl(ar, metadata{});
     extra_serialization<Tp>{ ar };
     cereal::save(ar, data);
     ar.finishNode();  // ranks
@@ -657,7 +642,7 @@ serialization<Tp, true>::impl(
     std::string _name = get_identifier();
     ar.setNextName(_name.c_str());
     ar.startNode();
-    (*this)(ar, metadata{});
+    impl(ar, metadata{});
     extra_serialization<Tp>{ ar };
     ar.setNextName("ranks");
     ar.startNode();
@@ -674,6 +659,50 @@ serialization<Tp, true>::impl(
 
         ar.finishNode();
     }
+    ar.finishNode();  // ranks
+    ar.finishNode();  // name
+}
+//
+template <typename Tp>
+template <typename Archive>
+void
+serialization<Tp, true>::impl(
+    Archive& ar, basic_tree_vector_type& data,
+    enable_if_t<concepts::is_input_archive<Archive>::value, int>) const
+{
+    auto idstr = get_identifier();
+    ar.setNextName(idstr.c_str());
+    ar.startNode();
+    ar(cereal::make_nvp("graph", data));
+    ar.finishNode();
+}
+//
+template <typename Tp>
+template <typename Archive>
+void
+serialization<Tp, true>::impl(
+    Archive& ar, std::vector<basic_tree_vector_type>& data,
+    enable_if_t<concepts::is_input_archive<Archive>::value, int>) const
+{
+    auto idstr = get_identifier();
+    ar.setNextName(idstr.c_str());
+    ar.startNode();
+    ar(cereal::make_nvp("graph", data));
+    ar.finishNode();
+}
+//
+template <typename Tp>
+template <typename Archive>
+void
+serialization<Tp, true>::impl(
+    Archive& ar, result_type& data,
+    enable_if_t<concepts::is_input_archive<Archive>::value, int>) const
+{
+    // node
+    std::string _name = get_identifier();
+    ar.setNextName(_name.c_str());
+    ar.startNode();
+    cereal::load(ar, data);
     ar.finishNode();  // ranks
     ar.finishNode();  // name
 }
@@ -799,7 +828,7 @@ serialization<Tp, true>::operator()(mpi_data, mpi::comm_t comm, const ValueT& en
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-struct serialization : internal::serialization<Tp, is_enabled<Tp>::value>
+struct serialization : public internal::serialization<Tp, is_enabled<Tp>::value>
 {
     using type      = Tp;
     using base_type = internal::serialization<Tp, is_enabled<Tp>::value>;
@@ -824,3 +853,7 @@ struct serialization : internal::serialization<Tp, is_enabled<Tp>::value>
 //
 }  // namespace operation
 }  // namespace tim
+
+#define TIMEMORY_OPERATIONS_TYPES_SERIALIZATION_HPP_
+#include "timemory/operations/types/serialization.cpp"
+#undef TIMEMORY_OPERATIONS_TYPES_SERIALIZATION_HPP_

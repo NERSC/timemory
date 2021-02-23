@@ -25,19 +25,14 @@
 #pragma once
 
 #include "timemory/components/base/declaration.hpp"
-#include "timemory/components/base/templates.hpp"
 #include "timemory/components/base/types.hpp"
 #include "timemory/components/metadata.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/operations/types/record.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/types.hpp"
-#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"
 
-//======================================================================================//
-//
 namespace tim
 {
 namespace component
@@ -415,5 +410,201 @@ base<Tp, void>::get_description()
 //
 }  // namespace component
 }  // namespace tim
+
+#include "timemory/components/opaque/definition.hpp"
+#include "timemory/operations/types.hpp"
+#include "timemory/operations/types/get.hpp"
+#include "timemory/operations/types/sample.hpp"
+#include "timemory/variadic/functional.hpp"
+
+namespace tim
+{
+namespace component
+{
 //
-//======================================================================================//
+template <typename Tp, typename Value>
+opaque
+base<Tp, Value>::get_opaque(scope::config _scope)
+{
+    auto _typeid_hash = typeid_hash<Tp>();
+
+    opaque _obj{};
+
+    _obj.m_valid = true;
+
+    _obj.m_typeid = _typeid_hash;
+
+    _obj.m_setup = [](void* v_result, const string_view_t& _prefix,
+                      scope::config arg_scope) {
+        DEBUG_PRINT_HERE("Setting up %s", demangle<Tp>().c_str());
+        Tp* _result = static_cast<Tp*>(v_result);
+        if(!_result)
+            _result = new Tp{};
+        invoke::set_prefix<TIMEMORY_API>(std::tie(*_result), _prefix);
+        invoke::set_scope<TIMEMORY_API>(std::tie(*_result), arg_scope);
+        return (void*) _result;
+    };
+
+    _obj.m_push = [_scope](void*& v_result, const string_view_t& _prefix,
+                           scope::config arg_scope) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Pushing %s", demangle<Tp>().c_str());
+            auto _hash   = add_hash_id(_prefix);
+            Tp*  _result = static_cast<Tp*>(v_result);
+            invoke::push<TIMEMORY_API>(std::tie(*_result), _scope + arg_scope, _hash);
+        }
+    };
+
+    _obj.m_sample = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Sampling %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::invoke<operation::sample, TIMEMORY_API>(std::tie(*_result));
+        }
+    };
+
+    _obj.m_start = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Starting %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::start<TIMEMORY_API>(std::tie(*_result));
+        }
+    };
+
+    _obj.m_stop = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Stopping %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::stop<TIMEMORY_API>(std::tie(*_result));
+        }
+    };
+
+    _obj.m_pop = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Popping %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::pop<TIMEMORY_API>(std::tie(*_result));
+        }
+    };
+
+    _obj.m_get = [_typeid_hash](void* v_result, void*& _ptr, size_t _hash) {
+        if(_hash == _typeid_hash && v_result && !_ptr)
+        {
+            DEBUG_PRINT_HERE("Getting %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            // invoke::get<TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
+            // operation::get<Tp>{ *_result, _ptr, _hash };
+            invoke::invoke<operation::get, TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
+        }
+    };
+
+    _obj.m_del = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Deleting %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            delete _result;
+        }
+    };
+
+    return _obj;
+}
+//
+template <typename Tp>
+opaque
+base<Tp, void>::get_opaque(scope::config _scope)
+{
+    auto _typeid_hash = typeid_hash<Tp>();
+
+    opaque _obj{};
+
+    _obj.m_valid = true;
+
+    _obj.m_typeid = _typeid_hash;
+
+    _obj.m_setup = [](void* v_result, const string_view_t& _prefix,
+                      scope::config arg_scope) {
+        DEBUG_PRINT_HERE("Setting up %s", demangle<Tp>().c_str());
+        Tp* _result = static_cast<Tp*>(v_result);
+        if(!_result)
+            _result = new Tp{};
+        invoke::set_prefix<TIMEMORY_API>(std::tie(*_result), _prefix);
+        invoke::set_scope<TIMEMORY_API>(std::tie(*_result), arg_scope);
+        return (void*) _result;
+    };
+
+    _obj.m_push = [_scope](void*& v_result, const string_view_t& _prefix,
+                           scope::config arg_scope) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Pushing %s", demangle<Tp>().c_str());
+            auto _hash   = add_hash_id(_prefix);
+            Tp*  _result = static_cast<Tp*>(v_result);
+            invoke::push<TIMEMORY_API>(std::tie(*_result), _scope + arg_scope, _hash);
+        }
+    };
+
+    _obj.m_sample = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Sampling %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::invoke<operation::sample, TIMEMORY_API>(std::tie(*_result));
+        }
+    };
+
+    _obj.m_start = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Starting %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::start<TIMEMORY_API>(std::tie(*_result));
+        }
+    };
+
+    _obj.m_stop = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Stopping %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::stop<TIMEMORY_API>(std::tie(*_result));
+        }
+    };
+
+    _obj.m_pop = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Popping %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::pop<TIMEMORY_API>(std::tie(*_result));
+        }
+    };
+
+    _obj.m_get = [_typeid_hash](void* v_result, void*& _ptr, size_t _hash) {
+        if(_hash == _typeid_hash && v_result && !_ptr)
+        {
+            DEBUG_PRINT_HERE("Getting %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::invoke<operation::get, TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
+        }
+    };
+
+    _obj.m_del = [](void* v_result) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Deleting %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            delete _result;
+        }
+    };
+
+    return _obj;
+}
+//
+}  // namespace component
+}  // namespace tim

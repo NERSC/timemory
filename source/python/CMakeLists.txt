@@ -165,23 +165,6 @@ import timemory
             COMMAND             ${PYTHON_EXECUTABLE} -m trace -t
                                 --ignore-module=_bootstrap
                                 --ignore-module=_bootstrap_external
-                                --ignore-module=sre_parse
-                                --ignore-module=sre_compile
-                                --ignore-module=sys
-                                --ignore-module=os
-                                --ignore-module=copy
-                                --ignore-module=atexit
-                                --ignore-module=platform
-                                --ignore-module=traceback
-                                --ignore-module=re
-                                --ignore-module=enum
-                                --ignore-module=types
-                                --ignore-module=posixpath
-                                --ignore-module=_collections_abc
-                                --ignore-module=encoder
-                                --ignore-module=decoder
-                                --ignore-module=scanner
-                                --ignore-dir=${CMAKE_INSTALL_PYTHONDIR}
                                 ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
             WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
         set_tests_properties(python-deadlock-trace PROPERTIES DEPENDS libpytimemory)

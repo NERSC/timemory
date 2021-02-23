@@ -519,12 +519,6 @@ struct base_data<Tp, void>
 };
 //
 template <typename Tp>
-struct base_data<Tp, std::tuple<>>
-{
-    using type = ::tim::component::base_data<std::tuple<>, 0>;
-};
-//
-template <typename Tp>
 struct base_data<Tp, type_list<>>
 {
     using type = ::tim::component::base_data<type_list<>, 0>;

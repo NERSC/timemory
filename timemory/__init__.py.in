@@ -31,7 +31,6 @@ import os
 import copy
 import atexit
 import platform
-import traceback
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
@@ -309,8 +308,12 @@ else:
 
     except Exception as e:
         print("Exception: {}".format(e))
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        traceback.print_exception(exc_type, exc_value, exc_traceback)
+        if platform.system() != "Darwin":
+            # traceback appears to cause deadlock for some reason
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            import traceback
+
+            traceback.print_exception(exc_type, exc_value, exc_traceback)
 
         from . import mpi_support
         from . import mpi

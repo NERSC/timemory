@@ -65,10 +65,6 @@ opaque
 get_opaque();
 //
 template <typename Toolset>
-opaque
-get_opaque(bool);
-//
-template <typename Toolset>
 std::set<size_t>
 get_typeids();
 //

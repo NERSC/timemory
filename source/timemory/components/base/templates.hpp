@@ -28,18 +28,12 @@
 #include "timemory/components/base/types.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/operations/types.hpp"
-#include "timemory/operations/types/base_printer.hpp"
-#include "timemory/operations/types/serialization.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
-#include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"
 
 #include <cassert>
 
-//======================================================================================//
-//
 namespace tim
 {
 namespace component
@@ -50,43 +44,6 @@ namespace component
 //                              NON-VOID BASE
 //
 //======================================================================================//
-//
-template <typename Tp, typename Value>
-template <typename Archive, typename Up,
-          enable_if_t<!trait::custom_serialization<Up>::value, int>>
-void
-base<Tp, Value>::load(Archive& ar, const unsigned int version)
-{
-    auto try_catch = [](Archive& arch, const char* key, auto& val) {
-        try
-        {
-            arch(cereal::make_nvp(key, val));
-        } catch(cereal::Exception& e)
-        {
-            if(settings::debug() || settings::verbose() > -1)
-                fprintf(stderr, "Warning! '%s' threw exception: %s\n", key, e.what());
-        }
-    };
-
-    // bool _transient = get_is_transient();
-    // try_catch(ar, "is_transient", _transient);
-    try_catch(ar, "laps", laps);
-    data_type::serialize(ar, version);
-    set_is_transient(true);  // assume always transient
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Archive, typename Up,
-          enable_if_t<!trait::custom_serialization<Up>::value, int>>
-void
-base<Tp, Value>::save(Archive& ar, const unsigned int version) const
-{
-    operation::serialization<Type>(static_cast<const Type&>(*this), ar, version);
-}
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
 template <typename Vp, typename Up, enable_if_t<trait::sampler<Up>::value, int>>
@@ -200,6 +157,28 @@ template <typename Tp, typename Value>
 template <typename Up>
 void
 base<Tp, Value>::print(
+    std::ostream&, enable_if_t<!trait::uses_value_storage<Up, Value>::value, long>) const
+{}
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace component
+}  // namespace tim
+//
+
+#include "timemory/operations/types/base_printer.hpp"
+#include "timemory/operations/types/serialization.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
+
+namespace tim
+{
+namespace component
+{
+//
+template <typename Tp, typename Value>
+template <typename Up>
+void
+base<Tp, Value>::print(
     std::ostream& os, enable_if_t<trait::uses_value_storage<Up, Value>::value, int>) const
 {
     operation::base_printer<Up>(os, static_cast<const Up&>(*this));
@@ -208,20 +187,37 @@ base<Tp, Value>::print(
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up>
+template <typename Archive, typename Up,
+          enable_if_t<!trait::custom_serialization<Up>::value, int>>
 void
-base<Tp, Value>::print(
-    std::ostream&, enable_if_t<!trait::uses_value_storage<Up, Value>::value, long>) const
-{}
+base<Tp, Value>::save(Archive& ar, const unsigned int version) const
+{
+    operation::serialization<Type>(static_cast<const Type&>(*this), ar, version);
+}
 //
-//--------------------------------------------------------------------------------------//
+template <typename Tp, typename Value>
+template <typename Archive, typename Up,
+          enable_if_t<!trait::custom_serialization<Up>::value, int>>
+void
+base<Tp, Value>::load(Archive& ar, const unsigned int version)
+{
+    auto try_catch = [](Archive& arch, const char* key, auto& val) {
+        try
+        {
+            arch(cereal::make_nvp(key, val));
+        } catch(cereal::Exception& e)
+        {
+            if(settings::debug() || settings::verbose() > -1)
+                fprintf(stderr, "Warning! '%s' threw exception: %s\n", key, e.what());
+        }
+    };
+
+    // bool _transient = get_is_transient();
+    // try_catch(ar, "is_transient", _transient);
+    try_catch(ar, "laps", laps);
+    data_type::serialize(ar, version);
+    set_is_transient(true);  // assume always transient
+}
 //
 }  // namespace component
-//
-//----------------------------------------------------------------------------------//
-//
 }  // namespace tim
-//
-//======================================================================================//
-
-#include "timemory/components/opaque/definition.hpp"

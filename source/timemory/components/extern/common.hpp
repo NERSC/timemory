@@ -22,14 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/extern/common.hpp
- * \brief Includes the common set of headers required for an extern declaration
- * or an instantiation
- */
-
 #pragma once
 
+#include "timemory/components/base.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/components/opaque/declaration.hpp"
 #include "timemory/environment/declaration.hpp"

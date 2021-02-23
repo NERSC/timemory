@@ -116,28 +116,37 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 template <typename Up>
+struct has_data
+{
+    // shorthand for non-void
+    using Vp                    = typename Up::value_type;
+    static constexpr bool value = !std::is_void<Vp>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Up>
 struct is_enabled
 {
     // shorthand for available + non-void
-    using Vp = typename Up::value_type;
+    using Vp                    = typename Up::value_type;
+    static constexpr bool value = trait::is_available<Up>::value && has_data<Up>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Up>
+struct enabled_value_storage
+{
+    // shorthand for available + uses_value_storage
     static constexpr bool value =
-        (trait::is_available<Up>::value && !(std::is_same<Vp, void>::value));
+        trait::is_available<Up>::value && trait::uses_value_storage<Up>::value;
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename U>
 using is_enabled_t = typename is_enabled<U>::type;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Up>
-struct has_data
-{
-    // shorthand for non-void
-    using Vp                    = typename Up::value_type;
-    static constexpr bool value = (!std::is_same<Vp, void>::value);
-};
 //
 //--------------------------------------------------------------------------------------//
 //

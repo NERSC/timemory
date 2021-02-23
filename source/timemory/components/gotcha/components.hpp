@@ -313,6 +313,9 @@ struct gotcha
         if(!is_permitted<N, Ret, Args...>(_func))
             return false;
 
+        if(_data.debug == nullptr)
+            _data.debug = &settings::debug();
+
         if(!_data.filled)
         {
             auto _label = demangle(_func);

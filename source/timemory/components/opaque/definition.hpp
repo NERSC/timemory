@@ -91,119 +91,27 @@ namespace hidden
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline size_t
-get_opaque_hash(const std::string& key)
-{
-    auto ret = std::hash<std::string>()(key);
-    return ret;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-//      simplify forward declaration
-//
-//--------------------------------------------------------------------------------------//
-//
 //  Configure the tool for a specific component
 //
-template <typename Toolset, enable_if_t<trait::is_available<Toolset>::value &&
-                                            !concepts::is_wrapper<Toolset>::value,
-                                        int> = 0>
-auto
+template <typename Toolset>
+enable_if_t<!concepts::is_wrapper<Toolset>::value && trait::is_available<Toolset>::value,
+            opaque>
 get_opaque(scope::config _scope)
 {
-    auto _typeid_hash = typeid_hash<Toolset>();
+    opaque _obj = Toolset::get_opaque(_scope);
 
-    auto _init = []() { operation::init_storage<Toolset>{}; };
+    // this is not in base-class impl
+    _obj.m_init = []() { operation::init_storage<Toolset>{}; };
 
-    auto _setup = [](void* v_result, const string_t& _prefix, scope::config arg_scope) {
-        DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
-        Toolset* _result = static_cast<Toolset*>(v_result);
-        if(!_result)
-            _result = new Toolset{};
-        invoke::set_prefix<TIMEMORY_API>(std::tie(*_result), _prefix);
-        invoke::set_scope<TIMEMORY_API>(std::tie(*_result), arg_scope);
-        return (void*) _result;
-    };
-
-    auto _push = [_scope](void*& v_result, const string_t& _prefix,
-                          scope::config arg_scope) {
-        if(v_result)
-        {
-            DEBUG_PRINT_HERE("Pushing %s", demangle<Toolset>().c_str());
-            auto     _hash   = add_hash_id(_prefix);
-            Toolset* _result = static_cast<Toolset*>(v_result);
-            invoke::push<TIMEMORY_API>(std::tie(*_result), _scope + arg_scope, _hash);
-        }
-    };
-
-    auto _sample = [](void* v_result) {
-        if(v_result)
-        {
-            DEBUG_PRINT_HERE("Sampling %s", demangle<Toolset>().c_str());
-            Toolset* _result = static_cast<Toolset*>(v_result);
-            invoke::invoke<operation::sample, TIMEMORY_API>(std::tie(*_result));
-        }
-    };
-
-    auto _start = [](void* v_result) {
-        if(v_result)
-        {
-            DEBUG_PRINT_HERE("Starting %s", demangle<Toolset>().c_str());
-            Toolset* _result = static_cast<Toolset*>(v_result);
-            invoke::start<TIMEMORY_API>(std::tie(*_result));
-        }
-    };
-
-    auto _stop = [](void* v_result) {
-        if(v_result)
-        {
-            DEBUG_PRINT_HERE("Stopping %s", demangle<Toolset>().c_str());
-            Toolset* _result = static_cast<Toolset*>(v_result);
-            invoke::stop<TIMEMORY_API>(std::tie(*_result));
-        }
-    };
-
-    auto _pop = [](void* v_result) {
-        if(v_result)
-        {
-            DEBUG_PRINT_HERE("Popping %s", demangle<Toolset>().c_str());
-            Toolset* _result = static_cast<Toolset*>(v_result);
-            invoke::pop<TIMEMORY_API>(std::tie(*_result));
-        }
-    };
-
-    auto _get = [_typeid_hash](void* v_result, void*& _ptr, size_t _hash) {
-        if(_hash == _typeid_hash && v_result && !_ptr)
-        {
-            DEBUG_PRINT_HERE("Getting %s", demangle<Toolset>().c_str());
-            Toolset* _result = static_cast<Toolset*>(v_result);
-            // invoke::get<TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
-            // operation::get<Toolset>{ *_result, _ptr, _hash };
-            invoke::invoke<operation::get, TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
-        }
-    };
-
-    auto _del = [](void* v_result) {
-        if(v_result)
-        {
-            DEBUG_PRINT_HERE("Deleting %s", demangle<Toolset>().c_str());
-            Toolset* _result = static_cast<Toolset*>(v_result);
-            delete _result;
-        }
-    };
-
-    return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del, _setup, _push,
-                  _pop, _sample);
+    return _obj;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 //  Configure the tool for a specific set of tools
 //
-template <typename Toolset, typename... Args,
-          enable_if_t<concepts::is_wrapper<Toolset>::value, int> = 0>
-auto
+template <typename Toolset, typename... Args>
+enable_if_t<concepts::is_wrapper<Toolset>::value, opaque>
 get_opaque(scope::config _scope, Args&&... args)
 {
     using Toolset_t = Toolset;
@@ -214,11 +122,15 @@ get_opaque(scope::config _scope, Args&&... args)
         return opaque{};
     }
 
-    auto _typeid_hash = typeid_hash<Toolset>();
+    opaque _obj{};
 
-    auto _init = []() {};
+    _obj.m_valid = true;
 
-    auto _setup = [_scope, &args...](void* v_result, const string_t& _prefix,
+    _obj.m_typeid = typeid_hash<Toolset>();
+
+    _obj.m_init = []() {};
+
+    auto _setup = [_scope, &args...](void* v_result, const string_view_t& _prefix,
                                      scope::config arg_scope) {
         DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset_t* _result = static_cast<Toolset_t*>(v_result);
@@ -234,8 +146,10 @@ get_opaque(scope::config _scope, Args&&... args)
         return (void*) _result;
     };
 
-    auto _push = [_setup](void*& v_result, const string_t& _prefix,
-                          scope::config arg_scope) {
+    _obj.m_setup = _setup;
+
+    _obj.m_push = [_setup](void*& v_result, const string_view_t& _prefix,
+                           scope::config arg_scope) {
         v_result = _setup(v_result, _prefix, arg_scope);
         if(v_result)
         {
@@ -245,7 +159,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _sample = [](void* v_result) {
+    _obj.m_sample = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Sampling %s", demangle<Toolset_t>().c_str());
@@ -254,7 +168,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _start = [](void* v_result) {
+    _obj.m_start = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Starting %s", demangle<Toolset>().c_str());
@@ -263,7 +177,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _stop = [](void* v_result) {
+    _obj.m_stop = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Stopping %s", demangle<Toolset>().c_str());
@@ -272,7 +186,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _pop = [](void* v_result) {
+    _obj.m_pop = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Popping %s", demangle<Toolset>().c_str());
@@ -281,7 +195,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _get = [](void* v_result, void*& ptr, size_t _hash) {
+    _obj.m_get = [](void* v_result, void*& ptr, size_t _hash) {
         if(v_result && !ptr)
         {
             DEBUG_PRINT_HERE("Getting %s", demangle<Toolset>().c_str());
@@ -290,7 +204,7 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    auto _del = [](void* v_result) {
+    _obj.m_del = [](void* v_result) {
         if(v_result)
         {
             DEBUG_PRINT_HERE("Deleting %s", demangle<Toolset>().c_str());
@@ -299,17 +213,15 @@ get_opaque(scope::config _scope, Args&&... args)
         }
     };
 
-    return opaque(true, _typeid_hash, _init, _start, _stop, _get, _del, _setup, _push,
-                  _pop, _sample);
+    return _obj;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 //  If a tool is not avail or has no contents return empty opaque
 //
-template <typename Toolset, typename... Args,
-          enable_if_t<!trait::is_available<Toolset>::value, int> = 0>
-auto
+template <typename Toolset, typename... Args>
+enable_if_t<!trait::is_available<Toolset>::value, opaque>
 get_opaque(scope::config, Args&&...)
 {
     return opaque{};
@@ -322,26 +234,26 @@ struct opaque_typeids
 {
     using result_type = std::set<size_t>;
 
-    template <typename U = T, enable_if_t<trait::is_available<U>::value, int> = 0>
-    static auto get()
+    template <typename U = T>
+    static auto get(enable_if_t<trait::is_available<U>::value, int> = 0)
     {
         return result_type({ typeid_hash<U>() });
     }
 
-    template <typename U = T, enable_if_t<trait::is_available<U>::value, int> = 0>
-    static auto hash()
+    template <typename U = T>
+    static auto hash(enable_if_t<trait::is_available<U>::value, int> = 0)
     {
         return typeid_hash<U>();
     }
 
-    template <typename U = T, enable_if_t<!trait::is_available<U>::value, int> = 0>
-    static auto get()
+    template <typename U = T>
+    static result_type get(enable_if_t<!trait::is_available<U>::value, long> = 0)
     {
         return result_type({ 0 });
     }
 
-    template <typename U = T, enable_if_t<!trait::is_available<U>::value, int> = 0>
-    static auto hash() -> size_t
+    template <typename U = T>
+    static size_t hash(enable_if_t<!trait::is_available<U>::value, long> = 0)
     {
         return 0;
     }
@@ -362,37 +274,27 @@ struct opaque_typeids<TupleT<T...>>
         ret.insert(typeid_hash<U>());
     }
 
-    template <typename U       = TupleT<T...>,
-              enable_if_t<trait::is_available<U>::value &&
-                              concepts::is_wrapper<TupleT<T...>>::value,
-                          int> = 0>
-    static result_type get()
+    template <typename U = TupleT<T...>>
+    static result_type get(enable_if_t<trait::is_available<U>::value, int> = 0)
     {
         result_type ret;
         this_type::get<TupleT<T...>>(ret);
-        TIMEMORY_FOLD_EXPRESSION(get<T>(ret));
+        IF_CONSTEXPR(concepts::is_wrapper<TupleT<T...>>::value)
+        {
+            TIMEMORY_FOLD_EXPRESSION(get<T>(ret));
+        }
         return ret;
     }
 
-    template <typename U       = TupleT<T...>,
-              enable_if_t<trait::is_available<U>::value &&
-                              !concepts::is_wrapper<TupleT<T...>>::value,
-                          int> = 0>
-    static result_type get()
-    {
-        result_type ret;
-        this_type::get<TupleT<T...>>(ret);
-        return ret;
-    }
 #else
-    template <typename U, enable_if_t<trait::is_available<U>::value, int> = 0>
-    static void get(result_type& ret)
+    template <typename U>
+    static void get(result_type& ret, enable_if_t<trait::is_available<U>::value, int> = 0)
     {
         ret.insert(typeid_hash<U>());
     }
 
-    template <typename U, enable_if_t<!trait::is_available<U>::value, int> = 0>
-    static void get(result_type&)
+    template <typename U>
+    static void get(result_type&, enable_if_t<!trait::is_available<U>::value, long> = 0)
     {}
 
     static result_type get()
@@ -403,9 +305,8 @@ struct opaque_typeids<TupleT<T...>>
     }
 #endif
 
-    template <typename U                                       = TupleT<T...>,
-              enable_if_t<!trait::is_available<U>::value, int> = 0>
-    static result_type get()
+    template <typename U = TupleT<T...>>
+    static result_type get(enable_if_t<!trait::is_available<U>::value, long> = 0)
     {
         return result_type({ 0 });
     }
@@ -447,17 +348,6 @@ opaque
 get_opaque(scope::config _scope)
 {
     return hidden::get_opaque<Toolset>(_scope);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-//  With bool arguments
-//
-template <typename Toolset>
-opaque
-get_opaque(bool _flat)
-{
-    return hidden::get_opaque<Toolset>(scope::config{ _flat });
 }
 //
 //--------------------------------------------------------------------------------------//

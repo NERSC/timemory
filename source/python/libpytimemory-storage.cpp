@@ -124,61 +124,22 @@ read_object(py::object _obj)
 //
 template <typename Tp, typename DataT>
 auto
-from_json(py::object _obj)
+from_json(py::object _inp)
 {
     using policy_type =
         tim::policy::input_archive<tim::cereal::JSONInputArchive, tim::project::python>;
-    using property_t = tim::component::properties<Tp>;
 
-    DataT             _ret{};
-    std::stringstream iss{ read_object(_obj) };
+    DataT             _obj{};
+    std::stringstream iss{ read_object(_inp) };
 
     {
         auto ia = policy_type::get(iss);
         ia->setNextName("timemory");
         ia->startNode();
-        bool              success = false;
-        std::stringstream _msg;
-        for(const auto& itr :
-            { std::string{ property_t::enum_string() }, std::string{ property_t::id() },
-              std::string{ Tp::label() },
-              std::string{ get_class_name(property_t::enum_string()) } })
-        {
-            try
-            {
-                ia->setNextName(itr.c_str());
-                ia->startNode();
-                // add the metadata
-                // get_finalize_type{}(*ia, get_metadata_type{});
-                for(auto name : { "graph", "mpi", "upcxx", "ranks" })
-                {
-                    try
-                    {
-                        (*ia)(tim::cereal::make_nvp(name, _ret));
-                        break;
-                    } catch(tim::cereal::Exception& e)
-                    {
-                        _msg << e.what() << std::endl;
-                        continue;
-                    }
-                }
-                ia->finishNode();  // base
-                success = true;
-            } catch(tim::cereal::Exception& e)
-            {
-                _msg << e.what() << std::endl;
-                continue;
-            }
-            break;
-        }
-
-        if(!success)
-        {
-            throw std::runtime_error(_msg.str());
-        }
+        tim::operation::serialization<Tp>{}(*ia, _obj);
         ia->finishNode();  // timemory
     }
-    return _ret;
+    return _obj;
 }
 //
 //--------------------------------------------------------------------------------------//
