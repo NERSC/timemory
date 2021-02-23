@@ -286,7 +286,6 @@ def main():
     _profiler_config.only_filenames = opts.only_files
     _profiler_config.verbosity = opts.verbosity
 
-    # print("opts: {}".format(opts))
     print("[timemory]> profiling: {}".format(argv))
 
     sys.argv[:] = argv
@@ -326,6 +325,8 @@ def main():
 
     builtins.__dict__["profile"] = prof
     builtins.__dict__["noprofile"] = fake
+    builtins.__dict__["trace"] = prof
+    builtins.__dict__["notrace"] = fake
 
     try:
         try:

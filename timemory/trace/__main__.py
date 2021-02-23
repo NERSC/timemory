@@ -240,7 +240,7 @@ def main():
     argv = None
     if "--" in sys.argv:
         _idx = sys.argv.index("--")
-        _argv = sys.argv[_idx + 1 :]
+        _argv = sys.argv[(_idx + 1) :]
         opts, argv = parse_args(sys.argv[:_idx])
         argv = _argv
     else:
@@ -283,7 +283,7 @@ def main():
         ns = locals()
         execfile(setup_file, ns, ns)
 
-    from .tracer import Tracer, FakeTracer
+    from . import Tracer, FakeTracer
 
     output_path = get_value(
         "TIMEMORY_OUTPUT_PATH", settings.output_path, str, opts.output_dir
@@ -315,6 +315,7 @@ def main():
         try:
             if not opts.builtin:
                 tracer.start()
+            tracer._unset += 1
             execfile_ = execfile
             ns = locals()
             if opts.builtin:
@@ -328,6 +329,7 @@ def main():
         finally:
             if not opts.builtin:
                 tracer.stop()
+            tracer._unset -= 1
             del tracer
             del fake
     except Exception as e:
