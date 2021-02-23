@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 #
 # MIT License
 #
@@ -26,7 +26,7 @@
 #
 
 ## @file mpi_support.py
-## MPI information for TiMemory module
+## MPI information for timemory module
 ##
 
 from __future__ import absolute_import

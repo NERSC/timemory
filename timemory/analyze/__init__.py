@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 #
 # MIT License
 #
@@ -31,7 +31,6 @@ import os
 import sys
 import json
 import argparse
-import traceback
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
@@ -299,6 +298,8 @@ def embedded_analyze(
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        import traceback
+
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=10)
         print("Exception - {}".format(e))
         if call_exit or _args.exit_on_failure:

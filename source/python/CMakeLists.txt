@@ -153,18 +153,6 @@ if(TIMEMORY_BUILD_PYTHON)
     add_subdirectory(tools)
 
     if(APPLE AND "$ENV{TRAVIS}" STREQUAL "true")
-        execute_process(COMMAND
-            ${PYTHON_EXECUTABLE} -c "import sys; print('{}'.format(sys.prefix))"
-            OUTPUT_VARIABLE _SYS_PREFIX
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-
-        execute_process(COMMAND
-            ${PYTHON_EXECUTABLE} -c "import sys; print('{}'.format(sys.exec_prefix))"
-            OUTPUT_VARIABLE _EXEC_PREFIX
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-
         #
         file(WRITE ${PROJECT_BINARY_DIR}/.pdbrc
 "r
@@ -174,19 +162,19 @@ q
         )
 
         file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
-"#!${PYTHON_EXECUTABLE}
+"#!/usr/bin/env python
 
+print('importing timemory')
 import timemory
+print('timemory imported')
 "
         )
 
         set(_IGNORE
-            --ignore-module=_bootstrap
-            --ignore-module=_bootstrap_external
-            --ignore-module=sre_parse
-            --ignore-module=sre_compile
-            --ignore-dir=${_SYS_PREFIX}
-            --ignore-dir=${_EXEC_PREFIX}
+            # --ignore-module=_bootstrap
+            # --ignore-module=_bootstrap_external
+            # --ignore-module=sre_parse
+            # --ignore-module=sre_compile
         )
 
         set(_FILE

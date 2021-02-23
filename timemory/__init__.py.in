@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # MIT License
 #

@@ -7,7 +7,7 @@ import traceback
 
 
 """
-A) Run a process and report TiMemory's timing and memory resuls
+A) Run a process and report timemory's timing and memory resuls
 
     Usage:
         timem ls -l

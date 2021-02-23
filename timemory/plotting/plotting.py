@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 #
 # MIT License
 #
@@ -25,7 +25,7 @@
 # SOFTWARE.
 
 """ @file plotting.py
-Plotting routines for TiMemory module
+Plotting routines for timemory module
 """
 
 from __future__ import absolute_import

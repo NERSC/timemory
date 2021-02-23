@@ -53,7 +53,6 @@ __all__ = [
 ]
 
 import os
-import re
 
 
 def _get_label(_fname):
@@ -112,6 +111,8 @@ def load(data, *_args, **_kwargs):
 
 def match(data, pattern, field="name"):
     """ Find the graphframes which fully match a regular expression """
+    import re
+
     prog = re.compile(pattern)
 
     if not isinstance(data, list):
@@ -125,6 +126,8 @@ def match(data, pattern, field="name"):
 
 def search(data, pattern, field="name"):
     """ Find the graphframes with substring that matches regular expression """
+    import re
+
     prog = re.compile(pattern)
 
     if not isinstance(data, list):
