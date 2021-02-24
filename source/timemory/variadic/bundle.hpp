@@ -45,30 +45,68 @@
 
 namespace tim
 {
-//
+/// \class tim::bundle
+/// \brief Static polymorphic base class for component bundlers
 template <typename...>
 class bundle;
-/// \class tim::bundle
-/// \tparam Tag unique identifying type for the bundle which when \ref
-/// tim::trait::is_available<Tag> is false at compile-time or \ref
-/// tim::trait::runtime_enabled<Tag>() is false at runtime, then none of the components
-/// will be collected
-/// \tparam Types Specification of the component types to bundle together
+//
+/// \class tim::bundle< Tag, BundleT, TupleT >
+/// \tparam Tag API tag type, e.g. `TIMEMORY_API`
+/// \tparam BundleT The empty or empty + tag derived type.
+/// \tparam TupleT The set of components wrapped in a type which provides the appropriate
+/// aliases.
 ///
-/// \brief This is a variadic component wrapper which combines the features of \ref
-/// tim::component_tuple<T...> and \ref tim::component_list<U..>. The "T" types
-/// (compile-time fixed, allocated on stack) should be specified as usual, the "U" types
-/// (runtime-time optional, allocated on the heap) should be specified as a pointer.
-/// Initialization of the optional types is similar to \ref tim::auto_list<U...> but no
-/// environment variable is built-in since, ideally, this environment variable should be
-/// customized based on the Tag template parameter.
+/// \brief Example:
+/// `bundle<Tag, component_bundle<Foo>, mixed_wrapper_types<concat<Bar, Baz>>>` will
+/// use `Tag` + `trait::is_available<Tag>` or `trait::runtime_available<Tag>` to disable
+/// this bundle at compile-time or run-time, respectively. It will covert
+/// `component_bundle<Foo>` to `component_bundle<Foo, Bar, Baz>` for purposes of function
+/// signatures and it will instantiate `std::tuple<...>` depending on the compile-time
+/// availability of `Bar` and `Baz`. `mixed_wrapper_types` is a dummy type with the
+/// appropriate aliases to perform these conversions. Here is a theoretical implementation
+/// of `mixed_wrapper_types` (which supports allocating components on the stack and the
+/// heap):
 ///
-/// See also: \ref tim::auto_bundle.
-/// The primary difference b/t the "component_*" and "auto_*" is that the latter
-/// used the constructor/destructor to call start and stop and is thus easier to
-/// just copy-and-paste into different places. However, the former is better suited for
-/// special configuration, data-access, etc.
+/// \code{.cpp}
+/// template <typename... T>
+/// struct heap_wrapper_types
+/// {
+///     TIMEMORY_DELETED_OBJECT(heap_wrapper_types)
 ///
+///     /// the set of types, unaltered, in a type_list
+///     using type_list_type = type_list<T...>;
+///
+///     /// the set of types without any pointers
+///     using reference_type = type_list<std::remove_pointer_t<T>...>;
+///
+///     /// type list of the available types
+///     using available_type = type_list_t<reference_type>;
+///
+///     /// the original bundle type
+///     template <typename BundleT>
+///     using this_type = convert_t<type_list<T...>, BundleT>;
+///
+///     /// the type after available_t<concat<...>>
+///     template <typename BundleT>
+///     using type = convert_t<available_type, BundleT>;
+///
+///     /// conversion to equivalent wrapper requiring explicit start/stop
+///     template <typename BundleT>
+///     using component_type = convert_t<type_list<T...>, BundleT>;
+///
+///     /// conversion to equivalent wrapper which automatically starts/stops
+///     template <typename BundleT>
+///     using auto_type = concepts::auto_type_t<convert_t<type_list_type, BundleT>>;
+///
+///     /// the valid types to instantiate in a tuple
+///     template <typename ApiT = TIMEMORY_API>
+///     using data_type = conditional_t<
+///         trait::is_available<ApiT>::value,
+///         convert_t<add_pointer_if_not_t<non_placeholder_t<non_quirk_t<type_list_t<T...>>>>,
+///                   std::tuple<>>,
+///         std::tuple<>>;
+/// };
+/// \endcode
 template <typename Tag, typename BundleT, typename TupleT>
 class bundle<Tag, BundleT, TupleT>
 : public api_bundle<Tag, typename TupleT::available_type>

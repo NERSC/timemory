@@ -53,7 +53,7 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
     ctest_notes_deleter()  = default;
     ~ctest_notes_deleter() = default;
 
-    void operator()(strset_t* data)
+    TIMEMORY_COLD void operator()(strset_t* data)
     {
         auto _settings = settings::instance();
         if(data->empty() || !_settings || !_settings->get_ctest_notes())
@@ -109,12 +109,12 @@ struct ctest_notes<manager>
         return _instance;
     }
 
-    ctest_notes(std::string&& fname)
+    TIMEMORY_COLD ctest_notes(std::string&& fname)
     {
         get_notes()->insert(std::forward<std::string>(fname));
     }
 
-    ctest_notes(strset_t&& fnames)
+    TIMEMORY_COLD ctest_notes(strset_t&& fnames)
     {
         for(auto&& itr : fnames)
             get_notes()->insert(itr);

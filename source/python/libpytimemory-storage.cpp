@@ -89,7 +89,7 @@ get_class_name(std::string id)
 //
 //--------------------------------------------------------------------------------------//
 //
-static auto
+static TIMEMORY_COLD auto
 read_object(py::object _obj)
 {
     std::stringstream iss;
@@ -123,7 +123,7 @@ read_object(py::object _obj)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename DataT>
-auto
+TIMEMORY_COLD auto
 from_json(py::object _inp)
 {
     using policy_type =
@@ -145,7 +145,7 @@ from_json(py::object _inp)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename DataT>
-auto
+TIMEMORY_COLD auto
 to_json(DataT&& _obj)
 {
     using policy_type = tim::policy::output_archive<tim::cereal::MinimalJSONOutputArchive,
@@ -168,7 +168,7 @@ to_json(DataT&& _obj)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-auto
+TIMEMORY_COLD auto
 construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value> = 0)
 {
     using property_t = tim::component::properties<Tp>;

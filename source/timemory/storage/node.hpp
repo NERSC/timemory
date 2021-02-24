@@ -55,7 +55,12 @@ namespace node
 {
 //
 //--------------------------------------------------------------------------------------//
-//
+/// \struct tim::node::entry
+/// \tparam Tp Component type
+/// \tparam StatT Statistics type
+///
+/// \brief This data type is used in \ref tim::node::tree for inclusive and exclusive
+/// values.
 template <typename Tp, typename StatT>
 struct entry : std::tuple<Tp, StatT>
 {
@@ -75,11 +80,17 @@ struct entry : std::tuple<Tp, StatT>
     : base_type(std::forward<base_type>(_obj))
     {}
 
-    Tp&    data() { return std::get<0>(*this); }
+    /// component object with either inclusive or exclusive values
+    Tp& data() { return std::get<0>(*this); }
+
+    /// statistics data with either inclusive or exclusive values
     StatT& stats() { return std::get<1>(*this); }
 
-    TIMEMORY_NODISCARD const Tp& data() const { return std::get<0>(*this); }
-    TIMEMORY_NODISCARD const StatT& stats() const { return std::get<1>(*this); }
+    /// component object with either inclusive or exclusive values
+    const Tp& data() const { return std::get<0>(*this); }
+
+    /// statistics data with either inclusive or exclusive values
+    const StatT& stats() const { return std::get<1>(*this); }
 
     this_type& operator+=(const this_type& rhs)
     {
@@ -109,8 +120,8 @@ struct data
     using stats_policy = policy::record_statistics<Tp, type>;
     using stats_type   = typename stats_policy::statistics_type;
     using node_type =
-        std::tuple<bool, uint16_t, uint16_t, uint64_t, int64_t, Tp, stats_type>;
-    using result_type = std::tuple<uint16_t, uint16_t, int64_t, uint64_t, uint64_t,
+        std::tuple<bool, uint32_t, uint32_t, uint64_t, int64_t, Tp, stats_type>;
+    using result_type = std::tuple<uint32_t, uint32_t, int64_t, uint64_t, uint64_t,
                                    string_t, uintvector_t, Tp, stats_type>;
     using idset_type  = std::set<int64_t>;
     using entry_type  = entry<Tp, stats_type>;
@@ -119,7 +130,10 @@ struct data
 };
 //
 //--------------------------------------------------------------------------------------//
-//
+/// \struct tim::node::graph
+/// \tparam Tp Component type
+///
+/// \brief This is the compact representation of a measurement in the call-graph.
 template <typename Tp>
 struct graph : private data<Tp>::node_type
 {
@@ -133,8 +147,8 @@ struct graph : private data<Tp>::node_type
 public:
     // ctor, dtor
     graph();
-    graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint16_t _tid,
-          uint16_t _pid = process::get_id(), bool _is_dummy = false);
+    graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint32_t _tid,
+          uint32_t _pid = process::get_id(), bool _is_dummy = false);
 
     ~graph()                = default;
     graph(const graph&)     = default;
@@ -162,31 +176,48 @@ public:
     }
 
 public:
-    // data access
-    bool&       is_dummy() { return std::get<0>(*this); }
-    uint16_t&   tid() { return std::get<1>(*this); }
-    uint16_t&   pid() { return std::get<2>(*this); }
-    uint64_t&   id() { return std::get<3>(*this); }
-    int64_t&    depth() { return std::get<4>(*this); }
-    Tp&         obj() { return std::get<5>(*this); }
+    /// denotes this is a placeholder for synchronization
+    bool& is_dummy() { return std::get<0>(*this); }
+
+    /// thread identifier
+    uint32_t& tid() { return std::get<1>(*this); }
+
+    /// process identifier
+    uint32_t& pid() { return std::get<2>(*this); }
+
+    /// hash identifer
+    uint64_t& id() { return std::get<3>(*this); }
+
+    /// depth in call-graph
+    int64_t& depth() { return std::get<4>(*this); }
+
+    /// this is the instance that gets updated in call-graph
+    Tp& obj() { return std::get<5>(*this); }
+
+    /// statistics data for entry in call-graph
     stats_type& stats() { return std::get<6>(*this); }
 
-    TIMEMORY_NODISCARD const bool& is_dummy() const { return std::get<0>(*this); }
-    TIMEMORY_NODISCARD const uint16_t& tid() const { return std::get<1>(*this); }
-    TIMEMORY_NODISCARD const uint16_t& pid() const { return std::get<2>(*this); }
-    TIMEMORY_NODISCARD const uint64_t& id() const { return std::get<3>(*this); }
-    TIMEMORY_NODISCARD const int64_t& depth() const { return std::get<4>(*this); }
-    TIMEMORY_NODISCARD const Tp& obj() const { return std::get<5>(*this); }
-    TIMEMORY_NODISCARD const stats_type& stats() const { return std::get<6>(*this); }
+    const bool&       is_dummy() const { return std::get<0>(*this); }
+    const uint32_t&   tid() const { return std::get<1>(*this); }
+    const uint32_t&   pid() const { return std::get<2>(*this); }
+    const uint64_t&   id() const { return std::get<3>(*this); }
+    const int64_t&    depth() const { return std::get<4>(*this); }
+    const Tp&         obj() const { return std::get<5>(*this); }
+    const stats_type& stats() const { return std::get<6>(*this); }
 
-    auto&                          data() { return this->obj(); }
-    auto&                          hash() { return this->id(); }
-    TIMEMORY_NODISCARD const auto& data() const { return this->obj(); }
-    TIMEMORY_NODISCARD const auto& hash() const { return this->id(); }
+    auto&       data() { return this->obj(); }
+    auto&       hash() { return this->id(); }
+    const auto& data() const { return this->obj(); }
+    const auto& hash() const { return this->id(); }
 };
 //
 //--------------------------------------------------------------------------------------//
-//
+/// \struct tim::node::result
+/// \tparam Tp Component type
+///
+/// \brief This data type is used when rendering the flat representation (i.e.
+/// loop-iterable) representation of the calling-context. The prefix here will be
+/// identical to the prefix in the text output.
 template <typename Tp>
 struct result : public data<Tp>::result_type
 {
@@ -208,36 +239,54 @@ struct result : public data<Tp>::result_type
 
     result(uint64_t _hash, const Tp& _data, const string_t& _prefix, int64_t _depth,
            uint64_t _rolling, const uintvector_t& _hierarchy, const stats_type& _stats,
-           uint16_t _tid, uint16_t _pid);
+           uint32_t _tid, uint32_t _pid);
 
-    uint16_t&     tid() { return std::get<0>(*this); }
-    uint16_t&     pid() { return std::get<1>(*this); }
-    int64_t&      depth() { return std::get<2>(*this); }
-    uint64_t&     hash() { return std::get<3>(*this); }
-    uint64_t&     rolling_hash() { return std::get<4>(*this); }
-    string_t&     prefix() { return std::get<5>(*this); }
+    /// measurement thread. May be `std::numeric_limits<uint16_t>::max()` (i.e. 65536) if
+    /// this entry is a combination of multiple threads
+    uint32_t& tid() { return std::get<0>(*this); }
+
+    /// the process identifier of the reporting process, if multiple process data is
+    /// combined, or the process identifier of the collecting process
+    uint32_t& pid() { return std::get<1>(*this); }
+
+    /// depth of the node in the calling-context
+    int64_t& depth() { return std::get<2>(*this); }
+
+    /// hash identifer of the node
+    uint64_t& hash() { return std::get<3>(*this); }
+
+    /// the summation of this hash and it's parent hashes
+    uint64_t& rolling_hash() { return std::get<4>(*this); }
+
+    /// the associated string with the hash + indentation and other decoration
+    string_t& prefix() { return std::get<5>(*this); }
+
+    /// an array of the hash value + each parent hash (not serialized)
     uintvector_t& hierarchy() { return std::get<6>(*this); }
-    Tp&           data() { return std::get<7>(*this); }
-    stats_type&   stats() { return std::get<8>(*this); }
 
-    TIMEMORY_NODISCARD const uint16_t& tid() const { return std::get<0>(*this); }
-    TIMEMORY_NODISCARD const uint16_t& pid() const { return std::get<1>(*this); }
-    TIMEMORY_NODISCARD const int64_t& depth() const { return std::get<2>(*this); }
-    TIMEMORY_NODISCARD const uint64_t& hash() const { return std::get<3>(*this); }
-    TIMEMORY_NODISCARD const uint64_t& rolling_hash() const { return std::get<4>(*this); }
-    TIMEMORY_NODISCARD const string_t& prefix() const { return std::get<5>(*this); }
-    TIMEMORY_NODISCARD const uintvector_t& hierarchy() const
-    {
-        return std::get<6>(*this);
-    }
-    TIMEMORY_NODISCARD const Tp& data() const { return std::get<7>(*this); }
-    TIMEMORY_NODISCARD const stats_type& stats() const { return std::get<8>(*this); }
+    /// reference to the component
+    Tp& data() { return std::get<7>(*this); }
 
-    uint64_t&                id() { return std::get<3>(*this); }
-    TIMEMORY_NODISCARD const uint64_t& id() const { return std::get<3>(*this); }
+    /// reference to the associate statistical accumulation of the data (if any)
+    stats_type& stats() { return std::get<8>(*this); }
 
-    Tp&                      obj() { return std::get<7>(*this); }
-    TIMEMORY_NODISCARD const Tp& obj() const { return std::get<7>(*this); }
+    /// alias for `hash()`
+    uint64_t& id() { return std::get<3>(*this); }
+
+    /// alias for `data()`
+    Tp& obj() { return std::get<7>(*this); }
+
+    const uint32_t&     tid() const { return std::get<0>(*this); }
+    const uint32_t&     pid() const { return std::get<1>(*this); }
+    const int64_t&      depth() const { return std::get<2>(*this); }
+    const uint64_t&     hash() const { return std::get<3>(*this); }
+    const uint64_t&     rolling_hash() const { return std::get<4>(*this); }
+    const string_t&     prefix() const { return std::get<5>(*this); }
+    const uintvector_t& hierarchy() const { return std::get<6>(*this); }
+    const Tp&           data() const { return std::get<7>(*this); }
+    const stats_type&   stats() const { return std::get<8>(*this); }
+    const uint64_t&     id() const { return std::get<3>(*this); }
+    const Tp&           obj() const { return std::get<7>(*this); }
 
     bool operator==(const this_type& rhs) const
     {
@@ -263,7 +312,12 @@ struct result : public data<Tp>::result_type
 };
 //
 //--------------------------------------------------------------------------------------//
-//
+/// \struct tim::node::tree
+/// \tparam Tp Generally `tim::basic_tree<ComponentT>`
+///
+/// \brief This data type is used when rendering the hierarchical representation (i.e.
+/// requires recursion) representation of the calling-context. The prefix here has no
+/// decoration.
 template <typename Tp>
 struct tree : private data<Tp>::tree_type
 {
@@ -287,7 +341,7 @@ public:
     ~tree()               = default;
     tree(const tree&)     = default;
     tree(tree&&) noexcept = default;
-    tree(bool _is_dummy, uint16_t _tid, uint16_t _pid, uint64_t _hash, int64_t _depth,
+    tree(bool _is_dummy, uint32_t _tid, uint32_t _pid, uint64_t _hash, int64_t _depth,
          const Tp& _obj);
 
 public:
@@ -315,22 +369,36 @@ public:
     }
 
 public:
-    // data access
-    bool&       is_dummy() { return std::get<0>(*this); }
-    uint64_t&   hash() { return std::get<1>(*this); }
-    int64_t&    depth() { return std::get<2>(*this); }
+    /// returns whether or not this node is a synchronization point and, if so, should be
+    /// ignored
+    bool& is_dummy() { return std::get<0>(*this); }
+
+    /// returns the hash identifier for the associated string identifier
+    uint64_t& hash() { return std::get<1>(*this); }
+
+    /// returns the depth of the node in the tree. NOTE: this value may be relative to
+    /// dummy nodes
+    int64_t& depth() { return std::get<2>(*this); }
+
+    /// the set of thread ids this data was collected from
     idset_type& tid() { return std::get<3>(*this); }
+
+    /// the set of process ids this data was collected from
     idset_type& pid() { return std::get<4>(*this); }
+
+    /// the inclusive data + statistics
     entry_type& inclusive() { return std::get<5>(*this); }
+
+    /// the exclusive data + statistics
     entry_type& exclusive() { return std::get<6>(*this); }
 
-    TIMEMORY_NODISCARD const bool& is_dummy() const { return std::get<0>(*this); }
-    TIMEMORY_NODISCARD const uint64_t& hash() const { return std::get<1>(*this); }
-    TIMEMORY_NODISCARD const int64_t& depth() const { return std::get<2>(*this); }
-    TIMEMORY_NODISCARD const idset_type& tid() const { return std::get<3>(*this); }
-    TIMEMORY_NODISCARD const idset_type& pid() const { return std::get<4>(*this); }
-    TIMEMORY_NODISCARD const entry_type& inclusive() const { return std::get<5>(*this); }
-    TIMEMORY_NODISCARD const entry_type& exclusive() const { return std::get<6>(*this); }
+    const bool&       is_dummy() const { return std::get<0>(*this); }
+    const uint64_t&   hash() const { return std::get<1>(*this); }
+    const int64_t&    depth() const { return std::get<2>(*this); }
+    const idset_type& tid() const { return std::get<3>(*this); }
+    const idset_type& pid() const { return std::get<4>(*this); }
+    const entry_type& inclusive() const { return std::get<5>(*this); }
+    const entry_type& exclusive() const { return std::get<6>(*this); }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -347,8 +415,8 @@ graph<Tp>::graph()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-graph<Tp>::graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint16_t _tid,
-                 uint16_t _pid, bool _is_dummy)
+graph<Tp>::graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint32_t _tid,
+                 uint32_t _pid, bool _is_dummy)
 : base_type(_is_dummy, _tid, _pid, _id, _depth, _obj, stats_type{})
 {}
 //
@@ -384,7 +452,7 @@ graph<Tp>::get_dummy()
 template <typename Tp>
 result<Tp>::result(uint64_t _id, const Tp& _data, const string_t& _prefix, int64_t _depth,
                    uint64_t _rolling, const uintvector_t& _hierarchy,
-                   const stats_type& _stats, uint16_t _tid, uint16_t _pid)
+                   const stats_type& _stats, uint32_t _tid, uint32_t _pid)
 : base_type(_tid, _pid, _depth, _id, _rolling, _prefix, _hierarchy, _data, _stats)
 {}
 //--------------------------------------------------------------------------------------//

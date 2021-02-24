@@ -60,7 +60,7 @@ struct fini
 
     template <typename Up                                       = Tp, int StateT,
               enable_if_t<trait::is_available<Up>::value, char> = 0>
-    explicit fini(mode_constant<StateT>)
+    explicit TIMEMORY_COLD fini(mode_constant<StateT>)
     {
         auto _storage = storage<Tp>::instance();
         if(_storage)
@@ -69,19 +69,19 @@ struct fini
 
     template <typename Up = Tp, int StateT, typename StorageT,
               enable_if_t<trait::is_available<Up>::value, char> = 0>
-    explicit fini(StorageT _storage, mode_constant<StateT>)
+    explicit TIMEMORY_COLD fini(StorageT _storage, mode_constant<StateT>)
     {
         sfinae<type, StateT>(_storage, 0, 0);
     }
 
     template <typename Up = Tp, int StateT, typename StorageT,
               enable_if_t<!trait::is_available<Up>::value, char> = 0>
-    explicit fini(StorageT, mode_constant<StateT>)
+    explicit TIMEMORY_COLD fini(StorageT, mode_constant<StateT>)
     {}
 
     template <typename Up                                       = Tp, int StateT,
               enable_if_t<trait::is_available<Up>::value, char> = 0>
-    auto operator()(mode_constant<StateT>)
+    TIMEMORY_COLD auto operator()(mode_constant<StateT>)
     {
         auto _storage = storage<Tp>::instance();
         if(_storage)
@@ -91,7 +91,7 @@ struct fini
 
     template <typename Up                                        = Tp, int StateT,
               enable_if_t<!trait::is_available<Up>::value, char> = 0>
-    auto operator()(mode_constant<StateT>)
+    TIMEMORY_COLD auto operator()(mode_constant<StateT>)
     {
         return false;
     }
@@ -108,7 +108,7 @@ struct fini
 private:
     template <typename Up, int StateT, typename StorageT,
               enable_if_t<StateT == fini_mode::global, char> = 0>
-    auto sfinae(StorageT _storage, int, int)
+    TIMEMORY_COLD auto sfinae(StorageT _storage, int, int)
         -> decltype(std::declval<Up>().global_finalize(_storage), bool())
     {
         if(was_executed<StateT>())
@@ -120,7 +120,7 @@ private:
 
     template <typename Up, int StateT, typename StorageT,
               enable_if_t<StateT == fini_mode::global, int> = 0>
-    auto sfinae(StorageT, int, long)
+    TIMEMORY_COLD auto sfinae(StorageT, int, long)
         -> decltype(std::declval<Up>().global_finalize(), bool())
     {
         if(was_executed<StateT>())
@@ -132,7 +132,7 @@ private:
 
     template <typename Up, int StateT, typename StorageT,
               enable_if_t<StateT == fini_mode::thread, char> = 0>
-    auto sfinae(StorageT _storage, int, int)
+    TIMEMORY_COLD auto sfinae(StorageT _storage, int, int)
         -> decltype(std::declval<Up>().thread_finalize(_storage), bool())
     {
         if(was_executed<StateT>())
@@ -144,7 +144,7 @@ private:
 
     template <typename Up, int StateT, typename StorageT,
               enable_if_t<StateT == fini_mode::thread, int> = 0>
-    auto sfinae(StorageT, int, long)
+    TIMEMORY_COLD auto sfinae(StorageT, int, long)
         -> decltype(std::declval<Up>().thread_finalize(), bool())
     {
         if(was_executed<StateT>())

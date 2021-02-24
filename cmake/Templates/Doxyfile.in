@@ -301,7 +301,7 @@ PERLMOD_MAKEVAR_PREFIX =
 #---------------------------------------------------------------------------
 ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
-EXPAND_ONLY_PREDEF     = YES
+EXPAND_ONLY_PREDEF     = NO
 SEARCH_INCLUDES        = YES
 INCLUDE_PATH           =
 INCLUDE_FILE_PATTERNS  =
@@ -312,6 +312,7 @@ PREDEFINED             = TIMEMORY_VISIBLE= \
                          TIMEMORY_HOT_INLINE= \
                          TIMEMORY_NOINLINE= \
                          TIMEMORY_INLINE= \
+                         TIMEMORY_COLD= \
                          TIMEMORY_HOT= \
                          TIMEMORY_DLL= \
                          TIMEMORY_CDLL= \
@@ -319,7 +320,7 @@ PREDEFINED             = TIMEMORY_VISIBLE= \
                          "__attribute__(x)=" \
                          "__declspec(x)="
 EXPAND_AS_DEFINED      =
-SKIP_FUNCTION_MACROS   = YES
+SKIP_FUNCTION_MACROS   = NO
 #---------------------------------------------------------------------------
 # Configuration options related to external references
 #---------------------------------------------------------------------------

@@ -40,14 +40,23 @@
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
 /// \class tim::auto_base_bundle
-/// \tparam Tag unique identifying type for the bundle which when \ref
+/// \brief Static polymorphic base class for automatic start/stop bundlers
+//
+/// \class tim::auto_base_bundle< Tag, CompT, BundleT >
+/// \tparam Tag Unique identifying type for the bundle which when \ref
 /// tim::trait::is_available<Tag> is false at compile-time or \ref
 /// tim::trait::runtime_enabled<Tag>() is false at runtime, then none of the components
 /// will be collected
-/// \tparam BundleT Bundle to wrap around
+/// \tparam CompT The empty or empty + tag non-auto type which will be wrapped
+/// \tparam BundleT Derived data type
 ///
+/// \brief Example:
+/// `auto_base_bundle<Tag, component_bundle<Tag>, auto_bundle<Tag, Types...>>` will
+/// use `Tag` + `trait::is_available<Tag>` or `trait::runtime_available<Tag>` to disable
+/// this bundle at compile-time or run-time, respectively. It will wrap auto-start/stop
+/// around `component_bundle<Tag, Types...>` and use `auto_bundle<Tag, Types...>` for
+/// function signatures.
 template <typename Tag, typename CompT, typename BundleT>
 class auto_base_bundle<Tag, CompT, BundleT>
 : public concepts::wrapper

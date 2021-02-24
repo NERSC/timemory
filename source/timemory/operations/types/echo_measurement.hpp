@@ -68,8 +68,8 @@ struct echo_measurement<Tp, true> : public common_utils
     /// generate a name attribute
     ///
     template <typename... Args>
-    static string_t generate_name(const string_t& _prefix, string_t _unit,
-                                  Args&&... _args)
+    static TIMEMORY_COLD string_t generate_name(const string_t& _prefix, string_t _unit,
+                                                Args&&... _args)
     {
         if(settings::dart_label())
         {
@@ -101,16 +101,17 @@ struct echo_measurement<Tp, true> : public common_utils
     {
         template <typename Tuple, typename... Args, size_t... Nt,
                   enable_if_t<sizeof...(Nt) == 0, char> = 0>
-        static std::string name_generator(const string_t&, Tuple, Args&&...,
-                                          index_sequence<Nt...>)
+        static TIMEMORY_COLD std::string name_generator(const string_t&, Tuple, Args&&...,
+                                                        index_sequence<Nt...>)
         {
             return "";
         }
 
         template <typename Tuple, typename... Args, size_t Idx, size_t... Nt,
                   enable_if_t<sizeof...(Nt) == 0, char> = 0>
-        static std::string name_generator(const string_t& _prefix, Tuple _units,
-                                          Args&&... _args, index_sequence<Idx, Nt...>)
+        static TIMEMORY_COLD std::string name_generator(const string_t& _prefix,
+                                                        Tuple _units, Args&&... _args,
+                                                        index_sequence<Idx, Nt...>)
         {
             return generate_name(_prefix, std::get<Idx>(_units),
                                  std::forward<Args>(_args)...);
@@ -118,8 +119,9 @@ struct echo_measurement<Tp, true> : public common_utils
 
         template <typename Tuple, typename... Args, size_t Idx, size_t... Nt,
                   enable_if_t<(sizeof...(Nt) > 0), char> = 0>
-        static std::string name_generator(const string_t& _prefix, Tuple _units,
-                                          Args&&... _args, index_sequence<Idx, Nt...>)
+        static TIMEMORY_COLD std::string name_generator(const string_t& _prefix,
+                                                        Tuple _units, Args&&... _args,
+                                                        index_sequence<Idx, Nt...>)
         {
             return join(
                 ",",
@@ -134,7 +136,8 @@ struct echo_measurement<Tp, true> : public common_utils
     /// generate a name attribute
     ///
     template <typename Tuple, typename... Args>
-    static string_t generate_name(const string_t& _prefix, Tuple _unit, Args&&... _args)
+    static TIMEMORY_COLD string_t generate_name(const string_t& _prefix, Tuple _unit,
+                                                Args&&... _args)
     {
         constexpr size_t N = std::tuple_size<Tuple>::value;
         return impl::template name_generator<Tuple>(
@@ -145,8 +148,9 @@ struct echo_measurement<Tp, true> : public common_utils
     /// generate a name attribute
     ///
     template <typename T, typename... Alloc, typename... Args>
-    static string_t generate_name(const string_t& _prefix, std::vector<T, Alloc...> _unit,
-                                  Args&&... _args)
+    static TIMEMORY_COLD string_t generate_name(const string_t&          _prefix,
+                                                std::vector<T, Alloc...> _unit,
+                                                Args&&... _args)
     {
         string_t ret;
         for(auto& itr : _unit)
@@ -161,8 +165,8 @@ struct echo_measurement<Tp, true> : public common_utils
     /// generate a name attribute
     ///
     template <typename T, size_t N, typename... Args>
-    static string_t generate_name(const string_t& _prefix, std::array<T, N> _unit,
-                                  Args&&... _args)
+    static TIMEMORY_COLD string_t generate_name(const string_t&  _prefix,
+                                                std::array<T, N> _unit, Args&&... _args)
     {
         string_t ret;
         for(auto& itr : _unit)
@@ -177,8 +181,9 @@ struct echo_measurement<Tp, true> : public common_utils
     /// generate a measurement tag
     ///
     template <typename Vt>
-    static void generate_measurement(std::ostream& os, const attributes_t& attributes,
-                                     const Vt& value)
+    static TIMEMORY_COLD void generate_measurement(std::ostream&       os,
+                                                   const attributes_t& attributes,
+                                                   const Vt&           value)
     {
         os << "<DartMeasurement";
         os << " " << attribute_string("type", "numeric/double");
@@ -192,8 +197,9 @@ struct echo_measurement<Tp, true> : public common_utils
     /// generate a measurement tag
     ///
     template <typename Vt, typename... ExtraT>
-    static void generate_measurement(std::ostream& os, attributes_t attributes,
-                                     const std::vector<Vt, ExtraT...>& value)
+    static TIMEMORY_COLD void generate_measurement(
+        std::ostream& os, attributes_t attributes,
+        const std::vector<Vt, ExtraT...>& value)
     {
         auto _default_name = attributes["name"];
         int  i             = 0;
@@ -210,8 +216,9 @@ struct echo_measurement<Tp, true> : public common_utils
     /// generate a measurement tag
     ///
     template <typename Lhs, typename Rhs, typename... ExtraT>
-    static void generate_measurement(std::ostream& os, attributes_t attributes,
-                                     const std::pair<Lhs, Rhs>& value)
+    static TIMEMORY_COLD void generate_measurement(std::ostream&              os,
+                                                   attributes_t               attributes,
+                                                   const std::pair<Lhs, Rhs>& value)
     {
         auto default_name = attributes["name"];
         auto set_name     = [&](int i) {
@@ -229,7 +236,7 @@ struct echo_measurement<Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// generate the prefix
     ///
-    static string_t generate_prefix(const strvec_t& hierarchy)
+    static TIMEMORY_COLD string_t generate_prefix(const strvec_t& hierarchy)
     {
         if(settings::dart_label())
             return string_t("");
@@ -259,7 +266,7 @@ struct echo_measurement<Tp, true> : public common_utils
               enable_if_t<!(trait::array_serialization<Up>::value ||
                             trait::iterable_measurement<Up>::value),
                           int>                         = 0>
-    echo_measurement(Up& obj, const strvec_t& hierarchy)
+    TIMEMORY_COLD echo_measurement(Up& obj, const strvec_t& hierarchy)
     {
         auto prefix = generate_prefix(hierarchy);
         auto _unit  = type::get_display_unit();
@@ -280,7 +287,7 @@ struct echo_measurement<Tp, true> : public common_utils
               enable_if_t<trait::array_serialization<Up>::value ||
                               trait::iterable_measurement<Up>::value,
                           int>                         = 0>
-    echo_measurement(Up& obj, const strvec_t& hierarchy)
+    TIMEMORY_COLD echo_measurement(Up& obj, const strvec_t& hierarchy)
     {
         auto prefix = generate_prefix(hierarchy);
         auto _data  = obj.get();

@@ -70,17 +70,17 @@ struct get<Type, true>
 
     TIMEMORY_DEFAULT_OBJECT(get)
 
-    explicit get(storage_type& _storage)
+    explicit TIMEMORY_COLD get(storage_type& _storage)
     : m_storage(&_storage)
     {}
 
-    explicit get(storage_type* _storage)
+    explicit TIMEMORY_COLD get(storage_type* _storage)
     : m_storage(_storage)
     {}
 
-    result_type&                         operator()(result_type&);
-    basic_tree_vector_type&              operator()(basic_tree_vector_type&);
-    std::vector<basic_tree_vector_type>& operator()(
+    TIMEMORY_COLD result_type& operator()(result_type&);
+    TIMEMORY_COLD basic_tree_vector_type& operator()(basic_tree_vector_type&);
+    TIMEMORY_COLD std::vector<basic_tree_vector_type>& operator()(
         std::vector<basic_tree_vector_type>& _data)
     {
         basic_tree_vector_type _obj{};
@@ -90,31 +90,31 @@ struct get<Type, true>
     }
 
     template <typename Archive>
-    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
-        Archive&);
+    TIMEMORY_COLD enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
+                  operator()(Archive&);
 
     template <typename Archive>
-    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
-        Archive&, metadata);
+    TIMEMORY_COLD enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
+                  operator()(Archive&, metadata);
 
 public:
-    static auto get_identifier(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_identifier(const Type& _obj = Type{})
     {
         return serialization<Type>::get_identifier(_obj);
     }
-    static auto get_label(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_label(const Type& _obj = Type{})
     {
         return serialization<Type>::get_label(_obj);
     }
-    static auto get_description(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_description(const Type& _obj = Type{})
     {
         return serialization<Type>::get_description(_obj);
     }
-    static auto get_unit(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_unit(const Type& _obj = Type{})
     {
         return serialization<Type>::get_unit(_obj);
     }
-    static auto get_display_unit(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_display_unit(const Type& _obj = Type{})
     {
         return serialization<Type>::get_display_unit(_obj);
     }

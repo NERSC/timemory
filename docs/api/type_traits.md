@@ -19,19 +19,14 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::is_available
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::python_args
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::default_runtime_enabled
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::runtime_enabled
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::api_components
    :members:
-   :undoc-members:
 ```
 
 ## Type Identification
@@ -44,13 +39,10 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::base_has_accum
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::base_has_last
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::dynamic_base
    :members:
-   :undoc-members:
 ```
 
 ## Data Sharing
@@ -58,10 +50,8 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::cache
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::derivation_types
    :members:
-   :undoc-members:
 ```
 
 ## Data Collection
@@ -69,10 +59,8 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::sampler
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::file_sampler
    :members:
-   :undoc-members:
 ```
 
 ## Feature Support
@@ -80,10 +68,8 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::supports_custom_record
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::supports_flamegraph
    :members:
-   :undoc-members:
 ```
 
 ## Archive Serialization
@@ -91,22 +77,16 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::api_input_archive
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::api_output_archive
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::input_archive
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::output_archive
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::pretty_archive
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::requires_json
    :members:
-   :undoc-members:
 ```
 
 ## Units and Formatting
@@ -114,22 +94,16 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::is_memory_category
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::is_timing_category
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::uses_memory_units
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::uses_timing_units
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::uses_percent_units
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::units
    :members:
-   :undoc-members:
 ```
 
 ## Output Reporting
@@ -137,46 +111,32 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::report
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::report_count
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::report_depth
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::report_metric_name
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::report_units
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::report_sum
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::report_mean
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::report_statistics
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::report_self
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::custom_label_printing
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::custom_serialization
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::custom_unit_printing
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::echo_enabled
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::iterable_measurement
    :members:
-   :undoc-members:
 ```
 
 ## Statistics
@@ -184,13 +144,10 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::statistics
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::record_statistics
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::permissive_statistics
    :members:
-   :undoc-members:
 ```
 
 ## Storage
@@ -198,34 +155,24 @@ user code.
 ```eval_rst
 .. doxygenstruct:: tim::trait::uses_storage
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::uses_value_storage
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::tree_storage
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::flat_storage
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::timeline_storage
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::thread_scope_only
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::data
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::secondary_data
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::collects_data
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::generates_output
    :members:
-   :undoc-members:
 ```
 
 ## Deprecated
@@ -239,23 +186,16 @@ These type-traits are either:
 ```eval_rst
 .. doxygenstruct:: tim::trait::is_component
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::is_gotcha
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::is_user_bundle
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::record_max
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::array_serialization
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::requires_prefix
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::trait::supports_args
    :members:
-   :undoc-members:
 ```

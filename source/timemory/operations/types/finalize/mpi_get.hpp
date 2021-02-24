@@ -63,21 +63,22 @@ struct mpi_get<Type, true>
 
     static auto& plus(Type& lhs, const Type& rhs) { return (lhs += rhs); }
 
-    explicit mpi_get(storage_type& _storage)
+    explicit TIMEMORY_COLD mpi_get(storage_type& _storage)
     : m_storage(&_storage)
     {}
 
-    distrib_type&           operator()(distrib_type&);
-    basic_tree_vector_type& operator()(basic_tree_vector_type&);
+    TIMEMORY_COLD distrib_type& operator()(distrib_type&);
+    TIMEMORY_COLD basic_tree_vector_type& operator()(basic_tree_vector_type&);
 
     template <typename Archive>
-    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
-        Archive&);
+    TIMEMORY_COLD enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
+                  operator()(Archive&);
 
     // this serializes a type (src) and adds it to dst, if !collapse_processes
     // then it uses the adder to combine the data
-    mpi_get(std::vector<Type>& dst, const Type& src,
-            std::function<Type&(Type& lhs, const Type& rhs)>&& adder = this_type::plus);
+    TIMEMORY_COLD mpi_get(
+        std::vector<Type>& dst, const Type& src,
+        std::function<Type&(Type& lhs, const Type& rhs)>&& adder = this_type::plus);
 
 private:
     storage_type* m_storage = nullptr;

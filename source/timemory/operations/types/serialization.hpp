@@ -345,8 +345,8 @@ private:
 public:
     // template overloads -- do not get instantiated in extern template
     template <typename Archive>
-    serialization(const Tp& obj, Archive& ar, const unsigned int version,
-                  enable_if_t<!is_specialized<Archive>(), int> = 0)
+    TIMEMORY_COLD serialization(const Tp& obj, Archive& ar, const unsigned int version,
+                                enable_if_t<!is_specialized<Archive>(), int> = 0)
     {
         static_assert(!is_specialized<Archive>(),
                       "Error! Calling template function instead of specialized function");
@@ -354,8 +354,8 @@ public:
     }
 
     template <typename Archive>
-    void operator()(const Tp& obj, Archive& ar, const unsigned int version,
-                    enable_if_t<!is_specialized<Archive>(), int> = 0) const
+    TIMEMORY_COLD void operator()(const Tp& obj, Archive& ar, const unsigned int version,
+                                  enable_if_t<!is_specialized<Archive>(), int> = 0) const
     {
         static_assert(!is_specialized<Archive>(),
                       "Error! Calling template function instead of specialized function");
@@ -363,8 +363,8 @@ public:
     }
 
     template <typename Archive>
-    void operator()(Archive& ar, metadata data,
-                    enable_if_t<!is_specialized<Archive>(), int> = 0) const
+    TIMEMORY_COLD void operator()(Archive& ar, metadata data,
+                                  enable_if_t<!is_specialized<Archive>(), int> = 0) const
     {
         static_assert(!is_specialized<Archive>(),
                       "Error! Calling template function instead of specialized function");
@@ -372,9 +372,10 @@ public:
     }
 
     template <typename Archive, typename DataT>
-    void operator()(Archive& ar, const DataT& data,
-                    enable_if_t<!is_specialized<Archive>() && is_supported_dtype<DataT>(),
-                                int> = 0) const
+    TIMEMORY_COLD void operator()(
+        Archive& ar, const DataT& data,
+        enable_if_t<!is_specialized<Archive>() && is_supported_dtype<DataT>(), int> =
+            0) const
     {
         static_assert(!is_specialized<Archive>(),
                       "Error! Calling template function instead of specialized function");
@@ -382,9 +383,10 @@ public:
     }
 
     template <typename Archive, typename DataT>
-    void operator()(Archive& ar, DataT& data,
-                    enable_if_t<!is_specialized<Archive>() && is_supported_dtype<DataT>(),
-                                int> = 0) const
+    TIMEMORY_COLD void operator()(
+        Archive& ar, DataT& data,
+        enable_if_t<!is_specialized<Archive>() && is_supported_dtype<DataT>(), int> =
+            0) const
     {
         static_assert(!is_specialized<Archive>(),
                       "Error! Calling template function instead of specialized function");
@@ -396,65 +398,71 @@ public:
 
 public:
     // MinimalJSONOutputArchive overloads -- get instantiated in extern template
-    serialization(const Tp& obj, cereal::MinimalJSONOutputArchive& ar,
-                  const unsigned int version, ...);
+    TIMEMORY_COLD serialization(const Tp& obj, cereal::MinimalJSONOutputArchive& ar,
+                                const unsigned int version, ...);
 
-    void operator()(const Tp& obj, cereal::MinimalJSONOutputArchive& ar,
-                    const unsigned int version, ...) const;
+    TIMEMORY_COLD void operator()(const Tp& obj, cereal::MinimalJSONOutputArchive& ar,
+                                  const unsigned int version, ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive& ar, metadata, ...) const;
+    TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar, metadata,
+                                  ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive& ar,
-                    const basic_tree_vector_type&     data, ...) const;
+    TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar,
+                                  const basic_tree_vector_type&     data, ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive&          ar,
-                    const std::vector<basic_tree_vector_type>& data, ...) const;
+    TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive&          ar,
+                                  const std::vector<basic_tree_vector_type>& data,
+                                  ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive& ar, const basic_tree_map_type& data,
-                    ...) const;
+    TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar,
+                                  const basic_tree_map_type&        data, ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive& ar, const result_type& data,
-                    ...) const;
+    TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar,
+                                  const result_type&                data, ...) const;
 
-    void operator()(cereal::MinimalJSONOutputArchive& ar, const distrib_type& data,
-                    ...) const;
+    TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar,
+                                  const distrib_type&               data, ...) const;
 
 public:
     // PrettyJSONOutputArchive overloads -- get instantiated in extern template
-    serialization(const Tp& obj, cereal::PrettyJSONOutputArchive& ar,
-                  const unsigned int version, ...);
+    TIMEMORY_COLD serialization(const Tp& obj, cereal::PrettyJSONOutputArchive& ar,
+                                const unsigned int version, ...);
 
-    void operator()(const Tp& obj, cereal::PrettyJSONOutputArchive& ar,
-                    const unsigned int version, ...) const;
+    TIMEMORY_COLD void operator()(const Tp& obj, cereal::PrettyJSONOutputArchive& ar,
+                                  const unsigned int version, ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive& ar, metadata, ...) const;
+    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar, metadata,
+                                  ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive& ar,
-                    const basic_tree_vector_type&    data, ...) const;
+    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar,
+                                  const basic_tree_vector_type&    data, ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive&           ar,
-                    const std::vector<basic_tree_vector_type>& data, ...) const;
+    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive&           ar,
+                                  const std::vector<basic_tree_vector_type>& data,
+                                  ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive& ar, const basic_tree_map_type& data,
-                    ...) const;
+    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar,
+                                  const basic_tree_map_type&       data, ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive& ar, const result_type& data,
-                    ...) const;
+    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar,
+                                  const result_type&               data, ...) const;
 
-    void operator()(cereal::PrettyJSONOutputArchive& ar, const distrib_type& data,
-                    ...) const;
+    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar,
+                                  const distrib_type&              data, ...) const;
 
 public:
     // JSONInputArchive overloads -- get instantiated in extern template
-    void operator()(cereal::JSONInputArchive& ar, basic_tree_vector_type& data,
-                    ...) const;
+    TIMEMORY_COLD void operator()(cereal::JSONInputArchive& ar,
+                                  basic_tree_vector_type&   data, ...) const;
 
-    void operator()(cereal::JSONInputArchive&            ar,
-                    std::vector<basic_tree_vector_type>& data, ...) const;
+    TIMEMORY_COLD void operator()(cereal::JSONInputArchive&            ar,
+                                  std::vector<basic_tree_vector_type>& data, ...) const;
 
-    void operator()(cereal::JSONInputArchive& ar, result_type& data, ...) const;
+    TIMEMORY_COLD void operator()(cereal::JSONInputArchive& ar, result_type& data,
+                                  ...) const;
 
-    void operator()(cereal::JSONInputArchive& ar, distrib_type& data, ...) const;
+    TIMEMORY_COLD void operator()(cereal::JSONInputArchive& ar, distrib_type& data,
+                                  ...) const;
 
 public:
     template <typename ValueT>
@@ -464,47 +472,56 @@ public:
 
 private:
     template <typename Archive>
-    void impl(const Tp& obj, Archive& ar, const unsigned int) const;
+    TIMEMORY_COLD void impl(const Tp& obj, Archive& ar, const unsigned int) const;
 
     template <typename Archive>
-    void impl(Archive& ar, metadata) const;
+    TIMEMORY_COLD void impl(Archive& ar, metadata) const;
 
     template <typename Archive>
-    void impl(Archive& ar, const basic_tree_vector_type& data,
-              enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
+    TIMEMORY_COLD void impl(
+        Archive& ar, const basic_tree_vector_type& data,
+        enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
 
     template <typename Archive>
-    void impl(Archive& ar, const std::vector<basic_tree_vector_type>& data,
-              enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
+    TIMEMORY_COLD void impl(
+        Archive& ar, const std::vector<basic_tree_vector_type>& data,
+        enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
 
     template <typename Archive>
-    void impl(Archive& ar, const basic_tree_map_type& data,
-              enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
+    TIMEMORY_COLD void impl(
+        Archive& ar, const basic_tree_map_type& data,
+        enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
 
     template <typename Archive>
-    void impl(Archive& ar, const result_type& data,
-              enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
+    TIMEMORY_COLD void impl(
+        Archive& ar, const result_type& data,
+        enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
 
     template <typename Archive>
-    void impl(Archive& ar, const distrib_type& data,
-              enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
+    TIMEMORY_COLD void impl(
+        Archive& ar, const distrib_type& data,
+        enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
 
     // input
     template <typename Archive>
-    void impl(Archive& ar, basic_tree_vector_type& data,
-              enable_if_t<concepts::is_input_archive<Archive>::value, int> = 0) const;
+    TIMEMORY_COLD void impl(
+        Archive& ar, basic_tree_vector_type& data,
+        enable_if_t<concepts::is_input_archive<Archive>::value, int> = 0) const;
 
     template <typename Archive>
-    void impl(Archive& ar, std::vector<basic_tree_vector_type>& data,
-              enable_if_t<concepts::is_input_archive<Archive>::value, int> = 0) const;
+    TIMEMORY_COLD void impl(
+        Archive& ar, std::vector<basic_tree_vector_type>& data,
+        enable_if_t<concepts::is_input_archive<Archive>::value, int> = 0) const;
 
     template <typename Archive>
-    void impl(Archive& ar, result_type& data,
-              enable_if_t<concepts::is_input_archive<Archive>::value, int> = 0) const;
+    TIMEMORY_COLD void impl(
+        Archive& ar, result_type& data,
+        enable_if_t<concepts::is_input_archive<Archive>::value, int> = 0) const;
 
     template <typename Archive>
-    void impl(Archive& ar, distrib_type& data,
-              enable_if_t<concepts::is_input_archive<Archive>::value, long> = 0) const;
+    TIMEMORY_COLD void impl(
+        Archive& ar, distrib_type& data,
+        enable_if_t<concepts::is_input_archive<Archive>::value, long> = 0) const;
 };
 //
 template <typename Tp>

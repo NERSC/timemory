@@ -784,6 +784,13 @@ storage<Type, false>::master_instance()
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \class tim::storage<Tp, Vp>
+/// \tparam Tp Component type
+/// \tparam Vp Component intermediate value type
+///
+/// \brief Responsible for maintaining the call-stack storage in timemory. This class
+/// and the serialization library are responsible for most of the timemory compilation
+/// time.
 template <typename Tp, typename Vp>
 class storage : public impl::storage<Tp, trait::uses_value_storage<Tp, Vp>::value>
 {
@@ -801,6 +808,47 @@ public:
 
     friend struct impl::storage_deleter<this_type>;
     friend class manager;
+
+    /// get the pointer to the storage on the current thread. Will initialize instance if
+    /// one does not exist.
+    using base_type::instance;
+    /// get the pointer to the storage on the primary thread. Will initialize instance if
+    /// one does not exist.
+    using base_type::master_instance;
+    /// get the pointer to the storage on the current thread w/o initializing if one does
+    /// not exist
+    using base_type::noninit_instance;
+    /// get the pointer to the storage on the primary thread w/o initializing if one does
+    /// not exist
+    using base_type::noninit_master_instance;
+    /// returns whether storage is finalizing on the primary thread
+    using base_type::master_is_finalizing;
+    /// returns whether storage is finalizing on the current thread
+    using base_type::worker_is_finalizing;
+    /// returns whether storage is finalizing on any thread
+    using base_type::is_finalizing;
+    /// reset the storage data
+    using base_type::reset;
+    /// returns whether any data has been stored
+    using base_type::empty;
+    /// get the current estimated number of nodes
+    using base_type::size;
+    /// inspect the graph and get the true number of nodes
+    using base_type::true_size;
+    /// get the depth of the last node which pushed to hierarchical storage. Nodes which
+    /// used \ref tim::scope::flat or have \ref tim::trait::flat_storage type-trait
+    /// set to true will not affect this value
+    using base_type::depth;
+    /// drop the current node depth and set the current node to it's parent
+    using base_type::pop;
+    /// insert a new node
+    using base_type::insert;
+    /// add a component to the stack which can be flushed if the merging or output is
+    /// requested/required
+    using base_type::stack_pop;
+    /// remove component from the stack that will be flushed if the merging or output is
+    /// requested/required
+    using base_type::stack_push;
 };
 //
 //--------------------------------------------------------------------------------------//

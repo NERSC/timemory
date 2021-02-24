@@ -200,6 +200,11 @@ get_stream(const pytim::pyenum_set_t& _types, std::index_sequence<Idx...>)
 
 PYBIND11_MODULE(libpytimemory, tim)
 {
+#if defined(_MACOS)
+    puts("LOADED!");
+    return;
+#endif
+
     //----------------------------------------------------------------------------------//
     //
     auto _settings       = tim::settings::shared_instance();

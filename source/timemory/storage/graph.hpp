@@ -328,7 +328,8 @@ private:
 //======================================================================================//
 
 /// \class tim::graph
-/// \brief Arbitrary Graph / Tree (i.e. binary-tree but not binary)
+/// \brief Arbitrary Graph / Tree (i.e. binary-tree but not binary). It is unlikely that
+/// this class will interacted with directly.
 ///
 template <typename T, typename AllocatorT>
 class graph

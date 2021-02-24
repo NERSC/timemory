@@ -62,17 +62,17 @@ struct dmp_get<Type, true>
     using basic_tree_vector_type = std::vector<basic_tree_type>;
     using basic_tree_map_type    = std::map<std::string, basic_tree_vector_type>;
 
-    explicit dmp_get(storage_type& _storage)
+    explicit TIMEMORY_COLD dmp_get(storage_type& _storage)
     : m_storage(&_storage)
     {}
 
-    distrib_type&           operator()(distrib_type&);
-    basic_tree_vector_type& operator()(basic_tree_vector_type&);
-    basic_tree_map_type&    operator()(basic_tree_map_type&);
+    TIMEMORY_COLD distrib_type& operator()(distrib_type&);
+    TIMEMORY_COLD basic_tree_vector_type& operator()(basic_tree_vector_type&);
+    TIMEMORY_COLD basic_tree_map_type& operator()(basic_tree_map_type&);
 
     template <typename Archive>
-    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
-        Archive&);
+    TIMEMORY_COLD enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
+                  operator()(Archive&);
 
 private:
     storage_type* m_storage = nullptr;

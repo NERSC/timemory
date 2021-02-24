@@ -56,7 +56,8 @@ struct print_header : public common_utils
     //
     template <typename Statp, typename Up = Tp,
               enable_if_t<is_enabled<Up>::value, char> = 0>
-    print_header(const type& _obj, utility::stream& _os, const Statp& _stats)
+    TIMEMORY_COLD print_header(const type& _obj, utility::stream& _os,
+                               const Statp& _stats)
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;
