@@ -65,12 +65,12 @@ namespace tim
 ///
 template <typename... Types>
 class lightweight_tuple
-: public stack_bundle<available_t<type_list<Types...>>>
+: public stack_bundle<mpl::available_t<type_list<Types...>>>
 , public concepts::comp_wrapper
 {
 protected:
-    using apply_v     = apply<void>;
-    using bundle_type = stack_bundle<available_t<type_list<Types...>>>;
+    using apply_v     = mpl::apply<void>;
+    using bundle_type = stack_bundle<mpl::available_t<type_list<Types...>>>;
     using impl_type   = typename bundle_type::impl_type;
 
     template <typename... Tp>
@@ -98,8 +98,8 @@ public:
     using custom_operation_t =
         typename bundle_type::template custom_operation<Op, Tuple>::type;
 
-    using auto_type        = append_type_t<quirk::auto_start, this_type>;
-    using component_type   = remove_type_t<quirk::auto_start, this_type>;
+    using auto_type        = mpl::append_type_t<quirk::auto_start, this_type>;
+    using component_type   = mpl::remove_type_t<quirk::auto_start, this_type>;
     using type             = convert_t<tuple_type, lightweight_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
     using transient_func_t = utility::transient_function<void(this_type&)>;

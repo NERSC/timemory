@@ -71,7 +71,7 @@ public:
     using base_type      = component_tuple<Types...>;
     using auto_type      = this_type;
     using component_type = typename base_type::component_type;
-    using type           = convert_t<available_t<concat<Types...>>, auto_tuple<>>;
+    using type           = convert_t<mpl::available_t<concat<Types...>>, auto_tuple<>>;
 
     template <typename... Args>
     explicit auto_tuple(Args&&... args);

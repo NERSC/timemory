@@ -533,27 +533,30 @@ TIMEMORY_UTILITY_INLINE std::vector<std::string>
 //
 //======================================================================================//
 
-class path_t : public std::string
+namespace utility
+{
+class path : public std::string
 {
 public:
     using size_type = std::string::size_type;
 
 public:
-    TIMEMORY_UTILITY_INLINE path_t(const std::string& _path);
-    TIMEMORY_UTILITY_INLINE path_t(char* _path);
-    TIMEMORY_UTILITY_INLINE path_t(const path_t& rhs);
-    TIMEMORY_UTILITY_INLINE path_t(const char* _path);
+    TIMEMORY_UTILITY_INLINE path(const std::string& _path);
+    TIMEMORY_UTILITY_INLINE path(char* _path);
+    TIMEMORY_UTILITY_INLINE path(const path& rhs);
+    TIMEMORY_UTILITY_INLINE path(const char* _path);
 
-    TIMEMORY_UTILITY_INLINE path_t& operator=(const std::string& rhs);
-    TIMEMORY_UTILITY_INLINE path_t& operator=(const path_t& rhs);
-    TIMEMORY_UTILITY_INLINE path_t& insert(size_type __pos, const std::string& __s);
-    TIMEMORY_UTILITY_INLINE path_t& insert(size_type __pos, const path_t& __s);
+    TIMEMORY_UTILITY_INLINE path& operator=(const std::string& rhs);
+    TIMEMORY_UTILITY_INLINE path& operator=(const path& rhs);
+    TIMEMORY_UTILITY_INLINE path& insert(size_type __pos, const std::string& __s);
+    TIMEMORY_UTILITY_INLINE path& insert(size_type __pos, const path& __s);
 
     // OS-dependent representation
     static std::string osrepr(std::string _path);
     static std::string os();
     static std::string inverse();
 };
+}  // namespace utility
 
 //--------------------------------------------------------------------------------------//
 

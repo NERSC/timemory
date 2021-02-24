@@ -34,6 +34,8 @@
 
 namespace tim
 {
+namespace mpl
+{
 namespace impl
 {
 //======================================================================================//
@@ -305,6 +307,8 @@ struct sortT<PrioT, type_list<In, InT...>, type_list<BegTT...>, type_list<Tp, En
 //--------------------------------------------------------------------------------------//
 //  remove a type from a variadic bundle
 //
+namespace internal
+{
 template <typename Tp, typename In, typename Out>
 struct remove_type;
 
@@ -324,10 +328,45 @@ struct remove_type<Tp, InTuple<In, InTail...>, OutTuple<Out...>>
         typename remove_type<Tp, type_list<InTail...>, OutTuple<Out...>>::type,
         typename remove_type<Tp, type_list<InTail...>, OutTuple<Out..., In>>::type>;
 };
+}  // namespace internal
 
 //======================================================================================//
 
-}  // namespace impl
+template <typename Tp, typename OpT>
+struct negative_priority;
+
+template <typename Tp, typename OpT>
+struct positive_priority;
+
+template <typename Tp, template <typename> class OpT>
+struct negative_priority<Tp, OpT<Tp>>
+{
+    static constexpr bool value = (OpT<Tp>::value < 0);
+};
+
+template <typename Tp, template <typename> class OpT>
+struct positive_priority<Tp, OpT<Tp>>
+{
+    static constexpr bool value = (OpT<Tp>::value > 0);
+};
+
+template <typename Tp>
+struct negative_start_priority : negative_priority<Tp, trait::start_priority<Tp>>
+{};
+
+template <typename Tp>
+struct positive_start_priority : positive_priority<Tp, trait::start_priority<Tp>>
+{};
+
+template <typename Tp>
+struct negative_stop_priority : negative_priority<Tp, trait::stop_priority<Tp>>
+{};
+
+template <typename Tp>
+struct positive_stop_priority : positive_priority<Tp, trait::stop_priority<Tp>>
+{};
+
+//======================================================================================//
 
 // add a type if not already present
 //
@@ -337,7 +376,7 @@ struct append_type;
 template <typename Tp, template <typename...> class Tuple, typename... Types>
 struct append_type<Tp, Tuple<Types...>>
 {
-    static constexpr auto value = impl::is_one_of<Tp, type_list<Types...>>::value;
+    static constexpr auto value = is_one_of<Tp, type_list<Types...>>::value;
     using type = conditional_t<value, Tuple<Types...>, Tuple<Types..., Tp>>;
 };
 
@@ -349,34 +388,36 @@ struct remove_type;
 template <typename Tp, template <typename...> class Tuple, typename... Types>
 struct remove_type<Tp, Tuple<Types...>>
 {
-    static constexpr auto value = impl::is_one_of<Tp, type_list<Types...>>::value;
+    static constexpr auto value = is_one_of<Tp, type_list<Types...>>::value;
     using type =
         conditional_t<value,
-                      typename impl::remove_type<Tp, Tuple<Types...>, Tuple<>>::type,
+                      typename internal::remove_type<Tp, Tuple<Types...>, Tuple<>>::type,
                       Tuple<Types...>>;
 };
 
-///
-/// append type to a tuple/bundler
-///
-template <typename Tp, typename Types>
-using append_type_t = typename append_type<Tp, Types>::type;
-
-///
-/// remove any instances of a type from a tuple/bundler
-///
-template <typename Tp, typename Types>
-using remove_type_t = typename remove_type<Tp, Types>::type;
-
 //======================================================================================//
 
-///
+}  // namespace impl
+
+/// append type to a tuple/bundler
+template <typename Tp, typename... Types>
+using append_type = impl::append_type<Tp, Types...>;
+
+/// remove any instances of a type from a tuple/bundler
+template <typename Tp, typename... Types>
+using remove_type = impl::remove_type<Tp, Types...>;
+
+/// append type to a tuple/bundler
+template <typename Tp, typename Types>
+using append_type_t = typename impl::append_type<Tp, Types>::type;
+
+/// remove any instances of a type from a tuple/bundler
+template <typename Tp, typename Types>
+using remove_type_t = typename impl::remove_type<Tp, Types>::type;
+
 /// check if type is in expansion
-///
 template <typename Types>
 using is_one_of_integral = typename impl::is_one_of_integral<Types>;
-
-//======================================================================================//
 
 template <typename T>
 using remove_duplicates_t = typename impl::unique<T, type_list<>>::type;
@@ -428,14 +469,13 @@ using get_trait_type_t = impl::get_trait_type_t<TraitT, convert_t<TypeList, type
 //
 //======================================================================================//
 
-namespace mpl
-{
 template <template <typename> class PrioT, typename Tuple, typename BegT = type_list<>,
           typename EndT = type_list<>>
-using sort = convert_t<typename ::tim::impl::sortT<PrioT, convert_t<Tuple, type_list<>>,
-                                                   convert_t<BegT, type_list<>>,
-                                                   convert_t<EndT, type_list<>>>::type,
-                       std::tuple<>>;
+using sort =
+    convert_t<typename ::tim::mpl::impl::sortT<PrioT, convert_t<Tuple, type_list<>>,
+                                               convert_t<BegT, type_list<>>,
+                                               convert_t<EndT, type_list<>>>::type,
+              std::tuple<>>;
 
 template <typename... Types>
 using runtime_configurable_t =
@@ -445,42 +485,18 @@ template <typename... Types>
 using external_function_wrappers_t =
     typename get_true_types<concepts::is_external_function_wrapper, Types...>::type;
 
-}  // namespace mpl
-
-template <typename Tp, typename OpT>
-struct negative_priority;
-
-template <typename Tp, typename OpT>
-struct positive_priority;
-
-template <typename Tp, template <typename> class OpT>
-struct negative_priority<Tp, OpT<Tp>>
-{
-    static constexpr bool value = (OpT<Tp>::value < 0);
-};
-
-template <typename Tp, template <typename> class OpT>
-struct positive_priority<Tp, OpT<Tp>>
-{
-    static constexpr bool value = (OpT<Tp>::value > 0);
-};
+template <typename Tp>
+using negative_start_priority = impl::negative_start_priority<Tp>;
 
 template <typename Tp>
-struct negative_start_priority : negative_priority<Tp, trait::start_priority<Tp>>
-{};
+using positive_start_priority = impl::positive_start_priority<Tp>;
 
 template <typename Tp>
-struct positive_start_priority : positive_priority<Tp, trait::start_priority<Tp>>
-{};
+using negative_stop_priority = impl::negative_stop_priority<Tp>;
 
 template <typename Tp>
-struct negative_stop_priority : negative_priority<Tp, trait::stop_priority<Tp>>
-{};
-
-template <typename Tp>
-struct positive_stop_priority : positive_priority<Tp, trait::stop_priority<Tp>>
-{};
+using positive_stop_priority = impl::positive_stop_priority<Tp>;
 
 //--------------------------------------------------------------------------------------//
-
+}  // namespace mpl
 }  // namespace tim

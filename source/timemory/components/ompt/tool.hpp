@@ -462,8 +462,8 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_target_t kind, ompt_scope_endpoint_t endpoint, int device_num,
                     ompt_data_t* task_data, ompt_id_t target_id, const void* codeptr)
-    : m_key(
-          apply<std::string>::join('_', ompt_target_type_labels[kind], "dev", device_num))
+    : m_key(mpl::apply<std::string>::join('_', ompt_target_type_labels[kind], "dev",
+                                          device_num))
     , m_data(
           { { (endpoint == ompt_scope_begin) ? construct_data() : task_data, nullptr } })
     {
@@ -477,8 +477,8 @@ public:
                     ompt_target_data_op_t optype, void* src_addr, int src_device_num,
                     void* dest_addr, int dest_device_num, size_t bytes,
                     const void* codeptr)
-    : m_key(apply<std::string>::join('_', ompt_target_data_op_labels[optype], "src",
-                                     src_device_num, "dest", dest_device_num))
+    : m_key(mpl::apply<std::string>::join('_', ompt_target_data_op_labels[optype], "src",
+                                          src_device_num, "dest", dest_device_num))
     , m_data({ { construct_data(true), nullptr } })
     {
         consume_parameters(target_id, host_op_id, src_addr, dest_addr, bytes, codeptr);
@@ -500,7 +500,7 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_id_t target_id, unsigned int nitems, void** host_addr,
                     void** device_addr, size_t* bytes, unsigned int* mapping_flags)
-    : m_key(apply<std::string>::join('_', "ompt_target_mapping", target_id))
+    : m_key(mpl::apply<std::string>::join('_', "ompt_target_mapping", target_id))
     , m_data({ { nullptr, nullptr } })
     {
         consume_parameters(nitems, host_addr, device_addr, bytes, mapping_flags);
@@ -511,7 +511,7 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(uint64_t device_num, const char* type, ompt_device_t* device,
                     ompt_function_lookup_t lookup, const char* documentation)
-    : m_key(apply<std::string>::join('_', "ompt_device", device_num, type))
+    : m_key(mpl::apply<std::string>::join('_', "ompt_device", device_num, type))
     , m_data({ { construct_data(), nullptr } })
     {
         get_data<device_state_tag>().insert({ device_num, m_data[0] });
@@ -537,7 +537,7 @@ public:
     context_handler(uint64_t device_num, const char* filename, int64_t offset_in_file,
                     void* vma_in_file, size_t bytes, void* host_addr, void* device_addr,
                     uint64_t module_id)
-    : m_key(apply<std::string>::join('_', "ompt_target_load", device_num, filename))
+    : m_key(mpl::apply<std::string>::join('_', "ompt_target_load", device_num, filename))
     , m_data({ { construct_data(), nullptr } })
     {
         get_data<device_load_tag, uint64_t, data_map_t>()[device_num].insert(

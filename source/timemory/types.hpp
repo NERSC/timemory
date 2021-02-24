@@ -201,8 +201,9 @@ struct complete_types;
 template <size_t... Idx>
 struct complete_types<std::index_sequence<Idx...>>
 {
-    using type = convert_t<non_placeholder_t<type_list<component::enumerator_t<Idx>...>>,
-                           type_list<>>;
+    using type =
+        convert_t<mpl::non_placeholder_t<type_list<component::enumerator_t<Idx>...>>,
+                  type_list<>>;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -213,9 +214,10 @@ struct available_types;
 template <size_t... Idx>
 struct available_types<std::index_sequence<Idx...>>
 {
-    using type = convert_t<
-        available_t<non_placeholder_t<type_list<component::enumerator_t<Idx>...>>>,
-        type_list<>>;
+    using type =
+        convert_t<mpl::available_t<
+                      mpl::non_placeholder_t<type_list<component::enumerator_t<Idx>...>>>,
+                  type_list<>>;
 };
 //
 //--------------------------------------------------------------------------------------//

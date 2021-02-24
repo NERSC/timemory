@@ -324,7 +324,7 @@ struct cpu_roofline
             // run roofline peak generation
             auto ert_config = get_finalizer();
             auto ert_data   = get_ert_data();
-            apply<void>::access<ert_executor_t>(ert_config, ert_data);
+            mpl::apply<void>::access<ert_executor_t>(ert_config, ert_data);
             if(ert_data && (settings::verbose() > 1 || settings::debug()))
                 std::cout << *(ert_data) << std::endl;
         }
@@ -352,7 +352,7 @@ struct cpu_roofline
 
     static std::string get_type_string()
     {
-        return apply<std::string>::join('_', demangle(typeid(Types).name())...);
+        return mpl::apply<std::string>::join('_', demangle(typeid(Types).name())...);
     }
 
     //----------------------------------------------------------------------------------//

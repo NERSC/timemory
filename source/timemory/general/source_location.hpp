@@ -46,7 +46,7 @@ namespace tim
 class source_location
 {
 public:
-    using join_type   = apply<std::string>;
+    using join_type   = mpl::apply<std::string>;
     using result_type = std::tuple<std::string, size_t>;
 
 public:

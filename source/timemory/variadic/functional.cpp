@@ -298,9 +298,9 @@ void
 start(TupleT<Tp...>& obj, Args&&... args)
 {
     using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
-    using priority_types_t = filter_false_t<negative_start_priority, data_type>;
+    using priority_types_t = mpl::filter_false_t<mpl::negative_start_priority, data_type>;
     using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
-    using delayed_types_t  = filter_false_t<positive_start_priority, data_type>;
+    using delayed_types_t  = mpl::filter_false_t<mpl::positive_start_priority, data_type>;
     using delayed_tuple_t  = mpl::sort<trait::start_priority, delayed_types_t>;
 
     // start high priority components
@@ -329,9 +329,9 @@ void
 start(TupleT<Tp&...>&& obj, Args&&... args)
 {
     using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
-    using priority_types_t = filter_false_t<negative_start_priority, data_type>;
+    using priority_types_t = mpl::filter_false_t<mpl::negative_start_priority, data_type>;
     using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
-    using delayed_types_t  = filter_false_t<positive_start_priority, data_type>;
+    using delayed_types_t  = mpl::filter_false_t<mpl::positive_start_priority, data_type>;
     using delayed_tuple_t  = mpl::sort<trait::start_priority, delayed_types_t>;
 
     // start high priority components
@@ -368,9 +368,9 @@ void
 stop(TupleT<Tp...>& obj, Args&&... args)
 {
     using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
-    using priority_types_t = filter_false_t<negative_stop_priority, data_type>;
+    using priority_types_t = mpl::filter_false_t<mpl::negative_stop_priority, data_type>;
     using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
-    using delayed_types_t  = filter_false_t<positive_stop_priority, data_type>;
+    using delayed_types_t  = mpl::filter_false_t<mpl::positive_stop_priority, data_type>;
     using delayed_tuple_t  = mpl::sort<trait::stop_priority, delayed_types_t>;
 
     // stop high priority components
@@ -400,9 +400,9 @@ void
 stop(TupleT<Tp&...>&& obj, Args&&... args)
 {
     using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
-    using priority_types_t = filter_false_t<negative_stop_priority, data_type>;
+    using priority_types_t = mpl::filter_false_t<mpl::negative_stop_priority, data_type>;
     using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
-    using delayed_types_t  = filter_false_t<positive_stop_priority, data_type>;
+    using delayed_types_t  = mpl::filter_false_t<mpl::positive_stop_priority, data_type>;
     using delayed_tuple_t  = mpl::sort<trait::stop_priority, delayed_types_t>;
 
     // stop high priority components
@@ -992,8 +992,8 @@ auto
 get(TupleT<Tp...>& obj, Args&&... args)
 {
     using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
-    using data_collect_type = get_data_type_t<data_type>;
-    using data_value_type   = get_data_value_t<data_type>;
+    using data_collect_type = mpl::get_data_type_t<data_type>;
+    using data_value_type   = mpl::get_data_value_t<data_type>;
 
     data_value_type _data{};
     auto&&          _obj = mpl::get_reference_tuple<data_collect_type>(obj);
@@ -1015,8 +1015,8 @@ auto
 get(TupleT<Tp&...>&& obj, Args&&... args)
 {
     using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
-    using data_collect_type = get_data_type_t<data_type>;
-    using data_value_type   = get_data_value_t<data_type>;
+    using data_collect_type = mpl::get_data_type_t<data_type>;
+    using data_value_type   = mpl::get_data_value_t<data_type>;
 
     data_value_type _data{};
     auto&&          _obj = mpl::get_reference_tuple<data_collect_type>(obj);
@@ -1057,8 +1057,8 @@ auto
 get_labeled(TupleT<Tp...>& obj, Args&&... args)
 {
     using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
-    using data_collect_type = get_data_type_t<data_type>;
-    using data_label_type   = get_data_label_t<data_type>;
+    using data_collect_type = mpl::get_data_type_t<data_type>;
+    using data_label_type   = mpl::get_data_label_t<data_type>;
 
     data_label_type _data{};
     auto&&          _obj = mpl::get_reference_tuple<data_collect_type>(obj);
@@ -1080,8 +1080,8 @@ auto
 get_labeled(TupleT<Tp&...>&& obj, Args&&... args)
 {
     using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
-    using data_collect_type = get_data_type_t<data_type>;
-    using data_label_type   = get_data_label_t<data_type>;
+    using data_collect_type = mpl::get_data_type_t<data_type>;
+    using data_label_type   = mpl::get_data_label_t<data_type>;
 
     data_label_type _data{};
     auto&&          _obj = mpl::get_reference_tuple<data_collect_type>(obj);

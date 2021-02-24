@@ -202,9 +202,9 @@ TEST_F(variadic_tests, concat)
     using join_t2 =
         typename tim::auto_tuple<lhs_t, tim::component_list<rhs_t, user_clock>>::type;
 
-    using comp_t0 = tim::remove_duplicates_t<join_t0>;
-    using comp_t1 = tim::remove_duplicates_t<join_t1>;
-    using comp_t2 = tim::remove_duplicates_t<join_t2>;
+    using comp_t0 = tim::mpl::remove_duplicates_t<join_t0>;
+    using comp_t1 = tim::mpl::remove_duplicates_t<join_t1>;
+    using comp_t2 = tim::mpl::remove_duplicates_t<join_t2>;
 
     using lhs_l = tim::convert_t<lhs_t, tim::component_list<>>;
     using rhs_l = tim::convert_t<rhs_t, tim::component_list<>>;
@@ -214,10 +214,10 @@ TEST_F(variadic_tests, concat)
     using dbeg_t2 = typename tim::auto_list<rhs_l, user_clock>::data_type;
     using dbeg_t3 = typename tim::auto_list<lhs_l, dbeg_t2>::data_type;
 
-    using data_t0 = tim::remove_duplicates_t<dbeg_t0>;
-    using data_t1 = tim::remove_duplicates_t<dbeg_t1>;
-    using data_t2 = tim::remove_duplicates_t<dbeg_t2>;
-    using data_t3 = tim::remove_duplicates_t<dbeg_t3>;
+    using data_t0 = tim::mpl::remove_duplicates_t<dbeg_t0>;
+    using data_t1 = tim::mpl::remove_duplicates_t<dbeg_t1>;
+    using data_t2 = tim::mpl::remove_duplicates_t<dbeg_t2>;
+    using data_t3 = tim::mpl::remove_duplicates_t<dbeg_t3>;
 
     std::cout << "\n" << std::flush;
 
@@ -275,9 +275,9 @@ TEST_F(variadic_tests, get)
     using join_t2 =
         typename tim::auto_tuple<lhs_t, tim::component_list<rhs_t, user_clock>>::type;
 
-    using comp_t0 = tim::remove_duplicates_t<join_t0>;
-    using comp_t1 = tim::remove_duplicates_t<join_t1>;
-    using comp_t2 = tim::remove_duplicates_t<join_t2>;
+    using comp_t0 = tim::mpl::remove_duplicates_t<join_t0>;
+    using comp_t1 = tim::mpl::remove_duplicates_t<join_t1>;
+    using comp_t2 = tim::mpl::remove_duplicates_t<join_t2>;
 
     using comp_t2_base_type      = typename comp_t2::base_type;
     using comp_t2_component_type = typename comp_t2::component_type;
@@ -299,10 +299,11 @@ TEST_F(variadic_tests, get)
     PRINT_TYPE(comp_t2_this_type)
     std::cout << "\n" << std::flush;
 
-    using list_t0 = tim::remove_duplicates_t<tim::component_list_t<lhs_l, rhs_l>>;
-    using list_t1 = tim::remove_duplicates_t<tim::auto_list_t<lhs_l, rhs_l, user_clock>>;
-    using list_t2 = tim::remove_duplicates_t<tim::auto_list_t<rhs_l, user_clock>>;
-    using list_t3 = tim::remove_duplicates_t<tim::auto_list_t<lhs_l, list_t2>>;
+    using list_t0 = tim::mpl::remove_duplicates_t<tim::component_list_t<lhs_l, rhs_l>>;
+    using list_t1 =
+        tim::mpl::remove_duplicates_t<tim::auto_list_t<lhs_l, rhs_l, user_clock>>;
+    using list_t2 = tim::mpl::remove_duplicates_t<tim::auto_list_t<rhs_l, user_clock>>;
+    using list_t3 = tim::mpl::remove_duplicates_t<tim::auto_list_t<lhs_l, list_t2>>;
 
     std::cout << "\n" << std::flush;
 

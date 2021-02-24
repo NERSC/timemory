@@ -32,6 +32,8 @@
 
 namespace tim
 {
+namespace mpl
+{
 namespace impl
 {
 //======================================================================================//
@@ -322,34 +324,35 @@ template <typename T>
 using available_t = impl::filter_false<trait::is_available, T>;
 
 //--------------------------------------------------------------------------------------//
+}  // namespace mpl
+//
+template <typename... T>
+using stl_tuple_t = convert_t<mpl::available_t<concat<T...>>, std::tuple<>>;
 
 template <typename... T>
-using stl_tuple_t = convert_t<available_t<concat<T...>>, std::tuple<>>;
-
-template <typename... T>
-using type_list_t = convert_t<available_t<concat<T...>>, type_list<>>;
+using type_list_t = convert_t<mpl::available_t<concat<T...>>, type_list<>>;
 
 template <typename Tag, typename... T>
-using component_bundle_t = convert_t<available_t<type_list<T...>>, component_bundle<Tag>>;
+using component_bundle_t =
+    convert_t<mpl::available_t<type_list<T...>>, component_bundle<Tag>>;
 
 template <typename... T>
-using component_tuple_t = convert_t<available_t<concat<T...>>, component_tuple<>>;
+using component_tuple_t = convert_t<mpl::available_t<concat<T...>>, component_tuple<>>;
 
 template <typename... T>
-using component_list_t = convert_t<available_t<concat<T...>>, component_list<>>;
+using component_list_t = convert_t<mpl::available_t<concat<T...>>, component_list<>>;
 
 template <typename... T>
-using auto_tuple_t = convert_t<available_t<concat<T...>>, auto_tuple<>>;
+using auto_tuple_t = convert_t<mpl::available_t<concat<T...>>, auto_tuple<>>;
 
 template <typename... T>
-using auto_list_t = convert_t<available_t<concat<T...>>, auto_list<>>;
+using auto_list_t = convert_t<mpl::available_t<concat<T...>>, auto_list<>>;
 
 template <typename Tag, typename... T>
-using auto_bundle_t = convert_t<available_t<type_list<T...>>, auto_bundle<Tag>>;
+using auto_bundle_t = convert_t<mpl::available_t<type_list<T...>>, auto_bundle<Tag>>;
 
 template <typename... T>
-using lightweight_tuple_t = convert_t<available_t<concat<T...>>, lightweight_tuple<>>;
-
-//--------------------------------------------------------------------------------------//
-
+using lightweight_tuple_t =
+    convert_t<mpl::available_t<concat<T...>>, lightweight_tuple<>>;
+//
 }  // namespace tim

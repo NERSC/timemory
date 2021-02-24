@@ -197,7 +197,7 @@ struct runtime_enabled
 {
     // type-list of APIs that are runtime configurable
     using api_type_list =
-        get_true_types_t<concepts::is_runtime_configurable, component_apis_t<T>>;
+        mpl::get_true_types_t<concepts::is_runtime_configurable, component_apis_t<T>>;
 
     // GET specialization if component is available
     template <typename U = T>

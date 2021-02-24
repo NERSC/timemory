@@ -12,7 +12,7 @@ jobs:
     #
     # ------------------------------------------------------------------------ #
     - os: osx
-      osx_image: xcode11
+      osx_image: xcode12u
       language: generic
       addons:
         homebrew:
@@ -27,7 +27,7 @@ jobs:
         - CMAKE_ARGS=''
         - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=17'
     - os: osx
-      osx_image: xcode11
+      osx_image: xcode12u
       language: generic
       addons:
         homebrew:
@@ -189,7 +189,7 @@ jobs:
         - BUILD_ARGS='--build-libs shared --mpi --gperftools --stats --profile=cpu --cxx-standard=17'
 
 before_install:
-  # only run macOS if a pull-request
+  - if [ -d /Library/Developer ]; then sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/* ; fi
   - which -a ${CC}
   - which -a ${CXX}
   - if [ -f /usr/bin/${CC} ]; then export CC=/usr/bin/${CC}; fi

@@ -310,7 +310,7 @@ settings::compose_input_filename(const std::string& _tag, std::string _ext,
     auto plast = _prefix.length() - 1;
     if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))
         _prefix += "_";
-    auto fpath = path_t(_prefix + _tag + _rank_suffix + _ext);
+    auto fpath = utility::path(_prefix + _tag + _rank_suffix + _ext);
     while(fpath.find("//") != std::string::npos)
         fpath.replace(fpath.find("//"), 2, "/");
     return std::move(fpath);

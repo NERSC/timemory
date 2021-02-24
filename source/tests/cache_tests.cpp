@@ -222,9 +222,9 @@ run1()
     using trait_type                = typename tim::trait::cache<Tp>::type;
     static constexpr bool is_null_v = tim::concepts::is_null_type<trait_type>::value;
     using type =
-        tim::conditional_t<(is_null_v), tim::type_list<>, tim::type_list<trait_type>>;
+        tim::conditional_t<is_null_v, tim::type_list<>, tim::type_list<trait_type>>;
     using ttype     = tim::convert_t<tim::type_concat_t<type>, std::tuple<>>;
-    using uniq_type = tim::unique_t<type, std::tuple<>>;
+    using uniq_type = tim::mpl::unique_t<type, std::tuple<>>;
     std::cout << "\ttype           : " << tim::demangle<Tp>() << std::endl;
     std::cout << "\ttrait type     : " << tim::demangle<trait_type>() << std::endl;
     std::cout << "\ttrait is null  : " << std::boolalpha << is_null_v << std::endl;
@@ -241,12 +241,12 @@ auto
 run2()
 {
     using trait_type =
-        typename tim::impl::get_trait_type_tuple<tim::trait::cache, Tp>::trait_type;
+        typename tim::mpl::impl::get_trait_type_tuple<tim::trait::cache, Tp>::trait_type;
     static constexpr bool is_null_v =
-        tim::impl::get_trait_type_tuple<tim::trait::cache, Tp>::is_null_v;
-    using type      = tim::impl::get_trait_type_tuple_t<tim::trait::cache, Tp>;
+        tim::mpl::impl::get_trait_type_tuple<tim::trait::cache, Tp>::is_null_v;
+    using type      = tim::mpl::impl::get_trait_type_tuple_t<tim::trait::cache, Tp>;
     using ttype     = tim::convert_t<tim::type_concat_t<type>, std::tuple<>>;
-    using uniq_type = tim::unique_t<type, std::tuple<>>;
+    using uniq_type = tim::mpl::unique_t<type, std::tuple<>>;
     std::cout << "\ttype           : " << tim::demangle<Tp>() << std::endl;
     std::cout << "\ttrait type     : " << tim::demangle<trait_type>() << std::endl;
     std::cout << "\ttrait is null  : " << std::boolalpha << is_null_v << std::endl;
@@ -266,10 +266,10 @@ run3()
     using namespace tim::stl::ostream;
 
     using trait_type =
-        typename tim::impl::get_trait_type<tim::trait::cache, Tp...>::trait_type;
-    using type      = tim::impl::get_trait_type_t<tim::trait::cache, Tp...>;
+        typename tim::mpl::impl::get_trait_type<tim::trait::cache, Tp...>::trait_type;
+    using type      = tim::mpl::impl::get_trait_type_t<tim::trait::cache, Tp...>;
     using ttype     = tim::convert_t<type, std::tuple<>>;
-    using uniq_type = tim::unique_t<type, std::tuple<>>;
+    using uniq_type = tim::mpl::unique_t<type, std::tuple<>>;
     std::cout << "\ttype           : " << tim::demangle<std::tuple<Tp...>>() << std::endl;
     std::cout << "\ttrait type     : " << tim::demangle<trait_type>() << std::endl;
     std::cout << "\ttype list type : " << tim::demangle<type>() << std::endl;
@@ -341,7 +341,7 @@ TEST_F(cache_tests, rusage)
 {
     using data_type =
         std::tuple<peak_rss, current_peak_rss, num_io_in, num_io_out, wall_clock>;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, data_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, data_type>;
     using cache_type    = typename tim::operation::construct_cache<data_type>::type;
     auto        _cache  = tim::invoke::get_cache<data_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -362,7 +362,7 @@ TEST_F(cache_tests, component_bundle)
     using bundle_type   = tim::component_bundle<TIMEMORY_API, peak_rss, current_peak_rss,
                                               num_io_in*, num_io_out*, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -385,7 +385,7 @@ TEST_F(cache_tests, auto_bundle)
     using bundle_type   = tim::auto_bundle<TIMEMORY_API, peak_rss, current_peak_rss,
                                          num_io_in*, num_io_out*, wall_clock*>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -408,7 +408,7 @@ TEST_F(cache_tests, component_tuple)
     using bundle_type   = tim::component_tuple<peak_rss, current_peak_rss, num_io_in,
                                              num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -431,7 +431,7 @@ TEST_F(cache_tests, auto_tuple)
     using bundle_type =
         tim::auto_tuple<peak_rss, current_peak_rss, num_io_in, num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -454,7 +454,7 @@ TEST_F(cache_tests, component_list)
     using bundle_type   = tim::component_list<peak_rss, current_peak_rss, num_io_in,
                                             num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -477,7 +477,7 @@ TEST_F(cache_tests, auto_list)
     using bundle_type =
         tim::auto_list<peak_rss, current_peak_rss, num_io_in, num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -500,7 +500,7 @@ TEST_F(cache_tests, lightweight_tuple)
     using bundle_type   = tim::lightweight_tuple<peak_rss, current_peak_rss, num_io_in,
                                                num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);

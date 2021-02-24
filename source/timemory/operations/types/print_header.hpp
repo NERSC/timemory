@@ -80,7 +80,7 @@ struct print_header : public common_utils
         _os.set_prefix_end();
 
         // auto _opzip = [](const std::string& _lhs, const std::string& _rhs) {
-        //    return tim::apply<std::string>::join("", _lhs, " [", _rhs, "]");
+        //    return tim::mpl::apply<std::string>::join("", _lhs, " [", _rhs, "]");
         // };
 
         auto ios_fixed = std::ios_base::fixed;

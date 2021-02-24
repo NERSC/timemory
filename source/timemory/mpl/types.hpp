@@ -49,8 +49,6 @@
 namespace tim
 {
 //
-using default_record_statistics_type = TIMEMORY_DEFAULT_STATISTICS_TYPE;
-//
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_DEPRECATED)
@@ -68,6 +66,8 @@ class[[deprecated("Use auto_bundle<T..., L*...>")]] auto_hybrid;
 //
 namespace trait
 {
+//
+using default_record_statistics_type = TIMEMORY_DEFAULT_STATISTICS_TYPE;
 //
 template <typename TraitT>
 std::string
@@ -489,25 +489,6 @@ struct type_concat<type_list<Ts0...>, type_list<Ts1...>, Rest...>
 {};
 
 //--------------------------------------------------------------------------------------//
-
-}  // namespace impl
-
-//======================================================================================//
-
-template <typename... Ts>
-using tuple_concat_t = typename impl::tuple_concat<Ts...>::type;
-
-template <typename... Ts>
-using type_concat_t = typename impl::type_concat<Ts...>::type;
-
-template <typename U>
-using remove_pointer_t = typename std::remove_pointer<U>::type;
-
-template <typename U>
-using add_pointer_t = conditional_t<(std::is_pointer<U>::value), U, U*>;
-
-//======================================================================================//
-
 ///
 /// get the index of a type in expansion
 ///
@@ -526,6 +507,27 @@ struct index_of<Tp, Tuple<Head, Tail...>>
 {
     static constexpr size_t value = 1 + index_of<Tp, Tuple<Tail...>>::value;
 };
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace impl
+
+//======================================================================================//
+
+template <typename... Ts>
+using tuple_concat_t = typename impl::tuple_concat<Ts...>::type;
+
+template <typename... Ts>
+using type_concat_t = typename impl::type_concat<Ts...>::type;
+
+template <typename U>
+using remove_pointer_t = typename std::remove_pointer<U>::type;
+
+template <typename U>
+using add_pointer_t = conditional_t<(std::is_pointer<U>::value), U, U*>;
+
+template <typename Tp, typename Type>
+using index_of = impl::index_of<Tp, Type>;
 
 //======================================================================================//
 

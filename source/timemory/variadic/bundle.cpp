@@ -349,7 +349,7 @@ void
 bundle<Tag, BundleT, TupleT>::init_storage()
 {
     static thread_local bool _once = []() {
-        apply_v::type_access<operation::init_storage, non_quirk_t<reference_type>>();
+        apply_v::type_access<operation::init_storage, mpl::non_quirk_t<reference_type>>();
         return true;
     }();
     consume_parameters(_once);
@@ -388,7 +388,7 @@ bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>)
     if(!m_enabled())
         return get_this_type();
 
-    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
     // reset the data
     invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
     // insert node or find existing node
@@ -407,7 +407,7 @@ bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>, scope::config _
     if(!m_enabled())
         return get_this_type();
 
-    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
     // reset the data
     invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
     // insert node or find existing node
@@ -446,7 +446,7 @@ bundle<Tag, BundleT, TupleT>::pop(mpl::piecewise_select<Tp...>)
     if(!m_enabled())
         return get_this_type();
 
-    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
     // set the current node to the parent node
     invoke::invoke<operation::pop_node, Tag>(pw_type{}, m_data);
     return get_this_type();

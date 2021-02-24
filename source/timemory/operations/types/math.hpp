@@ -151,7 +151,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \struct tim::operation::multipy
+/// \struct tim::operation::multiply
 /// \brief This operation class is used for multiplication of a component
 ///
 //

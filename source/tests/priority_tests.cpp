@@ -135,7 +135,7 @@ using plus_t  = typename tuple_t::operation_t<tim::operation::plus>;
 using start_t = typename tuple_t::operation_t<tim::operation::start>;
 using stop_t  = typename tuple_t::operation_t<tim::operation::stop>;
 
-using apply_v = tim::apply<void>;
+using apply_v = tim::mpl::apply<void>;
 
 //--------------------------------------------------------------------------------------//
 // this function consumes approximately "n" milliseconds of wall time

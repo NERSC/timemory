@@ -283,9 +283,12 @@ public:
     static constexpr auto ios_fixed         = std::ios_base::fixed;
     static constexpr auto ios_decimal       = std::ios_base::dec;
     static constexpr auto ios_showpoint     = std::ios_base::showpoint;
-    static const short    precision         = percent_units_v ? 1 : 3;
-    static const short    width             = percent_units_v ? 6 : 8;
     static const fmtflags format_flags      = ios_fixed | ios_decimal | ios_showpoint;
+
+#if !defined(DOXYGEN_SHOULD_SKIP_THIS)
+    static const short precision = percent_units_v ? 1 : 3;
+    static const short width     = percent_units_v ? 6 : 8;
+#endif
 
     template <typename Up = Type, typename UnitT = typename trait::units<Up>::type,
               enable_if_t<std::is_same<UnitT, int64_t>::value, int> = 0>

@@ -177,7 +177,7 @@ namespace concepts
 template <template <typename...> class Tuple, typename... T>
 struct has_user_bundle<Tuple<T...>>
 {
-    using type = typename get_true_types<trait::is_user_bundle, Tuple<T...>>::type;
+    using type = typename mpl::get_true_types<trait::is_user_bundle, Tuple<T...>>::type;
     static constexpr bool value = (mpl::get_tuple_size<type>::value != 0);
 };
 //

@@ -265,7 +265,7 @@ struct dict
     {
         using apply_types = std::tuple<construct_dict<Types>...>;
         py::dict _dict;
-        ::tim::apply<void>::access<apply_types>(_tup, std::ref(_dict));
+        ::tim::mpl::apply<void>::access<apply_types>(_tup, std::ref(_dict));
         return _dict;
     }
 };

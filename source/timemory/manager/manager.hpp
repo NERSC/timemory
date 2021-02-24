@@ -260,9 +260,9 @@ public:
     /// manager_t::get_storage<types>::clear(); // clear storage for all enumerated types
     /// \endcode
     template <typename... Types>
-    struct get_storage : public filtered_get_storage<implemented_t<Types...>>
+    struct get_storage : public filtered_get_storage<mpl::implemented_t<Types...>>
     {
-        using base_type = filtered_get_storage<implemented_t<Types...>>;
+        using base_type = filtered_get_storage<mpl::implemented_t<Types...>>;
         using base_type::clear;
         using base_type::initialize;
         using base_type::print;
@@ -274,9 +274,9 @@ public:
     /// Overload for a tuple/type-list
     template <template <typename...> class Tuple, typename... Types>
     struct get_storage<Tuple<Types...>>
-    : public filtered_get_storage<implemented_t<Types...>>
+    : public filtered_get_storage<mpl::implemented_t<Types...>>
     {
-        using base_type = filtered_get_storage<implemented_t<Types...>>;
+        using base_type = filtered_get_storage<mpl::implemented_t<Types...>>;
         using base_type::clear;
         using base_type::initialize;
         using base_type::print;

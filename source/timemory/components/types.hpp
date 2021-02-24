@@ -164,7 +164,7 @@ tuple_size<tim::component_bundle<Tag, Types...>>
 {
 private:
     // component_bundle does not apply concat
-    using type = tim::convert_t<tim::available_t<tuple<Types...>>, tuple<>>;
+    using type = tim::convert_t<tim::mpl::available_t<tuple<Types...>>, tuple<>>;
 
 public:
     static constexpr size_t value = tuple_size<type>::value;
@@ -204,7 +204,7 @@ tuple_size<tim::auto_bundle<Tag, Types...>>
 {
 private:
     // auto_bundle does not apply concat
-    using type = tim::convert_t<tim::available_t<tuple<Types...>>, tuple<>>;
+    using type = tim::convert_t<tim::mpl::available_t<tuple<Types...>>, tuple<>>;
 
 public:
     static constexpr size_t value = tuple_size<type>::value;

@@ -156,7 +156,7 @@ template <typename U>
 auto
 resolve_record_type(int) -> decltype(
     U::record(),
-    typename function_traits<decltype(std::declval<U>().record())>::result_type())
+    typename mpl::function_traits<decltype(std::declval<U>().record())>::result_type())
 {
     return U::record();
 }
@@ -183,7 +183,8 @@ resolve_record_type()
 template <typename T, typename V = typename T::value_type>
 struct check_record_type
 {
-    using type = typename function_traits<decltype(&resolve_record_type<T>)>::result_type;
+    using type =
+        typename mpl::function_traits<decltype(&resolve_record_type<T>)>::result_type;
     static constexpr bool value =
         (!std::is_void<V>::value && !std::is_void<type>::value && is_enabled<T>::value &&
          std::is_same<V, type>::value);

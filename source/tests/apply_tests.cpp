@@ -68,7 +68,7 @@ TEST_F(apply_tests, set_value)
 {
     const double           value = 10.0;
     std::array<double, 12> arr;
-    tim::apply<void>::set_value(arr, value);
+    tim::mpl::apply<void>::set_value(arr, value);
     for(auto& itr : arr)
     {
         auto diff = itr - value;

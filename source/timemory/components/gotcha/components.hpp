@@ -115,8 +115,9 @@ namespace component
 /// using base_bundle_t = tim::component_tuple<wall_clock, cpu_clock>;
 /// using gotcha_wrap_t = tim::component::gotcha<2, base_bundle_t, void>;
 /// using gotcha_repl_t = tim::component::gotcha<2, empty_tuple_t, exp_replace>;
-/// using impl_bundle_t = tim::append_type_t<base_bundle_t,
-///                                     tim::type_list<gotcha_wrap_t, gotcha_repl_t>>;
+/// using impl_bundle_t = tim::mpl::append_type_t<base_bundle_t,
+///                                               tim::type_list<gotcha_wrap_t,
+///                                                              gotcha_repl_t>>;
 ///
 /// void init_wrappers()
 /// {

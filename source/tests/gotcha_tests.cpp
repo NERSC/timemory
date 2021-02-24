@@ -426,8 +426,8 @@ template <typename func_t>
 void
 print_func_info(const std::string& fname)
 {
-    using ret_type = typename tim::function_traits<func_t>::result_type;
-    using arg_type = typename tim::function_traits<func_t>::args_type;
+    using ret_type = typename tim::mpl::function_traits<func_t>::result_type;
+    using arg_type = typename tim::mpl::function_traits<func_t>::args_type;
     std::cout << std::endl;
     std::cout << "  func name = " << fname << std::endl;
     std::cout << "memfun type = " << tim::demangle(typeid(func_t).name()) << std::endl;

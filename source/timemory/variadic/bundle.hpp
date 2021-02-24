@@ -140,7 +140,7 @@ class bundle<Tag, BundleT, TupleT>
     using internal_tag = tim::variadic::impl::internal_tag;
 
 protected:
-    using apply_v        = apply<void>;
+    using apply_v        = mpl::apply<void>;
     using bundle_type    = api_bundle<Tag, typename TupleT::available_type>;
     using string_t       = typename bundle_type::string_t;
     using reference_type = typename TupleT::reference_type;
@@ -754,7 +754,7 @@ bundle<Tag, BundleT, TupleT>::fixed_count()
 {
     return (size() -
             mpl::get_tuple_size<
-                typename get_true_types<std::is_pointer, data_type>::type>::value);
+                typename mpl::get_true_types<std::is_pointer, data_type>::type>::value);
 }
 
 //----------------------------------------------------------------------------------//
@@ -764,7 +764,7 @@ constexpr uint64_t
 bundle<Tag, BundleT, TupleT>::optional_count()
 {
     return mpl::get_tuple_size<
-        typename get_true_types<std::is_pointer, data_type>::type>::value;
+        typename mpl::get_true_types<std::is_pointer, data_type>::type>::value;
 }
 
 //----------------------------------------------------------------------------------//

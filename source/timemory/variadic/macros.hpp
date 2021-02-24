@@ -49,7 +49,7 @@
 namespace tim
 {
 // e.g. tim::string::join(...)
-using string = tim::apply<std::string>;
+using string = tim::mpl::apply<std::string>;
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//

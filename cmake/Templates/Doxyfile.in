@@ -137,12 +137,27 @@ EXCLUDE_PATTERNS       = */.git/* \
                          @PROJECT_SOURCE_DIR@/source/timemory/*/backends.hpp \
                          @PROJECT_SOURCE_DIR@/source/timemory/deprecated/*
 EXCLUDE_SYMBOLS        = "tim::*internal*" \
-                         "tim::impl*" \
+                         "tim::*impl*" \
                          "tim::*helpers*" \
                          "std::*" \
                          "_TIM_*" \
+                         "base<*" \
+                         "storage" \
+                         "multiply" \
+                         "handler<*" \
+                         "true_type" \
+                         "vsettings" \
+                         "false_type" \
+                         "conditional" \
+                         "SpaceHandle" \
+                         "KokkosPDevice" \
+                         "pthread_gotcha" \
+                         "mpi_trace_gotcha" \
+                         "timemory_settings" \
+                         "tools_stubs_dlsym" \
                          "tim::type_list_only*" \
-                         "tim::type_list_element*"
+                         "tim::type_list_element*" \
+                         "default_record_statistics_type"
 EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples
 EXAMPLE_PATTERNS       = *.h \
                          *.hh \
@@ -317,6 +332,7 @@ PREDEFINED             = TIMEMORY_VISIBLE= \
                          TIMEMORY_DLL= \
                          TIMEMORY_CDLL= \
                          "TIMEMORY_VISIBILITY(...)=" \
+                         "TIMEMORY_DEFAULT_OBJECT(...)=" \
                          "__attribute__(x)=" \
                          "__declspec(x)="
 EXPAND_AS_DEFINED      =

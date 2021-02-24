@@ -363,8 +363,8 @@ ops_kokkos(counter<device::kokkos, Tp, CounterT>& _counter, FuncOpsT&& ops_func,
                     constexpr size_t NUM_REP = NopsT / 2;
                     constexpr size_t MOD_REP = NopsT % 2;
                     Tp               beta    = static_cast<Tp>(0.8);
-                    apply<void>::unroll<NUM_REP + MOD_REP, device::gpu>(ops_func, beta,
-                                                                        buf[i], alpha);
+                    mpl::apply<void>::unroll<NUM_REP + MOD_REP, device::gpu>(
+                        ops_func, beta, buf[i], alpha);
                     store_func(buf[i], beta);
                 });
                 alpha *= static_cast<Tp>(1.0 - 1.0e-8);

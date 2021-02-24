@@ -219,8 +219,8 @@
 #    if !defined(TIMEMORY_C_GOTCHA)
 #        define TIMEMORY_C_GOTCHA(type, idx, func)                                       \
             type::template instrument<                                                   \
-                idx, typename ::tim::function_traits<decltype(func)>::result_type,       \
-                typename ::tim::function_traits<decltype(func)>::call_type>::            \
+                idx, typename ::tim::mpl::function_traits<decltype(func)>::result_type,  \
+                typename ::tim::mpl::function_traits<decltype(func)>::call_type>::       \
                 generate(TIMEMORY_STRINGIZE(func))
 #    endif
 //
@@ -232,8 +232,8 @@
 #    if !defined(TIMEMORY_C_GOTCHA_TOOL)
 #        define TIMEMORY_C_GOTCHA_TOOL(type, idx, func, ...)                             \
             type::template instrument<                                                   \
-                idx, typename ::tim::function_traits<decltype(func)>::result_type,       \
-                typename ::tim::function_traits<decltype(func)>::call_type>::            \
+                idx, typename ::tim::mpl::function_traits<decltype(func)>::result_type,  \
+                typename ::tim::mpl::function_traits<decltype(func)>::call_type>::       \
                 generate(TIMEMORY_STRINGIZE(func), __VA_ARGS__)
 #    endif
 //
@@ -246,8 +246,8 @@
 #    if !defined(TIMEMORY_CXX_GOTCHA)
 #        define TIMEMORY_CXX_GOTCHA(type, idx, func)                                     \
             type::template instrument<                                                   \
-                idx, typename ::tim::function_traits<decltype(func)>::result_type,       \
-                typename ::tim::function_traits<decltype(func)>::call_type>::            \
+                idx, typename ::tim::mpl::function_traits<decltype(func)>::result_type,  \
+                typename ::tim::mpl::function_traits<decltype(func)>::call_type>::       \
                 generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)))
 #    endif
 //
@@ -259,8 +259,8 @@
 #    if !defined(TIMEMORY_CXX_GOTCHA_TOOL)
 #        define TIMEMORY_CXX_GOTCHA_TOOL(type, idx, func, ...)                           \
             type::template instrument<                                                   \
-                idx, typename ::tim::function_traits<decltype(func)>::result_type,       \
-                typename ::tim::function_traits<decltype(func)>::call_type>::            \
+                idx, typename ::tim::mpl::function_traits<decltype(func)>::result_type,  \
+                typename ::tim::mpl::function_traits<decltype(func)>::call_type>::       \
                 generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)),        \
                          __VA_ARGS__)
 #    endif
@@ -274,8 +274,8 @@
 #    if !defined(TIMEMORY_CXX_GOTCHA_MEMFUN)
 #        define TIMEMORY_CXX_GOTCHA_MEMFUN(type, idx, func)                              \
             type::template instrument<                                                   \
-                idx, typename ::tim::function_traits<decltype(&func)>::result_type,      \
-                typename ::tim::function_traits<decltype(&func)>::call_type>::           \
+                idx, typename ::tim::mpl::function_traits<decltype(&func)>::result_type, \
+                typename ::tim::mpl::function_traits<decltype(&func)>::call_type>::      \
                 generate(::tim::mangle<decltype(&func)>(TIMEMORY_STRINGIZE(func)))
 #    endif
 //
@@ -289,8 +289,8 @@
 #    if !defined(TIMEMORY_DERIVED_GOTCHA)
 #        define TIMEMORY_DERIVED_GOTCHA(type, idx, func, ...)                            \
             type::template instrument<                                                   \
-                idx, typename ::tim::function_traits<decltype(func)>::result_type,       \
-                typename ::tim::function_traits<decltype(func)>::call_type>::            \
+                idx, typename ::tim::mpl::function_traits<decltype(func)>::result_type,  \
+                typename ::tim::mpl::function_traits<decltype(func)>::call_type>::       \
                 generate(__VA_ARGS__)
 #    endif
 //

@@ -528,16 +528,16 @@ TEST_F(tuple_tests, concat)
     using rhs_t = tim::component_tuple<wall_clock, cpu_clock>;
 
     using comp_t0 =
-        tim::remove_duplicates_t<typename tim::component_tuple<lhs_t, rhs_t>::type>;
-    using comp_t1 = tim::remove_duplicates_t<
+        tim::mpl::remove_duplicates_t<typename tim::component_tuple<lhs_t, rhs_t>::type>;
+    using comp_t1 = tim::mpl::remove_duplicates_t<
         typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::type>;
 
     using lhs_l = tim::convert_t<lhs_t, tim::component_list<>>;
     using rhs_l = tim::convert_t<rhs_t, tim::component_list<>>;
 
-    using data_t0 =
-        tim::remove_duplicates_t<typename tim::component_list<lhs_l, rhs_l>::data_type>;
-    using data_t1 = tim::remove_duplicates_t<
+    using data_t0 = tim::mpl::remove_duplicates_t<
+        typename tim::component_list<lhs_l, rhs_l>::data_type>;
+    using data_t1 = tim::mpl::remove_duplicates_t<
         typename tim::auto_list<lhs_l, rhs_l, user_clock>::data_type>;
 
     std::cout << "\n" << std::flush;
