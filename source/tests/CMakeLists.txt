@@ -376,7 +376,8 @@ if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
         LINK_LIBRARIES  common-test-libs
                         PTL::ptl
                         ${_LIBRARY}
-        ENVIRONMENT     ${ptl_tests_env})
+        ENVIRONMENT     ${ptl_tests_env}
+        TIMEOUT         300)
 endif()
 
 add_timemory_google_test(stl_overload_tests

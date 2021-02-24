@@ -105,7 +105,7 @@ jobs:
             conda activate pyctest &&
             export CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}:$(dirname $(dirname $(find /opt/software/ | grep 'cuda-' | grep 'cuda\.h$')))" &&
             python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j 1
-            --build-libs shared --cuda --gotcha --gperftools --profile=cpu --tools avail mallocp --cxx-standard=17
+            --build-libs shared --gotcha --gperftools --profile=cpu --tools avail mallocp --cxx-standard=17
             -- -V --output-on-failure -E cuda
             -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DPYTHON_EXECUTABLE=$(which python) -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:

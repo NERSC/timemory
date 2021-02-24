@@ -14,7 +14,6 @@ project(timemory-GPU-Roofline-Example LANGUAGES C CXX CUDA)
 if(NOT CUDA_VERSION VERSION_LESS 11.0)
     message(WARNING
         "[${PROJECT_NAME}] CUPTI profiling API for HW counters not supported for CUDA ${CUDA_VERSION} (>= 11.0)")
-    return()
 endif()
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
