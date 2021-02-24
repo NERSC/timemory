@@ -192,56 +192,46 @@ before_install:
   # only run macOS if a pull-request
   - which -a ${CC}
   - which -a ${CXX}
-  - EXECUTE=1
   - if [ -f /usr/bin/${CC} ]; then export CC=/usr/bin/${CC}; fi
   - if [ -f /usr/bin/${CXX} ]; then export CXX=/usr/bin/${CXX}; fi
   - if [ -d /usr/local/anaconda3/bin ]; then export PATH=/usr/local/anaconda3/bin:$PATH ; fi
   - env
   - export TIMEMORY_SOURCE_DIRECTORY=${PWD}
-  # - if [[ "$TRAVIS_PULL_REQUEST" != "false" || "${CONDA_OS}" != "MacOSX" ]]; then EXECUTE=1; else EXECUTE=0; fi;
   - if [ -z "${CONDA_OS}" ]; then CONDA_OS=Linux; fi
-  - if [ "${EXECUTE}" -ne 0 ]; then
-      if [ -n "$(which conda)" ]; then
-        wget https://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh;
-        bash miniconda.sh -b -p ${HOME}/miniconda;
-        export PATH="${HOME}/miniconda/bin:${PATH}";
-      fi;
-      conda config --set always_yes yes --set changeps1 no;
-    fi
+  - if [ -z "$(which conda)" ]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh;
+      bash miniconda.sh -b -p ${HOME}/miniconda;
+      export PATH="${HOME}/miniconda/bin:${PATH}";
+    fi;
+    conda config --set always_yes yes --set changeps1 no
 
 install:
-  - if [ "${EXECUTE}" -ne 0 ]; then
-      conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake pip;
-      source activate;
-      conda activate pyctest;
-      python -m pip install -r requirements.txt;
-      if [ -n "$(which mpicc)" ]; then
-        python -m pip install mpi4py;
-      fi;
+  - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake pip
+  - source activate
+  - conda activate pyctest
+  - python -m pip install -r requirements.txt
+  - if [ -n "$(which mpicc)" ]; then
+      python -m pip install mpi4py;
     fi
 
 script:
-  - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
+  - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo; fi
   - export BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis -j 1"
   - export CTEST_ARGS="-V --output-on-failure ${CTEST_ARGS}"
   - export CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${CMAKE_ARGS}"
   - export PYCTEST_ARGS="${BASE_ARGS} -cc ${CC} -cxx ${CXX} --pyctest-build-type=${BUILD_TYPE} ${BUILD_ARGS}"
   # main command
-  - if [ "${EXECUTE}" -ne 0 ]; then
-      python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS};
-    fi
+  - python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
   # cd into build directory
-  - if [ "${EXECUTE}" -ne 0 ]; then
-      if [ "${CONDA_OS}" = "Linux" ]; then
-        cd build-timemory/Linux; else cd build-timemory/Darwin;
-      fi;
+  - if [ "${CONDA_OS}" = "Linux" ]; then
+      cd build-timemory/Linux;
+    else
+      cd build-timemory/Darwin;
     fi
   # make install and check that cmake configures from installation and at least one of them builds
-  - if [ "${EXECUTE}" -ne 0 ]; then
-      make install -j;
-      cd ${TIMEMORY_SOURCE_DIRECTORY}/examples && mkdir build-examples && cd build-examples;
-      cmake -DTIMEMORY_BUILD_C_EXAMPLES=ON .. && make ex_array_of_bundles;
-    fi
+  - make install -j
+  - cd ${TIMEMORY_SOURCE_DIRECTORY}/examples && mkdir build-examples && cd build-examples
+  - cmake -DTIMEMORY_BUILD_C_EXAMPLES=ON .. && make ex_array_of_bundles
   # if python install test file exists, run it
   - if [ -f "tests/test-python-install-import.cmake" ]; then
       cmake -P tests/test-python-install-import.cmake;
