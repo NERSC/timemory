@@ -211,7 +211,8 @@ before_install:
 install:
   - if [ "${EXECUTE}" -ne 0 ]; then
       conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake pip;
-      source activate pyctest;
+      source activate;
+      conda activate pyctest;
       python -m pip install -r requirements.txt;
       if [ -n "$(which mpicc)" ]; then
         python -m pip install mpi4py;
