@@ -192,6 +192,7 @@ before_install:
   # only run macOS if a pull-request
   - which -a ${CC}
   - which -a ${CXX}
+  - EXECUTE=1
   - if [ -f /usr/bin/${CC} ]; then export CC=/usr/bin/${CC}; fi
   - if [ -f /usr/bin/${CXX} ]; then export CXX=/usr/bin/${CXX}; fi
   - if [ -d /usr/local/anaconda3/bin ]; then export PATH=/usr/local/anaconda3/bin:$PATH ; fi
