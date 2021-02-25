@@ -163,6 +163,13 @@ public:
     template <typename T, typename... U>
     using quirk_config = tim::variadic::impl::quirk_config<T, reference_type, U...>;
 
+    /// Query whether type matches this_type
+    template <typename U>
+    static constexpr bool is_this_type()
+    {
+        return std::is_same<decay_t<U>, this_type>::value;
+    }
+
 public:
     bundle();
 
@@ -211,40 +218,59 @@ public:
     bundle& operator=(const bundle& rhs);
     bundle& operator=(bundle&&) noexcept = default;
 
-    bundle& operator-=(const bundle& rhs);
-    bundle& operator+=(const bundle& rhs);
+    this_type& operator-=(const this_type& rhs);
+    this_type& operator+=(const this_type& rhs);
 
     // generic operators
-    template <typename Op>
-    bundle& operator-=(Op&& rhs);
-    template <typename Op>
-    bundle& operator+=(Op&& rhs);
-    template <typename Op>
-    bundle& operator*=(Op&& rhs);
-    template <typename Op>
-    bundle& operator/=(Op&& rhs);
+    template <typename Op, enable_if_t<!is_this_type<Op>()> = 0>
+    this_type& operator-=(Op&& rhs)
+    {
+        invoke::invoke<operation::minus, Tag>(m_data, std::forward<Op>(rhs));
+        return get_this_type();
+    }
+
+    template <typename Op, enable_if_t<!is_this_type<Op>()> = 0>
+    this_type& operator+=(Op&& rhs)
+    {
+        invoke::invoke<operation::plus, Tag>(m_data, std::forward<Op>(rhs));
+        return get_this_type();
+    }
+
+    template <typename Op, enable_if_t<!is_this_type<Op>()> = 0>
+    this_type& operator*=(Op&& rhs)
+    {
+        invoke::invoke<operation::multiply, Tag>(m_data, std::forward<Op>(rhs));
+        return get_this_type();
+    }
+
+    template <typename Op, enable_if_t<!is_this_type<Op>()> = 0>
+    this_type& operator/=(Op&& rhs)
+    {
+        invoke::invoke<operation::divide, Tag>(m_data, std::forward<Op>(rhs));
+        return get_this_type();
+    }
 
     // friend operators
-    friend bundle operator+(const bundle& lhs, const bundle& rhs)
+    friend this_type operator+(const this_type& lhs, const this_type& rhs)
     {
-        return bundle{ lhs } += rhs;
+        return this_type{ lhs } += rhs;
     }
 
-    friend bundle operator-(const bundle& lhs, const bundle& rhs)
+    friend this_type operator-(const this_type& lhs, const this_type& rhs)
     {
-        return bundle{ lhs } -= rhs;
-    }
-
-    template <typename Op>
-    friend bundle operator*(const bundle& lhs, Op&& rhs)
-    {
-        return bundle{ lhs } *= std::forward<Op>(rhs);
+        return this_type{ lhs } -= rhs;
     }
 
     template <typename Op>
-    friend bundle operator/(const bundle& lhs, Op&& rhs)
+    friend this_type operator*(const this_type& lhs, Op&& rhs)
     {
-        return bundle{ lhs } /= std::forward<Op>(rhs);
+        return this_type{ lhs } *= std::forward<Op>(rhs);
+    }
+
+    template <typename Op>
+    friend this_type operator/(const this_type& lhs, Op&& rhs)
+    {
+        return this_type{ lhs } /= std::forward<Op>(rhs);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const bundle& obj)

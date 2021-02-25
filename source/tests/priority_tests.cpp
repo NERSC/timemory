@@ -55,7 +55,6 @@ struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
 
     // since this is a template class, need these statements
     using base_type::accum;
-    using base_type::is_transient;
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;

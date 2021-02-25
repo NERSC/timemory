@@ -422,41 +422,47 @@ protected:
 //
 struct base_state
 {
-    TIMEMORY_DEFAULT_OBJECT(base_state)
+    TIMEMORY_INLINE bool get_is_running() const { return _compute_state(RunningIdx); }
+    TIMEMORY_INLINE bool get_is_on_stack() const { return _compute_state(OnStackIdx); }
+    TIMEMORY_INLINE bool get_is_transient() const { return _compute_state(TransientIdx); }
+    TIMEMORY_INLINE bool get_is_flat() const { return _compute_state(FlatIdx); }
+    TIMEMORY_INLINE bool get_depth_change() const { return _compute_state(DepthIdx); }
 
-    TIMEMORY_INLINE auto get_is_running() { return is_running; }
-    TIMEMORY_INLINE auto get_is_on_stack() { return is_on_stack; }
-    TIMEMORY_INLINE auto get_is_transient() { return is_transient; }
-    TIMEMORY_INLINE auto get_is_flat() { return is_flat; }
-    TIMEMORY_INLINE auto get_depth_change() { return depth_change; }
-
-    TIMEMORY_INLINE auto get_is_running() const { return is_running; }
-    TIMEMORY_INLINE auto get_is_on_stack() const { return is_on_stack; }
-    TIMEMORY_INLINE auto get_is_transient() const { return is_transient; }
-    TIMEMORY_INLINE auto get_is_flat() const { return is_flat; }
-    TIMEMORY_INLINE auto get_depth_change() const { return depth_change; }
-
-    TIMEMORY_INLINE void set_is_running(bool v) { is_running = v; }
-    TIMEMORY_INLINE void set_is_on_stack(bool v) { is_on_stack = v; }
-    TIMEMORY_INLINE void set_is_transient(bool v) { is_transient = v; }
-    TIMEMORY_INLINE void set_is_flat(bool v) { is_flat = v; }
-    TIMEMORY_INLINE void set_depth_change(bool v) { depth_change = v; }
-
-    void reset()
-    {
-        is_running   = false;
-        is_on_stack  = false;
-        is_transient = false;
-        is_flat      = false;
-        depth_change = false;
-    }
+    TIMEMORY_INLINE void set_is_running(bool v) { _assign_state(RunningIdx, v); }
+    TIMEMORY_INLINE void set_is_on_stack(bool v) { _assign_state(OnStackIdx, v); }
+    TIMEMORY_INLINE void set_is_transient(bool v) { _assign_state(TransientIdx, v); }
+    TIMEMORY_INLINE void set_is_flat(bool v) { _assign_state(FlatIdx, v); }
+    TIMEMORY_INLINE void set_depth_change(bool v) { _assign_state(DepthIdx, v); }
+    TIMEMORY_INLINE void reset() { m_state_value = 0; }
 
 protected:
-    bool is_running   = false;  // NOLINT
-    bool is_on_stack  = false;  // NOLINT
-    bool is_transient = false;  // NOLINT
-    bool is_flat      = false;  // NOLINT
-    bool depth_change = false;  // NOLINT
+    TIMEMORY_INLINE uint8_t get_state_value() const { return m_state_value; }
+    TIMEMORY_INLINE void    set_state_value(uint8_t v) { m_state_value = v; }
+
+private:
+    uint8_t m_state_value = 0;
+
+    enum State
+    {
+        RunningIdx   = 1 << 0,  // 1
+        OnStackIdx   = 1 << 1,  // 2
+        TransientIdx = 1 << 2,  // 4
+        FlatIdx      = 1 << 3,  // 8
+        DepthIdx     = 1 << 4,  // 16
+    };
+
+    TIMEMORY_INLINE bool _compute_state(State idx) const { return (m_state_value & idx); }
+    TIMEMORY_INLINE void _assign_state(State idx, bool v)
+    {
+        bool _curr = _compute_state(idx);
+        if(_curr != v)
+        {
+            if(!_curr)
+                m_state_value |= idx;
+            else
+                m_state_value &= (~idx);
+        }
+    }
 };
 //
 namespace internal

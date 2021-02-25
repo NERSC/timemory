@@ -232,9 +232,9 @@ template <typename Tag, typename BundleT, typename TupleT>
 bundle<Tag, BundleT, TupleT>::bundle(const bundle& rhs)
 : bundle_type(rhs)
 {
-    apply_v::set_value(m_data, nullptr);
-    invoke::invoke_impl::invoke_data<operation::copy, Tag>(m_data, rhs.m_data);
-    // apply_v::access2<operation_t<operation::copy>>(m_data, rhs.m_data);
+    using operation_t = convert_each_t<operation::copy, remove_pointers_t<data_type>>;
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
+    apply_v::access2<operation_t>(m_data, rhs.m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -257,76 +257,22 @@ bundle<Tag, BundleT, TupleT>::operator=(const bundle& rhs)
 // this_type operators
 //
 template <typename Tag, typename BundleT, typename TupleT>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator-=(const bundle& rhs)
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::operator-=(const this_type& rhs)
 {
-    // apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
     invoke::invoke_impl::invoke_data<operation::minus, Tag>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename BundleT, typename TupleT>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator+=(const bundle& rhs)
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::operator+=(const this_type& rhs)
 {
-    // apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
     invoke::invoke_impl::invoke_data<operation::plus, Tag>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
-    return *this;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename Op>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator-=(Op&& rhs)
-{
-    // using minus_t = operation_t<operation::minus>;
-    // apply_v::access<minus_t>(m_data, std::forward<Op>(rhs));
-    invoke::invoke<operation::minus, Tag>(m_data, std::forward<Op>(rhs));
-    return get_this_type();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename Op>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator+=(Op&& rhs)
-{
-    // using plus_t = operation_t<operation::plus>;
-    // apply_v::access<plus_t>(m_data, std::forward<Op>(rhs));
-    invoke::invoke<operation::plus, Tag>(m_data, std::forward<Op>(rhs));
-    return get_this_type();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename Op>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator*=(Op&& rhs)
-{
-    // using multiply_t = operation_t<operation::multiply>;
-    // apply_v::access<multiply_t>(m_data, std::forward<Op>(rhs));
-    invoke::invoke<operation::multiply, Tag>(m_data, std::forward<Op>(rhs));
-    return get_this_type();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename Op>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator/=(Op&& rhs)
-{
-    // using divide_t = operation_t<operation::divide>;
-    // apply_v::access<divide_t>(m_data, std::forward<Op>(rhs));
-    invoke::invoke<operation::divide, Tag>(m_data, std::forward<Op>(rhs));
     return get_this_type();
 }
 

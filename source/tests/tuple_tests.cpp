@@ -676,3 +676,55 @@ TEST_F(tuple_tests, auto_start)
 }
 
 //--------------------------------------------------------------------------------------//
+
+template <typename Tp>
+auto
+run(const std::string& lbl, int n)
+{
+    Tp _obj{ details::get_test_name() + "/" + lbl };
+    _obj.start();
+    details::do_sleep(n);
+    return _obj.stop();
+}
+
+template <typename Tp>
+auto
+validate(const std::string& lbl, int n)
+{
+    std::cout << "\n##### " << lbl << " #####\n";
+    auto   tmp    = run<Tp>(lbl, n);
+    double val    = 0.0;
+    std::tie(val) = tmp.get();
+    val *= tim::units::msec;
+    EXPECT_NEAR(val, n, 100) << tmp;
+    Tp obj{ details::get_test_name() + "/" + lbl,
+            tim::scope::config{} + tim::scope::timeline{} };
+    obj.push();
+    obj += tmp;
+    obj.pop();
+    double old    = val;
+    std::tie(val) = obj.get();
+    val *= tim::units::msec;
+    EXPECT_NEAR(val, old, 10) << obj;
+}
+
+TEST_F(tuple_tests, addition_tests)
+{
+    auto _initializer = [](auto& _obj) { _obj.template initialize<wall_clock>(); };
+
+    tim::component_list<wall_clock>::get_initializer()                  = _initializer;
+    tim::component_bundle<TIMEMORY_API, wall_clock*>::get_initializer() = _initializer;
+
+    validate<tim::lightweight_tuple<wall_clock>>("lightweight_tuple", 1000);
+    validate<tim::component_tuple<wall_clock>>("component_tuple", 1000);
+    validate<tim::component_list<wall_clock>>("component_list", 1000);
+    validate<tim::component_bundle<TIMEMORY_API, wall_clock>>("component_bundle", 1000);
+    validate<tim::component_bundle<TIMEMORY_API, wall_clock*>>("component_bundle*", 1000);
+
+    validate<tim::auto_tuple<wall_clock>>("auto_tuple", 1000);
+    validate<tim::auto_list<wall_clock>>("auto_list", 1000);
+    validate<tim::auto_bundle<TIMEMORY_API, wall_clock>>("auto_bundle", 1000);
+    validate<tim::auto_bundle<TIMEMORY_API, wall_clock*>>("auto_bundle*", 1000);
+}
+
+//--------------------------------------------------------------------------------------//

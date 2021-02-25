@@ -265,11 +265,6 @@ protected:
     int64_t        laps      = 0;
     graph_iterator graph_itr = graph_iterator{ nullptr };
 
-    using base_state::depth_change;
-    using base_state::is_flat;
-    using base_state::is_on_stack;
-    using base_state::is_running;
-    using base_state::is_transient;
     using data_type::accum;
     using data_type::last;
     using data_type::value;
@@ -429,12 +424,6 @@ protected:
         if(rhs.get_is_transient())
             set_is_transient(rhs.get_is_transient());
     }
-
-    using base_state::depth_change;
-    using base_state::is_flat;
-    using base_state::is_on_stack;
-    using base_state::is_running;
-    using base_state::is_transient;
 
 public:
     TIMEMORY_INLINE auto plus(crtp::base, const base_type& rhs) { this->plus(rhs); }

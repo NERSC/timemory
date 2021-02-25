@@ -328,6 +328,18 @@ public:
 
     decltype(auto) get_data() const { return m_temporary.get_data(); }
 
+    this_type& operator+=(const this_type& rhs)
+    {
+        m_temporary += rhs.m_temporary;
+        return static_cast<this_type&>(*this);
+    }
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        m_temporary -= rhs.m_temporary;
+        return static_cast<this_type&>(*this);
+    }
+
 protected:
     void internal_init(transient_func_t _init);
 

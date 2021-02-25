@@ -54,34 +54,42 @@ struct copy
 
     TIMEMORY_DELETED_OBJECT(copy)
 
-    template <typename Up = Tp, enable_if_t<trait::is_available<Up>::value, char> = 0>
-    copy(Up& obj, const Up& rhs)
+    template <typename Up = Tp>
+    copy(Up& obj, const Up& rhs,
+         enable_if_t<trait::is_available<Up>::value &&
+                         !std::is_pointer<decay_t<Up>>::value,
+                     int> = 0)
     {
-        obj = Up(rhs);
+        obj = Up{ rhs };
+        obj.set_iterator(nullptr);
     }
 
-    template <typename Up = Tp, enable_if_t<trait::is_available<Up>::value, char> = 0>
-    copy(Up*& obj, const Up* rhs)
+    template <typename Up = Tp>
+    copy(
+        Up& obj, const Up& rhs,
+        enable_if_t<trait::is_available<Up>::value && std::is_pointer<decay_t<Up>>::value,
+                    long> = 0)
     {
         if(rhs)
         {
             if(!obj)
             {
-                obj = new type(*rhs);
+                obj = new type{ *rhs };
             }
             else
             {
-                *obj = type(*rhs);
+                *obj = type{ *rhs };
             }
+            obj->set_iterator(nullptr);
         }
     }
 
-    template <typename Up = Tp, enable_if_t<!trait::is_available<Up>::value, char> = 0>
-    copy(Up&, const Up&)
+    template <typename Up = Tp>
+    copy(Up&, const Up&, enable_if_t<!trait::is_available<Up>::value, int> = 0)
     {}
 
-    template <typename Up = Tp, enable_if_t<!trait::is_available<Up>::value, char> = 0>
-    copy(Up*&, const Up*)
+    template <typename Up = Tp>
+    copy(Up*&, const Up*, enable_if_t<!trait::is_available<Up>::value, long> = 0)
     {}
 };
 //
