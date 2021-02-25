@@ -114,6 +114,39 @@ jobs:
             cmake --build build-timemory/Linux --target install --parallel 2 &&
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
             cmake -B build-examples -DUSE_MPI=OFF examples
+  macos-dev-build:
+    macos:
+      xcode: 12.4.0
+    steps:
+      - checkout
+      - run:
+          name: conda-installation
+          command: >
+            wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ${HOME}/miniconda.sh &&
+            bash ${HOME}/miniconda.sh -b -p ${HOME}/miniconda &&
+            export PATH="${HOME}/miniconda/bin:${PATH}" &&
+            conda config --set always_yes yes --set changeps1 no &&
+            conda create -c defaults -c conda-forge -n pyctest python=3.7 pyctest &&
+            source activate
+            conda activate pyctest
+            python -m pip install -r requirements.txt
+      - run:
+          name: build
+          command: >
+            export CONTINUOUS_INTEGRATION=true
+            export PATH="${HOME}/miniconda/bin:${PATH}" &&
+            source activate &&
+            conda activate pyctest &&
+            python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j 1
+            --build-libs shared --python --tools avail timem --cxx-standard=17
+            -- -V --output-on-failure
+            -- -DTIMEMORY_BUILD_{CALIPER,COMPILER_INSTRUMENTATION}=OFF -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_PYTHON_{HATCHET,TIMEMORY_BUILD_PYTHON_LINE_PROFILER}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
+      - run:
+          name: install
+          command: >
+            cmake --build build-timemory/Linux --target install --parallel 2 &&
+            export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
+            cmake -B build-examples -DUSE_MPI=OFF examples
 
 workflows:
   version: 2
@@ -121,4 +154,5 @@ workflows:
     jobs:
       - quick-build
       - cpu-dev-build
-      - gpu-dev-build
+      # - gpu-dev-build
+      - macos-dev-build
