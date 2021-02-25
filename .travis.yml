@@ -24,7 +24,7 @@ jobs:
         - CONDA_OS=MacOSX
         - CC=clang
         - CXX=clang++
-        - CMAKE_ARGS=''
+        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_HATCHET=OFF'
         - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=17'
     - os: osx
       osx_image: xcode12u
@@ -39,7 +39,7 @@ jobs:
         - CONDA_OS=MacOSX
         - CC=clang
         - CXX=clang++
-        - CMAKE_ARGS=''
+        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_HATCHET=OFF'
         - BUILD_ARGS='--minimal --build-libs shared --python --cxx-standard=17'
     # ------------------------------------------------------------------------ #
     #
@@ -189,7 +189,7 @@ jobs:
         - BUILD_ARGS='--build-libs shared --mpi --gperftools --stats --profile=cpu --cxx-standard=17'
 
 before_install:
-  - if [ -d /Library/Developer ]; then sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/* ; fi
+  # - if [ -d /Library/Developer ]; then sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/* ; fi
   - which -a ${CC}
   - which -a ${CXX}
   - if [ -f /usr/bin/${CC} ]; then export CC=/usr/bin/${CC}; fi
