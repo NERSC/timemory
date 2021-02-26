@@ -188,6 +188,8 @@ namespace
 bool _memory_units_init = (tim::set_env("TIMEMORY_MEMORY_UNITS", "B", 1), true);
 }
 
+namespace trait = ::tim::trait;
+
 class cache_tests : public ::testing::Test
 {
 protected:
@@ -206,10 +208,12 @@ protected:
         tim::settings::ert_min_working_size() = 1000;
         tim::settings::ert_max_data_size()    = 10000;
 
-        tim::trait::apply<tim::trait::runtime_enabled>::set<
-            cpu_roofline_flops, cpu_roofline_sp_flops, cpu_roofline_dp_flops,
-            gpu_roofline, gpu_roofline_hp_flops, gpu_roofline_sp_flops,
-            gpu_roofline_dp_flops>(false);
+        trait::runtime_enabled<cpu_roofline_flops>::set(false);
+        trait::runtime_enabled<cpu_roofline_sp_flops>::set(false);
+        trait::runtime_enabled<cpu_roofline_dp_flops>::set(false);
+        trait::runtime_enabled<gpu_roofline_flops>::set(false);
+        trait::runtime_enabled<gpu_roofline_sp_flops>::set(false);
+        trait::runtime_enabled<gpu_roofline_dp_flops>::set(false);
     }
 
     static void extra_teardown()
