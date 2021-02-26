@@ -140,18 +140,14 @@ init()
 
     return true;
 }
-//
-//  static initialization will run the init function
-//
-static auto did_init = init();
 
 //======================================================================================//
 
 int
 main(int argc, char** argv)
 {
-    if(!did_init)
-        throw std::runtime_error("Error! static initialization did not execute!");
+    if(!init())
+        throw std::runtime_error("Error! initialization failed!");
 
     tim::timemory_init(argc, argv);
 
