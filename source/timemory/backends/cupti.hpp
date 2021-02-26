@@ -786,10 +786,26 @@ public:
         results_t kern_data(labels.size());
 
         auto get_label_index = [&](const std::string& key) -> int64_t {
+            auto _klen = key.length();
             for(int64_t i = 0; i < static_cast<int64_t>(labels.size()); ++i)
             {
                 if(key == labels[i])
                     return i;
+            }
+            // this is a hack for weird string stuff that occurs during CI
+            // if you are looking at this, remind me to remove it
+            for(int64_t i = 0; i < static_cast<int64_t>(labels.size()); ++i)
+            {
+                if(labels[i].find(key) != std::string::npos)
+                {
+                    auto _llen = labels[i].length();
+                    // sum to avoid potentially negative numbers
+                    auto _suml = _klen + _llen;
+                    // allow for a slightly misplaced string terminator
+                    auto _maxl = 2 * (std::min(_klen, _llen) + 1);
+                    if(_suml < _maxl)
+                        return i;
+                }
             }
             return -1;
         };
@@ -800,7 +816,7 @@ public:
                 continue;
             for(size_t i = 0; i < m_event_names.size(); ++i)
             {
-                std::string evt_name  = m_event_names[i].c_str();
+                std::string evt_name  = m_event_names[i];
                 auto        label_idx = get_label_index(evt_name);
                 if(label_idx < 0)
                 {
@@ -816,7 +832,7 @@ public:
 
             for(size_t i = 0; i < m_metric_names.size(); ++i)
             {
-                std::string met_name  = m_metric_names[i].c_str();
+                std::string met_name  = m_metric_names[i];
                 auto        label_idx = get_label_index(met_name);
                 if(label_idx < 0)
                 {
@@ -1753,25 +1769,22 @@ tim::cupti::available_events_info(CUdevice device)
         size_t ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
         size_t lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
 
-        char eventName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
-        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
-        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char eventName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT + 1];
+        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG + 1];
+        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG + 1];
 
         TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(eventIdArray[i], CUPTI_EVENT_ATTR_NAME,
                                                    &ssize, eventName));
-        if(ssize < TIMEMORY_CUPTI_PROFILER_NAME_SHORT)
-            eventName[ssize] = '\0';
+        eventName[std::min<size_t>(ssize, TIMEMORY_CUPTI_PROFILER_NAME_SHORT)] = '\0';
 
         TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(
             eventIdArray[i], CUPTI_EVENT_ATTR_SHORT_DESCRIPTION, &lsize, short_desc));
-        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
-            short_desc[lsize] = '\0';
+        short_desc[std::min<size_t>(lsize, TIMEMORY_CUPTI_PROFILER_NAME_LONG)] = '\0';
 
         lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
         TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(
             eventIdArray[i], CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &lsize, long_desc));
-        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
-            long_desc[lsize] = '\0';
+        long_desc[std::min<size_t>(lsize, TIMEMORY_CUPTI_PROFILER_NAME_LONG)] = '\0';
 
         string_t _sym   = eventName;
         string_t _pysym = "cuda_" + _sym;
@@ -1811,9 +1824,9 @@ tim::cupti::available_metrics_info(CUdevice device)
 
     for(uint32_t i = 0; i < numMetric; i++)
     {
-        char metricName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
-        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
-        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char metricName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT + 1];
+        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG + 1];
+        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG + 1];
 
         size_t ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
         size_t lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
@@ -1825,21 +1838,18 @@ tim::cupti::available_metrics_info(CUdevice device)
         ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
         TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
             metricIdArray[i], CUPTI_METRIC_ATTR_NAME, &ssize, (void*) &metricName));
-        if(ssize < TIMEMORY_CUPTI_PROFILER_NAME_SHORT)
-            metricName[ssize] = '\0';
+        metricName[std::min<size_t>(ssize, TIMEMORY_CUPTI_PROFILER_NAME_SHORT)] = '\0';
 
         TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
                                                     CUPTI_METRIC_ATTR_SHORT_DESCRIPTION,
                                                     &lsize, (void*) &short_desc));
-        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
-            short_desc[lsize] = '\0';
+        short_desc[std::min<size_t>(lsize, TIMEMORY_CUPTI_PROFILER_NAME_LONG)] = '\0';
 
         lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
         TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
                                                     CUPTI_METRIC_ATTR_LONG_DESCRIPTION,
                                                     &lsize, (void*) &long_desc));
-        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
-            long_desc[lsize] = '\0';
+        long_desc[std::min<size_t>(lsize, TIMEMORY_CUPTI_PROFILER_NAME_LONG)] = '\0';
 
         bool _avail = true;
         if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||

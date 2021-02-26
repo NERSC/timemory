@@ -573,7 +573,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
         func = func.strip(">")
         _len = len(func)
         if _len > 30:
-            func = "{}...{}".join([func[:10], func[(_len - 20) :]])
+            func = "{}...{}".format(func[:10], func[(_len - 20) :])
         ytics.append("{} x [ {} counts ]".format(func, obj.laps))
         avgs.append(get_obj_idx(obj.data, idx))
         stds.append(0.0)
