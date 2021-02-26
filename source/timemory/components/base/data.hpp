@@ -28,6 +28,7 @@
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/utility/bit_flags.hpp"
 
 #include <array>
 
@@ -420,49 +421,37 @@ protected:
     value_type last  = Tp{};  // NOLINT
 };
 //
-struct base_state
+struct base_state : private utility::bit_flags<5>
 {
-    TIMEMORY_INLINE bool get_is_running() const { return _compute_state(RunningIdx); }
-    TIMEMORY_INLINE bool get_is_on_stack() const { return _compute_state(OnStackIdx); }
-    TIMEMORY_INLINE bool get_is_transient() const { return _compute_state(TransientIdx); }
-    TIMEMORY_INLINE bool get_is_flat() const { return _compute_state(FlatIdx); }
-    TIMEMORY_INLINE bool get_depth_change() const { return _compute_state(DepthIdx); }
+protected:
+    using base_type = utility::bit_flags<5>;
+    using base_type::set;
+    using base_type::test;
 
-    TIMEMORY_INLINE void set_is_running(bool v) { _assign_state(RunningIdx, v); }
-    TIMEMORY_INLINE void set_is_on_stack(bool v) { _assign_state(OnStackIdx, v); }
-    TIMEMORY_INLINE void set_is_transient(bool v) { _assign_state(TransientIdx, v); }
-    TIMEMORY_INLINE void set_is_flat(bool v) { _assign_state(FlatIdx, v); }
-    TIMEMORY_INLINE void set_depth_change(bool v) { _assign_state(DepthIdx, v); }
-    TIMEMORY_INLINE void reset() { m_state_value = 0; }
+public:
+    using base_type::reset;
+
+    TIMEMORY_INLINE bool get_is_running() const { return test<RunningIdx>(); }
+    TIMEMORY_INLINE bool get_is_on_stack() const { return test<OnStackIdx>(); }
+    TIMEMORY_INLINE bool get_is_transient() const { return test<TransientIdx>(); }
+    TIMEMORY_INLINE bool get_is_flat() const { return test<FlatIdx>(); }
+    TIMEMORY_INLINE bool get_depth_change() const { return test<DepthIdx>(); }
+
+    TIMEMORY_INLINE void set_is_running(bool v) { set<RunningIdx>(v); }
+    TIMEMORY_INLINE void set_is_on_stack(bool v) { set<OnStackIdx>(v); }
+    TIMEMORY_INLINE void set_is_transient(bool v) { set<TransientIdx>(v); }
+    TIMEMORY_INLINE void set_is_flat(bool v) { set<FlatIdx>(v); }
+    TIMEMORY_INLINE void set_depth_change(bool v) { set<DepthIdx>(v); }
 
 protected:
-    TIMEMORY_INLINE uint8_t get_state_value() const { return m_state_value; }
-    TIMEMORY_INLINE void    set_state_value(uint8_t v) { m_state_value = v; }
-
-private:
-    uint8_t m_state_value = 0;
-
     enum State
     {
-        RunningIdx   = 1 << 0,  // 1
-        OnStackIdx   = 1 << 1,  // 2
-        TransientIdx = 1 << 2,  // 4
-        FlatIdx      = 1 << 3,  // 8
-        DepthIdx     = 1 << 4,  // 16
+        RunningIdx   = 0,
+        OnStackIdx   = 1,
+        TransientIdx = 2,
+        FlatIdx      = 3,
+        DepthIdx     = 4,
     };
-
-    TIMEMORY_INLINE bool _compute_state(State idx) const { return (m_state_value & idx); }
-    TIMEMORY_INLINE void _assign_state(State idx, bool v)
-    {
-        bool _curr = _compute_state(idx);
-        if(_curr != v)
-        {
-            if(!_curr)
-                m_state_value |= idx;
-            else
-                m_state_value &= (~idx);
-        }
-    }
 };
 //
 namespace internal

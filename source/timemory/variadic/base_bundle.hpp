@@ -28,6 +28,7 @@
 #include "timemory/mpl/quirks.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/bit_flags.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/impl.hpp"
 #include "timemory/variadic/types.hpp"
@@ -138,42 +139,36 @@ public:
     }
 
 protected:
-    scope::config   m_scope  = scope::get_default();
-    hash_value_type m_hash   = 0;
-    int64_t         m_laps   = 0;
-    std::bitset<4>  m_config = {};
+    scope::config         m_scope  = scope::get_default();
+    hash_value_type       m_hash   = 0;
+    int64_t               m_laps   = 0;
+    utility::bit_flags<6> m_config = {};
 
 protected:
     // protected member function section
     enum ConfigIdx
     {
-        EnabledIdx = 0,
-        StoreIdx   = 1,
-        PushedIdx  = 2,
-        ActiveIdx  = 3
+        EnabledIdx = 0,  // enabled
+        StoreIdx   = 1,  // push/pop
+        ExPushIdx  = 2,  // explicit push
+        ExPopIdx   = 3,  // explicit pop
+        PushedIdx  = 4,  // was pushed
+        ActiveIdx  = 5,  // running
     };
 
-    TIMEMORY_NODISCARD TIMEMORY_INLINE bool m_enabled() const
-    {
-        return m_config.test(EnabledIdx);
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE bool m_store() const
-    {
-        return m_config.test(StoreIdx);
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE bool m_is_pushed() const
-    {
-        return m_config.test(PushedIdx);
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE bool m_is_active() const
-    {
-        return m_config.test(ActiveIdx);
-    }
+    TIMEMORY_INLINE bool m_enabled() const { return m_config.test<EnabledIdx>(); }
+    TIMEMORY_INLINE bool m_store() const { return m_config.test<StoreIdx>(); }
+    TIMEMORY_INLINE bool m_explicit_push() const { return m_config.test<ExPushIdx>(); }
+    TIMEMORY_INLINE bool m_explicit_pop() const { return m_config.test<ExPopIdx>(); }
+    TIMEMORY_INLINE bool m_is_pushed() const { return m_config.test<PushedIdx>(); }
+    TIMEMORY_INLINE bool m_is_active() const { return m_config.test<ActiveIdx>(); }
 
-    TIMEMORY_INLINE void m_enabled(bool v) { m_config.set(EnabledIdx, v); }
-    TIMEMORY_INLINE void m_store(bool v) { m_config.set(StoreIdx, v); }
-    TIMEMORY_INLINE void m_is_pushed(bool v) { m_config.set(PushedIdx, v); }
-    TIMEMORY_INLINE void m_is_active(bool v) { m_config.set(ActiveIdx, v); }
+    TIMEMORY_INLINE void m_enabled(bool v) { m_config.set<EnabledIdx>(v); }
+    TIMEMORY_INLINE void m_store(bool v) { m_config.set<StoreIdx>(v); }
+    TIMEMORY_INLINE void m_explicit_push(bool v) { return m_config.set<ExPushIdx>(v); }
+    TIMEMORY_INLINE void m_explicit_pop(bool v) { return m_config.set<ExPopIdx>(v); }
+    TIMEMORY_INLINE void m_is_pushed(bool v) { m_config.set<PushedIdx>(v); }
+    TIMEMORY_INLINE void m_is_active(bool v) { m_config.set<ActiveIdx>(v); }
 };
 //
 template <typename... Types>
@@ -461,6 +456,8 @@ protected:
             {
                 _init(_this);
             }
+            _this.m_explicit_push(quirk_config<quirk::explicit_push, T..., U...>::value);
+            _this.m_explicit_pop(quirk_config<quirk::explicit_pop, T..., U...>::value);
             _this.set_prefix(_this.get_hash());
             invoke::set_scope(_data, _this.get_scope());
             IF_CONSTEXPR(quirk_config<quirk::auto_start, T..., U...>::value)
@@ -537,10 +534,9 @@ template <typename Tag, typename... Types>
 class base_bundle<Tag, std::tuple<Types...>> : public base_bundle<Tag, Types...>
 {
 public:
-    template <typename... T>
-    using data_tuple_t = mpl::non_placeholder_t<mpl::non_quirk_t<std::tuple<T...>>>;
-
-    using data_type = data_tuple_t<Types...>;
+    using data_type =
+        convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<type_list<Types...>>>,
+                  std::tuple<>>;
 
     template <typename... Args>
     base_bundle(Args&&... args)
@@ -552,10 +548,9 @@ template <typename Tag, typename... Types>
 class base_bundle<Tag, type_list<Types...>> : public base_bundle<Tag, Types...>
 {
 public:
-    template <typename... T>
-    using data_tuple_t = mpl::non_placeholder_t<mpl::non_quirk_t<std::tuple<T...>>>;
-
-    using data_type = data_tuple_t<Types...>;
+    using data_type =
+        convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<type_list<Types...>>>,
+                  std::tuple<>>;
 
     template <typename... Args>
     base_bundle(Args&&... args)
@@ -572,10 +567,9 @@ struct stack_bundle
 : public impl::base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
-    template <typename... T>
-    using data_tuple_t = mpl::non_placeholder_t<mpl::non_quirk_t<std::tuple<T...>>>;
-
-    using data_type = data_tuple_t<Types...>;
+    using data_type =
+        convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<type_list<Types...>>>,
+                  std::tuple<>>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
@@ -588,10 +582,9 @@ struct stack_bundle<std::tuple<Types...>>
 : public impl::base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
-    template <typename... T>
-    using data_tuple_t = mpl::non_placeholder_t<mpl::non_quirk_t<std::tuple<T...>>>;
-
-    using data_type = data_tuple_t<Types...>;
+    using data_type =
+        convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<type_list<Types...>>>,
+                  std::tuple<>>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
@@ -604,63 +597,12 @@ struct stack_bundle<type_list<Types...>>
 : public impl::base_bundle<TIMEMORY_API, Types...>
 , public concepts::stack_wrapper
 {
-    template <typename... T>
-    using data_tuple_t = mpl::non_placeholder_t<mpl::non_quirk_t<std::tuple<T...>>>;
-
-    using data_type = data_tuple_t<Types...>;
+    using data_type =
+        convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<type_list<Types...>>>,
+                  std::tuple<>>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
-    : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
-    {}
-};
-//
-//======================================================================================//
-//
-template <typename... Types>
-struct heap_bundle
-: public impl::base_bundle<TIMEMORY_API, Types...>
-, public concepts::heap_wrapper
-{
-    template <typename... T>
-    using data_tuple_t = mpl::non_placeholder_t<mpl::non_quirk_t<std::tuple<T...>>>;
-
-    using data_type = data_tuple_t<Types*...>;
-
-    template <typename... Args>
-    heap_bundle(Args&&... args)
-    : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
-    {}
-};
-
-template <typename... Types>
-struct heap_bundle<std::tuple<Types...>>
-: public impl::base_bundle<TIMEMORY_API, Types...>
-, public concepts::heap_wrapper
-{
-    template <typename... T>
-    using data_tuple_t = mpl::non_placeholder_t<mpl::non_quirk_t<std::tuple<T...>>>;
-
-    using data_type = data_tuple_t<Types*...>;
-
-    template <typename... Args>
-    heap_bundle(Args&&... args)
-    : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
-    {}
-};
-
-template <typename... Types>
-struct heap_bundle<type_list<Types...>>
-: public impl::base_bundle<TIMEMORY_API, Types...>
-, public concepts::heap_wrapper
-{
-    template <typename... T>
-    using data_tuple_t = mpl::non_placeholder_t<mpl::non_quirk_t<std::tuple<T...>>>;
-
-    using data_type = data_tuple_t<Types*...>;
-
-    template <typename... Args>
-    heap_bundle(Args&&... args)
     : impl::base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };

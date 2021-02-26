@@ -221,7 +221,12 @@ bundle<Tag, BundleT, TupleT>::~bundle()
 
     IF_CONSTEXPR(optional_count() > 0)
     {
-        DEBUG_PRINT_HERE("%s", "deleting components");
+#if defined(DEBUG) && !defined(NDEBUG)
+        if(tim::settings::debug() && tim::settings::verbose() > 4)
+        {
+            PRINT_HERE("%s", "deleting components");
+        }
+#endif
         invoke::destroy<Tag>(m_data);
     }
 }
@@ -469,10 +474,14 @@ bundle<Tag, BundleT, TupleT>::start(mpl::piecewise_select<Tp...>, Args&&... args
 
     TIMEMORY_FOLD_EXPRESSION(
         operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_push, quirk::no_store>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value &&
+                 !quirk_config<quirk::no_store>::value)
     {
-        TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
-            std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+        if(m_store() && !bundle_type::m_explicit_push())
+        {
+            TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
+                std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+        }
     }
 
     // start components
@@ -497,10 +506,14 @@ bundle<Tag, BundleT, TupleT>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
     auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
     invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
 
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop, quirk::no_store>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value &&
+                 !quirk_config<quirk::no_store>::value)
     {
-        TIMEMORY_FOLD_EXPRESSION(
-            operation::pop_node<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+        if(m_store() && !bundle_type::m_explicit_pop())
+        {
+            TIMEMORY_FOLD_EXPRESSION(operation::pop_node<Tp>(
+                std::get<index_of<Tp, data_type>::value>(m_data)));
+        }
     }
     return get_this_type();
 }
@@ -517,9 +530,10 @@ bundle<Tag, BundleT, TupleT>::start(Args&&... args)
         return get_this_type();
 
     // push components into the call-stack
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_push, quirk::no_store>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value &&
+                 !quirk_config<quirk::no_store>::value)
     {
-        if(m_store())
+        if(m_store() && !bundle_type::m_explicit_push())
             push();
     }
 
@@ -542,9 +556,10 @@ bundle<Tag, BundleT, TupleT>::stop(Args&&... args)
     stop(mpl::lightweight{}, std::forward<Args>(args)...);
 
     // pop components off of the call-stack stack
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value &&
+                 !quirk_config<quirk::no_store>::value)
     {
-        if(m_store())
+        if(m_store() && !bundle_type::m_explicit_pop())
             pop();
     }
     return get_this_type();

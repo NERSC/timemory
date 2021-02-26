@@ -681,14 +681,15 @@ template <typename Tp>
 auto
 run(const std::string& lbl, int n)
 {
-    Tp _one{ details::get_test_name() + "/" + lbl };
+    Tp _one{ details::get_test_name() + "/" + lbl,
+             tim::quirk::config<tim::quirk::explicit_pop>{} };
     _one.start();
     details::do_sleep(n / 2);
     _one.stop();
     Tp _two{ "none", tim::quirk::config<tim::quirk::explicit_push>{} };
     _two.start();
     details::do_sleep(n / 2);
-    return _one + _two.stop();
+    return (_one += _two.stop()).pop();
 }
 
 template <typename Tp>
@@ -734,6 +735,18 @@ TEST_F(tuple_tests, addition_tests)
     validate<tim::auto_list<wall_clock>>("auto_list", 1000);
     validate<tim::auto_bundle<TIMEMORY_API, wall_clock>>("auto_bundle", 1000);
     validate<tim::auto_bundle<TIMEMORY_API, wall_clock*>>("auto_bundle*", 1000);
+
+    auto wc_storage = tim::storage<wall_clock>::instance()->get();
+
+    for(auto& itr : wc_storage)
+    {
+        if(itr.prefix().find(details::get_test_name()) == std::string::npos)
+            continue;
+        EXPECT_NEAR(itr.data().get(), 1.0 * wall_clock::get_unit(),
+                    5.0e-2 * wall_clock::get_unit())
+            << itr.data();
+        EXPECT_EQ(itr.data().get_laps(), 2) << itr.data();
+    }
 }
 
 //--------------------------------------------------------------------------------------//

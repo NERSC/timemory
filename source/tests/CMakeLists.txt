@@ -283,11 +283,13 @@ endif()
 
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_THREADS=OFF")
-list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=OFF")
+list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD=ON")
+list(APPEND component_bundle_tests_env "TIMEMORY_MPI_THREAD_TYPE=serialized")
 list(APPEND component_bundle_tests_env "TIMEMORY_MAX_WIDTH=140")
 list(APPEND component_bundle_tests_env "TIMEMORY_WIDTH=16")
 list(APPEND component_bundle_tests_env "TIMEMORY_PRECISION=6")
 list(APPEND component_bundle_tests_env "TIMEMORY_SCIENTIFIC=ON")
+list(APPEND component_bundle_tests_env "TIMEMORY_STACK_CLEARING=OFF")
 
 add_timemory_google_test(traits_tests
     SOURCES         traits_tests.cpp
@@ -352,7 +354,8 @@ add_timemory_google_test(cache_tests
     SOURCES         cache_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core
-                    ${_LIBRARY})
+                    ${_LIBRARY}
+    TIMEOUT         300)
 
 add_timemory_google_test(archive_storage_tests
     SOURCES         archive_storage_tests.cpp
