@@ -111,7 +111,7 @@ static auto use_intercept = tim::get_env("EXP_REPLACE", true);
 static auto use_timers    = tim::get_env("EXP_TIMERS", true);
 
 bool
-init()
+init_gotcha()
 {
     //
     // configure the initializer for the gotcha component which replaces exp with expf
@@ -146,7 +146,7 @@ init()
 int
 main(int argc, char** argv)
 {
-    if(!init())
+    if(!init_gotcha())
         throw std::runtime_error("Error! initialization failed!");
 
     tim::timemory_init(argc, argv);

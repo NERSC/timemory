@@ -696,7 +696,7 @@ validate(const std::string& lbl, int n)
     double val    = 0.0;
     std::tie(val) = tmp.get();
     val *= tim::units::msec;
-    EXPECT_NEAR(val, n, 100) << tmp;
+    EXPECT_NEAR(val, n, 150) << tmp;
     Tp obj{ details::get_test_name() + "/" + lbl,
             tim::scope::config{} + tim::scope::timeline{} };
     obj.push();
