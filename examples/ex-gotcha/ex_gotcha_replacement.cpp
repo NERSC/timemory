@@ -146,8 +146,7 @@ init_gotcha()
 int
 main(int argc, char** argv)
 {
-    if(!init_gotcha())
-        throw std::runtime_error("Error! initialization failed!");
+    if(!init_gotcha()) throw std::runtime_error("Error! initialization failed!");
 
     tim::timemory_init(argc, argv);
 

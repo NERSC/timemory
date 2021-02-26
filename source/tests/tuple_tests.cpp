@@ -681,10 +681,14 @@ template <typename Tp>
 auto
 run(const std::string& lbl, int n)
 {
-    Tp _obj{ details::get_test_name() + "/" + lbl };
-    _obj.start();
-    details::do_sleep(n);
-    return _obj.stop();
+    Tp _one{ details::get_test_name() + "/" + lbl };
+    _one.start();
+    details::do_sleep(n / 2);
+    _one.stop();
+    Tp _two{ "none", tim::quirk::config<tim::quirk::explicit_push>{} };
+    _two.start();
+    details::do_sleep(n / 2);
+    return _one + _two.stop();
 }
 
 template <typename Tp>
@@ -692,20 +696,25 @@ auto
 validate(const std::string& lbl, int n)
 {
     std::cout << "\n##### " << lbl << " #####\n";
-    auto   tmp    = run<Tp>(lbl, n);
-    double val    = 0.0;
-    std::tie(val) = tmp.get();
-    val *= tim::units::msec;
-    EXPECT_NEAR(val, n, 150) << tmp;
-    Tp obj{ details::get_test_name() + "/" + lbl,
-            tim::scope::config{} + tim::scope::timeline{} };
-    obj.push();
-    obj += tmp;
-    obj.pop();
+    std::shared_ptr<Tp> obj{};
+    double              val = 0.0;
+    {
+        auto tmp      = run<Tp>(lbl, n);
+        std::tie(val) = tmp.get();
+        val *= tim::units::msec;
+        EXPECT_NEAR(val, n, 150) << tmp;
+        EXPECT_EQ(tmp.laps(), 2) << tmp;
+        obj = std::make_shared<Tp>(details::get_test_name() + "/" + lbl,
+                                   tim::scope::config{} + tim::scope::timeline{});
+        obj->push();
+        *obj += tmp;
+        obj->pop();
+    }
     double old    = val;
-    std::tie(val) = obj.get();
+    std::tie(val) = obj->get();
     val *= tim::units::msec;
-    EXPECT_NEAR(val, old, 10) << obj;
+    EXPECT_NEAR(val, old, 10) << *obj;
+    EXPECT_EQ(obj->laps(), 2) << *obj;
 }
 
 TEST_F(tuple_tests, addition_tests)

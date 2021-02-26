@@ -125,6 +125,18 @@ public:
     void set_store(bool v) { m_store(v); }
     void set_laps(int64_t v) { m_laps = v; }
 
+    common_base_bundle& operator+=(const common_base_bundle& rhs)
+    {
+        m_laps += rhs.m_laps;
+        return *this;
+    }
+
+    common_base_bundle& operator-=(const common_base_bundle& rhs)
+    {
+        m_laps -= rhs.m_laps;
+        return *this;
+    }
+
 protected:
     scope::config   m_scope  = scope::get_default();
     hash_value_type m_hash   = 0;
@@ -228,6 +240,19 @@ public:
     static constexpr bool has_gotcha_v = (mpl::get_tuple_size<gotcha_types>::value != 0);
     static constexpr bool has_user_bundle_v =
         (mpl::get_tuple_size<user_bundle_types>::value != 0);
+
+public:
+    base_bundle& operator+=(const base_bundle& rhs)
+    {
+        common_base_bundle::operator+=(rhs);
+        return *this;
+    }
+
+    base_bundle& operator-=(const base_bundle& rhs)
+    {
+        common_base_bundle::operator-=(rhs);
+        return *this;
+    }
 
 protected:
     using ctor_params_t = std::tuple<hash_value_type, bool, scope::config>;
@@ -699,6 +724,18 @@ struct api_bundle<ApiT, std::tuple<Types...>>
     : base_bundle_type(std::forward<Args>(args)...)
     {}
 
+    api_bundle& operator+=(const api_bundle& rhs)
+    {
+        base_bundle_type::operator+=(rhs);
+        return *this;
+    }
+
+    api_bundle& operator-=(const api_bundle& rhs)
+    {
+        base_bundle_type::operator-=(rhs);
+        return *this;
+    }
+
 protected:
     using base_bundle_type::m_config;
     using base_bundle_type::m_hash;
@@ -734,6 +771,18 @@ struct api_bundle<ApiT, type_list<Types...>>
     api_bundle(Args&&... args)
     : base_bundle_type(std::forward<Args>(args)...)
     {}
+
+    api_bundle& operator+=(const api_bundle& rhs)
+    {
+        base_bundle_type::operator+=(rhs);
+        return *this;
+    }
+
+    api_bundle& operator-=(const api_bundle& rhs)
+    {
+        base_bundle_type::operator-=(rhs);
+        return *this;
+    }
 
 protected:
     using base_bundle_type::m_config;

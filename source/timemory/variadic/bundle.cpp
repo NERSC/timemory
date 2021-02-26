@@ -260,8 +260,8 @@ template <typename Tag, typename BundleT, typename TupleT>
 typename bundle<Tag, BundleT, TupleT>::this_type&
 bundle<Tag, BundleT, TupleT>::operator-=(const this_type& rhs)
 {
+    bundle_type::operator-=(static_cast<const bundle_type&>(rhs));
     invoke::invoke_impl::invoke_data<operation::minus, Tag>(m_data, rhs.m_data);
-    m_laps -= rhs.m_laps;
     return get_this_type();
 }
 
@@ -271,8 +271,8 @@ template <typename Tag, typename BundleT, typename TupleT>
 typename bundle<Tag, BundleT, TupleT>::this_type&
 bundle<Tag, BundleT, TupleT>::operator+=(const this_type& rhs)
 {
+    bundle_type::operator+=(static_cast<const bundle_type&>(rhs));
     invoke::invoke_impl::invoke_data<operation::plus, Tag>(m_data, rhs.m_data);
-    m_laps += rhs.m_laps;
     return get_this_type();
 }
 

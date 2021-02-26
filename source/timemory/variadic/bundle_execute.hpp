@@ -59,7 +59,6 @@ execute(BundleT&& _bundle, FuncT&& _func, Args&&... _args,
     return std::forward<BundleT>(_bundle);
 }
 //
-//
 template <typename BundleT, typename ValueT>
 auto
 execute(BundleT&& _bundle, ValueT&& _value,

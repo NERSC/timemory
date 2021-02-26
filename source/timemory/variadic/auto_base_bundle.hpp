@@ -340,6 +340,16 @@ public:
         return static_cast<this_type&>(*this);
     }
 
+    friend this_type operator+(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type{ lhs } += rhs;
+    }
+
+    friend this_type operator-(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type{ lhs } -= rhs;
+    }
+
 protected:
     void internal_init(transient_func_t _init);
 
