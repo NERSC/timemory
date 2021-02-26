@@ -1766,25 +1766,26 @@ tim::cupti::available_events_info(CUdevice device)
 
     for(uint32_t i = 0; i < totalEvents; i++)
     {
+        char eventName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
+        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+
+        memset(eventName, '\0', TIMEMORY_CUPTI_PROFILER_NAME_SHORT * sizeof(char));
+        memset(short_desc, '\0', TIMEMORY_CUPTI_PROFILER_NAME_LONG * sizeof(char));
+        memset(long_desc, '\0', TIMEMORY_CUPTI_PROFILER_NAME_LONG * sizeof(char));
+
         size_t ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
         size_t lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
 
-        char eventName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT + 1];
-        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG + 1];
-        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG + 1];
-
         TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(eventIdArray[i], CUPTI_EVENT_ATTR_NAME,
                                                    &ssize, eventName));
-        eventName[std::min<size_t>(ssize, TIMEMORY_CUPTI_PROFILER_NAME_SHORT)] = '\0';
 
         TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(
             eventIdArray[i], CUPTI_EVENT_ATTR_SHORT_DESCRIPTION, &lsize, short_desc));
-        short_desc[std::min<size_t>(lsize, TIMEMORY_CUPTI_PROFILER_NAME_LONG)] = '\0';
 
         lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
         TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(
             eventIdArray[i], CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &lsize, long_desc));
-        long_desc[std::min<size_t>(lsize, TIMEMORY_CUPTI_PROFILER_NAME_LONG)] = '\0';
 
         string_t _sym   = eventName;
         string_t _pysym = "cuda_" + _sym;
@@ -1824,9 +1825,13 @@ tim::cupti::available_metrics_info(CUdevice device)
 
     for(uint32_t i = 0; i < numMetric; i++)
     {
-        char metricName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT + 1];
-        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG + 1];
-        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG + 1];
+        char metricName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
+        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+
+        memset(metricName, '\0', TIMEMORY_CUPTI_PROFILER_NAME_SHORT * sizeof(char));
+        memset(short_desc, '\0', TIMEMORY_CUPTI_PROFILER_NAME_LONG * sizeof(char));
+        memset(long_desc, '\0', TIMEMORY_CUPTI_PROFILER_NAME_LONG * sizeof(char));
 
         size_t ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
         size_t lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
@@ -1837,19 +1842,14 @@ tim::cupti::available_metrics_info(CUdevice device)
 
         ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
         TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
-            metricIdArray[i], CUPTI_METRIC_ATTR_NAME, &ssize, (void*) &metricName));
-        metricName[std::min<size_t>(ssize, TIMEMORY_CUPTI_PROFILER_NAME_SHORT)] = '\0';
+            metricIdArray[i], CUPTI_METRIC_ATTR_NAME, &ssize, metricName));
 
-        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
-                                                    CUPTI_METRIC_ATTR_SHORT_DESCRIPTION,
-                                                    &lsize, (void*) &short_desc));
-        short_desc[std::min<size_t>(lsize, TIMEMORY_CUPTI_PROFILER_NAME_LONG)] = '\0';
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
+            metricIdArray[i], CUPTI_METRIC_ATTR_SHORT_DESCRIPTION, &lsize, short_desc));
 
         lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
-        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
-                                                    CUPTI_METRIC_ATTR_LONG_DESCRIPTION,
-                                                    &lsize, (void*) &long_desc));
-        long_desc[std::min<size_t>(lsize, TIMEMORY_CUPTI_PROFILER_NAME_LONG)] = '\0';
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
+            metricIdArray[i], CUPTI_METRIC_ATTR_LONG_DESCRIPTION, &lsize, long_desc));
 
         bool _avail = true;
         if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||
