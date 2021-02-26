@@ -32,6 +32,7 @@ jobs:
       - name: Build and Test
         run: |
           export CONTINUOUS_INTEGRATION=true
+          export CUDA_VISIBLE_DEVICES=2
           git submodule update .
           module load anaconda
           module load likwid
