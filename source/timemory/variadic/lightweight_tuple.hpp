@@ -194,7 +194,6 @@ public:
     using bundle_type::key;
     using bundle_type::laps;
     using bundle_type::prefix;
-    using bundle_type::rekey;
     using bundle_type::store;
 
     /// when chaining together operations, this function enables executing a function
@@ -554,11 +553,14 @@ public:
     int64_t     laps() const { return bundle_type::laps(); }
     std::string key() const { return bundle_type::key(); }
     uint64_t    hash() const { return bundle_type::hash(); }
-    void        rekey(const string_t& _key) { bundle_type::rekey(_key); }
     bool&       store() { return bundle_type::store(); }
     const bool& store() const { return bundle_type::store(); }
     auto        prefix() const { return bundle_type::prefix(); }
     auto        get_prefix() const { return bundle_type::get_prefix(); }
+
+    TIMEMORY_INLINE void rekey(const string_t& _key) { set_prefix(_key); }
+    TIMEMORY_INLINE void rekey(captured_location_t _loc) { set_prefix(_loc); }
+    TIMEMORY_INLINE void rekey(uint64_t _hash) { set_prefix(_hash); }
 
 protected:
     // protected member functions

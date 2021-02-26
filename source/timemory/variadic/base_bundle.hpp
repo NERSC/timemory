@@ -111,24 +111,19 @@ protected:
 
 public:
     // public member function section
-    TIMEMORY_NODISCARD auto hash() const { return m_hash; }
-    TIMEMORY_NODISCARD auto get_hash() const { return m_hash; }
+    hash_value_type hash() const { return m_hash; }
+    int64_t         laps() const { return m_laps; }
+    bool            store() const { return m_store(); }
+    std::string key() const { return std::string{ get_hash_identifier_fast(m_hash) }; }
 
-    TIMEMORY_NODISCARD int64_t laps() const { return m_laps; }
-    TIMEMORY_NODISCARD std::string key() const
-    {
-        return std::string{ get_hash_identifier_fast(m_hash) };
-    }
+    bool                 get_store() const { return m_store(); }
+    hash_value_type      get_hash() const { return m_hash; }
+    int64_t              get_laps() const { return m_laps; }
+    const scope::config& get_scope() const { return m_scope; }
 
-    void                    store(bool v) { m_store(v); }
-    TIMEMORY_NODISCARD bool store() const { return m_store(); }
-    TIMEMORY_NODISCARD bool get_store() const { return m_store(); }
-
-    auto&                          get_scope() { return m_scope; }
-    TIMEMORY_NODISCARD const auto& get_scope() const { return m_scope; }
-
-    TIMEMORY_HOT_INLINE void rekey(captured_location_t _loc) { m_hash = _loc.get_hash(); }
-    TIMEMORY_HOT_INLINE void rekey(uint64_t _hash) { m_hash = _hash; }
+    void store(bool v) { m_store(v); }
+    void set_store(bool v) { m_store(v); }
+    void set_laps(int64_t v) { m_laps = v; }
 
 protected:
     scope::config   m_scope  = scope::get_default();
@@ -277,6 +272,11 @@ protected:
 
     TIMEMORY_NODISCARD const auto& prefix() const { return get_persistent_data().prefix; }
     TIMEMORY_NODISCARD const auto& get_prefix() const { return prefix(); }
+
+    using common_base_bundle::m_config;
+    using common_base_bundle::m_hash;
+    using common_base_bundle::m_laps;
+    using common_base_bundle::m_scope;
 
 protected:
     // protected static function section
@@ -698,6 +698,12 @@ struct api_bundle<ApiT, std::tuple<Types...>>
     api_bundle(Args&&... args)
     : base_bundle_type(std::forward<Args>(args)...)
     {}
+
+protected:
+    using base_bundle_type::m_config;
+    using base_bundle_type::m_hash;
+    using base_bundle_type::m_laps;
+    using base_bundle_type::m_scope;
 };
 
 template <typename ApiT, typename... Types>
@@ -728,6 +734,12 @@ struct api_bundle<ApiT, type_list<Types...>>
     api_bundle(Args&&... args)
     : base_bundle_type(std::forward<Args>(args)...)
     {}
+
+protected:
+    using base_bundle_type::m_config;
+    using base_bundle_type::m_hash;
+    using base_bundle_type::m_laps;
+    using base_bundle_type::m_scope;
 };
 //
 //======================================================================================//

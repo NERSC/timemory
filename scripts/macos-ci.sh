@@ -25,7 +25,7 @@ else
     shift
 fi
 
-TIMEMORY_INSTALL_DIR=$(dirname ${TIMEMORY_SOURCE_DIR})/timemory-install
+: ${TIMEMORY_INSTALL_DIR:="$(dirname ${TIMEMORY_SOURCE_DIR})/timemory-install"}
 
 export CC=$(which clang)
 export CXX=$(which clang++)
@@ -89,9 +89,6 @@ make install -j
 
 # for finding installation
 export CMAKE_PREFIX_PATH=${TIMEMORY_INSTALL_DIR}:${CMAKE_PREFIX_PATH}
-
-# cd into build directory
-cd build-timemory/Darwin
 
 # if python install test file exists, run it
 if [ -f "tests/test-python-install-import.cmake" ]; then

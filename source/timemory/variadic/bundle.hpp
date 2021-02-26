@@ -411,7 +411,6 @@ public:
     using bundle_type::key;
     using bundle_type::laps;
     using bundle_type::prefix;
-    using bundle_type::rekey;
     using bundle_type::size;
     using bundle_type::store;
 
@@ -722,6 +721,10 @@ public:
     this_type& set_prefix(size_t) const;
     this_type& set_prefix(captured_location_t) const;
     this_type& set_scope(scope::config);
+
+    TIMEMORY_INLINE void rekey(const string_t& _key) { set_prefix(_key); }
+    TIMEMORY_INLINE void rekey(captured_location_t _loc) { set_prefix(_loc); }
+    TIMEMORY_INLINE void rekey(uint64_t _hash) { set_prefix(_hash); }
 
     const data_type& get_data() const { return m_data; }
 

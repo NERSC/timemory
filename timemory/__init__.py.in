@@ -311,14 +311,10 @@ else:
 
     except Exception as e:
         print("Exception: {}".format(e))
-        import platform
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        import traceback
 
-        if platform.system() != "Darwin":
-            # traceback appears to cause deadlock for some reason
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            import traceback
-
-            traceback.print_exception(exc_type, exc_value, exc_traceback)
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
 
         from . import mpi_support
         from . import mpi
@@ -375,8 +371,6 @@ version = sys.modules[__name__].__getattribute__("version")
 
 # this is required for correct pickling
 try:
-    import platform
-
     if "line_profiler" not in sys.modules:
         from . import line_profiler as lineprof
 
@@ -384,8 +378,11 @@ try:
 
         sys.modules["line_profiler"] = lineprof
         sys.modules["line_profiler._line_profiler"] = _lineprof
-except (ImportError, AttributeError):
-    pass
+except (ImportError, AttributeError) as e:
+    if os.path.exists(os.path.join(os.path.dirname(__file__), "line_profiler")):
+        import warnings
+
+        warnings.warn(f"{e}")
 
 # try to import the local hatchet first
 try:
