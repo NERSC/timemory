@@ -199,6 +199,17 @@ protected:
     {
         EXPECT_TRUE(_memory_units_init);
         details::allocate();
+
+        // disable roofline components and make sure ERT doesn't run excessively long
+        tim::settings::ert_num_threads()      = 1;
+        tim::settings::ert_num_streams()      = 1;
+        tim::settings::ert_min_working_size() = 1000;
+        tim::settings::ert_max_data_size()    = 10000;
+
+        tim::trait::apply<tim::trait::runtime_enabled>::set<
+            cpu_roofline_flops, cpu_roofline_sp_flops, cpu_roofline_dp_flops,
+            gpu_roofline, gpu_roofline_hp_flops, gpu_roofline_sp_flops,
+            gpu_roofline_dp_flops>(false);
     }
 
     static void extra_teardown()

@@ -146,6 +146,7 @@ init_gotcha()
 int
 main(int argc, char** argv)
 {
+    puts("starting...");
     if(!init_gotcha()) throw std::runtime_error("Error! initialization failed!");
 
     tim::timemory_init(argc, argv);
@@ -174,6 +175,7 @@ main(int argc, char** argv)
         (use_intercept && get_intercepts() != 2 * n) ? EXIT_FAILURE : EXIT_SUCCESS;
     auto rc_timers = (use_timers && sz == 0) ? EXIT_FAILURE : EXIT_SUCCESS;
 
+    puts("returning...");
     return rc_intercept + rc_timers;
 }
 

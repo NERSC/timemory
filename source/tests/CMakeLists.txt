@@ -301,7 +301,6 @@ add_timemory_google_test(component_bundle_tests
     NPROCS          2
     SOURCES         component_bundle_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-core
                     ${_LIBRARY}
     ENVIRONMENT     ${component_bundle_tests_env})
 
