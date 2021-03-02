@@ -38,11 +38,18 @@ template <size_t Idx>
 static void
 generate(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum)
 {
-    using T = typename tim::component::enumerator<Idx>::type;
-    if(std::is_same<T, tim::component::placeholder<tim::component::nothing>>::value)
+    using T                       = typename tim::component::enumerator<Idx>::type;
+    using property_t              = tim::component::properties<T>;
+    constexpr bool is_placeholder = tim::concepts::is_placeholder<T>::value;
+
+    if(is_placeholder)
         return;
-    using property_t = tim::component::properties<T>;
-    std::string id   = property_t::enum_string();
+
+    // ensure specialized if not placeholder
+    static_assert(is_placeholder || property_t::specialized(),
+                  "Error! Missing specialization for non-placeholder type");
+
+    std::string id = property_t::enum_string();
     for(auto& itr : id)
         itr = tolower(itr);
     _pyenum.value(id.c_str(), static_cast<TIMEMORY_NATIVE_COMPONENT>(property_t{}()),

@@ -636,14 +636,14 @@ generate_properties(py::class_<pytuple_t<T>>& /*_pycomp*/)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Idx, size_t N,
-          std::enable_if_t<tim::component::enumerator<Idx>::value &&
-                               !tim::concepts::is_placeholder<
-                                   tim::component::enumerator_t<Idx>>::value,
-                           int> = 0>
+template <size_t Idx, size_t N>
 static void
 generate(py::module& _pymod, std::array<bool, N>& _boolgen,
-         std::array<keyset_t, N>& _keygen)
+         std::array<keyset_t, N>& _keygen,
+         std::enable_if_t<
+             tim::component::enumerator<Idx>::value &&
+                 !tim::concepts::is_placeholder<tim::component::enumerator_t<Idx>>::value,
+             int> = 0)
 {
     using T = typename tim::component::enumerator<Idx>::type;
     if(tim::concepts::is_placeholder<T>::value)
@@ -651,8 +651,11 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     using property_t = tim::component::properties<T>;
     using metadata_t = tim::component::metadata<T>;
     using bundle_t   = pytuple_t<T>;
-    std::string id   = get_class_name(property_t::enum_string());
-    std::string cid  = property_t::id();
+
+    static_assert(property_t::specialized(), "Error! Missing specialization");
+
+    std::string id  = get_class_name(property_t::enum_string());
+    std::string cid = property_t::id();
 
     auto _init  = []() { return new bundle_t{}; };
     auto _sinit = [](std::string key) { return new bundle_t(key); };
@@ -741,14 +744,14 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Idx, size_t N,
-          std::enable_if_t<!tim::component::enumerator<Idx>::value &&
-                               !tim::concepts::is_placeholder<
-                                   tim::component::enumerator_t<Idx>>::value,
-                           int> = 0>
+template <size_t Idx, size_t N>
 static void
 generate(py::module& _pymod, std::array<bool, N>& _boolgen,
-         std::array<keyset_t, N>& _keygen)
+         std::array<keyset_t, N>& _keygen,
+         std::enable_if_t<
+             !tim::component::enumerator<Idx>::value &&
+                 !tim::concepts::is_placeholder<tim::component::enumerator_t<Idx>>::value,
+             long> = 0)
 {
     using T = typename tim::component::enumerator<Idx>::type;
     if(tim::concepts::is_placeholder<T>::value)

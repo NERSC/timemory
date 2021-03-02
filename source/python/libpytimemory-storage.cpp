@@ -174,6 +174,9 @@ construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value>
     using property_t = tim::component::properties<Tp>;
     // using metadata_t     = tim::component::metadata<Tp>;
 
+    // ensure specialized
+    static_assert(property_t::specialized(), "Error! Missing specialization");
+
     auto _base = get_class_name(property_t::enum_string());
 
     {

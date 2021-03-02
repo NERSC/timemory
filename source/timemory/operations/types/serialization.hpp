@@ -137,7 +137,9 @@ public:
 
     static std::string get_identifier(const type& _obj = type{})
     {
-        std::string idstr = to_lower(component::properties<type>::enum_string());
+        std::string idstr = (component::properties<type>::specialized())
+                                ? to_lower(component::properties<type>::enum_string())
+                                : "";
         if(idstr.empty())
             idstr = get_identifier_sfinae(_obj, 0);
         if(idstr.empty())
