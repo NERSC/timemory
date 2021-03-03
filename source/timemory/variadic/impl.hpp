@@ -94,11 +94,11 @@ struct heap_wrapper_types
 
     /// the valid types to instantiate in a tuple
     template <typename ApiT = TIMEMORY_API>
-    using data_type = conditional_t<
-        trait::is_available<ApiT>::value,
-        convert_t<add_pointer_if_not_t<non_placeholder_t<non_quirk_t<type_list_t<T...>>>>,
-                  std::tuple<>>,
-        std::tuple<>>;
+    using data_type = conditional_t<trait::is_available<ApiT>::value,
+                                    convert_t<add_pointer_if_not_t<mpl::non_placeholder_t<
+                                                  mpl::non_quirk_t<type_list_t<T...>>>>,
+                                              std::tuple<>>,
+                                    std::tuple<>>;
 };
 
 template <typename... T>
@@ -133,12 +133,12 @@ struct stack_wrapper_types
 
     /// the valid types to instantiate in a tuple
     template <typename ApiT = TIMEMORY_API>
-    using data_type = conditional_t<
-        trait::is_available<ApiT>::value,
-        convert_t<
-            non_placeholder_t<non_quirk_t<type_list_t<std::remove_pointer_t<T>...>>>,
-            std::tuple<>>,
-        std::tuple<>>;
+    using data_type =
+        conditional_t<trait::is_available<ApiT>::value,
+                      convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<
+                                    type_list_t<std::remove_pointer_t<T>...>>>,
+                                std::tuple<>>,
+                      std::tuple<>>;
 };
 
 template <typename... T>
@@ -175,7 +175,8 @@ struct mixed_wrapper_types
     template <typename ApiT = TIMEMORY_API>
     using data_type = conditional_t<
         trait::is_available<ApiT>::value,
-        convert_t<non_placeholder_t<non_quirk_t<type_list_t<T...>>>, std::tuple<>>,
+        convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<type_list_t<T...>>>,
+                  std::tuple<>>,
         std::tuple<>>;
 };
 //
@@ -324,7 +325,7 @@ get(const TupleT<Types...>& m_data, void*& ptr, size_t _hash)
     using get_type = std::tuple<operation::generic_operator<
         decay_t<remove_pointer_t<Types>>,
         operation::get<decay_t<remove_pointer_t<Types>>>, ApiT>...>;
-    apply<void>::access<get_type>(m_data, ptr, _hash);
+    mpl::apply<void>::access<get_type>(m_data, ptr, _hash);
 }
 
 //----------------------------------------------------------------------------------//

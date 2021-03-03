@@ -362,7 +362,7 @@ class timem_tuple : public lightweight_tuple<Types...>
 {
 public:
     using base_type = lightweight_tuple<Types...>;
-    using apply_v   = tim::apply<void>;
+    using apply_v   = tim::mpl::apply<void>;
     using data_type = typename base_type::impl_type;
     using this_type = timem_tuple<Types...>;
 
@@ -435,7 +435,7 @@ public:
         auto&&         _width = obj.output_width();
 
         using cprint_t = custom_operation_t<operation::custom_print, data_type>;
-        apply<void>::access_with_indices<cprint_t>(_data, std::ref(ssd));
+        mpl::apply<void>::access_with_indices<cprint_t>(_data, std::ref(ssd));
 
         ssp << std::setw(_width) << std::left << _key;
         os << ssp.str() << ssd.str();
@@ -451,7 +451,8 @@ public:
 
     void set_rank(int32_t _rank)
     {
-        apply<void>::access<custom_operation_t<operation::print_properties, data_type>>(
+        mpl::apply<void>::access<
+            custom_operation_t<operation::print_properties, data_type>>(
             this->m_data, operation::set_print_rank{}, _rank);
     }
 
@@ -551,7 +552,7 @@ private:
 };
 //
 template <typename... Types>
-using timem_tuple_t = convert_t<available_t<type_list<Types...>>, timem_tuple<>>;
+using timem_tuple_t = convert_t<mpl::available_t<type_list<Types...>>, timem_tuple<>>;
 //
 }  // namespace tim
 //

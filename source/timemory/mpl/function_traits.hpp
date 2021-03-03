@@ -22,12 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file mpl/function_traits.hpp
- * \headerfile mpl/function_traits.hpp "timemory/mpl/function_traits.hpp"
- * Provides the resolution of the function return type and arguments for GOTCHA
- *
- */
-
 #pragma once
 
 #if defined(__GNUC__) && (__GNUC__ >= 7) && (__cplusplus < 201703L)
@@ -43,9 +37,9 @@
 #include <tuple>
 #include <type_traits>
 
-//======================================================================================//
-
 namespace tim
+{
+namespace mpl
 {
 //--------------------------------------------------------------------------------------//
 //
@@ -185,9 +179,8 @@ struct function_traits<R (C::*)(Args...) const noexcept>
 };
 
 #endif
-
-//======================================================================================//
-
+//
+}  // namespace mpl
 }  // namespace tim
 
 #if defined(__GNUC__) && (__GNUC__ >= 7) && (__cplusplus < 201703L)

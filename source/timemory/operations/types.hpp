@@ -116,12 +116,31 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 template <typename Up>
+struct has_data
+{
+    // shorthand for non-void
+    using Vp                    = typename Up::value_type;
+    static constexpr bool value = !std::is_void<Vp>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Up>
 struct is_enabled
 {
     // shorthand for available + non-void
-    using Vp = typename Up::value_type;
+    using Vp                    = typename Up::value_type;
+    static constexpr bool value = trait::is_available<Up>::value && has_data<Up>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Up>
+struct enabled_value_storage
+{
+    // shorthand for available + uses_value_storage
     static constexpr bool value =
-        (trait::is_available<Up>::value && !(std::is_same<Vp, void>::value));
+        trait::is_available<Up>::value && trait::uses_value_storage<Up>::value;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -131,23 +150,13 @@ using is_enabled_t = typename is_enabled<U>::type;
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Up>
-struct has_data
-{
-    // shorthand for non-void
-    using Vp                    = typename Up::value_type;
-    static constexpr bool value = (!std::is_same<Vp, void>::value);
-};
-//
-//--------------------------------------------------------------------------------------//
-//
 namespace internal
 {
 template <typename U>
 auto
 resolve_record_type(int) -> decltype(
     U::record(),
-    typename function_traits<decltype(std::declval<U>().record())>::result_type())
+    typename mpl::function_traits<decltype(std::declval<U>().record())>::result_type())
 {
     return U::record();
 }
@@ -174,7 +183,8 @@ resolve_record_type()
 template <typename T, typename V = typename T::value_type>
 struct check_record_type
 {
-    using type = typename function_traits<decltype(&resolve_record_type<T>)>::result_type;
+    using type =
+        typename mpl::function_traits<decltype(&resolve_record_type<T>)>::result_type;
     static constexpr bool value =
         (!std::is_void<V>::value && !std::is_void<type>::value && is_enabled<T>::value &&
          std::is_same<V, type>::value);
@@ -686,27 +696,28 @@ struct merge<Type, true>
 
     TIMEMORY_DEFAULT_OBJECT(merge)
 
-    merge(storage_type& lhs, storage_type& rhs);
-    merge(result_type& lhs, result_type& rhs);
+    TIMEMORY_COLD merge(storage_type& lhs, storage_type& rhs);
+    TIMEMORY_COLD merge(result_type& lhs, result_type& rhs);
 
     // unary
     template <typename Tp>
-    basic_tree<Tp> operator()(const basic_tree<Tp>& _bt);
+    TIMEMORY_COLD basic_tree<Tp> operator()(const basic_tree<Tp>& _bt);
 
     template <typename Tp>
-    vector_t<basic_tree<Tp>> operator()(const vector_t<basic_tree<Tp>>& _bt);
+    TIMEMORY_COLD vector_t<basic_tree<Tp>> operator()(
+        const vector_t<basic_tree<Tp>>& _bt);
 
     template <typename Tp>
-    vector_t<basic_tree<Tp>> operator()(const vector_t<vector_t<basic_tree<Tp>>>& _bt,
-                                        size_t _root = 0);
+    TIMEMORY_COLD vector_t<basic_tree<Tp>> operator()(
+        const vector_t<vector_t<basic_tree<Tp>>>& _bt, size_t _root = 0);
 
     // binary
     template <typename Tp>
-    basic_tree<Tp> operator()(const basic_tree<Tp>&, const basic_tree<Tp>&);
+    TIMEMORY_COLD basic_tree<Tp> operator()(const basic_tree<Tp>&, const basic_tree<Tp>&);
 
     template <typename Tp>
-    vector_t<basic_tree<Tp>> operator()(const vector_t<basic_tree<Tp>>&,
-                                        const vector_t<basic_tree<Tp>>&);
+    TIMEMORY_COLD vector_t<basic_tree<Tp>> operator()(const vector_t<basic_tree<Tp>>&,
+                                                      const vector_t<basic_tree<Tp>>&);
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -747,8 +758,8 @@ struct print
     using stream_type = std::shared_ptr<utility::stream>;
     using settings_t  = std::shared_ptr<settings>;
 
-    explicit print(bool       _forced_json = false,
-                   settings_t _settings    = settings::shared_instance())
+    explicit TIMEMORY_COLD print(bool       _forced_json = false,
+                                 settings_t _settings    = settings::shared_instance())
     : m_settings(std::move(_settings))
     , json_forced(_forced_json)
     {
@@ -760,8 +771,8 @@ struct print
         }
     }
 
-    print(std::string _label, bool _forced_json,
-          settings_t _settings = settings::shared_instance())
+    TIMEMORY_COLD print(std::string _label, bool _forced_json,
+                        settings_t _settings = settings::shared_instance())
     : m_settings(std::move(_settings))
     , json_forced(_forced_json)
     , label(std::move(_label))
@@ -774,39 +785,39 @@ struct print
         }
     }
 
-    virtual void setup()        = 0;
-    virtual void execute()      = 0;
-    virtual void read_json()    = 0;
-    virtual void print_dart()   = 0;
-    virtual void update_data()  = 0;
-    virtual void print_custom() = 0;
+    TIMEMORY_COLD virtual void setup()        = 0;
+    TIMEMORY_COLD virtual void execute()      = 0;
+    TIMEMORY_COLD virtual void read_json()    = 0;
+    TIMEMORY_COLD virtual void print_dart()   = 0;
+    TIMEMORY_COLD virtual void update_data()  = 0;
+    TIMEMORY_COLD virtual void print_custom() = 0;
 
-    virtual void write(std::ostream& os, stream_type stream);
-    virtual void print_cout(stream_type stream);
-    virtual void print_text(const std::string& fname, stream_type stream);
-    virtual void print_plot(const std::string& fname, std::string suffix);
+    TIMEMORY_COLD virtual void write(std::ostream& os, stream_type stream);
+    TIMEMORY_COLD virtual void print_cout(stream_type stream);
+    TIMEMORY_COLD virtual void print_text(const std::string& fname, stream_type stream);
+    TIMEMORY_COLD virtual void print_plot(const std::string& fname, std::string suffix);
 
-    TIMEMORY_NODISCARD auto get_label() const { return label; }
-    TIMEMORY_NODISCARD auto get_text_output_name() const { return text_outfname; }
-    TIMEMORY_NODISCARD auto get_tree_output_name() const { return tree_outfname; }
-    TIMEMORY_NODISCARD auto get_json_output_name() const { return json_outfname; }
-    TIMEMORY_NODISCARD auto get_json_input_name() const { return json_inpfname; }
-    TIMEMORY_NODISCARD auto get_text_diff_name() const { return text_diffname; }
-    TIMEMORY_NODISCARD auto get_json_diff_name() const { return json_diffname; }
+    TIMEMORY_COLD auto get_label() const { return label; }
+    TIMEMORY_COLD auto get_text_output_name() const { return text_outfname; }
+    TIMEMORY_COLD auto get_tree_output_name() const { return tree_outfname; }
+    TIMEMORY_COLD auto get_json_output_name() const { return json_outfname; }
+    TIMEMORY_COLD auto get_json_input_name() const { return json_inpfname; }
+    TIMEMORY_COLD auto get_text_diff_name() const { return text_diffname; }
+    TIMEMORY_COLD auto get_json_diff_name() const { return json_diffname; }
 
-    void set_debug(bool v) { debug = v; }
-    void set_update(bool v) { update = v; }
-    void set_verbose(int32_t v) { verbose = v; }
-    void set_max_call_stack(int64_t v) { max_call_stack = v; }
+    TIMEMORY_COLD void set_debug(bool v) { debug = v; }
+    TIMEMORY_COLD void set_update(bool v) { update = v; }
+    TIMEMORY_COLD void set_verbose(int32_t v) { verbose = v; }
+    TIMEMORY_COLD void set_max_call_stack(int64_t v) { max_call_stack = v; }
 
-    TIMEMORY_NODISCARD int64_t get_max_depth() const
+    TIMEMORY_COLD int64_t get_max_depth() const
     {
         return (max_depth > 0)
                    ? max_depth
                    : std::min<int64_t>(max_call_stack, m_settings->get_max_depth());
     }
 
-    bool dart_output()
+    TIMEMORY_COLD bool dart_output()
     {
         if(!m_settings)
         {
@@ -815,7 +826,7 @@ struct print
         }
         return m_settings->get_dart_output();
     }
-    bool file_output()
+    TIMEMORY_COLD bool file_output()
     {
         if(!m_settings)
         {
@@ -824,7 +835,7 @@ struct print
         }
         return m_settings->get_file_output();
     }
-    bool cout_output()
+    TIMEMORY_COLD bool cout_output()
     {
         if(!m_settings)
         {
@@ -833,7 +844,7 @@ struct print
         }
         return m_settings->get_cout_output();
     }
-    bool tree_output()
+    TIMEMORY_COLD bool tree_output()
     {
         if(!m_settings)
         {
@@ -843,7 +854,7 @@ struct print
         return (m_settings->get_tree_output() || json_forced) &&
                m_settings->get_file_output();
     }
-    bool json_output()
+    TIMEMORY_COLD bool json_output()
     {
         if(!m_settings)
         {
@@ -853,7 +864,7 @@ struct print
         return (m_settings->get_json_output() || json_forced) &&
                m_settings->get_file_output();
     }
-    bool text_output()
+    TIMEMORY_COLD bool text_output()
     {
         if(!m_settings)
         {
@@ -862,7 +873,7 @@ struct print
         }
         return m_settings->get_text_output() && m_settings->get_file_output();
     }
-    bool plot_output()
+    TIMEMORY_COLD bool plot_output()
     {
         if(!m_settings)
         {
@@ -872,7 +883,7 @@ struct print
         return m_settings->get_plot_output() && m_settings->get_json_output() &&
                m_settings->get_file_output();
     }
-    bool flame_output()
+    TIMEMORY_COLD bool flame_output()
     {
         if(!m_settings)
         {
@@ -939,8 +950,8 @@ struct print<Tp, true> : public base::print
         return _instance;
     }
 
-    explicit print(storage_type*     _data,
-                   const settings_t& _settings = settings::shared_instance());
+    explicit TIMEMORY_COLD print(
+        storage_type* _data, const settings_t& _settings = settings::shared_instance());
 
     print(const std::string& _label, storage_type* _data,
           const settings_t& _settings = settings::shared_instance())
@@ -950,7 +961,7 @@ struct print<Tp, true> : public base::print
 
     virtual ~print() = default;
 
-    void execute() override
+    TIMEMORY_COLD void execute() override
     {
         if(!data)
             return;
@@ -1026,12 +1037,12 @@ struct print<Tp, true> : public base::print
         print_custom();
     }
 
-    void update_data() override;
-    void setup() override;
-    void read_json() override;
+    TIMEMORY_COLD void update_data() override;
+    TIMEMORY_COLD void setup() override;
+    TIMEMORY_COLD void read_json() override;
 
-    void print_dart() override;
-    void print_custom() override
+    TIMEMORY_COLD void print_dart() override;
+    TIMEMORY_COLD void print_custom() override
     {
         try
         {
@@ -1041,19 +1052,17 @@ struct print<Tp, true> : public base::print
             fprintf(stderr, "Exception: %s\n", e.what());
         }
     }
-    virtual void print_tree(const std::string& fname, result_tree& rt);
+    TIMEMORY_COLD virtual void print_tree(const std::string& fname, result_tree& rt);
 
-    void write_stream(stream_type& stream, result_type& results);
-    void print_json(const std::string& fname, result_type& results, int64_t concurrency);
-    TIMEMORY_NODISCARD const auto& get_data() const { return data; }
-    TIMEMORY_NODISCARD const auto& get_node_results() const { return node_results; }
-    TIMEMORY_NODISCARD const auto& get_node_input() const { return node_input; }
-    TIMEMORY_NODISCARD const auto& get_node_delta() const { return node_delta; }
+    TIMEMORY_COLD void        write_stream(stream_type& stream, result_type& results);
+    TIMEMORY_COLD void        print_json(const std::string& fname, result_type& results,
+                                         int64_t concurrency);
+    TIMEMORY_COLD const auto& get_data() const { return data; }
+    TIMEMORY_COLD const auto& get_node_results() const { return node_results; }
+    TIMEMORY_COLD const auto& get_node_input() const { return node_input; }
+    TIMEMORY_COLD const auto& get_node_delta() const { return node_delta; }
 
-    template <typename Archive>
-    void print_metadata(Archive& ar, const Tp& obj);
-
-    std::vector<result_node*> get_flattened(result_type& results)
+    TIMEMORY_COLD std::vector<result_node*> get_flattened(result_type& results)
     {
         std::vector<result_node*> flat;
         for(auto& ritr : results)

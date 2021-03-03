@@ -65,7 +65,7 @@ struct derived_cpu_util : public base<derived_cpu_util, double>
     static std::string label() { return "derived_cpu_util"; }
     static std::string description() { return "cpu utilization (derived)"; }
 
-    double get() const { return (is_transient) ? accum : value; }
+    double get() const { return base_type::load(); }
     double get_display() const { return get(); }
     void   start() {}
     void   stop() {}

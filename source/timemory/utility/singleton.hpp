@@ -197,17 +197,17 @@ private:
     void* operator new[](std::size_t) noexcept { return nullptr; }
     void  operator delete[](void*) noexcept {}
 
-    template <typename Tp = Type, typename PtrT = Pointer,
-              enable_if_t<std::is_same<PtrT, std::shared_ptr<Tp>>::value> = 0>
-    deleter_t& get_deleter()
+    template <typename PtrT = Pointer>
+    deleter_t& get_deleter(
+        enable_if_t<std::is_same<PtrT, std::shared_ptr<Type>>::value> = 0)
     {
         static deleter_t _instance = [](Pointer&) {};
         return _instance;
     }
 
-    template <typename Tp = Type, typename PtrT = Pointer,
-              enable_if_t<!std::is_same<PtrT, std::shared_ptr<Tp>>::value> = 0>
-    deleter_t& get_deleter()
+    template <typename PtrT = Pointer>
+    deleter_t& get_deleter(
+        enable_if_t<!std::is_same<PtrT, std::shared_ptr<Type>>::value> = 0)
     {
         static deleter_t _instance = [](Pointer& _master) {
             auto& del = _master.get_deleter();
@@ -253,7 +253,7 @@ private:
 
     static TIMEMORY_NOINLINE TIMEMORY_NOCLONE persistent_data& f_persistent_data()
     {
-        static persistent_data _instance;
+        static persistent_data _instance{};
         return _instance;
     }
 };
@@ -321,7 +321,7 @@ singleton<Type, Pointer, Tag>::initialize()
     if(!f_master_instance())
     {
         f_master_thread()   = std::this_thread::get_id();
-        f_master_instance() = new Type();
+        f_master_instance() = new Type{};
     }
 }
 
@@ -337,7 +337,7 @@ singleton<Type, Pointer, Tag>::instance()
     }
     if(!_local_instance().get())
     {
-        _local_instance().reset(new Type());
+        _local_instance().reset(new Type{});
         insert(_local_instance().get());
     }
     return _local_instance().get();
@@ -352,7 +352,7 @@ singleton<Type, Pointer, Tag>::master_instance()
     if(!f_master_instance())
     {
         f_master_thread()   = std::this_thread::get_id();
-        f_master_instance() = new Type();
+        f_master_instance() = new Type{};
     }
     return f_master_instance();
 }

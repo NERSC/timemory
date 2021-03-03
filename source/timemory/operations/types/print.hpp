@@ -62,7 +62,7 @@ struct print
 
     // only if components are available
     template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
-    print(const type& _obj, std::ostream& _os, bool _endline = false)
+    TIMEMORY_COLD print(const type& _obj, std::ostream& _os, bool _endline = false)
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;
@@ -75,8 +75,8 @@ struct print
     }
 
     template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
-    print(std::size_t N, std::size_t Ntot, const type& _obj, std::ostream& _os,
-          bool _endline)
+    TIMEMORY_COLD print(std::size_t N, std::size_t Ntot, const type& _obj,
+                        std::ostream& _os, bool _endline)
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;
@@ -96,8 +96,9 @@ struct print
 
     template <typename Vp, typename Statp, typename Up = Tp,
               enable_if_t<is_enabled<Up>::value, char> = 0>
-    print(const type& _obj, utility::stream& _os, const string_t& _prefix, int64_t _laps,
-          int64_t _depth, const Vp& _self, const Statp& _stats)
+    TIMEMORY_COLD print(const type& _obj, utility::stream& _os, const string_t& _prefix,
+                        int64_t _laps, int64_t _depth, const Vp& _self,
+                        const Statp& _stats)
     {
         auto _labels = common_utils::get_labels(_obj);
         auto _units  = common_utils::get_display_units(_obj);
@@ -163,7 +164,7 @@ struct print
     // only if components are available -- pointers
     //
     template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
-    print(const type* _obj, std::ostream& _os, bool _endline = false)
+    TIMEMORY_COLD print(const type* _obj, std::ostream& _os, bool _endline = false)
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;
@@ -173,8 +174,8 @@ struct print
     }
 
     template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
-    print(std::size_t N, std::size_t Ntot, const type* _obj, std::ostream& _os,
-          bool _endline)
+    TIMEMORY_COLD print(std::size_t N, std::size_t Ntot, const type* _obj,
+                        std::ostream& _os, bool _endline)
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;
@@ -184,9 +185,9 @@ struct print
     }
 
     template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
-    print(const type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
-          int64_t _depth, const widths_t& _output_widths, bool _endline,
-          const string_t& _suffix = "")
+    TIMEMORY_COLD print(const type* _obj, std::ostream& _os, const string_t& _prefix,
+                        int64_t _laps, int64_t _depth, const widths_t& _output_widths,
+                        bool _endline, const string_t& _suffix = "")
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;

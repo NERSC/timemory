@@ -89,26 +89,29 @@ struct add_statistics
 {
     using type = T;
 
+    TIMEMORY_DEFAULT_OBJECT(add_statistics)
+
     //----------------------------------------------------------------------------------//
     // if statistics is enabled
     //
-    template <typename StatsT, typename U = type,
-              enable_if_t<enabled_statistics<U, StatsT>::value, int> = 0>
-    TIMEMORY_HOT add_statistics(const U& rhs, StatsT& stats);
+    template <typename StatsT, typename U = type>
+    TIMEMORY_HOT add_statistics(
+        const U& rhs, StatsT& stats,
+        enable_if_t<enabled_statistics<U, StatsT>::value, int> = 0);
 
     //----------------------------------------------------------------------------------//
     // if statistics is not enabled
     //
-    template <typename StatsT, typename U,
-              enable_if_t<!enabled_statistics<U, StatsT>::value, int> = 0>
-    TIMEMORY_INLINE add_statistics(const U&, StatsT&)
+    template <typename StatsT, typename U>
+    TIMEMORY_INLINE add_statistics(
+        const U&, StatsT&, enable_if_t<!enabled_statistics<U, StatsT>::value, int> = 0)
     {}
 };
 //
 template <typename T>
-template <typename StatsT, typename U,
-          enable_if_t<enabled_statistics<U, StatsT>::value, int>>
-add_statistics<T>::add_statistics(const U& rhs, StatsT& stats)
+template <typename StatsT, typename U>
+add_statistics<T>::add_statistics(const U& rhs, StatsT& stats,
+                                  enable_if_t<enabled_statistics<U, StatsT>::value, int>)
 {
     // for type comparison
     using incoming_t = decay_t<typename StatsT::value_type>;

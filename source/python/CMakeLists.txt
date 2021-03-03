@@ -151,4 +151,76 @@ if(TIMEMORY_BUILD_PYTHON)
 
     message(STATUS "Adding source/python/tools...")
     add_subdirectory(tools)
+
+    # if(APPLE)
+    if(APPLE AND "$ENV{TRAVIS}" STREQUAL "true")
+        #
+        file(WRITE ${PROJECT_BINARY_DIR}/.pdbrc
+"r
+bt
+q
+"
+        )
+
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
+"#!/usr/bin/env python
+
+print('importing timemory')
+import timemory
+print('timemory imported')
+"
+        )
+
+        set(_IGNORE
+            # --ignore-module=_bootstrap
+            # --ignore-module=_bootstrap_external
+            # --ignore-module=sre_parse
+            # --ignore-module=sre_compile
+        )
+
+        set(_FILE
+            ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
+        )
+
+        add_test(
+            NAME                python-deadlock-pdb
+            COMMAND             ${PYTHON_EXECUTABLE} -m pdb ${_FILE}
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
+        add_test(
+            NAME                python-deadlock-trace
+            COMMAND             ${PYTHON_EXECUTABLE} -m trace -t ${_IGNORE} ${_FILE}
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
+        add_test(
+            NAME                python-deadlock-listfuncs
+            COMMAND             ${PYTHON_EXECUTABLE} -m trace -l ${_IGNORE} ${_FILE}
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
+        add_test(
+            NAME                python-deadlock-trackcalls
+            COMMAND             ${PYTHON_EXECUTABLE} -m trace -T ${_IGNORE} ${_FILE}
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
+        set_tests_properties(python-deadlock-pdb PROPERTIES DEPENDS libpytimemory)
+        set_tests_properties(python-deadlock-trace PROPERTIES DEPENDS libpytimemory)
+        set_tests_properties(python-deadlock-listfuncs PROPERTIES DEPENDS libpytimemory)
+        set_tests_properties(python-deadlock-trackcalls PROPERTIES DEPENDS libpytimemory)
+
+        find_program(LLDB_EXE NAMES lldb)
+        if(LLDB_EXE)
+            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pylldb-run "run\nrun\n")
+            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pylldb-crash "bt")
+            add_test(
+                NAME                python-deadlock-lldb
+                COMMAND             ${LLDB_EXE} -b
+                                    -s ${CMAKE_CURRENT_BINARY_DIR}/pylldb-run
+                                    --source-on-crash ${CMAKE_CURRENT_BINARY_DIR}/pylldb-crash
+                                    --
+                                    ${PYTHON_EXECUTABLE} ${_FILE}
+                WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+            set_tests_properties(python-deadlock-lldb PROPERTIES DEPENDS libpytimemory)
+        endif()
+    endif()
+
 endif()

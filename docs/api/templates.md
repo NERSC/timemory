@@ -1,5 +1,7 @@
 # C++ Variadic Template Bundlers
 
+[Detailed Doxygen Documentation](https://timemory.readthedocs.io/en/develop/doxygen-docs/index.html).
+
 Several flavors of variadic template classes for creating a single
 handle to multiple components are provided. In general, these
 components all have identical interfaces and the vast majority
@@ -31,4 +33,17 @@ of the struct in the `tim::operation` namespace can be written.
    templates/component_list
    templates/component_tuple
    templates/lightweight_tuple
+```
+
+## Static Polymorphic Base Classes
+
+```eval_rst
+.. doxygenclass:: tim::bundle
+   :members:
+.. doxygenclass:: tim::auto_base_bundle
+   :members:
+.. doxygenclass:: tim::bundle< Tag, BundleT, TupleT >
+   :members:
+.. doxygenclass:: tim::auto_base_bundle< Tag, CompT, BundleT >
+   :members:
 ```

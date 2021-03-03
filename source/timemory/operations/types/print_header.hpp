@@ -56,7 +56,8 @@ struct print_header : public common_utils
     //
     template <typename Statp, typename Up = Tp,
               enable_if_t<is_enabled<Up>::value, char> = 0>
-    print_header(const type& _obj, utility::stream& _os, const Statp& _stats)
+    TIMEMORY_COLD print_header(const type& _obj, utility::stream& _os,
+                               const Statp& _stats)
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;
@@ -79,7 +80,7 @@ struct print_header : public common_utils
         _os.set_prefix_end();
 
         // auto _opzip = [](const std::string& _lhs, const std::string& _rhs) {
-        //    return tim::apply<std::string>::join("", _lhs, " [", _rhs, "]");
+        //    return tim::mpl::apply<std::string>::join("", _lhs, " [", _rhs, "]");
         // };
 
         auto ios_fixed = std::ios_base::fixed;

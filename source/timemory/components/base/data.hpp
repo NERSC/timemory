@@ -28,6 +28,7 @@
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/utility/bit_flags.hpp"
 
 #include <array>
 
@@ -44,21 +45,12 @@ struct base_data<Tp, 0>
 {
     using value_type = null_type;
 
-    TIMEMORY_NODISCARD TIMEMORY_INLINE value_type get_value() const
-    {
-        return value_type{};
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE value_type get_accum() const
-    {
-        return value_type{};
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE value_type get_last() const
-    {
-        return value_type{};
-    }
-    TIMEMORY_INLINE void set_value(value_type) {}
-    TIMEMORY_INLINE void set_accum(value_type) {}
-    TIMEMORY_INLINE void set_last(value_type) {}
+    TIMEMORY_INLINE value_type get_value() const { return value_type{}; }
+    TIMEMORY_INLINE value_type get_accum() const { return value_type{}; }
+    TIMEMORY_INLINE value_type get_last() const { return value_type{}; }
+    TIMEMORY_INLINE void       set_value(value_type) {}
+    TIMEMORY_INLINE void       set_accum(value_type) {}
+    TIMEMORY_INLINE void       set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
@@ -70,10 +62,7 @@ struct base_data<Tp, 0>
     base_data& operator=(const base_data&) = default;
 
     TIMEMORY_INLINE value_type load(bool) { return value_type{}; }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE value_type load(bool) const
-    {
-        return value_type{};
-    }
+    TIMEMORY_INLINE value_type load(bool) const { return value_type{}; }
 
     void plus(const value_type&) {}
     void minus(const value_type&) {}
@@ -110,21 +99,12 @@ struct base_data<Tp, 1>
     using accum_type = empty_type;
     using last_type  = empty_type;
 
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_value() const
-    {
-        return value;
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_accum() const
-    {
-        return value;
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_last() const
-    {
-        return value;
-    }
-    TIMEMORY_INLINE void set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void set_accum(value_type) {}
-    TIMEMORY_INLINE void set_last(value_type) {}
+    TIMEMORY_INLINE const value_type& get_value() const { return value; }
+    TIMEMORY_INLINE const value_type& get_accum() const { return value; }
+    TIMEMORY_INLINE const value_type& get_last() const { return value; }
+    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
+    TIMEMORY_INLINE void              set_accum(value_type) {}
+    TIMEMORY_INLINE void              set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
@@ -142,10 +122,7 @@ struct base_data<Tp, 1>
     }
 
     TIMEMORY_INLINE value_type& load(bool) { return value; }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& load(bool) const
-    {
-        return value;
-    }
+    TIMEMORY_INLINE const value_type& load(bool) const { return value; }
 
     void plus(const value_type& lhs)
     {
@@ -218,21 +195,12 @@ struct base_data<Tp, 2>
     using accum_type = Tp;
     using last_type  = empty_type;
 
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_value() const
-    {
-        return value;
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_accum() const
-    {
-        return accum;
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_last() const
-    {
-        return value;
-    }
-    TIMEMORY_INLINE void set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void set_accum(value_type v) { accum = v; }
-    TIMEMORY_INLINE void set_last(value_type) {}
+    TIMEMORY_INLINE const value_type& get_value() const { return value; }
+    TIMEMORY_INLINE const value_type& get_accum() const { return accum; }
+    TIMEMORY_INLINE const value_type& get_last() const { return value; }
+    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
+    TIMEMORY_INLINE void              set_accum(value_type v) { accum = v; }
+    TIMEMORY_INLINE void              set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
@@ -253,7 +221,7 @@ struct base_data<Tp, 2>
     {
         return (is_transient) ? accum : value;
     }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& load(bool is_transient) const
+    TIMEMORY_INLINE const value_type& load(bool is_transient) const
     {
         return (is_transient) ? accum : value;
     }
@@ -345,18 +313,12 @@ struct base_data<Tp, 3>
     using accum_type = Tp;
     using last_type  = Tp;
 
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_value() const
-    {
-        return value;
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_accum() const
-    {
-        return accum;
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& get_last() const { return last; }
-    TIMEMORY_INLINE void set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void set_accum(value_type v) { accum = v; }
-    TIMEMORY_INLINE void set_last(value_type v) { last = v; }
+    TIMEMORY_INLINE const value_type& get_value() const { return value; }
+    TIMEMORY_INLINE const value_type& get_accum() const { return accum; }
+    TIMEMORY_INLINE const value_type& get_last() const { return last; }
+    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
+    TIMEMORY_INLINE void              set_accum(value_type v) { accum = v; }
+    TIMEMORY_INLINE void              set_last(value_type v) { last = v; }
 
     base_data()  = default;
     ~base_data() = default;
@@ -378,7 +340,7 @@ struct base_data<Tp, 3>
     {
         return (is_transient) ? accum : value;
     }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE const value_type& load(bool is_transient) const
+    TIMEMORY_INLINE const value_type& load(bool is_transient) const
     {
         return (is_transient) ? accum : value;
     }
@@ -459,52 +421,37 @@ protected:
     value_type last  = Tp{};  // NOLINT
 };
 //
-struct base_state
+struct base_state : private utility::bit_flags<5>
 {
-    TIMEMORY_DEFAULT_OBJECT(base_state)
+protected:
+    using base_type = utility::bit_flags<5>;
+    using base_type::set;
+    using base_type::test;
 
-    TIMEMORY_INLINE auto get_is_running() { return is_running; }
-    TIMEMORY_INLINE auto get_is_on_stack() { return is_on_stack; }
-    TIMEMORY_INLINE auto get_is_transient() { return is_transient; }
-    TIMEMORY_INLINE auto get_is_flat() { return is_flat; }
-    TIMEMORY_INLINE auto get_depth_change() { return depth_change; }
+public:
+    using base_type::reset;
 
-    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_running() const { return is_running; }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_on_stack() const
-    {
-        return is_on_stack;
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_transient() const
-    {
-        return is_transient;
-    }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_is_flat() const { return is_flat; }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_depth_change() const
-    {
-        return depth_change;
-    }
+    TIMEMORY_INLINE bool get_is_running() const { return test<RunningIdx>(); }
+    TIMEMORY_INLINE bool get_is_on_stack() const { return test<OnStackIdx>(); }
+    TIMEMORY_INLINE bool get_is_transient() const { return test<TransientIdx>(); }
+    TIMEMORY_INLINE bool get_is_flat() const { return test<FlatIdx>(); }
+    TIMEMORY_INLINE bool get_depth_change() const { return test<DepthIdx>(); }
 
-    TIMEMORY_INLINE void set_is_running(bool v) { is_running = v; }
-    TIMEMORY_INLINE void set_is_on_stack(bool v) { is_on_stack = v; }
-    TIMEMORY_INLINE void set_is_transient(bool v) { is_transient = v; }
-    TIMEMORY_INLINE void set_is_flat(bool v) { is_flat = v; }
-    TIMEMORY_INLINE void set_depth_change(bool v) { depth_change = v; }
-
-    void reset()
-    {
-        is_running   = false;
-        is_on_stack  = false;
-        is_transient = false;
-        is_flat      = false;
-        depth_change = false;
-    }
+    TIMEMORY_INLINE void set_is_running(bool v) { set<RunningIdx>(v); }
+    TIMEMORY_INLINE void set_is_on_stack(bool v) { set<OnStackIdx>(v); }
+    TIMEMORY_INLINE void set_is_transient(bool v) { set<TransientIdx>(v); }
+    TIMEMORY_INLINE void set_is_flat(bool v) { set<FlatIdx>(v); }
+    TIMEMORY_INLINE void set_depth_change(bool v) { set<DepthIdx>(v); }
 
 protected:
-    bool is_running   = false;  // NOLINT
-    bool is_on_stack  = false;  // NOLINT
-    bool is_transient = false;  // NOLINT
-    bool is_flat      = false;  // NOLINT
-    bool depth_change = false;  // NOLINT
+    enum State
+    {
+        RunningIdx   = 0,
+        OnStackIdx   = 1,
+        TransientIdx = 2,
+        FlatIdx      = 3,
+        DepthIdx     = 4,
+    };
 };
 //
 namespace internal
@@ -516,12 +463,6 @@ template <typename Tp>
 struct base_data<Tp, void>
 {
     using type = ::tim::component::base_data<void, 0>;
-};
-//
-template <typename Tp>
-struct base_data<Tp, std::tuple<>>
-{
-    using type = ::tim::component::base_data<std::tuple<>, 0>;
 };
 //
 template <typename Tp>

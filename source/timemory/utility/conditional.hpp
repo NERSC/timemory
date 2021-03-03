@@ -37,6 +37,8 @@
 
 namespace tim
 {
+namespace utility
+{
 ///
 /// \struct tim::conditional
 /// \brief This provides a conditional generator
@@ -170,5 +172,6 @@ public:
         return _instance;
     }
 };
-
+//
+}  // namespace utility
 }  // namespace tim

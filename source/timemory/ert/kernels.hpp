@@ -76,7 +76,8 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
         for(auto i = range.begin(); i < range.end(); i += range.stride())
         {
             Tp beta = static_cast<Tp>(0.8);
-            apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta, A[i], alpha);
+            mpl::apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta, A[i],
+                                                                 alpha);
             store_func(A[i], beta);
         }
         alpha *= static_cast<Tp>(1.0 - 1.0e-8);
@@ -106,7 +107,8 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
         for(auto i = range.begin(); i < range.end(); i += range.stride())
         {
             Tp beta = static_cast<Tp>(0.8);
-            apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta, A[i], alpha);
+            mpl::apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta, A[i],
+                                                                 alpha);
             store_func(A[i], beta);
         }
         alpha *= static_cast<Tp>(1.0 - 1.0e-8);
@@ -136,7 +138,8 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
         for(auto i = range.begin(); i < range.end(); i += range.stride())
         {
             Tp beta = { 0.8, 0.8 };
-            apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta, A[i], alpha);
+            mpl::apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta, A[i],
+                                                                 alpha);
             store_func(A[i], beta);
         }
         alpha *= { 1.0 - 1.0e-8, 1.0 - 1.0e-8 };

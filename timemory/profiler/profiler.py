@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 #
 # MIT License
 #
@@ -115,7 +115,7 @@ class Profiler:
 
         _trace = settings.trace_components
         _profl = settings.profiler_components
-        _components = _profl if _trace is None else _trace
+        _components = _trace if _profl is None else _profl
 
         self._original_function = sys.getprofile()
         self._use = (
@@ -128,8 +128,8 @@ class Profiler:
         self.components = list(dict.fromkeys(self.components))
         if len(self.components) == 0:
             self.components += ["wall_clock"]
-        if _trace is None:
-            settings.trace_components = ",".join(self.components)
+        if _profl is None:
+            settings.profiler_components = ",".join(self.components)
         settings.profiler_components = ",".join(self.components)
         self._unset = 0
 

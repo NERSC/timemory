@@ -444,24 +444,8 @@ print<Tp, true>::update_data()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Archive>
 void
-print<Tp, true>::print_metadata(Archive& ar, const Tp& obj)
-{
-    using metadata_get_type = finalize::get<Tp, true>;
-    ar(cereal::make_nvp("type", metadata_get_type::get_label(obj)),
-       cereal::make_nvp("description", metadata_get_type::get_description(obj)),
-       cereal::make_nvp("unit_value", metadata_get_type::get_unit(obj)),
-       cereal::make_nvp("unit_repr", metadata_get_type::get_display_unit(obj)),
-       cereal::make_nvp("properties", component::properties<Tp>{}));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-void
-print<Tp, true>::print_json(const std::string& outfname, result_type& results,
-                            int64_t concurrency)
+print<Tp, true>::print_json(const std::string& outfname, result_type& results, int64_t)
 {
     using policy_type = policy::output_archive_t<Tp>;
     if(outfname.length() > 0)
@@ -481,34 +465,7 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
 
             oa->setNextName("timemory");
             oa->startNode();
-
-            // node
-            std::string _name = component::properties<Tp>::id();
-            if(_name.empty())
-                _name = Tp::label();
-            oa->setNextName(_name.c_str());
-            oa->startNode();
-            (*oa)(cereal::make_nvp("num_ranks", node_size));
-            (*oa)(cereal::make_nvp("concurrency", concurrency));
-            print_metadata(*oa, operation::dummy<Tp>{}());
-            operation::extra_serialization<Tp>{ *oa };
-            oa->setNextName("ranks");
-            oa->startNode();
-            oa->makeArray();
-            for(uint64_t i = 0; i < results.size(); ++i)
-            {
-                if(results.at(i).empty())
-                    continue;
-
-                oa->startNode();
-
-                (*oa)(cereal::make_nvp("rank", i));
-                save(*oa, results.at(i));
-
-                oa->finishNode();
-            }
-            oa->finishNode();  // ranks
-            oa->finishNode();  // name
+            operation::serialization<Tp>{}(*oa, results);
             oa->finishNode();  // timemory
         }
         if(ofs)
@@ -524,8 +481,6 @@ void
 print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
 {
     using policy_type = policy::output_archive_t<Tp>;
-    using get_type    = get<Tp, true>;
-    using metadata_t  = typename get_type::metadata;
 
     if(outfname.length() > 0)
     {
@@ -542,20 +497,7 @@ print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
 
             oa->setNextName("timemory");
             oa->startNode();
-            auto idstr = get_type::get_identifier();
-            oa->setNextName(idstr.c_str());
-            oa->startNode();
-            get_type{}(*oa, metadata_t{});
-            if(rt.find("process") != rt.end())
-            {
-                (*oa)(cereal::make_nvp("graph", rt["process"]));
-            }
-            else
-            {
-                for(const auto& itr : rt)
-                    (*oa)(cereal::make_nvp(itr.first, itr.second));
-            }
-            oa->finishNode();
+            operation::serialization<Tp>{}(*oa, rt);
             oa->finishNode();
         }
         ofs << std::endl;
@@ -622,61 +564,12 @@ print<Tp, true>::read_json()
             printf("[%s]|%i> Reading '%s'...\n", label.c_str(), node_rank,
                    json_inpfname.c_str());
 
-            cereal::size_type num_ranks = 0;
             // ensure write final block during destruction before the file is closed
             auto ia = policy_type::get(ifs);
 
             ia->setNextName("timemory");
             ia->startNode();
-
-            // node
-            std::string _name = component::properties<Tp>::id();
-            if(_name.empty())
-                _name = Tp::label();
-            ia->setNextName(_name.c_str());
-            ia->startNode();
-
-            // node
-            try
-            {
-                cereal::size_type _nranks = 0;
-                (*ia)(cereal::make_nvp("num_ranks", _nranks));
-                (*ia)(cereal::make_nvp("concurrency", input_concurrency));
-                ia->setNextName("ranks");
-                ia->startNode();
-                ia->loadSize(num_ranks);
-
-                node_input.resize(num_ranks);
-                for(uint64_t i = 0; i < node_input.size(); ++i)
-                {
-                    // if(node_results.at(i).empty())
-                    //    continue;
-
-                    ia->startNode();
-
-                    (*ia)(cereal::make_nvp("rank", i));
-                    try
-                    {
-                        load(*ia, node_input.at(i));
-                    } catch(std::exception& e)
-                    {
-                        fprintf(stderr, "[%s]> Error reading node '%s': %s\n",
-                                label.c_str(), json_inpfname.c_str(), e.what());
-                    }
-
-                    ia->finishNode();
-                }
-                ia->finishNode();
-            } catch(std::exception& e)
-            {
-                fprintf(stderr, "[%s]> Error reading input file '%s': %s\n",
-                        label.c_str(), json_inpfname.c_str(), e.what());
-#if defined(TIMEMORY_INTERNAL_TESTING)
-                throw;
-#endif
-            }
-
-            ia->finishNode();
+            operation::serialization<Tp>{}(*ia, node_input);
             ia->finishNode();
         }
         else

@@ -217,9 +217,9 @@ public:
                         _counter, DeviceT::name(), _label, _itrp);
 
 #if !defined(_WINDOWS)
-        using namespace tim::stl::ostream;
-        if(settings::verbose() > 1 || settings::debug())
-            std::cout << "[RECORD]> " << _data << std::endl;
+        // using namespace tim::stl::ostream;
+        // if(settings::verbose() > 1 || settings::debug())
+        //    std::cout << "[RECORD]> " << _data << std::endl;
 #endif
 
         static std::mutex _mutex;

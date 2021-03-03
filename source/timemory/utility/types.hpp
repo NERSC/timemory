@@ -187,10 +187,6 @@ using remove_cv_t = typename std::remove_cv<T>::type;
 template <typename T>
 using remove_const_t = typename std::remove_const<T>::type;
 //
-using true_type = std::true_type;
-//
-using false_type = std::false_type;
-//
 template <int N>
 using priority_constant = std::integral_constant<int, N>;
 //

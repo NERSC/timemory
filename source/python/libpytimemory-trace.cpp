@@ -40,12 +40,13 @@ template <typename KeyT, typename MappedT>
 using uomap_t = std::unordered_map<KeyT, MappedT>;
 //
 using string_t            = std::string;
+using frame_object_t      = PyFrameObject;
 using tracer_t            = tim::lightweight_tuple<user_trace_bundle>;
 using tracer_line_map_t   = uomap_t<size_t, tracer_t>;
 using tracer_code_map_t   = uomap_t<string_t, tracer_line_map_t>;
 using tracer_iterator_t   = typename tracer_line_map_t::iterator;
 using function_vec_t      = std::vector<tracer_iterator_t>;
-using function_code_map_t = std::unordered_map<PyFrameObject*, function_vec_t>;
+using function_code_map_t = std::unordered_map<frame_object_t*, function_vec_t>;
 using strset_t            = std::unordered_set<string_t>;
 using strvec_t            = std::vector<string_t>;
 using decor_line_map_t    = uomap_t<string_t, std::set<size_t>>;
@@ -108,7 +109,7 @@ get_config()
 }
 //
 int32_t
-get_depth(PyFrameObject* frame)
+get_depth(frame_object_t* frame)
 {
     return (frame->f_back) ? (get_depth(frame->f_back) + 1) : 0;
 }
@@ -142,11 +143,11 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         return py::none{};
     }
 
-    auto* frame = reinterpret_cast<PyFrameObject*>(pframe.ptr());
+    auto* frame = reinterpret_cast<frame_object_t*>(pframe.ptr());
     //
-    using pushed_funcs_t = uomap_t<string_t, std::set<PyFrameObject*>>;
+    using pushed_funcs_t = uomap_t<string_t, std::set<frame_object_t*>>;
     //
-    static thread_local tracer_iterator_t _last;
+    static thread_local tracer_iterator_t _last         = {};
     static thread_local bool              _has_last     = false;
     static thread_local auto              _file_lines   = file_line_map_t{};
     static thread_local auto              _decor_lines  = decor_line_map_t{};
@@ -159,7 +160,11 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     auto&                                 _skip_files   = _config.exclude_filenames;
     //
     if(_has_last)
-        _has_last = (_last->second.stop(), false);
+    {
+        // _last->second.stop().pop().push();
+        _last->second.stop();
+        _has_last = false;
+    }
     //
     auto  _code = frame->f_code;
     auto  _line = frame->f_lineno;
@@ -384,9 +389,9 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
             DEBUG_PRINT_HERE("%8s | %s%s | %s", swhat, _func.c_str(), _get_args().c_str(),
                              _label.c_str());
             // create a tracer for the line
-            _tvec.insert({ i, tracer_t{ _label, _config.tracer_scope } });
+            _tvec.emplace(i, tracer_t{ _label, _config.tracer_scope });
         }
-        titr = _config.records.insert({ _full, _tvec }).first;
+        titr = _config.records.emplace(_full, _tvec).first;
         return titr->second;
     };
 
@@ -395,7 +400,11 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
 
     //----------------------------------------------------------------------------------//
     // the first time a frame is encountered, use the inspect module to process the
-    // source lines
+    // source lines. Essentially, this function finds all the source code lines in
+    // the frame, generates an label via the source code, and then "pushes" that
+    // label into the storage. Then we are free to call start/stop repeatedly
+    // and only when the pop is applied does the storage instance get updated.
+    // NOTE: this means the statistics are not correct.
     //
     auto _push_tracer = [&](auto object) {
         if(_pushed_funcs[_full].count(frame) == 0)
@@ -517,33 +526,31 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     // start function
     //
     auto _tracer_call = [&]() {
-        auto itr = _tlines.find(_line - 1);
-        if(itr == _tlines.end())
-            return;
-        auto& _entry = _config.functions[frame];
-        if(_entry.empty())
-        {
-            if(_decor_lines[_full].count(_line - 1) > 0)
-                ++itr;
-            itr->second.push();
-            itr->second.start();
-        }
-        _entry.emplace_back(itr);
+        // auto itr = _tlines.find(_line - 1);
+        // if(itr == _tlines.end())
+        //     return;
+        // auto& _entry = _config.functions[frame];
+        // if(_entry.empty())
+        // {
+        //     // if(_decor_lines[_full].count(_line - 1) > 0)
+        //     //     ++itr;
+        //     itr->second.push();
+        //     itr->second.start();
+        // }
+        // _entry.emplace_back(itr);
     };
 
     //----------------------------------------------------------------------------------//
     // stop function
     //
     auto _tracer_return = [&]() {
-        auto fitr = _config.functions.find(frame);
-        if(fitr == _config.functions.end() || fitr->second.empty())
-            return;
-        auto itr = fitr->second.back();
-        fitr->second.pop_back();
-        if(fitr->second.empty())
-        {
-            itr->second.stop();
-        }
+        // auto fitr = _config.functions.find(frame);
+        // if(fitr == _config.functions.end() || fitr->second.empty())
+        //     return;
+        // auto itr = fitr->second.back();
+        // fitr->second.pop_back();
+        // if(fitr->second.empty())
+        //     itr->second.stop();
     };
 
     //----------------------------------------------------------------------------------//
@@ -553,10 +560,9 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         auto itr = _tlines.find(_line - 1);
         if(itr == _tlines.end())
             return;
-        itr->second.push();
         itr->second.start();
-        _last     = itr;
         _has_last = true;
+        _last     = itr;
     };
 
     //----------------------------------------------------------------------------------//

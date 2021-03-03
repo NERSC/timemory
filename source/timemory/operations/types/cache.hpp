@@ -93,7 +93,8 @@ template <typename... Tp>
 struct construct_cache
 {
     using data_type = std::tuple<std::remove_pointer_t<Tp>...>;
-    using type      = unique_t<get_trait_type_t<trait::cache, data_type>, std::tuple<>>;
+    using type =
+        mpl::unique_t<mpl::get_trait_type_t<trait::cache, data_type>, std::tuple<>>;
 
     auto operator()() const { return type{}; }
 };

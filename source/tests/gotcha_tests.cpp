@@ -426,8 +426,8 @@ template <typename func_t>
 void
 print_func_info(const std::string& fname)
 {
-    using ret_type = typename tim::function_traits<func_t>::result_type;
-    using arg_type = typename tim::function_traits<func_t>::args_type;
+    using ret_type = typename tim::mpl::function_traits<func_t>::result_type;
+    using arg_type = typename tim::mpl::function_traits<func_t>::args_type;
     std::cout << std::endl;
     std::cout << "  func name = " << fname << std::endl;
     std::cout << "memfun type = " << tim::demangle(typeid(func_t).name()) << std::endl;
@@ -440,6 +440,10 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
+    auto _settings           = tim::settings::push<TIMEMORY_API>();
+    tim::settings::debug()   = false;
+    tim::settings::verbose() = 0;
+
     using toolset_t =
         tim::auto_tuple_t<wall_clock, peak_rss, memory_allocations, mpi_gotcha_t>;
 
@@ -508,6 +512,10 @@ TEST_F(gotcha_tests, malloc_gotcha)
     {
         EXPECT_GE(itr.data().get(), 240000.) << itr.prefix() << ": " << itr.data();
     }
+
+    tim::settings::pop<TIMEMORY_API>();
+    tim::settings::debug()   = _settings->get_debug();
+    tim::settings::verbose() = _settings->get_verbose();
 }
 
 //======================================================================================//

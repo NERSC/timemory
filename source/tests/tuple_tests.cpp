@@ -528,16 +528,16 @@ TEST_F(tuple_tests, concat)
     using rhs_t = tim::component_tuple<wall_clock, cpu_clock>;
 
     using comp_t0 =
-        tim::remove_duplicates_t<typename tim::component_tuple<lhs_t, rhs_t>::type>;
-    using comp_t1 = tim::remove_duplicates_t<
+        tim::mpl::remove_duplicates_t<typename tim::component_tuple<lhs_t, rhs_t>::type>;
+    using comp_t1 = tim::mpl::remove_duplicates_t<
         typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::type>;
 
     using lhs_l = tim::convert_t<lhs_t, tim::component_list<>>;
     using rhs_l = tim::convert_t<rhs_t, tim::component_list<>>;
 
-    using data_t0 =
-        tim::remove_duplicates_t<typename tim::component_list<lhs_l, rhs_l>::data_type>;
-    using data_t1 = tim::remove_duplicates_t<
+    using data_t0 = tim::mpl::remove_duplicates_t<
+        typename tim::component_list<lhs_l, rhs_l>::data_type>;
+    using data_t1 = tim::mpl::remove_duplicates_t<
         typename tim::auto_list<lhs_l, rhs_l, user_clock>::data_type>;
 
     std::cout << "\n" << std::flush;
@@ -673,6 +673,80 @@ TEST_F(tuple_tests, auto_start)
     ASSERT_NEAR(value[0], 2.0, 1.05e-2);
     ASSERT_NEAR(value[1], 1.0, 1.05e-2);
     ASSERT_NEAR(value[2], 50.0, 5.0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp>
+auto
+run(const std::string& lbl, int n)
+{
+    Tp _one{ details::get_test_name() + "/" + lbl,
+             tim::quirk::config<tim::quirk::explicit_pop>{} };
+    _one.start();
+    details::do_sleep(n / 2);
+    _one.stop();
+    Tp _two{ "none", tim::quirk::config<tim::quirk::explicit_push>{} };
+    _two.start();
+    details::do_sleep(n / 2);
+    return (_one += _two.stop()).pop();
+}
+
+template <typename Tp>
+auto
+validate(const std::string& lbl, int n)
+{
+    std::cout << "\n##### " << lbl << " #####\n";
+    std::shared_ptr<Tp> obj{};
+    double              val = 0.0;
+    {
+        auto tmp      = run<Tp>(lbl, n);
+        std::tie(val) = tmp.get();
+        val *= tim::units::msec;
+        EXPECT_NEAR(val, n, 150) << tmp;
+        EXPECT_EQ(tmp.laps(), 2) << tmp;
+        obj = std::make_shared<Tp>(details::get_test_name() + "/" + lbl,
+                                   tim::scope::config{} + tim::scope::timeline{});
+        obj->push();
+        *obj += tmp;
+        obj->pop();
+    }
+    double old    = val;
+    std::tie(val) = obj->get();
+    val *= tim::units::msec;
+    EXPECT_NEAR(val, old, 10) << *obj;
+    EXPECT_EQ(obj->laps(), 2) << *obj;
+}
+
+TEST_F(tuple_tests, addition_tests)
+{
+    auto _initializer = [](auto& _obj) { _obj.template initialize<wall_clock>(); };
+
+    tim::component_list<wall_clock>::get_initializer()                  = _initializer;
+    tim::component_bundle<TIMEMORY_API, wall_clock*>::get_initializer() = _initializer;
+
+    validate<tim::lightweight_tuple<wall_clock>>("lightweight_tuple", 1000);
+    validate<tim::component_tuple<wall_clock>>("component_tuple", 1000);
+    validate<tim::component_list<wall_clock>>("component_list", 1000);
+    validate<tim::component_bundle<TIMEMORY_API, wall_clock>>("component_bundle", 1000);
+    validate<tim::component_bundle<TIMEMORY_API, wall_clock*>>("component_bundle*", 1000);
+
+    validate<tim::auto_tuple<wall_clock>>("auto_tuple", 1000);
+    validate<tim::auto_list<wall_clock>>("auto_list", 1000);
+    validate<tim::auto_bundle<TIMEMORY_API, wall_clock>>("auto_bundle", 1000);
+    validate<tim::auto_bundle<TIMEMORY_API, wall_clock*>>("auto_bundle*", 1000);
+
+    auto wc_storage = tim::storage<wall_clock>::instance()->get();
+
+    for(auto& itr : wc_storage)
+    {
+        if(itr.prefix().find(details::get_test_name()) == std::string::npos)
+            continue;
+        EXPECT_NEAR(itr.data().get(), 1.0 * wall_clock::get_unit(),
+                    5.0e-2 * wall_clock::get_unit())
+            << itr.data();
+        EXPECT_EQ(itr.data().get_laps(), 2) << itr.data();
+    }
 }
 
 //--------------------------------------------------------------------------------------//

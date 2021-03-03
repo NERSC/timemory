@@ -76,7 +76,7 @@ struct mangler
         }
         else
         {
-            ret += apply<std::string>::join("", type_id<Args>::name()...);
+            ret += mpl::apply<std::string>::join("", utility::type_id<Args>::name()...);
         }
 
         return ret;
@@ -101,7 +101,7 @@ struct mangler<std::tuple<Args...>>
 
 //--------------------------------------------------------------------------------------//
 
-template <typename FuncT, typename TraitsT = function_traits<FuncT>>
+template <typename FuncT, typename TraitsT = mpl::function_traits<FuncT>>
 std::string
 mangle(const std::string& func)
 {

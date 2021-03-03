@@ -467,70 +467,72 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_DECLARE_EXTERN_OPERATIONS)
-#    define TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                 \
+#    define TIMEMORY_DECLARE_EXTERN_OPERATIONS(TYPE, HAS_DATA)                           \
         namespace tim                                                                    \
         {                                                                                \
         namespace component                                                              \
         {                                                                                \
         namespace factory                                                                \
         {                                                                                \
-        extern template opaque           get_opaque<COMPONENT_NAME>();                   \
-        extern template opaque           get_opaque<COMPONENT_NAME>(scope::config);      \
-        extern template std::set<size_t> get_typeids<COMPONENT_NAME>();                  \
+        extern template opaque           get_opaque<TYPE>();                             \
+        extern template opaque           get_opaque<TYPE>(scope::config);                \
+        extern template std::set<size_t> get_typeids<TYPE>();                            \
         }                                                                                \
         }                                                                                \
         namespace operation                                                              \
         {                                                                                \
-        extern template struct add_secondary<COMPONENT_NAME>;                            \
-        extern template struct add_statistics<COMPONENT_NAME>;                           \
-        extern template struct assemble<COMPONENT_NAME>;                                 \
-        extern template struct audit<COMPONENT_NAME>;                                    \
-        extern template struct cache<COMPONENT_NAME>;                                    \
-        extern template struct cleanup<COMPONENT_NAME>;                                  \
-        extern template struct construct<COMPONENT_NAME>;                                \
-        extern template struct copy<COMPONENT_NAME>;                                     \
-        extern template struct derive<COMPONENT_NAME>;                                   \
-        extern template struct fini<COMPONENT_NAME>;                                     \
-        extern template struct fini_storage<COMPONENT_NAME>;                             \
-        extern template struct echo_measurement<                                         \
-            COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                 \
-        extern template struct extra_serialization<COMPONENT_NAME>;                      \
-        extern template struct get<COMPONENT_NAME>;                                      \
-        extern template struct init<COMPONENT_NAME>;                                     \
-        extern template struct init_storage<COMPONENT_NAME>;                             \
-        extern template struct is_running<COMPONENT_NAME, true>;                         \
-        extern template struct is_running<COMPONENT_NAME, false>;                        \
-        extern template struct minus<COMPONENT_NAME>;                                    \
-        extern template struct plus<COMPONENT_NAME>;                                     \
-        extern template struct pop_node<COMPONENT_NAME>;                                 \
-        extern template struct print<COMPONENT_NAME>;                                    \
-        extern template struct print_header<COMPONENT_NAME>;                             \
-        extern template struct print_statistics<COMPONENT_NAME>;                         \
-        extern template struct print_storage<COMPONENT_NAME>;                            \
-        extern template struct push_node<COMPONENT_NAME>;                                \
-        extern template struct record<COMPONENT_NAME>;                                   \
-        extern template struct reset<COMPONENT_NAME>;                                    \
-        extern template struct serialization<COMPONENT_NAME>;                            \
-        extern template struct set_depth_change<COMPONENT_NAME>;                         \
-        extern template struct set_is_flat<COMPONENT_NAME>;                              \
-        extern template struct set_prefix<COMPONENT_NAME>;                               \
-        extern template struct set_scope<COMPONENT_NAME>;                                \
-        extern template struct set_state<COMPONENT_NAME>;                                \
-        extern template struct set_started<COMPONENT_NAME>;                              \
-        extern template struct set_stopped<COMPONENT_NAME>;                              \
-        extern template struct store<COMPONENT_NAME>;                                    \
-        extern template struct finalize::dmp_get<                                        \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        extern template struct finalize::get<                                            \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        extern template struct finalize::merge<                                          \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        extern template struct finalize::mpi_get<                                        \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        extern template struct finalize::print<                                          \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        extern template struct finalize::upc_get<                                        \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
+        namespace internal                                                               \
+        {                                                                                \
+        extern template struct add_secondary<TYPE, trait::secondary_data<TYPE>::value>;  \
+        extern template struct serialization_base<TYPE>;                                 \
+        extern template struct serialization<TYPE, is_enabled<TYPE>::value>;             \
+        }                                                                                \
+        extern template struct add_secondary<TYPE>;                                      \
+        extern template struct add_statistics<TYPE>;                                     \
+        extern template struct assemble<TYPE>;                                           \
+        extern template struct audit<TYPE>;                                              \
+        extern template struct cache<TYPE>;                                              \
+        extern template struct cleanup<TYPE>;                                            \
+        extern template struct construct<TYPE>;                                          \
+        extern template struct copy<TYPE>;                                               \
+        extern template struct derive<TYPE>;                                             \
+        extern template struct fini<TYPE>;                                               \
+        extern template struct fini_storage<TYPE>;                                       \
+        extern template struct echo_measurement<TYPE, trait::echo_enabled<TYPE>::value>; \
+        extern template struct extra_serialization<TYPE>;                                \
+        extern template struct get<TYPE>;                                                \
+        extern template struct init<TYPE>;                                               \
+        extern template struct init_storage<TYPE>;                                       \
+        extern template struct is_running<TYPE, true>;                                   \
+        extern template struct is_running<TYPE, false>;                                  \
+        extern template struct minus<TYPE>;                                              \
+        extern template struct plus<TYPE>;                                               \
+        extern template struct pop_node<TYPE>;                                           \
+        extern template struct print<TYPE>;                                              \
+        extern template struct print_header<TYPE>;                                       \
+        extern template struct print_statistics<TYPE>;                                   \
+        extern template struct print_storage<TYPE>;                                      \
+        extern template struct push_node<TYPE>;                                          \
+        extern template struct record<TYPE>;                                             \
+        extern template struct reset<TYPE>;                                              \
+        extern template struct serialization<TYPE>;                                      \
+        extern template struct set_depth_change<TYPE>;                                   \
+        extern template struct set_is_flat<TYPE>;                                        \
+        extern template struct set_prefix<TYPE>;                                         \
+        extern template struct set_scope<TYPE>;                                          \
+        extern template struct set_state<TYPE>;                                          \
+        extern template struct set_started<TYPE>;                                        \
+        extern template struct set_stopped<TYPE>;                                        \
+        extern template struct store<TYPE>;                                              \
+        namespace finalize                                                               \
+        {                                                                                \
+        extern template struct dmp_get<TYPE, enabled_value_storage<TYPE>::value>;        \
+        extern template struct get<TYPE, enabled_value_storage<TYPE>::value>;            \
+        extern template struct merge<TYPE, enabled_value_storage<TYPE>::value>;          \
+        extern template struct mpi_get<TYPE, enabled_value_storage<TYPE>::value>;        \
+        extern template struct print<TYPE, enabled_value_storage<TYPE>::value>;          \
+        extern template struct upc_get<TYPE, enabled_value_storage<TYPE>::value>;        \
+        }                                                                                \
         }                                                                                \
         }
 #endif
@@ -538,70 +540,72 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS)
-#    define TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)             \
+#    define TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(TYPE, HAS_DATA)                       \
         namespace tim                                                                    \
         {                                                                                \
         namespace component                                                              \
         {                                                                                \
         namespace factory                                                                \
         {                                                                                \
-        template opaque           get_opaque<COMPONENT_NAME>();                          \
-        template opaque           get_opaque<COMPONENT_NAME>(scope::config);             \
-        template std::set<size_t> get_typeids<COMPONENT_NAME>();                         \
+        template opaque           get_opaque<TYPE>();                                    \
+        template opaque           get_opaque<TYPE>(scope::config);                       \
+        template std::set<size_t> get_typeids<TYPE>();                                   \
         }                                                                                \
         }                                                                                \
         namespace operation                                                              \
         {                                                                                \
-        template struct add_secondary<COMPONENT_NAME>;                                   \
-        template struct add_statistics<COMPONENT_NAME>;                                  \
-        template struct assemble<COMPONENT_NAME>;                                        \
-        template struct audit<COMPONENT_NAME>;                                           \
-        template struct cache<COMPONENT_NAME>;                                           \
-        template struct cleanup<COMPONENT_NAME>;                                         \
-        template struct construct<COMPONENT_NAME>;                                       \
-        template struct copy<COMPONENT_NAME>;                                            \
-        template struct derive<COMPONENT_NAME>;                                          \
-        template struct echo_measurement<COMPONENT_NAME,                                 \
-                                         trait::echo_enabled<COMPONENT_NAME>::value>;    \
-        template struct extra_serialization<COMPONENT_NAME>;                             \
-        template struct fini<COMPONENT_NAME>;                                            \
-        template struct fini_storage<COMPONENT_NAME>;                                    \
-        template struct get<COMPONENT_NAME>;                                             \
-        template struct init<COMPONENT_NAME>;                                            \
-        template struct init_storage<COMPONENT_NAME>;                                    \
-        template struct is_running<COMPONENT_NAME, true>;                                \
-        template struct is_running<COMPONENT_NAME, false>;                               \
-        template struct minus<COMPONENT_NAME>;                                           \
-        template struct plus<COMPONENT_NAME>;                                            \
-        template struct pop_node<COMPONENT_NAME>;                                        \
-        template struct print<COMPONENT_NAME>;                                           \
-        template struct print_header<COMPONENT_NAME>;                                    \
-        template struct print_statistics<COMPONENT_NAME>;                                \
-        template struct print_storage<COMPONENT_NAME>;                                   \
-        template struct push_node<COMPONENT_NAME>;                                       \
-        template struct record<COMPONENT_NAME>;                                          \
-        template struct reset<COMPONENT_NAME>;                                           \
-        template struct serialization<COMPONENT_NAME>;                                   \
-        template struct set_depth_change<COMPONENT_NAME>;                                \
-        template struct set_is_flat<COMPONENT_NAME>;                                     \
-        template struct set_prefix<COMPONENT_NAME>;                                      \
-        template struct set_scope<COMPONENT_NAME>;                                       \
-        template struct set_state<COMPONENT_NAME>;                                       \
-        template struct set_started<COMPONENT_NAME>;                                     \
-        template struct set_stopped<COMPONENT_NAME>;                                     \
-        template struct store<COMPONENT_NAME>;                                           \
-        template struct finalize::dmp_get<                                               \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        template struct finalize::get<                                                   \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        template struct finalize::merge<                                                 \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        template struct finalize::mpi_get<                                               \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        template struct finalize::print<                                                 \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
-        template struct finalize::upc_get<                                               \
-            COMPONENT_NAME, HAS_DATA && trait::is_available<COMPONENT_NAME>::value>;     \
+        namespace internal                                                               \
+        {                                                                                \
+        template struct add_secondary<TYPE, trait::secondary_data<TYPE>::value>;         \
+        template struct serialization_base<TYPE>;                                        \
+        template struct serialization<TYPE, is_enabled<TYPE>::value>;                    \
+        }                                                                                \
+        template struct add_secondary<TYPE>;                                             \
+        template struct add_statistics<TYPE>;                                            \
+        template struct assemble<TYPE>;                                                  \
+        template struct audit<TYPE>;                                                     \
+        template struct cache<TYPE>;                                                     \
+        template struct cleanup<TYPE>;                                                   \
+        template struct construct<TYPE>;                                                 \
+        template struct copy<TYPE>;                                                      \
+        template struct derive<TYPE>;                                                    \
+        template struct echo_measurement<TYPE, trait::echo_enabled<TYPE>::value>;        \
+        template struct extra_serialization<TYPE>;                                       \
+        template struct fini<TYPE>;                                                      \
+        template struct fini_storage<TYPE>;                                              \
+        template struct get<TYPE>;                                                       \
+        template struct init<TYPE>;                                                      \
+        template struct init_storage<TYPE>;                                              \
+        template struct is_running<TYPE, true>;                                          \
+        template struct is_running<TYPE, false>;                                         \
+        template struct minus<TYPE>;                                                     \
+        template struct plus<TYPE>;                                                      \
+        template struct pop_node<TYPE>;                                                  \
+        template struct print<TYPE>;                                                     \
+        template struct print_header<TYPE>;                                              \
+        template struct print_statistics<TYPE>;                                          \
+        template struct print_storage<TYPE>;                                             \
+        template struct push_node<TYPE>;                                                 \
+        template struct record<TYPE>;                                                    \
+        template struct reset<TYPE>;                                                     \
+        template struct serialization<TYPE>;                                             \
+        template struct set_depth_change<TYPE>;                                          \
+        template struct set_is_flat<TYPE>;                                               \
+        template struct set_prefix<TYPE>;                                                \
+        template struct set_scope<TYPE>;                                                 \
+        template struct set_state<TYPE>;                                                 \
+        template struct set_started<TYPE>;                                               \
+        template struct set_stopped<TYPE>;                                               \
+        template struct store<TYPE>;                                                     \
+        namespace finalize                                                               \
+        {                                                                                \
+        template struct dmp_get<TYPE, enabled_value_storage<TYPE>::value>;               \
+        template struct get<TYPE, enabled_value_storage<TYPE>::value>;                   \
+        template struct merge<TYPE, enabled_value_storage<TYPE>::value>;                 \
+        template struct mpi_get<TYPE, enabled_value_storage<TYPE>::value>;               \
+        template struct print<TYPE, enabled_value_storage<TYPE>::value>;                 \
+        template struct upc_get<TYPE, enabled_value_storage<TYPE>::value>;               \
+        }                                                                                \
         }                                                                                \
         }
 #endif

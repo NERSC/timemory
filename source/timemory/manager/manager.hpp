@@ -133,6 +133,8 @@ public:
     void set_write_metadata(short v) { m_write_metadata = v; }
     /// Print metadata to filename
     void write_metadata(const std::string&, const char* = "");
+    /// Write metadata to ostream
+    std::ostream& write_metadata(std::ostream&);
     /// Updates settings, rank, output prefix, etc.
     void update_metadata_prefix();
     /// Get the dmp rank. This is stored to avoid having to do MPI/UPC++ query after
@@ -258,9 +260,9 @@ public:
     /// manager_t::get_storage<types>::clear(); // clear storage for all enumerated types
     /// \endcode
     template <typename... Types>
-    struct get_storage : public filtered_get_storage<implemented_t<Types...>>
+    struct get_storage : public filtered_get_storage<mpl::implemented_t<Types...>>
     {
-        using base_type = filtered_get_storage<implemented_t<Types...>>;
+        using base_type = filtered_get_storage<mpl::implemented_t<Types...>>;
         using base_type::clear;
         using base_type::initialize;
         using base_type::print;
@@ -272,9 +274,9 @@ public:
     /// Overload for a tuple/type-list
     template <template <typename...> class Tuple, typename... Types>
     struct get_storage<Tuple<Types...>>
-    : public filtered_get_storage<implemented_t<Types...>>
+    : public filtered_get_storage<mpl::implemented_t<Types...>>
     {
-        using base_type = filtered_get_storage<implemented_t<Types...>>;
+        using base_type = filtered_get_storage<mpl::implemented_t<Types...>>;
         using base_type::clear;
         using base_type::initialize;
         using base_type::print;

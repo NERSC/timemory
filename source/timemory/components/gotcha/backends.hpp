@@ -31,12 +31,6 @@
 #pragma once
 
 #include "timemory/backends/gotcha.hpp"
-#include "timemory/components/base.hpp"
-#include "timemory/components/types.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/filters.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/units.hpp"
 #include "timemory/utility/mangler.hpp"
 #include "timemory/variadic/types.hpp"
 
@@ -246,7 +240,7 @@ struct gotcha_data
     constructor_t constructor  = []() {};      /// wrap the function NOLINT
     destructor_t  destructor   = []() {};      /// unwrap the function NOLINT
     bool*         suppression  = nullptr;      /// turn on/off some suppression var NOLINT
-    bool*         debug        = &settings::debug();  //  NOLINT
+    bool*         debug        = nullptr;      //  NOLINT
 };
 }  // namespace component
 }  // namespace tim

@@ -32,10 +32,11 @@ jobs:
       - name: Build and Test
         run: |
           export CONTINUOUS_INTEGRATION=true
+          export CUDA_VISIBLE_DEVICES=2
           git submodule update .
           module load anaconda
           module load likwid
-          module load cuda
+          module load cuda/10.2
           module list
           spack env activate timemory-ci
           spack load dyninst boost

@@ -509,7 +509,7 @@ public:
     ///
     static string_t attribute_string(const string_t& key, const string_t& item)
     {
-        return apply<string_t>::join("", key, "=", "\"", item, "\"");
+        return mpl::apply<string_t>::join("", key, "=", "\"", item, "\"");
     }
 
     //----------------------------------------------------------------------------------//
@@ -564,8 +564,8 @@ public:
     template <typename Tp, typename... Args>
     static string_t join(Tp&& _delim, Args&&... _args)
     {
-        return apply<string_t>::join(std::forward<Tp>(_delim),
-                                     std::forward<Args>(_args)...);
+        return mpl::apply<string_t>::join(std::forward<Tp>(_delim),
+                                          std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

@@ -34,6 +34,10 @@
 
 namespace tim
 {
+namespace utility
+{
+namespace impl
+{
 //--------------------------------------------------------------------------------------//
 //  base overload
 //
@@ -66,7 +70,10 @@ struct type_id<Tp&>
 {
     static std::string name() { return std::string("R") + typeid(Tp).name(); }
 };
-
-//--------------------------------------------------------------------------------------//
-
+}  // namespace impl
+//
+template <typename Tp>
+using type_id = impl::type_id<Tp>;
+//
+}  // namespace utility
 }  // namespace tim

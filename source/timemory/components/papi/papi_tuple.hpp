@@ -123,7 +123,7 @@ private:
     {
         static thread_local value_type _instance = []() {
             value_type values;
-            apply<void>::set_value(values, 0);
+            mpl::apply<void>::set_value(values, 0);
             return values;
         }();
         return _instance;

@@ -65,12 +65,12 @@ namespace tim
 ///
 template <typename... Types>
 class lightweight_tuple
-: public stack_bundle<available_t<type_list<Types...>>>
+: public stack_bundle<mpl::available_t<type_list<Types...>>>
 , public concepts::comp_wrapper
 {
 protected:
-    using apply_v     = apply<void>;
-    using bundle_type = stack_bundle<available_t<type_list<Types...>>>;
+    using apply_v     = mpl::apply<void>;
+    using bundle_type = stack_bundle<mpl::available_t<type_list<Types...>>>;
     using impl_type   = typename bundle_type::impl_type;
 
     template <typename... Tp>
@@ -98,8 +98,8 @@ public:
     using custom_operation_t =
         typename bundle_type::template custom_operation<Op, Tuple>::type;
 
-    using auto_type        = append_type_t<quirk::auto_start, this_type>;
-    using component_type   = remove_type_t<quirk::auto_start, this_type>;
+    using auto_type        = mpl::append_type_t<quirk::auto_start, this_type>;
+    using component_type   = mpl::remove_type_t<quirk::auto_start, this_type>;
     using type             = convert_t<tuple_type, lightweight_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
     using transient_func_t = utility::transient_function<void(this_type&)>;
@@ -194,7 +194,6 @@ public:
     using bundle_type::key;
     using bundle_type::laps;
     using bundle_type::prefix;
-    using bundle_type::rekey;
     using bundle_type::store;
 
     /// when chaining together operations, this function enables executing a function
@@ -554,11 +553,14 @@ public:
     int64_t     laps() const { return bundle_type::laps(); }
     std::string key() const { return bundle_type::key(); }
     uint64_t    hash() const { return bundle_type::hash(); }
-    void        rekey(const string_t& _key) { bundle_type::rekey(_key); }
     bool&       store() { return bundle_type::store(); }
     const bool& store() const { return bundle_type::store(); }
     auto        prefix() const { return bundle_type::prefix(); }
     auto        get_prefix() const { return bundle_type::get_prefix(); }
+
+    TIMEMORY_INLINE void rekey(const string_t& _key) { set_prefix(_key); }
+    TIMEMORY_INLINE void rekey(captured_location_t _loc) { set_prefix(_loc); }
+    TIMEMORY_INLINE void rekey(uint64_t _hash) { set_prefix(_hash); }
 
 protected:
     // protected member functions

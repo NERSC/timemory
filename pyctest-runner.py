@@ -1456,7 +1456,22 @@ def run_pyctest():
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
                     "TIMEOUT": "900",
-                    "ENVIRONMENT": test_env,
+                    "ENVIRONMENT": ";".join([test_env, "TIMEMORY_VERBOSE=3"]),
+                },
+            )
+
+            pyct.test(
+                construct_name("ex-gpu-roofline.sp"),
+                construct_roofline_command(
+                    ["./ex_gpu_roofline.sp"],
+                    "gpu-roofline.sp",
+                    ["-t", "gpu_roofline"],
+                ),
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "900",
+                    "ENVIRONMENT": ";".join([test_env, "TIMEMORY_VERBOSE=3"]),
                 },
             )
 

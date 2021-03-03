@@ -21,55 +21,38 @@ perform a template specialization (which overrides the inheritance) is the need 
 ```eval_rst
 .. doxygenstruct:: tim::concepts::is_empty
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_null_type
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_placeholder
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_component
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_quirk_type
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_api
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_variadic
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_wrapper
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_stack_wrapper
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_heap_wrapper
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_mixed_wrapper
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_tagged
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_comp_wrapper
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_auto_wrapper
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_runtime_configurable
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_external_function_wrapper
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::is_phase_id
    :members:
-   :undoc-members:
 ```
 
 ## Non-Inheritable Concepts
@@ -77,14 +60,10 @@ perform a template specialization (which overrides the inheritance) is the need 
 ```eval_rst
 .. doxygenstruct:: tim::concepts::is_acceptable_conversion
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::tuple_type
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::auto_type
    :members:
-   :undoc-members:
 .. doxygenstruct:: tim::concepts::component_type
    :members:
-   :undoc-members:
 ```

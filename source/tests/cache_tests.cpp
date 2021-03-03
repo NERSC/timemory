@@ -37,14 +37,15 @@ using bundle_t    = tim::component_bundle<TIMEMORY_API, wall_clock, peak_rss, nu
                                        num_minor_page_faults, priority_context_switch,
                                        voluntary_context_switch, current_peak_rss>;
 
-static const int64_t niter        = 20;
-static const int64_t nelements    = 0.95 * (tim::units::get_page_size() * 500);
-static const auto    memory_unit  = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
-static auto          cache        = std::array<cache_ptr_t, 2>{};
-static auto          bundle       = std::shared_ptr<bundle_t>{};
-static auto          cache_bundle = std::shared_ptr<bundle_t>{};
-static auto          tot_size     = nelements * sizeof(int64_t) / memory_unit.first;
-static const double  peak_tolerance = 5 * tim::units::MiB;
+// static const auto    memory_unit  = std::pair<int64_t, string_t>(tim::units::KiB,
+// "KiB");
+static const int64_t niter          = 20;
+static const int64_t nelements      = 0.95 * (tim::units::get_page_size() * 500);
+static auto          cache          = std::array<cache_ptr_t, 2>{};
+static auto          bundle         = std::shared_ptr<bundle_t>{};
+static auto          cache_bundle   = std::shared_ptr<bundle_t>{};
+static auto          tot_size       = nelements * sizeof(int64_t);
+static const double  peak_tolerance = 3 * tim::units::MB;
 
 //--------------------------------------------------------------------------------------//
 
@@ -182,6 +183,13 @@ allocate()
 
 //--------------------------------------------------------------------------------------//
 
+namespace
+{
+bool _memory_units_init = (tim::set_env("TIMEMORY_MEMORY_UNITS", "B", 1), true);
+}
+
+namespace trait = ::tim::trait;
+
 class cache_tests : public ::testing::Test
 {
 protected:
@@ -189,7 +197,24 @@ protected:
     TIMEMORY_TEST_DEFAULT_TEARDOWN
 
     // preform allocation only once here
-    static void extra_setup() { details::allocate(); }
+    static void extra_setup()
+    {
+        EXPECT_TRUE(_memory_units_init);
+        details::allocate();
+
+        // disable roofline components and make sure ERT doesn't run excessively long
+        tim::settings::ert_num_threads()      = 1;
+        tim::settings::ert_num_streams()      = 1;
+        tim::settings::ert_min_working_size() = 1000;
+        tim::settings::ert_max_data_size()    = 10000;
+
+        trait::runtime_enabled<cpu_roofline_flops>::set(false);
+        trait::runtime_enabled<cpu_roofline_sp_flops>::set(false);
+        trait::runtime_enabled<cpu_roofline_dp_flops>::set(false);
+        trait::runtime_enabled<gpu_roofline_flops>::set(false);
+        trait::runtime_enabled<gpu_roofline_sp_flops>::set(false);
+        trait::runtime_enabled<gpu_roofline_dp_flops>::set(false);
+    }
 
     static void extra_teardown()
     {
@@ -212,9 +237,9 @@ run1()
     using trait_type                = typename tim::trait::cache<Tp>::type;
     static constexpr bool is_null_v = tim::concepts::is_null_type<trait_type>::value;
     using type =
-        tim::conditional_t<(is_null_v), tim::type_list<>, tim::type_list<trait_type>>;
+        tim::conditional_t<is_null_v, tim::type_list<>, tim::type_list<trait_type>>;
     using ttype     = tim::convert_t<tim::type_concat_t<type>, std::tuple<>>;
-    using uniq_type = tim::unique_t<type, std::tuple<>>;
+    using uniq_type = tim::mpl::unique_t<type, std::tuple<>>;
     std::cout << "\ttype           : " << tim::demangle<Tp>() << std::endl;
     std::cout << "\ttrait type     : " << tim::demangle<trait_type>() << std::endl;
     std::cout << "\ttrait is null  : " << std::boolalpha << is_null_v << std::endl;
@@ -231,12 +256,12 @@ auto
 run2()
 {
     using trait_type =
-        typename tim::impl::get_trait_type_tuple<tim::trait::cache, Tp>::trait_type;
+        typename tim::mpl::impl::get_trait_type_tuple<tim::trait::cache, Tp>::trait_type;
     static constexpr bool is_null_v =
-        tim::impl::get_trait_type_tuple<tim::trait::cache, Tp>::is_null_v;
-    using type      = tim::impl::get_trait_type_tuple_t<tim::trait::cache, Tp>;
+        tim::mpl::impl::get_trait_type_tuple<tim::trait::cache, Tp>::is_null_v;
+    using type      = tim::mpl::impl::get_trait_type_tuple_t<tim::trait::cache, Tp>;
     using ttype     = tim::convert_t<tim::type_concat_t<type>, std::tuple<>>;
-    using uniq_type = tim::unique_t<type, std::tuple<>>;
+    using uniq_type = tim::mpl::unique_t<type, std::tuple<>>;
     std::cout << "\ttype           : " << tim::demangle<Tp>() << std::endl;
     std::cout << "\ttrait type     : " << tim::demangle<trait_type>() << std::endl;
     std::cout << "\ttrait is null  : " << std::boolalpha << is_null_v << std::endl;
@@ -256,10 +281,10 @@ run3()
     using namespace tim::stl::ostream;
 
     using trait_type =
-        typename tim::impl::get_trait_type<tim::trait::cache, Tp...>::trait_type;
-    using type      = tim::impl::get_trait_type_t<tim::trait::cache, Tp...>;
+        typename tim::mpl::impl::get_trait_type<tim::trait::cache, Tp...>::trait_type;
+    using type      = tim::mpl::impl::get_trait_type_t<tim::trait::cache, Tp...>;
     using ttype     = tim::convert_t<type, std::tuple<>>;
-    using uniq_type = tim::unique_t<type, std::tuple<>>;
+    using uniq_type = tim::mpl::unique_t<type, std::tuple<>>;
     std::cout << "\ttype           : " << tim::demangle<std::tuple<Tp...>>() << std::endl;
     std::cout << "\ttrait type     : " << tim::demangle<trait_type>() << std::endl;
     std::cout << "\ttype list type : " << tim::demangle<type>() << std::endl;
@@ -331,7 +356,7 @@ TEST_F(cache_tests, rusage)
 {
     using data_type =
         std::tuple<peak_rss, current_peak_rss, num_io_in, num_io_out, wall_clock>;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, data_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, data_type>;
     using cache_type    = typename tim::operation::construct_cache<data_type>::type;
     auto        _cache  = tim::invoke::get_cache<data_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -352,7 +377,7 @@ TEST_F(cache_tests, component_bundle)
     using bundle_type   = tim::component_bundle<TIMEMORY_API, peak_rss, current_peak_rss,
                                               num_io_in*, num_io_out*, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -375,7 +400,7 @@ TEST_F(cache_tests, auto_bundle)
     using bundle_type   = tim::auto_bundle<TIMEMORY_API, peak_rss, current_peak_rss,
                                          num_io_in*, num_io_out*, wall_clock*>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -398,7 +423,7 @@ TEST_F(cache_tests, component_tuple)
     using bundle_type   = tim::component_tuple<peak_rss, current_peak_rss, num_io_in,
                                              num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -421,7 +446,7 @@ TEST_F(cache_tests, auto_tuple)
     using bundle_type =
         tim::auto_tuple<peak_rss, current_peak_rss, num_io_in, num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -444,7 +469,7 @@ TEST_F(cache_tests, component_list)
     using bundle_type   = tim::component_list<peak_rss, current_peak_rss, num_io_in,
                                             num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -467,7 +492,7 @@ TEST_F(cache_tests, auto_list)
     using bundle_type =
         tim::auto_list<peak_rss, current_peak_rss, num_io_in, num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -490,7 +515,7 @@ TEST_F(cache_tests, lightweight_tuple)
     using bundle_type   = tim::lightweight_tuple<peak_rss, current_peak_rss, num_io_in,
                                                num_io_out, wall_clock>;
     using data_type     = typename bundle_type::data_type;
-    using trait_type    = tim::get_trait_type_t<tim::trait::cache, bundle_type>;
+    using trait_type    = tim::mpl::get_trait_type_t<tim::trait::cache, bundle_type>;
     using cache_type    = tim::operation::construct_cache_t<bundle_type>;
     auto        _cache  = tim::invoke::get_cache<bundle_type>();
     const auto& _rusage = std::get<0>(_cache);
@@ -596,19 +621,88 @@ TEST_F(cache_tests, io)
 TEST_F(cache_tests, validation)
 {
     puts("\n>>> INITIAL CACHE <<<\n");
-    print_rusage_cache(*cache.at(0));
+    puts(print_rusage_cache(*cache.at(0)).c_str());
     puts("\n>>> BUNDLE <<<\n");
     std::cout << *bundle << std::endl;
     puts("\n>>> CACHE BUNDLE <<<\n");
     std::cout << *cache_bundle << std::endl;
     puts("\n>>> FINAL CACHE <<<\n");
-    print_rusage_cache(*cache.at(1));
+    puts(print_rusage_cache(*cache.at(1)).c_str());
 
     EXPECT_NEAR(tot_size, bundle->get<peak_rss>()->get(), peak_tolerance);
     EXPECT_NEAR(std::get<0>(bundle->get<current_peak_rss>()->get()),
-                cache.at(0)->get_peak_rss() / memory_unit.first, peak_tolerance);
+                cache.at(0)->get_peak_rss(), peak_tolerance);
     EXPECT_NEAR(std::get<1>(bundle->get<current_peak_rss>()->get()),
-                cache.at(1)->get_peak_rss() / memory_unit.first, peak_tolerance);
+                cache.at(1)->get_peak_rss(), peak_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, complete_tuple)
+{
+    tim::settings::debug()   = false;
+    tim::settings::verbose() = 0;
+
+    namespace component = tim::component;
+    puts("\n>>> INITIAL CACHE <<<\n");
+    puts(print_rusage_cache(*cache.at(0)).c_str());
+    puts("\n>>> BUNDLE <<<\n");
+    tim::component_tuple_t<TIMEMORY_COMPONENT_TYPES> _bundle{ details::get_test_name() };
+    _bundle.start(*cache.at(0));
+    details::consume(1000);
+    _bundle.store(1000);
+    _bundle.store(1000.0);
+    _bundle.stop(*cache.at(1));
+    puts("\n>>> FINAL CACHE <<<\n");
+    puts(print_rusage_cache(*cache.at(1)).c_str());
+
+    _bundle.push(tim::mpl::piecewise_select<data_tracker_floating, data_tracker_integer,
+                                            data_tracker_unsigned>{});
+    _bundle.store(100);
+    _bundle.store(100.0);
+    _bundle.pop(tim::mpl::piecewise_select<data_tracker_floating, data_tracker_integer,
+                                           data_tracker_unsigned>{});
+
+    EXPECT_NEAR(tot_size, _bundle.get<peak_rss>()->get(), peak_tolerance);
+    EXPECT_NEAR(std::get<0>(_bundle.get<current_peak_rss>()->get()),
+                cache.at(0)->get_peak_rss(), peak_tolerance);
+    EXPECT_NEAR(std::get<1>(_bundle.get<current_peak_rss>()->get()),
+                cache.at(1)->get_peak_rss(), peak_tolerance);
+
+    // these should use cache
+    if(tim::trait::is_available<user_mode_time>::value)
+    {
+        EXPECT_LT(_bundle.get<user_mode_time>()->get(), 0.1);
+    }
+
+    if(tim::trait::is_available<kernel_mode_time>::value)
+    {
+        EXPECT_LT(_bundle.get<kernel_mode_time>()->get(), 0.1);
+    }
+
+    auto fp_storage = tim::storage<data_tracker_floating>::instance()->get();
+    auto ui_storage = tim::storage<data_tracker_unsigned>::instance()->get();
+    auto si_storage = tim::storage<data_tracker_integer>::instance()->get();
+
+    EXPECT_EQ(fp_storage.back().data().get_laps(), 2);
+    EXPECT_EQ(ui_storage.back().data().get_laps(), 2);
+    EXPECT_EQ(si_storage.back().data().get_laps(), 2);
+
+    EXPECT_NEAR(fp_storage.back().stats().get_min(), 100.0, 1.0e-6);
+    EXPECT_EQ(ui_storage.back().stats().get_min(), 100);
+    EXPECT_EQ(si_storage.back().stats().get_min(), 100);
+
+    EXPECT_NEAR(fp_storage.back().stats().get_max(), 1000.0, 1.0e-6);
+    EXPECT_EQ(ui_storage.back().stats().get_max(), 1000);
+    EXPECT_EQ(si_storage.back().stats().get_max(), 1000);
+
+    EXPECT_NEAR(fp_storage.back().stats().get_mean(), 550.0, 1.0e-6);
+    EXPECT_EQ(ui_storage.back().stats().get_mean(), 550);
+    EXPECT_EQ(si_storage.back().stats().get_mean(), 550);
+
+    EXPECT_NEAR(fp_storage.back().stats().get_stddev(), 636.396, 1.0e-1);
+    EXPECT_EQ(ui_storage.back().stats().get_stddev(), 636);
+    EXPECT_EQ(si_storage.back().stats().get_stddev(), 636);
 }
 
 //--------------------------------------------------------------------------------------//

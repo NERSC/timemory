@@ -438,7 +438,9 @@ TEST_F(papi_tests, tuple_load_store_ins_rate)
     details::report<double>(total_measured, total_expected,
                             static_cast<double>(total_tolerance), "PAPI load/store rate");
 
+#if !defined(TIMEMORY_USE_COVERAGE)
     EXPECT_NEAR(total_measured, total_expected, total_tolerance);
+#endif
 }
 
 //--------------------------------------------------------------------------------------//

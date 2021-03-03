@@ -250,53 +250,56 @@ read_command_line(pid_t _pid)
     return _cmdline;
 }
 //
-path_t::path_t(const std::string& _path)
+namespace utility
+{
+//
+path::path(const std::string& _path)
 : std::string(osrepr(_path))
 {}
 
-path_t::path_t(char* _path)
+path::path(char* _path)
 : std::string(osrepr(std::string(_path)))
 {}
 
-path_t::path_t(const path_t& rhs)
+path::path(const path& rhs)
 : std::string(osrepr(rhs))
 {}
 
-path_t::path_t(const char* _path)
+path::path(const char* _path)
 : std::string(osrepr(std::string(const_cast<char*>(_path))))
 {}
 
-path_t&
-path_t::operator=(const std::string& rhs)
+path&
+path::operator=(const std::string& rhs)
 {
     std::string::operator=(osrepr(rhs));
     return *this;
 }
 
-path_t&
-path_t::operator=(const path_t& rhs)
+path&
+path::operator=(const path& rhs)
 {
     if(this != &rhs)
         std::string::operator=(osrepr(rhs));
     return *this;
 }
 
-path_t&
-path_t::insert(size_type __pos, const std::string& __s)
+path&
+path::insert(size_type __pos, const std::string& __s)
 {
     std::string::operator=(osrepr(std::string::insert(__pos, __s)));
     return *this;
 }
 
-path_t&
-path_t::insert(size_type __pos, const path_t& __s)
+path&
+path::insert(size_type __pos, const path& __s)
 {
     std::string::operator=(osrepr(std::string::insert(__pos, __s)));
     return *this;
 }
 
 TIMEMORY_UTILITY_INLINE std::string
-                        path_t::os()
+                        path::os()
 {
 #if defined(_WINDOWS)
     return "\\";
@@ -306,7 +309,7 @@ TIMEMORY_UTILITY_INLINE std::string
 }
 
 TIMEMORY_UTILITY_INLINE std::string
-                        path_t::inverse()
+                        path::inverse()
 {
 #if defined(_WINDOWS)
     return "/";
@@ -317,7 +320,7 @@ TIMEMORY_UTILITY_INLINE std::string
 
 // OS-dependent representation
 TIMEMORY_UTILITY_INLINE std::string
-                        path_t::osrepr(std::string _path)
+                        path::osrepr(std::string _path)
 {
 #if defined(_WINDOWS)
     while(_path.find('/') != std::string::npos)
@@ -331,52 +334,7 @@ TIMEMORY_UTILITY_INLINE std::string
     return _path;
 }
 //
-/*
-template auto
-get_backtrace<2, 1>();
-template auto
-get_backtrace<3, 1>();
-    //template auto
-//get_backtrace<4, 1>();
-template auto
-get_backtrace<8, 1>();
-template auto
-get_backtrace<16, 1>();
-template auto
-get_backtrace<32, 1>();
-//
-template auto
-get_demangled_backtrace<3, 2>();
-template auto
-get_demangled_backtrace<4, 2>();
-template auto
-get_demangled_backtrace<8, 2>();
-template auto
-get_demangled_backtrace<16, 2>();
-template auto
-get_demangled_backtrace<32, 2>();
-//
-template auto
-get_backtrace<3, 2>();
-template auto
-get_backtrace<4, 2>();
-template auto
-get_backtrace<8, 2>();
-template auto
-get_backtrace<16, 2>();
-template auto
-get_backtrace<32, 2>();
-//
-template auto
-get_demangled_backtrace<4, 3>();
-template auto
-get_demangled_backtrace<8, 3>();
-template auto
-get_demangled_backtrace<16, 3>();
-template auto
-get_demangled_backtrace<32, 3>();
-*/
-//
+}  // namespace utility
 }  // namespace tim
 //
 

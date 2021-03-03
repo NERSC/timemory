@@ -108,6 +108,7 @@ struct get_availability
     using this_type  = get_availability<Type>;
     using value_type = component_value_type_t<Type>;
     using metadata_t = component::metadata<Type>;
+    using property_t = component::properties<Type>;
 
     static info_type get_info()
     {
@@ -125,22 +126,29 @@ struct get_availability
             return _type;
         };
 
-        bool has_metadata = metadata_t::specialized();
-        bool is_available = trait::is_available<Type>::value;
-        bool file_output  = trait::generates_output<Type>::value;
-        auto name         = component::metadata<Type>::name();
-        auto label        = (file_output)
+        bool has_metadata   = metadata_t::specialized();
+        bool has_properties = property_t::specialized();
+        bool is_available   = trait::is_available<Type>::value;
+        bool file_output    = trait::generates_output<Type>::value;
+        auto name           = component::metadata<Type>::name();
+        auto label          = (file_output)
                          ? ((has_metadata) ? metadata_t::label() : Type::get_label())
                          : std::string("");
         auto description =
             (has_metadata) ? metadata_t::description() : Type::get_description();
         auto     data_type = demangle<value_type>();
-        string_t enum_type = component::properties<Type>::enum_string();
-        string_t id_type   = component::properties<Type>::id();
-        auto     ids_set   = component::properties<Type>::ids();
-        auto     itr       = ids_set.begin();
-        string_t db        = (markdown) ? "`\"" : "\"";
-        string_t de        = (markdown) ? "\"`" : "\"";
+        string_t enum_type = property_t::enum_string();
+        string_t id_type   = property_t::id();
+        auto     ids_set   = property_t::ids();
+        if(!has_properties)
+        {
+            enum_type = "";
+            id_type   = "";
+            ids_set.clear();
+        }
+        auto     itr = ids_set.begin();
+        string_t db  = (markdown) ? "`\"" : "\"";
+        string_t de  = (markdown) ? "\"`" : "\"";
         if(has_metadata)
             description += ". " + metadata_t::extra_description();
         while(itr->empty())
@@ -372,7 +380,7 @@ main(int argc, char** argv)
         .count(0);
     parser.add_argument({ "-v", "--value" }, "Output the value type for the component")
         .count(0);
-    parser.add_argument({ "-b", "--brief" }, "Suppress availibility/value info").count(0);
+    parser.add_argument({ "-b", "--brief" }, "Suppress availability/value info").count(0);
     parser.add_argument({ "-S", "--settings" }, "Display the runtime settings").count(0);
     parser.add_argument({ "-C", "--components" }, "Only display the components data")
         .count(0);

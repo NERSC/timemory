@@ -45,30 +45,68 @@
 
 namespace tim
 {
-//
+/// \class tim::bundle
+/// \brief Static polymorphic base class for component bundlers
 template <typename...>
 class bundle;
-/// \class tim::bundle
-/// \tparam Tag unique identifying type for the bundle which when \ref
-/// tim::trait::is_available<Tag> is false at compile-time or \ref
-/// tim::trait::runtime_enabled<Tag>() is false at runtime, then none of the components
-/// will be collected
-/// \tparam Types Specification of the component types to bundle together
+//
+/// \class tim::bundle< Tag, BundleT, TupleT >
+/// \tparam Tag API tag type, e.g. `TIMEMORY_API`
+/// \tparam BundleT The empty or empty + tag derived type.
+/// \tparam TupleT The set of components wrapped in a type which provides the appropriate
+/// aliases.
 ///
-/// \brief This is a variadic component wrapper which combines the features of \ref
-/// tim::component_tuple<T...> and \ref tim::component_list<U..>. The "T" types
-/// (compile-time fixed, allocated on stack) should be specified as usual, the "U" types
-/// (runtime-time optional, allocated on the heap) should be specified as a pointer.
-/// Initialization of the optional types is similar to \ref tim::auto_list<U...> but no
-/// environment variable is built-in since, ideally, this environment variable should be
-/// customized based on the Tag template parameter.
+/// \brief Example:
+/// `bundle<Tag, component_bundle<Foo>, mixed_wrapper_types<concat<Bar, Baz>>>` will
+/// use `Tag` + `trait::is_available<Tag>` or `trait::runtime_available<Tag>` to disable
+/// this bundle at compile-time or run-time, respectively. It will covert
+/// `component_bundle<Foo>` to `component_bundle<Foo, Bar, Baz>` for purposes of function
+/// signatures and it will instantiate `std::tuple<...>` depending on the compile-time
+/// availability of `Bar` and `Baz`. `mixed_wrapper_types` is a dummy type with the
+/// appropriate aliases to perform these conversions. Here is a theoretical implementation
+/// of `mixed_wrapper_types` (which supports allocating components on the stack and the
+/// heap):
 ///
-/// See also: \ref tim::auto_bundle.
-/// The primary difference b/t the "component_*" and "auto_*" is that the latter
-/// used the constructor/destructor to call start and stop and is thus easier to
-/// just copy-and-paste into different places. However, the former is better suited for
-/// special configuration, data-access, etc.
+/// \code{.cpp}
+/// template <typename... T>
+/// struct heap_wrapper_types
+/// {
+///     TIMEMORY_DELETED_OBJECT(heap_wrapper_types)
 ///
+///     /// the set of types, unaltered, in a type_list
+///     using type_list_type = type_list<T...>;
+///
+///     /// the set of types without any pointers
+///     using reference_type = type_list<std::remove_pointer_t<T>...>;
+///
+///     /// type list of the available types
+///     using available_type = type_list_t<reference_type>;
+///
+///     /// the original bundle type
+///     template <typename BundleT>
+///     using this_type = convert_t<type_list<T...>, BundleT>;
+///
+///     /// the type after available_t<concat<...>>
+///     template <typename BundleT>
+///     using type = convert_t<available_type, BundleT>;
+///
+///     /// conversion to equivalent wrapper requiring explicit start/stop
+///     template <typename BundleT>
+///     using component_type = convert_t<type_list<T...>, BundleT>;
+///
+///     /// conversion to equivalent wrapper which automatically starts/stops
+///     template <typename BundleT>
+///     using auto_type = concepts::auto_type_t<convert_t<type_list_type, BundleT>>;
+///
+///     /// the valid types to instantiate in a tuple
+///     template <typename ApiT = TIMEMORY_API>
+///     using data_type = conditional_t<
+///         trait::is_available<ApiT>::value,
+///         convert_t<add_pointer_if_not_t<non_placeholder_t<non_quirk_t<type_list_t<T...>>>>,
+///                   std::tuple<>>,
+///         std::tuple<>>;
+/// };
+/// \endcode
 template <typename Tag, typename BundleT, typename TupleT>
 class bundle<Tag, BundleT, TupleT>
 : public api_bundle<Tag, typename TupleT::available_type>
@@ -102,7 +140,7 @@ class bundle<Tag, BundleT, TupleT>
     using internal_tag = tim::variadic::impl::internal_tag;
 
 protected:
-    using apply_v        = apply<void>;
+    using apply_v        = mpl::apply<void>;
     using bundle_type    = api_bundle<Tag, typename TupleT::available_type>;
     using string_t       = typename bundle_type::string_t;
     using reference_type = typename TupleT::reference_type;
@@ -124,6 +162,13 @@ public:
 
     template <typename T, typename... U>
     using quirk_config = tim::variadic::impl::quirk_config<T, reference_type, U...>;
+
+    /// Query whether type matches this_type
+    template <typename U>
+    static constexpr bool is_this_type()
+    {
+        return std::is_same<decay_t<U>, this_type>::value;
+    }
 
 public:
     bundle();
@@ -173,40 +218,59 @@ public:
     bundle& operator=(const bundle& rhs);
     bundle& operator=(bundle&&) noexcept = default;
 
-    bundle& operator-=(const bundle& rhs);
-    bundle& operator+=(const bundle& rhs);
+    this_type& operator-=(const this_type& rhs);
+    this_type& operator+=(const this_type& rhs);
 
     // generic operators
-    template <typename Op>
-    bundle& operator-=(Op&& rhs);
-    template <typename Op>
-    bundle& operator+=(Op&& rhs);
-    template <typename Op>
-    bundle& operator*=(Op&& rhs);
-    template <typename Op>
-    bundle& operator/=(Op&& rhs);
+    template <typename Op, enable_if_t<!is_this_type<Op>()> = 0>
+    this_type& operator-=(Op&& rhs)
+    {
+        invoke::invoke<operation::minus, Tag>(m_data, std::forward<Op>(rhs));
+        return get_this_type();
+    }
+
+    template <typename Op, enable_if_t<!is_this_type<Op>()> = 0>
+    this_type& operator+=(Op&& rhs)
+    {
+        invoke::invoke<operation::plus, Tag>(m_data, std::forward<Op>(rhs));
+        return get_this_type();
+    }
+
+    template <typename Op, enable_if_t<!is_this_type<Op>()> = 0>
+    this_type& operator*=(Op&& rhs)
+    {
+        invoke::invoke<operation::multiply, Tag>(m_data, std::forward<Op>(rhs));
+        return get_this_type();
+    }
+
+    template <typename Op, enable_if_t<!is_this_type<Op>()> = 0>
+    this_type& operator/=(Op&& rhs)
+    {
+        invoke::invoke<operation::divide, Tag>(m_data, std::forward<Op>(rhs));
+        return get_this_type();
+    }
 
     // friend operators
-    friend bundle operator+(const bundle& lhs, const bundle& rhs)
+    friend this_type operator+(const this_type& lhs, const this_type& rhs)
     {
-        return bundle{ lhs } += rhs;
+        return this_type{ lhs } += rhs;
     }
 
-    friend bundle operator-(const bundle& lhs, const bundle& rhs)
+    friend this_type operator-(const this_type& lhs, const this_type& rhs)
     {
-        return bundle{ lhs } -= rhs;
-    }
-
-    template <typename Op>
-    friend bundle operator*(const bundle& lhs, Op&& rhs)
-    {
-        return bundle{ lhs } *= std::forward<Op>(rhs);
+        return this_type{ lhs } -= rhs;
     }
 
     template <typename Op>
-    friend bundle operator/(const bundle& lhs, Op&& rhs)
+    friend this_type operator*(const this_type& lhs, Op&& rhs)
     {
-        return bundle{ lhs } /= std::forward<Op>(rhs);
+        return this_type{ lhs } *= std::forward<Op>(rhs);
+    }
+
+    template <typename Op>
+    friend this_type operator/(const this_type& lhs, Op&& rhs)
+    {
+        return this_type{ lhs } /= std::forward<Op>(rhs);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const bundle& obj)
@@ -347,7 +411,6 @@ public:
     using bundle_type::key;
     using bundle_type::laps;
     using bundle_type::prefix;
-    using bundle_type::rekey;
     using bundle_type::size;
     using bundle_type::store;
 
@@ -659,6 +722,10 @@ public:
     this_type& set_prefix(captured_location_t) const;
     this_type& set_scope(scope::config);
 
+    TIMEMORY_INLINE void rekey(const string_t& _key) { set_prefix(_key); }
+    TIMEMORY_INLINE void rekey(captured_location_t _loc) { set_prefix(_loc); }
+    TIMEMORY_INLINE void rekey(uint64_t _hash) { set_prefix(_hash); }
+
     const data_type& get_data() const { return m_data; }
 
 protected:
@@ -716,7 +783,7 @@ bundle<Tag, BundleT, TupleT>::fixed_count()
 {
     return (size() -
             mpl::get_tuple_size<
-                typename get_true_types<std::is_pointer, data_type>::type>::value);
+                typename mpl::get_true_types<std::is_pointer, data_type>::type>::value);
 }
 
 //----------------------------------------------------------------------------------//
@@ -726,7 +793,7 @@ constexpr uint64_t
 bundle<Tag, BundleT, TupleT>::optional_count()
 {
     return mpl::get_tuple_size<
-        typename get_true_types<std::is_pointer, data_type>::type>::value;
+        typename mpl::get_true_types<std::is_pointer, data_type>::type>::value;
 }
 
 //----------------------------------------------------------------------------------//

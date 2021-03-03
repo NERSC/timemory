@@ -156,11 +156,10 @@
 
 #if !defined(TIMEMORY_PACKED_ALIGNMENT)
 #    if defined(_WIN32)  // Windows 32- and 64-bit
-#        define TIMEMORY_PACKED_ALIGNMENT __declspec(align(ACTIVITY_RECORD_ALIGNMENT))
+#        define TIMEMORY_PACKED_ALIGNMENT __declspec(align(TIMEMORY_DATA_ALIGNMENT))
 #    elif defined(__GNUC__)  // GCC
 #        define TIMEMORY_PACKED_ALIGNMENT                                                \
-            __attribute__((__packed__))                                                  \
-                __attribute__((aligned(ACTIVITY_RECORD_ALIGNMENT)))
+            __attribute__((__packed__)) __attribute__((aligned(TIMEMORY_DATA_ALIGNMENT)))
 #    else  // all other compilers
 #        define TIMEMORY_PACKED_ALIGNMENT
 #    endif

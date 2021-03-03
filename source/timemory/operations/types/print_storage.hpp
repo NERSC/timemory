@@ -51,9 +51,9 @@ struct print_storage
 {
     using type = Tp;
 
-    print_storage() { (*this)(); }
+    TIMEMORY_COLD print_storage() { (*this)(); }
 
-    void operator()() const { this->sfinae<type>(0); }
+    TIMEMORY_COLD void operator()() const { this->sfinae<type>(0); }
 
 private:
     //----------------------------------------------------------------------------------//
@@ -61,7 +61,7 @@ private:
     //
     template <typename Up, typename Vp = typename Up::value_type,
               enable_if_t<is_enabled<Up>::value, char> = 0>
-    void sfinae(int) const
+    TIMEMORY_COLD void sfinae(int) const
     {
         if(!trait::runtime_enabled<Tp>::get())
             return;

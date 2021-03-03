@@ -34,6 +34,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/serialization.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/basic_tree.hpp"
 #include "timemory/storage/node.hpp"
@@ -65,20 +66,21 @@ struct get<Type, true>
     using hierarchy_type         = typename storage_type::uintvector_t;
     using basic_tree_type        = basic_tree<node::tree<Type>>;
     using basic_tree_vector_type = std::vector<basic_tree_type>;
+    using metadata               = typename serialization<Type>::metadata;
 
     TIMEMORY_DEFAULT_OBJECT(get)
 
-    explicit get(storage_type& _storage)
+    explicit TIMEMORY_COLD get(storage_type& _storage)
     : m_storage(&_storage)
     {}
 
-    explicit get(storage_type* _storage)
+    explicit TIMEMORY_COLD get(storage_type* _storage)
     : m_storage(_storage)
     {}
 
-    result_type&                         operator()(result_type&);
-    basic_tree_vector_type&              operator()(basic_tree_vector_type&);
-    std::vector<basic_tree_vector_type>& operator()(
+    TIMEMORY_COLD result_type& operator()(result_type&);
+    TIMEMORY_COLD basic_tree_vector_type& operator()(basic_tree_vector_type&);
+    TIMEMORY_COLD std::vector<basic_tree_vector_type>& operator()(
         std::vector<basic_tree_vector_type>& _data)
     {
         basic_tree_vector_type _obj{};
@@ -88,137 +90,33 @@ struct get<Type, true>
     }
 
     template <typename Archive>
-    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
-        Archive&);
-
-    struct metadata
-    {};
+    TIMEMORY_COLD enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
+                  operator()(Archive&);
 
     template <typename Archive>
-    enable_if_t<concepts::is_output_archive<Archive>::value, Archive&> operator()(
-        Archive&, metadata);
+    TIMEMORY_COLD enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
+                  operator()(Archive&, metadata);
 
 public:
-    static std::string get_identifier(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_identifier(const Type& _obj = Type{})
     {
-        std::string idstr = component::properties<Type>::enum_string();
-        if(idstr.empty())
-            idstr = get_identifier_sfinae(_obj, 0);
-        if(idstr.empty())
-            idstr = demangle<Type>();
-        return idstr;
+        return serialization<Type>::get_identifier(_obj);
     }
-    static auto get_label(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_label(const Type& _obj = Type{})
     {
-        return get_label_sfinae(_obj, 0, 0);
+        return serialization<Type>::get_label(_obj);
     }
-    static auto get_description(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_description(const Type& _obj = Type{})
     {
-        return get_description_sfinae(_obj, 0, 0);
+        return serialization<Type>::get_description(_obj);
     }
-    static auto get_unit(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_unit(const Type& _obj = Type{})
     {
-        return get_unit_sfinae(_obj, 0, 0);
+        return serialization<Type>::get_unit(_obj);
     }
-    static auto get_display_unit(const Type& _obj = Type{})
+    static TIMEMORY_COLD auto get_display_unit(const Type& _obj = Type{})
     {
-        return get_display_unit_sfinae(_obj, 0, 0);
-    }
-
-private:
-    template <typename Tp>
-    static auto get_identifier_sfinae(const Tp& _data, int) -> decltype(_data.label())
-    {
-        return _data.label();
-    }
-
-    template <typename Tp>
-    static auto get_identifier_sfinae(const Tp&, long)
-    {
-        return std::string{};
-    }
-
-private:
-    template <typename Tp>
-    static auto get_label_sfinae(const Tp& _data, int, int)
-        -> decltype(_data.label_array())
-    {
-        return _data.label_array();
-    }
-
-    template <typename Tp>
-    static auto get_label_sfinae(const Tp& _data, int, long) -> decltype(_data.label())
-    {
-        return _data.label();
-    }
-
-    template <typename Tp>
-    static auto get_label_sfinae(const Tp&, long, long)
-    {
-        return std::string{};
-    }
-
-private:
-    template <typename Tp>
-    static auto get_description_sfinae(const Tp& _data, int, int)
-        -> decltype(_data.description_array())
-    {
-        return _data.description_array();
-    }
-
-    template <typename Tp>
-    static auto get_description_sfinae(const Tp& _data, int, long)
-        -> decltype(_data.description())
-    {
-        return _data.description();
-    }
-
-    template <typename Tp>
-    static auto get_description_sfinae(const Tp&, long, long)
-    {
-        return std::string{};
-    }
-
-private:
-    template <typename Tp>
-    static auto get_unit_sfinae(const Tp& _data, int, int) -> decltype(_data.unit_array())
-    {
-        return _data.unit_array();
-    }
-
-    template <typename Tp>
-    static auto get_unit_sfinae(const Tp& _data, int, long) -> decltype(_data.unit())
-
-    {
-        return _data.unit();
-    }
-
-    template <typename Tp>
-    static auto get_unit_sfinae(const Tp&, long, long) -> int64_t
-    {
-        return 0;
-    }
-
-private:
-    template <typename Tp>
-    static auto get_display_unit_sfinae(const Tp& _data, int, int)
-        -> decltype(_data.display_unit_array())
-    {
-        return _data.display_unit_array();
-    }
-
-    template <typename Tp>
-    static auto get_display_unit_sfinae(const Tp& _data, int, long)
-        -> decltype(_data.display_unit())
-
-    {
-        return _data.display_unit();
-    }
-
-    template <typename Tp>
-    static auto get_display_unit_sfinae(const Tp&, long, long)
-    {
-        return std::string{};
+        return serialization<Type>::get_display_unit(_obj);
     }
 
 private:
@@ -472,20 +370,7 @@ template <typename Archive>
 enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
 get<Type, true>::operator()(Archive& ar, metadata)
 {
-    bool _thread_scope_only = trait::thread_scope_only<Type>::value;
-    auto _num_thr_count     = manager::get_thread_count();
-    auto _num_pid_count     = dmp::size();
-
-    ar(cereal::make_nvp("properties", component::properties<Type>{}));
-    ar(cereal::make_nvp("type", get_label()));
-    ar(cereal::make_nvp("description", get_description()));
-    ar(cereal::make_nvp("unit_value", get_unit()));
-    ar(cereal::make_nvp("unit_repr", get_display_unit()));
-    ar(cereal::make_nvp("thread_scope_only", _thread_scope_only));
-    ar(cereal::make_nvp("mpi_size", mpi::size()));
-    ar(cereal::make_nvp("upcxx_size", upc::size()));
-    ar(cereal::make_nvp("thread_count", _num_thr_count));
-    ar(cereal::make_nvp("process_count", _num_pid_count));
+    serialization<Type>{}(ar, metadata{});
     return ar;
 }
 //
@@ -504,13 +389,8 @@ get<Type, true>::operator()(Archive& ar)
     m_storage->m_node_size = dmp::size();
     m_storage->merge();
 
-    auto idstr = get_identifier();
-    ar.setNextName(idstr.c_str());
-    ar.startNode();
-    (*this)(ar, metadata{});
     auto bt = basic_tree_vector_type{};
-    ar(cereal::make_nvp("graph", (*this)(bt)));
-    ar.finishNode();
+    serialization<Type>{}(ar, bt);
     return ar;
 }
 //

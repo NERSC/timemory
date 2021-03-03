@@ -102,14 +102,10 @@ class Tracer:
 
     # ---------------------------------------------------------------------------------- #
     #
-    def __init__(
-        self, components=[], flat=True, timeline=False, *args, **kwargs
-    ):
+    def __init__(self, components=[], *args, **kwargs):
         """
         Arguments:
             - components [list of strings]  : list of timemory components
-            - flat [bool]                   : enable flat profiling
-            - timeline [bool]               : enable timeline profiling
         """
 
         _trace = settings.trace_components
@@ -120,8 +116,6 @@ class Tracer:
         self._use = (
             not _tracer_config._is_running and Tracer.is_enabled() is True
         )
-        self._flat_profile = settings.flat_profile or flat
-        self._timeline_profile = settings.timeline_profile or timeline
         self.components = components + _components.split(",")
         self.components = [v.lower() for v in self.components]
         self.components = list(dict.fromkeys(self.components))
@@ -145,9 +139,7 @@ class Tracer:
         """Initialize, configure the bundle, store original tracer function"""
 
         _tracer_init()
-        _tracer_bundle.configure(
-            self.components, self._flat_profile, self._timeline_profile
-        )
+        _tracer_bundle.configure(self.components, True, False)
         self._original_function = sys.gettrace()
 
     # ---------------------------------------------------------------------------------- #
@@ -185,7 +177,6 @@ class Tracer:
         self._unset = self._unset - 1
         if self._unset == 0:
             sys.settrace(self._original_function)
-            threading.settrace(self._original_function)
             _tracer_fini()
 
         return self._unset

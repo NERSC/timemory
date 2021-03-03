@@ -235,7 +235,9 @@ fibonacci(int64_t n, int64_t cutoff,
 }
 
 //======================================================================================//
-using single_tuple_t = tim::convert_t<auto_tuple_t, tim::lightweight_tuple<>>;
+
+using single_tuple_t =
+    tim::lightweight_tuple<wall_clock, tim::quirk::config<tim::quirk::auto_start>>;
 static single_tuple_t single_sum{ "single" };
 
 template <typename Tp>
@@ -246,8 +248,7 @@ fibonacci(int64_t n, int64_t cutoff,
     if(n > cutoff)
     {
         single_tuple_t _scoped{};
-        _scoped.start();
-        auto _result =
+        auto           _result =
             (n < 2) ? n : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
         single_sum += _scoped.stop();
         return _result;
@@ -256,7 +257,8 @@ fibonacci(int64_t n, int64_t cutoff,
 }
 
 //======================================================================================//
-static size_t nticks = 0;
+
+static double nseconds = 0;
 
 template <typename Tp>
 int64_t
@@ -265,10 +267,13 @@ fibonacci(int64_t n, int64_t cutoff,
 {
     if(n > cutoff)
     {
-        auto _start = tim::get_clock_real_now<int64_t, std::nano>();
+        auto _start = std::chrono::high_resolution_clock::now();
         auto _result =
             (n < 2) ? n : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
-        nticks += tim::get_clock_real_now<int64_t, std::nano>() - _start;
+        nseconds +=
+            std::chrono::duration<double>{ std::chrono::high_resolution_clock::now() -
+                                           _start }
+                .count();
         return _result;
     }
     return fibonacci(n);
@@ -299,10 +304,10 @@ run(int64_t n, int64_t cutoff, bool store = true)
     timer_tuple_t timer(signature, store);
     timer.start();
     if(std::is_same<Tp, mode::single>::value)
-        single_sum.push().start();
+        single_sum.push();
     int64_t result = fibonacci<Tp>(n, cutoff);
     if(std::is_same<Tp, mode::single>::value)
-        single_sum.stop().pop();
+        single_sum.pop();
     timer.stop();
 
     int64_t nuniq =
@@ -455,9 +460,7 @@ main(int argc, char** argv)
     TIMEMORY_CALIPER_APPLY(global, stop);
 
     std::cout << single_sum << std::endl;
-    std::cout << ">>> manual :: "
-              << (static_cast<double>(nticks) / std::nano::den * wall_clock::get_unit())
-              << " " << wall_clock::get_display_unit() << std::endl;
+    std::cout << ">>> manual  : " << nseconds << " sec" << std::endl;
     std::cout << std::endl;
 
     std::cout << "\nReport from " << ex_measure << " total measurements and " << ex_unique

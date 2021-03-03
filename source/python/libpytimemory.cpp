@@ -71,10 +71,10 @@ manager_wrapper::get()
 namespace impl
 {
 //
-template <typename Tp, typename Archive,
-          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename Archive>
 auto
-get_json(Archive& ar, const pytim::pyenum_set_t& _types, int)
+get_json(Archive& ar, const pytim::pyenum_set_t& _types,
+         tim::enable_if_t<tim::trait::is_available<Tp>::value, int>)
     -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
 {
     if(_types.empty() || _types.count(tim::component::properties<Tp>{}()) > 0)
@@ -93,11 +93,12 @@ get_json(Archive&, const pytim::pyenum_set_t&, long)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT = typename Tp::value_type, typename StreamT,
-          tim::enable_if_t<tim::trait::is_available<Tp>::value &&
-                           !tim::concepts::is_null_type<ValueT>::value> = 0>
+template <typename Tp, typename ValueT = typename Tp::value_type, typename StreamT>
 auto
-get_stream(StreamT& strm, const pytim::pyenum_set_t& _types, int)
+get_stream(StreamT& strm, const pytim::pyenum_set_t& _types,
+           tim::enable_if_t<tim::trait::is_available<Tp>::value &&
+                                !tim::concepts::is_null_type<ValueT>::value,
+                            int>)
     -> decltype(tim::storage<Tp>::instance()->dmp_get(), void())
 {
     using printer_t = tim::operation::finalize::print<Tp, true>;
@@ -135,20 +136,20 @@ get_stream(StreamT&, const pytim::pyenum_set_t&, long)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename Archive,
-          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename Archive>
 auto
-get_json(Archive& ar, const pytim::pyenum_set_t& _types, int)
+get_json(Archive& ar, const pytim::pyenum_set_t& _types,
+         tim::enable_if_t<tim::trait::is_available<Tp>::value, int> = 0)
 {
     impl::get_json<Tp>(ar, _types, 0);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename Archive,
-          tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename Archive>
 auto
-get_json(Archive&, const pytim::pyenum_set_t&, ...)
+get_json(Archive&, const pytim::pyenum_set_t&,
+         tim::enable_if_t<!tim::trait::is_available<Tp>::value, long> = 0)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -162,20 +163,20 @@ get_json(Archive& ar, const pytim::pyenum_set_t& _types, std::index_sequence<Idx
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename StreamT,
-          tim::enable_if_t<tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename StreamT>
 auto
-get_stream(StreamT& strm, const pytim::pyenum_set_t& _types, int)
+get_stream(StreamT& strm, const pytim::pyenum_set_t& _types,
+           tim::enable_if_t<tim::trait::is_available<Tp>::value, int> = 0)
 {
     return impl::get_stream<Tp>(strm, _types, 0);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename StreamT,
-          tim::enable_if_t<!tim::trait::is_available<Tp>::value> = 0>
+template <typename Tp, typename StreamT>
 auto
-get_stream(StreamT&, const pytim::pyenum_set_t&, ...)
+get_stream(StreamT&, const pytim::pyenum_set_t&,
+           tim::enable_if_t<!tim::trait::is_available<Tp>::value, long> = 0)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -792,6 +793,33 @@ PYBIND11_MODULE(libpytimemory, tim)
     man.def("write_ctest_notes", &pytim::manager::write_ctest_notes,
             "Write a CTestNotes.cmake file", py::arg("directory") = ".",
             py::arg("append") = false);
+    //----------------------------------------------------------------------------------//
+    auto _add_metadata = [](std::string _label, py::object _data) {
+        std::stringstream _msg;
+        auto _f = [_label](auto _value) { tim::manager::add_metadata(_label, _value); };
+        bool _success =
+            pytim::try_cast_seq<std::string, size_t, double, std::vector<std::string>,
+                                std::vector<size_t>, std::vector<double>>(_f, _data,
+                                                                          &_msg);
+        if(!_success)
+            throw std::runtime_error(_msg.str());
+    };
+    man.def_static("add_metadata", _add_metadata, "Add metadata");
+    //----------------------------------------------------------------------------------//
+    auto _get_metadata = []() {
+        std::stringstream _data;
+        tim::manager::master_instance()->write_metadata(_data);
+        auto     json_module = py::module::import("json");
+        py::dict _metadata   = json_module.attr("loads")(_data.str());
+        if(_metadata.contains("timemory"))
+        {
+            _metadata = _metadata["timemory"];
+            if(_metadata.contains("metadata"))
+                _metadata = _metadata["metadata"];
+        }
+        return _metadata;
+    };
+    man.def_static("get_metadata", _get_metadata, "Get the metadata dictionary");
     //----------------------------------------------------------------------------------//
 
     //==================================================================================//

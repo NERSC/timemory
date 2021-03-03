@@ -212,7 +212,8 @@ public:
             }
 
             // integer
-            if(is_one_of_integral<types_tuple>::value || settings::instruction_roofline())
+            if(mpl::is_one_of_integral<types_tuple>::value ||
+               settings::instruction_roofline())
             {
                 for(const string_t& itr :
                     { "ipc", "inst_executed", "inst_integer", "inst_fp_64", "inst_fp_32",
@@ -275,7 +276,7 @@ public:
 
     static std::string get_type_string()
     {
-        return apply<std::string>::join('_', demangle(typeid(Types).name())...);
+        return mpl::apply<std::string>::join('_', demangle(typeid(Types).name())...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -341,7 +342,7 @@ public:
             // run roofline peak generation
             auto ert_config = get_finalizer();
             auto ert_data   = get_ert_data();
-            apply<void>::access<ert_executor_t>(ert_config, ert_data);
+            mpl::apply<void>::access<ert_executor_t>(ert_config, ert_data);
             if(ert_data && (settings::verbose() > 0 || settings::debug()))
                 std::cout << *(ert_data) << std::endl;
         }
@@ -1027,7 +1028,7 @@ public:
 
     static std::string get_type_string()
     {
-        return apply<std::string>::join('_', demangle(typeid(cuda::fp16_t).name()));
+        return mpl::apply<std::string>::join('_', demangle(typeid(cuda::fp16_t).name()));
     }
 
     //----------------------------------------------------------------------------------//

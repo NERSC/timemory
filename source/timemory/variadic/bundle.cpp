@@ -221,7 +221,12 @@ bundle<Tag, BundleT, TupleT>::~bundle()
 
     IF_CONSTEXPR(optional_count() > 0)
     {
-        DEBUG_PRINT_HERE("%s", "deleting components");
+#if defined(DEBUG) && !defined(NDEBUG)
+        if(tim::settings::debug() && tim::settings::verbose() > 4)
+        {
+            PRINT_HERE("%s", "deleting components");
+        }
+#endif
         invoke::destroy<Tag>(m_data);
     }
 }
@@ -232,9 +237,9 @@ template <typename Tag, typename BundleT, typename TupleT>
 bundle<Tag, BundleT, TupleT>::bundle(const bundle& rhs)
 : bundle_type(rhs)
 {
-    apply_v::set_value(m_data, nullptr);
-    invoke::invoke_impl::invoke_data<operation::copy, Tag>(m_data, rhs.m_data);
-    // apply_v::access2<operation_t<operation::copy>>(m_data, rhs.m_data);
+    using operation_t = convert_each_t<operation::copy, remove_pointers_t<data_type>>;
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
+    apply_v::access2<operation_t>(m_data, rhs.m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -257,76 +262,22 @@ bundle<Tag, BundleT, TupleT>::operator=(const bundle& rhs)
 // this_type operators
 //
 template <typename Tag, typename BundleT, typename TupleT>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator-=(const bundle& rhs)
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::operator-=(const this_type& rhs)
 {
-    // apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
+    bundle_type::operator-=(static_cast<const bundle_type&>(rhs));
     invoke::invoke_impl::invoke_data<operation::minus, Tag>(m_data, rhs.m_data);
-    m_laps -= rhs.m_laps;
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename BundleT, typename TupleT>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator+=(const bundle& rhs)
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::operator+=(const this_type& rhs)
 {
-    // apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
+    bundle_type::operator+=(static_cast<const bundle_type&>(rhs));
     invoke::invoke_impl::invoke_data<operation::plus, Tag>(m_data, rhs.m_data);
-    m_laps += rhs.m_laps;
-    return *this;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename Op>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator-=(Op&& rhs)
-{
-    // using minus_t = operation_t<operation::minus>;
-    // apply_v::access<minus_t>(m_data, std::forward<Op>(rhs));
-    invoke::invoke<operation::minus, Tag>(m_data, std::forward<Op>(rhs));
-    return get_this_type();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename Op>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator+=(Op&& rhs)
-{
-    // using plus_t = operation_t<operation::plus>;
-    // apply_v::access<plus_t>(m_data, std::forward<Op>(rhs));
-    invoke::invoke<operation::plus, Tag>(m_data, std::forward<Op>(rhs));
-    return get_this_type();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename Op>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator*=(Op&& rhs)
-{
-    // using multiply_t = operation_t<operation::multiply>;
-    // apply_v::access<multiply_t>(m_data, std::forward<Op>(rhs));
-    invoke::invoke<operation::multiply, Tag>(m_data, std::forward<Op>(rhs));
-    return get_this_type();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename Op>
-bundle<Tag, BundleT, TupleT>&
-bundle<Tag, BundleT, TupleT>::operator/=(Op&& rhs)
-{
-    // using divide_t = operation_t<operation::divide>;
-    // apply_v::access<divide_t>(m_data, std::forward<Op>(rhs));
-    invoke::invoke<operation::divide, Tag>(m_data, std::forward<Op>(rhs));
     return get_this_type();
 }
 
@@ -349,7 +300,7 @@ void
 bundle<Tag, BundleT, TupleT>::init_storage()
 {
     static thread_local bool _once = []() {
-        apply_v::type_access<operation::init_storage, non_quirk_t<reference_type>>();
+        apply_v::type_access<operation::init_storage, mpl::non_quirk_t<reference_type>>();
         return true;
     }();
     consume_parameters(_once);
@@ -388,7 +339,7 @@ bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>)
     if(!m_enabled())
         return get_this_type();
 
-    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
     // reset the data
     invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
     // insert node or find existing node
@@ -407,7 +358,7 @@ bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>, scope::config _
     if(!m_enabled())
         return get_this_type();
 
-    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
     // reset the data
     invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
     // insert node or find existing node
@@ -446,7 +397,7 @@ bundle<Tag, BundleT, TupleT>::pop(mpl::piecewise_select<Tp...>)
     if(!m_enabled())
         return get_this_type();
 
-    using pw_type = convert_t<implemented_t<Tp...>, mpl::piecewise_select<>>;
+    using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
     // set the current node to the parent node
     invoke::invoke<operation::pop_node, Tag>(pw_type{}, m_data);
     return get_this_type();
@@ -523,10 +474,14 @@ bundle<Tag, BundleT, TupleT>::start(mpl::piecewise_select<Tp...>, Args&&... args
 
     TIMEMORY_FOLD_EXPRESSION(
         operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_push, quirk::no_store>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value &&
+                 !quirk_config<quirk::no_store>::value)
     {
-        TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
-            std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+        if(m_store() && !bundle_type::m_explicit_push())
+        {
+            TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
+                std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+        }
     }
 
     // start components
@@ -551,10 +506,14 @@ bundle<Tag, BundleT, TupleT>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
     auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
     invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
 
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop, quirk::no_store>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value &&
+                 !quirk_config<quirk::no_store>::value)
     {
-        TIMEMORY_FOLD_EXPRESSION(
-            operation::pop_node<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+        if(m_store() && !bundle_type::m_explicit_pop())
+        {
+            TIMEMORY_FOLD_EXPRESSION(operation::pop_node<Tp>(
+                std::get<index_of<Tp, data_type>::value>(m_data)));
+        }
     }
     return get_this_type();
 }
@@ -571,9 +530,10 @@ bundle<Tag, BundleT, TupleT>::start(Args&&... args)
         return get_this_type();
 
     // push components into the call-stack
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_push, quirk::no_store>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value &&
+                 !quirk_config<quirk::no_store>::value)
     {
-        if(m_store())
+        if(m_store() && !bundle_type::m_explicit_push())
             push();
     }
 
@@ -596,9 +556,10 @@ bundle<Tag, BundleT, TupleT>::stop(Args&&... args)
     stop(mpl::lightweight{}, std::forward<Args>(args)...);
 
     // pop components off of the call-stack stack
-    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value &&
+                 !quirk_config<quirk::no_store>::value)
     {
-        if(m_store())
+        if(m_store() && !bundle_type::m_explicit_pop())
             pop();
     }
     return get_this_type();

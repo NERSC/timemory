@@ -55,7 +55,6 @@ struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
 
     // since this is a template class, need these statements
     using base_type::accum;
-    using base_type::is_transient;
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;
@@ -135,7 +134,7 @@ using plus_t  = typename tuple_t::operation_t<tim::operation::plus>;
 using start_t = typename tuple_t::operation_t<tim::operation::start>;
 using stop_t  = typename tuple_t::operation_t<tim::operation::stop>;
 
-using apply_v = tim::apply<void>;
+using apply_v = tim::mpl::apply<void>;
 
 //--------------------------------------------------------------------------------------//
 // this function consumes approximately "n" milliseconds of wall time
