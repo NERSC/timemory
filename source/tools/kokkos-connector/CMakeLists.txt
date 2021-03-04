@@ -167,7 +167,8 @@ endfunction()
 #   Build the sample (test executable)
 #
 if(TIMEMORY_KOKKOS_BUILD_SAMPLE)
-    find_package(Kokkos REQUIRED)
+    # use launch_compiler feature to ensure kokkos uses it's original compiler
+    find_package(Kokkos REQUIRED OPTIONAL_COMPONENTS launch_compiler)
     add_executable(kokkos-connector-sample sample/sample.cpp)
     target_compile_definitions(kokkos-connector-sample PRIVATE -DKOKKOS_PROFILE_LIBRARY="$<TARGET_FILE:kp_timemory>")
     target_link_libraries(kokkos-connector-sample PRIVATE Kokkos::kokkos)
