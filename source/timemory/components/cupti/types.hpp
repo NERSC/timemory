@@ -75,6 +75,7 @@ TIMEMORY_STATISTICS_TYPE(component::cupti_profiler, std::vector<double>)
 #if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_counters, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_activity, false_type)
+#endif
 //
 #if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA) ||                       \
     !defined(TIMEMORY_USE_CUPTI_NVPERF)
