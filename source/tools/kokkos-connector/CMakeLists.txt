@@ -168,8 +168,9 @@ endfunction()
 #
 if(TIMEMORY_KOKKOS_BUILD_SAMPLE)
     # use launch_compiler feature to ensure kokkos uses it's original compiler
-    find_package(Kokkos REQUIRED OPTIONAL_COMPONENTS launch_compiler)
+    find_package(Kokkos REQUIRED OPTIONAL_COMPONENTS separable_compilation)
     add_executable(kokkos-connector-sample sample/sample.cpp)
+    kokkos_compilation(SOURCE sample/sample.cpp)
     target_compile_definitions(kokkos-connector-sample PRIVATE -DKOKKOS_PROFILE_LIBRARY="$<TARGET_FILE:kp_timemory>")
     target_link_libraries(kokkos-connector-sample PRIVATE Kokkos::kokkos)
     set_target_properties(kokkos-connector-sample PROPERTIES
