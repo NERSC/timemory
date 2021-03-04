@@ -47,7 +47,7 @@ jobs:
           if [ -z "$(echo ${LD_LIBRARY_PATH} | grep timemory-ci)" ]; then echo "Warning: incorrect LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"; fi
           BASE_ARGS="--papi --likwid --mpi --cuda --cupti --gotcha --caliper --extra-optimizations --tools ${{ matrix.tools }} -SF --pyctest-model=Continuous -j 6"
           CTEST_ARGS="-V"
-          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory -DTIMEMORY_KOKKOS_BUILD_SAMPLE=ON -DTIMEMORY_BUILD_{CALIPER,GOTCHA}=OFF ${{ matrix.extra_cmake }}"
+          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory -DTIMEMORY_KOKKOS_BUILD_SAMPLE=ON -DTIMEMORY_BUILD_CALIPER=OFF -DTIMEMORY_BUILD_GOTCHA=OFF ${{ matrix.extra_cmake }}"
           export CC=${{ matrix.compiler }}
           export CXX="$(echo '${{ matrix.compiler }}' | sed 's/gcc/g++/1' | sed 's/clang/clang++/1')"
           if [ "${CUDA_CLANG}" -eq 1 ]; then export CUDACXX=${CXX}; fi
