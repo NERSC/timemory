@@ -51,7 +51,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
 
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
 TIMEMORY_FORWARD_DECLARE_COMPONENT(page_rss)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::page_rss, false_type)
 #endif
@@ -107,7 +107,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::papi_array_t, fals
 #    include <libexplain/execvp.h>
 #endif
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 #    include <unistd.h>
 extern "C"
 {

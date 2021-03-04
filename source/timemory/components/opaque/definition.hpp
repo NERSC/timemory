@@ -267,7 +267,7 @@ struct opaque_typeids<TupleT<T...>>
     using result_type = std::set<size_t>;
     using this_type   = opaque_typeids<TupleT<T...>>;
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
     template <typename U>
     static void get(result_type& ret)
     {

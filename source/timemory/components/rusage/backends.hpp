@@ -36,14 +36,14 @@
 #include <sstream>
 #include <string>
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 #    include <sys/resource.h>
 #    include <unistd.h>
-#    if defined(_MACOS)
+#    if defined(TIMEMORY_MACOS)
 #        include <libproc.h>
 #        include <mach/mach.h>
 #    endif
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
 #    endif
@@ -62,7 +62,7 @@
 //
 namespace tim
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 
 #    if !defined(_GNU_SOURCE) || !defined(RUSAGE_THREAD)
 #        define RUSAGE_THREAD RUSAGE_SELF
@@ -101,7 +101,7 @@ check_rusage_call(int ret, const char* _func)
 //
 struct rusage_cache
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     using rusage_t = struct rusage;
 
     rusage_cache()
@@ -130,7 +130,7 @@ struct rusage_cache
     TIMEMORY_NODISCARD inline int64_t get_user_mode_time() const;
     TIMEMORY_NODISCARD inline int64_t get_kernel_mode_time() const;
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 private:
     rusage_t m_data;
 #endif
@@ -182,10 +182,10 @@ get_kernel_mode_time();
 inline int64_t
 rusage_cache::get_peak_rss() const
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
     return tim::get_peak_rss();
 #else
-#    if defined(_MACOS)
+#    if defined(TIMEMORY_MACOS)
     // Darwin reports in bytes
     return static_cast<int64_t>(m_data.ru_maxrss);
 #    else
@@ -200,7 +200,7 @@ rusage_cache::get_peak_rss() const
 inline int64_t
 rusage_cache::get_num_io_in() const
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     return static_cast<int64_t>(m_data.ru_inblock);
 #else
     return tim::get_num_io_in();
@@ -212,7 +212,7 @@ rusage_cache::get_num_io_in() const
 inline int64_t
 rusage_cache::get_num_io_out() const
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     return static_cast<int64_t>(m_data.ru_oublock);
 #else
     return tim::get_num_io_out();
@@ -224,7 +224,7 @@ rusage_cache::get_num_io_out() const
 inline int64_t
 rusage_cache::get_num_minor_page_faults() const
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     return static_cast<int64_t>(m_data.ru_minflt);
 #else
     return tim::get_num_minor_page_faults();
@@ -236,7 +236,7 @@ rusage_cache::get_num_minor_page_faults() const
 inline int64_t
 rusage_cache::get_num_major_page_faults() const
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     return static_cast<int64_t>(m_data.ru_majflt);
 #else
     return tim::get_num_major_page_faults();
@@ -248,7 +248,7 @@ rusage_cache::get_num_major_page_faults() const
 inline int64_t
 rusage_cache::get_num_voluntary_context_switch() const
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     return static_cast<int64_t>(m_data.ru_nvcsw);
 #else
     return tim::get_num_voluntary_context_switch();
@@ -260,7 +260,7 @@ rusage_cache::get_num_voluntary_context_switch() const
 inline int64_t
 rusage_cache::get_num_priority_context_switch() const
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     return static_cast<int64_t>(m_data.ru_nivcsw);
 #else
     return tim::get_num_priority_context_switch();
@@ -272,7 +272,7 @@ rusage_cache::get_num_priority_context_switch() const
 inline int64_t
 rusage_cache::get_user_mode_time() const
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     constexpr int64_t MSEC = 1000000;
     return static_cast<int64_t>(m_data.ru_utime.tv_sec * MSEC + m_data.ru_utime.tv_usec);
 #else
@@ -285,7 +285,7 @@ rusage_cache::get_user_mode_time() const
 inline int64_t
 rusage_cache::get_kernel_mode_time() const
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     constexpr int64_t MSEC = 1000000;
     return static_cast<int64_t>(m_data.ru_stime.tv_sec * MSEC + m_data.ru_stime.tv_usec);
 #else
@@ -306,12 +306,12 @@ rusage_cache::get_kernel_mode_time() const
 inline int64_t
 tim::get_peak_rss()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
 // Darwin reports in bytes, Linux reports in kilobytes
-#    if defined(_MACOS)
+#    if defined(TIMEMORY_MACOS)
     constexpr int64_t _units = 1;
 #    else
     constexpr int64_t _units = units::kilobyte;
@@ -319,7 +319,7 @@ tim::get_peak_rss()
 
     return static_cast<int64_t>(_units * _usage.ru_maxrss);
 
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
     DWORD                   processID = GetCurrentProcessId();
     HANDLE                  hProcess;
     PROCESS_MEMORY_COUNTERS pmc;
@@ -346,8 +346,8 @@ tim::get_peak_rss()
 inline int64_t
 tim::get_page_rss()
 {
-#if defined(_UNIX)
-#    if defined(_MACOS)
+#if defined(TIMEMORY_UNIX)
+#    if defined(TIMEMORY_MACOS)
     // OSX
     // kern_return_t kret;
     // task_t task;
@@ -383,7 +383,7 @@ tim::get_page_rss()
     return static_cast<int64_t>(0);
 
 #    endif
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
     DWORD                   processID = GetCurrentProcessId();
     HANDLE                  hProcess;
     PROCESS_MEMORY_COUNTERS pmc;
@@ -408,7 +408,7 @@ tim::get_page_rss()
 inline int64_t
 tim::get_stack_rss()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -424,8 +424,8 @@ tim::get_stack_rss()
 inline int64_t
 tim::get_data_rss()
 {
-#if defined(_UNIX)
-#    if defined(_MACOS)
+#if defined(TIMEMORY_UNIX)
+#    if defined(TIMEMORY_MACOS)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -460,7 +460,7 @@ tim::get_data_rss()
 inline int64_t
 tim::get_num_swap()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -475,7 +475,7 @@ tim::get_num_swap()
 inline int64_t
 tim::get_num_io_in()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -490,7 +490,7 @@ tim::get_num_io_in()
 inline int64_t
 tim::get_num_io_out()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -505,7 +505,7 @@ tim::get_num_io_out()
 inline int64_t
 tim::get_num_minor_page_faults()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -520,7 +520,7 @@ tim::get_num_minor_page_faults()
 inline int64_t
 tim::get_num_major_page_faults()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -535,7 +535,7 @@ tim::get_num_major_page_faults()
 inline int64_t
 tim::get_num_messages_sent()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -550,7 +550,7 @@ tim::get_num_messages_sent()
 inline int64_t
 tim::get_num_messages_received()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -565,7 +565,7 @@ tim::get_num_messages_received()
 inline int64_t
 tim::get_num_signals()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -580,7 +580,7 @@ tim::get_num_signals()
 inline int64_t
 tim::get_num_voluntary_context_switch()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -595,7 +595,7 @@ tim::get_num_voluntary_context_switch()
 inline int64_t
 tim::get_num_priority_context_switch()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -610,8 +610,8 @@ tim::get_num_priority_context_switch()
 inline int64_t
 tim::get_virt_mem()
 {
-#if defined(_UNIX)
-#    if defined(_MACOS)
+#if defined(TIMEMORY_UNIX)
+#    if defined(TIMEMORY_MACOS)
     // OSX
     // kern_return_t kret;
     // task_t task;
@@ -651,7 +651,7 @@ tim::get_virt_mem()
     return static_cast<int64_t>(vm_size * units::get_page_size());
 
 #    endif
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
     return static_cast<int64_t>(0);
 #else
     return static_cast<int64_t>(0);
@@ -663,7 +663,7 @@ tim::get_virt_mem()
 inline int64_t
 tim::get_user_mode_time()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
@@ -679,7 +679,7 @@ tim::get_user_mode_time()
 inline int64_t
 tim::get_kernel_mode_time()
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 

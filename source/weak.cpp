@@ -33,12 +33,12 @@
 #include <limits>
 #include <numeric>
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
 #    include <dlfcn.h>
 #endif
 
 // Macro for obtaining jump pointer function association
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 #    define DLSYM_FUNCTION(VARNAME, HANDLE, FUNCNAME)
 #else
 #    define DLSYM_FUNCTION(VARNAME, HANDLE, FUNCNAME)                                    \
@@ -58,9 +58,9 @@
 #endif
 
 #if !defined(OS_DYNAMIC_LIBRARY_EXT)
-#    if defined(_MACOS)
+#    if defined(TIMEMORY_MACOS)
 #        define OS_DYNAMIC_LIBRARY_EXT "dylib"
-#    elif defined(_WINDOWS)
+#    elif defined(TIMEMORY_WINDOWS)
 #        define OS_DYNAMIC_LIBRARY_EXT "dll"
 #    else
 #        define OS_DYNAMIC_LIBRARY_EXT "so"
@@ -84,7 +84,7 @@ struct tools_stubs_dlsym
 
     void load(const std::string& id, std::string libname = "")
     {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
         tim::consume_parameters(id, libname);
 #else
         if(libname.empty())

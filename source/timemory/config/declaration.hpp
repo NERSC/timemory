@@ -64,7 +64,7 @@ template <typename Func>
 void
 read_command_line(Func&& _func)
 {
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
     auto _cmdline = tim::read_command_line(tim::process::get_target_id());
     if(tim::settings::verbose() > 1 || tim::settings::debug())
     {

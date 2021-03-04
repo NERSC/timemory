@@ -201,8 +201,7 @@ kokkosp_print_help(char* argv0)
 extern "C" void
 kokkosp_parse_args(int argc, char** argv)
 {
-    tim::timemory_init(argc, argv);
-
+    // tim::timemory_init(argc, argv);
     std::vector<std::string> _args{};
     _args.reserve(argc);
     for(int i = 0; i < argc; ++i)
@@ -226,10 +225,12 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     printf("%s\n\n", spacer.c_str());
 
     // timemory_init is expecting some args so generate some
-    std::array<char*, 1> cstr = { { strdup("@KP_LIBNAME@") } };
-    tim::timemory_init(1, cstr.data());
-    free(cstr.at(0));
-    assert(env_configured);    
+    tim::timemory_init("@KP_LIBNAME@");
+    assert(env_configured);
+
+    // clang-format off
+    tim::component::user_global_bundle::configure<@KP_COMPONENTS@>();
+    // clang-format on
 }
 
 extern "C" void

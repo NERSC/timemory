@@ -501,13 +501,13 @@ PYBIND11_MODULE(libpytimemory, tim)
     };
     //----------------------------------------------------------------------------------//
     auto set_rusage_child = []() {
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
         tim::get_rusage_type() = RUSAGE_CHILDREN;
 #endif
     };
     //----------------------------------------------------------------------------------//
     auto set_rusage_self = []() {
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
         tim::get_rusage_type() = RUSAGE_SELF;
 #endif
     };
@@ -585,7 +585,7 @@ PYBIND11_MODULE(libpytimemory, tim)
                 tim::timemory_finalize();
             } catch(std::exception& e)
             {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
                 auto             bt    = tim::get_demangled_backtrace<32>();
                 std::set<size_t> valid = {};
                 size_t           idx   = 0;
@@ -884,7 +884,7 @@ PYBIND11_MODULE(libpytimemory, tim)
              "fix issue with unittest module)",
              py::arg("parser") = py::none{}, py::arg("subparser") = true);
 
-#if !defined(_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
+#if !defined(TIMEMORY_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
     py::module _socket = tim.def_submodule("socket", "Socket communication API");
 
     using socket_manager_t = std::unique_ptr<tim::socket::manager>;

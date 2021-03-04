@@ -139,13 +139,43 @@ add_library(kp_timemory_filter SHARED ${PROJECT_SOURCE_DIR}/kp_timemory_filter.c
 configure_library(kp_timemory_filter)
 
 #
+#   Generate a test using kokkos
+#
+function(ADD_KOKKOS_SAMPLE_TEST _NAME _TARG)
+    if(NOT TIMEMORY_KOKKOS_BUILD_SAMPLE)
+        return()
+    endif()
+
+    string(REPLACE "_" "-" _NAME "${_NAME}")
+    add_test(
+        NAME kokkos-connector-test-${_NAME}
+        COMMAND $<TARGET_FILE:kokkos-connector-sample>
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    set(_TEST_ENV
+        "KOKKOS_PROFILE_LIBRARY=$<TARGET_FILE:${_TARG}>"
+        "OMP_PROC_BIND=spread"
+        "OMP_PLACES=threads"
+        "TIMEMORY_TIME_OUTPUT=OFF"
+        "TIMEMORY_COUT_OUTPUT=ON")
+    set_tests_properties(kokkos-connector-test-${_NAME} PROPERTIES
+        ENVIRONMENT "${_TEST_ENV}"
+        PASS_REGULAR_EXPRESSION
+        "(kokkos/allocate/Host/[yx]).*( 0 \\|).*(kokkos/allocate/Host/A).*(kokkos/deep_copy/Host=[yzA]/Host=[yzA]).*(kokkos/deallocate/Host/[Axy]).*(kokkos/dev[0-9]+/Kokkos::View::initialization .unsigned).*(kokkos/dev[0-9]+/Kokkos::View::initialization .long).*(kokkos/dev[0-9]+/Kokkos::View::initialization .A).*(kokkos/dev[0-9]+/yAx)[ \\|]+100 \\|")
+endfunction()
+
+#
 #   Build the sample (test executable)
 #
 if(TIMEMORY_KOKKOS_BUILD_SAMPLE)
     find_package(Kokkos REQUIRED)
-    add_executable(sample sample/sample.cpp)
-    target_compile_definitions(sample PRIVATE -DKOKKOS_PROFILE_LIBRARY="$<TARGET_FILE:kp_timemory>")
-    target_link_libraries(sample PRIVATE Kokkos::kokkos)
+    add_executable(kokkos-connector-sample sample/sample.cpp)
+    target_compile_definitions(kokkos-connector-sample PRIVATE -DKOKKOS_PROFILE_LIBRARY="$<TARGET_FILE:kp_timemory>")
+    target_link_libraries(kokkos-connector-sample PRIVATE Kokkos::kokkos)
+    set_target_properties(kokkos-connector-sample PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    add_kokkos_sample_test(libtimemory timemory::timemory-cxx-shared)
+    add_kokkos_sample_test(kp-timemory kp_timemory)
+    add_kokkos_sample_test(kp-timemory-filter kp_timemory_filter)
 endif()
 
 ##--------------------------------------------------------------------------------------##
@@ -234,6 +264,8 @@ function(ADD_CONNECTOR_CONFIG _NAME)
         ${CONNECTOR_TARGETS})
     target_compile_definitions(kp_timemory_${_NAME} PRIVATE
         ${CONNECTOR_DEFINITIONS})
+
+    add_kokkos_sample_test(kp_timemory_${_NAME} kp_timemory_${_NAME})
 endfunction()
 
 ##--------------------------------------------------------------------------------------##

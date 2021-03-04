@@ -51,7 +51,7 @@ template <typename Tp>
 bool
 is_finite(const Tp& val)
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
     const Tp _infv = std::numeric_limits<Tp>::infinity();
     const Tp _inf  = (val < 0.0) ? -_infv : _infv;
     return (val == val && val != _inf);

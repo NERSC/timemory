@@ -75,7 +75,7 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 //
 #    if !defined(TIMEMORY_EXTERN_BUNDLE)
 #        define TIMEMORY_EXTERN_BUNDLE(...)

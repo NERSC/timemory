@@ -27,7 +27,7 @@
 #include "timemory/backends/device.hpp"
 #include "timemory/macros/os.hpp"
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
 #    define RESTRICT(TYPE) TYPE __restrict__
 #else
 #    define RESTRICT(TYPE) TYPE
@@ -48,9 +48,9 @@
 #include <stdexcept>
 
 // provide allocation functions
-#if defined(_LINUX) || defined(_WINDOWS)
+#if defined(TIMEMORY_LINUX) || defined(TIMEMORY_WINDOWS)
 #    include <malloc.h>
-#elif defined(_MACOS)
+#elif defined(TIMEMORY_MACOS)
 #    include <malloc/malloc.h>
 #endif
 
@@ -70,12 +70,12 @@ allocate_aligned(std::size_t size, std::size_t alignment,
 {
 #if defined(_ISOC11_SOURCE)
     return static_cast<Tp*>(aligned_alloc(alignment, size * sizeof(Tp)));
-#elif defined(_MACOS) || (_POSIX_C_SOURCE >= 200112L)
+#elif defined(TIMEMORY_MACOS) || (_POSIX_C_SOURCE >= 200112L)
     void* ptr = nullptr;
     auto  ret = posix_memalign(&ptr, alignment, size * sizeof(Tp));
     (void) ret;
     return static_cast<Tp*>(ptr);
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
     return static_cast<Tp*>(_aligned_malloc(size * sizeof(Tp), alignment));
 #else
     return new Tp[size];
@@ -100,8 +100,8 @@ void
 free_aligned(Tp* ptr,
              std::enable_if_t<std::is_same<DeviceT, device::cpu>::value, int> = 0)
 {
-#if defined(_ISOC11_SOURCE) || defined(_MACOS) || (_POSIX_C_SOURCE >= 200112L) ||        \
-    defined(_WINDOWS)
+#if defined(_ISOC11_SOURCE) || defined(TIMEMORY_MACOS) ||                                \
+    (_POSIX_C_SOURCE >= 200112L) || defined(TIMEMORY_WINDOWS)
     free(static_cast<void*>(ptr));
 #else
     delete[] ptr;

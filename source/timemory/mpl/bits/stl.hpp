@@ -39,7 +39,7 @@
 
 //======================================================================================//
 
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 
 namespace std
 {
@@ -431,7 +431,7 @@ using namespace stl;
 
 namespace std
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 
 template <typename Lhs, typename Rhs>
 const pair<Lhs, Rhs>

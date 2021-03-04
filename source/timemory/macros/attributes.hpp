@@ -163,28 +163,29 @@
 #    else  // all other compilers
 #        define TIMEMORY_PACKED_ALIGNMENT
 #    endif
+#endif
 
 //======================================================================================//
 //  device decorators
 //
-#    if defined(__CUDACC__)
-#        define TIMEMORY_LAMBDA __host__ __device__
-#        define TIMEMORY_HOST_LAMBDA __host__
-#        define TIMEMORY_DEVICE_LAMBDA __device__
-#        define TIMEMORY_DEVICE_FUNCTION __device__
-#        define TIMEMORY_GLOBAL_FUNCTION __global__
-#        define TIMEMORY_HOST_DEVICE_FUNCTION __host__ __device__
-#        define TIMEMORY_DEVICE_INLINE __device__ __inline__
-#        define TIMEMORY_GLOBAL_INLINE __global__ __inline__
-#        define TIMEMORY_HOST_DEVICE_INLINE __host__ __device__ __inline__
-#    else
-#        define TIMEMORY_LAMBDA
-#        define TIMEMORY_HOST_LAMBDA
-#        define TIMEMORY_DEVICE_LAMBDA
-#        define TIMEMORY_DEVICE_FUNCTION
-#        define TIMEMORY_GLOBAL_FUNCTION
-#        define TIMEMORY_HOST_DEVICE_FUNCTION
-#        define TIMEMORY_DEVICE_INLINE inline
-#        define TIMEMORY_GLOBAL_INLINE inline
-#        define TIMEMORY_HOST_DEVICE_INLINE inline
-#    endif
+#if defined(__CUDACC__)
+#    define TIMEMORY_LAMBDA __host__ __device__
+#    define TIMEMORY_HOST_LAMBDA __host__
+#    define TIMEMORY_DEVICE_LAMBDA __device__
+#    define TIMEMORY_DEVICE_FUNCTION __device__
+#    define TIMEMORY_GLOBAL_FUNCTION __global__
+#    define TIMEMORY_HOST_DEVICE_FUNCTION __host__ __device__
+#    define TIMEMORY_DEVICE_INLINE __device__ __inline__
+#    define TIMEMORY_GLOBAL_INLINE __global__ __inline__
+#    define TIMEMORY_HOST_DEVICE_INLINE __host__ __device__ __inline__
+#else
+#    define TIMEMORY_LAMBDA
+#    define TIMEMORY_HOST_LAMBDA
+#    define TIMEMORY_DEVICE_LAMBDA
+#    define TIMEMORY_DEVICE_FUNCTION
+#    define TIMEMORY_GLOBAL_FUNCTION
+#    define TIMEMORY_HOST_DEVICE_FUNCTION
+#    define TIMEMORY_DEVICE_INLINE inline
+#    define TIMEMORY_GLOBAL_INLINE inline
+#    define TIMEMORY_HOST_DEVICE_INLINE inline
+#endif

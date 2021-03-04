@@ -58,7 +58,7 @@
 #    include <libexplain/execvp.h>
 #endif
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 #    include <unistd.h>
 extern "C"
 {

@@ -45,7 +45,7 @@
 #include <cstdint>
 #include <thread>
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 #    include <pthread.h>
 #    include <unistd.h>
 #endif
@@ -54,7 +54,7 @@
 #    include <papiStdEventDefs.h>
 //
 #    include <papi.h>
-#    if defined(_UNIX)
+#    if defined(TIMEMORY_UNIX)
 #        include <pthread.h>
 #    endif
 #endif
@@ -258,7 +258,7 @@ unregister_thread()
 inline int
 get_event_code(const std::string& event_code_str)
 {
-#if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
+#if defined(TIMEMORY_USE_PAPI) && defined(TIMEMORY_UNIX)
     static const uint64_t BUFFER_SIZE = 1024;
     int                   event_code  = -1;
     char                  event_code_char[BUFFER_SIZE];
@@ -279,7 +279,7 @@ get_event_code(const std::string& event_code_str)
 inline std::string
 get_event_code_name(int event_code)
 {
-#if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
+#if defined(TIMEMORY_USE_PAPI) && defined(TIMEMORY_UNIX)
     static const uint64_t BUFFER_SIZE = 1024;
     char                  event_code_char[BUFFER_SIZE];
     int                   retval = PAPI_event_code_to_name(event_code, event_code_char);

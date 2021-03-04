@@ -12,16 +12,16 @@ jobs:
           - build_type: 'Debug'
             compiler: 'gcc-7'
             standard: '17'
-            tools: 'dyninst mpip ncclp mallocp'
+            tools: 'dyninst mpip ncclp mallocp kokkos'
             extra_args: '--coverage --minimal'
-            generator: ''
+            extra_cmake: ''
         # compiler: ['gcc-6', 'gcc-7', 'gcc-8', 'gcc-9', 'gcc-10', 'clang-6.0', 'clang-7', 'clang-8', 'clang-9', 'clang-10', 'clang-11', 'clang-12']
         build_type: ['Release']
         compiler: ['gcc-9', 'gcc-10', 'clang-10', 'clang-11', 'clang-12']
         standard: ['17']
         tools: ['avail kokkos kokkos-config dyninst mpip ncclp mallocp compiler']
         extra_args: ['--python']
-        generator: ['-G Ninja']
+        extra_cmake: ['-G Ninja']
     runs-on: self-hosted
     steps:
       - name: Checkout Code
@@ -47,7 +47,7 @@ jobs:
           if [ -z "$(echo ${LD_LIBRARY_PATH} | grep timemory-ci)" ]; then echo "Warning: incorrect LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"; fi
           BASE_ARGS="--papi --likwid --mpi --cuda --cupti --gotcha --caliper --extra-optimizations --tools ${{ matrix.tools }} -SF --pyctest-model=Continuous -j 6"
           CTEST_ARGS="-V"
-          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory ${{ matrix.generator }}"
+          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory -DTIMEMORY_KOKKOS_BUILD_SAMPLE=ON -DTIMEMORY_BUILD_{CALIPER,GOTCHA}=OFF ${{ matrix.extra_cmake }}"
           export CC=${{ matrix.compiler }}
           export CXX="$(echo '${{ matrix.compiler }}' | sed 's/gcc/g++/1' | sed 's/clang/clang++/1')"
           if [ "${CUDA_CLANG}" -eq 1 ]; then export CUDACXX=${CXX}; fi

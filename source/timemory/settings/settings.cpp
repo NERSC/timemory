@@ -110,7 +110,7 @@ TIMEMORY_SETTINGS_INLINE
 settings::strvector_t
 settings::get_global_environment()
 {
-#    if defined(_UNIX)
+#    if defined(TIMEMORY_UNIX)
     strvector_t _environ;
     if(environ != nullptr)
     {

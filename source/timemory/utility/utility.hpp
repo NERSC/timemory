@@ -38,7 +38,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 // Without this include on windows launch_process is needed by makedir but is
 // missing at link time. With this include on linux there is a problem with
 // delimit not being defined before it is used in popen.hpp. I think including
@@ -76,12 +76,12 @@
 #include <mutex>
 #include <thread>
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 #    include <cxxabi.h>
 #    include <execinfo.h>
 #    include <sys/stat.h>
 #    include <sys/types.h>
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
 #    include <direct.h>
 using pid_t = int;
 #endif
@@ -117,7 +117,7 @@ template <typename Tp>
 inline bool
 isfinite(const Tp& arg)
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
     // Windows seems to be missing std::isfinite
     return (arg == arg && arg != std::numeric_limits<Tp>::infinity() &&
             arg != -std::numeric_limits<Tp>::infinity())
@@ -287,7 +287,7 @@ get_bool(const std::string& strbool, bool _default = false) noexcept;
 
 //--------------------------------------------------------------------------------------//
 //
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 //
 TIMEMORY_UTILITY_INLINE std::string
                         demangle_backtrace(const char* cstr);
@@ -602,8 +602,8 @@ struct hasher
 
 //--------------------------------------------------------------------------------------//
 /*
-#if defined(_UNIX) &&                                                                    \
-    (defined(TIMEMORY_UTILITY_SOURCE) || defined(TIMEMORY_USE_UTILITY_EXTERN))
+#if defined(TIMEMORY_UNIX) && \ (defined(TIMEMORY_UTILITY_SOURCE) ||
+defined(TIMEMORY_USE_UTILITY_EXTERN))
 //
 extern template auto
 get_backtrace<2, 1>();

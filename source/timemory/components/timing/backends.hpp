@@ -34,13 +34,13 @@
 #include <ctime>
 #include <ratio>
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 
 #    include <pthread.h>
 #    include <sys/times.h>
 #    include <unistd.h>
 
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
 //
 //  Windows does not have tms definition
 //
@@ -238,7 +238,7 @@ struct time_units<std::ratio<3600 * 24, 1>>
 TIMEMORY_HOT_INLINE int64_t
                     clock_tick() noexcept
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
     return CLOCKS_PER_SEC;
 #else
     static int64_t _val = ::sysconf(_SC_CLK_TCK);
@@ -262,7 +262,7 @@ TIMEMORY_HOT_INLINE Tp
                     get_clock_now(clockid_t clock_id) noexcept
 {
     constexpr Tp factor = Precision::den / static_cast<Tp>(std::nano::den);
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
     return clock_gettime_nsec_np(clock_id) * factor;
 #else
     struct timespec ts;
@@ -312,7 +312,7 @@ TIMEMORY_HOT_INLINE Tp
 // threads)
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // thread.
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
                     get_clock_thread_now() noexcept
@@ -350,7 +350,7 @@ TIMEMORY_HOT_INLINE Tp
 // this clock measures the CPU time within the current process (excludes child processes)
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // process.
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
                     get_clock_process_now() noexcept

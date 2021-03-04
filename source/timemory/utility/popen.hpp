@@ -28,7 +28,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
 
 #    include <sstream>
 #    include <string>
@@ -154,7 +154,7 @@ namespace tim
 inline bool
 launch_process(const char* cmd, const std::string& extra, std::ostream* os)
 {
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
     auto                       delim = tim::delimit(cmd, " \t");
     tim::popen::TIMEMORY_PIPE* fp    = nullptr;
     if(delim.size() < 2)

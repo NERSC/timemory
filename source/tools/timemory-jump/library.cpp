@@ -124,7 +124,7 @@ public:
 std::unique_ptr<jump>&
 get_jump()
 {
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
     static std::unique_ptr<jump> obj = std::make_unique<jump>(
         tim::get_env<std::string>("TIMEMORY_JUMP_LIBRARY", "libtimemory.so"));
 #else

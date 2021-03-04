@@ -52,8 +52,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, KokkosMemoryTracker, std::true
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, KokkosMemoryTracker, std::true_type)
 
 using alloc_entry_t = tim::auto_tuple<KokkosMemoryTracker>;
-using memory_entry_t =
-    tim::component_tuple<wall_clock, user_global_bundle, KokkosMemoryTracker>;
+using memory_entry_t = tim::component_tuple<user_kokkosp_bundle, KokkosMemoryTracker>;
 using memory_map_t =
     std::unordered_map<tim::string_view_t,
                        std::unordered_map<tim::string_view_t, memory_entry_t>>;
@@ -80,3 +79,5 @@ get_tl_static()
 }
 
 //--------------------------------------------------------------------------------------//
+
+TIMEMORY_DECLARE_EXTERN_COMPONENT(user_kokkosp_bundle, false, void)

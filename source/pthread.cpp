@@ -32,7 +32,7 @@
 #include "timemory/trace.hpp"
 #include "timemory/utility/bits/signals.hpp"
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
 
 #    include <array>
 #    include <functional>

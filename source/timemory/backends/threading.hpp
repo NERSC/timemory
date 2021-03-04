@@ -41,18 +41,18 @@
 #include <set>
 #include <thread>
 
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
 #    include <fstream>
 #    include <pthread.h>
 #    include <sys/syscall.h>
 #    include <unistd.h>
 #endif
 
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
 #    include <sys/sysctl.h>
 #endif
 
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 #    include <processthreadsapi.h>
 #endif
 
@@ -106,9 +106,9 @@ is_master_thread()
 inline uint32_t
 get_sys_tid()
 {
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
     return syscall(SYS_gettid);
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
     return GetCurrentThreadId();
 #else
     return static_cast<uint32_t>(get_id());
@@ -126,12 +126,12 @@ struct affinity
     static auto hw_physicalcpu()
     {
         static int64_t _value = []() -> int64_t {
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
             int    count;
             size_t count_len = sizeof(count);
             sysctlbyname("hw.physicalcpu", &count, &count_len, nullptr, 0);
             return static_cast<int64_t>(count);
-#elif defined(_LINUX)
+#elif defined(TIMEMORY_LINUX)
             std::ifstream ifs("/proc/cpuinfo");
             if(ifs)
             {
@@ -237,7 +237,7 @@ struct affinity
 
     static int64_t set()
     {
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
         auto proc_id = get_algorithm()(get_id());
         if(proc_id >= 0)
         {
@@ -255,7 +255,7 @@ struct affinity
 
     static int64_t set(native_handle_t athread)
     {
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
         auto      proc_id = get_algorithm()(get_id());
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);

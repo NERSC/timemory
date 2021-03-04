@@ -37,7 +37,7 @@ extern "C"
 {
 #endif
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
     char* strdup(const char* s)
     {
         size_t slen   = strlen(s);

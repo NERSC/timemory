@@ -48,8 +48,12 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_FOLD_EXPRESSION)
-#    define TIMEMORY_FOLD_EXPRESSION(...)                                                \
-        ::tim::consume_parameters(::std::initializer_list<int>{ (__VA_ARGS__, 0)... })
+#    if defined(CXX17)
+#        define TIMEMORY_FOLD_EXPRESSION(...) ((__VA_ARGS__), ...)
+#    else
+#        define TIMEMORY_FOLD_EXPRESSION(...)                                            \
+            ::tim::consume_parameters(::std::initializer_list<int>{ (__VA_ARGS__, 0)... })
+#    endif
 #endif
 
 //======================================================================================//

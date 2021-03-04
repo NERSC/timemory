@@ -49,7 +49,7 @@
 #include <unordered_map>
 #include <vector>
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 //
 #    include <ctime>
 #    include <unistd.h>

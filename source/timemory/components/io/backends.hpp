@@ -43,10 +43,10 @@
 #include <string>
 #include <type_traits>
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 #    include <sys/resource.h>
 #    include <unistd.h>
-#    if defined(_MACOS)
+#    if defined(TIMEMORY_MACOS)
 #        include <libproc.h>
 #        include <mach/mach.h>
 #    endif
@@ -116,7 +116,7 @@ struct io_cache
     }
 
 public:
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
     io_cache()
     : m_data(read())
     {}
@@ -130,7 +130,7 @@ public:
     io_cache(io_cache&&) noexcept        = default;
     io_cache& operator=(io_cache&&) noexcept = default;
 
-#if !defined(_LINUX)
+#if !defined(TIMEMORY_LINUX)
 
     TIMEMORY_NODISCARD inline int64_t get_char_read() const { return 0; }        // NOLINT
     TIMEMORY_NODISCARD inline int64_t get_char_written() const { return 0; }     // NOLINT
@@ -193,7 +193,7 @@ get_bytes_written();
 inline int64_t
 tim::get_char_read()
 {
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
     // read one value and return it
     return io_cache::read<1>().back();
 #else
@@ -206,7 +206,7 @@ tim::get_char_read()
 inline int64_t
 tim::get_char_written()
 {
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
     // read two values and return the last one
     return io_cache::read<2>().back();
 #else
@@ -219,7 +219,7 @@ tim::get_char_written()
 inline int64_t
 tim::get_syscall_read()
 {
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
     // read one value and return it
     return io_cache::read<3>().back();
 #else
@@ -232,7 +232,7 @@ tim::get_syscall_read()
 inline int64_t
 tim::get_syscall_written()
 {
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
     // read two values and return the last one
     return io_cache::read<4>().back();
 #else
@@ -245,13 +245,13 @@ tim::get_syscall_written()
 inline int64_t
 tim::get_bytes_read()
 {
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
     rusage_info_current rusage;
     if(proc_pid_rusage(process::get_target_id(), RUSAGE_INFO_CURRENT, (void**) &rusage) ==
        0)
         return rusage.ri_diskio_bytesread;
     return 0;
-#elif defined(_LINUX)
+#elif defined(TIMEMORY_LINUX)
     // read three values and return the last one
     return io_cache::read<5>().back();
 #else
@@ -264,13 +264,13 @@ tim::get_bytes_read()
 inline int64_t
 tim::get_bytes_written()
 {
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
     rusage_info_current rusage;
     if(proc_pid_rusage(process::get_target_id(), RUSAGE_INFO_CURRENT, (void**) &rusage) ==
        0)
         return rusage.ri_diskio_byteswritten;
     return 0;
-#elif defined(_LINUX)
+#elif defined(TIMEMORY_LINUX)
     // read four values and return the last one
     return io_cache::read<6>().back();
 #else
