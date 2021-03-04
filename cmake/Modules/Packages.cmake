@@ -1347,7 +1347,11 @@ if(TIMEMORY_USE_DYNINST)
     set(TIMEMORY_BUILD_DYNINST_TOOLS ${TIMEMORY_USE_DYNINST})
 endif()
 
-add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
+if(DYNINST_API_RT)
+    add_cmake_defines(DYNINST_API_RT VALUE QUOTE DEFAULT)
+else()
+    add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
+endif()
 
 
 #----------------------------------------------------------------------------------------#

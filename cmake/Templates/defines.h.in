@@ -27,6 +27,12 @@
 /// \file timemory/defines.h
 /// \brief Provides the definitions for the installation if not using cmake
 
+// clang-format off
+
 #if !defined(TIMEMORY_SOURCE) && !defined(TIMEMORY_CMAKE)
 @timemory_CMAKE_DEFINES@
 #endif
+    
+@timemory_DEFAULT_CMAKE_DEFINES@
+
+// clang-format on

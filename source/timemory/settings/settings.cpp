@@ -27,6 +27,7 @@
 
 #    include "timemory/settings/settings.hpp"
 #    include "timemory/backends/dmp.hpp"
+#    include "timemory/defines.h"
 #    include "timemory/mpl/policy.hpp"
 #    include "timemory/settings/macros.hpp"
 #    include "timemory/settings/types.hpp"

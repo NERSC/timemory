@@ -11,6 +11,8 @@ foreach(_DEF ${_CMAKE_DEFINES})
 endforeach()
 set(${PROJECT_NAME}_CMAKE_DEFINES "${${PROJECT_NAME}_CMAKE_DEFINES}\n")
 
+get_property(${PROJECT_NAME}_DEFAULT_CMAKE_DEFINES GLOBAL PROPERTY ${PROJECT_NAME}_DEFAULT_CMAKE_DEFINES)
+
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/defines.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/defines.h.in @ONLY)
 
