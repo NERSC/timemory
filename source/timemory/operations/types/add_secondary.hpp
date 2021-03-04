@@ -60,7 +60,7 @@ struct add_secondary<Tp, true>
     template <typename Storage, typename Iterator>
     add_secondary(Storage* _storage, Iterator _itr, const type& _rhs)
     {
-        if(!trait::runtime_enabled<Tp>::get() || !settings::add_secondary())
+        if(!_storage || !trait::runtime_enabled<Tp>::get() || !settings::add_secondary())
             return;
         (*this)(_storage, _itr, _rhs);
     }
@@ -82,6 +82,8 @@ struct add_secondary<Tp, true>
     template <typename Storage, typename Iterator, typename Up>
     auto operator()(Storage* _storage, Iterator _itr, const Up& _rhs) const
     {
+        if(!_storage)
+            return;
         using map_type         = decay_t<decltype(_rhs.get_secondary())>;
         using value_type       = typename map_type::mapped_type;
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
@@ -122,7 +124,7 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the storage can append secondary data
     //
-    template <typename Storage, typename Iterator, typename DataT>
+    template <typename Storage, typename DataT>
     auto storage_sfinae(Storage* _storage, int, DataT&& _data) const
         -> decltype(_storage->append(std::forward<DataT>(_data)))
     {
@@ -132,7 +134,7 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the storage can NOT append secondary data
     //
-    template <typename Storage, typename Iterator, typename DataT>
+    template <typename Storage, typename DataT>
     void storage_sfinae(Storage*, long, DataT&&) const
     {}
 };
