@@ -34,5 +34,4 @@
 #endif
     
 @timemory_DEFAULT_CMAKE_DEFINES@
-
 // clang-format on
