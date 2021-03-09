@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(TIMEMORY_LIBRARY_SOURCE)
+#    define TIMEMORY_LIBRARY_SOURCE 1
+#endif
+
 #include "timemory/trace.hpp"
 #include "timemory/compat/library.h"
 #include "timemory/library.h"
@@ -751,7 +755,7 @@ extern "C"
             };
             tim::signal_settings::set_exit_action(_exit_action);
             std::atexit(&timemory_trace_finalize);
-#if !defined(_MACOS)
+#if !defined(TIMEMORY_MACOS)
             // Apple clang version 11.0.3 (clang-1103.0.32.62) doesn't seem to have this
             // function
             std::at_quick_exit(&tim::timemory_finalize);

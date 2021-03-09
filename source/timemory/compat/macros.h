@@ -68,25 +68,49 @@
 
 #if defined(_WIN32) || defined(_WIN64) || defined(WIN32) || defined(WIN64)
 #    if !defined(_WINDOWS)
-#        define _WINDOWS
+#        define _WINDOWS 1
 #    endif
 #elif defined(__APPLE__) || defined(__MACH__)
 #    if !defined(_MACOS)
-#        define _MACOS
+#        define _MACOS 1
 #    endif
 #    if !defined(_UNIX)
-#        define _UNIX
+#        define _UNIX 1
 #    endif
 #elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
 #    if !defined(_LINUX)
-#        define _LINUX
+#        define _LINUX 1
 #    endif
 #    if !defined(_UNIX)
-#        define _UNIX
+#        define _UNIX 1
 #    endif
 #elif defined(__unix__) || defined(__unix) || defined(unix)
 #    if !defined(_UNIX)
-#        define _UNIX
+#        define _UNIX 1
+#    endif
+#endif
+
+#if defined(_WIN32) || defined(_WIN64) || defined(WIN32) || defined(WIN64)
+#    if !defined(TIMEMORY_WINDOWS)
+#        define TIMEMORY_WINDOWS 1
+#    endif
+#elif defined(__APPLE__) || defined(__MACH__)
+#    if !defined(TIMEMORY_MACOS)
+#        define TIMEMORY_MACOS 1
+#    endif
+#    if !defined(TIMEMORY_UNIX)
+#        define TIMEMORY_UNIX 1
+#    endif
+#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
+#    if !defined(TIMEMORY_LINUX)
+#        define TIMEMORY_LINUX 1
+#    endif
+#    if !defined(TIMEMORY_UNIX)
+#        define TIMEMORY_UNIX 1
+#    endif
+#elif defined(__unix__) || defined(__unix) || defined(unix)
+#    if !defined(TIMEMORY_UNIX)
+#        define TIMEMORY_UNIX 1
 #    endif
 #endif
 

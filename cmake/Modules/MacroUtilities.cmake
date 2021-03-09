@@ -1069,13 +1069,22 @@ ENDFUNCTION()
 
 FUNCTION(ADD_CMAKE_DEFINES _VAR)
     # parse args
-    cmake_parse_arguments(DEF "VALUE;QUOTE" "" "" ${ARGN})
+    cmake_parse_arguments(DEF "VALUE;QUOTE;DEFAULT" "" "" ${ARGN})
     if(DEF_VALUE)
         if(DEF_QUOTE)
             SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_DEFINES
                 "${_VAR} \"@${_VAR}@\"")
         else()
             SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_DEFINES "${_VAR} @${_VAR}@")
+        endif()
+        if(DEF_DEFAULT)
+            if(DEF_QUOTE)
+                SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_DEFAULT_CMAKE_DEFINES
+                    "#if !defined(${_VAR})\n#cmakedefine ${_VAR} \"@${_VAR}@\"\n#endif\n")
+            else()
+                SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_DEFAULT_CMAKE_DEFINES
+                    "#if !defined(${_VAR})\n#cmakedefine ${_VAR} @${_VAR}@\n#endif\n")
+            endif()
         endif()
     else()
         SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_DEFINES "${_VAR}")

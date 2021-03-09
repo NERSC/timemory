@@ -203,6 +203,9 @@ macro(ADD_TARGET_CXX_FLAG _TARG)
     if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
         target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${ARGN}>)
         list(APPEND ${_MAKE_TARG}_CUDA_FLAGS -Xcompiler=${ARGN})
+    elseif(CMAKE_CUDA_COMPILER_IS_CLANG)
+        target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:${ARGN}>)
+        list(APPEND ${_MAKE_TARG}_CUDA_FLAGS ${ARGN})
     endif()
 endmacro()
 
@@ -389,6 +392,9 @@ function(TIMEMORY_TARGET_FLAG _TARG_TARGET)
                     if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
                         target_compile_options(${_TARG_TARGET} ${_TARG_MODE}
                             $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${_FLAG}>)
+                    elseif(CMAKE_CUDA_COMPILER_IS_CLANG)
+                        target_compile_options(${_TARG_TARGET} ${_TARG_MODE}
+                            $<$<COMPILE_LANGUAGE:CUDA>:${_FLAG}>)
                     endif()
                 endif()
             endif()
@@ -436,6 +442,9 @@ function(TIMEMORY_TARGET_COMPILE_DEFINITIONS _TARG _VIS)
         target_compile_definitions(${_TARG} ${_VIS}
             $<$<COMPILE_LANGUAGE:CXX>:${_DEF}>)
         if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
+            target_compile_definitions(${_TARG} ${_VIS}
+                $<$<COMPILE_LANGUAGE:CUDA>:${_DEF}>)
+        elseif(CMAKE_CUDA_COMPILER_IS_CLANG)
             target_compile_definitions(${_TARG} ${_VIS}
                 $<$<COMPILE_LANGUAGE:CUDA>:${_DEF}>)
         endif()

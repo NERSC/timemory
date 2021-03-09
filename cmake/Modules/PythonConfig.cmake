@@ -162,11 +162,9 @@ else()
     set(TIMEMORY_PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
         CACHE STRING "Python version for timemory")
     add_feature(PYTHON_EXECUTABLE "Python executable")
-    add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE)
+    add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE DEFAULT)
     set(TIMEMORY_PYTHON_PLOTTER "${PYTHON_EXECUTABLE}")
-    timemory_target_compile_definitions(timemory-plotting INTERFACE
-        TIMEMORY_USE_PLOTTING
-        TIMEMORY_PYTHON_PLOTTER="${PYTHON_EXECUTABLE}")
+    timemory_target_compile_definitions(timemory-plotting INTERFACE TIMEMORY_USE_PLOTTING)
     target_link_libraries(timemory-headers INTERFACE timemory-plotting)
 endif()
 

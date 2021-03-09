@@ -23,7 +23,7 @@
 // SOFTWARE.
 //
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
 
 #    include "timemory/utility/popen.hpp"
 #    include <limits>
@@ -95,7 +95,7 @@ drop_privileges(int permanent)
 
     if(newgid != oldgid)
     {
-#    if !defined(_LINUX)
+#    if !defined(TIMEMORY_LINUX)
         auto ret = setegid(newgid);
         if(ret != 0)
             abort();
@@ -109,7 +109,7 @@ drop_privileges(int permanent)
 
     if(newuid != olduid)
     {
-#    if !defined(_LINUX)
+#    if !defined(TIMEMORY_LINUX)
         auto ret = seteuid(newuid);
         if(ret != 0)
             abort();

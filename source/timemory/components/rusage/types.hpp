@@ -135,7 +135,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(report_sum, component::current_peak_rss, false_ty
 //
 //--------------------------------------------------------------------------------------//
 
-#if defined(_LINUX) || (defined(_UNIX) && !defined(_MACOS))
+#if defined(TIMEMORY_LINUX) || (defined(TIMEMORY_UNIX) && !defined(TIMEMORY_MACOS))
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::page_rss, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::virtual_memory, true_type)
@@ -167,7 +167,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_swap, false_type)
 //
 //      WINDOWS (non-UNIX)
 //
-#if !defined(_UNIX)
+#if !defined(TIMEMORY_UNIX)
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_in, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_out, false_type)
@@ -182,19 +182,19 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::kernel_mode_time, false_
 //
 //      UNIX
 //
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 
 /// \macro TIMEMORY_USE_UNMAINTAINED_RUSAGE
 /// \brief This macro enables the globally disable rusage structures that are
 /// unmaintained by the Linux kernel and are zero on macOS
 ///
-#    if !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE) && defined(_MACOS)
+#    if !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE) && defined(TIMEMORY_MACOS)
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_in, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_out, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
 
-#    endif  // !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE) && defined(_MACOS)
+#    endif  // !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE) && defined(TIMEMORY_MACOS)
 
 #endif
 
@@ -204,7 +204,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_ty
 //
 //--------------------------------------------------------------------------------------//
 
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::current_peak_rss, false_type)
 #endif
 

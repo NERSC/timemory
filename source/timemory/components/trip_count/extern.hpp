@@ -33,6 +33,6 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/components/trip_count/components.hpp"
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
 TIMEMORY_EXTERN_COMPONENT(trip_count, true, int64_t)
 #endif

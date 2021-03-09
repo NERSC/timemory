@@ -27,6 +27,7 @@
 
 #    include "timemory/settings/settings.hpp"
 #    include "timemory/backends/dmp.hpp"
+#    include "timemory/defines.h"
 #    include "timemory/mpl/policy.hpp"
 #    include "timemory/settings/macros.hpp"
 #    include "timemory/settings/types.hpp"
@@ -110,7 +111,7 @@ TIMEMORY_SETTINGS_INLINE
 settings::strvector_t
 settings::get_global_environment()
 {
-#    if defined(_UNIX)
+#    if defined(TIMEMORY_UNIX)
     strvector_t _environ;
     if(environ != nullptr)
     {

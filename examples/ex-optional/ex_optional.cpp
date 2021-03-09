@@ -70,7 +70,7 @@ double              compute_avg(const std::vector<double>& array);
 int main(int argc, char** argv)
 {
     // setenv when available
-#if(_POSIX_C_SOURCE >= 200112L) || defined(_BSD_SOURCE) || defined(_UNIX)
+#if(_POSIX_C_SOURCE >= 200112L) || defined(_BSD_SOURCE) || defined(TIMEMORY_UNIX)
     setenv("TIMEMORY_TIMING_UNITS", "sec", 0);
     setenv("TIMEMORY_MEMORY_UNITS", "mb", 0);
     setenv("TIMEMORY_TIMING_WIDTH", "14", 0);

@@ -623,7 +623,9 @@ private:
             }
             else
             {
-                fprintf(stderr, "[cupti_counters]> Warning! No events or metrics!\n");
+                static int _pass = 0;
+                if(_pass++ > 0)
+                    fprintf(stderr, "[cupti_counters]> Warning! No events or metrics!\n");
             }
         }
         else

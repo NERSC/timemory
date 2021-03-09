@@ -223,7 +223,7 @@ template <typename Tp>
 void
 set_env(const std::string& env_var, const Tp& _val, int override)
 {
-#if defined(_MACOS) || (defined(_LINUX) && (_POSIX_C_SOURCE >= 200112L))
+#if defined(TIMEMORY_MACOS) || (defined(TIMEMORY_LINUX) && (_POSIX_C_SOURCE >= 200112L))
     std::stringstream ss_val;
     ss_val << _val;
     setenv(env_var.c_str(), ss_val.str().c_str(), override);

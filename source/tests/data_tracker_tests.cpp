@@ -418,6 +418,12 @@ TEST_F(data_tracker_tests, convergence_test)
 
     auto itr_storage = tim::storage<itr_tracker_type>::instance()->get();
     auto err_storage = tim::storage<err_tracker_type>::instance()->get();
+    auto wc_storage  = tim::storage<wall_clock>::instance()->get();
+
+    for(auto& itr : itr_storage)
+        std::cout << itr.prefix() << " :: " << itr.data() << std::endl;
+    for(auto& itr : wc_storage)
+        std::cout << itr.prefix() << " :: " << itr.data() << std::endl;
 
     ASSERT_EQ(itr_storage.size(), nthreads);
     ASSERT_EQ(err_storage.size(), nthreads);
@@ -435,6 +441,14 @@ TEST_F(data_tracker_tests, convergence_test)
         auto _true_iter = num_iters.at(i);
         auto _meas_iter = itr_storage.at(i).data().get();
         EXPECT_EQ(_true_iter, _meas_iter) << itr_storage.at(i).data();
+    }
+
+    for(size_t i = 0; i < nthreads; ++i)
+    {
+        auto _true_err =
+            std::accumulate(err_diffs.at(i).begin(), err_diffs.at(i).end(), 0.0);
+        auto _meas_err = err_storage.at(i).data().get();
+        EXPECT_NEAR(_true_err, _meas_err, 1.0e-3) << err_storage.at(i).data();
     }
 }
 

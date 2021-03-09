@@ -22,6 +22,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+// used by Kokkos decls
+#if !defined(TIMEMORY_LIBRARY_SOURCE)
+#    define TIMEMORY_LIBRARY_SOURCE 1
+#endif
+
 #include "timemory/api/kokkosp.hpp"
 #include "timemory/timemory.hpp"
 

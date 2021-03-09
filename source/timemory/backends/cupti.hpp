@@ -78,7 +78,7 @@ static uint64_t dummy_kernel_id = 0;
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 warmup()
 {}
 

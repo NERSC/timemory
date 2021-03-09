@@ -8,17 +8,17 @@ jobs:
   include:
     # ------------------------------------------------------------------------ #
     #
-    #   Python3.8 / macOS
+    #   Python 3.8 / macOS
     #
     # ------------------------------------------------------------------------ #
     - os: osx
       osx_image: xcode12u
       language: generic
-      addons:
-        homebrew:
-          casks:
-          - anaconda
-          update: true
+      # addons:
+      #  homebrew:
+      #    casks:
+      #    - anaconda
+      #    update: true
       env:
         - TRAVIS_PYTHON_VERSION=3.8
         - CONDA_OS=MacOSX
@@ -26,64 +26,11 @@ jobs:
         - CXX=clang++
         - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_HATCHET=OFF'
         - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=17'
-    - os: osx
-      osx_image: xcode12u
-      language: generic
-      addons:
-        homebrew:
-          casks:
-          - anaconda
-          update: true
-      env:
-        - TRAVIS_PYTHON_VERSION=3.8
-        - CONDA_OS=MacOSX
-        - CC=clang
-        - CXX=clang++
-        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_HATCHET=OFF'
-        - BUILD_ARGS='--minimal --build-libs shared --python --cxx-standard=17'
     # ------------------------------------------------------------------------ #
     #
-    #   Quick / Minimal builds
+    #   Python 3.6 / Python 3.7 / Linux
     #
     # ------------------------------------------------------------------------ #
-    # GCC 7
-    - os: linux
-      dist: bionic
-      python: "3.7"
-      addons:
-        apt:
-          packages:
-            - gcc
-            - g++
-            - build-essential
-      env:
-        - CC=gcc
-        - CXX=g++
-        - BUILD_ARGS='--quick --build-libs shared --tools timem --cxx-standard=17'
-    #
-    # GCC 8
-    - os: linux
-      dist: bionic
-      python: "3.7"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-8
-            - g++-8
-            - build-essential
-            - libopenmpi-dev
-            - openmpi-bin
-            - openmpi-common
-            - libfabric-dev
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
-      env:
-        - CC=gcc-8
-        - CXX=g++-8
-        - BUILD_ARGS='--quick --build-libs shared static --python --mpi --tools compiler --cxx-standard=17'
     # Clang 6.0
     - os: linux
       dist: xenial
@@ -117,12 +64,7 @@ jobs:
       env:
         - CC=clang-7
         - CXX=clang++-7
-        - BUILD_ARGS='--minimal --build-libs shared static --python --mpi --gotcha --caliper --stats --tools mallocp mpip ompt --cxx-standard=17'
-    # ------------------------------------------------------------------------ #
-    #
-    #   Python 3.6 / Linux
-    #
-    # ------------------------------------------------------------------------ #
+        - BUILD_ARGS='--minimal --build-libs shared static --python --mpi --gotcha --stats --tools mallocp mpip ompt --cxx-standard=17'
     # GCC 6
     - os: linux
       dist: xenial
@@ -161,7 +103,7 @@ jobs:
       env:
         - CC=gcc-7
         - CXX=g++-7
-        - BUILD_ARGS='--minimal --build-libs shared --mpi --papi --caliper --gotcha --tools mpip --stats --cxx-standard=17 --coverage'
+        - BUILD_ARGS='--minimal --build-libs shared --mpi --papi --gotcha --tools mpip --stats --cxx-standard=17 --coverage'
     #
     # GCC 8
     - os: linux
@@ -179,14 +121,11 @@ jobs:
             - openmpi-bin
             - openmpi-common
             - libfabric-dev
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
       env:
         - CC=gcc-8
         - CXX=g++-8
         - BUILD_TYPE=RelWithDebInfo
-        - BUILD_ARGS='--build-libs shared --mpi --gperftools --stats --profile=cpu --cxx-standard=17'
+        - BUILD_ARGS='--minimal --build-libs shared --mpi --stats --tools compiler --cxx-standard=17'
 
 before_install:
   # - if [ -d /Library/Developer ]; then sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/* ; fi
@@ -206,7 +145,7 @@ before_install:
     conda config --set always_yes yes --set changeps1 no
 
 install:
-  - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake pip
+  - conda create -c conda-forge -c defaults -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake pip
   - source activate
   - conda activate pyctest
   - python -m pip install -r requirements.txt

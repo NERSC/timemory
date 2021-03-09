@@ -216,7 +216,7 @@ public:
         data_type _data(ss.str(), working_set, trials, total_bytes, total_ops, nops,
                         _counter, DeviceT::name(), _label, _itrp);
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
         // using namespace tim::stl::ostream;
         // if(settings::verbose() > 1 || settings::debug())
         //    std::cout << "[RECORD]> " << _data << std::endl;

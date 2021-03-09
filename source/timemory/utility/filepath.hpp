@@ -37,13 +37,13 @@
 // base operating system
 
 #if defined(_WIN32) || defined(_WIN64)
-#    if !defined(_WINDOWS)
-#        define _WINDOWS
+#    if !defined(TIMEMORY_WINDOWS)
+#        define TIMEMORY_WINDOWS
 #    endif
 #elif defined(__APPLE__) || defined(__MACH__) || defined(__linux__) ||                   \
     defined(__linux) || defined(linux) || defined(__gnu_linux__)
-#    if !defined(_UNIX)
-#        define _UNIX
+#    if !defined(TIMEMORY_UNIX)
+#        define TIMEMORY_UNIX
 #    endif
 #endif
 
@@ -55,7 +55,7 @@ namespace filepath
 {
 using string_t = std::string;
 
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 
 inline string_t
 os()
@@ -78,7 +78,7 @@ osrepr(string_t _path)
     return _path;
 }
 
-#elif defined(_UNIX)
+#elif defined(TIMEMORY_UNIX)
 
 inline string_t
 os()

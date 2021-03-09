@@ -41,11 +41,11 @@
 #include <tuple>
 #include <vector>
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 #    include <unistd.h>
 #endif
 
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 // without this, windows will define macros for min and max
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
@@ -101,7 +101,7 @@ static constexpr int64_t GiB = 1024 * MiB;
 static constexpr int64_t TiB = 1024 * GiB;
 static constexpr int64_t PiB = 1024 * TiB;
 
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
 
 inline int64_t
 get_page_size()
@@ -111,7 +111,7 @@ get_page_size()
 }
 const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 
-#elif defined(_MACOS)
+#elif defined(TIMEMORY_MACOS)
 
 inline int64_t
 get_page_size()
@@ -121,7 +121,7 @@ get_page_size()
 }
 const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
 
 inline int64_t
 get_page_size()

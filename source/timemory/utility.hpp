@@ -34,7 +34,7 @@
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/singleton.hpp"
-#if !defined(_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
+#if !defined(TIMEMORY_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
 #    include "timemory/utility/socket.hpp"
 #endif
 #include "timemory/utility/type_id.hpp"

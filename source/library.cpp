@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(TIMEMORY_LIBRARY_SOURCE)
+#    define TIMEMORY_LIBRARY_SOURCE 1
+#endif
+
 #include "timemory/compat/library.h"
 #include "timemory/config.hpp"
 #include "timemory/library.h"

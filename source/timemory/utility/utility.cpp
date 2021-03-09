@@ -38,7 +38,7 @@ namespace tim
 std::string
 dirname(std::string _fname)
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     char* _cfname = realpath(_fname.c_str(), nullptr);
     _fname        = std::string(_cfname);
     free(_cfname);
@@ -49,7 +49,7 @@ dirname(std::string _fname)
         _fname.replace(_fname.find('\\'), 1, "/");
 
     return _fname.substr(0, _fname.find_last_of('/'));
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
     while(_fname.find('/') != std::string::npos)
         _fname.replace(_fname.find('/'), 1, "\\");
 
@@ -65,7 +65,7 @@ dirname(std::string _fname)
 int
 makedir(std::string _dir, int umask)
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     while(_dir.find("\\\\") != std::string::npos)
         _dir.replace(_dir.find("\\\\"), 2, "/");
     while(_dir.find('\\') != std::string::npos)
@@ -87,7 +87,7 @@ makedir(std::string _dir, int umask)
             return (launch_process(_sdir.str().c_str())) ? 0 : 1;
         }
     }
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
     consume_parameters(umask);
     while(_dir.find('/') != std::string::npos)
         _dir.replace(_dir.find('/'), 1, "\\");
@@ -152,7 +152,7 @@ get_bool(const std::string& strbool, bool _default) noexcept
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 //
 std::string
 demangle_backtrace(const char* cstr)
@@ -211,13 +211,13 @@ demangle_backtrace(const std::string& str)
     return demangle_backtrace(str.c_str());
 }
 //
-#endif  // defined(_UNIX)
+#endif  // defined(TIMEMORY_UNIX)
 //
 std::vector<std::string>
 read_command_line(pid_t _pid)
 {
     std::vector<std::string> _cmdline;
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
     std::stringstream fcmdline;
     fcmdline << "/proc/" << _pid << "/cmdline";
     std::ifstream ifs(fcmdline.str().c_str());
@@ -301,9 +301,9 @@ path::insert(size_type __pos, const path& __s)
 TIMEMORY_UTILITY_INLINE std::string
                         path::os()
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
     return "\\";
-#elif defined(_UNIX)
+#elif defined(TIMEMORY_UNIX)
     return "/";
 #endif
 }
@@ -311,9 +311,9 @@ TIMEMORY_UTILITY_INLINE std::string
 TIMEMORY_UTILITY_INLINE std::string
                         path::inverse()
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
     return "/";
-#elif defined(_UNIX)
+#elif defined(TIMEMORY_UNIX)
     return "\\";
 #endif
 }
@@ -322,10 +322,10 @@ TIMEMORY_UTILITY_INLINE std::string
 TIMEMORY_UTILITY_INLINE std::string
                         path::osrepr(std::string _path)
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
     while(_path.find('/') != std::string::npos)
         _path.replace(_path.find('/'), 1, "\\");
-#elif defined(_UNIX)
+#elif defined(TIMEMORY_UNIX)
     while(_path.find("\\\\") != std::string::npos)
         _path.replace(_path.find("\\\\"), 2, "/");
     while(_path.find('\\') != std::string::npos)

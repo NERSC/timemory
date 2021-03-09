@@ -24,7 +24,7 @@ option(BUILD_COMBINED_ROOFLINE "Build a combined roofline example" ON)
 
 add_library(gpu-roofline-compile-options INTERFACE)
 target_compile_options(gpu-roofline-compile-options INTERFACE
-    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
+    $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--default-stream=per-thread>>)
 
 set(EXE_NAME ex_gpu_roofline)
 set(COMPONENTS compile-options analysis-tools roofline cxx)

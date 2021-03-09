@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-#if !defined(MAX_STR_LEN)
-#    define MAX_STR_LEN 512
+#if !defined(TIMEMORY_LIBRARY_SOURCE)
+#    define TIMEMORY_LIBRARY_SOURCE 1
 #endif
 
 #include "timemory/compat/library.h"

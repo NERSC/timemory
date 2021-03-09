@@ -872,7 +872,7 @@ if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
     target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
 else()
     set(TIMEMORY_USE_NVTX OFF)
-    inform_empty_interface(timemory-cuda "NVTX")
+    # inform_empty_interface(timemory-cuda "NVTX")
 endif()
 
 
@@ -1347,7 +1347,11 @@ if(TIMEMORY_USE_DYNINST)
     set(TIMEMORY_BUILD_DYNINST_TOOLS ${TIMEMORY_USE_DYNINST})
 endif()
 
-add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
+if(DYNINST_API_RT)
+    add_cmake_defines(DYNINST_API_RT VALUE QUOTE DEFAULT)
+else()
+    add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
+endif()
 
 
 #----------------------------------------------------------------------------------------#

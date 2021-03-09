@@ -30,6 +30,7 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/testing.hpp"
@@ -49,7 +50,7 @@ using default_device = device_t;
 // amypx calculation
 //
 template <typename Tp>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 amypx(int64_t n, Tp* x, Tp* y, int64_t nitr)
 {
     auto range = tim::device::grid_strided_range<default_device, 0, int32_t>(n);
@@ -110,7 +111,8 @@ main(int argc, char** argv)
     tim::component::wall_clock wc;
     wc.start();
 
-    int64_t num_threads   = 1;                           // default number of threads
+    int64_t num_threads =
+        tim::threading::affinity::hw_physicalcpu();      // default number of threads
     int64_t num_streams   = 1;                           // default number of streams
     int64_t working_size  = 500 * tim::units::megabyte;  // default working set size
     int64_t memory_factor = 10;                          // default multiple of 500 MB

@@ -280,7 +280,7 @@ not_filtered(const std::string& line)
 std::string
 hl_filtered(std::string line)
 {
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
     if(regex_hl)
     {
         const auto _rc = regex_const::egrep | regex_const::optimize;

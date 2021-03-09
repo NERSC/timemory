@@ -36,14 +36,14 @@
 #include <cstdint>
 #include <cstdio>
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 #    include <sys/resource.h>
 #    include <unistd.h>
-#    if defined(_MACOS)
+#    if defined(TIMEMORY_MACOS)
 #        include <libproc.h>
 #        include <mach/mach.h>
 #    endif
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
 #    endif
@@ -60,9 +60,9 @@ namespace process
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 using id_t = pid_t;
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
 using id_t = DWORD;
 #else
 using id_t = int;
@@ -76,9 +76,9 @@ using id_t = int;
 inline id_t
 get_id()
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
     static auto instance = GetCurrentProcessId();
-#elif defined(_UNIX)
+#elif defined(TIMEMORY_UNIX)
     static auto instance = getpid();
 #else
     static auto instance = 0;
@@ -94,9 +94,9 @@ get_id()
 inline id_t&
 get_target_id()
 {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
     static auto instance = GetCurrentProcessId();
-#elif defined(_UNIX)
+#elif defined(TIMEMORY_UNIX)
     static auto instance = getpid();
 #else
     static auto instance = 0;

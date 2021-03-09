@@ -64,7 +64,7 @@ using string = tim::mpl::apply<std::string>;
 //
 //======================================================================================//
 
-#    if !defined(_WINDOWS)
+#    if !defined(TIMEMORY_WINDOWS)
 #        define _TIM_FILENAME_DELIM '/'
 #    else
 #        define _TIM_FILENAME_DELIM '\\'

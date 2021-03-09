@@ -75,10 +75,10 @@
 //
 // instantiate or declare template if:
 //      1. ERT extern
-//      2. ERT source code and not NVCC compiler
+//      2. ERT source code and not CUDA compiler
 #if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE_CXX)
 #    if defined(TIMEMORY_USE_ERT_EXTERN) ||                                              \
-        (defined(TIMEMORY_ERT_SOURCE) && !defined(_TIMEMORY_NVCC))
+        (defined(TIMEMORY_ERT_SOURCE) && !defined(_TIMEMORY_CUDACC))
 #        define TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(...)                                    \
             TIMEMORY_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CXX(...)                            \
@@ -96,10 +96,10 @@
 //
 // instantiate or declare template if:
 //      1. ERT extern + use CUDA
-//      2. ERT source code and NVCC compiler
+//      2. ERT source code and CUDA compiler
 #if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA)
 #    if(defined(TIMEMORY_USE_ERT_EXTERN) && defined(TIMEMORY_USE_CUDA)) ||               \
-        (defined(TIMEMORY_ERT_SOURCE) && defined(_TIMEMORY_NVCC))
+        (defined(TIMEMORY_ERT_SOURCE) && defined(_TIMEMORY_CUDACC))
 #        define TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(...)                                   \
             TIMEMORY_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(...)                           \

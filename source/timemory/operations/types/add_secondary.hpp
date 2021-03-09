@@ -60,6 +60,8 @@ struct add_secondary<Tp, true>
     template <typename Storage, typename Iterator>
     add_secondary(Storage* _storage, Iterator _itr, const type& _rhs)
     {
+        if(!_storage || !trait::runtime_enabled<Tp>::get() || !settings::add_secondary())
+            return;
         (*this)(_storage, _itr, _rhs);
     }
 
@@ -69,6 +71,8 @@ struct add_secondary<Tp, true>
     template <typename... Args>
     add_secondary(type& _rhs, Args&&... args)
     {
+        if(!trait::runtime_enabled<Tp>::get() || !settings::add_secondary())
+            return;
         (*this)(_rhs, std::forward<Args>(args)...);
     }
 
@@ -78,15 +82,16 @@ struct add_secondary<Tp, true>
     template <typename Storage, typename Iterator, typename Up>
     auto operator()(Storage* _storage, Iterator _itr, const Up& _rhs) const
     {
-        if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr ||
-           !settings::add_secondary())
+        if(!_storage)
             return;
-
         using map_type         = decay_t<decltype(_rhs.get_secondary())>;
         using value_type       = typename map_type::mapped_type;
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
         for(const auto& _data : _rhs.get_secondary())
-            _storage->append(secondary_data_t{ _itr, _data.first, _data.second });
+        {
+            storage_sfinae(_storage, 0,
+                           secondary_data_t{ _itr, _data.first, _data.second });
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -104,12 +109,9 @@ private:
     //
     template <typename Up, typename... Args>
     auto sfinae(Up& _obj, int, Args&&... args) const
-        -> decltype(_obj.add_secondary(std::forward<Args>(args)...), void())
+        -> decltype(_obj.add_secondary(std::forward<Args>(args)...))
     {
-        if(!trait::runtime_enabled<Tp>::get() || !settings::add_secondary())
-            return;
-
-        _obj.add_secondary(std::forward<Args>(args)...);
+        return _obj.add_secondary(std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -117,6 +119,23 @@ private:
     //
     template <typename Up, typename... Args>
     void sfinae(Up&, long, Args&&...) const
+    {}
+
+    //----------------------------------------------------------------------------------//
+    //  If the storage can append secondary data
+    //
+    template <typename Storage, typename DataT>
+    auto storage_sfinae(Storage* _storage, int, DataT&& _data) const
+        -> decltype(_storage->append(std::forward<DataT>(_data)))
+    {
+        return _storage->append(std::forward<DataT>(_data));
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  If the storage can NOT append secondary data
+    //
+    template <typename Storage, typename DataT>
+    void storage_sfinae(Storage*, long, DataT&&) const
     {}
 };
 //

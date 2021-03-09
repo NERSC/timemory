@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(TIMEMORY_LIBRARY_SOURCE)
+#    define TIMEMORY_LIBRARY_SOURCE 1
+#endif
+
 #include "timemory/backends/process.hpp"
 #include "timemory/compat/library.h"
 #include "timemory/components/ompt/types.hpp"
@@ -33,12 +37,12 @@
 #include <limits>
 #include <numeric>
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
 #    include <dlfcn.h>
 #endif
 
 // Macro for obtaining jump pointer function association
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 #    define DLSYM_FUNCTION(VARNAME, HANDLE, FUNCNAME)
 #else
 #    define DLSYM_FUNCTION(VARNAME, HANDLE, FUNCNAME)                                    \
@@ -58,9 +62,9 @@
 #endif
 
 #if !defined(OS_DYNAMIC_LIBRARY_EXT)
-#    if defined(_MACOS)
+#    if defined(TIMEMORY_MACOS)
 #        define OS_DYNAMIC_LIBRARY_EXT "dylib"
-#    elif defined(_WINDOWS)
+#    elif defined(TIMEMORY_WINDOWS)
 #        define OS_DYNAMIC_LIBRARY_EXT "dll"
 #    else
 #        define OS_DYNAMIC_LIBRARY_EXT "so"
@@ -84,7 +88,7 @@ struct tools_stubs_dlsym
 
     void load(const std::string& id, std::string libname = "")
     {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
         tim::consume_parameters(id, libname);
 #else
         if(libname.empty())

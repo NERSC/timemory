@@ -510,6 +510,8 @@ TEST_F(gotcha_tests, malloc_gotcha)
     EXPECT_GE(_data.size(), 2);
     for(auto& itr : _data)
     {
+        if(itr.prefix() == "calloc")
+            continue;
         EXPECT_GE(itr.data().get(), 240000.) << itr.prefix() << ": " << itr.data();
     }
 

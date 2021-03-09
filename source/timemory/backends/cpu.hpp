@@ -38,7 +38,7 @@
 #include <sstream>
 #include <string>
 
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
 #    include <sys/sysctl.h>
 #endif
 
@@ -57,7 +57,7 @@ struct cpu_info
 inline cpu_info
 get_info()
 {
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
 
     cpu_info _info{};
 
@@ -108,11 +108,11 @@ get_info()
 
     return _info;
 
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
 
     return cpu_info{};
 
-#elif defined(_LINUX)
+#elif defined(TIMEMORY_LINUX)
 
     std::ifstream ifs("/proc/cpuinfo");
     if(!ifs)
@@ -164,7 +164,7 @@ namespace impl
 inline size_t
 cache_size(const int& level)
 {
-#if defined(_MACOS)
+#if defined(TIMEMORY_MACOS)
 
     // configure sysctl query
     //      L1  ->  hw.l1dcachesize
@@ -178,7 +178,7 @@ cache_size(const int& level)
     sysctlbyname(query.c_str(), &line_size, &sizeof_line_size, nullptr, 0);
     return line_size;
 
-#elif defined(_WINDOWS)
+#elif defined(TIMEMORY_WINDOWS)
 
     size_t                                line_size   = 0;
     DWORD                                 buffer_size = 0;
@@ -203,7 +203,7 @@ cache_size(const int& level)
     free(buffer);
     return line_size;
 
-#elif defined(_LINUX)
+#elif defined(TIMEMORY_LINUX)
 
     // L1 has a data and instruction cache, index0 should be data
     static const std::array<std::string, 3> fpaths(

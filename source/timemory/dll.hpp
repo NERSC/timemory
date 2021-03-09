@@ -37,7 +37,8 @@
 #    define tim_dll
 #endif
 
-#if defined(_WINDOWS) && (defined(TIMEMORY_DLL_EXPORT) || defined(TIMEMORY_DLL_IMPORT))
+#if defined(TIMEMORY_WINDOWS) &&                                                         \
+    (defined(TIMEMORY_DLL_EXPORT) || defined(TIMEMORY_DLL_IMPORT))
 #    if !defined(tim_dll_export)
 #        define tim_dll_export
 #    endif

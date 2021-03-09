@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(TIMEMORY_LIBRARY_SOURCE)
+#    define TIMEMORY_LIBRARY_SOURCE 1
+#endif
+
 #include "timemory/backends/threading.hpp"
 #include "timemory/compat/library.h"
 #include "timemory/library.h"
@@ -32,7 +36,7 @@
 #include "timemory/trace.hpp"
 #include "timemory/utility/bits/signals.hpp"
 
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
 
 #    include <array>
 #    include <functional>

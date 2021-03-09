@@ -30,12 +30,12 @@
 
 #pragma once
 
-#if defined(_UNIX)
+#if defined(TIMEMORY_UNIX)
 #    include <cxxabi.h>
 #    include <execinfo.h>  // for StackBacktrace()
 #endif
 
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
 #    include <features.h>
 #endif
 
@@ -47,7 +47,7 @@
 //
 //======================================================================================//
 
-#if defined(_WINDOWS) || defined(_WIN32) || defined(_WIN64)
+#if defined(TIMEMORY_WINDOWS) || defined(_WIN32) || defined(_WIN64)
 //   dummy definition of SIGHUP
 #    ifndef SIGHUP
 #        define SIGHUP 1
@@ -172,7 +172,7 @@
 #    ifndef SIGUSR2
 #        define SIGUSR2 31
 #    endif
-#endif  // defined(_WINDOWS)
+#endif  // defined(TIMEMORY_WINDOWS)
 
 // compatible compiler
 #if(defined(__GNUC__) || defined(__clang__) || defined(_INTEL_COMPILER))

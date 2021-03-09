@@ -553,7 +553,7 @@ get_value(Arg&)
 }
 
 //--------------------------------------------------------------------------------------//
-#if defined(_LINUX)
+#if defined(TIMEMORY_LINUX)
 TEST_F(cache_tests, io)
 {
     using io_bundle_t =

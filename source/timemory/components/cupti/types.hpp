@@ -34,6 +34,11 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
+#if defined(TIMEMORY_USE_CUDA)
+#    include <cuda.h>
+#    include <cuda_runtime_api.h>
+#endif
+
 TIMEMORY_DECLARE_COMPONENT(cupti_activity)
 TIMEMORY_DECLARE_COMPONENT(cupti_counters)
 TIMEMORY_DECLARE_COMPONENT(cupti_profiler)

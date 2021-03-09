@@ -32,6 +32,7 @@
 
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
@@ -93,7 +94,7 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
 template <size_t Nrep, typename DeviceT, typename Intp, typename Tp, typename OpsFuncT,
           typename StoreFuncT, device::enable_if_gpu_t<DeviceT> = 0,
           enable_if_t<!std::is_same<Tp, cuda::fp16_t>::value> = 0>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& store_func)
 {
     // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
@@ -124,7 +125,7 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
 template <size_t Nrep, typename DeviceT, typename Intp, typename Tp, typename OpsFuncT,
           typename StoreFuncT, device::enable_if_gpu_t<DeviceT> = 0,
           enable_if_t<std::is_same<Tp, cuda::fp16_t>::value> = 0>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& store_func)
 {
     // divide by four instead of two here because fp16_t is a packed operation
@@ -195,6 +196,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
     }
 
     auto _opfunc = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
+        threading::affinity::set();
         using opmutex_t = std::mutex;
         using oplock_t  = std::unique_lock<opmutex_t>;
         static opmutex_t opmutex;
@@ -345,14 +347,14 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
     if(_counter.params.nthreads > 1)
     {
         // create synchronization barriers for the threads
-        thread_barrier fbarrier(_counter.params.nthreads);
-        thread_barrier lbarrier(_counter.params.nthreads);
+        thread_barrier fbarrier{ _counter.params.nthreads };
+        thread_barrier lbarrier{ _counter.params.nthreads };
 
         // list of threads
-        thread_list_t threads;
+        thread_list_t threads{};
         // create the threads
         for(uint64_t i = 0; i < _counter.params.nthreads; ++i)
-            threads.push_back(std::thread(_opfunc, i, &fbarrier, &lbarrier));
+            threads.emplace_back(_opfunc, i, &fbarrier, &lbarrier);
 
         /*
         uint64_t n = _counter.params.working_set_min;

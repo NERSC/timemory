@@ -261,7 +261,7 @@ protected:
     //
     void compute_data(const char* _func, int _line, const char* _fname, bool shorten)
     {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
         static const char delim = '\\';
 #else
         static const char delim = '/';

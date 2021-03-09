@@ -304,7 +304,7 @@ initialize_buffer(Tp* A, const Tp& value, const Intp& nsize)
 
 template <typename DeviceT, typename Tp, typename Intp = int32_t,
           device::enable_if_gpu_t<DeviceT> = 0>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 initialize_buffer(Tp* A, Tp value, Intp nsize)
 {
     auto range = device::grid_strided_range<DeviceT, 0, Intp>(nsize);

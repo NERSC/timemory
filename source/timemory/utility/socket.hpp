@@ -26,7 +26,7 @@
 
 #include "timemory/macros/os.hpp"
 
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 #    include <WinSock2.h>
 #    include <Ws2tcpip.h>
 #else
@@ -48,7 +48,7 @@ namespace tim
 namespace socket
 {
 //
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
 using socket_t                      = SOCKET;
 static constexpr int invalid_socket = INVALID_SOCKET;
 static constexpr int socket_error   = SOCKET_ERROR;
@@ -98,7 +98,7 @@ public:
         sockaddr_in _hint;
         _hint.sin_family = AF_INET;
         _hint.sin_port   = htons(_port);
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
         _hint.sin_addr.S_un.S_addr = INADDR_ANY;
 #else
         _hint.sin_addr.s_addr     = INADDR_ANY;
@@ -108,7 +108,7 @@ public:
         ::listen(_listening, SOMAXCONN);
 
         sockaddr_in _client;
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
         int _client_size = sizeof(_client);
 #else
         unsigned int _client_size = sizeof(_client);
@@ -234,7 +234,7 @@ public:
 private:
     static int init()
     {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
         WSADATA _wsa_data;
         return WSAStartup(MAKEWORD(1, 1), &_wsa_data);
 #else
@@ -244,7 +244,7 @@ private:
 
     static int quit()
     {
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
         return WSACleanup();
 #else
         return 0;
@@ -254,7 +254,7 @@ private:
     static int close(socket_t _sock)
     {
         int status = 0;
-#if defined(_WINDOWS)
+#if defined(TIMEMORY_WINDOWS)
         if((status = ::shutdown(_sock, SD_BOTH)) == 0)
             return ::closesocket(_sock);
 #else

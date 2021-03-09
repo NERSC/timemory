@@ -101,7 +101,7 @@ static auto      Nsub = N / nitr;
 
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 warmup(int64_t n)
 {
     int i   = blockIdx.x * blockDim.x + threadIdx.x;
@@ -112,7 +112,7 @@ warmup(int64_t n)
 
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 saxpy(int64_t n, float a, float* x, float* y)
 {
     auto itr = tim::device::grid_strided_range<tim::device::default_device, 0>(n);
@@ -855,7 +855,7 @@ test_5_mt_saxpy_async()
 
         evt.stop();
         nseconds += evt.get();
-        data_vector[i] = std::move(std::make_tuple(evt, nseconds, maxError, sumError));
+        data_vector[i] = std::make_tuple(evt, nseconds, maxError, sumError);
 
         tim::device::gpu::free(d_x);
         tim::device::gpu::free(d_y);
@@ -865,7 +865,7 @@ test_5_mt_saxpy_async()
 
     std::vector<std::thread> threads;
     for(int i = 0; i < nitr; i++)
-        threads.push_back(std::move(std::thread(run_thread, i)));
+        threads.emplace_back(run_thread, i);
 
     for(int i = 0; i < nitr; i++)
         threads[i].join();
@@ -994,7 +994,7 @@ test_6_mt_saxpy_async_pinned()
         evt->stop();
         nseconds += evt->get();
 
-        data_vector[i] = std::move(std::make_tuple(*evt, nseconds, maxError, sumError));
+        data_vector[i] = std::make_tuple(*evt, nseconds, maxError, sumError);
 
         tim::cuda::free_host(x);
         tim::cuda::free_host(y);
@@ -1005,12 +1005,12 @@ test_6_mt_saxpy_async_pinned()
 
     std::vector<std::thread> threads;
     for(int i = 0; i < nitr; i++)
-        threads.push_back(std::move(std::thread(run_thread, i)));
+        threads.emplace_back(run_thread, i);
 
     for(int i = 0; i < nitr; i++)
         threads[i].join();
 
-    cuda_event evt      = std::move(std::get<0>(data_vector[0]));
+    cuda_event evt      = std::get<0>(data_vector[0]);
     float      nseconds = std::get<1>(data_vector[0]);
     float      maxError = std::get<2>(data_vector[0]);
     float      sumError = std::get<3>(data_vector[0]);
@@ -1040,14 +1040,10 @@ test_6_mt_saxpy_async_pinned()
 }
 
 //======================================================================================//
-
-#include <thrust/device_vector.h>
-
-//======================================================================================//
 namespace impl
 {
 template <typename T>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 KERNEL_A(T* begin, int n)
 {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
@@ -1060,7 +1056,7 @@ KERNEL_A(T* begin, int n)
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 KERNEL_B(T* begin, int n)
 {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)

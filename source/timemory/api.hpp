@@ -120,25 +120,25 @@ using native_tag = project::timemory;
 namespace trait
 {
 //
-#if !defined(_UNIX)
+#if !defined(TIMEMORY_UNIX)
 template <>
 struct is_available<os::supports_unix> : false_type
 {};
 #endif
 //
-#if !defined(_LINUX)
+#if !defined(TIMEMORY_LINUX)
 template <>
 struct is_available<os::supports_linux> : false_type
 {};
 #endif
 //
-#if !defined(_MACOS)
+#if !defined(TIMEMORY_MACOS)
 template <>
 struct is_available<os::supports_darwin> : false_type
 {};
 #endif
 //
-#if !defined(_WINDOWS)
+#if !defined(TIMEMORY_WINDOWS)
 template <>
 struct is_available<os::supports_windows> : false_type
 {};

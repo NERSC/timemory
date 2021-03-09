@@ -119,6 +119,7 @@ kokkosp_end_deep_copy()
 
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(user_kokkosp_bundle, false, void)
 TIMEMORY_INITIALIZE_STORAGE(KokkosMemoryTracker)
 
 //--------------------------------------------------------------------------------------//

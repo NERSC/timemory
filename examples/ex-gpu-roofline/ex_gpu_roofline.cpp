@@ -82,12 +82,15 @@ using auto_tuple_t =
 // amypx calculation
 //
 template <typename Tp>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 amypx(int64_t n, Tp* x, Tp* y, int64_t nitr)
 {
     auto range = tim::device::grid_strided_range<default_device, 0, int32_t>(n);
-    for(int i = range.begin(); i < range.end(); i += range.stride())
-        y[i] = static_cast<Tp>(2.0) * y[i] + x[i];
+    for(int64_t j = 0; j < (nitr % 10 + 1); ++j)
+    {
+        for(int i = range.begin(); i < range.end(); i += range.stride())
+            y[i] = static_cast<Tp>(2.0) * y[i] + x[i];
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -95,7 +98,7 @@ amypx(int64_t n, Tp* x, Tp* y, int64_t nitr)
 //
 #if defined(TIMEMORY_USE_CUDA_HALF)
 template <>
-GLOBAL_CALLABLE void
+TIMEMORY_GLOBAL_FUNCTION void
 amypx(int64_t n, fp16_t* x, fp16_t* y, int64_t nitr)
 {
     auto range = tim::device::grid_strided_range<default_device, 0, int32_t>(n);
@@ -210,7 +213,8 @@ main(int argc, char** argv)
     tim::cuda::device_query();
     tim::cuda::set_device(0);
 
-    int64_t num_threads   = 1;                           // default number of threads
+    int64_t num_threads =
+        tim::threading::affinity::hw_physicalcpu();      // default number of threads
     int64_t num_streams   = 1;                           // default number of streams
     int64_t working_size  = 500 * tim::units::megabyte;  // default working set size
     int64_t memory_factor = 10;                          // default multiple of 500 MB

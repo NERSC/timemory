@@ -74,7 +74,7 @@ TIMEMORY_SET_COMPONENT_API(component::written_bytes, project::timemory, category
 //
 //--------------------------------------------------------------------------------------//
 // LINUX only
-#if !defined(_LINUX)
+#if !defined(TIMEMORY_LINUX)
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_char, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_char, false_type)
@@ -111,7 +111,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::written_bytes, false_typ
 //
 //--------------------------------------------------------------------------------------//
 
-#if defined(_LINUX) || (defined(_UNIX) && !defined(_MACOS))
+#if defined(TIMEMORY_LINUX) || (defined(TIMEMORY_UNIX) && !defined(TIMEMORY_MACOS))
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::read_char, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::written_char, true_type)
