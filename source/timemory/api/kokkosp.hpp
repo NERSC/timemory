@@ -40,7 +40,7 @@
 #include <vector>
 
 #if !defined(TIMEMORY_KOKKOSP_PREFIX)
-#    if defined(TIMEMORY_SOURCE)
+#    if defined(TIMEMORY_LIBRARY_SOURCE)
 #        define TIMEMORY_KOKKOSP_PREFIX TIMEMORY_WEAK_PREFIX
 #    else
 #        define TIMEMORY_KOKKOSP_PREFIX
@@ -48,7 +48,7 @@
 #endif
 
 #if !defined(TIMEMORY_KOKKOSP_POSTFIX)
-#    if defined(TIMEMORY_SOURCE)
+#    if defined(TIMEMORY_LIBRARY_SOURCE)
 #        define TIMEMORY_KOKKOSP_POSTFIX                                                 \
             TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default")
 #    else

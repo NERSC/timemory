@@ -36,12 +36,12 @@ jobs:
           git submodule update .
           module load anaconda
           module load likwid
+          if [ -n "$(echo ${{ matrix.compiler }} | grep 'clang')" ]; then module load cuda/10.0; CUDA_CLANG=1; else module load cuda; CUDA_CLANG=0; fi
           module list
           spack env activate timemory-ci
           spack load dyninst boost
           source activate
           conda activate timemory
-          if [ -n "$(echo ${{ matrix.compiler }} | grep 'clang')" ]; then module load cuda/10.0; CUDA_CLANG=1; else module load cuda; CUDA_CLANG=0; fi
           echo "python: $(which python)"
           env
           if [ -n "$(echo ${{ matrix.compiler }} | grep 'clang')" ]; then KOKKOS_SAMPLE=OFF; else KOKKOS_SAMPLE=ON; fi

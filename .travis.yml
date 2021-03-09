@@ -64,7 +64,7 @@ jobs:
       env:
         - CC=clang-7
         - CXX=clang++-7
-        - BUILD_ARGS='--minimal --build-libs shared static --python --mpi --gotcha --caliper --stats --tools mallocp mpip ompt --cxx-standard=17'
+        - BUILD_ARGS='--minimal --build-libs shared static --python --mpi --gotcha --stats --tools mallocp mpip ompt --cxx-standard=17'
     # GCC 6
     - os: linux
       dist: xenial
@@ -103,7 +103,7 @@ jobs:
       env:
         - CC=gcc-7
         - CXX=g++-7
-        - BUILD_ARGS='--minimal --build-libs shared --mpi --papi --caliper --gotcha --tools mpip --stats --cxx-standard=17 --coverage'
+        - BUILD_ARGS='--minimal --build-libs shared --mpi --papi --gotcha --tools mpip --stats --cxx-standard=17 --coverage'
     #
     # GCC 8
     - os: linux

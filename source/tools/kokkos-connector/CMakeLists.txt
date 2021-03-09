@@ -121,11 +121,7 @@ target_link_libraries(kp_timemory PRIVATE
     timemory::timemory-compile-options
     timemory::timemory-develop-options
     timemory::timemory-hidden-visibility)
-if(UNIX AND NOT APPLE)
-    # Linux: helps ensure kp_timemory symbols override timemory-cxx-shared symbols
-    # macOS: causes kp_timemory to load symbols from timemory-cxx-shared
-    target_compile_definitions(kp_timemory PRIVATE FORCE_HIDDEN_VISIBILITY)
-endif()
+target_compile_definitions(kp_timemory PRIVATE FORCE_HIDDEN_VISIBILITY)
 set_target_properties(kp_timemory PROPERTIES
     PREFIX          ""
     LINKER_LANGUAGE ${LINKER_LANGUAGE})
@@ -155,13 +151,16 @@ function(ADD_KOKKOS_SAMPLE_TEST _NAME _TARG)
         "KOKKOS_PROFILE_LIBRARY=$<TARGET_FILE:${_TARG}>"
         "OMP_PROC_BIND=spread"
         "OMP_PLACES=threads"
+        "OMP_NUM_THREADS=2"
+        "KOKKOS_NUM_THREADS=2"
         "TIMEMORY_TIME_OUTPUT=OFF"
-        "TIMEMORY_COUT_OUTPUT=ON"
-        "TIMEMORY_GLOBAL_COMPONENTS='wall_clock, peak_rss, virtual_memory, page_rss'")
+        "TIMEMORY_COUT_OUTPUT=ON")
     set_tests_properties(kokkos-connector-test-${_NAME} PROPERTIES
+        PROCESSORS 2
+        LABELS "kokkos"
         ENVIRONMENT "${_TEST_ENV}"
         PASS_REGULAR_EXPRESSION
-        ".*TRACKER.*(kokkos/allocate/Host/[yx]).*( 0 \\|).*(kokkos/allocate/Host/A).*(kokkos/deep_copy/Host=[yzA]/Host=[yzA]).*(kokkos/deallocate/Host/[Axy]).*(kokkos/dev[0-9]+/Kokkos::View::initialization .unsigned).*(kokkos/dev[0-9]+/Kokkos::View::initialization .long).*(kokkos/dev[0-9]+/Kokkos::View::initialization .A).*(kokkos/dev[0-9]+/yAx)[ \\|]+100 \\|")
+        "(kokkos/allocate/Host/[yx]).*( 0 \\|).*(kokkos/allocate/Host/A).*(kokkos/deep_copy/Host=[yzA]/Host=[yzA]).*(kokkos/deallocate/Host/[Axy])|(kokkos/dev[0-9]+/Kokkos::View::initialization .unsigned).*(kokkos/dev[0-9]+/Kokkos::View::initialization .long).*(kokkos/dev[0-9]+/Kokkos::View::initialization .A).*(kokkos/dev[0-9]+/yAx)[ \\|]+100 \\|")
 endfunction()
 
 #

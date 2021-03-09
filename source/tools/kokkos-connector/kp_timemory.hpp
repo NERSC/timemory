@@ -25,6 +25,7 @@
 #pragma once
 
 #if defined(FORCE_HIDDEN_VISIBILITY) && !_MSC_VER
+#    define TIMEMORY_KOKKOSP_POSTFIX __attribute__((visibility("default")))
 #    define TIMEMORY_INTERNAL __attribute__((visibility("internal")))
 #    define TIMEMORY_EXTERNAL __attribute__((visibility("default")))
 #    define TIMEMORY_VISIBILITY(...)
