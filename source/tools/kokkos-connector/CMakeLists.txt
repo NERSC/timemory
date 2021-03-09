@@ -156,11 +156,12 @@ function(ADD_KOKKOS_SAMPLE_TEST _NAME _TARG)
         "OMP_PROC_BIND=spread"
         "OMP_PLACES=threads"
         "TIMEMORY_TIME_OUTPUT=OFF"
-        "TIMEMORY_COUT_OUTPUT=ON")
+        "TIMEMORY_COUT_OUTPUT=ON"
+        "TIMEMORY_GLOBAL_COMPONENTS='wall_clock, peak_rss, virtual_memory, page_rss'")
     set_tests_properties(kokkos-connector-test-${_NAME} PROPERTIES
         ENVIRONMENT "${_TEST_ENV}"
         PASS_REGULAR_EXPRESSION
-        "(kokkos/allocate/Host/[yx]).*( 0 \\|).*(kokkos/allocate/Host/A).*(kokkos/deep_copy/Host=[yzA]/Host=[yzA]).*(kokkos/deallocate/Host/[Axy]).*(kokkos/dev[0-9]+/Kokkos::View::initialization .unsigned).*(kokkos/dev[0-9]+/Kokkos::View::initialization .long).*(kokkos/dev[0-9]+/Kokkos::View::initialization .A).*(kokkos/dev[0-9]+/yAx)[ \\|]+100 \\|")
+        ".*TRACKER.*(kokkos/allocate/Host/[yx]).*( 0 \\|).*(kokkos/allocate/Host/A).*(kokkos/deep_copy/Host=[yzA]/Host=[yzA]).*(kokkos/deallocate/Host/[Axy]).*(kokkos/dev[0-9]+/Kokkos::View::initialization .unsigned).*(kokkos/dev[0-9]+/Kokkos::View::initialization .long).*(kokkos/dev[0-9]+/Kokkos::View::initialization .A).*(kokkos/dev[0-9]+/yAx)[ \\|]+100 \\|")
 endfunction()
 
 #

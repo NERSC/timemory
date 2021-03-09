@@ -121,14 +121,11 @@ jobs:
             - openmpi-bin
             - openmpi-common
             - libfabric-dev
-            - graphviz
-            - libgoogle-perftools-dev
-            - google-perftools
       env:
         - CC=gcc-8
         - CXX=g++-8
         - BUILD_TYPE=RelWithDebInfo
-        - BUILD_ARGS='--minimal --build-libs shared --mpi --gperftools --stats --profile=cpu --tools compiler --cxx-standard=17'
+        - BUILD_ARGS='--minimal --build-libs shared --mpi --stats --tools compiler --cxx-standard=17'
 
 before_install:
   # - if [ -d /Library/Developer ]; then sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/* ; fi
