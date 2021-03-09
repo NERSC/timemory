@@ -179,7 +179,7 @@ if(TIMEMORY_KOKKOS_BUILD_SAMPLE)
         target_link_libraries(kokkos-connector-sample PRIVATE Kokkos::kokkos)
         set_target_properties(kokkos-connector-sample PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-        kokkos_compilation(TARGET kokkos-connector-sample)
+        # kokkos_compilation(TARGET kokkos-connector-sample)
         add_kokkos_sample_test(libtimemory timemory::timemory-cxx-shared)
         add_kokkos_sample_test(kp-timemory kp_timemory)
         add_kokkos_sample_test(kp-timemory-filter kp_timemory_filter)
