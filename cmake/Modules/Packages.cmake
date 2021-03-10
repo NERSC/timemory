@@ -453,8 +453,11 @@ file(GLOB TIMEMORY_FIND_MODULES ${PROJECT_SOURCE_DIR}/cmake/Modules/Find*.cmake)
 list(REMOVE_ITEM TIMEMORY_FIND_MODULES
     ${PROJECT_SOURCE_DIR}/cmake/Modules/FindPython3.cmake
     ${PROJECT_SOURCE_DIR}/cmake/Modules/FindPythonLibs.cmake)
-install(FILES ${TIMEMORY_FIND_MODULES}
-    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules)
+if(TIMEMORY_INSTALL_CONFIG)
+    install(FILES ${TIMEMORY_FIND_MODULES}
+        DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules
+        OPTIONAL)
+endif()
 
 #----------------------------------------------------------------------------------------#
 #
@@ -1018,10 +1021,13 @@ if(TIMEMORY_BUILD_CALIPER)
     foreach(_TARGET caliper caliper-serial caliper-tools-util caliper-mpi)
         if(TARGET ${_TARGET})
             list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_TARGET})
-            install(
-                TARGETS     ${_TARGET}
-                DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                EXPORT      ${PROJECT_NAME}-library-depends)
+            if(TIMEMORY_INSTALL_CONFIG)
+                install(
+                    TARGETS     ${_TARGET}
+                    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                    EXPORT      ${PROJECT_NAME}-library-depends
+                    OPTIONAL)
+            endif()
         endif()
     endforeach()
 else()
@@ -1073,10 +1079,13 @@ if(UNIX AND NOT APPLE)
         foreach(_TARGET gotcha gotcha-include Gotcha)
             if(TARGET ${_TARGET})
                 list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_TARGET})
-                install(
-                    TARGETS     ${_TARGET}
-                    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                    EXPORT      ${PROJECT_NAME}-library-depends)
+                if(TIMEMORY_INSTALL_CONFIG)
+                    install(
+                        TARGETS     ${_TARGET}
+                        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                        EXPORT      ${PROJECT_NAME}-library-depends
+                        OPTIONAL)
+                endif()
             endif()
         endforeach()
         set(gotcha_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/gotcha)
@@ -1173,9 +1182,12 @@ if(TIMEMORY_USE_OMPT)
         foreach(_TARGET omp omptarget)
             if(TARGET ${_TARGET})
                 list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_TARGET})
-                install(TARGETS ${_TARGET}
-                    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-                    EXPORT ${PROJECT_NAME}-library-depends)
+                if(TIMEMORY_INSTALL_CONFIG)
+                    install(TARGETS ${_TARGET}
+                        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                        EXPORT ${PROJECT_NAME}-library-depends
+                        OPTIONAL)
+                endif()
             endif()
         endforeach()
     endif()
@@ -1428,5 +1440,8 @@ include(UserPackages)
 
 add_feature(CMAKE_INSTALL_RPATH "Installation RPATH")
 
-install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/LocalFindUtilities.cmake
-    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules)
+if(TIMEMORY_INSTALL_CONFIG)
+    install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/LocalFindUtilities.cmake
+        DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules
+        OPTIONAL)
+endif()

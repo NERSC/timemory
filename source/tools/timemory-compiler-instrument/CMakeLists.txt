@@ -99,7 +99,8 @@ add_cxx_flag_if_avail("-ftls-model=local-exec" ${LIB_TARGET})
 # strip_target(${LIB_TARGET} ${LIB_TYPE} "timemory_profile_func")
 
 install(TARGETS ${LIB_TARGET}
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler
+    OPTIONAL)
 
 # build tree
 execute_process(
@@ -115,7 +116,8 @@ EXECUTE_PROCESS(
         timemory/compiler/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
         libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-")
+"
+OPTIONAL)
 
 if(NOT TARGET timemory::${LIB_TARGET})
     add_library(timemory::${LIB_TARGET} ALIAS ${LIB_TARGET})
@@ -176,7 +178,8 @@ foreach(LIB_TYPE ${_LIB_TYPES})
     endif()
 
     install(TARGETS ${LIB_TARGET}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler
+        OPTIONAL)
 
     # build tree
     execute_process(
@@ -192,7 +195,8 @@ EXECUTE_PROCESS(
         timemory/compiler/libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
         libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-    ")
+    "
+    OPTIONAL)
 
     if(NOT TARGET timemory::${LIB_TARGET})
         add_library(timemory::${LIB_TARGET} ALIAS ${LIB_TARGET})

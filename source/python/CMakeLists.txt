@@ -72,7 +72,8 @@ function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
     endif()
 
     install(TARGETS ${_TARGET}
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/timemory${_SUBDIR})
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/timemory${_SUBDIR}
+        OPTIONAL)
 
     if(NOT "${_TARGET}" STREQUAL "libpytimemory")
         add_dependencies(libpytimemory ${_TARGET})

@@ -83,7 +83,10 @@ function(configure_library _NAME)
     set_target_properties(${_NAME} PROPERTIES
         PREFIX          ""
         LINKER_LANGUAGE ${LINKER_LANGUAGE})
-    install(TARGETS ${_NAME} DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
+    install(
+        TARGETS     ${_NAME}
+        DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR}
+        OPTIONAL)
 endfunction()
 
 #
@@ -125,7 +128,10 @@ target_compile_definitions(kp_timemory PRIVATE FORCE_HIDDEN_VISIBILITY)
 set_target_properties(kp_timemory PROPERTIES
     PREFIX          ""
     LINKER_LANGUAGE ${LINKER_LANGUAGE})
-install(TARGETS kp_timemory DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
+install(
+    TARGETS     kp_timemory
+    DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR}
+    OPTIONAL)
 
 #
 #   Build regex filtering library

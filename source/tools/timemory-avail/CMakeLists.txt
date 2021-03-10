@@ -17,4 +17,4 @@ set_target_properties(timemory-avail PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
 install(TARGETS timemory-avail
     DESTINATION bin
     COMPONENT tools
-    ${_OPTIONAL})
+    OPTIONAL)

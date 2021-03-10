@@ -62,14 +62,17 @@ configure_file(
     ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-target-extract.cmake
     @ONLY)
 
-install(
-    FILES
-        ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-        ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
-        ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
-        ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-target-extract.cmake
-    DESTINATION
-        ${CMAKE_INSTALL_CONFIGDIR})
+if(TIMEMORY_INSTALL_CONFIG)
+    install(
+        FILES
+            ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+            ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
+            ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
+            ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-target-extract.cmake
+        DESTINATION
+            ${CMAKE_INSTALL_CONFIGDIR}
+        OPTIONAL)
+endif()
 
 # only if master project
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")

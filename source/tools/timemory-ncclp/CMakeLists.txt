@@ -31,4 +31,5 @@ set_target_properties(timemory-ncclp-shared PROPERTIES
 
 # installation
 install(TARGETS timemory-ncclp-shared
-    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)

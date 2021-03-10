@@ -49,7 +49,8 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
         endif()
         if(CMAKE_INSTALL_PYTHONDIR)
             install(FILES ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py
-                DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_DIR})
+                DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_DIR}
+                OPTIONAL)
         endif()
     endforeach()
 endforeach()
@@ -89,7 +90,8 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_cxx_info.txt "${MPI_CXX_I
 if(CMAKE_INSTALL_PYTHONDIR)
     foreach(_TYPE exe c cxx)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_${_TYPE}_info.txt
-            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/mpi_support)
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/mpi_support
+            OPTIONAL)
     endforeach(_TYPE exe c cxx)
 endif()
 
@@ -99,7 +101,8 @@ foreach(_FILE ${BIN_FILES})
     configure_file(${_FILE} ${CMAKE_CURRENT_BINARY_DIR}/bin/${_NAME} COPYONLY)
     if(CMAKE_INSTALL_PYTHONDIR)
         install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/bin/${_NAME}
-            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/bin)
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/bin
+            OPTIONAL)
     endif()
 endforeach()
 
@@ -111,7 +114,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py.in
 
 if(CMAKE_INSTALL_PYTHONDIR)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/__init__.py
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}
+        OPTIONAL)
 endif()
 
 foreach(PYLIB_SUBMODULE ${PYTHON_SUBMODULE_FILES})
@@ -121,7 +125,8 @@ foreach(PYLIB_SUBMODULE ${PYTHON_SUBMODULE_FILES})
 
     if(CMAKE_INSTALL_PYTHONDIR)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PYLIB_SUBMODULE}.py
-            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}
+            OPTIONAL)
     endif()
 endforeach()
 
@@ -138,7 +143,8 @@ function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNC
 
     if(CMAKE_INSTALL_PYTHONDIR)
         install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME}
-            DESTINATION ${CMAKE_INSTALL_BINDIR})
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+            OPTIONAL)
     endif()
 endfunction()
 

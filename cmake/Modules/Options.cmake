@@ -40,6 +40,7 @@ set(_FEATURE )
 set(_USE_PAPI OFF)
 set(_USE_COVERAGE OFF)
 set(_BUILD_OPT OFF)
+set(_BUILD_GOTCHA OFF)
 set(_BUILD_CALIPER ON)
 set(_NON_APPLE_UNIX OFF)
 set(_UNIX_OS ${UNIX})
@@ -61,6 +62,7 @@ endif()
 if(UNIX AND NOT APPLE)
     set(_NON_APPLE_UNIX ON)
     set(_USE_PAPI ON)
+    set(_BUILD_GOTCHA ON)
 endif()
 
 if(NOT UNIX)
@@ -221,6 +223,19 @@ endif()
 
 add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 
+
+# Install settings
+add_option(TIMEMORY_INSTALL_HEADERS "Install the header files" ON)
+add_option(TIMEMORY_INSTALL_CONFIG "Install the cmake package config files, i.e. timemory-config.cmake, etc." ON)
+add_option(TIMEMORY_INSTALL_ALL
+    "install target depends on all target. Set to OFF to only install artifacts which were explicitly built" ON)
+
+if(NOT TIMEMORY_INSTALL_ALL)
+    set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY ON)
+    set(_BUILD_CALIPER OFF)
+    set(_BUILD_GOTCHA OFF)
+endif()
+
 # Build settings
 add_option(TIMEMORY_BUILD_DOCS
     "Make a `doc` make target"  OFF)
@@ -261,7 +276,7 @@ add_option(TIMEMORY_BUILD_QUIET
 add_option(TIMEMORY_REQUIRE_PACKAGES
     "All find_package(...) use REQUIRED" OFF)
 add_option(TIMEMORY_BUILD_GOTCHA
-    "Enable building GOTCHA (set to OFF for external)" ON)
+    "Enable building GOTCHA (set to OFF for external)" ${_BUILD_GOTCHA})
 add_option(TIMEMORY_UNITY_BUILD
     "Same as CMAKE_UNITY_BUILD but is not propagated to submodules" ON)
 if(NOT CMAKE_VERSION VERSION_LESS 3.16)

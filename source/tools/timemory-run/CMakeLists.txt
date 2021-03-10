@@ -91,6 +91,7 @@ if(TIMEMORY_USE_DYNINST)
     foreach(_FILE ${COLLECTION_FILES})
         install(FILES ${_FILE}
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/timemory/collections
-            ${_OPTIONAL})
+            ${_OPTIONAL}
+            OPTIONAL)
     endforeach()
 endif()

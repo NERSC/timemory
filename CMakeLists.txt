@@ -309,9 +309,12 @@ add_subdirectory(external)
 
 # Install the export set for use with the install-tree
 message(STATUS "Exporting library dependencies...")
-install(EXPORT ${PROJECT_NAME}-library-depends
-    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
-    NAMESPACE ${PROJECT_NAME}::)
+if(TIMEMORY_INSTALL_CONFIG)
+    install(EXPORT ${PROJECT_NAME}-library-depends
+        DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
+        NAMESPACE ${PROJECT_NAME}::
+        OPTIONAL)
+endif()
 
 #----------------------------------------------------------------------------------------#
 #   Examples and Testing
@@ -363,7 +366,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 option(TIMEMORY_GENERATE_MAKEFILE_INCLUDE
-    "Generate a Makefile.timemory.inc for Makefile build systems" ON)
+    "Generate a Makefile.timemory.inc for Makefile build systems" ${TIMEMORY_INSTALL_CONFIG})
 mark_as_advanced(TIMEMORY_GENERATE_MAKEFILE_INCLUDE)
 
 if(TIMEMORY_GENERATE_MAKEFILE_INCLUDE)

@@ -28,12 +28,15 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/version.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
 
 if(timemory_MASTER_PROJECT)
-    install(
-        FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/defines.h
-            ${CMAKE_CURRENT_BINARY_DIR}/version.h
-        DESTINATION
-            ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
+    if(TIMEMORY_INSTALL_HEADERS)
+        install(
+            FILES
+                ${CMAKE_CURRENT_BINARY_DIR}/defines.h
+                ${CMAKE_CURRENT_BINARY_DIR}/version.h
+            DESTINATION
+                ${CMAKE_INSTALL_INCLUDEDIR}/timemory
+            OPTIONAL)
+    endif()
 else()
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -51,12 +54,15 @@ else()
         ERROR_VARIABLE ERR_MSG
         RESULT_VARIABLE RET
     )
-    install(
-        FILES
-            ${CMAKE_CURRENT_LIST_DIR}/defines.h
-            ${CMAKE_CURRENT_LIST_DIR}/version.h
-        DESTINATION
-            ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
+    if(TIMEMORY_INSTALL_HEADERS)
+        install(
+            FILES
+                ${CMAKE_CURRENT_LIST_DIR}/defines.h
+                ${CMAKE_CURRENT_LIST_DIR}/version.h
+            DESTINATION
+                ${CMAKE_INSTALL_INCLUDEDIR}/timemory
+            OPTIONAL)
+    endif()
 endif()
 
 file(GLOB_RECURSE header_files
