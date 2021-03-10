@@ -5,7 +5,6 @@ endif()
 
 if(NOT TIMEMORY_BUILD_TOOLS AND NOT TIMEMORY_BUILD_DYNINST_TOOLS)
   set(_EXCLUDE EXCLUDE_FROM_ALL)
-  set(_OPTIONAL OPTIONAL)
 endif()
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
@@ -74,24 +73,23 @@ if(TIMEMORY_USE_DYNINST)
 
     set_target_properties(timemory-run PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
 
-    install(TARGETS timemory-run DESTINATION bin ${_OPTIONAL})
+    install(
+        TARGETS     timemory-run
+        DESTINATION bin
+        OPTIONAL)
 
     configure_file(${CMAKE_CURRENT_LIST_DIR}/generated/timemory-instr.sh
         ${PROJECT_BINARY_DIR}/timemory-instr COPYONLY)
 
-    install(FILES ${PROJECT_BINARY_DIR}/timemory-instr
+    install(
+        PROGRAMS    ${PROJECT_BINARY_DIR}/timemory-instr
         DESTINATION ${CMAKE_INSTALL_BINDIR}
-        PERMISSIONS
-        OWNER_EXECUTE OWNER_READ OWNER_WRITE
-        GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ
-        ${_OPTIONAL})
+        OPTIONAL)
 
     file(GLOB COLLECTION_FILES "${CMAKE_CURRENT_LIST_DIR}/collections/*")
     foreach(_FILE ${COLLECTION_FILES})
         install(FILES ${_FILE}
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/timemory/collections
-            ${_OPTIONAL}
             OPTIONAL)
     endforeach()
 endif()

@@ -1,7 +1,6 @@
 
 if(NOT TIMEMORY_BUILD_AVAIL)
   set(_EXCLUDE EXCLUDE_FROM_ALL)
-  set(_OPTIONAL OPTIONAL)
 endif()
 
 add_executable(timemory-avail ${_EXCLUDE}

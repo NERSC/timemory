@@ -13,7 +13,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
 if(NOT TIMEMORY_BUILD_TIMEM)
     # if not enabled as option, make it available to be built and installed
     set(_EXCLUDE EXCLUDE_FROM_ALL)
-    set(_OPTIONAL OPTIONAL)
 endif()
 
 add_library(timem-libexplain INTERFACE)
