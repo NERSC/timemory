@@ -51,12 +51,12 @@ jobs:
         - BUILD_ARGS='--minimal --build-libs shared static --python --mpi --gotcha --stats --tools mallocp mpip ompt --cxx-standard=17'
     # Clang 8.0
     - os: linux
-      dist: xenial
+      dist: bionic
       python: "3.7"
       addons:
         apt:
           sources:
-            - llvm-toolchain-xenial-8
+            - llvm-toolchain-bionic-8
             - ubuntu-toolchain-r-test
           packages:
             - clang-8
