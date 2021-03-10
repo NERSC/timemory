@@ -27,6 +27,8 @@
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/operations/types.hpp"
+#include "timemory/operations/types/add_statistics.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/storage/types.hpp"
 
@@ -200,7 +202,7 @@ call_stack<Tp>::append(const secondary_data_t<Up>& _secondary,
         _obj += std::get<2>(_secondary);
         _obj.set_laps(_nitr->second->obj().get_laps() + 1);
         auto& _stats = _nitr->second->stats();
-        operation::add_statistics<Tp>(_nitr->second->obj(), _stats);
+        operation::add_statistics<Tp>{ _nitr->second->obj(), _stats };
         return _nitr->second;
     }
 
@@ -211,7 +213,7 @@ call_stack<Tp>::append(const secondary_data_t<Up>& _secondary,
     graph_node _node{ _hash, _tmp, _depth, m_thread_idx };
     _node.stats() += _tmp.get();
     auto& _stats = _node.stats();
-    operation::add_statistics<Tp>(_tmp, _stats);
+    operation::add_statistics<Tp>{ _tmp, _stats };
     auto itr = _data().emplace_child(_itr, _node);
     itr->obj().set_iterator(itr);
     m_node_ids[_depth][_hash] = itr;
