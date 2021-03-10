@@ -369,7 +369,8 @@ call_stack<Tp>::_data()
         {
             auto _m = m_parent->data();
             DEBUG_PRINT_HERE("[%s]> child thread: %i, parent pointer: %p",
-                             demangle<Tp>().c_str(), (int) m_thread_idx, (void*) _m);
+                             demangle<Tp>().c_str(), (int) m_thread_idx,
+                             (void*) _m.get());
             if(_m && _m->current())
             {
                 auto       _current = _m->current();
