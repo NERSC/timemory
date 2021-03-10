@@ -389,7 +389,7 @@ tsettings<Tp, Vp>::get_action(enable_if_t<is_else_type<Up>(), long long>)
         auto        pos = m_cmdline.back().find_first_not_of('-');
         if(pos != std::string::npos)
             id = id.substr(pos);
-        m_value = p.get<Up>(id);
+        m_value = p.get<decay_t<Up>>(id);
     };
 }
 //
