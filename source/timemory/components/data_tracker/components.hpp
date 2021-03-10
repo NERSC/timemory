@@ -388,22 +388,28 @@ private:
     secondary_ptr_t m_secondary{ nullptr };
 };
 //
-/// \typedef tim::component::data_handler_t
+/// \typedef typename T::handler_type tim::component::data_handler_t
 /// \brief an alias for getting the handle_type of a data tracker
 template <typename T>
 using data_handler_t = typename T::handler_type;
 //
-/// \typedef tim::component::data_tracker_integer
+/// \typedef tim::component::data_tracker<intmax_t, TIMEMORY_API>
+/// tim::component::data_tracker_integer
+///
 /// \brief Specialization of \ref tim::component::data_tracker for storing signed integer
 /// data
 using data_tracker_integer = data_tracker<intmax_t, TIMEMORY_API>;
 //
-/// \typedef tim::component::data_tracker_unsigned
+/// \typedef tim::component::data_tracker<size_t, TIMEMORY_API>
+/// tim::component::data_tracker_unsigned
+///
 /// \brief Specialization of \ref tim::component::data_tracker for storing unsigned
 /// integer data
 using data_tracker_unsigned = data_tracker<size_t, TIMEMORY_API>;
 //
-/// \typedef tim::component::data_tracker_floating
+/// \typedef tim::component::data_tracker<double, TIMEMORY_API>
+/// tim::component::data_tracker_floating
+///
 /// \brief Specialization of \ref tim::component::data_tracker for storing floating point
 /// data
 using data_tracker_floating = data_tracker<double, TIMEMORY_API>;

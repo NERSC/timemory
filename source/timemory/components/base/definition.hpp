@@ -92,7 +92,7 @@ template <typename Tp, typename Value>
 tim::base::storage*
 base<Tp, Value>::get_storage()
 {
-    return tim::base::storage::template base_instance<Tp, Value>();
+    return tim::base::storage::template base_instance<Tp>();
 }
 //
 //--------------------------------------------------------------------------------------//

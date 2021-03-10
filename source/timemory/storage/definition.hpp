@@ -48,144 +48,6 @@
 
 namespace tim
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              base::storage
-//
-//--------------------------------------------------------------------------------------//
-//
-namespace base
-{
-//
-#if !defined(TIMEMORY_STORAGE_HIDE_DEFINITION)
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STORAGE_LINKAGE
-storage::storage(bool _is_master, int64_t _instance_id, std::string _label)
-: m_is_master(_is_master)
-, m_node_init(dmp::is_initialized())
-, m_node_rank(dmp::rank())
-, m_node_size(dmp::size())
-, m_instance_id(_instance_id)
-, m_thread_idx(threading::get_id())
-, m_label(std::move(_label))
-, m_hash_ids(::tim::get_hash_ids())
-, m_hash_aliases(::tim::get_hash_aliases())
-, m_manager(::tim::manager::instance())
-, m_settings(::tim::settings::shared_instance())
-{
-    if(m_is_master && m_instance_id > 0)
-    {
-        int _id = m_instance_id;
-        PRINT_HERE("%s: %i (%s)",
-                   "Error! base::storage is master but is not zero instance", _id,
-                   m_label.c_str());
-        if(m_instance_id > 10)
-        {
-            // at this point we have a recursive loop
-            TIMEMORY_EXCEPTION("Duplication!")
-        }
-    }
-
-    if(!m_is_master && m_instance_id == 0)
-    {
-        int _id = m_instance_id;
-        PRINT_HERE("%s: %i (%s)",
-                   "Warning! base::storage is not master but is zero instance", _id,
-                   m_label.c_str());
-    }
-
-    if(m_settings->get_debug())
-    {
-        PRINT_HERE("%s: %i (%s)", "base::storage instance created", (int) m_instance_id,
-                   m_label.c_str());
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STORAGE_LINKAGE storage::~storage()
-{
-    if(m_settings->get_debug())
-    {
-        PRINT_HERE("%s: %i (%s)", "base::storage instance deleted", (int) m_instance_id,
-                   m_label.c_str());
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STORAGE_LINKAGE std::atomic<int>&
-                         storage::storage_once_flag()
-{
-    static std::atomic<int> _instance(0);
-    return _instance;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STORAGE_LINKAGE void
-storage::stop_profiler()
-{
-    // disable gperf if profiling
-#    if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_PROFILER) || \
-        defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
-    try
-    {
-        if(storage_once_flag()++ == 0)
-            gperftools::profiler_stop();
-    } catch(std::exception& e)
-    {
-        std::cerr << "Error calling gperftools::profiler_stop(): " << e.what()
-                  << ". Continuing..." << std::endl;
-    }
-#    endif
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STORAGE_LINKAGE void
-storage::add_hash_id(uint64_t _lhs, uint64_t _rhs)
-{
-    ::tim::add_hash_id(m_hash_ids, m_hash_aliases, _lhs, _rhs);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STORAGE_LINKAGE hash_value_type
-                         storage::add_hash_id(const std::string& _prefix)
-{
-    return ::tim::add_hash_id(m_hash_ids, _prefix);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STORAGE_LINKAGE void
-storage::add_file_output(const std::string& _category, const std::string& _label,
-                         const std::string& _file)
-{
-    if(m_manager)
-        m_manager->add_file_output(_category, _label, _file);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STORAGE_LINKAGE void
-storage::free_shared_manager()
-{
-    if(m_manager)
-        m_manager->remove_finalizer(m_label);
-}
-//
-#endif
-//--------------------------------------------------------------------------------------//
-//
-}  // namespace base
-//
-//--------------------------------------------------------------------------------------//
-//
 namespace impl
 {
 //
@@ -197,24 +59,6 @@ namespace impl
 //======================================================================================//
 //
 //                                      TRUE
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::pointer
-storage<Type, true>::noninit_instance()
-{
-    return get_singleton() ? get_singleton()->instance_ptr() : nullptr;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::pointer
-storage<Type, true>::noninit_master_instance()
-{
-    return get_singleton() ? get_singleton()->master_instance_ptr() : nullptr;
-}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -257,25 +101,25 @@ storage<Type, true>::instance_count()
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Type>
+typename storage<Type, true>::parent_type&
+storage<Type, true>::get_upcast()
+{
+    return static_cast<parent_type&>(*this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+const typename storage<Type, true>::parent_type&
+storage<Type, true>::get_upcast() const
+{
+    return static_cast<const parent_type&>(*this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 //                                      FALSE
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, false>::pointer
-storage<Type, false>::noninit_instance()
-{
-    return get_singleton() ? get_singleton()->instance_ptr() : nullptr;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, false>::pointer
-storage<Type, false>::noninit_master_instance()
-{
-    return get_singleton() ? get_singleton()->master_instance_ptr() : nullptr;
-}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -316,6 +160,24 @@ storage<Type, false>::instance_count()
     return _counter;
 }
 //
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type, false>::parent_type&
+storage<Type, false>::get_upcast()
+{
+    return static_cast<parent_type&>(*this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+const typename storage<Type, false>::parent_type&
+storage<Type, false>::get_upcast() const
+{
+    return static_cast<const parent_type&>(*this);
+}
+//
 //======================================================================================//
 //
 //                              impl::storage<Type, true>
@@ -325,20 +187,24 @@ storage<Type, false>::instance_count()
 //
 template <typename Type>
 storage<Type, true>::storage()
-: base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
+: base_type(parent_type::singleton_t::is_master_thread(), instance_count()++,
+            demangle<Type>())
 {
     if(m_settings->get_debug())
         printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
 
     component::state<Type>::has_storage() = true;
+    m_call_stack.set_primary(m_is_master);
 
-    static std::atomic<int32_t> _skip_once(0);
+    static std::atomic<int32_t> _skip_once{ 0 };
     if(_skip_once++ > 0)
     {
         // make sure all worker instances have a copy of the hash id and aliases
-        auto _master = singleton_t::master_instance();
+        auto _master = parent_type::singleton_t::master_instance();
         if(_master)
         {
+            _master->data_init();
+            m_call_stack.set_parent(&_master->m_call_stack);
             graph_hash_map_t   _hash_ids     = *_master->get_hash_ids();
             graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases();
             for(const auto& itr : _hash_ids)
@@ -372,18 +238,18 @@ storage<Type, true>::~storage()
 
     if(!m_is_master)
     {
-        if(singleton_t::master_instance())
+        if(parent_type::singleton_t::master_instance())
         {
             if(_debug)
                 printf("[%s]> merging into master @ %i...\n", m_label.c_str(), __LINE__);
-            singleton_t::master_instance()->merge(this);
+            parent_type::singleton_t::master_instance()->merge(this);
         }
     }
 
     if(_debug)
         printf("[%s]> deleting graph data @ %i...\n", m_label.c_str(), __LINE__);
-    delete m_graph_data_instance;
-    m_graph_data_instance = nullptr;
+
+    m_call_stack.data().reset();
 
     if(_debug)
         printf("[%s]> storage destroyed @ %i...\n", m_label.c_str(), __LINE__);
@@ -424,8 +290,7 @@ storage<Type, true>::finalize()
     manager::instance()->is_finalizing(true);
 
     using fini_t = operation::fini<Type>;
-    using ValueT = typename trait::collects_data<Type>::type;
-    auto upcast  = static_cast<tim::storage<Type, ValueT>*>(this);
+    auto upcast  = &get_upcast();
 
     if(m_thread_init)
         fini_t(upcast, operation::mode_constant<operation::fini_mode::thread>{});
@@ -440,22 +305,24 @@ storage<Type, true>::finalize()
 //
 template <typename Type>
 void
+storage<Type, true>::_data_init() const
+{
+    if(!is_finalizing())
+    {
+        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
+        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
+        consume_parameters(_init);
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+void
 storage<Type, true>::stack_clear()
 {
-    if(!m_stack.empty() && m_settings->get_stack_clearing())
-    {
-        std::unordered_set<Type*> _stack = m_stack;
-        for(auto& itr : _stack)
-        {
-            operation::generic_operator<Type, operation::start<Type>, TIMEMORY_API>{
-                *itr
-            };
-            operation::generic_operator<Type, operation::pop_node<Type>, TIMEMORY_API>{
-                *itr
-            };
-        }
-    }
-    m_stack.clear();
+    if(m_settings->get_stack_clearing())
+        m_call_stack.stack_clear();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -468,13 +335,12 @@ storage<Type, true>::global_init()
     {
         return [&]() {
             m_global_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->global_init();
+            if(!m_is_master && parent_type::master_instance())
+                parent_type::master_instance()->global_init();
             if(m_is_master)
             {
                 using init_t = operation::init<Type>;
-                using ValueT = typename trait::collects_data<Type>::type;
-                auto upcast  = static_cast<tim::storage<Type, ValueT>*>(this);
+                auto upcast  = &get_upcast();
                 init_t(upcast, operation::mode_constant<operation::init_mode::global>{});
             }
             return m_global_init;
@@ -493,13 +359,12 @@ storage<Type, true>::thread_init()
     {
         return [&]() {
             m_thread_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->thread_init();
+            if(!m_is_master && parent_type::master_instance())
+                parent_type::master_instance()->thread_init();
             bool _global_init = global_init();
             consume_parameters(_global_init);
             using init_t = operation::init<Type>;
-            using ValueT = typename trait::collects_data<Type>::type;
-            auto upcast  = static_cast<tim::storage<Type, ValueT>*>(this);
+            auto upcast  = &get_upcast();
             init_t(upcast, operation::mode_constant<operation::init_mode::thread>{});
             return m_thread_init;
         }();
@@ -517,8 +382,8 @@ storage<Type, true>::data_init()
     {
         return [&]() {
             m_data_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->data_init();
+            if(!m_is_master && parent_type::master_instance())
+                parent_type::master_instance()->data_init();
             bool _global_init = global_init();
             bool _thread_init = thread_init();
             consume_parameters(_global_init, _thread_init);
@@ -532,121 +397,15 @@ storage<Type, true>::data_init()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-const typename storage<Type, true>::graph_data_t&
-storage<Type, true>::data() const
-{
-    if(!is_finalizing())
-    {
-        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
-        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
-        consume_parameters(_init);
-    }
-    return _data();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-const typename storage<Type, true>::graph_t&
-storage<Type, true>::graph() const
-{
-    if(!is_finalizing())
-    {
-        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
-        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
-        consume_parameters(_init);
-    }
-    return _data().graph();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-int64_t
-storage<Type, true>::depth() const
-{
-    if(!is_finalizing())
-    {
-        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
-        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
-        consume_parameters(_init);
-    }
-    return (is_finalizing()) ? 0 : _data().depth();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::graph_data_t&
-storage<Type, true>::data()
-{
-    if(!is_finalizing())
-    {
-        static thread_local auto _init = data_init();
-        consume_parameters(_init);
-    }
-    return _data();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::graph_t&
-storage<Type, true>::graph()
-{
-    if(!is_finalizing())
-    {
-        static thread_local auto _init = data_init();
-        consume_parameters(_init);
-    }
-    return _data().graph();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::iterator&
-storage<Type, true>::current()
-{
-    if(!is_finalizing())
-    {
-        static thread_local auto _init = data_init();
-        consume_parameters(_init);
-    }
-    return _data().current();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::iterator
-storage<Type, true>::pop()
-{
-    return _data().pop_graph();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-void
-storage<Type, true>::stack_pop(Type* obj)
-{
-    auto itr = m_stack.find(obj);
-    if(itr != m_stack.end())
-        m_stack.erase(itr);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
 void
 storage<Type, true>::check_consistency()
 {
-    auto* ptr = &_data();
-    if(ptr != m_graph_data_instance)
+    auto ptr = m_call_stack.initialize_data();
+    if(ptr != m_call_stack.data())
     {
         fprintf(stderr, "[%s]> mismatched graph data on master thread: %p vs. %p\n",
-                m_label.c_str(), (void*) ptr, static_cast<void*>(m_graph_data_instance));
+                m_label.c_str(), (void*) ptr.get(),
+                static_cast<void*>(m_call_stack.data().get()));
     }
 }
 //
@@ -661,7 +420,7 @@ storage<Type, true>::insert_init()
     bool _data_init   = data_init();
     consume_parameters(_global_init, _thread_init, _data_init);
     // check this now to ensure everything is initialized
-    if(m_node_ids.empty() || m_graph_data_instance == nullptr)
+    if(get_node_ids().empty() || m_call_stack.data() == nullptr)
         initialize();
 }
 //
@@ -674,9 +433,9 @@ storage<Type, true>::get_prefix(const graph_node& node)
     auto _ret = operation::decode<TIMEMORY_API>{}(m_hash_ids, m_hash_aliases, node.id());
     if(_ret.find("unknown-hash=") == 0)
     {
-        if(!m_is_master && singleton_t::master_instance())
+        if(!m_is_master && parent_type::singleton_t::master_instance())
         {
-            auto _master = singleton_t::master_instance();
+            auto _master = parent_type::singleton_t::master_instance();
             return _master->get_prefix(node);
         }
 
@@ -702,9 +461,9 @@ storage<Type, true>::get_prefix(const uint64_t& id)
     auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, id);
     if(_ret.find("unknown-hash=") == 0)
     {
-        if(!m_is_master && singleton_t::master_instance())
+        if(!m_is_master && parent_type::singleton_t::master_instance())
         {
-            auto _master = singleton_t::master_instance();
+            auto _master = parent_type::singleton_t::master_instance();
             return _master->get_prefix(id);
         }
 
@@ -724,81 +483,13 @@ storage<Type, true>::get_prefix(const uint64_t& id)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type, true>::graph_data_t&
-storage<Type, true>::_data()
-{
-    if(m_graph_data_instance == nullptr)
-    {
-        auto_lock_t lk(singleton_t::get_mutex(), std::defer_lock);
-
-        if(!m_is_master && master_instance())
-        {
-            static thread_local bool _data_init = master_instance()->data_init();
-            auto&                    m          = master_instance()->data();
-            consume_parameters(_data_init);
-
-            if(!lk.owns_lock())
-                lk.lock();
-
-            DEBUG_PRINT_HERE("[%s]> Worker: %i, master ptr: %p", demangle<Type>().c_str(),
-                             (int) m_thread_idx, (void*) &m);
-            if(m.current())
-            {
-                auto         _current = m.current();
-                auto         _id      = _current->id();
-                auto         _depth   = _current->depth();
-                graph_node_t node(_id, operation::dummy<Type>{}(), _depth, m_thread_idx);
-                if(!m_graph_data_instance)
-                    m_graph_data_instance = new graph_data_t(node, _depth, &m);
-                m_graph_data_instance->depth()     = _depth;
-                m_graph_data_instance->sea_level() = _depth;
-            }
-            else
-            {
-                if(!m_graph_data_instance)
-                {
-                    graph_node_t node(0, operation::dummy<Type>{}(), 1, m_thread_idx);
-                    m_graph_data_instance = new graph_data_t(node, 1, &m);
-                }
-                m_graph_data_instance->depth()     = 1;
-                m_graph_data_instance->sea_level() = 1;
-            }
-            m_graph_data_instance->set_master(&m);
-        }
-        else
-        {
-            if(!lk.owns_lock())
-                lk.lock();
-
-            std::string _prefix = "> [tot] total";
-            add_hash_id(_prefix);
-            graph_node_t node(0, operation::dummy<Type>{}(), 0, m_thread_idx);
-            if(!m_graph_data_instance)
-                m_graph_data_instance = new graph_data_t(node, 0, nullptr);
-            m_graph_data_instance->depth()     = 0;
-            m_graph_data_instance->sea_level() = 0;
-            DEBUG_PRINT_HERE("[%s]> Master: %i, master ptr: %p", demangle<Type>().c_str(),
-                             (int) m_thread_idx, (void*) m_graph_data_instance);
-        }
-
-        if(m_node_ids.empty())
-            m_node_ids[0][0] = m_graph_data_instance->current();
-    }
-
-    m_initialized = true;
-    return *m_graph_data_instance;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
 void
 storage<Type, true>::merge()
 {
     if(!m_is_master || !m_initialized)
         return;
 
-    auto m_children = singleton_t::children();
+    auto m_children = parent_type::singleton_t::children();
     if(m_children.empty())
         return;
 
@@ -806,9 +497,9 @@ storage<Type, true>::merge()
         merge(itr);
 
     // create lock
-    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-    if(!l.owns_lock())
-        l.lock();
+    auto_lock_t _lk{ parent_type::singleton_t::get_mutex(), std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
 
     for(auto& itr : m_children)
     {
@@ -826,7 +517,8 @@ void
 storage<Type, true>::merge(this_type* itr)
 {
     if(itr)
-        operation::finalize::merge<Type, true>(*this, *itr);
+        operation::finalize::merge<Type, true>{ get_upcast(),
+                                                static_cast<parent_type&>(*itr) };
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -836,7 +528,7 @@ typename storage<Type, true>::result_array_t
 storage<Type, true>::get()
 {
     result_array_t _ret;
-    operation::finalize::get<Type, true>{ *this }(_ret);
+    operation::finalize::get<Type, true>{ get_upcast() }(_ret);
     return _ret;
 }
 //
@@ -847,7 +539,7 @@ template <typename Tp>
 Tp&
 storage<Type, true>::get(Tp& _ret)
 {
-    return operation::finalize::get<Type, true>{ *this }(_ret);
+    return operation::finalize::get<Type, true>{ get_upcast() }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -857,7 +549,7 @@ typename storage<Type, true>::dmp_result_t
 storage<Type, true>::mpi_get()
 {
     dmp_result_t _ret;
-    operation::finalize::mpi_get<Type, true>{ *this }(_ret);
+    operation::finalize::mpi_get<Type, true>{ get_upcast() }(_ret);
     return _ret;
 }
 //
@@ -868,7 +560,7 @@ template <typename Tp>
 Tp&
 storage<Type, true>::mpi_get(Tp& _ret)
 {
-    return operation::finalize::mpi_get<Type, true>{ *this }(_ret);
+    return operation::finalize::mpi_get<Type, true>{ get_upcast() }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -878,7 +570,7 @@ typename storage<Type, true>::dmp_result_t
 storage<Type, true>::upc_get()
 {
     dmp_result_t _ret;
-    operation::finalize::upc_get<Type, true>{ *this }(_ret);
+    operation::finalize::upc_get<Type, true>{ get_upcast() }(_ret);
     return _ret;
 }
 //
@@ -889,7 +581,7 @@ template <typename Tp>
 Tp&
 storage<Type, true>::upc_get(Tp& _ret)
 {
-    return operation::finalize::upc_get<Type, true>{ *this }(_ret);
+    return operation::finalize::upc_get<Type, true>{ get_upcast() }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -899,7 +591,7 @@ typename storage<Type, true>::dmp_result_t
 storage<Type, true>::dmp_get()
 {
     dmp_result_t _ret;
-    operation::finalize::dmp_get<Type, true>{ *this }(_ret);
+    operation::finalize::dmp_get<Type, true>{ get_upcast() }(_ret);
     return _ret;
 }
 //
@@ -910,7 +602,7 @@ template <typename Tp>
 Tp&
 storage<Type, true>::dmp_get(Tp& _ret)
 {
-    return operation::finalize::dmp_get<Type, true>{ *this }(_ret);
+    return operation::finalize::dmp_get<Type, true>{ get_upcast() }(_ret);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -924,10 +616,10 @@ storage<Type, true>::internal_print()
     if(!m_initialized && !m_finalized)
         return;
 
-    if(!singleton_t::is_master(this))
+    if(!parent_type::singleton_t::is_master(&get_upcast()))
     {
-        if(singleton_t::master_instance())
-            singleton_t::master_instance()->merge(this);
+        if(parent_type::singleton_t::master_instance())
+            parent_type::singleton_t::master_instance()->merge(this);
         finalize();
     }
     else
@@ -942,14 +634,14 @@ storage<Type, true>::internal_print()
         }
 
         // if the graph wasn't ever initialized, exit
-        if(!m_graph_data_instance)
+        if(!m_call_stack.data())
         {
             instance_count().store(0);
             return;
         }
 
         // no entries
-        if(_data().graph().size() <= 1)
+        if(m_call_stack.size() <= 1)
         {
             instance_count().store(0);
             return;
@@ -958,7 +650,7 @@ storage<Type, true>::internal_print()
         // generate output
         if(m_settings->get_auto_output())
         {
-            m_printer.reset(new printer_t(Type::get_label(), this, m_settings));
+            m_printer.reset(new printer_t(Type::get_label(), &get_upcast(), m_settings));
 
             if(m_manager)
                 m_manager->add_entries(this->size());
@@ -1011,10 +703,10 @@ storage<Type, true>::get_shared_manager()
         trait::runtime_enabled<Type>::set(_enabled);
 
         auto _instance_id = m_instance_id;
-        bool _is_master   = singleton_t::is_master(this);
+        bool _is_master   = parent_type::singleton_t::is_master(&get_upcast());
         auto _sync        = [&]() {
-            if(m_graph_data_instance)
-                this->data().sync_sea_level();
+            if(m_call_stack.data() != nullptr)
+                data().sync_sea_level();
         };
         auto _cleanup = [_is_master, _instance_id]() {
             if(_is_master)
@@ -1027,7 +719,7 @@ storage<Type, true>::get_shared_manager()
                                                             _instance_id);
         };
         func_t _finalize = [&]() {
-            auto _instance = this_type::get_singleton();
+            auto _instance = parent_type::get_singleton();
             if(_instance)
             {
                 auto _debug_v = m_settings->get_debug();
@@ -1037,7 +729,7 @@ storage<Type, true>::get_shared_manager()
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 }
-                _instance->reset(this);
+                _instance->reset(&get_upcast());
                 // if(_debug_v || _verb_v > 1)
                 //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                 //               "calling _instance->smart_instance().reset()");
@@ -1082,7 +774,8 @@ storage<Type, true>::get_shared_manager()
 //
 template <typename Type>
 storage<Type, false>::storage()
-: base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
+: base_type(parent_type::singleton_t::is_master_thread(), instance_count()++,
+            demangle<Type>())
 {
     if(m_settings->get_debug())
         printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
@@ -1131,8 +824,7 @@ storage<Type, false>::initialize()
     m_initialized = true;
 
     using init_t = operation::init<Type>;
-    using ValueT = typename trait::collects_data<Type>::type;
-    auto upcast  = static_cast<tim::storage<Type, ValueT>*>(this);
+    auto upcast  = &get_upcast();
 
     if(!m_is_master)
     {
@@ -1161,8 +853,7 @@ storage<Type, false>::finalize()
         printf("[%s]> finalizing...\n", m_label.c_str());
 
     using fini_t = operation::fini<Type>;
-    using ValueT = typename trait::collects_data<Type>::type;
-    auto upcast  = static_cast<tim::storage<Type, ValueT>*>(this);
+    auto upcast  = &get_upcast();
 
     m_finalized = true;
     manager::instance()->is_finalizing(true);
@@ -1199,7 +890,7 @@ template <typename Type>
 void
 storage<Type, false>::merge()
 {
-    auto m_children = singleton_t::children();
+    auto m_children = parent_type::singleton_t::children();
     if(m_children.size() == 0)
         return;
 
@@ -1219,7 +910,8 @@ void
 storage<Type, false>::merge(this_type* itr)
 {
     if(itr)
-        operation::finalize::merge<Type, false>(*this, *itr);
+        operation::finalize::merge<Type, false>{ get_upcast(),
+                                                 static_cast<parent_type&>(*itr) };
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1246,10 +938,10 @@ storage<Type, false>::get_shared_manager()
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 
-        bool   _is_master = singleton_t::is_master(this);
+        bool   _is_master = parent_type::singleton_t::is_master(&get_upcast());
         auto   _cleanup   = [&]() {};
         func_t _finalize  = [&]() {
-            auto _instance = this_type::get_singleton();
+            auto _instance = parent_type::get_singleton();
             if(_instance)
             {
                 auto _debug_v = m_settings->get_debug();
@@ -1259,7 +951,7 @@ storage<Type, false>::get_shared_manager()
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 }
-                _instance->reset(this);
+                _instance->reset(&get_upcast());
                 // if(_debug_v || _verb_v > 1)
                 //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                 //               "calling _instance->smart_instance().reset()");

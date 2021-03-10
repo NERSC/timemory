@@ -49,7 +49,7 @@ template <typename Type>
 struct flamegraph
 {
     static constexpr bool has_data = true;
-    using storage_type             = impl::storage<Type, has_data>;
+    using storage_type             = storage<Type>;
     using result_type              = typename storage_type::result_array_t;
     using distrib_type             = typename storage_type::dmp_result_t;
     using result_node              = typename storage_type::result_node;

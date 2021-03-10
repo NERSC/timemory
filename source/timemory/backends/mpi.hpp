@@ -33,6 +33,7 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/environment/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
@@ -155,7 +156,7 @@ rank(comm_t comm = comm_world_v);
 static inline bool&
 use_mpi_thread()
 {
-    static bool _instance = true;
+    static bool _instance = tim::get_env("TIMEMORY_MPI_THREAD", true);
     return _instance;
 }
 
@@ -164,7 +165,8 @@ use_mpi_thread()
 inline std::string&
 use_mpi_thread_type()
 {
-    static std::string _instance = {};
+    static std::string _instance =
+        tim::get_env<std::string>("TIMEMORY_MPI_THREAD_TYPE", "");
     return _instance;
 }
 

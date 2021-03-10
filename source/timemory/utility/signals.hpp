@@ -96,6 +96,9 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message);
 //
 //--------------------------------------------------------------------------------------//
 //
+static void TIMEMORY_ATTRIBUTE(signal)
+    timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */);
+//
 static void
 timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
 {
@@ -158,8 +161,9 @@ tim_signal_oldaction()
 static void
 termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 {
-    std::stringstream message;
-    sys_signal        _sig = (sys_signal)(sig);
+    // std::stringstream message;
+    auto&      message = os;
+    sys_signal _sig    = (sys_signal)(sig);
 
     message << "\n### ERROR ### ";
     if(dmp::is_initialized())
@@ -217,27 +221,35 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 
     signal_settings::disable(_sig);
 
-    std::stringstream        prefix;
-    std::stringstream        serr;
-    std::vector<std::string> bt;
+    char prefix[512];
+    memset(prefix, '\0', 512 * sizeof(char));
+    sprintf(prefix, "[PID=%i][TID=%i]", (int) process::get_id(),
+            (int) threading::get_id());
 
-    prefix << "[PID=" << process::get_id() << "][TID=" << threading::get_id() << "]";
-
-    for(auto&& itr : tim::get_demangled_backtrace<32>())
+    size_t ntot = 0;
+    auto   bt   = tim::get_backtrace<32>();
+    for(size_t i = 0; i < bt.size(); ++i)
     {
-        if(itr.length() > 0)
-            bt.push_back(itr);
+        if(!bt.at(i))
+            break;
+        if(strlen(bt.at(i)) == 0)
+            break;
+        ++ntot;
     }
 
+    std::stringstream serr;
     serr << "\nBacktrace:\n";
     for(size_t i = 0; i < bt.size(); ++i)
     {
-        auto& itr = bt.at(i);
-        serr << prefix.str() << "[" << i << '/' << bt.size() << "]> " << itr << "\n";
+        if(!bt.at(i))
+            break;
+        if(strlen(bt.at(i)) == 0)
+            break;
+        message << prefix << "[" << i << '/' << ntot << "]> " << bt.at(i) << "\n";
     }
 
-    message << serr.str().c_str() << std::flush;
-    os << message.str() << std::flush;
+    // message << serr.str().c_str() << std::flush;
+    os << std::flush;
 
     try
     {

@@ -38,7 +38,9 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/call_stack.hpp"
 #include "timemory/operations/types/cleanup.hpp"
+#include "timemory/storage/base_storage.hpp"
 #include "timemory/storage/graph.hpp"
 #include "timemory/storage/graph_data.hpp"
 #include "timemory/storage/macros.hpp"
@@ -110,11 +112,6 @@ public:
     using base_type      = base::storage;
     using component_type = Type;
     using this_type      = storage<Type, has_data_v>;
-    using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
-    using singleton_t    = singleton<this_type, smart_pointer>;
-    using singleton_type = singleton_t;
-    using pointer        = typename singleton_t::pointer;
-    using auto_lock_t    = typename singleton_t::auto_lock_t;
     using node_type      = typename node::data<Type>::node_type;
     using stats_type     = typename node::data<Type>::stats_type;
     using result_type    = typename node::data<Type>::result_type;
@@ -128,6 +125,8 @@ public:
     using graph_type     = graph_t;
     using iterator       = typename graph_type::iterator;
     using const_iterator = typename graph_type::const_iterator;
+    using parent_type    = tim::storage<Type>;
+    using auto_lock_t    = std::unique_lock<std::recursive_mutex>;
 
     template <typename Vp>
     using secondary_data_t       = std::tuple<iterator, const std::string&, Vp>;
@@ -147,20 +146,13 @@ public:
 
 public:
     // static functions
-    static pointer instance();
-    static pointer master_instance();
-    static pointer noninit_instance();
-    static pointer noninit_master_instance();
-
     static bool& master_is_finalizing();
     static bool& worker_is_finalizing();
     static bool  is_finalizing();
 
 private:
-    static singleton_t* get_singleton() { return get_storage_singleton<this_type>(); }
     static std::atomic<int64_t>& instance_count();
 
-public:
 public:
     storage();
     ~storage() override;
@@ -184,31 +176,19 @@ public:
     bool thread_init() final;
     bool data_init() final;
 
-    const graph_data_t& data() const;
-    const graph_t&      graph() const;
-    int64_t             depth() const;
-    graph_data_t&       data();
-    graph_t&            graph();
-    iterator&           current();
+    const graph_data_t& data() const { return *m_call_stack.data(); }
+    const graph_t&      graph() const { return m_call_stack.data()->graph(); }
+    int64_t             depth() const { return m_call_stack.depth(); }
+    graph_data_t&       data() { return *m_call_stack.data(); }
+    graph_t&            graph() { return m_call_stack.data()->graph(); }
+    iterator&           current() { return m_call_stack.data()->current(); }
 
-    void        reset();
-    inline bool empty() const
-    {
-        return (m_graph_data_instance) ? (_data().graph().size() <= 1) : true;
-    }
-    inline size_t size() const
-    {
-        return (m_graph_data_instance) ? (_data().graph().size() - 1) : 0;
-    }
-    inline size_t true_size() const
-    {
-        if(!m_graph_data_instance)
-            return 0;
-        size_t _sz = _data().graph().size();
-        size_t _dc = _data().dummy_count();
-        return (_dc < _sz) ? (_sz - _dc) : 0;
-    }
-    iterator       pop();
+    void          reset() { m_call_stack.reset(); }
+    inline bool   empty() const { return m_call_stack.empty(); }
+    inline size_t size() const { return m_call_stack.size(); }
+    inline size_t true_size() const { return m_call_stack.true_size(); }
+    iterator      pop() { return m_call_stack.pop(); }
+
     result_array_t get();
     dmp_result_t   mpi_get();
     dmp_result_t   upc_get();
@@ -225,22 +205,24 @@ public:
 
     std::shared_ptr<printer_t> get_printer() const { return m_printer; }
 
-    iterator_hash_map_t get_node_ids() const { return m_node_ids; }
+    iterator_hash_map_t get_node_ids() const { return m_call_stack.get_node_ids(); }
 
-    void stack_push(Type* obj) { m_stack.insert(obj); }
-    void stack_pop(Type* obj);
+    void stack_push(Type* _obj) { m_call_stack.stack_push(_obj); }
+    void stack_pop(Type* _obj) { m_call_stack.stack_pop(_obj); }
 
     void insert_init();
 
-    iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id);
-
-    // append a value to the the graph
-    template <typename Vp, enable_if_t<!std::is_same<decay_t<Vp>, Type>::value, int> = 0>
-    iterator append(const secondary_data_t<Vp>& _secondary);
+    iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id)
+    {
+        return m_call_stack.insert(scope_data, obj, hash_id);
+    }
 
     // append an instance to the graph
-    template <typename Vp, enable_if_t<std::is_same<decay_t<Vp>, Type>::value, int> = 0>
-    iterator append(const secondary_data_t<Vp>& _secondary);
+    template <typename Vp>
+    iterator append(const secondary_data_t<Vp>& _secondary)
+    {
+        return m_call_stack.append(_secondary);
+    }
 
     template <typename Archive>
     void serialize(Archive& ar, unsigned int version);
@@ -251,17 +233,14 @@ public:
     const auto& get_samples() const { return m_samples; }
 
 protected:
-    iterator insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
-    iterator insert_timeline(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
-    iterator insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
-    iterator insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                              bool has_head);
-
     void     merge();
     void     merge(this_type* itr);
     string_t get_prefix(const graph_node&);
     string_t get_prefix(iterator _node) { return get_prefix(*_node); }
     string_t get_prefix(const uint64_t& _id);
+
+    parent_type&       get_upcast();
+    const parent_type& get_upcast() const;
 
 private:
     void check_consistency();
@@ -271,336 +250,14 @@ private:
 
     void internal_print();
 
-    graph_data_t&       _data();
-    const graph_data_t& _data() const
-    {
-        using type_t = decay_t<remove_pointer_t<decltype(this)>>;
-        return const_cast<type_t*>(this)->_data();
-    }
+    void _data_init() const;
 
 private:
-    uint64_t                   m_timeline_counter    = 1;
-    mutable graph_data_t*      m_graph_data_instance = nullptr;
-    iterator_hash_map_t        m_node_ids;
-    std::unordered_set<Type*>  m_stack;
+    using call_stack_t = operation::call_stack<Type>;
+    call_stack_t               m_call_stack{};
     std::shared_ptr<printer_t> m_printer;
     sample_array_t             m_samples;
 };
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-void
-storage<Type, true>::reset()
-{
-    // have the data graph erase all children of the head node
-    if(m_graph_data_instance)
-        m_graph_data_instance->reset();
-    // erase all the cached iterators except for m_node_ids[0][0]
-    for(auto& ditr : m_node_ids)
-    {
-        auto _depth = ditr.first;
-        if(_depth != 0)
-        {
-            ditr.second.clear();
-        }
-        else
-        {
-            for(auto itr = ditr.second.begin(); itr != ditr.second.end(); ++itr)
-            {
-                if(itr->first != 0)
-                    ditr.second.erase(itr);
-            }
-        }
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::iterator
-storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t hash_id)
-{
-    insert_init();
-
-    using force_tree_t = trait::tree_storage<Type>;
-    using force_flat_t = trait::flat_storage<Type>;
-    using force_time_t = trait::timeline_storage<Type>;
-
-    // if data is all the way up to the zeroth (relative) depth then worker
-    // threads should insert a new dummy at the current master thread id and depth.
-    // Be aware, this changes 'm_current' inside the data graph
-    //
-    if(!m_is_master && _data().at_sea_level() &&
-       _data().dummy_count() < m_settings->get_max_thread_bookmarks())
-        _data().add_dummy();
-
-    // compute the insertion depth
-    auto hash_depth = scope_data.compute_depth<force_tree_t, force_flat_t, force_time_t>(
-        _data().depth());
-
-    // compute the insertion key
-    auto hash_value = scope_data.compute_hash<force_tree_t, force_flat_t, force_time_t>(
-        hash_id, hash_depth, m_timeline_counter);
-
-    // alias the true id with the insertion key
-    add_hash_id(hash_id, hash_value);
-
-    // even when flat is combined with timeline, it still inserts at depth of 1
-    // so this is easiest check
-    if(scope_data.is_flat() || force_flat_t::value)
-        return insert_flat(hash_value, obj, hash_depth);
-
-    // in the case of tree + timeline, timeline will have appropriately modified the
-    // depth and hash so it doesn't really matter which check happens first here
-    // however, the query for is_timeline() is cheaper so we will check that
-    // and fallback to inserting into tree without a check
-    // if(scope_data.is_timeline())
-    //    return insert_timeline(hash_value, obj, hash_depth);
-
-    // default fall-through if neither flat nor timeline
-    return insert_tree(hash_value, obj, hash_depth);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-template <typename Vp, enable_if_t<!std::is_same<decay_t<Vp>, Type>::value, int>>
-typename storage<Type, true>::iterator
-storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
-{
-    insert_init();
-
-    // get the iterator and check if valid
-    auto&& _itr = std::get<0>(_secondary);
-    if(!_data().graph().is_valid(_itr))
-        return nullptr;
-
-    // compute hash of prefix
-    auto _hash_id = add_hash_id(std::get<1>(_secondary));
-    // compute hash w.r.t. parent iterator (so identical kernels from different
-    // call-graph parents do not locate same iterator)
-    auto _hash = _hash_id ^ _itr->id();
-    // add the hash alias
-    add_hash_id(_hash_id, _hash);
-    // compute depth
-    auto _depth = _itr->depth() + 1;
-
-    // see if depth + hash entry exists already
-    auto _nitr = m_node_ids[_depth].find(_hash);
-    if(_nitr != m_node_ids[_depth].end())
-    {
-        // if so, then update
-        auto& _obj = _nitr->second->obj();
-        _obj += std::get<2>(_secondary);
-        _obj.set_laps(_nitr->second->obj().get_laps() + 1);
-        auto& _stats = _nitr->second->stats();
-        operation::add_statistics<Type>(_nitr->second->obj(), _stats);
-        return _nitr->second;
-    }
-
-    // else, create a new entry
-    auto&& _tmp = Type{};
-    _tmp += std::get<2>(_secondary);
-    _tmp.set_laps(_tmp.get_laps() + 1);
-    graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
-    _node.stats() += _tmp.get();
-    auto& _stats = _node.stats();
-    operation::add_statistics<Type>(_tmp, _stats);
-    auto itr = _data().emplace_child(_itr, _node);
-    itr->obj().set_iterator(itr);
-    m_node_ids[_depth][_hash] = itr;
-    return itr;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-template <typename Vp, enable_if_t<std::is_same<decay_t<Vp>, Type>::value, int>>
-typename storage<Type, true>::iterator
-storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
-{
-    insert_init();
-
-    // get the iterator and check if valid
-    auto&& _itr = std::get<0>(_secondary);
-    if(!_data().graph().is_valid(_itr))
-        return nullptr;
-
-    // compute hash of prefix
-    auto _hash_id = add_hash_id(std::get<1>(_secondary));
-    // compute hash w.r.t. parent iterator (so identical kernels from different
-    // call-graph parents do not locate same iterator)
-    auto _hash = _hash_id ^ _itr->id();
-    // add the hash alias
-    add_hash_id(_hash_id, _hash);
-    // compute depth
-    auto _depth = _itr->depth() + 1;
-
-    // see if depth + hash entry exists already
-    auto _nitr = m_node_ids[_depth].find(_hash);
-    if(_nitr != m_node_ids[_depth].end())
-    {
-        _nitr->second->obj() += std::get<2>(_secondary);
-        return _nitr->second;
-    }
-
-    // else, create a new entry
-    auto&&       _tmp = std::get<2>(_secondary);
-    graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
-    auto         itr = _data().emplace_child(_itr, _node);
-    itr->obj().set_iterator(itr);
-    m_node_ids[_depth][_hash] = itr;
-    return itr;
-}
-//
-//----------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::iterator
-storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
-{
-    // PRINT_HERE("%s", "");
-    bool has_head = _data().has_head();
-    return insert_hierarchy(hash_id, obj, hash_depth, has_head);
-}
-
-//----------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::iterator
-storage<Type, true>::insert_timeline(uint64_t hash_id, const Type& obj,
-                                     uint64_t hash_depth)
-{
-    // PRINT_HERE("%s", "");
-    auto         _current = _data().current();
-    graph_node_t _node(hash_id, obj, hash_depth, m_thread_idx);
-    return _data().emplace_child(_current, _node);
-}
-
-//----------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::iterator
-storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
-{
-    // PRINT_HERE("%s", "");
-    static thread_local auto _current = _data().head();
-    static thread_local bool _first   = true;
-    if(_first)
-    {
-        _first = false;
-        if(_current.begin())
-        {
-            _current = _current.begin();
-        }
-        else
-        {
-            graph_node_t node(hash_id, obj, hash_depth, m_thread_idx);
-            auto         itr                = _data().emplace_child(_current, node);
-            m_node_ids[hash_depth][hash_id] = itr;
-            _current                        = itr;
-            return itr;
-        }
-    }
-
-    auto _existing = m_node_ids[hash_depth].find(hash_id);
-    if(_existing != m_node_ids[hash_depth].end())
-        return m_node_ids[hash_depth].find(hash_id)->second;
-
-    graph_node_t node(hash_id, obj, hash_depth, m_thread_idx);
-    auto         itr                = _data().emplace_child(_current, node);
-    m_node_ids[hash_depth][hash_id] = itr;
-    return itr;
-}
-//
-//----------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::iterator
-storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
-                                      uint64_t hash_depth, bool has_head)
-{
-    using id_hash_map_t = typename iterator_hash_map_t::mapped_type;
-    // PRINT_HERE("%s", "");
-
-    auto& m_data = m_graph_data_instance;
-    auto  tid    = m_thread_idx;
-
-    // if first instance
-    if(!has_head || (m_is_master && m_node_ids.empty()))
-    {
-        graph_node_t node(hash_id, obj, hash_depth, tid);
-        auto         itr                = m_data->append_child(node);
-        m_node_ids[hash_depth][hash_id] = itr;
-        return itr;
-    }
-
-    // lambda for updating settings
-    auto _update = [&](iterator itr) {
-        m_data->depth() = itr->depth();
-        return (m_data->current() = itr);
-    };
-
-    if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
-       m_node_ids[hash_depth].find(hash_id)->second->depth() == m_data->depth())
-    {
-        return _update(m_node_ids[hash_depth].find(hash_id)->second);
-    }
-
-    using sibling_itr = typename graph_t::sibling_iterator;
-    graph_node_t node(hash_id, obj, m_data->depth(), tid);
-
-    // lambda for inserting child
-    auto _insert_child = [&]() {
-        node.depth() = hash_depth;
-        auto itr     = m_data->append_child(node);
-        auto ditr    = m_node_ids.find(hash_depth);
-        if(ditr == m_node_ids.end())
-            m_node_ids.insert({ hash_depth, id_hash_map_t{} });
-        auto hitr = m_node_ids.at(hash_depth).find(hash_id);
-        if(hitr == m_node_ids.at(hash_depth).end())
-            m_node_ids.at(hash_depth).insert({ hash_id, iterator{} });
-        m_node_ids.at(hash_depth).at(hash_id) = itr;
-        return itr;
-    };
-
-    auto current = m_data->current();
-    if(!m_data->graph().is_valid(current))
-        _insert_child();
-
-    // check children first because in general, child match is ideal
-    auto fchild = graph_t::child(current, 0);
-    if(m_data->graph().is_valid(fchild))
-    {
-        for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-        {
-            if((hash_id) == itr->id())
-                return _update(itr);
-        }
-    }
-
-    // occasionally, we end up here because of some of the threading stuff that
-    // has to do with the head node. Protected against mis-matches in hierarchy
-    // because the actual hash includes the depth so "example" at depth 2
-    // has a different hash than "example" at depth 3.
-    if((hash_id) == current->id())
-        return current;
-
-    // check siblings
-    for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
-    {
-        // skip if current
-        if(itr == current)
-            continue;
-        // check hash id's
-        if((hash_id) == itr->id())
-            return _update(itr);
-    }
-
-    return _insert_child();
-}
-
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -630,24 +287,6 @@ storage<Type, true>::do_serialize(Archive& ar)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Type>
-typename storage<Type, true>::pointer
-storage<Type, true>::instance()
-{
-    return get_singleton() ? get_singleton()->instance() : nullptr;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::pointer
-storage<Type, true>::master_instance()
-{
-    return get_singleton() ? get_singleton()->master_instance() : nullptr;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 //                      impl::storage<Type, false>
 //                          impl::storage_false
 //
@@ -672,12 +311,9 @@ public:
     using component_type = Type;
     using this_type      = storage<Type, has_data_v>;
     using string_t       = std::string;
-    using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
-    using singleton_t    = singleton<this_type, smart_pointer>;
-    using singleton_type = singleton_t;
-    using pointer        = typename singleton_t::pointer;
-    using auto_lock_t    = typename singleton_t::auto_lock_t;
     using printer_t      = operation::finalize::print<Type, has_data_v>;
+    using parent_type    = tim::storage<Type>;
+    using auto_lock_t    = std::unique_lock<std::recursive_mutex>;
 
     using iterator       = void*;
     using const_iterator = const void*;
@@ -694,17 +330,11 @@ public:
     friend struct operation::finalize::merge<Type, has_data_v>;
 
 public:
-    static pointer instance();
-    static pointer master_instance();
-    static pointer noninit_instance();
-    static pointer noninit_master_instance();
-
     static bool& master_is_finalizing();
     static bool& worker_is_finalizing();
     static bool  is_finalizing();
 
 private:
-    static singleton_t* get_singleton() { return get_storage_singleton<this_type>(); }
     static std::atomic<int64_t>& instance_count();
 
 public:
@@ -750,6 +380,9 @@ protected:
     void merge();
     void merge(this_type* itr);
 
+    parent_type&       get_upcast();
+    const parent_type& get_upcast() const;
+
 private:
     template <typename Archive>
     void do_serialize(Archive&)
@@ -759,24 +392,6 @@ private:
     std::unordered_set<Type*>  m_stack;
     std::shared_ptr<printer_t> m_printer;
 };
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, false>::pointer
-storage<Type, false>::instance()
-{
-    return get_singleton() ? get_singleton()->instance() : nullptr;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, false>::pointer
-storage<Type, false>::master_instance()
-{
-    return get_singleton() ? get_singleton()->master_instance() : nullptr;
-}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -791,36 +406,45 @@ storage<Type, false>::master_instance()
 /// \brief Responsible for maintaining the call-stack storage in timemory. This class
 /// and the serialization library are responsible for most of the timemory compilation
 /// time.
-template <typename Tp, typename Vp>
-class storage : public impl::storage<Tp, trait::uses_value_storage<Tp, Vp>::value>
+template <typename Tp>
+class storage
+: public impl::storage<
+      Tp, trait::uses_value_storage<Tp, typename trait::collects_data<Tp>::type>::value>
 {
 public:
+    using Vp                                   = typename trait::collects_data<Tp>::type;
     static constexpr bool uses_value_storage_v = trait::uses_value_storage<Tp, Vp>::value;
-    using this_type                            = storage<Tp, Vp>;
+    using this_type                            = storage<Tp>;
     using base_type                            = impl::storage<Tp, uses_value_storage_v>;
-    using deleter_t                            = impl::storage_deleter<base_type>;
-    using smart_pointer                        = std::unique_ptr<base_type, deleter_t>;
-    using singleton_t                          = singleton<base_type, smart_pointer>;
+    using deleter_t                            = impl::storage_deleter<this_type>;
+    using smart_pointer                        = std::unique_ptr<this_type, deleter_t>;
+    using singleton_t                          = singleton<this_type, smart_pointer>;
     using pointer                              = typename singleton_t::pointer;
     using auto_lock_t                          = typename singleton_t::auto_lock_t;
     using iterator                             = typename base_type::iterator;
     using const_iterator                       = typename base_type::const_iterator;
+    using singleton_type                       = singleton_t;
 
     friend struct impl::storage_deleter<this_type>;
+    friend class impl::storage<Tp, uses_value_storage_v>;
     friend class manager;
 
     /// get the pointer to the storage on the current thread. Will initialize instance if
     /// one does not exist.
-    using base_type::instance;
+    static pointer instance();
+
     /// get the pointer to the storage on the primary thread. Will initialize instance if
     /// one does not exist.
-    using base_type::master_instance;
+    static pointer master_instance();
+
     /// get the pointer to the storage on the current thread w/o initializing if one does
     /// not exist
-    using base_type::noninit_instance;
+    static pointer noninit_instance();
+
     /// get the pointer to the storage on the primary thread w/o initializing if one does
     /// not exist
-    using base_type::noninit_master_instance;
+    static pointer noninit_master_instance();
+
     /// returns whether storage is finalizing on the primary thread
     using base_type::master_is_finalizing;
     /// returns whether storage is finalizing on the current thread
@@ -849,32 +473,46 @@ public:
     /// remove component from the stack that will be flushed if the merging or output is
     /// requested/required
     using base_type::stack_push;
+
+private:
+    static singleton_t* get_singleton() { return get_storage_singleton<this_type>(); }
 };
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp>
-class storage<Tp, type_list<>>
-: public storage<
-      Tp, conditional_t<trait::is_available<Tp>::value, typename Tp::value_type, void>>
+template <typename Type>
+typename storage<Type>::pointer
+storage<Type>::instance()
 {
-public:
-    using Vp =
-        conditional_t<trait::is_available<Tp>::value, typename Tp::value_type, void>;
-    static constexpr bool uses_value_storage_v = trait::uses_value_storage<Tp, Vp>::value;
-    using this_type                            = storage<Tp, Vp>;
-    using base_type                            = impl::storage<Tp, uses_value_storage_v>;
-    using deleter_t                            = impl::storage_deleter<base_type>;
-    using smart_pointer                        = std::unique_ptr<base_type, deleter_t>;
-    using singleton_t                          = singleton<base_type, smart_pointer>;
-    using pointer                              = typename singleton_t::pointer;
-    using auto_lock_t                          = typename singleton_t::auto_lock_t;
-    using iterator                             = typename base_type::iterator;
-    using const_iterator                       = typename base_type::const_iterator;
-
-    friend struct impl::storage_deleter<this_type>;
-    friend class manager;
-};
+    return get_singleton() ? get_singleton()->instance() : nullptr;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type>::pointer
+storage<Type>::master_instance()
+{
+    return get_singleton() ? get_singleton()->master_instance() : nullptr;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type>::pointer
+storage<Type>::noninit_instance()
+{
+    return get_singleton() ? get_singleton()->instance_ptr() : nullptr;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type>::pointer
+storage<Type>::noninit_master_instance()
+{
+    return get_singleton() ? get_singleton()->master_instance_ptr() : nullptr;
+}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -975,34 +613,4 @@ struct storage_deleter : public std::default_delete<StorageType>
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace impl
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Vp>
-inline base::storage*
-base::storage::base_instance()
-{
-    using storage_type = tim::storage<Tp, Vp>;
-
-    // thread-local variable
-    static thread_local base::storage* _ret = nullptr;
-
-    // return nullptr is disabled
-    if(!trait::runtime_enabled<Tp>::get())
-        return nullptr;
-
-    // if nullptr, try to get instance
-    if(_ret == nullptr)
-    {
-        // thread will copy the hash-table so use a lock here
-        auto_lock_t lk(type_mutex<base::storage>());
-        _ret = static_cast<base::storage*>(storage_type::instance());
-    }
-
-    // return pointer
-    return _ret;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace tim

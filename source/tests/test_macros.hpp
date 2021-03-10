@@ -115,7 +115,6 @@ print_dart(dummy&)
             tim::settings::verbose()     = 0;                                            \
             tim::settings::debug()       = false;                                        \
             tim::settings::json_output() = true;                                         \
-            tim::settings::mpi_thread()  = false;                                        \
             puts("[SetupTestSuite] initializing dmp");                                   \
             tim::dmp::initialize(_argc, _argv);                                          \
             puts("[SetupTestSuite] initializing timemory");                              \
@@ -139,6 +138,8 @@ print_dart(dummy&)
             print_dart(metric());                                                        \
             __VA_ARGS__;                                                                 \
             tim::timemory_finalize();                                                    \
+            if(tim::dmp::rank() == 0)                                                    \
+                tim::enable_signal_detection(tim::signal_settings::get_default());       \
             tim::dmp::finalize();                                                        \
         }
 

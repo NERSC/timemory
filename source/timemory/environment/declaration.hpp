@@ -32,6 +32,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
+#include <cstdlib>
 #include <iosfwd>
 #include <map>
 #include <mutex>
@@ -180,9 +181,9 @@ get_env(const std::string& env_id, Tp _default)
     char* env_var = std::getenv(env_id.c_str());
     if(env_var)
     {
-        std::string        str_var = std::string(env_var);
-        std::istringstream iss(str_var);
-        Tp                 var = Tp();
+        std::string       str_var = std::string(env_var);
+        std::stringstream iss{ str_var };
+        auto              var = Tp{};
         iss >> var;
         env_settings::instance()->insert<Tp>(env_id, var);
         return var;
@@ -207,8 +208,8 @@ load_env(const std::string& env_id, Tp _default)
     auto itr           = _env_settings->get(env_id);
     if(itr != _env_settings->end())
     {
-        std::istringstream iss(itr->second);
-        Tp                 var = Tp();
+        std::stringstream iss{ itr->second };
+        auto              var = Tp{};
         iss >> var;
         return var;
     }
@@ -223,12 +224,16 @@ template <typename Tp>
 void
 set_env(const std::string& env_var, const Tp& _val, int override)
 {
-#if defined(TIMEMORY_MACOS) || (defined(TIMEMORY_LINUX) && (_POSIX_C_SOURCE >= 200112L))
     std::stringstream ss_val;
     ss_val << _val;
+#if defined(TIMEMORY_MACOS) || (defined(TIMEMORY_LINUX) && (_POSIX_C_SOURCE >= 200112L))
     setenv(env_var.c_str(), ss_val.str().c_str(), override);
+#elif defined(TIMEMORY_WINDOWS)
+    auto _curr = get_env<std::string>(env_var, "");
+    if(_curr.empty() || override > 0)
+        _putenv_s(env_var.c_str(), ss_val.str().c_str());
 #else
-    consume_parameters(env_var, _val, override);
+    consume_parameters(env_var, _val, override, ss_val);
 #endif
 }
 //

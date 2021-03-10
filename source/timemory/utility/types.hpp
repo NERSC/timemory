@@ -111,6 +111,16 @@
 
 //======================================================================================//
 //
+#if !defined(TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT)
+#    define TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT(NAME)                                      \
+        NAME(const NAME&)     = delete;                                                  \
+        NAME(NAME&&) noexcept = default;                                                 \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) noexcept = default;
+#endif
+
+//======================================================================================//
+//
 #if !defined(TIMEMORY_DEFAULT_OBJECT)
 #    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
         NAME()                = default;                                                 \

@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/storage/macros.hpp
- * \brief Include the macros for storage
- */
-
 #pragma once
 
 #include "timemory/dll.hpp"
@@ -48,6 +43,7 @@
 #    define TIMEMORY_STORAGE_HIDE_DEFINITION
 #else
 #    define TIMEMORY_STORAGE_LINKAGE inline
+#    define TIMEMORY_STORAGE_HEADER_MODE
 #endif
 //
 //--------------------------------------------------------------------------------------//

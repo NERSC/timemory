@@ -302,7 +302,7 @@ struct serialization<Tp, true> : public serialization_base<Tp>
     using result_node            = node::result<type>;
     using result_type            = std::vector<result_node>;
     using distrib_type           = std::vector<result_type>;
-    using storage_type           = impl::storage<type, value>;
+    using storage_type           = storage<Tp>;
     using graph_type             = graph<graph_node>;
     using hierarchy_type         = std::vector<uint64_t>;
     using basic_tree_type        = basic_tree<node::tree<type>>;

@@ -275,8 +275,6 @@ The general design is that each user-bundle:
 
 .. doxygentypedef:: tim::component::user_global_bundle
 
-.. doxygentypedef:: tim::component::user_kokkosp_bundle
-
 .. doxygentypedef:: tim::component::user_mpip_bundle
 
 .. doxygentypedef:: tim::component::user_ncclp_bundle
@@ -286,6 +284,8 @@ The general design is that each user-bundle:
 .. doxygentypedef:: tim::component::user_profiler_bundle
 
 .. doxygentypedef:: tim::component::user_trace_bundle
+
+.. doxygentypedef:: tim::component::user_kokkosp_bundle
 
 ```
 

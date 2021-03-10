@@ -33,6 +33,7 @@
 #include "timemory/operations/types/assemble.hpp"
 #include "timemory/operations/types/audit.hpp"
 #include "timemory/operations/types/cache.hpp"
+#include "timemory/operations/types/call_stack.hpp"
 #include "timemory/operations/types/cleanup.hpp"
 #include "timemory/operations/types/construct.hpp"
 #include "timemory/operations/types/copy.hpp"
@@ -70,5 +71,6 @@
 #if defined(TIMEMORY_COMPONENT_SOURCE) || !defined(TIMEMORY_USE_COMPONENT_EXTERN)
 // source/header-only requirements
 #    include "timemory/components/opaque/definition.hpp"
+#    include "timemory/operations/types/call_stack.cpp"
 #    include "timemory/storage/definition.hpp"
 #endif

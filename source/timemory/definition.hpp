@@ -25,14 +25,13 @@
 #pragma once
 
 #include "timemory/components.hpp"
+#include "timemory/components/opaque/definition.hpp"
 #include "timemory/config/definition.hpp"
 #include "timemory/containers/definition.hpp"
 #include "timemory/ert/definition.hpp"
 #include "timemory/operations/definition.hpp"
 #include "timemory/storage/definition.hpp"
 #include "timemory/variadic/definition.hpp"
-//
-#include "timemory/components/opaque/definition.hpp"
 
 #if !defined(TIMEMORY_USE_EXTERN)
 //
@@ -46,5 +45,8 @@
 #        include "timemory/plotting.hpp"
 #        include "timemory/settings.hpp"
 #    endif
-//
+
+#    if !defined(TIMEMORY_USE_STORAGE_EXTERN)
+#        include "timemory/storage/base_storage.cpp"
+#    endif
 #endif

@@ -48,7 +48,7 @@ template <typename Type>
 struct upc_get<Type, true>
 {
     static constexpr bool value  = true;
-    using storage_type           = impl::storage<Type, value>;
+    using storage_type           = storage<Type>;
     using result_type            = typename storage_type::result_array_t;
     using distrib_type           = typename storage_type::dmp_result_t;
     using result_node            = typename storage_type::result_node;
@@ -81,7 +81,7 @@ template <typename Type>
 struct upc_get<Type, false>
 {
     static constexpr bool value = false;
-    using storage_type          = impl::storage<Type, value>;
+    using storage_type          = storage<Type>;
 
     upc_get(storage_type&) {}
 

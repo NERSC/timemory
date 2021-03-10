@@ -43,3 +43,7 @@
 #    include "timemory/variadic/auto_hybrid.hpp"
 #    include "timemory/variadic/component_hybrid.hpp"
 #endif
+
+#if defined(TIMEMORY_STORAGE_HEADER_MODE)
+#    include "timemory/storage/base_storage.cpp"
+#endif
