@@ -22,14 +22,14 @@ jobs:
       - run:
           name: install
           command: >
-            cmake --build build-timemory/timem-ci-install --target install | tee timem-install.log
+            cmake --build build-timemory/timem-ci-install --target install | tee timem-install.log &&
             if [ $(cat timem-install.log | wc -l) -gt 3 ]; then echo "Error! unexpected installation"; exit 1; fi
       - run:
           name: test
           command: >
-            export PATH=/opt/user/timemory/bin:${PATH}
-            cd ${HOME}
-            timem -o timem-install-test/%p -- sleep 2
+            export PATH=/opt/user/timemory/bin:${PATH} &&
+            cd ${HOME} &&
+            timem -o timem-install-test/%p -- sleep 2 &&
             cat timem-install-test/*
   quick-build:
     docker:

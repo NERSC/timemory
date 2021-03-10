@@ -11,6 +11,35 @@ Command-line tool which provides the same capabilities of the UNIX command-line 
 - Hardware counters (when built with PAPI support)
 - Aggregation of data for multiple MPI processes (when using `timem-mpi`)
 
+## Installation
+
+### General
+
+`timem` is automatically built whenever `TIMEMORY_BUILD_TIMEM=ON`. This option defaults to the value of `TIMEMORY_BUILD_TOOLS=ON` on non-Windows systems.
+
+```console
+cmake -B /path/to/build -DTIMEMORY_BUILD_TIMEM=ON /path/to/source
+```
+
+### Standalone
+
+If you want to build and install `timem` exclusively without building or installing anything else from timemory,
+this is possible by setting `TIMEMORY_INSTALL_ALL=OFF`, which removes the CMake target dependency on `all` for the `install` target (i.e. `make install` does not run `make all` first). In this situation, since you will have
+an "incomplete" build, it is advisable to also suppress installation of the CMake configuration files
+(`TIMEMORY_INSTALL_CONFIG=OFF`) and the installation of the timemory headers (`TIMEMORY_INSTALL_HEADERS=OFF`).
+
+```console
+$ cmake -B /path/to/build \
+    -DCMAKE_INSTALL_PREFIX=/path/to/install
+    -DTIMEMORY_INSTALL_HEADERS=OFF \
+    -DTIMEMORY_INSTALL_CONFIG=OFF \
+    -DTIMEMORY_INSTALL_ALL=OFF \
+    -DTIMEMORY_BUILD_TIMEM=ON \
+    /path/to/source
+$ cmake --build /path/to/build --target timem
+$ cmake --build /path/to/build --target install
+```
+
 ## Output Examples
 
 ```console
