@@ -178,7 +178,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void configure(const MODE& _mode, const int& _device = 0)
+    static void configure(const MODE& _mode, int _device = 0)
     {
         if(is_configured())
             return;
@@ -1009,7 +1009,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void configure(const MODE&, const int& = 0) {}
+    static void configure(const MODE&, int = 0) {}
 
     //----------------------------------------------------------------------------------//
 

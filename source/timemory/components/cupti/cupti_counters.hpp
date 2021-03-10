@@ -155,7 +155,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     static const profptr_t& get_profiler() { return _get_profiler(); }
     static const strvec_t&  get_events() { return *_get_events(); }
     static const strvec_t&  get_metrics() { return *_get_metrics(); }
-    static const int&       get_device() { return *_get_device(); }
+    static int              get_device() { return *_get_device(); }
     static const strvec_t&  get_labels() { return *_get_labels(); }
 
     explicit cupti_counters()

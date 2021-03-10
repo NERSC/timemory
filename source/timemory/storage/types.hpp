@@ -86,12 +86,14 @@ class storage;
 namespace impl
 {
 //
+template <typename Type>
+class void_storage;
+//
+template <typename Type>
+class value_storage;
+//
 template <typename StorageType>
 struct storage_deleter;
-//
-template <typename Type, bool ImplementsStorage>
-class storage
-{};
 //
 }  // namespace impl
 //

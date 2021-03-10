@@ -46,6 +46,8 @@
 #include "timemory/storage/macros.hpp"
 #include "timemory/storage/node.hpp"
 #include "timemory/storage/types.hpp"
+#include "timemory/storage/value_storage.hpp"
+#include "timemory/storage/void_storage.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/singleton.hpp"
@@ -86,371 +88,83 @@ get_storage_singleton()
 //
 namespace impl
 {
+template <typename Tp, bool>
+struct storage_impl;
 //
-//--------------------------------------------------------------------------------------//
-//
-//                              impl::storage<Tp, true>
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-class storage<Type, true> : public base::storage
+template <typename Tp>
+struct storage_impl<Tp, true>
 {
-public:
-    //----------------------------------------------------------------------------------//
-    //
-    static constexpr bool has_data_v = true;
-
-    template <typename KeyT, typename MappedT>
-    using uomap_t = std::unordered_map<KeyT, MappedT>;
-
-    using result_node    = node::result<Type>;
-    using graph_node     = node::graph<Type>;
-    using strvector_t    = std::vector<string_t>;
-    using uintvector_t   = std::vector<uint64_t>;
-    using EmptyT         = std::tuple<>;
-    using base_type      = base::storage;
-    using component_type = Type;
-    using this_type      = storage<Type, has_data_v>;
-    using node_type      = typename node::data<Type>::node_type;
-    using stats_type     = typename node::data<Type>::stats_type;
-    using result_type    = typename node::data<Type>::result_type;
-    using result_array_t = std::vector<result_node>;
-    using dmp_result_t   = std::vector<result_array_t>;
-    using printer_t      = operation::finalize::print<Type, has_data_v>;
-    using sample_array_t = std::vector<Type>;
-    using graph_node_t   = graph_node;
-    using graph_data_t   = graph_data<graph_node_t>;
-    using graph_t        = typename graph_data_t::graph_t;
-    using graph_type     = graph_t;
-    using iterator       = typename graph_type::iterator;
-    using const_iterator = typename graph_type::const_iterator;
-    using parent_type    = tim::storage<Type>;
-    using auto_lock_t    = std::unique_lock<std::recursive_mutex>;
-
-    template <typename Vp>
-    using secondary_data_t       = std::tuple<iterator, const std::string&, Vp>;
-    using iterator_hash_submap_t = uomap_t<int64_t, iterator>;
-    using iterator_hash_map_t    = uomap_t<int64_t, iterator_hash_submap_t>;
-
-    friend class tim::manager;
-    friend struct node::result<Type>;
-    friend struct node::graph<Type>;
-    friend struct impl::storage_deleter<this_type>;
-    friend struct operation::finalize::get<Type, has_data_v>;
-    friend struct operation::finalize::mpi_get<Type, has_data_v>;
-    friend struct operation::finalize::upc_get<Type, has_data_v>;
-    friend struct operation::finalize::dmp_get<Type, has_data_v>;
-    friend struct operation::finalize::print<Type, has_data_v>;
-    friend struct operation::finalize::merge<Type, has_data_v>;
-
-public:
-    // static functions
-    static bool& master_is_finalizing();
-    static bool& worker_is_finalizing();
-    static bool  is_finalizing();
-
-private:
-    static std::atomic<int64_t>& instance_count();
-
-public:
-    storage();
-    ~storage() override;
-
-    storage(const this_type&) = delete;
-    storage(this_type&&)      = delete;
-
-    this_type& operator=(const this_type&) = delete;
-    this_type& operator=(this_type&& rhs) = delete;
-
-public:
-    void get_shared_manager();
-
-    void print() final { internal_print(); }
-    void cleanup() final { operation::cleanup<Type>{}; }
-    void disable() final { trait::runtime_enabled<component_type>::set(false); }
-    void initialize() final;
-    void finalize() final;
-    void stack_clear() final;
-    bool global_init() final;
-    bool thread_init() final;
-    bool data_init() final;
-
-    const graph_data_t& data() const { return *m_call_stack.data(); }
-    const graph_t&      graph() const { return m_call_stack.data()->graph(); }
-    int64_t             depth() const { return m_call_stack.depth(); }
-    graph_data_t&       data() { return *m_call_stack.data(); }
-    graph_t&            graph() { return m_call_stack.data()->graph(); }
-    iterator&           current() { return m_call_stack.data()->current(); }
-
-    void          reset() { m_call_stack.reset(); }
-    inline bool   empty() const { return m_call_stack.empty(); }
-    inline size_t size() const { return m_call_stack.size(); }
-    inline size_t true_size() const { return m_call_stack.true_size(); }
-    iterator      pop() { return m_call_stack.pop(); }
-
-    result_array_t get();
-    dmp_result_t   mpi_get();
-    dmp_result_t   upc_get();
-    dmp_result_t   dmp_get();
-
-    template <typename Tp>
-    Tp& get(Tp&);
-    template <typename Tp>
-    Tp& mpi_get(Tp&);
-    template <typename Tp>
-    Tp& upc_get(Tp&);
-    template <typename Tp>
-    Tp& dmp_get(Tp&);
-
-    std::shared_ptr<printer_t> get_printer() const { return m_printer; }
-
-    iterator_hash_map_t get_node_ids() const { return m_call_stack.get_node_ids(); }
-
-    void stack_push(Type* _obj) { m_call_stack.stack_push(_obj); }
-    void stack_pop(Type* _obj) { m_call_stack.stack_pop(_obj); }
-
-    void insert_init();
-
-    iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id)
-    {
-        return m_call_stack.insert(scope_data, obj, hash_id);
-    }
-
-    // append an instance to the graph
-    template <typename Vp>
-    iterator append(const secondary_data_t<Vp>& _secondary)
-    {
-        return m_call_stack.append(_secondary);
-    }
-
-    template <typename Archive>
-    void serialize(Archive& ar, unsigned int version);
-
-    void add_sample(Type&& _obj) { m_samples.emplace_back(std::forward<Type>(_obj)); }
-
-    auto&       get_samples() { return m_samples; }
-    const auto& get_samples() const { return m_samples; }
-
-protected:
-    void     merge();
-    void     merge(this_type* itr);
-    string_t get_prefix(const graph_node&);
-    string_t get_prefix(iterator _node) { return get_prefix(*_node); }
-    string_t get_prefix(const uint64_t& _id);
-
-    parent_type&       get_upcast();
-    const parent_type& get_upcast() const;
-
-private:
-    void check_consistency();
-
-    template <typename Archive>
-    void do_serialize(Archive& ar);
-
-    void internal_print();
-
-    void _data_init() const;
-
-private:
-    using call_stack_t = operation::call_stack<Type>;
-    call_stack_t               m_call_stack{};
-    std::shared_ptr<printer_t> m_printer;
-    sample_array_t             m_samples;
+    using type = value_storage<Tp>;
 };
 //
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-template <typename Archive>
-void
-storage<Type, true>::serialize(Archive& ar, const unsigned int version)
+template <typename Tp>
+struct storage_impl<Tp, false>
 {
-    auto&& _results = dmp_get();
-    operation::serialization<Type>{}(ar, _results);
-    consume_parameters(version);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-template <typename Archive>
-void
-storage<Type, true>::do_serialize(Archive& ar)
-{
-    if(m_is_master)
-        merge();
-
-    auto&& _results = dmp_get();
-    operation::serialization<Type>{}(ar, _results);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-//                      impl::storage<Type, false>
-//                          impl::storage_false
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-class storage<Type, false> : public base::storage
-{
-public:
-    //----------------------------------------------------------------------------------//
-    //
-    static constexpr bool has_data_v = false;
-
-    using result_node    = std::tuple<>;
-    using graph_node     = std::tuple<>;
-    using graph_t        = std::tuple<>;
-    using graph_type     = graph_t;
-    using dmp_result_t   = std::vector<std::tuple<>>;
-    using result_array_t = std::vector<std::tuple<>>;
-    using uintvector_t   = std::vector<uint64_t>;
-    using base_type      = base::storage;
-    using component_type = Type;
-    using this_type      = storage<Type, has_data_v>;
-    using string_t       = std::string;
-    using printer_t      = operation::finalize::print<Type, has_data_v>;
-    using parent_type    = tim::storage<Type>;
-    using auto_lock_t    = std::unique_lock<std::recursive_mutex>;
-
-    using iterator       = void*;
-    using const_iterator = const void*;
-
-    friend class tim::manager;
-    friend struct node::result<Type>;
-    friend struct node::graph<Type>;
-    friend struct impl::storage_deleter<this_type>;
-    friend struct operation::finalize::get<Type, has_data_v>;
-    friend struct operation::finalize::mpi_get<Type, has_data_v>;
-    friend struct operation::finalize::upc_get<Type, has_data_v>;
-    friend struct operation::finalize::dmp_get<Type, has_data_v>;
-    friend struct operation::finalize::print<Type, has_data_v>;
-    friend struct operation::finalize::merge<Type, has_data_v>;
-
-public:
-    static bool& master_is_finalizing();
-    static bool& worker_is_finalizing();
-    static bool  is_finalizing();
-
-private:
-    static std::atomic<int64_t>& instance_count();
-
-public:
-    storage();
-    ~storage() override;
-
-    explicit storage(const this_type&) = delete;
-    explicit storage(this_type&&)      = delete;
-    this_type& operator=(const this_type&) = delete;
-    this_type& operator=(this_type&& rhs) = delete;
-
-    void print() final { finalize(); }
-    void cleanup() final { operation::cleanup<Type>{}; }
-    void stack_clear() final;
-    void disable() final { trait::runtime_enabled<component_type>::set(false); }
-
-    void initialize() final;
-    void finalize() final;
-
-    void                             reset() {}
-    TIMEMORY_NODISCARD bool          empty() const { return true; }
-    TIMEMORY_NODISCARD inline size_t size() const { return 0; }
-    TIMEMORY_NODISCARD inline size_t true_size() const { return 0; }
-    TIMEMORY_NODISCARD inline size_t depth() const { return 0; }
-
-    iterator pop() { return nullptr; }
-    iterator insert(int64_t, const Type&, const string_t&) { return nullptr; }
-
-    template <typename Archive>
-    void serialize(Archive&, const unsigned int)
-    {}
-
-    void stack_push(Type* obj) { m_stack.insert(obj); }
-    void stack_pop(Type* obj);
-
-    TIMEMORY_NODISCARD std::shared_ptr<printer_t> get_printer() const
-    {
-        return m_printer;
-    }
-
-protected:
-    void get_shared_manager();
-    void merge();
-    void merge(this_type* itr);
-
-    parent_type&       get_upcast();
-    const parent_type& get_upcast() const;
-
-private:
-    template <typename Archive>
-    void do_serialize(Archive&)
-    {}
-
-private:
-    std::unordered_set<Type*>  m_stack;
-    std::shared_ptr<printer_t> m_printer;
+    using type = void_storage<Tp>;
 };
 //
-//--------------------------------------------------------------------------------------//
+template <typename Tp>
+using storage_impl_t = typename storage_impl<
+    Tp,
+    trait::uses_value_storage<Tp, typename trait::collects_data<Tp>::type>::value>::type;
 //
 }  // namespace impl
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class tim::storage<Tp, Vp>
+/// \class tim::storage
 /// \tparam Tp Component type
-/// \tparam Vp Component intermediate value type
 ///
 /// \brief Responsible for maintaining the call-stack storage in timemory. This class
 /// and the serialization library are responsible for most of the timemory compilation
 /// time.
 template <typename Tp>
-class storage
-: public impl::storage<
-      Tp, trait::uses_value_storage<Tp, typename trait::collects_data<Tp>::type>::value>
+class storage : public impl::storage_impl_t<Tp>
 {
 public:
     using Vp                                   = typename trait::collects_data<Tp>::type;
     static constexpr bool uses_value_storage_v = trait::uses_value_storage<Tp, Vp>::value;
-    using this_type                            = storage<Tp>;
-    using base_type                            = impl::storage<Tp, uses_value_storage_v>;
-    using deleter_t                            = impl::storage_deleter<this_type>;
-    using smart_pointer                        = std::unique_ptr<this_type, deleter_t>;
-    using singleton_t                          = singleton<this_type, smart_pointer>;
-    using pointer                              = typename singleton_t::pointer;
-    using auto_lock_t                          = typename singleton_t::auto_lock_t;
-    using iterator                             = typename base_type::iterator;
-    using const_iterator                       = typename base_type::const_iterator;
-    using singleton_type                       = singleton_t;
 
-    friend struct impl::storage_deleter<this_type>;
-    friend class impl::storage<Tp, uses_value_storage_v>;
+    using this_type      = storage<Tp>;
+    using base_type      = impl::storage_impl_t<Tp>;
+    using deleter_type   = impl::storage_deleter<this_type>;
+    using singleton_type = singleton<this_type, std::unique_ptr<this_type, deleter_type>>;
+    using auto_lock_t    = typename singleton_type::auto_lock_t;
+    using iterator       = typename base_type::iterator;
+    using const_iterator = typename base_type::const_iterator;
+    using result_type    = typename base_type::result_vector_type;
+    using distrib_type   = typename base_type::dmp_result_vector_type;
+    using result_node    = typename base_type::result_node;
+    using graph_type     = typename base_type::graph_type;
+    using graph_node     = typename base_type::graph_node;
+
     friend class manager;
+    friend class impl::void_storage<Tp>;
+    friend class impl::value_storage<Tp>;
+    friend struct impl::storage_deleter<this_type>;
 
     /// get the pointer to the storage on the current thread. Will initialize instance if
     /// one does not exist.
-    static pointer instance();
+    static storage* instance();
 
     /// get the pointer to the storage on the primary thread. Will initialize instance if
     /// one does not exist.
-    static pointer master_instance();
+    static storage* master_instance();
 
     /// get the pointer to the storage on the current thread w/o initializing if one does
     /// not exist
-    static pointer noninit_instance();
+    static storage* noninit_instance();
 
     /// get the pointer to the storage on the primary thread w/o initializing if one does
     /// not exist
-    static pointer noninit_master_instance();
+    static storage* noninit_master_instance();
 
     /// returns whether storage is finalizing on the primary thread
-    using base_type::master_is_finalizing;
+    static bool& master_is_finalizing() { return base_type::master_is_finalizing(); }
     /// returns whether storage is finalizing on the current thread
-    using base_type::worker_is_finalizing;
+    static bool& worker_is_finalizing() { return base_type::worker_is_finalizing(); }
     /// returns whether storage is finalizing on any thread
-    using base_type::is_finalizing;
+    static bool is_finalizing() { return base_type::is_finalizing(); }
     /// reset the storage data
     using base_type::reset;
     /// returns whether any data has been stored
@@ -475,13 +189,22 @@ public:
     using base_type::stack_push;
 
 private:
-    static singleton_t* get_singleton() { return get_storage_singleton<this_type>(); }
+    static singleton_type* get_singleton();
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type>::pointer
+typename storage<Type>::singleton_type*
+storage<Type>::get_singleton()
+{
+    return get_storage_singleton<this_type>();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+storage<Type>*
 storage<Type>::instance()
 {
     return get_singleton() ? get_singleton()->instance() : nullptr;
@@ -490,7 +213,7 @@ storage<Type>::instance()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type>::pointer
+storage<Type>*
 storage<Type>::master_instance()
 {
     return get_singleton() ? get_singleton()->master_instance() : nullptr;
@@ -499,7 +222,7 @@ storage<Type>::master_instance()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type>::pointer
+storage<Type>*
 storage<Type>::noninit_instance()
 {
     return get_singleton() ? get_singleton()->instance_ptr() : nullptr;
@@ -508,7 +231,7 @@ storage<Type>::noninit_instance()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type>::pointer
+storage<Type>*
 storage<Type>::noninit_master_instance()
 {
     return get_singleton() ? get_singleton()->master_instance_ptr() : nullptr;

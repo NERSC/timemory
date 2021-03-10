@@ -515,7 +515,7 @@ struct nvtx_marker : public base<nvtx_marker, void>
     auto get_color() { return m_color; }
 
 private:
-    static const int32_t& get_stream_id(cuda::stream_t _stream)
+    static int32_t get_stream_id(cuda::stream_t _stream)
     {
         using pair_t    = std::pair<cuda::stream_t, int32_t>;
         using map_t     = std::map<cuda::stream_t, int32_t>;

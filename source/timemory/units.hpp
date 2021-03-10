@@ -140,7 +140,7 @@ const int64_t clocks_per_sec = CLOCKS_PER_SEC;
 //--------------------------------------------------------------------------------------//
 
 inline std::string
-time_repr(const int64_t& _unit)
+time_repr(int64_t _unit)
 {
     std::string _sunit;
     switch(_unit)
@@ -160,7 +160,7 @@ time_repr(const int64_t& _unit)
 //--------------------------------------------------------------------------------------//
 
 inline std::string
-mem_repr(const int64_t& _unit)
+mem_repr(int64_t _unit)
 {
     std::string _sunit;
     switch(_unit)

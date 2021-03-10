@@ -395,12 +395,9 @@
         template <typename T>                                                            \
         using storage_t = storage<T>;                                                    \
         template <typename T>                                                            \
-        using storage_impl_t = impl::storage<T, trait::uses_value_storage<T>::value>;    \
+        using storage_deleter_t = impl::storage_deleter<storage_t<T>>;                   \
         template <typename T>                                                            \
-        using storage_deleter_t = impl::storage_deleter<storage_impl_t<T>>;              \
-        template <typename T>                                                            \
-        using storage_pointer_t =                                                        \
-            std::unique_ptr<alias::storage_impl_t<T>, alias::storage_deleter_t<T>>;      \
+        using storage_pointer_t = std::unique_ptr<storage_t<T>, storage_deleter_t<T>>;   \
         }                                                                                \
         }
 #endif
@@ -408,25 +405,23 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                            \
-        TIMEMORY_EXTERN_STORAGE_ALIASES                                                      \
-        namespace tim                                                                        \
-        {                                                                                    \
-        extern template class impl::storage<TYPE,                                            \
-                                            trait::uses_value_storage<TYPE>::value>;         \
-        extern template class storage<TYPE>;                                                 \
-        extern template class singleton<alias::storage_impl_t<TYPE>,                         \
-                                        alias::storage_pointer_t<TYPE>, TIMEMORY_API>;       \
-        extern template storage_singleton<alias::storage_t<TYPE>>*                           \
-                                            get_storage_singleton<alias::storage_t<TYPE>>(); \
-        extern template storage_initializer storage_initializer::get<TYPE>();                \
-        namespace node                                                                       \
-        {                                                                                    \
-        extern template struct data<TYPE>;                                                   \
-        extern template struct graph<TYPE>;                                                  \
-        extern template struct result<TYPE>;                                                 \
-        extern template struct tree<TYPE>;                                                   \
-        }                                                                                    \
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                        \
+        TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
+        namespace tim                                                                    \
+        {                                                                                \
+        extern template class storage<TYPE>;                                             \
+        extern template class singleton<storage<TYPE>, alias::storage_pointer_t<TYPE>,   \
+                                        TIMEMORY_API>;                                   \
+        extern template storage_singleton<storage<TYPE>>*                                \
+                                            get_storage_singleton<storage<TYPE>>();      \
+        extern template storage_initializer storage_initializer::get<TYPE>();            \
+        namespace node                                                                   \
+        {                                                                                \
+        extern template struct data<TYPE>;                                               \
+        extern template struct graph<TYPE>;                                              \
+        extern template struct result<TYPE>;                                             \
+        extern template struct tree<TYPE>;                                               \
+        }                                                                                \
         }
 #endif
 //
@@ -437,12 +432,11 @@
         TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
         namespace tim                                                                    \
         {                                                                                \
-        template class impl::storage<TYPE, trait::uses_value_storage<TYPE>::value>;      \
         template class storage<TYPE>;                                                    \
-        template class singleton<alias::storage_impl_t<TYPE>,                            \
-                                 alias::storage_pointer_t<TYPE>, TIMEMORY_API>;          \
-        template storage_singleton<alias::storage_t<TYPE>>*                              \
-                                     get_storage_singleton<alias::storage_t<TYPE>>();    \
+        template class singleton<storage<TYPE>, alias::storage_pointer_t<TYPE>,          \
+                                 TIMEMORY_API>;                                          \
+        template storage_singleton<storage<TYPE>>*                                       \
+                                     get_storage_singleton<storage<TYPE>>();             \
         template storage_initializer storage_initializer::get<TYPE>();                   \
         namespace node                                                                   \
         {                                                                                \

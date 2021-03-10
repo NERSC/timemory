@@ -96,8 +96,8 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message);
 //
 //--------------------------------------------------------------------------------------//
 //
-static void TIMEMORY_ATTRIBUTE(signal)
-    timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */);
+// static void TIMEMORY_ATTRIBUTE(signal)
+//    timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */);
 //
 static void
 timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)

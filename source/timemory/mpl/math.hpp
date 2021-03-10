@@ -147,8 +147,8 @@ TIMEMORY_INLINE Tp
     {                                                                                    \
         return lhs;                                                                      \
     }                                                                                    \
-    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, const uint64_t&) { return lhs; }             \
-    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, const int64_t&) { return lhs; }
+    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, uint64_t) { return lhs; }                    \
+    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, int64_t) { return lhs; }
 
 TIMEMORY_MATH_NULL_TYPE_OVERLOAD(std::tuple<>)
 TIMEMORY_MATH_NULL_TYPE_OVERLOAD(null_type)

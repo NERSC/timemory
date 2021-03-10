@@ -257,7 +257,7 @@ private:
     //
     template <size_t N>
     void write(std::ostream& os, const value_type& ret, const string_t& _trailing,
-               const int32_t& _width) const
+               int32_t _width) const
     {
         os << std::setw(10) << std::get<N>(m_labels) << " = " << std::setw(_width)
            << std::get<N>(ret) << _trailing;

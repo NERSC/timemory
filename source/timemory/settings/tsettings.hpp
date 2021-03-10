@@ -218,13 +218,7 @@ tsettings<Tp, Vp>::parse()
     {
         char* c_env_val = std::getenv(m_env_name.c_str());
         if(c_env_val)
-        {
-            printf("Gettings %s from %s\n", m_env_name.c_str(), c_env_val);
-            fflush(stdout);
-            // using Up = decay_t<Tp>;
-            // m_value  = get_env<Up>(m_env_name, m_value);
             parse(std::string{ c_env_val });
-        }
     }
 }
 //

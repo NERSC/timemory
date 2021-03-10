@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/// \file timemory/components/user_bundle/types.hpp
+/// \brief Forward declaration of user_bundle components. User-bundles are similar to the
+/// classical profiling interface where the interface is fixed.
+
 #pragma once
 
 #include "timemory/api.hpp"

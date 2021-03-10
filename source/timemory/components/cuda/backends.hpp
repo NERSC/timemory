@@ -89,25 +89,25 @@ struct half2
     half2(float lhs, float rhs)
     : value{ { lhs, rhs } }
     {}
-    half2& operator+=(const float& rhs)
+    half2& operator+=(float rhs)
     {
         value[0] += rhs;
         value[1] += rhs;
         return *this;
     }
-    half2& operator-=(const float& rhs)
+    half2& operator-=(float rhs)
     {
         value[0] -= rhs;
         value[1] -= rhs;
         return *this;
     }
-    half2& operator*=(const float& rhs)
+    half2& operator*=(float rhs)
     {
         value[0] *= rhs;
         value[1] *= rhs;
         return *this;
     }
-    half2& operator/=(const float& rhs)
+    half2& operator/=(float rhs)
     {
         value[0] /= rhs;
         value[1] /= rhs;
@@ -155,8 +155,8 @@ struct half2
         return half2(lhs) /= rhs;
     }
 
-    float&       operator[](int idx) { return value[idx % 2]; }
-    const float& operator[](int idx) const { return value[idx % 2]; }
+    float& operator[](int idx) { return value[idx % 2]; }
+    float  operator[](int idx) const { return value[idx % 2]; }
 
 private:
     using value_type = std::array<float, 2>;
@@ -535,7 +535,7 @@ memcpy(Tp* dst, const Tp* src, size_t n, memcpy_t from_to, stream_t stream)
 /// cuda memset
 template <typename Tp>
 inline error_t
-memset(Tp* dst, const int& value, size_t n)
+memset(Tp* dst, int value, size_t n)
 {
 #if defined(TIMEMORY_USE_CUDA)
     return cudaMemset(dst, value, n * sizeof(Tp));
@@ -549,7 +549,7 @@ memset(Tp* dst, const int& value, size_t n)
 /// cuda memset
 template <typename Tp>
 inline error_t
-memset(Tp* dst, const int& value, size_t n, stream_t stream)
+memset(Tp* dst, int value, size_t n, stream_t stream)
 {
 #if defined(TIMEMORY_USE_CUDA)
     return cudaMemsetAsync(dst, value, n * sizeof(Tp), stream);
