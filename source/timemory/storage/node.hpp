@@ -198,17 +198,17 @@ public:
     stats_type& stats() { return std::get<6>(*this); }
 
     const bool&       is_dummy() const { return std::get<0>(*this); }
-    const uint32_t&   tid() const { return std::get<1>(*this); }
-    const uint32_t&   pid() const { return std::get<2>(*this); }
-    const uint64_t&   id() const { return std::get<3>(*this); }
-    const int64_t&    depth() const { return std::get<4>(*this); }
+    uint32_t          tid() const { return std::get<1>(*this); }
+    uint32_t          pid() const { return std::get<2>(*this); }
+    uint64_t          id() const { return std::get<3>(*this); }
+    int64_t           depth() const { return std::get<4>(*this); }
     const Tp&         obj() const { return std::get<5>(*this); }
     const stats_type& stats() const { return std::get<6>(*this); }
 
     auto&       data() { return this->obj(); }
     auto&       hash() { return this->id(); }
     const auto& data() const { return this->obj(); }
-    const auto& hash() const { return this->id(); }
+    auto        hash() const { return this->id(); }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -276,16 +276,16 @@ struct result : public data<Tp>::result_type
     /// alias for `data()`
     Tp& obj() { return std::get<7>(*this); }
 
-    const uint32_t&     tid() const { return std::get<0>(*this); }
-    const uint32_t&     pid() const { return std::get<1>(*this); }
-    const int64_t&      depth() const { return std::get<2>(*this); }
-    const uint64_t&     hash() const { return std::get<3>(*this); }
-    const uint64_t&     rolling_hash() const { return std::get<4>(*this); }
+    uint32_t            tid() const { return std::get<0>(*this); }
+    uint32_t            pid() const { return std::get<1>(*this); }
+    int64_t             depth() const { return std::get<2>(*this); }
+    uint64_t            hash() const { return std::get<3>(*this); }
+    uint64_t            rolling_hash() const { return std::get<4>(*this); }
     const string_t&     prefix() const { return std::get<5>(*this); }
     const uintvector_t& hierarchy() const { return std::get<6>(*this); }
     const Tp&           data() const { return std::get<7>(*this); }
     const stats_type&   stats() const { return std::get<8>(*this); }
-    const uint64_t&     id() const { return std::get<3>(*this); }
+    uint64_t            id() const { return std::get<3>(*this); }
     const Tp&           obj() const { return std::get<7>(*this); }
 
     bool operator==(const this_type& rhs) const

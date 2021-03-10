@@ -162,7 +162,7 @@ namespace cache_size
 namespace impl
 {
 inline size_t
-cache_size(const int& level)
+cache_size(int level)
 {
 #if defined(TIMEMORY_MACOS)
 
@@ -263,7 +263,7 @@ get()
 //--------------------------------------------------------------------------------------//
 
 inline size_t
-get(const int& _level)
+get(int _level)
 {
     // only enable queries 1, 2, 3
     if(_level < 1 || _level > 3)

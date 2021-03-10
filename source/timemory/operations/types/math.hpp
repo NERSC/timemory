@@ -165,7 +165,7 @@ struct multiply
     TIMEMORY_DELETED_OBJECT(multiply)
 
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
-    multiply(type& obj, const int64_t& rhs)
+    multiply(type& obj, int64_t rhs)
     {
         if(!trait::runtime_enabled<type>::get())
             return;
@@ -206,7 +206,7 @@ struct divide
     TIMEMORY_DELETED_OBJECT(divide)
 
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
-    divide(type& obj, const int64_t& rhs)
+    divide(type& obj, int64_t rhs)
     {
         if(!trait::runtime_enabled<type>::get())
             return;

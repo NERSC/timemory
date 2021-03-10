@@ -694,7 +694,7 @@ struct merge<Type, true>
     using storage_type             = storage<Type>;
     using singleton_t              = typename storage_type::singleton_type;
     using graph_t                  = typename storage_type::graph_type;
-    using result_type              = typename storage_type::result_array_t;
+    using result_type              = typename storage_type::result_vector_type;
 
     template <typename Tp>
     using vector_t = std::vector<Tp>;
@@ -734,7 +734,7 @@ struct merge<Type, false>
     using storage_type             = storage<Type>;
     using singleton_t              = typename storage_type::singleton_type;
     using graph_t                  = typename storage_type::graph_type;
-    using result_type              = typename storage_type::result_array_t;
+    using result_type              = typename storage_type::result_vector_type;
 
     merge(storage_type& lhs, storage_type& rhs);
     merge(result_type&, const result_type&) {}
@@ -938,11 +938,11 @@ struct print<Tp, true> : public base::print
     using this_type                = print<Tp, has_data>;
     using type                     = Tp;
     using storage_type             = storage<Tp>;
-    using result_type              = typename storage_type::dmp_result_t;
+    using result_type              = typename storage_type::dmp_result_vector_type;
     using result_node              = typename storage_type::result_node;
-    using graph_type               = typename storage_type::graph_t;
+    using graph_type               = typename storage_type::graph_type;
     using graph_node               = typename storage_type::graph_node;
-    using hierarchy_type           = typename storage_type::uintvector_t;
+    using hierarchy_type           = std::vector<uint64_t>;
     using callback_type            = std::function<void(this_type*)>;
     using stream_type              = std::shared_ptr<utility::stream>;
     using basic_tree_type          = basic_tree<node::tree<Tp>>;

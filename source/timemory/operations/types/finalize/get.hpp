@@ -58,12 +58,12 @@ struct get<Type, true>
 {
     static constexpr bool value  = true;
     using storage_type           = storage<Type>;
-    using result_type            = typename storage_type::result_array_t;
-    using distrib_type           = typename storage_type::dmp_result_t;
+    using result_type            = typename storage_type::result_vector_type;
+    using distrib_type           = typename storage_type::dmp_result_vector_type;
     using result_node            = typename storage_type::result_node;
-    using graph_type             = typename storage_type::graph_t;
+    using graph_type             = typename storage_type::graph_type;
     using graph_node             = typename storage_type::graph_node;
-    using hierarchy_type         = typename storage_type::uintvector_t;
+    using hierarchy_type         = std::vector<uint64_t>;
     using basic_tree_type        = basic_tree<node::tree<Type>>;
     using basic_tree_vector_type = std::vector<basic_tree_type>;
     using metadata               = typename serialization<Type>::metadata;
