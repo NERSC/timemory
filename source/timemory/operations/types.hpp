@@ -632,6 +632,11 @@ struct decode;
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
+struct call_stack;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
 struct dummy
 {
     static_assert(std::is_default_constructible<T>::value,
@@ -686,7 +691,7 @@ template <typename Type>
 struct merge<Type, true>
 {
     static constexpr bool has_data = true;
-    using storage_type             = impl::storage<Type, has_data>;
+    using storage_type             = storage<Type>;
     using singleton_t              = typename storage_type::singleton_type;
     using graph_t                  = typename storage_type::graph_type;
     using result_type              = typename storage_type::result_array_t;
@@ -726,7 +731,7 @@ template <typename Type>
 struct merge<Type, false>
 {
     static constexpr bool has_data = false;
-    using storage_type             = impl::storage<Type, has_data>;
+    using storage_type             = storage<Type>;
     using singleton_t              = typename storage_type::singleton_type;
     using graph_t                  = typename storage_type::graph_type;
     using result_type              = typename storage_type::result_array_t;
@@ -932,7 +937,7 @@ struct print<Tp, true> : public base::print
     using base_type                = base::print;
     using this_type                = print<Tp, has_data>;
     using type                     = Tp;
-    using storage_type             = impl::storage<Tp, has_data>;
+    using storage_type             = storage<Tp>;
     using result_type              = typename storage_type::dmp_result_t;
     using result_node              = typename storage_type::result_node;
     using graph_type               = typename storage_type::graph_t;

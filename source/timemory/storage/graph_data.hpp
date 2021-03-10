@@ -69,11 +69,12 @@ public:
 public:
     // graph_data() = default;
 
-    explicit graph_data(const NodeT& rhs, int64_t _depth, graph_data* _master = nullptr)
+    explicit graph_data(const NodeT& rhs, int64_t _depth,
+                        std::shared_ptr<graph_data> _parent = {})
     : m_has_head(true)
     , m_depth(_depth)
     , m_sea_level(_depth)
-    , m_master(_master)
+    , m_parent(_parent)
     {
         m_head    = m_graph.set_head(rhs);
         m_current = m_head;
@@ -83,8 +84,8 @@ public:
     ~graph_data() { m_graph.clear(); }
 
     // allow move and copy construct
-    graph_data(this_type&&) = delete;
-    graph_data& operator=(this_type&&) = delete;
+    graph_data(this_type&&) = default;
+    graph_data& operator=(this_type&&) = default;
 
     // delete copy-assignment
     graph_data(const this_type&) = delete;
@@ -112,12 +113,12 @@ public:
 
     inline void sync_sea_level()
     {
-        if(m_master)
+        if(m_parent)
         {
             DEBUG_PRINT_HERE(
-                "[%s][%i]> synchronizing sea-level for depth = %i, master depth = %i",
+                "[%s][%i]> synchronizing sea-level for depth = %i, parent depth = %i",
                 demangle<NodeT>().c_str(), (int) threading::get_id(), (int) depth(),
-                (int) m_master->depth());
+                (int) m_parent->depth());
             add_dummy();
         }
     }
@@ -132,35 +133,49 @@ public:
         m_dummies.clear();
     }
 
-    inline void set_master(graph_data* _master)
+    inline void set_parent(std::shared_ptr<graph_data> _parent)
     {
-        if(_master != this)
-            m_master = _master;
+        if(_parent.get() != this)
+            m_parent = _parent;
     }
+
+    inline void set_master(std::shared_ptr<graph_data> _parent) { set_parent(_parent); }
 
     inline void add_dummy()
     {
-        if(!m_master)
+        if(!m_parent)
             return;
 
-        if(depth() == m_master->depth())
+        if(depth() == m_parent->depth())
             return;
 
-        DEBUG_PRINT_HERE("[%s][%i]> Adding dummy for depth = %i, master depth = %i",
+        DEBUG_PRINT_HERE("[%s][%i]> Adding dummy for depth = %i, parent depth = %i",
                          demangle<NodeT>().c_str(), (int) threading::get_id(),
-                         (int) depth(), (int) m_master->depth());
+                         (int) depth(), (int) m_parent->depth());
 
-        auto _current = m_master->current();
+        auto _current = m_parent->current();
         auto _id      = _current->id();
         auto _depth   = _current->depth();
 
-        NodeT node(_id, NodeT::get_dummy(), _depth, threading::get_id(),
-                   process::get_id(), true);
+        NodeT _node{ _id,
+                     NodeT::get_dummy(),
+                     _depth,
+                     static_cast<uint32_t>(threading::get_id()),
+                     static_cast<uint32_t>(process::get_id()),
+                     true };
         m_depth     = _depth;
         m_sea_level = _depth;
-        m_current   = m_graph.insert_after(m_head, node);
+        m_current   = m_graph.insert_after(m_head, _node);
 
         m_dummies.insert({ m_depth, m_current });
+    }
+
+    inline bool is_dummy(iterator itr) const
+    {
+        for(const auto& ditr : m_dummies)
+            if(ditr.second == itr)
+                return true;
+        return false;
     }
 
     inline void reset()
@@ -253,7 +268,7 @@ private:
     graph_t                          m_graph;
     iterator                         m_current = nullptr;
     iterator                         m_head    = nullptr;
-    graph_data*                      m_master  = nullptr;
+    std::shared_ptr<graph_data>      m_parent  = {};
     std::multimap<int64_t, iterator> m_dummies = {};
 };
 //

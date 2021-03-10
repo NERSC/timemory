@@ -169,8 +169,8 @@ struct sampler<CompT<Types...>, N, SigIds...>
     using array_type   = array_t;
     using tracker_type = policy::instance_tracker<this_type, false>;
 
-    static void  execute(int signum);
-    static void  execute(int signum, siginfo_t*, void*);
+    static void  TIMEMORY_ATTRIBUTE(signal) execute(int signum);
+    static void  TIMEMORY_ATTRIBUTE(signal) execute(int signum, siginfo_t*, void*);
     static auto& get_samplers() { return get_persistent_data().m_instances; }
     static auto  get_latest_samples();
 

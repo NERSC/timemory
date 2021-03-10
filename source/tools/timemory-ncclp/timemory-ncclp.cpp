@@ -79,16 +79,22 @@ extern "C"
             // make sure the symbols are loaded to be wrapped
             auto libpath =
                 tim::get_env<std::string>("TIMEMORY_NCCL_LIBRARY", "libnccl.so");
-            libnccl_handle = dlopen(libpath.c_str(), RTLD_NOW | RTLD_GLOBAL);
-            if(!libnccl_handle)
-                fprintf(stderr, "%s\n", dlerror());
+            libnccl_handle = dlopen(libpath.c_str(), RTLD_LAZY);
+            if(libnccl_handle)
+            {
+                dlclose(libnccl_handle);
+                libnccl_handle = dlopen(libpath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+                if(!libnccl_handle)
+                    fprintf(stderr, "%s\n", dlerror());
+            }
             dlerror();  // Clear any existing error
 
             configure_ncclp<nccl_toolset_t, api_t>();
             tim::operation::init<user_ncclp_bundle>(
                 tim::operation::mode_constant<tim::operation::init_mode::global>{});
             auto ret = activate_ncclp<nccl_toolset_t, api_t>();
-            dlclose(libnccl_handle);
+            if(libnccl_handle)
+                dlclose(libnccl_handle);
             return ret;
         }
         else

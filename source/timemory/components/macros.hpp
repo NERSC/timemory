@@ -393,7 +393,7 @@
         namespace alias                                                                  \
         {                                                                                \
         template <typename T>                                                            \
-        using storage_t = storage<T, typename T::value_type>;                            \
+        using storage_t = storage<T>;                                                    \
         template <typename T>                                                            \
         using storage_impl_t = impl::storage<T, trait::uses_value_storage<T>::value>;    \
         template <typename T>                                                            \
@@ -414,7 +414,7 @@
         {                                                                                    \
         extern template class impl::storage<TYPE,                                            \
                                             trait::uses_value_storage<TYPE>::value>;         \
-        extern template class storage<TYPE, typename TYPE::value_type>;                      \
+        extern template class storage<TYPE>;                                                 \
         extern template class singleton<alias::storage_impl_t<TYPE>,                         \
                                         alias::storage_pointer_t<TYPE>, TIMEMORY_API>;       \
         extern template storage_singleton<alias::storage_t<TYPE>>*                           \
@@ -438,7 +438,7 @@
         namespace tim                                                                    \
         {                                                                                \
         template class impl::storage<TYPE, trait::uses_value_storage<TYPE>::value>;      \
-        template class storage<TYPE, typename TYPE::value_type>;                         \
+        template class storage<TYPE>;                                                    \
         template class singleton<alias::storage_impl_t<TYPE>,                            \
                                  alias::storage_pointer_t<TYPE>, TIMEMORY_API>;          \
         template storage_singleton<alias::storage_t<TYPE>>*                              \
@@ -492,6 +492,7 @@
         extern template struct assemble<TYPE>;                                           \
         extern template struct audit<TYPE>;                                              \
         extern template struct cache<TYPE>;                                              \
+        extern template struct call_stack<TYPE>;                                         \
         extern template struct cleanup<TYPE>;                                            \
         extern template struct construct<TYPE>;                                          \
         extern template struct copy<TYPE>;                                               \
@@ -565,6 +566,7 @@
         template struct assemble<TYPE>;                                                  \
         template struct audit<TYPE>;                                                     \
         template struct cache<TYPE>;                                                     \
+        template struct call_stack<TYPE>;                                                \
         template struct cleanup<TYPE>;                                                   \
         template struct construct<TYPE>;                                                 \
         template struct copy<TYPE>;                                                      \

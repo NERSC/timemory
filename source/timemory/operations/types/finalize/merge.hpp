@@ -89,13 +89,10 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     // if self is not initialized but itr is, copy data
     if(rhs.is_initialized() && !lhs.is_initialized())
     {
-        PRINT_HERE("[%s]> Warning! master is not initialized! Segmentation fault likely",
+        PRINT_HERE("[%s]> Warning! No measurement/initialization on primary thread. "
+                   "Segmentation fault possible",
                    Type::get_label().c_str());
-        lhs.graph().insert_subgraph_after(lhs._data().head(), rhs.data().head());
         lhs.m_initialized = rhs.m_initialized;
-        lhs.m_finalized   = rhs.m_finalized;
-        _copy_hash_ids();
-        return;
     }
 
     _copy_hash_ids();
@@ -173,7 +170,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         ++_nitr;
         if(!lhs.graph().is_valid(_nitr))
             _nitr = pre_order_iterator(rhs.data().head());
-        lhs.graph().append_child(lhs._data().head(), _nitr);
+        lhs.graph().append_child(lhs.data().head(), _nitr);
     }
 
     rhs.data().clear();

@@ -49,7 +49,7 @@ struct mpi_get<Type, true>
 {
     static constexpr bool value  = true;
     using this_type              = mpi_get<Type, value>;
-    using storage_type           = impl::storage<Type, value>;
+    using storage_type           = storage<Type>;
     using result_type            = typename storage_type::result_array_t;
     using distrib_type           = typename storage_type::dmp_result_t;
     using result_node            = typename storage_type::result_node;
@@ -90,7 +90,7 @@ template <typename Type>
 struct mpi_get<Type, false>
 {
     static constexpr bool value = false;
-    using storage_type          = impl::storage<Type, value>;
+    using storage_type          = storage<Type>;
 
     mpi_get(storage_type&) {}
 
