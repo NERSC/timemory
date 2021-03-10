@@ -26,6 +26,12 @@
 #define TIMEMORY_STORAGE_VOID_STORAGE_CPP_ 1
 
 #include "timemory/storage/void_storage.hpp"
+#include "timemory/manager.hpp"
+#include "timemory/operations/types/fini.hpp"
+#include "timemory/operations/types/init.hpp"
+#include "timemory/operations/types/node.hpp"
+#include "timemory/operations/types/start.hpp"
+#include "timemory/operations/types/stop.hpp"
 
 namespace tim
 {
