@@ -286,8 +286,12 @@ public:
     this_type& rekey(captured_location_t _loc);
     this_type& rekey(uint64_t _hash);
 
-    // returns an stack-object for calling stop
+    /// returns a stack-object for calling stop
     scope::transient_destructor get_scope_destructor();
+
+    /// returns a stack-object for calling some member functions when the scope is exited.
+    scope::transient_destructor get_scope_destructor(
+        utility::transient_function<void(this_type&)>);
 
 public:
     template <typename Tp, typename... Args>

@@ -392,6 +392,12 @@ struct argument_parser
             return *this;
         }
 
+        argument& dtype(const std::string& _dtype)
+        {
+            m_dtype = _dtype;
+            return *this;
+        }
+
         argument& required(bool req)
         {
             m_required = req;
@@ -585,6 +591,7 @@ struct argument_parser
         int                        m_max_count = Count::ANY;
         std::vector<std::string>   m_names     = {};
         std::string                m_desc      = {};
+        std::string                m_dtype     = {};
         bool                       m_found     = false;
         bool                       m_required  = false;
         int                        m_index     = -1;
@@ -624,6 +631,72 @@ struct argument_parser
                            const std::string& desc, bool req = false)
     {
         return add_argument().names(_names).description(desc).required(req);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    argument& add_positional_argument(const std::string& _name)
+    {
+        m_positional_arguments.push_back({});
+        auto& _entry = m_positional_arguments.back();
+        _entry.name(_name);
+        _entry.count(1);
+        _entry.m_index = m_positional_arguments.size();
+        return _entry;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Tp>
+    arg_result get(size_t _idx, Tp& _value)
+    {
+        if(m_positional_values.find(_idx) == m_positional_values.end())
+            return arg_result{ "Positional value not found at index " +
+                               std::to_string(_idx) };
+        if(_idx >= m_positional_arguments.size())
+            return arg_result{ "No positional argument was specified for index " +
+                               std::to_string(_idx) };
+        _value = m_positional_arguments.at(_idx).get<Tp>();
+        return arg_result{};
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Tp>
+    arg_result get(const std::string& _name, Tp& _value)
+    {
+        // loop over parsed positional args
+        for(size_t i = 0; i < m_positional_values.size(); ++i)
+        {
+            if(i >= m_positional_arguments.size())
+                break;
+
+            // loop over added positional args
+            auto& itr = m_positional_arguments.at(i);
+            for(auto& nitr : itr.m_names)
+            {
+                if(nitr == _name)
+                    return get(i, _value);
+            }
+        }
+
+        // not found, check if required
+        for(auto& itr : m_positional_arguments)
+        {
+            for(auto& nitr : itr.m_names)
+            {
+                if(nitr == _name)
+                {
+                    if(itr.m_required)
+                        return arg_result{
+                            _name + " not parsed from the command line (required)"
+                        };
+                    return arg_result{};
+                }
+            }
+        }
+
+        return arg_result{ _name + " is not a named positional argument" };
     }
     //
     //----------------------------------------------------------------------------------//
@@ -868,6 +941,10 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    int64_t get_positional_count() const { return m_positional_values.size(); }
+    //
+    //----------------------------------------------------------------------------------//
+    //
     static int64_t get_count(argument& a) { return a.m_values.size(); }
     //
     //----------------------------------------------------------------------------------//
@@ -877,6 +954,10 @@ struct argument_parser
     {
         on_error_sfinae(std::forward<ErrorFuncT>(_func), 0);
     }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void set_help_width(int _v) { m_width = _v; }
 
 private:
     //
@@ -973,9 +1054,11 @@ private:
     std::string                m_bin          = {};
     error_func_t               m_error_func   = [](this_type&, const result_type&) {};
     std::vector<argument>      m_arguments    = {};
-    std::map<int, int>         m_positional_arguments = {};
+    std::map<int, int>         m_positional_map       = {};
     std::map<std::string, int> m_name_map             = {};
     std::vector<action_pair_t> m_actions              = {};
+    std::vector<argument>      m_positional_arguments = {};
+    std::map<int, std::string> m_positional_values    = {};
 };
 //
 //--------------------------------------------------------------------------------------//

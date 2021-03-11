@@ -24,6 +24,7 @@
 
 #include "timem.hpp"
 #include "timemory/utility/argparse.hpp"
+#include <random>
 
 //--------------------------------------------------------------------------------------//
 
@@ -76,7 +77,8 @@ main(int argc, char** argv)
                 (_argc > 1 && help_args.find(_argv[1]) != help_args.end()));
     };
 
-    auto help_action = [](parser_t& p) {
+    auto _pec        = EXIT_SUCCESS;
+    auto help_action = [&_pec](parser_t& p) {
         if(tim::dmp::rank() == 0)
         {
             stringstream_t hs;
@@ -87,16 +89,17 @@ main(int argc, char** argv)
             hs << "    timemory-avail -H | grep PAPI | grep -i cache\n";
             hs << "    srun -N 1 -n 1 timem -e PAPI_L1_TCM PAPI_L2_TCM PAPI_L3_TCM -- "
                   "./myexe\n";
-            p.print_help("-- <CMD> <ARGS>");
+            p.print_help(hs.str());
         }
-        exit(EXIT_FAILURE);
+        exit(_pec);
     };
 
     auto parser = parser_t(argv[0]);
 
     parser.enable_help();
-    parser.on_error([=](parser_t& p, const parser_err_t& _err) {
+    parser.on_error([=, &_pec](parser_t& p, const parser_err_t& _err) {
         std::cerr << _err << std::endl;
+        _pec = EXIT_FAILURE;
         help_action(p);
     });
 
@@ -166,6 +169,8 @@ main(int argc, char** argv)
 %{INDENT}% - '%j' to encode the slurm job ID
 %{INDENT}% - '%r' to encode the MPI comm rank
 %{INDENT}% - '%s' to encode the MPI comm size
+%{INDENT}% - '%x' to encode a random string of 8 characters
+%{INDENT}% - '%Nx' to encode a random string of N characters
 %{INDENT}% E.g. '-o timem-output-%p'.
 %{INDENT}% If verbosity >= 2 or debugging is enabled, will also write sampling data to log file.)")
         .max_count(1);
@@ -842,6 +847,32 @@ timem_mpi_was_finalized()
 {
     static bool _instance = false;
     return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+std::string
+get_random_string(size_t _nrand, std::string _base)
+{
+    std::random_device              rd;
+    std::mt19937                    gen{ rd() };
+    std::uniform_int_distribution<> distrib{ 0, std::numeric_limits<char>::max() };
+    std::array<char, 2>             buffer{};
+    memset(buffer.data(), '\0', buffer.size() * sizeof(char));
+
+    auto _get_random_character = [&distrib, &gen, &buffer]() {
+        char c = '\0';
+        do
+        {
+            c = distrib(gen);
+        } while(!std::isalnum(c));
+        buffer[0] = c;
+        return buffer.data();
+    };
+
+    for(size_t i = 0; i < _nrand; ++i)
+        _base += _get_random_character();
+    return _base;
 }
 
 //--------------------------------------------------------------------------------------//

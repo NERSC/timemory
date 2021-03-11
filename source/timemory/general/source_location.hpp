@@ -39,7 +39,39 @@
 
 namespace tim
 {
-//======================================================================================//
+namespace impl
+{
+template <typename... Tp>
+struct source_location_constant_char;
+
+template <>
+struct source_location_constant_char<>
+{
+    static constexpr bool value = true;
+};
+
+template <>
+struct source_location_constant_char<const char*>
+{
+    static constexpr bool value = true;
+};
+
+template <typename Tp>
+struct source_location_constant_char<Tp>
+{
+    static constexpr bool value = std::is_same<Tp, const char*>::value;
+};
+
+template <typename Tp, typename Up, typename... Tail>
+struct source_location_constant_char<Tp, Up, Tail...>
+{
+    static constexpr bool value = source_location_constant_char<Tp>::value &&
+                                  source_location_constant_char<Up>::value &&
+                                  source_location_constant_char<Tail...>::value;
+};
+
+}  // namespace impl
+
 /// \class tim::source_location
 /// \brief Provides source location information and variadic joining of source location
 /// tags
@@ -48,6 +80,13 @@ class source_location
 public:
     using join_type   = mpl::apply<std::string>;
     using result_type = std::tuple<std::string, size_t>;
+
+private:
+    template <typename... Tp>
+    static constexpr bool is_constant_char()
+    {
+        return impl::source_location_constant_char<decay_t<Tp>...>::value;
+    }
 
 public:
     //
@@ -69,15 +108,9 @@ public:
     struct captured
     {
     public:
-        TIMEMORY_NODISCARD const std::string& get_id() const
-        {
-            return std::get<0>(m_result);
-        }
-        TIMEMORY_NODISCARD const hash_value_type& get_hash() const
-        {
-            return std::get<1>(m_result);
-        }
-        TIMEMORY_NODISCARD const result_type& get() const { return m_result; }
+        const result_type&     get() const { return m_result; }
+        const std::string&     get_id() const { return std::get<0>(m_result); }
+        const hash_value_type& get_hash() const { return std::get<1>(m_result); }
 
         explicit captured(result_type _result)
         : m_result(std::move(_result))
@@ -121,8 +154,9 @@ public:
         }
 
         template <typename... ArgsT, enable_if_t<sizeof...(ArgsT) == 0, int> = 0>
-        captured& set(const source_location& obj, ArgsT&&...)
+        captured& set(const source_location& obj, ArgsT&&... _args)
         {
+            tim::consume_parameters(std::forward<ArgsT>(_args)...);
             m_result = result_type(obj.m_prefix, add_hash_id(obj.m_prefix));
             return *this;
         }
@@ -139,7 +173,8 @@ public:
     static captured get_captured_inline(const mode& _mode, const char* _func, int _line,
                                         const char* _fname, ArgsT&&... _args)
     {
-        source_location _loc(_mode, _func, _line, _fname, std::forward<ArgsT>(_args)...);
+        source_location _loc{ _mode, _func, _line, _fname,
+                              std::forward<ArgsT>(_args)... };
         return _loc.get_captured(std::forward<ArgsT>(_args)...);
     }
 
@@ -150,7 +185,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename... ArgsT>
+    template <typename... ArgsT, enable_if_t<!is_constant_char<ArgsT...>(), int> = 0>
     source_location(const mode& _mode, const char* _func, int _line, const char* _fname,
                     ArgsT&&...)
     : m_mode(_mode)
@@ -169,49 +204,12 @@ public:
     //----------------------------------------------------------------------------------//
     //  if a const char* is passed, assume it is constant
     //
+    template <typename... ArgsT, enable_if_t<is_constant_char<ArgsT...>(), int> = 0>
     source_location(const mode& _mode, const char* _func, int _line, const char* _fname,
-                    const char* _arg)
+                    ArgsT&&... _args)
     : m_mode(_mode)
     {
-        switch(m_mode)
-        {
-            case mode::blank:
-            {
-                // label and hash
-                auto&& _label = std::string(_arg);
-                auto&& _hash  = add_hash_id(_label);
-                m_captured    = captured(result_type{ _label, _hash });
-                break;
-            }
-            case mode::basic:
-            {
-                compute_data(_func);
-                auto&& _label = (_arg) ? _join(_arg) : std::string(m_prefix);
-                auto&& _hash  = add_hash_id(_label);
-                m_captured    = captured(result_type{ _label, _hash });
-                break;
-            }
-            case mode::full:
-            case mode::complete:
-            {
-                compute_data(_func, _line, _fname, m_mode == mode::full);
-                // label and hash
-                auto&& _label = (_arg) ? _join(_arg) : std::string(m_prefix);
-                auto&& _hash  = add_hash_id(_label);
-                m_captured    = captured(result_type{ _label, _hash });
-                break;
-            }
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  if a const char* is passed, assume it is constant
-    //
-    source_location(const mode& _mode, const char* _func, int _line, const char* _fname,
-                    const char* _arg1, const char* _arg2)
-    : m_mode(_mode)
-    {
-        auto _arg = join_type::join("", _arg1, _arg2);
+        auto _arg = join_type::join("", _args...);
         switch(m_mode)
         {
             case mode::blank:
@@ -300,7 +298,9 @@ protected:
 public:
     //----------------------------------------------------------------------------------//
     //
-    template <typename... ArgsT>
+    template <
+        typename... ArgsT,
+        enable_if_t<(sizeof...(ArgsT) > 0) && !is_constant_char<ArgsT...>(), int> = 0>
     const captured& get_captured(ArgsT&&... _args)
     {
         return m_captured.set(*this, std::forward<ArgsT>(_args)...);
@@ -308,11 +308,17 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    const captured& get_captured(const char*) const { return m_captured; }
+    const captured& get_captured() const { return m_captured; }
 
     //----------------------------------------------------------------------------------//
     //
-    const captured& get_captured(const char*, const char*) const { return m_captured; }
+    template <
+        typename... ArgsT,
+        enable_if_t<(sizeof...(ArgsT) > 0) && is_constant_char<ArgsT...>(), int> = 0>
+    const captured& get_captured(ArgsT&&...)
+    {
+        return m_captured;
+    }
 
 private:
     mode        m_mode;

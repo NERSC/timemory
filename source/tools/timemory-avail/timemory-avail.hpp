@@ -128,9 +128,21 @@ public:
         func                     = func.erase(0, prefix.length());
         std::transform(func.begin(), func.end(), func.begin(),
                        [](char& c) { return tolower(c); });
-        std::stringstream ss;
-        ss << "settings::" << func << "()";
-        current_entry->insert({ "accessor", ss.str() });
+        {
+            std::stringstream ss;
+            ss << "settings::" << func << "()";
+            current_entry->insert({ "static_accessor", ss.str() });
+        }
+        {
+            std::stringstream ss;
+            ss << "settings::instance()->get_" << func << "()";
+            current_entry->insert({ "member_accessor", ss.str() });
+        }
+        {
+            std::stringstream ss;
+            ss << "settings." << func;
+            current_entry->insert({ "python_accessor", ss.str() });
+        }
     }
 
     void setNextType(const char*) {}

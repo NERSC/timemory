@@ -453,7 +453,8 @@ bundle<Tag, BundleT, TupleT>::stop(mpl::lightweight, Args&&... args)
         return get_this_type();
 
     invoke::stop<Tag>(m_data, std::forward<Args>(args)...);
-    ++m_laps;
+    if(m_is_active())
+        ++m_laps;
     derive(*this);
     m_is_active(false);
     return get_this_type();
@@ -683,11 +684,8 @@ bundle<Tag, BundleT, TupleT>::store(Args&&... _args)
     if(!m_enabled())
         return get_this_type();
 
-    // auto _active = m_is_active();
     m_is_active(true);
     invoke<operation::store>(std::forward<Args>(_args)...);
-    // if(!_active)
-    //    ++m_laps;
     m_is_active(false);
     return get_this_type();
 }
@@ -903,6 +901,25 @@ bundle<Tag, BundleT, TupleT>::set_scope(scope::config val)
     m_scope = val;
     invoke::set_scope<Tag>(m_data, m_scope);
     return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+scope::transient_destructor
+bundle<Tag, BundleT, TupleT>::get_scope_destructor()
+{
+    return scope::transient_destructor{ [&]() { this->stop(); } };
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+scope::transient_destructor
+bundle<Tag, BundleT, TupleT>::get_scope_destructor(
+    utility::transient_function<void(this_type&)> _func)
+{
+    return scope::transient_destructor{ [&, _func]() { _func(get_this_type()); } };
 }
 
 //--------------------------------------------------------------------------------------//

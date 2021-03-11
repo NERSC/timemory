@@ -483,6 +483,7 @@ BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::rekey(captured_location_t _loc)
 {
     m_temporary.rekey(_loc);
+    return static_cast<this_type&>(*this);
 }
 
 template <typename Tag, typename CompT, typename BundleT>
@@ -490,6 +491,7 @@ BundleT&
 auto_base_bundle<Tag, CompT, BundleT>::rekey(uint64_t _hash)
 {
     m_temporary.rekey(_hash);
+    return static_cast<this_type&>(*this);
 }
 
 template <typename Tag, typename CompT, typename BundleT>
@@ -497,6 +499,16 @@ scope::transient_destructor
 auto_base_bundle<Tag, CompT, BundleT>::get_scope_destructor()
 {
     return scope::transient_destructor{ [&]() { this->stop(); } };
+}
+
+template <typename Tag, typename CompT, typename BundleT>
+scope::transient_destructor
+auto_base_bundle<Tag, CompT, BundleT>::get_scope_destructor(
+    utility::transient_function<void(this_type&)> _func)
+{
+    return scope::transient_destructor{ [&, _func]() {
+        _func(static_cast<this_type&>(*this));
+    } };
 }
 
 //

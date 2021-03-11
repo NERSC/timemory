@@ -9,6 +9,7 @@ add_executable(timemory-avail ${_EXCLUDE}
 target_include_directories(timemory-avail PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(timemory-avail PRIVATE
     timemory::timemory-compile-options
+    timemory::timemory-compile-timing
     timemory::timemory-extensions
     timemory::timemory-headers
     timemory::timemory-python)
