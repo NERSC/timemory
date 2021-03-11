@@ -23,7 +23,7 @@ jobs:
           name: install
           command: >
             cmake --build build-timemory/timem-ci-install --target install | tee timem-install.log &&
-            if [ $(cat timem-install.log | wc -l) -gt 3 ]; then echo "Error! unexpected installation"; exit 1; fi
+            if [ $(cat timem-install.log | wc -l) -gt 6 ]; then echo "Error! unexpected installation"; exit 1; fi
       - run:
           name: test
           command: >
