@@ -48,6 +48,7 @@ foreach(_TYPE ${LIB_TYPES})
 
     # installation
     install(TARGETS ${TARGET_NAME}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        OPTIONAL)
 
 endforeach()

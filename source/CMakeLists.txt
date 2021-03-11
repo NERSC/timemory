@@ -393,9 +393,12 @@ list(REMOVE_DUPLICATES _installed_headers)
 timemory_install_header_files(${_installed_headers})
 
 # Install the export set for use with the install-tree
-install(EXPORT ${PROJECT_NAME}-library-depends
-    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
-    NAMESPACE ${PROJECT_NAME}::)
+if(TIMEMORY_INSTALL_CONFIG)
+    install(EXPORT ${PROJECT_NAME}-library-depends
+        DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
+        NAMESPACE ${PROJECT_NAME}::
+        OPTIONAL)
+endif()
 
 get_property(TIMEMORY_INTERMEDIATE_LIBRARIES GLOBAL PROPERTY TIMEMORY_INTERMEDIATE_TARGETS)
 
@@ -435,15 +438,12 @@ if((TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON) AND NOT SKBUILD)
         ${PROJECT_BINARY_DIR}/timemory-roofline @ONLY)
 
     install(
-        FILES
+        PROGRAMS
             ${PROJECT_BINARY_DIR}/timemory-plotter
             ${PROJECT_BINARY_DIR}/timemory-roofline
         DESTINATION
             ${CMAKE_INSTALL_BINDIR}
-        PERMISSIONS
-            OWNER_EXECUTE OWNER_READ OWNER_WRITE
-            GROUP_EXECUTE GROUP_READ
-            WORLD_EXECUTE WORLD_READ)
+        OPTIONAL)
 endif()
 
 #----------------------------------------------------------------------------------------#

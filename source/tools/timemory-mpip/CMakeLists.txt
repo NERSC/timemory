@@ -31,4 +31,5 @@ set_target_properties(timemory-mpip-shared PROPERTIES
 
 # installation
 install(TARGETS timemory-mpip-shared
-    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)

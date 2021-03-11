@@ -13,7 +13,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
 if(NOT TIMEMORY_BUILD_TIMEM)
     # if not enabled as option, make it available to be built and installed
     set(_EXCLUDE EXCLUDE_FROM_ALL)
-    set(_OPTIONAL OPTIONAL)
 endif()
 
 add_library(timem-libexplain INTERFACE)
@@ -71,7 +70,7 @@ set_target_properties(timem PROPERTIES
 install(TARGETS timem
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT   tools
-    ${_OPTIONAL})
+    OPTIONAL)
 
 # do not build timem-mpi if not using mpi
 if(NOT TIMEMORY_USE_MPI)
@@ -103,4 +102,4 @@ endif()
 install(TARGETS timem-mpi
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT   tools
-    ${_OPTIONAL})
+    OPTIONAL)

@@ -1,7 +1,6 @@
 
 if(NOT TIMEMORY_BUILD_AVAIL)
   set(_EXCLUDE EXCLUDE_FROM_ALL)
-  set(_OPTIONAL OPTIONAL)
 endif()
 
 add_executable(timemory-avail ${_EXCLUDE}
@@ -17,4 +16,4 @@ set_target_properties(timemory-avail PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
 install(TARGETS timemory-avail
     DESTINATION bin
     COMPONENT tools
-    ${_OPTIONAL})
+    OPTIONAL)

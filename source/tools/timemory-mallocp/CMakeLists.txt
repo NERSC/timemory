@@ -30,4 +30,5 @@ set_target_properties(timemory-mallocp-shared PROPERTIES
 
 # installation
 install(TARGETS timemory-mallocp-shared
-    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL)

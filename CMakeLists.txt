@@ -224,7 +224,7 @@ endif()
 set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
 set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
 
-if(SKBUILD OR TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON)
+if(SKBUILD OR TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON OR TIMEMORY_USE_DYNINST)
     set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "${_TLS_DESCRIPT}")
     # ensure local override
     set(TIMEMORY_TLS_MODEL "global-dynamic")
@@ -309,9 +309,12 @@ add_subdirectory(external)
 
 # Install the export set for use with the install-tree
 message(STATUS "Exporting library dependencies...")
-install(EXPORT ${PROJECT_NAME}-library-depends
-    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
-    NAMESPACE ${PROJECT_NAME}::)
+if(TIMEMORY_INSTALL_CONFIG)
+    install(EXPORT ${PROJECT_NAME}-library-depends
+        DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
+        NAMESPACE ${PROJECT_NAME}::
+        OPTIONAL)
+endif()
 
 #----------------------------------------------------------------------------------------#
 #   Examples and Testing
@@ -363,7 +366,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 option(TIMEMORY_GENERATE_MAKEFILE_INCLUDE
-    "Generate a Makefile.timemory.inc for Makefile build systems" ON)
+    "Generate a Makefile.timemory.inc for Makefile build systems" ${TIMEMORY_INSTALL_CONFIG})
 mark_as_advanced(TIMEMORY_GENERATE_MAKEFILE_INCLUDE)
 
 if(TIMEMORY_GENERATE_MAKEFILE_INCLUDE)

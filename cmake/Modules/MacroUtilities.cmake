@@ -157,7 +157,10 @@ FUNCTION(CREATE_EXECUTABLE)
 
     # Install the exe
     if(EXE_INSTALL_DESTINATION)
-        install(TARGETS ${EXE_TARGET_NAME} DESTINATION ${EXE_INSTALL_DESTINATION})
+        install(
+            TARGETS     ${EXE_TARGET_NAME}
+            DESTINATION ${EXE_INSTALL_DESTINATION}
+            OPTIONAL)
     endif()
 ENDFUNCTION()
 
@@ -425,7 +428,8 @@ MACRO(ADD_INTERFACE_LIBRARY _TARGET)
     install(
         TARGETS     ${_TARGET}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        EXPORT      ${PROJECT_NAME}-library-depends)
+        EXPORT      ${PROJECT_NAME}-library-depends
+        OPTIONAL)
     add_enabled_interface(${_TARGET})
     if(NOT "${ARGN}" STREQUAL "")
         set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_INTERFACE_DOC
@@ -696,10 +700,16 @@ endfunction()
 # C/C++ development headers
 #
 FUNCTION(TIMEMORY_INSTALL_HEADER_FILES)
+    if(NOT TIMEMORY_INSTALL_HEADERS)
+        return()
+    endif()
     foreach(_header ${ARGN})
         file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/source ${_header})
         get_filename_component(_destpath ${_relative} DIRECTORY)
-        install(FILES ${_header} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_destpath})
+        install(
+            FILES       ${_header}
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_destpath}
+            OPTIONAL)
     endforeach()
 ENDFUNCTION()
 
@@ -737,7 +747,8 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
         install(
             TARGETS ${_LIB}
             DESTINATION ${LIB_DESTINATION}
-            EXPORT ${PROJECT_NAME}-library-depends)
+            EXPORT ${PROJECT_NAME}-library-depends
+            OPTIONAL)
 
         if(TIMEMORY_USE_PYTHON AND ${_LIB} IN_LIST SHARED_LIBS)
             set(_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
@@ -818,7 +829,8 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
                             ${INSTALL_RELPATH}/${${_FNAME}} ${_PYLIB}/${${_FNAME}}
                             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
                             ${_ECHO})
-                        ")
+                        "
+                        OPTIONAL)
                 endif()
             endforeach()
         endif()

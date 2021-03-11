@@ -320,5 +320,8 @@ message(STATUS "Generated output/Makefile.timemory.inc")
 
 #----------------------------------------------------------------------------------------#
 
-install(FILES ${PROJECT_BINARY_DIR}/output/Makefile.timemory.inc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
+if(TIMEMORY_INSTALL_CONFIG)
+    install(FILES ${PROJECT_BINARY_DIR}/output/Makefile.timemory.inc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
+        OPTIONAL)
+endif()
