@@ -382,6 +382,11 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         std::cerr << "'" << '\n';
     }
 
+    for(auto& a : m_arguments)
+        a.m_callback(a.m_default);
+    for(auto& a : m_positional_arguments)
+        a.m_callback(a.m_default);
+
     using argmap_t = std::map<std::string, argument*>;
 
     argmap_t   m_arg_map = {};
@@ -501,7 +506,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     // check all the counts have been satisfied
     for(auto& a : m_arguments)
     {
-        if(a.m_found)
+        if(a.m_found && a.m_default == nullptr)
         {
             auto cnt_err = check_count(a);
             if(cnt_err)

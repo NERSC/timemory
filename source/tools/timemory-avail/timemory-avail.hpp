@@ -31,7 +31,6 @@
 #pragma once
 
 #define TIMEMORY_DISABLE_BANNER
-#define TIMEMORY_DISABLE_SETTINGS_SERIALIZATION
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
 
 #include "timemory/tpls/cereal/archives.hpp"

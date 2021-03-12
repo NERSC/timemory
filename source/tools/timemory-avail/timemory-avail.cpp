@@ -42,7 +42,7 @@
 #include <vector>
 
 #if defined(TIMEMORY_UNIX)
-#    include <sys/ioctl.h>  //ioctl() and TIOCGWINSZ
+#    include <sys/ioctl.h>  // ioctl() and TIOCGWINSZ
 #    include <unistd.h>     // for STDOUT_FILENO
 #elif defined(TIMEMORY_WINDOWS)
 #    include <windows.h>
@@ -296,7 +296,7 @@ main(int argc, char** argv)
         .max_count(1)
         .action([](parser_t& p) { markdown = p.get<bool>("markdown"); });
 
-    parser.add_positional_argument("REGEX_FILTER").set_default(std::string{ "" });
+    parser.add_positional_argument("REGEX_FILTER").set_default(std::string{});
 
     auto err = parser.parse(argc, argv);
 

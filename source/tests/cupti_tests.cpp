@@ -430,7 +430,7 @@ TEST_F(cupti_tests, streams)
 {
     num_iter *= 2;
     TIMEMORY_CONFIGURE(
-        cupti_event, { 0 },
+        cupti_event, 0,
         { "active_warps", "active_cycles", "global_load", "global_store" },
         { "inst_per_warp", "branch_efficiency", "warp_execution_efficiency",
           "flop_count_sp", "flop_count_sp_add", "flop_count_sp_mul", "flop_count_sp_fma",
