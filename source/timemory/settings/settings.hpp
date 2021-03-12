@@ -529,8 +529,9 @@ settings::indent_width(int64_t _w)
 //
 template <typename Archive>
 void
-settings::load(Archive& ar, unsigned int version)
+settings::load(Archive& ar, unsigned int)
 {
+#if !defined(TIMEMORY_DISABLE_SETTINGS_SERIALIZATION)
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
     for(const auto& itr : m_data)
@@ -557,7 +558,9 @@ settings::load(Archive& ar, unsigned int version)
             m_data.insert({ m_order.back(), itr.second });
         }
     }
-    consume_parameters(version);
+#else
+    consume_parameters(ar);
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -566,6 +569,7 @@ template <typename Archive>
 void
 settings::save(Archive& ar, unsigned int) const
 {
+#if !defined(TIMEMORY_DISABLE_SETTINGS_SERIALIZATION)
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
     for(const auto& itr : m_data)
@@ -580,6 +584,9 @@ settings::save(Archive& ar, unsigned int) const
     }
     ar(cereal::make_nvp("command_line", m_command_line),
        cereal::make_nvp("environment", m_environment));
+#else
+    consume_parameters(ar);
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//

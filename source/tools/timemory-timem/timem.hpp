@@ -33,6 +33,7 @@
 #define TIMEMORY_DISABLE_STORE_ENVIRONMENT
 #define TIMEMORY_DISABLE_CEREAL_CLASS_VERSION
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
+#define TIMEMORY_DISABLE_SETTINGS_SERIALIZATION
 
 // disables unnecessary instantiations
 #define TIMEMORY_COMPILER_INSTRUMENTATION
@@ -699,11 +700,11 @@ struct timem_config
         }
 
         std::vector<std::pair<std::string, std::string>> rdata = {
-            { "%x", get_random_string(8) }
+            { "%h", get_random_string(8) }
         };
 
         // Extraction of a sub-match
-        const std::regex base_regex("%([0-9]+)x");
+        const std::regex base_regex("%([0-9]+)h");
         std::smatch      base_match;
 
         if(std::regex_search(inp, base_match, base_regex))
@@ -714,7 +715,7 @@ struct timem_config
             {
                 std::ssub_match base_sub_match = base_match[i];
                 auto            n              = std::stoi(base_sub_match.str());
-                rdata.emplace_back("%" + base_sub_match.str() + "x",
+                rdata.emplace_back("%" + base_sub_match.str() + "h",
                                    get_random_string(n));
             }
         }

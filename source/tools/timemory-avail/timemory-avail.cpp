@@ -574,8 +574,8 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
 
     static constexpr size_t size = 7;
     using archive_type           = cereal::SettingsTextArchive;
-    using array_type   = typename archive_type::array_type;
-    using unique_set   = typename archive_type::unique_set;
+    using array_type             = typename archive_type::array_type;
+    using unique_set             = typename archive_type::unique_set;
     using width_type             = array_t<int64_t, size>;
     using width_bool             = array_t<bool, size>;
 
@@ -916,8 +916,8 @@ get_availability<Type>::get_info()
     bool file_output    = trait::generates_output<Type>::value;
     auto name           = component::metadata<Type>::name();
     auto label          = (file_output)
-                              ? ((has_metadata) ? metadata_t::label() : Type::get_label())
-                              : std::string("");
+                     ? ((has_metadata) ? metadata_t::label() : Type::get_label())
+                     : std::string("");
     auto description =
         (has_metadata) ? metadata_t::description() : Type::get_description();
     auto     data_type = demangle<value_type>();

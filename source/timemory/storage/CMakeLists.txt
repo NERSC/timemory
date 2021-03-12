@@ -10,4 +10,5 @@ build_intermediate_library(
     FOLDER              components
     HEADERS             ${header_files}
     SOURCES             ${source_files}
-    PROPERTY_DEPENDS    GLOBAL)
+    DEPENDS             timemory::timemory-core
+                        timemory::timemory-manager)

@@ -169,8 +169,8 @@ main(int argc, char** argv)
 %{INDENT}% - '%j' to encode the slurm job ID
 %{INDENT}% - '%r' to encode the MPI comm rank
 %{INDENT}% - '%s' to encode the MPI comm size
-%{INDENT}% - '%x' to encode a random string of 8 characters
-%{INDENT}% - '%Nx' to encode a random string of N characters
+%{INDENT}% - '%h' to encode a random hash of 8 characters
+%{INDENT}% - '%Nh' to encode a random hash of N characters
 %{INDENT}% E.g. '-o timem-output-%p'.
 %{INDENT}% If verbosity >= 2 or debugging is enabled, will also write sampling data to log file.)")
         .max_count(1);
@@ -698,7 +698,8 @@ parent_process(pid_t pid)
 
         auto fname = get_config().get_output_filename();
         fname += ".json";
-        fprintf(stderr, "\n[%s]> Outputting '%s'...\n", command().c_str(), fname.c_str());
+        fprintf(stderr, "%s[%s]> Outputting '%s'...\n", (verbose() < 0) ? "" : "\n",
+                command().c_str(), fname.c_str());
         tim::generic_serialization<json_type>(fname, _measurements, "timemory", "timem",
                                               _cmdline);
     }

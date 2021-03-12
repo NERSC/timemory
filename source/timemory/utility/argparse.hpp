@@ -1047,16 +1047,16 @@ private:
     //----------------------------------------------------------------------------------//
     //
 private:
-    bool                       m_help_enabled = false;
-    int                        m_current      = -1;
-    int                        m_width        = 30;
-    std::string                m_desc         = {};
-    std::string                m_bin          = {};
-    error_func_t               m_error_func   = [](this_type&, const result_type&) {};
-    std::vector<argument>      m_arguments    = {};
-    std::map<int, int>         m_positional_map       = {};
-    std::map<std::string, int> m_name_map             = {};
-    std::vector<action_pair_t> m_actions              = {};
+    bool                       m_help_enabled   = false;
+    int                        m_current        = -1;
+    int                        m_width          = 30;
+    std::string                m_desc           = {};
+    std::string                m_bin            = {};
+    error_func_t               m_error_func     = [](this_type&, const result_type&) {};
+    std::vector<argument>      m_arguments      = {};
+    std::map<int, int>         m_positional_map = {};
+    std::map<std::string, int> m_name_map       = {};
+    std::vector<action_pair_t> m_actions        = {};
     std::vector<argument>      m_positional_arguments = {};
     std::map<int, std::string> m_positional_values    = {};
 };
