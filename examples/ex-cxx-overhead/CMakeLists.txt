@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 project(timemory-CXX-Overhead-Example LANGUAGES C CXX)
 
+# set this locally to a release build so that the fibonacci calcs are always optimized
+set(CMAKE_BUILD_TYPE "Release")
 set(EXE_NAME ex_cxx_overhead)
 set(COMPONENTS compile-options analysis-tools OPTIONAL_COMPONENTS cxx)
 

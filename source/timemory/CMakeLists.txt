@@ -100,11 +100,11 @@ endif()
 # global
 add_subdirectory(manager)
 add_subdirectory(ert)
-add_subdirectory(config)
 add_subdirectory(storage)
 add_subdirectory(operations)
 add_subdirectory(backends)
 add_subdirectory(variadic)
+add_subdirectory(config)
 
 # deprecated
 add_subdirectory(deprecated)
