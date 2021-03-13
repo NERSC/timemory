@@ -162,8 +162,9 @@ main(int argc, char** argv)
                       // indented 35 spaces
                       R"(Write results to JSON output file.
 %{INDENT}% Use:
+%{INDENT}% - '%m' to encode md5sum of command line
 %{INDENT}% - '%p' to encode the process ID
-%{INDENT}% - '%j' to encode the slurm job ID
+%{INDENT}% - '%j' to encode the SLURM job ID
 %{INDENT}% - '%r' to encode the MPI comm rank
 %{INDENT}% - '%s' to encode the MPI comm size
 %{INDENT}% E.g. '-o timem-output-%p'.
@@ -693,7 +694,8 @@ parent_process(pid_t pid)
 
         auto fname = get_config().get_output_filename();
         fname += ".json";
-        fprintf(stderr, "\n[%s]> Outputting '%s'...\n", command().c_str(), fname.c_str());
+        fprintf(stderr, "%s[%s]> Outputting '%s'...\n", (verbose() < 0) ? "" : "\n",
+                command().c_str(), fname.c_str());
         tim::generic_serialization<json_type>(fname, _measurements, "timemory", "timem",
                                               _cmdline);
     }

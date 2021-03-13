@@ -55,7 +55,7 @@ set(TIMEMORY_gperftools_COMPONENTS_OPTIONS
 set_property(CACHE TIMEMORY_gperftools_COMPONENTS PROPERTY STRINGS
     "${TIMEMORY_gperftools_COMPONENTS_OPTIONS}")
 
-if(NOT ${PROJECT_NAME}_MASTER_PROJECT)
+if(NOT ${PROJECT_NAME}_MAIN_PROJECT)
     set(_FEATURE NO_FEATURE)
 endif()
 
@@ -155,6 +155,13 @@ if(TIMEMORY_SKIP_BUILD)
     set(BUILD_STATIC_LIBS OFF)
 endif()
 
+if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS AND NOT TIMEMORY_SKIP_BUILD)
+    message(STATUS "")
+    message(STATUS "Set TIMEMORY_SKIP_BUILD=ON instead of BUILD_SHARED_LIBS=OFF and BUILD_STATIC_LIBS=OFF")
+    message(STATUS "")
+    message(FATAL_ERROR "Confusing settings")
+endif()
+
 if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
     # local override
     set(TIMEMORY_BUILD_C OFF)
@@ -167,18 +174,7 @@ if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
     set(TIMEMORY_BUILD_OMPT_LIBRARY OFF)
 endif()
 
-if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS AND NOT TIMEMORY_SKIP_BUILD)
-    message(STATUS "")
-    message(STATUS "Set TIMEMORY_SKIP_BUILD=ON instead of BUILD_SHARED_LIBS=OFF and BUILD_STATIC_LIBS=OFF")
-    message(STATUS "")
-    message(FATAL_ERROR "Confusing settings")
-endif()
-
-# if(BUILD_STATIC_LIBS AND NOT BUILD_SHARED_LIBS)
-#    set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so .dylib)
-# endif()
-
-if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
+if(${PROJECT_NAME}_MAIN_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     if("${CMAKE_CXX_STANDARD}" LESS 14)
         unset(CMAKE_CXX_STANDARD CACHE)
     endif()
@@ -188,7 +184,7 @@ if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     endif()
 endif()
 
-if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
+if(${PROJECT_NAME}_MAIN_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     # standard
     set(CMAKE_C_STANDARD 11 CACHE STRING "C language standard")
     set(CMAKE_CXX_STANDARD 14 CACHE STRING "CXX language standard")
@@ -216,6 +212,11 @@ else()
     add_feature(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)")
     add_feature(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++14)")
     add_feature(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)")
+
+    if(NOT DEFINED CMAKE_CXX_STANDARD)
+        message(AUTHOR_WARNING "timemory requires settings CMAKE_CXX_STANDARD. Defaulting CMAKE_CXX_STANDARD to 14...")
+        set(CMAKE_CXX_STANDARD 14)
+    endif()
 endif()
 
 # set it to the same because of string_view
@@ -279,11 +280,19 @@ add_option(TIMEMORY_BUILD_GOTCHA
     "Enable building GOTCHA (set to OFF for external)" ${_BUILD_GOTCHA})
 add_option(TIMEMORY_UNITY_BUILD
     "Same as CMAKE_UNITY_BUILD but is not propagated to submodules" ON)
+add_option(TIMEMORY_BUILD_EXCLUDE_FROM_ALL
+    "When timemory is a subproject, ensure only your timemory target dependencies are built" OFF)
 if(NOT CMAKE_VERSION VERSION_LESS 3.16)
     add_option(TIMEMORY_PRECOMPILE_HEADERS
         "Pre-compile headers where possible" OFF)
 else()
     set(TIMEMORY_PRECOMPILE_HEADERS OFF)
+endif()
+
+if(TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
+    set(TIMEMORY_EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
+else()
+    set(TIMEMORY_EXCLUDE_FROM_ALL)
 endif()
 
 if(NOT _NON_APPLE_UNIX)
@@ -304,7 +313,7 @@ if(NOT CMAKE_CXX_COMPILER_IS_CLANG OR CMAKE_CXX_COMPILER_IS_APPLE_CLANG)
 endif()
 
 # Features
-if(${PROJECT_NAME}_MASTER_PROJECT)
+if(${PROJECT_NAME}_MAIN_PROJECT)
     add_feature(${PROJECT_NAME}_C_FLAGS "C compiler flags")
     add_feature(${PROJECT_NAME}_CXX_FLAGS "C++ compiler flags")
     add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA compiler flags")
@@ -405,7 +414,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS OFF)
 endif()
 
-if(${PROJECT_NAME}_MASTER_PROJECT)
+if(${PROJECT_NAME}_MAIN_PROJECT)
     add_feature(TIMEMORY_gperftools_COMPONENTS "gperftool components" DOC)
 endif()
 

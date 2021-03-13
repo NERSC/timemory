@@ -24,7 +24,7 @@ if(CpuArch_FOUND)
         else()
             set(TIMEMORY_VEC 128)
         endif()
-        message(STATUS "Compiling with vector width: ${TIMEMORY_VEC}")
+        timemory_message(STATUS "Compiling with vector width: ${TIMEMORY_VEC}")
         timemory_target_compile_definitions(${VECTOR_INTERFACE_TARGET} INTERFACE
             ${VECTOR_DEFINITION}=${TIMEMORY_VEC})
     endif()

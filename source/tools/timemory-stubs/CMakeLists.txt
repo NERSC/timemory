@@ -3,6 +3,10 @@ if(WIN32)
     return()
 endif()
 
+if(NOT timemory_MAIN_PROJECT OR NOT TIMEMORY_BUILD_STUBS OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
+    set(_EXCLUDE EXCLUDE_FROM_ALL)
+endif()
+
 foreach(LIB_TYPE shared static)
 
     set(LIB_TARGET timemory-stubs-${LIB_TYPE})
@@ -11,6 +15,7 @@ foreach(LIB_TYPE shared static)
     build_library(
         PIC
         NO_CACHE_LIST
+        ${_EXCLUDE}
         TYPE                ${UC_LIB_TYPE}
         TARGET_NAME         timemory-stubs-${LIB_TYPE}
         OUTPUT_NAME         timemory
@@ -36,19 +41,24 @@ foreach(LIB_TYPE shared static)
         OPTIONAL)
 
     # build tree
-    execute_process(
+    add_custom_command(
+        OUTPUT libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+        MAIN_DEPENDENCY timemory-stubs-${LIB_TYPE}
         COMMAND ${CMAKE_COMMAND} -E create_symlink
             stubs/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
             libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMENT "Creating symbolic link libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}")
 
     # install tree
     install(CODE "
-EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        timemory/stubs/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-        libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-    WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+if(EXISTS \"${PROJECT_BINARY_DIR}/stubs/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}\")
+    EXECUTE_PROCESS(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            timemory/stubs/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+            libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+        WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+endif()
     "
     OPTIONAL)
 

@@ -27,7 +27,7 @@ configure_file(${CMAKE_CURRENT_BINARY_DIR}/defines.h.in
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/version.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
 
-if(timemory_MASTER_PROJECT)
+if(timemory_MAIN_PROJECT)
     if(TIMEMORY_INSTALL_HEADERS)
         install(
             FILES

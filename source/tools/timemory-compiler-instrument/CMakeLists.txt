@@ -102,23 +102,6 @@ install(TARGETS ${LIB_TARGET}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/compiler
     OPTIONAL)
 
-# build tree
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        compiler/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-        libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-
-# install tree
-install(CODE "
-EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        timemory/compiler/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-        libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-    WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-"
-OPTIONAL)
-
 if(NOT TARGET timemory::${LIB_TARGET})
     add_library(timemory::${LIB_TARGET} ALIAS ${LIB_TARGET})
 endif()
@@ -182,19 +165,24 @@ foreach(LIB_TYPE ${_LIB_TYPES})
         OPTIONAL)
 
     # build tree
-    execute_process(
+    add_custom_command(
+        OUTPUT libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        MAIN_DEPENDENCY ${LIB_TARGET}
         COMMAND ${CMAKE_COMMAND} -E create_symlink
             compiler/libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
             libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMENT "Creating symbolic link libtimemory-stubs${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}")
 
     # install tree
     install(CODE "
-EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        timemory/compiler/libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-        libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-    WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+if(EXISTS \"${PROJECT_BINARY_DIR}/compiler/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}\")
+    EXECUTE_PROCESS(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            timemory/compiler/libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+            libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+        WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+endif()
     "
     OPTIONAL)
 

@@ -92,7 +92,7 @@ endfunction()
 #
 #   Build object library
 #
-add_library(kp_timemory_common OBJECT
+add_library(kp_timemory_common OBJECT ${TIMEMORY_EXCLUDE_FROM_ALL}
     ${PROJECT_SOURCE_DIR}/kp_timemory_common.cpp
     ${PROJECT_SOURCE_DIR}/kp_timemory.hpp)
 
@@ -110,7 +110,7 @@ set(timemory_COMMON_SOURCES
 #
 #   Build generic library with hidden symbols
 #
-add_library(kp_timemory SHARED
+add_library(kp_timemory SHARED ${TIMEMORY_EXCLUDE_FROM_ALL}
     ${PROJECT_SOURCE_DIR}/kp_timemory.cpp
     ${PROJECT_SOURCE_DIR}/kp_timemory.hpp
     ${PROJECT_SOURCE_DIR}/kp_timemory_common.cpp)
@@ -136,7 +136,8 @@ install(
 #
 #   Build regex filtering library
 #
-add_library(kp_timemory_filter SHARED ${PROJECT_SOURCE_DIR}/kp_timemory_filter.cpp
+add_library(kp_timemory_filter SHARED ${TIMEMORY_EXCLUDE_FROM_ALL}
+    ${PROJECT_SOURCE_DIR}/kp_timemory_filter.cpp
      ${timemory_COMMON_SOURCES})
 configure_library(kp_timemory_filter)
 
@@ -175,7 +176,7 @@ endfunction()
 if(TIMEMORY_KOKKOS_BUILD_SAMPLE)
     # use launch_compiler feature to ensure kokkos uses it's original compiler
     find_package(Kokkos REQUIRED)
-    add_executable(kokkos-connector-sample sample/sample.cpp)
+    add_executable(kokkos-connector-sample ${TIMEMORY_EXCLUDE_FROM_ALL} sample/sample.cpp)
     target_compile_definitions(kokkos-connector-sample PRIVATE
         -DKOKKOS_PROFILE_LIBRARY="$<TARGET_FILE:kp_timemory>")
     target_link_libraries(kokkos-connector-sample PRIVATE Kokkos::kokkos)
@@ -189,17 +190,19 @@ endif()
 
 ##--------------------------------------------------------------------------------------##
 
-if(NOT TIMEMORY_BUILD_KOKKOS_CONFIG)
-    message(STATUS "")
-    message(STATUS
-        "[${PROJECT_NAME}] Disabled building explicit configurations with 'TIMEMORY_BUILD_KOKKOS_CONFIG=OFF'")
-    message(STATUS "")
-else()
-    message(STATUS "")
-    message(STATUS "Building explicit connector configurations: ${_CONNECTORS}")
-    message(STATUS "    Disable building explicit configurations with '-DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF'")
-    message(STATUS "    Reduce explicit configurations with semi-colon delimited '-DTIMEMORY_BUILD_KOKKOS_CONNECTORS=\"...\"'")
-    message(STATUS "")
+if(timemory_MAIN_PROJECT)
+    if(NOT TIMEMORY_BUILD_KOKKOS_CONFIG)
+        message(STATUS "")
+        message(STATUS
+            "[${PROJECT_NAME}] Disabled building explicit configurations with 'TIMEMORY_BUILD_KOKKOS_CONFIG=OFF'")
+        message(STATUS "")
+    else()
+        message(STATUS "")
+        message(STATUS "Building explicit connector configurations: ${_CONNECTORS}")
+        message(STATUS "    Disable building explicit configurations with '-DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF'")
+        message(STATUS "    Reduce explicit configurations with semi-colon delimited '-DTIMEMORY_BUILD_KOKKOS_CONNECTORS=\"...\"'")
+        message(STATUS "")
+    endif()
 endif()
 
 ##--------------------------------------------------------------------------------------##
@@ -267,7 +270,7 @@ function(ADD_CONNECTOR_CONFIG _NAME)
         timemory::timemory-dmp
         timemory::timemory-threading)
 
-    add_library(kp_timemory_${_NAME} SHARED
+    add_library(kp_timemory_${_NAME} SHARED ${TIMEMORY_EXCLUDE_FROM_ALL}
         ${SOURCE_FILE} ${timemory_COMMON_SOURCES})
     configure_library(kp_timemory_${_NAME}
         ${CONNECTOR_TARGETS})
