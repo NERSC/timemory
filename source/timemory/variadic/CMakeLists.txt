@@ -6,7 +6,7 @@ build_intermediate_library(
     USE_INTERFACE
     INSTALL_SOURCE
     NAME                variadic
-    TARGET              variadic
+    TARGET              common
     CATEGORY            GLOBAL
     FOLDER              components
     HEADERS             ${header_files}

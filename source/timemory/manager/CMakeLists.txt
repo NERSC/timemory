@@ -5,7 +5,7 @@ file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 build_intermediate_library(
     USE_INTERFACE
     NAME                manager
-    TARGET              manager
+    TARGET              common
     CATEGORY            GLOBAL
     FOLDER              components
     HEADERS             ${header_files}

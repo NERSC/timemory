@@ -7,7 +7,7 @@ project(timemory-Statistics-Example LANGUAGES C CXX)
 # link to the pre-compiled library w/ extern component templates
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-statistics-example)
 set(COMPONENTS headers compile-options analysis-tools
-    OPTIONAL_COMPONENTS mpi core manager)
+    OPTIONAL_COMPONENTS mpi core common)
 
 option(USE_PAPI "Enable PAPI support" OFF)
 option(USE_CALIPER "Enable Caliper support" OFF)
