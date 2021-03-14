@@ -30,7 +30,6 @@
 namespace
 {
 using size_type                 = typename md5sum::size_type;
-static constexpr auto blocksize = md5sum::blocksize;
 
 // Constants for md5sumTransform routine.
 static constexpr uint32_t S11 = 7;
