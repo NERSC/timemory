@@ -107,11 +107,8 @@ sum_exp(const vector<double>&);
 
 //======================================================================================//
 
-static auto use_intercept = tim::get_env("EXP_REPLACE", true);
-static auto use_timers    = tim::get_env("EXP_TIMERS", true);
-
 bool
-init_gotcha()
+init_gotcha(bool use_intercept, bool use_timers)
 {
     //
     // configure the initializer for the gotcha component which replaces exp with expf
@@ -147,7 +144,10 @@ int
 main(int argc, char** argv)
 {
     puts("starting...");
-    if(!init_gotcha()) throw std::runtime_error("Error! initialization failed!");
+    auto use_intercept = tim::get_env("EXP_REPLACE", true);
+    auto use_timers    = tim::get_env("EXP_TIMERS", true);
+    if(!init_gotcha(use_intercept, use_timers))
+        throw std::runtime_error("Error! initialization failed!");
 
     tim::timemory_init(argc, argv);
 

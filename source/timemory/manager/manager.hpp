@@ -173,6 +173,8 @@ public:
     /// It is only "decremented" when the last manager instance has been deleted, at which
     /// point it is set to zero.
     static int32_t get_thread_count() { return f_thread_counter().load(); }
+    /// Return whether this is the main thread
+    static bool get_is_main_thread();
 
     /// Add a metadata entry of a non-string type. If this fails to serialize, either
     /// include either the approiate header from timemory/tpls/cereal/cereal/types or
@@ -293,9 +295,9 @@ private:
 
 public:
     /// Get the instance ID for this manager instance
-    TIMEMORY_NODISCARD int32_t instance_count() const { return m_instance_count; }
+    int32_t instance_count() const { return m_instance_count; }
     /// Get the thread-index for this manager instance
-    TIMEMORY_NODISCARD int64_t get_tid() const { return m_thread_index; }
+    int64_t get_tid() const { return m_thread_index; }
 
 protected:
     // static comm_group_t get_communicator_group();

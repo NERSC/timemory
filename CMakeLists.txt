@@ -197,6 +197,17 @@ include(MacroUtilities)
 include(Options)
 
 #----------------------------------------------------------------------------------------#
+#   compile-timing-perf
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_BUILD_DEVELOPER)
+    find_package(compile-time-perf QUIET)
+    if(compile-time-perf_FOUND)
+        enable_compile_time_perf(timemory-compile-time)
+    endif()
+endif()
+
+#----------------------------------------------------------------------------------------#
 #   handle some additional configuration before other includes
 #----------------------------------------------------------------------------------------#
 
@@ -282,17 +293,9 @@ else()
 endif()
 
 #----------------------------------------------------------------------------------------#
-#   timemory exports
-#----------------------------------------------------------------------------------------#
-
-#message(STATUS "Exporting interface libraries...")
-#install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
-#    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#    EXPORT ${PROJECT_NAME}-library-depends)
-
-#----------------------------------------------------------------------------------------#
 #   timemory source
 #----------------------------------------------------------------------------------------#
+
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     # activate clang-tidy if enabled
     _timemory_activate_clang_tidy()

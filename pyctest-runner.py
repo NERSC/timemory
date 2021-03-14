@@ -702,6 +702,8 @@ def run_pyctest():
         ]
         _cmd.extend(extra_opts)
         _cmd.extend(["--"])
+        if args.mpi and dmprun is not None:
+            _cmd += [dmprun] + dmpargs
         _cmd.extend(cmd)
         return _cmd
 
@@ -1419,6 +1421,21 @@ def run_pyctest():
                 construct_roofline_command(
                     ["./ex_cpu_roofline"],
                     "cpu-roofline",
+                    ["-t", "cpu_roofline"],
+                ),
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "900",
+                    "ENVIRONMENT": test_env,
+                },
+            )
+
+            pyct.test(
+                construct_name("ex-cpu-roofline.dp"),
+                construct_roofline_command(
+                    ["./ex_cpu_roofline.dp"],
+                    "cpu-roofline.dp",
                     ["-t", "cpu_roofline"],
                 ),
                 {
