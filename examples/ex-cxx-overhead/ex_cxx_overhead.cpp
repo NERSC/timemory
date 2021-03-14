@@ -387,7 +387,7 @@ main(int argc, char** argv)
     tim::settings::cout_output() = false;
 
     // default calc: fibonacci(43)
-    int nfib = 43;
+    int nfib = 35;
     if(argc > 1)
         nfib = std::stoi(argv[1]);
 
