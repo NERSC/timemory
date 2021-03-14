@@ -1487,7 +1487,10 @@ main(int argc, char** argv)
                                "Beginning non-batched instrumentation for this set\n",
                                (unsigned long) _beg, (unsigned long) _beg + batch_size);
                     for(size_t i = _beg; i < _beg + batch_size; ++i)
-                        instr_procedure_functions.at(i)();
+                    {
+                        if(i < instr_procedure_functions.size())
+                            instr_procedure_functions.at(i)();
+                    }
                 }
                 return _beg + batch_size;
             };
