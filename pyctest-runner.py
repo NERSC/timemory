@@ -1432,21 +1432,6 @@ def run_pyctest():
             )
 
             pyct.test(
-                construct_name("ex-cpu-roofline.dp"),
-                construct_roofline_command(
-                    ["./ex_cpu_roofline.dp"],
-                    "cpu-roofline.dp",
-                    ["-t", "cpu_roofline"],
-                ),
-                {
-                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                    "LABELS": pyct.PROJECT_NAME,
-                    "TIMEOUT": "900",
-                    "ENVIRONMENT": test_env,
-                },
-            )
-
-            pyct.test(
                 construct_name("ex-cpu-roofline.sp"),
                 construct_roofline_command(
                     ["./ex_cpu_roofline.sp"],
