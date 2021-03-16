@@ -124,9 +124,17 @@ template <size_t... Idx>
 static auto
 get_storage(tim::index_sequence<Idx...>) TIMEMORY_INTERNAL_NO_INSTRUMENT;
 //
-template <size_t Idx, size_t N>
+template <size_t Idx, size_t N, typename Tp = tim::component::enumerator_t<Idx>>
 static void
-get_storage_impl(std::array<std::function<void()>, N>&) TIMEMORY_INTERNAL_NO_INSTRUMENT;
+get_storage_impl(std::array<std::function<void()>, N>&,
+                 enable_if_t<tim::trait::is_available<Tp>::value, int> = 0)
+    TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
+template <size_t Idx, size_t N, typename Tp = tim::component::enumerator_t<Idx>>
+static void
+get_storage_impl(std::array<std::function<void()>, N>&,
+                 enable_if_t<!tim::trait::is_available<Tp>::value, long> = 0)
+    TIMEMORY_INTERNAL_NO_INSTRUMENT;
 //
 static bool&
 get_main_wrapped() TIMEMORY_INTERNAL_NO_INSTRUMENT;
@@ -171,17 +179,28 @@ const void* null_site         = nullptr;
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t Idx, size_t N>
+template <size_t Idx, size_t N, typename Tp>
 void
-get_storage_impl(std::array<std::function<void()>, N>& _data)
+get_storage_impl(std::array<std::function<void()>, N>& _data,
+                 enable_if_t<tim::trait::is_available<Tp>::value, int>)
 {
     static_assert(Idx < N, "Error! Expanded greater than array size");
     _data[Idx] = []() {
-        using type = tim::component::enumerator_t<Idx>;
-        tim::operation::fini_storage<type>{};
-        auto _instance = tim::storage<type>::instance();
-        tim::get_storage_singleton<tim::storage<type>>()->reset(_instance);
+        tim::operation::fini_storage<Tp>{};
+        auto _instance = tim::storage<Tp>::instance();
+        tim::get_storage_singleton<tim::storage<Tp>>()->reset(_instance);
     };
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t Idx, size_t N, typename Tp>
+void
+get_storage_impl(std::array<std::function<void()>, N>& _data,
+                 enable_if_t<!tim::trait::is_available<Tp>::value, long>)
+{
+    static_assert(Idx < N, "Error! Expanded greater than array size");
+    _data[Idx] = []() { tim::operation::fini_storage<Tp>{}; };
 }
 
 //--------------------------------------------------------------------------------------//
