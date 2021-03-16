@@ -426,7 +426,7 @@ private:
 
 public:
     gpu_roofline(operation::dummy<this_type>)
-    : cupti_data(operation::dummy<cupti_data>{})
+    : m_data(operation::dummy<cupti_data>{})
     {}
 
     gpu_roofline() { configure(); }
