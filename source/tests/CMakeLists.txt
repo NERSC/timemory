@@ -302,6 +302,7 @@ add_timemory_google_test(component_bundle_tests
     SOURCES         component_bundle_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     ${_LIBRARY}
+                    timemory::timemory-address-sanitizer
     ENVIRONMENT     ${component_bundle_tests_env})
 
 list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
@@ -369,6 +370,7 @@ add_timemory_google_test(threading_tests
                     timemory::timemory-plotting
                     timemory::timemory-core
                     timemory::timemory-ompt
+                    timemory::timemory-thread-sanitizer
                     ${_LIBRARY} ${_OPENMP})
 
 if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
@@ -378,6 +380,7 @@ if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
         LINK_LIBRARIES  common-test-libs
                         PTL::ptl
                         ${_LIBRARY}
+                        timemory::timemory-address-sanitizer
         ENVIRONMENT     ${ptl_tests_env}
         TIMEOUT         300)
 endif()

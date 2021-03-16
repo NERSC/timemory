@@ -203,7 +203,10 @@ include(Options)
 if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
     find_package(compile-time-perf QUIET)
     if(compile-time-perf_FOUND)
-        enable_compile_time_perf(timemory-compile-time)
+        enable_compile_time_perf(timemory-compile-time
+            LINK
+            ANALYZER_OPTIONS
+                -s "${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}")
         set(TIMEMORY_USE_CTP ON)
     else()
         set(TIMEMORY_USE_CTP OFF)
