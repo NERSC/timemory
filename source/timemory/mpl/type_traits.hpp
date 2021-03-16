@@ -159,10 +159,23 @@ template <typename T>
 using component_apis_t = typename component_apis<T>::type;
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::supports_runtime_enabled
+/// \brief trait to specify that the type supports toggling availablity at runtime.
+/// Supporting runtime availability has a relatively miniscule overhead but disabling it
+/// can ensure that the implementation truly maps down to the same assembly as
+/// hand-implementations.
+///
+template <typename Tp>
+struct supports_runtime_enabled : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
 
 template <>
 struct runtime_enabled<void>
 {
+    static constexpr bool value = supports_runtime_enabled<void>::value;
+
     // GET specialization if component is available
     static TIMEMORY_HOT TIMEMORY_INLINE bool get() { return get_runtime_value(); }
 
@@ -195,13 +208,24 @@ struct default_runtime_enabled : true_type
 template <typename T>
 struct runtime_enabled
 {
-    // type-list of APIs that are runtime configurable
+private:
+    template <typename U>
+    static constexpr bool get_value()
+    {
+        return supports_runtime_enabled<U>::value;
+    }
+
+public:
+    static constexpr bool value = supports_runtime_enabled<T>::value;
+
+    /// type-list of APIs that are runtime configurable
     using api_type_list =
         mpl::get_true_types_t<concepts::is_runtime_configurable, component_apis_t<T>>;
 
-    // GET specialization if component is available
+    /// GET specialization if component is available
     template <typename U = T>
-    static TIMEMORY_HOT TIMEMORY_INLINE enable_if_t<is_available<U>::value, bool> get()
+    static TIMEMORY_INLINE bool get(
+        enable_if_t<is_available<U>::value && get_value<U>(), int> = 0)
     {
         return (runtime_enabled<void>::get() && get_runtime_value() &&
                 apply<runtime_enabled>{}(api_type_list{}));
@@ -209,26 +233,30 @@ struct runtime_enabled
 
     /// SET specialization if component is available
     template <typename U = T>
-    static TIMEMORY_HOT TIMEMORY_INLINE enable_if_t<is_available<U>::value, void> set(
-        bool val)
+    static TIMEMORY_INLINE bool set(
+        bool val, enable_if_t<is_available<U>::value && get_value<U>(), int> = 0)
     {
-        get_runtime_value() = val;
+        return (get_runtime_value() = val);
     }
 
     /// GET specialization if component is NOT available
     template <typename U = T>
-    static TIMEMORY_INLINE enable_if_t<!is_available<U>::value, bool> get()
+    static TIMEMORY_INLINE bool get(
+        enable_if_t<!is_available<U>::value || !get_value<U>(), long> = 0)
     {
-        return false;
+        return is_available<T>::value && default_runtime_enabled<T>::value;
     }
 
     /// SET specialization if component is NOT available
     template <typename U = T>
-    static TIMEMORY_INLINE enable_if_t<!is_available<U>::value, void> set(bool)
-    {}
+    static TIMEMORY_INLINE bool set(
+        bool, enable_if_t<!is_available<U>::value || !get_value<U>(), long> = 0)
+    {
+        return is_available<T>::value && default_runtime_enabled<T>::value;
+    }
 
 private:
-    static TIMEMORY_HOT TIMEMORY_INLINE bool& get_runtime_value()
+    static TIMEMORY_HOT bool& get_runtime_value()
     {
         static bool _instance =
             is_available<T>::value && default_runtime_enabled<T>::value;

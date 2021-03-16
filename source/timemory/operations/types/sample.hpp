@@ -96,9 +96,6 @@ private:
 template <typename Tp>
 sample<Tp>::sample(Tp& obj)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     sfinae(obj, 0, 0, null_type{});
 }
 //
@@ -108,9 +105,6 @@ template <typename Tp>
 template <typename Arg, typename... Args>
 sample<Tp>::sample(Tp& obj, Arg&& arg, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     sfinae(obj, 0, 0, std::forward<Arg>(arg), std::forward<Args>(args)...);
 }
 //

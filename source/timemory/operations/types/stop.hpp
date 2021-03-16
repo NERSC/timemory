@@ -63,7 +63,7 @@ struct stop
     TIMEMORY_HOT auto operator()(type& obj, Args&&... args) const
     {
         using RetT = decltype(sfinae(obj, 0, 0, std::forward<Args>(args)...));
-        if(trait::runtime_enabled<type>::get() && is_running<Tp, true>{}(obj))
+        if(is_running<Tp, true>{}(obj))
         {
             return sfinae(obj, 0, 0, std::forward<Args>(args)...);
         }
@@ -202,8 +202,6 @@ template <typename... Args>
 void
 stop<Tp>::impl(type& obj, Args&&... args) const
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
     if(is_running<Tp, true>{}(obj))
     {
         set_stopped<Tp>{}(obj);
@@ -217,9 +215,6 @@ template <typename Tp>
 template <typename... Args>
 priority_stop<Tp>::priority_stop(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     using sfinae_type =
         conditional_t<(trait::stop_priority<Tp>::value < 0), true_type, false_type>;
     sfinae(obj, sfinae_type{}, std::forward<Args>(args)...);
@@ -231,9 +226,6 @@ template <typename Tp>
 template <typename... Args>
 standard_stop<Tp>::standard_stop(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     using sfinae_type =
         conditional_t<(trait::stop_priority<Tp>::value == 0), true_type, false_type>;
     sfinae(obj, sfinae_type{}, std::forward<Args>(args)...);
@@ -245,9 +237,6 @@ template <typename Tp>
 template <typename... Args>
 delayed_stop<Tp>::delayed_stop(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     using sfinae_type =
         conditional_t<(trait::stop_priority<Tp>::value > 0), true_type, false_type>;
     sfinae(obj, sfinae_type{}, std::forward<Args>(args)...);

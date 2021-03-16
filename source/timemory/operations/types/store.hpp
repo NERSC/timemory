@@ -50,9 +50,6 @@ struct store
     template <typename... Args>
     TIMEMORY_HOT explicit store(type& obj, Args&&... args)
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
 

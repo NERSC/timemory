@@ -60,9 +60,6 @@ struct plus
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
     plus(type& obj, const type& rhs)
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         obj += rhs;
         // ensures update to laps
         sfinae(obj, 0, 0, rhs);
@@ -115,9 +112,6 @@ struct minus
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
     minus(type& obj, const type& rhs)
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         obj -= rhs;
         // ensures update to laps
         sfinae(obj, 0, 0, rhs);
@@ -167,9 +161,6 @@ struct multiply
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
     multiply(type& obj, int64_t rhs)
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         using namespace tim::stl;
         obj *= rhs;
     }
@@ -177,9 +168,6 @@ struct multiply
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
     multiply(type& obj, const type& rhs)
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         using namespace tim::stl;
         obj *= rhs;
     }
@@ -208,9 +196,6 @@ struct divide
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
     divide(type& obj, int64_t rhs)
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         using namespace tim::stl;
         obj /= rhs;
     }
@@ -218,9 +203,6 @@ struct divide
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
     divide(type& obj, const type& rhs)
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         using namespace tim::stl;
         obj /= rhs;
     }

@@ -302,6 +302,7 @@ add_timemory_google_test(component_bundle_tests
     SOURCES         component_bundle_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     ${_LIBRARY}
+                    timemory::timemory-sanitizer
     ENVIRONMENT     ${component_bundle_tests_env})
 
 list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")

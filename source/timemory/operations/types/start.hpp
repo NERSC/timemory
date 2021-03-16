@@ -67,7 +67,7 @@ struct start
     TIMEMORY_HOT auto operator()(type& obj, Args&&... args)
     {
         using RetT = decltype(do_sfinae(obj, 0, 0, std::forward<Args>(args)...));
-        if(trait::runtime_enabled<type>::get() && !is_running<Tp, false>{}(obj))
+        if(!is_running<Tp, false>{}(obj))
         {
             return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
         }
@@ -216,10 +216,6 @@ template <typename... Args>
 void
 start<Tp>::impl(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
-    // init_storage<Tp>::init();
     if(!is_running<Tp, false>{}(obj))
     {
         set_started<Tp>{}(obj);
@@ -233,9 +229,6 @@ template <typename Tp>
 template <typename... Args>
 priority_start<Tp>::priority_start(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     using sfinae_type =
         conditional_t<(trait::start_priority<Tp>::value < 0), true_type, false_type>;
     sfinae(obj, sfinae_type{}, std::forward<Args>(args)...);
@@ -247,9 +240,6 @@ template <typename Tp>
 template <typename... Args>
 standard_start<Tp>::standard_start(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     using sfinae_type =
         conditional_t<(trait::start_priority<Tp>::value == 0), true_type, false_type>;
     sfinae(obj, sfinae_type{}, std::forward<Args>(args)...);
@@ -261,9 +251,6 @@ template <typename Tp>
 template <typename... Args>
 delayed_start<Tp>::delayed_start(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     using sfinae_type =
         conditional_t<(trait::start_priority<Tp>::value > 0), true_type, false_type>;
     sfinae(obj, sfinae_type{}, std::forward<Args>(args)...);

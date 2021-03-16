@@ -89,8 +89,6 @@ template <typename Tp>
 template <typename... Args>
 measure<Tp>::measure(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
     sfinae(obj, 0, 0, std::forward<Args>(args)...);
 }
 //
