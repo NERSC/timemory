@@ -23,29 +23,29 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_STORAGE_VALUE_STORAGE_CPP_
-#    define TIMEMORY_STORAGE_VALUE_STORAGE_CPP_ 1
+#define TIMEMORY_STORAGE_VALUE_STORAGE_CPP_ 1
 
-#    include "timemory/storage/value_storage.hpp"
-#    include "timemory/backends/process.hpp"
-#    include "timemory/backends/threading.hpp"
-#    include "timemory/hash/declaration.hpp"
-#    include "timemory/hash/types.hpp"
-#    include "timemory/manager/declaration.hpp"
-#    include "timemory/operations/types/decode.hpp"
-#    include "timemory/operations/types/fini.hpp"
-#    include "timemory/operations/types/init.hpp"
-#    include "timemory/operations/types/node.hpp"
-#    include "timemory/operations/types/start.hpp"
-#    include "timemory/operations/types/stop.hpp"
-#    include "timemory/plotting/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
-#    include "timemory/storage/macros.hpp"
-#    include "timemory/storage/types.hpp"
+#include "timemory/storage/value_storage.hpp"
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
+#include "timemory/hash/declaration.hpp"
+#include "timemory/hash/types.hpp"
+#include "timemory/manager/declaration.hpp"
+#include "timemory/operations/types/decode.hpp"
+#include "timemory/operations/types/fini.hpp"
+#include "timemory/operations/types/init.hpp"
+#include "timemory/operations/types/node.hpp"
+#include "timemory/operations/types/start.hpp"
+#include "timemory/operations/types/stop.hpp"
+#include "timemory/plotting/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
+#include "timemory/storage/macros.hpp"
+#include "timemory/storage/types.hpp"
 
-#    include <fstream>
-#    include <memory>
-#    include <utility>
+#include <fstream>
+#include <memory>
+#include <utility>
 
 namespace tim
 {
@@ -328,12 +328,12 @@ value_storage<Type>::get_prefix(const graph_node& node)
         return operation::decode<TIMEMORY_API>{}(node.id());
     }
 
-#    if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
+#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
     if(_ret.empty() || _ret.find("unknown-hash=") == 0)
     {
         TIMEMORY_EXCEPTION("Hash-lookup error!")
     }
-#    endif
+#endif
 
     return _ret;
 }
@@ -356,12 +356,12 @@ value_storage<Type>::get_prefix(uint64_t id)
         return get_hash_identifier(id);
     }
 
-#    if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
+#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
     if(_ret.empty() || _ret.find("unknown-hash=") == 0)
     {
         TIMEMORY_EXCEPTION("Hash-lookup error!")
     }
-#    endif
+#endif
 
     return _ret;
 }

@@ -67,7 +67,7 @@ jobs:
         - BUILD_ARGS='--minimal --build-libs shared static --stats --tools kokkos-config timem --cxx-standard=14'
     # GCC 6
     - os: linux
-      dist: xenial
+      dist: bionic
       python: "3.6"
       addons:
         apt:

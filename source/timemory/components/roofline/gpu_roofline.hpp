@@ -465,12 +465,14 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY: {
+            case MODE::ACTIVITY:
+            {
                 m_data.activity->start();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS: {
+            case MODE::COUNTERS:
+            {
                 m_data.counters->start();
                 std::get<1>(value) = m_data.counters->get_value();
                 break;
@@ -485,13 +487,15 @@ public:
         using namespace tim::component::operators;
         switch(event_mode())
         {
-            case MODE::ACTIVITY: {
+            case MODE::ACTIVITY:
+            {
                 m_data.activity->stop();
                 std::get<0>(accum) = m_data.activity->get_accum();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS: {
+            case MODE::COUNTERS:
+            {
                 m_data.counters->stop();
                 std::get<1>(accum) = m_data.counters->get_accum();
                 std::get<1>(value) = m_data.counters->get_value();
@@ -506,13 +510,15 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY: {
+            case MODE::ACTIVITY:
+            {
                 *m_data.activity += *rhs.m_data.activity;
                 std::get<0>(accum) = m_data.activity->get_accum();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS: {
+            case MODE::COUNTERS:
+            {
                 *m_data.counters += *rhs.m_data.counters;
                 std::get<1>(accum) = m_data.counters->get_accum();
                 std::get<1>(value) = m_data.counters->get_value();
@@ -528,13 +534,15 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY: {
+            case MODE::ACTIVITY:
+            {
                 *m_data.activity -= *rhs.m_data.activity;
                 std::get<0>(accum) = m_data.activity->get_accum();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS: {
+            case MODE::COUNTERS:
+            {
                 *m_data.counters -= *rhs.m_data.counters;
                 std::get<1>(accum) = m_data.counters->get_accum();
                 std::get<1>(value) = m_data.counters->get_value();
@@ -550,13 +558,15 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY: {
+            case MODE::ACTIVITY:
+            {
                 *m_data.activity += std::get<0>(rhs);
                 std::get<0>(accum) = m_data.activity->get_accum();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS: {
+            case MODE::COUNTERS:
+            {
                 *m_data.counters += std::get<1>(rhs);
                 std::get<1>(accum) = m_data.counters->get_accum();
                 std::get<1>(value) = m_data.counters->get_value();
@@ -579,7 +589,8 @@ public:
         secondary_type ret;
         switch(event_mode())
         {
-            case MODE::ACTIVITY: {
+            case MODE::ACTIVITY:
+            {
                 auto&& _tmp = m_data.activity->get_secondary();
                 for(auto&& itr : _tmp)
                 {
@@ -588,7 +599,8 @@ public:
                 }
                 break;
             }
-            case MODE::COUNTERS: {
+            case MODE::COUNTERS:
+            {
                 auto&& _tmp = m_data.counters->get_secondary();
                 for(auto&& itr : _tmp)
                 {

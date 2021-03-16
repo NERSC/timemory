@@ -177,7 +177,8 @@ get_storage_impl(std::array<std::function<void()>, N>& _data)
 {
     static_assert(Idx < N, "Error! Expanded greater than array size");
     _data[Idx] = []() {
-        tim::operation::fini_storage<tim::component::enumerator_t<Idx>>{};
+        using type = tim::component::enumerator_t<Idx>;
+        tim::operation::fini_storage<type>{};
         auto _instance = tim::storage<type>::instance();
         tim::get_storage_singleton<tim::storage<type>>()->reset(_instance);
     };
