@@ -200,10 +200,13 @@ include(Options)
 #   compile-timing-perf
 #----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_BUILD_DEVELOPER)
+if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
     find_package(compile-time-perf QUIET)
     if(compile-time-perf_FOUND)
         enable_compile_time_perf(timemory-compile-time)
+        set(TIMEMORY_USE_CTP ON)
+    else()
+        set(TIMEMORY_USE_CTP OFF)
     endif()
 endif()
 

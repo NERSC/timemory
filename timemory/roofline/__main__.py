@@ -401,7 +401,6 @@ def run(args, cmd):
         os.environ["TIMEMORY_ROOFLINE_MODE"] = "ai"
         os.environ["TIMEMORY_ROOFLINE_MODE_CPU"] = "ai"
         os.environ["TIMEMORY_ROOFLINE_MODE_GPU"] = "ai"
-        os.environ["TIMEMORY_OUTPUT_PREFIX"] = "ai_{}".format(output_prefix)
         p = sp.Popen(cmd)
         ret = p.wait()
         handle_error(ret, cmd, args.keep_going)
@@ -410,7 +409,6 @@ def run(args, cmd):
         os.environ["TIMEMORY_ROOFLINE_MODE"] = "op"
         os.environ["TIMEMORY_ROOFLINE_MODE_CPU"] = "op"
         os.environ["TIMEMORY_ROOFLINE_MODE_GPU"] = "op"
-        os.environ["TIMEMORY_OUTPUT_PREFIX"] = "op_{}".format(output_prefix)
         p = sp.Popen(cmd)
         ret = p.wait()
         handle_error(ret, cmd, args.keep_going)
@@ -418,18 +416,18 @@ def run(args, cmd):
     if "gpu_roofline" in args.rtype:
         args.arithmetic_intensity = os.path.join(
             output_path,
-            "ai_{}{}_activity.json".format(output_prefix, args.rtype),
+            "{}{}_activity.json".format(output_prefix, args.rtype),
         )
         args.operations = os.path.join(
             output_path,
-            "op_{}{}_counters.json".format(output_prefix, args.rtype),
+            "{}{}_counters.json".format(output_prefix, args.rtype),
         )
     else:
         args.arithmetic_intensity = os.path.join(
-            output_path, "ai_{}{}_ai.json".format(output_prefix, args.rtype)
+            output_path, "{}{}_ai.json".format(output_prefix, args.rtype)
         )
         args.operations = os.path.join(
-            output_path, "op_{}{}_op.json".format(output_prefix, args.rtype)
+            output_path, "{}{}_op.json".format(output_prefix, args.rtype)
         )
 
 

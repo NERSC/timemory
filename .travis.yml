@@ -155,7 +155,7 @@ install:
 
 script:
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo; fi
-  - export BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis -j 1"
+  - export BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis -j 1 --compile-time-perf ${HOME}/ctp"
   - export CTEST_ARGS="-V --output-on-failure ${CTEST_ARGS}"
   - export CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${CMAKE_ARGS}"
   - export PYCTEST_ARGS="${BASE_ARGS} -cc ${CC} -cxx ${CXX} --pyctest-build-type=${BUILD_TYPE} ${BUILD_ARGS}"

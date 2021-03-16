@@ -70,6 +70,57 @@ def get_branch(wd=pyct.SOURCE_DIRECTORY):
     return branch
 
 
+def install_compile_time_perf(_dir):
+    import tempfile
+
+    if os.path.exists(os.path.join(_dir, "bin", "timem")):
+        return
+
+    source_dir = tempfile.mkdtemp()
+
+    def run_cmd(_cmd):
+        if not os.path.exists(source_dir):
+            os.makedirs(source_dir)
+        cmd = pyct.command(_cmd)
+        cmd.SetWorkingDirectory(source_dir)
+        cmd.SetOutputQuiet(False)
+        cmd.SetErrorQuiet(False)
+        cmd.Execute()
+        if int(cmd.Result()) > 0:
+            print("command failed with error code {}: {}".format(cmd.Result(), " ".join(_cmd)))
+            sys.exit(1)
+
+    git_cmd = helpers.FindExePath("git")
+    cmake_cmd = helpers.FindExePath("cmake")
+
+    if (git_cmd, cmake_cmd) is None:
+        return
+
+    run_cmd(
+        [
+            git_cmd,
+            "clone",
+            "https://github.com/jrmadsen/compile-time-perf.git",
+        ]
+    )
+    run_cmd(
+        [
+            cmake_cmd,
+            "-B",
+            "build-ctp",
+            "-D",
+            f"CMAKE_INSTALL_PREFIX={_dir}",
+            "compile-time-perf",
+        ]
+    )
+    run_cmd([cmake_cmd, "--build", "build-ctp", "--target", "all"])
+    run_cmd([cmake_cmd, "--build", "build-ctp", "--target", "install"])
+
+    os.environ["CMAKE_PREFIX_PATH"] = ":".join(
+        [_dir, os.environ.get("CMAKE_PREFIX_PATH", "")]
+    )
+
+
 def configure():
 
     # Get pyctest argument parser that include PyCTest arguments
@@ -298,6 +349,12 @@ def configure():
         default=False,
         action="store_true",
     )
+    parser.add_argument(
+        "--compile-time-perf",
+        help="Build and install compile-time-perf in the given directory",
+        default=None,
+        type=str,
+    )
 
     args = parser.parse_args()
 
@@ -391,6 +448,9 @@ def configure():
         "kokkos-kokkos", "kokkos-config"
     )
 
+    if args.compile_time_perf is not None:
+        install_compile_time_perf(args.compile_time_perf)
+
     return args
 
 
@@ -477,6 +537,9 @@ def run_pyctest():
         else "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON"
         if args.extra_optimizations
+        else "OFF",
+        "TIMEMORY_USE_CTP": "ON"
+        if args.compile_time_perf is not None
         else "OFF",
         "TIMEMORY_USE_MPI": "ON" if args.mpi else "OFF",
         "TIMEMORY_USE_TAU": "ON" if args.tau else "OFF",
@@ -689,7 +752,7 @@ def run_pyctest():
 
     # construct a command
     #
-    def construct_roofline_command(cmd, dir, extra_opts=[]):
+    def construct_roofline_command(cmd, dir, extra_opts=[], use_mpi=True):
         _cmd = [
             sys.executable,
             "-m",
@@ -702,7 +765,7 @@ def run_pyctest():
         ]
         _cmd.extend(extra_opts)
         _cmd.extend(["--"])
-        if args.mpi and dmprun is not None:
+        if use_mpi and args.mpi and dmprun is not None:
             _cmd += [dmprun] + dmpargs
         _cmd.extend(cmd)
         return _cmd
@@ -1437,6 +1500,7 @@ def run_pyctest():
                     ["./ex_cpu_roofline.sp"],
                     "cpu-roofline.sp",
                     ["-t", "cpu_roofline"],
+                    use_mpi=False,
                 ),
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -1453,6 +1517,7 @@ def run_pyctest():
                     ["./ex_gpu_roofline"],
                     "gpu-roofline",
                     ["-t", "gpu_roofline"],
+                    use_mpi=False,
                 ),
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -1468,6 +1533,7 @@ def run_pyctest():
                     ["./ex_gpu_roofline.sp"],
                     "gpu-roofline.sp",
                     ["-t", "gpu_roofline"],
+                    use_mpi=False,
                 ),
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,

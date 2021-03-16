@@ -1427,6 +1427,10 @@ if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
 
     message(STATUS "Adding external/ptl")
     option(PTL_USE_TBB "Enable TBB backend support in PTL" OFF)
+    if(CMAKE_CXX_COMPILER_IS_CLANG)
+        option(PTL_USE_SANITIZER "Enable TBB backend support in PTL" ON)
+        set(PTL_SANITIZER_TYPE address CACHE STRING "Address sanitizer")
+    endif()
     add_subdirectory(external/ptl)
 endif()
 

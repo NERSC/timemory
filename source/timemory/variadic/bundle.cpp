@@ -237,9 +237,9 @@ template <typename Tag, typename BundleT, typename TupleT>
 bundle<Tag, BundleT, TupleT>::bundle(const bundle& rhs)
 : bundle_type(rhs)
 {
-    using operation_t = convert_each_t<operation::copy, remove_pointers_t<data_type>>;
+    using copy_oper_t = convert_each_t<operation::copy, remove_pointers_t<data_type>>;
     IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
-    apply_v::access2<operation_t>(m_data, rhs.m_data);
+    apply_v::access2<copy_oper_t>(m_data, rhs.m_data);
 }
 
 //--------------------------------------------------------------------------------------//

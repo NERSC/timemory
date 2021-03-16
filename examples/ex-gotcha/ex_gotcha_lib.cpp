@@ -88,14 +88,3 @@ do_exp_work(int nitr)
 
 }  // namespace ext
 
-//--------------------------------------------------------------------------------------//
-//
-double
-sum_exp(const std::vector<double>& data)
-{
-    auto ret = double{};
-    for(const auto& itr : data) ret += exp(itr);
-    return ret;
-}
-//
-//--------------------------------------------------------------------------------------//

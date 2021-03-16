@@ -120,7 +120,6 @@ init_gotcha(bool use_intercept, bool use_timers)
     exp_time_t::get_initializer() = []() {
         puts("Generating exp timers...");
         TIMEMORY_C_GOTCHA(exp_time_t, 0, exp);
-        TIMEMORY_CXX_GOTCHA(exp_time_t, 1, sum_exp);
     };
 
     exp_bundle_t::get_initializer() = [=](exp_bundle_t& obj) {
@@ -129,6 +128,16 @@ init_gotcha(bool use_intercept, bool use_timers)
     };
 
     return true;
+}
+
+//======================================================================================//
+
+double
+sum_exp(const std::vector<double>& data)
+{
+    auto ret = double{};
+    for(const auto& itr : data) ret += exp(itr);
+    return ret;
 }
 
 //======================================================================================//

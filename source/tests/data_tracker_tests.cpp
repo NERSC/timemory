@@ -406,13 +406,13 @@ TEST_F(data_tracker_tests, convergence_test)
         itr.join();
 
     auto&& _compare = [](auto& lhs, auto& rhs) {
-        return [](const std::string& lhs, const std::string& rhs) {
-            auto lidx = lhs.find_last_of("0123456789");
-            auto ridx = rhs.find_last_of("0123456789");
+        return [](const std::string& _lhs, const std::string& _rhs) {
+            auto lidx = _lhs.find_last_of("0123456789");
+            auto ridx = _rhs.find_last_of("0123456789");
             if(lidx == std::string::npos || ridx == std::string::npos)
-                return (lidx == ridx) ? (lhs < rhs) : (lidx < ridx);
-            return std::stoi(lhs.substr(lidx, lidx + 1)) <
-                   std::stoi(rhs.substr(ridx, ridx + 1));
+                return (lidx == ridx) ? (_lhs < _rhs) : (lidx < ridx);
+            return std::stoi(_lhs.substr(lidx, lidx + 1)) <
+                   std::stoi(_rhs.substr(ridx, ridx + 1));
         }(lhs.prefix(), rhs.prefix());
     };
 

@@ -302,6 +302,7 @@ add_timemory_google_test(component_bundle_tests
     SOURCES         component_bundle_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     ${_LIBRARY}
+                    timemory::timemory-address-sanitizer
     ENVIRONMENT     ${component_bundle_tests_env})
 
 list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
@@ -369,6 +370,7 @@ add_timemory_google_test(threading_tests
                     timemory::timemory-plotting
                     timemory::timemory-core
                     timemory::timemory-ompt
+                    timemory::timemory-thread-sanitizer
                     ${_LIBRARY} ${_OPENMP})
 
 if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
@@ -932,4 +934,13 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST AND NOT TIMEMORY_USE_COVE
                 DEPENDS ${_TARGET} timemory-run)
         endforeach()
     endforeach()
+endif()
+
+if(TIMEMORY_USE_CTP AND compile-time-perf_ANALYZER_EXECUTABLE)
+    add_test(
+        NAME                compile-time-perf
+        COMMAND             ${CMAKE_COMMAND}
+                            --build ${PROJECT_BINARY_DIR}
+                            --target analyze-timemory-compile-time
+        WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
 endif()
