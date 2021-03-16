@@ -212,7 +212,9 @@ TEST_F(component_bundle_tests, variadic)
 TEST_F(component_bundle_tests, get)
 {
     tim::trait::runtime_enabled<cpu_roofline<float>>::set(false);
+    tim::trait::runtime_enabled<gpu_roofline<float>>::set(false);
     tim::trait::runtime_enabled<cpu_roofline<double>>::set(false);
+    tim::trait::runtime_enabled<gpu_roofline<double>>::set(false);
 
     using lhs_t =
         tim::component_bundle_t<TIMEMORY_API, wall_clock, user_clock*, system_clock,
