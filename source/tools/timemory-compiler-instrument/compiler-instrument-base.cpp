@@ -154,7 +154,7 @@ allocate() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static void
 finalize() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 //
-static auto
+static std::tuple<std::shared_ptr<pthread_bundle_t>, std::shared_ptr<main_bundle_t>>
 setup_gotcha() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 
 //--------------------------------------------------------------------------------------//
@@ -775,7 +775,7 @@ struct main_gotcha : tim::component::base<main_gotcha, void>
 
 //--------------------------------------------------------------------------------------//
 
-auto
+std::tuple<std::shared_ptr<pthread_bundle_t>, std::shared_ptr<main_bundle_t>>
 setup_gotcha()
 {
 #if defined(TIMEMORY_USE_GOTCHA)
@@ -787,6 +787,7 @@ setup_gotcha()
         main_gotcha_t::template configure<0, int, int, char**>("main");
     };
 #endif
+
     return std::make_tuple(std::make_shared<pthread_bundle_t>("pthread"),
                            std::make_shared<main_bundle_t>("main"));
 }
