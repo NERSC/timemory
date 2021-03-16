@@ -87,8 +87,10 @@ def install_compile_time_perf(_dir):
         cmd.SetErrorQuiet(False)
         cmd.Execute()
         if int(cmd.Result()) > 0:
-            print("command failed with error code {}: {}".format(cmd.Result(), " ".join(_cmd)))
-            sys.exit(1)
+            print("output message : {}".format(cmd.Output()))
+            print("error message  : {}".format(cmd.Error()))
+            print("command failed with errc {}: {}".format(cmd.Result(), " ".join(_cmd)))
+            raise RuntimeError("command error")
 
     git_cmd = helpers.FindExePath("git")
     cmake_cmd = helpers.FindExePath("cmake")
@@ -451,7 +453,10 @@ def configure():
     )
 
     if args.compile_time_perf is not None:
-        install_compile_time_perf(args.compile_time_perf)
+        try:
+            install_compile_time_perf(args.compile_time_perf)
+        except RuntimeError:
+            pass
 
     return args
 
