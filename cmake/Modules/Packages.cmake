@@ -1176,7 +1176,7 @@ if(TIMEMORY_USE_OMPT)
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             REPO_URL https://github.com/NERSC/LLVM-openmp.git
             REPO_BRANCH timemory)
-        add_subdirectory(external/llvm-ompt)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/external/llvm-ompt)
         target_include_directories(timemory-ompt SYSTEM INTERFACE
             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/llvm-ompt/runtime/src>)
         foreach(_TARGET omp omptarget)
@@ -1427,7 +1427,7 @@ if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
 
     message(STATUS "Adding external/ptl")
     option(PTL_USE_TBB "Enable TBB backend support in PTL" OFF)
-    add_subdirectory(external/ptl)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/external/ptl)
 endif()
 
 #----------------------------------------------------------------------------------------#

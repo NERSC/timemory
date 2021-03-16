@@ -370,7 +370,6 @@ add_timemory_google_test(threading_tests
                     timemory::timemory-plotting
                     timemory::timemory-core
                     timemory::timemory-ompt
-                    timemory::timemory-thread-sanitizer
                     ${_LIBRARY} ${_OPENMP})
 
 if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)

@@ -89,7 +89,11 @@ def install_compile_time_perf(_dir):
         if int(cmd.Result()) > 0:
             print("output message : {}".format(cmd.Output()))
             print("error message  : {}".format(cmd.Error()))
-            print("command failed with errc {}: {}".format(cmd.Result(), " ".join(_cmd)))
+            print(
+                "command failed with errc {}: {}".format(
+                    cmd.Result(), " ".join(_cmd)
+                )
+            )
             raise RuntimeError("command error")
 
     git_cmd = helpers.FindExePath("git")
@@ -791,6 +795,14 @@ def run_pyctest():
             "PYTHONPATH={}".format(pypath),
         ]
     )
+    asan_lib = "/Applications/Xcode-12.for.macOS.Universal.Apps.beta.2.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/12.0.0/lib/darwin/libclang_rt.asan_osx_dynamic.dylib"
+    if platform.platform() == "Darwin" and os.path.exists(asan_lib):
+        base_env = ";".join(
+            [
+                base_env,
+                "DYLD_INSERT_LIBRARIES={}".format(asan_lib),
+            ]
+        )
     test_env = ";".join(
         [base_env, "TIMEMORY_DART_OUTPUT=ON", "TIMEMORY_DART_COUNT=1"]
     )
