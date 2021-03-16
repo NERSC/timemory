@@ -31,6 +31,7 @@
 #include "timemory/timemory.hpp"
 
 #include <array>
+#include <cmath>
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
@@ -96,14 +97,6 @@ static_assert(exp_time_t::components_size == 1, "exp_time_t should have no compo
 static_assert(std::is_same<exptime_ct, wc_t>::value,
               "exp_time_t has incorrect components");
 static_assert(!exp_time_t::differ_is_component, "exp_repl_t won't replace exp");
-
-//======================================================================================//
-
-extern "C" double
-exp(double);
-
-extern double
-sum_exp(const vector<double>&);
 
 //======================================================================================//
 
