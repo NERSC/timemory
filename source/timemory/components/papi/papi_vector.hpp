@@ -97,8 +97,6 @@ struct papi_vector
 
     //----------------------------------------------------------------------------------//
 
-    papi_vector(operation::dummy<this_type>) {}
-
     papi_vector()
     {
         events = get_events<common_type>();

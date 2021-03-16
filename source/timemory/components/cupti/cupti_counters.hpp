@@ -158,8 +158,6 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     static int              get_device() { return *_get_device(); }
     static const strvec_t&  get_labels() { return *_get_labels(); }
 
-    cupti_counters(operation::dummy<cupti_counters>) {}
-
     cupti_counters()
     {
         configure();

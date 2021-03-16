@@ -411,8 +411,6 @@ struct cpu_roofline
     }
 
 public:
-    cpu_roofline(operation::dummy<this_type>) {}
-
     cpu_roofline()
     : base_type()
     {

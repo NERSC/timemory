@@ -178,6 +178,8 @@ get_storage_impl(std::array<std::function<void()>, N>& _data)
     static_assert(Idx < N, "Error! Expanded greater than array size");
     _data[Idx] = []() {
         tim::operation::fini_storage<tim::component::enumerator_t<Idx>>{};
+        auto _instance = tim::storage<type>::instance();
+        tim::get_storage_singleton<tim::storage<type>>()->reset(_instance);
     };
 }
 
@@ -190,7 +192,7 @@ get_storage(tim::index_sequence<Idx...>)
     // array of finalization functions
     std::array<std::function<void()>, sizeof...(Idx)> _data{};
     // initialize the storage in the thread
-    TIMEMORY_FOLD_EXPRESSION(tim::storage_initializer::get<Idx>());
+    // TIMEMORY_FOLD_EXPRESSION(tim::storage_initializer::get<Idx>());
     // generate a function for finalizing
     TIMEMORY_FOLD_EXPRESSION(get_storage_impl<Idx>(_data));
     // return the array of finalization functions

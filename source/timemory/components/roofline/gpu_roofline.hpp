@@ -425,10 +425,6 @@ private:
     }
 
 public:
-    gpu_roofline(operation::dummy<this_type>)
-    : m_data(operation::dummy<cupti_data>{})
-    {}
-
     gpu_roofline() { configure(); }
     ~gpu_roofline() = default;
 
@@ -469,14 +465,12 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY:
-            {
+            case MODE::ACTIVITY: {
                 m_data.activity->start();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS:
-            {
+            case MODE::COUNTERS: {
                 m_data.counters->start();
                 std::get<1>(value) = m_data.counters->get_value();
                 break;
@@ -491,15 +485,13 @@ public:
         using namespace tim::component::operators;
         switch(event_mode())
         {
-            case MODE::ACTIVITY:
-            {
+            case MODE::ACTIVITY: {
                 m_data.activity->stop();
                 std::get<0>(accum) = m_data.activity->get_accum();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS:
-            {
+            case MODE::COUNTERS: {
                 m_data.counters->stop();
                 std::get<1>(accum) = m_data.counters->get_accum();
                 std::get<1>(value) = m_data.counters->get_value();
@@ -514,15 +506,13 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY:
-            {
+            case MODE::ACTIVITY: {
                 *m_data.activity += *rhs.m_data.activity;
                 std::get<0>(accum) = m_data.activity->get_accum();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS:
-            {
+            case MODE::COUNTERS: {
                 *m_data.counters += *rhs.m_data.counters;
                 std::get<1>(accum) = m_data.counters->get_accum();
                 std::get<1>(value) = m_data.counters->get_value();
@@ -538,15 +528,13 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY:
-            {
+            case MODE::ACTIVITY: {
                 *m_data.activity -= *rhs.m_data.activity;
                 std::get<0>(accum) = m_data.activity->get_accum();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS:
-            {
+            case MODE::COUNTERS: {
                 *m_data.counters -= *rhs.m_data.counters;
                 std::get<1>(accum) = m_data.counters->get_accum();
                 std::get<1>(value) = m_data.counters->get_value();
@@ -562,15 +550,13 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY:
-            {
+            case MODE::ACTIVITY: {
                 *m_data.activity += std::get<0>(rhs);
                 std::get<0>(accum) = m_data.activity->get_accum();
                 std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
-            case MODE::COUNTERS:
-            {
+            case MODE::COUNTERS: {
                 *m_data.counters += std::get<1>(rhs);
                 std::get<1>(accum) = m_data.counters->get_accum();
                 std::get<1>(value) = m_data.counters->get_value();
@@ -593,8 +579,7 @@ public:
         secondary_type ret;
         switch(event_mode())
         {
-            case MODE::ACTIVITY:
-            {
+            case MODE::ACTIVITY: {
                 auto&& _tmp = m_data.activity->get_secondary();
                 for(auto&& itr : _tmp)
                 {
@@ -603,8 +588,7 @@ public:
                 }
                 break;
             }
-            case MODE::COUNTERS:
-            {
+            case MODE::COUNTERS: {
                 auto&& _tmp = m_data.counters->get_secondary();
                 for(auto&& itr : _tmp)
                 {
@@ -708,21 +692,12 @@ private:
         cupti_activity* activity = nullptr;
         cupti_counters* counters;
 
-        cupti_data(operation::dummy<cupti_data>)
-        {
-            switch(event_mode())
-            {
-                case MODE::ACTIVITY: activity = nullptr; break;
-                case MODE::COUNTERS: counters = nullptr; break;
-            }
-        }
-
         cupti_data()
         {
             switch(event_mode())
             {
-                case MODE::ACTIVITY: activity = new cupti_activity{}; break;
-                case MODE::COUNTERS: counters = new cupti_counters{}; break;
+                case MODE::ACTIVITY: activity = new cupti_activity(); break;
+                case MODE::COUNTERS: counters = new cupti_counters(); break;
             }
         }
 
@@ -767,13 +742,11 @@ private:
             {
                 case MODE::ACTIVITY:
                     delete activity;
-                    activity =
-                        (rhs.activity) ? new cupti_activity(*rhs.activity) : nullptr;
+                    activity = new cupti_activity(*rhs.activity);
                     break;
                 case MODE::COUNTERS:
                     delete counters;
-                    counters =
-                        (rhs.counters) ? new cupti_counters(*rhs.counters) : nullptr;
+                    counters = new cupti_counters(*rhs.counters);
                     break;
             }
             return *this;

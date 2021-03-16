@@ -373,6 +373,7 @@ if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
         LINK_LIBRARIES  common-test-libs
                         PTL::ptl
                         ${_LIBRARY}
+                        test-debug-flags
                         timemory::timemory-address-sanitizer
         ENVIRONMENT     ${ptl_tests_env}
         TIMEOUT         300)
