@@ -12,7 +12,7 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
 set(CMAKE_C_VISIBILITY_PRESET "hidden")
 set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_UNITY_BUILD OFF)
 
 set(LINK_LIBS)
@@ -21,10 +21,6 @@ if(dl_LIBRARY)
 endif()
 if(rt_LIBRARY)
     list(APPEND LINK_LIBS ${rt_LIBRARY})
-endif()
-
-if(TIMEMORY_BUILD_TESTING)
-    list(APPEND TESTING_LIBS timemory::timemory-sanitizer)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -96,8 +92,7 @@ target_link_libraries(${LIB_TARGET} PRIVATE
     timemory::timemory-gotcha
     timemory::timemory-statistics
     timemory::timemory-compile-options
-    timemory::timemory-hidden-visibility
-    ${TESTING_LIBS})
+    timemory::timemory-hidden-visibility)
 
 add_cxx_flag_if_avail("-ftls-model=local-exec" ${LIB_TARGET})
 
@@ -156,7 +151,7 @@ foreach(LIB_TYPE ${_LIB_TYPES})
         timemory-compiler-instrument-base
         timemory::timemory-compile-options
         timemory::timemory-hidden-visibility
-        ${TESTING_LIBS})
+        )
 
     if(WIN32)
         # not yet implemented

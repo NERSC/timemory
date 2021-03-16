@@ -428,7 +428,7 @@ def configure():
             continue
         if "quiet" in key:
             continue
-        if "compile-time-perf" in key:
+        if "compile_time_perf" in key:
             continue
         # get the current value
         curr = args.__getattribute__(key)
