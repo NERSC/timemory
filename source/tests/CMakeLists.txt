@@ -328,19 +328,13 @@ add_timemory_google_test(flat_tests
     DISCOVER_TESTS
     SOURCES         flat_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    extern-test-templates
-                    ${_LIBRARY})
+                    extern-test-templates)
 
 add_timemory_google_test(timeline_tests
     DISCOVER_TESTS
     SOURCES         timeline_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    extern-test-templates
-                    ${_LIBRARY})
+                    extern-test-templates)
 
 add_timemory_google_test(data_tracker_tests
     DISCOVER_TESTS

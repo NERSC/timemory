@@ -520,6 +520,139 @@ finalize()
 }
 
 //--------------------------------------------------------------------------------------//
+
+struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
+{
+    struct TIMEMORY_INTERNAL_NO_INSTRUMENT wrapper
+    {
+        using routine_t = void* (*) (void*);
+
+        wrapper(routine_t _routine, void* _arg, bool _debug)
+        : m_routine(_routine)
+        , m_arg(_arg)
+        , m_debug(_debug)
+        {}
+
+        void* operator()() const { return m_routine(m_arg); }
+
+        TIMEMORY_NODISCARD bool debug() const { return m_debug; }
+
+        static void* wrap(void* _arg)
+        {
+            if(!_arg)
+                return nullptr;
+
+            // convert the argument
+            wrapper* _wrapper = static_cast<wrapper*>(_arg);
+            if(_wrapper->debug())
+                PRINT_HERE("%s", "Creating timemory manager");
+            // create the manager and initialize the storage
+            auto _tlm = tim::manager::instance();
+#if defined(TIMEMORY_INTERNAL_TESTING)
+            assert(_tlm.get() != nullptr);
+#endif
+            // if(_wrapper->debug())
+            //    PRINT_HERE("%s", "Initializing timemory component storage");
+            // initialize the storage
+            // tim::consume_parameters(
+            //    get_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{}));
+            if(_wrapper->debug())
+                PRINT_HERE("%s", "Executing original function");
+            // execute the original function
+            auto _ret = (*_wrapper)();
+            // only child threads
+            if(tim::threading::get_id() != primary_tidx)
+            {
+                if(_wrapper->debug())
+                    PRINT_HERE("%s", "Executing finalizing");
+                // disable future instrumentation for thread
+                get_thread_enabled() = false;
+                // finalize
+                finalize();
+            }
+            // return the data
+            return _ret;
+        }
+
+    private:
+        routine_t m_routine = nullptr;
+        void*     m_arg     = nullptr;
+        bool      m_debug   = false;
+    };
+
+    // pthread_create
+    int operator()(pthread_t* thread, const pthread_attr_t* attr,
+                   void* (*start_routine)(void*), void*     arg)
+    {
+        if(m_debug)
+            PRINT_HERE("%s", "wrapping pthread_create");
+        auto* _obj = new wrapper(start_routine, arg, m_debug);
+        if(m_debug)
+            PRINT_HERE("%s", "executing pthread_create");
+        return pthread_create(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
+    }
+
+private:
+    bool m_debug =
+        (tim::settings::instance()) ? tim::settings::instance()->get_debug() : false;
+};
+
+//--------------------------------------------------------------------------------------//
+
+struct main_gotcha : tim::component::base<main_gotcha, void>
+{
+    // beginning of main
+    static void audit(tim::audit::incoming)
+    {
+        puts("[timemory-compiler-instrument]> wrapped main");
+        get_main_wrapped() = true;
+        initialize();
+    }
+
+    // beginning of main
+    static void audit(tim::audit::incoming, int argc, char** argv)
+    {
+        puts("[timemory-compiler-instrument]> wrapped main");
+        get_main_wrapped() = true;
+        if(argc > 0)
+        {
+            initialize(argv[0]);
+        }
+        else
+        {
+            initialize();
+        }
+    }
+
+    // end of main
+    static void audit(tim::audit::outgoing, int)
+    {
+        get_thread_enabled() = false;
+        get_enabled()        = false;
+        finalize();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+std::tuple<std::shared_ptr<pthread_bundle_t>, std::shared_ptr<main_bundle_t>>
+setup_gotcha()
+{
+#if defined(TIMEMORY_USE_GOTCHA)
+    pthread_gotcha_t::get_initializer() = []() {
+        TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
+    };
+
+    main_gotcha_t::get_initializer() = []() {
+        main_gotcha_t::template configure<0, int, int, char**>("main");
+    };
+#endif
+
+    return std::make_tuple(std::make_shared<pthread_bundle_t>("pthread"),
+                           std::make_shared<main_bundle_t>("main"));
+}
+
+//--------------------------------------------------------------------------------------//
 //
 //      timemory symbols
 //
@@ -658,138 +791,5 @@ extern "C"
     }
 
 }  // extern "C"
-
-//--------------------------------------------------------------------------------------//
-
-struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
-{
-    struct TIMEMORY_INTERNAL_NO_INSTRUMENT wrapper
-    {
-        using routine_t = void* (*) (void*);
-
-        wrapper(routine_t _routine, void* _arg, bool _debug)
-        : m_routine(_routine)
-        , m_arg(_arg)
-        , m_debug(_debug)
-        {}
-
-        void* operator()() const { return m_routine(m_arg); }
-
-        TIMEMORY_NODISCARD bool debug() const { return m_debug; }
-
-        static void* wrap(void* _arg)
-        {
-            if(!_arg)
-                return nullptr;
-
-            // convert the argument
-            wrapper* _wrapper = static_cast<wrapper*>(_arg);
-            if(_wrapper->debug())
-                PRINT_HERE("%s", "Creating timemory manager");
-            // create the manager and initialize the storage
-            auto _tlm = tim::manager::instance();
-#if defined(TIMEMORY_INTERNAL_TESTING)
-            assert(_tlm.get() != nullptr);
-#endif
-            if(_wrapper->debug())
-                PRINT_HERE("%s", "Initializing timemory component storage");
-            // initialize the storage
-            tim::consume_parameters(
-                get_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{}));
-            if(_wrapper->debug())
-                PRINT_HERE("%s", "Executing original function");
-            // execute the original function
-            auto _ret = (*_wrapper)();
-            // only child threads
-            if(tim::threading::get_id() != primary_tidx)
-            {
-                if(_wrapper->debug())
-                    PRINT_HERE("%s", "Executing finalizing");
-                // disable future instrumentation for thread
-                get_thread_enabled() = false;
-                // finalize
-                finalize();
-            }
-            // return the data
-            return _ret;
-        }
-
-    private:
-        routine_t m_routine = nullptr;
-        void*     m_arg     = nullptr;
-        bool      m_debug   = false;
-    };
-
-    // pthread_create
-    int operator()(pthread_t* thread, const pthread_attr_t* attr,
-                   void* (*start_routine)(void*), void*     arg)
-    {
-        if(m_debug)
-            PRINT_HERE("%s", "wrapping pthread_create");
-        auto* _obj = new wrapper(start_routine, arg, m_debug);
-        if(m_debug)
-            PRINT_HERE("%s", "executing pthread_create");
-        return pthread_create(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
-    }
-
-private:
-    bool m_debug =
-        (tim::settings::instance()) ? tim::settings::instance()->get_debug() : false;
-};
-
-//--------------------------------------------------------------------------------------//
-
-struct main_gotcha : tim::component::base<main_gotcha, void>
-{
-    // beginning of main
-    static void audit(tim::audit::incoming)
-    {
-        puts("[timemory-compiler-instrument]> wrapped main");
-        get_main_wrapped() = true;
-        initialize();
-    }
-
-    // beginning of main
-    static void audit(tim::audit::incoming, int argc, char** argv)
-    {
-        puts("[timemory-compiler-instrument]> wrapped main");
-        get_main_wrapped() = true;
-        if(argc > 0)
-        {
-            initialize(argv[0]);
-        }
-        else
-        {
-            initialize();
-        }
-    }
-
-    // end of main
-    static void audit(tim::audit::outgoing, int)
-    {
-        get_thread_enabled() = false;
-        get_enabled()        = false;
-        finalize();
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-std::tuple<std::shared_ptr<pthread_bundle_t>, std::shared_ptr<main_bundle_t>>
-setup_gotcha()
-{
-#if defined(TIMEMORY_USE_GOTCHA)
-    pthread_gotcha_t::get_initializer() = []() {
-        TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
-    };
-
-    main_gotcha_t::get_initializer() = []() {
-        main_gotcha_t::template configure<0, int, int, char**>("main");
-    };
-#endif
-
-    return std::make_tuple(std::make_shared<pthread_bundle_t>("pthread"),
-                           std::make_shared<main_bundle_t>("main"));
-}
 
 //--------------------------------------------------------------------------------------//

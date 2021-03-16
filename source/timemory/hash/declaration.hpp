@@ -42,9 +42,9 @@ PairT&
 get_shared_ptr_pair()
 {
     static auto                 _master = std::make_shared<Tp>();
-    static std::atomic<int64_t> _count(0);
+    static std::atomic<int64_t> _count{ 0 };
     static thread_local auto    _inst =
-        PairT(_master, PtrT((_count++ == 0) ? nullptr : new Tp()));
+        PairT{ _master, PtrT{ (_count++ == 0) ? nullptr : new Tp{} } };
     return _inst;
 }
 //

@@ -90,6 +90,7 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
+    papi_array(operation::dummy<this_type>) {}
     papi_array() { events = get_events<common_type>(); }
     ~papi_array()                     = default;
     papi_array(const papi_array&)     = default;

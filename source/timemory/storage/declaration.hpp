@@ -161,35 +161,46 @@ public:
 
     /// returns whether storage is finalizing on the primary thread
     static bool& master_is_finalizing() { return base_type::master_is_finalizing(); }
+
     /// returns whether storage is finalizing on the current thread
     static bool& worker_is_finalizing() { return base_type::worker_is_finalizing(); }
+
     /// returns whether storage is finalizing on any thread
     static bool is_finalizing() { return base_type::is_finalizing(); }
+
     /// reset the storage data
     using base_type::reset;
+
     /// returns whether any data has been stored
     using base_type::empty;
+
     /// get the current estimated number of nodes
     using base_type::size;
+
     /// inspect the graph and get the true number of nodes
     using base_type::true_size;
+
     /// get the depth of the last node which pushed to hierarchical storage. Nodes which
     /// used \ref tim::scope::flat or have \ref tim::trait::flat_storage type-trait
     /// set to true will not affect this value
     using base_type::depth;
+
     /// drop the current node depth and set the current node to it's parent
     using base_type::pop;
+
     /// insert a new node
     using base_type::insert;
+
     /// add a component to the stack which can be flushed if the merging or output is
     /// requested/required
     using base_type::stack_pop;
+
     /// remove component from the stack that will be flushed if the merging or output is
     /// requested/required
     using base_type::stack_push;
 
 private:
-    static singleton_type* get_singleton();
+    static singleton_type* get_singleton() TIMEMORY_VISIBILITY("default");
 };
 //
 //--------------------------------------------------------------------------------------//

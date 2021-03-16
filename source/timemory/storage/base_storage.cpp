@@ -29,7 +29,7 @@
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/hash.hpp"
-#include "timemory/manager.hpp"
+#include "timemory/manager/manager.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/storage/macros.hpp"
 #include "timemory/storage/types.hpp"

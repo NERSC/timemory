@@ -146,6 +146,8 @@ public:
     }
 
 public:
+    papi_rate_tuple(operation::dummy<this_type>) {}
+
     TIMEMORY_DEFAULT_OBJECT(papi_rate_tuple)
 
     using base_type::load;

@@ -26,7 +26,7 @@
 #define TIMEMORY_STORAGE_VOID_STORAGE_CPP_ 1
 
 #include "timemory/storage/void_storage.hpp"
-#include "timemory/manager.hpp"
+#include "timemory/manager/manager.hpp"
 #include "timemory/operations/types/fini.hpp"
 #include "timemory/operations/types/init.hpp"
 #include "timemory/operations/types/node.hpp"
@@ -64,6 +64,24 @@ const typename void_storage<Type>::parent_type&
 void_storage<Type>::get_upcast() const
 {
     return static_cast<const parent_type&>(*this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename void_storage<Type>::parent_type*
+void_storage<Type>::get_parent()
+{
+    return static_cast<parent_type*>(this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+const typename void_storage<Type>::parent_type*
+void_storage<Type>::get_parent() const
+{
+    return static_cast<const parent_type*>(this);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -120,7 +138,7 @@ void_storage<Type>::initialize()
     m_initialized = true;
 
     using init_t = operation::init<Type>;
-    auto upcast  = &get_upcast();
+    auto upcast  = get_parent();
 
     if(!m_is_master)
     {
@@ -149,7 +167,7 @@ void_storage<Type>::finalize()
         printf("[%s]> finalizing...\n", m_label.c_str());
 
     using fini_t = operation::fini<Type>;
-    auto upcast  = &get_upcast();
+    auto upcast  = get_parent();
 
     m_finalized = true;
     manager::instance()->is_finalizing(true);
@@ -234,7 +252,7 @@ void_storage<Type>::get_shared_manager()
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 
-        bool   _is_master = parent_type::singleton_type::is_master(&get_upcast());
+        bool   _is_master = parent_type::singleton_type::is_master(get_parent());
         auto   _cleanup   = [&]() {};
         func_t _finalize  = [&]() {
             auto _instance = parent_type::get_singleton();
@@ -247,7 +265,7 @@ void_storage<Type>::get_shared_manager()
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 }
-                _instance->reset(&get_upcast());
+                _instance->reset(get_parent());
                 // if(_debug_v || _verb_v > 1)
                 //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                 //               "calling _instance->smart_instance().reset()");

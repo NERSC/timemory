@@ -168,6 +168,8 @@ struct cupti_activity : public base<cupti_activity, intmax_t>
     //----------------------------------------------------------------------------------//
 
 public:
+    cupti_activity(operation::dummy<cupti_activity>) {}
+
     TIMEMORY_DEFAULT_OBJECT(cupti_activity)
 
     // make sure it is removed

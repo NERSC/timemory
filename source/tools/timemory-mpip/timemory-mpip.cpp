@@ -74,14 +74,9 @@ extern "C"
         {
             // make sure the symbols are loaded to be wrapped
             auto libpath = tim::get_env<std::string>("TIMEMORY_MPI_LIBRARY", "libmpi.so");
-            libmpi_handle = dlopen(libpath.c_str(), RTLD_LAZY);
-            if(libmpi_handle)
-            {
-                dlclose(libmpi_handle);
-                libmpi_handle = dlopen(libpath.c_str(), RTLD_NOW | RTLD_GLOBAL);
-                if(!libmpi_handle)
-                    fprintf(stderr, "%s\n", dlerror());
-            }
+            libmpi_handle = dlopen(libpath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+            if(!libmpi_handle)
+                fprintf(stderr, "%s\n", dlerror());
             dlerror();  // Clear any existing error
 
             configure_mpip<mpi_toolset_t, api_t>();

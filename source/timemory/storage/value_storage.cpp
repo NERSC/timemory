@@ -23,29 +23,29 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_STORAGE_VALUE_STORAGE_CPP_
-#define TIMEMORY_STORAGE_VALUE_STORAGE_CPP_ 1
+#    define TIMEMORY_STORAGE_VALUE_STORAGE_CPP_ 1
 
-#include "timemory/storage/value_storage.hpp"
-#include "timemory/backends/process.hpp"
-#include "timemory/backends/threading.hpp"
-#include "timemory/hash/declaration.hpp"
-#include "timemory/hash/types.hpp"
-#include "timemory/manager/declaration.hpp"
-#include "timemory/operations/types/decode.hpp"
-#include "timemory/operations/types/fini.hpp"
-#include "timemory/operations/types/init.hpp"
-#include "timemory/operations/types/node.hpp"
-#include "timemory/operations/types/start.hpp"
-#include "timemory/operations/types/stop.hpp"
-#include "timemory/plotting/declaration.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
-#include "timemory/storage/macros.hpp"
-#include "timemory/storage/types.hpp"
+#    include "timemory/storage/value_storage.hpp"
+#    include "timemory/backends/process.hpp"
+#    include "timemory/backends/threading.hpp"
+#    include "timemory/hash/declaration.hpp"
+#    include "timemory/hash/types.hpp"
+#    include "timemory/manager/declaration.hpp"
+#    include "timemory/operations/types/decode.hpp"
+#    include "timemory/operations/types/fini.hpp"
+#    include "timemory/operations/types/init.hpp"
+#    include "timemory/operations/types/node.hpp"
+#    include "timemory/operations/types/start.hpp"
+#    include "timemory/operations/types/stop.hpp"
+#    include "timemory/plotting/declaration.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/declaration.hpp"
+#    include "timemory/storage/macros.hpp"
+#    include "timemory/storage/types.hpp"
 
-#include <fstream>
-#include <memory>
-#include <utility>
+#    include <fstream>
+#    include <memory>
+#    include <utility>
 
 namespace tim
 {
@@ -80,6 +80,24 @@ value_storage<Type>::get_upcast() const
     return static_cast<const parent_type&>(*this);
 }
 //
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename value_storage<Type>::parent_type*
+value_storage<Type>::get_parent()
+{
+    return static_cast<parent_type*>(this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+const typename value_storage<Type>::parent_type*
+value_storage<Type>::get_parent() const
+{
+    return static_cast<const parent_type*>(this);
+}
+//
 //======================================================================================//
 //
 //                              impl::value_storage<Type>
@@ -105,7 +123,8 @@ value_storage<Type>::value_storage()
         auto _master = parent_type::singleton_type::master_instance();
         if(_master)
         {
-            _master->data_init();
+            // _master->data_init();
+            _master->m_call_stack.initialize_data();
             m_call_stack.set_parent(&_master->m_call_stack);
             graph_hash_map_t   _hash_ids     = *_master->get_hash_ids();
             graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases();
@@ -192,11 +211,11 @@ value_storage<Type>::finalize()
     manager::instance()->is_finalizing(true);
 
     if(m_thread_init)
-        operation::fini<Type>{ &get_upcast(),
+        operation::fini<Type>{ get_parent(),
                                operation::mode_constant<operation::fini_mode::thread>{} };
 
     if(m_is_master && m_global_init)
-        operation::fini<Type>{ &get_upcast(),
+        operation::fini<Type>{ get_parent(),
                                operation::mode_constant<operation::fini_mode::global>{} };
 
     if(m_settings->get_debug())
@@ -228,8 +247,7 @@ value_storage<Type>::global_init()
             if(m_is_master)
             {
                 operation::init<Type>{
-                    &get_upcast(),
-                    operation::mode_constant<operation::init_mode::global>{}
+                    get_parent(), operation::mode_constant<operation::init_mode::global>{}
                 };
             }
             return m_global_init;
@@ -244,16 +262,14 @@ template <typename Type>
 bool
 value_storage<Type>::thread_init()
 {
-    if(!m_thread_init)
+    if(!m_thread_init && m_thread_tid == std::this_thread::get_id())
     {
         return [&]() {
-            m_thread_init = true;
-            if(!m_is_master && parent_type::master_instance())
-                parent_type::master_instance()->thread_init();
             bool _global_init = global_init();
             consume_parameters(_global_init);
+            m_thread_init = true;
             operation::init<Type>{
-                &get_upcast(), operation::mode_constant<operation::init_mode::thread>{}
+                get_parent(), operation::mode_constant<operation::init_mode::thread>{}
             };
             return m_thread_init;
         }();
@@ -289,13 +305,9 @@ template <typename Type>
 void
 value_storage<Type>::insert_init()
 {
-    bool _global_init = global_init();
-    bool _thread_init = thread_init();
-    bool _data_init   = data_init();
-    consume_parameters(_global_init, _thread_init, _data_init);
+    consume_parameters(global_init(), thread_init(), data_init());
     // check this now to ensure everything is initialized
-    if(get_node_ids().empty() || m_call_stack.data() == nullptr)
-        initialize();
+    initialize();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -316,12 +328,12 @@ value_storage<Type>::get_prefix(const graph_node& node)
         return operation::decode<TIMEMORY_API>{}(node.id());
     }
 
-#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
+#    if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
     if(_ret.empty() || _ret.find("unknown-hash=") == 0)
     {
         TIMEMORY_EXCEPTION("Hash-lookup error!")
     }
-#endif
+#    endif
 
     return _ret;
 }
@@ -344,12 +356,12 @@ value_storage<Type>::get_prefix(uint64_t id)
         return get_hash_identifier(id);
     }
 
-#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
+#    if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
     if(_ret.empty() || _ret.find("unknown-hash=") == 0)
     {
         TIMEMORY_EXCEPTION("Hash-lookup error!")
     }
-#endif
+#    endif
 
     return _ret;
 }
@@ -487,7 +499,7 @@ value_storage<Type>::internal_print()
     if(!m_initialized && !m_finalized)
         return;
 
-    if(!parent_type::singleton_type::is_master(&get_upcast()))
+    if(!parent_type::singleton_type::is_master(get_parent()))
     {
         if(parent_type::singleton_type::master_instance())
             parent_type::singleton_type::master_instance()->merge(this);
@@ -521,7 +533,7 @@ value_storage<Type>::internal_print()
         // generate output
         if(m_settings->get_auto_output())
         {
-            m_printer.reset(new printer_t(Type::get_label(), &get_upcast(), m_settings));
+            m_printer.reset(new printer_t{ Type::get_label(), get_parent(), m_settings });
 
             if(m_manager)
                 m_manager->add_entries(this->size());
@@ -574,7 +586,7 @@ value_storage<Type>::get_shared_manager()
         trait::runtime_enabled<Type>::set(_enabled);
 
         auto _instance_id = m_instance_id;
-        bool _is_master   = parent_type::singleton_type::is_master(&get_upcast());
+        bool _is_master   = parent_type::singleton_type::is_master(get_parent());
         auto _sync        = [&]() {
             if(m_call_stack.data() != nullptr)
                 data().sync_sea_level();
@@ -600,7 +612,7 @@ value_storage<Type>::get_shared_manager()
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 }
-                _instance->reset(&get_upcast());
+                _instance->reset(get_parent());
                 // if(_debug_v || _verb_v > 1)
                 //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                 //               "calling _instance->smart_instance().reset()");
@@ -638,8 +650,5 @@ value_storage<Type>::get_shared_manager()
 //
 }  // namespace impl
 }  // namespace tim
-//
-//--------------------------------------------------------------------------------------//
-//
 
 #endif

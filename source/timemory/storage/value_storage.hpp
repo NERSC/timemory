@@ -186,6 +186,9 @@ protected:
     parent_type&       get_upcast();
     const parent_type& get_upcast() const;
 
+    parent_type*       get_parent();
+    const parent_type* get_parent() const;
+
 private:
     void internal_print();
 
@@ -295,6 +298,7 @@ template <typename Type>
 typename value_storage<Type>::iterator
 value_storage<Type>::insert(scope::config scope_data, const Type& obj, uint64_t hash_id)
 {
+    insert_init();
     return m_call_stack.insert(scope_data, obj, hash_id);
 }
 //
@@ -305,6 +309,7 @@ template <typename Vp>
 typename value_storage<Type>::iterator
 value_storage<Type>::append(const secondary_data_t<Vp>& _secondary)
 {
+    insert_init();
     return m_call_stack.append(_secondary);
 }
 //

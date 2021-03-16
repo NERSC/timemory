@@ -139,6 +139,9 @@ protected:
     parent_type&       get_upcast();
     const parent_type& get_upcast() const;
 
+    parent_type*       get_parent();
+    const parent_type* get_parent() const;
+
 private:
     template <typename Archive>
     void do_serialize(Archive&)

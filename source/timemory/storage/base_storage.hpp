@@ -103,6 +103,7 @@ protected:
     int32_t                   m_node_size    = dmp::size();                // NOLINT
     int64_t                   m_instance_id  = -1;                         // NOLINT
     int64_t                   m_thread_idx   = threading::get_id();        // NOLINT
+    std::thread::id           m_thread_tid   = threading::get_tid();       // NOLINT
     string_t                  m_label        = "";                         // NOLINT
     graph_hash_map_ptr_t      m_hash_ids     = ::tim::get_hash_ids();      // NOLINT
     graph_hash_alias_ptr_t    m_hash_aliases = ::tim::get_hash_aliases();  // NOLINT

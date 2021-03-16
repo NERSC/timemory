@@ -173,7 +173,7 @@ TEST_F(INSTRUMENTATION_TESTS_NAME, mt_consume)
 #    if !defined(DISABLE_TIMEMORY)
         auto _tid = tim::threading::get_id() + 1;
 #    else
-        std::atomic<int64_t> _tidc;
+        std::atomic<int64_t> _tidc{};
         auto                 _tid = ++_tidc;
 #    endif
         auto _rng = get_rng();
@@ -183,10 +183,10 @@ TEST_F(INSTRUMENTATION_TESTS_NAME, mt_consume)
         EXPECT_TRUE(_ret <= 1000);
     };
 
-    std::vector<std::thread> _threads;
+    std::vector<std::thread> _threads{};
     _threads.reserve(4);
     for(int i = 0; i < 4; ++i)
-        _threads.emplace_back(std::thread(_consume));
+        _threads.emplace_back(_consume);
     for(auto& itr : _threads)
         itr.join();
     _threads.clear();

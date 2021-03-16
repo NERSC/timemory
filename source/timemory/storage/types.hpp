@@ -77,7 +77,7 @@ struct tree;
 namespace base
 {
 //
-class storage;
+class TIMEMORY_VISIBILITY("default") storage;
 //
 }  // namespace base
 //
@@ -87,10 +87,10 @@ namespace impl
 {
 //
 template <typename Type>
-class void_storage;
+class TIMEMORY_VISIBILITY("default") void_storage;
 //
 template <typename Type>
-class value_storage;
+class TIMEMORY_VISIBILITY("default") value_storage;
 //
 template <typename StorageType>
 struct storage_deleter;
@@ -100,7 +100,7 @@ struct storage_deleter;
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-class storage;
+class TIMEMORY_VISIBILITY("default") storage;
 //
 template <typename Tp>
 using storage_singleton =

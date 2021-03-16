@@ -59,7 +59,8 @@ template <typename Tp, typename Label, typename... Args,
 static auto
 create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 {
-    return new Tp(std::forward<Label>(_label), true, _scope, std::forward<Args>(args)...);
+    return new Tp{ std::forward<Label>(_label), true, _scope,
+                   std::forward<Args>(args)... };
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -69,7 +70,7 @@ template <typename Tp, typename Label, typename... Args,
 static auto
 create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 {
-    return new Tp(std::forward<Label>(_label), _scope, std::forward<Args>(args)...);
+    return new Tp{ std::forward<Label>(_label), _scope, std::forward<Args>(args)... };
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -81,7 +82,7 @@ template <typename Tp, typename Label, typename... Args,
 static auto
 create_heap_variadic(Label&& _label, bool, Args&&... args)
 {
-    return new Tp(std::forward<Label>(_label), std::forward<Args>(args)...);
+    return new Tp{ std::forward<Label>(_label), std::forward<Args>(args)... };
 }
 //
 //--------------------------------------------------------------------------------------//

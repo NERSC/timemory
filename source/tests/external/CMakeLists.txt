@@ -17,8 +17,12 @@ target_include_directories(gotcha-tests-lib PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(socket-server PRIVATE common-test-libs)
 target_link_libraries(socket-client PRIVATE common-test-libs)
-target_link_libraries(extern-test-templates PUBLIC common-test-libs)
 target_link_libraries(gotcha-tests-lib PUBLIC common-test-libs)
+target_link_libraries(extern-test-templates PUBLIC
+    common-test-libs
+    timemory::timemory-plotting
+    timemory::timemory-core
+    timemory::timemory-dmp)
 
 set(_BUILD OFF)
 if(BUILD_SHARED_LIBS)

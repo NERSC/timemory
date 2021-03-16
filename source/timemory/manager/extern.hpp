@@ -26,7 +26,3 @@
 
 #include "timemory/manager/manager.hpp"
 #include "timemory/settings/settings.hpp"
-
-#if !defined(TIMEMORY_USE_MANAGER_EXTERN) && !defined(TIMEMORY_MANAGER_SOURCE)
-#    include "timemory/manager/manager.cpp"
-#endif

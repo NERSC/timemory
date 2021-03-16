@@ -639,15 +639,29 @@ struct call_stack;
 template <typename T>
 struct dummy
 {
-    static_assert(std::is_default_constructible<T>::value,
-                  "Type is not default constructible and therefore a dummy object (for "
-                  "placeholders and meta-programming) cannot be automatically generated. "
-                  "Please specialize tim::operation::dummy<T> to provide operator()() "
-                  "which returns a dummy object.");
-
     TIMEMORY_DEFAULT_OBJECT(dummy)
 
-    TIMEMORY_ALWAYS_INLINE T operator()() const { return T{}; }
+    inline T operator()() const { return sfinae(0); }
+
+private:
+    template <typename U = T>
+    inline auto sfinae(
+        int, enable_if_t<std::is_constructible<U, dummy<U>>::value, int> = 0) const
+    {
+        return T{ operation::dummy<T>{} };
+    }
+
+    template <typename U = T>
+    inline auto sfinae(long) const
+    {
+        static_assert(
+            std::is_default_constructible<U>::value,
+            "Type is not default constructible and therefore a dummy object (for "
+            "placeholders and meta-programming) cannot be automatically generated. "
+            "Please specialize tim::operation::dummy<T> to provide operator()() "
+            "which returns a dummy object.");
+        return T{};
+    }
 };
 //
 //--------------------------------------------------------------------------------------//

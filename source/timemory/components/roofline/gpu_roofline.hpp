@@ -425,7 +425,9 @@ private:
     }
 
 public:
-    //----------------------------------------------------------------------------------//
+    gpu_roofline(operation::dummy<this_type>)
+    : cupti_data(operation::dummy<cupti_data>{})
+    {}
 
     gpu_roofline() { configure(); }
     ~gpu_roofline() = default;
@@ -706,12 +708,21 @@ private:
         cupti_activity* activity = nullptr;
         cupti_counters* counters;
 
+        cupti_data(operation::dummy<cupti_data>)
+        {
+            switch(event_mode())
+            {
+                case MODE::ACTIVITY: activity = nullptr; break;
+                case MODE::COUNTERS: counters = nullptr; break;
+            }
+        }
+
         cupti_data()
         {
             switch(event_mode())
             {
-                case MODE::ACTIVITY: activity = new cupti_activity(); break;
-                case MODE::COUNTERS: counters = new cupti_counters(); break;
+                case MODE::ACTIVITY: activity = new cupti_activity{}; break;
+                case MODE::COUNTERS: counters = new cupti_counters{}; break;
             }
         }
 
@@ -756,11 +767,13 @@ private:
             {
                 case MODE::ACTIVITY:
                     delete activity;
-                    activity = new cupti_activity(*rhs.activity);
+                    activity =
+                        (rhs.activity) ? new cupti_activity(*rhs.activity) : nullptr;
                     break;
                 case MODE::COUNTERS:
                     delete counters;
-                    counters = new cupti_counters(*rhs.counters);
+                    counters =
+                        (rhs.counters) ? new cupti_counters(*rhs.counters) : nullptr;
                     break;
             }
             return *this;

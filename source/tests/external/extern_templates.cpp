@@ -32,14 +32,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(timeline_storage, monotonic_raw_clock, true_type)
 
 #include "timemory/timemory.hpp"
 
-TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(class tim::auto_tuple<wall_clock>)
-TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(class tim::component_tuple<wall_clock>)
-TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(
-    class tim::component_bundle<TIMEMORY_API, wall_clock>)
-TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(
-    class tim::component_bundle<TIMEMORY_API, monotonic_clock>)
-TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(
-    class tim::component_bundle<TIMEMORY_API, monotonic_raw_clock>)
 TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(wall_clock, true, int64_t)
 TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(monotonic_clock, true, int64_t)
 TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(monotonic_raw_clock, true, int64_t)
