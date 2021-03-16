@@ -99,13 +99,3 @@ sum_exp(const std::vector<double>& data)
 }
 //
 //--------------------------------------------------------------------------------------//
-//
-float
-sum_exp(const std::vector<float>& data)
-{
-    auto ret = float{};
-    for(const auto& itr : data) ret += expf(itr);
-    return ret;
-}
-//
-//--------------------------------------------------------------------------------------//

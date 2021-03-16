@@ -38,6 +38,3 @@ do_exp_work(int);
 
 double
 sum_exp(const std::vector<double>& data);
-
-float
-sum_exp(const std::vector<float>& data);
