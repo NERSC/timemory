@@ -90,6 +90,11 @@ target_compile_options(timemory-compile-debuginfo INTERFACE
     $<$<COMPILE_LANGUAGE:C>:$<$<C_COMPILER_ID:GNU>:-rdynamic>>
     $<$<COMPILE_LANGUAGE:CXX>:$<$<CXX_COMPILER_ID:GNU>:-rdynamic>>)
 
+if(NOT APPLE)
+    target_link_options(timemory-compile-debuginfo INTERFACE
+        $<$<CXX_COMPILER_ID:GNU>:-rdynamic>)
+endif()
+
 if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
     target_compile_options(timemory-compile-debuginfo INTERFACE
         $<$<COMPILE_LANGUAGE:CUDA>:$<$<CXX_COMPILER_ID:GNU>:-Xcompiler=-rdynamic>>)

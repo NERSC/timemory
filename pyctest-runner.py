@@ -1037,6 +1037,18 @@ def run_pyctest():
 
     if not args.quick and not args.coverage and not args.minimal:
 
+        if "compiler" in args.tools:
+            pyct.test(
+                construct_name("ex-compiler-instrument"),
+                construct_command(["./ex_compiler_instrument"], args),
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "120",
+                    "ENVIRONMENT": test_env,
+                },
+            )
+
         pyct.test(
             construct_name("ex-derived"),
             construct_command(["./ex_derived"], args),
