@@ -722,9 +722,16 @@ public:
     this_type& set_prefix(captured_location_t) const;
     this_type& set_scope(scope::config);
 
-    TIMEMORY_INLINE void rekey(const string_t& _key) { set_prefix(_key); }
-    TIMEMORY_INLINE void rekey(captured_location_t _loc) { set_prefix(_loc); }
-    TIMEMORY_INLINE void rekey(uint64_t _hash) { set_prefix(_hash); }
+    TIMEMORY_INLINE void rekey(const string_t& _key);
+    TIMEMORY_INLINE void rekey(captured_location_t _loc);
+    TIMEMORY_INLINE void rekey(uint64_t _hash);
+
+    /// returns a stack-object for calling stop
+    scope::transient_destructor get_scope_destructor();
+
+    /// returns a stack-object for calling some member functions when the scope is exited.
+    scope::transient_destructor get_scope_destructor(
+        utility::transient_function<void(this_type&)>);
 
     const data_type& get_data() const { return m_data; }
 
@@ -881,6 +888,33 @@ bundle<Tag, BundleT, TupleT>::get_reference(
 //
 //----------------------------------------------------------------------------------//
 //
+template <typename Tag, typename BundleT, typename TupleT>
+void
+bundle<Tag, BundleT, TupleT>::rekey(const string_t& _key)
+{
+    m_hash = add_hash_id(_key);
+    set_prefix(_key);
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+void
+bundle<Tag, BundleT, TupleT>::rekey(captured_location_t _loc)
+{
+    m_hash = _loc.get_hash();
+    set_prefix(_loc);
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+void
+bundle<Tag, BundleT, TupleT>::rekey(uint64_t _hash)
+{
+    m_hash = _hash;
+    set_prefix(_hash);
+}
 //
 //----------------------------------------------------------------------------------//
 //

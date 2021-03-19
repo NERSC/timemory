@@ -122,9 +122,6 @@ private:
 template <typename Tp>
 set_prefix<Tp>::set_prefix(type& obj, const string_t& _prefix)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     sfinae_str(obj, 0, 0, 0, _prefix);
 }
 //
@@ -133,9 +130,6 @@ set_prefix<Tp>::set_prefix(type& obj, const string_t& _prefix)
 template <typename Tp>
 set_prefix<Tp>::set_prefix(type& obj, uint64_t _nhash, const string_t& _prefix)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     sfinae_hash(obj, 0, _nhash);
     sfinae_str(obj, 0, 0, 0, _prefix);
 }
@@ -180,9 +174,6 @@ private:
 template <typename Tp>
 set_scope<Tp>::set_scope(type& obj, scope::config _data)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     sfinae(obj, 0, _data);
 }
 //
@@ -226,9 +217,6 @@ private:
 template <typename Tp>
 set_state<Tp>::set_state(type& obj, component::base_state* _data)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     sfinae(obj, 0, _data);
 }
 //

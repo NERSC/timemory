@@ -98,13 +98,23 @@ if(TIMEMORY_USE_COVERAGE)
 endif()
 
 # global
-add_subdirectory(manager)
 add_subdirectory(ert)
-add_subdirectory(config)
+
+# do this here for IDE benefit
+build_intermediate_library(
+    USE_INTERFACE
+    NAME                common
+    TARGET              common
+    CATEGORY            GLOBAL
+    FOLDER              components
+    PROPERTY_DEPENDS    GLOBAL)
+
+add_subdirectory(manager)
 add_subdirectory(storage)
 add_subdirectory(operations)
-add_subdirectory(backends)
 add_subdirectory(variadic)
+add_subdirectory(config)
+add_subdirectory(backends)
 
 # deprecated
 add_subdirectory(deprecated)

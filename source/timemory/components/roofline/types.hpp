@@ -38,37 +38,46 @@ namespace tim
 {
 namespace component
 {
-/// \typedef tim::component::cpu_roofline_sp_flops
+/// \typedef tim::component::cpu_roofline<float> tim::component::cpu_roofline_sp_flops
+///
 /// \brief A specialization of \ref tim::component::cpu_roofline for 32-bit floating point
 /// operations
 using cpu_roofline_sp_flops = cpu_roofline<float>;
 
-/// \typedef tim::component::cpu_roofline_dp_flops
+/// \typedef tim::component::cpu_roofline<double> tim::component::cpu_roofline_dp_flops
+///
 /// \brief A specialization of \ref tim::component::cpu_roofline for 64-bit floating point
 /// operations
 using cpu_roofline_dp_flops = cpu_roofline<double>;
 
-/// \typedef tim::component::cpu_roofline_flops
+/// \typedef tim::component::cpu_roofline<float, double>
+/// tim::component::cpu_roofline_flops
+///
 /// \brief A specialization of \ref tim::component::cpu_roofline for 32-bit and 64-bit
 /// floating point operations
 using cpu_roofline_flops = cpu_roofline<float, double>;
 
-/// \typedef tim::component::gpu_roofline_hp_flops
+/// \typedef tim::component::gpu_roofline<float> tim::component::gpu_roofline_hp_flops
+///
 /// \brief A specialization of \ref tim::component::gpu_roofline for 16-bit floating point
 /// operations (depending on availability).
 using gpu_roofline_hp_flops = gpu_roofline<cuda::fp16_t>;
 
-/// \typedef tim::component::gpu_roofline_sp_flops
+/// \typedef tim::component::gpu_roofline<float> tim::component::gpu_roofline_sp_flops
+///
 /// \brief A specialization of \ref tim::component::gpu_roofline for 32-bit floating point
 /// operations
 using gpu_roofline_sp_flops = gpu_roofline<float>;
 
-/// \typedef tim::component::gpu_roofline_dp_flops
+/// \typedef tim::component::gpu_roofline<double> tim::component::gpu_roofline_dp_flops
+///
 /// \brief A specialization of \ref tim::component::gpu_roofline for 64-bit floating point
 /// operations
 using gpu_roofline_dp_flops = gpu_roofline<double>;
 
-/// \typedef tim::component::gpu_roofline_flops
+/// \typedef tim::component::gpu_roofline<float, double>
+/// tim::component::gpu_roofline_flops
+///
 /// \brief A specialization of \ref tim::component::gpu_roofline for 16-bit (possibly),
 /// 32-bit, and 64-bit floating point operations
 #if defined(TIMEMORY_USE_CUDA_HALF)

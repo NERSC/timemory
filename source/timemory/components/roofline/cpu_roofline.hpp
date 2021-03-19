@@ -411,8 +411,6 @@ struct cpu_roofline
     }
 
 public:
-    //----------------------------------------------------------------------------------//
-
     cpu_roofline()
     : base_type()
     {
@@ -421,8 +419,6 @@ public:
         m_wall_clock                         = std::make_shared<wall_clock>();
         std::tie(value.second, accum.second) = std::make_pair(0, 0);
     }
-
-    //----------------------------------------------------------------------------------//
 
     ~cpu_roofline()                           = default;
     cpu_roofline(const cpu_roofline& rhs)     = default;

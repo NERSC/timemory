@@ -83,84 +83,43 @@ struct half2
     half2& operator=(const half2&) = default;
     half2& operator=(half2&&) = default;
 
-    half2(float val)
-    : value{ { val, val } }
+    template <typename... Args>
+    half2(float val, Args&&...)
+    : value{ val }
     {}
-    half2(float lhs, float rhs)
-    : value{ { lhs, rhs } }
-    {}
-    half2& operator+=(const float& rhs)
+
+    template <typename Tp>
+    half2& operator+=(const Tp&)
     {
-        value[0] += rhs;
-        value[1] += rhs;
         return *this;
     }
-    half2& operator-=(const float& rhs)
+    template <typename Tp>
+    half2& operator-=(const Tp&)
     {
-        value[0] -= rhs;
-        value[1] -= rhs;
         return *this;
     }
-    half2& operator*=(const float& rhs)
+    template <typename Tp>
+    half2& operator*=(const Tp&)
     {
-        value[0] *= rhs;
-        value[1] *= rhs;
         return *this;
     }
-    half2& operator/=(const float& rhs)
+    template <typename Tp>
+    half2& operator/=(const Tp&)
     {
-        value[0] /= rhs;
-        value[1] /= rhs;
         return *this;
     }
 
-    half2& operator+=(const half2& rhs)
-    {
-        value[0] += rhs[0];
-        value[1] += rhs[1];
-        return *this;
-    }
-    half2& operator-=(const half2& rhs)
-    {
-        value[0] -= rhs[0];
-        value[1] -= rhs[1];
-        return *this;
-    }
-    half2& operator*=(const half2& rhs)
-    {
-        value[0] *= rhs[0];
-        value[1] *= rhs[1];
-        return *this;
-    }
-    half2& operator/=(const half2& rhs)
-    {
-        value[0] /= rhs[0];
-        value[1] /= rhs[1];
-        return *this;
-    }
-    friend half2 operator+(const half2& lhs, const half2& rhs)
-    {
-        return half2(lhs) += rhs;
-    }
-    friend half2 operator-(const half2& lhs, const half2& rhs)
-    {
-        return half2(lhs) -= rhs;
-    }
-    friend half2 operator*(const half2& lhs, const half2& rhs)
-    {
-        return half2(lhs) *= rhs;
-    }
-    friend half2 operator/(const half2& lhs, const half2& rhs)
-    {
-        return half2(lhs) /= rhs;
-    }
+    friend half2 operator+(half2 lhs, const half2& rhs) { return lhs += rhs; }
+    friend half2 operator-(half2 lhs, const half2& rhs) { return lhs -= rhs; }
+    friend half2 operator*(half2 lhs, const half2& rhs) { return lhs *= rhs; }
+    friend half2 operator/(half2 lhs, const half2& rhs) { return lhs /= rhs; }
 
-    float&       operator[](int idx) { return value[idx % 2]; }
-    const float& operator[](int idx) const { return value[idx % 2]; }
+    float&       operator[](int) { return value; }
+    const float& operator[](int) const { return value; }
 
 private:
-    using value_type = std::array<float, 2>;
-    value_type value;
+    using value_type = float;
+    value_type value = 0.0f;
 };
 
 using __half2 = half2;
@@ -535,7 +494,7 @@ memcpy(Tp* dst, const Tp* src, size_t n, memcpy_t from_to, stream_t stream)
 /// cuda memset
 template <typename Tp>
 inline error_t
-memset(Tp* dst, const int& value, size_t n)
+memset(Tp* dst, int value, size_t n)
 {
 #if defined(TIMEMORY_USE_CUDA)
     return cudaMemset(dst, value, n * sizeof(Tp));
@@ -549,7 +508,7 @@ memset(Tp* dst, const int& value, size_t n)
 /// cuda memset
 template <typename Tp>
 inline error_t
-memset(Tp* dst, const int& value, size_t n, stream_t stream)
+memset(Tp* dst, int value, size_t n, stream_t stream)
 {
 #if defined(TIMEMORY_USE_CUDA)
     return cudaMemsetAsync(dst, value, n * sizeof(Tp), stream);

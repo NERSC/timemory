@@ -937,7 +937,7 @@ struct print<Tp, true> : public base::print
     using result_node              = typename storage_type::result_node;
     using graph_type               = typename storage_type::graph_t;
     using graph_node               = typename storage_type::graph_node;
-    using hierarchy_type           = typename storage_type::uintvector_t;
+    using hierarchy_type           = std::vector<uint64_t>;
     using callback_type            = std::function<void(this_type*)>;
     using stream_type              = std::shared_ptr<utility::stream>;
     using basic_tree_type          = basic_tree<node::tree<Tp>>;

@@ -558,9 +558,9 @@ public:
     auto        prefix() const { return bundle_type::prefix(); }
     auto        get_prefix() const { return bundle_type::get_prefix(); }
 
-    TIMEMORY_INLINE void rekey(const string_t& _key) { set_prefix(_key); }
-    TIMEMORY_INLINE void rekey(captured_location_t _loc) { set_prefix(_loc); }
-    TIMEMORY_INLINE void rekey(uint64_t _hash) { set_prefix(_hash); }
+    TIMEMORY_INLINE void rekey(const string_t& _key);
+    TIMEMORY_INLINE void rekey(captured_location_t _loc);
+    TIMEMORY_INLINE void rekey(uint64_t _hash);
 
 protected:
     // protected member functions
@@ -581,6 +581,37 @@ protected:
     mutable data_type m_data = data_type{};
 };
 
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename... Types>
+void
+lightweight_tuple<Types...>::rekey(const string_t& _key)
+{
+    m_hash = add_hash_id(_key);
+    set_prefix(_key);
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename... Types>
+void
+lightweight_tuple<Types...>::rekey(captured_location_t _loc)
+{
+    m_hash = _loc.get_hash();
+    set_prefix(_loc.get_hash());
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename... Types>
+void
+lightweight_tuple<Types...>::rekey(uint64_t _hash)
+{
+    m_hash = _hash;
+    set_prefix(_hash);
+}
+//
 //======================================================================================//
 
 template <typename... Types>

@@ -68,13 +68,8 @@ struct push_node
     TIMEMORY_HOT_INLINE auto operator()(type& obj, scope::config _scope,
                                         hash_value_type _hash) const
     {
-        // using return_type = decltype(sfinae(obj, 0, 0, 0, _scope, _hash));
-
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         init_storage<Tp>::init();
-        sfinae(obj, 0, 0, 0, _scope, _hash);
+        return sfinae(obj, 0, 0, 0, _scope, _hash);
     }
 
     TIMEMORY_HOT_INLINE auto operator()(type& obj, scope::config _scope,

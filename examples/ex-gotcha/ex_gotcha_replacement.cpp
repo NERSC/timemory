@@ -31,6 +31,7 @@
 #include "timemory/timemory.hpp"
 
 #include <array>
+#include <cmath>
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
@@ -99,19 +100,8 @@ static_assert(!exp_time_t::differ_is_component, "exp_repl_t won't replace exp");
 
 //======================================================================================//
 
-extern "C" double
-exp(double);
-
-extern double
-sum_exp(const vector<double>&);
-
-//======================================================================================//
-
-static auto use_intercept = tim::get_env("EXP_REPLACE", true);
-static auto use_timers    = tim::get_env("EXP_TIMERS", true);
-
 bool
-init_gotcha()
+init_gotcha(bool use_intercept, bool use_timers)
 {
     //
     // configure the initializer for the gotcha component which replaces exp with expf
@@ -130,7 +120,6 @@ init_gotcha()
     exp_time_t::get_initializer() = []() {
         puts("Generating exp timers...");
         TIMEMORY_C_GOTCHA(exp_time_t, 0, exp);
-        TIMEMORY_CXX_GOTCHA(exp_time_t, 1, sum_exp);
     };
 
     exp_bundle_t::get_initializer() = [=](exp_bundle_t& obj) {
@@ -143,11 +132,24 @@ init_gotcha()
 
 //======================================================================================//
 
+double
+sum_exp(const std::vector<double>& data)
+{
+    auto ret = double{};
+    for(const auto& itr : data) ret += exp(itr);
+    return ret;
+}
+
+//======================================================================================//
+
 int
 main(int argc, char** argv)
 {
     puts("starting...");
-    if(!init_gotcha()) throw std::runtime_error("Error! initialization failed!");
+    auto use_intercept = tim::get_env("EXP_REPLACE", true);
+    auto use_timers    = tim::get_env("EXP_TIMERS", true);
+    if(!init_gotcha(use_intercept, use_timers))
+        throw std::runtime_error("Error! initialization failed!");
 
     tim::timemory_init(argc, argv);
 

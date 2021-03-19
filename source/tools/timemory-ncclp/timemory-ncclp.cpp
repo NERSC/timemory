@@ -88,7 +88,8 @@ extern "C"
             tim::operation::init<user_ncclp_bundle>(
                 tim::operation::mode_constant<tim::operation::init_mode::global>{});
             auto ret = activate_ncclp<nccl_toolset_t, api_t>();
-            dlclose(libnccl_handle);
+            if(libnccl_handle)
+                dlclose(libnccl_handle);
             return ret;
         }
         else

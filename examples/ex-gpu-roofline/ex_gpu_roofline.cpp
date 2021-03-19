@@ -54,29 +54,24 @@ using simple_timer_t = tim::auto_tuple_t<wall_clock>;
 #if ROOFLINE_FP_BYTES == 8
 
 using gpu_roofline_t = gpu_roofline_dp_flops;
-using cpu_roofline_t = cpu_roofline_dp_flops;
 
 #elif ROOFLINE_FP_BYTES == 4
 
 using gpu_roofline_t = gpu_roofline_sp_flops;
-using cpu_roofline_t = cpu_roofline_sp_flops;
 
 #elif(ROOFLINE_FP_BYTES == 2) && defined(TIMEMORY_USE_CUDA_HALF)
 
 using gpu_roofline_t = gpu_roofline_hp_flops;
-using cpu_roofline_t = cpu_roofline_sp_flops;
 
 #else
 
 using gpu_roofline_t = gpu_roofline_flops;
-using cpu_roofline_t = cpu_roofline_flops;
 
 #endif
 
 //--------------------------------------------------------------------------------------//
 
-using auto_tuple_t =
-    tim::auto_tuple<wall_clock, cpu_clock, cpu_util, gpu_roofline_t, cpu_roofline_t>;
+using auto_tuple_t = tim::auto_tuple<wall_clock, cpu_clock, cpu_util, gpu_roofline_t>;
 
 //--------------------------------------------------------------------------------------//
 // amypx calculation
@@ -323,16 +318,19 @@ main(int argc, char** argv)
     //
     // stop the overall timing
     //
+    printf("Stopping main timer...\n");
     _main.stop();
 
     //
     // overall timing
     //
+    printf("Stopping total timer...\n");
     std::this_thread::sleep_for(std::chrono::seconds(1));
     total.stop();
 
     std::cout << "Total time: " << total << std::endl;
 
+    printf("Finalizing timemory...\n");
     tim::timemory_finalize();
 }
 

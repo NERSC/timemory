@@ -48,8 +48,7 @@ endif()
 if(CMAKE_CXX_COMPILER_IS_GNU)
     add_target_cxx_flag_if_avail(
         timemory-compile-options
-        "-Wno-class-memaccess"
-        "-Wno-cast-function-type")
+        "-Wno-class-memaccess")
 endif()
 
 if(TIMEMORY_BUILD_QUIET)

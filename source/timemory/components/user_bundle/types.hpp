@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/// \file timemory/components/user_bundle/types.hpp
+/// \brief Forward declaration of user_bundle components. User-bundles are similar to the
+/// classical profiling interface where the interface is fixed.
+
 #pragma once
 
 #include "timemory/api.hpp"
@@ -57,7 +61,9 @@ namespace tim
 {
 namespace component
 {
-/// \typedef tim::component::user_global_bundle
+/// \typedef tim::component::user_bundle<global_bundle_idx, project::timemory>
+/// tim::component::user_global_bundle
+///
 /// \brief A specification of components which is used by multiple variadic bundlers and
 /// user_bundles as the fall-back set of components if their specific variable is
 /// not set. E.g. user_mpip_bundle will use this if TIMEMORY_MPIP_COMPONENTS is not
@@ -68,25 +74,33 @@ using user_global_bundle = user_bundle<global_bundle_idx, project::timemory>;
 using user_tuple_bundle = user_global_bundle;
 using user_list_bundle  = user_global_bundle;
 
-/// \typedef tim::component::user_ompt_bundle
+/// \typedef tim::component::user_bundle<ompt_bundle_idx, project::timemory>
+/// tim::component::user_ompt_bundle
+///
 /// \brief Generic bundle for inserting components at runtime into OMPT call-back system.
 /// Configure via TIMEMORY_OMPT_COMPONENTS [environment], settings::ompt_components()
 /// [string], or direct insertion
 using user_ompt_bundle = user_bundle<ompt_bundle_idx, project::timemory>;
 
-/// \typedef tim::component::user_mpip_bundle
+/// \typedef tim::component::user_bundle<mpip_bundle_idx, project::timemory>
+/// tim::component::user_mpip_bundle
+///
 /// \brief Generic bundle for inserting components at runtime around MPI calls. Configure
 /// via TIMEMORY_MPIP_COMPONENTS [environment], settings::mpip_components() [string], or
 /// direct insertion
 using user_mpip_bundle = user_bundle<mpip_bundle_idx, project::timemory>;
 
-/// \typedef tim::component::user_ncclp_bundle
+/// \typedef tim::component::user_bundle<ncclp_bundle_idx, project::timemory>
+/// tim::component::user_ncclp_bundle
+///
 /// \brief Generic bundle for inserting components at runtime around NCCL calls. Configure
 /// via TIMEMORY_NCCLP_COMPONENTS [environment], settings::ncclp_components() [string], or
 /// direct insertion
 using user_ncclp_bundle = user_bundle<ncclp_bundle_idx, project::timemory>;
 
-/// \typedef tim::component::user_trace_bundle
+/// \typedef tim::component::user_bundle<trace_bundle_idx, project::timemory>
+/// tim::component::user_trace_bundle
+///
 /// \brief Used by `timemory-run` instrumentation tool for dynamic instrumentation
 /// at runtime and re-writing binaries with instrumentation. See `timemory-run`
 /// documentation for instructions about using this type to insert custom components.
@@ -95,13 +109,17 @@ using user_ncclp_bundle = user_bundle<ncclp_bundle_idx, project::timemory>;
 /// Environment variable: `TIMEMORY_TRACE_COMPONENTS`
 using user_trace_bundle = user_bundle<trace_bundle_idx, project::timemory>;
 
-/// \typedef tim::component::user_profiler_bundle
+/// \typedef tim::component::user_bundle<profiler_bundle_idx, project::timemory>
+/// tim::component::user_profiler_bundle
+///
 /// \brief Used by the Python function profiler, e.g. `python -m timemory.profiler
 /// <OPTIONS> -- <CMD>`
 /// Environment variable: `TIMEMORY_PROFILER_COMPONENTS`
 using user_profiler_bundle = user_bundle<profiler_bundle_idx, project::timemory>;
 
-/// \typedef tim::component::user_kokkosp_bundle
+/// \typedef tim::component::user_bundle<kokkosp_bundle_idx, project::timemory>
+/// tim::component::user_kokkosp_bundle
+///
 /// \brief Bundle used for Kokkos runtime callbacks that are built into the core library.
 /// Environment variable: `TIMEMORY_KOKKOS_COMPONENTS`
 using user_kokkosp_bundle = user_bundle<kokkosp_bundle_idx, project::kokkosp>;

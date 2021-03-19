@@ -99,10 +99,14 @@ namespace tim
 // c++14 and std::string_view in c++17 and newer
 using string_t = std::string;
 
-// thread synchronization aliases. Recursive mutex is used for convenience since the
-// performance penalty vs. a regular mutex is not really an issue since there are not
-// many locks in general.
-using mutex_t     = std::recursive_mutex;
+/// \typedef std::recursive_mutex mutex_t
+/// \brief Recursive mutex is used for convenience since the
+/// performance penalty vs. a regular mutex is not really an issue since there are not
+/// many locks in general.
+using mutex_t = std::recursive_mutex;
+
+/// \typedef std::unique_lock<std::recursive_mutex> auto_lock_t
+/// \brief Unique lock type around \ref mutex_t
 using auto_lock_t = std::unique_lock<mutex_t>;
 
 //--------------------------------------------------------------------------------------//
@@ -134,26 +138,21 @@ isfinite(const Tp& arg)
 //
 //======================================================================================//
 
-template <typename Tp, typename ApiT = TIMEMORY_API>
-auto&
-type_mutex(const uint64_t& _n = 0)
+/// \fn mutex_t& type_mutex(uint64_t)
+/// \tparam Tp data type for lock
+/// \tparam ApiT API for lock
+/// \tparam N max size
+///
+/// \brief A simple way to get a mutex for a class or common behavior, e.g.
+/// `type_mutex<decltype(std::cout)>()` provides a mutex for synchronizing output streams.
+/// Recommend using in conjunction with auto-lock:
+/// `tim::auto_lock_t _lk{ type_mutex<Foo>() }`.
+template <typename Tp, typename ApiT = TIMEMORY_API, size_t N = 4>
+mutex_t&
+type_mutex(uint64_t _n = 0)
 {
-    static std::vector<mutex_t*> _mutexes{};
-    if(_n < _mutexes.size())
-        return *(_mutexes.at(_n));
-
-    static mutex_t _internal{};
-    auto_lock_t    _internal_lk{ _internal };
-
-    // check in case another already resized
-    if(_n < _mutexes.size())
-        return *(_mutexes.at(_n));
-
-    // append new mutexes
-    auto i0 = _mutexes.size();
-    for(auto i = i0; i < (_n + 1); ++i)
-        _mutexes.push_back(new mutex_t{});
-    return *(_mutexes.at(_n));
+    static std::array<mutex_t, N> _mutexes{};
+    return _mutexes.at(_n % N);
 }
 
 //--------------------------------------------------------------------------------------//

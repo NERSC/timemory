@@ -212,7 +212,9 @@ TEST_F(component_bundle_tests, variadic)
 TEST_F(component_bundle_tests, get)
 {
     tim::trait::runtime_enabled<cpu_roofline<float>>::set(false);
+    tim::trait::runtime_enabled<gpu_roofline<float>>::set(false);
     tim::trait::runtime_enabled<cpu_roofline<double>>::set(false);
+    tim::trait::runtime_enabled<gpu_roofline<double>>::set(false);
 
     using lhs_t =
         tim::component_bundle_t<TIMEMORY_API, wall_clock, user_clock*, system_clock,
@@ -745,6 +747,99 @@ TEST_F(component_bundle_tests, mixed_stop_last_instance)
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
     EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
                 600., 100.);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp>
+void
+rekey(const std::string& _initial)
+{
+    std::random_device              rd;
+    std::mt19937                    gen{ rd() };
+    std::uniform_int_distribution<> distrib{ 0, std::numeric_limits<char>::max() };
+
+    auto get_random_character = [&distrib, &gen]() {
+        static std::array<char, 2> buffer{};
+        memset(buffer.data(), '\0', buffer.size() * sizeof(char));
+
+        char c = '\0';
+        do
+        {
+            c = distrib(gen);
+        } while(!std::isalnum(c));
+        buffer[0] = c;
+        return buffer.data();
+    };
+
+    auto _other = _initial + "/";
+    for(int i = 0; i < 8; ++i)
+        _other += get_random_character();
+
+    auto _init_hash  = tim::add_hash_id(_initial);
+    auto _other_hash = tim::add_hash_id(_other);
+
+    auto _init_srcloc =
+        TIMEMORY_SOURCE_LOCATION(TIMEMORY_CAPTURE_MODE(blank), _initial.c_str());
+    auto _other_srcloc =
+        TIMEMORY_SOURCE_LOCATION(TIMEMORY_CAPTURE_MODE(blank), _other.c_str());
+
+    std::cout << "[" << tim::demangle<Tp>() << "] initial: " << _initial
+              << ", random: " << _other << std::endl;
+
+    {
+        Tp _obj{ _initial };
+        EXPECT_EQ(_obj.key(), _initial) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_EQ(_obj.hash(), _init_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
+
+        _obj.rekey(_other);
+        EXPECT_EQ(_obj.key(), _other) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_NE(_obj.key(), _initial) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_EQ(_obj.hash(), _other_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_NE(_obj.hash(), _init_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
+    }
+
+    {
+        Tp _obj{ _init_hash };
+        EXPECT_EQ(_obj.key(), _initial) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_EQ(_obj.hash(), _init_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
+
+        _obj.rekey(_other_hash);
+        EXPECT_EQ(_obj.key(), _other) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_NE(_obj.key(), _initial) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_EQ(_obj.hash(), _other_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_NE(_obj.hash(), _init_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
+    }
+
+    {
+        Tp _obj{ _init_srcloc.get_captured() };
+        EXPECT_EQ(_obj.key(), _initial) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_EQ(_obj.hash(), _init_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
+
+        _obj.rekey(_other_srcloc.get_captured());
+        EXPECT_EQ(_obj.key(), _other) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_NE(_obj.key(), _initial) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_EQ(_obj.hash(), _other_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
+        EXPECT_NE(_obj.hash(), _init_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
+    }
+
+    std::cout << std::endl;
+}
+
+template <typename BundleT>
+using rekey_bundle_t =
+    tim::convert_t<tim::type_list<wall_clock, quirk::explicit_start>, BundleT>;
+
+TEST_F(component_bundle_tests, rekey)
+{
+    rekey<rekey_bundle_t<tim::component_tuple<>>>(details::get_test_name());
+    rekey<rekey_bundle_t<tim::component_list<>>>(details::get_test_name());
+    rekey<rekey_bundle_t<tim::component_bundle<TIMEMORY_API>>>(details::get_test_name());
+    rekey<rekey_bundle_t<tim::lightweight_tuple<>>>(details::get_test_name());
+
+    rekey<rekey_bundle_t<tim::auto_tuple<>>>(details::get_test_name());
+    rekey<rekey_bundle_t<tim::auto_list<>>>(details::get_test_name());
+    rekey<rekey_bundle_t<tim::auto_bundle<TIMEMORY_API>>>(details::get_test_name());
 }
 
 //--------------------------------------------------------------------------------------//
