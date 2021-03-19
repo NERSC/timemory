@@ -1121,7 +1121,9 @@ def run_pyctest():
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
                     "TIMEOUT": "120",
-                    "ENVIRONMENT": test_env,
+                    "ENVIRONMENT": ";".join(
+                        [test_env, "TIMEMORY_COMPILER_COUT_OUTPUT=ON"]
+                    ),
                 },
             )
 

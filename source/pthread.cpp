@@ -87,7 +87,7 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
 
         void* operator()() const { return m_routine(m_arg); }
 
-        bool debug() const { return m_debug; }
+        bool         debug() const { return m_debug; }
         static void* wrap(void* _arg)
         {
             if(!_arg)
@@ -141,7 +141,8 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
         auto _tid      = tim::threading::get_id();
         auto _settings = tim::settings::instance<TIMEMORY_API>();
         auto _debug    = (_settings) ? _settings->get_debug() : true;
-        PRINT_HERE("[T%li] Creating new thread", (long int) _tid);
+        if(_debug)
+            PRINT_HERE("[T%li] Creating new thread", (long int) _tid);
         auto* _obj = new wrapper(start_routine, arg, _debug);
         return pthread_create(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
     }
