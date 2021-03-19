@@ -96,16 +96,16 @@ fibonacci<long>(long n)
 TEST_F(chained_tests, fibonacci)
 {
     using bundle_t     = tim::component_bundle<TIMEMORY_API, trip_count>;
-    using timer_t      = tim::lightweight_tuple<wall_clock, tim::quirk::auto_start>;
+    using lw_timer_t   = tim::lightweight_tuple<wall_clock, tim::quirk::auto_start>;
     using auto_timer_t = tim::auto_bundle<TIMEMORY_API, wall_clock>;
 
     tim::settings::precision() = 6;
     long nfib                  = 30;
 
-    std::pair<timer_t, long> count_tmp =
-        timer_t{ "count" }.start().execute(details::fibonacci<long>, nfib).stop();
+    std::pair<lw_timer_t, long> count_tmp =
+        lw_timer_t{ "count" }.start().execute(details::fibonacci<long>, nfib).stop();
 
-    auto real_ret = timer_t{ "real" }
+    auto real_ret = lw_timer_t{ "real" }
                         .start()
                         .execute(details::fibonacci<void>, nfib)
                         .stop()

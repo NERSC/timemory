@@ -66,11 +66,13 @@ endfunction()
 add_interface_library(timemory-compiler-instrument-compile-options INTERFACE)
 
 target_link_libraries(timemory-compiler-instrument-compile-options INTERFACE
+    timemory::timemory-compile-extra
     timemory::timemory-compile-options
     timemory::timemory-hidden-visibility)
 
 add_target_cxx_flag_if_avail(timemory-compiler-instrument-compile-options
-    "-ftls-model=local-dynamic")
+    "-ftls-model=local-dynamic"
+    "-g")
 
 set(LIB_TARGET timemory-compiler-instrument-base)
 set(LIB_TYPE STATIC)

@@ -92,7 +92,6 @@ extern "C"
 
 using namespace tim::component;
 
-struct main_gotcha;
 struct pthread_gotcha;
 static int64_t primary_tidx   = 0;
 static size_t  throttle_count = 1000;
@@ -114,9 +113,6 @@ using trace_vec_t =
 using empty_tuple_t    = tim::component_tuple<>;
 using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
 using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
-using main_gotcha_t    = tim::component::gotcha<2, tim::component_tuple<main_gotcha>,
-                                             tim::type_list<main_gotcha>>;
-using main_bundle_t    = tim::auto_tuple<main_gotcha_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -127,9 +123,6 @@ get_storage(tim::index_sequence<Idx...>) TIMEMORY_INTERNAL_NO_INSTRUMENT;
 template <size_t Idx, size_t N>
 static void
 get_storage_impl(std::array<std::function<void()>, N>&) TIMEMORY_INTERNAL_NO_INSTRUMENT;
-//
-static bool&
-get_main_wrapped() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static bool&
 get_enabled() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static auto&
@@ -195,15 +188,6 @@ get_storage(tim::index_sequence<Idx...>)
     TIMEMORY_FOLD_EXPRESSION(get_storage_impl<Idx>(_data));
     // return the array of finalization functions
     return _data;
-}
-
-//--------------------------------------------------------------------------------------//
-
-bool&
-get_main_wrapped()
-{
-    static auto _instance = false;
-    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -314,7 +298,7 @@ get_label(void* this_fn, void* call_site)
         return _hash;
     }
 
-    if(!get_main_wrapped() && get_first().first == nullptr)
+    if(get_first().first == nullptr)
     {
         constexpr auto _rc = std::regex_constants::optimize | std::regex_constants::egrep;
         if(std::regex_match(finfo.dli_sname, std::regex("^[_]*main$", _rc)))
@@ -447,9 +431,12 @@ finalize()
 
     get_thread_enabled() = false;
 
-    // acquire a lock so that no more entries are added while finalizing
+    // acquire a thread-local lock so that no more entries are added while finalizing
     tim::trace::lock<tim::trace::compiler> lk{};
     lk.acquire();
+
+    // acquire global lock
+    tim::auto_lock_t _projlk{ tim::type_mutex<tim::project::compiler_instrument>() };
 
     bool _remove_manager = false;
     if(get_trace_vec())
@@ -585,8 +572,8 @@ extern "C"
                         .c_str());
         }
 
-        const bool _is_first = (!get_main_wrapped() && get_first().first == this_fn &&
-                                get_first().second == call_site);
+        const bool _is_first =
+            (get_first().first == this_fn && get_first().second == call_site);
 
         if(_is_first)
         {
@@ -742,61 +729,21 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-struct main_gotcha : tim::component::base<main_gotcha, void>
-{
-    // beginning of main
-    static void audit(tim::audit::incoming)
-    {
-        puts("[timemory-compiler-instrument]> wrapped main");
-        get_main_wrapped() = true;
-        initialize();
-    }
-
-    // beginning of main
-    static void audit(tim::audit::incoming, int argc, char** argv)
-    {
-        puts("[timemory-compiler-instrument]> wrapped main");
-        get_main_wrapped() = true;
-        if(argc > 0)
-        {
-            initialize(argv[0]);
-        }
-        else
-        {
-            initialize();
-        }
-    }
-
-    // end of main
-    static void audit(tim::audit::outgoing, int)
-    {
-        get_thread_enabled() = false;
-        get_enabled()        = false;
-        finalize();
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
 auto
 setup_gotcha()
 {
 #if defined(TIMEMORY_USE_GOTCHA)
-    auto enable_gotchas = tim::get_env("TIMEMORY_COMPILER_ENABLE_GOTCHA_WRAPPERS", true);
+    auto _enable_gotcha =
+        tim::get_env("TIMEMORY_COMPILER_ENABLE_PTHREAD_GOTCHA_WRAPPER", false);
 
-    if(enable_gotchas)
+    if(_enable_gotcha)
     {
         pthread_gotcha_t::get_initializer() = []() {
             TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
         };
-
-        main_gotcha_t::get_initializer() = []() {
-            main_gotcha_t::template configure<0, int, int, char**>("main");
-        };
     }
 #endif
-    return std::make_tuple(std::make_shared<pthread_bundle_t>("pthread"),
-                           std::make_shared<main_bundle_t>("main"));
+    return std::make_tuple(std::make_shared<pthread_bundle_t>("pthread"));
 }
 
 namespace

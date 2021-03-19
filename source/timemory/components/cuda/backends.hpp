@@ -595,25 +595,25 @@ tim::cuda::device_query()
         sprintf_s(msg, sizeof(msg),
                   "  Total amount of global memory:                 %.0f MBytes "
                   "(%llu bytes)\n",
-                  static_cast<float>(deviceProp.totalGlobalMem / 1048576.0f),
+                  static_cast<double>(deviceProp.totalGlobalMem / 1048576.0),
                   (unsigned long long) deviceProp.totalGlobalMem);
 #    else
         snprintf(msg, sizeof(msg),
                  "  Total amount of global memory:                 %.0f MBytes "
                  "(%llu bytes)\n",
-                 static_cast<float>(deviceProp.totalGlobalMem / 1048576.0f),
+                 static_cast<double>(deviceProp.totalGlobalMem / 1048576.0),
                  (unsigned long long) deviceProp.totalGlobalMem);
 #    endif
         printf("%s", msg);
 
         printf("  GPU Max Clock rate:                            %.0f MHz (%0.2f "
                "GHz)\n",
-               deviceProp.clockRate * 1e-3f, deviceProp.clockRate * 1e-6f);
+               deviceProp.clockRate * 1e-3, deviceProp.clockRate * 1.0e-6);
 
 #    if CUDART_VERSION >= 5000
         // This is supported in CUDA 5.0 (runtime API device properties)
         printf("  Memory Clock rate:                             %.0f Mhz\n",
-               deviceProp.memoryClockRate * 1e-3f);
+               deviceProp.memoryClockRate * 1.0e-3);
         printf("  Memory Bus Width:                              %d-bit\n",
                deviceProp.memoryBusWidth);
 
