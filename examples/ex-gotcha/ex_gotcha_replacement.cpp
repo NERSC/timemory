@@ -147,7 +147,7 @@ main(int argc, char** argv)
 {
     puts("starting...");
     auto use_intercept = tim::get_env("EXP_REPLACE", true);
-    auto use_timers    = tim::get_env("EXP_TIMERS", true);
+    auto use_timers    = !use_intercept;
     if(!init_gotcha(use_intercept, use_timers))
         throw std::runtime_error("Error! initialization failed!");
 

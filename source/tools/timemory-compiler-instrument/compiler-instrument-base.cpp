@@ -496,13 +496,16 @@ finalize()
     auto _manager = tim::manager::instance();
     if(_manager && !_manager->is_finalized() && !_manager->is_finalizing())
     {
+        // must use manually bc finalization will cause the stop operation to be disabled
         wall_clock wc{};
         peak_rss   pr{};
-        tim::invoke::start(std::tie(wc, pr));
+        wc.start();
+        pr.start();
         //
         tim::timemory_finalize();
         //
-        tim::invoke::stop(std::tie(wc, pr));
+        wc.stop();
+        pr.stop();
         std::stringstream ss;
         ss << "required " << wc.get() << " " << tim::component::wall_clock::display_unit()
            << " and " << pr.get() << " " << tim::component::peak_rss::display_unit();
@@ -779,13 +782,18 @@ auto
 setup_gotcha()
 {
 #if defined(TIMEMORY_USE_GOTCHA)
-    pthread_gotcha_t::get_initializer() = []() {
-        TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
-    };
+    auto enable_gotchas = tim::get_env("TIMEMORY_COMPILER_ENABLE_GOTCHA_WRAPPERS", true);
 
-    main_gotcha_t::get_initializer() = []() {
-        main_gotcha_t::template configure<0, int, int, char**>("main");
-    };
+    if(enable_gotchas)
+    {
+        pthread_gotcha_t::get_initializer() = []() {
+            TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
+        };
+
+        main_gotcha_t::get_initializer() = []() {
+            main_gotcha_t::template configure<0, int, int, char**>("main");
+        };
+    }
 #endif
     return std::make_tuple(std::make_shared<pthread_bundle_t>("pthread"),
                            std::make_shared<main_bundle_t>("main"));
