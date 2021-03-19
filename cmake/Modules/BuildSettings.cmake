@@ -121,7 +121,8 @@ if(NOT TIMEMORY_USE_COVERAGE)
 endif()
 
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
-    target_link_libraries(timemory-compile-options INTERFACE timemory-compile-extra)
+    target_link_libraries(timemory-compile-options INTERFACE
+        $<BUILD_INTERFACE:timemory-compile-extra>)
     add_flag_if_avail(
         "-fno-signaling-nans"
         "-fno-trapping-math"

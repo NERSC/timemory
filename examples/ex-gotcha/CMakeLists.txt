@@ -24,8 +24,7 @@ target_link_libraries(ex_gotcha PRIVATE ex_gotcha_lib)
 add_executable(ex_gotcha_replacement ex_gotcha_replacement.cpp)
 target_link_libraries(ex_gotcha_replacement PRIVATE
     timemory::timemory-headers
-    timemory::timemory-gotcha
-    timemory::timemory-compile-options)
+    timemory::timemory-gotcha)
 
 add_library(ex_gotcha_lib_mpi SHARED ex_gotcha_lib.hpp ex_gotcha_lib.cpp)
 target_link_libraries(ex_gotcha_lib_mpi PUBLIC timemory-gotcha-example timemory::timemory-mpi)

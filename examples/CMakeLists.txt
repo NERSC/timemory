@@ -13,6 +13,9 @@ project(timemory-Examples C CXX)
 #   Add the examples
 #
 
+# disable unity builds
+set(CMAKE_UNITY_BUILD OFF)
+
 add_subdirectory(ex-minimal)
 add_subdirectory(ex-derived)
 add_subdirectory(ex-optional)
