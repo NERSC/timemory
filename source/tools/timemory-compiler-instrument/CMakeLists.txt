@@ -71,8 +71,7 @@ target_link_libraries(timemory-compiler-instrument-compile-options INTERFACE
     timemory::timemory-hidden-visibility)
 
 add_target_cxx_flag_if_avail(timemory-compiler-instrument-compile-options
-    "-ftls-model=local-dynamic"
-    "-g")
+    "-ftls-model=local-dynamic")
 
 set(LIB_TARGET timemory-compiler-instrument-base)
 set(LIB_TYPE STATIC)
