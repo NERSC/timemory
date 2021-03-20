@@ -42,10 +42,9 @@
 #include "timemory/settings/vsettings.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 
-#include <atomic>
 #include <ctime>
+#include <map>
 #include <string>
-#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -285,9 +284,6 @@ public:
     static int64_t indent_width(int64_t _w = indent_width<Idx>())
         TIMEMORY_VISIBILITY("default");
 
-    template <typename Tp>
-    static size_t data_width(int64_t _idx, int64_t _w) TIMEMORY_VISIBILITY("default");
-
 public:
     TIMEMORY_NODISCARD auto ordering() const { return m_order; }
     iterator                begin() { return m_data.begin(); }
@@ -406,6 +402,12 @@ private:
     void initialize_miscellaneous() TIMEMORY_VISIBILITY("hidden");
     void initialize_ert() TIMEMORY_VISIBILITY("hidden");
     void initialize_dart() TIMEMORY_VISIBILITY("hidden");
+
+    static auto& indent_width_map()
+    {
+        static std::map<size_t, std::map<std::type_index, int64_t>> _instance{};
+        return _instance;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -505,9 +507,10 @@ template <size_t Idx>
 int64_t
 settings::indent_width(int64_t _w)
 {
-    static std::atomic<int64_t> _instance(_w);
-    _instance.store(std::max<int64_t>(_instance.load(), _w));
-    return _instance.load();
+    auto        _tidx = std::type_index{ typeid(TIMEMORY_API) };
+    auto_lock_t _lk{ type_mutex<settings, TIMEMORY_API>() };
+    auto&       _itr = indent_width_map()[Idx][_tidx];
+    return (_itr = std::max<int64_t>(_itr, _w));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -516,32 +519,19 @@ template <typename Tp, size_t Idx>
 int64_t
 settings::indent_width(int64_t _w)
 {
-    static std::atomic<int64_t> _instance(_w);
-    _instance.store(std::max<int64_t>(_instance.load(), _w));
-    return _instance.load();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-size_t
-settings::data_width(int64_t _idx, int64_t _w)
-{
-    static std::vector<int64_t> _instance;
-    static std::recursive_mutex _mtx;
-    auto_lock_t                 lk(_mtx);
-    if(_idx >= (int64_t) _instance.size())
-        _instance.resize(_idx + 1, _w);
-    _instance[_idx] = std::max<int64_t>(_instance[_idx], _w);
-    return _instance[_idx];
+    auto        _tidx = std::type_index{ typeid(Tp) };
+    auto_lock_t _lk{ type_mutex<settings, TIMEMORY_API>() };
+    auto&       _itr = indent_width_map()[Idx][_tidx];
+    return (_itr = std::max<int64_t>(_itr, _w));
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Archive>
 void
-settings::load(Archive& ar, unsigned int version)
+settings::load(Archive& ar, unsigned int)
 {
+#if !defined(TIMEMORY_DISABLE_SETTINGS_SERIALIZATION)
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
     for(const auto& itr : m_data)
@@ -568,7 +558,9 @@ settings::load(Archive& ar, unsigned int version)
             m_data.insert({ m_order.back(), itr.second });
         }
     }
-    consume_parameters(version);
+#else
+    consume_parameters(ar);
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -577,6 +569,7 @@ template <typename Archive>
 void
 settings::save(Archive& ar, unsigned int) const
 {
+#if !defined(TIMEMORY_DISABLE_SETTINGS_SERIALIZATION)
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
     for(const auto& itr : m_data)
@@ -591,6 +584,9 @@ settings::save(Archive& ar, unsigned int) const
     }
     ar(cereal::make_nvp("command_line", m_command_line),
        cereal::make_nvp("environment", m_environment));
+#else
+    consume_parameters(ar);
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//

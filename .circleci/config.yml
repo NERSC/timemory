@@ -58,7 +58,7 @@ jobs:
             source activate &&
             conda activate pyctest &&
             python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Debug -j 1
-            --quick --build-libs shared --mpi --papi --gotcha --stats --tools mpip mallocp dyninst kokkos --cxx-standard=17
+            --quick --build-libs shared --mpi --papi --gotcha --stats --tools mpip mallocp dyninst kokkos --cxx-standard=17 --compile-time-perf ${HOME}/ctp
             -- -V --output-on-failure
             -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:
@@ -95,7 +95,7 @@ jobs:
             source activate &&
             conda activate pyctest &&
             python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j 1
-            --build-libs shared --mpi --papi --gotcha --tools mpip mallocp dyninst --cxx-standard=17
+            --build-libs shared --mpi --papi --gotcha --tools mpip mallocp dyninst --cxx-standard=17 --compile-time-perf ${HOME}/ctp
             -- -V --output-on-failure
             -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:
@@ -132,7 +132,7 @@ jobs:
             conda activate pyctest &&
             export CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}:$(dirname $(dirname $(find /opt/software/ | grep 'cuda-' | grep 'cuda\.h$')))" &&
             python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j 1
-            --build-libs shared --gotcha --gperftools --profile=cpu --tools avail mallocp --cxx-standard=17
+            --build-libs shared --gotcha --gperftools --profile=cpu --tools avail mallocp --cxx-standard=17 --compile-time-perf ${HOME}/ctp
             -- -V --output-on-failure -E cuda
             -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DPYTHON_EXECUTABLE=$(which python) -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:
@@ -165,7 +165,7 @@ jobs:
             source activate &&
             conda activate pyctest &&
             python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j 1
-            --build-libs shared --python --tools avail timem --cxx-standard=17
+            --build-libs shared --python --tools avail timem --cxx-standard=17 --compile-time-perf ${HOME}/ctp
             -- -V --output-on-failure
             -- -DTIMEMORY_BUILD_{CALIPER,COMPILER_INSTRUMENTATION}=OFF -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_PYTHON_{HATCHET,TIMEMORY_BUILD_PYTHON_LINE_PROFILER}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
       - run:

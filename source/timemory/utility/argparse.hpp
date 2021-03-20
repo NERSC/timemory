@@ -360,7 +360,7 @@ struct argument_parser
     //
     struct argument
     {
-        using callback_t = std::function<void(void*)>;
+        using callback_t = std::function<void(void*&)>;
 
         enum Position : int
         {
@@ -372,6 +372,8 @@ struct argument_parser
         {
             ANY = -1
         };
+
+        ~argument() { m_destroy(m_default); }
 
         argument& name(const std::string& name)
         {
@@ -389,6 +391,12 @@ struct argument_parser
         argument& description(const std::string& description)
         {
             m_desc = description;
+            return *this;
+        }
+
+        argument& dtype(const std::string& _dtype)
+        {
+            m_dtype = _dtype;
             return *this;
         }
 
@@ -434,14 +442,27 @@ struct argument_parser
         template <typename T>
         argument& set_default(const T& val)
         {
-            m_callback = [&](void* obj) { obj = (void*) new T(val); };
+            m_found        = true;
+            m_default_tidx = std::type_index{ typeid(decay_t<T>) };
+            m_callback     = [&](void*& obj) {
+                m_destroy(obj);
+                if(!obj)
+                    obj = (void*) new T{};
+                (*static_cast<T*>(obj)) = val;
+            };
+            m_destroy = [](void*& obj) {
+                if(obj)
+                    delete static_cast<T*>(obj);
+            };
             return *this;
         }
 
         template <typename T>
         argument& set_default(T& val)
         {
-            m_callback = [&](void* obj) { obj = (void*) &val; };
+            m_found        = true;
+            m_default_tidx = std::type_index{ typeid(decay_t<T>) };
+            m_callback     = [&](void*& obj) { obj = (void*) &val; };
             return *this;
         }
 
@@ -491,6 +512,9 @@ struct argument_parser
                 in >> vt;
                 t.insert(t.end(), vt);
             }
+            if(m_values.empty() && m_default &&
+               m_default_tidx == std::type_index{ typeid(T) })
+                t = (*static_cast<T*>(m_default));
             return t;
         }
 
@@ -500,9 +524,11 @@ struct argument_parser
         get()
         {
             auto               inp = get<std::string>();
-            std::istringstream iss(inp);
+            std::istringstream iss{ inp };
             T                  t = T{};
             iss >> t >> std::ws;
+            if(inp.empty() && m_default && m_default_tidx == std::type_index{ typeid(T) })
+                t = (*static_cast<T*>(m_default));
             return t;
         }
 
@@ -513,7 +539,9 @@ struct argument_parser
                 return found();
 
             auto inp = get<std::string>();
-            if(inp.empty())
+            if(inp.empty() && m_default && m_default_tidx == std::type_index{ typeid(T) })
+                return (*static_cast<T*>(m_default));
+            else if(inp.empty())
                 return found();
 
             return get_bool(inp, found());
@@ -579,20 +607,23 @@ struct argument_parser
         }
 
         friend struct argument_parser;
-        int                        m_position  = Position::IgnoreArgument;
-        int                        m_count     = Count::ANY;
-        int                        m_min_count = Count::ANY;
-        int                        m_max_count = Count::ANY;
-        std::vector<std::string>   m_names     = {};
-        std::string                m_desc      = {};
-        bool                       m_found     = false;
-        bool                       m_required  = false;
-        int                        m_index     = -1;
-        void*                      m_default   = nullptr;
-        callback_t                 m_callback  = [](void*) {};
-        std::set<std::string>      m_choices   = {};
-        std::vector<std::string>   m_values    = {};
-        std::vector<action_func_t> m_actions   = {};
+        int                        m_position     = Position::IgnoreArgument;
+        int                        m_count        = Count::ANY;
+        int                        m_min_count    = Count::ANY;
+        int                        m_max_count    = Count::ANY;
+        std::vector<std::string>   m_names        = {};
+        std::string                m_desc         = {};
+        std::string                m_dtype        = {};
+        bool                       m_found        = false;
+        bool                       m_required     = false;
+        int                        m_index        = -1;
+        std::type_index            m_default_tidx = std::type_index{ typeid(void) };
+        void*                      m_default      = nullptr;
+        callback_t                 m_callback     = [](void*&) {};
+        callback_t                 m_destroy      = [](void*&) {};
+        std::set<std::string>      m_choices      = {};
+        std::vector<std::string>   m_values       = {};
+        std::vector<action_func_t> m_actions      = {};
     };
     //
     //----------------------------------------------------------------------------------//
@@ -624,6 +655,75 @@ struct argument_parser
                            const std::string& desc, bool req = false)
     {
         return add_argument().names(_names).description(desc).required(req);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    argument& add_positional_argument(const std::string& _name)
+    {
+        m_positional_arguments.push_back({});
+        auto& _entry = m_positional_arguments.back();
+        _entry.name(_name);
+        _entry.count(1);
+        _entry.m_index = m_positional_arguments.size();
+        return _entry;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Tp>
+    arg_result get(size_t _idx, Tp& _value)
+    {
+        if(m_positional_values.find(_idx) == m_positional_values.end())
+            return arg_result{ "Positional value not found at index " +
+                               std::to_string(_idx) };
+        if(_idx >= m_positional_arguments.size())
+            return arg_result{ "No positional argument was specified for index " +
+                               std::to_string(_idx) };
+        _value = m_positional_arguments.at(_idx).get<Tp>();
+        return arg_result{};
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Tp>
+    arg_result get(const std::string& _name, Tp& _value)
+    {
+        // loop over parsed positional args
+        for(size_t i = 0; i < m_positional_values.size(); ++i)
+        {
+            if(i >= m_positional_arguments.size())
+                break;
+
+            // loop over added positional args
+            auto& itr = m_positional_arguments.at(i);
+            for(auto& nitr : itr.m_names)
+            {
+                if(nitr == _name)
+                    return get(i, _value);
+            }
+        }
+
+        // not found, check if required
+        for(auto& itr : m_positional_arguments)
+        {
+            for(auto& nitr : itr.m_names)
+            {
+                if(nitr == _name)
+                {
+                    if(itr.m_default &&
+                       itr.m_default_tidx == std::type_index{ typeid(decay_t<Tp>) })
+                        _value = (*static_cast<Tp*>(itr.m_default));
+                    else if(itr.m_required)
+                        return arg_result{
+                            _name + " not parsed from the command line (required)"
+                        };
+                    return arg_result{};
+                }
+            }
+        }
+
+        return arg_result{ _name + " is not a named positional argument" };
     }
     //
     //----------------------------------------------------------------------------------//
@@ -868,6 +968,10 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    int64_t get_positional_count() const { return m_positional_values.size(); }
+    //
+    //----------------------------------------------------------------------------------//
+    //
     static int64_t get_count(argument& a) { return a.m_values.size(); }
     //
     //----------------------------------------------------------------------------------//
@@ -877,6 +981,10 @@ struct argument_parser
     {
         on_error_sfinae(std::forward<ErrorFuncT>(_func), 0);
     }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void set_help_width(int _v) { m_width = _v; }
 
 private:
     //
@@ -966,16 +1074,18 @@ private:
     //----------------------------------------------------------------------------------//
     //
 private:
-    bool                       m_help_enabled = false;
-    int                        m_current      = -1;
-    int                        m_width        = 30;
-    std::string                m_desc         = {};
-    std::string                m_bin          = {};
-    error_func_t               m_error_func   = [](this_type&, const result_type&) {};
-    std::vector<argument>      m_arguments    = {};
-    std::map<int, int>         m_positional_arguments = {};
-    std::map<std::string, int> m_name_map             = {};
-    std::vector<action_pair_t> m_actions              = {};
+    bool                       m_help_enabled   = false;
+    int                        m_current        = -1;
+    int                        m_width          = 30;
+    std::string                m_desc           = {};
+    std::string                m_bin            = {};
+    error_func_t               m_error_func     = [](this_type&, const result_type&) {};
+    std::vector<argument>      m_arguments      = {};
+    std::map<int, int>         m_positional_map = {};
+    std::map<std::string, int> m_name_map       = {};
+    std::vector<action_pair_t> m_actions        = {};
+    std::vector<argument>      m_positional_arguments = {};
+    std::map<int, std::string> m_positional_values    = {};
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -984,6 +1094,9 @@ template <>
 inline std::string
 argument_parser::argument::get<std::string>()
 {
+    using T = std::string;
+    if(m_values.empty() && m_default && m_default_tidx == std::type_index{ typeid(T) })
+        return (*static_cast<T*>(m_default));
     return helpers::join(m_values.begin(), m_values.end());
 }
 //
@@ -993,6 +1106,9 @@ template <>
 inline std::vector<std::string>
 argument_parser::argument::get<std::vector<std::string>>()
 {
+    using T = std::vector<std::string>;
+    if(m_values.empty() && m_default && m_default_tidx == std::type_index{ typeid(T) })
+        return (*static_cast<T*>(m_default));
     return m_values;
 }
 //

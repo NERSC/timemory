@@ -57,7 +57,7 @@ public:
     using lock_t    = std::unique_lock<mutex_t>;
 
 public:
-    explicit thread_barrier(const size_t& nthreads)
+    explicit thread_barrier(size_t nthreads)
     : m_master(std::this_thread::get_id())
     , m_num_threads(nthreads)
     , m_notify(0)

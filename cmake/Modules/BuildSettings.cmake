@@ -48,8 +48,7 @@ endif()
 if(CMAKE_CXX_COMPILER_IS_GNU)
     add_target_cxx_flag_if_avail(
         timemory-compile-options
-        "-Wno-class-memaccess"
-        "-Wno-cast-function-type")
+        "-Wno-class-memaccess")
 endif()
 
 if(TIMEMORY_BUILD_QUIET)
@@ -122,7 +121,8 @@ if(NOT TIMEMORY_USE_COVERAGE)
 endif()
 
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
-    target_link_libraries(timemory-compile-options INTERFACE timemory-compile-extra)
+    target_link_libraries(timemory-compile-options INTERFACE
+        $<BUILD_INTERFACE:timemory-compile-extra>)
     add_flag_if_avail(
         "-fno-signaling-nans"
         "-fno-trapping-math"

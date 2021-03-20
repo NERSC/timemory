@@ -743,7 +743,19 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
         endif()
     endif()
 
+    list(REMOVE_DUPLICATES LIB_TARGETS)
     foreach(_LIB ${LIB_TARGETS})
+        # get the list of previously exported libraries
+        get_property(_PREVIOUS_EXPORTS GLOBAL PROPERTY TIMEMORY_EXPORTED_LIBRARIES)
+
+        # skip exporting again if already exported
+        if("${_LIB}" IN_LIST _PREVIOUS_EXPORTS)
+            continue()
+        endif()
+
+        # add to list of export targets
+        set_property(GLOBAL APPEND PROPERTY TIMEMORY_EXPORTED_LIBRARIES ${_LIB})
+
         install(
             TARGETS ${_LIB}
             DESTINATION ${LIB_DESTINATION}
@@ -899,7 +911,6 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
     check_required(COMP_TARGET)
     check_required(COMP_CATEGORY)
     check_required(COMP_FOLDER)
-    check_required(COMP_SOURCES)
 
     if(NOT COMP_VISIBILITY)
       set(COMP_VISIBILITY default)
@@ -938,7 +949,19 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
     set(_SOURCES ${COMP_SOURCES} ${COMP_HEADERS})
 
     if(COMP_INSTALL_SOURCE)
-        timemory_install_header_files(${COMP_SOURCES})
+        set(_SOURCES)
+        foreach(_SOURCE ${COMP_SOURCES})
+            get_filename_component(_SOURCE_NAME "${_SOURCE}" NAME)
+            get_filename_component(_SOURCE_DIR "${_SOURCE}" DIRECTORY)
+            get_filename_component(_SOURCE_DIR "${_SOURCE_DIR}" NAME)
+            if(NOT "${_SOURCE_NAME}" STREQUAL "extern.cpp" AND
+               NOT "${_SOURCE_DIR}" STREQUAL "extern")
+                list(APPEND _SOURCES ${_SOURCE})
+            else()
+                message(WARNING "Not installing ${_SOURCE} source")
+            endif()
+        endforeach()
+        timemory_install_header_files(${_SOURCES})
     endif()
 
     foreach(LINK ${_LIB_TYPES})
@@ -954,10 +977,6 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
         timemory_get_internal_depends(_DEPENDS ${LINK} ${COMP_DEPENDS} timemory-core)
         timemory_get_property_depends(_PROPERTY_OBJS OBJECT ${COMP_PROPERTY_DEPENDS})
         timemory_get_property_depends(_PROPERTY_LINK ${UPP_LINK} ${COMP_PROPERTY_DEPENDS})
-
-        # message(STATUS "[DEPENDS] ${TARGET_NAME} :: ${_DEPENDS}")
-        # message(STATUS "[PROPOBJ] ${TARGET_NAME} :: ${_PROPERTY_OBJS}")
-        # message(STATUS "[PROPLNK] ${TARGET_NAME} :: ${_PROPERTY_LINK}")
 
         # must reset this variable
         set(DEPENDS)
@@ -993,6 +1012,20 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
             CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
 
         target_include_directories(${TARGET_NAME} PUBLIC ${COMP_INCLUDES})
+
+        list(REMOVE_ITEM DEPENDS "${TARGET_NAME}")
+        set(_DEPS ${DEPENDS})
+        set(DEPENDS)
+        foreach(_DEP ${_DEPS})
+            if("${_DEP}" MATCHES "timemory::")
+                list(APPEND DEPENDS ${_DEP})
+            else()
+                list(APPEND DEPENDS "timemory::${_DEP}")
+            endif()
+        endforeach()
+        if(NOT "${DEPENDS}" STREQUAL "")
+            list(REMOVE_DUPLICATES DEPENDS)
+        endif()
 
         target_link_libraries(${TARGET_NAME} PUBLIC
             timemory-external-${LINK}

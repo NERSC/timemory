@@ -20,7 +20,7 @@ jobs:
         compiler: ['gcc-9', 'clang-10', 'gcc-10', 'clang-11', 'clang-12']
         standard: ['17']
         tools: ['avail kokkos kokkos-config dyninst mpip ncclp mallocp compiler']
-        extra_args: ['--python']
+        extra_args: ['--python --compile-time-perf build-ctp']
         extra_cmake: ['-G Ninja']
     runs-on: self-hosted
     steps:

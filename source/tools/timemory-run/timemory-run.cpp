@@ -26,6 +26,7 @@
 #include "timemory-run.hpp"
 
 static bool                                       is_driver  = false;
+static size_t                                     batch_size = 50;
 static strset_t                                   extra_libs = {};
 static std::vector<std::pair<uint64_t, string_t>> hash_ids;
 static std::map<string_t, bool>                   use_stubs;
@@ -261,6 +262,13 @@ main(int argc, char** argv)
     parser.add_argument(
         { "--fini-functions" },
         "Finalization function(s) for supplemental instrumentation libraries");
+    parser
+        .add_argument(
+            { "-b", "--batch-size" },
+            "Dyninst supports batch insertion of multiple points. If one large batch "
+            "insertion fails, this value will be used to create smaller batches")
+        .count(1)
+        .action([](parser_t& p) { batch_size = p.get<size_t>("batch-size"); });
 
     if(_cmdc == 0)
     {
@@ -1454,8 +1462,43 @@ main(int argc, char** argv)
             verbprintf(
                 1,
                 "Using insertion set failed. Restarting with individual insertion...\n");
-            for(auto& instr_procedure : instr_procedure_functions)
-                instr_procedure();
+            auto _execute_batch = [&instr_procedure_functions, &addr_space](size_t _beg,
+                                                                            size_t _end) {
+                verbprintf(1, "Instrumenting batch of functions [%lu, %lu)\n",
+                           (unsigned long) _beg, (unsigned long) _end);
+                addr_space->beginInsertionSet();
+                for(size_t i = _beg; i < _end; ++i)
+                {
+                    if(i < instr_procedure_functions.size())
+                        instr_procedure_functions.at(i)();
+                }
+                bool _modified = true;
+                bool _success  = addr_space->finalizeInsertionSet(true, &_modified);
+                return _success;
+            };
+
+            auto execute_batch = [&_execute_batch,
+                                  &instr_procedure_functions](size_t _beg) {
+                if(!_execute_batch(_beg, _beg + batch_size))
+                {
+                    verbprintf(1,
+                               "Batch instrumentation of functions [%lu, %lu) failed. "
+                               "Beginning non-batched instrumentation for this set\n",
+                               (unsigned long) _beg, (unsigned long) _beg + batch_size);
+                    for(size_t i = _beg; i < _beg + batch_size; ++i)
+                    {
+                        if(i < instr_procedure_functions.size())
+                            instr_procedure_functions.at(i)();
+                    }
+                }
+                return _beg + batch_size;
+            };
+
+            size_t nidx = 0;
+            while(nidx < instr_procedure_functions.size())
+            {
+                nidx = execute_batch(nidx);
+            }
         }
     }
 

@@ -94,7 +94,6 @@ template <typename TupleT, typename ApiT, typename... Args>
 TIMEMORY_INLINE auto
 construct(Args&&... args);
 //
-//
 template <typename TupleT, typename... Args>
 TIMEMORY_INLINE auto
 construct(Args&&... args);

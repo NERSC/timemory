@@ -177,7 +177,7 @@ struct lock<Tp, true>
         {
             if((m_value = !get_global()))
                 get_global() = true;
-            if(itr++ == std::numeric_limits<int32_t>::max())
+            if(itr++ >= std::numeric_limits<int16_t>::max())
                 break;
         }
         return m_value;
@@ -235,7 +235,7 @@ struct lock<Tp, false>
         {
             while(!(m_value = exchange(true)))
             {
-                if(itr++ == std::numeric_limits<int32_t>::max())
+                if(itr++ >= std::numeric_limits<int16_t>::max())
                     break;
             }
         }

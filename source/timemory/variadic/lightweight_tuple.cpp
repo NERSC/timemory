@@ -272,7 +272,7 @@ template <typename... Types>
 lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::operator-=(const this_type& rhs)
 {
-    apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
+    invoke::invoke_impl::invoke_data<operation::minus, TIMEMORY_API>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
     return *this;
 }
@@ -283,7 +283,7 @@ template <typename... Types>
 lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::operator-=(this_type& rhs)
 {
-    apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
+    invoke::invoke_impl::invoke_data<operation::minus, TIMEMORY_API>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
     return *this;
 }
@@ -294,7 +294,7 @@ template <typename... Types>
 lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::operator+=(const this_type& rhs)
 {
-    apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
+    invoke::invoke_impl::invoke_data<operation::plus, TIMEMORY_API>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
     return *this;
 }
@@ -305,7 +305,7 @@ template <typename... Types>
 lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::operator+=(this_type& rhs)
 {
-    apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
+    invoke::invoke_impl::invoke_data<operation::plus, TIMEMORY_API>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
     return *this;
 }

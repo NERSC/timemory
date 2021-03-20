@@ -7,7 +7,7 @@ endif()
 cmake_policy(PUSH)
 cmake_policy(SET CMP0063 NEW)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON) # ensure always pic
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
 set(CMAKE_C_VISIBILITY_PRESET "hidden")
 set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
@@ -63,6 +63,16 @@ endfunction()
 
 #----------------------------------------------------------------------------------------#
 
+add_interface_library(timemory-compiler-instrument-compile-options INTERFACE)
+
+target_link_libraries(timemory-compiler-instrument-compile-options INTERFACE
+    timemory::timemory-compile-extra
+    timemory::timemory-compile-options
+    timemory::timemory-hidden-visibility)
+
+add_target_cxx_flag_if_avail(timemory-compiler-instrument-compile-options
+    "-ftls-model=local-dynamic")
+
 set(LIB_TARGET timemory-compiler-instrument-base)
 set(LIB_TYPE STATIC)
 
@@ -91,10 +101,8 @@ target_link_libraries(${LIB_TARGET} PRIVATE
     timemory::timemory-papi
     timemory::timemory-gotcha
     timemory::timemory-statistics
-    timemory::timemory-compile-options
-    timemory::timemory-hidden-visibility)
+    timemory::timemory-compiler-instrument-compile-options)
 
-add_cxx_flag_if_avail("-ftls-model=local-exec" ${LIB_TARGET})
 
 # strip_target(${LIB_TARGET} ${LIB_TYPE} "timemory_profile_func")
 
@@ -149,9 +157,7 @@ foreach(LIB_TYPE ${_LIB_TYPES})
 
     target_link_libraries(${LIB_TARGET} PRIVATE
         timemory-compiler-instrument-base
-        timemory::timemory-compile-options
-        timemory::timemory-hidden-visibility
-        )
+        timemory::timemory-compiler-instrument-compile-options)
 
     if(WIN32)
         # not yet implemented

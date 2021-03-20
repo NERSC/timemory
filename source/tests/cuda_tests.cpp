@@ -160,8 +160,8 @@ TEST_F(cuda_tests, saxpy)
     float sumError = 0.0;
     for(int64_t i = 0; i < N; i++)
     {
-        maxError = std::max<float>(maxError, std::abs(y[i] - 2.0));
-        sumError += (y[i] > 2.0) ? (y[i] - 2.0) : (2.0 - y[i]);
+        maxError = std::max<float>(maxError, std::abs(y[i] - 2.0f));
+        sumError += (y[i] > 2.0f) ? (y[i] - 2.0f) : (2.0f - y[i]);
     }
 
     tim::device::cpu::free(x);
@@ -176,12 +176,12 @@ TEST_F(cuda_tests, saxpy)
 #endif
     auto rc = *bw.get<wall_clock>();
 
-    printf("Max error: %8.4e\n", maxError);
-    printf("Sum error: %8.4e\n", sumError);
-    printf("Total amount of data (GB): %f\n", data_size);
-    printf("Effective Bandwidth (GB/s): %f\n", data_size / ce.get());
-    printf("Kernel Runtime (sec): %16.12e\n", ce.get());
-    printf("Wall-clock time (sec): %16.12e\n", rc.get());
+    printf("Max error: %8.4e\n", (double) maxError);
+    printf("Sum error: %8.4e\n", (double) sumError);
+    printf("Total amount of data (GB): %f\n", (double) data_size);
+    printf("Effective Bandwidth (GB/s): %f\n", (double) (data_size / ce.get()));
+    printf("Kernel Runtime (sec): %16.12e\n", (double) ce.get());
+    printf("Wall-clock time (sec): %16.12e\n", (double) rc.get());
     std::cout << details::get_test_name() << " cuda event: " << ce << std::endl;
     std::cout << details::get_test_name() << " real clock: " << rc << std::endl;
     std::cout << tot << std::endl;
@@ -277,8 +277,8 @@ TEST_F(cuda_tests, saxpy_streams)
     float sumError = 0.0;
     for(int64_t i = 0; i < N; i++)
     {
-        maxError = std::max<float>(maxError, std::abs(y[i] - 2.0));
-        sumError += (y[i] > 2.0) ? (y[i] - 2.0) : (2.0 - y[i]);
+        maxError = std::max<float>(maxError, std::abs(y[i] - 2.0f));
+        sumError += (y[i] > 2.0f) ? (y[i] - 2.0f) : (2.0f - y[i]);
     }
 
     tim::device::cpu::free(x);
@@ -293,12 +293,12 @@ TEST_F(cuda_tests, saxpy_streams)
 #endif
     auto rc = *bw.get<wall_clock>();
 
-    printf("Max error: %8.4e\n", maxError);
-    printf("Sum error: %8.4e\n", sumError);
-    printf("Total amount of data (GB): %f\n", data_size);
-    printf("Effective Bandwidth (GB/s): %f\n", data_size / ce.get());
-    printf("Kernel Runtime (sec): %16.12e\n", ce.get());
-    printf("Wall-clock time (sec): %16.12e\n", rc.get());
+    printf("Max error: %8.4e\n", (double) maxError);
+    printf("Sum error: %8.4e\n", (double) sumError);
+    printf("Total amount of data (GB): %f\n", (double) data_size);
+    printf("Effective Bandwidth (GB/s): %f\n", (double) (data_size / ce.get()));
+    printf("Kernel Runtime (sec): %16.12e\n", (double) ce.get());
+    printf("Wall-clock time (sec): %16.12e\n", (double) rc.get());
     std::cout << details::get_test_name() << " cuda event: " << ce << std::endl;
     std::cout << details::get_test_name() << " real clock: " << rc << std::endl;
     std::cout << tot << std::endl;

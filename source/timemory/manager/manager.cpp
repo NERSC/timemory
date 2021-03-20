@@ -821,6 +821,16 @@ manager::master_instance()
 //
 //----------------------------------------------------------------------------------//
 //
+TIMEMORY_MANAGER_LINKAGE(bool)
+manager::get_is_main_thread()
+{
+    if(!master_instance())
+        return true;
+    return (std::this_thread::get_id() == master_instance()->m_thread_id);
+}
+//
+//----------------------------------------------------------------------------------//
+//
 TIMEMORY_MANAGER_LINKAGE(manager*)
 timemory_manager_master_instance()
 {

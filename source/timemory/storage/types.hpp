@@ -55,22 +55,20 @@ struct settings;
 namespace node
 {
 //
-//--------------------------------------------------------------------------------------//
-//
 template <typename Tp>
 struct data;
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
 struct graph;
 //
-//--------------------------------------------------------------------------------------//
-//
 template <typename Tp>
 struct result;
 //
-//--------------------------------------------------------------------------------------//
+template <typename Tp, typename StatT>
+struct entry;
+//
+template <typename Tp>
+struct tree;
 //
 }  // namespace node
 //
@@ -78,8 +76,6 @@ struct result;
 //
 namespace base
 {
-//
-//--------------------------------------------------------------------------------------//
 //
 class storage
 {
@@ -160,8 +156,6 @@ protected:
     std::shared_ptr<settings> m_settings     = {};                         // NOLINT
 };
 //
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace base
 //
 //--------------------------------------------------------------------------------------//
@@ -169,18 +163,12 @@ protected:
 namespace impl
 {
 //
-//--------------------------------------------------------------------------------------//
-//
-template <typename StorageType>
-struct storage_deleter;
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename Type, bool ImplementsStorage>
 class storage
 {};
 //
-//--------------------------------------------------------------------------------------//
+template <typename StorageType>
+struct storage_deleter;
 //
 }  // namespace impl
 //
@@ -189,13 +177,9 @@ class storage
 template <typename Tp, typename Vp = typename trait::collects_data<Tp>::type>
 class storage;
 //
-//--------------------------------------------------------------------------------------//
-//
 template <typename Tp>
 using storage_singleton =
     singleton<Tp, std::unique_ptr<Tp, impl::storage_deleter<Tp>>, TIMEMORY_API>;
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename NodeT>
 class graph_data;
@@ -208,26 +192,6 @@ class graph_allocator;
 //
 template <typename T, typename AllocatorT = std::allocator<tgraph_node<T>>>
 class graph;
-//
-//--------------------------------------------------------------------------------------//
-//
-namespace node
-{
-template <typename Tp, typename StatT>
-struct entry;
-//
-template <typename Tp>
-struct data;
-//
-template <typename Tp>
-struct graph;
-//
-template <typename Tp>
-struct result;
-//
-template <typename Tp>
-struct tree;
-}  // namespace node
 //
 //--------------------------------------------------------------------------------------//
 //

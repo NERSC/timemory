@@ -16,9 +16,7 @@ if(NOT CUDA_VERSION VERSION_LESS 11.0)
         "[${PROJECT_NAME}] CUPTI profiling API for HW counters not supported for CUDA ${CUDA_VERSION} (>= 11.0)")
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
-endif()
+set(CMAKE_BUILD_TYPE "Release")
 
 option(BUILD_COMBINED_ROOFLINE "Build a combined roofline example" ON)
 
@@ -27,13 +25,14 @@ target_compile_options(gpu-roofline-compile-options INTERFACE
     $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--default-stream=per-thread>>)
 
 set(EXE_NAME ex_gpu_roofline)
-set(COMPONENTS compile-options analysis-tools roofline cxx)
-set(timemory_FIND_COMPONENTS_INTERFACE timemory-gpu-roofline-example)
 set_source_files_properties(${EXE_NAME}.cpp PROPERTIES
     LANGUAGE CUDA
     LINKER_LANGUAGE CUDA)
 
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
+set(timemory_FIND_COMPONENTS_INTERFACE timemory-gpu-roofline-example)
+find_package(timemory REQUIRED
+    COMPONENTS          headers roofline
+    OPTIONAL_COMPONENTS cxx)
 
 add_library(gpu-fp-half   INTERFACE)
 add_library(gpu-fp-single INTERFACE)
@@ -49,41 +48,28 @@ target_link_libraries(gpu-fp-double INTERFACE gpu-roofline-compile-options)
 
 # using half-precision
 if(TIMEMORY_USE_CUDA_HALF)
-    add_executable(ex-gpu-roofline-half            ${EXE_NAME}.cpp)
-    target_link_libraries(ex-gpu-roofline-half     timemory-gpu-roofline-example gpu-fp-half)
-    set_target_properties(ex-gpu-roofline-half     PROPERTIES OUTPUT_NAME ${EXE_NAME}.hp)
+    add_executable(ex-gpu-roofline-half         ${EXE_NAME}.cpp)
+    target_link_libraries(ex-gpu-roofline-half  timemory-gpu-roofline-example gpu-fp-half)
+    set_target_properties(ex-gpu-roofline-half  PROPERTIES OUTPUT_NAME ${EXE_NAME}.hp)
+    install(TARGETS ex-gpu-roofline-half        DESTINATION bin COMPONENT examples OPTIONAL)
 endif()
 
 # using single-precision
-add_executable(ex-gpu-roofline-single          ${EXE_NAME}.cpp)
-target_link_libraries(ex-gpu-roofline-single   timemory-gpu-roofline-example gpu-fp-single)
-set_target_properties(ex-gpu-roofline-single   PROPERTIES OUTPUT_NAME ${EXE_NAME}.sp)
+add_executable(ex-gpu-roofline-single           ${EXE_NAME}.cpp)
+target_link_libraries(ex-gpu-roofline-single    timemory-gpu-roofline-example gpu-fp-single)
+set_target_properties(ex-gpu-roofline-single    PROPERTIES OUTPUT_NAME ${EXE_NAME}.sp)
+install(TARGETS ex-gpu-roofline-single          DESTINATION bin COMPONENT examples OPTIONAL)
 
 # using double-precision
-add_executable(ex-gpu-roofline-double          ${EXE_NAME}.cpp)
-target_link_libraries(ex-gpu-roofline-double   timemory-gpu-roofline-example gpu-fp-double)
-set_target_properties(ex-gpu-roofline-double   PROPERTIES OUTPUT_NAME ${EXE_NAME}.dp)
+add_executable(ex-gpu-roofline-double           ${EXE_NAME}.cpp)
+target_link_libraries(ex-gpu-roofline-double    timemory-gpu-roofline-example gpu-fp-double)
+set_target_properties(ex-gpu-roofline-double    PROPERTIES OUTPUT_NAME ${EXE_NAME}.dp)
+install(TARGETS ex-gpu-roofline-double          DESTINATION bin COMPONENT examples OPTIONAL)
 
 # using all-precision
 if(BUILD_COMBINED_ROOFLINE)
-    add_executable(ex-gpu-roofline                 ${EXE_NAME}.cpp)
-    target_link_libraries(ex-gpu-roofline          timemory-gpu-roofline-example)
-    set_target_properties(ex-gpu-roofline          PROPERTIES OUTPUT_NAME ${EXE_NAME})
-endif()
-
-install(
-    TARGETS
-        ex-gpu-roofline-single
-        ex-gpu-roofline-double
-    DESTINATION
-        bin
-    COMPONENT examples
-    OPTIONAL)
-
-if(TARGET ex-gpu-roofline)
-    install(TARGETS ex-gpu-roofline DESTINATION bin COMPONENT examples OPTIONAL)
-endif()
-
-if(TARGET ex-gpu-roofline-half)
-    install(TARGETS ex-gpu-roofline-half DESTINATION bin COMPONENT examples OPTIONAL)
+    add_executable(ex-gpu-roofline              ${EXE_NAME}.cpp)
+    target_link_libraries(ex-gpu-roofline       timemory-gpu-roofline-example)
+    set_target_properties(ex-gpu-roofline       PROPERTIES OUTPUT_NAME ${EXE_NAME})
+    install(TARGETS ex-gpu-roofline             DESTINATION bin COMPONENT examples OPTIONAL)
 endif()

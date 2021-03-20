@@ -51,11 +51,11 @@ template <template <typename> class OpT, typename Tag,
 void
 invoke(TupleT<Tp...>& _obj, Args&&... _args)
 {
-    using data_type = std::tuple<Tp...>;
+    using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
         operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
                                     OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
-            std::get<index_of<Tp, data_type>::value>(_obj),
+            std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::forward<Args>(_args)...));
 }
 //
@@ -66,11 +66,11 @@ template <template <typename, typename> class OpT, typename Tag,
 void
 invoke(TupleT<Tp...>& _obj, Args&&... _args)
 {
-    using data_type = std::tuple<Tp...>;
+    using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
         operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
                                     OpT<std::remove_pointer_t<decay_t<Tp>>, Tag>, Tag>(
-            std::get<index_of<Tp, data_type>::value>(_obj),
+            std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::forward<Args>(_args)...));
 }
 //
@@ -81,11 +81,11 @@ template <template <typename> class OpT, typename Tag,
 void
 invoke(TupleT<Tp&...>&& _obj, Args&&... _args)
 {
-    using data_type = std::tuple<Tp...>;
+    using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
         operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
                                     OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
-            std::get<index_of<Tp, data_type>::value>(_obj),
+            std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::forward<Args>(_args)...));
 }
 //
@@ -96,11 +96,11 @@ template <template <typename, typename> class OpT, typename Tag,
 void
 invoke(TupleT<Tp&...>&& _obj, Args&&... _args)
 {
-    using data_type = std::tuple<Tp...>;
+    using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
         operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
                                     OpT<std::remove_pointer_t<decay_t<Tp>>, Tag>, Tag>(
-            std::get<index_of<Tp, data_type>::value>(_obj),
+            std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::forward<Args>(_args)...));
 }
 //
@@ -112,12 +112,12 @@ template <template <typename> class OpT, typename Tag,
 void
 invoke_data(TupleT<Tp...>& _obj, ValueT<Vp...>& _val, Args&&... _args)
 {
-    using data_type = std::tuple<Tp...>;
+    using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
         operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
                                     OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
-            std::get<index_of<Tp, data_type>::value>(_obj),
-            std::get<index_of<Tp, data_type>::value>(_val),
+            std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
+            std::get<index_of<decay_t<Tp>, data_type>::value>(_val),
             std::forward<Args>(_args)...));
 }
 //
@@ -129,12 +129,12 @@ template <template <typename> class OpT, typename Tag,
 void
 invoke_data(TupleT<Tp&...>&& _obj, ValueT<Vp...>& _val, Args&&... _args)
 {
-    using data_type = std::tuple<Tp...>;
+    using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
         operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
                                     OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
-            std::get<index_of<Tp, data_type>::value>(_obj),
-            std::get<index_of<Tp, data_type>::value>(_val),
+            std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
+            std::get<index_of<decay_t<Tp>, data_type>::value>(_val),
             std::forward<Args>(_args)...));
 }
 //
@@ -144,9 +144,9 @@ template <template <typename...> class TupleT, typename... Tp, typename... Args>
 void
 construct(TupleT<Tp...>& _obj, Args&&... _args)
 {
-    using data_type = std::tuple<Tp...>;
+    using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
-        std::get<index_of<Tp, data_type>::value>(_obj) =
+        std::get<index_of<decay_t<Tp>, data_type>::value>(_obj) =
             operation::construct<Tp>::get(std::forward<Args>(_args)...));
 }
 //

@@ -83,7 +83,8 @@ extern "C"
             tim::operation::init<user_mpip_bundle>(
                 tim::operation::mode_constant<tim::operation::init_mode::global>{});
             auto ret = activate_mpip<mpi_toolset_t, api_t>();
-            dlclose(libmpi_handle);
+            if(libmpi_handle)
+                dlclose(libmpi_handle);
             return ret;
         }
         else

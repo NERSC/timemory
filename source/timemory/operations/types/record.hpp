@@ -117,8 +117,6 @@ private:
 template <typename Tp>
 record<Tp>::record(type& obj, const type& rhs)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
     sfinae(obj, rhs, 0, 0);
 }
 //
@@ -128,8 +126,6 @@ template <typename Tp>
 template <typename T, typename... Args, enable_if_t<check_record_type<T>::value, char>>
 record<Tp>::record(T& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
     sfinae<type>(obj, 0, 0, std::forward<Args>(args)...);
 }
 //

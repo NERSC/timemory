@@ -46,7 +46,7 @@ class env_settings;
 //
 template <typename Tp>
 Tp
-get_env(const std::string& env_id, Tp _default = Tp());
+get_env(const std::string& env_id, Tp _default = Tp{});
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -64,7 +64,7 @@ get_env(const std::string& env_id, bool _default);
 //
 template <typename Tp>
 Tp
-load_env(const std::string& env_id, Tp _default = Tp());
+load_env(const std::string& env_id, Tp _default = Tp{});
 //
 //--------------------------------------------------------------------------------------//
 //

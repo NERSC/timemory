@@ -108,16 +108,84 @@ TIMEMORY_UTILITY_INLINE argument_vector::cargs_t
 TIMEMORY_UTILITY_INLINE void
 argument_parser::print_help(const std::string& _extra)
 {
-    std::cerr << "Usage: " << m_bin;
+    std::stringstream _usage;
+    if(!m_desc.empty())
+        _usage << "[" << m_desc << "] ";
+    _usage << "Usage: " << m_bin;
+
+    std::cerr << _usage.str();
+
+    std::stringstream _sshort_desc;
+    auto              _indent = _usage.str().length() + 2;
+    size_t            _ncnt   = 0;
+    for(auto& a : m_arguments)
+    {
+        std::string name = a.m_names.at(0);
+        if(name.empty() || name.find_first_of('-') > name.find_first_not_of(" -"))
+            continue;
+        // select the first long option
+        for(size_t n = 1; n < a.m_names.size(); ++n)
+        {
+            if(name.find("--") == 0)
+                break;
+            else if(a.m_names.at(n).find("--") == 0)
+            {
+                name = a.m_names.at(n);
+                break;
+            }
+        }
+        if(name.length() > 0)
+        {
+            if(_ncnt++ > 0)
+                _sshort_desc << "\n " << std::setw(_indent) << " " << name;
+            else
+                _sshort_desc << " " << name;
+
+            _sshort_desc << " (";
+            if(a.m_count != argument::Count::ANY)
+                _sshort_desc << "count: " << a.m_count;
+            else if(a.m_min_count != argument::Count::ANY)
+                _sshort_desc << "min: " << a.m_min_count;
+            else if(a.m_max_count != argument::Count::ANY)
+                _sshort_desc << "max: " << a.m_max_count;
+            else
+                _sshort_desc << "count: unlimited";
+            if(!a.m_dtype.empty())
+                _sshort_desc << ", dtype: " << a.m_dtype;
+            else if(a.m_count == 0 ||
+                    (a.m_count == argument::Count::ANY && a.m_max_count == 1))
+                _sshort_desc << ", dtype: bool" << a.m_dtype;
+            _sshort_desc << ")";
+        }
+    }
+
+    std::string _short_desc;
+    if(!_sshort_desc.str().empty())
+    {
+        _short_desc.append("[" + _sshort_desc.str());
+        std::stringstream _tmp;
+        _tmp << "\n" << std::setw(_indent) << "]";
+        _short_desc.append(_tmp.str());
+    }
+
     if(m_positional_arguments.empty())
     {
-        std::cerr << " [" << demangle<this_type>() << " arguments...]"
-                  << " " << _extra << std::endl;
+        std::cerr << " " << _short_desc << " " << _extra << std::endl;
     }
     else
     {
+        std::cerr << " " << _short_desc;
+        if(!_short_desc.empty())
+            std::cerr << "\n" << std::setw(_indent - 2) << " ";
+        for(auto& itr : m_positional_arguments)
+        {
+            std::cerr << " " << helpers::ltrim(itr.m_names.at(0), [](int c) -> bool {
+                return c != static_cast<int>('-');
+            });
+        }
+
         int current = 0;
-        for(auto& v : m_positional_arguments)
+        for(auto& v : m_positional_map)
         {
             if(v.first != argument::Position::LastArgument)
             {
@@ -125,7 +193,7 @@ argument_parser::print_help(const std::string& _extra)
                     std::cerr << " [" << current << "]";
                 std::cerr << " ["
                           << helpers::ltrim(
-                                 m_arguments[static_cast<size_t>(v.second)].m_names[0],
+                                 m_arguments[static_cast<size_t>(v.second)].m_names.at(0),
                                  [](int c) -> bool { return c != static_cast<int>('-'); })
                           << "]";
             }
@@ -133,20 +201,18 @@ argument_parser::print_help(const std::string& _extra)
             {
                 std::cerr << " ... ["
                           << helpers::ltrim(
-                                 m_arguments[static_cast<size_t>(v.second)].m_names[0],
+                                 m_arguments[static_cast<size_t>(v.second)].m_names.at(0),
                                  [](int c) -> bool { return c != static_cast<int>('-'); })
                           << "]";
             }
         }
-        if(m_positional_arguments.find(argument::Position::LastArgument) ==
-           m_positional_arguments.end())
-            std::cerr << " [" << demangle<this_type>() << " arguments...]";
         std::cerr << " " << _extra << std::endl;
     }
+
     std::cerr << "\nOptions:" << std::endl;
     for(auto& a : m_arguments)
     {
-        std::string name = a.m_names[0];
+        std::string name = a.m_names.at(0);
         for(size_t n = 1; n < a.m_names.size(); ++n)
             name.append(", " + a.m_names[n]);
         std::stringstream ss;
@@ -166,16 +232,30 @@ argument_parser::print_help(const std::string& _extra)
 
         auto desc = a.m_desc;
         if(ss.str().length() >= static_cast<size_t>(m_width))
-            desc = std::string("\n%{INDENT}%") + desc;
+            desc = std::string("\n%{NEWLINE}%") + desc;
 
-        // replace %{INDENT}% with indentation
-        const std::string indent_key = "%{INDENT}%";
-        const auto        npos       = std::string::npos;
-        auto              pos        = npos;
-        std::stringstream indent;
-        indent << std::setw(prefix.str().length()) << "";
-        while((pos = desc.find(indent_key)) != npos)
-            desc = desc.replace(pos, indent_key.length(), indent.str());
+        {
+            // replace %{INDENT}% with indentation
+            const std::string indent_key = "%{INDENT}%";
+            const auto        npos       = std::string::npos;
+            auto              pos        = npos;
+            std::stringstream indent;
+            indent << std::setw(prefix.str().length()) << "";
+            while((pos = desc.find(indent_key)) != npos)
+                desc = desc.replace(pos, indent_key.length(), indent.str());
+        }
+
+        {
+            // replace %{NEWLINE}% with indentation
+            const std::string indent_key = "%{NEWLINE}%";
+            const auto        npos       = std::string::npos;
+            auto              pos        = npos;
+            std::stringstream indent;
+            indent << std::setw(m_width + 5) << "";
+            while((pos = desc.find(indent_key)) != npos)
+                desc = desc.replace(pos, indent_key.length(), indent.str());
+        }
+
         std::cerr << " " << std::setw(m_width) << desc;
 
         if(a.m_required)
@@ -302,6 +382,11 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         std::cerr << "'" << '\n';
     }
 
+    for(auto& a : m_arguments)
+        a.m_callback(a.m_default);
+    for(auto& a : m_positional_arguments)
+        a.m_callback(a.m_default);
+
     using argmap_t = std::map<std::string, argument*>;
 
     argmap_t   m_arg_map = {};
@@ -320,6 +405,8 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
             {
                 auto        nleading_dash = helpers::lcount(n, is_leading_dash);
                 std::string name          = helpers::ltrim(n, is_leading_dash);
+                if(name.empty())
+                    continue;
                 if(m_name_map.find(name) != m_name_map.end())
                     return arg_result("Duplicate of argument name: " + n);
                 m_name_map[name] = a.m_index;
@@ -328,7 +415,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
                     long_short_opts.insert(name);
             }
             if(a.m_position >= 0 || a.m_position == argument::Position::LastArgument)
-                m_positional_arguments.at(a.m_position) = a.m_index;
+                m_positional_map.at(a.m_position) = a.m_index;
         }
 
         m_bin = _args.at(0);
@@ -343,8 +430,8 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
             if(arg_len == 0)
                 continue;
             if(argv_index == argc - 1 &&
-               m_positional_arguments.find(argument::Position::LastArgument) !=
-                   m_positional_arguments.end())
+               m_positional_map.find(argument::Position::LastArgument) !=
+                   m_positional_map.end())
             {
                 err          = end_argument();
                 arg_result b = err;
@@ -400,19 +487,26 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     {
         if(a.m_required && !a.m_found)
         {
-            return arg_result("Required argument not found: " + a.m_names[0]);
+            return arg_result("Required argument not found: " + a.m_names.at(0));
         }
         if(a.m_position >= 0 && argc >= a.m_position && !a.m_found)
         {
-            return arg_result("argument " + a.m_names[0] + " expected in position " +
+            return arg_result("argument " + a.m_names.at(0) + " expected in position " +
                               std::to_string(a.m_position));
         }
+    }
+
+    // check requirements
+    for(auto& a : m_positional_arguments)
+    {
+        if(a.m_required && !a.m_found)
+            return arg_result("Required argument not found: " + a.m_names.at(0));
     }
 
     // check all the counts have been satisfied
     for(auto& a : m_arguments)
     {
-        if(a.m_found)
+        if(a.m_found && a.m_default == nullptr)
         {
             auto cnt_err = check_count(a);
             if(cnt_err)
@@ -440,8 +534,8 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
 TIMEMORY_UTILITY_INLINE argument_parser::arg_result
                         argument_parser::begin_argument(const std::string& arg, bool longarg, int position)
 {
-    auto it = m_positional_arguments.find(position);
-    if(it != m_positional_arguments.end())
+    auto it = m_positional_map.find(position);
+    if(it != m_positional_map.end())
     {
         arg_result err = end_argument();
         argument&  a   = m_arguments[static_cast<size_t>(it->second)];
@@ -512,13 +606,29 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
                         argument_parser::add_value(const std::string& value, int location)
 {
     auto unnamed = [&]() {
-        auto itr = m_positional_arguments.find(location);
-        if(itr != m_positional_arguments.end())
+        auto itr = m_positional_map.find(location);
+        if(itr != m_positional_map.end())
         {
             argument& a = m_arguments[static_cast<size_t>(itr->second)];
             a.m_values.push_back(value);
             a.m_found = true;
         }
+        else
+        {
+            auto idx = m_positional_values.size();
+            m_positional_values.emplace(idx, value);
+            if(idx < m_positional_arguments.size())
+            {
+                auto& a   = m_positional_arguments.at(idx);
+                a.m_found = true;
+                auto err  = a.check_choice(value);
+                if(err)
+                    return err;
+                a.m_values.push_back(value);
+                a.execute_actions(*this);
+            }
+        }
+        return arg_result{};
     };
 
     if(m_current >= 0)
@@ -541,8 +651,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
             err = end_argument();
             if(err)
                 return err;
-            unnamed();
-            return arg_result{};
+            return unnamed();
         }
 
         a.m_values.push_back(value);
@@ -557,12 +666,8 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         }
         return arg_result{};
     }
-    else
-    {
-        unnamed();
-        // TODO
-        return arg_result{};
-    }
+
+    return unnamed();
 }
 
 TIMEMORY_UTILITY_INLINE argument_parser::arg_result
@@ -573,16 +678,16 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         argument& a = m_arguments[static_cast<size_t>(m_current)];
         m_current   = -1;
         if(static_cast<int>(a.m_values.size()) < a.m_count)
-            return arg_result("Too few arguments given for " + a.m_names[0]);
+            return arg_result("Too few arguments given for " + a.m_names.at(0));
         if(a.m_max_count >= 0)
         {
             if(static_cast<int>(a.m_values.size()) > a.m_max_count)
-                return arg_result("Too many arguments given for " + a.m_names[0]);
+                return arg_result("Too many arguments given for " + a.m_names.at(0));
         }
         else if(a.m_count >= 0)
         {
             if(static_cast<int>(a.m_values.size()) > a.m_count)
-                return arg_result("Too many arguments given for " + a.m_names[0]);
+                return arg_result("Too many arguments given for " + a.m_names.at(0));
         }
     }
     return arg_result{};
