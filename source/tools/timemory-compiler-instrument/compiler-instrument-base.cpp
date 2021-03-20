@@ -98,7 +98,6 @@ static size_t  throttle_count = 1000;
 static size_t  throttle_value = 10000;
 
 #if !defined(TIMEMORY_USE_GOTCHA)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, main_gotcha, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, pthread_gotcha, false_type)
 #endif
 
