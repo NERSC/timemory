@@ -126,6 +126,19 @@ timemory_mpi_finalize_gotcha_wrapper()
 
 //--------------------------------------------------------------------------------------//
 
+static int&
+timemory_trace_mpi_comm_key()
+{
+    static int comm_key = -1;
+    return comm_key;
+}
+
+static int
+timemory_trace_mpi_copy(MPI_Comm, int, void*, void*, void*, int*)
+{
+    return MPI_SUCCESS;
+}
+
 static int
 timemory_trace_mpi_finalize(MPI_Comm, int, void*, void*)
 {
@@ -154,11 +167,11 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
         tim::trace::lock<tim::trace::library> lk{};
         auto                                  _state = tim::settings::enabled();
         tim::settings::enabled()                     = false;
-        int  comm_key                                = 0;
-        auto ret = MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_trace_mpi_finalize,
-                                          &comm_key, NULL);
+        auto ret =
+            MPI_Comm_create_keyval(&timemory_trace_mpi_copy, &timemory_trace_mpi_finalize,
+                                   &timemory_trace_mpi_comm_key(), nullptr);
         if(ret == MPI_SUCCESS)
-            MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, NULL);
+            MPI_Comm_set_attr(MPI_COMM_SELF, timemory_trace_mpi_comm_key(), nullptr);
         tim::settings::enabled() = _state;
     }
 
