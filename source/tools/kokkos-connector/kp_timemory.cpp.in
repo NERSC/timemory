@@ -254,8 +254,11 @@ kokkosp_begin_parallel_for(const char* name, uint32_t devid, uint64_t* kernid)
 {
     if_constexpr(profile_entry_t::size() > 0)
     {
-        auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-        *kernid    = get_unique_id();
+        auto pname =
+            (devid > std::numeric_limits<uint16_t>::max())  // junk device number
+                ? TIMEMORY_JOIN('/', "kokkos", name)
+                : TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        *kernid = get_unique_id();
         create_profiler(pname, *kernid);
         start_profiler(*kernid, kp_timemory_parallel_for{}, name, devid);
     }
@@ -278,8 +281,11 @@ kokkosp_begin_parallel_reduce(const char* name, uint32_t devid, uint64_t* kernid
 {
     if_constexpr(profile_entry_t::size() > 0)
     {
-        auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-        *kernid    = get_unique_id();
+        auto pname =
+            (devid > std::numeric_limits<uint16_t>::max())  // junk device number
+                ? TIMEMORY_JOIN('/', "kokkos", name)
+                : TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        *kernid = get_unique_id();
         create_profiler(pname, *kernid);
         start_profiler(*kernid, kp_timemory_parallel_reduce{}, name, devid);
     }
@@ -302,8 +308,11 @@ kokkosp_begin_parallel_scan(const char* name, uint32_t devid, uint64_t* kernid)
 {
     if_constexpr(profile_entry_t::size() > 0)
     {
-        auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-        *kernid    = get_unique_id();
+        auto pname =
+            (devid > std::numeric_limits<uint16_t>::max())  // junk device number
+                ? TIMEMORY_JOIN('/', "kokkos", name)
+                : TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        *kernid = get_unique_id();
         create_profiler(pname, *kernid);
         start_profiler(*kernid, kp_timemory_parallel_scan{}, name, devid);
     }
@@ -326,8 +335,11 @@ kokkosp_begin_fence(const char* name, uint32_t devid, uint64_t* kernid)
 {
     if_constexpr(profile_entry_t::size() > 0)
     {
-        auto pname = TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-        *kernid    = get_unique_id();
+        auto pname =
+            (devid > std::numeric_limits<uint16_t>::max())  // junk device number
+                ? TIMEMORY_JOIN('/', "kokkos", name)
+                : TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+        *kernid = get_unique_id();
         create_profiler(pname, *kernid);
         start_profiler(*kernid, kp_timemory_fence{}, name, devid);
     }
@@ -376,8 +388,7 @@ kokkosp_create_profile_section(const char* name, uint32_t* secid)
     if_constexpr(profile_entry_t::size() > 0)
     {
         *secid = get_unique_id();
-        auto pname =
-            TIMEMORY_JOIN('/', "kokkos", TIMEMORY_JOIN("", "section", *secid), name);
+        auto pname = TIMEMORY_JOIN('/', "kokkos", name);
         create_profiler(pname, *secid);
     }
 }

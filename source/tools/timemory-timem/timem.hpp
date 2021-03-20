@@ -94,6 +94,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::written_bytes, fal
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::papi_array_t, false_type)
 // clang-format on
 
+#include "md5.hpp"
+
 // C includes
 #include <errno.h>
 #include <signal.h>
@@ -665,36 +667,9 @@ struct timem_config
     std::vector<std::string> argvector = {};
 
     template <typename Archive>
-    void serialize(Archive& ar, unsigned int)
-    {
-        ar(tim::cereal::make_nvp("use_shell", use_shell),
-           tim::cereal::make_nvp("use_mpi", use_mpi),
-           tim::cereal::make_nvp("use_papi", use_papi),
-           tim::cereal::make_nvp("use_sample", use_sample),
-           tim::cereal::make_nvp("debug", debug),
-           tim::cereal::make_nvp("verbose", verbose),
-           tim::cereal::make_nvp("shell", shell),
-           tim::cereal::make_nvp("shell_flags", shell_flags),
-           tim::cereal::make_nvp("sample_freq", sample_freq),
-           tim::cereal::make_nvp("sample_delay", sample_delay));
-    }
+    void serialize(Archive& ar, unsigned int);
 
-    std::string get_output_filename(std::string inp = {})
-    {
-        if(inp.empty())
-            inp = output_file;
-
-        using pair_t = std::pair<std::string, int64_t>;
-        for(const auto& itr :
-            { pair_t{ "%p", worker_pid }, pair_t{ "%j", tim::get_env("SLURM_JOB_ID", 0) },
-              pair_t{ "%r", tim::mpi::rank() }, pair_t{ "%s", tim::mpi::size() } })
-        {
-            auto pos = std::string::npos;
-            while((pos = inp.find(itr.first)) != std::string::npos)
-                inp = inp.replace(pos, itr.first.length(), std::to_string(itr.second));
-        }
-        return inp;
-    }
+    std::string get_output_filename(std::string inp = {});
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -760,3 +735,50 @@ explain(int ret, const char* pathname, char** argv)
 }
 //
 //--------------------------------------------------------------------------------------//
+//
+template <typename Archive>
+void
+timem_config::serialize(Archive& ar, unsigned int)
+{
+    ar(tim::cereal::make_nvp("use_shell", use_shell),
+       tim::cereal::make_nvp("use_mpi", use_mpi),
+       tim::cereal::make_nvp("use_papi", use_papi),
+       tim::cereal::make_nvp("use_sample", use_sample),
+       tim::cereal::make_nvp("debug", debug), tim::cereal::make_nvp("verbose", verbose),
+       tim::cereal::make_nvp("shell", shell),
+       tim::cereal::make_nvp("shell_flags", shell_flags),
+       tim::cereal::make_nvp("sample_freq", sample_freq),
+       tim::cereal::make_nvp("sample_delay", sample_delay));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+std::string
+timem_config::get_output_filename(std::string inp)
+{
+    if(inp.empty())
+        inp = output_file;
+
+    auto _replace = [](std::string& _inp, const std::string& _key,
+                       const std::string& _sub) {
+        auto pos = std::string::npos;
+        while((pos = _inp.find(_key)) != std::string::npos)
+            _inp = _inp.replace(pos, _key.length(), _sub);
+    };
+
+    std::string argstring = {};
+    for(size_t i = 1; i < argvector.size(); ++i)
+        argstring.append(argvector.at(i));
+
+    _replace(inp, "%m", compute_md5(argstring));
+
+    using pair_t = std::pair<std::string, int64_t>;
+    for(const auto& itr :
+        { pair_t{ "%p", worker_pid }, pair_t{ "%j", tim::get_env("SLURM_JOB_ID", 0) },
+          pair_t{ "%r", tim::get_env("SLURM_PROCID", tim::mpi::rank()) },
+          pair_t{ "%s", tim::mpi::size() } })
+    {
+        _replace(inp, itr.first, std::to_string(itr.second));
+    }
+    return inp;
+}

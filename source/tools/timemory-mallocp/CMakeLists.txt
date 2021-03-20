@@ -1,13 +1,16 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
-if(NOT TIMEMORY_BUILD_MALLOCP_LIBRARY OR NOT TIMEMORY_USE_GOTCHA OR
-    NOT TARGET timemory::timemory-cxx-shared OR TIMEMORY_SKIP_BUILD)
+if(NOT TIMEMORY_USE_GOTCHA OR NOT TARGET timemory::timemory-cxx-shared)
     return()
+endif()
+
+if(NOT TIMEMORY_BUILD_MALLOCP_LIBRARY OR TIMEMORY_SKIP_BUILD OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
+    set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
 project(timemory-mallocp-tool)
 
-add_library(timemory-mallocp-shared SHARED ${PROJECT_SOURCE_DIR}/timemory-mallocp.cpp)
+add_library(timemory-mallocp-shared SHARED ${_EXCLUDE} ${PROJECT_SOURCE_DIR}/timemory-mallocp.cpp)
 add_library(timemory::timemory-mallocp-shared ALIAS timemory-mallocp-shared)
 
 # public link targets

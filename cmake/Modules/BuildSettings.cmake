@@ -155,22 +155,15 @@ if(NOT cxx_timemory_lto_flto_thin)
         add_disabled_interface(timemory-lto)
         set(TIMEMORY_BUILD_LTO OFF)
     else()
-        set_target_properties(timemory-lto PROPERTIES
-            INTERFACE_LINK_OPTIONS -flto)
+        target_link_options(timemory-lto INTERFACE -flto)
     endif()
 else()
-    set_target_properties(timemory-lto PROPERTIES
-        INTERFACE_LINK_OPTIONS -flto=thin)
+    target_link_options(timemory-lto INTERFACE -flto=thin)
 endif()
 
 if(TIMEMORY_BUILD_LTO)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-    target_link_libraries(timemory-compile-options INTERFACE timemory-lto)
-    if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
-        # add_target_cuda_flag(timemory-lto "-dlto")
-        # set_target_properties(timemory-lto PROPERTIES
-        #    INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-dlto>)
-    endif()
+    target_link_libraries(timemory-compile-options INTERFACE timemory::timemory-lto)
 endif()
 
 #----------------------------------------------------------------------------------------#

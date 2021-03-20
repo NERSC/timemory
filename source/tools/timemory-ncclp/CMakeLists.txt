@@ -1,13 +1,16 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
-if(NOT TIMEMORY_BUILD_NCCLP_LIBRARY OR NOT TIMEMORY_USE_NCCL OR NOT TIMEMORY_USE_GOTCHA OR
-    NOT TARGET timemory::timemory-cxx-shared OR TIMEMORY_SKIP_BUILD)
+if(NOT TIMEMORY_USE_GOTCHA OR NOT TIMEMORY_USE_NCCL OR NOT TARGET timemory::timemory-cxx-shared)
     return()
+endif()
+
+if(NOT TIMEMORY_BUILD_NCCLP_LIBRARY OR TIMEMORY_SKIP_BUILD OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
+    set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
 project(timemory-ncclp-tool)
 
-add_library(timemory-ncclp-shared SHARED ${PROJECT_SOURCE_DIR}/timemory-ncclp.cpp)
+add_library(timemory-ncclp-shared SHARED ${_EXCLUDE} ${PROJECT_SOURCE_DIR}/timemory-ncclp.cpp)
 add_library(timemory::timemory-ncclp-shared ALIAS timemory-ncclp-shared)
 
 # public link targets

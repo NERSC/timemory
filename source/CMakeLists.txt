@@ -95,7 +95,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-message(STATUS "Adding source/timemory...")
+timemory_message(STATUS "Adding source/timemory...")
 add_subdirectory(timemory)
 
 
@@ -302,7 +302,7 @@ endif()
 #
 # timem wrapper tool, mpip, etc.
 #
-message(STATUS "Adding source/tools...")
+timemory_message(STATUS "Adding source/tools...")
 add_subdirectory(tools)
 
 set(_OMPT_LIB)
@@ -426,7 +426,7 @@ export(TARGETS  ${LIBRARIES}
 #
 # Python bindings
 #
-message(STATUS "Adding source/python...")
+timemory_message(STATUS "Adding source/python...")
 add_subdirectory(python)
 
 #
@@ -456,7 +456,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-message(STATUS "Configuring packaging...")
+timemory_message(STATUS "Configuring packaging...")
 include(PackageConfigure)
 
 #----------------------------------------------------------------------------------------#
@@ -465,7 +465,7 @@ include(PackageConfigure)
 #
 #----------------------------------------------------------------------------------------#
 
-message(STATUS "Adding source/tests...")
+timemory_message(STATUS "Adding source/tests...")
 add_subdirectory(tests)
 
 set(TIMEMORY_MAKEFILE_COMPILED_LIBRARIES

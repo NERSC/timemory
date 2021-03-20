@@ -259,7 +259,9 @@ function(GENERATE_COMPOSITE_INTERFACE _TARGET)
 
     foreach(_DEPENDS ${ARGN})
         if(${_DEPENDS} IN_LIST TIMEMORY_EMPTY_INTERFACE_LIBRARIES)
-            message(STATUS  "[interface] '${_TARGET}' depends on '${_DEPENDS}' which is empty...")
+            if(NOT TIMEMORY_QUIET_CONFIG)
+                message(STATUS  "[interface] '${_TARGET}' depends on '${_DEPENDS}' which is empty...")
+            endif()
             set(_FOUND OFF)
         else()
             list(APPEND _LINK ${_DEPENDS})
@@ -644,13 +646,8 @@ if(UPCXX_FOUND)
     target_compile_definitions(timemory-upcxx INTERFACE ${UPCXX_DEFINITIONS})
     timemory_target_compile_definitions(timemory-upcxx INTERFACE TIMEMORY_USE_UPCXX)
 
-    if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-        target_link_options(timemory-upcxx INTERFACE
-            $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_LINK_OPTIONS}>)
-    else()
-        set_target_properties(timemory-upcxx PROPERTIES INTERFACE_LINK_OPTIONS
-            $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_LINK_OPTIONS}>)
-    endif()
+    target_link_options(timemory-upcxx INTERFACE
+        $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_LINK_OPTIONS}>)
 
 else()
 
@@ -799,6 +796,12 @@ if(TIMEMORY_USE_CUDA)
         target_include_directories(timemory-cuda SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
     endif()
     target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
+
+    if(TIMEMORY_BUILD_LTO AND CMAKE_CUDA_COMPILER_IS_NVIDIA AND NOT CUDA_VERSION VERSION_LESS 11.2)
+        add_target_cuda_flag(timemory-lto "-dlto")
+        target_link_options(timemory-lto INTERFACE
+            $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:-dlto>>)
+    endif()
 
 else()
     set(TIMEMORY_USE_CUDA OFF)
@@ -1413,7 +1416,7 @@ if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
         REPO_URL https://github.com/jrmadsen/PTL.git
         REPO_BRANCH master)
 
-    message(STATUS "Adding external/ptl")
+    timemory_message(STATUS "Adding external/ptl")
     option(PTL_USE_TBB "Enable TBB backend support in PTL" OFF)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/ptl)
 endif()

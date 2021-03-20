@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 # this is for internal use
-if(NOT TIMEMORY_BUILD_OMPT_LIBRARY OR NOT TIMEMORY_USE_OMPT OR TIMEMORY_SKIP_BUILD)
+if(NOT TIMEMORY_USE_OMPT)
     return()
+endif()
+
+if(NOT TIMEMORY_BUILD_OMPT_LIBRARY OR TIMEMORY_SKIP_BUILD OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
+    set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
 project(timemory-ompt-tool)
@@ -25,7 +29,7 @@ foreach(_TYPE ${LIB_TYPES})
 
     set(TARGET_NAME timemory-ompt-${_LC_TYPE})
 
-    add_library(${TARGET_NAME} ${_TYPE} ${PROJECT_SOURCE_DIR}/timemory-ompt.cpp)
+    add_library(${TARGET_NAME} ${_TYPE} ${_EXCLUDE} ${PROJECT_SOURCE_DIR}/timemory-ompt.cpp)
     add_library(timemory::${TARGET_NAME} ALIAS ${TARGET_NAME})
 
     # public link targets

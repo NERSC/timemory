@@ -164,8 +164,9 @@ main(int argc, char** argv)
                       // indented 35 spaces
                       R"(Write results to JSON output file.
 %{INDENT}% Use:
+%{INDENT}% - '%m' to encode md5sum of command line
 %{INDENT}% - '%p' to encode the process ID
-%{INDENT}% - '%j' to encode the slurm job ID
+%{INDENT}% - '%j' to encode the SLURM job ID
 %{INDENT}% - '%r' to encode the MPI comm rank
 %{INDENT}% - '%s' to encode the MPI comm size
 %{INDENT}% E.g. '-o timem-output-%p'.

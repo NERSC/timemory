@@ -21,6 +21,7 @@ include(GNUInstallDirs)
 include(CMakeParseArguments)
 
 # if built in kokkos-tools or in timemory
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME kokkos)
 set(TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/timemory/kokkos-tools)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/kokkos-tools)
@@ -39,6 +40,7 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.18)
     cmake_policy(SET CMP0104 OLD)
 endif()
 set(BUILD_SHARED_LIBS ON)
+set(BUILD_STATIC_LIBS OFF)
 set(CMAKE_CXX_STANDARD 14 CACHE STRING "CXX language standard")
 set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "CXX language flags required")
 set(CMAKE_CUDA_STANDARD 14 CACHE STRING "CUDA language standard")
@@ -92,7 +94,7 @@ endfunction()
 #
 #   Build object library
 #
-add_library(kp_timemory_common OBJECT
+add_library(kp_timemory_common OBJECT ${TIMEMORY_EXCLUDE_FROM_ALL}
     ${PROJECT_SOURCE_DIR}/kp_timemory_common.cpp
     ${PROJECT_SOURCE_DIR}/kp_timemory.hpp)
 
@@ -110,7 +112,7 @@ set(timemory_COMMON_SOURCES
 #
 #   Build generic library with hidden symbols
 #
-add_library(kp_timemory SHARED
+add_library(kp_timemory SHARED ${TIMEMORY_EXCLUDE_FROM_ALL}
     ${PROJECT_SOURCE_DIR}/kp_timemory.cpp
     ${PROJECT_SOURCE_DIR}/kp_timemory.hpp
     ${PROJECT_SOURCE_DIR}/kp_timemory_common.cpp)
@@ -136,7 +138,8 @@ install(
 #
 #   Build regex filtering library
 #
-add_library(kp_timemory_filter SHARED ${PROJECT_SOURCE_DIR}/kp_timemory_filter.cpp
+add_library(kp_timemory_filter SHARED ${TIMEMORY_EXCLUDE_FROM_ALL}
+    ${PROJECT_SOURCE_DIR}/kp_timemory_filter.cpp
      ${timemory_COMMON_SOURCES})
 configure_library(kp_timemory_filter)
 
@@ -175,7 +178,7 @@ endfunction()
 if(TIMEMORY_KOKKOS_BUILD_SAMPLE)
     # use launch_compiler feature to ensure kokkos uses it's original compiler
     find_package(Kokkos REQUIRED)
-    add_executable(kokkos-connector-sample sample/sample.cpp)
+    add_executable(kokkos-connector-sample ${TIMEMORY_EXCLUDE_FROM_ALL} sample/sample.cpp)
     target_compile_definitions(kokkos-connector-sample PRIVATE
         -DKOKKOS_PROFILE_LIBRARY="$<TARGET_FILE:kp_timemory>")
     target_link_libraries(kokkos-connector-sample PRIVATE Kokkos::kokkos)
@@ -189,17 +192,19 @@ endif()
 
 ##--------------------------------------------------------------------------------------##
 
-if(NOT TIMEMORY_BUILD_KOKKOS_CONFIG)
-    message(STATUS "")
-    message(STATUS
-        "[${PROJECT_NAME}] Disabled building explicit configurations with 'TIMEMORY_BUILD_KOKKOS_CONFIG=OFF'")
-    message(STATUS "")
-else()
-    message(STATUS "")
-    message(STATUS "Building explicit connector configurations: ${_CONNECTORS}")
-    message(STATUS "    Disable building explicit configurations with '-DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF'")
-    message(STATUS "    Reduce explicit configurations with semi-colon delimited '-DTIMEMORY_BUILD_KOKKOS_CONNECTORS=\"...\"'")
-    message(STATUS "")
+if(timemory_MAIN_PROJECT)
+    if(NOT TIMEMORY_BUILD_KOKKOS_CONFIG)
+        message(STATUS "")
+        message(STATUS
+            "[${PROJECT_NAME}] Disabled building explicit configurations with 'TIMEMORY_BUILD_KOKKOS_CONFIG=OFF'")
+        message(STATUS "")
+    else()
+        message(STATUS "")
+        message(STATUS "Building explicit connector configurations: ${_CONNECTORS}")
+        message(STATUS "    Disable building explicit configurations with '-DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF'")
+        message(STATUS "    Reduce explicit configurations with semi-colon delimited '-DTIMEMORY_BUILD_KOKKOS_CONNECTORS=\"...\"'")
+        message(STATUS "")
+    endif()
 endif()
 
 ##--------------------------------------------------------------------------------------##
@@ -267,7 +272,7 @@ function(ADD_CONNECTOR_CONFIG _NAME)
         timemory::timemory-dmp
         timemory::timemory-threading)
 
-    add_library(kp_timemory_${_NAME} SHARED
+    add_library(kp_timemory_${_NAME} SHARED ${TIMEMORY_EXCLUDE_FROM_ALL}
         ${SOURCE_FILE} ${timemory_COMMON_SOURCES})
     configure_library(kp_timemory_${_NAME}
         ${CONNECTOR_TARGETS})
@@ -529,10 +534,8 @@ add_connector_config(tau
     TARGETS timemory::timemory-tau)
 
 set(USE_OMPT ${TIMEMORY_USE_OMPT})
-if(TARGET timemory::timemory-ompt)
-    set(_OMPT_LIB timemory::timemory-ompt)
-elseif(TARGET timemory::timemory-ompt-static)
-    set(_OMPT_LIB timemory::timemory-ompt-static)
+if(TARGET timemory::timemory-ompt-shared)
+    set(_OMPT_LIB timemory::timemory-ompt-shared)
 else()
     set(USE_OMPT OFF)
 endif()

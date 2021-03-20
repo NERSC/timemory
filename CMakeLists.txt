@@ -1,103 +1,17 @@
 
-##########################################################################################
-#       CMake settings
-##########################################################################################
+#----------------------------------------------------------------------------------------#
+#   recommend out-of-source builds
+#----------------------------------------------------------------------------------------#
 
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
-if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND
+   CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(MSG "")
     message(STATUS "Warning! Building from the source directory is not recommended")
     message(STATUS "If unintented, please remove 'CMakeCache.txt' and 'CMakeFiles'")
     message(STATUS "and build from a separate directory")
-    message(WARNING "In-source build")
-endif()
-
-option(TIMEMORY_CCACHE_BUILD "Enable ccache build" OFF)
-mark_as_advanced(TIMEMORY_CCACHE_BUILD)
-if(TIMEMORY_CCACHE_BUILD)
-    find_program(TIMEMORY_CCACHE_EXE ccache PATH_SUFFIXES bin)
-    if(TIMEMORY_CCACHE_EXE)
-        if(NOT EXISTS "${TIMEMORY_CCACHE_EXE}")
-            message(WARNING
-                "TIMEMORY_CCACHE_BUILD is ON but TIMEMORY_CCACHE_EXE (${TIMEMORY_CCACHE_EXE}) does not exist!")
-        else()
-            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${TIMEMORY_CCACHE_EXE}")
-        endif()
-    endif()
-endif()
-
-cmake_policy(SET CMP0010 NEW)
-cmake_policy(SET CMP0022 NEW)
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0042 NEW)
-cmake_policy(SET CMP0053 NEW)
-cmake_policy(SET CMP0063 NEW)
-if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-    cmake_policy(SET CMP0077 NEW)
-    cmake_policy(SET CMP0079 NEW)
-endif()
-if(NOT CMAKE_VERSION VERSION_LESS 3.14)
-    cmake_policy(SET CMP0082 NEW)
-endif()
-if(NOT CMAKE_VERSION VERSION_LESS 3.18)
-    cmake_policy(SET CMP0104 OLD)
-endif()
-# make sure testing enabled
-if(TIMEMORY_BUILD_MINIMAL_TESTING)
-    set(TIMEMORY_BUILD_TESTING ON)
-endif()
-# this gets annoying
-if(TIMEMORY_BUILD_GOOGLE_TEST OR TIMEMORY_BUILD_TESTING)
-    set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
-        "Suppress Warnings that are meant for the author of the CMakeLists.txt files")
-endif()
-# override any cache settings
-if(TIMEMORY_BUILD_TESTING)
-    set(TIMEMORY_BUILD_GOOGLE_TEST ON)
-    if(NOT TIMEMORY_BUILD_MINIMAL_TESTING)
-        set(TIMEMORY_BUILD_EXAMPLES ON)
-    endif()
-else()
-    if(TIMEMORY_BUILD_MINIMAL_TESTING)
-        set(TIMEMORY_BUILD_GOOGLE_TEST ON)
-        set(TIMEMORY_BUILD_EXAMPLES OFF)
-    endif()
-endif()
-#
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
-endif()
-
-#----------------------------------------------------------------------------------------#
-#   versioning
-#----------------------------------------------------------------------------------------#
-
-file(READ "${CMAKE_CURRENT_LIST_DIR}/VERSION" FULL_VERSION_STRING LIMIT_COUNT 1)
-string(REGEX REPLACE "(\n|\r)" "" FULL_VERSION_STRING "${FULL_VERSION_STRING}")
-string(REGEX REPLACE "[A-Za-z].*" "" VERSION_STRING "${FULL_VERSION_STRING}")
-set(TIMEMORY_VERSION "${VERSION_STRING}")
-message(STATUS "timemory version ${TIMEMORY_VERSION} (${FULL_VERSION_STRING})")
-set(TIMEMORY_VERSION_STRING "${FULL_VERSION_STRING}")
-string(REPLACE "." ";" VERSION_LIST "${VERSION_STRING}")
-LIST(GET VERSION_LIST 0 TIMEMORY_VERSION_MAJOR)
-LIST(GET VERSION_LIST 1 TIMEMORY_VERSION_MINOR)
-LIST(GET VERSION_LIST 2 TIMEMORY_VERSION_PATCH)
-set(TIMEMORY_VERSION
-    "${TIMEMORY_VERSION_MAJOR}.${TIMEMORY_VERSION_MINOR}.${TIMEMORY_VERSION_PATCH}")
-
-math(EXPR TIMEMORY_VERSION_CODE
-    "${TIMEMORY_VERSION_MAJOR} * 10000 + ${TIMEMORY_VERSION_MINOR} * 100 + ${TIMEMORY_VERSION_PATCH}")
-
-#----------------------------------------------------------------------------------------#
-#   setup.py
-#----------------------------------------------------------------------------------------#
-
-if(SKBUILD)
-    set(CMAKE_INSTALL_LIBDIR lib)
-    set(TIMEMORY_USE_PYTHON ON CACHE BOOL "" FORCE)
-    set(TIMEMORY_BUILD_PYTHON ON CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+    message(AUTHOR_WARNING "In-source build")
 endif()
 
 if(APPLE AND NOT "$ENV{CONDA_PYTHON_EXE}" STREQUAL "")
@@ -110,25 +24,28 @@ endif()
 #   project
 #----------------------------------------------------------------------------------------#
 
+# sets version info, policies, some options, and other miscellaneous stuff
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/Modules/ProjectSetup.cmake")
+
 project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
 
 # Check if project is being used directly or via add_subdirectory
-set(${PROJECT_NAME}_MASTER_PROJECT ON)
-if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    set(${PROJECT_NAME}_MASTER_PROJECT OFF)
+set(${PROJECT_NAME}_MAIN_PROJECT ON)
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR OR
+   NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+    set(${PROJECT_NAME}_MAIN_PROJECT OFF)
 endif()
 
 # set these as the defaults
-if(timemory_MASTER_PROJECT)
+if(timemory_MAIN_PROJECT)
     set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL
-        "Append directories in the linker search path")
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
+    # set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
     mark_as_advanced(CMAKE_ENABLE_EXPORTS)
 else()
     set(CMAKE_ENABLE_EXPORTS ON)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    # set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 find_package(Git QUIET)
@@ -181,7 +98,7 @@ set(LIBNAME timemory)
 #
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
     set(_BIN_DIR ${CMAKE_BINARY_DIR})
-    if(NOT ${PROJECT_NAME}_MASTER_PROJECT)
+    if(NOT ${PROJECT_NAME}_MAIN_PROJECT)
         set(_BIN_DIR ${PROJECT_BINARY_DIR})
     endif()
     if(WIN32)
@@ -235,6 +152,9 @@ set(_BUILD_STATIC_CXX ${BUILD_STATIC_LIBS})
 option(TIMEMORY_BUILD_QUIET "Suppress author warnings without -Wno-dev" OFF)
 mark_as_advanced(TIMEMORY_BUILD_QUIET)
 
+option(TIMEMORY_QUIET_CONFIG "Make timemory configuration quieter" OFF)
+mark_as_advanced(TIMEMORY_QUIET_CONFIG)
+
 if(SKBUILD)
     set(_BUILD_SHARED_CXX ON)
 else()
@@ -278,16 +198,16 @@ unset(_TLS_OPTIONS)
 
 include(CMakeParseArguments)
 
-message(STATUS "Adding clang-format...")
+timemory_message(STATUS "Adding clang-format...")
 include(ClangFormat)
 
-message(STATUS "Configuring compilers...")
+timemory_message(STATUS "Configuring compilers...")
 include(Compilers)
 
-message(STATUS "Configuring build settings...")
+timemory_message(STATUS "Configuring build settings...")
 include(BuildSettings)
 
-message(STATUS "Configuring external packages and interface libraries...")
+timemory_message(STATUS "Configuring external packages and interface libraries...")
 include(Packages)
 
 # only after submodules have been added
@@ -299,7 +219,7 @@ else()
 endif()
 
 # set these as the defaults
-if(timemory_MASTER_PROJECT)
+if(timemory_MAIN_PROJECT)
     set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF CACHE BOOL
         "Add compile flag to hide symbols of inline functions")
     set(CMAKE_C_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
@@ -315,24 +235,23 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
-    # activate clang-tidy if enabled
-    _timemory_activate_clang_tidy()
+    _timemory_activate_clang_tidy() # activate clang-tidy if enabled
 endif()
 
 set(timemory_DIR ${PROJECT_BINARY_DIR} CACHE PATH "Path to timemory" FORCE)
 
-message(STATUS "Adding timemory (python)...")
+timemory_message(STATUS "Adding timemory (python)...")
 add_subdirectory(timemory)
 
-message(STATUS "Adding source...")
+timemory_message(STATUS "Adding source...")
 add_subdirectory(source)
 
-message(STATUS "Adding external...")
+timemory_message(STATUS "Adding external...")
 add_subdirectory(external)
 
 # Install the export set for use with the install-tree
-message(STATUS "Exporting library dependencies...")
 if(TIMEMORY_INSTALL_CONFIG)
+    timemory_message(STATUS "Exporting library dependencies...")
     install(EXPORT ${PROJECT_NAME}-library-depends
         DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
         NAMESPACE ${PROJECT_NAME}::
@@ -344,10 +263,10 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    message(STATUS "Adding examples...")
+    timemory_message(STATUS "Adding examples...")
     add_subdirectory(examples)
 elseif(TIMEMORY_USE_PYTHON AND TIMEMORY_CI)
-    message(STATUS "Adding examples/ex-python...")
+    timemory_message(STATUS "Adding examples/ex-python...")
     # copies over some python scripts
     function(CONFIGURE_PYTHON_SCRIPT)
         foreach(_TYPE ${ARGN})
@@ -370,7 +289,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     include(Documentation)
 
     if(TIMEMORY_BUILD_DOCS)
-        message(STATUS "Adding documentation...")
+        timemory_message(STATUS "Adding documentation...")
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
     endif()
 

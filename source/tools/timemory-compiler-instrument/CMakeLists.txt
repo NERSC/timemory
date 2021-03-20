@@ -4,16 +4,22 @@ if(WIN32 OR NOT TIMEMORY_BUILD_COMPILER_INSTRUMENTATION)
     return()
 endif()
 
+if(NOT timemory_MAIN_PROJECT OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
+    set(_EXCLUDE EXCLUDE_FROM_ALL)
+endif()
+
 cmake_policy(PUSH)
 cmake_policy(SET CMP0063 NEW)
 
+set(CMAKE_UNITY_BUILD OFF)
+set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+#
 set(CMAKE_C_VISIBILITY_PRESET "hidden")
 set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_UNITY_BUILD OFF)
 
 set(LINK_LIBS)
 if(dl_LIBRARY)
@@ -79,6 +85,7 @@ set(LIB_TYPE STATIC)
 build_library(
     PIC
     NO_CACHE_LIST
+    ${_EXCLUDE}
     TYPE                ${LIB_TYPE}
     TARGET_NAME         ${LIB_TARGET}
     OUTPUT_NAME         ${LIB_TARGET}
@@ -103,7 +110,6 @@ target_link_libraries(${LIB_TARGET} PRIVATE
     timemory::timemory-statistics
     timemory::timemory-compiler-instrument-compile-options)
 
-
 # strip_target(${LIB_TARGET} ${LIB_TYPE} "timemory_profile_func")
 
 install(TARGETS ${LIB_TARGET}
@@ -111,19 +117,24 @@ install(TARGETS ${LIB_TARGET}
     OPTIONAL)
 
 # build tree
-execute_process(
+add_custom_command(TARGET ${LIB_TARGET}
+    POST_BUILD
+    BYPRODUCTS  ${PROJECT_BINARY_DIR}/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
     COMMAND ${CMAKE_COMMAND} -E create_symlink
         compiler/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
         lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Creating library symlink lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}")
 
 # install tree
 install(CODE "
-EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        timemory/compiler/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-        lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-    WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+if(EXISTS \"${PROJECT_BINARY_DIR}/compiler/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}\")
+    EXECUTE_PROCESS(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            timemory/compiler/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+            lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+endif()
 "
 OPTIONAL)
 
@@ -143,6 +154,7 @@ foreach(LIB_TYPE ${_LIB_TYPES})
     build_library(
         PIC
         NO_CACHE_LIST
+        ${_EXCLUDE}
         TYPE                ${UC_LIB_TYPE}
         TARGET_NAME         ${LIB_TARGET}
         OUTPUT_NAME         timemory-compiler-instrument
@@ -171,8 +183,7 @@ foreach(LIB_TYPE ${_LIB_TYPES})
             $<$<COMPILE_LANGUAGE:C>:/Gh>
             $<$<COMPILE_LANGUAGE:CXX>:/Gh>)
 
-        set_target_properties(${LIB_TARGET} PROPERTIES
-            INTERFACE_LINK_OPTIONS "/DEBUG")
+        target_link_options(${LIB_TARGET} INTERFACE "/DEBUG")
     else()
         target_link_libraries(${LIB_TARGET} INTERFACE
             timemory::timemory-compile-debuginfo
@@ -188,19 +199,24 @@ foreach(LIB_TYPE ${_LIB_TYPES})
         OPTIONAL)
 
     # build tree
-    execute_process(
+    add_custom_command(TARGET ${LIB_TARGET}
+        POST_BUILD
+        BYPRODUCTS ${PROJECT_BINARY_DIR}/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
         COMMAND ${CMAKE_COMMAND} -E create_symlink
             compiler/libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
             libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMENT "Creating library symlink libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}")
 
     # install tree
     install(CODE "
-EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        timemory/compiler/libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-        libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-    WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+if(EXISTS \"${PROJECT_BINARY_DIR}/compiler/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}\")
+    EXECUTE_PROCESS(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            timemory/compiler/libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+            libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+        WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+endif()
     "
     OPTIONAL)
 
