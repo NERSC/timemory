@@ -102,7 +102,10 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
             // create the manager and initialize the storage
             auto _tlm = tim::manager::instance();
 #    if defined(TIMEMORY_INTERNAL_TESTING)
-            assert(_tlm.get() != nullptr);
+            if(_tlm == nullptr)
+                throw std::runtime_error("nullptr to manager instance");
+#    else
+            (void) _tlm;
 #    endif
             // initialize the storage
             auto _final =
@@ -116,11 +119,6 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
             // finalize
             for(auto& itr : _final)
                 itr();
-            if(_wrapper->debug())
-                PRINT_HERE("[T%li] Executing finalize manager", (long int) _tid);
-            // finalize the thread-local manager
-            if(_tlm)
-                _tlm->finalize();
             if(_wrapper->debug())
                 PRINT_HERE("[T%li] Returning from thread", (long int) _tid);
             // return the data
