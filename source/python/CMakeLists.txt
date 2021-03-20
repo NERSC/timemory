@@ -158,6 +158,8 @@ if(TIMEMORY_BUILD_PYTHON)
     # if(APPLE)
     if(APPLE AND "$ENV{TRAVIS}" STREQUAL "true")
         #
+        target_link_libraries(libpytimemory PRIVATE timemory::timemory-sanitizer)
+        #
         file(WRITE ${PROJECT_BINARY_DIR}/.pdbrc
 "r
 bt

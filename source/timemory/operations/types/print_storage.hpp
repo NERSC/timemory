@@ -66,7 +66,7 @@ private:
         if(!trait::runtime_enabled<Tp>::get())
             return;
 
-        auto _storage = storage<Tp, Vp>::noninit_instance();
+        auto _storage = storage<Tp>::noninit_instance();
         if(_storage)
         {
             _storage->stack_clear();

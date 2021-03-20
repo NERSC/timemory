@@ -623,8 +623,6 @@ protected:
     using base_type::value;
 
     friend struct base<this_type, value_type>;
-    friend class impl::storage<this_type,
-                               trait::uses_value_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//
@@ -898,6 +896,5 @@ public:
         ar.finishNode();
     }
 };
-
 }  // namespace component
 }  // namespace tim

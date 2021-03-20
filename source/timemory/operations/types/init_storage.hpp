@@ -47,8 +47,7 @@ init_storage<Tp>::init_storage(enable_if_t<trait::uses_value_storage<Up>::value,
 {
 #if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
 #else
-    using value_type = typename type::value_type;
-    base::storage::template base_instance<type, value_type>();
+    base::storage::template base_instance<type>();
 #endif
 }
 //
@@ -66,8 +65,7 @@ init_storage<Tp>::get(enable_if_t<trait::uses_value_storage<U, V>::value, int>)
         if(!trait::runtime_enabled<Tp>::get())
             return get_type{ nullptr, false, false, false };
 
-        using value_type = typename type::value_type;
-        auto this_inst   = tim::base::storage::template base_instance<Tp, value_type>();
+        auto this_inst = tim::base::storage::template base_instance<Tp>();
         this_inst->initialize();
         bool this_glob = true;
         bool this_work = true;
@@ -92,8 +90,7 @@ init_storage<Tp>::get(enable_if_t<!trait::uses_value_storage<U, V>::value, int>)
         if(!trait::runtime_enabled<Tp>::get())
             return get_type{ nullptr, false, false, false };
 
-        using value_type = typename type::value_type;
-        auto this_inst   = tim::base::storage::template base_instance<Tp, value_type>();
+        auto this_inst = tim::base::storage::template base_instance<Tp>();
         this_inst->initialize();
         return get_type{ this_inst, false, false, false };
     }();

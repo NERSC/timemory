@@ -17,7 +17,6 @@ if(NOT CUDA_VERSION VERSION_LESS 11.0)
 endif()
 
 set(CMAKE_BUILD_TYPE "Release")
-
 option(BUILD_COMBINED_ROOFLINE "Build a combined roofline example" ON)
 
 add_library(gpu-roofline-compile-options INTERFACE)

@@ -45,5 +45,8 @@
 #        include "timemory/plotting.hpp"
 #        include "timemory/settings.hpp"
 #    endif
-//
+
+#    if !defined(TIMEMORY_USE_STORAGE_EXTERN)
+#        include "timemory/storage/base_storage.cpp"
+#    endif
 #endif

@@ -1462,6 +1462,7 @@ main(int argc, char** argv)
             verbprintf(
                 1,
                 "Using insertion set failed. Restarting with individual insertion...\n");
+
             auto _execute_batch = [&instr_procedure_functions, &addr_space](size_t _beg,
                                                                             size_t _end) {
                 verbprintf(1, "Instrumenting batch of functions [%lu, %lu)\n",

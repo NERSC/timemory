@@ -204,6 +204,7 @@ main(int argc, char** argv)
 {
     tim::settings::json_output()          = true;
     tim::settings::instruction_roofline() = true;
+    tim::dmp::initialize(argc, argv);
     tim::timemory_init(argc, argv);
     tim::cuda::device_query();
     tim::cuda::set_device(0);
@@ -332,6 +333,11 @@ main(int argc, char** argv)
 
     printf("Finalizing timemory...\n");
     tim::timemory_finalize();
+
+    printf("Finalizing distributed memory parallelism...\n");
+    tim::dmp::finalize();
+
+    return 0;
 }
 
 //--------------------------------------------------------------------------------------//

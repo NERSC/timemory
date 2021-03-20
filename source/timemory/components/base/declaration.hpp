@@ -87,7 +87,7 @@ public:
     using this_type         = Tp;
     using base_type         = base<Tp, Value>;
     using base_storage_type = tim::base::storage;
-    using storage_type      = storage<Tp, Value>;
+    using storage_type      = storage<Tp>;
     using graph_iterator    = graph_iterator_t<Tp>;
     using state_t           = state<this_type>;
     using statistics_policy = policy::record_statistics<Tp, Value>;
@@ -338,7 +338,7 @@ public:
 
     using this_type    = Tp;
     using base_type    = base<Tp, value_type>;
-    using storage_type = storage<Tp, void>;
+    using storage_type = storage<Tp>;
 
 private:
     friend struct node::graph<Tp>;

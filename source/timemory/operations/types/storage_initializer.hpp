@@ -75,7 +75,7 @@ enable_if_t<trait::uses_storage<T>::value, storage_initializer> storage_initiali
 
     invoke_preinit<T>(0);
 
-    using storage_type = storage<T, typename T::value_type>;
+    using storage_type = storage<T>;
 
     static auto _master = (storage_type::master_instance(), storage_initializer{});
     static thread_local auto _worker = (storage_type::instance(), storage_initializer{});

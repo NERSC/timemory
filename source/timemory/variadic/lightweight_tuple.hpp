@@ -580,7 +580,6 @@ protected:
     using bundle_type::m_store;
     mutable data_type m_data = data_type{};
 };
-
 //
 //----------------------------------------------------------------------------------//
 //

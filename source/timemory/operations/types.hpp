@@ -632,17 +632,36 @@ struct decode;
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
+struct call_stack;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
 struct dummy
 {
-    static_assert(std::is_default_constructible<T>::value,
-                  "Type is not default constructible and therefore a dummy object (for "
-                  "placeholders and meta-programming) cannot be automatically generated. "
-                  "Please specialize tim::operation::dummy<T> to provide operator()() "
-                  "which returns a dummy object.");
-
     TIMEMORY_DEFAULT_OBJECT(dummy)
 
-    TIMEMORY_ALWAYS_INLINE T operator()() const { return T{}; }
+    inline T operator()() const { return sfinae(0); }
+
+private:
+    template <typename U = T>
+    inline auto sfinae(
+        int, enable_if_t<std::is_constructible<U, dummy<U>>::value, int> = 0) const
+    {
+        return T{ operation::dummy<T>{} };
+    }
+
+    template <typename U = T>
+    inline auto sfinae(long) const
+    {
+        static_assert(
+            std::is_default_constructible<U>::value,
+            "Type is not default constructible and therefore a dummy object (for "
+            "placeholders and meta-programming) cannot be automatically generated. "
+            "Please specialize tim::operation::dummy<T> to provide operator()() "
+            "which returns a dummy object.");
+        return T{};
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -686,10 +705,10 @@ template <typename Type>
 struct merge<Type, true>
 {
     static constexpr bool has_data = true;
-    using storage_type             = impl::storage<Type, has_data>;
+    using storage_type             = storage<Type>;
     using singleton_t              = typename storage_type::singleton_type;
     using graph_t                  = typename storage_type::graph_type;
-    using result_type              = typename storage_type::result_array_t;
+    using result_type              = typename storage_type::result_vector_type;
 
     template <typename Tp>
     using vector_t = std::vector<Tp>;
@@ -726,10 +745,10 @@ template <typename Type>
 struct merge<Type, false>
 {
     static constexpr bool has_data = false;
-    using storage_type             = impl::storage<Type, has_data>;
+    using storage_type             = storage<Type>;
     using singleton_t              = typename storage_type::singleton_type;
     using graph_t                  = typename storage_type::graph_type;
-    using result_type              = typename storage_type::result_array_t;
+    using result_type              = typename storage_type::result_vector_type;
 
     merge(storage_type& lhs, storage_type& rhs);
     merge(result_type&, const result_type&) {}
@@ -932,10 +951,10 @@ struct print<Tp, true> : public base::print
     using base_type                = base::print;
     using this_type                = print<Tp, has_data>;
     using type                     = Tp;
-    using storage_type             = impl::storage<Tp, has_data>;
-    using result_type              = typename storage_type::dmp_result_t;
+    using storage_type             = storage<Tp>;
+    using result_type              = typename storage_type::dmp_result_vector_type;
     using result_node              = typename storage_type::result_node;
-    using graph_type               = typename storage_type::graph_t;
+    using graph_type               = typename storage_type::graph_type;
     using graph_node               = typename storage_type::graph_node;
     using hierarchy_type           = std::vector<uint64_t>;
     using callback_type            = std::function<void(this_type*)>;

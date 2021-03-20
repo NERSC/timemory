@@ -641,6 +641,11 @@ get_signal_handler()
 //
 //--------------------------------------------------------------------------------------//
 //
+std::string
+get_random_string(size_t _nrand, std::string _base = {});
+//
+//--------------------------------------------------------------------------------------//
+//
 struct timem_config
 {
     static constexpr bool papi_available = tim::trait::is_available<papi_array_t>::value;
@@ -693,6 +698,35 @@ struct timem_config
             while((pos = inp.find(itr.first)) != std::string::npos)
                 inp = inp.replace(pos, itr.first.length(), std::to_string(itr.second));
         }
+
+        std::vector<std::pair<std::string, std::string>> rdata = {
+            { "%h", get_random_string(8) }
+        };
+
+        // Extraction of a sub-match
+        const std::regex base_regex("%([0-9]+)h");
+        std::smatch      base_match;
+
+        if(std::regex_search(inp, base_match, base_regex))
+        {
+            // The first sub_match is the whole string; the next
+            // sub_match is the first parenthesized expression.
+            for(size_t i = 1; i < base_match.size(); ++i)
+            {
+                std::ssub_match base_sub_match = base_match[i];
+                auto            n              = std::stoi(base_sub_match.str());
+                rdata.emplace_back("%" + base_sub_match.str() + "h",
+                                   get_random_string(n));
+            }
+        }
+
+        for(const auto& itr : rdata)
+        {
+            auto pos = std::string::npos;
+            while((pos = inp.find(itr.first)) != std::string::npos)
+                inp = inp.replace(pos, itr.first.length(), itr.second);
+        }
+
         return inp;
     }
 };

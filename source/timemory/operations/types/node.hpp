@@ -81,14 +81,13 @@ struct push_node
 private:
     //  typical resolution: component
     template <typename Up, typename Vp = typename Up::value_type,
-              typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
     TIMEMORY_HOT auto sfinae(Up& _obj, int, int, int, scope::config _scope,
                              hash_value_type _hash) const
         -> decltype(_obj.get_is_on_stack() && _obj.get_is_flat() && _obj.get_storage() &&
                     _obj.get_depth_change())
     {
-        using storage_type          = StorageT;
+        using storage_type          = storage<Up>;
         constexpr bool force_flat_v = trait::flat_storage<Tp>::value;
         constexpr bool force_time_v = trait::timeline_storage<Tp>::value;
         if(!_obj.get_is_on_stack())
@@ -166,13 +165,12 @@ struct pop_node
 private:
     //  typical resolution: component
     template <typename Up, typename Vp = typename Up::value_type,
-              typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
     TIMEMORY_HOT auto sfinae(Up& _obj, int, int, int, int) const
         -> decltype(_obj.get_is_on_stack() && _obj.get_depth_change() &&
                     _obj.get_storage() && _obj.get_iterator())
     {
-        using storage_type = StorageT;
+        using storage_type = storage<Up>;
         // obj.pop_node(std::forward<Args>(args)...);
         if(_obj.get_is_on_stack() && _obj.get_iterator())
         {

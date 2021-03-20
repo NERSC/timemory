@@ -24,6 +24,7 @@
 
 #include "timem.hpp"
 #include "timemory/utility/argparse.hpp"
+#include <random>
 
 //--------------------------------------------------------------------------------------//
 
@@ -168,6 +169,8 @@ main(int argc, char** argv)
 %{INDENT}% - '%j' to encode the slurm job ID
 %{INDENT}% - '%r' to encode the MPI comm rank
 %{INDENT}% - '%s' to encode the MPI comm size
+%{INDENT}% - '%h' to encode a random hash of 8 characters
+%{INDENT}% - '%Nh' to encode a random hash of N characters
 %{INDENT}% E.g. '-o timem-output-%p'.
 %{INDENT}% If verbosity >= 2 or debugging is enabled, will also write sampling data to log file.)")
         .max_count(1);
@@ -845,6 +848,32 @@ timem_mpi_was_finalized()
 {
     static bool _instance = false;
     return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+std::string
+get_random_string(size_t _nrand, std::string _base)
+{
+    std::random_device              rd;
+    std::mt19937                    gen{ rd() };
+    std::uniform_int_distribution<> distrib{ 0, std::numeric_limits<char>::max() };
+    std::array<char, 2>             buffer{};
+    memset(buffer.data(), '\0', buffer.size() * sizeof(char));
+
+    auto _get_random_character = [&distrib, &gen, &buffer]() {
+        char c = '\0';
+        do
+        {
+            c = distrib(gen);
+        } while(!std::isalnum(c));
+        buffer[0] = c;
+        return buffer.data();
+    };
+
+    for(size_t i = 0; i < _nrand; ++i)
+        _base += _get_random_character();
+    return _base;
 }
 
 //--------------------------------------------------------------------------------------//
