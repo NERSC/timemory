@@ -170,6 +170,59 @@ private:
     std::array<int64_t, 6> m_data{};
 #endif
 };
+
+struct win_io_counters
+{
+    static auto& instance()
+    {
+        static auto _instance = win_io_counters{};
+        return _instance;
+    }
+
+    TIMEMORY_NODISCARD inline int64_t get_bytes_read()
+    {
+        update();
+        return static_cast<int64_t>(m_io_counters.ReadTransferCount);
+    }
+
+    TIMEMORY_NODISCARD inline int64_t get_bytes_written()
+    {
+        update();
+        return static_cast<int64_t>(m_io_counters.WriteTransferCount);
+    }
+
+private:
+    using clock_t = std::chrono::steady_clock;
+    using time_point_t = clock_t::time_point;
+    time_point_t m_last_update = time_point_t::min();
+    IO_COUNTERS m_io_counters;
+
+    win_io_counters() { update(); }
+
+    bool should_update() const
+    {
+        auto now = clock_t::now();
+        if(std::chrono::duration_cast<std::chrono::milliseconds>(now - m_last_update) >
+           std::chrono::milliseconds{ 1000 })
+            return true;
+        return false;
+    }
+
+    void update()
+    {
+        if(should_update())
+        {
+            static auto handle = GetCurrentProcess();
+            if(!GetProcessIoCounters(handle, &m_io_counters))
+            {
+                m_io_counters.ReadTransferCount = m_io_counters.ReadOperationCount = 0;
+                m_io_counters.WriteTransferCount = m_io_counters.WriteOperationCount = 0;
+                m_io_counters.OtherTransferCount = m_io_counters.OtherOperationCount = 0;
+            }
+        }
+    }
+};
+
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -254,6 +307,8 @@ tim::get_bytes_read()
 #elif defined(TIMEMORY_LINUX)
     // read three values and return the last one
     return io_cache::read<5>().back();
+#elif defined(TIMEMORY_WINDOWS)
+    return win_io_counters::instance().get_bytes_read();
 #else
     return 0;
 #endif
@@ -273,6 +328,8 @@ tim::get_bytes_written()
 #elif defined(TIMEMORY_LINUX)
     // read four values and return the last one
     return io_cache::read<6>().back();
+#elif defined(TIMEMORY_WINDOWS)
+    return win_io_counters::instance().get_bytes_written();
 #else
     return 0;
 #endif
