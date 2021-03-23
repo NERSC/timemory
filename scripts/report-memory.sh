@@ -2,6 +2,7 @@
 
 run()
 {
+    echo ""
     date
     if [ $(uname) = "Darwin" ]; then
         ps -caxm -orss= | awk '{ sum += $1 } END { print "Resident Set Size: " sum/1024 " MiB" }'
@@ -15,7 +16,7 @@ run()
 
 F=""
 N=1000
-W=30
+W=60
 
 if [ -f "$1" ]; then
     F="$1"

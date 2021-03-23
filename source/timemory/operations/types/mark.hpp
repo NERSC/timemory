@@ -172,9 +172,6 @@ template <typename Tp>
 template <typename... Args>
 mark_begin<Tp>::mark_begin(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     sfinae(obj, 0, 0, std::forward<Args>(args)...);
 }
 //
@@ -184,9 +181,6 @@ template <typename Tp>
 template <typename... Args>
 mark_end<Tp>::mark_end(type& obj, Args&&... args)
 {
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
     sfinae(obj, 0, 0, std::forward<Args>(args)...);
 }
 //

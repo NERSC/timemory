@@ -67,8 +67,6 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
     {
         // array of finalization functions
         std::array<std::function<void()>, sizeof...(Idx)> _data{};
-        // initialize the storage in the thread
-        TIMEMORY_FOLD_EXPRESSION(tim::storage_initializer::get<Idx>());
         // generate a function for finalizing
         TIMEMORY_FOLD_EXPRESSION(get_storage_impl<Idx>(_data));
         // return the array of finalization functions
@@ -81,31 +79,48 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
 
         TIMEMORY_DEFAULT_OBJECT(wrapper)
 
-        wrapper(routine_t _routine, void* _arg)
+        wrapper(routine_t _routine, void* _arg, bool _debug)
         : m_routine(_routine)
         , m_arg(_arg)
+        , m_debug(_debug)
         {}
 
         void* operator()() const { return m_routine(m_arg); }
 
+        bool         debug() const { return m_debug; }
         static void* wrap(void* _arg)
         {
             if(!_arg)
                 return nullptr;
 
+            // get the thread id
+            auto _tid = tim::threading::get_id();
             // convert the argument
             wrapper* _wrapper = static_cast<wrapper*>(_arg);
+            if(_wrapper->debug())
+                PRINT_HERE("[T%li] Creating timemory manager", (long int) _tid);
             // create the manager and initialize the storage
             auto _tlm = tim::manager::instance();
-            assert(_tlm.get() != nullptr);
+#    if defined(TIMEMORY_INTERNAL_TESTING)
+            if(_tlm == nullptr)
+                throw std::runtime_error("nullptr to manager instance");
+#    else
+            (void) _tlm;
+#    endif
             // initialize the storage
             auto _final =
                 get_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+            if(_wrapper->debug())
+                PRINT_HERE("[T%li] Executing original function", (long int) _tid);
             // execute the original function
             auto _ret = (*_wrapper)();
+            if(_wrapper->debug())
+                PRINT_HERE("[T%li] Executing finalizing callbacks", (long int) _tid);
             // finalize
             for(auto& itr : _final)
                 itr();
+            if(_wrapper->debug())
+                PRINT_HERE("[T%li] Returning from thread", (long int) _tid);
             // return the data
             return _ret;
         }
@@ -113,13 +128,20 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
     private:
         routine_t m_routine = nullptr;
         void*     m_arg     = nullptr;
+        bool      m_debug   = false;
     };
 
     // pthread_create
     int operator()(pthread_t* thread, const pthread_attr_t* attr,
                    void* (*start_routine)(void*), void*     arg)
     {
-        auto* _obj = new wrapper(start_routine, arg);
+        // get the thread id
+        auto _tid      = tim::threading::get_id();
+        auto _settings = tim::settings::instance<TIMEMORY_API>();
+        auto _debug    = (_settings) ? _settings->get_debug() : true;
+        if(_debug)
+            PRINT_HERE("[T%li] Creating new thread", (long int) _tid);
+        auto* _obj = new wrapper(start_routine, arg, _debug);
         return pthread_create(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
     }
 
@@ -128,7 +150,10 @@ private:
     static void get_storage_impl(std::array<std::function<void()>, N>& _data)
     {
         _data[Idx] = []() {
-            tim::operation::fini_storage<tim::component::enumerator_t<Idx>>{};
+            using type = tim::component::enumerator_t<Idx>;
+            tim::operation::fini_storage<type>{};
+            // auto _instance = tim::storage<type>::instance();
+            // tim::get_storage_singleton<tim::storage<type>>()->reset(_instance);
         };
     }
 };

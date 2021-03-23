@@ -244,7 +244,7 @@ public:
     void serialize(Archive& ar, const unsigned int)
     {
         if(!data.get())  // for input
-            data = data_ptr_t(new ert_data_t());
+            data = std::make_shared<ert_data_t>();
         ar(cereal::make_nvp("params", params), cereal::make_nvp("data", *data));
     }
 

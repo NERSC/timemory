@@ -47,8 +47,8 @@ namespace argparse
 struct argument_parser;
 }
 //
-/// \struct tim::base::vsettings
-/// \brief Base class for storing settings
+/// \struct tim::vsettings
+/// \brief Virtual base class for storing settings
 struct vsettings
 {
     using parser_t      = argparse::argument_parser;

@@ -122,8 +122,10 @@ if(TIMEMORY_BUILD_PYTHON)
     endif()
 
     set(pybind_libs pybind11::module)
-    if(TIMEMORY_BUILD_LTO AND TARGET pybind11::thin_lto)
+    if((TIMEMORY_BUILD_LTO OR APPLE) AND TARGET pybind11::thin_lto)
         list(APPEND pybind_libs pybind11::thin_lto)
+    elseif(APPLE)
+        list(APPEND pybind_libs timemory::timemory-lto)
     endif()
 
     add_library(libpytimemory-interface INTERFACE)

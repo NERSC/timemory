@@ -240,8 +240,8 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
-using memory_tracker = component::data_tracker<int64_t, project::kokkosp>;
-using kokkos_bundle  = component::user_kokkosp_bundle;
+using memory_tracker = tim::component::data_tracker<int64_t, tim::project::kokkosp>;
+using kokkos_bundle  = tim::component::user_kokkosp_bundle;
 
 using logger_t = tim::component_bundle_t<project::kokkosp, kokkosp::kernel_logger*>;
 

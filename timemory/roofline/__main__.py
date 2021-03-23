@@ -261,7 +261,7 @@ def plot(args):
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=20)
         print("Exception - {}".format(e))
         sys.exit(1)
 
@@ -413,13 +413,14 @@ def run(args, cmd):
         ret = p.wait()
         handle_error(ret, cmd, args.keep_going)
 
-    _rank = "" if args.rank is None else "_{}".format(args.rank)
     if "gpu_roofline" in args.rtype:
         args.arithmetic_intensity = os.path.join(
-            output_path, "{}{}_activity.json".format(output_prefix, args.rtype)
+            output_path,
+            "{}{}_activity.json".format(output_prefix, args.rtype),
         )
         args.operations = os.path.join(
-            output_path, "{}{}_counters.json".format(output_prefix, args.rtype)
+            output_path,
+            "{}{}_counters.json".format(output_prefix, args.rtype),
         )
     else:
         args.arithmetic_intensity = os.path.join(
@@ -465,8 +466,10 @@ def try_plot():
         plot(args)
 
     except Exception as e:
-        msg = "\nCommand line argument error:\n\t{}\n".format(e)
-        warnings.warn(msg)
+        print(f"\nException :: command line argument error\n\t{e}\n")
+        # warnings.warn(msg)
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=20)
         _errc = 1
 
     sys.exit(_errc)

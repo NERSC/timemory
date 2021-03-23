@@ -59,10 +59,30 @@ struct generic_operator
 
 private:
     template <typename Up>
-    static void check()
+    static bool check()
     {
         using U = std::decay_t<std::remove_pointer_t<Up>>;
         static_assert(std::is_same<U, type>::value, "Error! Up != type");
+
+        // this is commented out because generic_operator does work with non-component
+        // types
+        // static_assert(
+        //     concepts::is_component<U>::value,
+        //     "Error! Applying generic_operator on a type that is not a component");
+
+        constexpr bool supports_runtime_checks = trait::runtime_enabled<Tp>::value &&
+                                                 trait::runtime_enabled<Op>::value &&
+                                                 trait::runtime_enabled<Tag>::value;
+
+        // if runtime checks are enabled and type or tag is not enabled, return false
+        if(supports_runtime_checks &&
+           (!trait::runtime_enabled<Tp>::get() || !trait::runtime_enabled<Tag>::get()))
+            return false;
+
+        // if supports_runtime_checks if false, compiler should optimize away this entire
+        // function call because it will be known at compile time that this function will
+        // always returns true
+        return true;
     }
 
     //----------------------------------------------------------------------------------//
@@ -76,7 +96,10 @@ public:
               enable_if_t<std::is_pointer<Up>::value, int>     = 0>
     TIMEMORY_INLINE explicit generic_operator(Up obj, Args&&... args)
     {
-        check<Up>();
+        // rely on compiler to optimize this away if supports_runtime_checks if false
+        if(!check<Up>())
+            return;
+
         if(obj)
             sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
@@ -86,7 +109,10 @@ public:
               enable_if_t<std::is_pointer<Up>::value, int>     = 0>
     TIMEMORY_INLINE explicit generic_operator(Up obj, Up rhs, Args&&... args)
     {
-        check<Up>();
+        // rely on compiler to optimize this away if supports_runtime_checks if false
+        if(!check<Up>())
+            return;
+
         if(obj && rhs)
             sfinae(obj, rhs, 0, 0, std::forward<Args>(args)...);
     }
@@ -142,7 +168,10 @@ public:
               enable_if_t<!std::is_pointer<Up>::value, int>    = 0>
     TIMEMORY_INLINE explicit generic_operator(Up& obj, Args&&... args)
     {
-        check<Up>();
+        // rely on compiler to optimize this away if supports_runtime_checks if false
+        if(!check<Up>())
+            return;
+
         sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
 
@@ -151,7 +180,10 @@ public:
               enable_if_t<!std::is_pointer<Up>::value, int>    = 0>
     TIMEMORY_INLINE explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
     {
-        check<Up>();
+        // rely on compiler to optimize this away if supports_runtime_checks if false
+        if(!check<Up>())
+            return;
+
         sfinae(obj, rhs, 0, 0, std::forward<Args>(args)...);
     }
 

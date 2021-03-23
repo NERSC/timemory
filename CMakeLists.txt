@@ -131,11 +131,13 @@ if(Git_FOUND)
         COMMAND             ${GIT_EXECUTABLE} describe --tags
         WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}
         OUTPUT_VARIABLE     TIMEMORY_GIT_DESCRIBE
+        ERROR_QUIET
         OUTPUT_STRIP_TRAILING_WHITESPACE)
     execute_process(
         COMMAND             ${GIT_EXECUTABLE} rev-parse HEAD
         WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}
         OUTPUT_VARIABLE     TIMEMORY_GIT_REVISION
+        ERROR_QUIET
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
 
@@ -196,6 +198,26 @@ endif()
 
 include(MacroUtilities)
 include(Options)
+
+#----------------------------------------------------------------------------------------#
+#   compile-timing-perf
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
+    find_package(compile-time-perf QUIET)
+    if(compile-time-perf_FOUND)
+        enable_compile_time_perf(timemory-compile-time
+            LINK
+            ANALYZER_OPTIONS
+                -s "${PROJECT_BINARY_DIR}/" "${PROJECT_SOURCE_DIR}/"
+                -f "lang-all" "so" "a" "dylib" "dll"
+                -i ".*(_tests)$" "^(ex_).*"
+                -e "^(@rpath).*" "^(/usr)" "^(/opt)")
+        set(TIMEMORY_USE_CTP ON)
+    else()
+        set(TIMEMORY_USE_CTP OFF)
+    endif()
+endif()
 
 #----------------------------------------------------------------------------------------#
 #   handle some additional configuration before other includes
@@ -283,17 +305,9 @@ else()
 endif()
 
 #----------------------------------------------------------------------------------------#
-#   timemory exports
-#----------------------------------------------------------------------------------------#
-
-#message(STATUS "Exporting interface libraries...")
-#install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
-#    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#    EXPORT ${PROJECT_NAME}-library-depends)
-
-#----------------------------------------------------------------------------------------#
 #   timemory source
 #----------------------------------------------------------------------------------------#
+
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     # activate clang-tidy if enabled
     _timemory_activate_clang_tidy()

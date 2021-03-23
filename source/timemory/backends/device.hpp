@@ -231,14 +231,14 @@ struct params
     , dynamic((_grid > 0) ? false : true)
     {}
 
-    int compute(const int& size)
+    int compute(int size)
     {
         if(grid == 0 || dynamic)
             grid = ((size + block - 1) / block);
         return grid;
     }
 
-    static int compute(const int& size, const int& block_size)
+    static int compute(int size, int block_size)
     {
         return ((size + block_size - 1) / block_size);
     }

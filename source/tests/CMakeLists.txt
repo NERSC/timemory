@@ -336,19 +336,13 @@ add_timemory_google_test(flat_tests
     DISCOVER_TESTS
     SOURCES         flat_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_extern_test_templates}
-                    ${_LIBRARY})
+                    ${_extern_test_templates})
 
 add_timemory_google_test(timeline_tests
     DISCOVER_TESTS
     SOURCES         timeline_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_extern_test_templates}
-                    ${_LIBRARY})
+                    ${_extern_test_templates})
 
 add_timemory_google_test(data_tracker_tests
     DISCOVER_TESTS
@@ -387,6 +381,8 @@ if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
         LINK_LIBRARIES  common-test-libs
                         PTL::ptl
                         ${_LIBRARY}
+                        test-debug-flags
+                        timemory::timemory-sanitizer
         ENVIRONMENT     ${ptl_tests_env}
         TIMEOUT         300)
 endif()
@@ -945,4 +941,13 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST AND NOT TIMEMORY_USE_COVE
                 DEPENDS ${_TARGET} timemory-run)
         endforeach()
     endforeach()
+endif()
+
+if(TIMEMORY_USE_CTP AND compile-time-perf_ANALYZER_EXECUTABLE)
+    add_test(
+        NAME                compile-time-perf
+        COMMAND             ${CMAKE_COMMAND}
+                            --build ${PROJECT_BINARY_DIR}
+                            --target analyze-timemory-compile-time
+        WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
 endif()

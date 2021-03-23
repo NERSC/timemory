@@ -21,7 +21,8 @@ build_intermediate_library(
     FOLDER              components
     HEADERS             ${header_files}
     SOURCES             ${source_files}
-    DEPENDS             timemory-vector
-                        timemory-cuda
-    PRIVATE_LINK        timemory-roofline-options
-    PROPERTY_DEPENDS    GLOBAL)
+    DEPENDS             timemory::timemory-vector
+                        timemory::timemory-cuda
+                        timemory::timemory-core
+                        timemory::timemory-manager
+    PRIVATE_LINK        timemory::timemory-roofline-options)

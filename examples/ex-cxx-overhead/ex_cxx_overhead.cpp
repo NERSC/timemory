@@ -31,6 +31,8 @@
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/testing.hpp"
 
+// TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_runtime_enabled, TIMEMORY_API, false_type)
+
 using namespace tim::component;
 
 using auto_tuple_t  = tim::auto_tuple_t<wall_clock, user_global_bundle>;
@@ -42,6 +44,7 @@ using global_tuple_t =
                       page_rss, priority_context_switch, voluntary_context_switch,
                       caliper, tau_marker, papi_tuple_t, trip_count>;
 
+static int64_t ncount       = 0;
 static int64_t nmeasure     = 0;
 static int64_t toolkit_size = 2;
 using result_type           = std::tuple<timer_tuple_t, int64_t, int64_t>;
@@ -63,6 +66,8 @@ struct invoke
 struct chained
 {};
 struct measure
+{};
+struct count
 {};
 struct single
 {};
@@ -86,7 +91,7 @@ print_result(const std::string& prefix, int64_t result, int64_t num_meas,
              int64_t num_uniq)
 {
     std::cout << std::setw(20) << prefix << " answer : " << result
-              << " (# measurments: " << num_meas << ", # unique: " << num_uniq << ")"
+              << " (# measurements: " << num_meas << ", # unique: " << num_uniq << ")"
               << std::endl;
 }
 
@@ -122,6 +127,17 @@ fibonacci(int64_t n, int64_t cutoff,
                        : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
+}
+
+//======================================================================================//
+
+template <typename Tp>
+int64_t
+fibonacci(int64_t n, int64_t cutoff,
+          tim::enable_if_t<std::is_same<Tp, mode::count>::value, int> = 0)
+{
+    ncount += 1;
+    return (n < 2) ? n : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
 }
 
 //======================================================================================//
@@ -236,8 +252,7 @@ fibonacci(int64_t n, int64_t cutoff,
 
 //======================================================================================//
 
-using single_tuple_t =
-    tim::lightweight_tuple<wall_clock, tim::quirk::config<tim::quirk::auto_start>>;
+using single_tuple_t = tim::lightweight_tuple<wall_clock>;
 static single_tuple_t single_sum{ "single" };
 
 template <typename Tp>
@@ -245,38 +260,36 @@ int64_t
 fibonacci(int64_t n, int64_t cutoff,
           tim::enable_if_t<std::is_same<Tp, mode::single>::value, int> = 0)
 {
-    if(n > cutoff)
-    {
-        single_tuple_t _scoped{};
-        auto           _result =
-            (n < 2) ? n : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
-        single_sum += _scoped.stop();
-        return _result;
-    }
-    return fibonacci(n);
+    single_tuple_t _scoped{};
+    _scoped.start();
+    auto _result =
+        (n < 2) ? n : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
+    single_sum += _scoped.stop();
+    return _result;
 }
 
 //======================================================================================//
 
-static double nseconds = 0;
+static int64_t nseconds = 0;
 
 template <typename Tp>
 int64_t
 fibonacci(int64_t n, int64_t cutoff,
           tim::enable_if_t<std::is_same<Tp, mode::manual>::value, int> = 0)
 {
-    if(n > cutoff)
-    {
-        auto _start = std::chrono::high_resolution_clock::now();
-        auto _result =
-            (n < 2) ? n : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
-        nseconds +=
-            std::chrono::duration<double>{ std::chrono::high_resolution_clock::now() -
-                                           _start }
-                .count();
-        return _result;
-    }
-    return fibonacci(n);
+    using clock_type    = std::chrono::steady_clock;
+    using duration_type = std::chrono::duration<clock_type::rep, std::nano>;
+
+    auto _start =
+        std::chrono::duration_cast<duration_type>(clock_type::now().time_since_epoch())
+            .count();
+    auto _result =
+        (n < 2) ? n : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
+    nseconds +=
+        std::chrono::duration_cast<duration_type>(clock_type::now().time_since_epoch())
+            .count() -
+        _start;
+    return _result;
 }
 
 //======================================================================================//
@@ -301,21 +314,17 @@ run(int64_t n, int64_t cutoff, bool store = true)
     nmeasure = 0;
     fibonacci<mode::measure>(n, cutoff);
 
-    timer_tuple_t timer(signature, store);
-    timer.start();
-    if(std::is_same<Tp, mode::single>::value)
-        single_sum.push();
-    int64_t result = fibonacci<Tp>(n, cutoff);
-    if(std::is_same<Tp, mode::single>::value)
-        single_sum.pop();
-    timer.stop();
+    timer_tuple_t timer{ signature, store };
+    int64_t       result =
+        timer.start().execute(&fibonacci<Tp>, n, cutoff, 0).stop().return_result();
 
     int64_t nuniq =
         (is_blank) ? ((n - cutoff) * toolkit_size) : (is_basic) ? nmeasure : 0;
 
     if(std::is_same<Tp, mode::single>::value || std::is_same<Tp, mode::manual>::value)
     {
-        nuniq = toolkit_size;
+        nuniq    = toolkit_size;
+        nmeasure = ncount;
     }
 
     auto _alt = timer;
@@ -376,25 +385,24 @@ main(int argc, char** argv)
     tim::settings::timing_precision()  = 6;
     tim::timemory_init(&argc, &argv);
     tim::settings::cout_output() = false;
-    tim::print_env();
 
     // default calc: fibonacci(43)
-    int nfib = 43;
+    int nfib = 35;
     if(argc > 1)
-        nfib = atoi(argv[1]);
+        nfib = std::stoi(argv[1]);
 
     // only record auto_timers when n > cutoff
     int cutoff = nfib - 15;
     if(argc > 2)
-        cutoff = atoi(argv[2]);
+        cutoff = std::stoi(argv[2]);
 
     int nitr = 1;
     if(argc > 3)
-        nitr = atoi(argv[3]);
+        nitr = std::stoi(argv[3]);
 
-    int nwarmup = 1;
+    int nwarmup = std::max<int>(nitr, 2);
     if(argc > 4)
-        nwarmup = atoi(argv[4]);
+        nwarmup = std::stoi(argv[4]);
 
     auto env_tool = tim::get_env<std::string>("EX_CXX_OVERHEAD_COMPONENTS", "");
     auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
@@ -412,11 +420,15 @@ main(int argc, char** argv)
     tim::auto_tuple<> empty_test("test");
     tim::consume_parameters(empty_test);
 
+    std::cout << "[begin warmup]\n";
+    do_print_result() = false;
+    run<mode::count>(nfib, nfib, false);
     for(int i = 0; i < nwarmup; ++i)
     {
         auto warmup = run<mode::none>(nfib, nfib, false);
-        std::cout << "[warmup]" << std::get<0>(warmup) << std::endl;
+        std::cout << std::get<0>(warmup) << "\n";
     }
+    std::cout << "[end warmup]\n";
 
     int64_t ex_measure = 0;
     int64_t ex_unique  = 0;
@@ -448,6 +460,8 @@ main(int argc, char** argv)
     //----------------------------------------------------------------------------------//
     //      run various modes
     //----------------------------------------------------------------------------------//
+    single_sum.push();
+
     launch<mode::manual>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
     launch<mode::single>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
     launch<mode::blank>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
@@ -459,14 +473,26 @@ main(int argc, char** argv)
 
     TIMEMORY_CALIPER_APPLY(global, stop);
 
-    std::cout << single_sum << std::endl;
-    std::cout << ">>> manual  : " << nseconds << " sec" << std::endl;
-    std::cout << std::endl;
+    single_sum.pop();
+
+    std::stringstream _sum_msg{};
+    _sum_msg.setf(wall_clock::get_format_flags());
+    _sum_msg << ">>> manual  : " << std::setprecision(wall_clock::get_precision())
+             << (nseconds / static_cast<double>(std::nano::den)) << " sec\n";
+    _sum_msg << single_sum << "\n";
+    std::cout << "\n" << _sum_msg.str() << std::endl;
+    assert(single_sum.get<wall_clock>()->get() > 0.0);
 
     std::cout << "\nReport from " << ex_measure << " total measurements and " << ex_unique
               << " unique measurements: " << std::endl;
 
     int nc = -1;
+
+    // discarded print to set max width
+    std::stringstream _discard{};
+    for(auto& itr : timer_list)
+        _discard << "    " << itr << "\n";
+
     for(auto& itr : timer_list)
     {
         std::cout << "    " << itr << std::endl;

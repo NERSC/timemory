@@ -76,7 +76,8 @@ main(int argc, char** argv)
                 (_argc > 1 && help_args.find(_argv[1]) != help_args.end()));
     };
 
-    auto help_action = [](parser_t& p) {
+    auto _pec        = EXIT_SUCCESS;
+    auto help_action = [&_pec](parser_t& p) {
         if(tim::dmp::rank() == 0)
         {
             stringstream_t hs;
@@ -87,16 +88,17 @@ main(int argc, char** argv)
             hs << "    timemory-avail -H | grep PAPI | grep -i cache\n";
             hs << "    srun -N 1 -n 1 timem -e PAPI_L1_TCM PAPI_L2_TCM PAPI_L3_TCM -- "
                   "./myexe\n";
-            p.print_help("-- <CMD> <ARGS>");
+            p.print_help(hs.str());
         }
-        exit(EXIT_FAILURE);
+        exit(_pec);
     };
 
     auto parser = parser_t(argv[0]);
 
     parser.enable_help();
-    parser.on_error([=](parser_t& p, const parser_err_t& _err) {
+    parser.on_error([=, &_pec](parser_t& p, const parser_err_t& _err) {
         std::cerr << _err << std::endl;
+        _pec = EXIT_FAILURE;
         help_action(p);
     });
 
@@ -693,7 +695,8 @@ parent_process(pid_t pid)
 
         auto fname = get_config().get_output_filename();
         fname += ".json";
-        fprintf(stderr, "\n[%s]> Outputting '%s'...\n", command().c_str(), fname.c_str());
+        fprintf(stderr, "%s[%s]> Outputting '%s'...\n", (verbose() < 0) ? "" : "\n",
+                command().c_str(), fname.c_str());
         tim::generic_serialization<json_type>(fname, _measurements, "timemory", "timem",
                                               _cmdline);
     }
