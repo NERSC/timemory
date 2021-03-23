@@ -101,8 +101,10 @@ free_aligned(Tp* ptr,
              std::enable_if_t<std::is_same<DeviceT, device::cpu>::value, int> = 0)
 {
 #if defined(_ISOC11_SOURCE) || defined(TIMEMORY_MACOS) ||                                \
-    (_POSIX_C_SOURCE >= 200112L) || defined(TIMEMORY_WINDOWS)
+    (_POSIX_C_SOURCE >= 200112L)
     free(static_cast<void*>(ptr));
+#elif defined(TIMEMORY_WINDOWS)
+    _aligned_free(ptr);
 #else
     delete[] ptr;
 #endif
