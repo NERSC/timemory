@@ -399,7 +399,11 @@ struct validate
 
     explicit validate(bool val) { (*this)(val, std::index_sequence_for<Types...>{}); }
 
+#if defined(TIMEMORY_WINDOWS)
+    template <size_t Idx, size_t... Tail, tim::enable_if_t<sizeof...(Tail) == 0> = 0>
+#else
     template <size_t Idx, size_t... Tail, enable_if_t<sizeof...(Tail) == 0> = 0>
+#endif
     auto operator()(bool expected, std::index_sequence<Idx, Tail...>)
     {
         using type  = typename std::tuple_element<Idx, tuple_type>::type;
@@ -414,7 +418,11 @@ struct validate
         }
     }
 
+#if defined(TIMEMORY_WINDOWS)
+    template <size_t Idx, size_t... Tail, tim::enable_if_t<(sizeof...(Tail) > 0)> = 0>
+#else
     template <size_t Idx, size_t... Tail, enable_if_t<(sizeof...(Tail) > 0)> = 0>
+#endif
     auto operator()(bool val, std::index_sequence<Idx, Tail...>)
     {
         (*this)(val, std::index_sequence<Idx>{});

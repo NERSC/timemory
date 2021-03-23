@@ -8,15 +8,18 @@ if(NOT TIMEMORY_BUILD_TESTING)
     set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
-add_executable(socket-server ${_EXCLUDE} server.cpp)
-add_executable(socket-client ${_EXCLUDE} client.cpp)
+if(NOT WIN32 OR TIMEMORY_USE_WINSOCK)
+    add_executable(socket-server ${_EXCLUDE} server.cpp)
+    add_executable(socket-client ${_EXCLUDE} client.cpp)
+    target_link_libraries(socket-server PRIVATE common-test-libs)
+    target_link_libraries(socket-client PRIVATE common-test-libs)
+endif()
+
 add_library(extern-test-templates ${_EXCLUDE} SHARED extern_templates.cpp)
 add_library(gotcha-tests-lib ${_EXCLUDE} SHARED gotcha_tests_lib.hpp gotcha_tests_lib.cpp)
 
 target_include_directories(gotcha-tests-lib PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(socket-server PRIVATE common-test-libs)
-target_link_libraries(socket-client PRIVATE common-test-libs)
 target_link_libraries(extern-test-templates PUBLIC common-test-libs)
 target_link_libraries(gotcha-tests-lib PUBLIC common-test-libs)
 

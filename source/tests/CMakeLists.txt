@@ -248,18 +248,23 @@ add_timemory_google_test(type_trait_tests
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core)
 
+if(NOT WIN32)
+    set(_warning_tests_extra_libs test-debug-flags)
+endif()
 add_timemory_google_test(warning_tests
     SOURCES         warning_tests.cpp
     LINK_LIBRARIES  test-werror-flags
-                    test-debug-flags
+                    ${_warning_tests_extra_libs}
                     timemory::timemory-core)
 
-add_timemory_google_test(socket_tests
-    SOURCES         socket_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-core
-                    test-werror-flags
-    TIMEOUT         15)
+if (NOT WIN32 OR (WIN32 AND TIMEMORY_USE_WINSOCK))
+    add_timemory_google_test(socket_tests
+        SOURCES         socket_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-core
+                        test-werror-flags
+        TIMEOUT         15)
+endif()
 
 add_timemory_google_test(settings_tests
     DISCOVER_TESTS
@@ -323,13 +328,17 @@ add_timemory_google_test(kokkosp_tests
                     ${_LIBRARY}
     ENVIRONMENT     ${kokkosp_tests_env})
 
+if (NOT WIN32)
+    set(_extern_test_templates extern-test-templates)
+endif()
+
 add_timemory_google_test(flat_tests
     DISCOVER_TESTS
     SOURCES         flat_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-plotting
                     timemory::timemory-core
-                    extern-test-templates
+                    ${_extern_test_templates}
                     ${_LIBRARY})
 
 add_timemory_google_test(timeline_tests
@@ -338,7 +347,7 @@ add_timemory_google_test(timeline_tests
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-plotting
                     timemory::timemory-core
-                    extern-test-templates
+                    ${_extern_test_templates}
                     ${_LIBRARY})
 
 add_timemory_google_test(data_tracker_tests
@@ -634,16 +643,17 @@ if(TIMEMORY_USE_GPERFTOOLS)
                         ${_LIBRARY})
 endif()
 
-add_timemory_google_test(gperf_fake_cpu_tests
-    DISCOVER_TESTS
-    SOURCES         gperf_cpu_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-headers
-                    timemory::timemory-plotting
-                    timemory::timemory-analysis-tools
-                    timemory::timemory-core
-                    ${_LIBRARY})
-
+if(NOT WIN32)
+    add_timemory_google_test(gperf_fake_cpu_tests
+        DISCOVER_TESTS
+        SOURCES         gperf_cpu_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-headers
+                        timemory::timemory-plotting
+                        timemory::timemory-analysis-tools
+                        timemory::timemory-core
+                        ${_LIBRARY})
+endif()
 
 if(TIMEMORY_USE_GOTCHA)
     add_timemory_google_test(gotcha_tests
@@ -716,14 +726,17 @@ if(TIMEMORY_USE_UPCXX)
                         ${_LIBRARY})
 endif()
 
+if(NOT WIN32)
+    set(_variadic_tests_extra_libs test-debug-flags)
+endif()
 add_timemory_google_test(variadic_tests
     DISCOVER_TESTS
     SOURCES         variadic_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-plotting
                     timemory::timemory-core
-                    timemory::timemory-dmp
-                    test-debug-flags
+                    timemory::timemory-dmp                    
+                    ${_variadic_tests_extra_libs}
                     ${_LIBRARY})
 
 add_timemory_google_test(derived_tests

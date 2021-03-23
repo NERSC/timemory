@@ -222,6 +222,10 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
 
         # always add as a dependency if target is built
         add_dependencies(timemory-test ${TEST_NAME})
+
+        if(WIN32)
+            set_target_properties(${TEST_NAME} PROPERTIES FOLDER tests)
+        endif()
     endif()
 
     set(TEST_LAUNCHER)
@@ -743,12 +747,26 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
         endif()
     endif()
 
+    if (WIN32)
+        # use the defaults for destination folders on windows; this follows
+        # conventional windows locations by putting DLLs into bin and LIBs
+        # into lib
+        set(_dst)
+    else()
+        # set destination to be the one specified by input argument
+        set(_dst DESTINATION ${LIB_DESTINATION})
+    endif()
     foreach(_LIB ${LIB_TARGETS})
         install(
             TARGETS ${_LIB}
-            DESTINATION ${LIB_DESTINATION}
+            ${_dst}
             EXPORT ${PROJECT_NAME}-library-depends
             OPTIONAL)
+
+        if (WIN32)
+            # for windows install pdb files too
+            install(FILES $<TARGET_PDB_FILE:${_LIB}> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+        endif()
 
         if(TIMEMORY_USE_PYTHON AND ${_LIB} IN_LIST SHARED_LIBS)
             set(_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
