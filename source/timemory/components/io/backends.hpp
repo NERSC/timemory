@@ -172,7 +172,9 @@ private:
 };
 
 #if defined(TIMEMORY_WINDOWS)
-#define TIMEMORY_WIN_IO_MIN_DELAY_MSEC 0
+#if !defined(TIMEMORY_WIN_IO_MIN_DELAY_MSEC)
+#    define TIMEMORY_WIN_IO_MIN_DELAY_MSEC 0
+#endif
 struct win_io_counters
 {
     static auto& instance()

@@ -399,12 +399,8 @@ struct validate
 
     explicit validate(bool val) { (*this)(val, std::index_sequence_for<Types...>{}); }
 
-#if defined(TIMEMORY_WINDOWS)
-    template <size_t Idx, size_t... Tail, tim::enable_if_t<sizeof...(Tail) == 0> = 0>
-#else
-    template <size_t Idx, size_t... Tail, enable_if_t<sizeof...(Tail) == 0> = 0>
-#endif
-    auto operator()(bool expected, std::index_sequence<Idx, Tail...>)
+    template <size_t Idx, size_t... Tail>
+    auto operator()(bool expected, std::index_sequence<Idx, Tail...>, std::enable_if_t<sizeof...(Tail) == 0, int> = 0)
     {
         using type  = typename std::tuple_element<Idx, tuple_type>::type;
         bool result = Predicate<type>::value;
@@ -418,12 +414,8 @@ struct validate
         }
     }
 
-#if defined(TIMEMORY_WINDOWS)
-    template <size_t Idx, size_t... Tail, tim::enable_if_t<(sizeof...(Tail) > 0)> = 0>
-#else
-    template <size_t Idx, size_t... Tail, enable_if_t<(sizeof...(Tail) > 0)> = 0>
-#endif
-    auto operator()(bool val, std::index_sequence<Idx, Tail...>)
+    template <size_t Idx, size_t... Tail>
+    auto operator()(bool val, std::index_sequence<Idx, Tail...>, std::enable_if_t<(sizeof...(Tail) > 0), long> = 0)
     {
         (*this)(val, std::index_sequence<Idx>{});
         (*this)(val, std::index_sequence<Tail...>{});

@@ -251,10 +251,8 @@ add_timemory_google_test(type_trait_tests
 add_timemory_google_test(warning_tests
     SOURCES         warning_tests.cpp
     LINK_LIBRARIES  test-werror-flags
+                    $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
                     timemory::timemory-core)
-if(NOT WIN32)                    
-    target_link_libraries(warning_tests test-debug-flags)
-endif()
 
 if (NOT WIN32 OR (WIN32 AND TIMEMORY_USE_WINSOCK))
     add_timemory_google_test(socket_tests
@@ -376,12 +374,10 @@ if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
         LINK_LIBRARIES  common-test-libs
                         PTL::ptl
                         ${_LIBRARY}
+                        $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
                         timemory::timemory-sanitizer
         ENVIRONMENT     ${ptl_tests_env}
         TIMEOUT         300)
-    if(NOT WIN32)
-        target_link_libraries(ptl_tests test-debug-flags)
-    endif()
 endif()
 
 add_timemory_google_test(stl_overload_tests
@@ -726,10 +722,8 @@ add_timemory_google_test(variadic_tests
                     timemory::timemory-plotting
                     timemory::timemory-core
                     timemory::timemory-dmp
+                    $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
                     ${_LIBRARY})
-if(NOT WIN32)
-    target_link_libraries(variadic_tests test-debug-flags)
-endif()
 
 add_timemory_google_test(derived_tests
     DISCOVER_TESTS

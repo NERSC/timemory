@@ -776,7 +776,7 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
             EXPORT ${PROJECT_NAME}-library-depends
             OPTIONAL)
 
-        if (WIN32 AND SHARED_LIBS)
+        if (WIN32 AND "${_LIB}" IN_LIST SHARED_LIBS)
             # for windows install pdb files too
             install(FILES $<TARGET_PDB_FILE:${_LIB}> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
         endif()
