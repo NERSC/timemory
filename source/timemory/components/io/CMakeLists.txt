@@ -1,5 +1,5 @@
 
-if(WIN32 OR APPLE)
+if(APPLE)
 	return()
 endif()
 
