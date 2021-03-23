@@ -248,14 +248,13 @@ add_timemory_google_test(type_trait_tests
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-core)
 
-if(NOT WIN32)
-    set(_warning_tests_extra_libs test-debug-flags)
-endif()
 add_timemory_google_test(warning_tests
     SOURCES         warning_tests.cpp
     LINK_LIBRARIES  test-werror-flags
-                    ${_warning_tests_extra_libs}
                     timemory::timemory-core)
+if(NOT WIN32)                    
+    target_link_libraries(warning_tests test-debug-flags)
+endif()
 
 if (NOT WIN32 OR (WIN32 AND TIMEMORY_USE_WINSOCK))
     add_timemory_google_test(socket_tests
@@ -328,21 +327,17 @@ add_timemory_google_test(kokkosp_tests
                     ${_LIBRARY}
     ENVIRONMENT     ${kokkosp_tests_env})
 
-if (NOT WIN32)
-    set(_extern_test_templates extern-test-templates)
-endif()
-
 add_timemory_google_test(flat_tests
     DISCOVER_TESTS
     SOURCES         flat_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    ${_extern_test_templates})
+                    extern-test-templates)
 
 add_timemory_google_test(timeline_tests
     DISCOVER_TESTS
     SOURCES         timeline_tests.cpp
     LINK_LIBRARIES  common-test-libs
-                    ${_extern_test_templates})
+                    extern-test-templates)
 
 add_timemory_google_test(data_tracker_tests
     DISCOVER_TESTS
@@ -381,10 +376,12 @@ if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
         LINK_LIBRARIES  common-test-libs
                         PTL::ptl
                         ${_LIBRARY}
-                        test-debug-flags
                         timemory::timemory-sanitizer
         ENVIRONMENT     ${ptl_tests_env}
         TIMEOUT         300)
+    if(NOT WIN32)
+        target_link_libraries(ptl_tests test-debug-flags)
+    endif()
 endif()
 
 add_timemory_google_test(stl_overload_tests
@@ -722,18 +719,17 @@ if(TIMEMORY_USE_UPCXX)
                         ${_LIBRARY})
 endif()
 
-if(NOT WIN32)
-    set(_variadic_tests_extra_libs test-debug-flags)
-endif()
 add_timemory_google_test(variadic_tests
     DISCOVER_TESTS
     SOURCES         variadic_tests.cpp
     LINK_LIBRARIES  common-test-libs
                     timemory::timemory-plotting
                     timemory::timemory-core
-                    timemory::timemory-dmp                    
-                    ${_variadic_tests_extra_libs}
+                    timemory::timemory-dmp
                     ${_LIBRARY})
+if(NOT WIN32)
+    target_link_libraries(variadic_tests test-debug-flags)
+endif()
 
 add_timemory_google_test(derived_tests
     DISCOVER_TESTS
