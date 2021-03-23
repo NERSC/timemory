@@ -171,6 +171,7 @@ private:
 #endif
 };
 
+#if defined(TIMEMORY_WINDOWS)
 struct win_io_counters
 {
     static auto& instance()
@@ -179,13 +180,13 @@ struct win_io_counters
         return _instance;
     }
 
-    TIMEMORY_NODISCARD inline int64_t get_bytes_read()
+    inline int64_t get_bytes_read()
     {
         update();
         return static_cast<int64_t>(m_io_counters.ReadTransferCount);
     }
 
-    TIMEMORY_NODISCARD inline int64_t get_bytes_written()
+    inline int64_t get_bytes_written()
     {
         update();
         return static_cast<int64_t>(m_io_counters.WriteTransferCount);
@@ -222,7 +223,7 @@ private:
         }
     }
 };
-
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //
