@@ -172,6 +172,7 @@ private:
 };
 
 #if defined(TIMEMORY_WINDOWS)
+#define TIMEMORY_WIN_IO_MIN_DELAY_MSEC 0
 struct win_io_counters
 {
     static auto& instance()
@@ -193,20 +194,26 @@ struct win_io_counters
     }
 
 private:
+#if TIMEMORY_WIN_IO_MIN_DELAY_MSEC
     using clock_t = std::chrono::steady_clock;
     using time_point_t = clock_t::time_point;
     time_point_t m_last_update = time_point_t::min();
+#endif
     IO_COUNTERS m_io_counters;
 
     win_io_counters() { update(); }
 
     bool should_update() const
     {
+#if TIMEMORY_WIN_IO_MIN_DELAY_MSEC
         auto now = clock_t::now();
         if(std::chrono::duration_cast<std::chrono::milliseconds>(now - m_last_update) >
            std::chrono::milliseconds{ 1000 })
             return true;
         return false;
+#else
+        return true;
+#endif
     }
 
     void update()
@@ -223,6 +230,7 @@ private:
         }
     }
 };
+#undef TIMEMORY_WIN_IO_MIN_DELAY_MSEC
 #endif
 //
 //--------------------------------------------------------------------------------------//
