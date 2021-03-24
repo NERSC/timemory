@@ -129,7 +129,7 @@ get_filetime_offset() noexcept
 }
 
 EXTERN_C inline int
-clock_gettime(clockid_t, struct timespec* tv) noexcept
+clock_gettime(clockid_t id, struct timespec* tv) noexcept
 {
     LARGE_INTEGER        t;
     FILETIME             f;
@@ -391,9 +391,27 @@ template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
                     get_clock_user_now() noexcept
 {
+#if defined(TIMEMORY_WINDOWS)
+    auto _get_user_time = [](const FILETIME& user_time) -> Tp {
+        // values are provided in 100 ns units
+        constexpr Tp   factor = Precision::den / static_cast<Tp>(std::nano::den / 100);
+        ULARGE_INTEGER user;
+        user.HighPart = user_time.dwHighDateTime;
+        user.LowPart  = user_time.dwLowDateTime;
+        return (user.QuadPart * factor);
+    };
+    HANDLE   this_proc = GetCurrentProcess();
+    FILETIME creation_time;
+    FILETIME exit_time;
+    FILETIME kernel_time;
+    FILETIME user_time;
+    GetProcessTimes(this_proc, &creation_time, &exit_time, &kernel_time, &user_time);
+    return _get_user_time(user_time);
+#else
     tms _tms;
     ::times(&_tms);
     return (_tms.tms_utime + _tms.tms_cutime) * static_cast<Tp>(clock_tick<Precision>());
+#endif
 }
 
 //--------------------------------------------------------------------------------------//
@@ -403,9 +421,27 @@ template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
                     get_clock_system_now() noexcept
 {
+#if defined(TIMEMORY_WINDOWS)
+    auto _get_kern_time = [](const FILETIME& kernel_time) -> Tp {
+        // values are provided in 100 ns units
+        constexpr Tp   factor = Precision::den / static_cast<Tp>(std::nano::den / 100);
+        ULARGE_INTEGER kernel;
+        kernel.HighPart = kernel_time.dwHighDateTime;
+        kernel.LowPart  = kernel_time.dwLowDateTime;
+        return (kernel.QuadPart * factor);
+    };
+    HANDLE   this_proc = GetCurrentProcess();
+    FILETIME creation_time;
+    FILETIME exit_time;
+    FILETIME kernel_time;
+    FILETIME user_time;
+    GetProcessTimes(this_proc, &creation_time, &exit_time, &kernel_time, &user_time);
+    return _get_kern_time(kernel_time);
+#else
     tms _tms;
     ::times(&_tms);
     return (_tms.tms_stime + _tms.tms_cstime) * static_cast<Tp>(clock_tick<Precision>());
+#endif
 }
 
 //--------------------------------------------------------------------------------------//
@@ -415,10 +451,14 @@ template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_HOT_INLINE Tp
                     get_clock_cpu_now() noexcept
 {
+#if defined(TIMEMORY_WINDOWS)
+    return get_clock_process_now();
+#else
     tms _tms;
     ::times(&_tms);
     return (_tms.tms_utime + _tms.tms_cutime + _tms.tms_stime + _tms.tms_cstime) *
            static_cast<Tp>(clock_tick<Precision>());
+#endif
 }
 
 //--------------------------------------------------------------------------------------//
