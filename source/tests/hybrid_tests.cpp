@@ -34,10 +34,6 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/component_hybrid.hpp"
 
-#if TIMEMORY_WINDOWS
-#include "timemory/components/papi/papi_array.hpp"
-#endif
-
 #include <chrono>
 #include <condition_variable>
 #include <functional>
