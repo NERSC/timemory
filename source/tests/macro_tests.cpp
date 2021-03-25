@@ -140,7 +140,7 @@ TEST_F(macro_tests, marker)
     auto              key = timemory_variable_135.key();
     std::stringstream expected;
     std::string       file = __FILE__;
-    file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
+    file = file.substr(file.find_last_of(TIMEMORY_OS_PATH_DELIMITER) + 1);
     expected << __FUNCTION__ << "@" << file << ":" << line << "/"
              << details::get_test_name();
     if(key != expected.str())
@@ -273,7 +273,7 @@ TEST_F(macro_tests, handle)
     auto              key = _obj.key();
     std::stringstream expected;
     std::string       file = __FILE__;
-    file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
+    file = file.substr(file.find_last_of(TIMEMORY_OS_PATH_DELIMITER) + 1);
     expected << __FUNCTION__ << "@" << file << ":" << line << "/"
              << details::get_test_name();
     if(key != expected.str())

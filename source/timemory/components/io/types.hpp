@@ -75,7 +75,7 @@ TIMEMORY_SET_COMPONENT_API(component::written_bytes, project::timemory, category
 //--------------------------------------------------------------------------------------//
 #if defined(TIMEMORY_WINDOWS)
 
-// read_bytes and written_bytes are available on windows. 
+// read_bytes and written_bytes are available on windows.
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_char, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_char, false_type)
 

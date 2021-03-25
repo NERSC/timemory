@@ -339,11 +339,14 @@ TEST_F(settings_tests, push_pop)
 
     auto _print_settings = [](const auto& _label, auto _instance) {
         std::cout << '\n' << _label << '\n';
-        std::cout << "\tadd_secondary     : " << std::boolalpha
+        std::cout << "\tpointer address    : " << _instance << '\n';
+        std::cout << "\tinstance<> address : " << tim::settings::instance<TIMEMORY_API>()
+                  << '\n';
+        std::cout << "\tadd_secondary      : " << std::boolalpha
                   << _instance->get_add_secondary() << '\n';
-        std::cout << "\tenabled           : " << std::boolalpha
+        std::cout << "\tenabled            : " << std::boolalpha
                   << _instance->get_enabled() << '\n';
-        std::cout << "\tglobal components : " << std::boolalpha
+        std::cout << "\tglobal components  : " << std::boolalpha
                   << _instance->get_global_components() << '\n';
     };
 

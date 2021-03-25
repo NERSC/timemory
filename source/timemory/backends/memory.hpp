@@ -70,7 +70,8 @@ allocate_aligned(std::size_t size, std::size_t alignment,
 {
 #if defined(_ISOC11_SOURCE)
     return static_cast<Tp*>(aligned_alloc(alignment, size * sizeof(Tp)));
-#elif defined(TIMEMORY_MACOS) || (_POSIX_C_SOURCE >= 200112L)
+#elif defined(TIMEMORY_MACOS) ||                                                         \
+    (defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 200112L))
     void* ptr = nullptr;
     auto  ret = posix_memalign(&ptr, alignment, size * sizeof(Tp));
     (void) ret;
@@ -100,8 +101,7 @@ void
 free_aligned(Tp* ptr,
              std::enable_if_t<std::is_same<DeviceT, device::cpu>::value, int> = 0)
 {
-#if defined(_ISOC11_SOURCE) || defined(TIMEMORY_MACOS) ||                                \
-    (_POSIX_C_SOURCE >= 200112L)
+#if defined(_ISOC11_SOURCE) || defined(TIMEMORY_MACOS) || (_POSIX_C_SOURCE >= 200112L)
     free(static_cast<void*>(ptr));
 #elif defined(TIMEMORY_WINDOWS)
     _aligned_free(ptr);

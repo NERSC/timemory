@@ -114,7 +114,8 @@ using namespace tim::component;
 
 using tim_bundle_t  = tim::component_bundle<project::timemory, wall_clock, cpu_clock>;
 using cali_bundle_t = tim::component_bundle<tpls::caliper, caliper_marker, wall_clock>;
-using time_bundle_t = tim::component_tuple<wall_clock, cpu_clock, num_minor_page_faults>;
+using time_bundle_t = tim::component_tuple<wall_clock, cpu_clock, num_minor_page_faults,
+                                           read_bytes, written_bytes>;
 using os_bundle_t   = tim::component_bundle<os::agnostic, wall_clock, cpu_clock>;
 
 //--------------------------------------------------------------------------------------//
@@ -199,6 +200,13 @@ TEST_F(api_tests, tpls)
 
 TEST_F(api_tests, category)
 {
+    // a type in a non-timing category that should still be enabled
+#if defined(TIMEMORY_UNIX)
+    using check_type = num_minor_page_faults;
+#elif defined(TIMEMORY_WINDOWS)
+    using check_type = read_bytes;
+#endif
+
     using test_t  = category::timing;
     auto incoming = trait::runtime_enabled<test_t>::get();
     trait::runtime_enabled<test_t>::set(false);
@@ -217,7 +225,7 @@ TEST_F(api_tests, category)
 
     EXPECT_FALSE(trait::runtime_enabled<wall_clock>::get());
     EXPECT_FALSE(trait::runtime_enabled<cpu_clock>::get());
-    EXPECT_TRUE(trait::runtime_enabled<num_minor_page_faults>::get());
+    EXPECT_TRUE(trait::runtime_enabled<check_type>::get());
 
     time_bundle_t _obj(details::get_test_name());
     _obj.start();
@@ -226,14 +234,40 @@ TEST_F(api_tests, category)
     {
         std::vector<double> _data(10000, 0.0);
         details::random_fill(_data, 10.0, 1.0);
+        {
+            std::ofstream ofs{ TIMEMORY_JOIN("", ".", details::get_test_name(), "_data",
+                                             i, ".txt") };
+            for(auto& itr : _data)
+                ofs << std::fixed << std::setprecision(6) << itr << " ";
+        }
+        auto _data_cpy = _data;
+        _data.clear();
+        _data.resize(10000, 0.0);
+        {
+            std::ifstream ifs{ TIMEMORY_JOIN("", ".", details::get_test_name(), "_data",
+                                             i, ".txt") };
+            for(auto& itr : _data)
+                ifs >> itr;
+        }
+        for(size_t i = 0; i < _data.size(); ++i)
+            EXPECT_NEAR(_data.at(i), _data_cpy.at(i), 1.0e-3);
         auto val = details::random_entry(_data);
         EXPECT_GE(val, 1.0);
         EXPECT_LE(val, 11.0);
     }
     _obj.stop();
+
+    ASSERT_TRUE(_obj.get<wall_clock>() != nullptr);
+    ASSERT_TRUE(_obj.get<cpu_clock>() != nullptr);
+    ASSERT_TRUE(_obj.get<check_type>() != nullptr);
+
     EXPECT_NEAR(_obj.get<wall_clock>()->get(), 0.0, 1.0e-6);
     EXPECT_NEAR(_obj.get<cpu_clock>()->get(), 0.0, 1.0e-6);
-    EXPECT_GT(_obj.get<num_minor_page_faults>()->get(), 0);
+#if defined(TIMEMORY_UNIX)
+    EXPECT_GT(_obj.get<check_type>()->get(), 0);
+#elif defined(TIMEMORY_WINDOWS)
+    EXPECT_GT(std::get<0>(_obj.get<check_type>()->get()), 0);
+#endif
 
     trait::runtime_enabled<test_t>::set(incoming);
 }

@@ -215,6 +215,7 @@ launch_process(const char* cmd, const std::string& extra, std::ostream* os)
                 extra.c_str());
         return false;
     }
+    (void) os;
 #endif
 
     return true;

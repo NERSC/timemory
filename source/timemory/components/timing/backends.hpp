@@ -129,7 +129,7 @@ get_filetime_offset() noexcept
 }
 
 EXTERN_C inline int
-clock_gettime(clockid_t id, struct timespec* tv) noexcept
+clock_gettime(clockid_t, struct timespec* tv) noexcept
 {
     LARGE_INTEGER        t;
     FILETIME             f;
@@ -452,7 +452,7 @@ TIMEMORY_HOT_INLINE Tp
                     get_clock_cpu_now() noexcept
 {
 #if defined(TIMEMORY_WINDOWS)
-    return get_clock_process_now();
+    return get_clock_process_now<Tp, Precision>();
 #else
     tms _tms;
     ::times(&_tms);
@@ -529,7 +529,6 @@ TIMEMORY_HOT_INLINE Tp
     tms _tms;
     ::times(&_tms);
     return (_tms.tms_cutime + _tms.tms_cstime) * static_cast<Tp>(clock_tick<Precision>());
-    return (clock() * static_cast<Tp>(Precision::den)) / static_cast<Tp>(CLOCKS_PER_SEC);
 }
 
 //--------------------------------------------------------------------------------------//

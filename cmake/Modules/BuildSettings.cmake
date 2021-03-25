@@ -40,6 +40,11 @@ add_flag_if_avail(
     "-Wno-attributes"
     "-Wno-missing-field-initializers")
 
+if(WIN32)
+    # suggested by MSVC for spectre mitigation in rapidjson implementation
+    add_cxx_flag_if_avail("/Qspectre")
+endif()
+
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     add_cxx_flag_if_avail(
         "-Wno-mismatched-tags")

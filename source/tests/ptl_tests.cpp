@@ -256,7 +256,7 @@ TEST_F(ptl_tests, pi_task)
     printf("[%s]> pi: %f\n", details::get_test_name().c_str(), pi);
 
 #if defined(TIMEMORY_WINDOWS) && !defined(M_PI)
-#define M_PI 3.14159265358979323846
+#    define M_PI 3.14159265358979323846
 #endif
 
     ASSERT_NEAR(pi, M_PI, pi_epsilon);

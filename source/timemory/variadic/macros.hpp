@@ -65,9 +65,9 @@ using string = tim::mpl::apply<std::string>;
 //======================================================================================//
 
 #    if !defined(TIMEMORY_WINDOWS)
-#        define _TIM_FILENAME_DELIM '/'
+#        define TIMEMORY_OS_PATH_DELIMITER '/'
 #    else
-#        define _TIM_FILENAME_DELIM '\\'
+#        define TIMEMORY_OS_PATH_DELIMITER '\\'
 #    endif
 
 //--------------------------------------------------------------------------------------//
@@ -77,7 +77,7 @@ using string = tim::mpl::apply<std::string>;
 #    else
 #        define _TIM_FILESTR                                                             \
             std::string(__FILE__).substr(                                                \
-                std::string(__FILE__).find_last_of(_TIM_FILENAME_DELIM) + 1)
+                std::string(__FILE__).find_last_of(TIMEMORY_OS_PATH_DELIMITER) + 1)
 #    endif
 
 //--------------------------------------------------------------------------------------//
