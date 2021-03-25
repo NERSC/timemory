@@ -345,12 +345,15 @@ add_timemory_google_test(data_tracker_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
-add_timemory_google_test(cache_tests
-    SOURCES         cache_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-core
-                    ${_LIBRARY}
-    TIMEOUT         300)
+if(NOT WIN32)
+    # cache structures are designed for use on Windows
+    add_timemory_google_test(cache_tests
+        SOURCES         cache_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-core
+                        ${_LIBRARY}
+        TIMEOUT         300)
+endif()
 
 add_timemory_google_test(archive_storage_tests
     SOURCES         archive_storage_tests.cpp

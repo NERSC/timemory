@@ -267,6 +267,9 @@ TEST_F(api_tests, category)
     EXPECT_GT(_obj.get<check_type>()->get(), 0);
 #elif defined(TIMEMORY_WINDOWS)
     EXPECT_GT(std::get<0>(_obj.get<check_type>()->get()), 0);
+    EXPECT_GT(std::get<1>(_obj.get<check_type>()->get()), 0);
+    EXPECT_NEAR(std::get<0>(_obj.get<read_bytes>()->get()),
+                std::get<0>(_obj.get<written_bytes>()->get()), 1.0e-3);
 #endif
 
     trait::runtime_enabled<test_t>::set(incoming);

@@ -43,7 +43,11 @@ using namespace tim::component;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
+#if defined(TIMEMORY_WINDOWS)
+using toolset_t = tim::auto_tuple<wall_clock, tim::quirk::timeline_scope>;
+#else
 using toolset_t = tim::auto_tuple<wall_clock>;
+#endif
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(timeline_storage, monotonic_raw_clock, true_type)
 TIMEMORY_DECLARE_EXTERN_COMPONENT(wall_clock, true, int64_t)
@@ -156,15 +160,18 @@ TEST_F(timeline_tests, parse)
     std::cout << "\ntimeline_profile() = " << std::boolalpha
               << tim::settings::timeline_profile() << '\n'
               << std::endl;
-    ASSERT_TRUE(tim::settings::timeline_profile());
+    auto ret = tim::get_env<bool>("TIMEMORY_TIMELINE_PROFILE", false);
+    std::cout << "environment = " << std::boolalpha << ret << '\n' << std::endl;
+    EXPECT_TRUE(ret);
+    EXPECT_TRUE(tim::settings::timeline_profile());
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(timeline_tests, general)
 {
-    auto bsize = tim::storage<wall_clock>::instance()->size();
-    // tim::settings::timeline_profile() = true;
+    auto bsize                        = tim::storage<wall_clock>::instance()->size();
+    tim::settings::timeline_profile() = true;
 
     long n = 10;
     for(long i = 0; i < n; ++i)
