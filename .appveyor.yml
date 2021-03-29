@@ -19,7 +19,7 @@ environment:
     - CONDA: 38
       CPP: 17
       CONFIG: Release
-      EXAMPLES: "ON"
+      EXAMPLES: "OFF"
       TOOLS: "OFF"
       WINSOCK: "OFF"
       USE_ARCH: "OFF"
@@ -127,7 +127,7 @@ build_script:
     -DTIMEMORY_BUILD_TESTING="%BUILD_TESTING%"
     -DTIMEMORY_BUILD_MINIMAL_TESTING="%BUILD_TESTING%"
     -DTIMEMORY_BUILD_TOOLS="%TOOLS%"
-    -DTIMEMORY_BUILD_GOOGLE_TEST=OFF
+    -DTIMEMORY_BUILD_GOOGLE_TEST="%BUILD_TESTING%"
     -DTIMEMORY_USE_WINSOCK="%WINSOCK%"
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
@@ -137,7 +137,8 @@ build_script:
       if ($env:BUILD_TESTING -eq "ON") {
           iex "ctest . --output-on-failure -C %CONFIG%"
       }
-      elseif ($env:EXAMPLES -eq "ON") {
+  - ps: |
+      if ($env:EXAMPLES -eq "ON") {
         iex ".\outputs\runtime\$env:CONFIG\ex_optional_off.exe"
         iex ".\outputs\runtime\$env:CONFIG\ex_cxx_basic.exe"
         iex ".\outputs\runtime\$env:CONFIG\ex_optional_on.exe"

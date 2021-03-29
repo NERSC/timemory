@@ -345,6 +345,14 @@ add_timemory_google_test(data_tracker_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
+# if(TARGET timemory::timemory-io-component)
+if(WIN32) # for now just enable for Windows
+    add_timemory_google_test(io_tests
+        SOURCES         io_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        ${_LIBRARY})
+endif()
+
 if(NOT WIN32)
     # cache structures are designed for use on Windows
     add_timemory_google_test(cache_tests
