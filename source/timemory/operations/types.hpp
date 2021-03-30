@@ -785,6 +785,8 @@ struct print
         }
     }
 
+    TIMEMORY_COLD virtual ~print() {}
+
     TIMEMORY_COLD virtual void setup()        = 0;
     TIMEMORY_COLD virtual void execute()      = 0;
     TIMEMORY_COLD virtual void read_json()    = 0;
