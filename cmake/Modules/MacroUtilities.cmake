@@ -229,7 +229,8 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
                 FOLDER                   tests
                 RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/runtime
                 LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/runtime
-                ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/archive)
+                ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/archive
+                PDB_OUTPUT_DIRECTORY     ${PROJECT_BINARY_DIR}/outputs/runtime)
         endif()
     endif()
 
