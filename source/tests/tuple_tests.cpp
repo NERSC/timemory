@@ -590,8 +590,8 @@ TEST_F(tuple_tests, get)
     ASSERT_TRUE(std::get<0>(wc_l) == "wall");
     ASSERT_TRUE(std::get<0>(cc_l) == "cpu");
 
-    ASSERT_NEAR(wc_v, 2.0, 1.0e-2);
-    ASSERT_NEAR(cc_v, 1.0, 1.25e-2);
+    ASSERT_NEAR(wc_v, 2.0, 5.0e-2);
+    ASSERT_NEAR(cc_v, 1.0, 5.0e-2);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -670,8 +670,8 @@ TEST_F(tuple_tests, auto_start)
 
     EXPECT_EQ(ex_check_start_t, true);
     EXPECT_EQ(ex_check_stop_t, false);
-    ASSERT_NEAR(value[0], 2.0, 1.05e-2);
-    ASSERT_NEAR(value[1], 1.0, 1.05e-2);
+    ASSERT_NEAR(value[0], 2.0, 5.0e-2);
+    ASSERT_NEAR(value[1], 1.0, 5.0e-2);
     ASSERT_NEAR(value[2], 50.0, 5.0);
 }
 

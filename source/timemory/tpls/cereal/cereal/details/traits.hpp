@@ -31,7 +31,7 @@
 #define TIMEMORY_CEREAL_DETAILS_TRAITS_HPP_
 
 #ifndef __clang__
-#    if(__GNUC__ == 4 && __GNUC_MINOR__ <= 7)
+#    if defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ <= 7)
 #        define TIMEMORY_CEREAL_OLDER_GCC
 #    endif  // gcc 4.7 or earlier
 #endif      // __clang__

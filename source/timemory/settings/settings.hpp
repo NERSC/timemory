@@ -458,9 +458,8 @@ settings::push()
 
     auto _old = shared_instance<Tag>();
     get_stack<Tag>().push(_old);
-    auto _new                      = std::make_shared<settings>(*_old);
-    private_shared_instance<Tag>() = _new;
-    return _new;
+    private_shared_instance<Tag>() = std::make_shared<settings>(*_old);
+    return private_shared_instance<Tag>();
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -222,6 +222,16 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
 
         # always add as a dependency if target is built
         add_dependencies(timemory-test ${TEST_NAME})
+
+        if(WIN32)
+            set_target_properties(${TEST_NAME} 
+                PROPERTIES 
+                FOLDER                   tests
+                RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/runtime
+                LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/runtime
+                ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/archive
+                PDB_OUTPUT_DIRECTORY     ${PROJECT_BINARY_DIR}/outputs/runtime)
+        endif()
     endif()
 
     set(TEST_LAUNCHER)
@@ -246,18 +256,25 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         set(TEST_TIMEOUT ${CTEST_TEST_TIMEOUT})
     endif()
 
+    set(WORKING_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    if(WIN32)
+        set(WORKING_DIR $<TARGET_FILE_DIR:${TEST_NAME}>)
+    endif()
+
     if(TEST_DISCOVER_TESTS)
         GTEST_DISCOVER_TESTS(${TEST_NAME}
             TEST_LIST ${TEST_NAME}_TESTS
             ${TEST_OPTIONS}
-            DISCOVERY_TIMEOUT 15)
+            DISCOVERY_TIMEOUT 15
+            WORKING_DIRECTORY ${WORKING_DIR})
         SET_TESTS_PROPERTIES(${${TEST_NAME}_TESTS} PROPERTIES
             ENVIRONMENT "${TEST_ENVIRONMENT}"
             TIMEOUT     ${TEST_TIMEOUT})
     elseif(TEST_ADD_TESTS)
         GTEST_ADD_TESTS(TARGET ${TEST_NAME}
             TEST_LIST ${TEST_NAME}_TESTS
-            ${TEST_OPTIONS})
+            ${TEST_OPTIONS}
+            WORKING_DIRECTORY ${WORKING_DIR})
         SET_TESTS_PROPERTIES(${${TEST_NAME}_TESTS} PROPERTIES
             ENVIRONMENT "${TEST_ENVIRONMENT}"
             TIMEOUT     ${TEST_TIMEOUT})
@@ -265,7 +282,7 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         ADD_TEST(
             NAME                ${TEST_NAME}
             COMMAND             ${TEST_COMMAND}
-            WORKING_DIRECTORY   ${CMAKE_CURRENT_BINARY_DIR}
+            WORKING_DIRECTORY   ${WORKING_DIR}
             ${TEST_OPTIONS})
         SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
             ENVIRONMENT "${TEST_ENVIRONMENT}"
@@ -744,6 +761,16 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
     endif()
 
     list(REMOVE_DUPLICATES LIB_TARGETS)
+
+    if (WIN32)
+        # use the defaults for destination folders on windows; this follows
+        # conventional windows locations by putting DLLs into bin and LIBs
+        # into lib
+        set(_dst)
+    else()
+        # set destination to be the one specified by input argument
+        set(_dst DESTINATION ${LIB_DESTINATION})
+    endif()
     foreach(_LIB ${LIB_TARGETS})
         # get the list of previously exported libraries
         get_property(_PREVIOUS_EXPORTS GLOBAL PROPERTY TIMEMORY_EXPORTED_LIBRARIES)
@@ -758,9 +785,14 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
 
         install(
             TARGETS ${_LIB}
-            DESTINATION ${LIB_DESTINATION}
+            ${_dst}
             EXPORT ${PROJECT_NAME}-library-depends
             OPTIONAL)
+
+        if (WIN32 AND "${_LIB}" IN_LIST SHARED_LIBS)
+            # for windows install pdb files too
+            install(FILES $<TARGET_PDB_FILE:${_LIB}> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+        endif()
 
         if(TIMEMORY_USE_PYTHON AND ${_LIB} IN_LIST SHARED_LIBS)
             set(_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})

@@ -175,18 +175,19 @@
 #endif  // defined(TIMEMORY_WINDOWS)
 
 // compatible compiler
-#if(defined(__GNUC__) || defined(__clang__) || defined(_INTEL_COMPILER))
+#if defined(__GNUC__) || defined(__clang__) || defined(_INTEL_COMPILER)
 #    if !defined(SIGNAL_COMPAT_COMPILER)
 #        define SIGNAL_COMPAT_COMPILER
 #    endif
 #endif
 
-#if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
+#if defined(_XOPEN_SOURCE) && defined(_POSIX_C_SOURCE) &&                                \
+    (_XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L)
 #    define PSIGINFO_AVAILABLE
 #endif
 
 // compatible operating system
-#if(defined(__linux__) || defined(__MACH__))
+#if defined(__linux__) || defined(__MACH__)
 #    if !defined(SIGNAL_COMPAT_OS)
 #        define SIGNAL_COMPAT_OS
 #    endif

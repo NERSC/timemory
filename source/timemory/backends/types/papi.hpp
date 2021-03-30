@@ -33,6 +33,8 @@
 
 #include <string>
 
+// disable clang-format bc formatting this on windows does weird stuff
+// clang-format off
 // adding these definitions make things easier
 #if !defined(TIMEMORY_USE_PAPI) && !defined(TIMEMORY_EXTERNAL_PAPI_DEFINITIONS)
 
@@ -763,3 +765,6 @@ const hwi_describe_t _papi_hwi_err[PAPI_NUM_ERRORS] = {
     /*25 */ {PAPI_ECMP_DISABLED, "PAPI_ECMP_DISABLED", "Component containing event is disabled"}
 };
 #endif
+
+// re-enable clang-format
+// clang-format on

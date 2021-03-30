@@ -180,7 +180,7 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
     endif()
     if(WIN32)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${_BIN_DIR}/outputs/runtime)
-        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${_BIN_DIR}/outputs/library)
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${_BIN_DIR}/outputs/runtime)
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${_BIN_DIR}/outputs/archive)
     else()
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${_BIN_DIR})
@@ -188,7 +188,10 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${_BIN_DIR})
     endif()
 endforeach()
-
+if(WIN32)
+    # use folders for cmake predefined projects
+    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+endif()
 #----------------------------------------------------------------------------------------#
 #   configuration
 #----------------------------------------------------------------------------------------#

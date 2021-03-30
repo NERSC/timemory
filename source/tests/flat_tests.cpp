@@ -43,7 +43,11 @@ using namespace tim::component;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
+#if defined(TIMEMORY_WINDOWS)
+using toolset_t = tim::auto_tuple<wall_clock, tim::quirk::flat_scope>;
+#else
 using toolset_t = tim::auto_tuple<wall_clock>;
+#endif
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(flat_storage, monotonic_clock, true_type)
 TIMEMORY_DECLARE_EXTERN_COMPONENT(wall_clock, true, int64_t)
@@ -168,6 +172,7 @@ TEST_F(flat_tests, parse)
 }
 
 //--------------------------------------------------------------------------------------//
+#if !defined(TIMEMORY_WINDOWS)
 
 TEST_F(flat_tests, get_default)
 {
@@ -183,6 +188,7 @@ TEST_F(flat_tests, get_default)
     EXPECT_FALSE(_scope.is_tree_timeline());
 }
 
+#endif
 //--------------------------------------------------------------------------------------//
 
 TEST_F(flat_tests, flat)

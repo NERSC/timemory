@@ -22,7 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#if defined(__GNUC__)
+#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include "test_macros.hpp"
 

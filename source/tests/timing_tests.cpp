@@ -40,7 +40,7 @@ using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
 static const double util_tolerance  = 2.5;
-static const double timer_tolerance = 0.015;
+static const double timer_tolerance = 0.025;
 
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \

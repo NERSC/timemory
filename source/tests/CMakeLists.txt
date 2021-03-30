@@ -16,10 +16,12 @@ if(NOT TIMEMORY_BUILD_TESTING)
     set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
-unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY )
-unset(CMAKE_LIBRARY_OUTPUT_DIRECTORY )
-unset(CMAKE_ARCHIVE_OUTPUT_DIRECTORY )
-unset(CMAKE_PDB_OUTPUT_DIRECTORY )
+if(NOT WIN32)
+    unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    unset(CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+    unset(CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
+    unset(CMAKE_PDB_OUTPUT_DIRECTORY)
+endif()
 
 set(DEVICE_LANGUAGE CXX)
 if(TIMEMORY_USE_CUDA)
@@ -251,15 +253,17 @@ add_timemory_google_test(type_trait_tests
 add_timemory_google_test(warning_tests
     SOURCES         warning_tests.cpp
     LINK_LIBRARIES  test-werror-flags
-                    test-debug-flags
+                    $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
                     timemory::timemory-core)
 
-add_timemory_google_test(socket_tests
-    SOURCES         socket_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-core
-                    test-werror-flags
-    TIMEOUT         15)
+if (NOT WIN32 OR (WIN32 AND TIMEMORY_USE_WINSOCK))
+    add_timemory_google_test(socket_tests
+        SOURCES         socket_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-core
+                        test-werror-flags
+        TIMEOUT         15)
+endif()
 
 add_timemory_google_test(settings_tests
     DISCOVER_TESTS
@@ -343,12 +347,23 @@ add_timemory_google_test(data_tracker_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
-add_timemory_google_test(cache_tests
-    SOURCES         cache_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-core
-                    ${_LIBRARY}
-    TIMEOUT         300)
+# if(TARGET timemory::timemory-io-component)
+if(WIN32) # for now just enable for Windows
+    add_timemory_google_test(io_tests
+        SOURCES         io_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        ${_LIBRARY})
+endif()
+
+if(NOT WIN32)
+    # cache structures are designed for use on Windows
+    add_timemory_google_test(cache_tests
+        SOURCES         cache_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-core
+                        ${_LIBRARY}
+        TIMEOUT         300)
+endif()
 
 add_timemory_google_test(archive_storage_tests
     SOURCES         archive_storage_tests.cpp
@@ -372,7 +387,7 @@ if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
         LINK_LIBRARIES  common-test-libs
                         PTL::ptl
                         ${_LIBRARY}
-                        test-debug-flags
+                        $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
                         timemory::timemory-sanitizer
         ENVIRONMENT     ${ptl_tests_env}
         TIMEOUT         300)
@@ -630,16 +645,17 @@ if(TIMEMORY_USE_GPERFTOOLS)
                         ${_LIBRARY})
 endif()
 
-add_timemory_google_test(gperf_fake_cpu_tests
-    DISCOVER_TESTS
-    SOURCES         gperf_cpu_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-headers
-                    timemory::timemory-plotting
-                    timemory::timemory-analysis-tools
-                    timemory::timemory-core
-                    ${_LIBRARY})
-
+if(NOT WIN32)
+    add_timemory_google_test(gperf_fake_cpu_tests
+        DISCOVER_TESTS
+        SOURCES         gperf_cpu_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-headers
+                        timemory::timemory-plotting
+                        timemory::timemory-analysis-tools
+                        timemory::timemory-core
+                        ${_LIBRARY})
+endif()
 
 if(TIMEMORY_USE_GOTCHA)
     add_timemory_google_test(gotcha_tests
@@ -719,7 +735,7 @@ add_timemory_google_test(variadic_tests
                     timemory::timemory-plotting
                     timemory::timemory-core
                     timemory::timemory-dmp
-                    test-debug-flags
+                    $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
                     ${_LIBRARY})
 
 add_timemory_google_test(derived_tests
@@ -801,7 +817,7 @@ endif()
 
 # Tests recording the symbols of each compiled library
 find_program(NM_EXE NAMES nm)
-if(NM_EXE)
+if(NM_EXE AND NOT WIN32)
     set(_COMPILED_LIBS
         ${TIMEMORY_TOOL_LIBRARIES}
         ${TIMEMORY_COMPILED_LIBRARIES}

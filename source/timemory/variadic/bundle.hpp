@@ -318,7 +318,7 @@ public:
     {
         using T = remove_pointer_decay_t<U>;
         return can_stack_init<T>() || can_heap_init<T>() || can_placement_init<T>() ||
-               has_user_bundle();
+               (trait::is_available<T>::value && has_user_bundle());
     }
 
     /// Query at compile-time whether initialization will occur on the heap.
@@ -339,7 +339,46 @@ public:
     static constexpr bool will_opaque_init()
     {
         using T = remove_pointer_decay_t<U>;
-        return has_user_bundle() && !can_stack_init<T>() && !can_heap_init<T>();
+        return !can_stack_init<T>() && !can_heap_init<T>() &&
+               (trait::is_available<T>::value && has_user_bundle());
+    }
+
+    /// Query at compile-time whether type can be constructed with the given argument
+    /// types. if type is not available, then it probably won't be defined, so this
+    /// places the `trait::is_available<T>` check in the template parameters and the
+    /// `std::is_constructible<T, ...>` in the body to avoid undefined behavior
+    template <typename U, typename... Args, typename T = remove_pointer_decay_t<U>,
+              enable_if_t<trait::is_available<T>::value> = 0>
+    static constexpr bool is_constructible()
+    {
+        return std::is_constructible<T, Args...>::value;
+    }
+
+    /// Return false if the type is not available
+    template <typename U, typename... Args, typename T = remove_pointer_decay_t<U>,
+              enable_if_t<!trait::is_available<T>::value> = 0>
+    static constexpr bool is_constructible()
+    {
+        return false;
+    }
+
+    /// Query at compile-time whether type supports default construction. If type is not
+    /// available, then it probably won't be defined, so this places the
+    /// `trait::is_available<T>` check in the template parameters and the
+    /// `std::is_constructible<T, ...>` in the body to avoid undefined behavior
+    template <typename U, typename T = remove_pointer_decay_t<U>,
+              enable_if_t<trait::is_available<T>::value> = 0>
+    static constexpr bool is_default_constructible()
+    {
+        return std::is_default_constructible<T>::value;
+    }
+
+    /// Return false if the type is not available
+    template <typename U, typename T = remove_pointer_decay_t<U>,
+              enable_if_t<!trait::is_available<T>::value> = 0>
+    static constexpr bool is_default_constructible()
+    {
+        return false;
     }
 
 public:
@@ -571,7 +610,7 @@ public:
     /// accepts arguments
     template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<will_heap_init<T>() && !will_opaque_init<T>(), bool> init(
-        Args&&... _args, enable_if_t<std::is_constructible<T, Args...>::value, int> = 0)
+        Args&&... _args, enable_if_t<is_constructible<T, Args...>(), int> = 0)
     {
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
@@ -604,9 +643,9 @@ public:
     /// constructible with provided arguments
     template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
     enable_if_t<will_heap_init<T>() && !will_opaque_init<T>(), bool> init(
-        Args&&..., enable_if_t<!std::is_constructible<T, Args...>::value &&
-                                   std::is_default_constructible<T>::value,
-                               long> = 0)
+        Args&&...,
+        enable_if_t<!is_constructible<T, Args...>() && is_default_constructible<T>(),
+                    long> = 0)
     {
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)

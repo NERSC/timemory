@@ -944,4 +944,16 @@ static auto timemory_library_is_constructed = (timemory_library_constructor(), t
 //
 #endif
 
+// formerly in manager/extern.cpp
+#if defined(TIMEMORY_MANAGER_SOURCE)
+#    include "timemory/manager/extern.hpp"
+#    include "timemory/manager/manager.hpp"
+#    include "timemory/manager/types.hpp"
+//
+#    include "timemory/environment.hpp"
+#    include "timemory/hash.hpp"
+#    include "timemory/plotting.hpp"
+#    include "timemory/settings.hpp"
+#endif
+
 #endif  // TIMEMORY_MANAGER_MANAGER_CPP_

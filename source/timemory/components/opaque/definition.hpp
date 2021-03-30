@@ -38,6 +38,7 @@
 #include <cassert>
 #include <cstdint>
 #include <functional>
+#include <set>
 #include <string>
 
 //======================================================================================//
@@ -230,10 +231,17 @@ get_opaque(scope::config, Args&&...)
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename T, bool IsWrapper = concepts::is_wrapper<T>::value>
+struct opaque_typeids;
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename T>
-struct opaque_typeids
+struct opaque_typeids<T, false>
 {
     using result_type = std::set<size_t>;
+    static_assert(!concepts::is_wrapper<T>::value,
+                  "Internal timemory error! Type should not be a variadic wrapper");
 
     template <typename U = T>
     static auto get(enable_if_t<trait::is_available<U>::value, int> = 0)
@@ -263,31 +271,51 @@ struct opaque_typeids
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class TupleT, typename... T>
-struct opaque_typeids<TupleT<T...>>
+struct opaque_typeids<TupleT<T...>, false>
 {
     using result_type = std::set<size_t>;
-    using this_type   = opaque_typeids<TupleT<T...>>;
-
-#if !defined(TIMEMORY_WINDOWS)
-    template <typename U>
-    static void get(result_type& ret)
-    {
-        ret.insert(typeid_hash<U>());
-    }
+    using this_type   = opaque_typeids<TupleT<T...>, false>;
+    static_assert(!concepts::is_wrapper<TupleT<T...>>::value,
+                  "Internal timemory error! Type should not be a variadic wrapper");
 
     template <typename U = TupleT<T...>>
     static result_type get(enable_if_t<trait::is_available<U>::value, int> = 0)
     {
-        result_type ret;
-        this_type::get<TupleT<T...>>(ret);
-        IF_CONSTEXPR(concepts::is_wrapper<TupleT<T...>>::value)
-        {
-            TIMEMORY_FOLD_EXPRESSION(get<T>(ret));
-        }
+        return result_type({ typeid_hash<U>() });
+    }
+
+    template <typename U = TupleT<T...>>
+    static result_type get(enable_if_t<!trait::is_available<U>::value, long> = 0)
+    {
+        return result_type({ 0 });
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class TupleT, typename... T>
+struct opaque_typeids<TupleT<T...>, true>
+{
+    using result_type = std::set<size_t>;
+    using this_type   = opaque_typeids<TupleT<T...>>;
+    static_assert(concepts::is_wrapper<TupleT<T...>>::value,
+                  "Internal timemory error! Type should be a variadic wrapper");
+
+    template <typename U = TupleT<T...>>
+    static result_type get(enable_if_t<trait::is_available<U>::value, int> = 0)
+    {
+        auto ret = result_type{ typeid_hash<U>() };
+        TIMEMORY_FOLD_EXPRESSION(get<T>(ret));
         return ret;
     }
 
-#else
+    template <typename U = TupleT<T...>>
+    static result_type get(enable_if_t<!trait::is_available<U>::value, long> = 0)
+    {
+        return result_type({ 0 });
+    }
+
+private:
     template <typename U>
     static void get(result_type& ret, enable_if_t<trait::is_available<U>::value, int> = 0)
     {
@@ -295,22 +323,8 @@ struct opaque_typeids<TupleT<T...>>
     }
 
     template <typename U>
-    static void get(result_type&, enable_if_t<!trait::is_available<U>::value, long> = 0)
+    static void get(result_type&, enable_if_t<!trait::is_available<U>::value, int> = 0)
     {}
-
-    static result_type get()
-    {
-        result_type ret;
-        this_type::get<TupleT<T...>>(ret);
-        return ret;
-    }
-#endif
-
-    template <typename U = TupleT<T...>>
-    static result_type get(enable_if_t<!trait::is_available<U>::value, long> = 0)
-    {
-        return result_type({ 0 });
-    }
 };
 //
 //--------------------------------------------------------------------------------------//
