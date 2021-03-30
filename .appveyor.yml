@@ -135,7 +135,7 @@ build_script:
   - ls
   - ps: |
       if ($env:BUILD_TESTING -eq "ON") {
-          iex "ctest . --output-on-failure -C %CONFIG%"
+          iex "ctest . --output-on-failure -C $env:CONFIG"
       }
   - ps: |
       if ($env:EXAMPLES -eq "ON") {
