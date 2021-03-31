@@ -35,9 +35,12 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
+rank = 0
 try:
     import mpi4py
     from mpi4py import MPI
+
+    rank = MPI.COMM_WORLD.Get_rank()
 except ImportError:
     pass
 
@@ -64,6 +67,7 @@ def fibonacci(n, with_arg=True):
         "fib({})".format(n) if with_arg else "",
         mode=mode,
     ):
+        arr = np.ones([100, 100], dtype=float)
         return (
             n
             if n < 2
@@ -117,9 +121,10 @@ class TimemoryHatchetTests(unittest.TestCase):
         data = tim.get(hierarchy=True, components=["wall_clock"])
         gf = ht.GraphFrame.from_timemory(data)
 
-        print(gf.dataframe)
-        print(gf.tree("sum"))
-        print(gf.tree("sum.inc"))
+        if rank == 0:
+            print(gf.dataframe)
+            print(gf.tree("sum"))
+            print(gf.tree("sum.inc"))
 
     # ---------------------------------------------------------------------------------- #
     # test handling multi-dimensional data from hatchet
@@ -136,9 +141,10 @@ class TimemoryHatchetTests(unittest.TestCase):
         data = tim.get(hierarchy=True, components=[CurrentPeakRss.id()])
         gf = ht.GraphFrame.from_timemory(data)
 
-        print(gf.dataframe)
-        print(gf.tree("sum.start-peak-rss"))
-        print(gf.tree("sum.stop-peak-rss.inc"))
+        if rank == 0:
+            print(gf.dataframe)
+            print(gf.tree("sum.start-peak-rss"))
+            print(gf.tree("sum.stop-peak-rss.inc"))
 
         self.assertTrue(gf.tree("sum.start-peak-rss.inc") is not None)
         self.assertTrue(gf.tree("sum.stop-peak-rss") is not None)
@@ -167,7 +173,8 @@ class TimemoryHatchetTests(unittest.TestCase):
             ).split()
         )
 
-        print(f"arguments: {args}")
+        if rank == 0:
+            print(f"arguments: {args}")
 
         embedded_analyze(
             args,
