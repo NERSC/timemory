@@ -176,28 +176,28 @@ def parse_args(args=None):
     parser.add_argument(
         "--skip-funcs",
         type=str,
-        nargs="?",
+        nargs="+",
         default=_profiler_config.skip_functions,
         help="Filter out any entries with these function names",
     )
     parser.add_argument(
         "--skip-files",
         type=str,
-        nargs="?",
+        nargs="+",
         default=_profiler_config.skip_filenames,
         help="Filter out any entries from these files",
     )
     parser.add_argument(
         "--only-funcs",
         type=str,
-        nargs="?",
+        nargs="+",
         default=_profiler_config.only_functions,
         help="Select only entries with these function names",
     )
     parser.add_argument(
         "--only-files",
         type=str,
-        nargs="?",
+        nargs="+",
         default=_profiler_config.only_filenames,
         help="Select only entries from these files",
     )

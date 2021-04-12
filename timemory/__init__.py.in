@@ -40,6 +40,7 @@ import os
 
 os.environ.setdefault("TIMEMORY_BANNER", "OFF")
 os.environ.setdefault("PROFILESELECTED", "1")
+
 """
 Setting PROFILESELECTED=1 attempts to ensure that when gperftools is linked,
 cpu profiler, heap checker, and heap profiler lie dormant until activated.
@@ -242,19 +243,43 @@ else:
 
         args = sys.argv[:]
         try:
+            # when executing something like "python -m timemory.{profiler,trace,etc.} ..."
+            # or the scripts "timemory-{python-profiler,plotter,etc.} ..." or a help
+            # flag is in the arguments, disable initialization by default to avoid
+            # creating a directory like "timemory-cpu-clock-output" for commands like
+            # "python -m timemory.trace -c cpu_clock -- <cmd>" and disable finalization
+            # via the atexit since these scripts should call finalize themselves.
+            if len(args) > 0 and (
+                args[0] == "-m"
+                or os.path.basename(args[0]).startswith("timemory-")
+                or "-h" in args
+                or "--help" in args
+                or "-?" in args
+            ):
+                os.environ.setdefault("TIMEMORY_LIBRARY_CTOR", "0")
+                os.environ.setdefault("TIMEMORY_LIBRARY_DTOR", "0")
+
+            # if "--" is present, discard everything before the "--"
+            if len(args) > 0 and "--" in args:
+                idx = args.index("--")
+                args = args[(idx + 1) :]
+
             while len(args) > 0 and len(args[0]) > 0 and args[0][0] == "-":
                 args.pop(0)
+
         except Exception:
-            args = []
-            pass
+            args = ["python"]
 
         if len(args) == 0:
             args.append("python")
 
-        if os.environ.get("TIMEMORY_LIBRARY_CTOR", True):
+        def str2bool(v):
+            return v.lower() in ("yes", "y", "true", "t", "1", "on")
+
+        if str2bool(os.environ.get("TIMEMORY_LIBRARY_CTOR", "yes")):
             initialize(args)
 
-        if os.environ.get("TIMEMORY_LIBRARY_DTOR", True):
+        if str2bool(os.environ.get("TIMEMORY_LIBRARY_DTOR", "yes")):
             import atexit
 
             atexit.register(finalize)
