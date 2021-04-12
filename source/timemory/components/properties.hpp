@@ -31,9 +31,11 @@
 #pragma once
 
 #include "timemory/enum.h"
+#include "timemory/environment/types.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
 
+#include <cstdio>
 #include <cstring>
 #include <regex>
 #include <set>
@@ -107,44 +109,32 @@ struct static_properties<void, false>
 {
     static bool matches(const char* _ckey, const char* _enum_str, const idset_t& _ids)
     {
-        std::string _key{ _ckey };
-        // convert to lower-case
-        for(auto& itr : _key)
-            itr = tolower(itr);
-
-        auto _matches = [_key](std::string _option) {
-            // convert to lower-case
-            for(auto& itr : _option)
-                itr = tolower(itr);
-            // see if there is a match
-            auto _pos = _key.find(_option);
-            if(_pos == std::string::npos)
-                return false;
-            // ^option
-            if(_pos == 0)
-                return true;
-            auto _bpos = _pos - 1;
-            auto _epos = _pos + _option.length() + 1;
-            if(_epos >= _key.length())
-                return true;
-            bool _beg = false;
-            bool _end = false;
-            for(auto&& itr : { ',', ' ', ';', ':' })
-            {
-                _beg |= (_key[_bpos] == itr);
-                _end |= (_key[_epos] == itr);
-                if(_beg && _end)
-                    return true;
-            }
-            return false;
-        };
-
-        if(_matches(_enum_str))
-            return true;
+        static bool       _debug       = tim::get_env<bool>("TIMEMORY_DEBUG", false);
+        static const auto regex_consts = std::regex_constants::egrep |
+                                         std::regex_constants::icase |
+                                         std::regex_constants::optimize;
+        std::stringstream _ssopt{};
+        _ssopt << _enum_str;
         for(const auto& itr : _ids)
         {
-            if(_matches(itr))
-                return true;
+            if(!itr.empty())
+                _ssopt << "|" << itr;
+        }
+        auto _option = std::string("^(.*[,;: '\"\t\n\r]+|)(") + _ssopt.str() +
+                       ")([,;: '\"\t\n\r]+.*|$)";
+        if(std::regex_match(_ckey, std::regex(_option, regex_consts)))
+        {
+            if(_debug)
+            {
+                _option = std::string("^(.*[,;: '\"\\t\\n\\r]+|)(") + _ssopt.str() +
+                          ")([,;: '\"\\t\\n\\r]+.*|$)";
+                fprintf(stderr,
+                        "[component::static_properties::matches] '%s' matches (%s) "
+                        "[regex: '%s']\n",
+                        _ckey, _ssopt.str().c_str(), _option.c_str());
+                fflush(stderr);
+            }
+            return true;
         }
         return false;
     }

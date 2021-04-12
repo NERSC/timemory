@@ -43,21 +43,15 @@
 #endif
 
 #if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
-
-#    define TIMEMORY_SPRINTF(...)
-
+#    if !defined(TIMEMORY_SPRINTF)
+#        define TIMEMORY_SPRINTF(...)
+#    endif
 #else
-#    if defined(__cplusplus)
-#        define TIMEMORY_SPRINTF(VAR, LEN, FMT, ...)                                     \
-            std::unique_ptr<char> VAR_PTR = std::unique_ptr<char>(new char[LEN]);        \
-            char*                 VAR     = VAR_PTR.get();                               \
-            sprintf(VAR, FMT, __VA_ARGS__);
-#    else
+#    if !defined(TIMEMORY_SPRINTF)
 #        define TIMEMORY_SPRINTF(VAR, LEN, FMT, ...)                                     \
             char VAR[LEN];                                                               \
             sprintf(VAR, FMT, __VA_ARGS__);
 #    endif
-
 #endif
 
 //======================================================================================//

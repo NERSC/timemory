@@ -237,15 +237,19 @@ TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_clock, TIMEMORY_MONOTONIC_CLOCK,
 TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_raw_clock, TIMEMORY_MONOTONIC_RAW_CLOCK,
                                  "monotonic_raw_clock", "")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_clock, TIMEMORY_THREAD_CPU_CLOCK,
-                                 "thread_cpu_clock", "")
 TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_clock, TIMEMORY_PROCESS_CPU_CLOCK,
-                                 "process_cpu_clock", "")
+                                 "process_cpu_clock", "cpu_process_clock")
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_util, TIMEMORY_CPU_UTIL, "cpu_util", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_clock, TIMEMORY_THREAD_CPU_CLOCK,
+                                 "thread_cpu_clock", "cpu_thread_clock")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_util, TIMEMORY_CPU_UTIL, "cpu_util",
+                                 "cpu_utilization")
 
 TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_util, TIMEMORY_PROCESS_CPU_UTIL,
-                                 "process_cpu_util", "")
+                                 "process_cpu_util", "process_cpu_utilization",
+                                 "cpu_process_util", "cpu_process_utilization")
 
 TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_util, TIMEMORY_THREAD_CPU_UTIL,
-                                 "thread_cpu_util", "")
+                                 "thread_cpu_util", "thread_cpu_utilization",
+                                 "cpu_thread_util", "cpu_thread_utilization")
