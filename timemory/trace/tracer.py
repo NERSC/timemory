@@ -240,7 +240,6 @@ class Tracer:
     def runctx(self, cmd, _globals, _locals):
         """Trace a context"""
 
-        print("cmd: {}".format(cmd))
         try:
             self.start()
             exec_(cmd, _globals, _locals)

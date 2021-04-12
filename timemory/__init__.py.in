@@ -257,7 +257,6 @@ else:
                 or "-?" in args
             ):
                 os.environ.setdefault("TIMEMORY_LIBRARY_CTOR", "0")
-                os.environ.setdefault("TIMEMORY_LIBRARY_DTOR", "0")
 
             # if "--" is present, discard everything before the "--"
             if len(args) > 0 and "--" in args:
