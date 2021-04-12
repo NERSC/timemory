@@ -50,7 +50,15 @@
 #    if !defined(TIMEMORY_SPRINTF)
 #        define TIMEMORY_SPRINTF(VAR, LEN, FMT, ...)                                     \
             char VAR[LEN];                                                               \
-            sprintf(VAR, FMT, __VA_ARGS__);
+            snprintf(VAR, LEN, FMT, __VA_ARGS__);
+#    endif
+#endif
+
+#if !defined(TIMEMORY_CODE)
+#    if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
+#        define TIMEMORY_CODE(...)
+#    else
+#        define TIMEMORY_CODE(...) __VA_ARGS__
 #    endif
 #endif
 
