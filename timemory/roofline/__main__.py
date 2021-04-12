@@ -37,10 +37,6 @@ import warnings
 import traceback
 import multiprocessing as mp
 
-import timemory
-import timemory.roofline as _roofline
-
-
 # error code
 _errc = 0
 
@@ -287,6 +283,8 @@ def plot_impl(args, ai_data, op_data, rank=None, label=None):
         fname = "{}_{}".format(fname, rank)
         title = "{} (MPI rank: {})".format(args.title, rank)
 
+    import timemory.roofline as _roofline
+
     _roofline.plot_roofline(
         ai_data,
         op_data,
@@ -462,6 +460,8 @@ def try_plot():
         args = parse_args(len(_cmd) != 0)
         run(args, _cmd)
         if args.verbose is not None:
+            import timemory.roofline as _roofline
+
             _roofline.VERBOSE = args.verbose
         plot(args)
 
