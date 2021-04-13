@@ -244,7 +244,17 @@ def main():
         opts, argv = parse_args(sys.argv[:_idx])
         argv = _argv
     else:
-        opts, argv = parse_args()
+        if "-h" in sys.argv or "--help" in sys.argv:
+            opts, argv = parse_args()
+        else:
+            argv = sys.argv[1:]
+            opts, discard = parse_args()
+            if len(argv) == 0 or not os.path.isfile(argv[0]):
+                raise RuntimeError(
+                    "Could not determine input script. Use '--' before "
+                    "the script and its arguments to ensure correct parsing. \nE.g. "
+                    "python -m timemory.trace -- ./script.py"
+                )
 
     from ..libpytimemory import initialize
     from ..libpytimemory import settings
