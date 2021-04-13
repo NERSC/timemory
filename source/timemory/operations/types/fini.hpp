@@ -62,7 +62,7 @@ struct fini
               enable_if_t<trait::is_available<Up>::value, char> = 0>
     explicit TIMEMORY_COLD fini(mode_constant<StateT>)
     {
-        auto _storage = storage<Tp>::instance();
+        auto _storage = storage<Tp>::noninit_instance();
         if(_storage)
             sfinae<type, StateT>(_storage, 0, 0);
     }
@@ -83,7 +83,7 @@ struct fini
               enable_if_t<trait::is_available<Up>::value, char> = 0>
     TIMEMORY_COLD auto operator()(mode_constant<StateT>)
     {
-        auto _storage = storage<Tp>::instance();
+        auto _storage = storage<Tp>::noninit_instance();
         if(_storage)
             return sfinae<type, StateT>(_storage, 0, 0);
         return false;
