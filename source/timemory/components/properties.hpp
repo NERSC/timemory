@@ -112,7 +112,7 @@ struct static_properties<void, false>
     static bool matches(const char* _ckey, const char* _enum_str, const idset_t& _ids)
     {
         static bool       _debug       = tim::get_env<bool>("TIMEMORY_DEBUG", false);
-        static const auto regex_consts = std::regex_constants::egrep |
+        static const auto regex_consts = std::regex_constants::ECMAScript |
                                          std::regex_constants::icase |
                                          std::regex_constants::optimize;
         std::string _opts{ _enum_str };
@@ -122,16 +122,14 @@ struct static_properties<void, false>
             if(!itr.empty())
                 _opts += "|" + itr;
         }
-        auto _option = std::string{ "(^|[,;: '\"\t\n\r]?)(" } + _opts +
-                       std::string{ ")([,;: '\"\t\n\r]?|$)" };
+        auto _option = std::string{ "\\b(" } + _opts + std::string{ ")\\b" };
         try
         {
             if(std::regex_search(_ckey, std::regex{ _option, regex_consts }))
             {
                 if(_debug)
                 {
-                    auto _doption = std::string{ "^([,;: '\\\"\\t\\n\\r]?)(" } + _opts +
-                                    std::string{ ")([,;: '\\\"\\t\\n\\r]?|$)" };
+                    auto _doption = std::string{ "\\b(" } + _opts + std::string{ ")\\b" };
                     fprintf(stderr,
                             "[component::static_properties::matches] '%s' matches (%s) "
                             "[regex: '%s']\n",
@@ -142,11 +140,10 @@ struct static_properties<void, false>
             }
         } catch(std::regex_error& err)
         {
-            auto _doption = std::string{ "^([,;: '\\\"\\t\\n\\r]?)(" } + _opts +
-                            std::string{ ")([,;: '\\\"\\t\\n\\r]?|$)" };
+            auto _doption = std::string{ "\\b(" } + _opts + std::string{ ")\\b" };
             PRINT_HERE("regex error in regex_match(\"%s\", regex{ \"%s\", egrep | icase "
-                       "| optimize }): %s",
-                       _ckey, _doption.c_str(), err.what());
+                       "| optimize }): %s [real: %s]",
+                       _ckey, _doption.c_str(), err.what(), _option.c_str());
             TIMEMORY_TESTING_EXCEPTION("regex error in: \"" << _doption << "\" for "
                                                             << _ckey)
         }
