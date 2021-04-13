@@ -406,7 +406,7 @@ def dump_flamegraph(data, metric, file=None, echo_dart=False):
                         os.path.basename(itr), itr, format="string", type="text"
                     )
             else:
-                (outs, errs) = popen(
+                (retc, outs, errs) = popen(
                     [
                         flamegrapher,
                         "--hash",

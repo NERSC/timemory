@@ -214,15 +214,8 @@ if __name__ == "__main__":
         _separator = "--"
 
         for _arg in sys.argv[1:]:
-            if _arg == _separator:
+            if _arg == _separator and _i < len(_argsets):
                 _i += 1
-                if _i >= len(_argsets):
-                    sys.exit(
-                        'ERROR: Too many "{}" separators provided '
-                        "(expected at most {}).".format(
-                            _separator, len(_argsets) - 1
-                        )
-                    )
             else:
                 _argsets[_i].append(_arg)
 

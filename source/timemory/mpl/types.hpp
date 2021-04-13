@@ -156,6 +156,9 @@ template <typename T>
 struct stop_priority;
 
 template <typename T>
+struct fini_priority;
+
+template <typename T>
 struct is_timing_category;
 
 template <typename T>

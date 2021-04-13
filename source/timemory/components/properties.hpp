@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/enum.h"
 #include "timemory/environment/types.hpp"
 #include "timemory/macros/language.hpp"
@@ -113,29 +115,42 @@ struct static_properties<void, false>
         static const auto regex_consts = std::regex_constants::egrep |
                                          std::regex_constants::icase |
                                          std::regex_constants::optimize;
-        std::stringstream _ssopt{};
-        _ssopt << _enum_str;
+        std::string _opts{ _enum_str };
+        _opts.reserve(_opts.size() + 512);
         for(const auto& itr : _ids)
         {
             if(!itr.empty())
-                _ssopt << "|" << itr;
+                _opts += "|" + itr;
         }
-        auto _option = std::string("^(.*[,;: '\"\t\n\r]+|)(") + _ssopt.str() +
-                       ")([,;: '\"\t\n\r]+.*|$)";
-        if(std::regex_match(_ckey, std::regex(_option, regex_consts)))
+        auto _option = std::string{ "(^|[,;: '\"\t\n\r]?)(" } + _opts +
+                       std::string{ ")([,;: '\"\t\n\r]?|$)" };
+        try
         {
-            if(_debug)
+            if(std::regex_search(_ckey, std::regex{ _option, regex_consts }))
             {
-                _option = std::string("^(.*[,;: '\"\\t\\n\\r]+|)(") + _ssopt.str() +
-                          ")([,;: '\"\\t\\n\\r]+.*|$)";
-                fprintf(stderr,
-                        "[component::static_properties::matches] '%s' matches (%s) "
-                        "[regex: '%s']\n",
-                        _ckey, _ssopt.str().c_str(), _option.c_str());
-                fflush(stderr);
+                if(_debug)
+                {
+                    auto _doption = std::string{ "^([,;: '\\\"\\t\\n\\r]?)(" } + _opts +
+                                    std::string{ ")([,;: '\\\"\\t\\n\\r]?|$)" };
+                    fprintf(stderr,
+                            "[component::static_properties::matches] '%s' matches (%s) "
+                            "[regex: '%s']\n",
+                            _ckey, _opts.c_str(), _doption.c_str());
+                    fflush(stderr);
+                }
+                return true;
             }
-            return true;
+        } catch(std::regex_error& err)
+        {
+            auto _doption = std::string{ "^([,;: '\\\"\\t\\n\\r]?)(" } + _opts +
+                            std::string{ ")([,;: '\\\"\\t\\n\\r]?|$)" };
+            PRINT_HERE("regex error in regex_match(\"%s\", regex{ \"%s\", egrep | icase "
+                       "| optimize }): %s",
+                       _ckey, _doption.c_str(), err.what());
+            TIMEMORY_TESTING_EXCEPTION("regex error in: \"" << _doption << "\" for "
+                                                            << _ckey)
         }
+
         return false;
     }
 };

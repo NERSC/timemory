@@ -155,7 +155,11 @@ generate(py::module& _pymod, const char* _name, const char* _doc,
         size_t isize = bundle_t::size();
         if(tim::settings::debug() || tim::settings::verbose() > 3)
         {
-            PRINT_HERE("%s", "configuring pybundle");
+            static auto _enum2str = pytim::get_enum_string_map();
+            std::string _slist{};
+            for(auto& itr : components)
+                _slist += ", " + _enum2str[itr];
+            PRINT_HERE("configuring pybundle with [%s]", _slist.substr(2).c_str());
         }
 
         _scope_set(flat_profile, timeline_profile);

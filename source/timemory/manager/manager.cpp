@@ -227,35 +227,43 @@ manager::cleanup()
 TIMEMORY_MANAGER_LINKAGE(void)
 manager::finalize()
 {
+    auto _print_size = [&](const char* _msg) {
+        if(f_debug())
+        {
+            auto _get_sz = [](auto& _mdata) {
+                int _val = 0;
+                for(auto& itr : _mdata)
+                    _val += itr.second.size();
+                return _val;
+            };
+            PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", _msg,
+                       _get_sz(m_master_cleanup), _get_sz(m_master_finalizers),
+                       _get_sz(m_worker_cleanup), _get_sz(m_worker_finalizers),
+                       (int) m_pointer_fini.size());
+        }
+    };
+
+    auto _finalize = [](finalizer_pmap_t& _pdata) {
+        for(auto& _functors : _pdata)
+        {
+            // reverse to delete the most recent additions first
+            std::reverse(_functors.second.begin(), _functors.second.end());
+            // invoke all the functions
+            for(auto& itr : _functors.second)
+                itr.second();
+            // remove all these finalizers
+            _functors.second.clear();
+        }
+    };
+
     m_is_finalizing = true;
     m_rank          = std::max<int32_t>(m_rank, dmp::rank());
-    if(f_debug())
-    {
-        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
-                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
-                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
-                   (int) m_pointer_fini.size());
-    }
+
+    _print_size("finalizing");
 
     cleanup();
 
-    auto _finalize = [](finalizer_list_t& _functors) {
-        // reverse to delete the most recent additions first
-        std::reverse(_functors.begin(), _functors.end());
-        // invoke all the functions
-        for(auto& itr : _functors)
-            itr.second();
-        // remove all these finalizers
-        _functors.clear();
-    };
-
-    if(f_debug())
-    {
-        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
-                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
-                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
-                   (int) m_pointer_fini.size());
-    }
+    _print_size("finalizing (pre-storage-cleanup)");
 
     //
     //  ideally, only one of these will be populated
@@ -266,13 +274,7 @@ manager::finalize()
     // finalize masters second
     _finalize(m_master_cleanup);
 
-    if(f_debug())
-    {
-        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
-                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
-                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
-                   (int) m_pointer_fini.size());
-    }
+    _print_size("finalizing (pre-storage-finalization)");
 
     //
     //  ideally, only one of these will be populated
@@ -282,13 +284,7 @@ manager::finalize()
     // finalize masters second
     _finalize(m_master_finalizers);
 
-    if(f_debug())
-    {
-        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
-                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
-                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
-                   (int) m_pointer_fini.size());
-    }
+    _print_size("finalizing (pre-pointer-finalization)");
 
     for(auto& itr : m_pointer_fini)
         itr.second();
@@ -297,13 +293,7 @@ manager::finalize()
 
     m_is_finalizing = false;
 
-    if(f_debug())
-    {
-        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalized",
-                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
-                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
-                   (int) m_pointer_fini.size());
-    }
+    _print_size("finalized");
 
     if(m_instance_count == 0 && m_rank == 0)
     {
@@ -668,13 +658,16 @@ manager::remove_cleanup(const std::string& _key)
 TIMEMORY_MANAGER_LINKAGE(void)
 manager::remove_finalizer(const std::string& _key)
 {
-    auto _remove_finalizer = [&](finalizer_list_t& _functors) {
-        for(auto itr = _functors.begin(); itr != _functors.end(); ++itr)
+    auto _remove_finalizer = [&](finalizer_pmap_t& _pdata) {
+        for(auto& _functors : _pdata)
         {
-            if(itr->first == _key)
+            for(auto itr = _functors.second.begin(); itr != _functors.second.end(); ++itr)
             {
-                _functors.erase(itr);
-                return;
+                if(itr->first == _key)
+                {
+                    _functors.second.erase(itr);
+                    return;
+                }
             }
         }
     };

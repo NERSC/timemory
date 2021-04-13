@@ -29,11 +29,6 @@ user code.
    :members:
 ```
 
-## Type Identification
-
-```eval_rst
-```
-
 ## Base Class Modifications
 
 ```eval_rst
@@ -42,6 +37,17 @@ user code.
 .. doxygenstruct:: tim::trait::base_has_last
    :members:
 .. doxygenstruct:: tim::trait::dynamic_base
+   :members:
+```
+
+## Priority Ordering
+
+```eval_rst
+.. doxygenstruct:: tim::trait::start_priority
+   :members:
+.. doxygenstruct:: tim::trait::stop_priority
+   :members:
+.. doxygenstruct:: tim::trait::fini_priority
    :members:
 ```
 

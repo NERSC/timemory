@@ -311,6 +311,8 @@ def run(args, cmd):
     if len(cmd) == 0:
         return
 
+    os.environ["TIMEMORY_PYTHON_BINDINGS"] = "0"
+
     def get_environ(env_var, default_value, dtype):
         val = os.environ.get(env_var)
         if val is None:
@@ -443,15 +445,8 @@ def try_plot():
         _separator = "--"
 
         for _arg in sys.argv[1:]:
-            if _arg == _separator:
+            if _arg == _separator and _i < len(_argsets):
                 _i += 1
-                if _i >= len(_argsets):
-                    sys.exit(
-                        'ERROR: Too many "{}" separators provided '
-                        "(expected at most {}).".format(
-                            _separator, len(_argsets) - 1
-                        )
-                    )
             else:
                 _argsets[_i].append(_arg)
 

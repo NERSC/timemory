@@ -76,6 +76,10 @@ before BEFORE running Python
 """
 
 
+def __str2bool(v):
+    return v.lower() in ("yes", "y", "true", "t", "1", "on")
+
+
 def __load_component_libs():
     """Loads the timemory library"""
     relative_lib_path = "@LIB_RELPATH@"
@@ -113,7 +117,10 @@ except ImportError:
     import pickle
 
 
-if os.environ.get("TIMEMORY_CXX_PLOT_MODE", None) is not None:
+_no_bindings = __str2bool(
+    os.environ.get("TIMEMORY_CXX_PLOT_MODE", "0")
+) or not __str2bool(os.environ.get("TIMEMORY_PYTHON_BINDINGS", "1"))
+if _no_bindings:
 
     from . import mpi_support
     from . import mpi
@@ -272,13 +279,10 @@ else:
         if len(args) == 0:
             args.append("python")
 
-        def str2bool(v):
-            return v.lower() in ("yes", "y", "true", "t", "1", "on")
-
-        if str2bool(os.environ.get("TIMEMORY_LIBRARY_CTOR", "yes")):
+        if __str2bool(os.environ.get("TIMEMORY_LIBRARY_CTOR", "yes")):
             initialize(args)
 
-        if str2bool(os.environ.get("TIMEMORY_LIBRARY_DTOR", "yes")):
+        if __str2bool(os.environ.get("TIMEMORY_LIBRARY_DTOR", "yes")):
             import atexit
 
             atexit.register(finalize)
