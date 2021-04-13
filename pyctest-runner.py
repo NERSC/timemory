@@ -1134,43 +1134,6 @@ def run_pyctest():
         )
 
         pyct.test(
-            "timemory-python-line-profiler-no-opts",
-            [
-                sys.executable,
-                "-m",
-                "timemory.line_profiler",
-                "./ex_python_external",
-                "12",
-            ],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "120",
-                "ENVIRONMENT": base_env,
-            },
-        )
-
-        pyct.test(
-            "timemory-python-line-profiler-script",
-            [
-                os.path.join(pyct.BINARY_DIRECTORY, "bin", "timemory-python-line-profiler"),
-                "-v",
-                "-l",
-                "-c",
-                "peak_rss",
-                "--",
-                "./ex_python_external",
-                "12",
-            ],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "120",
-                "ENVIRONMENT": base_env,
-            },
-        )
-
-        pyct.test(
             "timemory-python-line-profiler-builtin",
             [
                 sys.executable,
