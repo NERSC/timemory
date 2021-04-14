@@ -1068,8 +1068,10 @@ storage<Type, true>::get_shared_manager()
             m_manager->add_synchronization(demangle<Type>(), m_instance_id,
                                            std::move(_sync));
         }
+
         m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
-                                 std::move(_finalize), _is_master);
+                                 std::move(_finalize), _is_master,
+                                 trait::fini_priority<Type>::value);
     }
 }
 //
@@ -1284,7 +1286,8 @@ storage<Type, false>::get_shared_manager()
         };
 
         m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
-                                 std::move(_finalize), _is_master);
+                                 std::move(_finalize), _is_master,
+                                 trait::fini_priority<Type>::value);
     }
 }
 //

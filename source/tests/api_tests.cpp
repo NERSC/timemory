@@ -249,8 +249,8 @@ TEST_F(api_tests, category)
             for(auto& itr : _data)
                 ifs >> itr;
         }
-        for(size_t i = 0; i < _data.size(); ++i)
-            EXPECT_NEAR(_data.at(i), _data_cpy.at(i), 1.0e-3);
+        for(size_t j = 0; j < _data.size(); ++j)
+            EXPECT_NEAR(_data.at(j), _data_cpy.at(j), 1.0e-3);
         auto val = details::random_entry(_data);
         EXPECT_GE(val, 1.0);
         EXPECT_LE(val, 11.0);

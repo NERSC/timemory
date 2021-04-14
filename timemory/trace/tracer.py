@@ -121,6 +121,7 @@ class Tracer:
         self.components = list(dict.fromkeys(self.components))
         if len(self.components) == 0:
             self.components += ["wall_clock"]
+        self.components.remove("")
         if _trace is None:
             settings.trace_components = ",".join(self.components)
         settings.trace_components = ",".join(self.components)
@@ -139,6 +140,10 @@ class Tracer:
         """Initialize, configure the bundle, store original tracer function"""
 
         _tracer_init()
+        if settings.debug:
+            print(
+                "configuring Tracer with components: {}".format(self.components)
+            )
         _tracer_bundle.configure(self.components, True, False)
         self._original_function = sys.gettrace()
 
@@ -240,7 +245,6 @@ class Tracer:
     def runctx(self, cmd, _globals, _locals):
         """Trace a context"""
 
-        print("cmd: {}".format(cmd))
         try:
             self.start()
             exec_(cmd, _globals, _locals)

@@ -196,6 +196,7 @@ def popen(cmd, outf=None, keep_going=True, timeout=None, shell=False):
     p = None
     outs = None
     errs = None
+    retc = 0
     if shell:
         p = sp.run(
             " ".join(cmd),
@@ -213,13 +214,14 @@ def popen(cmd, outf=None, keep_going=True, timeout=None, shell=False):
         except sp.TimeoutExpired:
             p.kill()
 
-    if p.returncode != 0:
+    retc = p.returncode
+    if retc != 0:
         if errs is not None:
             print("{}".format(errs.decode("utf-8")))
         elif p.stderr is not None:
             print("{}".format(p.stderr.decode("utf-8")))
 
-    handle_error(p.returncode, cmd, keep_going)
+    handle_error(retc, cmd, keep_going)
 
     if outf is not None:
         with open(outf, "w") as f:
@@ -234,7 +236,7 @@ def popen(cmd, outf=None, keep_going=True, timeout=None, shell=False):
     if errs is None and p.stderr is not None:
         errs = "{}".format(p.stderr.decode("utf-8"))
 
-    return (outs, errs)
+    return (retc, outs, errs)
 
 
 def dart_measurement(name, value):

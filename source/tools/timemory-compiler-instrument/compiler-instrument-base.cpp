@@ -123,6 +123,8 @@ template <size_t Idx, size_t N>
 static void
 get_storage_impl(std::array<std::function<void()>, N>&) TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static bool&
+is_finalized() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static bool&
 get_enabled() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 static auto&
 get_first() TIMEMORY_INTERNAL_NO_INSTRUMENT;
@@ -187,6 +189,15 @@ get_storage(tim::index_sequence<Idx...>)
     TIMEMORY_FOLD_EXPRESSION(get_storage_impl<Idx>(_data));
     // return the array of finalization functions
     return _data;
+}
+
+//--------------------------------------------------------------------------------------//
+
+bool&
+is_finalized()
+{
+    static auto _instance = new bool{ false };
+    return *_instance;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -425,6 +436,9 @@ allocate()
 void
 finalize()
 {
+    if(is_finalized())
+        return;
+
     if(tim::threading::get_id() == primary_tidx)
         get_enabled() = false;
 
@@ -432,10 +446,27 @@ finalize()
 
     // acquire a thread-local lock so that no more entries are added while finalizing
     tim::trace::lock<tim::trace::compiler> lk{};
-    lk.acquire();
+    try
+    {
+        lk.acquire();
+    } catch(std::system_error& e)
+    {
+        std::cerr << e.what() << std::endl;
+        return;
+    }
 
     // acquire global lock
-    tim::auto_lock_t _projlk{ tim::type_mutex<tim::project::compiler_instrument>() };
+    tim::auto_lock_t _projlk{ tim::type_mutex<tim::project::compiler_instrument>(),
+                              std::defer_lock };
+    try
+    {
+        if(!_projlk.owns_lock())
+            _projlk.lock();
+    } catch(std::system_error& e)
+    {
+        std::cerr << e.what() << std::endl;
+        return;
+    }
 
     bool _remove_manager = false;
     if(get_trace_vec())
@@ -482,6 +513,7 @@ finalize()
     auto _manager = tim::manager::instance();
     if(_manager && !_manager->is_finalized() && !_manager->is_finalizing())
     {
+        is_finalized() = true;
         // must use manually bc finalization will cause the stop operation to be disabled
         wall_clock wc{};
         peak_rss   pr{};

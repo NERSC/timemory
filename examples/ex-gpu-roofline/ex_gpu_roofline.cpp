@@ -207,12 +207,12 @@ main(int argc, char** argv)
     tim::timemory_init(argc, argv);
     tim::cuda::device_query();
     tim::cuda::set_device(0);
+    tim::enable_signal_detection();
 
-    int64_t num_threads =
-        tim::threading::affinity::hw_physicalcpu();      // default number of threads
-    int64_t num_streams   = 1;                           // default number of streams
-    int64_t working_size  = 500 * tim::units::megabyte;  // default working set size
-    int64_t memory_factor = 10;                          // default multiple of 500 MB
+    int64_t num_threads   = 1;                           // default number of threads
+    int64_t num_streams   = 8;                           // default number of streams
+    int64_t working_size  = 100 * tim::units::megabyte;  // default working set size
+    int64_t memory_factor = 5;                           // default multiple of 100 MB
     int64_t iterations    = 1000;
     int64_t block_size    = 1024;
     int64_t grid_size     = 0;

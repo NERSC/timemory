@@ -81,6 +81,7 @@ public:
     using finalizer_func_t   = std::function<void()>;
     using finalizer_pair_t   = std::pair<std::string, finalizer_func_t>;
     using finalizer_list_t   = std::deque<finalizer_pair_t>;
+    using finalizer_pmap_t   = std::map<int32_t, finalizer_list_t>;
     using synchronize_list_t = uomap_t<string_t, uomap_t<int64_t, std::function<void()>>>;
     using finalizer_void_t   = std::multimap<void*, finalizer_func_t>;
     using settings_ptr_t     = std::shared_ptr<settings>;
@@ -108,9 +109,9 @@ public:
     /// add functors to destroy instances based on a string key
     template <typename Func>
     void add_cleanup(const std::string&, Func&&);
-    /// this is used by storage classes for finalization
-    template <typename StackFunc, typename FinalFunc>
-    void add_finalizer(const std::string&, StackFunc&&, FinalFunc&&, bool);
+    /// this is used by storage classes for finalization.
+    template <typename StackFuncT, typename FinalFuncT>
+    void add_finalizer(const std::string&, StackFuncT&&, FinalFuncT&&, bool, int32_t = 0);
     /// remove a cleanup functor
     void remove_cleanup(void*);
     /// remove a cleanup functor
@@ -325,10 +326,10 @@ private:
     graph_hash_map_ptr_t   m_hash_ids           = get_hash_ids();
     graph_hash_alias_ptr_t m_hash_aliases       = get_hash_aliases();
     finalizer_list_t       m_finalizer_cleanups = {};
-    finalizer_list_t       m_master_cleanup     = {};
-    finalizer_list_t       m_worker_cleanup     = {};
-    finalizer_list_t       m_master_finalizers  = {};
-    finalizer_list_t       m_worker_finalizers  = {};
+    finalizer_pmap_t       m_master_cleanup     = {};
+    finalizer_pmap_t       m_worker_cleanup     = {};
+    finalizer_pmap_t       m_master_finalizers  = {};
+    finalizer_pmap_t       m_worker_finalizers  = {};
     finalizer_void_t       m_pointer_fini       = {};
     synchronize_list_t     m_synchronize        = {};
     filemap_t              m_output_files       = {};
@@ -425,10 +426,10 @@ manager::add_cleanup(const std::string& _key, Func&& _func)
 //
 //----------------------------------------------------------------------------------//
 //
-template <typename StackFunc, typename FinalFunc>
+template <typename StackFuncT, typename FinalFuncT>
 void
-manager::add_finalizer(const std::string& _key, StackFunc&& _stack_func,
-                       FinalFunc&& _inst_func, bool _is_master)
+manager::add_finalizer(const std::string& _key, StackFuncT&& _stack_func,
+                       FinalFuncT&& _inst_func, bool _is_master, int32_t _priority)
 {
     // ensure there are no duplicates
     remove_finalizer(_key);
@@ -438,19 +439,11 @@ manager::add_finalizer(const std::string& _key, StackFunc&& _stack_func,
     if(m_write_metadata == 0)
         m_write_metadata = 1;
 
-    auto _stack_entry = finalizer_pair_t{ _key, std::forward<StackFunc>(_stack_func) };
-    auto _final_entry = finalizer_pair_t{ _key, std::forward<FinalFunc>(_inst_func) };
+    auto& _cleanup_target   = (_is_master) ? m_master_cleanup : m_worker_cleanup;
+    auto& _finalizer_target = (_is_master) ? m_master_finalizers : m_worker_finalizers;
 
-    if(_is_master)
-    {
-        m_master_cleanup.push_back(_stack_entry);
-        m_master_finalizers.push_back(_final_entry);
-    }
-    else
-    {
-        m_worker_cleanup.push_back(_stack_entry);
-        m_worker_finalizers.push_back(_final_entry);
-    }
+    _cleanup_target[_priority].emplace_back(_key, std::forward<StackFuncT>(_stack_func));
+    _finalizer_target[_priority].emplace_back(_key, std::forward<FinalFuncT>(_inst_func));
 }
 //
 //--------------------------------------------------------------------------------------//

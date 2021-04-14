@@ -5,6 +5,17 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory" AND NOT TIMEMORY_USE_PAPI)
     return()
 endif()
 
+set(VALID_PARANOID OFF)
+set(PARANOID_FILE "/proc/sys/kernel/perf_event_paranoid")
+if(EXISTS "${PARANOID_FILE}")
+    file(READ "${PARANOID_FILE}" PARANOID_VALUE LIMIT_COUNT 1)
+    if(PARANOID_VALUE GREATER 1)
+        message(AUTHOR_WARNING "${PARANOID_FILE} is ${PARANOID_VALUE} and a value <= 1 is required to collect the HW counters.")
+        message(STATUS "Skipping cpu-roofline example because HW counter data cannot be collected")
+        return()
+    endif()
+endif()
+
 project(timemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cpu_roofline)

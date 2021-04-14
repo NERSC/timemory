@@ -176,28 +176,28 @@ def parse_args(args=None):
     parser.add_argument(
         "--skip-funcs",
         type=str,
-        nargs="?",
+        nargs="+",
         default=_profiler_config.skip_functions,
         help="Filter out any entries with these function names",
     )
     parser.add_argument(
         "--skip-files",
         type=str,
-        nargs="?",
+        nargs="+",
         default=_profiler_config.skip_filenames,
         help="Filter out any entries from these files",
     )
     parser.add_argument(
         "--only-funcs",
         type=str,
-        nargs="?",
+        nargs="+",
         default=_profiler_config.only_functions,
         help="Select only entries with these function names",
     )
     parser.add_argument(
         "--only-files",
         type=str,
-        nargs="?",
+        nargs="+",
         default=_profiler_config.only_filenames,
         help="Select only entries from these files",
     )
@@ -259,7 +259,17 @@ def main():
         opts, argv = parse_args(sys.argv[:_idx])
         argv = _argv
     else:
-        opts, argv = parse_args()
+        if "-h" in sys.argv or "--help" in sys.argv:
+            opts, argv = parse_args()
+        else:
+            argv = sys.argv[1:]
+            opts, discard = parse_args()
+            if len(argv) == 0 or not os.path.isfile(argv[0]):
+                raise RuntimeError(
+                    "Could not determine input script. Use '--' before "
+                    "the script and its arguments to ensure correct parsing. \nE.g. "
+                    "python -m timemory.profiler -- ./script.py"
+                )
 
     from ..libpytimemory import initialize
     from ..libpytimemory import settings

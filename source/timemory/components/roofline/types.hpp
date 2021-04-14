@@ -175,7 +175,6 @@ TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_label_printing, component::gpu_roofline, t
 
 TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::cpu_roofline, true_type,
                                typename)
-//                                typename)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -233,6 +232,19 @@ TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_serialization, component::gpu_roofline, tr
 
 TIMEMORY_DEFINE_VARIADIC_TRAIT(secondary_data, component::gpu_roofline, true_type,
                                typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              FINALIZATION PRIORITY
+//
+//--------------------------------------------------------------------------------------//
+
+// finalize early
+TIMEMORY_DEFINE_VARIADIC_TRAIT(fini_priority, component::cpu_roofline,
+                               priority_constant<-4>, typename)
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(fini_priority, component::gpu_roofline,
+                               priority_constant<-4>, typename)
 
 //--------------------------------------------------------------------------------------//
 //

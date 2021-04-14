@@ -128,6 +128,7 @@ class Profiler:
         self.components = list(dict.fromkeys(self.components))
         if len(self.components) == 0:
             self.components += ["wall_clock"]
+        self.components.remove("")
         if _profl is None:
             settings.profiler_components = ",".join(self.components)
         settings.profiler_components = ",".join(self.components)
@@ -146,6 +147,12 @@ class Profiler:
         """Initialize, configure the bundle, store original profiler function"""
 
         _profiler_init()
+        if settings.debug:
+            print(
+                "configuring Profiler with components: {}".format(
+                    self.components
+                )
+            )
         _profiler_bundle.configure(
             self.components, self._flat_profile, self._timeline_profile
         )

@@ -943,6 +943,46 @@ def run_pyctest():
         )
 
         pyct.test(
+            "timemory-python-profiler-main-no-opts",
+            [
+                sys.executable,
+                "-m",
+                "timemory.profiler",
+                "./ex_python_external",
+                "5",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "120",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-profiler-main-script",
+            [
+                os.path.join(pyct.BINARY_DIRECTORY, "bin", "timemory-python-profiler"),
+                "--max-stack-depth=10",
+                "-l",
+                "-f",
+                "-F",
+                "-c",
+                "wall_clock",
+                "peak_rss",
+                "--",
+                "./ex_python_external",
+                "12",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "120",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
             "timemory-python-profiler-builtin",
             [
                 sys.executable,
@@ -989,6 +1029,45 @@ def run_pyctest():
                 sys.executable,
                 "-m",
                 "timemory.trace",
+                "-l",
+                "-f",
+                "-F",
+                "-c",
+                "wall_clock",
+                "peak_rss",
+                "--",
+                "./ex_python_external",
+                "12",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "120",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-trace-main-no-opts",
+            [
+                sys.executable,
+                "-m",
+                "timemory.trace",
+                "./ex_python_external",
+                "5",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "120",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-trace-main-script",
+            [
+                os.path.join(pyct.BINARY_DIRECTORY, "bin", "timemory-python-trace"),
                 "-l",
                 "-f",
                 "-F",

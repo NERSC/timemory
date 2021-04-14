@@ -37,10 +37,6 @@ import warnings
 import traceback
 import multiprocessing as mp
 
-import timemory
-import timemory.roofline as _roofline
-
-
 # error code
 _errc = 0
 
@@ -287,6 +283,8 @@ def plot_impl(args, ai_data, op_data, rank=None, label=None):
         fname = "{}_{}".format(fname, rank)
         title = "{} (MPI rank: {})".format(args.title, rank)
 
+    import timemory.roofline as _roofline
+
     _roofline.plot_roofline(
         ai_data,
         op_data,
@@ -312,6 +310,8 @@ def run(args, cmd):
 
     if len(cmd) == 0:
         return
+
+    os.environ["TIMEMORY_PYTHON_BINDINGS"] = "0"
 
     def get_environ(env_var, default_value, dtype):
         val = os.environ.get(env_var)
@@ -445,15 +445,8 @@ def try_plot():
         _separator = "--"
 
         for _arg in sys.argv[1:]:
-            if _arg == _separator:
+            if _arg == _separator and _i < len(_argsets):
                 _i += 1
-                if _i >= len(_argsets):
-                    sys.exit(
-                        'ERROR: Too many "{}" separators provided '
-                        "(expected at most {}).".format(
-                            _separator, len(_argsets) - 1
-                        )
-                    )
             else:
                 _argsets[_i].append(_arg)
 
@@ -462,6 +455,8 @@ def try_plot():
         args = parse_args(len(_cmd) != 0)
         run(args, _cmd)
         if args.verbose is not None:
+            import timemory.roofline as _roofline
+
             _roofline.VERBOSE = args.verbose
         plot(args)
 

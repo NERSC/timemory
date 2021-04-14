@@ -283,7 +283,7 @@ struct custom_unit_printing : false_type
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::start_priority
 /// \brief trait that designates whether there is a priority when starting the type w.r.t.
-/// other types.
+/// other types. Lower values indicate higher priority.
 ///
 template <typename T>
 struct start_priority : std::integral_constant<int, 0>
@@ -292,10 +292,20 @@ struct start_priority : std::integral_constant<int, 0>
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::stop_priority
 /// \brief trait that designates whether there is a priority when stopping the type w.r.t.
-/// other types.
+/// other types. Lower values indicate higher priority.
 ///
 template <typename T>
 struct stop_priority : std::integral_constant<int, 0>
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::fini_priority
+/// \brief trait that designates whether there is a priority when finalizing the type
+/// w.r.t. other types. Recommended for component which hold instances of other
+/// components. Lower values indicate higher priority.
+///
+template <typename T>
+struct fini_priority : std::integral_constant<int, 0>
 {};
 
 //--------------------------------------------------------------------------------------//
