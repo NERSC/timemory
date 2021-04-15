@@ -100,6 +100,12 @@ if(SKBUILD)
     set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 endif()
 
+if(APPLE AND NOT "$ENV{CONDA_PYTHON_EXE}" STREQUAL "")
+    # disable by default bc conda will set these and cause problem with python bindings
+    set(CMAKE_C_FLAGS "" CACHE STRING "")
+    set(CMAKE_CXX_FLAGS "" CACHE STRING "")
+endif()
+
 #----------------------------------------------------------------------------------------#
 #   project
 #----------------------------------------------------------------------------------------#
