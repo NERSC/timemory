@@ -47,39 +47,42 @@ jobs:
             wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ${HOME}/miniconda.sh &&
             bash ${HOME}/miniconda.sh -b -p ${HOME}/miniconda &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
-            conda config --set always_yes yes --set changeps1 no &&
-            conda create -c defaults -c conda-forge -n timemory python=3.8 pip scikit-build ninja cython &&
-            source activate timemory
+            conda config --set always_yes yes &&
+            conda create -c conda-forge -c defaults -n timemory-ci python=3.8 scikit-build ninja cython numpy matplotlib pillow six pandas pydot &&
+            source activate
+            conda activate timemory-ci
       - run:
           name: build
           command: >
-            python -m pip install -r .requirements/runtime.txt &&
+            which -a python &&
             python setup.py install
             --enable-arch
-            --enable-c
-            --enable-caliper
             --enable-cuda
-            --enable-dyninst
-            --enable-gotcha
-            --enable-kokkos
-            --enable-likwid
             --enable-mpi
-            --enable-ompt
-            --enable-papi
-            --enable-tools
-            --enable-vtune
+            --disable-c
+            --disable-caliper
+            --disable-dyninst
+            --disable-gotcha
+            --disable-kokkos
+            --disable-likwid
+            --disable-ompt
+            --disable-papi
+            --disable-tools
+            --disable-vtune
             --disable-cupti
             --disable-gperftools
             --disable-build-caliper
             --disable-build-gotcha
             --cxx-standard=17
-            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF
+            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -- -j1
       - run:
           name: test
           command: >
-            SUBPACKAGES="analyze api bundle common component hardware_counters mpi bundle options plotting profiler region roofline settings signals trace units util"
-            python -c "import timemory; print(help(timemory))"
-            for i in ${SUBPACKAGES}; do python -c "import timemory; print(help(timemory.${i}))"; done
+            SUBPACKAGES="api bundle common component hardware_counters mpi bundle options plotting profiler region roofline settings signals trace units util";
+            python -c "import timemory; print(help(timemory))";
+            for i in ${SUBPACKAGES}; do python -c "import timemory; print(help(timemory.${i}))"; done;
+            python -c "import timemory.analyze; print(help(timemory.analyze))";
+            python -c "import timemory.hatchet; print(help(timemory.hatchet))";
   quick-build:
     docker:
       - image: jrmadsen/timemory:dev-cpu
