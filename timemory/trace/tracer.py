@@ -102,30 +102,19 @@ class Tracer:
 
     # ---------------------------------------------------------------------------------- #
     #
-    def __init__(self, components=[], *args, **kwargs):
+    def __init__(self, components=[], **kwargs):
         """
         Arguments:
-            - components [list of strings]  : list of timemory components
+            - components [list, str, or function]  : list of timemory components
         """
 
-        _trace = settings.trace_components
-        _profl = settings.profiler_components
-        _components = _profl if _trace is None else _trace
-
+        self.components = components
         self._original_function = sys.gettrace()
+        self._unset = 0
         self._use = (
             not _tracer_config._is_running and Tracer.is_enabled() is True
         )
-        self.components = components + _components.split(",")
-        self.components = [v.lower() for v in self.components]
-        self.components = list(dict.fromkeys(self.components))
-        if len(self.components) == 0:
-            self.components += ["wall_clock"]
-        self.components.remove("")
-        if _trace is None:
-            settings.trace_components = ",".join(self.components)
-        settings.trace_components = ",".join(self.components)
-        self._unset = 0
+        self.debug = kwargs["debug"] if "debug" in kwargs else False
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -140,12 +129,54 @@ class Tracer:
         """Initialize, configure the bundle, store original tracer function"""
 
         _tracer_init()
-        if settings.debug:
-            print(
-                "configuring Tracer with components: {}".format(self.components)
+        _trace = settings.trace_components
+        _profl = settings.profiler_components
+        _components = _profl if _trace is None else _trace
+        if len(_components) == 0:
+            _components = settings.global_components
+
+        # support function and list
+        import inspect
+
+        if inspect.isfunction(self.components):
+            self.components = self.components()
+
+        input_components = []
+        if isinstance(self.components, list):
+            input_components = self.components
+        else:
+            input_components = ["{}".format(self.components)]
+
+        # factor in global and local settings
+        components = input_components + _components.split(",")
+        components = list(set([v.lower() for v in components]))
+        components = [f"{v}" for v in components]
+        if "" in components:
+            components.remove("")
+
+        # update global setting
+        if _trace is None or len(_trace) == 0:
+            settings.trace_components = ",".join(components)
+
+        # configure
+        if settings.debug or self.debug:
+            sys.stderr.write(
+                "configuring Profiler with components (type: {}): {}\n".format(
+                    type(components).__name__, components
+                )
             )
-        _tracer_bundle.configure(self.components, True, False)
+        try:
+            _tracer_bundle.configure(components, True, False)
+        except Exception as e:
+            sys.stderr.write(f"Tracer configuration failed: {e}\n")
+
+        # store original
+        if settings.debug or self.debug:
+            sys.stderr.write("setting trace function...\n")
         self._original_function = sys.gettrace()
+
+        if settings.debug or self.debug:
+            sys.stderr.write("Tracer configured...\n")
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -167,9 +198,13 @@ class Tracer:
 
         self.update()
         if self._use:
+            if settings.debug or self.debug:
+                sys.stderr.write("Tracer starting...\n")
             self.configure()
             sys.settrace(_tracer_function)
             threading.settrace(_tracer_function)
+            if settings.debug or self.debug:
+                sys.stderr.write("Tracer started...\n")
 
         self._unset = self._unset + 1
         return self._unset
@@ -181,8 +216,12 @@ class Tracer:
 
         self._unset = self._unset - 1
         if self._unset == 0:
+            if settings.debug or self.debug:
+                sys.stderr.write("Tracer stopping...\n")
             sys.settrace(self._original_function)
             _tracer_fini()
+            if settings.debug or self.debug:
+                sys.stderr.write("Tracer stopped...\n")
 
         return self._unset
 

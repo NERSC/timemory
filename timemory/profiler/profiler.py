@@ -103,36 +103,23 @@ class Profiler:
 
     # ---------------------------------------------------------------------------------- #
     #
-    def __init__(
-        self, components=[], flat=False, timeline=False, *args, **kwargs
-    ):
+    def __init__(self, components=[], flat=False, timeline=False, **kwargs):
         """
         Arguments:
-            - components [list of strings]  : list of timemory components
-            - flat [bool]                   : enable flat profiling
-            - timeline [bool]               : enable timeline profiling
+            - components [list, str, or function]  : list of timemory components
+            - flat [bool]                          : enable flat profiling
+            - timeline [bool]                      : enable timeline profiling
         """
 
-        _trace = settings.trace_components
-        _profl = settings.profiler_components
-        _components = _trace if _profl is None else _profl
-
+        self.flat = flat
+        self.timeline = timeline
+        self.components = components
         self._original_function = sys.getprofile()
+        self._unset = 0
         self._use = (
             not _profiler_config._is_running and Profiler.is_enabled() is True
         )
-        self._flat_profile = settings.flat_profile or flat
-        self._timeline_profile = settings.timeline_profile or timeline
-        self.components = components + _components.split(",")
-        self.components = [v.lower() for v in self.components]
-        self.components = list(dict.fromkeys(self.components))
-        if len(self.components) == 0:
-            self.components += ["wall_clock"]
-        self.components.remove("")
-        if _profl is None:
-            settings.profiler_components = ",".join(self.components)
-        settings.profiler_components = ",".join(self.components)
-        self._unset = 0
+        self.debug = kwargs["debug"] if "debug" in kwargs else False
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -147,16 +134,58 @@ class Profiler:
         """Initialize, configure the bundle, store original profiler function"""
 
         _profiler_init()
-        if settings.debug:
-            print(
-                "configuring Profiler with components: {}".format(
-                    self.components
+        _trace = settings.trace_components
+        _profl = settings.profiler_components
+        _components = _trace if _profl is None else _profl
+        if len(_components) == 0:
+            _components = settings.global_components
+
+        # support function and list
+        import inspect
+
+        if inspect.isfunction(self.components):
+            self.components = self.components()
+
+        input_components = []
+        if isinstance(self.components, list):
+            input_components = self.components
+        else:
+            input_components = ["{}".format(self.components)]
+
+        # factor in global and local settings
+        components = input_components + _components.split(",")
+        components = list(set([v.lower() for v in components]))
+        components = [f"{v}" for v in components]
+        if "" in components:
+            components.remove("")
+
+        # update global setting
+        if _profl is None or len(_profl) == 0:
+            settings.profiler_components = ",".join(components)
+
+        # configure
+        if settings.debug or self.debug:
+            sys.stderr.write(
+                "configuring Profiler with components (type: {}): {}\n".format(
+                    type(components).__name__, components
                 )
             )
-        _profiler_bundle.configure(
-            self.components, self._flat_profile, self._timeline_profile
-        )
+        try:
+            _profiler_bundle.configure(
+                components,
+                settings.flat_profile or self.flat,
+                settings.timeline_profile or self.timeline,
+            )
+        except Exception as e:
+            sys.stderr.write(f"Profiler configuration failed: {e}\n")
+
+        # store original
+        if settings.debug or self.debug:
+            sys.stderr.write("setting profile function...\n")
         self._original_function = sys.getprofile()
+
+        if settings.debug or self.debug:
+            sys.stderr.write("Tracer configured...\n")
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -178,9 +207,13 @@ class Profiler:
 
         self.update()
         if self._use:
+            if settings.debug or self.debug:
+                sys.stderr.write("Profiler starting...\n")
             self.configure()
             sys.setprofile(_profiler_function)
             threading.setprofile(_profiler_function)
+            if settings.debug or self.debug:
+                sys.stderr.write("Profiler started...\n")
 
         self._unset = self._unset + 1
         return self._unset
@@ -192,8 +225,12 @@ class Profiler:
 
         self._unset = self._unset - 1
         if self._unset == 0:
+            if settings.debug or self.debug:
+                sys.stderr.write("Profiler stopping...\n")
             sys.setprofile(self._original_function)
             _profiler_fini()
+            if settings.debug or self.debug:
+                sys.stderr.write("Profiler stopped...\n")
 
         return self._unset
 
