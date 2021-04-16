@@ -33,7 +33,7 @@ jobs:
             cat timem-install-test/*
   python-install:
     docker:
-      - image: jrmadsen/timemory:dev-gpu
+      - image: jrmadsen/timemory:dev-cpu
     steps:
       - run:
           name: apt-fixes
@@ -56,10 +56,11 @@ jobs:
             which -a python &&
             python setup.py install
             --enable-arch
-            --enable-cuda
             --enable-mpi
             --disable-c
             --disable-caliper
+            --disable-cuda
+            --disable-cupti
             --disable-dyninst
             --disable-gotcha
             --disable-kokkos
@@ -68,7 +69,6 @@ jobs:
             --disable-papi
             --disable-tools
             --disable-vtune
-            --disable-cupti
             --disable-gperftools
             --disable-build-caliper
             --disable-build-gotcha
