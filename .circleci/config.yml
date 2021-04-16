@@ -52,6 +52,7 @@ jobs:
       - run:
           name: build
           command: >
+            export CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/view/targets/x86_64-linux &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate timemory-ci &&
             which -a python &&
@@ -78,6 +79,8 @@ jobs:
       - run:
           name: test
           command: >
+            export PATH="${HOME}/miniconda/bin:${PATH}" &&
+            source activate timemory-ci &&
             SUBPACKAGES="api bundle common component hardware_counters mpi bundle options plotting profiler region roofline settings signals trace units util";
             python -c "import timemory; print(help(timemory))";
             for i in ${SUBPACKAGES}; do python -c "import timemory; print(help(timemory.${i}))"; done;
