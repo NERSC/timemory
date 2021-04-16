@@ -49,7 +49,7 @@ jobs:
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             conda config --set always_yes yes &&
             conda create -c conda-forge -c defaults -n timemory-ci python=3.8 scikit-build ninja cython numpy matplotlib pillow six pandas pydot &&
-            conda activate timemory-ci
+            source activate timemory-ci
       - run:
           name: build
           command: >
