@@ -33,7 +33,7 @@ jobs:
             cat timem-install-test/*
   python-install:
     docker:
-      - image: jrmadsen/timemory:dev-cpu
+      - image: jrmadsen/timemory:dev-gpu
     steps:
       - run:
           name: apt-fixes
@@ -48,19 +48,19 @@ jobs:
             bash ${HOME}/miniconda.sh -b -p ${HOME}/miniconda &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             conda config --set always_yes yes &&
-            conda create -c conda-forge -c defaults -n timemory-ci python=3.8 scikit-build ninja cython numpy matplotlib pillow six pandas pydot &&
-            source activate timemory-ci
+            conda create -c conda-forge -c defaults -n timemory-ci python=3.8 scikit-build ninja cython numpy matplotlib pillow six pandas pydot
       - run:
           name: build
           command: >
+            export PATH="${HOME}/miniconda/bin:${PATH}" &&
+            source activate timemory-ci &&
             which -a python &&
             python setup.py install
             --enable-arch
+            --enable-cuda
             --enable-mpi
             --disable-c
             --disable-caliper
-            --disable-cuda
-            --disable-cupti
             --disable-dyninst
             --disable-gotcha
             --disable-kokkos
@@ -69,6 +69,7 @@ jobs:
             --disable-papi
             --disable-tools
             --disable-vtune
+            --disable-cupti
             --disable-gperftools
             --disable-build-caliper
             --disable-build-gotcha
