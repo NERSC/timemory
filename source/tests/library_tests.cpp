@@ -493,6 +493,49 @@ TEST_F(library_tests, remove)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(library_tests, add_remove)
+{
+    std::array<uint64_t, 2> idx;
+    idx.fill(0);
+
+    timemory_push_components("wall_clock, cpu_clock");
+
+    // add and then immediately remove
+    timemory_add_components("cpu_util");
+    timemory_remove_components("cpu_util");
+
+    timemory_begin_record(TEST_NAME, &idx[0]);
+    ret += details::fibonacci(35);
+
+    // add in second region
+    timemory_add_components("peak_rss");
+
+    timemory_begin_record(TEST_NAME, &idx[1]);
+    ret += details::fibonacci(35);
+
+    // remove
+    timemory_remove_components("peak_rss");
+
+    timemory_end_record(idx[0]);
+    timemory_end_record(idx[1]);
+
+    timemory_pop_components();
+
+    printf("fibonacci(35) = %li\n\n", ret);
+
+    auto wc_n = wc_size_orig + 2;
+    auto cu_n = cu_size_orig + 0;
+    auto cc_n = cc_size_orig + 2;
+    auto pr_n = pr_size_orig + 1;
+
+    ASSERT_EQ(get_wc_storage_size(), wc_n);
+    ASSERT_EQ(get_cu_storage_size(), cu_n);
+    ASSERT_EQ(get_cc_storage_size(), cc_n);
+    ASSERT_EQ(get_pr_storage_size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(library_tests, record_types)
 {
     std::array<uint64_t, 2> idx;

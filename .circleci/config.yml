@@ -75,7 +75,7 @@ jobs:
             --disable-build-caliper
             --disable-build-gotcha
             --cxx-standard=17
-            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -- -j1
+            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -DTIMEMORY_UNITY_BUILD=OFF -- -j1
       - run:
           name: test
           command: >
