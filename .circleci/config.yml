@@ -50,7 +50,7 @@ jobs:
             conda config --set always_yes yes &&
             conda create -c conda-forge -c defaults -n timemory-ci python=3.8 scikit-build ninja cython numpy matplotlib pillow six pandas pydot
       - run:
-          name: build
+          name: build-and-test
           command: >
             touch .hold &&
             (./scripts/report-memory.sh .hold 120 &) &&
@@ -80,17 +80,12 @@ jobs:
             --disable-build-gotcha
             --cxx-standard=17
             -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -DTIMEMORY_UNITY_BUILD=OFF -- -j1 &&
-            rm -f .hold
-      - run:
-          name: test
-          command: >
-            export PATH="${HOME}/miniconda/bin:${PATH}" &&
-            source activate timemory-ci &&
+            rm -f .hold &&
             SUBPACKAGES="api bundle common component hardware_counters mpi bundle options plotting profiler region roofline settings signals trace units util";
-            python -c "import timemory; print(help(timemory))";
-            for i in ${SUBPACKAGES}; do python -c "import timemory; print(help(timemory.${i}))"; done;
-            python -c "import timemory.analyze; print(help(timemory.analyze))";
-            python -c "import timemory.hatchet; print(help(timemory.hatchet))";
+            python -c "import timemory";
+            for i in ${SUBPACKAGES}; do python -c "import timemory"; done;
+            python -c "import timemory.analyze";
+            python -c "import timemory.hatchet";
   quick-build:
     docker:
       - image: jrmadsen/timemory:dev-cpu
