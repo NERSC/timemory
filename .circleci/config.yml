@@ -52,20 +52,22 @@ jobs:
       - run:
           name: build
           command: >
+            touch .hold &&
+            (./scripts/report-memory.sh .hold 120 &) &&
             export CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/view/targets/x86_64-linux &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate timemory-ci &&
             which -a python &&
             python setup.py install
-            --enable-arch
             --enable-cuda
-            --enable-mpi
+            --disable-arch
             --disable-c
             --disable-caliper
             --disable-dyninst
             --disable-gotcha
             --disable-kokkos
             --disable-likwid
+            --disable-mpi
             --disable-ompt
             --disable-papi
             --disable-tools
@@ -75,7 +77,8 @@ jobs:
             --disable-build-caliper
             --disable-build-gotcha
             --cxx-standard=17
-            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -DTIMEMORY_UNITY_BUILD=OFF -- -j1
+            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -DTIMEMORY_UNITY_BUILD=OFF -- -j1 &&
+            rm -f .hold
       - run:
           name: test
           command: >
