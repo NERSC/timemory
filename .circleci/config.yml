@@ -58,13 +58,17 @@ jobs:
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate timemory-ci &&
             which -a python &&
+            export CC=$(which clang) &&
+            export CXX=$(which clang++) &&
             python setup.py install
-            --enable-cuda
             --disable-arch
             --disable-c
             --disable-caliper
+            --disable-cuda
+            --disable-cupti
             --disable-dyninst
             --disable-gotcha
+            --disable-gperftools
             --disable-kokkos
             --disable-likwid
             --disable-mpi
@@ -72,8 +76,6 @@ jobs:
             --disable-papi
             --disable-tools
             --disable-vtune
-            --disable-cupti
-            --disable-gperftools
             --disable-build-caliper
             --disable-build-gotcha
             --cxx-standard=17
