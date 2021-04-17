@@ -33,7 +33,7 @@ jobs:
             cat timem-install-test/*
   python-install:
     docker:
-      - image: jrmadsen/timemory:dev-gpu
+      - image: jrmadsen/timemory:dev-cpu
     steps:
       - run:
           name: apt-fixes
