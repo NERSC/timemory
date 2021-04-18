@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 # this is for internal use
 if(NOT TIMEMORY_BUILD_OMPT_LIBRARY OR NOT TIMEMORY_USE_OMPT OR TIMEMORY_SKIP_BUILD)

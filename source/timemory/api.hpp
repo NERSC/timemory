@@ -28,7 +28,6 @@
 #include "timemory/defines.h"
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/concepts.hpp"
-#include "timemory/version.h"
 
 #include <type_traits>
 

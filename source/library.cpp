@@ -307,7 +307,7 @@ extern "C"
         tim::trace::lock<tim::trace::library> lk{};
         auto&                                 _stack = get_current_components();
         for(auto itr : tim::enumerate_components(_component_string))
-            tim::consume_parameters(std::remove(_stack.begin(), _stack.end(), itr));
+            _stack.erase(std::remove(_stack.begin(), _stack.end(), itr), _stack.end());
     }
 
     //----------------------------------------------------------------------------------//

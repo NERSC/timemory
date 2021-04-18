@@ -138,9 +138,10 @@ component_bundle(const std::string& func, const std::string& file, const int lin
 //--------------------------------------------------------------------------------------//
 //
 template <typename UserBundleT, typename ScopeFunc = std::function<void(bool, bool)>>
-void
-generate(py::module& _pymod, const char* _name, const char* _doc,
-         const ScopeFunc& _scope_set = [](bool, bool) {})
+auto
+generate(
+    py::module& _pymod, const char* _name, const char* _doc,
+    ScopeFunc _scope_set = [](bool, bool) {})
 {
     using bundle_t = pycomponent_bundle<UserBundleT>;
 
@@ -148,31 +149,50 @@ generate(py::module& _pymod, const char* _name, const char* _doc,
 
     auto configure_pybundle = [_scope_set](py::list _args, bool flat_profile,
                                            bool timeline_profile) {
-        auto components = pytim::get_enum_set(_args);
-        if(_args.size() == 0)
-            components.insert(WALL_CLOCK);
-
-        size_t isize = bundle_t::size();
-        if(tim::settings::debug() || tim::settings::verbose() > 3)
+        try
         {
-            static auto _enum2str = pytim::get_enum_string_map();
-            std::string _slist{};
-            for(auto& itr : components)
-                _slist += ", " + _enum2str[itr];
-            PRINT_HERE("configuring pybundle with [%s]", _slist.substr(2).c_str());
-        }
+            pytim::pyenum_set_t components{};
+            try
+            {
+                components = pytim::get_enum_set(_args);
+            } catch(py::cast_error& e)
+            {
+                auto _argstr = py::str(_args);
+                std::cerr << "Error getting enumeration set from "
+                          << _argstr.cast<std::string>() << " : " << e.what()
+                          << ". Expected python list" << std::endl;
+                tim::print_demangled_backtrace<32>();
+            }
 
-        _scope_set(flat_profile, timeline_profile);
+            if(_args.size() == 0)
+                components.insert(WALL_CLOCK);
 
-        tim::configure<UserBundleT>(components,
-                                    tim::scope::config{ flat_profile, timeline_profile });
+            size_t isize = bundle_t::size();
+            if(tim::settings::debug() || tim::settings::verbose() > 3)
+            {
+                static auto _enum2str = pytim::get_enum_string_map();
+                std::string _slist{};
+                for(auto& itr : components)
+                    _slist += ", " + _enum2str[itr];
+                PRINT_HERE("configuring pybundle with [%s]", _slist.substr(2).c_str());
+            }
 
-        if(tim::settings::debug() || tim::settings::verbose() > 3)
+            _scope_set(flat_profile, timeline_profile);
+
+            tim::configure<UserBundleT>(
+                components, tim::scope::config{ flat_profile, timeline_profile });
+
+            if(tim::settings::debug() || tim::settings::verbose() > 3)
+            {
+                auto fsize = components.size();
+                PRINT_HERE("final size: %lu, input size: %lu, components size: %lu\n",
+                           (unsigned long) fsize, (unsigned long) isize,
+                           (unsigned long) components.size());
+            }
+        } catch(py::cast_error& e)
         {
-            auto fsize = components.size();
-            PRINT_HERE("final size: %lu, input size: %lu, components size: %lu\n",
-                       (unsigned long) fsize, (unsigned long) isize,
-                       (unsigned long) components.size());
+            std::cerr << "Error configuring bundle! " << e.what() << std::endl;
+            tim::print_demangled_backtrace<32>();
         }
     };
 
@@ -184,21 +204,23 @@ generate(py::module& _pymod, const char* _name, const char* _doc,
     //                      Component bundle
     //
     //==================================================================================//
+
     comp_bundle.def(py::init(&init::component_bundle<UserBundleT>), "Initialization",
                     py::arg("func"), py::arg("file"), py::arg("line"),
                     py::arg("extra") = py::list{});
-    //----------------------------------------------------------------------------------//
+
     comp_bundle.def("start", &bundle_t::start, "Start the bundle");
-    //----------------------------------------------------------------------------------//
+
     comp_bundle.def("stop", &bundle_t::stop, "Stop the bundle");
-    //----------------------------------------------------------------------------------//
+
     comp_bundle.def_static(
         "configure", configure_pybundle, py::arg("components") = py::list{},
         py::arg("flat_profile") = false, py::arg("timeline_profile") = false,
         "Configure the profiler types (default: 'wall_clock')");
-    //----------------------------------------------------------------------------------//
+
     comp_bundle.def_static("reset", &bundle_t::reset,
                            "Reset the components in the bundle");
+    return comp_bundle;
 }
 //
 }  // namespace pycomponent_bundle

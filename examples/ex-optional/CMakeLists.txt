@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 project(timemory-Optional-Example LANGUAGES C CXX)
 
@@ -16,9 +16,7 @@ if(OpenMP_FOUND AND USE_OPENMP)
 endif()
 
 if(USE_MPI)
-    if(TARGET timemory-mpi)
-        set(_MPI timemory-mpi)
-    elseif(TARGET timemory::timemory-mpi)
+    if(TARGET timemory::timemory-mpi)
         set(_MPI timemory::timemory-mpi)
     endif()
 
@@ -33,8 +31,8 @@ file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cpp ${PROJECT_SOURCE_DIR}/*.hpp)
 add_executable(ex_optional_on ${sources})
 add_executable(ex_optional_off ${sources})
 
-target_link_libraries(ex_optional_on timemory ${_OMP})
-target_link_libraries(ex_optional_off timemory-compile-options ${_OMP})
+target_link_libraries(ex_optional_on timemory::timemory ${_OMP})
+target_link_libraries(ex_optional_off timemory::timemory-compile-options ${_OMP})
 target_compile_definitions(ex_optional_on PRIVATE USE_TIMEMORY)
 
 install(TARGETS ex_optional_on ex_optional_off DESTINATION bin OPTIONAL)
@@ -43,8 +41,8 @@ if(_MPI)
     add_executable(ex_optional_on.mpi ${sources})
     add_executable(ex_optional_off.mpi ${sources})
 
-    target_link_libraries(ex_optional_on.mpi timemory ${_MPI} ${_OMP})
-    target_link_libraries(ex_optional_off.mpi timemory-compile-options ${_MPI} ${_OMP})
+    target_link_libraries(ex_optional_on.mpi timemory::timemory ${_MPI} ${_OMP})
+    target_link_libraries(ex_optional_off.mpi timemory::timemory-compile-options ${_MPI} ${_OMP})
     target_compile_definitions(ex_optional_on.mpi PRIVATE USE_TIMEMORY)
 
     install(TARGETS ex_optional_on.mpi ex_optional_off.mpi DESTINATION bin OPTIONAL)

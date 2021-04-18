@@ -781,6 +781,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
+set(TIMEMORY_USE_NVTX ${TIMEMORY_USE_CUDA})
 if(TIMEMORY_USE_CUDA)
 
     set(PROJECT_USE_CUDA_OPTION            TIMEMORY_USE_CUDA)
@@ -790,6 +791,14 @@ if(TIMEMORY_USE_CUDA)
     set(PROJECT_CUDA_USE_HALF_DEFINITION   TIMEMORY_USE_CUDA_HALF)
 
     include(CUDAConfig)
+
+    find_package(NVTX ${TIMEMORY_FIND_QUIETLY})
+    if(NVTX_FOUND)
+        add_rpath(${NVTX_LIBRARIES})
+        target_link_libraries(timemory-cuda INTERFACE ${NVTX_LIBRARIES})
+        target_include_directories(timemory-cuda SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
+    endif()
+    target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
 
 else()
     set(TIMEMORY_USE_CUDA OFF)
@@ -855,27 +864,6 @@ else()
     set(TIMEMORY_USE_CUPTI OFF)
     inform_empty_interface(timemory-cupti "CUPTI")
     inform_empty_interface(timemory-gpu-roofline "GPU roofline (CUPTI)")
-endif()
-
-
-#----------------------------------------------------------------------------------------#
-#
-#                               NVTX
-#
-#----------------------------------------------------------------------------------------#
-
-if(TIMEMORY_USE_CUDA)
-    find_package(NVTX ${TIMEMORY_FIND_QUIETLY})
-endif()
-
-if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
-    add_rpath(${NVTX_LIBRARIES})
-    target_link_libraries(timemory-cuda INTERFACE ${NVTX_LIBRARIES})
-    target_include_directories(timemory-cuda SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
-    target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
-else()
-    set(TIMEMORY_USE_NVTX OFF)
-    # inform_empty_interface(timemory-cuda "NVTX")
 endif()
 
 

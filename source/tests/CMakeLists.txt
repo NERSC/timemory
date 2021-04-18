@@ -834,6 +834,9 @@ if(NM_EXE AND NOT WIN32)
             NAME                nm-mangled-${_LIB}
             COMMAND             ${NM_EXE} -g $<TARGET_FILE:${_LIB}>
             WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+        if(APPLE AND "$ENV{USER}" STREQUAL "travis" AND "$ENV{TRAVIS}" STREQUAL "true")
+            continue()
+        endif()
         add_test(
             NAME                nm-demangled-${_LIB}
             COMMAND             ${NM_EXE} -g --demangle $<TARGET_FILE:${_LIB}>

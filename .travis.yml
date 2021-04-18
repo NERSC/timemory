@@ -12,20 +12,20 @@ jobs:
     #
     # ------------------------------------------------------------------------ #
     - os: osx
-      osx_image: xcode12u
-      language: generic
+      osx_image: xcode12
+      language: c++
+      python: "3.8"
+      env:
+        - TRAVIS_PYTHON_VERSION=3.8
+        - CONDA_OS=MacOSX
+        - CONFIG_ARGS='-DTIMEMORY_BUILD_PYTHON_HATCHET=OFF -DTIMEMORY_BUILD_PYTHON_LINE_PROFILER=OFF -DTIMEMORY_USE_SANITIZER=ON -DSANITIZER_TYPE=address'
+        - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=17'
+        - CONDA_EXTRA='cxx-compiler compiler-rt pybind11-abi'
       # addons:
       #  homebrew:
       #    casks:
       #    - anaconda
       #    update: true
-      env:
-        - TRAVIS_PYTHON_VERSION=3.8
-        - CONDA_OS=MacOSX
-        - CC=clang
-        - CXX=clang++
-        - CMAKE_ARGS='-DTIMEMORY_BUILD_PYTHON_HATCHET=OFF -DTIMEMORY_USE_SANITIZER=ON -DSANITIZER_TYPE=address'
-        - BUILD_ARGS='--quick --build-libs shared --python --cxx-standard=17'
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.6 / Python 3.7 / Linux
@@ -129,8 +129,8 @@ jobs:
 
 before_install:
   # - if [ -d /Library/Developer ]; then sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/* ; fi
-  - which -a ${CC}
-  - which -a ${CXX}
+  - if [ "${CC}" != "" ]; then which -a ${CC}; fi
+  - if [ "${CXX}" != "" ]; then which -a ${CXX}; fi
   - if [ -f /usr/bin/${CC} ]; then export CC=/usr/bin/${CC}; fi
   - if [ -f /usr/bin/${CXX} ]; then export CXX=/usr/bin/${CXX}; fi
   - if [ -d /usr/local/anaconda3/bin ]; then export PATH=/usr/local/anaconda3/bin:$PATH ; fi
@@ -145,7 +145,7 @@ before_install:
     conda config --set always_yes yes --set changeps1 no
 
 install:
-  - conda create -c conda-forge -c defaults -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake pip
+  - conda create -c conda-forge -c defaults -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake pip ${CONDA_EXTRA}
   - source activate
   - conda activate pyctest
   - python -m pip install -r requirements.txt
@@ -157,8 +157,9 @@ script:
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo; fi
   - export BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis -j 1 --compile-time-perf ${HOME}/ctp"
   - export CTEST_ARGS="-V --output-on-failure ${CTEST_ARGS}"
-  - export CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${CMAKE_ARGS}"
+  - export CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${CONFIG_ARGS}"
   - export PYCTEST_ARGS="${BASE_ARGS} -cc ${CC} -cxx ${CXX} --pyctest-build-type=${BUILD_TYPE} ${BUILD_ARGS}"
+  - echo -e "Running command:\npython ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
   # main command
   - python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
   # cd into build directory

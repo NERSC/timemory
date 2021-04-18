@@ -3,7 +3,7 @@
 #       CMake settings
 ##########################################################################################
 
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     set(MSG "")
@@ -98,6 +98,12 @@ if(SKBUILD)
     set(TIMEMORY_USE_PYTHON ON CACHE BOOL "" FORCE)
     set(TIMEMORY_BUILD_PYTHON ON CACHE BOOL "" FORCE)
     set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+endif()
+
+if(APPLE AND NOT "$ENV{CONDA_PYTHON_EXE}" STREQUAL "")
+    # disable by default bc conda will set these and cause problem with python bindings
+    set(CMAKE_C_FLAGS "" CACHE STRING "")
+    set(CMAKE_CXX_FLAGS "" CACHE STRING "")
 endif()
 
 #----------------------------------------------------------------------------------------#

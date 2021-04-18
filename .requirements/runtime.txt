@@ -5,3 +5,4 @@ pillow
 six
 pandas
 pydot
+multiprocess

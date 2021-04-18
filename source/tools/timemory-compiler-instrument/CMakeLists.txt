@@ -113,16 +113,16 @@ install(TARGETS ${LIB_TARGET}
 # build tree
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E create_symlink
-        compiler/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-        libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        compiler/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
 # install tree
 install(CODE "
 EXECUTE_PROCESS(
     COMMAND ${CMAKE_COMMAND} -E create_symlink
-        timemory/compiler/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-        libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        timemory/compiler/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 "
 OPTIONAL)

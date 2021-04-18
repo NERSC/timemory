@@ -962,7 +962,9 @@ def run_pyctest():
         pyct.test(
             "timemory-python-profiler-main-script",
             [
-                os.path.join(pyct.BINARY_DIRECTORY, "bin", "timemory-python-profiler"),
+                os.path.join(
+                    pyct.BINARY_DIRECTORY, "bin", "timemory-python-profiler"
+                ),
                 "--max-stack-depth=10",
                 "-l",
                 "-f",
@@ -1067,7 +1069,9 @@ def run_pyctest():
         pyct.test(
             "timemory-python-trace-main-script",
             [
-                os.path.join(pyct.BINARY_DIRECTORY, "bin", "timemory-python-trace"),
+                os.path.join(
+                    pyct.BINARY_DIRECTORY, "bin", "timemory-python-trace"
+                ),
                 "-l",
                 "-f",
                 "-F",
@@ -1582,7 +1586,17 @@ def run_pyctest():
                     },
                 )
 
-        if args.papi:
+        paranoid = 3
+        try:
+            if os.path.exists("/proc/sys/kernel/perf_event_paranoid"):
+                with open("/proc/sys/kernel/perf_event_paranoid", "r") as f:
+                    data = [int(line) for line in f.readlines()]
+                    if len(data) > 0:
+                        paranoid = data[0]
+        except IOError:
+            pass
+
+        if args.papi and paranoid < 2:
             pyct.test(
                 construct_name("ex-cpu-roofline"),
                 construct_roofline_command(

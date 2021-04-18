@@ -425,6 +425,20 @@ demangle_backtrace(const std::string& str)
     return str;
 }
 //
+template <size_t Depth, size_t Offset = 2>
+static inline void
+print_backtrace(std::ostream& os = std::cerr)
+{
+    os << "[timemory]> Backtrace not supported on this platform\n";
+}
+//
+template <size_t Depth, size_t Offset = 3>
+static inline void
+print_demangled_backtrace(std::ostream& os = std::cerr)
+{
+    os << "[timemory]> Backtrace not supported on this platform\n";
+}
+//
 #endif
 //
 //--------------------------------------------------------------------------------------//

@@ -31,6 +31,7 @@ jobs:
           clean: true
       - name: Build and Test
         run: |
+          rm -rf build-timemory/*
           export CONTINUOUS_INTEGRATION=true
           export CUDA_VISIBLE_DEVICES=2
           git submodule update .

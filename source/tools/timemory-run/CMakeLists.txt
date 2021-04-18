@@ -63,7 +63,6 @@ if(TIMEMORY_USE_DYNINST)
     add_target_flag_if_avail(timemory-run "-Wno-unused-function")
 
     target_link_libraries(timemory-run PRIVATE
-        timemory::timemory-dmp
         timemory::timemory-headers
         timemory::timemory-dyninst
         timemory::timemory-compile-options

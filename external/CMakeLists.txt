@@ -36,5 +36,33 @@ if(TIMEMORY_BUILD_PYTHON AND TIMEMORY_BUILD_PYTHON_HATCHET)
 
     if(TARGET libpytimemory AND TARGET hatchet)
         add_dependencies(libpytimemory hatchet)
+        if(CMAKE_INSTALL_PYTHONDIR)
+            set(HATCHET_PYDIR "${CMAKE_CURRENT_LIST_DIR}/hatchet/hatchet")
+            file(GLOB_RECURSE hatchet_files
+                "${HATCHET_PYDIR}/*.py"
+                "${HATCHET_PYDIR}/*.js")
+            file(GLOB_RECURSE hatchet_test_files
+                "${HATCHET_PYDIR}/tests/*")
+
+            set(HATCHET_CYTHONDIR
+                "${HATCHET_PYDIR}/cython_modules/libs")
+
+            set(hatchet_install_files ${hatchet_files} ${hatchet_test_files})
+            list(REMOVE_DUPLICATES hatchet_install_files)
+            foreach(_FILE ${hatchet_install_files})
+                get_filename_component(_SUBDIR "${_FILE}" PATH)
+                string(REPLACE "${CMAKE_CURRENT_LIST_DIR}/hatchet/" "" _SUBDIR "${_SUBDIR}")
+                install(FILES ${_FILE}
+                    DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/timemory/${_SUBDIR}
+                    OPTIONAL)
+            endforeach()
+
+            # cython build modules
+            install(FILES
+                "${HATCHET_CYTHONDIR}/graphframe_modules${PYTHON_MODULE_EXTENSION}"
+                "${HATCHET_CYTHONDIR}/reader_modules${PYTHON_MODULE_EXTENSION}"
+                DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/timemory/hatchet/cython_modules/libs
+                OPTIONAL)
+        endif()
     endif()
 endif()

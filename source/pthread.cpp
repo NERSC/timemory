@@ -162,7 +162,7 @@ private:
 
 using empty_tuple_t    = tim::component_tuple<>;
 using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
-using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
+using pthread_bundle_t = tim::component_tuple<pthread_gotcha_t, tim::quirk::auto_start>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -176,7 +176,7 @@ setup_pthread_gotcha()
             TIMEMORY_C_GOTCHA(pthread_gotcha_t, 0, pthread_create);
         };
     }
-    return std::make_shared<pthread_bundle_t>("pthread");
+    return std::make_shared<pthread_bundle_t>();
 #    else
     return std::shared_ptr<pthread_bundle_t>{};
 #    endif
