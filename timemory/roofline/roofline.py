@@ -1076,7 +1076,21 @@ def plot_roofline_impl(
     # try:
     #    from adjustText import adjust_text
     print(labels)
-    pylab.legend(plotted_spots, labels, prop={"size": (FONT_SIZE - 2)})
+    try:
+        pylab.legend(
+            plotted_spots,
+            labels,
+            prop={"size": (FONT_SIZE - 2)},
+            bbox_to_anchor=(1.04, 1),
+            loc="upper left",
+        )
+    except Exception as e:
+        sys.stderr.write(f"{e}\n")
+        pylab.legend(
+            plotted_spots,
+            labels,
+            prop={"size": (FONT_SIZE - 2)},
+        )
 
     # plt.legend(labels)
     if display:
@@ -1089,7 +1103,7 @@ def plot_roofline_impl(
         if not ".{}".format(image_type) in imgfname:
             imgfname += ".{}".format(image_type)
         print('Saving plot: "{}"...'.format(imgfname))
-        plt.savefig(imgfname)
+        plt.savefig(imgfname, bbox_inches="tight")
         plt.close()
         if echo_dart:
             bfname = os.path.basename(fname)

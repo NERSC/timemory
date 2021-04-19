@@ -283,11 +283,25 @@ extern "C"
     void timemory_set_default(const char* _component_string)
     {
         tim::trace::lock<tim::trace::library> lk{};
-        get_default_components() = std::string(_component_string);
-        tim::set_env("TIMEMORY_GLOBAL_COMPONENTS", _component_string, 0);
-        tim::set_env("TIMEMORY_COMPONENTS", _component_string, 0);
+        get_default_components() =
+            tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", _component_string);
+        // tim::set_env("TIMEMORY_COMPONENTS", _component_string, 0);
         static thread_local auto& _stack = get_components_stack();
-        _stack.push_back(tim::enumerate_components(_component_string));
+        if(_stack.empty())
+            _stack.push_back(tim::enumerate_components(get_default_components()));
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_set_environ(const char* evar, const char* eval, int over, int parse)
+    {
+        tim::trace::lock<tim::trace::library> lk{};
+        if(evar && eval)
+        {
+            tim::set_env(evar, eval, over);
+            if(parse > 0)
+                tim::settings::parse();
+        }
     }
 
     //----------------------------------------------------------------------------------//

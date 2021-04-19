@@ -148,6 +148,12 @@ function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNC
             DESTINATION ${CMAKE_INSTALL_BINDIR}
             OPTIONAL)
     endif()
+
+    add_test(
+        NAME                ${SCRIPT_NAME}-console-script-test
+        COMMAND             ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} --help
+        WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
 endfunction()
 
 timemory_python_console_script("timemory-plotter" "timemory.plotting" "try_plot")
@@ -155,9 +161,11 @@ timemory_python_console_script("timemory-roofline" "timemory.roofline" "try_plot
 	"import os\n    os.environ[\"TIMEMORY_CXX_PLOT_MODE\"] = \"ON\"")
 timemory_python_console_script("timemory-analyze" "timemory.analyze" "try_analyze")
 
-timemory_python_console_script("timemory-python-profiler" "timemory.profiler" "main")
-timemory_python_console_script("timemory-python-trace" "timemory.trace" "main")
+if(TIMEMORY_USE_PYTHON)
+    timemory_python_console_script("timemory-python-profiler" "timemory.profiler" "main")
+    timemory_python_console_script("timemory-python-trace" "timemory.trace" "main")
 
-if(TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
-    timemory_python_console_script("timemory-python-line-profiler" "timemory.profiler" "main")
+    if(TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
+        timemory_python_console_script("timemory-python-line-profiler" "timemory.profiler" "main")
+    endif()
 endif()

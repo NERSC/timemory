@@ -33,7 +33,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-from . import embedded_plot
+from timemory.plotting import embedded_plot
 
 
 def try_plot():

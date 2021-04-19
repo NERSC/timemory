@@ -228,6 +228,9 @@ if __name__ == "__main__":
             run(args, _cmd)
 
     except Exception as e:
-        msg = "\nCommand line argument error:\n\t{}\n".format(e)
-        sys.stderr.write("{}\n".format(msg))
+        print(f"\nException :: command line argument error\n\t{e}\n")
+        # warnings.warn(msg)
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=20)
         warnings.warn("timemory.gperftools is disabled")
+        sys.exit(1)
