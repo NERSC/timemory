@@ -139,9 +139,8 @@ component_bundle(const std::string& func, const std::string& file, const int lin
 //
 template <typename UserBundleT, typename ScopeFunc = std::function<void(bool, bool)>>
 auto
-generate(
-    py::module& _pymod, const char* _name, const char* _doc,
-    ScopeFunc _scope_set = [](bool, bool) {})
+generate(py::module& _pymod, const char* _name, const char* _doc,
+         ScopeFunc _scope_set = [](bool, bool) {})
 {
     using bundle_t = pycomponent_bundle<UserBundleT>;
 

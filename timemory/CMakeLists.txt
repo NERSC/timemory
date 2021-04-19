@@ -161,9 +161,11 @@ timemory_python_console_script("timemory-roofline" "timemory.roofline" "try_plot
 	"import os\n    os.environ[\"TIMEMORY_CXX_PLOT_MODE\"] = \"ON\"")
 timemory_python_console_script("timemory-analyze" "timemory.analyze" "try_analyze")
 
-timemory_python_console_script("timemory-python-profiler" "timemory.profiler" "main")
-timemory_python_console_script("timemory-python-trace" "timemory.trace" "main")
+if(TIMEMORY_USE_PYTHON)
+    timemory_python_console_script("timemory-python-profiler" "timemory.profiler" "main")
+    timemory_python_console_script("timemory-python-trace" "timemory.trace" "main")
 
-if(TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
-    timemory_python_console_script("timemory-python-line-profiler" "timemory.profiler" "main")
+    if(TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
+        timemory_python_console_script("timemory-python-line-profiler" "timemory.profiler" "main")
+    endif()
 endif()

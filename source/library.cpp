@@ -285,6 +285,10 @@ extern "C"
         tim::trace::lock<tim::trace::library> lk{};
         get_default_components() =
             tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", _component_string);
+        // tim::set_env("TIMEMORY_COMPONENTS", _component_string, 0);
+        static thread_local auto& _stack = get_components_stack();
+        if(_stack.empty())
+            _stack.push_back(tim::enumerate_components(get_default_components()));
     }
 
     //----------------------------------------------------------------------------------//

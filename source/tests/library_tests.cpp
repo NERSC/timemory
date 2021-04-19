@@ -132,8 +132,6 @@ protected:
         timemory_set_environ("TIMEMORY_DART_COUNT", "1", 1, 0);
         timemory_set_environ("TIMEMORY_JSON_OUTPUT", "ON", 1, 0);
         timemory_set_environ("TIMEMORY_DART_OUTPUT", "OFF", 1, 0);
-        timemory_set_environ("TIMEMORY_GLOBAL_COMPONENTS",
-                             "wall_clock, cpu_util, cpu_clock, peak_rss", 1, 0);
 
         if(!timemory_library_is_initialized())
             timemory_init_library(_argc, _argv);
@@ -149,8 +147,7 @@ protected:
 
     void SetUp() override
     {
-        if(details::get_test_name().find("override_default") == std::string::npos)
-            timemory_set_default("wall_clock, cpu_util, cpu_clock, peak_rss");
+        timemory_set_default("wall_clock, cpu_util, cpu_clock, peak_rss");
 
         wc_size_orig = get_wc_storage_size();
         cu_size_orig = get_cu_storage_size();
@@ -184,46 +181,6 @@ protected:
 //--------------------------------------------------------------------------------------//
 
 #define TEST_NAME TIMEMORY_JOIN(".", "library_tests", details::get_test_name()).c_str()
-
-void
-set_environ(const char*, const char*, int);
-
-//--------------------------------------------------------------------------------------//
-
-TEST_F(library_tests, override_default)
-{
-    timemory_set_default("wall_clock, cpu_util");
-
-    {
-        uint64_t idx = 0;
-        timemory_begin_record(TEST_NAME, &idx);
-        ret += details::fibonacci(35);
-        timemory_end_record(idx);
-    }
-
-    {
-        uint64_t idx = 0;
-        timemory_begin_record(TEST_NAME, &idx);
-        ret += details::fibonacci(35);
-        timemory_end_record(idx);
-    }
-
-    timemory_pop_components();
-
-    printf("fibonacci(35) = %li\n\n", ret);
-
-    auto wc_n = wc_size_orig + 1;
-    auto cu_n = cu_size_orig + 1;
-    auto cc_n = cc_size_orig + 1;
-    auto pr_n = pr_size_orig + 1;
-
-    ASSERT_EQ(get_wc_storage_size(), wc_n);
-    ASSERT_EQ(get_cu_storage_size(), cu_n);
-    ASSERT_EQ(get_cc_storage_size(), cc_n);
-    ASSERT_EQ(get_pr_storage_size(), pr_n);
-
-    timemory_set_environ("TIMEMORY_GLOBAL_COMPONENTS", "", 1, 1);
-}
 
 //--------------------------------------------------------------------------------------//
 
@@ -703,6 +660,43 @@ TEST_F(library_tests, pause_resume)
     ASSERT_EQ(get_cu_storage_size(), cu_n);
     ASSERT_EQ(get_cc_storage_size(), cc_n);
     ASSERT_EQ(get_pr_storage_size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(library_tests, override_default)
+{
+    timemory_set_default("wall_clock, cpu_util");
+
+    {
+        uint64_t idx = 0;
+        timemory_begin_record(TEST_NAME, &idx);
+        ret += details::fibonacci(35);
+        timemory_end_record(idx);
+    }
+
+    {
+        uint64_t idx = 0;
+        timemory_begin_record(TEST_NAME, &idx);
+        ret += details::fibonacci(35);
+        timemory_end_record(idx);
+    }
+
+    timemory_pop_components();
+
+    printf("fibonacci(35) = %li\n\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 1;
+
+    ASSERT_EQ(get_wc_storage_size(), wc_n);
+    ASSERT_EQ(get_cu_storage_size(), cu_n);
+    ASSERT_EQ(get_cc_storage_size(), cc_n);
+    ASSERT_EQ(get_pr_storage_size(), pr_n);
+
+    timemory_set_environ("TIMEMORY_GLOBAL_COMPONENTS", "", 1, 1);
 }
 
 //--------------------------------------------------------------------------------------//
