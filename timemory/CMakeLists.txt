@@ -148,6 +148,12 @@ function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNC
             DESTINATION ${CMAKE_INSTALL_BINDIR}
             OPTIONAL)
     endif()
+
+    add_test(
+        NAME                ${SCRIPT_NAME}-console-script-test
+        COMMAND             ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} --help
+        WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
 endfunction()
 
 timemory_python_console_script("timemory-plotter" "timemory.plotting" "try_plot")

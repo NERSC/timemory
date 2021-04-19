@@ -41,15 +41,6 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
-rank = 0
-try:
-    import mpi4py
-    from mpi4py import MPI
-
-    rank = MPI.COMM_WORLD.Get_rank()
-except ImportError:
-    pass
-
 from .analyze import (
     load,
     match,
@@ -69,11 +60,19 @@ def embedded_analyze(
     data=[],
     call_exit=False,
     verbose=os.environ.get("TIMEMORY_VERBOSE", 0),
-    ranks=[0],
+    ranks=[],
 ):
     """This is intended to be called from the embedded python interpreter"""
-    if len(ranks) > 0 and rank not in ranks:
-        return
+    if len(ranks) > 0:
+        try:
+            import mpi4py
+            from mpi4py import MPI
+
+            rank = MPI.COMM_WORLD.Get_rank()
+            if rank not in ranks:
+                return
+        except (ImportError, RuntimeError):
+            pass
 
     call_exit = False
     cmd_line = False

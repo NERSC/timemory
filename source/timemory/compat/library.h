@@ -132,6 +132,23 @@ extern "C"
     /// \endcode
     extern void timemory_set_default(const char* components) TIMEMORY_VISIBLE;
 
+    /// \fn void timemory_set_environ(const char* evar, const char* eval, int ovr, int up)
+    /// \param [in] evar Environment variable name
+    /// \param [in] eval Environment variable value
+    /// \param [in] ovr Overwrite existing environment variable when > 0
+    /// \param [in] up Update settings when > 0
+    ///
+    /// Set an environment variable and (potentially) update settings with new value.
+    ///
+    /// \code{.cpp}
+    /// // overwrites the TIMEMORY_GLOBAL_COMPONENTS environment variable and updates
+    /// // settings
+    /// timemory_set_environ("TIIMEMORY_GLOBAL_COMPONENTS,
+    ///                      "wall_clock, cpu_clock, cpu_util", 1, 1);
+    /// \endcode
+    extern void timemory_set_environ(const char* evar, const char* eval, int ovr,
+                                     int up) TIMEMORY_VISIBLE;
+
     /// \fn void timemory_add_components(const char* components)
     /// Add some components to the current set of components being collected
     /// Any components which are currently being collected are ignored.

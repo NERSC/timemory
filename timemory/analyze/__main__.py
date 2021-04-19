@@ -29,7 +29,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-from . import embedded_analyze
+from timemory.analyze import embedded_analyze
 
 
 def try_analyze():
@@ -39,7 +39,11 @@ def try_analyze():
     if verbose > 3:
         print("Plotting with args: {}".format(sys.argv))
     embedded_analyze(
-        sys.argv[1:], True, os.environ.get("TIMEMORY_VERBOSE", verbose)
+        sys.argv[1:],
+        data=[],
+        call_exit=True,
+        verbose=os.environ.get("TIMEMORY_VERBOSE", verbose),
+        ranks=[],
     )
 
 

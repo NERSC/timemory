@@ -66,6 +66,9 @@ get_sc_storage_size();  // gets system_clock storage size
 
 //--------------------------------------------------------------------------------------//
 
+static int    _argc = 0;
+static char** _argv = nullptr;
+
 namespace details
 {
 //--------------------------------------------------------------------------------------//
@@ -113,12 +116,41 @@ consume(long n)
 
 //--------------------------------------------------------------------------------------//
 
+void
+start_metric();
+void
+stop_metric();
+
 class library_tests : public ::testing::Test
 {
 protected:
+    static void SetUpTestSuite()
+    {
+        timemory_set_environ("TIMEMORY_DEBUG", "OFF", 1, 0);
+        timemory_set_environ("TIMEMORY_BANNER", "OFF", 1, 0);
+        timemory_set_environ("TIMEMORY_VERBOSE", "1", 1, 0);
+        timemory_set_environ("TIMEMORY_DART_COUNT", "1", 1, 0);
+        timemory_set_environ("TIMEMORY_JSON_OUTPUT", "ON", 1, 0);
+        timemory_set_environ("TIMEMORY_DART_OUTPUT", "OFF", 1, 0);
+        timemory_set_environ("TIMEMORY_GLOBAL_COMPONENTS",
+                             "wall_clock, cpu_util, cpu_clock, peak_rss", 1, 0);
+
+        if(!timemory_library_is_initialized())
+            timemory_init_library(_argc, _argv);
+        start_metric();
+    }
+
+    static void TearDownTestSuite()
+    {
+        stop_metric();
+        if(timemory_library_is_initialized())
+            timemory_finalize_library();
+    }
+
     void SetUp() override
     {
-        timemory_set_default("wall_clock, cpu_util, cpu_clock, peak_rss");
+        if(details::get_test_name().find("override_default") == std::string::npos)
+            timemory_set_default("wall_clock, cpu_util, cpu_clock, peak_rss");
 
         wc_size_orig = get_wc_storage_size();
         cu_size_orig = get_cu_storage_size();
@@ -152,6 +184,46 @@ protected:
 //--------------------------------------------------------------------------------------//
 
 #define TEST_NAME TIMEMORY_JOIN(".", "library_tests", details::get_test_name()).c_str()
+
+void
+set_environ(const char*, const char*, int);
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(library_tests, override_default)
+{
+    timemory_set_default("wall_clock, cpu_util");
+
+    {
+        uint64_t idx = 0;
+        timemory_begin_record(TEST_NAME, &idx);
+        ret += details::fibonacci(35);
+        timemory_end_record(idx);
+    }
+
+    {
+        uint64_t idx = 0;
+        timemory_begin_record(TEST_NAME, &idx);
+        ret += details::fibonacci(35);
+        timemory_end_record(idx);
+    }
+
+    timemory_pop_components();
+
+    printf("fibonacci(35) = %li\n\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 1;
+
+    ASSERT_EQ(get_wc_storage_size(), wc_n);
+    ASSERT_EQ(get_cu_storage_size(), cu_n);
+    ASSERT_EQ(get_cc_storage_size(), cc_n);
+    ASSERT_EQ(get_pr_storage_size(), pr_n);
+
+    timemory_set_environ("TIMEMORY_GLOBAL_COMPONENTS", "", 1, 1);
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -635,29 +707,21 @@ TEST_F(library_tests, pause_resume)
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/environment.hpp"
+#include "test_macros.hpp"
 
-//--------------------------------------------------------------------------------------//
+TIMEMORY_TEST_MAIN
 
-int
-main(int argc, char** argv)
+void
+start_metric()
 {
-    ::testing::InitGoogleTest(&argc, argv);
+    metric().start();
+}
 
-    tim::set_env("TIMEMORY_VERBOSE", 0, 1);
-    tim::set_env("TIMEMORY_DEBUG", "OFF", 1);
-    tim::set_env("TIMEMORY_JSON_OUTPUT", "ON", 1);
-    tim::set_env("TIMEMORY_DART_OUTPUT", "OFF", 1);
-    tim::set_env("TIMEMORY_DART_COUNT", 1, 1);
-    tim::set_env("TIMEMORY_BANNER", "OFF", 1);
-
-    if(!timemory_library_is_initialized())
-        timemory_init_library(argc, argv);
-    auto ret = RUN_ALL_TESTS();
-    if(timemory_library_is_initialized())
-        timemory_finalize_library();
-
-    return ret;
+void
+stop_metric()
+{
+    metric().stop();
+    print_dart(metric());
 }
 
 //--------------------------------------------------------------------------------------//
