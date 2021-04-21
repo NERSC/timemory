@@ -340,16 +340,16 @@ add_cmake_defines(TIMEMORY_VEC VALUE)
 #----------------------------------------------------------------------------------------#
 # sanitizer
 #
-set(SANITIZER_TYPES address memory thread leak undefined unreachable null bounds alignment)
-set_property(CACHE SANITIZER_TYPE PROPERTY STRINGS "${SANITIZER_TYPES}")
+set(TIMEMORY_SANITIZER_TYPES address memory thread leak undefined unreachable null bounds alignment)
+set_property(CACHE TIMEMORY_SANITIZER_TYPE PROPERTY STRINGS "${TIMEMORY_SANITIZER_TYPES}")
 add_interface_library(timemory-sanitizer-compile-options "Adds compiler flags for sanitizers")
 add_interface_library(timemory-sanitizer
-    "Adds compiler flags to enable ${SANITIZER_TYPE} sanitizer (-fsanitizer=${SANITIZER_TYPE})")
+    "Adds compiler flags to enable ${TIMEMORY_SANITIZER_TYPE} sanitizer (-fsanitizer=${TIMEMORY_SANITIZER_TYPE})")
 
 set(COMMON_SANITIZER_FLAGS "-fno-optimize-sibling-calls" "-fno-omit-frame-pointer" "-fno-inline-functions")
 add_target_flag(timemory-sanitizer-compile-options ${COMMON_SANITIZER_FLAGS})
 
-foreach(_TYPE ${SANITIZER_TYPES})
+foreach(_TYPE ${TIMEMORY_SANITIZER_TYPES})
     set(_FLAG "-fsanitize=${_TYPE}")
     add_interface_library(timemory-${_TYPE}-sanitizer
         "Adds compiler flags to enable ${_TYPE} sanitizer (${_FLAG})")
@@ -364,7 +364,7 @@ unset(_FLAG)
 unset(COMMON_SANITIZER_FLAGS)
 
 if(TIMEMORY_USE_SANITIZER)
-    foreach(_TYPE ${SANITIZER_TYPE})
+    foreach(_TYPE ${TIMEMORY_SANITIZER_TYPE})
         if(TARGET timemory-${_TYPE}-sanitizer)
             target_link_libraries(timemory-sanitizer INTERFACE timemory-${_TYPE}-sanitizer)
         else()
@@ -373,7 +373,7 @@ if(TIMEMORY_USE_SANITIZER)
     endforeach()
 else()
     set(TIMEMORY_USE_SANITIZER OFF)
-    inform_empty_interface(timemory-sanitizer "${SANITIZER_TYPE} sanitizer")
+    inform_empty_interface(timemory-sanitizer "${TIMEMORY_SANITIZER_TYPE} sanitizer")
 endif()
 
 if (MSVC)

@@ -48,12 +48,23 @@ set(_DEFAULT_BUILD_SHARED ON)
 set(_DEFAULT_BUILD_STATIC OFF)
 set(_USE_XML ON)
 
-set(SANITIZER_TYPE leak CACHE STRING "Sanitizer type")
+set(TIMEMORY_SANITIZER_TYPE leak CACHE STRING "Sanitizer type")
 set(TIMEMORY_gperftools_COMPONENTS "profiler" CACHE STRING "gperftools components")
 set(TIMEMORY_gperftools_COMPONENTS_OPTIONS
     "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug")
 set_property(CACHE TIMEMORY_gperftools_COMPONENTS PROPERTY STRINGS
     "${TIMEMORY_gperftools_COMPONENTS_OPTIONS}")
+
+# use generic if defined
+if(DEFINED SANITIZER_TYPE AND NOT "${SANITIZER_TYPE}" STREQUAL "")
+    set(TIMEMORY_SANITIZER_TYPE "${SANITIZER_TYPE}" CACHE STRING "Sanitizer type" FORCE)
+endif()
+
+if(TIMEMORY_USE_SANITIZER)
+    set(PTL_USE_SANITIZER ${TIMEMORY_USE_SANITIZER} CACHE BOOL "Enable sanitizer" FORCE)
+    set(PTL_SANITIZER_TYPE ${TIMEMORY_SANITIZER_TYPE} CACHE STRING "Sanitizer type" FORCE)
+    mark_as_advanced(PTL_SANITIZER_TYPE)
+endif()
 
 if(NOT ${PROJECT_NAME}_MAIN_PROJECT)
     set(_FEATURE NO_FEATURE)
@@ -249,11 +260,11 @@ add_option(TIMEMORY_BUILD_EXAMPLES
 add_option(TIMEMORY_BUILD_C
     "Build the C compatible library" ON)
 add_option(TIMEMORY_BUILD_PYTHON
-    "Build Python binds for ${PROJECT_NAME}" OFF)
+    "Build Python binding" OFF)
 add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
-    "Build customized Python line-profiler" ${_UNIX_OS})
+    "Build customized Python line-profiler" ON)
 add_option(TIMEMORY_BUILD_PYTHON_HATCHET
-    "Build internal Hatchet distribution" ${_HATCHET})
+    "Build internal Hatchet distribution" ON)
 add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
@@ -349,7 +360,7 @@ add_option(TIMEMORY_USE_MPI_INIT
 add_option(TIMEMORY_USE_UPCXX
     "Enable UPCXX usage (MPI support takes precedence)" ${_UPCXX} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_SANITIZER
-    "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
+    "Enable -fsanitize flag (=${TIMEMORY_SANITIZER_TYPE})" OFF)
 add_option(TIMEMORY_USE_TAU
     "Enable TAU marking API" ${_TAU} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_PAPI

@@ -264,8 +264,12 @@ template <typename Tp, typename Vp>
 std::shared_ptr<vsettings>
 tsettings<Tp, Vp>::clone()
 {
-    return std::make_shared<tsettings<Tp>>(m_value, m_name, m_env_name, m_description,
-                                           m_cmdline, m_count, m_max_count);
+    using Up = decay_t<Tp>;
+    return std::make_shared<tsettings<Up>>(
+        Up{ m_value }, std::string{ m_name }, std::string{ m_env_name },
+        std::string{ m_description }, std::vector<std::string>{ m_cmdline },
+        int32_t{ m_count }, int32_t{ m_max_count },
+        std::vector<std::string>{ m_choices });
 }
 //
 template <typename Tp, typename Vp>

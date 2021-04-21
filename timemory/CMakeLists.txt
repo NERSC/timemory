@@ -158,6 +158,10 @@ function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNC
 
 endfunction()
 
+if(NOT PYTHON_EXECUTABLE)
+    set(PYTHON_EXECUTABLE "/usr/bin/env python")
+endif()
+
 timemory_python_console_script("timemory-plotter" "timemory.plotting" "try_plot")
 timemory_python_console_script("timemory-roofline" "timemory.roofline" "try_plot"
 	"import os\n    os.environ[\"TIMEMORY_CXX_PLOT_MODE\"] = \"ON\"")
