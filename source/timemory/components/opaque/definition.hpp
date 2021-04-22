@@ -56,18 +56,7 @@ namespace factory
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Label, typename... Args,
-          enable_if_t<concepts::is_comp_wrapper<Tp>::value, int> = 0>
-static auto
-create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
-{
-    return new Tp{ std::forward<Label>(_label), true, _scope,
-                   std::forward<Args>(args)... };
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Label, typename... Args,
-          enable_if_t<concepts::is_auto_wrapper<Tp>::value, int> = 0>
+          enable_if_t<concepts::is_wrapper<Tp>::value, int> = 0>
 static auto
 create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 {
@@ -77,11 +66,9 @@ create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Label, typename... Args,
-          enable_if_t<!(concepts::is_auto_wrapper<Tp>::value ||
-                        concepts::is_auto_wrapper<Tp>::value),
-                      int> = 0>
+          enable_if_t<!concepts::is_wrapper<Tp>::value, int> = 0>
 static auto
-create_heap_variadic(Label&& _label, bool, Args&&... args)
+create_heap_variadic(Label&& _label, scope::config, Args&&... args)
 {
     return new Tp{ std::forward<Label>(_label), std::forward<Args>(args)... };
 }
@@ -114,7 +101,7 @@ get_opaque(scope::config _scope)
 //
 template <typename Toolset, typename... Args>
 enable_if_t<concepts::is_wrapper<Toolset>::value, opaque>
-get_opaque(scope::config _scope, Args&&... args)
+get_opaque(scope::config _scope, Args... args)
 {
     using Toolset_t = Toolset;
 
@@ -133,19 +120,19 @@ get_opaque(scope::config _scope, Args&&... args)
     _obj.m_init = []() {};
 
     auto _setup = [_scope, &args...](void* v_result, const string_view_t& _prefix,
-                                     scope::config arg_scope) {
+                                     scope::config _arg_scope) {
         DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset_t* _result = static_cast<Toolset_t*>(v_result);
-        if(!_result)
+        if(_result == nullptr)
         {
-            _result = create_heap_variadic<Toolset_t>(_prefix, _scope + arg_scope,
-                                                      std::forward<Args>(args)...);
+            _result = create_heap_variadic<Toolset_t>(_prefix, _scope + _arg_scope,
+                                                      std::move(args)...);
         }
         else
         {
             _result->rekey(_prefix);
         }
-        return (void*) _result;
+        return static_cast<void*>(_result);
     };
 
     _obj.m_setup = _setup;

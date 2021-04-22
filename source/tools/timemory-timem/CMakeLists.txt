@@ -10,7 +10,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #
-if(NOT TIMEMORY_BUILD_TIMEM)
+if(NOT TIMEMORY_BUILD_TIMEM OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
     # if not enabled as option, make it available to be built and installed
     set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
@@ -50,8 +50,15 @@ if(NOT DEFINED TIMEM_PAPI_TARGET OR NOT TIMEM_PAPI_TARGET)
     endif()
 endif()
 
+add_library(timem-md5sum OBJECT md5.cpp md5.hpp)
+
+target_link_libraries(timem-md5sum PRIVATE
+    timemory::timemory-compile-options
+    timemory::timemory-develop-options)
+
 # non-MPI version
-add_executable(timem ${_EXCLUDE} timem.cpp timem.hpp)
+add_executable(timem ${_EXCLUDE}
+    timem.cpp timem.hpp $<TARGET_OBJECTS:timem-md5sum>)
 
 target_link_libraries(timem PRIVATE
     timemory::timemory-compile-options
@@ -77,7 +84,8 @@ if(NOT TIMEMORY_USE_MPI)
     return()
 endif()
 
-add_executable(timem-mpi ${_EXCLUDE} timem.cpp timem.hpp)
+add_executable(timem-mpi ${_EXCLUDE}
+    timem.cpp timem.hpp $<TARGET_OBJECTS:timem-md5sum>)
 
 target_link_libraries(timem-mpi PRIVATE
     timemory::timemory-compile-options

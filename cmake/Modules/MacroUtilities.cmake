@@ -18,6 +18,67 @@ unset(${PROJECT_NAME_UC}_COMPILED_LIBRARIES CACHE)
 unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
 
 #-----------------------------------------------------------------------
+# message which handles TIMEMORY_QUIET_CONFIG settings
+#-----------------------------------------------------------------------
+#
+FUNCTION(TIMEMORY_MESSAGE TYPE)
+    if(NOT TIMEMORY_QUIET_CONFIG)
+        message(${TYPE} "${ARGN}")
+    endif()
+ENDFUNCTION()
+
+#-----------------------------------------------------------------------
+# Save a set of variables with the given prefix
+#-----------------------------------------------------------------------
+MACRO(TIMEMORY_SAVE_VARIABLES _PREFIX)
+    # parse args
+    cmake_parse_arguments(SAVE
+        ""                # options
+        "CONDITION"       # single value args
+        "VARIABLES"       # multiple value args
+        ${ARGN})
+    if(DEFINED SAVE_CONDITION AND NOT "${SAVE_CONDITION}" STREQUAL "")
+        if(${SAVE_CONDITION})
+            foreach(_VAR ${ARGN})
+                if(DEFINED ${_VAR})
+                    set(${_PREFIX}_${_VAR} ${${_VAR}})
+                else()
+                    message(AUTHOR_WARNING "${_VAR} is not defined")
+                endif()
+            endforeach()
+        endif()
+    endif()
+    unset(SAVE_CONDITION)
+    unset(SAVE_VARIABLES)
+ENDMACRO()
+
+#-----------------------------------------------------------------------
+# Restore a set of variables with the given prefix
+#-----------------------------------------------------------------------
+MACRO(TIMEMORY_RESTORE_VARIABLES _PREFIX)
+    # parse args
+    cmake_parse_arguments(RESTORE
+        ""                # options
+        "CONDITION"       # single value args
+        "VARIABLES"       # multiple value args
+        ${ARGN})
+    if(DEFINED RESTORE_CONDITION AND NOT "${RESTORE_CONDITION}" STREQUAL "")
+        if(${RESTORE_CONDITION})
+            foreach(_VAR ${ARGN})
+                if(DEFINED ${_PREFIX}_${_VAR})
+                    set(${_VAR} ${${_PREFIX}_${_VAR}})
+                    unset(${_PREFIX}_${_VAR})
+                else()
+                    message(AUTHOR_WARNING "${_PREFIX}_${_VAR} is not defined")
+                endif()
+            endforeach()
+        endif()
+    endif()
+    unset(RESTORE_CONDITION)
+    unset(RESTORE_VARIABLES)
+ENDMACRO()
+
+#-----------------------------------------------------------------------
 # CACHED LIST
 #-----------------------------------------------------------------------
 # macro set_ifnot(<var> <value>)
@@ -137,7 +198,7 @@ FUNCTION(CREATE_EXECUTABLE)
         ${ARGN})
 
     set(_EXCLUDE)
-    if(EXE_EXCLUDE_FROM_ALL)
+    if(EXE_EXCLUDE_FROM_ALL OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
         set(_EXCLUDE EXCLUDE_FROM_ALL)
     endif()
     # create library
@@ -224,8 +285,8 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         add_dependencies(timemory-test ${TEST_NAME})
 
         if(WIN32)
-            set_target_properties(${TEST_NAME} 
-                PROPERTIES 
+            set_target_properties(${TEST_NAME}
+                PROPERTIES
                 FOLDER                   tests
                 RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/runtime
                 LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/runtime
@@ -441,7 +502,6 @@ MACRO(ADD_INTERFACE_LIBRARY _TARGET)
     add_library(${_TARGET} INTERFACE)
     add_library(${PROJECT_NAME}::${_TARGET} ALIAS ${_TARGET})
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
-    # message(STATUS "Exporting interface libraries...")
     install(
         TARGETS     ${_TARGET}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -462,12 +522,14 @@ ENDMACRO()
 #----------------------------------------------------------------------------------------#
 
 FUNCTION(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
-    if(NOT TARGET ${_TARGET})
+    if(NOT TARGET ${_TARGET} AND NOT TIMEMORY_QUIET_CONFIG)
         message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
     endif()
     if(NOT ${_TARGET} IN_LIST TIMEMORY_EMPTY_INTERFACE_LIBRARIES)
-        message(STATUS
-            "[interface] ${_PACKAGE} not found/enabled. '${_TARGET}' interface will not provide ${_PACKAGE}...")
+        if(NOT TIMEMORY_QUIET_CONFIG)
+            message(STATUS
+                "[interface] ${_PACKAGE} not found/enabled. '${_TARGET}' interface will not provide ${_PACKAGE}...")
+        endif()
         set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET} PARENT_SCOPE)
     endif()
     add_disabled_interface(${_TARGET})
@@ -499,7 +561,9 @@ ENDFUNCTION()
 FUNCTION(BUILD_LIBRARY)
 
     # options
-    set(_options    PIC NO_CACHE_LIST)
+    set(_options    PIC
+                    NO_CACHE_LIST
+                    EXCLUDE_FROM_ALL)
     # single-value
     set(_onevalue   TYPE
                     OUTPUT_NAME
@@ -533,6 +597,11 @@ FUNCTION(BUILD_LIBRARY)
         set(LIBRARY_OUTPUT_DIR ${PROJECT_BINARY_DIR})
     endif()
 
+    set(_EXCLUDE)
+    if(LIBRARY_EXCLUDE_FROM_ALL OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
+        set(_EXCLUDE EXCLUDE_FROM_ALL)
+    endif()
+
     if(NOT "${LIBRARY_TYPE}" STREQUAL "OBJECT")
         if(NOT WIN32 AND NOT XCODE)
             list(APPEND LIBRARY_EXTRA_PROPERTIES
@@ -559,7 +628,7 @@ FUNCTION(BUILD_LIBRARY)
 
     # add the library or sources
     if(NOT TARGET ${LIBRARY_TARGET_NAME})
-        add_library(${LIBRARY_TARGET_NAME} ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
+        add_library(${LIBRARY_TARGET_NAME} ${LIBRARY_TYPE} ${_EXCLUDE} ${LIBRARY_SOURCES})
         add_library(${PROJECT_NAME}::${LIBRARY_TARGET_NAME} ALIAS ${LIBRARY_TARGET_NAME})
     else()
         target_sources(${LIBRARY_TARGET_NAME} PRIVATE ${LIBRARY_SOURCES})

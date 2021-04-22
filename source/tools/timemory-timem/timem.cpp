@@ -77,7 +77,17 @@ main(int argc, char** argv)
     };
 
     auto _pec        = EXIT_SUCCESS;
-    auto help_action = [&_pec](parser_t& p) {
+    auto help_action = [&_pec, argc, argv](parser_t& p) {
+        if(_pec != EXIT_SUCCESS)
+        {
+            stringstream_t msg;
+            msg << "Error in command:";
+            for(int i = 0; i < argc; ++i)
+                msg << " " << argv[i];
+            msg << "\n\n";
+            std::cerr << msg.str() << std::flush;
+        }
+
         if(tim::dmp::rank() == 0)
         {
             stringstream_t hs;
@@ -164,8 +174,9 @@ main(int argc, char** argv)
                       // indented 35 spaces
                       R"(Write results to JSON output file.
 %{INDENT}% Use:
+%{INDENT}% - '%m' to encode md5sum of command line
 %{INDENT}% - '%p' to encode the process ID
-%{INDENT}% - '%j' to encode the slurm job ID
+%{INDENT}% - '%j' to encode the SLURM job ID
 %{INDENT}% - '%r' to encode the MPI comm rank
 %{INDENT}% - '%s' to encode the MPI comm size
 %{INDENT}% E.g. '-o timem-output-%p'.

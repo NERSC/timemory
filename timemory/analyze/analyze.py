@@ -53,6 +53,7 @@ __all__ = [
 ]
 
 import os
+import sys
 
 
 def _get_label(_fname):
@@ -371,7 +372,7 @@ def dump_tree(data, metric, file=None, echo_dart=False):
 
 def dump_dot(data, metric, file=None, echo_dart=False):
     """ Dumps data as a dot to stdout or file """
-    from timemory.common import popen, dart_measurement_file
+    from timemory.common import popen, dart_measurement_file, which
 
     _files = dump_entity(data, lambda x: x.to_dot(metric), file, ".dot")
     for itr in _files:
@@ -380,9 +381,18 @@ def dump_dot(data, metric, file=None, echo_dart=False):
             oitr = _get_filename(itr, ".dot")
             pitr = _get_filename(itr, ".dot.png")
             print(f"[{lbl}]|0> Outputting '{pitr}'...")
-            popen(["dot", "-Tpng", f"-o{pitr}", f"{oitr}"])
-            if echo_dart:
-                dart_measurement_file(os.path.basename(pitr), pitr, "png")
+            try:
+                dot_exe = which("dot")
+                if dot_exe is not None:
+                    popen(
+                        [dot_exe, "-Tpng", f"-o{pitr}", f"{oitr}"], shell=True
+                    )
+                    if echo_dart:
+                        dart_measurement_file(
+                            os.path.basename(pitr), pitr, "png"
+                        )
+            except Exception as e:
+                sys.stderr.write(f"{e}\n")
 
 
 def dump_flamegraph(data, metric, file=None, echo_dart=False):

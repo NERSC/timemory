@@ -3,6 +3,14 @@ if(WIN32)
     return()
 endif()
 
+if(DEFINED TIMEMORY_BUILD_JUMP AND NOT TIMEMORY_BUILD_JUMP)
+    return()
+endif()
+
+if(NOT timemory_MAIN_PROJECT OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
+    set(_EXCLUDE EXCLUDE_FROM_ALL)
+endif()
+
 foreach(LIB_TYPE shared static)
 
     set(LIB_TARGET timemory-jump-${LIB_TYPE})
@@ -11,6 +19,7 @@ foreach(LIB_TYPE shared static)
     build_library(
         PIC
         NO_CACHE_LIST
+        ${_EXCLUDE}
         TYPE                ${UC_LIB_TYPE}
         TARGET_NAME         timemory-jump-${LIB_TYPE}
         OUTPUT_NAME         timemory
@@ -36,19 +45,24 @@ foreach(LIB_TYPE shared static)
         OPTIONAL)
 
     # build tree
-    execute_process(
+    add_custom_command(TARGET timemory-jump-${LIB_TYPE}
+        POST_BUILD
+        BYPRODUCTS  ${PROJECT_BINARY_DIR}/libtimemory-jump${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
         COMMAND ${CMAKE_COMMAND} -E create_symlink
             jump/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
             libtimemory-jump${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMENT "Creating library symlink libtimemory-jump${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}")
 
     # install tree
     install(CODE "
-EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        timemory/jump/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-        libtimemory-jump${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-    WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+if(EXISTS \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/timemory/jump/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}\")
+    EXECUTE_PROCESS(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            timemory/jump/libtimemory${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+            libtimemory-jump${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+        WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+endif()
     "
     OPTIONAL)
 

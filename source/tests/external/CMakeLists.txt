@@ -4,7 +4,7 @@ if(NOT TIMEMORY_BUILD_GOOGLE_TEST)
 endif()
 
 set(_EXCLUDE)
-if(NOT TIMEMORY_BUILD_TESTING)
+if(NOT TIMEMORY_BUILD_TESTING OR NOT timemory_MAIN_PROJECT OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
     set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
@@ -27,18 +27,17 @@ target_link_libraries(extern-test-templates PUBLIC
     timemory::timemory-core
     timemory::timemory-dmp)
 
-set(_BUILD OFF)
+set(_LIB_TAG)
+set(_LIB_TYPE)
 if(BUILD_SHARED_LIBS)
-    set(_BUILD ON)
     set(_LIB_TAG shared)
     set(_LIB_TYPE SHARED)
 elseif(BUILD_STATIC_LIBS)
-    set(_BUILD ON)
     set(_LIB_TAG static)
     set(_LIB_TYPE STATIC)
 endif()
 
-if(NOT TIMEMORY_SKIP_BUILD AND _BUILD)
+if(_LIB_TAG AND _LIB_TYPE)
     if(TIMEMORY_BUILD_C)
         add_library(custom-record-functions ${_EXCLUDE} ${_LIB_TYPE}
             custom_record_functions.cpp)

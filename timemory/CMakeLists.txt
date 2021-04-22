@@ -153,8 +153,14 @@ function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNC
         NAME                ${SCRIPT_NAME}-console-script-test
         COMMAND             ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} --help
         WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+    set_tests_properties(${SCRIPT_NAME}-console-script-test PROPERTIES
+        ENVIRONMENT         "PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH}")
 
 endfunction()
+
+if(NOT PYTHON_EXECUTABLE)
+    set(PYTHON_EXECUTABLE "/usr/bin/env python")
+endif()
 
 timemory_python_console_script("timemory-plotter" "timemory.plotting" "try_plot")
 timemory_python_console_script("timemory-roofline" "timemory.roofline" "try_plot"

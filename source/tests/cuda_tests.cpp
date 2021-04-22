@@ -188,7 +188,7 @@ TEST_F(cuda_tests, saxpy)
     std::cout << dev << std::endl;
     std::cout << bw << std::endl;
     std::cout << std::endl;
-    ASSERT_NEAR(ce.get(), rc.get(), 1.0e-3);
+    ASSERT_NEAR(ce.get(), rc.get(), 2.0e-3);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -306,7 +306,7 @@ TEST_F(cuda_tests, saxpy_streams)
     std::cout << dev << std::endl;
     std::cout << bw << std::endl;
     std::cout << std::endl;
-    ASSERT_NEAR(ce.get(), rc.get(), 1.0e-3);
+    ASSERT_NEAR(ce.get(), rc.get(), 2.0e-3);
 }
 
 //--------------------------------------------------------------------------------------//

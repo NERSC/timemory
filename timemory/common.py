@@ -239,6 +239,29 @@ def popen(cmd, outf=None, keep_going=True, timeout=None, shell=False):
     return (retc, outs, errs)
 
 
+def which(exe):
+    """Portable implementation of which"""
+    try:
+        import shutil
+
+        return shutil.which(exe)
+    except (ImportError, AttributeError):
+        try:
+            from distutils.spawn import find_executable
+
+            return find_executable(exe)
+        except (ImportError):
+            import os
+
+            _path = os.getenv("PATH")
+            for p in _path.split(os.path.pathsep):
+                p = os.path.join(p, exe)
+                if os.path.exists(p) and os.access(p, os.X_OK):
+                    return p
+
+    return None
+
+
 def dart_measurement(name, value):
     """Prints out an XML tag which gets detected by CTest and recorded by CDash"""
     print(

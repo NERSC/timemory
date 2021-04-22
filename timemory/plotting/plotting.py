@@ -57,13 +57,11 @@ __all__ = [
 
 import sys
 import os
-import imp
 import copy
 import json
 import ctypes
 import platform
 import warnings
-import importlib
 import traceback
 import collections
 

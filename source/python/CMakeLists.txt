@@ -149,10 +149,10 @@ if(TIMEMORY_BUILD_PYTHON)
     target_include_directories(libpytimemory-interface SYSTEM INTERFACE
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/pybind11/include>)
 
-    add_library(libpytimemory MODULE ${pysources} ${pyheaders} ${pybind_headers})
+    add_library(libpytimemory MODULE ${TIMEMORY_EXCLUDE_FROM_ALL} ${pysources} ${pyheaders} ${pybind_headers})
     timemory_configure_pytarget(libpytimemory)
 
-    message(STATUS "Adding source/python/tools...")
+    timemory_message(STATUS "Adding source/python/tools...")
     add_subdirectory(tools)
 
     # if(APPLE)
