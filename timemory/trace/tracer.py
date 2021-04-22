@@ -28,12 +28,12 @@ import sys
 import threading
 from functools import wraps
 
-from ..libpytimemory.trace import tracer_function as _tracer_function
-from ..libpytimemory.trace import config as _tracer_config
-from ..libpytimemory.trace import tracer_init as _tracer_init
-from ..libpytimemory.trace import tracer_finalize as _tracer_fini
-from ..libpytimemory.trace import trace_bundle as _tracer_bundle
-from ..libpytimemory import settings
+from ..libs.libpytimemory.trace import tracer_function as _tracer_function
+from ..libs.libpytimemory.trace import config as _tracer_config
+from ..libs.libpytimemory.trace import tracer_init as _tracer_init
+from ..libs.libpytimemory.trace import tracer_finalize as _tracer_fini
+from ..libs.libpytimemory.trace import trace_bundle as _tracer_bundle
+from ..libs.libpytimemory import settings
 
 
 __all__ = ["trace", "config", "Tracer", "FakeTracer", "Config"]

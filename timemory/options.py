@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
+#
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California,
@@ -39,4 +40,4 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
-from .libpytimemory.options import *
+from .libs.libpytimemory.options import *

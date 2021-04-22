@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -38,8 +38,8 @@ from enum import Enum
 from functools import wraps
 
 from ..common import FILE, FUNC, LINE, FRAME
-from ..libpytimemory import settings, timer_decorator, component_decorator
-from ..libpytimemory import timer, rss_usage, component
+from ..libs.libpytimemory import settings, timer_decorator, component_decorator
+from ..libs.libpytimemory import timer, rss_usage, component
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"

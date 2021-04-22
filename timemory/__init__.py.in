@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 # -*- coding: UTF-8 -*-
 # MIT License
 #
@@ -146,69 +146,18 @@ if _no_bindings:
 else:
     _loaded_bindings = True
     try:
-        from . import libpytimemory
+        from .libs import *
     except Exception:
         _loaded_bindings = False
         __load_component_libs()
 
     try:
         if not _loaded_bindings:
-            from . import libpytimemory
+            from .libs import *
 
-        from .libpytimemory import (
-            report,
-            toggle,
-            enable,
-            disable,
-            is_enabled,
-            enabled,
-            has_mpi_support,
-            set_rusage_children,
-            set_rusage_self,
-            timemory_init,
-            timemory_finalize,
-            initialize,
-            finalize,
-            timemory_argparse,
-            add_arguments,
-            get,
-            get_text,
-            clear,
-            size,
-            mpi_init,
-            mpi_finalize,
-            upcxx_init,
-            upcxx_finalize,
-            dmp_init,
-            dmp_finalize,
-            start_mpip,
-            stop_mpip,
-            start_ompt,
-            stop_ompt,
-            start_ncclp,
-            stop_ncclp,
-            start_mallocp,
-            stop_mallocp,
-            enable_signal_detection,
-            disable_signal_detection,
-            set_exit_action,
-            # api,
-            # papi,
-            # cupti,
-            # cuda,
-            component,
-            # hardware_counters,
-            manager,
-            # profiler,
-            # trace,
-            # units,
-            scope,
-            settings,
-            storage,
-            # region,
-            # options,
-        )
-
+        from .libs.libpytimemory import component as component
+        from .libs.libpytimemory import storage as storage
+        from .libs.libpytimemory import initialize as init
         from . import plotting as plotting
         from . import roofline as roofline
         from . import mpi_support as mpi_support
@@ -226,7 +175,6 @@ else:
 
         from .common import LINE, FUNC, FILE, line, func, file, frame
 
-        sys.modules["timemory.libpytimemory"] = libpytimemory
         sys.modules["timemory.plotting"] = plotting
         sys.modules["timemory.roofline"] = roofline
         sys.modules["timemory.mpi_support"] = mpi_support

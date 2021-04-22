@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -43,7 +43,7 @@ throttling. Also, provides the timemory Python tracer
 
 try:
     from .tracer import Tracer, FakeTracer
-    from ..libpytimemory.trace import (
+    from ..libs.libpytimemory.trace import (
         init,
         finalize,
         is_throttled,
@@ -53,8 +53,8 @@ try:
         tracer_init,
         tracer_finalize,
     )
-    from ..libpytimemory.trace import config as Config
-    from ..libpytimemory.trace import trace_bundle as TraceBundle
+    from ..libs.libpytimemory.trace import config as Config
+    from ..libs.libpytimemory.trace import trace_bundle as TraceBundle
 
     config = Config
     trace = Tracer
