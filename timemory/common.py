@@ -255,7 +255,7 @@ def which(exe):
 
             _path = os.getenv("PATH")
             for p in _path.split(os.path.pathsep):
-                p = os.path.join(p, pgm)
+                p = os.path.join(p, exe)
                 if os.path.exists(p) and os.access(p, os.X_OK):
                     return p
 

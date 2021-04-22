@@ -53,6 +53,7 @@ __all__ = [
 ]
 
 import os
+import sys
 
 
 def _get_label(_fname):
