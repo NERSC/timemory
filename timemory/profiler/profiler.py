@@ -28,7 +28,9 @@ import sys
 import threading
 from functools import wraps
 
-from ..libs.libpytimemory.profiler import profiler_function as _profiler_function
+from ..libs.libpytimemory.profiler import (
+    profiler_function as _profiler_function,
+)
 from ..libs.libpytimemory.profiler import config as _profiler_config
 from ..libs.libpytimemory.profiler import profiler_init as _profiler_init
 from ..libs.libpytimemory.profiler import profiler_finalize as _profiler_fini

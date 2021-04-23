@@ -71,16 +71,25 @@ manager_wrapper::get()
 namespace impl
 {
 //
+template <typename Tp>
+using basic_dmp_tree_t = std::vector<std::vector<tim::basic_tree<tim::node::tree<Tp>>>>;
+//
 template <typename Tp, typename Archive>
 auto
 get_json(Archive& ar, const pytim::pyenum_set_t& _types,
          tim::enable_if_t<tim::trait::is_available<Tp>::value, int>)
-    -> decltype(tim::storage<Tp>::instance()->dmp_get(ar), void())
+    -> decltype(
+        tim::storage<Tp>::instance()->dmp_get(std::declval<basic_dmp_tree_t<Tp>&>()),
+        void())
 {
     if(_types.empty() || _types.count(tim::component::properties<Tp>{}()) > 0)
     {
         if(!tim::storage<Tp>::instance()->empty())
-            tim::storage<Tp>::instance()->dmp_get(ar);
+        {
+            basic_dmp_tree_t<Tp> _obj{};
+            tim::storage<Tp>::instance()->dmp_get(_obj);
+            tim::operation::serialization<Tp>{}(ar, _obj);
+        }
     }
 }
 //
