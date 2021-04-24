@@ -222,12 +222,17 @@ extern "C"
         tim::trace::lock<tim::trace::library> lk{};
         get_library_state()[1] = true;
 
-        if(tim::settings::enabled() == false && get_record_map().empty())
+        auto _manager  = tim::manager::master_instance();
+        auto _settings = tim::settings::instance();
+        if(!_manager || !_settings)
+            return;
+
+        if(_settings->get_enabled() == false && get_record_map().empty())
             return;
 
         auto& _record_map = get_record_map();
 
-        if(tim::settings::verbose() > 0)
+        if(_settings->get_verbose() > 0)
         {
             printf("\n%s\n", spacer.c_str());
             printf("\tFinalization of timemory library...\n");
@@ -248,13 +253,14 @@ extern "C"
         _record_map.clear();
 
         // have the manager finalize
-        tim::manager::instance()->finalize();
+        if(tim::manager::instance())
+            tim::manager::instance()->finalize();
 
         // do the finalization
         tim::timemory_finalize();
 
         // just in case
-        tim::settings::enabled() = false;
+        _settings->get_enabled() = false;
 
         // set the finalization state to true
         tim::dmp::set_finalized(true);
@@ -264,7 +270,7 @@ extern "C"
 
         // PGI and Intel compilers don't respect destruction order
 #if defined(__PGI) || defined(__INTEL_COMPILER)
-        tim::settings::auto_output() = false;
+        _settings->get_output() = false;
 #endif
     }
 
