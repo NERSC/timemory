@@ -749,6 +749,17 @@ PYBIND11_MODULE(libpytimemory, tim)
             "argument will return the size for all available types",
             py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
+    tim.def("get_hash", [](const std::string& _id) { return tim::add_hash_id(_id); },
+            "Get timemory's hash for a key (string)", py::arg("key"));
+    //----------------------------------------------------------------------------------//
+    tim.def("get_hash_identifier",
+            py::overload_cast<tim::hash_value_type>(&tim::get_hash_identifier),
+            "Get the string associated with a hash identifer", py::arg("hash_id"));
+    //----------------------------------------------------------------------------------//
+    tim.def("add_hash_id", [](const std::string& _id) { return tim::add_hash_id(_id); },
+            "Add a key (string) to the database and return the hash for it",
+            py::arg("key"));
+    //----------------------------------------------------------------------------------//
     tim.def("mpi_init", _init_mpi, "Initialize MPI");
     //----------------------------------------------------------------------------------//
     tim.def("mpi_finalize", _finalize_mpi, "Finalize MPI");
