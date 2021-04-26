@@ -868,7 +868,7 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
     if(TIMEMORY_USE_PYTHON)
         set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/libs)
         if(NOT IS_ABSOLUTE "${_PYLIB}")
-            set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB}/libs)
+            set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
         endif()
     endif()
 
