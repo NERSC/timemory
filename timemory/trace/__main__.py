@@ -78,7 +78,7 @@ def parse_args(args=None):
     if args is None:
         args = sys.argv
 
-    from ..libpytimemory.trace import config as _tracer_config
+    from ..libs.libpytimemory.trace import config as _tracer_config
 
     def str2bool(v):
         if isinstance(v, bool):
@@ -256,8 +256,8 @@ def main():
                     "python -m timemory.trace -- ./script.py"
                 )
 
-    from ..libpytimemory import initialize
-    from ..libpytimemory import settings
+    from ..libs.libpytimemory import initialize
+    from ..libs.libpytimemory import settings
 
     if os.path.isfile(argv[0]):
         argv[0] = os.path.realpath(argv[0])
@@ -267,7 +267,7 @@ def main():
     )
     initialize(argv)
 
-    from ..libpytimemory.trace import config as _tracer_config
+    from ..libs.libpytimemory.trace import config as _tracer_config
 
     _tracer_config.include_args = opts.include_args
     _tracer_config.include_line = opts.include_line
@@ -350,6 +350,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-    from ..libpytimemory import finalize
+    from ..libs.libpytimemory import finalize
 
     finalize()

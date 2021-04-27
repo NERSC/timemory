@@ -28,12 +28,14 @@ import sys
 import threading
 from functools import wraps
 
-from ..libpytimemory.profiler import profiler_function as _profiler_function
-from ..libpytimemory.profiler import config as _profiler_config
-from ..libpytimemory.profiler import profiler_init as _profiler_init
-from ..libpytimemory.profiler import profiler_finalize as _profiler_fini
-from ..libpytimemory.profiler import profiler_bundle as _profiler_bundle
-from ..libpytimemory import settings
+from ..libs.libpytimemory.profiler import (
+    profiler_function as _profiler_function,
+)
+from ..libs.libpytimemory.profiler import config as _profiler_config
+from ..libs.libpytimemory.profiler import profiler_init as _profiler_init
+from ..libs.libpytimemory.profiler import profiler_finalize as _profiler_fini
+from ..libs.libpytimemory.profiler import profiler_bundle as _profiler_bundle
+from ..libs.libpytimemory import settings
 
 
 __all__ = ["profile", "config", "Profiler", "FakeProfiler", "Config"]

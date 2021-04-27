@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -40,7 +40,7 @@ This submodule imports the compiled APIs
 """
 
 try:
-    from ..libpytimemory.api import papi, cuda, cupti
+    from ..libs.libpytimemory.api import papi, cuda, cupti
     from . import gperftools
 except Exception as e:
     print("{}".format(e))

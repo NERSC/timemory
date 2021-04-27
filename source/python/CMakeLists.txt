@@ -150,7 +150,7 @@ if(TIMEMORY_BUILD_PYTHON)
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/pybind11/include>)
 
     add_library(libpytimemory MODULE ${TIMEMORY_EXCLUDE_FROM_ALL} ${pysources} ${pyheaders} ${pybind_headers})
-    timemory_configure_pytarget(libpytimemory)
+    timemory_configure_pytarget(libpytimemory libs)
 
     timemory_message(STATUS "Adding source/python/tools...")
     add_subdirectory(tools)

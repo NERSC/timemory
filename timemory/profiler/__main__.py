@@ -78,7 +78,7 @@ def parse_args(args=None):
     if args is None:
         args = sys.argv
 
-    from ..libpytimemory.profiler import config as _profiler_config
+    from ..libs.libpytimemory.profiler import config as _profiler_config
 
     def str2bool(v):
         if isinstance(v, bool):
@@ -271,8 +271,8 @@ def main():
                     "python -m timemory.profiler -- ./script.py"
                 )
 
-    from ..libpytimemory import initialize
-    from ..libpytimemory import settings
+    from ..libs.libpytimemory import initialize
+    from ..libs.libpytimemory import settings
 
     if os.path.isfile(argv[0]):
         argv[0] = os.path.realpath(argv[0])
@@ -282,7 +282,7 @@ def main():
     )
     initialize(argv)
 
-    from ..libpytimemory.profiler import config as _profiler_config
+    from ..libs.libpytimemory.profiler import config as _profiler_config
 
     _profiler_config.trace_c = opts.trace_c
     _profiler_config.include_args = opts.include_args
@@ -363,6 +363,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-    from ..libpytimemory import finalize
+    from ..libs.libpytimemory import finalize
 
     finalize()

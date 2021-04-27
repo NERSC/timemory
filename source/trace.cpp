@@ -810,40 +810,53 @@ extern "C"
         if(library_trace_count.load() == 0)
             return;
 
-        if(tim::settings::verbose() > 1 || tim::settings::debug())
+        auto _manager  = tim::manager::master_instance();
+        auto _settings = tim::settings::instance();
+        if(!_manager || !_settings)
+            return;
+
+        auto _debug = _settings->get_debug();
+        if(_settings->get_verbose() > 1 || _settings->get_debug())
             PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
                        (int) tim::process::get_id(), (int) tim::threading::get_id());
 
+        CONDITIONAL_PRINT_HERE(_debug, "%s", "getting count");
         // do the finalization
         auto _count = --library_trace_count;
 
         if(_count > 0)
         {
+            CONDITIONAL_PRINT_HERE(_debug, "%s", "positive count");
             // have the manager finalize
             if(tim::manager::instance())
                 tim::manager::instance()->finalize();
+            CONDITIONAL_PRINT_HERE(_debug, "%s", "returning");
             return;
         }
 
+        CONDITIONAL_PRINT_HERE(_debug, "%s", "secondary lock");
         tim::auto_lock_t lock(tim::type_mutex<TIMEMORY_API>());
 
+        CONDITIONAL_PRINT_HERE(_debug, "%s", "setting state");
         // tim::settings::enabled() = false;
         get_library_state()[1] = true;
 
+        CONDITIONAL_PRINT_HERE(_debug, "%s", "barrier");
         tim::mpi::barrier();
 
+        CONDITIONAL_PRINT_HERE(_debug, "%s", "resetting");
         // reset traces just in case
         user_trace_bundle::reset();
 
         // if already finalized
         bool _skip_stop = false;
-        auto _manager   = tim::manager::master_instance();
         if(!_manager || _manager->is_finalized())
             _skip_stop = true;
 
         // clean up any remaining entries
         if(!_skip_stop)
         {
+            CONDITIONAL_PRINT_HERE(_debug, "%s", "cleaning trace map");
             for(auto& itr : get_trace_map())
             {
                 for(auto& eitr : itr.second)
@@ -851,17 +864,21 @@ extern "C"
                 // delete all the records
                 itr.second.clear();
             }
+            CONDITIONAL_PRINT_HERE(_debug, "%s", "clearing trace map");
+            // delete all the records
+            get_trace_map().clear();
         }
 
-        // delete all the records
-        get_trace_map().clear();
-
+        CONDITIONAL_PRINT_HERE(_debug, "%s", "resetting mpi gotcha");
         // deactivate the gotcha wrappers
         if(use_mpi_gotcha)
             mpi_gotcha_handle.reset();
 
+        CONDITIONAL_PRINT_HERE(_debug, "%s", "finalizing library");
         // finalize the library
         timemory_finalize_library();
+
+        CONDITIONAL_PRINT_HERE(_debug, "%s", "finalized trace");
     }
     //
     //----------------------------------------------------------------------------------//

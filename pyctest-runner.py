@@ -1162,11 +1162,14 @@ def run_pyctest():
 
         pyunittests = [
             "flat",
+            "general",
+            "hatchet",
             "rusage",
+            "storage",
             "throttle",
             "timeline",
             "timing",
-            "hatchet",
+            "tools",
         ]
 
         pyusempi = {"hatchet": True}

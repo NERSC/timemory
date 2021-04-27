@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -37,18 +37,9 @@ __status__ = "Development"
 
 """
 This submodule imports the compiled timemory hardware_counters.
-
-    from timemory.hardware_counters import WallClock
-    import time
-
-    wc = WallClock("label")
-    wc.start()
-    time.sleep(2)
-    wc.stop()
-    print("{} = {}", wc.key(), wc.get())
 """
 
 try:
-    from ..libpytimemory.hardware_counters import *
+    from ..libs.libpytimemory.hardware_counters import *
 except Exception as e:
     print("{}".format(e))

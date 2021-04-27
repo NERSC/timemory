@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -49,6 +49,6 @@ This submodule imports the compiled timemory component.
 """
 
 try:
-    from ..libpytimemory.component import *
+    from ..libs.libpytimemory.component import *
 except Exception as e:
     print("{}".format(e))

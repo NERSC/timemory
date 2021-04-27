@@ -68,6 +68,7 @@ CO_GENERATOR = 0x0020
 # Python 2/3 compatibility utils
 PY3 = sys.version_info[0] == 3
 PY35 = PY3 and sys.version_info[1] >= 5
+PY37 = PY3 and sys.version_info[1] >= 7
 
 
 def frame(back=2):
@@ -198,12 +199,21 @@ def popen(cmd, outf=None, keep_going=True, timeout=None, shell=False):
     errs = None
     retc = 0
     if shell:
-        p = sp.run(
-            " ".join(cmd),
-            shell=True,
-            check=False,
-            capture_output=True,
-        )
+        if PY37:
+            p = sp.run(
+                " ".join(cmd),
+                shell=True,
+                check=False,
+                capture_output=True,
+            )
+        else:
+            p = sp.run(
+                " ".join(cmd),
+                shell=True,
+                check=False,
+                stdout=sp.PIPE,
+                stderr=sp.PIPE,
+            )
     else:
         p = sp.Popen(cmd)
         try:

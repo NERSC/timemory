@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -41,13 +41,13 @@ This submodule imports the timemory Python function profiler
 
 try:
     from .profiler import Profiler, FakeProfiler
-    from ..libpytimemory.profiler import (
+    from ..libs.libpytimemory.profiler import (
         profiler_function,
         profiler_init,
         profiler_finalize,
     )
-    from ..libpytimemory.profiler import config as Config
-    from ..libpytimemory.profiler import profiler_bundle as ProfilerBundle
+    from ..libs.libpytimemory.profiler import config as Config
+    from ..libs.libpytimemory.profiler import profiler_bundle as ProfilerBundle
 
     config = Config
     profile = Profiler

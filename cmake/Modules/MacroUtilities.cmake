@@ -626,8 +626,11 @@ FUNCTION(BUILD_LIBRARY)
         set(_CUDA ON)
     endif()
 
+    set(_ENABLE_CUSTOM_COMMAND OFF)
+
     # add the library or sources
     if(NOT TARGET ${LIBRARY_TARGET_NAME})
+        set(_ENABLE_CUSTOM_COMMAND ON)
         add_library(${LIBRARY_TARGET_NAME} ${LIBRARY_TYPE} ${_EXCLUDE} ${LIBRARY_SOURCES})
         add_library(${PROJECT_NAME}::${LIBRARY_TARGET_NAME} ALIAS ${LIBRARY_TARGET_NAME})
     else()
@@ -705,6 +708,46 @@ FUNCTION(BUILD_LIBRARY)
 
     set_property(GLOBAL APPEND PROPERTY TIMEMORY_${LIBRARY_TYPE}_LIBRARIES
         ${LIBRARY_TARGET_NAME})
+
+    if("${LIBRARY_TYPE}" STREQUAL "SHARED" AND _ENABLE_CUSTOM_COMMAND)
+        set(_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
+        set(_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+
+        get_target_property(_OUTNAME    ${LIBRARY_TARGET_NAME} OUTPUT_NAME)
+        get_target_property(_VERSION    ${LIBRARY_TARGET_NAME} VERSION)
+        get_target_property(_SOVERSION  ${LIBRARY_TARGET_NAME} SOVERSION)
+
+        set(_FILENAME ${_PREFIX}${_OUTNAME}${_SUFFIX})
+
+        get_target_property(_OUTDIR ${LIBRARY_TARGET_NAME} LIBRARY_OUTPUT_DIRECTORY)
+        if(NOT IS_ABSOLUTE "${_OUTDIR}")
+            set(_OUTDIR "${PROJECT_BINARY_DIR}/${_OUTDIR}")
+        endif()
+        file(RELATIVE_PATH BINARY_RELPATH
+            "${PROJECT_BINARY_DIR}/timemory/libs" "${_OUTDIR}")
+
+        string(REGEX REPLACE "/$" "" BINARY_RELPATH "${BINARY_RELPATH}")
+
+        # build tree
+        if(WIN32)
+            # copy if on windows
+            add_custom_command(TARGET ${LIBRARY_TARGET_NAME}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    $<TARGET_FILE:${LIBRARY_TARGET_NAME}>
+                    ${PROJECT_BINARY_DIR}/timemory/libs
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        else()
+            # symlink if not windows
+            add_custom_command(TARGET ${LIBRARY_TARGET_NAME}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E create_symlink
+                    ${BINARY_RELPATH}/${_FILENAME}
+                    ${PROJECT_BINARY_DIR}/timemory/libs/${_FILENAME}
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        endif()
+
+    endif()
 
 ENDFUNCTION()
 
@@ -823,7 +866,7 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
     get_property(SHARED_LIBS GLOBAL PROPERTY TIMEMORY_SHARED_LIBRARIES)
 
     if(TIMEMORY_USE_PYTHON)
-        set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+        set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/libs)
         if(NOT IS_ABSOLUTE "${_PYLIB}")
             set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
         endif()
@@ -901,29 +944,8 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
             if(NOT IS_ABSOLUTE "${_OUTDIR}")
                 set(_OUTDIR "${PROJECT_BINARY_DIR}/${_OUTDIR}")
             endif()
-            file(RELATIVE_PATH BINARY_RELPATH
-                "${PROJECT_BINARY_DIR}/timemory" "${_OUTDIR}")
 
             string(REGEX REPLACE "/$" "" INSTALL_RELPATH "${INSTALL_RELPATH}")
-            string(REGEX REPLACE "/$" "" BINARY_RELPATH "${BINARY_RELPATH}")
-
-            # build tree
-            if(WIN32)
-                # copy if on windows
-                add_custom_command(TARGET ${_LIB}
-                    POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        $<TARGET_FILE:${_LIB}>
-                        ${PROJECT_BINARY_DIR}/timemory/
-                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-            else()
-                # symlink if not windows
-                execute_process(
-                    COMMAND ${CMAKE_COMMAND} -E create_symlink
-                        ${BINARY_RELPATH}/${_FILENAME}
-                        ${_FILENAME}
-                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
-            endif()
 
             # install tree
             foreach(_FNAME ${_FILE_TYPES})
@@ -932,7 +954,7 @@ FUNCTION(TIMEMORY_INSTALL_LIBRARIES)
                 endif()
                 if(WIN32)
                     # install a second time if windows
-                    install(TARGETS ${_LIB} DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+                    install(TARGETS ${_LIB} DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/libs)
                 else()
                     # symlink if not windows
                     install(CODE

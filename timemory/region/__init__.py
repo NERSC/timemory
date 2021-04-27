@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -43,6 +43,6 @@ throttling.
 """
 
 try:
-    from ..libpytimemory.region import *
+    from ..libs.libpytimemory.region import *
 except Exception as e:
     print("{}".format(e))
