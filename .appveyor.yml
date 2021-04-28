@@ -46,6 +46,7 @@ environment:
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "ON"
       LINE_PROFILER: "OFF"
+      HATCHET: "OFF"
     - CONDA: 37
       CPP: 14
       CONFIG: RelWithDebInfo
@@ -59,6 +60,7 @@ environment:
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
       LINE_PROFILER: "OFF"
+      HATCHET: "OFF"
     - PYTHON: 36
       CPP: 14
       CONFIG: Debug
@@ -72,6 +74,7 @@ environment:
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "OFF"
       LINE_PROFILER: "OFF"
+      HATCHET: "OFF"
     - PYTHON: 37
       CPP: 17
       CONFIG: MinSizeRel
@@ -85,6 +88,7 @@ environment:
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
       LINE_PROFILER: "OFF"
+      HATCHET: "OFF"
 
 install:
   # Configure environment
@@ -114,7 +118,7 @@ install:
           $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
         }
         python -m pip install --disable-pip-version-check --user --upgrade pip wheel
-        python -m pip install --user cython numpy matplotlib pillow pandas pydot
+        python -m pip install --user -r .requirements/runtime.txt
       } elseif ($env:CONDA) {
         $env:BUILD_NAME = "MSVC-2019-CXX$env:CPP-CONDA$env:CONDA"
         if ($env:PLATFORM -eq "x64") {
@@ -129,7 +133,7 @@ install:
           $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
         }
         conda update -y -q -n base conda
-        conda install -y -c defaults -c conda-forge -q pip setuptools scikit-build numpy matplotlib pillow cython pandas pydot multiprocess
+        conda install -y -c conda-forge -c defaults -q -r .requirements/runtime.txt
       }
       $env:TIMEMORY_FILE_OUTPUT = "OFF"
       $env:TIMEMORY_AUTO_OUTPUT = "ON"
@@ -154,6 +158,7 @@ build_script:
     -DTIMEMORY_BUILD_MINIMAL_TESTING="%BUILD_TESTING%"
     -DTIMEMORY_BUILD_GOOGLE_TEST="%BUILD_TESTING%"
     -DTIMEMORY_BUILD_PYTHON_LINE_PROFILER="%LINE_PROFILER%"
+    -DTIMEMORY_BUILD_PYTHON_HATCHET="%HATCHET%"
     -DTIMEMORY_USE_WINSOCK="%WINSOCK%"
     -DCMAKE_GENERATOR="%CMAKE_GENERATOR%"
     -DCMAKE_GENERATOR_PLATFORM="%CMAKE_GENERATOR_PLATFORM%"
