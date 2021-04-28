@@ -45,7 +45,7 @@ environment:
       BUILD_SHARED: "ON"
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "ON"
-      LINE_PROFILER: "OFF"
+      LINE_PROFILER: "ON"
       HATCHET: "OFF"
     - CONDA: 37
       CPP: 14
@@ -59,7 +59,7 @@ environment:
       BUILD_SHARED: "ON"
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
-      LINE_PROFILER: "OFF"
+      LINE_PROFILER: "ON"
       HATCHET: "OFF"
     - PYTHON: 36
       CPP: 14
@@ -87,7 +87,7 @@ environment:
       BUILD_SHARED: "OFF"
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
-      LINE_PROFILER: "OFF"
+      LINE_PROFILER: "ON"
       HATCHET: "OFF"
 
 install:

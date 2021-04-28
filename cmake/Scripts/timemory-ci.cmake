@@ -276,7 +276,6 @@ get_filename_component(BINARY_REALDIR ${BINARY_DIR} REALPATH)
 
 set(CONFIG_ARGS)
 foreach(_ARG ${TIMEMORY_CMAKE_ARGS})
-    string(REPLACE "\\" "/" _ARG "${_ARG}")
     if(NOT "${${_ARG}}" STREQUAL "")
         get_property(_ARG_TYPE CACHE ${_ARG} PROPERTY TYPE)
         if("${_ARG_TYPE}" STREQUAL "UNINITIALIZED")
@@ -294,6 +293,7 @@ foreach(_ARG ${TIMEMORY_CMAKE_ARGS})
     endif()
 endforeach()
 
+string(REPLACE "\\" "/" CONFIG_ARGS "${CONFIG_ARGS}")
 file(WRITE ${BINARY_REALDIR}/initial-cache.cmake
 "
 set(CMAKE_CXX_FLAGS \"${CMAKE_CXX_FLAGS}\" CACHE STRING \"\")
