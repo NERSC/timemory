@@ -45,7 +45,7 @@ environment:
       BUILD_SHARED: "ON"
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "ON"
-      LINE_PROFILER: "ON"
+      LINE_PROFILER: "OFF"
     - CONDA: 37
       CPP: 14
       CONFIG: RelWithDebInfo
@@ -58,7 +58,7 @@ environment:
       BUILD_SHARED: "ON"
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
-      LINE_PROFILER: "ON"
+      LINE_PROFILER: "OFF"
     - PYTHON: 36
       CPP: 14
       CONFIG: Debug
@@ -84,7 +84,7 @@ environment:
       BUILD_SHARED: "OFF"
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
-      LINE_PROFILER: "ON"
+      LINE_PROFILER: "OFF"
 
 install:
   # Configure environment
@@ -142,7 +142,7 @@ build_script:
     -DBUILD_STATIC_LIBS="%BUILD_STATIC%"
     -DCMAKE_BUILD_TYPE="%CONFIG%"
     -DCMAKE_CXX_STANDARD="%CPP%"
-    -DCMAKE_INSTALL_PREFIX=..\install-timemory
+    -DCMAKE_INSTALL_PREFIX="../install-timemory"
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_USE_MPI=OFF
     -DTIMEMORY_USE_PYTHON="%USE_PYTHON%"
