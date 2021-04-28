@@ -133,7 +133,7 @@ install:
           $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
         }
         conda update -y -q -n base conda
-        conda install -y -c conda-forge -c defaults -q -r .requirements/runtime.txt
+        conda install -y -c conda-forge -c defaults -q --file=.requirements/runtime.txt
       }
       $env:TIMEMORY_FILE_OUTPUT = "OFF"
       $env:TIMEMORY_AUTO_OUTPUT = "ON"
