@@ -42,6 +42,7 @@ environment:
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "ON"
+      BUILD_SHARED: "ON"
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "ON"
       LINE_PROFILER: "ON"
@@ -54,6 +55,7 @@ environment:
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "OFF"
+      BUILD_SHARED: "ON"
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
       LINE_PROFILER: "ON"
@@ -66,6 +68,7 @@ environment:
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "ON"
+      BUILD_SHARED: "ON"
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "OFF"
       LINE_PROFILER: "OFF"
@@ -78,6 +81,7 @@ environment:
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "OFF"
+      BUILD_SHARED: "OFF"
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
       LINE_PROFILER: "ON"
@@ -87,7 +91,7 @@ install:
   - ps: |
       # CMake architecture
       if ($env:PLATFORM -eq "x64") {
-        $env:CMAKE_ARCH = "x64"
+        $env:CMAKE_GENERATOR_PLATFORM = "x64"
       }
 
       # CMake generator
@@ -99,6 +103,7 @@ install:
 
       # Python environment
       if ($env:PYTHON) {
+        $env:BUILD_NAME = MSVC-2019-CXX$env:CPP-PY$env:PYTHON
         if ($env:PLATFORM -eq "x64") {
           $env:PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
           $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts"
@@ -111,6 +116,7 @@ install:
         python -m pip install --disable-pip-version-check --user --upgrade pip wheel
         python -m pip install --user cython numpy matplotlib pillow pandas pydot
       } elseif ($env:CONDA) {
+        $env:BUILD_NAME = MSVC-2019-CXX$env:CPP-CONDA$env:CONDA
         if ($env:PLATFORM -eq "x64") {
           $env:PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts;$env:PATH"
           $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts"
@@ -123,7 +129,7 @@ install:
           $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
         }
         conda update -y -q -n base conda
-        conda install -y -c defaults -c conda-forge -q pip setuptools scikit-build numpy matplotlib pillow cython pandas pydot
+        conda install -y -c defaults -c conda-forge -q pip setuptools scikit-build numpy matplotlib pillow cython pandas pydot multiprocess
       }
       $env:TIMEMORY_FILE_OUTPUT = "OFF"
       $env:TIMEMORY_AUTO_OUTPUT = "ON"
@@ -131,10 +137,8 @@ install:
       $env:TEMP = "C:\Users\appveyor\CTestTemp"
 
 build_script:
-  - mkdir build-timemory
-  - cd build-timemory
-  - cmake .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
-    -DBUILD_SHARED_LIBS=ON
+  - cmake
+    -DBUILD_SHARED_LIBS="%BUILD_SHARED%"
     -DBUILD_STATIC_LIBS="%BUILD_STATIC%"
     -DCMAKE_BUILD_TYPE="%CONFIG%"
     -DCMAKE_CXX_STANDARD="%CPP%"
@@ -144,21 +148,22 @@ build_script:
     -DTIMEMORY_USE_PYTHON="%USE_PYTHON%"
     -DTIMEMORY_USE_ARCH="%USE_ARCH%"
     -DTIMEMORY_BUILD_C="%BUILD_C%"
+    -DTIMEMORY_BUILD_TOOLS="%TOOLS%"
     -DTIMEMORY_BUILD_EXAMPLES="%EXAMPLES%"
     -DTIMEMORY_BUILD_TESTING="%BUILD_TESTING%"
     -DTIMEMORY_BUILD_MINIMAL_TESTING="%BUILD_TESTING%"
-    -DTIMEMORY_BUILD_TOOLS="%TOOLS%"
     -DTIMEMORY_BUILD_GOOGLE_TEST="%BUILD_TESTING%"
-    -DTIMEMORY_USE_WINSOCK="%WINSOCK%"
     -DTIMEMORY_BUILD_PYTHON_LINE_PROFILER="%LINE_PROFILER%"
-  - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
-  - cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
+    -DTIMEMORY_USE_WINSOCK="%WINSOCK%"
+    -DCMAKE_GENERATOR="%CMAKE_GENERATOR%"
+    -DCMAKE_GENERATOR_PLATFORM="%CMAKE_GENERATOR_PLATFORM%"
+    -DSITE=AppVeyor
+    -DTARGET=INSTALL
+    -DBUILD_NAME=%BUILD_NAME%
+    -DCTEST_ARGS="-C %CONFIG% -V --output-on-failure"
+    -P cmake\Scripts\timemory-ci.cmake
   - ls
-  - ps: |
-      if ($env:BUILD_TESTING -eq "ON") {
-          iex "ctest . --output-on-failure -C $env:CONFIG"
-      }
+  - cd build-timemory/Windows
   - ps: |
       if ($env:EXAMPLES -eq "ON") {
         iex ".\outputs\runtime\$env:CONFIG\ex_optional_off.exe"
