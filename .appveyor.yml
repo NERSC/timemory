@@ -103,7 +103,7 @@ install:
 
       # Python environment
       if ($env:PYTHON) {
-        $env:BUILD_NAME = MSVC-2019-CXX$env:CPP-PY$env:PYTHON
+        $env:BUILD_NAME = "MSVC-2019-CXX$env:CPP-PY$env:PYTHON"
         if ($env:PLATFORM -eq "x64") {
           $env:PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
           $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts"
