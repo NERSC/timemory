@@ -40,9 +40,11 @@ add_flag_if_avail(
     "-Wno-attributes"
     "-Wno-missing-field-initializers")
 
-if(WIN32)
+if(CMAKE_CXX_COMPILER_IS_MSVC)
     # suggested by MSVC for spectre mitigation in rapidjson implementation
-    add_cxx_flag_if_avail("/Qspectre")
+    add_cxx_flag("/Qspectre")
+    # exception handling
+    add_cxx_flag("/EHsc")
 endif()
 
 if(CMAKE_CXX_COMPILER_IS_CLANG)
