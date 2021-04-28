@@ -165,7 +165,6 @@ build_script:
     -DSITE=AppVeyor
     -DTARGET=INSTALL
     -DBUILD_NAME=%BUILD_NAME%
-    -DCMAKE_ARGS="--config %CONFIG%"
     -DCTEST_ARGS="-V --output-on-failure"
     -P cmake\Scripts\timemory-ci.cmake
   - ls
