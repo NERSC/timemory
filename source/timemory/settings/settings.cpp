@@ -1346,6 +1346,8 @@ TIMEMORY_SETTINGS_MEMBER_DEF(string_t, mpi_thread_type,
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, upcxx_init, TIMEMORY_SETTINGS_KEY("UPCXX_INIT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, upcxx_finalize,
                              TIMEMORY_SETTINGS_KEY("UPCXX_FINALIZE"))
+TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_threading,
+                             TIMEMORY_SETTINGS_KEY("PAPI_THREADING"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_multiplexing,
                              TIMEMORY_SETTINGS_KEY("PAPI_MULTIPLEXING"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_fail_on_error,
