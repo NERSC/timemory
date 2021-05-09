@@ -504,6 +504,153 @@ TEST_F(component_bundle_tests, custom_type_count_wo_init)
 
 //--------------------------------------------------------------------------------------//
 
+template <typename T>
+using get_is_invalid_t = tim::operation::get_is_invalid<T, false>;
+
+TEST_F(component_bundle_tests, invalid)
+{
+    using bundle_t = tim::component_tuple<wall_clock, cpu_clock, cpu_util, peak_rss>;
+
+    auto wc_size_orig = tim::storage<wall_clock>::instance()->size();
+    auto cu_size_orig = tim::storage<cpu_util>::instance()->size();
+    auto cc_size_orig = tim::storage<cpu_clock>::instance()->size();
+    auto pr_size_orig = tim::storage<peak_rss>::instance()->size();
+
+    long ret = 0;
+    {
+        bundle_t _instance{ details::get_test_name(),
+                            tim::scope::flat{} + tim::scope::timeline{} };
+
+        _instance.invoke<tim::operation::set_is_invalid>(true);
+        _instance.get<cpu_clock>()->set_is_invalid(false);
+
+        EXPECT_TRUE(_instance.get<wall_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<cpu_util>()->get_is_invalid());
+        EXPECT_FALSE(_instance.get<cpu_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<peak_rss>()->get_is_invalid());
+
+        EXPECT_EQ(_instance.get<wall_clock>()->get_is_invalid(),
+                  get_is_invalid_t<wall_clock>{}(*_instance.get<wall_clock>()));
+        EXPECT_EQ(_instance.get<cpu_util>()->get_is_invalid(),
+                  get_is_invalid_t<cpu_util>{}(*_instance.get<cpu_util>()));
+        EXPECT_EQ(_instance.get<cpu_clock>()->get_is_invalid(),
+                  get_is_invalid_t<cpu_clock>{}(*_instance.get<cpu_clock>()));
+        EXPECT_EQ(_instance.get<peak_rss>()->get_is_invalid(),
+                  get_is_invalid_t<peak_rss>{}(*_instance.get<peak_rss>()));
+
+        _instance.start();
+        ret += details::fibonacci(35);
+        _instance.stop();
+    }
+
+    {
+        bundle_t _instance{ details::get_test_name(),
+                            tim::scope::flat{} + tim::scope::timeline{} };
+
+        _instance.invoke<tim::operation::set_is_invalid>(true);
+
+        EXPECT_TRUE(_instance.get<wall_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<cpu_util>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<cpu_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<peak_rss>()->get_is_invalid());
+
+        EXPECT_EQ(_instance.get<wall_clock>()->get_is_invalid(),
+                  get_is_invalid_t<wall_clock>{}(*_instance.get<wall_clock>()));
+        EXPECT_EQ(_instance.get<cpu_util>()->get_is_invalid(),
+                  get_is_invalid_t<cpu_util>{}(*_instance.get<cpu_util>()));
+        EXPECT_EQ(_instance.get<cpu_clock>()->get_is_invalid(),
+                  get_is_invalid_t<cpu_clock>{}(*_instance.get<cpu_clock>()));
+        EXPECT_EQ(_instance.get<peak_rss>()->get_is_invalid(),
+                  get_is_invalid_t<peak_rss>{}(*_instance.get<peak_rss>()));
+
+        _instance.start();
+
+        EXPECT_TRUE(_instance.get<wall_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<cpu_util>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<cpu_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<peak_rss>()->get_is_invalid());
+        EXPECT_TRUE(get_is_invalid_t<wall_clock>{}(*_instance.get<wall_clock>()));
+        EXPECT_TRUE(get_is_invalid_t<cpu_util>{}(*_instance.get<cpu_util>()));
+        EXPECT_TRUE(get_is_invalid_t<cpu_clock>{}(*_instance.get<cpu_clock>()));
+        EXPECT_TRUE(get_is_invalid_t<peak_rss>{}(*_instance.get<peak_rss>()));
+
+        ret += details::fibonacci(35);
+        _instance.stop();
+
+        EXPECT_TRUE(_instance.get<wall_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<cpu_util>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<cpu_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<peak_rss>()->get_is_invalid());
+        EXPECT_TRUE(get_is_invalid_t<wall_clock>{}(*_instance.get<wall_clock>()));
+        EXPECT_TRUE(get_is_invalid_t<cpu_util>{}(*_instance.get<cpu_util>()));
+        EXPECT_TRUE(get_is_invalid_t<cpu_clock>{}(*_instance.get<cpu_clock>()));
+        EXPECT_TRUE(get_is_invalid_t<peak_rss>{}(*_instance.get<peak_rss>()));
+    }
+
+    {
+        bundle_t _instance{ details::get_test_name(),
+                            tim::scope::flat{} + tim::scope::timeline{} };
+
+        EXPECT_FALSE(_instance.get<wall_clock>()->get_is_invalid());
+        EXPECT_FALSE(_instance.get<cpu_util>()->get_is_invalid());
+        EXPECT_FALSE(_instance.get<cpu_clock>()->get_is_invalid());
+        EXPECT_FALSE(_instance.get<peak_rss>()->get_is_invalid());
+        EXPECT_FALSE(get_is_invalid_t<wall_clock>{}(*_instance.get<wall_clock>()));
+        EXPECT_FALSE(get_is_invalid_t<cpu_util>{}(*_instance.get<cpu_util>()));
+        EXPECT_FALSE(get_is_invalid_t<cpu_clock>{}(*_instance.get<cpu_clock>()));
+        EXPECT_FALSE(get_is_invalid_t<peak_rss>{}(*_instance.get<peak_rss>()));
+
+        _instance.invoke<tim::operation::set_is_invalid>(true);
+
+        EXPECT_TRUE(_instance.get<wall_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<cpu_util>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<cpu_clock>()->get_is_invalid());
+        EXPECT_TRUE(_instance.get<peak_rss>()->get_is_invalid());
+        EXPECT_TRUE(get_is_invalid_t<wall_clock>{}(*_instance.get<wall_clock>()));
+        EXPECT_TRUE(get_is_invalid_t<cpu_util>{}(*_instance.get<cpu_util>()));
+        EXPECT_TRUE(get_is_invalid_t<cpu_clock>{}(*_instance.get<cpu_clock>()));
+        EXPECT_TRUE(get_is_invalid_t<peak_rss>{}(*_instance.get<peak_rss>()));
+
+        _instance.invoke<tim::operation::set_is_invalid>(false);
+
+        EXPECT_FALSE(_instance.get<wall_clock>()->get_is_invalid());
+        EXPECT_FALSE(_instance.get<cpu_util>()->get_is_invalid());
+        EXPECT_FALSE(_instance.get<cpu_clock>()->get_is_invalid());
+        EXPECT_FALSE(_instance.get<peak_rss>()->get_is_invalid());
+        EXPECT_FALSE(get_is_invalid_t<wall_clock>{}(*_instance.get<wall_clock>()));
+        EXPECT_FALSE(get_is_invalid_t<cpu_util>{}(*_instance.get<cpu_util>()));
+        EXPECT_FALSE(get_is_invalid_t<cpu_clock>{}(*_instance.get<cpu_clock>()));
+        EXPECT_FALSE(get_is_invalid_t<peak_rss>{}(*_instance.get<peak_rss>()));
+
+        EXPECT_EQ(_instance.get<wall_clock>()->get_is_invalid(),
+                  get_is_invalid_t<wall_clock>{}(*_instance.get<wall_clock>()));
+        EXPECT_EQ(_instance.get<cpu_util>()->get_is_invalid(),
+                  get_is_invalid_t<cpu_util>{}(*_instance.get<cpu_util>()));
+        EXPECT_EQ(_instance.get<cpu_clock>()->get_is_invalid(),
+                  get_is_invalid_t<cpu_clock>{}(*_instance.get<cpu_clock>()));
+        EXPECT_EQ(_instance.get<peak_rss>()->get_is_invalid(),
+                  get_is_invalid_t<peak_rss>{}(*_instance.get<peak_rss>()));
+
+        _instance.start();
+        ret += details::fibonacci(35);
+        _instance.stop();
+    }
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 2;
+    auto pr_n = pr_size_orig + 1;
+
+    EXPECT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    EXPECT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    EXPECT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    EXPECT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(component_bundle_tests, custom_type_count_w_init)
 {
     using api_t                                   = CUSTOM_API;

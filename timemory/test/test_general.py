@@ -118,14 +118,14 @@ class TimemoryGeneralTests(unittest.TestCase):
         with tim.util.marker(["wall_clock"], key="fibonacci"):
             ret = fibonacci(20)
 
-        fib_id  = tim.get_hash_identifier(fib_val)
+        fib_id = tim.get_hash_identifier(fib_val)
 
         self.assertEqual(fib_hash, fib_val)
         self.assertEqual(fib_id, "fibonacci")
 
         foobar_hash = tim.get_hash("foobar")
         foobar_val = tim.add_hash_id("foobar")
-        foobar_id  = tim.get_hash_identifier(foobar_val)
+        foobar_id = tim.get_hash_identifier(foobar_val)
 
         self.assertEqual(foobar_hash, foobar_val)
         self.assertEqual(foobar_id, "foobar")

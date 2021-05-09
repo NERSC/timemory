@@ -178,6 +178,7 @@ struct settings
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, mpi_thread_type)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, upcxx_init)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, upcxx_finalize)
+    TIMEMORY_SETTINGS_MEMBER_DECL(bool, papi_threading)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, papi_multiplexing)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, papi_fail_on_error)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, papi_quiet)

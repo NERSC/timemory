@@ -29,6 +29,8 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 
+#include <type_traits>
+
 namespace tim
 {
 //
@@ -64,35 +66,48 @@ struct start
     }
 
     template <typename... Args>
-    TIMEMORY_HOT auto operator()(type& obj, Args&&... args)
+    TIMEMORY_HOT auto operator()(type& obj, Args&&... args) const
     {
         using RetT = decltype(do_sfinae(obj, 0, 0, std::forward<Args>(args)...));
         if(!is_running<Tp, false>{}(obj))
         {
             return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
         }
-        return RetT{};
+        return get_return<RetT>();
     }
 
     template <typename... Args>
-    TIMEMORY_HOT auto operator()(type& obj, quirk::unsafe&&, Args&&... args)
+    TIMEMORY_HOT auto operator()(type& obj, quirk::unsafe&&, Args&&... args) const
     {
         return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
 
 private:
-    template <typename... Args>
-    TIMEMORY_HOT void impl(type& obj, Args&&... args);
+    template <typename T>
+    auto get_return(enable_if_t<std::is_void<T>::value, int> = 0) const
+    {}
+
+    template <typename T>
+    auto get_return(enable_if_t<!std::is_void<T>::value, long> = 0) const
+    {
+        static_assert(std::is_default_constructible<T>::value,
+                      "Error! start() returns a type that is not default constructible! "
+                      "You must specialize operation::start<T> struct");
+        return T{};
+    }
 
     template <typename... Args>
-    TIMEMORY_HOT auto impl(type& obj, quirk::unsafe&&, Args&&... args)
+    TIMEMORY_HOT void impl(type& obj, Args&&... args) const;
+
+    template <typename... Args>
+    TIMEMORY_HOT auto impl(type& obj, quirk::unsafe&&, Args&&... args) const
     {
         return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
 
     // resolution #1 (best)
     template <typename Up, typename... Args>
-    TIMEMORY_HOT auto do_sfinae(Up& obj, int, int, Args&&... args)
+    TIMEMORY_HOT auto do_sfinae(Up& obj, int, int, Args&&... args) const
         -> decltype(obj.start(std::forward<Args>(args)...))
     {
         set_started<Tp>{}(obj);
@@ -101,7 +116,8 @@ private:
 
     // resolution #2
     template <typename Up, typename... Args>
-    TIMEMORY_HOT auto do_sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.start())
+    TIMEMORY_HOT auto do_sfinae(Up& obj, int, long, Args&&...) const
+        -> decltype(obj.start())
     {
         set_started<Tp>{}(obj);
         return obj.start();
@@ -109,7 +125,7 @@ private:
 
     // resolution #3 (worst) - no member function
     template <typename Up, typename... Args>
-    void do_sfinae(Up&, long, long, Args&&...)
+    void do_sfinae(Up&, long, long, Args&&...) const
     {
         SFINAE_WARNING(type);
         DEBUG_PRINT_HERE("No support for arguments: start(%s)",
@@ -214,7 +230,7 @@ private:
 template <typename Tp>
 template <typename... Args>
 void
-start<Tp>::impl(type& obj, Args&&... args)
+start<Tp>::impl(type& obj, Args&&... args) const
 {
     if(!is_running<Tp, false>{}(obj))
     {

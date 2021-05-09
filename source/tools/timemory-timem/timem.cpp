@@ -255,6 +255,7 @@ main(int argc, char** argv)
 
     // override a some settings
     tim::settings::suppress_parsing() = true;
+    tim::settings::papi_threading()   = false;
     tim::settings::auto_output()      = false;
     tim::settings::output_prefix()    = "";
 

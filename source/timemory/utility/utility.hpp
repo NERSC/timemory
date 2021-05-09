@@ -379,15 +379,14 @@ template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE void
 print_backtrace(std::ostream& os = std::cerr)
 {
-    auto              bt = tim::get_backtrace<Depth, Offset>();
-    std::stringstream ss;
+    auto bt = tim::get_backtrace<Depth, Offset>();
     for(const auto& itr : bt)
     {
-        ss << "\nBacktrace:\n";
-        if(itr.length() > 0)
-            ss << itr << "\n";
+        os << "\nBacktrace:\n";
+        if(itr && strlen(itr) > 0)
+            os << itr << "\n";
     }
-    ss << "\n";
+    os << "\n";
     os << std::flush;
 }
 //

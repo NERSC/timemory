@@ -308,6 +308,109 @@ struct compose;
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename T>
+struct insert
+{
+    TIMEMORY_DEFAULT_OBJECT(insert)
+
+    template <typename Up, typename... Args>
+    TIMEMORY_HOT auto operator()(Up& obj, Args&&... args) const
+    {
+        return sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    }
+
+private:
+    template <typename Up, typename... Args>
+    static TIMEMORY_HOT auto sfinae(Up& obj, int, int, Args&&... args)
+        -> decltype(obj.insert(std::forward<Args>(args)...))
+    {
+        return obj.insert(std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    static TIMEMORY_HOT auto sfinae(Up& obj, int, long, Args&&... args)
+        -> decltype(obj->insert(std::forward<Args>(args)...))
+    {
+        return obj->insert(std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    static TIMEMORY_INLINE auto sfinae(Up&, long, long, Args&&...) -> std::nullptr_t
+    {
+        return nullptr;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct stack_push
+{
+    TIMEMORY_DEFAULT_OBJECT(stack_push)
+
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT void operator()(Up& obj, Vp&& arg) const
+    {
+        sfinae(obj, 0, 0, std::forward<Vp>(arg));
+    }
+
+private:
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT auto sfinae(Up& obj, int, int, Vp&& arg) const
+        -> decltype(obj.stack_push(std::forward<Vp>(arg)), void())
+    {
+        obj.stack_push(std::forward<Vp>(arg));
+    }
+
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT auto sfinae(Up& obj, int, long, Vp&& arg) const
+        -> decltype(obj->stack_push(std::forward<Vp>(arg)), void())
+    {
+        if(obj)
+            obj->stack_push(std::forward<Vp>(arg));
+    }
+
+    template <typename Up, typename... Args>
+    TIMEMORY_INLINE void sfinae(Up&, long, long, Args&&...) const
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct stack_pop
+{
+    TIMEMORY_DEFAULT_OBJECT(stack_pop)
+
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT void operator()(Up& obj, Vp&& arg) const
+    {
+        sfinae(obj, 0, 0, std::forward<Vp>(arg));
+    }
+
+private:
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT auto sfinae(Up& obj, int, int, Vp&& arg) const
+        -> decltype(obj.stack_pop(std::forward<Vp>(arg)), void())
+    {
+        obj.stack_pop(std::forward<Vp>(arg));
+    }
+
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT auto sfinae(Up& obj, int, long, Vp&& arg) const
+        -> decltype(obj->stack_pop(std::forward<Vp>(arg)), void())
+    {
+        if(obj)
+            obj->stack_pop(std::forward<Vp>(arg));
+    }
+
+    template <typename Up, typename... Args>
+    TIMEMORY_INLINE void sfinae(Up&, long, long, Args&&...) const
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \struct tim::operation::set_started
 /// \tparam T Component type
 ///
@@ -370,6 +473,58 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::operation::set_depth_change
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not the component triggered a depth change when it
+/// was push to the call-stack or when it was popped from the call-stack
+template <typename T>
+struct set_depth_change;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_is_flat
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not the component triggered a depth change when it
+/// was push to the call-stack or when it was popped from the call-stack
+template <typename T>
+struct set_is_flat;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_is_on_stack
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not the component is referenced in persistent storage
+template <typename T>
+struct set_is_on_stack;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_is_invalid
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which sets whether or not
+/// the component is in a valid state for data access and updates.
+template <typename T>
+struct set_is_invalid;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_iterator
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which sets a pointer to
+/// a reference value in persistant storage.
+template <typename T>
+struct set_iterator;
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \struct tim::operation::is_running
 /// \tparam T Component type
 /// \tparam DefaultValue The value to return if the member function is not provided
@@ -409,25 +564,204 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct tim::operation::set_depth_change
+/// \struct tim::operation::get_is_flat
 /// \tparam T Component type
+/// \tparam DefaultValue The value to return if the member function is not provided
 ///
-/// \brief This operation attempts to call a member function which the component provides
-/// to internally store whether or not the component triggered a depth change when it
-/// was push to the call-stack or when it was popped from the call-stack
-template <typename T>
-struct set_depth_change;
+/// \brief This operation attempts to call a member function which provides whether or not
+/// the component pushed to storage at a depth of zero.
+template <typename T, bool DefaultValue>
+struct get_is_flat
+{
+    TIMEMORY_DEFAULT_OBJECT(get_is_flat)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(const Up& obj) const
+    {
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(const Up& obj, int) -> decltype(obj.get_is_flat())
+    {
+        return obj.get_is_flat();
+    }
+
+    template <typename Up>
+    static auto sfinae(const Up&, ...) -> bool
+    {
+        return DefaultValue;
+    }
+};
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct tim::operation::set_is_flat
+/// \struct tim::operation::get_is_invalid
+/// \tparam T Component type
+/// \tparam DefaultValue The value to return if the member function is not provided
+///
+/// \brief This operation attempts to call a member function which provides whether or not
+/// the component is in a valid state for data access and updates.
+template <typename T, bool DefaultValue>
+struct get_is_invalid
+{
+    TIMEMORY_DEFAULT_OBJECT(get_is_invalid)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(const Up& obj) const
+    {
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(const Up& obj, int) -> decltype(obj.get_is_invalid())
+    {
+        return obj.get_is_invalid();
+    }
+
+    template <typename Up>
+    static auto sfinae(const Up&, ...) -> bool
+    {
+        return DefaultValue;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::get_is_on_stack
+/// \tparam T Component type
+/// \tparam DefaultValue The value to return if the member function is not provided
+///
+/// \brief This operation attempts to call a member function which provides whether or not
+/// the component is in a valid state for data access and updates.
+template <typename T, bool DefaultValue>
+struct get_is_on_stack
+{
+    TIMEMORY_DEFAULT_OBJECT(get_is_on_stack)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(const Up& obj) const
+    {
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(const Up& obj, int) -> decltype(obj.get_is_on_stack())
+    {
+        return obj.get_is_on_stack();
+    }
+
+    template <typename Up>
+    static auto sfinae(const Up&, ...) -> bool
+    {
+        return DefaultValue;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::get_depth
 /// \tparam T Component type
 ///
-/// \brief This operation attempts to call a member function which the component provides
-/// to internally store whether or not the component triggered a depth change when it
-/// was push to the call-stack or when it was popped from the call-stack
+/// \brief This operation attempts to call a member function which provides a depth value.
 template <typename T>
-struct set_is_flat;
+struct get_depth
+{
+    TIMEMORY_DEFAULT_OBJECT(get_depth)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(Up&& obj) const
+    {
+        return sfinae(std::forward<Up>(obj), 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(Up&& obj, int) -> decltype(std::forward<Up>(obj).get_depth())
+    {
+        return std::forward<Up>(obj).get_depth();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&& obj, int) -> decltype(std::forward<Up>(obj)->get_depth())
+    {
+        return std::forward<Up>(obj)->get_depth();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&&, ...) -> bool
+    {
+        return 0;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::get_storage
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which provides a pointer to
+/// the data storage structure for a component which should be updated for
+/// aggregation/logging.
+template <typename T>
+struct get_storage
+{
+    TIMEMORY_DEFAULT_OBJECT(get_storage)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(Up&& obj) const
+    {
+        return sfinae(std::forward<Up>(obj), 0);
+    }
+
+private:
+    template <typename Up>
+    auto sfinae(Up&& obj, int) -> decltype(std::forward<Up>(obj).get_storage()) const
+    {
+        return std::forward<Up>(obj).get_storage();
+    }
+
+    template <typename Up>
+    auto sfinae(Up&&, ...) const -> std::nullptr_t
+    {
+        return nullptr;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::get_iterator
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which provides a pointer to
+/// a component which exists in storage.
+template <typename T>
+struct get_iterator
+{
+    TIMEMORY_DEFAULT_OBJECT(get_iterator)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(Up&& obj) const
+    {
+        return sfinae(std::forward<Up>(obj), 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(Up&& obj, int) -> decltype(std::forward<Up>(obj).get_iterator())
+    {
+        return std::forward<Up>(obj).get_iterator();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&&, ...) -> std::nullptr_t
+    {
+        return nullptr;
+    }
+};
 //
 //--------------------------------------------------------------------------------------//
 //
