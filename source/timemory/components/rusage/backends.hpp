@@ -101,17 +101,7 @@ check_rusage_call(int ret, const char* _func)
 //
 struct rusage_cache
 {
-#if defined(TIMEMORY_UNIX)
-    using rusage_t = struct rusage;
-
-    rusage_cache()
-    {
-        check_rusage_call(getrusage(get_rusage_type(), &m_data), __FUNCTION__);
-    }
-#else
-    rusage_cache() = default;
-#endif
-
+    rusage_cache() { update(); }
     ~rusage_cache() = default;
 
     rusage_cache(const rusage_cache&) = delete;
@@ -120,18 +110,27 @@ struct rusage_cache
     rusage_cache(rusage_cache&&) noexcept = default;
     rusage_cache& operator=(rusage_cache&&) noexcept = default;
 
-    TIMEMORY_NODISCARD inline int64_t get_peak_rss() const;
-    TIMEMORY_NODISCARD inline int64_t get_num_io_in() const;
-    TIMEMORY_NODISCARD inline int64_t get_num_io_out() const;
-    TIMEMORY_NODISCARD inline int64_t get_num_minor_page_faults() const;
-    TIMEMORY_NODISCARD inline int64_t get_num_major_page_faults() const;
-    TIMEMORY_NODISCARD inline int64_t get_num_voluntary_context_switch() const;
-    TIMEMORY_NODISCARD inline int64_t get_num_priority_context_switch() const;
-    TIMEMORY_NODISCARD inline int64_t get_user_mode_time() const;
-    TIMEMORY_NODISCARD inline int64_t get_kernel_mode_time() const;
+    inline void update()
+    {
+#if defined(TIMEMORY_UNIX)
+        check_rusage_call(getrusage(get_rusage_type(), &m_data), __FUNCTION__);
+#endif
+    }
+
+    inline int64_t get_peak_rss() const;
+    inline int64_t get_num_io_in() const;
+    inline int64_t get_num_io_out() const;
+    inline int64_t get_num_minor_page_faults() const;
+    inline int64_t get_num_major_page_faults() const;
+    inline int64_t get_num_voluntary_context_switch() const;
+    inline int64_t get_num_priority_context_switch() const;
+    inline int64_t get_user_mode_time() const;
+    inline int64_t get_kernel_mode_time() const;
 
 #if defined(TIMEMORY_UNIX)
 private:
+    using rusage_t = struct rusage;
+
     rusage_t m_data;
 #endif
 };
