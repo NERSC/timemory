@@ -37,13 +37,13 @@ def fib(n):
 
 @profile(["wall_clock", "peak_rss", "global_bundle"])
 def run_profile(n):
-    """ Run full profiler """
+    """Run full profiler"""
     return fib(int(n))
 
 
 @auto_timer()
 def run_auto_timer(n):
-    """ Decorator and context manager for high-level pre-defined collection """
+    """Decorator and context manager for high-level pre-defined collection"""
     fib(n)
     with auto_timer(key="auto_timer_ctx_manager"):
         fib(n)
@@ -51,7 +51,7 @@ def run_auto_timer(n):
 
 @marker(["wall_clock", "peak_rss", "global_bundle"])
 def run_marker(n):
-    """ Decorator and context manager for high-level custom collection """
+    """Decorator and context manager for high-level custom collection"""
     fib(n)
     with auto_tuple(get_config(), key="auto_tuple_ctx_manager"):
         fib(n)

@@ -230,6 +230,8 @@ struct set_depth_change
     template <typename Up>
     TIMEMORY_HOT auto operator()(Up& obj, bool v) const
     {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
         return sfinae(obj, 0, v);
     }
 
@@ -271,6 +273,8 @@ struct set_is_flat
     template <typename Up>
     TIMEMORY_HOT auto operator()(Up& obj, bool v) const
     {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
         return sfinae(obj, 0, v);
     }
 
@@ -311,6 +315,8 @@ struct set_is_on_stack
     template <typename Up>
     TIMEMORY_HOT auto operator()(Up& obj, bool v) const
     {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
         return sfinae(obj, 0, v);
     }
 
@@ -337,6 +343,8 @@ struct set_is_invalid
     template <typename Up>
     TIMEMORY_HOT auto operator()(Up& obj, bool v) const
     {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
         return sfinae(obj, 0, v);
     }
 
@@ -391,6 +399,34 @@ private:
 
     template <typename Up>
     TIMEMORY_INLINE auto sfinae(Tp&, long, Up&&) const
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct set_is_running
+{
+    TIMEMORY_DEFAULT_OBJECT(set_is_running)
+
+    template <typename Up>
+    TIMEMORY_HOT auto operator()(Up& obj, bool v) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        return sfinae(obj, 0, v);
+    }
+
+private:
+    template <typename Up>
+    static TIMEMORY_HOT auto sfinae(Up& obj, int, bool v)
+        -> decltype(obj.set_is_running(v))
+    {
+        return obj.set_is_running(v);
+    }
+
+    template <typename Up>
+    static TIMEMORY_INLINE auto sfinae(Up&, long, bool)
     {}
 };
 //

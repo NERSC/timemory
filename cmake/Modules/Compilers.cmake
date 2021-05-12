@@ -571,12 +571,13 @@ foreach(LANG C CXX CUDA)
 
     elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "NVIDIA")
 
-        SET_COMPILER_VAR(       NVIDIA               1)
+        # NVCC
+        SET_COMPILER_VAR(       NVIDIA              1)
 
     endif()
 
     # set other to no
-    foreach(TYPE GNU INTEL INTEL_ICC INTEL_ICPC APPLE_CLANG CLANG PGI XLC HP_ACC MIPS MSVC)
+    foreach(TYPE GNU INTEL INTEL_ICC INTEL_ICPC APPLE_CLANG CLANG PGI XLC HP_ACC MIPS MSVC NVIDIA)
         if(NOT DEFINED CMAKE_${LANG}_COMPILER_IS_${TYPE})
             SET_COMPILER_VAR(${TYPE} 0)
         endif()

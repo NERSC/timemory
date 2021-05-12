@@ -232,9 +232,9 @@ public:
         return data_type::load(get_is_transient());
     }
 
-protected:
     static base_storage_type* get_storage();
 
+protected:
     Type& plus_oper(const Type& rhs);
     Type& minus_oper(const Type& rhs);
     Type& multiply_oper(const Type& rhs);

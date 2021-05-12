@@ -23,6 +23,7 @@ exclude = '''
     | spack
     | docker
     | docs
+    | hatchet
   )/
   | cmake/Templates/console-script.py.in
 )

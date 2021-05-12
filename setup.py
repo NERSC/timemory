@@ -15,10 +15,11 @@ if os.environ.get("CRAYPE_VERSION") is not None:
     os.environ["CRAYPE_LINK_TYPE"] = "dynamic"
 
 cmake_args = [
-    "-DPYTHON_EXECUTABLE={}".format(sys.executable),
-    "-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON",
-    "-DTIMEMORY_USE_PYTHON=ON",
-    "-DTIMEMORY_BUILD_PYTHON=ON",
+    "-DPYTHON_EXECUTABLE:FILEPATH={}".format(sys.executable),
+    "-DPython3_EXECUTABLE:FILEPATH={}".format(sys.executable),
+    "-DCMAKE_INSTALL_RPATH_USE_LINK_PATH:BOOL=ON",
+    "-DTIMEMORY_USE_PYTHON:BOOL=ON",
+    "-DTIMEMORY_BUILD_PYTHON:BOOL=ON",
 ]
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("-h", "--help", help="Print help", action="store_true")

@@ -57,7 +57,7 @@ import sys
 
 
 def _get_label(_fname):
-    """ Generates a label for log messages """
+    """Generates a label for log messages"""
     _lbl = os.path.basename(_fname)
     if "." in _lbl:
         return _lbl[0 : (_lbl.find("."))]
@@ -65,7 +65,7 @@ def _get_label(_fname):
 
 
 def _get_filename(_file, _fext):
-    """ Ensures an output file has a certain extension """
+    """Ensures an output file has a certain extension"""
     if _file is None or _fext is None:
         return _file
     else:
@@ -77,7 +77,7 @@ def _get_filename(_file, _fext):
 
 
 def _svg_to_png(out, svg_code=None, svg_file=None):
-    """ Writes an SVG to a PNG """
+    """Writes an SVG to a PNG"""
     try:
         from cairosvg import svg2png
 
@@ -101,7 +101,7 @@ def _svg_to_png(out, svg_code=None, svg_file=None):
 
 
 def load(data, *_args, **_kwargs):
-    """ Loads a graphframe """
+    """Loads a graphframe"""
     from timemory import hatchet
     import hatchet as ht
 
@@ -111,7 +111,7 @@ def load(data, *_args, **_kwargs):
 
 
 def match(data, pattern, field="name"):
-    """ Find the graphframes which fully match a regular expression """
+    """Find the graphframes which fully match a regular expression"""
     import re
 
     prog = re.compile(pattern)
@@ -126,7 +126,7 @@ def match(data, pattern, field="name"):
 
 
 def search(data, pattern, field="name"):
-    """ Find the graphframes with substring that matches regular expression """
+    """Find the graphframes with substring that matches regular expression"""
     import re
 
     prog = re.compile(pattern)
@@ -211,7 +211,7 @@ def expression(data, math_expr, metric="sum.inc"):
 
 
 def sort(data, metric="sum", ascending=False):
-    """ Sort one or more graphframes by a metric """
+    """Sort one or more graphframes by a metric"""
 
     def _generate(itr, _metric, _ascending):
         # try importing from real hatchet
@@ -249,7 +249,7 @@ def sort(data, metric="sum", ascending=False):
 
 
 def group(data, metric, field="name", ascending=False):
-    """ Generate a flat profile """
+    """Generate a flat profile"""
 
     def _generate(itr, _metric, _field, _ascending):
         # Drop all index levels in the DataFrame except ``node``.
@@ -270,7 +270,7 @@ def group(data, metric, field="name", ascending=False):
 
 
 def add(data):
-    """ Adds two or more graphframes """
+    """Adds two or more graphframes"""
     obj = None
     for itr in data:
         if obj is None:
@@ -281,7 +281,7 @@ def add(data):
 
 
 def subtract(data):
-    """ Subtracts two or more graphframes """
+    """Subtracts two or more graphframes"""
     obj = None
     for itr in data:
         if obj is None:
@@ -292,7 +292,7 @@ def subtract(data):
 
 
 def unify(data):
-    """ Finds unity between two or more graphframes """
+    """Finds unity between two or more graphframes"""
     obj = None
     for itr in data:
         if obj is None:
@@ -358,7 +358,7 @@ def dump_entity(data, functor, file=None, fext=None):
 
 
 def dump_tree(data, metric, file=None, echo_dart=False):
-    """ Dumps data as a tree to stdout or file """
+    """Dumps data as a tree to stdout or file"""
     _files = dump_entity(data, lambda x: x.tree(metric), file, ".txt")
     for itr in _files:
         if itr is not None and echo_dart is True:
@@ -371,7 +371,7 @@ def dump_tree(data, metric, file=None, echo_dart=False):
 
 
 def dump_dot(data, metric, file=None, echo_dart=False):
-    """ Dumps data as a dot to stdout or file """
+    """Dumps data as a dot to stdout or file"""
     from timemory.common import popen, dart_measurement_file, which
 
     _files = dump_entity(data, lambda x: x.to_dot(metric), file, ".dot")
@@ -396,7 +396,7 @@ def dump_dot(data, metric, file=None, echo_dart=False):
 
 
 def dump_flamegraph(data, metric, file=None, echo_dart=False):
-    """ Dumps a flamegraph file """
+    """Dumps a flamegraph file"""
     from timemory.common import (
         popen,
         get_bin_script,
@@ -462,7 +462,7 @@ def dump_flamegraph(data, metric, file=None, echo_dart=False):
 
 
 def dump_tabulate(dtype, data, metric, file=None, echo_dart=False):
-    """ Dumps a non-graphframe """
+    """Dumps a non-graphframe"""
 
     from tabulate import tabulate
 
@@ -499,7 +499,7 @@ def dump_tabulate(dtype, data, metric, file=None, echo_dart=False):
 
 
 def dump_unknown(data, metric, file=None, echo_dart=False):
-    """ Dumps a non-graphframe """
+    """Dumps a non-graphframe"""
     _files = dump_entity(data, lambda x: x, file, ".txt")
     for itr in _files:
         if itr is not None and echo_dart is True:

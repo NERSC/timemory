@@ -55,12 +55,12 @@ namespace factory
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Label, typename... Args,
+template <typename Tp, typename... Args,
           enable_if_t<concepts::is_wrapper<Tp>::value, int> = 0>
 static auto
-create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
+create_heap_variadic(Args... args)
 {
-    return new Tp{ std::forward<Label>(_label), _scope, std::forward<Args>(args)... };
+    return new Tp{ std::move(args)... };
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -87,7 +87,7 @@ enable_if_t<!concepts::is_wrapper<Toolset>::value && trait::is_available<Toolset
             opaque>
 get_opaque(scope::config _scope)
 {
-    opaque _obj = Toolset::get_opaque(_scope);
+    opaque _obj = Toolset::get_opaque(std::move(_scope));
 
     // this is not in base-class impl
     _obj.m_init = []() { operation::init_storage<Toolset>{}; };
@@ -119,14 +119,14 @@ get_opaque(scope::config _scope, Args... args)
 
     _obj.m_init = []() {};
 
-    auto _setup = [_scope, &args...](void* v_result, const string_view_t& _prefix,
-                                     scope::config _arg_scope) {
+    auto _setup = [=](void* v_result, const string_view_t& _prefix,
+                      scope::config _arg_scope) {
         DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset_t* _result = static_cast<Toolset_t*>(v_result);
         if(_result == nullptr)
         {
-            _result = create_heap_variadic<Toolset_t>(_prefix, _scope + _arg_scope,
-                                                      std::move(args)...);
+            _result =
+                create_heap_variadic<Toolset_t>(_prefix, _scope + _arg_scope, args...);
         }
         else
         {
