@@ -67,7 +67,8 @@ static std::function<void()> end_cb   = [] {};
 #define CHECK_WORKING()                                                                  \
     if(!tim::papi::working())                                                            \
     {                                                                                    \
-        printf("Skipping test because PAPI is not working\n");                           \
+        printf("Skipping %s because PAPI is not working\n",                              \
+               details::get_test_name().c_str());                                        \
         return;                                                                          \
     }
 
@@ -75,7 +76,8 @@ static std::function<void()> end_cb   = [] {};
     CHECK_WORKING();                                                                     \
     if(!tim::trait::is_available<type>::value)                                           \
     {                                                                                    \
-        printf("Skipping test because either component is not available\n");             \
+        printf("skipping %s because %s is not available\n",                              \
+               details::get_test_name().c_str(), tim::demangle<type>().c_str());         \
         return;                                                                          \
     }
 

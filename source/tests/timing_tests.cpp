@@ -39,12 +39,16 @@ using namespace tim::component;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
-static const double util_tolerance  = 2.5;
+static const double util_tolerance  = 5.0;
 static const double timer_tolerance = 0.025;
 
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \
-        return;
+    {                                                                                    \
+        printf("skipping %s because %s is not available\n",                              \
+               details::get_test_name().c_str(), tim::demangle<type>().c_str());         \
+        return;                                                                          \
+    }
 
 //--------------------------------------------------------------------------------------//
 namespace details
@@ -146,7 +150,7 @@ TEST_F(timing_tests, wall_timer)
 {
     CHECK_AVAILABLE(wall_clock);
 
-    wall_clock obj;
+    wall_clock obj{};
     obj.start();
     details::do_sleep(1000);
     obj.stop();
@@ -171,7 +175,7 @@ TEST_F(timing_tests, wall_timer)
 TEST_F(timing_tests, monotonic_timer)
 {
     CHECK_AVAILABLE(monotonic_clock);
-    monotonic_clock obj;
+    monotonic_clock obj{};
     obj.start();
     details::do_sleep(1000);
     obj.stop();
@@ -186,7 +190,7 @@ TEST_F(timing_tests, monotonic_timer)
 TEST_F(timing_tests, monotonic_raw_timer)
 {
     CHECK_AVAILABLE(monotonic_raw_clock);
-    monotonic_raw_clock obj;
+    monotonic_raw_clock obj{};
     obj.start();
     details::do_sleep(1000);
     obj.stop();
@@ -201,7 +205,7 @@ TEST_F(timing_tests, monotonic_raw_timer)
 TEST_F(timing_tests, system_timer)
 {
     CHECK_AVAILABLE(system_clock);
-    system_clock obj;
+    system_clock obj{};
     obj.start();
     std::thread t(details::do_sleep, 1000);
     t.join();
@@ -217,7 +221,7 @@ TEST_F(timing_tests, system_timer)
 TEST_F(timing_tests, user_timer)
 {
     CHECK_AVAILABLE(user_clock);
-    user_clock obj;
+    user_clock obj{};
     obj.start();
     std::thread t(details::do_sleep, 1000);
     t.join();
@@ -233,9 +237,10 @@ TEST_F(timing_tests, user_timer)
 TEST_F(timing_tests, cpu_timer)
 {
     CHECK_AVAILABLE(cpu_clock);
-    cpu_clock obj;
+    cpu_clock obj{};
     obj.start();
-    details::consume(1000);
+    for(int i = 0; i < 10; ++i)
+        details::consume(100);
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
@@ -248,10 +253,13 @@ TEST_F(timing_tests, cpu_timer)
 TEST_F(timing_tests, cpu_utilization)
 {
     CHECK_AVAILABLE(cpu_util);
-    cpu_util obj;
+    cpu_util obj{};
     obj.start();
-    details::consume(750);
-    details::do_sleep(250);
+    for(int i = 0; i < 10; ++i)
+    {
+        details::consume(75);
+        details::do_sleep(25);
+    }
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
@@ -264,7 +272,7 @@ TEST_F(timing_tests, cpu_utilization)
 TEST_F(timing_tests, thread_cpu_timer)
 {
     CHECK_AVAILABLE(thread_cpu_clock);
-    thread_cpu_clock obj;
+    thread_cpu_clock obj{};
     obj.start();
     std::thread t(details::fibonacci, 43);
     t.join();
@@ -280,11 +288,19 @@ TEST_F(timing_tests, thread_cpu_timer)
 TEST_F(timing_tests, thread_cpu_utilization)
 {
     CHECK_AVAILABLE(thread_cpu_util);
-    thread_cpu_util obj;
+    auto _consume = []() {
+        for(int i = 0; i < 10; ++i)
+            details::consume(200);
+    };
+
+    thread_cpu_util obj{};
     obj.start();
-    std::thread t(details::consume, 2000);
-    details::consume(1000);
-    details::do_sleep(1000);
+    std::thread t{ _consume };
+    for(int i = 0; i < 10; ++i)
+    {
+        details::consume(100);
+        details::do_sleep(100);
+    }
     t.join();
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
@@ -298,9 +314,10 @@ TEST_F(timing_tests, thread_cpu_utilization)
 TEST_F(timing_tests, process_cpu_timer)
 {
     CHECK_AVAILABLE(process_cpu_clock);
-    process_cpu_clock obj;
+    process_cpu_clock obj{};
     obj.start();
-    details::consume(1000);
+    for(int i = 0; i < 10; ++i)
+        details::consume(100);
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
@@ -314,11 +331,19 @@ TEST_F(timing_tests, process_cpu_timer)
 TEST_F(timing_tests, process_cpu_utilization)
 {
     CHECK_AVAILABLE(process_cpu_util);
-    process_cpu_util obj;
+    auto _consume = []() {
+        for(int i = 0; i < 10; ++i)
+            details::consume(200);
+    };
+
+    process_cpu_util obj{};
     obj.start();
-    std::thread t(details::consume, 2000);
-    details::consume(1000);
-    details::do_sleep(1000);
+    std::thread t{ _consume };
+    for(int i = 0; i < 10; ++i)
+    {
+        details::consume(100);
+        details::do_sleep(100);
+    }
     t.join();
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"

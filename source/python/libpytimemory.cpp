@@ -753,7 +753,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             "Get timemory's hash for a key (string)", py::arg("key"));
     //----------------------------------------------------------------------------------//
     tim.def("get_hash_identifier",
-            py::overload_cast<tim::hash_value_type>(&tim::get_hash_identifier),
+            py::overload_cast<tim::hash_value_t>(&tim::get_hash_identifier),
             "Get the string associated with a hash identifer", py::arg("hash_id"));
     //----------------------------------------------------------------------------------//
     tim.def("add_hash_id", [](const std::string& _id) { return tim::add_hash_id(_id); },

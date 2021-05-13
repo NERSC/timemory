@@ -105,20 +105,20 @@ protected:
     // protected construction / destruction section
     TIMEMORY_DEFAULT_OBJECT(common_base_bundle)
 
-    common_base_bundle(scope::config&& _config, hash_value_type _hash)
+    common_base_bundle(scope::config&& _config, hash_value_t _hash)
     : m_scope(std::move(_config))
     , m_hash(_hash)
     {}
 
 public:
     // public member function section
-    hash_value_type hash() const { return m_hash; }
-    int64_t         laps() const { return m_laps; }
-    bool            store() const { return m_store(); }
-    std::string key() const { return std::string{ get_hash_identifier_fast(m_hash) }; }
+    hash_value_t hash() const { return m_hash; }
+    int64_t      laps() const { return m_laps; }
+    bool         store() const { return m_store(); }
+    std::string  key() const { return std::string{ get_hash_identifier_fast(m_hash) }; }
 
     bool                 get_store() const { return m_store(); }
-    hash_value_type      get_hash() const { return m_hash; }
+    hash_value_t         get_hash() const { return m_hash; }
     int64_t              get_laps() const { return m_laps; }
     const scope::config& get_scope() const { return m_scope; }
 
@@ -140,7 +140,7 @@ public:
 
 protected:
     scope::config         m_scope  = scope::get_default();
-    hash_value_type       m_hash   = 0;
+    hash_value_t          m_hash   = 0;
     int64_t               m_laps   = 0;
     utility::bit_flags<6> m_config = {};
 
@@ -250,7 +250,7 @@ public:
     }
 
 protected:
-    using ctor_params_t = std::tuple<hash_value_type, bool, scope::config>;
+    using ctor_params_t = std::tuple<hash_value_t, bool, scope::config>;
 
     // protected construction / destruction section
     template <typename U = impl_type>
@@ -308,22 +308,22 @@ protected:
 protected:
     // protected static function section [HANDLERS]
     template <typename... T>
-    static hash_value_type handle_key(type_list<T...>, hash_value_type _hash)
+    static hash_value_t handle_key(type_list<T...>, hash_value_t _hash)
     {
         return _hash;
     }
 
     // HAS SIZE
     template <typename... T>
-    static hash_value_type handle_key(type_list<T...>, const string_t& _key,
-                                      enable_if_t<sizeof...(T) != 0, int> = {})
+    static hash_value_t handle_key(type_list<T...>, const string_t& _key,
+                                   enable_if_t<sizeof...(T) != 0, int> = {})
     {
         return (tim::variadic::impl::global_enabled()) ? add_hash_id(_key) : 0;
     }
 
     template <typename... T>
-    static hash_value_type handle_key(type_list<T...>, const captured_location_t& _loc,
-                                      enable_if_t<sizeof...(T) != 0, int> = {})
+    static hash_value_t handle_key(type_list<T...>, const captured_location_t& _loc,
+                                   enable_if_t<sizeof...(T) != 0, int> = {})
     {
         return _loc.get_hash();
     }
@@ -367,15 +367,15 @@ protected:
 
     // ZERO SIZE
     template <typename... T>
-    static hash_value_type handle_key(type_list<T...>, const string_t&,
-                                      enable_if_t<sizeof...(T) == 0, int> = {})
+    static hash_value_t handle_key(type_list<T...>, const string_t&,
+                                   enable_if_t<sizeof...(T) == 0, int> = {})
     {
         return 0;
     }
 
     template <typename... T>
-    static hash_value_type handle_key(type_list<T...>, const captured_location_t&,
-                                      enable_if_t<sizeof...(T) == 0, int> = {})
+    static hash_value_t handle_key(type_list<T...>, const captured_location_t&,
+                                   enable_if_t<sizeof...(T) == 0, int> = {})
     {
         return 0;
     }

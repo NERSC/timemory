@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "timemory/macros/language.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <tuple>
@@ -347,6 +349,30 @@ TIMEMORY_IMPL_IS_CONCEPT(external_function_wrapper)
 /// };
 /// \endcode
 TIMEMORY_IMPL_IS_CONCEPT(phase_id)
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_string_type
+/// \brief concept that specifies that a component type wraps external functions
+///
+TIMEMORY_IMPL_IS_CONCEPT(string_type)
+
+template <>
+struct is_string_type<std::string> : true_type
+{};
+
+template <>
+struct is_string_type<char*> : true_type
+{};
+
+template <>
+struct is_string_type<const char*> : true_type
+{};
+
+#if defined(CXX17)
+template <>
+struct is_string_type<std::string_view> : true_type
+{};
+#endif
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::has_gotcha

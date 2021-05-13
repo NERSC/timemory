@@ -70,15 +70,33 @@ struct decode
         return tokenized_demangle(demangle_backtrace(demangle_hash_identifier(inp)));
     }
 
-    auto operator()(const graph_hash_map_ptr_t&   _hash_map,
-                    const graph_hash_alias_ptr_t& _hash_alias, hash_value_type _hash_id)
+    auto operator()(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                    hash_value_t _hash_id)
     {
+        auto        _resolvers = *get_hash_resolvers();
+        std::string _resolved{};
+        for(auto& itr : _resolvers)
+        {
+            if(itr(_hash_id, _resolved))
+                return tokenized_demangle(demangle_hash_identifier(_resolved));
+            return _resolved;
+        }
+
         return tokenized_demangle(demangle_hash_identifier(
             get_hash_identifier(_hash_map, _hash_alias, _hash_id)));
     }
 
-    auto operator()(hash_value_type _hash_id)
+    auto operator()(hash_value_t _hash_id)
     {
+        auto        _resolvers = *get_hash_resolvers();
+        std::string _resolved{};
+        for(auto& itr : _resolvers)
+        {
+            if(itr(_hash_id, _resolved))
+                return tokenized_demangle(demangle_hash_identifier(_resolved));
+            return _resolved;
+        }
+
         return tokenized_demangle(
             demangle_hash_identifier(get_hash_identifier(_hash_id)));
     }

@@ -178,8 +178,8 @@ TEST_F(macro_tests, marker_auto_type)
     EXPECT_TRUE(auto_check) << same.str();
     EXPECT_FALSE(comp_check) << same.str();
     EXPECT_GE(TIMEMORY_ESC(timemory_variable_156.get<wall_clock>()->get()), 0.9);
-    EXPECT_GE(TIMEMORY_ESC(timemory_variable_156.get<cpu_clock>()->get()), 0.7);
-    EXPECT_GE(TIMEMORY_ESC(timemory_variable_156.get<cpu_util>()->get()), 70.0);
+    EXPECT_GE(TIMEMORY_ESC(timemory_variable_156.get<cpu_clock>()->get()), 0.65);
+    EXPECT_GE(TIMEMORY_ESC(timemory_variable_156.get<cpu_util>()->get()), 65.0);
 
     if(key != expected.str())
         FAIL() << "expected key: \"" << expected.str() << "\" vs. actual key: \"" << key;

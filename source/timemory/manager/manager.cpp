@@ -321,7 +321,7 @@ manager::exit_hook()
         if(master_count > 0)
         {
             auto master_manager =
-                get_shared_ptr_pair_master_instance<manager, TIMEMORY_API>();
+                get_shared_ptr_pair_main_instance<manager, TIMEMORY_API>();
             if(master_manager)
             {
                 master_manager->internal_write_metadata("manager::exit_hook");
@@ -807,7 +807,7 @@ manager::instance()
 TIMEMORY_MANAGER_LINKAGE(manager::pointer_t)
 manager::master_instance()
 {
-    static auto _pinst = get_shared_ptr_pair_master_instance<manager, TIMEMORY_API>();
+    static auto _pinst = get_shared_ptr_pair_main_instance<manager, TIMEMORY_API>();
     manager::f_manager_persistent_data().master_instance = _pinst;
     return _pinst;
 }

@@ -64,7 +64,7 @@ struct push_node
 
     TIMEMORY_DEFAULT_OBJECT(push_node)
 
-    TIMEMORY_HOT push_node(type& obj, scope::config _scope, hash_value_type _hash)
+    TIMEMORY_HOT push_node(type& obj, scope::config _scope, hash_value_t _hash)
     {
         (*this)(obj, _scope, _hash);
     }
@@ -74,7 +74,7 @@ struct push_node
     {}
 
     TIMEMORY_HOT auto operator()(type& obj, scope::config _scope,
-                                 hash_value_type _hash) const
+                                 hash_value_t _hash) const
     {
         init_storage<Tp>::init();
         return sfinae(obj, 0, 0, 0, _scope, _hash);
@@ -107,7 +107,7 @@ private:
               typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
     TIMEMORY_HOT auto sfinae(Up& _obj, int, long, long, scope::config _scope,
-                             hash_value_type _hash,
+                             hash_value_t _hash,
                              enable_if_t<!storage_is_nullptr_t<Up>(), int> = 0) const
         -> decltype(_obj.get_iterator())
     {

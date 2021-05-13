@@ -106,17 +106,14 @@ public:
     static this_type* base_instance();
 
 public:
-    TIMEMORY_NODISCARD const graph_hash_map_ptr_t& get_hash_ids() const
-    {
-        return m_hash_ids;
-    }
-    TIMEMORY_NODISCARD const graph_hash_alias_ptr_t& get_hash_aliases() const
+    TIMEMORY_NODISCARD const hash_map_ptr_t& get_hash_ids() const { return m_hash_ids; }
+    TIMEMORY_NODISCARD const hash_alias_ptr_t& get_hash_aliases() const
     {
         return m_hash_aliases;
     }
 
-    hash_value_type add_hash_id(const std::string& _prefix);
-    void            add_hash_id(uint64_t _lhs, uint64_t _rhs);
+    hash_value_t add_hash_id(const std::string& _prefix);
+    void         add_hash_id(uint64_t _lhs, uint64_t _rhs);
 
     TIMEMORY_NODISCARD bool is_initialized() const { return m_initialized; }
     TIMEMORY_NODISCARD int64_t instance_id() const { return m_instance_id; }
@@ -150,8 +147,8 @@ protected:
     int64_t                   m_instance_id  = -1;                         // NOLINT
     int64_t                   m_thread_idx   = threading::get_id();        // NOLINT
     string_t                  m_label        = "";                         // NOLINT
-    graph_hash_map_ptr_t      m_hash_ids     = ::tim::get_hash_ids();      // NOLINT
-    graph_hash_alias_ptr_t    m_hash_aliases = ::tim::get_hash_aliases();  // NOLINT
+    hash_map_ptr_t            m_hash_ids     = ::tim::get_hash_ids();      // NOLINT
+    hash_alias_ptr_t          m_hash_aliases = ::tim::get_hash_aliases();  // NOLINT
     std::shared_ptr<manager>  m_manager      = {};                         // NOLINT
     std::shared_ptr<settings> m_settings     = {};                         // NOLINT
 };

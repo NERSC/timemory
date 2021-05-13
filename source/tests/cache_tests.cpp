@@ -679,14 +679,26 @@ TEST_F(cache_tests, complete_tuple)
     // these should use cache
     if(tim::trait::is_available<user_mode_time>::value)
     {
-        EXPECT_LT(_bundle.get<user_mode_time>()->get(),
-                  1.05 * bundle->get<user_clock>()->get());
+        // if the user mode time is less than the resolution of user_clock
+        // then this test will fail
+        auto _usrclk_val = bundle->get<user_clock>()->get();
+        if(_usrclk_val >= 1.0e-3)
+        {
+            EXPECT_NEAR(_bundle.get<user_mode_time>()->get(), _usrclk_val,
+                        0.1 * _usrclk_val);
+        }
     }
 
     if(tim::trait::is_available<kernel_mode_time>::value)
     {
-        EXPECT_LT(_bundle.get<kernel_mode_time>()->get(),
-                  1.05 * bundle->get<system_clock>()->get());
+        // if the kernel mode time is less than the resolution of system_clock
+        // then this test will fail
+        auto _sysclk_val = bundle->get<system_clock>()->get();
+        if(_sysclk_val >= 1.0e-3)
+        {
+            EXPECT_NEAR(_bundle.get<kernel_mode_time>()->get(), _sysclk_val,
+                        0.5 * _sysclk_val);
+        }
     }
 
     auto fp_storage = tim::storage<data_tracker_floating>::instance()->get();
