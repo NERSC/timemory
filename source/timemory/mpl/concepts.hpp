@@ -24,12 +24,14 @@
 
 #pragma once
 
-#include "timemory/macros/language.hpp"
-
 #include <cstddef>
 #include <cstdint>
 #include <tuple>
 #include <type_traits>
+
+#if __cplusplus >= 201703L  // C++17
+#    include <string_view>
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -368,7 +370,7 @@ template <>
 struct is_string_type<const char*> : true_type
 {};
 
-#if defined(CXX17)
+#if __cplusplus >= 201703L  // C++17
 template <>
 struct is_string_type<std::string_view> : true_type
 {};
