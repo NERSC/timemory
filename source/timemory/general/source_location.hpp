@@ -108,9 +108,9 @@ public:
     struct captured
     {
     public:
-        const result_type&     get() const { return m_result; }
-        const std::string&     get_id() const { return std::get<0>(m_result); }
-        const hash_value_type& get_hash() const { return std::get<1>(m_result); }
+        const result_type&  get() const { return m_result; }
+        const std::string&  get_id() const { return std::get<0>(m_result); }
+        const hash_value_t& get_hash() const { return std::get<1>(m_result); }
 
         explicit captured(result_type _result)
         : m_result(std::move(_result))

@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/compat/macros.h"
+#include "timemory/hash/types.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/concepts.hpp"
@@ -617,12 +618,14 @@ struct config : public data_type
            is_flat<ForceFlatT::value>())
         {
             // printf("compute_hash is tree or flat at %i\n", (int) _depth);
-            _id ^= _depth;
+            _id = get_combined_hash_id(_id, _depth);
+            // _id ^= _depth;
         }
         if(ForceTimeT::value || is_timeline())
         {
             // printf("compute_hash is timeline at %i\n", (int) _depth);
-            _id ^= _counter++;
+            _id = get_combined_hash_id(_id, _counter++);
+            // _id ^= _counter++;
         }
         // printf("compute_hash is %i at depth %i (counter = %i)\n", (int) _id, (int)
         // _depth,

@@ -208,6 +208,7 @@ public:
 
     using base_state::get_depth_change;
     using base_state::get_is_flat;
+    using base_state::get_is_invalid;
     using base_state::get_is_on_stack;
     using base_state::get_is_running;
     using base_state::get_is_transient;
@@ -217,6 +218,7 @@ public:
 
     using base_state::set_depth_change;
     using base_state::set_is_flat;
+    using base_state::set_is_invalid;
     using base_state::set_is_on_stack;
     using base_state::set_is_running;
     using base_state::set_is_transient;
@@ -230,9 +232,9 @@ public:
         return data_type::load(get_is_transient());
     }
 
-protected:
     static base_storage_type* get_storage();
 
+protected:
     Type& plus_oper(const Type& rhs);
     Type& minus_oper(const Type& rhs);
     Type& multiply_oper(const Type& rhs);
@@ -402,12 +404,14 @@ public:
 
     using base_state::get_depth_change;
     using base_state::get_is_flat;
+    using base_state::get_is_invalid;
     using base_state::get_is_on_stack;
     using base_state::get_is_running;
     using base_state::get_is_transient;
 
     using base_state::set_depth_change;
     using base_state::set_is_flat;
+    using base_state::set_is_invalid;
     using base_state::set_is_on_stack;
     using base_state::set_is_running;
     using base_state::set_is_transient;

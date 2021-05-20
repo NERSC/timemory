@@ -501,6 +501,13 @@
         extern template struct echo_measurement<TYPE, trait::echo_enabled<TYPE>::value>; \
         extern template struct extra_serialization<TYPE>;                                \
         extern template struct get<TYPE>;                                                \
+        extern template struct get_is_flat<TYPE, true>;                                  \
+        extern template struct get_is_flat<TYPE, false>;                                 \
+        extern template struct get_is_invalid<TYPE, true>;                               \
+        extern template struct get_is_invalid<TYPE, false>;                              \
+        extern template struct get_is_on_stack<TYPE, true>;                              \
+        extern template struct get_is_on_stack<TYPE, false>;                             \
+        extern template struct get_depth<TYPE, 0>;                                       \
         extern template struct init<TYPE>;                                               \
         extern template struct init_storage<TYPE>;                                       \
         extern template struct is_running<TYPE, true>;                                   \
@@ -518,6 +525,9 @@
         extern template struct serialization<TYPE>;                                      \
         extern template struct set_depth_change<TYPE>;                                   \
         extern template struct set_is_flat<TYPE>;                                        \
+        extern template struct set_is_invalid<TYPE>;                                     \
+        extern template struct set_is_on_stack<TYPE>;                                    \
+        extern template struct set_iterator<TYPE>;                                       \
         extern template struct set_prefix<TYPE>;                                         \
         extern template struct set_scope<TYPE>;                                          \
         extern template struct set_state<TYPE>;                                          \
@@ -574,6 +584,13 @@
         template struct fini<TYPE>;                                                      \
         template struct fini_storage<TYPE>;                                              \
         template struct get<TYPE>;                                                       \
+        template struct get_is_flat<TYPE, true>;                                         \
+        template struct get_is_flat<TYPE, false>;                                        \
+        template struct get_is_invalid<TYPE, true>;                                      \
+        template struct get_is_invalid<TYPE, false>;                                     \
+        template struct get_is_on_stack<TYPE, true>;                                     \
+        template struct get_is_on_stack<TYPE, false>;                                    \
+        template struct get_depth<TYPE, 0>;                                              \
         template struct init<TYPE>;                                                      \
         template struct init_storage<TYPE>;                                              \
         template struct is_running<TYPE, true>;                                          \
@@ -591,6 +608,9 @@
         template struct serialization<TYPE>;                                             \
         template struct set_depth_change<TYPE>;                                          \
         template struct set_is_flat<TYPE>;                                               \
+        template struct set_is_invalid<TYPE>;                                            \
+        template struct set_is_on_stack<TYPE>;                                           \
+        template struct set_iterator<TYPE>;                                              \
         template struct set_prefix<TYPE>;                                                \
         template struct set_scope<TYPE>;                                                 \
         template struct set_state<TYPE>;                                                 \

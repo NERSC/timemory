@@ -70,8 +70,8 @@ def fibonacci(n):
 
 
 def fib(n, instr):
-    if instr == True:
-        with marker(components=["wall_clock"], key="fib"):
+    if instr is True:
+        with marker(components=["wall_clock", "current_peak_rss"], key="fib"):
             return n if n < 2 else (fib(n - 1, True) + fib(n - 2, False))
 
     else:
@@ -92,7 +92,7 @@ def consume(n):
         # try until time point
         while time.time_ns() < (now + (n * 1e6)):
             pass
-    except:
+    except AttributeError:
         now = 1000 * time.time()
         # try until time point
         while (1000 * time.time()) < (now + n):
@@ -107,7 +107,7 @@ def random_entry(vect):
 
 
 # get auto_tuple config
-def get_config(items=["wall_clock"]):
+def get_config(items=["wall_clock", "current_peak_rss"]):
     return [getattr(tim.component, x) for x in items]
 
 
@@ -126,11 +126,13 @@ class TimemoryTimelineTests(unittest.TestCase):
         tim.settings.dart_output = True
         tim.settings.dart_count = 1
         tim.settings.banner = False
+        tim.settings.timing_units = "usec"
+        tim.settings.memory_units = "byte"
 
         tim.settings.parse()
 
         # put one empty marker
-        with marker(components=["wall_clock"], key="dummy"):
+        with marker(components=["wall_clock", "current_peak_rss"], key="dummy"):
             pass
 
     def setUp(self):
@@ -176,12 +178,16 @@ class TimemoryTimelineTests(unittest.TestCase):
         tim.settings.parse()
 
         n = 5
-        with marker(components=["wall_clock"], key=self.shortDescription()):
+        with marker(
+            components=["wall_clock", "current_peak_rss"],
+            key=self.shortDescription(),
+        ):
             for i in range(n):
                 with marker(
-                    components=["wall_clock"], key=self.shortDescription()
+                    components=["wall_clock", "current_peak_rss"],
+                    key=self.shortDescription(),
                 ):
-                    ret = fibonacci(n)
+                    fibonacci(n)
 
         # counts must be == 1
         data = tim.get()["timemory"]["wall_clock"]["ranks"][0]["graph"]
@@ -199,13 +205,17 @@ class TimemoryTimelineTests(unittest.TestCase):
         """timeline"""
         old_data = tim.get()["timemory"]["wall_clock"]["ranks"][0]["graph"]
 
-        n = 5
-        with marker(components=["wall_clock"], key=self.shortDescription()):
+        n = 20
+        with marker(
+            components=["wall_clock", "current_peak_rss"],
+            key=self.shortDescription(),
+        ):
             for i in range(n):
                 with marker(
-                    components=["wall_clock"], key=self.shortDescription()
+                    components=["wall_clock", "current_peak_rss"],
+                    key=self.shortDescription(),
                 ):
-                    ret = fibonacci(n)
+                    fibonacci(n)
 
         # inspect data
         data = tim.get()["timemory"]["wall_clock"]["ranks"][0]["graph"]

@@ -89,7 +89,7 @@ base<Tp, Value>::set_stopped()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-tim::base::storage*
+typename base<Tp, Value>::base_storage_type*
 base<Tp, Value>::get_storage()
 {
     return tim::base::storage::template base_instance<Tp, Value>();

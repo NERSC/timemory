@@ -329,6 +329,10 @@ inline void
 init_threading()
 {
 #if defined(TIMEMORY_USE_PAPI)
+    static bool _threading = settings::papi_threading();
+    if(!_threading)
+        return;
+
     static bool threading_initialized = false;
     if(is_master_thread() && !threading_initialized && working())
     {
@@ -356,8 +360,8 @@ inline void
 init_multiplexing()
 {
 #if defined(TIMEMORY_USE_PAPI)
-    static bool allow_multiplexing = settings::papi_multiplexing();
-    if(!allow_multiplexing)
+    static bool _multiplexing = settings::papi_multiplexing();
+    if(!_multiplexing)
         return;
 
     static bool multiplexing_initialized = false;

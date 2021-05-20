@@ -300,7 +300,7 @@ def write_ctest_notes(fname, path=None, mode="a"):
 
 
 def get_bin_script(fname):
-    """ Returns the path to a script in the internal bin folder """
+    """Returns the path to a script in the internal bin folder"""
     _this_dir = os.path.dirname(__file__)
     _fpath = os.path.join(_this_dir, "bin", fname)
     if os.path.exists(_fpath):

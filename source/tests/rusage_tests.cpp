@@ -61,7 +61,11 @@ static const double byte_tolerance = tot_rw;  // macOS is not dependable
 
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \
-        return;
+    {                                                                                    \
+        printf("skipping %s because %s is not available\n",                              \
+               details::get_test_name().c_str(), tim::demangle<type>().c_str());         \
+        return;                                                                          \
+    }
 
 //--------------------------------------------------------------------------------------//
 namespace details

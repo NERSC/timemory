@@ -119,12 +119,18 @@ install(TARGETS ${LIB_TARGET}
 # build tree
 add_custom_command(TARGET ${LIB_TARGET}
     POST_BUILD
-    BYPRODUCTS  ${PROJECT_BINARY_DIR}/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
     COMMAND ${CMAKE_COMMAND} -E create_symlink
         compiler/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
-        lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        ${PROJECT_BINARY_DIR}/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMENT "Creating library symlink lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}")
+
+if(EXISTS ${PROJECT_BINARY_DIR}/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX})
+    set_source_files_properties(
+        ${PROJECT_BINARY_DIR}/lib${LIB_TARGET}${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+        PROPERTIES
+        GENERATED ON)
+endif()
 
 # install tree
 install(CODE "
@@ -201,12 +207,18 @@ foreach(LIB_TYPE ${_LIB_TYPES})
     # build tree
     add_custom_command(TARGET ${LIB_TARGET}
         POST_BUILD
-        BYPRODUCTS ${PROJECT_BINARY_DIR}/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
         COMMAND ${CMAKE_COMMAND} -E create_symlink
             compiler/libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
-            libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
+            ${PROJECT_BINARY_DIR}/libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         COMMENT "Creating library symlink libtimemory-compiler-instrument${CMAKE_${UC_LIB_TYPE}_LIBRARY_SUFFIX}")
+
+    if(EXISTS ${PROJECT_BINARY_DIR}/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX})
+        set_source_files_properties(
+            ${PROJECT_BINARY_DIR}/libtimemory-compiler-instrument${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}
+            PROPERTIES
+            GENERATED ON)
+    endif()
 
     # install tree
     install(CODE "

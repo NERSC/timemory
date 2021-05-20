@@ -197,13 +197,13 @@ merge<Type, true>::merge(result_type& dst, result_type& src)
 
     //----------------------------------------------------------------------------------//
     //
-    using hash_map_t =
+    using merge_hash_map_t =
         uomap_t<int64_t,
                 uomap_t<uint64_t, uomap_t<uint64_t, uomap_t<std::string, int64_t>>>>;
 
     // this is a look-up table for the index in dst of existing records with same depth +
     // hash + rolling-hash + prefix
-    hash_map_t _hash_table{};
+    merge_hash_map_t _hash_table{};
 
     //----------------------------------------------------------------------------------//
     // add hash-table entries for a new record

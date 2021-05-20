@@ -374,12 +374,15 @@ extern "C"
 {
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_print_help(char* argv0) TIMEMORY_KOKKOSP_POSTFIX;
 
+    TIMEMORY_KOKKOSP_PREFIX void kokkosp_parse_args(int    argc,
+                                                    char** argv) TIMEMORY_KOKKOSP_POSTFIX;
+
+    TIMEMORY_KOKKOSP_PREFIX void kokkosp_declare_metadata(
+        const char* key, const char* value) TIMEMORY_KOKKOSP_POSTFIX;
+
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_init_library(
         const int loadSeq, const uint64_t interfaceVer, const uint32_t devInfoCount,
         void* deviceInfo) TIMEMORY_KOKKOSP_POSTFIX;
-
-    TIMEMORY_KOKKOSP_PREFIX void kokkosp_parse_args(int    argc,
-                                                    char** argv) TIMEMORY_KOKKOSP_POSTFIX;
 
     TIMEMORY_KOKKOSP_PREFIX void kokkosp_finalize_library() TIMEMORY_KOKKOSP_POSTFIX;
 

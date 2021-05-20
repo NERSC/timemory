@@ -798,8 +798,13 @@ settings::initialize_tpls()
 {
     // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
+        bool, papi_threading, TIMEMORY_SETTINGS_KEY("PAPI_THREADING"),
+        "Enable multithreading support when using PAPI", true,
+        strvector_t({ "--timemory-papi-threading" }), -1, 1);
+
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, papi_multiplexing, TIMEMORY_SETTINGS_KEY("PAPI_MULTIPLEXING"),
-        "Enable multiplexing when using PAPI", true,
+        "Enable multiplexing when using PAPI", false,
         strvector_t({ "--timemory-papi-multiplexing" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
@@ -1341,6 +1346,8 @@ TIMEMORY_SETTINGS_MEMBER_DEF(string_t, mpi_thread_type,
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, upcxx_init, TIMEMORY_SETTINGS_KEY("UPCXX_INIT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, upcxx_finalize,
                              TIMEMORY_SETTINGS_KEY("UPCXX_FINALIZE"))
+TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_threading,
+                             TIMEMORY_SETTINGS_KEY("PAPI_THREADING"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_multiplexing,
                              TIMEMORY_SETTINGS_KEY("PAPI_MULTIPLEXING"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_fail_on_error,

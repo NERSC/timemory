@@ -103,6 +103,17 @@ struct add_secondary<Tp, true>
         return sfinae(_rhs, 0, std::forward<Args>(args)...);
     }
 
+    //----------------------------------------------------------------------------------//
+    // if no storage type
+    //
+    template <typename... Args>
+    add_secondary(std::nullptr_t, Args...)
+    {}
+
+    template <typename... Args>
+    auto operator()(std::nullptr_t, Args...)
+    {}
+
 private:
     //----------------------------------------------------------------------------------//
     //  If the component has a add_secondary(Args...) member function
@@ -186,6 +197,17 @@ struct add_secondary<Tp, false>
         return sfinae(_rhs, 0, std::forward<Args>(args)...);
     }
 
+    //----------------------------------------------------------------------------------//
+    // if no storage type
+    //
+    template <typename... Args>
+    add_secondary(std::nullptr_t, Args...)
+    {}
+
+    template <typename... Args>
+    auto operator()(std::nullptr_t, Args...)
+    {}
+
 private:
     //----------------------------------------------------------------------------------//
     //  If the component has a get_secondary() member function
@@ -260,8 +282,10 @@ struct add_secondary
     using string_t  = std::string;
     using base_type = internal::add_secondary<Tp, trait::secondary_data<Tp>::value>;
 
+    TIMEMORY_DEFAULT_OBJECT(add_secondary)
+
     add_secondary(const type& _rhs, typename type::storage_type* _storage)
-    : base_type(_storage, _rhs.get_iterator(), _rhs)
+    : base_type{ _storage, _rhs.get_iterator(), _rhs }
     {}
 
     //----------------------------------------------------------------------------------//
@@ -269,7 +293,7 @@ struct add_secondary
     //
     template <typename Storage, typename Iterator>
     add_secondary(Storage* _storage, Iterator _itr, const type& _rhs)
-    : base_type(_storage, _itr, _rhs)
+    : base_type{ _storage, _itr, _rhs }
     {}
 
     //----------------------------------------------------------------------------------//
@@ -277,7 +301,14 @@ struct add_secondary
     //
     template <typename... Args>
     add_secondary(type& _rhs, Args&&... args)
-    : base_type(_rhs, std::forward<Args>(args)...)
+    : base_type{ _rhs, std::forward<Args>(args)... }
+    {}
+
+    //----------------------------------------------------------------------------------//
+    // add_secondary called without storage
+    //
+    template <typename... Args>
+    add_secondary(std::nullptr_t, Args...)
     {}
 };
 //

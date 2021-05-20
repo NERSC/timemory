@@ -27,7 +27,6 @@
 #include "timemory/plotting/macros.hpp"
 #include "timemory/plotting/types.hpp"
 #include "timemory/settings/declaration.hpp"
-#include "timemory/types.hpp"
 
 #include <initializer_list>
 #include <sstream>

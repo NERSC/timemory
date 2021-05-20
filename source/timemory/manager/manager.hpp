@@ -323,17 +323,17 @@ private:
     auto_lock_ptr_t m_lock = auto_lock_ptr_t{ nullptr };
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
-    graph_hash_map_ptr_t   m_hash_ids           = get_hash_ids();
-    graph_hash_alias_ptr_t m_hash_aliases       = get_hash_aliases();
-    finalizer_list_t       m_finalizer_cleanups = {};
-    finalizer_pmap_t       m_master_cleanup     = {};
-    finalizer_pmap_t       m_worker_cleanup     = {};
-    finalizer_pmap_t       m_master_finalizers  = {};
-    finalizer_pmap_t       m_worker_finalizers  = {};
-    finalizer_void_t       m_pointer_fini       = {};
-    synchronize_list_t     m_synchronize        = {};
-    filemap_t              m_output_files       = {};
-    settings_ptr_t         m_settings           = settings::shared_instance();
+    hash_map_ptr_t     m_hash_ids           = get_hash_ids();
+    hash_alias_ptr_t   m_hash_aliases       = get_hash_aliases();
+    finalizer_list_t   m_finalizer_cleanups = {};
+    finalizer_pmap_t   m_master_cleanup     = {};
+    finalizer_pmap_t   m_worker_cleanup     = {};
+    finalizer_pmap_t   m_master_finalizers  = {};
+    finalizer_pmap_t   m_worker_finalizers  = {};
+    finalizer_void_t   m_pointer_fini       = {};
+    synchronize_list_t m_synchronize        = {};
+    filemap_t          m_output_files       = {};
+    settings_ptr_t     m_settings           = settings::shared_instance();
 
 private:
     struct persistent_data

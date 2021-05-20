@@ -115,11 +115,22 @@ namespace operation
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Up, typename Ap = trait::is_available_t<Up>>
+struct has_data;
+//
 template <typename Up>
-struct has_data
+struct has_data<Up, true_type>
 {
     // shorthand for non-void
     using Vp                    = typename Up::value_type;
+    static constexpr bool value = !std::is_void<Vp>::value;
+};
+//
+template <typename Up>
+struct has_data<Up, false_type>
+{
+    // shorthand for non-void
+    using Vp                    = void;
     static constexpr bool value = !std::is_void<Vp>::value;
 };
 //
@@ -308,6 +319,143 @@ struct compose;
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename T>
+struct insert
+{
+    TIMEMORY_DEFAULT_OBJECT(insert)
+
+    template <typename Up, typename... Args>
+    TIMEMORY_HOT auto operator()(Up& obj, Args&&... args) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        return sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    }
+
+private:
+    template <typename Up, typename... Args>
+    static TIMEMORY_HOT auto sfinae(Up& obj, int, int, Args&&... args)
+        -> decltype(obj.insert(std::forward<Args>(args)...))
+    {
+        return obj.insert(std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    static TIMEMORY_HOT auto sfinae(Up& obj, int, long, Args&&... args)
+        -> decltype(obj->insert(std::forward<Args>(args)...))
+    {
+        return obj->insert(std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    static TIMEMORY_INLINE auto sfinae(Up&, long, long, Args&&...) -> std::nullptr_t
+    {
+        return nullptr;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct stack_push
+{
+    TIMEMORY_DEFAULT_OBJECT(stack_push)
+
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT void operator()(Up& obj, Vp&& arg) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        sfinae(obj, 0, 0, std::forward<Vp>(arg));
+    }
+
+private:
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT auto sfinae(Up& obj, int, int, Vp&& arg) const
+        -> decltype(obj.stack_push(std::forward<Vp>(arg)), void())
+    {
+        obj.stack_push(std::forward<Vp>(arg));
+    }
+
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT auto sfinae(Up& obj, int, long, Vp&& arg) const
+        -> decltype(obj->stack_push(std::forward<Vp>(arg)), void())
+    {
+        if(obj)
+            obj->stack_push(std::forward<Vp>(arg));
+    }
+
+    template <typename Up, typename... Args>
+    TIMEMORY_INLINE void sfinae(Up&, long, long, Args&&...) const
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct pop
+{
+    TIMEMORY_DEFAULT_OBJECT(pop)
+
+    template <typename Up, typename... Args>
+    TIMEMORY_HOT decltype(auto) operator()(Up& obj, Args&&... args) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        return sfinae(obj, 0, std::forward<Args>(args)...);
+    }
+
+private:
+    template <typename Up, typename... Args>
+    TIMEMORY_HOT auto sfinae(Up& obj, int, Args&&... args) const
+        -> decltype(obj.pop(std::forward<Args>(args)...))
+    {
+        return obj.pop(std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    TIMEMORY_INLINE void sfinae(Up&, long, Args&&...) const
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct stack_pop
+{
+    TIMEMORY_DEFAULT_OBJECT(stack_pop)
+
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT void operator()(Up& obj, Vp&& arg) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        sfinae(obj, 0, 0, std::forward<Vp>(arg));
+    }
+
+private:
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT auto sfinae(Up& obj, int, int, Vp&& arg) const
+        -> decltype(obj.stack_pop(std::forward<Vp>(arg)), void())
+    {
+        obj.stack_pop(std::forward<Vp>(arg));
+    }
+
+    template <typename Up, typename Vp>
+    TIMEMORY_HOT auto sfinae(Up& obj, int, long, Vp&& arg) const
+        -> decltype(obj->stack_pop(std::forward<Vp>(arg)), void())
+    {
+        if(obj)
+            obj->stack_pop(std::forward<Vp>(arg));
+    }
+
+    template <typename Up, typename... Args>
+    TIMEMORY_INLINE void sfinae(Up&, long, long, Args&&...) const
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \struct tim::operation::set_started
 /// \tparam T Component type
 ///
@@ -322,6 +470,8 @@ struct set_started
     template <typename Up>
     TIMEMORY_HOT auto operator()(Up& obj) const
     {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
         return sfinae(obj, 0);
     }
 
@@ -353,6 +503,8 @@ struct set_stopped
     template <typename Up>
     TIMEMORY_HOT auto operator()(Up& obj) const
     {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
         return sfinae(obj, 0);
     }
 
@@ -370,6 +522,68 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::operation::set_depth_change
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not the component triggered a depth change when it
+/// was push to the call-stack or when it was popped from the call-stack
+template <typename T>
+struct set_depth_change;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_is_flat
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not the component triggered a depth change when it
+/// was push to the call-stack or when it was popped from the call-stack
+template <typename T>
+struct set_is_flat;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_is_on_stack
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which the component provides
+/// to internally store whether or not the component is referenced in persistent storage
+template <typename T>
+struct set_is_on_stack;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_is_invalid
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which sets whether or not
+/// the component is in a valid state for data access and updates.
+template <typename T>
+struct set_is_invalid;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_is_running
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which sets whether or not
+/// the component is currently collecting.
+template <typename T>
+struct set_is_running;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::set_iterator
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which sets a pointer to
+/// a reference value in persistant storage.
+template <typename T>
+struct set_iterator;
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \struct tim::operation::is_running
 /// \tparam T Component type
 /// \tparam DefaultValue The value to return if the member function is not provided
@@ -384,6 +598,8 @@ struct is_running
     template <typename Up>
     TIMEMORY_HOT auto operator()(const Up& obj) const
     {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
         return sfinae(obj, 0);
     }
 
@@ -409,25 +625,212 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct tim::operation::set_depth_change
+/// \struct tim::operation::get_is_flat
 /// \tparam T Component type
+/// \tparam DefaultValue The value to return if the member function is not provided
 ///
-/// \brief This operation attempts to call a member function which the component provides
-/// to internally store whether or not the component triggered a depth change when it
-/// was push to the call-stack or when it was popped from the call-stack
-template <typename T>
-struct set_depth_change;
+/// \brief This operation attempts to call a member function which provides whether or not
+/// the component pushed to storage at a depth of zero.
+template <typename T, bool DefaultValue>
+struct get_is_flat
+{
+    TIMEMORY_DEFAULT_OBJECT(get_is_flat)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(const Up& obj) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(const Up& obj, int) -> decltype(obj.get_is_flat())
+    {
+        return obj.get_is_flat();
+    }
+
+    template <typename Up>
+    static auto sfinae(const Up&, ...) -> bool
+    {
+        return DefaultValue;
+    }
+};
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \struct tim::operation::set_is_flat
+/// \struct tim::operation::get_is_invalid
+/// \tparam T Component type
+/// \tparam DefaultValue The value to return if the member function is not provided
+///
+/// \brief This operation attempts to call a member function which provides whether or not
+/// the component is in a valid state for data access and updates.
+template <typename T, bool DefaultValue>
+struct get_is_invalid
+{
+    TIMEMORY_DEFAULT_OBJECT(get_is_invalid)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(const Up& obj) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(const Up& obj, int) -> decltype(obj.get_is_invalid())
+    {
+        return obj.get_is_invalid();
+    }
+
+    template <typename Up>
+    static auto sfinae(const Up&, ...) -> bool
+    {
+        return DefaultValue;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::get_is_on_stack
+/// \tparam T Component type
+/// \tparam DefaultValue The value to return if the member function is not provided
+///
+/// \brief This operation attempts to call a member function which provides whether or not
+/// the component is in a valid state for data access and updates.
+template <typename T, bool DefaultValue>
+struct get_is_on_stack
+{
+    TIMEMORY_DEFAULT_OBJECT(get_is_on_stack)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(const Up& obj) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(const Up& obj, int) -> decltype(obj.get_is_on_stack())
+    {
+        return obj.get_is_on_stack();
+    }
+
+    template <typename Up>
+    static auto sfinae(const Up&, ...) -> bool
+    {
+        return DefaultValue;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::get_depth
+/// \tparam T Component type
+/// \tparam DefaultDepth value to return if get_depth() function not available
+///
+/// \brief This operation attempts to call a member function which provides a depth value.
+template <typename T, int64_t DefaultDepth = 0>
+struct get_depth
+{
+    TIMEMORY_DEFAULT_OBJECT(get_depth)
+
+    template <typename Up, enable_if_t<!std::is_pointer<decay_t<Up>>::value, int> = 0>
+    TIMEMORY_INLINE auto operator()(Up& obj) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        return sfinae(obj, 0, 0);
+    }
+
+    template <typename Up, enable_if_t<std::is_pointer<decay_t<Up>>::value, int> = 0>
+    TIMEMORY_INLINE auto operator()(Up obj) const
+    {
+        if(!obj)
+            return DefaultDepth;
+
+        return sfinae(*obj, 0, 0);
+    }
+
+private:
+    template <typename Up>
+    auto sfinae(Up& obj, int, int) const -> decltype(obj.get_depth())
+    {
+        return obj.get_depth();
+    }
+
+    template <typename Up>
+    auto sfinae(Up& obj, int, long) const -> decltype(obj.depth())
+    {
+        return obj.depth();
+    }
+
+    template <typename Up>
+    auto sfinae(Up&&, long, long) const
+    {
+        return DefaultDepth;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::get_storage
 /// \tparam T Component type
 ///
-/// \brief This operation attempts to call a member function which the component provides
-/// to internally store whether or not the component triggered a depth change when it
-/// was push to the call-stack or when it was popped from the call-stack
+/// \brief This operation attempts to call a member function which provides a pointer to
+/// the data storage structure for a component which should be updated for
+/// aggregation/logging.
 template <typename T>
-struct set_is_flat;
+struct get_storage
+{
+    using type = T;
+
+    TIMEMORY_DEFAULT_OBJECT(get_storage)
+
+    TIMEMORY_INLINE auto operator()(type& obj) const
+    {
+        return static_cast<storage<type>*>(obj.get_storage());
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::operation::get_iterator
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which provides a pointer to
+/// a component which exists in storage.
+template <typename T>
+struct get_iterator
+{
+    TIMEMORY_DEFAULT_OBJECT(get_iterator)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(Up& obj) const
+    {
+        static_assert(!std::is_pointer<Up>::value,
+                      "SFINAE tests will always fail with pointer types");
+        return sfinae(obj, 0);
+    }
+
+private:
+    template <typename Up>
+    static auto sfinae(Up& obj, int) -> decltype(obj.get_iterator())
+    {
+        return obj.get_iterator();
+    }
+
+    template <typename Up>
+    static auto sfinae(Up&&, ...) -> std::nullptr_t
+    {
+        return nullptr;
+    }
+};
 //
 //--------------------------------------------------------------------------------------//
 //

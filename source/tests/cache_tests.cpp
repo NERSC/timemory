@@ -32,10 +32,11 @@ using namespace tim::component;
 
 using floating_t  = double;
 using cache_ptr_t = std::shared_ptr<tim::rusage_cache>;
-using bundle_t    = tim::component_bundle<TIMEMORY_API, wall_clock, peak_rss, num_io_in,
-                                       num_io_out, num_major_page_faults,
-                                       num_minor_page_faults, priority_context_switch,
-                                       voluntary_context_switch, current_peak_rss>;
+using bundle_t =
+    tim::component_bundle<TIMEMORY_API, wall_clock, user_clock, system_clock, peak_rss,
+                          num_io_in, num_io_out, num_major_page_faults,
+                          num_minor_page_faults, priority_context_switch,
+                          voluntary_context_switch, current_peak_rss>;
 
 // static const auto    memory_unit  = std::pair<int64_t, string_t>(tim::units::KiB,
 // "KiB");
@@ -155,9 +156,6 @@ allocate_basic(bool _write = false)
 void
 allocate()
 {
-    if(!cache.at(0))
-        cache.at(0) = std::make_shared<tim::rusage_cache>();
-
     if(!bundle)
         bundle = std::make_shared<bundle_t>("allocate",
                                             tim::quirk::config<tim::quirk::no_store>{});
@@ -167,14 +165,19 @@ allocate()
             "allocate", tim::quirk::config<tim::quirk::no_store>{});
 
     bundle->reset();
-    bundle->start();
     cache_bundle->reset();
+
+    if(!cache.at(0))
+        cache.at(0) = std::make_shared<tim::rusage_cache>();
+
+    bundle->start();
     cache_bundle->start(*cache.at(0));
 
     allocate_basic();
 
     bundle->stop();
     cache_bundle->stop(*cache.at(0));
+
     if(!cache.at(1))
         cache.at(1) = std::make_shared<tim::rusage_cache>();
 }
@@ -644,17 +647,21 @@ TEST_F(cache_tests, complete_tuple)
     tim::settings::verbose() = 0;
 
     namespace component = tim::component;
-    puts("\n>>> INITIAL CACHE <<<\n");
-    puts(print_rusage_cache(*cache.at(0)).c_str());
-    puts("\n>>> BUNDLE <<<\n");
     tim::component_tuple_t<TIMEMORY_COMPONENT_TYPES> _bundle{ details::get_test_name() };
-    _bundle.start(*cache.at(0));
+    auto&                                            _bcache = *cache.at(0);
+    auto&                                            _ecache = *cache.at(1);
+    _bundle.start(_bcache);
     details::consume(1000);
     _bundle.store(1000);
     _bundle.store(1000.0);
-    _bundle.stop(*cache.at(1));
+    _bundle.stop(_ecache);
+
+    puts("\n>>> INITIAL CACHE <<<\n");
+    puts(print_rusage_cache(_bcache).c_str());
+    puts("\n>>> BUNDLE <<<\n");
+    std::cout << _bundle << std::endl;
     puts("\n>>> FINAL CACHE <<<\n");
-    puts(print_rusage_cache(*cache.at(1)).c_str());
+    puts(print_rusage_cache(_ecache).c_str());
 
     _bundle.push(tim::mpl::piecewise_select<data_tracker_floating, data_tracker_integer,
                                             data_tracker_unsigned>{});
@@ -665,19 +672,33 @@ TEST_F(cache_tests, complete_tuple)
 
     EXPECT_NEAR(tot_size, _bundle.get<peak_rss>()->get(), peak_tolerance);
     EXPECT_NEAR(std::get<0>(_bundle.get<current_peak_rss>()->get()),
-                cache.at(0)->get_peak_rss(), peak_tolerance);
+                _bcache.get_peak_rss(), peak_tolerance);
     EXPECT_NEAR(std::get<1>(_bundle.get<current_peak_rss>()->get()),
-                cache.at(1)->get_peak_rss(), peak_tolerance);
+                _ecache.get_peak_rss(), peak_tolerance);
 
     // these should use cache
     if(tim::trait::is_available<user_mode_time>::value)
     {
-        EXPECT_LT(_bundle.get<user_mode_time>()->get(), 0.1);
+        // if the user mode time is less than the resolution of user_clock
+        // then this test will fail
+        auto _usrclk_val = bundle->get<user_clock>()->get();
+        if(_usrclk_val >= 1.0e-3)
+        {
+            EXPECT_NEAR(_bundle.get<user_mode_time>()->get(), _usrclk_val,
+                        1.5 * _usrclk_val);
+        }
     }
 
     if(tim::trait::is_available<kernel_mode_time>::value)
     {
-        EXPECT_LT(_bundle.get<kernel_mode_time>()->get(), 0.1);
+        // if the kernel mode time is less than the resolution of system_clock
+        // then this test will fail
+        auto _sysclk_val = bundle->get<system_clock>()->get();
+        if(_sysclk_val >= 1.0e-3)
+        {
+            EXPECT_NEAR(_bundle.get<kernel_mode_time>()->get(), _sysclk_val,
+                        1.5 * _sysclk_val);
+        }
     }
 
     auto fp_storage = tim::storage<data_tracker_floating>::instance()->get();

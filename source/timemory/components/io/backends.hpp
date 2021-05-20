@@ -116,55 +116,39 @@ struct io_cache
     }
 
 public:
-#if defined(TIMEMORY_LINUX)
-    io_cache()
-    : m_data(read())
-    {}
-#else
-    io_cache() = default;
-#endif
+    io_cache() { update(); }
+    ~io_cache() = default;
 
-    ~io_cache()               = default;
     io_cache(const io_cache&) = delete;
     io_cache& operator=(const io_cache&) = delete;
-    io_cache(io_cache&&) noexcept        = default;
+
+    io_cache(io_cache&&) noexcept = default;
     io_cache& operator=(io_cache&&) noexcept = default;
+
+    inline void update()
+    {
+#if defined(TIMEMORY_LINUX)
+        m_data = read();
+#endif
+    }
 
 #if !defined(TIMEMORY_LINUX)
 
-    TIMEMORY_NODISCARD inline int64_t get_char_read() const { return 0; }        // NOLINT
-    TIMEMORY_NODISCARD inline int64_t get_char_written() const { return 0; }     // NOLINT
-    TIMEMORY_NODISCARD inline int64_t get_syscall_read() const { return 0; }     // NOLINT
-    TIMEMORY_NODISCARD inline int64_t get_syscall_written() const { return 0; }  // NOLINT
-    TIMEMORY_NODISCARD inline int64_t get_bytes_read() const { return 0; }       // NOLINT
-    TIMEMORY_NODISCARD inline int64_t get_bytes_written() const { return 0; }    // NOLINT
+    inline int64_t get_char_read() const { return 0; }        // NOLINT
+    inline int64_t get_char_written() const { return 0; }     // NOLINT
+    inline int64_t get_syscall_read() const { return 0; }     // NOLINT
+    inline int64_t get_syscall_written() const { return 0; }  // NOLINT
+    inline int64_t get_bytes_read() const { return 0; }       // NOLINT
+    inline int64_t get_bytes_written() const { return 0; }    // NOLINT
 
 #else
 
-    TIMEMORY_NODISCARD inline int64_t get_char_read() const
-    {
-        return std::get<0>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_char_written() const
-    {
-        return std::get<1>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_syscall_read() const
-    {
-        return std::get<2>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_syscall_written() const
-    {
-        return std::get<3>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_bytes_read() const
-    {
-        return std::get<4>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_bytes_written() const
-    {
-        return std::get<5>(m_data);
-    }
+    inline int64_t get_char_read() const { return std::get<0>(m_data); }
+    inline int64_t get_char_written() const { return std::get<1>(m_data); }
+    inline int64_t get_syscall_read() const { return std::get<2>(m_data); }
+    inline int64_t get_syscall_written() const { return std::get<3>(m_data); }
+    inline int64_t get_bytes_read() const { return std::get<4>(m_data); }
+    inline int64_t get_bytes_written() const { return std::get<5>(m_data); }
 
 private:
     std::array<int64_t, 6> m_data{};

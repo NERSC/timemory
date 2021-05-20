@@ -63,11 +63,21 @@ get_shared_ptr_pair_instance()
 //
 template <typename Tp, typename Tag, typename PtrT, typename PairT>
 PtrT
-get_shared_ptr_pair_master_instance()
+get_shared_ptr_pair_main_instance()
 {
     static auto& _pinst = get_shared_ptr_pair<Tp, Tag>();
     static auto  _inst  = _pinst.first;
     return _inst;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Tag, typename PtrT>
+PtrT
+get_shared_ptr_lone_instance()
+{
+    static auto _instance = std::make_shared<Tp>();
+    return _instance;
 }
 //
 //--------------------------------------------------------------------------------------//

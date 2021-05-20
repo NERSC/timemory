@@ -18,7 +18,6 @@ set(USE_MPI_COMPONENTS mpi)
 set(USE_TAU_COMPONENTS tau)
 
 foreach(_OPT PAPI CALIPER MPI TAU)
-    message(STATUS "${PROJECT_NAME}: USE_${_OPT} = ${USE_${_OPT}}")
     if(USE_${_OPT})
         list(APPEND COMPONENTS ${USE_${_OPT}_COMPONENTS})
     endif()

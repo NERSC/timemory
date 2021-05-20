@@ -67,7 +67,7 @@ struct stop
         {
             return sfinae(obj, 0, 0, std::forward<Args>(args)...);
         }
-        return RetT{};
+        return get_return<RetT>();
     }
 
     template <typename... Args>
@@ -77,6 +77,19 @@ struct stop
     }
 
 private:
+    template <typename T>
+    auto get_return(enable_if_t<std::is_void<T>::value, int> = 0) const
+    {}
+
+    template <typename T>
+    auto get_return(enable_if_t<!std::is_void<T>::value, long> = 0) const
+    {
+        static_assert(std::is_default_constructible<T>::value,
+                      "Error! start() returns a type that is not default constructible! "
+                      "You must specialize operation::start<T> struct");
+        return T{};
+    }
+
     template <typename... Args>
     TIMEMORY_HOT void impl(type& obj, Args&&... args) const;
 

@@ -74,9 +74,9 @@ struct basic_tree
 
     friend bool operator==(const this_type& lhs, const this_type& rhs)
     {
-        auto _lhash = get_hash_id(get_hash_aliases(), lhs.m_value.hash());
-        auto _rhash = get_hash_id(get_hash_aliases(), rhs.m_value.hash());
-        return (_lhash == _rhash);
+        // auto _lhash = get_hash_id(get_hash_aliases(), lhs.m_value.hash());
+        // auto _rhash = get_hash_id(get_hash_aliases(), rhs.m_value.hash());
+        return (lhs.m_value.hash() == rhs.m_value.hash());
     }
 
     friend bool operator!=(const this_type& lhs, const this_type& rhs)
@@ -109,7 +109,7 @@ basic_tree<Tp>::operator()(const GraphT& g, ItrT root)
             {
                 m_value.exclusive().data() -= itr->data();
                 m_value.exclusive().stats() -= itr->stats();
-                m_children.push_back(std::make_shared<child_type>());
+                m_children.emplace_back(std::make_shared<child_type>());
                 m_children.back()->operator()(g, itr);
             }
             else
@@ -120,7 +120,7 @@ basic_tree<Tp>::operator()(const GraphT& g, ItrT root)
                 {
                     if(!ditr->is_dummy())
                     {
-                        m_children.push_back(std::make_shared<child_type>());
+                        m_children.emplace_back(std::make_shared<child_type>());
                         m_children.back()->operator()(g, ditr);
                     }
                 }
@@ -226,7 +226,7 @@ basic_tree<Tp>::save(Archive& ar, const unsigned int) const
     // this is for backward compatiblity
     children_base _children{};
     for(const auto& itr : m_children)
-        _children.push_back(*itr);
+        _children.emplace_back(*itr);
     ar(cereal::make_nvp("node", m_value), cereal::make_nvp("children", _children));
 }
 

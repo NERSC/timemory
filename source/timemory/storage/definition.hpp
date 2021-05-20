@@ -154,7 +154,7 @@ storage::add_hash_id(uint64_t _lhs, uint64_t _rhs)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_STORAGE_LINKAGE hash_value_type
+TIMEMORY_STORAGE_LINKAGE hash_value_t
                          storage::add_hash_id(const std::string& _prefix)
 {
     return ::tim::add_hash_id(m_hash_ids, _prefix);
@@ -339,8 +339,8 @@ storage<Type, true>::storage()
         auto _master = singleton_t::master_instance();
         if(_master)
         {
-            graph_hash_map_t   _hash_ids     = *_master->get_hash_ids();
-            graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases();
+            hash_map_t       _hash_ids     = *_master->get_hash_ids();
+            hash_alias_map_t _hash_aliases = *_master->get_hash_aliases();
             for(const auto& itr : _hash_ids)
             {
                 if(m_hash_ids->find(itr.first) == m_hash_ids->end())

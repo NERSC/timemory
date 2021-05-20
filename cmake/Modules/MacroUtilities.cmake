@@ -23,7 +23,7 @@ unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
 #
 FUNCTION(TIMEMORY_MESSAGE TYPE)
     if(NOT TIMEMORY_QUIET_CONFIG)
-        message(${TYPE} "${ARGN}")
+        message(${TYPE} "[timemory] ${ARGN}")
     endif()
 ENDFUNCTION()
 
@@ -522,14 +522,12 @@ ENDMACRO()
 #----------------------------------------------------------------------------------------#
 
 FUNCTION(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
-    if(NOT TARGET ${_TARGET} AND NOT TIMEMORY_QUIET_CONFIG)
-        message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
+    if(NOT TARGET ${_TARGET})
+        timemory_message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
     endif()
     if(NOT ${_TARGET} IN_LIST TIMEMORY_EMPTY_INTERFACE_LIBRARIES)
-        if(NOT TIMEMORY_QUIET_CONFIG)
-            message(STATUS
+        timemory_message(STATUS
                 "[interface] ${_PACKAGE} not found/enabled. '${_TARGET}' interface will not provide ${_PACKAGE}...")
-        endif()
         set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET} PARENT_SCOPE)
     endif()
     add_disabled_interface(${_TARGET})
@@ -1415,7 +1413,7 @@ FUNCTION(PRINT_ENABLED_INTERFACES)
     endforeach()
     foreach(_feature ${_enabled})
         # add feature to text
-        set(_currentFeatureText "${_currentFeatureText}\n     ${_feature}")
+        set(_currentFeatureText "${_currentFeatureText}\n     timemory::${_feature}")
     endforeach()
 
     if(NOT "${_currentFeatureText}" STREQUAL "${_basemsg}")
@@ -1437,7 +1435,7 @@ FUNCTION(PRINT_DISABLED_INTERFACES)
         list(SORT _disabled)
     endif()
     foreach(_feature ${_disabled})
-        set(_currentFeatureText "${_currentFeatureText}\n     ${_feature}")
+        set(_currentFeatureText "${_currentFeatureText}\n     timemory::${_feature}")
     endforeach(_feature)
 
     if(NOT "${_currentFeatureText}" STREQUAL "${_basemsg}")

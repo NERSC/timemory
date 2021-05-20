@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/backends/types/papi.hpp"
+#include "timemory/macros/attributes.hpp"
 
 #include <functional>
 #include <string>

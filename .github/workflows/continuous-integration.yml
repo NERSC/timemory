@@ -1,5 +1,13 @@
 name: continuous-integration
-on: [push, pull_request]
+
+# on: [push, pull_request]
+on:
+  push:
+    branches: [ master ]
+    # branches: [ master, develop ]
+  pull_request:
+    branches: [ master ]
+    # branches: [ master, develop ]
 
 jobs:
   maeve-ci:

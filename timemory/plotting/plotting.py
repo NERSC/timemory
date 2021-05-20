@@ -419,7 +419,7 @@ class plot_data:
 
     # ------------------------------------------------------------------------ #
     def update_parameters(self, params=None):
-        """ Update plot parameters (i.e. recalculate maxes)"""
+        """Update plot parameters (i.e. recalculate maxes)"""
         if params is not None:
             self.plot_params = params
         self.plot_params.max_value = 0.0
