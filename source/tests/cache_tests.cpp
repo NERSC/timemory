@@ -685,7 +685,7 @@ TEST_F(cache_tests, complete_tuple)
         if(_usrclk_val >= 1.0e-3)
         {
             EXPECT_NEAR(_bundle.get<user_mode_time>()->get(), _usrclk_val,
-                        0.1 * _usrclk_val);
+                        1.5 * _usrclk_val);
         }
     }
 
@@ -697,7 +697,7 @@ TEST_F(cache_tests, complete_tuple)
         if(_sysclk_val >= 1.0e-3)
         {
             EXPECT_NEAR(_bundle.get<kernel_mode_time>()->get(), _sysclk_val,
-                        0.5 * _sysclk_val);
+                        1.5 * _sysclk_val);
         }
     }
 

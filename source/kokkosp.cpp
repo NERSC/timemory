@@ -119,6 +119,11 @@ extern "C"
         setup_kernel_logger();
     }
 
+    void kokkosp_declare_metadata(const char* key, const char* value)
+    {
+        tim::manager::add_metadata(key, value);
+    }
+
     void kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                               const uint32_t devInfoCount, void* deviceInfo)
     {

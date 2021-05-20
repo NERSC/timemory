@@ -107,6 +107,10 @@ protected:
     {
         tim::settings::memory_units() = "kb";
         kokkosp_init_library(0, 0, 0, nullptr);
+        kokkosp_parse_args(_argc, _argv);
+        kokkosp_declare_metadata(
+            "test_suite",
+            ::testing::UnitTest::GetInstance()->current_test_suite()->name());
         tim::settings::dart_output() = true;
         tim::settings::dart_count()  = 1;
         metric().start();

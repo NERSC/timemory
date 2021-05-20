@@ -290,7 +290,7 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
     auto help_action = [](parser_t& p) {
         if(dmp::rank() == 0)
             p.print_help("-- <NON_TIMEMORY_ARGS>");
-        exit(EXIT_FAILURE);
+        exit(EXIT_SUCCESS);
     };
 
     auto err_action = [=](const parser_err_t& _err) {

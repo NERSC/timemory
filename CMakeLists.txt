@@ -286,7 +286,7 @@ endif()
 #   Documentation
 #----------------------------------------------------------------------------------------#
 
-if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+if(timemory_MAIN_PROJECT)
 
     include(Documentation)
 
@@ -299,7 +299,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
         "Print the list of enabled/disabled options and interface libraries" ON)
     mark_as_advanced(TIMEMORY_PRINT_FEATURES)
 
-    if(TIMEMORY_PRINT_FEATURES)
+    if(TIMEMORY_PRINT_FEATURES AND NOT TIMEMORY_QUIET_CONFIG)
         print_features()
     endif()
 

@@ -95,7 +95,7 @@ get_components_stack()
 }
 
 //--------------------------------------------------------------------------------------//
-// default components to record -- maybe should be empty?
+// default components to record
 //
 inline std::string&
 get_default_components()
@@ -106,7 +106,7 @@ get_default_components()
 }
 
 //--------------------------------------------------------------------------------------//
-// default components to record -- maybe should be empty?
+// current set of components being recorded
 //
 inline component_enum_t&
 get_current_components()
@@ -194,6 +194,18 @@ extern "C"
     bool timemory_library_is_initialized(void) { return get_library_state()[0]; }
 
     //----------------------------------------------------------------------------------//
+    //
+    //
+    void timemory_named_init_library(char* name)
+    {
+        if(name)
+        {
+            char* _name[1] = { name };
+            timemory_init_library(1, _name);
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
     //  initialize the library
     //
     void timemory_init_library(int argc, char** argv)
@@ -203,6 +215,25 @@ extern "C"
             return;
         get_library_state()[0] = true;
 
+        if(argc < 1 && argv)
+            argc = 1;
+        if(argv == nullptr)
+        {
+            argc = 0;
+        }
+        else
+        {
+            int i = 0;
+            for(; i < argc; ++i)
+            {
+                if(argv[i] == nullptr)
+                {
+                    argc = i;
+                    break;
+                }
+            }
+        }
+
         if(tim::settings::verbose() > 0)
         {
             printf("%s\n", spacer.c_str());
@@ -210,7 +241,8 @@ extern "C"
             printf("%s\n\n", spacer.c_str());
         }
 
-        tim::timemory_init(argc, argv);
+        if(argc > 0 && argv)
+            tim::timemory_init(argc, argv);
         tim::manager::instance()->update_metadata_prefix();
         // tim::settings::parse();
     }

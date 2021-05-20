@@ -105,6 +105,10 @@ extern "C"
     /// Returns whether the library is initialized or not.
     extern bool timemory_library_is_initialized(void) TIMEMORY_VISIBLE;
 
+    /// \fn void timemory_named_init_library(const char* name)
+    /// Initializes timemory with the exe name
+    extern void timemory_named_init_library(char* name) TIMEMORY_VISIBLE;
+
     /// \fn void timemory_init_library(int argc, char** argv)
     /// Initializes timemory. Not strictly necessary but highly recommended.
     extern void timemory_init_library(int argc, char** argv) TIMEMORY_VISIBLE;
