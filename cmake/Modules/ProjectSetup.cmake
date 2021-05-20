@@ -20,27 +20,6 @@ if(TIMEMORY_CCACHE_BUILD)
 endif()
 
 #----------------------------------------------------------------------------------------#
-#   policies
-#----------------------------------------------------------------------------------------#
-
-cmake_policy(SET CMP0010 NEW)
-cmake_policy(SET CMP0022 NEW)
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0042 NEW)
-cmake_policy(SET CMP0053 NEW)
-cmake_policy(SET CMP0063 NEW)
-if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-    cmake_policy(SET CMP0077 NEW)
-    cmake_policy(SET CMP0079 NEW)
-endif()
-if(NOT CMAKE_VERSION VERSION_LESS 3.14)
-    cmake_policy(SET CMP0082 NEW)
-endif()
-if(NOT CMAKE_VERSION VERSION_LESS 3.18)
-    cmake_policy(SET CMP0104 OLD)
-endif()
-
-#----------------------------------------------------------------------------------------#
 #   options
 #----------------------------------------------------------------------------------------#
 

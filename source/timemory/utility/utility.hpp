@@ -184,37 +184,35 @@ demangle(const std::string& _str)
 
 template <typename Tp>
 inline auto
-demangle()
+try_demangle()
 {
-    // a type demangle will always be the same
-    static auto _value = demangle(typeid(Tp).name());
-    return _value;
+    // static because a type demangle will always be the same
+    static auto _val = []() {
+        // wrap the type in type_list and then extract ... from tim::type_list<...>
+        auto _tmp = ::tim::demangle(typeid(type_list<Tp>).name());
+        auto _key = std::string{ "type_list" };
+        auto _idx = _tmp.find(_key);
+        _idx      = _tmp.find("<", _idx);
+        _tmp      = _tmp.substr(_idx + 1);
+        _idx      = _tmp.find_last_of(">");
+        _tmp      = _tmp.substr(0, _idx);
+        // strip trailing whitespaces
+        while((_idx = _tmp.find_last_of(" ")) == _tmp.length() - 1)
+            _tmp = _tmp.substr(0, _idx);
+        return _tmp;
+    }();
+    return _val;
 }
 
 //--------------------------------------------------------------------------------------//
 
-namespace internal
-{
-template <typename Tp, typename Up = Tp>
-inline auto
-try_demangle(int) -> decltype(demangle<Tp>(), std::string())
-{
-    return demangle<Tp>();
-}
-//
-template <typename Tp, typename Up = Tp>
-inline auto
-try_demangle(long)
-{
-    return "";
-}
-}  // namespace internal
-
 template <typename Tp>
 inline auto
-try_demangle()
+demangle()
 {
-    return internal::try_demangle<Tp>(0);
+    // static because a type demangle will always be the same
+    static auto _val = demangle(typeid(Tp).name());
+    return _val;
 }
 
 //--------------------------------------------------------------------------------------//

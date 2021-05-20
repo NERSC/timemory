@@ -951,15 +951,20 @@ if(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_GOOGLE_TEST AND NOT TIMEMORY_USE_COVE
         "binary-rewrite-stubs")
 
     foreach(_TARGET ${_DYNAMIC_TARGETS})
-        set(COMMAND
-            ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET})
-
         foreach(_FILE ${_scripts})
             # do not run launch-process + timemory
             if("${_TARGET}" STREQUAL "dynamic_instrument_timemory_tests" AND
                "${_FILE}" IN_LIST _SKIP_DYNAMIC_WITH_TIMEMORY)
                 continue()
             endif()
+
+            # set the relative or absolute path
+            if("${_FILE}" STREQUAL "launch-process")
+                set(COMMAND ${_TARGET})
+            else()
+                set(COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET})
+            endif()
+
             set(TEST_NAME ${_TARGET}-${_FILE})
             configure_file(
                 ${CMAKE_CURRENT_LIST_DIR}/scripts/${_FILE}.sh.in

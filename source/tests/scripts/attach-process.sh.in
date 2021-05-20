@@ -18,6 +18,8 @@ export TIMEMORY_FLAMEGRAPH_OUTPUT=OFF
 
 rm -rf ${TIMEMORY_OUTPUT_PATH}
 
+# append directories to path
+export PATH=@CMAKE_CURRENT_BINARY_DIR@:@PROJECT_BINARY_DIR@:${PATH}
 # add path to libtimemory to LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
 

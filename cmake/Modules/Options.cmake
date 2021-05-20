@@ -42,6 +42,7 @@ set(_USE_COVERAGE OFF)
 set(_BUILD_OPT OFF)
 set(_BUILD_GOTCHA OFF)
 set(_BUILD_CALIPER ON)
+set(_BUILD_FORTRAN ON)
 set(_NON_APPLE_UNIX OFF)
 set(_UNIX_OS ${UNIX})
 set(_DEFAULT_BUILD_SHARED ON)
@@ -84,7 +85,8 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(_BUILD_OPT ON)
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_TESTING)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND
+    (TIMEMORY_BUILD_TESTING OR TIMEMORY_BUILD_MINIMAL_TESTING OR TIMEMORY_CI))
     set(_USE_COVERAGE ON)
 endif()
 
@@ -110,11 +112,21 @@ if(TIMEMORY_USE_CUDA OR (NOT DEFINED TIMEMORY_USE_CUDA AND NOT TIMEMORY_REQUIRE_
     if(CMAKE_CUDA_COMPILER)
         enable_language(CUDA)
     else()
-        message(STATUS "No CUDA support")
+        timemory_message(STATUS "CUDA support not detected")
         set(_USE_CUDA OFF)
     endif()
 else()
     set(_USE_CUDA OFF)
+endif()
+
+if(TIMEMORY_BUILD_FORTRAN OR NOT DEFINED TIMEMORY_BUILD_FORTRAN)
+    check_language(Fortran)
+    if(CMAKE_Fortran_COMPILER)
+        enable_language(Fortran)
+    else()
+        timemory_message(STATUS "Fortran support not detected")
+        set(_BUILD_FORTRAN OFF)
+    endif()
 endif()
 
 # if already defined, set default for shared to OFF
@@ -177,6 +189,7 @@ if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
     # local override
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
+    set(TIMEMORY_BUILD_FORTRAN OFF)
     set(TIMEMORY_USE_PYTHON OFF)
     set(TIMEMORY_USE_DYNINST OFF)
     set(TIMEMORY_BUILD_KOKKOS_TOOLS OFF)
@@ -225,7 +238,7 @@ else()
     add_feature(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)")
 
     if(NOT DEFINED CMAKE_CXX_STANDARD)
-        message(AUTHOR_WARNING "timemory requires settings CMAKE_CXX_STANDARD. Defaulting CMAKE_CXX_STANDARD to 14...")
+        timemory_message(AUTHOR_WARNING "timemory requires settings CMAKE_CXX_STANDARD. Defaulting CMAKE_CXX_STANDARD to 14...")
         set(CMAKE_CXX_STANDARD 14)
     endif()
 endif()
@@ -259,6 +272,8 @@ add_option(TIMEMORY_BUILD_EXAMPLES
     "Build the examples"  ${TIMEMORY_BUILD_TESTING})
 add_option(TIMEMORY_BUILD_C
     "Build the C compatible library" ON)
+add_option(TIMEMORY_BUILD_FORTRAN
+    "Build the Fortran compatible library" ${_BUILD_FORTRAN})
 add_option(TIMEMORY_BUILD_PYTHON
     "Build Python binding" OFF)
 add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
@@ -321,6 +336,10 @@ endif()
 if(NOT CMAKE_CXX_COMPILER_IS_CLANG OR CMAKE_CXX_COMPILER_IS_APPLE_CLANG)
     set(TIMEMORY_INLINE_COMPILER_INSTRUMENTATION ON CACHE BOOL
         "Only the Clang compiler supports instrumentation after inlining" FORCE)
+endif()
+
+if(TIMEMORY_BUILD_FORTRAN)
+    enable_language(Fortran)
 endif()
 
 # Features
@@ -482,32 +501,32 @@ unset(_DYNINST)
 
 if(TIMEMORY_BUILD_MPIP_LIBRARY AND (NOT BUILD_SHARED_LIBS OR
     NOT TIMEMORY_USE_MPI OR NOT TIMEMORY_USE_GOTCHA))
-    message(AUTHOR_WARNING
+    timemory_message(AUTHOR_WARNING
         "TIMEMORY_BUILD_MPIP_LIBRARY requires BUILD_SHARED_LIBS=ON, TIMEMORY_USE_MPI=ON, and TIMEMORY_USE_GOTCHA=ON...")
     set(TIMEMORY_BUILD_MPIP_LIBRARY OFF CACHE BOOL "Build the mpiP library" FORCE)
 endif()
 
 if(TIMEMORY_BUILD_OMPT_LIBRARY AND NOT TIMEMORY_USE_OMPT)
-    message(AUTHOR_WARNING
+    timemory_message(AUTHOR_WARNING
         "TIMEMORY_BUILD_OMPT_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_OMPT=ON...")
     set(TIMEMORY_BUILD_OMPT_LIBRARY OFF CACHE BOOL "Build the OMPT library" FORCE)
 endif()
 
 if(TIMEMORY_BUILD_NCCLP_LIBRARY AND (NOT BUILD_SHARED_LIBS OR
     NOT TIMEMORY_USE_NCCL OR NOT TIMEMORY_USE_GOTCHA))
-    message(AUTHOR_WARNING
+    timemory_message(AUTHOR_WARNING
         "TIMEMORY_BUILD_NCCLP_LIBRARY requires BUILD_SHARED_LIBS=ON, TIMEMORY_USE_NCCL=ON, and TIMEMORY_USE_GOTCHA=ON...")
     set(TIMEMORY_BUILD_NCCLP_LIBRARY OFF CACHE BOOL "Build the ncclP library" FORCE)
 endif()
 
 if(TIMEMORY_BUILD_MALLOCP_LIBRARY AND (NOT BUILD_SHARED_LIBS OR NOT TIMEMORY_USE_GOTCHA))
-    message(AUTHOR_WARNING
+    timemory_message(AUTHOR_WARNING
         "TIMEMORY_BUILD_MALLOCP_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_GOTCHA=ON...")
     set(TIMEMORY_BUILD_MALLOCP_LIBRARY OFF CACHE BOOL "Build the ncclP library" FORCE)
 endif()
 
 if(NOT BUILD_SHARED_LIBS AND TIMEMORY_BUILD_KOKKOS_TOOLS)
-    message(AUTHOR_WARNING
+    timemory_message(AUTHOR_WARNING
         "TIMEMORY_BUILD_KOKKOS_TOOLS requires BUILD_SHARED_LIBS=ON...")
     set(TIMEMORY_BUILD_KOKKOS_TOOLS OFF CACHE BOOL "Build the kokkos-tools libraries" FORCE)
 endif()
@@ -531,7 +550,7 @@ macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)
         find_program(CLANG_TIDY_COMMAND NAMES clang-tidy)
         add_feature(CLANG_TIDY_COMMAND "Path to clang-tidy command")
         if(NOT CLANG_TIDY_COMMAND)
-            message(WARNING "TIMEMORY_USE_CLANG_TIDY is ON but clang-tidy is not found!")
+            timemory_message(WARNING "TIMEMORY_USE_CLANG_TIDY is ON but clang-tidy is not found!")
             set(TIMEMORY_USE_CLANG_TIDY OFF)
         else()
             set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_COMMAND})
@@ -552,9 +571,7 @@ endmacro()
 # these variables conflict with variables in examples, leading to things like: -lON flags
 get_property(DEFAULT_OPTION_VARIABLES GLOBAL PROPERTY DEFAULT_OPTION_VARIABLES)
 foreach(_VAR ${DEFAULT_OPTION_VARIABLES})
-    # message(STATUS "Reseting: ${_VAR} :: ${${_VAR}}")
     unset(${_VAR})
-    # message(STATUS "Result: ${_VAR} :: ${${_VAR}}")
 endforeach()
 
 # some logic depends on this not being set

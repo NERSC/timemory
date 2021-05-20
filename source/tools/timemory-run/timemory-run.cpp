@@ -25,6 +25,9 @@
 
 #include "timemory-run.hpp"
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 static bool                                       is_driver  = false;
 static size_t                                     batch_size = 50;
 static strset_t                                   extra_libs = {};
@@ -44,6 +47,9 @@ static string_t                                   instr_push_func = "timemory_pu
 static string_t                                   instr_pop_func  = "timemory_pop_trace";
 static string_t instr_push_hash = "timemory_push_trace_hash";
 static string_t instr_pop_hash  = "timemory_pop_trace_hash";
+
+std::string
+get_absolute_exe_filepath(std::string exe_name);
 
 //======================================================================================//
 //
@@ -133,6 +139,17 @@ main(int argc, char** argv)
             ss << _av[i] << " ";
         return ss.str();
     };
+
+    if(_cmdc > 0 && !mutname.empty())
+    {
+        auto resolved_mutname = get_absolute_exe_filepath(mutname);
+        if(resolved_mutname != mutname)
+        {
+            mutname = resolved_mutname;
+            delete _cmdv[0];
+            copy_str(_cmdv[0], resolved_mutname.c_str());
+        }
+    }
 
     if(verbose_level > 1 && tim::dmp::rank() == 0)
     {
@@ -331,9 +348,10 @@ main(int argc, char** argv)
             parser.print_help(extra_help);
             return EXIT_FAILURE;
         }
-        mutname = keys.at(0);
-        _cmdc   = keys.size();
-        _cmdv   = new char*[_cmdc];
+        keys.at(0) = get_absolute_exe_filepath(keys.at(0));
+        mutname    = keys.at(0);
+        _cmdc      = keys.size();
+        _cmdv      = new char*[_cmdc];
         for(int i = 0; i < _cmdc; ++i)
         {
             copy_str(_cmdv[i], keys.at(i).c_str());
@@ -2084,6 +2102,40 @@ load_dependent_libraries(address_space_t* bedit, char* bindings)
     }
 
     return true;
+}
+
+//======================================================================================//
+//
+std::string
+get_absolute_exe_filepath(std::string exe_name)
+{
+    auto file_exists = [](const std::string& name) {
+        struct stat buffer;
+        return (stat(name.c_str(), &buffer) == 0);
+    };
+
+    if(!exe_name.empty() && !file_exists(exe_name))
+    {
+        auto _exe_orig = exe_name;
+        auto _paths    = tim::delimit(tim::get_env<std::string>("PATH", ""), ":");
+        for(auto& pitr : _paths)
+        {
+            if(file_exists(TIMEMORY_JOIN('/', pitr, exe_name)))
+            {
+                exe_name = TIMEMORY_JOIN('/', pitr, exe_name);
+                verbprintf(0, "Resolved '%s' to '%s'...\n", _exe_orig.c_str(),
+                           exe_name.c_str());
+                break;
+            }
+        }
+
+        if(!file_exists(exe_name))
+        {
+            verbprintf(0, "Warning! File path to '%s' could not be determined...\n",
+                       exe_name.c_str());
+        }
+    }
+    return exe_name;
 }
 
 //======================================================================================//
