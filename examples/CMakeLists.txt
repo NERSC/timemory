@@ -35,6 +35,7 @@ option(TIMEMORY_BUILD_C_EXAMPLES "Enable building these examples" ${DEFAULT_CHOI
 option(TIMEMORY_BUILD_TPL_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_CUDA_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_PYTHON_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_FORTRAN_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_ROOFLINE_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_DYNAMIC_INSTRUMENT_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_COMPILER_INSTRUMENT_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
@@ -42,6 +43,10 @@ option(TIMEMORY_BUILD_COMPILER_INSTRUMENT_EXAMPLES "Enable building these exampl
 # C language related
 if(TIMEMORY_BUILD_C_EXAMPLES)
     add_subdirectory(ex-c)
+endif()
+
+if(TIMEMORY_BUILD_FORTRAN_EXAMPLES)
+    add_subdirectory(ex-fortran)
 endif()
 
 # external package related

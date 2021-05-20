@@ -60,29 +60,53 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     if(&lhs == &rhs)
         return;
 
-    // if merge was not initialized return
-    if(!rhs.is_initialized())
-        return;
-
-    rhs.stack_clear();
-
     // create lock
     auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
     if(!l.owns_lock())
         l.lock();
 
-    auto _copy_hash_ids = [&lhs, &rhs]() {
-        auto _hash_ids     = *rhs.get_hash_ids();
-        auto _hash_aliases = *rhs.get_hash_aliases();
-        for(const auto& itr : _hash_ids)
+    // if merge was not initialized return
+    if(!rhs.is_initialized())
+        return;
+
+    auto _settings = tim::settings::instance();
+    if(!_settings)
+        PRINT_HERE("[%s]> nullptr to settings!", Type::get_label().c_str());
+    auto _debug = _settings && (_settings->get_debug() || _settings->get_verbose() > 2);
+
+    rhs.stack_clear();
+
+    auto _copy_hash_ids = [&lhs, &rhs, _debug]() {
+        // copy over mapping of hashes to strings
+        if(rhs.get_hash_ids() && lhs.get_hash_ids())
         {
-            if(lhs.m_hash_ids->find(itr.first) == lhs.m_hash_ids->end())
-                (*lhs.m_hash_ids)[itr.first] = itr.second;
+            CONDITIONAL_PRINT_HERE(
+                _debug, "[%s]> merging %lu hash-ids into existing set of %lu hash-ids!",
+                Type::get_label().c_str(), (unsigned long) rhs.get_hash_ids()->size(),
+                (unsigned long) lhs.get_hash_ids()->size());
+
+            auto _hash_ids = *rhs.get_hash_ids();
+            for(const auto& itr : _hash_ids)
+            {
+                if(lhs.m_hash_ids->find(itr.first) == lhs.m_hash_ids->end())
+                    lhs.m_hash_ids->emplace(itr.first, itr.second);
+            }
         }
-        for(const auto& itr : _hash_aliases)
+        // copy over aliases
+        if(rhs.get_hash_aliases() && lhs.get_hash_aliases())
         {
-            if(lhs.m_hash_aliases->find(itr.first) == lhs.m_hash_aliases->end())
-                (*lhs.m_hash_aliases)[itr.first] = itr.second;
+            CONDITIONAL_PRINT_HERE(
+                _debug,
+                "[%s]> merging %lu hash-aliases into existing set of %lu hash-aliases!",
+                Type::get_label().c_str(), (unsigned long) rhs.get_hash_aliases()->size(),
+                (unsigned long) lhs.get_hash_aliases()->size());
+
+            auto _hash_aliases = *rhs.get_hash_aliases();
+            for(const auto& itr : _hash_aliases)
+            {
+                if(lhs.m_hash_aliases->find(itr.first) == lhs.m_hash_aliases->end())
+                    lhs.m_hash_aliases->emplace(itr.first, itr.second);
+            }
         }
     };
 
@@ -115,12 +139,9 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 
             if(rhs.graph().is_valid(pitr) && pitr)
             {
-                if(settings::debug() || settings::verbose() > 2)
-                {
-                    PRINT_HERE("[%s]> worker is merging %i records into %i records",
-                               Type::get_label().c_str(), (int) rhs.size(),
-                               (int) lhs.size());
-                }
+                CONDITIONAL_PRINT_HERE(
+                    _debug, "[%s]> worker is merging %i records into %i records",
+                    Type::get_label().c_str(), (int) rhs.size(), (int) lhs.size());
 
                 pre_order_iterator pos = master_entry;
 
@@ -131,17 +152,14 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
                     for(auto sitr = other.begin(); sitr != other.end(); ++sitr)
                     {
                         pre_order_iterator pchild = sitr;
-                        if(pchild->obj().get_laps() == 0)
+                        if(!pchild || pchild->obj().get_laps() == 0)
                             continue;
                         lhs.graph().append_child(pos, pchild);
                     }
                 }
 
-                if(settings::debug() || settings::verbose() > 2)
-                {
-                    PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
-                               (int) lhs.size());
-                }
+                CONDITIONAL_PRINT_HERE(_debug, "[%s]> master has %i records",
+                                       Type::get_label().c_str(), (int) lhs.size());
 
                 // remove the entry from this graph since it has been added
                 rhs.graph().erase(entry.second);
@@ -158,7 +176,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
            << "contained " << merge_size << " bookmarks but only merged " << num_merged
            << " nodes!";
 
-        PRINT_HERE("%s", ss.str().c_str());
+        CONDITIONAL_PRINT_HERE(_debug, "%s", ss.str().c_str());
 
 #if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
         TIMEMORY_EXCEPTION(ss.str());
@@ -167,14 +185,17 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 
     if(num_merged == 0)
     {
-        if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("[%s]> worker is not merged!", Type::get_label().c_str());
+        CONDITIONAL_PRINT_HERE(_debug, "[%s]> worker is not merged!",
+                               Type::get_label().c_str());
         pre_order_iterator _nitr(rhs.data().head());
         ++_nitr;
         if(!lhs.graph().is_valid(_nitr))
             _nitr = pre_order_iterator(rhs.data().head());
         lhs.graph().append_child(lhs._data().head(), _nitr);
     }
+
+    CONDITIONAL_PRINT_HERE(_debug, "[%s]> clearing merged storage!",
+                           Type::get_label().c_str());
 
     rhs.data().clear();
 }

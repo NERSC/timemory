@@ -42,6 +42,7 @@ __all__ = [
 ]
 
 import os
+import sys
 from .plotting import make_output_directory, add_plotted_files, plot_parameters
 
 # use the matplotlib import stuff from plotting
@@ -78,6 +79,11 @@ def timem(data, fname, args):
         col_labels.append("Rank {}".format(rank))
         i = 0
         for key, entry in data["timem"][rank].items():
+            if isinstance(entry["value"], (list, dict)):
+                sys.stderr.write(
+                    f"Skipping multi-dimensional entry for {key}\n"
+                )
+                continue
             if rank == 0:
                 unit = entry["unit_repr"]
                 if unit:
@@ -99,7 +105,7 @@ def timem(data, fname, args):
                 int_data[i] = False
             else:
                 table_vals[i].append("{}".format(value))
-                if not i in int_data:
+                if i not in int_data:
                     int_data[i] = True
             i += 1
 

@@ -80,12 +80,14 @@ jobs:
           packages:
             - gcc-6
             - g++-6
+            - gfortran-6
             - build-essential
             - libtbb-dev
             - ccache
       env:
         - CC=gcc-6
         - CXX=g++-6
+        - FC=gfortran-6
         - BUILD_TYPE=RelWithDebInfo
         - BUILD_ARGS='--minimal --build-libs shared --python --stats --cxx-standard=14'
         - CONFIG_ARGS='-DTIMEMORY_CCACHE_BUILD=ON'
@@ -100,6 +102,7 @@ jobs:
           packages:
             - gcc-7
             - g++-7
+            - gfortran-7
             - build-essential
             - libmpich-dev
             - mpich
@@ -109,6 +112,7 @@ jobs:
       env:
         - CC=gcc-7
         - CXX=g++-7
+        - FC=gfortran-7
         - BUILD_ARGS='--minimal --build-libs shared --mpi --papi --gotcha --tools mpip --stats --cxx-standard=17 --coverage'
     #
     # GCC 8
@@ -122,6 +126,7 @@ jobs:
           packages:
             - gcc-8
             - g++-8
+            - gfortran-8
             - build-essential
             - libopenmpi-dev
             - openmpi-bin
@@ -131,6 +136,7 @@ jobs:
       env:
         - CC=gcc-8
         - CXX=g++-8
+        - FC=gfortran-8
         - BUILD_TYPE=RelWithDebInfo
         - BUILD_ARGS='--minimal --build-libs shared --mpi --stats --tools compiler --cxx-standard=17'
         - CONFIG_ARGS='-DTIMEMORY_CCACHE_BUILD=ON'

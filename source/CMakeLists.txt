@@ -31,6 +31,7 @@ file(GLOB compat_headers            ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.
                                     ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.hpp)
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/*.c)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+file(GLOB fortran_sources           ${CMAKE_CURRENT_LIST_DIR}/*.f90)
 file(GLOB_RECURSE tpl_headers       ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.h)
 file(GLOB_RECURSE tpl_licenses      ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*license*)
@@ -66,8 +67,9 @@ file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
 # build library setup
 #
 # directly compile sources
-set(C_LIBRARY_SOURCES       ${c_sources}   ${c_headers})
-set(CXX_LIBRARY_SOURCES     ${cxx_sources} ${timemory_glob_headers})
+set(C_LIBRARY_SOURCES       ${c_sources}        ${c_headers})
+set(CXX_LIBRARY_SOURCES     ${cxx_sources}      ${timemory_glob_headers})
+set(Fortran_LIBRARY_SOURCES ${fortran_sources}  ${fortran_headers})
 
 #----------------------------------------------------------------------------------------#
 # build the C++ libraries
@@ -293,6 +295,71 @@ if(TIMEMORY_BUILD_C)
     endif()
 endif()
 
+
+#----------------------------------------------------------------------------------------#
+#
+#                       EXTERN C libraries
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_BUILD_FORTRAN)
+
+    if(_BUILD_SHARED_CXX)
+        build_library(
+            PIC
+            TYPE                SHARED
+            TARGET_NAME         timemory-fortran-shared
+            OUTPUT_NAME         ftimemory
+            LANGUAGE            Fortran
+            LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
+            OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+            SOURCES             ${Fortran_LIBRARY_SOURCES}
+            LINK_LIBRARIES      timemory-external-shared
+                                PRIVATE
+                                    timemory-compile-options
+                                    timemory-develop-options
+                                    timemory-analysis-tools
+                                    timemory-cxx-shared)
+
+        set_target_properties(timemory-fortran-shared PROPERTIES
+            INTERPROCEDURAL_OPTIMIZATION OFF)
+
+        if(WIN32)
+            target_compile_definitions(timemory-fortran-shared
+                PRIVATE     TIMEMORY_CDLL_EXPORT
+                INTERFACE   TIMEMORY_CDLL_IMPORT)
+        endif()
+    endif()
+
+    if(_BUILD_STATIC_CXX)
+
+        build_library(
+            TYPE                STATIC
+            TARGET_NAME         timemory-fortran-static
+            OUTPUT_NAME         ftimemory
+            LANGUAGE            Fortran
+            LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
+            OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+            SOURCES             ${Fortran_LIBRARY_SOURCES}
+            LINK_LIBRARIES      timemory-external-static
+                                PRIVATE
+                                    timemory-compile-options
+                                    timemory-develop-options
+                                    timemory-analysis-tools
+                                    timemory-cxx-static)
+
+        target_include_directories(timemory-fortran-static PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
+
+        set_target_properties(timemory-fortran-static PROPERTIES
+            INTERPROCEDURAL_OPTIMIZATION OFF)
+    endif()
+
+    if(WIN32 AND _BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
+        add_dependencies(timemory-fortran-shared timemory-fortran-static)
+    endif()
+endif()
 
 #----------------------------------------------------------------------------------------#
 #

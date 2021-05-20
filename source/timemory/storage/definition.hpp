@@ -367,26 +367,38 @@ storage<Type, true>::~storage()
 
     auto _debug = m_settings->get_debug();
 
-    if(_debug)
-        printf("[%s]> destructing @ %i...\n", m_label.c_str(), __LINE__);
+    CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> destroying storage", m_label.c_str(),
+                           (long) m_instance_id);
+
+    auto _main_instance = singleton_t::master_instance();
 
     if(!m_is_master)
     {
-        if(singleton_t::master_instance())
+        if(_main_instance)
         {
-            if(_debug)
-                printf("[%s]> merging into master @ %i...\n", m_label.c_str(), __LINE__);
-            singleton_t::master_instance()->merge(this);
+            CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> merging into primary instance",
+                                   m_label.c_str(), (long) m_instance_id);
+            _main_instance->merge(this);
+        }
+        else
+        {
+            CONDITIONAL_PRINT_HERE(
+                _debug, "[%s|%li]> skipping merge into non-existent primary instance",
+                m_label.c_str(), (long) m_instance_id);
         }
     }
 
-    if(_debug)
-        printf("[%s]> deleting graph data @ %i...\n", m_label.c_str(), __LINE__);
-    delete m_graph_data_instance;
+    if(m_graph_data_instance)
+    {
+        CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> deleting graph data", m_label.c_str(),
+                               (long) m_instance_id);
+        delete m_graph_data_instance;
+    }
+
     m_graph_data_instance = nullptr;
 
-    if(_debug)
-        printf("[%s]> storage destroyed @ %i...\n", m_label.c_str(), __LINE__);
+    CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> storage destroyed", m_label.c_str(),
+                           (long) m_instance_id);
 }
 //
 //--------------------------------------------------------------------------------------//

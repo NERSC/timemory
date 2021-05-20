@@ -45,23 +45,27 @@ get_test_name()
            "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
-inline void
+inline std::string
 demangle(const std::string& _inst)
 {
-    std::cout << "\n"
-              << "original:\n\t " << _inst << "\n"
-              << "demangle:\n\t " << tim::demangle(_inst.c_str()) << "\n"
-              << std::endl;
+    std::stringstream ss;
+    ss << "\n"
+       << "original :: \t" << _inst << "\n"
+       << "demangle :: \t" << tim::demangle(_inst.c_str()) << "\n"
+       << std::endl;
+    return ss.str();
 }
 
 template <typename Tp>
-inline void
+inline std::string
 demangle()
 {
-    std::cout << "\n"
-              << "original:\n\t " << typeid(Tp).name() << "\n"
-              << "demangle:\n\t " << tim::demangle<Tp>() << "\n"
-              << std::endl;
+    std::stringstream ss;
+    ss << "\n"
+       << "original :: \t" << typeid(Tp).name() << "\n"
+       << "demangle :: \t" << tim::demangle<Tp>() << "\n"
+       << std::endl;
+    return ss.str();
 }
 
 }  // namespace details
@@ -81,9 +85,34 @@ TEST_F(mangle_tests, sample)
         "vEEvT_OT0_mEUlvE_EEvSH_";
 
     using namespace tim::component;
-    std::cout << "\n" << tim::demangle(function_name) << "\n";
-    std::cout << "\n" << tim::demangle<tim::auto_tuple<wall_clock, cuda_event>>() << "\n";
-    std::cout << std::endl;
+
+    std::string demangled_name =
+        "void amrex::launch_global<void amrex::For<long, void "
+        "doEsirkepovDepositionShapeN<3>(double const*, double const*, double const*, "
+        "double const*, double const*, double const*, double const*, int const*, "
+        "amrex::Array4<double> const&, amrex::Array4<double> const&, "
+        "amrex::Array4<double> const&, long, double, std::array<double, 3ul> const&, "
+        "std::array<double, 3ul>, amrex::Dim3, double, long)::'lambda'(long), void>(3, "
+        "void doEsirkepovDepositionShapeN<3>(double const*, double const*, double "
+        "const*, double const*, double const*, double const*, double const*, int const*, "
+        "amrex::Array4<double> const&, amrex::Array4<double> const&, "
+        "amrex::Array4<double> const&, long, double, std::array<double, 3ul> const&, "
+        "std::array<double, 3ul>, amrex::Dim3, double, long)::'lambda'(long)&&, unsigned "
+        "long)::'lambda'()>(3)";
+
+    EXPECT_EQ(demangled_name, tim::demangle(function_name))
+        << details::demangle(function_name);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(mangle_tests, auto_tuple)
+{
+    using namespace tim::component;
+    std::string demangled_name =
+        "tim::auto_tuple<tim::component::wall_clock, tim::component::cuda_event>";
+    std::string runtime_name = tim::demangle<tim::auto_tuple<wall_clock, cuda_event>>();
+    EXPECT_EQ(demangled_name, runtime_name);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -95,34 +124,78 @@ TEST_F(mangle_tests, cuda_kernel)
         "S4_S4_S4_S4_S4_PKiRKNS_6Array4IdEESA_SA_ldRKSt5arrayIdLm3EESC_NS_4Dim3EdlEUllE_"
         "vEEvT_OT0_mEUlvE_EEvSH_";
 
-    details::demangle(function_name);
-    using namespace tim::component;
-    std::cout << tim::demangle(function_name) << "\n";
-    std::cout << tim::demangle<tim::auto_tuple<wall_clock, cuda_event>>() << "\n";
+    std::string demangled_name =
+        "void amrex::launch_global<void amrex::For<long, void "
+        "doEsirkepovDepositionShapeN<3>(double const*, double const*, double const*, "
+        "double const*, double const*, double const*, double const*, int const*, "
+        "amrex::Array4<double> const&, amrex::Array4<double> const&, "
+        "amrex::Array4<double> const&, long, double, std::array<double, 3ul> const&, "
+        "std::array<double, 3ul>, amrex::Dim3, double, long)::'lambda'(long), void>(3, "
+        "void doEsirkepovDepositionShapeN<3>(double const*, double const*, double "
+        "const*, double const*, double const*, double const*, double const*, int const*, "
+        "amrex::Array4<double> const&, amrex::Array4<double> const&, "
+        "amrex::Array4<double> const&, long, double, std::array<double, 3ul> const&, "
+        "std::array<double, 3ul>, amrex::Dim3, double, long)::'lambda'(long)&&, unsigned "
+        "long)::'lambda'()>(3)";
+
+    EXPECT_EQ(demangled_name, tim::demangle(function_name))
+        << details::demangle(function_name);
 }
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(mangle_tests, data_type) { details::demangle<double>(); }
+TEST_F(mangle_tests, data_type)
+{
+    auto runtime_value  = tim::demangle<double>();
+    auto demangled_name = std::string{ "double" };
+    EXPECT_EQ(demangled_name, runtime_value) << details::demangle<double>();
+}
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(mangle_tests, struct_type)
 {
     using namespace tim::component;
-    details::demangle<wall_clock>();
+
+    auto runtime_value  = tim::demangle<wall_clock>();
+    auto demangled_name = std::string{ "tim::component::wall_clock" };
+    EXPECT_EQ(demangled_name, runtime_value) << details::demangle<wall_clock>();
 }
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(mangle_tests, variadic_struct_type) { details::demangle<tim::auto_tuple<>>(); }
+TEST_F(mangle_tests, variadic_struct_type)
+{
+    auto runtime_value  = tim::demangle<tim::auto_tuple<>>();
+    auto demangled_name = std::string{ "tim::auto_tuple<>" };
+    EXPECT_EQ(demangled_name, runtime_value) << details::demangle<tim::auto_tuple<>>();
+}
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(mangle_tests, function)
 {
-    using Type = decltype(details::get_test_name);
-    details::demangle<Type>();
+    using Type          = decltype(details::get_test_name);
+    auto runtime_value  = tim::demangle<Type>();
+    auto demangled_name = tim::demangle<std::string>() + " ()";
+    EXPECT_EQ(demangled_name, runtime_value) << details::demangle<Type>();
+}
+
+//--------------------------------------------------------------------------------------//
+
+namespace Foo
+{
+template <typename T>
+class Bar;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(mangle_tests, undefined_type)
+{
+    auto runtime_value  = tim::try_demangle<Foo::Bar<double>>();
+    auto demangled_name = std::string{ "Foo::Bar<double>" };
+    EXPECT_EQ(demangled_name, runtime_value);
 }
 
 //--------------------------------------------------------------------------------------//

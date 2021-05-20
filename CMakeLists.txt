@@ -29,6 +29,23 @@ include("${CMAKE_CURRENT_LIST_DIR}/cmake/Modules/ProjectSetup.cmake")
 
 project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
 
+cmake_policy(SET CMP0010 NEW)
+cmake_policy(SET CMP0022 NEW)
+cmake_policy(SET CMP0048 NEW)
+cmake_policy(SET CMP0042 NEW)
+cmake_policy(SET CMP0053 NEW)
+cmake_policy(SET CMP0063 NEW)
+if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+    cmake_policy(SET CMP0077 NEW)
+    cmake_policy(SET CMP0079 NEW)
+endif()
+if(NOT CMAKE_VERSION VERSION_LESS 3.14)
+    cmake_policy(SET CMP0082 NEW)
+endif()
+if(NOT CMAKE_VERSION VERSION_LESS 3.18)
+    cmake_policy(SET CMP0104 OLD)
+endif()
+
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MAIN_PROJECT ON)
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR OR
