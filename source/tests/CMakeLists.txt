@@ -465,6 +465,16 @@ add_timemory_google_test(rusage_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
+if(TIMEMORY_USE_LIBUNWIND)
+    add_timemory_google_test(libunwind_tests
+        DISCOVER_TESTS
+        SOURCES         libunwind_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-plotting
+                        timemory::timemory-core
+                        ${_LIBRARY})
+endif()
+
 set(VALID_PARANOID OFF)
 set(PARANOID_FILE "/proc/sys/kernel/perf_event_paranoid")
 if(EXISTS "${PARANOID_FILE}")

@@ -86,7 +86,8 @@ build_intermediate_library(
     CATEGORY            GLOBAL
     FOLDER              components
     HEADERS             ${header_files}
-    SOURCES             ${source_files})
+    SOURCES             ${source_files}
+    DEPENDS             timemory::timemory-libunwind)
 
 if(TIMEMORY_USE_COVERAGE)
     if(TARGET timemory-core-shared)

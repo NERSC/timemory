@@ -268,7 +268,7 @@ TEST_F(threading_tests, stl)
 {
     TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name());
 
-    auto run_fib = [&](uint64_t n) { return details::fibonacci(n); };
+    auto run_fib = [](uint64_t n) { return details::fibonacci(n); };
 
     std::atomic<uint64_t> sum(0);
 
@@ -324,6 +324,73 @@ TEST_F(threading_tests, stl)
         tc_nlaps += itr.data().get_laps();
 
     ASSERT_EQ(wc_nlaps, tc_nlaps);
+}
+
+//--------------------------------------------------------------------------------------//
+
+#include "timemory/operations/types/async.hpp"
+
+TEST_F(threading_tests, async)
+{
+    // auto wc_beg = tim::storage<wall_clock>::instance()->get();
+    // auto tc_beg = tim::storage<thread_cpu_clock>::instance()->get();
+
+    using bundle_t = tim::convert_t<tuple_t, tim::component_tuple<>>;
+
+    std::atomic<long> sum{ 0 };
+    long              nitr = 2;
+    bundle_t          _bundle{ details::get_test_name() };
+    {
+        tim::operation::async<bundle_t> _async{ _bundle };
+
+        for(long i = -nitr; i <= nitr; ++i)
+        {
+            _async(
+                [&sum](bundle_t& _b, long _n) {
+                    _b.start();
+                    sum += details::fibonacci(_n);
+                    _b.stop();
+                },
+                35 + i);
+        }
+
+        _async.wait();
+    }
+
+    printf("[%s]> sum: %lu\n", details::get_test_name().c_str(),
+           static_cast<unsigned long>(sum));
+
+    auto wc_end = tim::storage<wall_clock>::instance()->get();
+    auto tc_end = tim::storage<thread_cpu_clock>::instance()->get();
+
+    EXPECT_GT(wc_end.size(), 0);
+    EXPECT_GT(tc_end.size(), 0);
+
+    int nlaps = 0;
+    for(auto& itr : wc_end)
+    {
+        if(itr.prefix().find("async") == std::string::npos)
+        {
+            std::cout << "skipping " << itr.prefix() << std::endl;
+            continue;
+        }
+        EXPECT_EQ(itr.data().get_laps(), 2 * nitr + 1);
+        nlaps += itr.data().get_laps();
+    }
+    EXPECT_GT(nlaps, 0);
+
+    nlaps = 0;
+    for(auto& itr : tc_end)
+    {
+        if(itr.prefix().find("async") == std::string::npos)
+        {
+            std::cout << "skipping " << itr.prefix() << std::endl;
+            continue;
+        }
+        EXPECT_EQ(itr.data().get_laps(), 2 * nitr + 1);
+        nlaps += itr.data().get_laps();
+    }
+    EXPECT_GT(nlaps, 0);
 }
 
 //--------------------------------------------------------------------------------------//

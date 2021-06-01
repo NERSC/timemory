@@ -36,6 +36,7 @@
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
+#include <iostream>
 #include <ratio>
 #include <string>
 #include <tuple>

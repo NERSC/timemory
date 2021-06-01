@@ -24,7 +24,12 @@
 
 #pragma once
 
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
+
+#include <fstream>
+#include <string>
 
 #if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED) ||                           \
     (defined(TIMEMORY_ENABLED) && TIMEMORY_ENABLED == 0)

@@ -492,6 +492,27 @@
 //
 #endif
 
+#if defined(TIMEMORY_USE_NVML)
+#    if !defined(TIMEMORY_NVML_RUNTIME_CHECK_ERROR)
+#        define TIMEMORY_NVML_RUNTIME_CHECK_ERROR(apiFuncCall, ...)                      \
+            {                                                                            \
+                auto err = apiFuncCall;                                                  \
+                if(err != NVML_SUCCESS && (int) err != 0)                                \
+                {                                                                        \
+                    fprintf(stderr,                                                      \
+                            "%s:%d: error check failed with: code %i -- %s.\nFunction "  \
+                            "call: %s\n",                                                \
+                            __FILE__, __LINE__, (int) err, nvmlErrorString(err),         \
+                            #apiFuncCall);                                               \
+                    __VA_ARGS__;                                                         \
+                }                                                                        \
+            }
+#    endif
+#else
+#    if !defined(TIMEMORY_NVML_RUNTIME_CHECK_ERROR)
+#        define TIMEMORY_NVML_RUNTIME_CHECK_ERROR(...)
+#    endif
+#endif
 //======================================================================================//
 //
 //                              LIKWID

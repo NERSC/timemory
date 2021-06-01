@@ -505,6 +505,24 @@ ENDFUNCTION()
 
 
 #----------------------------------------------------------------------------------------#
+# try to find a package quietly
+#
+FUNCTION(TIMEMORY_TEST_FIND_PACKAGE PACKAGE_NAME OUTPUT_VAR)
+    cmake_parse_arguments(
+        PACKAGE "" "" "UNSET" ${ARGN})
+    find_package(${PACKAGE_NAME} QUIET ${PACKAGE_UNPARSED_ARGUMENTS})
+    if(NOT ${PACKAGE_NAME}_FOUND)
+        set(${OUTPUT_VAR} OFF PARENT_SCOPE)
+    else()
+        set(${OUTPUT_VAR} ON PARENT_SCOPE)
+    endif()
+    foreach(_ARG ${PACKAGE_UNSET} FIND_PACKAGE_MESSAGE_DETAILS_${PACKAGE_NAME})
+        unset(${_ARG} CACHE)
+    endforeach()
+ENDFUNCTION()
+
+
+#----------------------------------------------------------------------------------------#
 # macro to add an interface lib
 #
 MACRO(ADD_INTERFACE_LIBRARY _TARGET)
