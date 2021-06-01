@@ -30,6 +30,8 @@
 
 //--------------------------------------------------------------------------------------//
 
+void execute(std::vector<nvml_device_info>&, int argc, char** argv);
+
 int
 main(int argc, char** argv)
 {
@@ -91,7 +93,7 @@ main(int argc, char** argv)
     for(size_t i = 0; i < unit_device_vec.size(); ++i)
         unit_device_vec.at(i).index = static_cast<int>(i);
 
-    monitor(unit_device_vec);
+    execute(unit_device_vec, argc, argv);
 
     TIMEMORY_NVML_RUNTIME_CHECK_ERROR(nvmlShutdown(), {})
     tim::timemory_finalize();
@@ -105,6 +107,39 @@ Error:
     fprintf(stderr, "Press ENTER to continue...\n");
     getchar();
     return 1;
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
+execute(std::vector<nvml_device_info>& unit_device_vec, int argc, char** argv)
+{
+    if(argc == 1)
+    {
+        monitor(unit_device_vec);
+        return;
+    }
+
+    auto _execute = [argc, argv]() {
+        std::vector<char*> _argv(argc, nullptr);
+        argvector().clear();
+        std::ostringstream _cmdstring{};
+        for(int i = 1; i < argc; ++i)
+        {
+            argvector().emplace_back(argv[i]);
+            _argv.at(i - 1) = argv[i];
+            _cmdstring << " " << argvector().back();
+        }
+        std::cerr << "command:" << _cmdstring.str() << std::endl;
+        auto _cmd = tim::popen::popen(_argv.at(0), _argv.data());
+        tim::popen::flush_output(std::cout, _cmd);
+        std::cout << std::flush;
+        finished() = true;
+    };
+
+    std::thread _t{ _execute };
+    monitor(unit_device_vec);
+    _t.join();
 }
 
 //--------------------------------------------------------------------------------------//

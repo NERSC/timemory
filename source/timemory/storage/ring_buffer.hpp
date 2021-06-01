@@ -39,7 +39,7 @@ namespace base
 struct ring_buffer
 {
     ring_buffer() = default;
-    ring_buffer(size_t _size) { init(_size); }
+    explicit ring_buffer(size_t _size) { init(_size); }
 
     ~ring_buffer();
 
@@ -81,6 +81,8 @@ struct ring_buffer
     /// Returns if the buffer is full.
     bool is_full() const { return count() == m_size; }
 
+    size_t rewind(size_t n) const;
+
 private:
     /// Returns the current write pointer.
     void* write_ptr() const
@@ -112,7 +114,8 @@ ring_buffer::write(Tp* in)
         _length = free();
 
     // Copy in.
-    memcpy(write_ptr(), in, _length);
+    new(write_ptr()) Tp{ *in };
+    // memcpy(write_ptr(), in, _length);
 
     // Update write count
     m_write_count += _length;
@@ -134,12 +137,21 @@ ring_buffer::read(Tp* out) const
         _length = count();
 
     // Copy out for BYTE, nothing magic here.
-    memcpy((char*) out, read_ptr(), _length);
+    *out = *((Tp*) read_ptr());
 
     // Update read count.
     m_read_count += _length;
 
     return _length;
+}
+//
+size_t
+ring_buffer::rewind(size_t n) const
+{
+    if(n > m_read_count)
+        n = m_read_count;
+    m_read_count -= n;
+    return n;
 }
 //
 }  // namespace base
@@ -154,8 +166,8 @@ struct ring_buffer : private base::ring_buffer
     ring_buffer()  = default;
     ~ring_buffer() = default;
 
-    ring_buffer(size_t _size)
-    : base_type{ _size }
+    explicit ring_buffer(size_t _size)
+    : base_type{ _size * sizeof(Tp) }
     {}
 
     ring_buffer(const ring_buffer&) = delete;
@@ -171,7 +183,7 @@ struct ring_buffer : private base::ring_buffer
     size_t capacity() const { return base_type::capacity(); }
 
     /// Creates new ring buffer.
-    void init(size_t _size) { base_type::init(_size); }
+    void init(size_t _size) { base_type::init(_size * sizeof(Tp)); }
 
     /// Destroy ring buffer.
     void destroy() { base_type::destroy(); }
@@ -196,6 +208,16 @@ struct ring_buffer : private base::ring_buffer
 
     /// Returns if the buffer is full.
     bool is_full() const { return base_type::is_full(); }
+
+    /// Rewinds the read pointer
+    size_t rewind(size_t n) const { return base_type::rewind(n); }
+
+    template <typename... Args>
+    auto emplace(Args&&... args)
+    {
+        Tp _obj{ std::forward<Args>(args)... };
+        return write(&_obj);
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const ring_buffer& obj)
     {

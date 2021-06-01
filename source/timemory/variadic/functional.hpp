@@ -560,6 +560,27 @@ TIMEMORY_INLINE auto
 get_labeled(TupleT<Tp&...>&& obj, Args&&... args);
 //
 //--------------------------------------------------------------------------------------//
+//                                  get_labeled
+//--------------------------------------------------------------------------------------//
+//
+template <typename ApiT, typename ArchiveT, template <typename...> class TupleT, typename... Tp>
+TIMEMORY_INLINE auto
+serialize(ArchiveT& ar, TupleT<Tp...>& obj);
+//
+template <typename ArchiveT, template <typename...> class TupleT, typename... Tp>
+TIMEMORY_INLINE auto
+serialize(ArchiveT& ar, TupleT<Tp...>& obj);
+//
+template <typename ApiT, typename ArchiveT, template <typename...> class TupleT,
+          typename... Tp>
+TIMEMORY_INLINE auto
+serialize(ArchiveT& ar, TupleT<Tp&...>&& obj);
+//
+template <typename ArchiveT, template <typename...> class TupleT, typename... Tp>
+TIMEMORY_INLINE auto
+serialize(ArchiveT& ar, TupleT<Tp&...>&& obj);
+//
+//--------------------------------------------------------------------------------------//
 //                                  get_cache
 //--------------------------------------------------------------------------------------//
 //

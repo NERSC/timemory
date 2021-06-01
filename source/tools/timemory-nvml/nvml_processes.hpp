@@ -35,6 +35,10 @@
 #include <nvml.h>
 
 #include <cassert>
+#include <vector>
+#include <string>
+#include <tuple>
+#include <utility>
 
 namespace tim
 {
@@ -66,3 +70,6 @@ private:
 };
 }  // namespace component
 }  // namespace tim
+
+TIMEMORY_SET_CLASS_VERSION(0, tim::component::nvml_processes)
+TIMEMORY_SET_CLASS_VERSION(0, tim::backends::nvml_process_data)

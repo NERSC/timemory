@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/storage/ring_buffer.hpp"
+#include "timemory/macros/os.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/units.hpp"
 
@@ -31,9 +32,11 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#if defined(TIMEMORY_UNIX)
+#    include <sys/mman.h>
+#    include <sys/stat.h>
+#    include <sys/types.h>
+#endif
 
 namespace tim
 {
@@ -59,12 +62,13 @@ ring_buffer::init(size_t _size)
     m_read_count  = 0;
     m_write_count = 0;
 
+#if defined(TIMEMORY_UNIX)
     // Set file path depending on whether shared memory is compiled in or not.
-#ifdef SHM
+#    ifdef SHM
     char path[] = "/dev/shm/rb-XXXXXX";
-#else
+#    else
     char path[] = "/tmp/rb-XXXXXX";
-#endif /* SHM */
+#    endif /* SHM */
 
     // Create a temporary file for mmap backing.
     if((m_fd = mkstemp(path)) < 0)
@@ -96,12 +100,17 @@ ring_buffer::init(size_t _size)
     if(mmap(static_cast<char*>(m_ptr) + m_size, m_size, PROT_READ | PROT_WRITE,
             MAP_FIXED | MAP_SHARED, m_fd, 0) == MAP_FAILED)
         destroy();
+#else
+    m_ptr = malloc(m_size * sizeof(char));
+    (void) m_fd;
+#endif
 }
 
 void
 ring_buffer::destroy()
 {
     m_init = false;
+#if defined(TIMEMORY_UNIX)
     // Truncate file to zero, to avoid writing back memory to file, on munmap.
     if(ftruncate(m_fd, 0) < 0)
     {
@@ -115,6 +124,9 @@ ring_buffer::destroy()
     close(m_fd);
     if(ret)
         perror("munmap");
+#else
+    free(m_ptr);
+#endif
 }
 
 }  // namespace base

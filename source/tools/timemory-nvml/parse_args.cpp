@@ -111,6 +111,18 @@ parse_args_and_configure(int& argc, char**& argv)
             tim::settings::verbose() = verbose() = -1;
             tim::settings::debug() = debug() = false;
         });
+    parser.add_argument({ "-c", "--buffer-count" }, "Buffer count")
+        .count(1)
+        .action([](parser_t& p) { buffer_count() = p.get<size_t>("buffer-count"); });
+    parser.add_argument({ "-m", "--max-samples" }, "Maximum samples")
+        .count(1)
+        .action([](parser_t& p) { max_samples() = p.get<size_t>("max-samples"); });
+    parser.add_argument({ "-i", "--dump-interval" }, "Dump interval")
+        .count(1)
+        .action([](parser_t& p) { dump_interval() = p.get<size_t>("dump-interval"); });
+    parser.add_argument({ "-s", "--sample-interval" }, "Sample interval")
+        .count(1)
+        .action([](parser_t& p) { sample_interval() = p.get<double>("sample-interval"); });
     parser
         .add_argument({ "-o", "--output" },
                       // indented 35 spaces

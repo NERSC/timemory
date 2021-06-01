@@ -95,7 +95,10 @@ nvml_processes::get_display() const
     for(auto& itr : load())
         os << ", " << (itr / std::get<1>(_memory_unit())) << " "
            << std::get<0>(_memory_unit());
-    return os.str().substr(2);
+    if(os.str().length() > 0)
+        return os.str().substr(2);
+    else
+        return std::string{};
 }
 
 std::tuple<std::string, int64_t>

@@ -44,18 +44,41 @@ namespace backends
 struct nvml_process_data
 {
     using value_type = unsigned long long;
+    using pid_map_t = std::unordered_map<unsigned long, std::string>;
+
+    static pid_map_t& get_pid_name_map()
+    {
+        static pid_map_t _instance{};
+        return _instance;
+    }
+
+    static void add_pid_name(unsigned int _pid)
+    {
+        if(get_pid_name_map().count(_pid) == 0)
+        {
+            constexpr int buffer_size = 64;
+            char          name[buffer_size + 1];
+            memset(name, '\0', buffer_size + 1);
+            auto ret = nvmlSystemGetProcessName(_pid, name, buffer_size);
+            if(ret == NVML_SUCCESS)
+                get_pid_name_map()[_pid] = std::string{ name };
+        }
+    }
 
     TIMEMORY_DEFAULT_OBJECT(nvml_process_data)
 
     nvml_process_data(const nvmlProcessInfo_t& rhs)
     : pid{ rhs.pid }
     , used_gpu_memory{ rhs.usedGpuMemory }
-    {}
+    {
+        add_pid_name(pid);
+    }
 
     nvml_process_data& operator=(const nvmlProcessInfo_t& rhs)
     {
         pid             = rhs.pid;
         used_gpu_memory = rhs.usedGpuMemory;
+        add_pid_name(pid);
         return *this;
     }
 
@@ -90,19 +113,23 @@ struct nvml_process_data
 
     friend std::ostream& operator<<(std::ostream& os, const nvml_process_data& rhs)
     {
-        constexpr int buffer_size = 64;
-        char          name[buffer_size + 1];
-        name[buffer_size] = '\0';
-        nvmlSystemGetProcessName(rhs.pid, name, buffer_size);
-        os << ", " << name << " :: " << rhs.used_gpu_memory;
+        if(get_pid_name_map().count(rhs.pid) > 0)
+            os << get_pid_name_map()[rhs.pid] << " :: " << rhs.used_gpu_memory;
+        else
+            os << rhs.pid << " :: " << rhs.used_gpu_memory;
         return os;
     }
 
     template <typename ArchiveT>
     void serialize(ArchiveT& ar, const unsigned int)
     {
-        ar(cereal::make_nvp("pid", pid),
-           cereal::make_nvp("used_gpu_memory", used_gpu_memory));
+        if(get_pid_name_map().count(pid) > 0)
+            ar(cereal::make_nvp("pid", pid),
+               cereal::make_nvp("name", get_pid_name_map()[pid]),
+               cereal::make_nvp("used_gpu_memory", used_gpu_memory));
+        else
+            ar(cereal::make_nvp("pid", pid),
+               cereal::make_nvp("used_gpu_memory", used_gpu_memory));
     }
 
     unsigned int pid             = 0;

@@ -28,7 +28,16 @@
 #include "nvml_temperature.hpp"
 #include "nvml_utilization_rate.hpp"
 
+#include <timemory/general/serialization.hpp>
 #include <timemory/storage/ring_buffer.hpp>
+#include <timemory/timemory.hpp>
+#include <timemory/tpls/cereal/cereal.hpp>
+#include <timemory/variadic/lightweight_tuple.hpp>
+
+#include <chrono>
+#include <map>
+#include <thread>
+#include <vector>
 
 using bundle_t = tim::lightweight_tuple<nvml_processes, nvml_memory_info,
                                         nvml_temperature, nvml_utilization_rate>;
@@ -37,17 +46,22 @@ using ring_buffer_t       = tim::data_storage::ring_buffer<bundle_t>;
 using device_bundle_map_t = std::map<int, ring_buffer_t>;
 
 void
-dump(const device_bundle_map_t& _data)
+dump(const device_bundle_map_t& _data, bool report = false)
 {
     using map_type = std::map<int, std::vector<bundle_t>>;
     map_type _mdata{};
 
+    CONDITIONAL_PRINT_HERE(debug() || verbose() > 1, "Writing bundle data to %s",
+                           get_config().get_output_filename().c_str());
+
     for(auto& itr : _data)
     {
         std::vector<bundle_t> _vdata{};
-        size_t                n = itr.second.count();
-        _vdata.resize(n);
-        for(size_t i = 0; i < n; ++i)
+        size_t                _n = itr.second.count();
+        _vdata.resize(_n);
+        CONDITIONAL_PRINT_HERE(debug() || verbose() > 1, "Device %i has %i entries",
+                               (int) itr.first, (int) _n);
+        for(size_t i = 0; i < _n; ++i)
         {
             itr.second.read(&_vdata[i]);
         }
@@ -61,8 +75,9 @@ dump(const device_bundle_map_t& _data)
 
     auto fname = get_config().get_output_filename();
     fname += ".json";
-    fprintf(stderr, "%s>>> Outputting '%s'...\n", (verbose() < 0) ? "" : "\n",
-            fname.c_str());
+    if(debug() || verbose() > 0 || report)
+        fprintf(stderr, "%s>>> Outputting '%s'...\n", (verbose() < 0) ? "" : "\n",
+                fname.c_str());
     tim::generic_serialization<json_type>(fname, _mdata, "timemory", "nvml", _cmdline);
 }
 
@@ -84,20 +99,27 @@ monitor(const std::vector<nvml_device_info>& _device_info)
     // create a ring buffer for each device
     for(const auto& itr : _device_info)
     {
+        CONDITIONAL_PRINT_HERE(debug(),
+                               "Creating ring buffer for %i entries for device %i",
+                               (int) buffer_count(), itr.index);
         device_bundle_map.emplace(itr.index, buffer_count());
     }
 
+    long int _duration = 1.0e9 * sample_interval();
+    size_t   ncount    = 0;
     while(true)
     {
-        size_t ncount = 0;
         for(const auto& itr : _device_info)
         {
             bundle_t _bundle{ get_record_time() };
             _bundle.sample(itr.device);
-            device_bundle_map[itr.index].write(&_bundle);
+            if(_bundle.get<nvml_processes>()->get().size() > 0)
+                device_bundle_map[itr.index].write(&_bundle);
         }
         auto nidx = ++ncount;
-        if(nidx >= max_samples() && max_samples() > 0)
+        if(finished())
+            break;
+        if(max_samples() > 0 && nidx >= max_samples())
         {
             break;
         }
@@ -106,7 +128,8 @@ monitor(const std::vector<nvml_device_info>& _device_info)
             ncount = 0;
             dump(device_bundle_map);
         }
+        std::this_thread::sleep_for(std::chrono::nanoseconds{ _duration });
     }
 
-    dump(device_bundle_map);
+    dump(device_bundle_map, true);
 }

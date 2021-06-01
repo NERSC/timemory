@@ -35,6 +35,7 @@
 #include <nvml.h>
 
 #include <cassert>
+#include <string>
 
 namespace tim
 {
@@ -50,6 +51,10 @@ struct nvml_temperature : public base<nvml_temperature, unsigned int>
     static std::string display_unit() { return "Celsius"; }
 
     void sample(nvmlDevice_t _device);
+
+    std::string get_display() const { return std::to_string(get()) + " deg C"; }
 };
 }  // namespace component
 }  // namespace tim
+
+TIMEMORY_SET_CLASS_VERSION(0, tim::component::nvml_temperature)

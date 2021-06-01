@@ -3,8 +3,12 @@ if(NOT TIMEMORY_USE_NVML)
     return()
 endif()
 
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
+
+if(NOT DEFINED TIMEMORY_BUILD_NVML)
+    set(TIMEMORY_BUILD_NVML ON CACHE BOOL "Build NVML exe")
+endif()
 
 #----------------------------------------------------------------------------------------#
 # Build and install nvml tool
@@ -35,7 +39,6 @@ target_link_libraries(timemory-nvml-exe PRIVATE
     timemory::timemory-develop-options
     timemory::timemory-threading
     timemory::timemory-headers
-    timemory::timemory-core
     timemory::timemory-nvml)
 
 add_target_flag_if_avail(timemory-nvml-exe "-g")

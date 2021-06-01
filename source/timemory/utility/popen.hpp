@@ -85,18 +85,27 @@ TIMEMORY_UTILITY_LINKAGE(void)  // NOLINT
 restore_privileges();
 //
 inline strvec_t
-read_fork(TIMEMORY_PIPE* ldd)
+read_fork(TIMEMORY_PIPE* proc, int max_counter = 50)
 {
     int      counter = 0;
     strvec_t linked_libraries;
 
-    while(ldd)
+    while(proc)
     {
         char buffer[4096];
-        auto ret = fgets(buffer, 4096, ldd->read_fd);
+        auto ret = fgets(buffer, 4096, proc->read_fd);
         if(ret == nullptr || strlen(buffer) == 0)
         {
-            if(counter++ > 50)
+            if(max_counter == 0)
+            {
+                int   stat;
+                pid_t cpid = waitpid(proc->child_pid, &stat, WNOHANG);
+                if(cpid == 0)
+                    continue;
+                else
+                    break;
+            }
+            if(counter++ > max_counter)
                 break;
             continue;
         }
@@ -116,15 +125,24 @@ read_fork(TIMEMORY_PIPE* ldd)
 }
 //
 inline std::ostream&
-flush_output(std::ostream& os, TIMEMORY_PIPE* ldd, int max_counter = 5000)
+flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0)
 {
     int counter = 0;
-    while(ldd)
+    while(proc)
     {
         char buffer[4096];
-        auto ret = fgets(buffer, 4096, ldd->read_fd);
+        auto ret = fgets(buffer, 4096, proc->read_fd);
         if(ret == nullptr || strlen(buffer) == 0)
         {
+            if(max_counter == 0)
+            {
+                int   stat;
+                pid_t cpid = waitpid(proc->child_pid, &stat, WNOHANG);
+                if(cpid == 0)
+                    continue;
+                else
+                    break;
+            }
             if(counter++ > max_counter)
                 break;
             continue;

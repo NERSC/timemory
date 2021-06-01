@@ -546,7 +546,10 @@ public:
             }
         }
 
-        ar(cereal::make_nvp("data", m_data));
+        ar.setNextName("data");
+        ar.startNode();
+        invoke::serialize(ar, m_data);
+        ar.finishNode();
     }
 
 public:

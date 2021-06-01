@@ -1098,6 +1098,44 @@ get_labeled(TupleT<Tp&...>&& obj, Args&&... args)
 }
 //
 //--------------------------------------------------------------------------------------//
+//                                  get_labeled
+//--------------------------------------------------------------------------------------//
+//
+namespace impl
+{
+template <typename ArchiveT, typename TupleT, size_t... Idx>
+auto
+serialize(ArchiveT& ar, TupleT& obj, std::index_sequence<Idx...>)
+{
+    auto _serialize = [&ar](auto& _obj) {
+        using serialization_t = operation::serialization<decay_t<decltype(_obj)>>;
+        auto _label = _obj.label();
+        ar.setNextName(_label.c_str());
+        ar.startNode();
+        serialization_t{}(ar, typename serialization_t::metadata{} );
+        ar(cereal::make_nvp("entry", _obj));
+        ar.finishNode();
+    };
+    TIMEMORY_FOLD_EXPRESSION(_serialize(std::get<Idx>(obj)));
+}
+//
+}  // namespace impl
+//
+template <typename ArchiveT, template <typename...> class TupleT, typename... Tp>
+auto
+serialize(ArchiveT& ar, TupleT<Tp...>& obj)
+{
+    impl::serialize(ar, obj, std::make_index_sequence<sizeof...(Tp)>{});
+}
+//
+template <typename ArchiveT, template <typename...> class TupleT, typename... Tp>
+auto
+serialize(ArchiveT& ar, TupleT<Tp&...>&& obj)
+{
+    impl::serialize(ar, obj, std::make_index_sequence<sizeof...(Tp)>{});
+}
+//
+//--------------------------------------------------------------------------------------//
 //                                  get_cache
 //--------------------------------------------------------------------------------------//
 //

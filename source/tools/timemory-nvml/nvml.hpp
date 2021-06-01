@@ -24,10 +24,6 @@
 
 #pragma once
 
-#define TIMEMORY_DISABLE_BANNER
-#define TIMEMORY_DISABLE_STORE_ENVIRONMENT
-#define TIMEMORY_DISABLE_CEREAL_CLASS_VERSION
-
 #include "timemory/general.hpp"
 #include "timemory/sampling.hpp"
 #include "timemory/timemory.hpp"
@@ -60,15 +56,17 @@ struct nvml_device_info
 
 struct nvml_config
 {
-    bool   debug            = tim::get_env("TIMEMORY_NVML_DEBUG", false);
-    int    verbose          = tim::get_env("TIMEMORY_NVML_VERBOSE", 0);
-    size_t buffer_count     = tim::get_env<size_t>("TIMEMORY_NVML_BUFFER_COUNT", 1000);
-    size_t max_samples      = tim::get_env<double>("TIMEMORY_NVML_MAX_SAMPLES", 0);
-    size_t dump_interval    = tim::get_env<size_t>("TIMEMORY_NVML_DUMP_INTERVAL", 1000);
-    double sample_interval  = tim::get_env<double>("TIMEMORY_NVML_SAMPLE_INTERVAL", 1.0);
-    std::string output_file = tim::get_env<std::string>("TIMEMORY_NVML_OUTPUT", "");
+    bool   debug           = tim::get_env("TIMEMORY_NVML_DEBUG", false);
+    bool   finished        = false;
+    int    verbose         = tim::get_env("TIMEMORY_NVML_VERBOSE", 0);
+    size_t buffer_count    = tim::get_env<size_t>("TIMEMORY_NVML_BUFFER_COUNT", 1000);
+    size_t max_samples     = tim::get_env<double>("TIMEMORY_NVML_MAX_SAMPLES", 0);
+    size_t dump_interval   = tim::get_env<size_t>("TIMEMORY_NVML_DUMP_INTERVAL", 1000);
+    double sample_interval = tim::get_env<double>("TIMEMORY_NVML_SAMPLE_INTERVAL", 1.0);
+    std::string output_file =
+        tim::get_env<std::string>("TIMEMORY_NVML_OUTPUT", "timemory-nvml-output");
     std::string time_format =
-        tim::get_env<std::string>("TIMEMORY_NVML_TIME_FORMAT", "%F_%I.%M_%p");
+        tim::get_env<std::string>("TIMEMORY_NVML_TIME_FORMAT", "%F_%I:%M:%S_%p");
     std::vector<std::string> argvector = {};
 
     template <typename Archive>
@@ -102,12 +100,13 @@ nvml_config::serialize(Archive& ar, unsigned int)
 #define NVML_CONFIG_FUNCTION(NAME)                                                       \
     inline auto& NAME() { return get_config().NAME; }
 
-NVML_CONFIG_FUNCTION(output_file)
 NVML_CONFIG_FUNCTION(debug)
+NVML_CONFIG_FUNCTION(finished)
 NVML_CONFIG_FUNCTION(verbose)
 NVML_CONFIG_FUNCTION(buffer_count)
 NVML_CONFIG_FUNCTION(max_samples)
 NVML_CONFIG_FUNCTION(dump_interval)
 NVML_CONFIG_FUNCTION(sample_interval)
+NVML_CONFIG_FUNCTION(output_file)
 NVML_CONFIG_FUNCTION(time_format)
 NVML_CONFIG_FUNCTION(argvector)
