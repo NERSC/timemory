@@ -147,7 +147,7 @@ flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0)
                 break;
             continue;
         }
-        os << string_t{ buffer };
+        os << string_t{ buffer } << std::flush;
     }
 
     return os;

@@ -30,8 +30,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-void
-execute(std::vector<nvml_device_info>&, int argc, char** argv);
+void execute(std::vector<nvml_device_info>&, int argc, char** argv);
 
 int
 main(int argc, char** argv)
@@ -131,10 +130,11 @@ execute(std::vector<nvml_device_info>& unit_device_vec, int argc, char** argv)
             _argv.at(i - 1) = argv[i];
             _cmdstring << " " << argvector().back();
         }
-        std::cerr << "command:" << _cmdstring.str() << std::endl;
         auto _cmd = tim::popen::popen(_argv.at(0), _argv.data());
         tim::popen::flush_output(std::cout, _cmd);
-        std::cout << std::flush;
+        auto perr = tim::popen::pclose(_cmd);
+        if(perr != 0)
+            perror("Error in timemory_fork");
         finished() = true;
     };
 

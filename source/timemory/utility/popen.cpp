@@ -325,6 +325,22 @@ pclose(TIMEMORY_PIPE* p)
     int   status;
     pid_t pid = -1;
 
+    // clean up memory
+    auto _clean = [&]() {
+        if(p->read_fd)
+            fclose(p->read_fd);
+        if(p->write_fd)
+            fclose(p->write_fd);
+        delete p;
+    };
+
+    // check if child already exited
+    if(p->child_pid != -1 && waitpid(p->child_pid, &status, WNOHANG) != 0)
+    {
+        _clean();
+        return 0;
+    }
+
     if(p->child_pid != -1)
     {
         do
@@ -332,11 +348,7 @@ pclose(TIMEMORY_PIPE* p)
             pid = waitpid(p->child_pid, &status, 0);
         } while(pid == -1 && errno == EINTR);
     }
-    if(p->read_fd)
-        fclose(p->read_fd);
-    if(p->write_fd)
-        fclose(p->write_fd);
-    delete p;
+    _clean();
     if(pid != -1 && WIFEXITED(status))
         return WEXITSTATUS(status);
     return (pid == -1 ? -1 : 0);
