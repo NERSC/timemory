@@ -262,7 +262,7 @@ TEST_F(libunwind_tests, bt)
     bar(1);
 
     memset(&act, 0, sizeof(act));
-    act.sa_handler = (void (*)(int)) sighandler;
+    act.sa_handler = &sighandler;
     act.sa_flags   = SA_SIGINFO;
     if(sigaction(SIGTERM, &act, NULL) < 0)
     {
@@ -286,7 +286,7 @@ TEST_F(libunwind_tests, bt)
     }
 
     memset(&act, 0, sizeof(act));
-    act.sa_handler = (void (*)(int)) sighandler;
+    act.sa_handler = &sighandler;
     act.sa_flags   = SA_ONSTACK | SA_SIGINFO;
     if(sigaction(SIGTERM, &act, NULL) < 0)
     {

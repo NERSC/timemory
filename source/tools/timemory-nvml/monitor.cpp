@@ -45,6 +45,24 @@ using bundle_t = tim::lightweight_tuple<nvml_processes, nvml_memory_info,
 using ring_buffer_t       = tim::data_storage::ring_buffer<bundle_t>;
 using device_bundle_map_t = std::map<int, ring_buffer_t>;
 
+template <typename Tp, typename ArchiveT>
+void
+serialize_metadata(ArchiveT& ar)
+{
+    auto _label = Tp::label();
+    ar.setNextName(_label.c_str());
+    ar.startNode();
+    tim::operation::serialization<Tp>{}(
+        ar, typename tim::operation::serialization<Tp>::metadata{});
+    ar.finishNode();
+}
+
+template <typename ArchiveT, typename... Tp>
+void serialize_metadata(ArchiveT& ar, tim::type_list<Tp...>)
+{
+    TIMEMORY_FOLD_EXPRESSION(serialize_metadata<Tp>(ar));
+}
+
 void
 dump(const device_bundle_map_t& _data, bool report = false)
 {
@@ -71,6 +89,10 @@ dump(const device_bundle_map_t& _data, bool report = false)
     // extra function
     auto _cmdline = [](json_type& ar) {
         ar(tim::cereal::make_nvp("config", get_config()));
+        ar.setNextName("metadata");
+        ar.startNode();
+        serialize_metadata(ar, tim::convert_t<bundle_t, tim::type_list<>>{});
+        ar.finishNode();
     };
 
     auto fname = get_config().get_output_filename();
@@ -109,14 +131,18 @@ monitor(const std::vector<nvml_device_info>& _device_info)
     size_t   ncount    = 0;
     while(true)
     {
+        bool _valid = false;
         for(const auto& itr : _device_info)
         {
             bundle_t _bundle{ get_record_time() };
             _bundle.sample(itr.device);
             if(_bundle.get<nvml_processes>()->get().size() > 0)
+            {
+                _valid = true;
                 device_bundle_map[itr.index].write(&_bundle);
+            }
         }
-        auto nidx = ++ncount;
+        auto nidx = (_valid) ? ++ncount : ncount;
         if(finished())
             break;
         if(max_samples() > 0 && nidx >= max_samples())

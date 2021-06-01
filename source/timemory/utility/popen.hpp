@@ -61,6 +61,7 @@ struct TIMEMORY_PIPE
     FILE* read_fd  = nullptr;
     FILE* write_fd = nullptr;
     pid_t child_pid;
+    int   child_status = std::numeric_limits<int>::max();
 };
 //
 TIMEMORY_UTILITY_LINKAGE(TIMEMORY_PIPE*)
@@ -98,8 +99,7 @@ read_fork(TIMEMORY_PIPE* proc, int max_counter = 50)
         {
             if(max_counter == 0)
             {
-                int   stat;
-                pid_t cpid = waitpid(proc->child_pid, &stat, WNOHANG);
+                pid_t cpid = waitpid(proc->child_pid, &proc->child_status, WNOHANG);
                 if(cpid == 0)
                     continue;
                 else
@@ -136,8 +136,7 @@ flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0)
         {
             if(max_counter == 0)
             {
-                int   stat;
-                pid_t cpid = waitpid(proc->child_pid, &stat, WNOHANG);
+                pid_t cpid = waitpid(proc->child_pid, &proc->child_status, WNOHANG);
                 if(cpid == 0)
                     continue;
                 else

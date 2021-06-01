@@ -28,7 +28,6 @@
 #include <sstream>
 
 #include <stdexcept>
-#include <unistd.h>
 
 namespace tim
 {
@@ -63,11 +62,17 @@ struct ring_buffer
 
     /// Write data to buffer.
     template <typename Tp>
-    size_t write(Tp* in);
+    size_t write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int> = 0);
+
+    template <typename Tp>
+    size_t write(Tp* in, std::enable_if_t<!std::is_class<Tp>::value, int> = 0);
 
     /// Read data from buffer.
     template <typename Tp>
-    size_t read(Tp* out) const;
+    size_t read(Tp* out, std::enable_if_t<std::is_class<Tp>::value, int> = 0) const;
+
+    template <typename Tp>
+    size_t read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int> = 0) const;
 
     /// Returns number of bytes currently held by the buffer.
     size_t count() const { return m_write_count - m_read_count; }
@@ -104,8 +109,11 @@ private:
 //
 template <typename Tp>
 size_t
-ring_buffer::write(Tp* in)
+ring_buffer::write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int>)
 {
+    if(in == nullptr)
+        return 0;
+
     auto _length = sizeof(Tp);
 
     // Make sure we don't put in more than there's room for, by writing no
@@ -125,9 +133,32 @@ ring_buffer::write(Tp* in)
 //
 template <typename Tp>
 size_t
-ring_buffer::read(Tp* out) const
+ring_buffer::write(Tp* in, std::enable_if_t<!std::is_class<Tp>::value, int>)
 {
-    if(is_empty())
+    if(in == nullptr)
+        return 0;
+
+    auto _length = sizeof(Tp);
+
+    // Make sure we don't put in more than there's room for, by writing no
+    // more than there is free.
+    if(_length > free())
+        _length = free();
+
+    // Copy in.
+    memcpy(write_ptr(), in, _length);
+
+    // Update write count
+    m_write_count += _length;
+
+    return _length;
+}
+//
+template <typename Tp>
+size_t
+ring_buffer::read(Tp* out, std::enable_if_t<std::is_class<Tp>::value, int>) const
+{
+    if(is_empty() || out == nullptr)
         return 0;
 
     auto _length = sizeof(Tp);
@@ -137,7 +168,30 @@ ring_buffer::read(Tp* out) const
         _length = count();
 
     // Copy out for BYTE, nothing magic here.
-    *out = *((Tp*) read_ptr());
+    *out = *(reinterpret_cast<Tp*>(read_ptr()));
+
+    // Update read count.
+    m_read_count += _length;
+
+    return _length;
+}
+//
+template <typename Tp>
+size_t
+ring_buffer::read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int>) const
+{
+    if(is_empty() || out == nullptr)
+        return 0;
+
+    auto _length = sizeof(Tp);
+
+    // Make sure we do not read out more than there is actually in the buffer.
+    if(_length > count())
+        _length = count();
+
+    assert(out != nullptr);
+    // Copy out for BYTE, nothing magic here.
+    memcpy(out, read_ptr(), _length);
 
     // Update read count.
     m_read_count += _length;

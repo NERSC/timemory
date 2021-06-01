@@ -30,7 +30,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-void
+int
 execute(std::vector<nvml_device_info>&, int argc, char** argv);
 
 int
@@ -38,6 +38,7 @@ main(int argc, char** argv)
 {
     parse_args_and_configure(argc, argv);
 
+    int                           ec           = 0;
     unsigned int                  device_count = 0;
     std::vector<nvml_device_info> unit_device_vec{};
 
@@ -94,11 +95,12 @@ main(int argc, char** argv)
     for(size_t i = 0; i < unit_device_vec.size(); ++i)
         unit_device_vec.at(i).index = static_cast<int>(i);
 
-    execute(unit_device_vec, argc, argv);
+    ec = execute(unit_device_vec, argc, argv);
 
     TIMEMORY_NVML_RUNTIME_CHECK_ERROR(nvmlShutdown(), {})
     tim::timemory_finalize();
-    return 0;
+    return ec;
+
 Error:
     auto result = nvmlShutdown();
     if(NVML_SUCCESS != result)
@@ -107,21 +109,22 @@ Error:
     tim::timemory_finalize();
     fprintf(stderr, "Press ENTER to continue...\n");
     getchar();
-    return 1;
+    return EXIT_FAILURE;
 }
 
 //--------------------------------------------------------------------------------------//
 
-void
+int
 execute(std::vector<nvml_device_info>& unit_device_vec, int argc, char** argv)
 {
     if(argc == 1)
     {
         monitor(unit_device_vec);
-        return;
+        return EXIT_SUCCESS;
     }
 
-    auto _execute = [argc, argv]() {
+    int ec = 0;
+    auto _execute = [&ec, argc, argv]() {
         std::vector<char*> _argv(argc, nullptr);
         argvector().clear();
         std::ostringstream _cmdstring{};
@@ -133,8 +136,8 @@ execute(std::vector<nvml_device_info>& unit_device_vec, int argc, char** argv)
         }
         auto _cmd = tim::popen::popen(_argv.at(0), _argv.data());
         tim::popen::flush_output(std::cout, _cmd);
-        auto perr = tim::popen::pclose(_cmd);
-        if(perr != 0)
+        ec = tim::popen::pclose(_cmd);
+        if(ec != 0)
             perror("Error in timemory_fork");
         finished() = true;
     };
@@ -142,6 +145,7 @@ execute(std::vector<nvml_device_info>& unit_device_vec, int argc, char** argv)
     std::thread _t{ _execute };
     monitor(unit_device_vec);
     _t.join();
+    return ec;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -405,13 +405,13 @@ add_option(TIMEMORY_USE_VTUNE
 add_option(TIMEMORY_USE_CUDA
     "Enable CUDA option for GPU measurements" ${_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_NVTX
-    "Enable NVTX marking API" ${_CUDA} CMAKE_DEFINE)
+    "Enable NVTX marking API" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CUPTI
-    "Enable CUPTI profiling for NVIDIA GPUs" ${_CUDA} CMAKE_DEFINE)
+    "Enable CUPTI profiling for NVIDIA GPUs" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_NVML
+    "Enable support for NVIDIA Management Library" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_NCCL
     "Enable NCCL support for NVIDIA GPUs" ${_NCCL} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_NVML
-    "Enable support for NVIDIA Management Library" ${_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_PYTHON

@@ -111,6 +111,14 @@ struct nvml_process_data
         return lhs;
     }
 
+    auto percent_diff(const nvml_process_data& rhs) const
+    {
+        auto lhs = *this;
+        lhs.used_gpu_memory = math::compute<value_type>::percent_diff(
+            lhs.used_gpu_memory, rhs.used_gpu_memory);
+        return lhs;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const nvml_process_data& rhs)
     {
         if(get_pid_name_map().count(rhs.pid) > 0)
@@ -132,6 +140,7 @@ struct nvml_process_data
                cereal::make_nvp("used_gpu_memory", used_gpu_memory));
     }
 
+private:
     unsigned int pid             = 0;
     value_type   used_gpu_memory = 0;
 };
@@ -175,6 +184,13 @@ struct nvml_memory_info_data
         return *this;
     }
 
+    auto percent_diff(const nvml_memory_info_data& rhs) const
+    {
+        auto lhs   = *this;
+        lhs.m_data = math::compute<array_type>::percent_diff(lhs.m_data, rhs.m_data);
+        return lhs;
+    }
+
     template <typename Tp, enable_if_t<std::is_integral<Tp>::value> = 0>
     friend nvml_memory_info_data operator/(nvml_memory_info_data lhs, Tp rhs)
     {
@@ -207,6 +223,7 @@ struct nvml_memory_info_data
     value_type& total() { return m_data.at(1); }
     value_type& used() { return m_data.at(2); }
 
+private:
     array_type m_data{};
 };
 
@@ -249,6 +266,13 @@ struct nvml_utilization_rate_data
         return *this;
     }
 
+    auto percent_diff(const nvml_utilization_rate_data& rhs) const
+    {
+        auto lhs = *this;
+        lhs.m_data = math::compute<array_type>::percent_diff(lhs.m_data, rhs.m_data);
+        return lhs;
+    }
+
     template <typename Tp, enable_if_t<std::is_integral<Tp>::value> = 0>
     friend nvml_utilization_rate_data operator/(nvml_utilization_rate_data lhs, Tp rhs)
     {
@@ -280,6 +304,7 @@ struct nvml_utilization_rate_data
     value_type& gpu() { return m_data.at(0); }
     value_type& memory() { return m_data.at(1); }
 
+private:
     array_type m_data{};
 };
 
