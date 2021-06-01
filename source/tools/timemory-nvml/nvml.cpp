@@ -30,7 +30,8 @@
 
 //--------------------------------------------------------------------------------------//
 
-void execute(std::vector<nvml_device_info>&, int argc, char** argv);
+void
+execute(std::vector<nvml_device_info>&, int argc, char** argv);
 
 int
 main(int argc, char** argv)
