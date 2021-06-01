@@ -115,27 +115,32 @@ parse_args_and_configure(int& argc, char**& argv)
         .add_argument({ "-c", "--buffer-count" },
                       "Buffer count (env: TIMEMORY_NVML_BUFFER_COUNT)")
         .count(1)
+        .dtype("integer")
         .action([](parser_t& p) { buffer_count() = p.get<size_t>("buffer-count"); });
     parser
         .add_argument({ "-m", "--max-samples" },
                       "Maximum samples (env: TIMEMORY_NVML_MAX_SAMPLES)")
         .count(1)
+        .dtype("integer")
         .action([](parser_t& p) { max_samples() = p.get<size_t>("max-samples"); });
     parser
         .add_argument({ "-i", "--dump-interval" },
                       "Dump interval (env: TIMEMORY_NVML_DUMP_INTERVAL)")
         .count(1)
+        .dtype("integer")
         .action([](parser_t& p) { dump_interval() = p.get<size_t>("dump-interval"); });
     parser
         .add_argument({ "-s", "--sample-interval" },
                       "Sample interval (env: TIMEMORY_NVML_SAMPLE_INTERVAL)")
         .count(1)
+        .dtype("double")
         .action(
             [](parser_t& p) { sample_interval() = p.get<double>("sample-interval"); });
     parser
         .add_argument({ "-f", "--time-format" },
                       "strftime format for labels (env: TIMEMORY_NVML_TIME_FORMAT)")
         .count(1)
+        .dtype("string")
         .action([](parser_t& p) { time_format() = p.get<std::string>("time-format"); });
     parser
         .add_argument({ "-o", "--output" },
@@ -145,6 +150,7 @@ parse_args_and_configure(int& argc, char**& argv)
 %{INDENT}% - '%p' to encode the process ID
 %{INDENT}% - '%j' to encode the SLURM job ID
 %{INDENT}% E.g. '-o timemory-nvml-output-%p'.)")
+        .dtype("string")
         .max_count(1);
 
     auto _args = parser.parse_known_args(argc, argv);
