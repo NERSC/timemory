@@ -323,7 +323,7 @@ int
 pclose(TIMEMORY_PIPE* p)
 {
     int   status = p->child_status;
-    pid_t pid = -1;
+    pid_t pid    = -1;
 
     // clean up memory
     auto _clean = [&]() {
@@ -339,7 +339,8 @@ pclose(TIMEMORY_PIPE* p)
         _clean();
         if(WIFEXITED(status))
         {
-            // printf("process %i exited, status=%d\n", p->child_pid, WEXITSTATUS(status));
+            // printf("process %i exited, status=%d\n", p->child_pid,
+            // WEXITSTATUS(status));
             return EXIT_SUCCESS;
         }
         else if(WIFSIGNALED(status))

@@ -58,7 +58,8 @@ serialize_metadata(ArchiveT& ar)
 }
 
 template <typename ArchiveT, typename... Tp>
-void serialize_metadata(ArchiveT& ar, tim::type_list<Tp...>)
+void
+serialize_metadata(ArchiveT& ar, tim::type_list<Tp...>)
 {
     TIMEMORY_FOLD_EXPRESSION(serialize_metadata<Tp>(ar));
 }

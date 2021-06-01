@@ -113,7 +113,7 @@ struct nvml_process_data
 
     auto percent_diff(const nvml_process_data& rhs) const
     {
-        auto lhs = *this;
+        auto lhs            = *this;
         lhs.used_gpu_memory = math::compute<value_type>::percent_diff(
             lhs.used_gpu_memory, rhs.used_gpu_memory);
         return lhs;
@@ -268,7 +268,7 @@ struct nvml_utilization_rate_data
 
     auto percent_diff(const nvml_utilization_rate_data& rhs) const
     {
-        auto lhs = *this;
+        auto lhs   = *this;
         lhs.m_data = math::compute<array_type>::percent_diff(lhs.m_data, rhs.m_data);
         return lhs;
     }

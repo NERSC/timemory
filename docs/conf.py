@@ -121,6 +121,7 @@ def copy_doxy_docs():
         "timemory-avail",
         "timemory-jump",
         "timemory-stubs",
+        "timemory-nvml",
         "kokkos-connector",
         "timemory-compiler-instrument",
     ]:

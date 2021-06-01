@@ -1108,7 +1108,7 @@ auto
 serialize(ArchiveT& ar, TupleT& obj, std::index_sequence<Idx...>)
 {
     auto _serialize = [&ar](auto& _obj) {
-        auto _label           = _obj.label();
+        auto _label = _obj.label();
         ar(cereal::make_nvp(_label.c_str(), _obj));
     };
     TIMEMORY_FOLD_EXPRESSION(_serialize(std::get<Idx>(obj)));

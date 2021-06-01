@@ -123,7 +123,7 @@ execute(std::vector<nvml_device_info>& unit_device_vec, int argc, char** argv)
         return EXIT_SUCCESS;
     }
 
-    int ec = 0;
+    int  ec       = 0;
     auto _execute = [&ec, argc, argv]() {
         std::vector<char*> _argv(argc, nullptr);
         argvector().clear();
