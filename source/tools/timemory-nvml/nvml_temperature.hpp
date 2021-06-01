@@ -43,8 +43,8 @@ namespace component
 {
 struct nvml_temperature : public base<nvml_temperature, unsigned int>
 {
-    using value_type       = unsigned int;
-    using base_type        = base<nvml_temperature, value_type>;
+    using value_type = unsigned int;
+    using base_type  = base<nvml_temperature, value_type>;
 
     static std::string label();
     static std::string description();

@@ -46,8 +46,8 @@ namespace component
 {
 struct nvml_memory_info : public base<nvml_memory_info, backends::nvml_memory_info_data>
 {
-    using value_type       = backends::nvml_memory_info_data;
-    using base_type        = base<nvml_memory_info, value_type>;
+    using value_type = backends::nvml_memory_info_data;
+    using base_type  = base<nvml_memory_info, value_type>;
 
     static std::string label();
     static std::string description();
@@ -59,7 +59,7 @@ struct nvml_memory_info : public base<nvml_memory_info, backends::nvml_memory_in
     void sample(nvmlDevice_t _device);
 
     std::array<unsigned long long, 3> get() const;
-    std::string get_display() const;
+    std::string                       get_display() const;
 
 private:
     static std::tuple<std::string, int64_t> _memory_unit();

@@ -47,8 +47,8 @@ namespace component
 struct nvml_utilization_rate
 : public base<nvml_utilization_rate, backends::nvml_utilization_rate_data>
 {
-    using value_type       = backends::nvml_utilization_rate_data;
-    using base_type        = base<nvml_utilization_rate, value_type>;
+    using value_type = backends::nvml_utilization_rate_data;
+    using base_type  = base<nvml_utilization_rate, value_type>;
 
     static std::string label();
     static std::string description();
@@ -60,7 +60,7 @@ struct nvml_utilization_rate
     void sample(nvmlDevice_t _device);
 
     std::array<unsigned int, 2> get() const;
-    std::string get_display() const;
+    std::string                 get_display() const;
 
 private:
     static std::tuple<std::string, int64_t> _memory_unit();

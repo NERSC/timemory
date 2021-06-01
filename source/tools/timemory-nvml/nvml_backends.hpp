@@ -44,7 +44,7 @@ namespace backends
 struct nvml_process_data
 {
     using value_type = unsigned long long;
-    using pid_map_t = std::unordered_map<unsigned long, std::string>;
+    using pid_map_t  = std::unordered_map<unsigned long, std::string>;
 
     static pid_map_t& get_pid_name_map()
     {

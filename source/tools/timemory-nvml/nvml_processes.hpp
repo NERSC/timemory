@@ -35,10 +35,10 @@
 #include <nvml.h>
 
 #include <cassert>
-#include <vector>
 #include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace tim
 {
