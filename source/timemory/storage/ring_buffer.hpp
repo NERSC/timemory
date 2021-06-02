@@ -185,13 +185,16 @@ ring_buffer::read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int>) con
 
     auto _length = sizeof(Tp);
 
+    using Up = typename std::remove_const<Tp>::type;
+
     // Make sure we do not read out more than there is actually in the buffer.
     if(_length > count())
         _length = count();
 
     assert(out != nullptr);
     // Copy out for BYTE, nothing magic here.
-    memcpy(out, read_ptr(), _length);
+    Up* _out = const_cast<Up*>(out);
+    memcpy(_out, read_ptr(), _length);
 
     // Update read count.
     m_read_count += _length;

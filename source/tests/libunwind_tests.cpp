@@ -239,7 +239,7 @@ bar(long v)
 }
 
 void
-sighandler(int signal, void* siginfo, void* context)
+sighandler(int signal, siginfo_t* siginfo, void* context)
 {
     tim::consume_parameters(signal, siginfo, context);
 
@@ -262,8 +262,8 @@ TEST_F(libunwind_tests, bt)
     bar(1);
 
     memset(&act, 0, sizeof(act));
-    act.sa_handler = &sighandler;
-    act.sa_flags   = SA_SIGINFO;
+    act.sa_sigaction = &sighandler;
+    act.sa_flags     = SA_SIGINFO;
     if(sigaction(SIGTERM, &act, NULL) < 0)
     {
         FAIL() << "sigaction: " << strerror(errno);
@@ -286,8 +286,8 @@ TEST_F(libunwind_tests, bt)
     }
 
     memset(&act, 0, sizeof(act));
-    act.sa_handler = &sighandler;
-    act.sa_flags   = SA_ONSTACK | SA_SIGINFO;
+    act.sa_sigaction = &sighandler;
+    act.sa_flags     = SA_ONSTACK | SA_SIGINFO;
     if(sigaction(SIGTERM, &act, NULL) < 0)
     {
         FAIL() << "sigaction: " << strerror(errno);
