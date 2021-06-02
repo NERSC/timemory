@@ -32,7 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#if defined(TIMEMORY_UNIX)
+#if defined(TIMEMORY_LINUX)
 #    include <sys/mman.h>
 #    include <sys/stat.h>
 #    include <sys/types.h>
@@ -55,15 +55,23 @@ ring_buffer::init(size_t _size)
     m_init = true;
 
     // Round up to multiple of page size.
-    _size += units::get_page_size() - ((_size % units::get_page_size())
+    _size += units::get_page_size() - ((_size % units::get_page_size() > 0)
                                            ? (_size % units::get_page_size())
                                            : units::get_page_size());
+
+    if((_size % units::get_page_size()) > 0)
+    {
+        std::ostringstream _oss{};
+        _oss << "Error! size is not a multiple of page size: " << _size << " % "
+             << units::get_page_size() << " = " << (_size % units::get_page_size());
+        throw std::runtime_error(_oss.str());
+    }
 
     m_size        = _size;
     m_read_count  = 0;
     m_write_count = 0;
 
-#if defined(TIMEMORY_UNIX)
+#if defined(TIMEMORY_LINUX)
     // Set file path depending on whether shared memory is compiled in or not.
 #    ifdef SHM
     char path[] = "/dev/shm/rb-XXXXXX";
@@ -111,7 +119,7 @@ void
 ring_buffer::destroy()
 {
     m_init = false;
-#if defined(TIMEMORY_UNIX)
+#if defined(TIMEMORY_LINUX)
     // Truncate file to zero, to avoid writing back memory to file, on munmap.
     if(ftruncate(m_fd, 0) < 0)
     {

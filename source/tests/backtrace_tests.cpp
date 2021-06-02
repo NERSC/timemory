@@ -156,7 +156,7 @@ TEST_F(backtrace_tests, backtrace)
     int  cnt = 0;
     for(const auto& itr : ret)
     {
-        if(itr)
+        if(itr && strlen(itr) > 0)
         {
             std::cerr << itr << std::endl;
             ++cnt;

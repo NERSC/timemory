@@ -48,6 +48,10 @@
 #    include "timemory/utility/popen.hpp"
 #endif
 
+#if defined(TIMEMORY_USE_LIBUNWIND)
+#    include <libunwind.h>
+#endif
+
 // C library
 #include <cctype>
 #include <cerrno>
@@ -297,14 +301,64 @@ TIMEMORY_NOINLINE auto
 get_backtrace()
 {
     static_assert((Depth - Offset) >= 1, "Error Depth - Offset should be >= 1");
+#    if defined(TIMEMORY_USE_LIBUNWIND) && 0
+    unw_cursor_t  cursor;
+    unw_context_t context;
 
-    using type = const char*;
     // destination
-    std::array<type, Depth> btrace;
-    btrace.fill(nullptr);
+    std::array<char[512], Depth> btrace{};
+    for(auto& itr : btrace)
+        itr[0] = '\0';
+
+    // Initialize cursor to current frame for local unwinding.
+    unw_getcontext(&context);
+    if(unw_init_local(&cursor, &context) < 0)
+    {
+        return btrace;
+    }
+
+    size_t tot_idx = 0;
+    while(unw_step(&cursor) > 0)
+    {
+        unw_word_t ip;   // stack pointer
+        unw_word_t off;  // offset
+        auto       _idx = ++tot_idx;
+        if(_idx >= Depth + Offset)
+            break;
+        auto ret = unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        printf("unw_get_reg(UNW_REG_IP) returned %i\n", ret);
+        printf("ip = %lx\n", (long) ip);
+        if(ip == 0)
+            break;
+        char name[512];
+        name[0] = '\0';
+        if(unw_get_proc_name(&cursor, name, sizeof(name), &off) == 0)
+        {
+            printf("[name]:      %s\n", name);
+            if(_idx >= Offset)
+            {
+                auto _lidx = _idx - Offset;
+                printf("[added@%i=%i]: %s\n", (int) _idx, (int) _lidx, name);
+                if(off)
+                    snprintf(btrace[_lidx], sizeof(btrace[_lidx]), "%s +0x%lx", name,
+                             (long) off);
+                else
+                    snprintf(btrace[_lidx], sizeof(btrace[_lidx]), "%s", name);
+            }
+        }
+    }
+
+    return btrace;
+#    else
+    // destination
+    std::array<char[512], Depth> btrace{};
+    for(auto& itr : btrace)
+        itr[0] = '\0';
 
     // plus one for this stack-frame
-    std::array<void*, Depth + Offset> buffer;
+    std::array<void*, Depth + Offset> buffer{};
+    buffer.fill(nullptr);
+
     // size of returned buffer
     auto sz = backtrace(buffer.data(), Depth + Offset);
     // size of relevant data
@@ -321,43 +375,28 @@ get_backtrace()
     else
     {
         for(decltype(n) i = 0; i < n; ++i)
-            btrace[i] = bsym[i];
+        {
+            snprintf(btrace[i], sizeof(btrace[i]), "%s", bsym[i]);
+        }
     }
+#    endif
     return btrace;
 }
 //
 template <size_t Depth, size_t Offset, typename Func>
 TIMEMORY_NOINLINE auto
-get_backtrace(Func&& func = [](const char* inp) { return std::string(inp); })
+get_backtrace(Func&& func = [](const char inp[512]) { return inp; })
 {
     static_assert((Depth - Offset) >= 1, "Error Depth - Offset should be >= 1");
 
-    using type = std::result_of_t<Func(const char*)>;
+    using type = std::result_of_t<Func(const char[512])>;
     // destination
-    std::array<type, Depth> btrace;
-    btrace.fill((std::is_pointer<type>::value) ? nullptr : type{});
+    std::array<type, Depth> btrace{};
 
-    // plus one for this stack-frame
-    std::array<void*, Depth + Offset> buffer;
-    // size of returned buffer
-    auto sz = backtrace(buffer.data(), Depth + Offset);
-    // size of relevant data
-    auto n = sz - Offset;
-
-    // skip ahead (Offset + 1) stack frames
-    char** bsym = backtrace_symbols(buffer.data() + Offset, n);
-
-    // report errors
-    if(bsym == nullptr)
-    {
-        perror("backtrace_symbols");
-    }
-    else
-    {
-        for(decltype(n) i = 0; i < n; ++i)
-            btrace[i] = func(bsym[i]);
-        free(bsym);
-    }
+    auto&& _data = get_backtrace<Depth, Offset + 1>();
+    auto   _n    = _data.size();
+    for(decltype(_n) i = 0; i < _n; ++i)
+        btrace[i] = func(_data[i]);
     return btrace;
 }
 //

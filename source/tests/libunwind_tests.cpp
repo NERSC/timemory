@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if !defined(UNW_LOCAL_ONLY)
+#    define UNW_LOCAL_ONLY
+#endif
+
 #include "test_macros.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN
@@ -115,10 +119,10 @@ int num_errors;
 
 /* These variables are global because they
  * cause the signal stack to overflow */
-char                                            buf[512], name[256];
+char                                            buf[512], name[512];
 unw_cursor_t                                    cursor;
 unw_context_t                                   uc;
-tim::data_storage::ring_buffer<const char[256]> name_buffer;
+tim::data_storage::ring_buffer<const char[512]> name_buffer;
 
 static void
 do_backtrace(void)
@@ -148,7 +152,7 @@ do_backtrace(void)
                 snprintf(buf, sizeof(buf), "<%s+0x%lx>", name, (long) off);
             else
                 snprintf(buf, sizeof(buf), "<%s>", name);
-            name_buffer.write(&name);
+            name_buffer.write(&buf);
         }
         if(verbose)
         {
@@ -253,7 +257,7 @@ TEST_F(libunwind_tests, bt)
     verbose = true;
 
     EXPECT_FALSE(name_buffer.is_initialized());
-    name_buffer.init(1000000 * sizeof(const char[256]));
+    name_buffer.init(1000);
     std::cout << "original: " << name_buffer << "\n";
 
     if(verbose)
@@ -277,7 +281,9 @@ TEST_F(libunwind_tests, bt)
         printf("\nBacktrace across signal handler on alternate stack:\n");
     stk.ss_sp = malloc(SIG_STACK_SIZE);
     if(!stk.ss_sp)
-        panic("failed to allocate %u bytes\n", SIG_STACK_SIZE);
+    {
+        FAIL() << "failed to allocate " << SIG_STACK_SIZE << " bytes:" << strerror(errno);
+    }
     stk.ss_size  = SIG_STACK_SIZE;
     stk.ss_flags = 0;
     if(sigaltstack(&stk, NULL) < 0)
@@ -310,11 +316,16 @@ TEST_F(libunwind_tests, bt)
 
     for(size_t i = 0; i < name_buffer.count(); ++i)
     {
-        char _inp[256] = {};
-        memset(_inp, '\0', 256);
+        char _inp[512] = {};
+        memset(_inp, '\0', 512);
         name_buffer.read(&_inp);
-        printf("Name buffer value #%lu: %s (demangled: %s)\n", (unsigned long) i, _inp,
-               tim::demangle(_inp).c_str());
+        auto _mangled = std::string{ _inp }.substr(1).substr(0, strlen(_inp) - 2);
+        auto _ret     = _mangled.find("+0x");
+        if(_ret != std::string::npos)
+            _mangled = _mangled.substr(0, _ret);
+        printf("Name buffer value #%lu: %s (demangled: <%s>)\n", (unsigned long) i, _inp,
+               tim::demangle(_mangled).c_str());
+        EXPECT_TRUE(tim::demangle(_mangled).find("_Z") != 0) << tim::demangle(_mangled);
     }
 
     std::cout << "final: " << name_buffer << "\n";
