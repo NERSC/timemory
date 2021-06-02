@@ -126,7 +126,7 @@ ring_buffer::destroy()
     if(ret)
         perror("munmap");
 #else
-    free(m_ptr);
+    ::free(m_ptr);
 #endif
 }
 
