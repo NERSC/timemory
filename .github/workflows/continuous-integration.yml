@@ -1,65 +1,127 @@
 name: continuous-integration
 
-# on: [push, pull_request]
-on:
-  push:
-    branches: [ master ]
-    # branches: [ master, develop ]
-  pull_request:
-    branches: [ master ]
-    # branches: [ master, develop ]
+on: [push, pull_request]
 
 jobs:
-  maeve-ci:
+  linux-ci:
+    runs-on: ubuntu-18.04
     continue-on-error: false
     strategy:
-      max-parallel: 2
       fail-fast: true
       matrix:
         include:
-          - build_type: 'Debug'
-            compiler: 'gcc-7'
-            standard: '17'
-            tools: 'dyninst mpip ncclp mallocp kokkos'
-            extra_args: '--coverage --minimal'
-            extra_cmake: ''
-        # compiler: ['gcc-6', 'gcc-7', 'gcc-8', 'gcc-9', 'gcc-10', 'clang-6.0', 'clang-7', 'clang-8', 'clang-9', 'clang-10', 'clang-11', 'clang-12']
-        build_type: ['Release']
-        compiler: ['gcc-9', 'clang-10', 'gcc-10', 'clang-11', 'clang-12']
-        standard: ['17']
-        tools: ['avail kokkos kokkos-config dyninst mpip ncclp mallocp compiler']
-        extra_args: ['--python --compile-time-perf build-ctp']
-        extra_cmake: ['-G Ninja']
-    runs-on: self-hosted
+          - CC: clang-7
+            CXX: clang++-7
+            PYTHON_VERSION: '3.6'
+            BUILD_TYPE: 'RelWithDebInfo'
+            PACKAGES: 'clang-7 build-essential libmpich-dev mpich ccache'
+            BUILD_ARGS: '--minimal --build-libs shared static --python --mpi --gotcha --stats --tools mallocp mpip ompt --cxx-standard=17'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
+          - CC: clang-8
+            CXX: clang++-8
+            PYTHON_VERSION: '3.7'
+            BUILD_TYPE: 'RelWithDebInfo'
+            PACKAGES: 'clang-8 build-essential ccache'
+            BUILD_ARGS: '--minimal --build-libs shared static --stats --tools kokkos-config timem --cxx-standard=14'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
+          - CC: gcc-6
+            CXX: g++-6
+            FC: gfortran-6
+            PYTHON_VERSION: '3.8'
+            BUILD_TYPE: 'RelWithDebInfo'
+            PACKAGES: 'gcc-6 g++-6 gfortran-6 build-essential libtbb-dev ccache'
+            BUILD_ARGS: '--minimal --build-libs shared --python --stats --cxx-standard=14'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
+          - CC: gcc-7
+            CXX: g++-7
+            FC: gfortran-7
+            PYTHON_VERSION: '3.9'
+            BUILD_TYPE: 'Debug'
+            PACKAGES: 'gcc-7 g++-7 gfortran-7 build-essential libmpich-dev mpich libtbb-dev libpapi-dev papi-tools lcov ccache'
+            BUILD_ARGS: '--minimal --build-libs shared --mpi --papi --gotcha --tools mpip --stats --cxx-standard=17 --coverage'
+            CONFIG_ARGS: ''
+          - CC: gcc-8
+            CXX: g++-8
+            FC: gfortran-8
+            PYTHON_VERSION: 'pypy-3.6'
+            BUILD_TYPE: 'Release'
+            PACKAGES: 'gcc-8 g++-8 gfortran-8 build-essential libopenmpi-dev openmpi-bin openmpi-common libfabric-dev ccache'
+            BUILD_ARGS: '--minimal --build-libs shared --mpi --stats --tools compiler --cxx-standard=17'
+            CONFIG_ARGS: ''
+          - CC: gcc-9
+            CXX: g++-9
+            FC: gfortran-9
+            PYTHON_VERSION: 'pypy-3.7'
+            BUILD_TYPE: 'MinSizeRel'
+            PACKAGES: 'gcc-9 g++-9 gfortran-9 build-essential ccache'
+            BUILD_ARGS: '--minimal --build-libs shared --stats --tools compiler --cxx-standard=17'
+            CONFIG_ARGS: ''
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
         with:
           submodules: true
           clean: true
+
+      - name: Update container
+        run:
+          sudo scripts/linux-ci.sh
+          sudo apt-get install -y ${{ matrix.PACKAGES }}
+
+      - name: Install PyCTest
+        run: |
+          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+          bash miniconda.sh -b -p ${HOME}/miniconda
+          export PATH="${HOME}/miniconda/bin:${PATH}"
+          conda config --set always_yes yes --set changeps1 no
+          conda create -c conda-forge -c defaults -n pyctest python=3.7 pyctest scikit-build cmake pip pydot ${CONDA_EXTRA}
+          source activate
+          conda activate pyctest
+          export PYCTEST_PYTHON_EXE=$(which python)
+
+      - name: Set up Python ${{ matrix.PYTHON_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.PYTHON_VERSION }}
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install pytest
+          if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
+
       - name: Build and Test
         run: |
-          rm -rf build-timemory/*
-          export CONTINUOUS_INTEGRATION=true
-          export CUDA_VISIBLE_DEVICES=2
-          git submodule update .
-          module load anaconda
-          module load likwid
-          if [ -n "$(echo ${{ matrix.compiler }} | grep 'clang')" ]; then module load cuda/10.0; CUDA_CLANG=1; else module load cuda; CUDA_CLANG=0; fi
-          module list
-          spack env activate timemory-ci
-          spack load dyninst boost
-          source activate
-          conda activate timemory
-          echo "python: $(which python)"
-          env
-          if [ -n "$(echo ${{ matrix.compiler }} | grep 'clang')" ]; then KOKKOS_SAMPLE=OFF; else KOKKOS_SAMPLE=ON; fi
-          if [ -z "$(echo ${LD_LIBRARY_PATH} | grep timemory-ci)" ]; then echo "Warning: incorrect LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"; fi
-          BASE_ARGS="--papi --likwid --mpi --cuda --cupti --gotcha --caliper --extra-optimizations --tools ${{ matrix.tools }} -SF --pyctest-model=Continuous -j 6"
-          CTEST_ARGS="-V"
-          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${PWD}/install-timemory -DTIMEMORY_KOKKOS_BUILD_SAMPLE=${KOKKOS_SAMPLE} -DTIMEMORY_BUILD_CALIPER=OFF -DTIMEMORY_BUILD_GOTCHA=OFF ${{ matrix.extra_cmake }}"
-          export CC=${{ matrix.compiler }}
-          export CXX="$(echo '${{ matrix.compiler }}' | sed 's/gcc/g++/1' | sed 's/clang/clang++/1')"
-          if [ "${CUDA_CLANG}" -eq 1 ]; then export CUDACXX=${CXX}; fi
-          python ./pyctest-runner.py --cxx-standard=${{ matrix.standard }} --pyctest-build-type=${{ matrix.build_type }} ${{ matrix.extra_args }} ${BASE_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
-          cmake --build build-timemory/Linux --target all --parallel 6
+          export FC="${{ matrix.FC }}"
+          BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 -P $(which python) --compile-time-perf ${HOME}/ctp"
+          CTEST_ARGS="-V --output-on-failure ${{ matrix.CTEST_ARGS }}"
+          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}"
+          PYCTEST_ARGS="${BASE_ARGS} -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
+          echo -e "Running command:\n${PYCTEST_PYTHON_EXE} ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
+          ${PYCTEST_PYTHON_EXE} ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
+
+      - name: Test Install
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        run: |
+          cmake --build . --target all --parallel $(nproc)
+          ctest --output-on-failure
+          cmake --build . --target install --parallel $(nproc)
+
+      - name: Test Python
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        run: |
+          if [ -f "tests/test-python-install-import.cmake" ]; then
+            cmake -P tests/test-python-install-import.cmake;
+            if [ -d "timemory/hatchet" ]; then
+                ln -s timemory/hatchet hatchet;
+                PYTHONPATH=. $(which pytest);
+            fi;
+            cd;
+            export PYTHON_PATH=${HOME}/timemory-install/lib/python${TRAVIS_PYTHON_VERSION}/site-packages:${PYTHONPATH};
+            python${TRAVIS_PYTHON_VERSION} -c "import timemory";
+          fi
+
+      - name: Test Examples
+        working-directory: ${{github.workspace}}/examples
+        run: |
+          cmake -B build-examples -DTIMEMORY_BUILD_C_EXAMPLES=ON .
+          cmake --build build-examples --target ex_array_of_bundles --parallel 2
