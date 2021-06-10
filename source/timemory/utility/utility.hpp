@@ -306,56 +306,9 @@ template <size_t Depth, size_t Offset = 1>
 TIMEMORY_NOINLINE auto
 get_backtrace()
 {
-    static_assert((Depth - Offset) >= 1, "Error Depth - Offset should be >= 1");
-#    if defined(TIMEMORY_USE_LIBUNWIND) && 0
-    unw_cursor_t  cursor;
-    unw_context_t context;
+    static_assert(Depth > 0, "Error !(Depth > 0)");
+    static_assert(Offset >= 0, "Error !(Offset >= 0)");
 
-    // destination
-    std::array<char[512], Depth> btrace{};
-    for(auto& itr : btrace)
-        itr[0] = '\0';
-
-    // Initialize cursor to current frame for local unwinding.
-    unw_getcontext(&context);
-    if(unw_init_local(&cursor, &context) < 0)
-    {
-        return btrace;
-    }
-
-    size_t tot_idx = 0;
-    while(unw_step(&cursor) > 0)
-    {
-        unw_word_t ip;   // stack pointer
-        unw_word_t off;  // offset
-        auto       _idx = ++tot_idx;
-        if(_idx >= Depth + Offset)
-            break;
-        auto ret = unw_get_reg(&cursor, UNW_REG_IP, &ip);
-        printf("unw_get_reg(UNW_REG_IP) returned %i\n", ret);
-        printf("ip = %lx\n", (long) ip);
-        if(ip == 0)
-            break;
-        char name[512];
-        name[0] = '\0';
-        if(unw_get_proc_name(&cursor, name, sizeof(name), &off) == 0)
-        {
-            printf("[name]:      %s\n", name);
-            if(_idx >= Offset)
-            {
-                auto _lidx = _idx - Offset;
-                printf("[added@%i=%i]: %s\n", (int) _idx, (int) _lidx, name);
-                if(off)
-                    snprintf(btrace[_lidx], sizeof(btrace[_lidx]), "%s +0x%lx", name,
-                             (long) off);
-                else
-                    snprintf(btrace[_lidx], sizeof(btrace[_lidx]), "%s", name);
-            }
-        }
-    }
-
-    return btrace;
-#    else
     // destination
     std::array<char[512], Depth> btrace{};
     for(auto& itr : btrace)
@@ -385,13 +338,68 @@ get_backtrace()
             snprintf(btrace[i], sizeof(btrace[i]), "%s", bsym[i]);
         }
     }
+    return btrace;
+}
+//
+template <size_t Depth, size_t Offset = 1>
+TIMEMORY_NOINLINE auto
+get_unw_backtrace()
+{
+#    if defined(TIMEMORY_USE_LIBUNWIND)
+    static_assert(Depth > 0, "Error !(Depth > 0)");
+    static_assert(Offset >= 0, "Error !(Offset >= 0)");
+
+    unw_cursor_t  cursor;
+    unw_context_t context;
+
+    // destination
+    std::array<char[512], Depth> btrace{};
+    for(auto& itr : btrace)
+        itr[0] = '\0';
+
+    // Initialize cursor to current frame for local unwinding.
+    unw_getcontext(&context);
+    if(unw_init_local(&cursor, &context) < 0)
+    {
+        return btrace;
+    }
+
+    size_t tot_idx = 0;
+    while(unw_step(&cursor) > 0)
+    {
+        unw_word_t ip;   // stack pointer
+        unw_word_t off;  // offset
+        auto       _idx = ++tot_idx;
+        if(_idx >= Depth + Offset)
+            break;
+        unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        if(ip == 0)
+            break;
+        char name[512];
+        name[0] = '\0';
+        if(unw_get_proc_name(&cursor, name, sizeof(name), &off) == 0)
+        {
+            if(_idx >= Offset)
+            {
+                auto _lidx = _idx - Offset;
+                if(off)
+                    snprintf(btrace[_lidx], sizeof(btrace[_lidx]), "%s +0x%lx", name,
+                             (long) off);
+                else
+                    snprintf(btrace[_lidx], sizeof(btrace[_lidx]), "%s", name);
+            }
+        }
+    }
+#    else
+    std::array<char[512], Depth> btrace{};
+    throw std::runtime_error("[timemory]> libunwind not available");
 #    endif
     return btrace;
 }
 //
-template <size_t Depth, size_t Offset, typename Func>
+template <size_t Depth, size_t Offset = 1, typename Func>
 TIMEMORY_NOINLINE auto
-get_backtrace(Func&& func = [](const char inp[512]) { return inp; })
+get_backtrace(Func&& func)
 {
     static_assert(Depth > 0, "Error !(Depth > 0)");
     static_assert(Offset >= 0, "Error !(Offset >= 0)");
@@ -400,7 +408,25 @@ get_backtrace(Func&& func = [](const char inp[512]) { return inp; })
     // destination
     std::array<type, Depth> btrace{};
 
-    auto&& _data = get_backtrace<Depth, Offset + 1>();
+    auto&& _data = ::tim::get_backtrace<Depth, Offset + 1>();
+    auto   _n    = _data.size();
+    for(decltype(_n) i = 0; i < _n; ++i)
+        btrace[i] = func(_data[i]);
+    return btrace;
+}
+//
+template <size_t Depth, size_t Offset = 1, typename Func>
+TIMEMORY_NOINLINE auto
+get_unw_backtrace(Func&& func)
+{
+    static_assert(Depth > 0, "Error !(Depth > 0)");
+    static_assert(Offset >= 0, "Error !(Offset >= 0)");
+
+    using type = std::result_of_t<Func(const char[512])>;
+    // destination
+    std::array<type, Depth> btrace{};
+
+    auto&& _data = ::tim::get_unw_backtrace<Depth, Offset + 1>();
     auto   _n    = _data.size();
     for(decltype(_n) i = 0; i < _n; ++i)
         btrace[i] = func(_data[i]);
@@ -413,7 +439,7 @@ template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE auto
 get_demangled_backtrace()
 {
-    auto demangle_bt = [](const char* cstr) { return demangle_backtrace(cstr); };
+    auto demangle_bt = [](const char cstr[512]) { return demangle_backtrace(cstr); };
     return get_backtrace<Depth, Offset>(demangle_bt);
 }
 //
@@ -423,7 +449,7 @@ template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE auto
 get_demangled_unw_backtrace()
 {
-    auto demangle_bt = [](const char* cstr) { return demangle_unw_backtrace(cstr); };
+    auto demangle_bt = [](const char cstr[512]) { return demangle_unw_backtrace(cstr); };
     return get_unw_backtrace<Depth, Offset>(demangle_bt);
 }
 //
@@ -456,8 +482,8 @@ TIMEMORY_NOINLINE std::ostream&
 //
 template <size_t Depth, size_t Offset = 3>
 TIMEMORY_NOINLINE std::ostream&
-                  print_demangled_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                            std::string _indent = "    ")
+print_demangled_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                          std::string _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
     auto bt = tim::get_demangled_backtrace<Depth, Offset>();
@@ -476,8 +502,8 @@ TIMEMORY_NOINLINE std::ostream&
 //
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
-                  print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                      std::string _indent = "    ")
+print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                    std::string _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
     auto bt = tim::get_unw_backtrace<Depth, Offset>();
@@ -501,8 +527,8 @@ TIMEMORY_NOINLINE std::ostream&
 //
 template <size_t Depth, size_t Offset = 3>
 TIMEMORY_NOINLINE std::ostream&
-                  print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                                std::string _indent = "    ")
+print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                              std::string _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
     auto bt = tim::get_demangled_unw_backtrace<Depth, Offset>();
@@ -575,8 +601,9 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string = {},
 template <typename ContainerT = std::vector<std::string>,
           typename PredicateT = std::function<std::string(const std::string&)>>
 inline ContainerT
-delimit(const std::string& line, const std::string& delimiters = "\"',;: ",
-        PredicateT&& predicate = [](const std::string& s) -> std::string { return s; })
+delimit(
+    const std::string& line, const std::string& delimiters = "\"',;: ",
+    PredicateT&& predicate = [](const std::string& s) -> std::string { return s; })
 {
     ContainerT _result{};
     size_t     _beginp = 0;  // position that is the beginning of the new string
@@ -702,7 +729,7 @@ public:
 
 template <typename T>
 TIMEMORY_INLINE size_t
-                get_hash(T&& obj)
+get_hash(T&& obj)
 {
     return std::hash<decay_t<T>>()(std::forward<T>(obj));
 }
@@ -710,7 +737,7 @@ TIMEMORY_INLINE size_t
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_INLINE size_t
-                get_hash(const string_view_t& str)
+get_hash(const string_view_t& str)
 {
     return std::hash<string_view_t>{}(str);
 }
@@ -718,7 +745,7 @@ TIMEMORY_INLINE size_t
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_INLINE size_t
-                get_hash(const char* cstr)
+get_hash(const char* cstr)
 {
     return std::hash<string_view_t>{}(cstr);
 }
@@ -726,7 +753,7 @@ TIMEMORY_INLINE size_t
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_HOT_INLINE size_t
-                    get_hash(char* cstr)
+get_hash(char* cstr)
 {
     return std::hash<string_view_t>{}(cstr);
 }

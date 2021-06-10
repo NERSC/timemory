@@ -164,6 +164,23 @@
         }
 #endif
 
+#if !defined(TIMEMORY_CONDITIONAL_BACKTRACE)
+#    define TIMEMORY_CONDITIONAL_BACKTRACE(CONDITION, ...)                               \
+        if(CONDITION)                                                                    \
+        {                                                                                \
+            ::tim::print_backtrace<__VA_ARGS__>(std::cerr, TIMEMORY_PID_TID_STRING);     \
+        }
+#endif
+
+#if !defined(TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE)
+#    define TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(CONDITION, ...)                     \
+        if(CONDITION)                                                                    \
+        {                                                                                \
+            ::tim::print_demangled_backtrace<__VA_ARGS__>(std::cerr,                     \
+                                                          TIMEMORY_PID_TID_STRING);      \
+        }
+#endif
+
 #if !defined(PRETTY_PRINT_HERE)
 #    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
 #        define PRETTY_PRINT_HERE(fmt, ...)                                              \
