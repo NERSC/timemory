@@ -44,10 +44,10 @@ __status__ = "Development"
 
 
 try:
-    from .utils import *
-    from . import utils as utils
-    from . import cpu_profiler as cpu_profiler
-    from . import heap_profiler as heap_profiler
+    from .utils import *  # noqa: F401
+    from . import utils as utils  # noqa: F401
+    from . import cpu_profiler as cpu_profiler  # noqa: F401
+    from . import heap_profiler as heap_profiler  # noqa: F401
 
     # __all__ = ['utils', 'cpu_profiler', 'heap_profiler']
 

@@ -6,16 +6,15 @@ import argparse
 
 use_mpi = True
 try:
-    import mpi4py
-    from mpi4py import MPI
+    import mpi4py  # noqa: F401
+    from mpi4py import MPI  # noqa: F401
 except ImportError:
     use_mpi = False
     pass
 
-import timemory
-from timemory.profiler import profile
-
-import libex_python_bindings as ex_bindings
+import timemory  # noqa: E402
+from timemory.profiler import profile  # noqa: E402
+import libex_python_bindings as ex_bindings  # noqa: E402
 
 if use_mpi:
     comm = MPI.COMM_WORLD

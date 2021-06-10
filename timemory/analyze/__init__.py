@@ -29,7 +29,6 @@ from __future__ import division
 
 import os
 import sys
-import json
 import argparse
 
 __author__ = "Jonathan Madsen"
@@ -65,8 +64,8 @@ def embedded_analyze(
     """This is intended to be called from the embedded python interpreter"""
     if len(ranks) > 0:
         try:
-            import mpi4py
-            from mpi4py import MPI
+            import mpi4py  # noqa: F401
+            from mpi4py import MPI  # noqa: F401
 
             rank = MPI.COMM_WORLD.Get_rank()
             if rank not in ranks:
@@ -183,17 +182,26 @@ def embedded_analyze(
         )
         parser.add_argument(
             "--per-thread",
-            help="Encode the thread ID in node hash to ensure squashing doesn't combine thread-data",
+            help=(
+                "Encode the thread ID in node hash to ensure squashing doesn't "
+                + "combine thread-data"
+            ),
             action="store_true",
         )
         parser.add_argument(
             "--per-rank",
-            help="Encode the rank ID in node hash to ensure squashing doesn't combine rank-data",
+            help=(
+                "Encode the rank ID in node hash to ensure squashing doesn't "
+                + "combine rank-data"
+            ),
             action="store_true",
         )
         parser.add_argument(
             "--select",
-            help="Select the component type if the JSON input contains output from multiple components",
+            help=(
+                "Select the component type if the JSON input contains output "
+                + "from multiple components"
+            ),
             type=str,
             default=None,
         )

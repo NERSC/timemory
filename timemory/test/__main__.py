@@ -39,8 +39,8 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 try:
-    import mpi4py
-    from mpi4py import MPI
+    import mpi4py  # noqa: F401
+    from mpi4py import MPI  # noqa: F401
 except ImportError:
     pass
 
@@ -48,6 +48,7 @@ import os
 import sys
 import unittest
 import timemory as tim
+
 
 # discover and run all timemory unittests in the current directory
 def run_all_tests():

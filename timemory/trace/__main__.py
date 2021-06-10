@@ -91,8 +91,6 @@ def parse_args(args=None):
             raise argparse.ArgumentTypeError("Boolean value expected.")
 
     parser = argparse.ArgumentParser(add_help=True)
-    # parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-    #                    help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
     parser.add_argument(
         "-c",
         "--components",
@@ -240,7 +238,7 @@ def main():
     argv = None
     if "--" in sys.argv:
         _idx = sys.argv.index("--")
-        _argv = sys.argv[(_idx + 1) :]
+        _argv = sys.argv[(_idx + 1) :]  # noqa: E203
         opts, argv = parse_args(sys.argv[:_idx])
         argv = _argv
     else:

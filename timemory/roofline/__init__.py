@@ -45,7 +45,6 @@ __status__ = "Development"
 
 
 try:
-    from . import roofline
     from .roofline import *
 
     __all__ = ["plot_roofline"]

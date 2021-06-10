@@ -25,9 +25,9 @@
 # SOFTWARE.
 #
 
-## @file mpi_support.py
-## MPI information for timemory module
-##
+# @file mpi_support.py
+# MPI information for timemory module
+#
 
 from __future__ import absolute_import
 import os

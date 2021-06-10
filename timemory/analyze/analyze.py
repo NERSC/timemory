@@ -60,7 +60,7 @@ def _get_label(_fname):
     """Generates a label for log messages"""
     _lbl = os.path.basename(_fname)
     if "." in _lbl:
-        return _lbl[0 : (_lbl.find("."))]
+        return _lbl[0 : (_lbl.find("."))]  # noqa: E203
     return _lbl
 
 
@@ -194,8 +194,9 @@ def expression(data, math_expr, metric="sum.inc"):
                     float(token)
                 except ValueError:
                     raise ValueError(
-                        "Error: Token '{}' is not valid. Must be numeric or one of: {}".format(
-                            token, " ".join(valid_filter)
+                        f"Error: Token '{token}' is not valid. "
+                        + "Must be numeric or one of: {}".format(
+                            " ".join(valid_filter)
                         )
                     )
     else:
@@ -219,8 +220,8 @@ def sort(data, metric="sum", ascending=False):
             from hatchet.graph import Graph
             from hatchet.graphframe import GraphFrame
         except ImportError:
-            from timemory.hatchet.graph import Graph
-            from timemory.hatchet.graphframe import GraphFrame
+            from timemory.hatchet.graph import Graph  # noqa: F401
+            from timemory.hatchet.graphframe import GraphFrame  # noqa: F401
 
         # generate a new graph from the sorted graphframe
         _data_frame = itr.dataframe.sort_values(

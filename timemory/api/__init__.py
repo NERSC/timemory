@@ -40,7 +40,7 @@ This submodule imports the compiled APIs
 """
 
 try:
-    from ..libs.libpytimemory.api import papi, cuda, cupti
-    from . import gperftools
+    from ..libs.libpytimemory.api import papi, cuda, cupti  # noqa: F401
+    from . import gperftools  # noqa: F401
 except Exception as e:
     print("{}".format(e))

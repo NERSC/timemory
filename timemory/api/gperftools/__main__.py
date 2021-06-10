@@ -29,25 +29,18 @@
 Command line execution for gperftools
 """
 
-import os
 import sys
-import copy
-import json
 import argparse
 import warnings
 import traceback
-import multiprocessing as mp
 
 from . import cpu_profiler as _cpu
-from . import heap_profiler as _heap
 from . import utils as _utils
 
 
 def parse_args():
 
     parser = argparse.ArgumentParser()
-    # parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-    #  help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
     parser.add_argument(
         "-e",
         "--echo-dart",
@@ -138,7 +131,6 @@ def parse_args():
     if args.output_prefix is None:
         args.output_prefix = "{}.prof".format(args.type.split("_")[0])
 
-    _libs = copy.copy(args.libs)
     for lib in args.libs:
         _libpath = _utils.find_library_path(lib)
         if _libpath is not None:

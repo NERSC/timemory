@@ -36,16 +36,13 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 try:
-    import mpi4py
-    from mpi4py import MPI
+    import mpi4py  # noqa: F401
+    from mpi4py import MPI  # noqa: F401
 except ImportError:
     pass
 
-import os
 import time
 import unittest
-import threading
-import inspect
 import timemory as tim
 from timemory import settings as settings
 from timemory import component as comp
@@ -77,7 +74,7 @@ def consume(n):
         # try until time point
         while time.time_ns() < (now + (n * 1e6)):
             pass
-    except:
+    except AttributeError:
         now = 1000 * time.time()
         # try until time point
         while (1000 * time.time()) < (now + n):
@@ -337,7 +334,7 @@ class TimemoryTimingTests(unittest.TestCase):
         self.assertAlmostEqual(75.0, obj.get(), delta=deltautil)
 
 
-# ----------------------------- main test runner ---------------------------------------- #
+# ----------------------------- main test runner -------------------------------------- #
 # test runner
 def run():
     # run all tests

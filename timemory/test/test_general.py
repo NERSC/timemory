@@ -36,19 +36,13 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 try:
-    import mpi4py
-    from mpi4py import MPI
+    import mpi4py  # noqa: F401
+    from mpi4py import MPI  # noqa: F401
 except ImportError:
     pass
 
-import os
 import time
-import json
-import random
 import unittest
-import threading
-import inspect
-import numpy as np
 import timemory as tim
 
 
@@ -72,7 +66,7 @@ def consume(n):
         # try until time point
         while time.time_ns() < (now + (n * 1e6)):
             pass
-    except:
+    except AttributeError:
         now = 1000 * time.time()
         # try until time point
         while (1000 * time.time()) < (now + n):
@@ -116,7 +110,7 @@ class TimemoryGeneralTests(unittest.TestCase):
         fib_val = tim.add_hash_id("fibonacci")
 
         with tim.util.marker(["wall_clock"], key="fibonacci"):
-            ret = fibonacci(20)
+            fibonacci(20)
 
         fib_id = tim.get_hash_identifier(fib_val)
 
@@ -138,7 +132,7 @@ class TimemoryGeneralTests(unittest.TestCase):
         print(f"foobar_id   : {foobar_id}")
 
 
-# ----------------------------- main test runner ---------------------------------------- #
+# ----------------------------- main test runner -------------------------------------- #
 # main runner
 def run():
     # run all tests

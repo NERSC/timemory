@@ -3,7 +3,6 @@
 import timemory
 from timemory.util import auto_tuple
 import sys
-import json
 
 
 def fib(n):

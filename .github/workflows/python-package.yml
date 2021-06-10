@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Python package
+name: python-package
 
 on:
   push:
@@ -10,12 +10,11 @@ on:
     branches: [ master, develop ]
 
 jobs:
-  build:
-
+  linting:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
     - uses: actions/checkout@v2
@@ -26,14 +25,46 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest
+        pip install flake8
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=90 --statistics
-    #- name: Test with pytest
-    #  run: |
-    #    pytest
+        # flake8 options are defined in setup.cfg
+        flake8 . --count --statistics
+
+  formatting:
+    runs-on: ubuntu-16.04
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        sudo apt-get update
+        sudo apt-get install -y clang-format-6.0
+    - name: black format
+      run: |
+        black --diff --check .
+    - name: clang-format
+      run: |
+        set +e
+        FILES=$(find source examples -type f | grep -v 'tpls/cereal/cereal/external' | egrep '\.h$|\.hpp$|\.c$|\.cpp$|\.cpp\.in$')
+        FORMAT_OUT=$(clang-format-6.0 -output-replacements-xml ${FILES})
+        RET=$(echo ${FORMAT_OUT} | grep -c '<replacement ')
+        if [ "${RET}" -ne 0 ]; then
+          echo -e "\nError! Code not formatted. Detected ${RET} lines\n"
+          clang-format-6.0 -i ${FILES}
+          git diff
+          exit ${RET}
+        fi

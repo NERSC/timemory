@@ -57,6 +57,13 @@ if(TIMEMORY_BUILD_PYTHON AND TIMEMORY_BUILD_PYTHON_HATCHET)
                     OPTIONAL)
             endforeach()
 
+            if(NOT WIN32)
+                execute_process(
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink
+                        ${PROJECT_BINARY_DIR}/timemory/hatchet
+                        ${PROJECT_BINARY_DIR}/hatchet
+                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+            endif()
             # cython build modules
             install(FILES
                 "${HATCHET_CYTHONDIR}/graphframe_modules${PYTHON_MODULE_EXTENSION}"

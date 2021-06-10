@@ -29,10 +29,7 @@ from __future__ import absolute_import
 import os
 import re
 import sys
-import copy
-import json
 import math
-import argparse
 from math import log, pi
 
 import matplotlib.pyplot as plt
@@ -304,7 +301,7 @@ def get_peak_ops(roof_data, flop_info=None):
         )  # this gives total_ops/repr_data (time) ops/sec
         if VERBOSE > 2:
             print("LABEL: {}, DATA: {}".format(_label, _data))
-        if not _label in peak:
+        if _label not in peak:
             peak[_label] = _data
         else:
             _peak = peak[_label]
@@ -445,7 +442,7 @@ def get_hotspots(op_data, ai_data, index=None):
 
     marker = itertools.cycle(("o", ",", "^", "+", "*", ">", "<"))
 
-    if not "type" in op_data or not "type" in ai_data:
+    if "type" not in op_data or "type" not in ai_data:
         return []
 
     op_data_type = op_data["type"]
@@ -633,22 +630,16 @@ def get_hotspots_integer(op_data, ai_data, index=None):
     import itertools
 
     marker = itertools.cycle(("o", ",", "^", "+", "*", ">", "<"))
-    if not "type" in op_data or not "type" in ai_data:
+    if "type" not in op_data or "type" not in ai_data:
         return []
 
     op_data_type = op_data["type"]
-    ai_data_type = ai_data["type"]
 
     op_type = None
-    ai_type = None
     if "cpu_roofline" in op_data_type:
         op_type = "cpu"
-    if "cpu_roofline" in ai_data_type:
-        ai_type = "cpu"
     if "gpu_roofline" in op_data_type:
         op_type = "gpu"
-    if "gpu_roofline" in ai_data_type:
-        ai_type = "gpu"
 
     if index is None:
         index = RANK_INDEX
@@ -969,7 +960,7 @@ def plot_roofline_impl(
     plot_params = plot_parameters(peak_flop, hotspots, inst_roofline)
 
     f = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
-    ax = f.add_subplot(111)
+    f.add_subplot(111)
 
     _title_font = get_font()
     _title_font["size"] += 8
