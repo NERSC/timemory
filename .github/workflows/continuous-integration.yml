@@ -84,13 +84,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
+
+      - name: Build and Test
         run: |
           python -m pip install -r requirements.txt
           python -m pip install pytest
           if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
-
-      - name: Build and Test
-        run: |
           export FC="${{ matrix.FC }}"
           BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 -P $(which python) --compile-time-perf ${HOME}/ctp"
           CTEST_ARGS="-V --output-on-failure ${{ matrix.CTEST_ARGS }}"
