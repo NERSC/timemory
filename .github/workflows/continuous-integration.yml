@@ -54,7 +54,7 @@ jobs:
             PYTHON_VERSION: 'pypy-3.7'
             BUILD_TYPE: 'MinSizeRel'
             PACKAGES: 'gcc-9 g++-9 gfortran-9 build-essential ccache'
-            BUILD_ARGS: '--minimal --build-libs shared --stats --tools compiler --cxx-standard=17'
+            BUILD_ARGS: '--minimal --build-libs shared --stats --python --cxx-standard=17'
             CONFIG_ARGS: ''
 
     steps:
@@ -76,7 +76,7 @@ jobs:
           bash miniconda.sh -b -p ${HOME}/miniconda
           export PATH="${HOME}/miniconda/bin:${PATH}"
           conda config --set always_yes yes --set changeps1 no
-          conda create -c conda-forge -c defaults -n pyctest python=3.7 pyctest scikit-build cmake pip pydot ${CONDA_EXTRA}
+          conda create -c conda-forge -c defaults -n pyctest python=3.7 pyctest
           source activate
           conda activate pyctest
 
@@ -87,12 +87,14 @@ jobs:
 
       - name: Build and Test
         run: |
+          export CC="${{ matrix.CC }}"
+          export CXX="${{ matrix.CXX }}"
+          export FC="${{ matrix.FC }}"
           python -m pip install -r requirements.txt
           python -m pip install pytest
           if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
-          export FC="${{ matrix.FC }}"
           BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 -P $(which python) --compile-time-perf ${HOME}/ctp"
-          CTEST_ARGS="-V --output-on-failure ${{ matrix.CTEST_ARGS }}"
+          CTEST_ARGS="-VV ${{ matrix.CTEST_ARGS }}"
           CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}"
           PYCTEST_ARGS="${BASE_ARGS} -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
           echo -e "Running command:\n${PYCTEST_PYTHON_EXE} ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
@@ -110,16 +112,14 @@ jobs:
         run: |
           if [ -f "tests/test-python-install-import.cmake" ]; then
             cmake -P tests/test-python-install-import.cmake;
-            if [ -d "timemory/hatchet" ]; then
-                ln -s timemory/hatchet hatchet;
-                PYTHONPATH=. $(which pytest);
-            fi;
+            PYTHONPATH=. $(which pytest);
             cd;
+            export PYTHONPATH=$(realpath ${HOME}/timemory-install/lib/python*/site-packages):${PYTHONPATH}
             python -c "import timemory";
           fi
 
       - name: Test Examples
         working-directory: ${{github.workspace}}/examples
         run: |
-          cmake -B build-examples -DTIMEMORY_BUILD_C_EXAMPLES=ON .
+          cmake -B build-examples -DTIMEMORY_BUILD_C_EXAMPLES=ON -Dtimemory_DIR=${HOME}/timemory-install/share/cmake/timemory .
           cmake --build build-examples --target ex_array_of_bundles --parallel 2
