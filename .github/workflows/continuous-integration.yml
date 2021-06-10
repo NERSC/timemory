@@ -66,8 +66,9 @@ jobs:
 
       - name: Update container
         run:
-          sudo scripts/linux-ci.sh
+          sudo apt-get update
           sudo apt-get install -y ${{ matrix.PACKAGES }}
+          sudo scripts/linux-ci.sh
 
       - name: Install PyCTest
         run: |

@@ -49,9 +49,6 @@ EOF
 run-verbose apt-get update
 run-verbose apt-get dist-upgrade -y
 
-: ${GCC_VERSION:=9}
-: ${CLANG_VERSION:=12}
-
 #-----------------------------------------------------------------------------#
 #
 #   Base packages
@@ -60,19 +57,6 @@ run-verbose apt-get dist-upgrade -y
 
 run-verbose apt-get install -y build-essential git-core ssed bash-completion gdb
 
-#-----------------------------------------------------------------------------#
-#
-#   Compiler specific installation
-#
-#-----------------------------------------------------------------------------#
-
-# install compilers
-run-verbose apt-get -y install {gcc,g++,gfortran}-{7,8,${GCC_VERSION}} gcc-{7,8,${GCC_VERSION}}-multilib
-run-verbose apt-get -y install clang-{7,8,9,10,11,${CLANG_VERSION}} clang-{tidy,tools,format}-{6.0,7,8,9,10,11,${CLANG_VERSION}} libc++-dev libc++abi-dev
-
-DISPLAY_PACKAGES="xserver-xorg freeglut3-dev libx11-dev libx11-xcb-dev libxpm-dev libxft-dev libxmu-dev libxv-dev libxrandr-dev \
-    libglew-dev libftgl-dev libxkbcommon-x11-dev libxrender-dev libxxf86vm-dev libxinerama-dev qt5-default \
-    emacs-nox vim-nox firefox"
 CUDA_VER=$(dpkg --get-selections | grep cuda-cudart- | awk '{print $1}' | tail -n 1 | sed 's/cuda-cudart-//g' | sed 's/dev-//g')
 
 #-----------------------------------------------------------------------------#
@@ -91,7 +75,7 @@ fi
 #
 #-----------------------------------------------------------------------------#
 
-run-verbose apt-get install -y cmake ninja-build clang-tidy clang-format
+run-verbose apt-get install -y cmake ninja-build
 
 if [ "${ENABLE_DISPLAY}" -gt 0 ]; then
     run-verbose apt-get install -y ${DISPLAY_PACKAGES}
@@ -101,7 +85,7 @@ fi
 #   UPDATE ALTERNATIVES -- GCC
 #-----------------------------------------------------------------------------#
 priority=10
-for i in 5 6 7 8 9 ${GCC_VERSION}
+for i in 5 6 7 8 9 10 ${GCC_VERSION}
 do
     if [ -n "$(which gcc-${i})" ]; then
         run-verbose update-alternatives --install $(which gcc) gcc $(which gcc-${i}) ${priority} \
@@ -114,28 +98,13 @@ done
 #   UPDATE ALTERNATIVES -- CLANG
 #-----------------------------------------------------------------------------#
 priority=10
-for i in 5.0 6.0 7.0 7 8 9 10 11 ${CLANG_VERSION}
+for i in 5.0 6.0 7.0 7 8 9 10 11 12 13 ${CLANG_VERSION}
 do
     if [ -n "$(which clang-${i})" ]; then
-        run-verbose update-alternatives --install /usr/bin/clang clang $(which clang-${i}) ${priority} \
-            --slave /usr/bin/clang++ clang++ $(which clang++-${i})
+        run-verbose update-alternatives --install /usr/bin/clang clang $(which clang-${i}) ${priority}
+        run-verbose update-alternatives --install /usr/bin/clang++ clang++ $(which clang++-${i}) ${priority}
         priority=$(( ${priority}+10 ))
     fi
-done
-
-#-----------------------------------------------------------------------------#
-#   UPDATE ALTERNATIVES -- CLANG TOOLS
-#-----------------------------------------------------------------------------#
-priority=10
-for i in 7.0 7 8 9 10 11 ${CLANG_VERSION} 6.0
-do
-    for j in tools tidy format
-    do
-        if [ -n "$(which clang-${j}-${i})" ]; then
-            run-verbose update-alternatives --install /usr/bin/clang-${j} clang-${j} $(which clang-${j}-${i}) ${priority}
-        fi
-    done
-    priority=$(( ${priority}+10 ))
 done
 
 #-----------------------------------------------------------------------------#
@@ -151,7 +120,7 @@ fi
 if [ -n "$(which gcc)" ]; then
     run-verbose update-alternatives --install $(which cc)  cc  $(which gcc)     ${priority}
     run-verbose update-alternatives --install $(which c++) c++ $(which g++)     ${priority}
-    run-verbose priority=$(( ${priority}+10 ))
+    priority=$(( ${priority}+10 ))
 fi
 
 if [ -d /opt/intel ]; then
@@ -159,33 +128,20 @@ if [ -d /opt/intel ]; then
     if [ -n "$(which icc)" ]; then
         run-verbose update-alternatives --install $(which cc)  cc  $(which icc)     ${priority}
         run-verbose update-alternatives --install $(which c++) c++ $(which icpc)    ${priority}
-        run-verbose priority=$(( ${priority}+10 ))
+        priority=$(( ${priority}+10 ))
     fi
-fi
-
-if [ -n "${COMPILER}" ]; then
-    C_COMPILER=${COMPILER}
-    CXX_COMPILER=$(echo ${COMPILER} | sed 's/gcc/g++/1' | sed 's/clang/clang++/1')
-    run-verbose update-alternatives --install $(which cc)  cc  $(which ${C_COMPILER})   ${priority}
-    run-verbose update-alternatives --install $(which c++) c++ $(which ${CXX_COMPILER}) ${priority}
 fi
 
 #-----------------------------------------------------------------------------#
 #   UPDATE ALTERNATIVES -- CUDA compilers
 #-----------------------------------------------------------------------------#
 priority=10
-for i in clang++-{7.0,7,8,9,10,11,${CLANG_VERSION}} nvcc
+for i in clang++-{7.0,7,8,9,10,11,12,13,${CLANG_VERSION}} nvcc
 do
     if [ -n "$(which ${i})" ]; then
         run-verbose update-alternatives --install /usr/bin/cu cu $(which ${i}) ${priority}
     fi
 done
-
-#-----------------------------------------------------------------------------#
-#   CLEANUP
-#-----------------------------------------------------------------------------#
-run-verbose apt-get -y autoclean
-run-verbose rm -rf /var/lib/apt/lists/*
 
 #-----------------------------------------------------------------------------#
 #   CONDA
