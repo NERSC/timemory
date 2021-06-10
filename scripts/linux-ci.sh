@@ -47,7 +47,7 @@ deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME} 
 EOF
 # upgrade
 run-verbose apt-get update
-run-verbose apt-get dist-upgrade -y
+# run-verbose apt-get dist-upgrade -y
 
 #-----------------------------------------------------------------------------#
 #
@@ -55,7 +55,7 @@ run-verbose apt-get dist-upgrade -y
 #
 #-----------------------------------------------------------------------------#
 
-run-verbose apt-get install -y build-essential git-core ssed bash-completion gdb
+run-verbose apt-get install -y build-essential git-core ssed cmake ninja-build
 
 CUDA_VER=$(dpkg --get-selections | grep cuda-cudart- | awk '{print $1}' | tail -n 1 | sed 's/cuda-cudart-//g' | sed 's/dev-//g')
 
@@ -67,18 +67,6 @@ CUDA_VER=$(dpkg --get-selections | grep cuda-cudart- | awk '{print $1}' | tail -
 
 if [ -n "${CUDA_VER}" ]; then
     run-verbose apt-get install -y cuda-nsight-{compute,systems}-${CUDA_VER}
-fi
-
-#-----------------------------------------------------------------------------#
-#
-#   Install supplemental packages
-#
-#-----------------------------------------------------------------------------#
-
-run-verbose apt-get install -y cmake ninja-build
-
-if [ "${ENABLE_DISPLAY}" -gt 0 ]; then
-    run-verbose apt-get install -y ${DISPLAY_PACKAGES}
 fi
 
 #-----------------------------------------------------------------------------#

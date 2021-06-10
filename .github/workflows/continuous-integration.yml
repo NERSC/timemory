@@ -79,7 +79,6 @@ jobs:
           conda create -c conda-forge -c defaults -n pyctest python=3.7 pyctest scikit-build cmake pip pydot ${CONDA_EXTRA}
           source activate
           conda activate pyctest
-          export PYCTEST_PYTHON_EXE=$(which python)
 
       - name: Set up Python ${{ matrix.PYTHON_VERSION }}
         uses: actions/setup-python@v2
@@ -97,7 +96,7 @@ jobs:
           CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}"
           PYCTEST_ARGS="${BASE_ARGS} -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
           echo -e "Running command:\n${PYCTEST_PYTHON_EXE} ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
-          ${PYCTEST_PYTHON_EXE} ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
+          ${HOME}/miniconda/envs/pyctest/bin/python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
 
       - name: Test Install
         working-directory: ${{github.workspace}}/build-timemory/Linux
@@ -116,8 +115,7 @@ jobs:
                 PYTHONPATH=. $(which pytest);
             fi;
             cd;
-            export PYTHON_PATH=${HOME}/timemory-install/lib/python${TRAVIS_PYTHON_VERSION}/site-packages:${PYTHONPATH};
-            python${TRAVIS_PYTHON_VERSION} -c "import timemory";
+            python -c "import timemory";
           fi
 
       - name: Test Examples
