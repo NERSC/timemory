@@ -178,6 +178,10 @@ public:
                     transient_func_t = get_initializer());
 
     template <typename... T>
+    explicit bundle(hash_value_t _hash, quirk::config<T...>,
+                    transient_func_t = get_initializer());
+
+    template <typename... T>
     explicit bundle(const captured_location_t& _loc, quirk::config<T...>,
                     transient_func_t = get_initializer());
 
@@ -189,7 +193,7 @@ public:
     explicit bundle(const captured_location_t& _loc, bool _store, quirk::config<T...>,
                     transient_func_t = get_initializer());
 
-    explicit bundle(size_t _hash, bool _store = true,
+    explicit bundle(hash_value_t _hash, bool _store = true,
                     scope::config _scope = scope::get_default(),
                     transient_func_t     = get_initializer());
 
@@ -201,7 +205,7 @@ public:
                     scope::config _scope = scope::get_default(),
                     transient_func_t     = get_initializer());
 
-    explicit bundle(size_t _hash, scope::config _scope,
+    explicit bundle(hash_value_t _hash, scope::config _scope,
                     transient_func_t = get_initializer());
 
     explicit bundle(const string_t& _key, scope::config _scope,
@@ -575,7 +579,7 @@ public:
     /// }
     /// \endcode
     ///
-    this_type& get(void*& ptr, size_t _hash) const;
+    this_type& get(void*& ptr, hash_value_t _hash) const;
 
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
@@ -757,7 +761,7 @@ public:
     this_type& type_apply(Func&&, Args&&...);
 
     void       set_prefix(const string_t&) const;
-    this_type& set_prefix(size_t) const;
+    this_type& set_prefix(hash_value_t) const;
     this_type& set_prefix(captured_location_t) const;
     this_type& set_scope(scope::config);
 

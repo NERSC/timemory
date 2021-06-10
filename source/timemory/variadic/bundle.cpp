@@ -79,6 +79,22 @@ bundle<Tag, BundleT, TupleT>::bundle(const string_t& _key, quirk::config<T...> _
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename... T>
+bundle<Tag, BundleT, TupleT>::bundle(hash_value_t _hash, quirk::config<T...> _config,
+                                     transient_func_t _init_func)
+: bundle_type(bundle_type::handle(type_list_type{}, _hash, true_type{}, _config))
+, m_data(invoke::construct<data_type, Tag>(_hash, _config))
+{
+    update_last_instance(&get_this_type(), get_last_instance(),
+                         quirk_config<quirk::stop_last_bundle, T...>::value);
+    IF_CONSTEXPR(optional_count() > 0) { apply_v::set_value(m_data, nullptr); }
+    bundle_type::init(type_list_type{}, get_this_type(), m_data, std::move(_init_func),
+                      _config);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... T>
 bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc,
                                      quirk::config<T...>        _config,
                                      transient_func_t           _init_func)
@@ -129,8 +145,8 @@ bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc, bool _stor
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename BundleT, typename TupleT>
-bundle<Tag, BundleT, TupleT>::bundle(size_t _hash, bool _store, scope::config _scope,
-                                     transient_func_t _init_func)
+bundle<Tag, BundleT, TupleT>::bundle(hash_value_t _hash, bool _store,
+                                     scope::config _scope, transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _hash, _store, _scope))
 , m_data(invoke::construct<data_type, Tag>(_hash, m_scope))
 {
@@ -169,7 +185,7 @@ bundle<Tag, BundleT, TupleT>::bundle(const captured_location_t& _loc, bool _stor
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename BundleT, typename TupleT>
-bundle<Tag, BundleT, TupleT>::bundle(size_t _hash, scope::config _scope,
+bundle<Tag, BundleT, TupleT>::bundle(hash_value_t _hash, scope::config _scope,
                                      transient_func_t _init_func)
 : bundle_type(bundle_type::handle(type_list_type{}, _hash, true_type{}, _scope))
 {
@@ -869,7 +885,7 @@ bundle<Tag, BundleT, TupleT>::set_prefix(const string_t& _key) const
 //
 template <typename Tag, typename BundleT, typename TupleT>
 typename bundle<Tag, BundleT, TupleT>::this_type&
-bundle<Tag, BundleT, TupleT>::set_prefix(size_t _hash) const
+bundle<Tag, BundleT, TupleT>::set_prefix(hash_value_t _hash) const
 {
     if(!m_enabled())
         return get_this_type();
