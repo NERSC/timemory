@@ -65,7 +65,7 @@ jobs:
           clean: true
 
       - name: Update container
-        run:
+        run: |
           sudo apt-get update
           sudo apt-get install -y ${{ matrix.PACKAGES }}
           sudo scripts/linux-ci.sh
