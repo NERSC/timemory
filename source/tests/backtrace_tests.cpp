@@ -216,9 +216,9 @@ TEST_F(backtrace_tests, decode)
 
     int cnt_m = 0;
     int cnt_d = 0;
-    for(const auto& itr : ret_m)
+    for(auto itr : ret_m)
     {
-        if(itr)
+        if(strlen(itr))
             ++cnt_m;
     }
 
@@ -368,4 +368,50 @@ TEST_F(backtrace_tests, decode)
     }
 }
 
+//--------------------------------------------------------------------------------------//
+
+TEST_F(backtrace_tests, print_backtrace)
+{
+    std::stringstream ss;
+    tim::print_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING);
+    std::cerr << ss.str();
+    auto btvec = tim::delimit(ss.str(), "\n");
+    EXPECT_GE(btvec.size(), 3) << ss.str();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(backtrace_tests, print_demangled_backtrace)
+{
+    std::stringstream ss;
+    tim::print_demangled_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING);
+    std::cerr << ss.str();
+    auto btvec = tim::delimit(ss.str(), "\n");
+    EXPECT_GE(btvec.size(), 3) << ss.str();
+}
+
+//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_USE_LIBUNWIND)
+
+TEST_F(backtrace_tests, print_unw_backtrace)
+{
+    std::stringstream ss;
+    tim::print_unw_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING);
+    std::cerr << ss.str();
+    auto btvec = tim::delimit(ss.str(), "\n");
+    EXPECT_GE(btvec.size(), 3) << ss.str();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(backtrace_tests, print_demangled_unw_backtrace)
+{
+    std::stringstream ss;
+    tim::print_demangled_unw_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING);
+    std::cerr << ss.str();
+    auto btvec = tim::delimit(ss.str(), "\n");
+    EXPECT_GE(btvec.size(), 3) << ss.str();
+}
+
+#endif
 //--------------------------------------------------------------------------------------//

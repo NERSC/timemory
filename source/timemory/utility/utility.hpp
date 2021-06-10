@@ -296,6 +296,12 @@ TIMEMORY_UTILITY_INLINE std::string
 TIMEMORY_UTILITY_INLINE std::string
                         demangle_backtrace(const std::string& str);
 //
+TIMEMORY_UTILITY_INLINE std::string
+                        demangle_unw_backtrace(const char* cstr);
+//
+TIMEMORY_UTILITY_INLINE std::string
+                        demangle_unw_backtrace(const std::string& str);
+//
 template <size_t Depth, size_t Offset = 1>
 TIMEMORY_NOINLINE auto
 get_backtrace()
@@ -387,7 +393,8 @@ template <size_t Depth, size_t Offset, typename Func>
 TIMEMORY_NOINLINE auto
 get_backtrace(Func&& func = [](const char inp[512]) { return inp; })
 {
-    static_assert((Depth - Offset) >= 1, "Error Depth - Offset should be >= 1");
+    static_assert(Depth > 0, "Error !(Depth > 0)");
+    static_assert(Offset >= 0, "Error !(Offset >= 0)");
 
     using type = std::result_of_t<Func(const char[512])>;
     // destination
@@ -413,36 +420,101 @@ get_demangled_backtrace()
 //--------------------------------------------------------------------------------------//
 //
 template <size_t Depth, size_t Offset = 2>
-TIMEMORY_NOINLINE void
-print_backtrace(std::ostream& os = std::cerr)
+TIMEMORY_NOINLINE auto
+get_demangled_unw_backtrace()
 {
+    auto demangle_bt = [](const char* cstr) { return demangle_unw_backtrace(cstr); };
+    return get_unw_backtrace<Depth, Offset>(demangle_bt);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Depth, size_t Offset = 2>
+TIMEMORY_NOINLINE std::ostream&
+                  print_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                                  std::string _indent = "    ")
+{
+    os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
     auto bt = tim::get_backtrace<Depth, Offset>();
+    if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
+        _prefix += " ";
     for(const auto& itr : bt)
     {
-        os << "\nBacktrace:\n";
-        if(itr && strlen(itr) > 0)
-            os << itr << "\n";
+        if(std::is_pointer<std::decay_t<decltype(itr)>>::value)
+        {
+            if(!itr)
+                continue;
+        }
+        if(strlen(itr) > 0)
+            os << _indent << _prefix << itr << "\n";
     }
-    os << "\n";
     os << std::flush;
+    return os;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <size_t Depth, size_t Offset = 3>
-TIMEMORY_NOINLINE void
-print_demangled_backtrace(std::ostream& os = std::cerr)
+TIMEMORY_NOINLINE std::ostream&
+                  print_demangled_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                                            std::string _indent = "    ")
 {
-    auto              bt = tim::get_demangled_backtrace<Depth, Offset>();
-    std::stringstream ss;
+    os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
+    auto bt = tim::get_demangled_backtrace<Depth, Offset>();
+    if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
+        _prefix += " ";
     for(const auto& itr : bt)
     {
-        ss << "\nBacktrace:\n";
         if(itr.length() > 0)
-            ss << itr << "\n";
+            os << _indent << _prefix << itr << "\n";
     }
-    ss << "\n";
     os << std::flush;
+    return os;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Depth, size_t Offset = 2>
+TIMEMORY_NOINLINE std::ostream&
+                  print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                                      std::string _indent = "    ")
+{
+    os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
+    auto bt = tim::get_unw_backtrace<Depth, Offset>();
+    if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
+        _prefix += " ";
+    for(const auto& itr : bt)
+    {
+        if(std::is_pointer<std::decay_t<decltype(itr)>>::value)
+        {
+            if(!itr)
+                continue;
+        }
+        if(strlen(itr) > 0)
+            os << _indent << _prefix << itr << "\n";
+    }
+    os << std::flush;
+    return os;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Depth, size_t Offset = 3>
+TIMEMORY_NOINLINE std::ostream&
+                  print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                                                std::string _indent = "    ")
+{
+    os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
+    auto bt = tim::get_demangled_unw_backtrace<Depth, Offset>();
+    if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
+        _prefix += " ";
+    for(const auto& itr : bt)
+    {
+        if(itr.length() > 0)
+            os << _indent << _prefix << itr << "\n";
+    }
+    os << std::flush;
+    return os;
 }
 //
 #else
@@ -452,7 +524,7 @@ print_demangled_backtrace(std::ostream& os = std::cerr)
 static inline auto
 demangle_backtrace(const char* cstr)
 {
-    return std::string(cstr);
+    return std::string{ cstr };
 }
 //
 static inline auto
@@ -462,17 +534,37 @@ demangle_backtrace(const std::string& str)
 }
 //
 template <size_t Depth, size_t Offset = 2>
-static inline void
-print_backtrace(std::ostream& os = std::cerr)
+static inline std::ostream&
+print_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {})
 {
     os << "[timemory]> Backtrace not supported on this platform\n";
+    return os;
 }
 //
 template <size_t Depth, size_t Offset = 3>
-static inline void
-print_demangled_backtrace(std::ostream& os = std::cerr)
+static inline std::ostream&
+print_demangled_backtrace(std::ostream& os = std::cerr, std::string = {},
+                          std::string = {})
 {
     os << "[timemory]> Backtrace not supported on this platform\n";
+    return os;
+}
+//
+template <size_t Depth, size_t Offset = 2>
+static inline std::ostream&
+print_unw_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {})
+{
+    os << "[timemory]> libunwind backtrace not supported on this platform\n";
+    return os;
+}
+//
+template <size_t Depth, size_t Offset = 3>
+static inline std::ostream&
+print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string = {},
+                              std::string = {})
+{
+    os << "[timemory]> libunwind backtrace not supported on this platform\n";
+    return os;
 }
 //
 #endif

@@ -82,7 +82,7 @@ fibonacci(long n)
 
 #if defined(_OPENMP)
 double
-compute_pi(uint64_t nstart, uint64_t nstop, double step, uint64_t nblock)
+compute_pi(int64_t nstart, int64_t nstop, double step, int64_t nblock)
 {
     double sum  = 0.0;
     double sum1 = 0.0;
@@ -90,7 +90,7 @@ compute_pi(uint64_t nstart, uint64_t nstop, double step, uint64_t nblock)
 
     if(nstop - nstart < nblock)
     {
-        for(uint64_t i = nstart; i < nstop; ++i)
+        for(int64_t i = nstart; i < nstop; ++i)
         {
             double x = (i + 0.5) * step;
             sum      = sum + 4.0 / (1.0 + x * x);
@@ -98,7 +98,7 @@ compute_pi(uint64_t nstart, uint64_t nstop, double step, uint64_t nblock)
     }
     else
     {
-        uint64_t iblk = nstop - nstart;
+        int64_t iblk = nstop - nstart;
 #    pragma omp task shared(sum1)
         sum1 = compute_pi(nstart, nstop - iblk / 2, step, nblock);
 #    pragma omp task shared(sum2)
@@ -144,7 +144,7 @@ TEST_F(threading_tests, openmp)
 
     omp_set_num_threads(2);
 
-    std::atomic<uint64_t> sum(0);
+    std::atomic<int64_t> sum(0);
     {
         std::string region = "AAAAA";
         TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/master/0");
@@ -196,7 +196,7 @@ TEST_F(threading_tests, openmp_ompt)
 
     omp_set_num_threads(2);
 
-    std::atomic<uint64_t> sum(0);
+    std::atomic<int64_t> sum(0);
     {
 #    pragma omp parallel for
         for(int i = 0; i < 4; i++)
@@ -238,8 +238,8 @@ TEST_F(threading_tests, openmp_task)
 
     TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name());
 
-    uint64_t num_threads = tim::get_env<uint64_t>("NUM_THREADS", 4);
-    uint64_t num_steps   = tim::get_env<uint64_t>("NUM_STEPS", 500000000);
+    int64_t num_threads = tim::get_env<int64_t>("NUM_THREADS", 4);
+    int64_t num_steps   = tim::get_env<int64_t>("NUM_STEPS", 500000000);
 
     omp_set_num_threads(num_threads);
 
@@ -270,7 +270,7 @@ TEST_F(threading_tests, stl)
 
     auto run_fib = [](uint64_t n) { return details::fibonacci(n); };
 
-    std::atomic<uint64_t> sum(0);
+    std::atomic<int64_t> sum(0);
 
     auto run_a = [&]() {
         for(int i = 0; i < 2; ++i)

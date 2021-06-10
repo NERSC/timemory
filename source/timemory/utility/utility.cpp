@@ -172,7 +172,10 @@ demangle_backtrace(const char* cstr)
         return _sub;
     };
 
-    auto str = demangle(std::string(cstr));
+    auto _save = std::string{ cstr };
+    auto str   = demangle(std::string(cstr));
+    if(str.empty())
+        return str;
     auto beg = str.find("(");
     if(beg == std::string::npos)
     {
@@ -202,6 +205,25 @@ demangle_backtrace(const char* cstr)
         auto dem = demangle(_trim(sub, len));
         str      = str.replace(beg, len, dem);
     }
+
+    if(str.empty())
+    {
+        TIMEMORY_TESTING_EXCEPTION(__FUNCTION__ << " resulted in empty string. input: "
+                                                << _save);
+        return _save;
+    }
+
+    // cleanup std::_1::basic_<...> types since demangled versions are for diagnostics
+    using pair_t = std::pair<std::string, std::string>;
+    for(auto&& itr : { pair_t{ demangle<std::string>(), "std::string" },
+                       pair_t{ demangle<std::istream>(), "std::istream" },
+                       pair_t{ demangle<std::ostream>(), "std::ostream" },
+                       pair_t{ demangle<std::stringstream>(), "std::stringstream" },
+                       pair_t{ demangle<std::istringstream>(), "std::istringstream" },
+                       pair_t{ demangle<std::ostringstream>(), "std::ostringstream" } })
+        str = str_transform(str, itr.first, "", [itr](const std::string&) -> std::string {
+            return itr.second;
+        });
     return str;
 }
 //
@@ -209,6 +231,52 @@ std::string
 demangle_backtrace(const std::string& str)
 {
     return demangle_backtrace(str.c_str());
+}
+//
+std::string
+demangle_unw_backtrace(const char* cstr)
+{
+    auto _save = std::string{ cstr };
+    auto _str  = tim::demangle(cstr);
+    if(_str.empty())
+        return _str;
+    auto _beg = _str.find("_Z");
+    auto _end = _str.find(" ", _beg);
+    if(_beg != std::string::npos && _end != std::string::npos)
+    {
+        auto _len = _end - _beg;
+        auto _sub = _str.substr(_beg, _len);
+        auto _dem = demangle(_sub);
+        _str      = _str.replace(_beg, _len, _dem);
+    }
+
+    if(_str.empty())
+    {
+        TIMEMORY_TESTING_EXCEPTION(__FUNCTION__ << " resulted in empty string. input: "
+                                                << _save);
+        return _save;
+    }
+
+    // cleanup std::_1::basic_<...> types since demangled versions are for diagnostics
+    using pair_t = std::pair<std::string, std::string>;
+    for(auto&& itr : { pair_t{ demangle<std::string>(), "std::string" },
+                       pair_t{ demangle<std::istream>(), "std::istream" },
+                       pair_t{ demangle<std::ostream>(), "std::ostream" },
+                       pair_t{ demangle<std::stringstream>(), "std::stringstream" },
+                       pair_t{ demangle<std::istringstream>(), "std::istringstream" },
+                       pair_t{ demangle<std::ostringstream>(), "std::ostringstream" } })
+        _str =
+            str_transform(_str, itr.first, "", [itr](const std::string&) -> std::string {
+                return itr.second;
+            });
+
+    return _str;
+}
+//
+std::string
+demangle_unw_backtrace(const std::string& _str)
+{
+    return demangle_unw_backtrace(_str.c_str());
 }
 //
 #endif  // defined(TIMEMORY_UNIX)
