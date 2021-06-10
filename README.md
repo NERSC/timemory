@@ -188,8 +188,8 @@ storage from the equation and, in doing so, transforms timemory into a toolkit f
     - [timemory-run](source/tools/timemory-run/README.md) (Linux)
         - Dynamic instrumentation profiling tool
         - Supports runtime instrumentation and binary re-writing
-	- [timemory-nvml](source/tools/timemory-nvml/README.md)
-	    - Data collection similar to `nvidia-smi`
+    - [timemory-nvml](source/tools/timemory-nvml/README.md)
+        - Data collection similar to `nvidia-smi`
     - `timemory-python-profiler`
         - Python function profiler supporting all timemory components
         - `from timemory.profiler import Profile`

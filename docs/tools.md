@@ -29,8 +29,8 @@ This section covers the executables and libraries that are distributed as part o
         - Use this executable to query available components, available settings, and available hardware counters
     - [timemory-run](tools/timemory-run/README.md)
         - Use this executable (Linux-only) for dynamic instrumentation
-	- [timemory-nvml](tools/timemory-nvml/README.md)
-	    - Data collection similar to `nvidia-smi`
+    - [timemory-nvml](tools/timemory-nvml/README.md)
+        - Data collection similar to `nvidia-smi`
 - Libraries
     - [timemory-stubs](tools/timemory-stubs/README.md)
         - Provides timemory instrumentation stubs for dynamic library preloading
