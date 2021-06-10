@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "timemory/macros/attributes.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include <iosfwd>
@@ -99,9 +101,11 @@
 
 #if !defined(TIMEMORY_FILE_LINE_FUNC_STRING)
 #    define TIMEMORY_FILE_LINE_FUNC_STRING                                               \
-        std::string{ TIMEMORY_TRUNCATED_FILE_STRING(__FILE__) + ":" +                    \
-                     TIMEMORY_STRINGIZE(__LINE__) + ":'" + __FUNCTION__ + "'" }          \
-            .c_str()
+        std::string                                                                      \
+        {                                                                                \
+            std::string{ "[" } + TIMEMORY_TRUNCATED_FILE_STRING(__FILE__) + ":" +        \
+                std::to_string(__LINE__) + "@'" + __FUNCTION__ + "']"                    \
+        }
 #endif
 
 #if !defined(TIMEMORY_PID_TID_STRING)
@@ -114,88 +118,102 @@
         }
 #endif
 
+template <typename Arg>
+TIMEMORY_NOINLINE auto
+timemory_proxy_value(Arg&& arg, int) -> decltype(arg.proxy_value())
+{
+    return arg.proxy_value();
+}
+
+template <typename Arg>
+TIMEMORY_NOINLINE auto
+timemory_proxy_value(Arg&& arg, long)
+{
+    return std::forward<Arg>(arg);
+}
+
+template <typename... Args>
+TIMEMORY_NOINLINE void
+timemory_print_here(const char* _pid_tid, const char* _file, int _line, const char* _func,
+                    Args&&... args)
+{
+    fprintf(stderr, "%s[%s:%i@'%s']> ", _pid_tid, _file, _line, _func);
+    fprintf(stderr, timemory_proxy_value(std::forward<Args>(args), 0)...);
+    fprintf(stderr, "...\n");
+    fflush(stderr);
+}
+
 #if !defined(PRINT_HERE)
-#    define PRINT_HERE(fmt, ...)                                                         \
-        (fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",                   \
-                 (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),       \
-                 TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,             \
-                 __FUNCTION__, __VA_ARGS__),                                             \
-         fflush(stderr))
+#    define PRINT_HERE(...)                                                              \
+        timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                             \
+                            TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,  \
+                            __FUNCTION__, __VA_ARGS__)
 #endif
 
 #if !defined(DEBUG_PRINT_HERE)
 #    if defined(DEBUG)
-#        define DEBUG_PRINT_HERE(fmt, ...)                                               \
+#        define DEBUG_PRINT_HERE(...)                                                    \
             if(::tim::settings::debug())                                                 \
             {                                                                            \
-                fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",            \
-                        (int) ::tim::process::get_id(),                                  \
-                        (int) ::tim::threading::get_id(),                                \
-                        TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,      \
-                        __FUNCTION__, __VA_ARGS__);                                      \
-                fflush(stderr);                                                          \
+                timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                     \
+                                    TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),    \
+                                    __LINE__, __FUNCTION__, __VA_ARGS__);                \
             }
 #    else
-#        define DEBUG_PRINT_HERE(fmt, ...)
+#        define DEBUG_PRINT_HERE(...)
 #    endif
 #endif
 
 #if !defined(VERBOSE_PRINT_HERE)
-#    define VERBOSE_PRINT_HERE(VERBOSE_LEVEL, fmt, ...)                                  \
+#    define VERBOSE_PRINT_HERE(VERBOSE_LEVEL, ...)                                       \
         if(::tim::settings::verbose() >= VERBOSE_LEVEL)                                  \
         {                                                                                \
-            fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",                \
-                    (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),    \
-                    TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,          \
-                    __FUNCTION__, __VA_ARGS__);                                          \
-            fflush(stderr);                                                              \
+            timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
+                                TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
+                                __LINE__, __FUNCTION__, __VA_ARGS__);                    \
         }
 #endif
 
 #if !defined(CONDITIONAL_PRINT_HERE)
-#    define CONDITIONAL_PRINT_HERE(CONDITION, fmt, ...)                                  \
+#    define CONDITIONAL_PRINT_HERE(CONDITION, ...)                                       \
         if(CONDITION)                                                                    \
         {                                                                                \
-            fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",                \
-                    (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),    \
-                    TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,          \
-                    __FUNCTION__, __VA_ARGS__);                                          \
-            fflush(stderr);                                                              \
+            timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
+                                TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
+                                __LINE__, __FUNCTION__, __VA_ARGS__);                    \
         }
 #endif
 
 #if !defined(TIMEMORY_CONDITIONAL_BACKTRACE)
-#    define TIMEMORY_CONDITIONAL_BACKTRACE(CONDITION, ...)                               \
+#    define TIMEMORY_CONDITIONAL_BACKTRACE(CONDITION, DEPTH)                             \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_backtrace<__VA_ARGS__>(std::cerr, TIMEMORY_PID_TID_STRING);     \
+            ::tim::print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING, "    ",    \
+                                          TIMEMORY_FILE_LINE_FUNC_STRING);               \
         }
 #endif
 
 #if !defined(TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE)
-#    define TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(CONDITION, ...)                     \
+#    define TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(CONDITION, DEPTH)                   \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_demangled_backtrace<__VA_ARGS__>(std::cerr,                     \
-                                                          TIMEMORY_PID_TID_STRING);      \
+            ::tim::print_demangled_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING,  \
+                                                    "    ",                              \
+                                                    TIMEMORY_FILE_LINE_FUNC_STRING);     \
         }
 #endif
 
 #if !defined(PRETTY_PRINT_HERE)
 #    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
-#        define PRETTY_PRINT_HERE(fmt, ...)                                              \
-            (fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",               \
-                     (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),   \
-                     TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,         \
-                     __FUNCTION__, __VA_ARGS__),                                         \
-             fflush(stderr))
+#        define PRETTY_PRINT_HERE(...)                                                   \
+            timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
+                                TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
+                                __LINE__, __PRETTY_FUNCTION__, __VA_ARGS__)
 #    else
-#        define PRETTY_PRINT_HERE(fmt, ...)                                              \
-            (fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",               \
-                     (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),   \
-                     TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,         \
-                     __FUNCTION__, __VA_ARGS__),                                         \
-             fflush(stderr))
+#        define PRETTY_PRINT_HERE(...)                                                   \
+            timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
+                                TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
+                                __LINE__, __FUNCTION__, __VA_ARGS__) #endif
 #    endif
 #endif
 

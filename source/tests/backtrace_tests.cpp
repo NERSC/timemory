@@ -154,9 +154,9 @@ TEST_F(backtrace_tests, backtrace)
 {
     auto ret = spam();
     int  cnt = 0;
-    for(const auto& itr : ret)
+    for(auto itr : ret)
     {
-        if(itr && strlen(itr) > 0)
+        if(strlen(itr) > 0)
         {
             std::cerr << itr << std::endl;
             ++cnt;
@@ -373,7 +373,8 @@ TEST_F(backtrace_tests, decode)
 TEST_F(backtrace_tests, print_backtrace)
 {
     std::stringstream ss;
-    tim::print_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING);
+    tim::print_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING,
+                               TIMEMORY_FILE_LINE_FUNC_STRING);
     std::cerr << ss.str();
     auto btvec = tim::delimit(ss.str(), "\n");
     EXPECT_GE(btvec.size(), 3) << ss.str();
@@ -384,7 +385,8 @@ TEST_F(backtrace_tests, print_backtrace)
 TEST_F(backtrace_tests, print_demangled_backtrace)
 {
     std::stringstream ss;
-    tim::print_demangled_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING);
+    tim::print_demangled_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING,
+                                         TIMEMORY_FILE_LINE_FUNC_STRING);
     std::cerr << ss.str();
     auto btvec = tim::delimit(ss.str(), "\n");
     EXPECT_GE(btvec.size(), 3) << ss.str();
@@ -396,7 +398,8 @@ TEST_F(backtrace_tests, print_demangled_backtrace)
 TEST_F(backtrace_tests, print_unw_backtrace)
 {
     std::stringstream ss;
-    tim::print_unw_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING);
+    tim::print_unw_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING,
+                                   TIMEMORY_FILE_LINE_FUNC_STRING);
     std::cerr << ss.str();
     auto btvec = tim::delimit(ss.str(), "\n");
     EXPECT_GE(btvec.size(), 3) << ss.str();
@@ -407,11 +410,13 @@ TEST_F(backtrace_tests, print_unw_backtrace)
 TEST_F(backtrace_tests, print_demangled_unw_backtrace)
 {
     std::stringstream ss;
-    tim::print_demangled_unw_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING);
+    tim::print_demangled_unw_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING,
+                                             TIMEMORY_FILE_LINE_FUNC_STRING);
     std::cerr << ss.str();
     auto btvec = tim::delimit(ss.str(), "\n");
     EXPECT_GE(btvec.size(), 3) << ss.str();
 }
 
 #endif
+
 //--------------------------------------------------------------------------------------//

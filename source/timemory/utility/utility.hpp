@@ -435,22 +435,22 @@ get_unw_backtrace(Func&& func)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 2>
+template <size_t Depth, size_t Offset = 1>
 TIMEMORY_NOINLINE auto
 get_demangled_backtrace()
 {
     auto demangle_bt = [](const char cstr[512]) { return demangle_backtrace(cstr); };
-    return get_backtrace<Depth, Offset>(demangle_bt);
+    return get_backtrace<Depth, Offset + 1>(demangle_bt);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 2>
+template <size_t Depth, size_t Offset = 1>
 TIMEMORY_NOINLINE auto
 get_demangled_unw_backtrace()
 {
     auto demangle_bt = [](const char cstr[512]) { return demangle_unw_backtrace(cstr); };
-    return get_unw_backtrace<Depth, Offset>(demangle_bt);
+    return get_unw_backtrace<Depth, Offset + 1>(demangle_bt);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -458,9 +458,12 @@ get_demangled_unw_backtrace()
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
                   print_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                  std::string _indent = "    ")
+                                  std::string _info = "", std::string _indent = "    ")
 {
-    os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
+    os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
+    if(!_info.empty())
+        os << " " << _info;
+    os << ":\n" << std::flush;
     auto bt = tim::get_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
@@ -480,12 +483,15 @@ TIMEMORY_NOINLINE std::ostream&
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 3>
+template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
-print_demangled_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                          std::string _indent = "    ")
+                  print_demangled_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                                            std::string _info = "", std::string _indent = "    ")
 {
-    os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
+    os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
+    if(!_info.empty())
+        os << " " << _info;
+    os << ":\n" << std::flush;
     auto bt = tim::get_demangled_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
@@ -502,10 +508,13 @@ print_demangled_backtrace(std::ostream& os = std::cerr, std::string _prefix = ""
 //
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
-print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                    std::string _indent = "    ")
+                  print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                                      std::string _info = "", std::string _indent = "    ")
 {
-    os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
+    os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
+    if(!_info.empty())
+        os << " " << _info;
+    os << ":\n" << std::flush;
     auto bt = tim::get_unw_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
@@ -527,10 +536,13 @@ print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
 //
 template <size_t Depth, size_t Offset = 3>
 TIMEMORY_NOINLINE std::ostream&
-print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                              std::string _indent = "    ")
+                  print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                                                std::string _info = "", std::string _indent = "    ")
 {
-    os << _indent.substr(0, _indent.length() / 2) << "Backtrace:\n" << std::flush;
+    os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
+    if(!_info.empty())
+        os << " " << _info;
+    os << ":\n" << std::flush;
     auto bt = tim::get_demangled_unw_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
@@ -601,9 +613,8 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string = {},
 template <typename ContainerT = std::vector<std::string>,
           typename PredicateT = std::function<std::string(const std::string&)>>
 inline ContainerT
-delimit(
-    const std::string& line, const std::string& delimiters = "\"',;: ",
-    PredicateT&& predicate = [](const std::string& s) -> std::string { return s; })
+delimit(const std::string& line, const std::string& delimiters = "\"',;: ",
+        PredicateT&& predicate = [](const std::string& s) -> std::string { return s; })
 {
     ContainerT _result{};
     size_t     _beginp = 0;  // position that is the beginning of the new string
@@ -729,7 +740,7 @@ public:
 
 template <typename T>
 TIMEMORY_INLINE size_t
-get_hash(T&& obj)
+                get_hash(T&& obj)
 {
     return std::hash<decay_t<T>>()(std::forward<T>(obj));
 }
@@ -737,7 +748,7 @@ get_hash(T&& obj)
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_INLINE size_t
-get_hash(const string_view_t& str)
+                get_hash(const string_view_t& str)
 {
     return std::hash<string_view_t>{}(str);
 }
@@ -745,7 +756,7 @@ get_hash(const string_view_t& str)
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_INLINE size_t
-get_hash(const char* cstr)
+                get_hash(const char* cstr)
 {
     return std::hash<string_view_t>{}(cstr);
 }
@@ -753,7 +764,7 @@ get_hash(const char* cstr)
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_HOT_INLINE size_t
-get_hash(char* cstr)
+                    get_hash(char* cstr)
 {
     return std::hash<string_view_t>{}(cstr);
 }
