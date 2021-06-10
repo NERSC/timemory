@@ -45,7 +45,8 @@ if(CLANG_FORMATTER)
     file(GLOB_RECURSE sources
         ${PROJECT_SOURCE_DIR}/source/*.c
         ${PROJECT_SOURCE_DIR}/source/*.cu
-        ${PROJECT_SOURCE_DIR}/source/*.cpp)
+        ${PROJECT_SOURCE_DIR}/source/*.cpp
+        ${PROJECT_SOURCE_DIR}/source/*.cpp.in)
     if(TIMEMORY_SOURCE_GROUP)
         source_group(TREE ${PROJECT_SOURCE_DIR}/source FILES ${sources})
     endif()

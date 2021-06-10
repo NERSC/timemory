@@ -77,8 +77,8 @@ struct kp_timemory_section
 //--------------------------------------------------------------------------------------//
 
 template <typename... Tp>
-std::enable_if_t<sizeof...(Tp) != 0, std::string> get_types_string(
-    tim::component_tuple<Tp...>)
+std::enable_if_t<sizeof...(Tp) != 0, std::string>
+get_types_string(tim::component_tuple<Tp...>)
 {
     return TIMEMORY_JOIN(" + ", tim::demangle<Tp>()...);
 }
@@ -86,8 +86,8 @@ std::enable_if_t<sizeof...(Tp) != 0, std::string> get_types_string(
 //--------------------------------------------------------------------------------------//
 
 template <typename... Tp>
-std::enable_if_t<sizeof...(Tp) == 0, std::string> get_types_string(
-    tim::component_tuple<Tp...>)
+std::enable_if_t<sizeof...(Tp) == 0, std::string>
+get_types_string(tim::component_tuple<Tp...>)
 {
     return TIMEMORY_JOIN("", "NONE [the requested types in ",
                          tim::demangle<profile_entry_t>(),
@@ -393,7 +393,7 @@ kokkosp_create_profile_section(const char* name, uint32_t* secid)
 {
     if_constexpr(profile_entry_t::size() > 0)
     {
-        *secid = get_unique_id();
+        *secid     = get_unique_id();
         auto pname = TIMEMORY_JOIN('/', "kokkos", name);
         create_profiler(pname, *secid);
     }
