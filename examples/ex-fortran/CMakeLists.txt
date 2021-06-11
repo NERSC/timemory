@@ -7,7 +7,7 @@ endif()
 
 project(timemory-Fortran-Example LANGUAGES Fortran)
 
-set(EXE_NAME ex_fortran_timing)
+set(EXE_NAME ex_fortran)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory::fortran-example)

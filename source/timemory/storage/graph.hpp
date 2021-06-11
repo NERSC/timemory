@@ -581,6 +581,9 @@ public:
     template <typename IterT>
     inline IterT replace(IterT position, const T& x);
 
+    template <typename IterT>
+    inline IterT replace(IterT position, T&& x);
+
     /// Replace node at 'position' with subgraph starting at 'from' (do not
     /// erase subgraph at 'from'); see above.
     template <typename IterT>
@@ -956,7 +959,7 @@ graph<T, AllocatorT>::erase(IterT it)
     if(cur == head || cur == feet)
         return it;
     IterT ret = it;
-    ret.skip_children();
+    // ret.skip_children();
     ++ret;
     erase_children(it);
     if(cur->parent && cur->prev_sibling == nullptr)
@@ -1271,8 +1274,8 @@ graph<T, AllocatorT>::append_child(IterT position, IterT other)
     assert(position.node != feet);
     assert(position.node);
 
-    sibling_iterator aargh = append_child(position, value_type());
-    return replace(aargh, other);
+    IterT aargh = append_child(position, value_type());
+    return move_ontop(aargh, other);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1286,8 +1289,8 @@ graph<T, AllocatorT>::prepend_child(IterT position, IterT other)
     assert(position.node != feet);
     assert(position.node);
 
-    sibling_iterator aargh = prepend_child(position, value_type());
-    return replace(aargh, other);
+    IterT aargh = prepend_child(position, value_type());
+    return move_ontop(aargh, other);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1570,6 +1573,21 @@ graph<T, AllocatorT>::replace(IterT position, const T& x)
     //  position.node->data = x;
     m_alloc.destroy(position.node);
     m_alloc.construct(position.node, x);
+    return position;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename AllocatorT>
+template <typename IterT>
+IterT
+graph<T, AllocatorT>::replace(IterT position, T&& x)
+{
+    //	kp::destructor(&position.node->data);
+    //	kp::constructor(&position.node->data, x);
+    //  position.node->data = x;
+    m_alloc.destroy(position.node);
+    m_alloc.construct(position.node, std::forward<T>(x));
     return position;
 }
 

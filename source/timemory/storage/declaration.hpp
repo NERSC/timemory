@@ -77,7 +77,9 @@ get_storage_singleton()
     using component_type  = typename Tp::component_type;
     static auto _instance = std::unique_ptr<singleton_type>(
         (trait::runtime_enabled<component_type>::get()) ? new singleton_type{} : nullptr);
+    static auto _dtor = scope::destructor{ []() { _instance.reset(); } };
     return _instance.get();
+    consume_parameters(_dtor);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -403,11 +405,11 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     auto&& _tmp = Type{};
     _tmp += std::get<2>(_secondary);
     _tmp.set_laps(_tmp.get_laps() + 1);
-    graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
+    graph_node_t _node{ _hash, _tmp, _depth, m_thread_idx };
     _node.stats() += _tmp.get();
     auto& _stats = _node.stats();
     operation::add_statistics<Type>(_tmp, _stats);
-    auto itr = _data().emplace_child(_itr, _node);
+    auto itr = _data().emplace_child(_itr, std::move(_node));
     itr->obj().set_iterator(itr);
     m_node_ids[_depth][_hash] = itr;
     return itr;
@@ -446,9 +448,9 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     }
 
     // else, create a new entry
-    auto&&       _tmp = std::get<2>(_secondary);
-    graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
-    auto         itr = _data().emplace_child(_itr, _node);
+    auto&& _tmp = std::get<2>(_secondary);
+    auto   itr  = _data().emplace_child(
+        _itr, graph_node_t{ _hash, _tmp, static_cast<int64_t>(_depth), m_thread_idx });
     itr->obj().set_iterator(itr);
     m_node_ids[_depth][_hash] = itr;
     return itr;
@@ -473,9 +475,10 @@ storage<Type, true>::insert_timeline(uint64_t hash_id, const Type& obj,
                                      uint64_t hash_depth)
 {
     // PRINT_HERE("%s", "");
-    auto         _current = _data().current();
-    graph_node_t _node(hash_id, obj, hash_depth, m_thread_idx);
-    return _data().emplace_child(_current, _node);
+    auto _current = _data().current();
+    return _data().emplace_child(
+        _current,
+        graph_node_t{ hash_id, obj, static_cast<int64_t>(hash_depth), m_thread_idx });
 }
 
 //----------------------------------------------------------------------------------//
@@ -496,8 +499,9 @@ storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t has
         }
         else
         {
-            graph_node_t node(hash_id, obj, hash_depth, m_thread_idx);
-            auto         itr                = _data().emplace_child(_current, node);
+            auto itr = _data().emplace_child(
+                _current, graph_node_t{ hash_id, obj, static_cast<int64_t>(hash_depth),
+                                        m_thread_idx });
             m_node_ids[hash_depth][hash_id] = itr;
             _current                        = itr;
             return itr;
@@ -508,8 +512,9 @@ storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t has
     if(_existing != m_node_ids[hash_depth].end())
         return m_node_ids[hash_depth].find(hash_id)->second;
 
-    graph_node_t node(hash_id, obj, hash_depth, m_thread_idx);
-    auto         itr                = _data().emplace_child(_current, node);
+    auto itr = _data().emplace_child(
+        _current,
+        graph_node_t{ hash_id, obj, static_cast<int64_t>(hash_depth), m_thread_idx });
     m_node_ids[hash_depth][hash_id] = itr;
     return itr;
 }
@@ -530,8 +535,8 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
     // if first instance
     if(!has_head || (m_is_master && m_node_ids.empty()))
     {
-        graph_node_t node(hash_id, obj, hash_depth, tid);
-        auto         itr                = m_data->append_child(node);
+        auto itr = m_data->append_child(
+            graph_node_t{ hash_id, obj, static_cast<int64_t>(hash_depth), tid });
         m_node_ids[hash_depth][hash_id] = itr;
         return itr;
     }
@@ -549,12 +554,12 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
     }
 
     using sibling_itr = typename graph_t::sibling_iterator;
-    graph_node_t node(hash_id, obj, m_data->depth(), tid);
+    graph_node_t node{ hash_id, obj, m_data->depth(), tid };
 
     // lambda for inserting child
     auto _insert_child = [&]() {
         node.depth() = hash_depth;
-        auto itr     = m_data->append_child(node);
+        auto itr     = m_data->append_child(std::move(node));
         auto ditr    = m_node_ids.find(hash_depth);
         if(ditr == m_node_ids.end())
             m_node_ids.insert({ hash_depth, id_hash_map_t{} });

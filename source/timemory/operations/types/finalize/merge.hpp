@@ -162,7 +162,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
                                        Type::get_label().c_str(), (int) lhs.size());
 
                 // remove the entry from this graph since it has been added
-                rhs.graph().erase(entry.second);
+                // rhs.graph().erase(pitr);
             }
         }
     }

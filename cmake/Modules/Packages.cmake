@@ -574,7 +574,7 @@ timemory_target_compile_definitions(timemory-no-mpi-init INTERFACE TIMEMORY_MPI_
 if(MPI_FOUND)
     target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
 
-    foreach(_LANG C CXX)
+    foreach(_LANG CXX)
         if(TARGET MPI::MPI_${_LANG})
             target_link_libraries(timemory-mpi INTERFACE MPI::MPI_${_LANG})
         endif()

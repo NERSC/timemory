@@ -65,14 +65,8 @@ namespace base
 TIMEMORY_STORAGE_LINKAGE
 storage::storage(bool _is_master, int64_t _instance_id, std::string _label)
 : m_is_master(_is_master)
-, m_node_init(dmp::is_initialized())
-, m_node_rank(dmp::rank())
-, m_node_size(dmp::size())
 , m_instance_id(_instance_id)
-, m_thread_idx(threading::get_id())
 , m_label(std::move(_label))
-, m_hash_ids(::tim::get_hash_ids())
-, m_hash_aliases(::tim::get_hash_aliases())
 , m_manager(::tim::manager::instance())
 , m_settings(::tim::settings::shared_instance())
 {

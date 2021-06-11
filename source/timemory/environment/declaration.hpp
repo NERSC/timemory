@@ -147,8 +147,9 @@ template <typename Archive>
 void
 env_settings::serialize(Archive& ar, const unsigned int)
 {
+    auto _tmp = env_uomap_t{};
     if(!m_env)
-        m_env = new env_uomap_t();
+        m_env = &_tmp;
 
     collapse();
 
@@ -159,6 +160,9 @@ env_settings::serialize(Archive& ar, const unsigned int)
         lk.lock();
 
     ar(cereal::make_nvp("environment", *m_env));
+
+    if(m_env == &_tmp)
+        m_env = nullptr;
 
     lock_flag().store(false);
 }

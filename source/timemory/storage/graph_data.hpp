@@ -158,13 +158,15 @@ public:
                    process::get_id(), true);
         m_depth     = _depth;
         m_sea_level = _depth;
-        m_current   = m_graph.insert_after(m_head, node);
+        m_current   = m_graph.insert_after(m_head, std::move(node));
 
         m_dummies.insert({ m_depth, m_current });
     }
 
     inline void reset()
     {
+        // for(auto& itr : m_dummies)
+        //    m_graph.erase(itr.second);
         m_graph.erase_children(m_head);
         m_depth   = 0;
         m_current = m_head;
@@ -221,10 +223,16 @@ public:
         return _accum;
     }
 
-    inline iterator append_child(NodeT& node)
+    inline iterator append_child(const NodeT& node)
     {
         ++m_depth;
         return (m_current = m_graph.append_child(m_current, node));
+    }
+
+    inline iterator append_child(NodeT&& node)
+    {
+        ++m_depth;
+        return (m_current = m_graph.append_child(m_current, std::move(node)));
     }
 
     inline iterator append_head(NodeT& node)
@@ -232,9 +240,14 @@ public:
         return m_graph.append_child(m_head, node);
     }
 
-    inline iterator emplace_child(iterator _itr, NodeT& node)
+    inline iterator emplace_child(iterator _itr, const NodeT& node)
     {
         return m_graph.append_child(_itr, node);
+    }
+
+    inline iterator emplace_child(iterator _itr, NodeT&& node)
+    {
+        return m_graph.append_child(_itr, std::move(node));
     }
 
     TIMEMORY_NODISCARD inverse_insert_t get_inverse_insert() const
