@@ -36,19 +36,13 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 try:
-    import mpi4py
-    from mpi4py import MPI
+    import mpi4py  # noqa: F401
+    from mpi4py import MPI  # noqa: F401
 except ImportError:
     pass
 
-import os
-import time
 import json
-import random
 import unittest
-import threading
-import inspect
-import numpy as np
 import timemory as tim
 
 
@@ -134,7 +128,7 @@ class TimemoryToolsTests(unittest.TestCase):
         self.assertEqual(unit_r, MallocGotcha.display_unit())
 
 
-# ----------------------------- main test runner ---------------------------------------- #
+# ----------------------------- main test runner -------------------------------------- #
 # main runner
 def run():
     # run all tests

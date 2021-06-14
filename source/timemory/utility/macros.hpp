@@ -73,11 +73,53 @@
 //
 //======================================================================================//
 
+// stringify some macro -- uses TIMEMORY_STRINGIZE2 which does the actual
+//   "stringify-ing" after the macro has been substituted by it's result
+#if !defined(TIMEMORY_STRINGIZE)
+#    define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
+#endif
+
+// actual stringifying
+#if !defined(TIMEMORY_STRINGIZE2)
+#    define TIMEMORY_STRINGIZE2(X) #    X
+#endif
+
+#if !defined(TIMEMORY_TRUNCATED_FILE_STRING)
+#    define TIMEMORY_TRUNCATED_FILE_STRING(FILE)                                         \
+        []() {                                                                           \
+            std::string _f{ FILE };                                                      \
+            auto        _pos = _f.find("/timemory/");                                    \
+            if(_pos != std::string::npos)                                                \
+            {                                                                            \
+                return _f.substr(_pos + 1);                                              \
+            }                                                                            \
+            return _f;                                                                   \
+        }()
+#endif
+
+#if !defined(TIMEMORY_FILE_LINE_FUNC_STRING)
+#    define TIMEMORY_FILE_LINE_FUNC_STRING                                               \
+        std::string{ TIMEMORY_TRUNCATED_FILE_STRING(__FILE__) + ":" +                    \
+                     TIMEMORY_STRINGIZE(__LINE__) + ":'" + __FUNCTION__ + "'" }          \
+            .c_str()
+#endif
+
+#if !defined(TIMEMORY_PID_TID_STRING)
+#    define TIMEMORY_PID_TID_STRING                                                      \
+        std::string                                                                      \
+        {                                                                                \
+            std::string{ "[pid=" } + std::to_string(::tim::process::get_id()) +          \
+                std::string{ "][tid=" } + std::to_string(::tim::threading::get_id()) +   \
+                "]"                                                                      \
+        }
+#endif
+
 #if !defined(PRINT_HERE)
 #    define PRINT_HERE(fmt, ...)                                                         \
-        (fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",                   \
+        (fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",                   \
                  (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),       \
-                 __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__),                         \
+                 TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,             \
+                 __FUNCTION__, __VA_ARGS__),                                             \
          fflush(stderr))
 #endif
 
@@ -86,9 +128,10 @@
 #        define DEBUG_PRINT_HERE(fmt, ...)                                               \
             if(::tim::settings::debug())                                                 \
             {                                                                            \
-                fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",            \
+                fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",            \
                         (int) ::tim::process::get_id(),                                  \
-                        (int) ::tim::threading::get_id(), __FILE__, __LINE__,            \
+                        (int) ::tim::threading::get_id(),                                \
+                        TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,      \
                         __FUNCTION__, __VA_ARGS__);                                      \
                 fflush(stderr);                                                          \
             }
@@ -101,9 +144,10 @@
 #    define VERBOSE_PRINT_HERE(VERBOSE_LEVEL, fmt, ...)                                  \
         if(::tim::settings::verbose() >= VERBOSE_LEVEL)                                  \
         {                                                                                \
-            fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",                \
+            fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",                \
                     (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),    \
-                    __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__);                      \
+                    TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,          \
+                    __FUNCTION__, __VA_ARGS__);                                          \
             fflush(stderr);                                                              \
         }
 #endif
@@ -112,9 +156,10 @@
 #    define CONDITIONAL_PRINT_HERE(CONDITION, fmt, ...)                                  \
         if(CONDITION)                                                                    \
         {                                                                                \
-            fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",                \
+            fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",                \
                     (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),    \
-                    __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__);                      \
+                    TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,          \
+                    __FUNCTION__, __VA_ARGS__);                                          \
             fflush(stderr);                                                              \
         }
 #endif
@@ -122,17 +167,35 @@
 #if !defined(PRETTY_PRINT_HERE)
 #    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
 #        define PRETTY_PRINT_HERE(fmt, ...)                                              \
-            (fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",               \
+            (fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",               \
                      (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),   \
-                     __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__),                     \
+                     TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,         \
+                     __FUNCTION__, __VA_ARGS__),                                         \
              fflush(stderr))
 #    else
 #        define PRETTY_PRINT_HERE(fmt, ...)                                              \
-            (fprintf(stderr, "[pid=%i][tid=%i][%s:%i@'%s']> " fmt "...\n",               \
+            (fprintf(stderr, "[pid=%i][tid=%i][%s:%i:'%s']> " fmt "...\n",               \
                      (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),   \
-                     __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__),                     \
+                     TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,         \
+                     __FUNCTION__, __VA_ARGS__),                                         \
              fflush(stderr))
 #    endif
+#endif
+
+#if !defined(TIMEMORY_CONDITIONAL_BACKTRACE)
+#    define TIMEMORY_CONDITIONAL_BACKTRACE(CONDITION, DEPTH)                             \
+        if(CONDITION)                                                                    \
+        {                                                                                \
+            ::tim::print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING);           \
+        }
+#endif
+
+#if !defined(TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE)
+#    define TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(CONDITION, DEPTH)                   \
+        if(CONDITION)                                                                    \
+        {                                                                                \
+            ::tim::print_demangled_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING); \
+        }
 #endif
 
 #if defined(DEBUG)
@@ -141,8 +204,11 @@ template <typename... Args>
 inline void
 __LOG(std::string file, int line, const char* msg, Args&&... args)
 {
-    if(file.find('/') != std::string::npos)
-        file = file.substr(file.find_last_of('/'));
+    auto _pos = file.find("/timemory/");
+    if(_pos == std::string::npos)
+        _pos = file.find_last_of('/');
+    if(_pos != std::string::npos)
+        file = file.substr(_pos);
     fprintf(stderr, "[Log @ %s:%i]> ", file.c_str(), line);
     fprintf(stderr, msg, std::forward<Args>(args)...);
     fprintf(stderr, "\n");

@@ -55,6 +55,6 @@ This submodule imports the timemory bindings to the component storage
 """
 
 try:
-    from ..libpytimemory.storage import *
+    from ..libpytimemory.storage import *  # noqa: F401
 except Exception as e:
     print("{}".format(e))

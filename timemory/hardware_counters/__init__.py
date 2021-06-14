@@ -40,6 +40,6 @@ This submodule imports the compiled timemory hardware_counters.
 """
 
 try:
-    from ..libs.libpytimemory.hardware_counters import *
+    from ..libs.libpytimemory.hardware_counters import *  # noqa: F401
 except Exception as e:
     print("{}".format(e))

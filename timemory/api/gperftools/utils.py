@@ -24,7 +24,6 @@
 # SOFTWARE.
 
 import os
-import sys
 import platform
 import subprocess as sp
 
@@ -88,7 +87,7 @@ def find_library_path(fname):
     _prefixes = get_library_prefixes()
     _lib_ext = get_shared_lib_ext()
 
-    if not _lib_ext in fname:
+    if _lib_ext not in fname:
         return None
 
     fname = fname.strip("@rpath/")

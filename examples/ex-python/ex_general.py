@@ -19,7 +19,6 @@ Usage:
 """
 
 import os
-import sys
 import json
 import argparse
 import timemory
@@ -83,8 +82,8 @@ if __name__ == "__main__":
         default=["json_tree"],
         help=(
             'Data reporting format. In a "flat" json, all entries are in a 1D array'
-            'and labels are modified with indentation to reflect hierarchy. In a "tree" json'
-            ", entries are arranged in a hierarchical and the labels are unmodified."
+            'and labels are modified with indentation to reflect hierarchy. In a "tree" '
+            "json, entries are arranged in a hierarchical and the labels are unmodified."
         ),
     )
 

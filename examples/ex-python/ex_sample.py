@@ -22,7 +22,7 @@ if int(os.environ.get("EX_SAMPLE_NO_ENV", "0")) < 1:
     os.environ["TIMEMORY_CUPTI_EVENTS"] = "{}".format(",".join(events))
     os.environ["TIMEMORY_CUPTI_METRICS"] = "{}".format(",".join(metrics))
 
-import timemory
+import timemory  # noqa: E402
 
 
 #

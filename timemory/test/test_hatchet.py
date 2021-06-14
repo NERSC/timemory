@@ -26,6 +26,21 @@
 
 from __future__ import absolute_import
 
+import os
+import unittest
+import numpy as np
+import timemory as tim
+from timemory.bundle import marker
+
+rank = 0
+try:
+    import mpi4py  # noqa: F401
+    from mpi4py import MPI  # noqa: F401
+
+    rank = MPI.COMM_WORLD.Get_rank()
+except ImportError:
+    pass
+
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
 __credits__ = ["Muhammad Haseeb"]
@@ -34,28 +49,6 @@ __version__ = "@PROJECT_VERSION@"
 __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
-
-rank = 0
-try:
-    import mpi4py
-    from mpi4py import MPI
-
-    rank = MPI.COMM_WORLD.Get_rank()
-except ImportError:
-    pass
-
-import os
-import time
-import json
-import random
-import unittest
-import threading
-import inspect
-import numpy as np
-import timemory as tim
-from timemory import component as comp
-from timemory.profiler import profile, config
-from timemory.bundle import auto_timer, auto_tuple, marker
 
 
 # --------------------------- helper functions ----------------------------------------- #
@@ -67,7 +60,7 @@ def fibonacci(n, with_arg=True):
         "fib({})".format(n) if with_arg else "",
         mode=mode,
     ):
-        arr = np.ones([100, 100], dtype=float)
+        arr = np.ones([100, 100], dtype=float)  # noqa: F841
         return (
             n
             if n < 2
@@ -153,7 +146,7 @@ class TimemoryHatchetTests(unittest.TestCase):
         """test_hatchet_analyze"""
 
         try:
-            import hatchet as ht
+            import hatchet as ht  # noqa: F401
         except ImportError:
             return
 
@@ -166,12 +159,10 @@ class TimemoryHatchetTests(unittest.TestCase):
             "analysis",
         )
 
-        args = (
-            ["--expression", "x > 0"]
-            + "-f dot flamegraph tree -o {} --per-thread --per-rank --select peak_rss --search fibonacci -e".format(
-                outpath
-            ).split()
-        )
+        args = ["--expression", "x > 0"] + (
+            f"-f dot flamegraph tree -o {outpath} --per-thread --per-rank "
+            + "--select peak_rss --search fibonacci -e"
+        ).split()
 
         if rank == 0:
             print(f"arguments: {args}")
@@ -182,7 +173,7 @@ class TimemoryHatchetTests(unittest.TestCase):
         )
 
 
-# ----------------------------- main test runner ---------------------------------------- #
+# ----------------------------- main test runner -------------------------------------- #
 # main runner
 def run():
     # run all tests

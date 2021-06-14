@@ -169,10 +169,12 @@ if __name__ == "__main__":
                 )
 
             except Exception as e:
+                sys.stderr.write(f"{e}\n")
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_traceback)
 
     except Exception as e:
+        sys.stderr.write(f"{e}\n")
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback)
 

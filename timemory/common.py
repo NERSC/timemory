@@ -282,9 +282,8 @@ def dart_measurement(name, value):
 def dart_measurement_file(name, path, format="png", type="image"):
     """Prints out an XML tag which gets detected by CTest and uploaded to CDash"""
     _path = os.path.abspath(path)
-    print(
-        f'<DartMeasurementFile name="{name}" type="{type}/{format}">{_path}</DartMeasurementFile>'
-    )
+    tag = "DartMeasurementFile"
+    print(f'<{tag} name="{name}" type="{type}/{format}">{_path}</{tag}>')
 
 
 def write_ctest_notes(fname, path=None, mode="a"):

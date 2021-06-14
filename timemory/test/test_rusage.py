@@ -36,18 +36,15 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 try:
-    import mpi4py
-    from mpi4py import MPI
+    import mpi4py  # noqa: F401
+    from mpi4py import MPI  # noqa: F401
 except ImportError:
     pass
 
-import os
 import time
 import mmap
 import numpy as np
 import unittest
-import threading
-import inspect
 import random
 import tempfile
 import timemory as tim
@@ -140,6 +137,8 @@ def read_write():
 
     rb.stop()
     wb.stop()
+
+    return data
 
 
 # print_info for peak, page rss
@@ -255,7 +254,7 @@ class TimemoryRUsageTests(unittest.TestCase):
         )
 
 
-# ----------------------------- main test runner ---------------------------------------- #
+# ----------------------------- main test runner -------------------------------------- #
 # test runner
 def run():
     # run all tests

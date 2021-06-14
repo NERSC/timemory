@@ -49,6 +49,6 @@ This submodule imports the compiled timemory component.
 """
 
 try:
-    from ..libs.libpytimemory.component import *
+    from ..libs.libpytimemory.component import *  # noqa: F401
 except Exception as e:
     print("{}".format(e))

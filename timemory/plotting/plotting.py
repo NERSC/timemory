@@ -59,8 +59,6 @@ import sys
 import os
 import copy
 import json
-import ctypes
-import platform
 import warnings
 import traceback
 import collections
@@ -98,7 +96,7 @@ if (
 # tornado helps set the matplotlib backend but is not necessary
 #
 try:
-    import tornado
+    import tornado  # noqa: F401
 except ImportError:
     pass
 
@@ -107,7 +105,7 @@ except ImportError:
 #
 try:
     import matplotlib
-    import matplotlib.pyplot as plt_default_backend
+    import matplotlib.pyplot as plt_default_backend  # noqa: F401
 
     _matplotlib_backend = matplotlib.get_backend()
 except ImportError:
@@ -115,7 +113,7 @@ except ImportError:
         import matplotlib
 
         matplotlib.use("agg", warn=False)
-        import matplotlib.pyplot as plt_try_agg_backend
+        import matplotlib.pyplot as plt_try_agg_backend  # noqa: F401
 
         _matplotlib_backend = matplotlib.get_backend()
     except ImportError:
@@ -521,7 +519,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     """Generic plotting routine"""
     if _matplotlib_backend is None:
         try:
-            import matplotlib
+            import matplotlib  # noqa: F401
         except ImportError:
             warnings.warn(
                 "Matplotlib could not find a suitable backend. Skipping plotting..."
@@ -571,7 +569,9 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
         func = func.strip(">")
         _len = len(func)
         if _len > 30:
-            func = "{}...{}".format(func[:10], func[(_len - 20) :])
+            func = "{}...{}".format(
+                func[:10], func[(_len - 20) :]  # noqa: E203
+            )
         ytics.append("{} x [ {} counts ]".format(func, obj.laps))
         avgs.append(get_obj_idx(obj.data, idx))
         stds.append(0.0)
@@ -639,7 +639,7 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
     #
     if _matplotlib_backend is None:
         try:
-            import matplotlib
+            import matplotlib  # noqa: F401
         except ImportError:
             warnings.warn(
                 "Matplotlib could not find a suitable backend. Skipping plotting..."

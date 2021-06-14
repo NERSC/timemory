@@ -36,23 +36,19 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 try:
-    import mpi4py
-    from mpi4py import MPI
+    import mpi4py  # noqa: F401
+    from mpi4py import MPI  # noqa: F401
 except ImportError:
     pass
 
 import os
 import time
-import json
 import unittest
 import threading
 import inspect
 import numpy as np
 import timemory as tim
 from timemory import settings as settings
-from timemory import component as comp
-from timemory.profiler import profile
-from timemory.bundle import auto_timer, auto_tuple, marker
 
 # --------------------------- test setup variables ----------------------------------- #
 
@@ -83,7 +79,7 @@ def consume(n):
         # try until time point
         while time.time_ns() < (now + n):
             pass
-    except:
+    except AttributeError:
         now = 1e9 * time.time()
         # try until time point
         while (1e9 * time.time()) < (now + n):
@@ -255,7 +251,7 @@ class TimemoryThrottleTests(unittest.TestCase):
             self.assertTrue(is_throttled[i] == _answer)
 
 
-# ----------------------------- main test runner ---------------------------------------- #
+# ----------------------------- main test runner -------------------------------------- #
 # main runner
 def run():
     # run all tests

@@ -82,7 +82,7 @@ if(TIMEMORY_USE_MPI AND MPI_FOUND)
         OUTPUT_STRIP_TRAILING_WHITESPACE
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 
-endif(TIMEMORY_USE_MPI AND MPI_FOUND)
+endif()
 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_exe_info.txt "${MPI_EXE_INFO}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")
@@ -93,7 +93,7 @@ if(CMAKE_INSTALL_PYTHONDIR)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_${_TYPE}_info.txt
             DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/mpi_support
             OPTIONAL)
-    endforeach(_TYPE exe c cxx)
+    endforeach()
 endif()
 
 file(GLOB BIN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/*)
@@ -113,10 +113,18 @@ endforeach()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/__init__.py @ONLY)
 
+configure_file(${PROJECT_SOURCE_DIR}/pytest.ini
+    ${PROJECT_BINARY_DIR}/pytest.ini COPYONLY)
+
 if(CMAKE_INSTALL_PYTHONDIR)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/__init__.py
         DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}
         OPTIONAL)
+    if(SKBUILD)
+        install(FILES ${PROJECT_BINARY_DIR}/pytest.ini
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
+            OPTIONAL)
+    endif()
 endif()
 
 foreach(PYLIB_SUBMODULE ${PYTHON_SUBMODULE_FILES})

@@ -30,16 +30,17 @@
 #
 
 from __future__ import absolute_import
-import os
 import six
-import sys
 import inspect
 from enum import Enum
 from functools import wraps
 
 from ..common import FILE, FUNC, LINE, FRAME
-from ..libs.libpytimemory import settings, timer_decorator, component_decorator
-from ..libs.libpytimemory import timer, rss_usage, component
+from ..libs.libpytimemory import timer_decorator as _timer_decorator
+from ..libs.libpytimemory import component_decorator as _component_decorator
+from ..libs.libpytimemory import timer as _timer
+from ..libs.libpytimemory import rss_usage as _rss_usage
+from ..libs.libpytimemory import component as _component
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
@@ -82,7 +83,7 @@ class base_decorator(object):
         if self.mode != "defer":
             try:
                 self.signature = getattr(context, self.mode)
-            except Exception as e:
+            except AttributeError:
                 pass
 
     # ---------------------------------------------------------------------------------- #
@@ -133,7 +134,7 @@ class base_decorator(object):
             _str = "[{}]".format(type(args[0]).__name__)
             # this check guards against old bug from class methods
             # calling class methods
-            if not _str in self.key:
+            if _str not in self.key:
                 return _str
             else:
                 return ""
@@ -213,7 +214,7 @@ class auto_timer(base_decorator):
                 )
             _key = _key.strip("/")
 
-            _dec = timer_decorator(_key, self.report_at_exit)
+            _dec = _timer_decorator(_key, self.report_at_exit)
             _ret = func(*args, **kwargs)
             del _dec
             return _ret
@@ -242,7 +243,7 @@ class auto_timer(base_decorator):
             _key = "{}{}@{}:{}/{}".format(_func, _args, _file, _line, self.key)
         _key = _key.strip("/")
 
-        self._self_obj = timer_decorator(_key, self.report_at_exit)
+        self._self_obj = _timer_decorator(_key, self.report_at_exit)
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -311,7 +312,7 @@ class timer(base_decorator):
                 )
             _key = _key.strip("/")
 
-            t = timer(_key)
+            t = _timer(_key)
 
             t.start()
             ret = func(*args, **kwargs)
@@ -343,7 +344,7 @@ class timer(base_decorator):
             _key = "{}{}@{}:{}/{}".format(_func, _args, _file, _line, self.key)
         _key = _key.strip("/")
 
-        self._self_obj = timer(_key)
+        self._self_obj = _timer(_key)
         self._self_obj.start()
 
     # ---------------------------------------------------------------------------------- #
@@ -415,8 +416,8 @@ class rss_usage(base_decorator):
                 )
             _key = _key.strip("/")
 
-            self._self_obj = rss_usage(_key)
-            self._self_dif = rss_usage(_key)
+            self._self_obj = _rss_usage(_key)
+            self._self_dif = _rss_usage(_key)
             self._self_dif.record()
             # run function
             ret = func(*args, **kwargs)
@@ -451,8 +452,8 @@ class rss_usage(base_decorator):
             _key = "{}{}@{}:{}/{}".format(_func, _args, _file, _line, self.key)
         _key = _key.strip("/")
 
-        self._self_obj = rss_usage(_key)
-        self._self_dif = rss_usage(_key)
+        self._self_obj = _rss_usage(_key)
+        self._self_dif = _rss_usage(_key)
         self._self_dif.record()
 
     # ---------------------------------------------------------------------------------- #
@@ -497,8 +498,8 @@ class marker(base_decorator):
         for x in items:
             if isinstance(x, six.string_types):
                 try:
-                    ret.append(getattr(component, x))
-                except:
+                    ret.append(getattr(_component, x))
+                except AttributeError:
                     pass
             else:
                 ret.append(x)
@@ -552,7 +553,7 @@ class marker(base_decorator):
                 )
             _key = _key.strip("/")
 
-            t = component_decorator(self.components, _key)
+            t = _component_decorator(self.components, _key)
             ret = func(*args, **kwargs)
             del t
             return ret
@@ -581,7 +582,7 @@ class marker(base_decorator):
             _key = "{}{}@{}:{}/{}".format(_func, _args, _file, _line, self.key)
         _key = _key.strip("/")
 
-        self._self_obj = component_decorator(self.components, _key)
+        self._self_obj = _component_decorator(self.components, _key)
 
     # ---------------------------------------------------------------------------------- #
     #

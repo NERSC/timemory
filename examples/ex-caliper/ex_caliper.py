@@ -4,7 +4,6 @@ import timemory
 from timemory.bundle import auto_tuple
 from timemory.component import CaliperConfig
 import sys
-import json
 
 
 def fib(n):

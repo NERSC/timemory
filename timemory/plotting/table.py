@@ -43,14 +43,11 @@ __all__ = [
 
 import os
 import sys
-from .plotting import make_output_directory, add_plotted_files, plot_parameters
+from .plotting import make_output_directory, add_plotted_files
 
 # use the matplotlib import stuff from plotting
 try:
     import matplotlib.pyplot as plt
-    import base64
-    import io
-    import pickle
 
 except ImportError as e:
     print(f"{e}")

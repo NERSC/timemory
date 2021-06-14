@@ -40,4 +40,4 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
-from .libs.libpytimemory.signals import *
+from .libs.libpytimemory.signals import *  # noqa: F401

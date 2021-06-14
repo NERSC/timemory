@@ -43,6 +43,6 @@ throttling.
 """
 
 try:
-    from ..libs.libpytimemory.region import *
+    from ..libs.libpytimemory.region import *  # noqa: F401
 except Exception as e:
     print("{}".format(e))

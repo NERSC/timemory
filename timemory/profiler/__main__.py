@@ -91,8 +91,6 @@ def parse_args(args=None):
             raise argparse.ArgumentTypeError("Boolean value expected.")
 
     parser = argparse.ArgumentParser(add_help=True)
-    # parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-    #                    help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
     parser.add_argument(
         "-c",
         "--components",

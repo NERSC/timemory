@@ -36,8 +36,8 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 try:
-    import mpi4py
-    from mpi4py import MPI
+    import mpi4py  # noqa: F401
+    from mpi4py import MPI  # noqa: F401
 except ImportError:
     pass
 
@@ -46,13 +46,9 @@ import time
 import json
 import random
 import unittest
-import threading
-import inspect
-import numpy as np
 import timemory as tim
-from timemory import component as comp
 from timemory.profiler import profile, config
-from timemory.bundle import auto_timer, auto_tuple, marker
+from timemory.bundle import marker
 
 # --------------------------- test setup variables ----------------------------------- #
 
@@ -64,7 +60,7 @@ def fibonacci(n):
 
 
 def fib(n, instr):
-    if instr == True:
+    if instr is True:
         with marker(components=["wall_clock", "current_peak_rss"], key="fib"):
             return n if n < 2 else (fib(n - 1, True) + fib(n - 2, False))
     else:
@@ -85,7 +81,7 @@ def consume(n):
         # try until time point
         while time.time_ns() < (now + (n * 1e6)):
             pass
-    except:
+    except AttributeError:
         now = 1000 * time.time()
         # try until time point
         while (1000 * time.time()) < (now + n):
@@ -163,7 +159,7 @@ class TimemoryFlatTests(unittest.TestCase):
         with marker(
             components=["wall_clock", "cpu_clock"], key=self.shortDescription()
         ):
-            ret = fib(n, True)
+            fib(n, True)
 
         print(
             "{}\n".format(
@@ -187,7 +183,7 @@ class TimemoryFlatTests(unittest.TestCase):
                 flat=True,
                 timeline=False,
             ):
-                ret = fibonacci(n)
+                fibonacci(n)
 
         print(
             "{}\n".format(
@@ -199,7 +195,7 @@ class TimemoryFlatTests(unittest.TestCase):
         self.assertEqual(data[-1]["depth"], 0)
 
 
-# ----------------------------- main test runner ---------------------------------------- #
+# ----------------------------- main test runner -------------------------------------- #
 # main runner
 def run():
     # run all tests

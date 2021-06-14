@@ -33,9 +33,8 @@ import os
 import sys
 import json
 import argparse
-import warnings
 import traceback
-import multiprocessing as mp
+
 
 # error code
 _errc = 0
@@ -281,7 +280,7 @@ def plot_impl(args, ai_data, op_data, rank=None, label=None):
 
     if rank is not None:
         fname = "{}_{}".format(fname, rank)
-        title = "{} (MPI rank: {})".format(args.title, rank)
+        args.title = "{} (MPI rank: {})".format(args.title, rank)
 
     import timemory.roofline as _roofline
 
