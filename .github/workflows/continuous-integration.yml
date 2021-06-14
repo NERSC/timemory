@@ -16,7 +16,7 @@ jobs:
             BUILD_TYPE: 'RelWithDebInfo'
             PACKAGES: 'clang-7 build-essential libmpich-dev mpich ccache'
             BUILD_ARGS: '--minimal --build-libs shared static --python --mpi --gotcha --stats --tools mallocp mpip ompt --cxx-standard=17'
-            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_UNITY_BUILD=OFF -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
           - CC: clang-8
             CXX: clang++-8
             PYTHON_VERSION: '3.6'
@@ -31,7 +31,7 @@ jobs:
             BUILD_TYPE: 'RelWithDebInfo'
             PACKAGES: 'gcc-6 g++-6 gfortran-6 build-essential libtbb-dev ccache'
             BUILD_ARGS: '--minimal --build-libs shared --python --gotcha --stats --cxx-standard=14'
-            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
           - CC: gcc-7
             CXX: g++-7
             FC: gfortran-7
@@ -55,7 +55,7 @@ jobs:
             BUILD_TYPE: 'MinSizeRel'
             PACKAGES: 'gcc-9 g++-9 gfortran-9 build-essential ccache'
             BUILD_ARGS: '--minimal --build-libs shared --gotcha --stats --python --cxx-standard=17'
-            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
 
     steps:
       - name: Checkout Code
