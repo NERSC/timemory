@@ -61,16 +61,18 @@ jobs:
       CC: ${{ matrix.CC }}
       FC: ${{ matrix.FC }}
       CXX: ${{ matrix.CXX }}
-      PATH: "${HOME}/miniconda/bin:${PATH}"
       CTEST_ARGS: "-VV ${{ matrix.CTEST_ARGS }}"
       CMAKE_ARGS: "-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}"
       PYCTEST_ARGS: "-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 --compile-time-perf ${HOME}/ctp -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
 
     steps:
+      - name: Set env
+        run: |
+          echo "PATH=${HOME}/miniconda/bin:${PATH}" >> $GITHUB_ENV
+
       - name: Checkout Code
         uses: actions/checkout@v2
         with:
-          submodules: true
           clean: true
 
       - name: Update container
