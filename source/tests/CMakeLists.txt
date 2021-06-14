@@ -139,85 +139,59 @@ add_timemory_test_target()
 
 add_subdirectory(external)
 
-set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON;TIMEMORY_COMPILER_COUT_OUTPUT=ON")
+foreach(_LINK_TYPE shared static)
+    foreach(_DEPTH_VALUE 0 5)
+        set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON;TIMEMORY_COMPILER_COUT_OUTPUT=ON")
+        if(NOT "${_DEPTH_VALUE}" STREQUAL "0")
+            set(_EXTRA "_max_depth_${_DEPTH_VALUE}")
+            list(APPEND compiler_instr_env "TIMEMORY_COMPILER_MAX_DEPTH=${_DEPTH_VALUE}")
+        endif()
 
-if(TARGET timemory::timemory-compiler-instrument-shared)
-    add_timemory_google_test(compiler_instrument_shared_tests
-        SOURCES         instrumentation_tests.cpp
-        DEFINITIONS     DISABLE_TIMEMORY
-        LINK_LIBRARIES  common-test-libs
-                        test-opt-flags
-                        timemory::timemory-compiler-instrument-shared
-        ENVIRONMENT     ${compiler_instr_env}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
-    #
-    add_timemory_google_test(compiler_instrument_mt_shared_tests
-        SOURCES         instrumentation_tests.cpp
-        DEFINITIONS     ENABLE_MT DISABLE_TIMEMORY
-        LINK_LIBRARIES  common-test-libs
-                        test-opt-flags
-                        timemory::timemory-compiler-instrument-shared
-        ENVIRONMENT     ${compiler_instr_env}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
-    #
-    add_timemory_google_test(compiler_instrument_timemory_shared_tests
-        SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  common-test-libs
-                        test-opt-flags
-                        ${_LIBRARY}
-                        timemory::timemory-compiler-instrument-shared
-        ENVIRONMENT     ${compiler_instr_env}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
-    #
-    add_timemory_google_test(compiler_instrument_timemory_mt_shared_tests
-        SOURCES         instrumentation_tests.cpp
-        DEFINITIONS     ENABLE_MT
-        LINK_LIBRARIES  common-test-libs
-                        test-opt-flags
-                        ${_LIBRARY}
-                        timemory::timemory-compiler-instrument-shared
-        ENVIRONMENT     ${compiler_instr_env}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
-endif()
-
-if(TARGET timemory::timemory-compiler-instrument-static)
-    add_timemory_google_test(compiler_instrument_static_tests
-        SOURCES         instrumentation_tests.cpp
-        DEFINITIONS     DISABLE_TIMEMORY
-        LINK_LIBRARIES  common-test-libs
-                        test-opt-flags
-                        timemory::timemory-compiler-instrument-static
-        ENVIRONMENT     ${compiler_instr_env}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
-    #
-    add_timemory_google_test(compiler_instrument_mt_static_tests
-        SOURCES         instrumentation_tests.cpp
-        DEFINITIONS     ENABLE_MT DISABLE_TIMEMORY
-        LINK_LIBRARIES  common-test-libs
-                        test-opt-flags
-                        timemory::timemory-compiler-instrument-static
-        ENVIRONMENT     ${compiler_instr_env}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
-    #
-    add_timemory_google_test(compiler_instrument_timemory_static_tests
-        SOURCES         instrumentation_tests.cpp
-        LINK_LIBRARIES  common-test-libs
-                        test-opt-flags
-                        ${_LIBRARY}
-                        timemory::timemory-compiler-instrument-static
-        ENVIRONMENT     ${compiler_instr_env}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
-    #
-    add_timemory_google_test(compiler_instrument_timemory_mt_static_tests
-        SOURCES         instrumentation_tests.cpp
-        DEFINITIONS     ENABLE_MT
-        LINK_LIBRARIES  common-test-libs
-                        test-opt-flags
-                        ${_LIBRARY}
-                        timemory::timemory-compiler-instrument-static
-        ENVIRONMENT     ${compiler_instr_env}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
-endif()
+        if(TARGET timemory::timemory-compiler-instrument-${_LINK_TYPE})
+            #
+            add_timemory_google_test(compiler_instrument${_EXTRA}_${_LINK_TYPE}_tests
+                TARGET          compiler_instrument_${_LINK_TYPE}_tests
+                SOURCES         instrumentation_tests.cpp
+                DEFINITIONS     DISABLE_TIMEMORY
+                LINK_LIBRARIES  common-test-libs
+                                test-opt-flags
+                                timemory::timemory-compiler-instrument-${_LINK_TYPE}
+                ENVIRONMENT     ${compiler_instr_env}
+                PROPERTIES      PROCESSOR_AFFINITY ON)
+            #
+            add_timemory_google_test(compiler_instrument_mt${_EXTRA}_${_LINK_TYPE}_tests
+                TARGET          compiler_instrument_mt_${_LINK_TYPE}_tests
+                SOURCES         instrumentation_tests.cpp
+                DEFINITIONS     ENABLE_MT DISABLE_TIMEMORY
+                LINK_LIBRARIES  common-test-libs
+                                test-opt-flags
+                                timemory::timemory-compiler-instrument-${_LINK_TYPE}
+                ENVIRONMENT     ${compiler_instr_env}
+                PROPERTIES      PROCESSOR_AFFINITY ON)
+            #
+            add_timemory_google_test(compiler_instrument_timemory${_EXTRA}_${_LINK_TYPE}_tests
+                TARGET          compiler_instrument_timemory_${_LINK_TYPE}_tests
+                SOURCES         instrumentation_tests.cpp
+                LINK_LIBRARIES  common-test-libs
+                                test-opt-flags
+                                ${_LIBRARY}
+                                timemory::timemory-compiler-instrument-${_LINK_TYPE}
+                ENVIRONMENT     ${compiler_instr_env}
+                PROPERTIES      PROCESSOR_AFFINITY ON)
+            #
+            add_timemory_google_test(compiler_instrument_timemory_mt${_EXTRA}_${_LINK_TYPE}_tests
+                TARGET          compiler_instrument_timemory_mt_${_LINK_TYPE}_tests
+                SOURCES         instrumentation_tests.cpp
+                DEFINITIONS     ENABLE_MT
+                LINK_LIBRARIES  common-test-libs
+                                test-opt-flags
+                                ${_LIBRARY}
+                                timemory::timemory-compiler-instrument-${_LINK_TYPE}
+                ENVIRONMENT     ${compiler_instr_env}
+                PROPERTIES      PROCESSOR_AFFINITY ON)
+        endif()
+    endforeach()
+endforeach()
 
 if(TARGET custom-record-functions)
     add_timemory_google_test(library_tests

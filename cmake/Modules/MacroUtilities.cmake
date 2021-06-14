@@ -261,7 +261,7 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     set(multival_args SOURCES DEPENDS PROPERTIES DEFINITIONS LINK_LIBRARIES
         COMMAND OPTIONS ENVIRONMENT)
     # parse args
-    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS;MPI" "NPROCS;TIMEOUT"
+    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS;MPI" "NPROCS;TIMEOUT;TARGET"
         "${multival_args}" ${ARGN})
 
     if(NOT TARGET google-test-debug-options)
@@ -271,21 +271,25 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
     list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
 
-    if(TEST_SOURCES)
+    if(NOT TEST_TARGET)
+        set(TEST_TARGET ${TEST_NAME})
+    endif()
+
+    if(TEST_SOURCES AND NOT TARGET ${TEST_TARGET})
         CREATE_EXECUTABLE(${_OPTS}
-            TARGET_NAME     ${TEST_NAME}
-            OUTPUT_NAME     ${TEST_NAME}
+            TARGET_NAME     ${TEST_TARGET}
+            OUTPUT_NAME     ${TEST_TARGET}
             SOURCES         ${TEST_SOURCES}
             LINK_LIBRARIES  timemory-google-test ${TEST_LINK_LIBRARIES}
             PROPERTIES      "${TEST_PROPERTIES}")
 
-        target_compile_definitions(${TEST_NAME} PUBLIC ${TEST_DEFINITIONS})
+        target_compile_definitions(${TEST_TARGET} PUBLIC ${TEST_DEFINITIONS})
 
         # always add as a dependency if target is built
-        add_dependencies(timemory-test ${TEST_NAME})
+        add_dependencies(timemory-test ${TEST_TARGET})
 
         if(WIN32)
-            set_target_properties(${TEST_NAME}
+            set_target_properties(${TEST_TARGET}
                 PROPERTIES
                 FOLDER                   tests
                 RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/runtime
@@ -304,7 +308,7 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
 
     if("${TEST_COMMAND}" STREQUAL "")
-        set(TEST_COMMAND ${TEST_LAUNCHER} $<TARGET_FILE:${TEST_NAME}>)
+        set(TEST_COMMAND ${TEST_LAUNCHER} $<TARGET_FILE:${TEST_TARGET}>)
     elseif(TEST_LAUNCHER)
         set(TEST_COMMAND ${TEST_LAUNCHER} ${TEST_COMMAND})
     endif()
@@ -319,11 +323,11 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
 
     set(WORKING_DIR ${CMAKE_CURRENT_BINARY_DIR})
     if(WIN32)
-        set(WORKING_DIR $<TARGET_FILE_DIR:${TEST_NAME}>)
+        set(WORKING_DIR $<TARGET_FILE_DIR:${TEST_TARGET}>)
     endif()
 
     if(TEST_DISCOVER_TESTS)
-        GTEST_DISCOVER_TESTS(${TEST_NAME}
+        GTEST_DISCOVER_TESTS(${TEST_TARGET}
             TEST_LIST ${TEST_NAME}_TESTS
             ${TEST_OPTIONS}
             DISCOVERY_TIMEOUT 15
@@ -332,7 +336,7 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             ENVIRONMENT "${TEST_ENVIRONMENT}"
             TIMEOUT     ${TEST_TIMEOUT})
     elseif(TEST_ADD_TESTS)
-        GTEST_ADD_TESTS(TARGET ${TEST_NAME}
+        GTEST_ADD_TESTS(TARGET ${TEST_TARGET}
             TEST_LIST ${TEST_NAME}_TESTS
             ${TEST_OPTIONS}
             WORKING_DIRECTORY ${WORKING_DIR})
