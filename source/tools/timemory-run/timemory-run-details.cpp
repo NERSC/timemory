@@ -279,29 +279,6 @@ find_function(image_t* app_image, const std::string& _name, strset_t _extra)
 
 //======================================================================================//
 //
-//   check that the cost of a snippet is sane.  Due to differences between
-//   platforms, it is impossible to check this exactly in a machine independent
-//   manner.
-//
-void
-check_cost(snippet_t snippet)
-{
-    float     cost;
-    snippet_t copy;
-
-    // test copy constructor too.
-    copy = snippet;
-    cost = snippet.getCost();
-    if(cost < 0.0f)
-        printf("*Error*: negative snippet cost\n");
-    else if(cost == 0.0f)
-        printf("*Warning*: zero snippet cost\n");
-    else if(cost > 0.01f)
-        printf("*Error*: snippet cost of %f, exceeds max expected of 0.1", (double) cost);
-}
-
-//======================================================================================//
-//
 void
 error_func_real(error_level_t level, int num, const char* const* params)
 {
