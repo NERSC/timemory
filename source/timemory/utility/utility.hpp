@@ -375,7 +375,7 @@ get_unw_backtrace()
         unw_get_reg(&cursor, UNW_REG_IP, &ip);
         if(ip == 0)
             break;
-        char name[512];
+        char name[496];
         name[0] = '\0';
         if(unw_get_proc_name(&cursor, name, sizeof(name), &off) == 0)
         {
@@ -469,11 +469,6 @@ TIMEMORY_NOINLINE std::ostream&
         _prefix += " ";
     for(const auto& itr : bt)
     {
-        if(std::is_pointer<std::decay_t<decltype(itr)>>::value)
-        {
-            if(!itr)
-                continue;
-        }
         if(strlen(itr) > 0)
             os << _indent << _prefix << itr << "\n";
     }
@@ -520,11 +515,6 @@ TIMEMORY_NOINLINE std::ostream&
         _prefix += " ";
     for(const auto& itr : bt)
     {
-        if(std::is_pointer<std::decay_t<decltype(itr)>>::value)
-        {
-            if(!itr)
-                continue;
-        }
         if(strlen(itr) > 0)
             os << _indent << _prefix << itr << "\n";
     }

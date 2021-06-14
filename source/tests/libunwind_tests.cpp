@@ -119,7 +119,7 @@ int num_errors;
 
 /* These variables are global because they
  * cause the signal stack to overflow */
-char                                            buf[512], name[512];
+char                                            buf[512], name[496];
 unw_cursor_t                                    cursor;
 unw_context_t                                   uc;
 tim::data_storage::ring_buffer<const char[512]> name_buffer;
