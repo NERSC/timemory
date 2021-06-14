@@ -222,9 +222,6 @@ procedure_t*
 find_function(image_t* appImage, const string_t& functionName, strset_t = {});
 
 void
-check_cost(snippet_t snippet);
-
-void
 error_func_real(error_level_t level, int num, const char* const* params);
 
 void
