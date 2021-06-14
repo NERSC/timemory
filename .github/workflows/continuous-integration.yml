@@ -77,23 +77,24 @@ jobs:
           export PATH="${HOME}/miniconda/bin:${PATH}"
           conda config --set always_yes yes --set changeps1 no
           conda create -c conda-forge -c defaults -n pyctest python=${{ matrix.PYTHON_VERSION }} pyctest
-          source activate
-          conda activate pyctest
 
       - name: Build and Test
         run: |
+          export PATH="${HOME}/miniconda/bin:${PATH}"
+          source activate
+          conda activate pyctest
           export CC="${{ matrix.CC }}"
           export CXX="${{ matrix.CXX }}"
           export FC="${{ matrix.FC }}"
           python -m pip install -r requirements.txt
           python -m pip install pytest
           if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
-          BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 -P $(which python) --compile-time-perf ${HOME}/ctp"
+          BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 --compile-time-perf ${HOME}/ctp"
           CTEST_ARGS="-VV ${{ matrix.CTEST_ARGS }}"
           CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}"
           PYCTEST_ARGS="${BASE_ARGS} -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
           echo -e "Running command:\n${PYCTEST_PYTHON_EXE} ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
-          ${HOME}/miniconda/envs/pyctest/bin/python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
+          python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
 
       - name: Test Install
         working-directory: ${{github.workspace}}/build-timemory/Linux
