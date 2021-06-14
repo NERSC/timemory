@@ -30,7 +30,7 @@ jobs:
             PYTHON_VERSION: '3.6'
             BUILD_TYPE: 'RelWithDebInfo'
             PACKAGES: 'gcc-6 g++-6 gfortran-6 build-essential libtbb-dev ccache'
-            BUILD_ARGS: '--minimal --build-libs shared --python --stats --cxx-standard=14'
+            BUILD_ARGS: '--minimal --build-libs shared --python --gotcha --stats --cxx-standard=14'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
           - CC: gcc-7
             CXX: g++-7
@@ -46,16 +46,16 @@ jobs:
             PYTHON_VERSION: '3.7'
             BUILD_TYPE: 'Release'
             PACKAGES: 'gcc-8 g++-8 gfortran-8 build-essential libopenmpi-dev openmpi-bin openmpi-common libfabric-dev ccache'
-            BUILD_ARGS: '--minimal --build-libs shared --mpi --stats --tools compiler --cxx-standard=17'
-            CONFIG_ARGS: ''
+            BUILD_ARGS: '--minimal --build-libs shared --mpi --gotcha --stats --tools compiler --cxx-standard=17'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
           - CC: gcc-9
             CXX: g++-9
             FC: gfortran-9
             PYTHON_VERSION: '3.7'
             BUILD_TYPE: 'MinSizeRel'
             PACKAGES: 'gcc-9 g++-9 gfortran-9 build-essential ccache'
-            BUILD_ARGS: '--minimal --build-libs shared --stats --python --cxx-standard=17'
-            CONFIG_ARGS: ''
+            BUILD_ARGS: '--minimal --build-libs shared --gotcha --stats --python --cxx-standard=17'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
 
     steps:
       - name: Checkout Code
@@ -93,7 +93,7 @@ jobs:
           CTEST_ARGS="-VV ${{ matrix.CTEST_ARGS }}"
           CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}"
           PYCTEST_ARGS="${BASE_ARGS} -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
-          echo -e "Running command:\n${PYCTEST_PYTHON_EXE} ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
+          echo -e "Running command:\n./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
           python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
 
       - name: Test Install
@@ -113,8 +113,8 @@ jobs:
             cmake -P tests/test-python-install-import.cmake;
             PYTHONPATH=. $(which pytest);
             cd;
-            export PYTHONPATH=$(realpath ${HOME}/timemory-install/lib/python*/site-packages):${PYTHONPATH}
-            python -c "import timemory";
+            export PYTHONPATH=${HOME}/timemory-install/lib/python${{ matrix.PYTHON_VERSION }}/site-packages:${PYTHONPATH}
+            python -c "import timemory; print(timemory.__file__)";
           fi
 
       - name: Test Examples
