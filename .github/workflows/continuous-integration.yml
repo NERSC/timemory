@@ -57,6 +57,15 @@ jobs:
             BUILD_ARGS: '--minimal --build-libs shared --gotcha --stats --python --cxx-standard=17'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
 
+    env:
+      CC: ${{ matrix.CC }}
+      FC: ${{ matrix.FC }}
+      CXX: ${{ matrix.CXX }}
+      PATH: "${HOME}/miniconda/bin:${PATH}"
+      CTEST_ARGS: "-VV ${{ matrix.CTEST_ARGS }}"
+      CMAKE_ARGS: "-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}"
+      PYCTEST_ARGS: "-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 --compile-time-perf ${HOME}/ctp -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
@@ -74,46 +83,46 @@ jobs:
         run: |
           wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
           bash miniconda.sh -b -p ${HOME}/miniconda
-          export PATH="${HOME}/miniconda/bin:${PATH}"
           conda config --set always_yes yes --set changeps1 no
           conda create -c conda-forge -c defaults -n pyctest python=${{ matrix.PYTHON_VERSION }} pyctest
 
       - name: Build and Test
         run: |
-          export PATH="${HOME}/miniconda/bin:${PATH}"
           source activate
           conda activate pyctest
-          export CC="${{ matrix.CC }}"
-          export CXX="${{ matrix.CXX }}"
-          export FC="${{ matrix.FC }}"
           python -m pip install -r requirements.txt
           python -m pip install pytest
-          if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
-          BASE_ARGS="-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 --compile-time-perf ${HOME}/ctp"
-          CTEST_ARGS="-VV ${{ matrix.CTEST_ARGS }}"
-          CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}"
-          PYCTEST_ARGS="${BASE_ARGS} -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
-          echo -e "Running command:\n./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
+          echo -e "Running command:\n$(which python) ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
           python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
 
       - name: Test Install
         working-directory: ${{github.workspace}}/build-timemory/Linux
         run: |
+          source activate
+          conda activate pyctest
           cmake --build . --target all --parallel $(nproc)
           ctest --output-on-failure
           cmake --build . --target install --parallel $(nproc)
 
-      - name: Test Python
+      - name: Test Python Build
         working-directory: ${{github.workspace}}/build-timemory/Linux
         run: |
-          export PATH="${HOME}/miniconda/bin:${PATH}"
           source activate
           conda activate pyctest
           if [ -f "tests/test-python-install-import.cmake" ]; then
             cmake -P tests/test-python-install-import.cmake;
             PYTHONPATH=. $(which pytest);
+          fi
+
+      - name: Import Python Install
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        env:
+          PYTHONPATH: "${HOME}/timemory-install/lib/python${{ matrix.PYTHON_VERSION }}/site-packages:${PYTHONPATH}"
+        run: |
+          source activate
+          conda activate pyctest
+          if [ -f "tests/test-python-install-import.cmake" ]; then
             cd;
-            export PYTHONPATH=${HOME}/timemory-install/lib/python${{ matrix.PYTHON_VERSION }}/site-packages:${PYTHONPATH}
             python -c "import timemory; print(timemory.__file__)";
           fi
 
