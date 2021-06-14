@@ -66,7 +66,7 @@ jobs:
       PYCTEST_ARGS: "-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 --compile-time-perf ${HOME}/ctp -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
 
     steps:
-      - name: Set env
+      - name: Setup Environment
         run: |
           echo "PATH=${HOME}/miniconda/bin:${PATH}" >> $GITHUB_ENV
 
@@ -118,13 +118,12 @@ jobs:
 
       - name: Import Python Install
         working-directory: ${{github.workspace}}/build-timemory/Linux
-        env:
-          PYTHONPATH: "${HOME}/timemory-install/lib/python${{ matrix.PYTHON_VERSION }}/site-packages:${PYTHONPATH}"
         run: |
           source activate
           conda activate pyctest
           if [ -f "tests/test-python-install-import.cmake" ]; then
             cd;
+            export PYTHONPATH="${HOME}/timemory-install/lib/python${{ matrix.PYTHON_VERSION }}/site-packages:${PYTHONPATH}"
             python -c "import timemory; print(timemory.__file__)";
           fi
 
