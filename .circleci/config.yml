@@ -17,7 +17,7 @@ jobs:
       - run:
           name: build
           command: >
-            cmake -B build-timemory/timem-ci-install -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_TIMEM=ON -DTIMEMORY_USE_PAPI=OFF -DTIMEMORY_INSTALL_ALL=OFF -DTIMEMORY_INSTALL_HEADERS=OFF -DTIMEMORY_INSTALL_CONFIG=OFF -DCMAKE_INSTALL_PREFIX=/opt/user/timemory &&
+            cmake -B build-timemory/timem-ci-install -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_TIMEM=ON -DTIMEMORY_USE_PAPI=ON -DTIMEMORY_INSTALL_ALL=OFF -DTIMEMORY_INSTALL_HEADERS=OFF -DTIMEMORY_INSTALL_CONFIG=OFF -DCMAKE_INSTALL_PREFIX=/opt/user/timemory &&
             cmake --build build-timemory/timem-ci-install --target timem
       - run:
           name: install

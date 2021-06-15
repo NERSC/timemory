@@ -28,6 +28,13 @@ jobs:
             PACKAGES: 'clang-8 build-essential ccache'
             BUILD_ARGS: '--minimal --build-libs shared static --stats --tools kokkos-config timem --cxx-standard=14'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
+          - CC: clang-9
+            CXX: clang++-9
+            PYTHON_VERSION: '3.7'
+            BUILD_TYPE: 'MinSizeRel'
+            PACKAGES: 'clang-9 build-essential libopenmpi-dev openmpi-bin openmpi-common libfabric-dev ccache'
+            BUILD_ARGS: '--quick --build-libs shared --mpi --cxx-standard=14'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
           - CC: gcc-6
             CXX: g++-6
             FC: gfortran-6
@@ -49,7 +56,7 @@ jobs:
             FC: gfortran-8
             PYTHON_VERSION: '3.7'
             BUILD_TYPE: 'Release'
-            PACKAGES: 'gcc-8 g++-8 gfortran-8 build-essential libopenmpi-dev openmpi-bin openmpi-common libfabric-dev ccache'
+            PACKAGES: 'gcc-8 g++-8 gfortran-8 build-essential libmpich-dev mpich ccache'
             BUILD_ARGS: '--minimal --build-libs shared --mpi --gotcha --stats --tools compiler --cxx-standard=17'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
           - CC: gcc-9
