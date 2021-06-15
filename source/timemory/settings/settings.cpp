@@ -340,10 +340,21 @@ void
 settings::parse(settings* _settings)
 {
     if(!_settings)
+    {
+        PRINT_HERE("%s", "nullptr to tim::settings");
         return;
+    }
 
     if(_settings->get_suppress_parsing())
+    {
+        static auto _once = false;
+        if(!_once)
+        {
+            PRINT_HERE("%s", "settings parsing has been suppressed");
+            _once = true;
+        }
         return;
+    }
 
     for(const auto& itr : *_settings)
     {

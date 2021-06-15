@@ -25,6 +25,9 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
+#include "timemory/environment/types.hpp"
 #include "timemory/settings/types.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -55,128 +58,85 @@ struct vsettings
     using parser_func_t = std::function<void(parser_t&)>;
     using display_map_t = std::map<std::string, std::string>;
 
+    struct noparse
+    {};
+
     vsettings(std::string _name = "", std::string _env_name = "",
               std::string _descript = "", std::vector<std::string> _cmdline = {},
               int32_t _count = -1, int32_t _max_count = -1,
-              std::vector<std::string> _choices = {})
-    : m_count(_count)
-    , m_max_count(_max_count)
-    , m_name(std::move(_name))
-    , m_env_name(std::move(_env_name))
-    , m_description(std::move(_descript))
-    , m_cmdline(std::move(_cmdline))
-    , m_choices(std::move(_choices))
-    {}
+              std::vector<std::string> _choices = {});
 
     virtual ~vsettings() = default;
 
-    TIMEMORY_NODISCARD virtual std::string as_string() const                        = 0;
-    virtual void                           parse()                                  = 0;
-    virtual void                           parse(const std::string&)                = 0;
-    virtual void                           add_argument(argparse::argument_parser&) = 0;
-    virtual std::shared_ptr<vsettings>     clone()                                  = 0;
-    virtual void                           clone(std::shared_ptr<vsettings> rhs);
+    vsettings(const vsettings&) = default;
+    vsettings(vsettings&&)      = default;
+
+    vsettings& operator=(const vsettings&) = default;
+    vsettings& operator=(vsettings&&) = default;
+
+    virtual std::string                as_string() const                        = 0;
+    virtual void                       reset()                                  = 0;
+    virtual void                       parse()                                  = 0;
+    virtual void                       parse(const std::string&)                = 0;
+    virtual void                       add_argument(argparse::argument_parser&) = 0;
+    virtual std::shared_ptr<vsettings> clone()                                  = 0;
+    virtual void                       clone(std::shared_ptr<vsettings> rhs);
 
     virtual display_map_t get_display(std::ios::fmtflags fmt = {}, int _w = -1,
-                                      int _p = -1)
-    {
-        display_map_t _data;
-        auto          _as_str = [&](auto _val) {
-            std::stringstream _ss;
-            _ss.setf(fmt);
-            if(_w > -1)
-                _ss << std::setw(_w);
-            if(_p > -1)
-                _ss << std::setprecision(_p);
-            _ss << std::boolalpha << _val;
-            return _ss.str();
-        };
+                                      int _p = -1);
 
-        auto _arr_as_str = [&](auto _val) -> std::string {
-            if(_val.empty())
-                return "";
-            std::stringstream _ss;
-            for(size_t i = 0; i < _val.size(); ++i)
-                _ss << ", " << _as_str(_val.at(i));
-            return _ss.str().substr(2);
-        };
-
-        _data["name"]         = _as_str(m_name);
-        _data["count"]        = _as_str(m_count);
-        _data["max_count"]    = _as_str(m_max_count);
-        _data["env_name"]     = _as_str(m_env_name);
-        _data["description"]  = _as_str(m_description);
-        _data["command_line"] = _arr_as_str(m_cmdline);
-        _data["choices"]      = _arr_as_str(m_choices);
-        return _data;
-    }
-
-    TIMEMORY_NODISCARD const auto& get_name() const { return m_name; }
-    TIMEMORY_NODISCARD const auto& get_env_name() const { return m_env_name; }
-    TIMEMORY_NODISCARD const auto& get_description() const { return m_description; }
-    TIMEMORY_NODISCARD const auto& get_command_line() const { return m_cmdline; }
-    TIMEMORY_NODISCARD const auto& get_choices() const { return m_choices; }
-    TIMEMORY_NODISCARD const auto& get_count() const { return m_count; }
-    TIMEMORY_NODISCARD const auto& get_max_count() const { return m_max_count; }
+    const auto& get_name() const { return m_name; }
+    const auto& get_env_name() const { return m_env_name; }
+    const auto& get_description() const { return m_description; }
+    const auto& get_command_line() const { return m_cmdline; }
+    const auto& get_choices() const { return m_choices; }
+    const auto& get_count() const { return m_count; }
+    const auto& get_max_count() const { return m_max_count; }
 
     void set_count(int32_t v) { m_count = v; }
     void set_max_count(int32_t v) { m_max_count = v; }
     void set_choices(const std::vector<std::string>& v) { m_choices = v; }
     void set_command_line(const std::vector<std::string>& v) { m_cmdline = v; }
 
-    TIMEMORY_NODISCARD auto get_type_index() const { return m_type_index; }
-    TIMEMORY_NODISCARD auto get_value_index() const { return m_value_index; }
+    auto get_type_index() const { return m_type_index; }
+    auto get_value_index() const { return m_value_index; }
 
-    TIMEMORY_NODISCARD virtual bool matches(const std::string&, bool exact = true) const;
-
-    template <typename Tp>
-    TIMEMORY_NODISCARD std::pair<bool, Tp> get() const
-    {
-        auto _ref = dynamic_cast<const tsettings<Tp, Tp&>*>(this);
-        if(_ref)
-        {
-            return { true, _ref->get() };
-        }
-
-        auto _nref = dynamic_cast<const tsettings<Tp, Tp>*>(this);
-        if(_nref)
-            return { true, _nref->get() };
-
-        return { false, Tp{} };
-    }
+    virtual bool matches(const std::string&, bool exact = true) const;
 
     template <typename Tp>
-    bool get(Tp& _val) const
-    {
-        auto&& _ret = this->get<Tp>();
-        if(_ret.first)
-            _val = _ret.second;
-        return _ret.first;
-    }
+    std::pair<bool, Tp> get() const;
+
+    template <typename Tp>
+    bool get(Tp& _val) const;
 
     template <typename Tp, enable_if_t<std::is_fundamental<decay_t<Tp>>::value> = 0>
-    bool set(const Tp& _val)
-    {
-        auto _ref = dynamic_cast<tsettings<Tp, Tp&>*>(this);
-        if(_ref)
-        {
-            _ref->set(_val);
-            return true;
-        }
-
-        auto _nref = dynamic_cast<tsettings<Tp, Tp>*>(this);
-        if(_nref)
-        {
-            _nref->set(_val);
-            return true;
-        }
-
-        return false;
-    }
-
+    bool set(const Tp& _val);
     void set(const std::string& _val) { parse(_val); }
 
     virtual parser_func_t get_action(TIMEMORY_API) = 0;
+
+    template <typename Tp>
+    static auto cast(std::shared_ptr<vsettings>& _val)
+    {
+        return static_cast<tsettings<decay_t<Tp>, Tp>*>(_val.get());
+    }
+
+    template <typename Tp>
+    static auto cast(const std::shared_ptr<vsettings>& _val)
+    {
+        return static_cast<const tsettings<decay_t<Tp>, Tp>*>(_val.get());
+    }
+
+protected:
+    int get_debug()
+    {
+        static bool _bool_val = get_env("TIMEMORY_DEBUG_SETTINGS", false);
+        static int  _int_val  = get_env("TIMEMORY_DEBUG_SETTINGS", 0);
+        return (_bool_val) ? _int_val : 0;
+    }
+
+    template <typename Tp>
+    void report_change(Tp _old, const Tp& _new);
 
 protected:
     std::type_index          m_type_index  = std::type_index(typeid(void));  // NOLINT
@@ -189,6 +149,75 @@ protected:
     std::vector<std::string> m_cmdline     = {};                             // NOLINT
     std::vector<std::string> m_choices     = {};                             // NOLINT
 };
+//
+template <typename Tp>
+std::pair<bool, Tp>
+vsettings::get() const
+{
+    auto _ref = dynamic_cast<const tsettings<Tp, Tp&>*>(this);
+    if(_ref)
+    {
+        return { true, _ref->get() };
+    }
+
+    auto _nref = dynamic_cast<const tsettings<Tp, Tp>*>(this);
+    if(_nref)
+        return { true, _nref->get() };
+
+    return { false, Tp{} };
+}
+//
+template <typename Tp>
+bool
+vsettings::get(Tp& _val) const
+{
+    auto&& _ret = this->get<Tp>();
+    if(_ret.first)
+        _val = _ret.second;
+    return _ret.first;
+}
+//
+template <typename Tp, enable_if_t<std::is_fundamental<decay_t<Tp>>::value>>
+bool
+vsettings::set(const Tp& _val)
+{
+    auto _ref = dynamic_cast<tsettings<Tp, Tp&>*>(this);
+    if(_ref)
+    {
+        _ref->set(_val);
+        return true;
+    }
+
+    auto _nref = dynamic_cast<tsettings<Tp, Tp>*>(this);
+    if(_nref)
+    {
+        _nref->set(_val);
+        return true;
+    }
+
+    return false;
+}
+//
+template <typename Tp>
+void
+vsettings::report_change(Tp _old, const Tp& _new)
+{
+    if(get_debug() < 1)
+        return;
+
+    if(_old != _new)
+    {
+        std::ostringstream oss;
+        oss << std::boolalpha;
+        oss << "[timemory::settings] " << m_name << " (env: " << m_env_name
+            << ") changed: " << _old << " --> " << _new << "\n";
+        if(get_debug() > 1)
+        {
+            print_demangled_backtrace<6, 3>(oss);
+        }
+        std::cerr << oss.str() << std::flush;
+    }
+}
 //
 }  // namespace tim
 

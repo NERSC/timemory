@@ -87,6 +87,9 @@ public:
     template <typename... Args>
     tsettings(Vp, Args&&...);
 
+    template <typename... Args>
+    tsettings(noparse, Vp, Args&&...);
+
     ~tsettings() {}
 
     tsettings(const tsettings&) = default;
@@ -101,6 +104,7 @@ public:
     std::string as_string() const override;
 
     void set(Tp);
+    void reset() final;
     void parse() final;
     void parse(const std::string& v) final;
     void clone(std::shared_ptr<vsettings> rhs) final;
@@ -153,6 +157,7 @@ private:
     using base_type::m_name;
     using base_type::m_type_index;
     value_type m_value;
+    type       m_init = {};
 };
 //
 template <typename Tp, typename Vp>
@@ -160,13 +165,29 @@ template <typename Up, enable_if_t<!std::is_reference<Up>::value, int>>
 tsettings<Tp, Vp>::tsettings()
 : base_type{}
 , m_value{ Tp{} }
-{}
+, m_init{ Tp{} }
+{
+    this->parse();
+}
 //
 template <typename Tp, typename Vp>
 template <typename... Args>
 tsettings<Tp, Vp>::tsettings(Vp _value, Args&&... _args)  // NOLINT
 : base_type{ std::forward<Args>(_args)... }
 , m_value{ _value }  // NOLINT
+, m_init{ _value }   // NOLINT
+{
+    this->parse();
+    m_type_index  = std::type_index(typeid(type));
+    m_value_index = std::type_index(typeid(value_type));
+}
+//
+template <typename Tp, typename Vp>
+template <typename... Args>
+tsettings<Tp, Vp>::tsettings(noparse, Vp _value, Args&&... _args)  // NOLINT
+: base_type{ std::forward<Args>(_args)... }
+, m_value{ _value }  // NOLINT
+, m_init{ _value }   // NOLINT
 {
     m_type_index  = std::type_index(typeid(type));
     m_value_index = std::type_index(typeid(value_type));
@@ -197,7 +218,9 @@ template <typename Tp, typename Vp>
 void
 tsettings<Tp, Vp>::set(Tp _value)
 {
-    m_value = std::move(_value);
+    auto _old = m_value;
+    m_value   = std::move(_value);
+    report_change(std::move(_old), m_value);
 }
 //
 template <typename Tp, typename Vp>
@@ -208,6 +231,13 @@ tsettings<Tp, Vp>::as_string() const
     ss << std::boolalpha;
     ss << m_value;
     return ss.str();
+}
+//
+template <typename Tp, typename Vp>
+void
+tsettings<Tp, Vp>::reset()
+{
+    set(m_init);
 }
 //
 template <typename Tp, typename Vp>
@@ -226,7 +256,7 @@ template <typename Tp, typename Vp>
 void
 tsettings<Tp, Vp>::parse(const std::string& v)
 {
-    m_value = get_value<decay_t<Tp>>(v);
+    set(std::move(get_value<decay_t<Tp>>(v)));
 }
 //
 template <typename Tp, typename Vp>
@@ -266,7 +296,7 @@ tsettings<Tp, Vp>::clone()
 {
     using Up = decay_t<Tp>;
     return std::make_shared<tsettings<Up>>(
-        Up{ m_value }, std::string{ m_name }, std::string{ m_env_name },
+        noparse{}, Up{ m_value }, std::string{ m_name }, std::string{ m_env_name },
         std::string{ m_description }, std::vector<std::string>{ m_cmdline },
         int32_t{ m_count }, int32_t{ m_max_count },
         std::vector<std::string>{ m_choices });
@@ -313,6 +343,7 @@ tsettings<Tp, Vp>::save(Archive& ar, const unsigned int,
     ar(cereal::make_nvp("max_count", m_max_count));
     ar(cereal::make_nvp("cmdline", m_cmdline));
     ar(cereal::make_nvp("data_type", _dtype));
+    ar(cereal::make_nvp("initial", m_init));
     ar(cereal::make_nvp("value", m_value));
 }
 //
@@ -331,6 +362,7 @@ tsettings<Tp, Vp>::load(Archive& ar, const unsigned int)
         ar(cereal::make_nvp("max_count", m_max_count));
         ar(cereal::make_nvp("cmdline", m_cmdline));
         ar(cereal::make_nvp("data_type", _dtype));
+        ar(cereal::make_nvp("initial", m_init));
     } catch(...)
     {}
     ar(cereal::make_nvp("value", m_value));
@@ -349,11 +381,11 @@ tsettings<Tp, Vp>::get_action(enable_if_t<is_bool_type<Up>(), int>)
         auto val = p.get<std::string>(id);
         if(val.empty())
         {
-            m_value = true;
+            set(true);
         }
         else
         {
-            m_value = get_bool(val, true);
+            set(get_bool(val, true));
         }
     };
 }
@@ -371,14 +403,14 @@ tsettings<Tp, Vp>::get_action(enable_if_t<is_string_type<Up>(), long>)
         auto _vec = p.get<std::vector<std::string>>(id);
         if(_vec.empty())
         {
-            m_value = "";
+            set("");
         }
         else
         {
             std::stringstream ss;
             for(auto& itr : _vec)
                 ss << ", " << itr;
-            m_value = ss.str().substr(2);
+            set(ss.str().substr(2));
         }
     };
 }
@@ -393,7 +425,7 @@ tsettings<Tp, Vp>::get_action(enable_if_t<is_else_type<Up>(), long long>)
         auto        pos = m_cmdline.back().find_first_not_of('-');
         if(pos != std::string::npos)
             id = id.substr(pos);
-        m_value = p.get<decay_t<Up>>(id);
+        set(p.get<decay_t<Up>>(id));
     };
 }
 //
