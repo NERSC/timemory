@@ -62,13 +62,14 @@ jobs:
       FC: ${{ matrix.FC }}
       CXX: ${{ matrix.CXX }}
       CTEST_ARGS: "-VV ${{ matrix.CTEST_ARGS }}"
-      CMAKE_ARGS: "-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}"
-      PYCTEST_ARGS: "-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 --compile-time-perf ${HOME}/ctp -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}"
 
     steps:
       - name: Setup Environment
         run: |
           echo "PATH=${HOME}/miniconda/bin:${PATH}" >> $GITHUB_ENV
+          echo "CMAKE_ARGS=\"-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install ${{ matrix.CONFIG_ARGS }}\"" >> $GITHUB_ENV
+          echo "PYCTEST_ARGS=\"-SF --pyctest-model=Continuous --pyctest-site=GitHub -j 1 --compile-time-perf ${HOME}/ctp -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}\"" >> $GITHUB_ENV
+          env
 
       - name: Checkout Code
         uses: actions/checkout@v2
