@@ -8,7 +8,7 @@ if(NOT TIMEMORY_BUILD_TESTING OR NOT timemory_MAIN_PROJECT OR TIMEMORY_BUILD_EXC
     set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()
 
-if(NOT WIN32 OR TIMEMORY_USE_WINSOCK)
+if(TIMEMORY_SOCKET_TESTS)
     add_executable(socket-server ${_EXCLUDE} server.cpp)
     add_executable(socket-client ${_EXCLUDE} client.cpp)
     target_link_libraries(socket-server PRIVATE common-test-libs)
