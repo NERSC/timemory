@@ -10,26 +10,25 @@ ProcessorCount(NCPU)
 
 # if set, will screw up loading library
 unset(CMAKE_DEBUG_POSTFIX)
-
-set(_visibility timemory::timemory-default-visibility)
 set(CMAKE_CXX_CLANG_TIDY)
-set(CMAKE_UNITY_BUILD ${TIMEMORY_UNITY_BUILD})
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
-if(NOT NCPU GREATER 2)
-  set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
+
+# handle unity build for python
+option(TIMEMORY_BUILD_PYTHON_UNITY "Build python interface with unity build support" ${TIMEMORY_UNITY_BUILD})
+mark_as_advanced(TIMEMORY_BUILD_PYTHON_UNITY)
+set(CMAKE_UNITY_BUILD ${TIMEMORY_BUILD_PYTHON_UNITY})
+if(NOT NCPU GREATER 2 OR "$ENV{CI}" STREQUAL "true")
+    set(CMAKE_UNITY_BUILD OFF)
 else()
-  set(CMAKE_UNITY_BUILD_BATCH_SIZE 4)
+    set(CMAKE_UNITY_BUILD_BATCH_SIZE 4)
 endif()
 
+set(_visibility timemory::timemory-default-visibility)
 if(TIMEMORY_BUILD_PYTHON_HIDDEN)
     set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
     set(_visibility timemory::timemory-hidden-visibility)
-endif()
-
-if("$ENV{USER}" STREQUAL "travis" AND "$ENV{TRAVIS}" STREQUAL "true")
-    set(CMAKE_UNITY_BUILD OFF)
 endif()
 
 ##########################################################################################

@@ -63,6 +63,7 @@ class TimemoryToolsTests(unittest.TestCase):
         tim.settings.dart_output = True
         tim.settings.dart_count = 1
         tim.settings.banner = False
+        tim.settings.memory_units = "MB"
 
     def setUp(self):
         pass
@@ -123,9 +124,11 @@ class TimemoryToolsTests(unittest.TestCase):
 
         unit_v = _json["timemory"]["malloc_gotcha"]["unit_value"]
         unit_r = _json["timemory"]["malloc_gotcha"]["unit_repr"]
+        real_v = MallocGotcha.unit()
+        real_r = MallocGotcha.display_unit().upper()
 
-        self.assertEqual(unit_v, MallocGotcha.unit())
-        self.assertEqual(unit_r, MallocGotcha.display_unit())
+        self.assertEqual(unit_v, real_v)
+        self.assertEqual(unit_r, real_r)
 
 
 # ----------------------------- main test runner -------------------------------------- #
