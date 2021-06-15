@@ -107,7 +107,7 @@ using trace_set_t = tim::available_list_t;
 using throttle_map_t = uomap_t<bool>;
 using overhead_map_t = uomap_t<std::tuple<size_t, monotonic_clock, size_t>>;
 using label_map_t    = uomap_t<size_t>;
-using trace_data_t =
+using trace_vec_t =
     std::vector<std::tuple<const void*, const void*, std::unique_ptr<trace_set_t>>>;
 using empty_tuple_t    = tim::component_tuple<>;
 using pthread_gotcha_t = tim::component::gotcha<2, empty_tuple_t, pthread_gotcha>;
@@ -115,68 +115,39 @@ using pthread_bundle_t = tim::auto_tuple<pthread_gotcha_t>;
 
 //--------------------------------------------------------------------------------------//
 
-// global data
-
-static bool&
-get_enabled() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static bool&
-is_finalized() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static bool
-get_debug() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static auto&
-get_max_depth() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static auto&
-get_first() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static auto
-get_trace_size() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-// thread-local data
-
-static bool&
-get_thread_enabled() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static auto&
-get_depth() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static auto&
-get_overhead() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static auto&
-get_throttle() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static auto&
-get_trace_data() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static auto&
-get_labels() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-static auto
-get_label(void*, void*) TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-// miscellaneous functions
-
 template <size_t... Idx>
 static auto
 get_storage(tim::index_sequence<Idx...>) TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
+//
 template <size_t Idx, size_t N>
 static void
 get_storage_impl(std::array<std::function<void()>, N>&) TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
+static bool&
+is_finalized() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static bool&
+get_enabled() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_first() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_overhead() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_throttle() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_trace_vec() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static unsigned long
+get_trace_size() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto&
+get_label_map() TIMEMORY_INTERNAL_NO_INSTRUMENT;
+static auto
+get_label(void*, void*) TIMEMORY_INTERNAL_NO_INSTRUMENT;
+//
 static void
 initialize(const char* = nullptr) TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
 static void
 allocate() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
 static void
 finalize() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
+//
 static auto
 setup_gotcha() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 
@@ -184,64 +155,13 @@ setup_gotcha() TIMEMORY_INTERNAL_NO_INSTRUMENT;
 
 namespace
 {
-bool m_default_enabled = (std::atexit(&finalize), true);
-
-struct global_data;
-struct thread_local_data;
-
-global_data*&
-get_global_data() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-thread_local_data*&
-get_thread_local_data() TIMEMORY_INTERNAL_NO_INSTRUMENT;
-
-struct global_data
-{
-    using void_pair_t = std::pair<void*, void*>;
-    using children_t  = std::vector<thread_local_data*>;
-
-    global_data() = default;
-    ~global_data();
-
-    bool        enabled   = tim::settings::enabled();
-    bool        finalized = false;
-    bool        debug     = tim::get_env(TIMEMORY_SETTINGS_KEY("DEBUG"), false);
-    int64_t     max_depth = tim::settings::max_depth();
-    void_pair_t first     = void_pair_t{ nullptr, nullptr };
-    children_t  children  = {};
-};
-
-struct thread_local_data
-{
-    bool           enabled    = get_global_data()->enabled;
-    int64_t        depth      = 0;
-    overhead_map_t overhead   = {};
-    throttle_map_t throttle   = {};
-    trace_data_t   trace_data = {};
-    label_map_t    labels     = {};
-};
-
-global_data::~global_data()
-{
-    for(auto itr : children)
-        delete itr;
-}
-
-global_data*&
-get_global_data()
-{
-    static auto _instance = new global_data{};
-    return _instance;
-}
-
-thread_local_data*&
-get_thread_local_data()
-{
-    static thread_local auto _instance = new thread_local_data{};
-    return _instance;
-}
-
+bool        m_default_enabled = (std::atexit(&finalize), true);
+const void* null_site         = nullptr;
 }  // namespace
+
+#if !defined(CALL_SITE)
+#    define CALL_SITE call_site
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -274,17 +194,28 @@ get_storage(tim::index_sequence<Idx...>)
 //--------------------------------------------------------------------------------------//
 
 bool&
-get_enabled()
+is_finalized()
 {
-    return get_global_data()->enabled;
+    static auto _instance = new bool{ false };
+    return *_instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
 bool&
-is_finalized()
+get_enabled()
 {
-    return get_global_data()->finalized;
+    static auto _instance = new bool{ tim::settings::enabled() };
+    return *_instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+bool&
+get_thread_enabled()
+{
+    static thread_local auto _instance = new bool{ get_enabled() };
+    return *_instance;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -292,28 +223,50 @@ is_finalized()
 bool
 get_debug()
 {
-    return get_global_data()->debug;
+    static auto _instance =
+        new bool{ tim::get_env(TIMEMORY_SETTINGS_KEY("DEBUG"), false) };
+    return *_instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
-auto&
-get_max_depth()
-{
-    return get_global_data()->max_depth;
-}
-
-//--------------------------------------------------------------------------------------//
-
-auto&
+static auto&
 get_first()
 {
-    return get_global_data()->first;
+    static auto _instance = std::pair<void*, void*>(nullptr, nullptr);
+    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
-auto
+static auto&
+get_overhead()
+{
+    static thread_local auto _instance = new overhead_map_t{};
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+static auto&
+get_throttle()
+{
+    static thread_local auto _instance = new throttle_map_t{};
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+static auto&
+get_trace_vec()
+{
+    static thread_local auto _instance = new trace_vec_t{};
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+static unsigned long
 get_trace_size()
 {
     using types_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
@@ -322,58 +275,23 @@ get_trace_size()
 
 //--------------------------------------------------------------------------------------//
 
-bool&
-get_thread_enabled()
+static auto&
+get_label_map()
 {
-    return get_thread_local_data()->enabled;
+    static thread_local auto _instance = new label_map_t{};
+    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
-auto&
-get_depth()
-{
-    return get_thread_local_data()->depth;
-}
-
-//--------------------------------------------------------------------------------------//
-
-auto&
-get_overhead()
-{
-    return get_thread_local_data()->overhead;
-}
-
-//--------------------------------------------------------------------------------------//
-
-auto&
-get_throttle()
-{
-    return get_thread_local_data()->throttle;
-}
-
-//--------------------------------------------------------------------------------------//
-
-auto&
-get_trace_data()
-{
-    return get_thread_local_data()->trace_data;
-}
-
-//--------------------------------------------------------------------------------------//
-
-auto&
-get_labels()
-{
-    return get_thread_local_data()->labels;
-}
-
-//--------------------------------------------------------------------------------------//
-
-auto
+static auto
 get_label(void* this_fn, void* call_site)
 {
-    auto& _label_site = get_labels()[call_site];
+    auto& _label_map = get_label_map();
+    if(!_label_map)
+        return static_cast<size_t>(0);
+
+    auto& _label_site = (*_label_map)[call_site];
 
     auto itr = _label_site.find(this_fn);
     if(itr != _label_site.end())
@@ -409,7 +327,7 @@ get_label(void* this_fn, void* call_site)
 
 //--------------------------------------------------------------------------------------//
 
-void
+static void
 initialize(const char* _exe_name)
 {
     static bool _first = true;
@@ -518,9 +436,6 @@ allocate()
 void
 finalize()
 {
-    if(!get_thread_local_data() || !get_global_data())
-        return;
-
     if(is_finalized())
         return;
 
@@ -554,7 +469,7 @@ finalize()
     }
 
     bool _remove_manager = false;
-    if(!get_trace_data().empty())
+    if(get_trace_vec())
     {
         printf("[pid=%i][tid=%i]> timemory-compiler-instrument: %lu results\n",
                (int) tim::process::get_id(), (int) tim::threading::get_id(),
@@ -567,24 +482,30 @@ finalize()
         _remove_manager = true;
     }
 
-    if(get_thread_local_data())
+    // clean up trace map
+    if(get_trace_vec())
     {
-        // clean up trace map
-        for(auto& itr : get_trace_data())
+        for(auto& itr : *get_trace_vec())
             std::get<2>(itr)->stop();
-
-        // clean up trace map
-        get_trace_data().clear();
-
-        // clean up overhead map
-        get_overhead().clear();
-
-        // clean up throttle map
-        get_throttle().clear();
-
-        delete get_thread_local_data();
-        get_thread_local_data() = nullptr;
     }
+
+    // clean up trace map
+    if(get_trace_vec())
+        get_trace_vec()->clear();
+    delete get_trace_vec();
+    get_trace_vec() = nullptr;
+
+    // clean up overhead map
+    if(get_overhead())
+        get_overhead()->clear();
+    delete get_overhead();
+    get_overhead() = nullptr;
+
+    // clean up throttle map
+    if(get_throttle())
+        get_throttle()->clear();
+    delete get_throttle();
+    get_throttle() = nullptr;
 
     if(tim::threading::get_id() != primary_tidx)
         return;
@@ -613,12 +534,6 @@ finalize()
         assert(wc.get() > 0.0);
         assert(pr.get() > 0.0);
 #endif
-
-        if(get_global_data())
-        {
-            delete get_global_data();
-            get_global_data() = nullptr;
-        }
     }
 
     if(_remove_manager)
@@ -635,14 +550,16 @@ extern "C"
 {
     void timemory_profile_func_enter(void* this_fn, void* call_site)
     {
-        using auto_start_quirk_t = tim::quirk::config<tim::quirk::auto_start>;
-
-        if(!get_thread_local_data())
-            return;
-
         tim::trace::lock<tim::trace::compiler> lk{};
         if(!lk || !get_enabled() || !get_thread_enabled())
             return;
+
+        const auto& _trace_vec = get_trace_vec();
+        if(!_trace_vec)
+            return;
+
+        if(_trace_vec->size() % 100 == 0)
+            _trace_vec->reserve(_trace_vec->size() + 100);
 
         auto _label = get_label(this_fn, call_site);
         if(get_debug())
@@ -653,34 +570,26 @@ extern "C"
                 tim::operation::decode<TIMEMORY_API>{}(_label).substr(0, 120).c_str());
         }
 
-        if(get_depth()++ > get_max_depth())
+        const auto& _overhead = get_overhead();
+        const auto& _throttle = get_throttle();
+        if((*_throttle)[CALL_SITE][this_fn])
             return;
 
-        auto& _trace_data = get_trace_data();
-        auto& _overhead   = get_overhead();
-        auto& _throttle   = get_throttle();
-        if(_throttle[call_site][this_fn])
-            return;
+        _trace_vec->emplace_back(
+            std::make_tuple(this_fn, call_site, std::make_unique<trace_set_t>(_label)));
+        std::get<2>(_trace_vec->back())->start();
 
-        if(_trace_data.size() % 100 == 0)
-            _trace_data.reserve(_trace_data.size() + 100);
-
-        _trace_data.emplace_back(
-            this_fn, call_site,
-            std::make_unique<trace_set_t>(_label, auto_start_quirk_t{}));
-
-        auto& _this_over = _overhead[call_site][this_fn];
+        auto& _this_over = (*_overhead)[CALL_SITE][this_fn];
         if(std::get<0>(_this_over) == 0)
             std::get<1>(_this_over).start();
+
+        tim::consume_parameters(call_site, null_site);
     }
     //
     //----------------------------------------------------------------------------------//
     //
     void timemory_profile_func_exit(void* this_fn, void* call_site)
     {
-        if(!get_thread_local_data())
-            return;
-
         tim::trace::lock<tim::trace::compiler> lk{};
         if(!lk || !get_enabled() || !get_thread_enabled())
             return;
@@ -704,23 +613,24 @@ extern "C"
                 get_enabled() = false;
         }
 
-        if(get_depth()-- > get_max_depth())
+        const auto& _trace_vec = get_trace_vec();
+        if(!_trace_vec)
             return;
 
-        auto& _trace_data = get_trace_data();
-        auto& _overhead   = get_overhead();
-        auto& _throttle   = get_throttle();
+        const auto& _overhead = get_overhead();
+        const auto& _throttle = get_throttle();
 
-        if(_throttle[call_site][this_fn])
+        if((_throttle != nullptr) && (*_throttle)[CALL_SITE][this_fn])
             return;
 
-        if(_trace_data.empty())
+        if(_trace_vec->empty())
             return;
 
-        --(std::get<0>(_overhead[call_site][this_fn]));
+        if(_overhead)
+            --(std::get<0>((*_overhead)[CALL_SITE][this_fn]));
 
-        std::get<2>(_trace_data.back())->stop();
-        _trace_data.pop_back();
+        std::get<2>(_trace_vec->back())->stop();
+        _trace_vec->pop_back();
 
         if(_is_first)
         {
@@ -728,7 +638,7 @@ extern "C"
             return;
         }
 
-        auto& _this_over = _overhead[call_site][this_fn];
+        auto& _this_over = (*_overhead)[CALL_SITE][this_fn];
         auto  _count     = ++(std::get<2>(_this_over));
         if(_count % throttle_count == 0)
         {
@@ -736,23 +646,21 @@ extern "C"
             _mono.stop();
             auto _accum = _mono.get_accum() / _count;
             if(_accum < throttle_value)
-                _throttle[call_site][this_fn] = true;
+                (*_throttle)[CALL_SITE][this_fn] = true;
             _mono.reset();
             std::get<2>(_this_over) = 0;
         }
+
+        tim::consume_parameters(call_site, null_site);
     }
     //
     //----------------------------------------------------------------------------------//
     //
     int timemory_profile_thread_init(void)
     {
-        if(!get_thread_local_data())
-            return 0;
-
         tim::trace::lock<tim::trace::compiler> lk{};
         if(!lk || !get_enabled() || !get_thread_enabled())
             return 0;
-
         static auto              _initialized = (initialize(), true);
         static thread_local auto _allocated   = (allocate(), true);
         tim::consume_parameters(_initialized, _allocated);
@@ -763,13 +671,9 @@ extern "C"
     //
     int timemory_profile_thread_fini(void)
     {
-        if(!get_thread_local_data())
-            return 0;
-
         tim::trace::lock<tim::trace::compiler> lk{};
         if(!lk || !get_enabled() || !get_thread_enabled())
             return 0;
-
         finalize();
         return 1;
     }

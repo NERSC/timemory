@@ -127,6 +127,16 @@ private:
 
             // get the current depth
             auto _beg_depth = operation::get_depth<storage_type>{}(*_storage);
+            // check against max depth when not flat
+            if(!operation::get_is_flat<type, false>{}(_obj))
+            {
+                auto _settings = settings::instance();
+                if(_settings && _beg_depth + 1 > _settings->get_max_depth())
+                {
+                    operation::set_is_on_stack<type>{}(_obj, false);
+                    return nullptr;
+                }
+            }
             // assign iterator to the insertion point in storage
             operation::set_iterator<type>{}(
                 _obj, operation::insert<storage_type>{}(*_storage, _scope, _obj, _hash));
