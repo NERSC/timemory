@@ -254,11 +254,16 @@ if(TIMEMORY_BUILD_C)
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
             LINK_LIBRARIES      timemory-external-shared
+                                timemory-cxx-shared
                                 PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
-                                    timemory-analysis-tools
-                                    timemory-cxx-shared)
+                                    timemory-analysis-tools)
+
+        target_include_directories(timemory-c-shared PUBLIC
+            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source>
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
         if(WIN32)
             target_compile_definitions(timemory-c-shared
@@ -279,14 +284,15 @@ if(TIMEMORY_BUILD_C)
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
             LINK_LIBRARIES      timemory-external-static
+                                timemory-cxx-static
                                 PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
-                                    timemory-analysis-tools
-                                    timemory-cxx-static)
+                                    timemory-analysis-tools)
 
         target_include_directories(timemory-c-static PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/source>
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
     endif()
 
@@ -298,7 +304,7 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 #
-#                       EXTERN C libraries
+#                       Fortran libraries
 #
 #----------------------------------------------------------------------------------------#
 
@@ -347,10 +353,6 @@ if(TIMEMORY_BUILD_FORTRAN)
                                     timemory-develop-options
                                     timemory-analysis-tools
                                     timemory-cxx-static)
-
-        target_include_directories(timemory-fortran-static PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
         set_target_properties(timemory-fortran-static PROPERTIES
             INTERPROCEDURAL_OPTIMIZATION OFF)
