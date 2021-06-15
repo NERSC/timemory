@@ -563,7 +563,8 @@ demangle_backtrace(const std::string& str)
 //
 template <size_t Depth, size_t Offset = 2>
 static inline std::ostream&
-print_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {})
+print_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {},
+                std::string = {})
 {
     os << "[timemory]> Backtrace not supported on this platform\n";
     return os;
@@ -572,7 +573,7 @@ print_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {}
 template <size_t Depth, size_t Offset = 3>
 static inline std::ostream&
 print_demangled_backtrace(std::ostream& os = std::cerr, std::string = {},
-                          std::string = {})
+                          std::string = {}, std::string = {})
 {
     os << "[timemory]> Backtrace not supported on this platform\n";
     return os;
@@ -580,7 +581,8 @@ print_demangled_backtrace(std::ostream& os = std::cerr, std::string = {},
 //
 template <size_t Depth, size_t Offset = 2>
 static inline std::ostream&
-print_unw_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {})
+print_unw_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {},
+                    std::string = {})
 {
     os << "[timemory]> libunwind backtrace not supported on this platform\n";
     return os;
@@ -589,7 +591,7 @@ print_unw_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string 
 template <size_t Depth, size_t Offset = 3>
 static inline std::ostream&
 print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string = {},
-                              std::string = {})
+                              std::string = {}, std::string = {})
 {
     os << "[timemory]> libunwind backtrace not supported on this platform\n";
     return os;
