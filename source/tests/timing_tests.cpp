@@ -39,7 +39,7 @@ using namespace tim::component;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
-static const double util_tolerance  = 5.0;
+static const double util_tolerance  = 25.0;
 static const double timer_tolerance = 0.025;
 
 #define CHECK_AVAILABLE(type)                                                            \

@@ -1,4 +1,9 @@
 
+add_test(
+    NAME                timemory-echo
+    COMMAND             ${CMAKE_COMMAND} -E echo "timemory testing"
+    WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+
 # return if skipping build or no other builds were enabled
 if(TIMEMORY_SKIP_BUILD OR
    (NOT TIMEMORY_BUILD_TESTING AND

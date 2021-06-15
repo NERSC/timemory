@@ -17,6 +17,7 @@ exclude = '''
     | _build
     | __pycache__
     | build
+    | build-timemory
     | dist
     | external
     | scripts
