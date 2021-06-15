@@ -22,11 +22,6 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/**
- * \file timemory/components/cupti/components.hpp
- * \brief Implementation of the cupti component(s)
- */
-
 #pragma once
 
 #include "timemory/components/base.hpp"
@@ -40,3 +35,4 @@
 
 #include "timemory/components/cupti/cupti_activity.hpp"
 #include "timemory/components/cupti/cupti_counters.hpp"
+#include "timemory/components/cupti/cupti_pcsampling.hpp"

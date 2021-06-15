@@ -1,19 +1,18 @@
 
+file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+                               ${CMAKE_CURRENT_SOURCE_DIR}/*.cu)
+
 if(TIMEMORY_USE_CUPTI)
     set(NAME cupti)
     set(DEPS timemory-cupti timemory-cuda timemory-cuda-device)
 
-    file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
-    file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/*.cu)
-
     if(CMAKE_CUDA_COMPILER)
         set_source_files_properties(${source_files} PROPERTIES
-            # LANGUAGE CUDA
             LINKER_LANGUAGE CUDA)
     endif()
 
-    build_intermediate_library(USE_INTERFACE                               
+    build_intermediate_library(USE_INTERFACE
         NAME                ${NAME}
         TARGET              ${NAME}-component
         CATEGORY            COMPONENT
@@ -23,3 +22,8 @@ if(TIMEMORY_USE_CUPTI)
         DEPENDS             ${DEPS}
         PROPERTY_DEPENDS    GLOBAL)
 endif()
+
+list(REMOVE_ITEM source_files ${CMAKE_CURRENT_SOURCE_DIR}/extern.cpp)
+timemory_install_header_files(
+    ${header_files}
+    ${source_files})

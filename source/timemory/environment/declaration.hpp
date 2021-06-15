@@ -52,7 +52,6 @@ namespace tim
 class env_settings
 {
 public:
-    using mutex_t        = std::recursive_mutex;
     using string_t       = std::string;
     using env_map_t      = std::map<string_t, string_t>;
     using env_uomap_t    = std::map<string_t, string_t>;
@@ -106,12 +105,6 @@ public:
     }
 
 private:
-    static mutex_t& mutex()
-    {
-        static mutex_t m_mutex;
-        return m_mutex;
-    }
-
     static std::atomic_bool& lock_flag()
     {
         static std::atomic_bool _instance(false);
@@ -140,7 +133,8 @@ env_settings::insert(const std::string& env_id, Tp val)
     if(lock_flag().load() && !lk.owns_lock())
         lk.lock();
 
-    if(m_env->find(env_id) == m_env->end() || m_env->find(env_id)->second != ss.str())
+    if(m_env &&
+       (m_env->find(env_id) == m_env->end() || m_env->find(env_id)->second != ss.str()))
         (*m_env)[env_id] = ss.str();
 #else
     consume_parameters(env_id, val);

@@ -23,23 +23,319 @@
 // SOFTWARE.
 //
 
-/**
- * \file timemory/components/cupti/backends.hpp
- * \brief Implementation of the cupti functions/utilities
- */
-
 #pragma once
 
 #include "timemory/backends/types/cupti.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/backends/cupti.hpp"
+#    include <cuda.h>
+#    include <cupti.h>
+#    if defined(TIMEMORY_USE_CUPTI_PCSAMPLING)
+#        include <cupti_pcsampling.h>
+#    endif
+#endif
+
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <iostream>
+#include <string>
+#include <unordered_set>
+#include <vector>
+
+// for disabling a category at runtime
+// no statistics ever
+//
+#if !defined(TIMEMORY_CUPTI_API_CALL)
+#    define TIMEMORY_CUPTI_API_CALL(...) TIMEMORY_CUPTI_CALL(__VA_ARGS__)
+#endif
+
+#if !defined(ACTIVITY_RECORD_ALIGNMENT)
+#    define ACTIVITY_RECORD_ALIGNMENT 8
+#endif
+
+#if !defined(PACKED_ALIGNMENT)
+#    if defined(_WIN32)  // Windows 32- and 64-bit
+#        define PACKED_ALIGNMENT __declspec(align(ACTIVITY_RECORD_ALIGNMENT))
+#    elif defined(__GNUC__)  // GCC
+#        define PACKED_ALIGNMENT                                                         \
+            __attribute__((__packed__))                                                  \
+                __attribute__((aligned(ACTIVITY_RECORD_ALIGNMENT)))
+#    else  // all other compilers
+#        define PACKED_ALIGNMENT
+#    endif
+#endif
+
+#if !defined(TIMEMORY_CUPTI_CALLOC)
+#    define TIMEMORY_CUPTI_CALLOC(TYPE, SIZE)                                            \
+        (SIZE == 0) ? nullptr : static_cast<TYPE*>(calloc(SIZE, sizeof(TYPE)))
+#endif
+
+#if !defined(CUPTI_STALL_REASON_STRING_SIZE)
+#    define CUPTI_STALL_REASON_STRING_SIZE 128
+#endif
+
+#if !defined(TIMEMORY_CUPTIAPI)
+#    if defined(CUPTIAPI)
+#        define TIMEMORY_CUPTIAPI CUPTIAPI
+#    else
+#        define TIMEMORY_CUPTIAPI
+#    endif
+#endif
+
+#if !defined(TIMEMORY_USE_CUPTI_PCSAMPLING)
+extern "C"
+{
+    struct PACKED_ALIGNMENT CUpti_PCSamplingStallReason_t;
+    struct PACKED_ALIGNMENT CUpti_PCSamplingPCData_t;
+    struct PACKED_ALIGNMENT CUpti_PCSamplingData_t;
+}
 #endif
 
 //--------------------------------------------------------------------------------------//
 //
 namespace tim
 {
+namespace cupti
+{
+#if !defined(TIMEMORY_USE_CUPTI_PCSAMPLING)
+struct CUpti_PCSamplingStallReason_t
+{};
+struct CUpti_PCSamplingPCData_t
+{};
+struct CUpti_PCSamplingData_t
+{};
+#else
+using CUpti_PCSamplingStallReason_t = CUpti_PCSamplingStallReason;
+using CUpti_PCSamplingPCData_t      = CUpti_PCSamplingPCData;
+using CUpti_PCSamplingData_t        = CUpti_PCSamplingData;
+#endif
+
+/// \struct tim::component::cupti::pcstall
+/// \brief Timemory's version of CUpti_PCSamplingStallReason
+///
+struct PACKED_ALIGNMENT pcstall
+{
+    // Collected stall reason index
+    uint32_t index = 0;
+    // Number of times the PC was sampled with the stallReason.
+    uint32_t samples = 0;
+
+    TIMEMORY_DEFAULT_OBJECT(pcstall)
+
+    pcstall(const CUpti_PCSamplingStallReason_t&);
+    pcstall(uint32_t _index, uint32_t _samples);
+
+    pcstall& operator+=(const pcstall& rhs);
+    pcstall& operator-=(const pcstall& rhs);
+
+    bool operator==(const pcstall& rhs) const { return index == rhs.index; }
+    bool operator!=(const pcstall& rhs) const { return !(*this == rhs); }
+    bool operator<(const pcstall& rhs) const { return index < rhs.index; }
+    bool operator>(const pcstall& rhs) const { return index > rhs.index; }
+    bool operator<=(const pcstall& rhs) const { return index <= rhs.index; }
+    bool operator>=(const pcstall& rhs) const { return index >= rhs.index; }
+
+    const char*        name() const { return name(index); }
+    static const char* name(uint32_t index);
+    static bool        enabled(uint32_t index);
+
+    // serialization
+    template <typename Archive>
+    void save(Archive& ar, const unsigned int) const;
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int);
+
+    friend std::ostream& operator<<(std::ostream& os, const pcstall& obj)
+    {
+        os << obj.name() << "=" << obj.samples;
+        return os;
+    }
+
+    static char**& get_name_array()
+    {
+        static char** _instance = nullptr;
+        return _instance;
+    }
+
+    static uint32_t*& get_index_array()
+    {
+        static uint32_t* _instance = nullptr;
+        return _instance;
+    }
+
+    static bool*& get_bool_array()
+    {
+        static bool* _instance = nullptr;
+        return _instance;
+    }
+
+    static size_t& get_size()
+    {
+        static size_t _instance = 0;
+        return _instance;
+    }
+
+    static void allocate_arrays(size_t _n)
+    {
+        // last data size allocated
+        size_t _last_n = get_size();
+
+        // references to arrays
+        uint32_t*& _idx  = get_index_array();
+        char**&    _desc = get_name_array();
+        bool*&     _on   = get_bool_array();
+
+        // cleanup
+        if(_idx)
+            free(_idx);
+
+        if(_on)
+            free(_on);
+
+        if(_desc)
+        {
+            for(size_t i = 0; i < _last_n; i++)
+                free(_desc[i]);
+            free(_desc);
+        }
+
+        // allocate, value of zero for _n sets to nullptr
+        _on   = TIMEMORY_CUPTI_CALLOC(bool, _n);
+        _idx  = TIMEMORY_CUPTI_CALLOC(uint32_t, _n);
+        _desc = TIMEMORY_CUPTI_CALLOC(char*, _n);
+        for(size_t i = 0; i < _n; i++)
+        {
+            _desc[i]    = TIMEMORY_CUPTI_CALLOC(char, CUPTI_STALL_REASON_STRING_SIZE);
+            _desc[i][0] = '\0';
+        }
+
+        get_size() = _n;
+    }
+};
+
+/// \struct tim::component::cupti::pcsample
+/// \brief Timemory's version of CUpti_PCSamplingPCData
+///
+struct pcsample
+{
+    // used by name()
+    template <typename KeyT, typename MappedT, typename... Tail>
+    using uomap_t = std::unordered_map<KeyT, MappedT, Tail...>;
+
+    // used to set array size
+    static constexpr int32_t stall_reasons_size = 38;
+
+    // Number of samples collected across all PCs. It includes all dropped samples.
+    mutable uint64_t totalSamples = 0;
+    // Unique cubin id
+    uint64_t cubinCrc = 0;
+    // PC offset
+    uint32_t pcOffset = 0;
+    // The function's unique symbol index in the module.
+    uint32_t functionIndex = 0;
+    // Function name
+    const char* functionName = "<unknown>";
+    // Collected stall reasons
+    mutable std::array<pcstall, stall_reasons_size> stalls{};
+
+    pcsample(const pcsample&)     = default;
+    pcsample(pcsample&&) noexcept = default;
+    pcsample& operator=(const pcsample&) = default;
+    pcsample& operator=(pcsample&&) noexcept = default;
+
+    pcsample();
+    explicit pcsample(const CUpti_PCSamplingPCData_t&);
+
+    const pcsample& operator+=(const pcsample& rhs) const;
+    const pcsample& operator-=(const pcsample& rhs) const;
+    pcsample&       operator/=(uint64_t) { return *this; }
+    const pcsample& operator/=(uint64_t) const { return *this; }
+
+    bool operator==(const pcsample& rhs) const;
+    bool operator<(const pcsample& rhs) const;
+    bool operator<=(const pcsample& rhs) const;
+    bool operator!=(const pcsample& rhs) const { return !(*this == rhs); }
+    bool operator>=(const pcsample& rhs) const { return !(*this < rhs); }
+    bool operator>(const pcsample& rhs) const { return !(*this <= rhs); }
+
+    std::string name() const;
+
+    // serialization
+    template <typename Archive>
+    void save(Archive& ar, const unsigned int) const;
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int);
+
+    friend std::ostream& operator<<(std::ostream& os, const pcsample& obj)
+    {
+        os << "samples=" << obj.totalSamples << ", cubinCrc=" << obj.cubinCrc
+           << ", pc-offset=" << obj.pcOffset << ", functionIndex=" << obj.functionIndex;
+        for(const auto& itr : obj.stalls)
+        {
+            if(itr.samples > 0)
+                os << ", " << itr;
+        }
+        return os;
+    }
+
+    static auto& get_cubin_map()
+    {
+        static std::unordered_map<uint64_t, std::tuple<const void*, uint32_t>>
+            _instance{};
+        return _instance;
+    }
+
+    static void TIMEMORY_CUPTIAPI compute_cubin_crc(const void* cubin, uint32_t cubinSize,
+                                                    uint64_t* cubinCrc)
+    {
+        auto&    _map = get_cubin_map();
+        uint64_t _idx = _map.size();
+        _map.insert({ _idx, { cubin, cubinSize } });
+        *cubinCrc = _idx;
+    }
+};
+///
+struct pcdata
+{
+    // Number of PCs collected
+    size_t totalNumPcs = 0;
+    // Number of PCs available for collection
+    size_t remainingNumPcs = 0;
+    // Unique identifier for each range. Data collected across multiple ranges in multiple
+    // buffers can be identified using range id.
+    uint64_t rangeId = 0;
+    // Profiled PC data
+    std::set<pcsample> samples{};
+
+    TIMEMORY_DEFAULT_OBJECT(pcdata)
+
+    explicit pcdata(CUpti_PCSamplingData_t&& _data);
+
+    pcdata& operator+=(const pcdata& rhs);
+    pcdata& operator+=(pcdata&& rhs);
+    pcdata& operator-=(const pcdata& rhs);
+
+    bool operator==(const pcdata& rhs) const { return rangeId == rhs.rangeId; }
+    bool operator!=(const pcdata& rhs) const { return rangeId != rhs.rangeId; }
+    bool operator<(const pcdata& rhs) const { return rangeId < rhs.rangeId; }
+    bool operator>(const pcdata& rhs) const { return rangeId > rhs.rangeId; }
+    bool operator<=(const pcdata& rhs) const { return rangeId <= rhs.rangeId; }
+    bool operator>=(const pcdata& rhs) const { return rangeId >= rhs.rangeId; }
+
+    // serialization
+    template <typename Archive>
+    void save(Archive& ar, const unsigned int) const;
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int);
+
+    bool append(const pcsample& rhs);
+    bool append(pcsample&& rhs);
+};
+//
+}  // namespace cupti
+//
 namespace stl
 {
 //
@@ -643,3 +939,7 @@ struct perfworks_translation
 //
 //--------------------------------------------------------------------------------------//
 //
+
+#if defined(TIMEMORY_CUPTI_HEADER_MODE)
+#    include "timemory/components/cupti/backends.cpp"
+#endif

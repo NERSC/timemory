@@ -479,7 +479,6 @@ delimit(const std::string& line, const std::string& delimiters = "\"',;: ",
     }
     return _result;
 }
-
 //
 //--------------------------------------------------------------------------------------//
 ///  \brief apply a string transformation to substring inbetween a common delimiter.

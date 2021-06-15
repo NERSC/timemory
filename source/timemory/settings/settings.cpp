@@ -862,8 +862,36 @@ settings::initialize_tpls()
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(int, cupti_device,
                                       TIMEMORY_SETTINGS_KEY("CUPTI_DEVICE"),
-                                      "Target device for CUPTI hw counter collection", 0,
+                                      "Target device for CUPTI data collection", 0,
                                       strvector_t({ "--timemory-cupti-device" }), 1);
+
+    insert<int>("TIMEMORY_CUPTI_PCSAMPLING_PERIOD", "cupti_pcsampling_period",
+                "The period for PC sampling. Must be >= 5 and <= 31", 8,
+                strvector_t{ "--timemory-cupti-pcsampling-period" });
+
+    insert<bool>(
+        "TIMEMORY_CUPTI_PCSAMPLING_PER_LINE", "cupti_pcsampling_per_line",
+        "Report the PC samples per-line or collapse into one entry for entire function",
+        false, strvector_t{ "--timemory-cupti-pcsampling-per-line" });
+
+    insert<bool>(
+        "TIMEMORY_CUPTI_PCSAMPLING_REGION_TOTALS", "cupti_pcsampling_region_totals",
+        "When enabled, region markers will report total samples from all child functions",
+        true, strvector_t{ "--timemory-cupti-pcsampling-region-totals" });
+
+    insert<bool>("TIMEMORY_CUPTI_PCSAMPLING_SERIALIZED", "cupti_pcsampling_serialized",
+                 "Serialize all the kernel functions", false,
+                 strvector_t{ "--timemory-cupti-pcsampling-serialize" });
+
+    insert<size_t>("TIMEMORY_CUPTI_PCSAMPLING_NUM_COLLECT",
+                   "cupti_pcsampling_num_collect", "Number of PCs to be collected",
+                   size_t{ 100 },
+                   strvector_t{ "--timemory-cupti-pcsampling-num-collect" });
+
+    insert<std::string>("TIMEMORY_CUPTI_PCSAMPLING_STALL_REASONS",
+                        "cupti_pcsampling_stall_reasons",
+                        "The PC sampling stall reasons to count", std::string{},
+                        strvector_t{ "--timemory-cupti-pcsampling-stall-reasons" });
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(string_t, craypat_categories,
                                   TIMEMORY_SETTINGS_KEY("CRAYPAT"),
