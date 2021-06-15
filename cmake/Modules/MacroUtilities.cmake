@@ -269,6 +269,11 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         target_compile_definitions(google-test-debug-options INTERFACE
             $<$<CONFIG:Debug>:DEBUG> TIMEMORY_TESTING)
     endif()
+    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR TIMEMORY_USE_COVERAGE)
+        # create a pre-processor which relaxes pass/fail when converage is enabled
+        target_compile_definitions(google-test-debug-options INTERFACE
+            TIMEMORY_RELAXED_TESTING)
+    endif()
     list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
 
     if(NOT TEST_TARGET)

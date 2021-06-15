@@ -20,6 +20,7 @@ jobs:
             BUILD_TYPE: 'RelWithDebInfo'
             PACKAGES: 'clang-7 build-essential libmpich-dev mpich ccache'
             BUILD_ARGS: '--minimal --build-libs shared static --python --mpi --gotcha --stats --tools mallocp mpip ompt --cxx-standard=17'
+            CTEST_ARGS: '-VV'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_UNITY_BUILD=OFF -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
           - CC: clang-8
             CXX: clang++-8
@@ -34,6 +35,7 @@ jobs:
             BUILD_TYPE: 'MinSizeRel'
             PACKAGES: 'clang-9 build-essential libopenmpi-dev openmpi-bin openmpi-common libfabric-dev ccache'
             BUILD_ARGS: '--quick --build-libs shared --mpi --cxx-standard=14'
+            CTEST_ARGS: '-VV'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
           - CC: gcc-6
             CXX: g++-6
@@ -42,6 +44,7 @@ jobs:
             BUILD_TYPE: 'RelWithDebInfo'
             PACKAGES: 'gcc-6 g++-6 gfortran-6 build-essential libtbb-dev ccache'
             BUILD_ARGS: '--minimal --build-libs shared --python --gotcha --stats --cxx-standard=14'
+            CTEST_ARGS: '-VV'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
           - CC: gcc-7
             CXX: g++-7
@@ -50,6 +53,7 @@ jobs:
             BUILD_TYPE: 'Debug'
             PACKAGES: 'gcc-7 g++-7 gfortran-7 build-essential libmpich-dev mpich libtbb-dev libpapi-dev papi-tools lcov ccache'
             BUILD_ARGS: '--minimal --build-libs shared --mpi --papi --gotcha --tools mpip --stats --cxx-standard=17 --coverage'
+            CTEST_ARGS: '-V --output-on-failure'
             CONFIG_ARGS: ''
           - CC: gcc-8
             CXX: g++-8
@@ -58,6 +62,7 @@ jobs:
             BUILD_TYPE: 'Release'
             PACKAGES: 'gcc-8 g++-8 gfortran-8 build-essential libmpich-dev mpich ccache'
             BUILD_ARGS: '--minimal --build-libs shared --mpi --gotcha --stats --tools compiler --cxx-standard=17'
+            CTEST_ARGS: '-VV'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
           - CC: gcc-9
             CXX: g++-9
@@ -66,13 +71,14 @@ jobs:
             BUILD_TYPE: 'MinSizeRel'
             PACKAGES: 'gcc-9 g++-9 gfortran-9 build-essential ccache'
             BUILD_ARGS: '--minimal --build-libs shared --gotcha --stats --python --cxx-standard=17'
+            CTEST_ARGS: '-VV'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
 
     env:
       CC: ${{ matrix.CC }}
       FC: ${{ matrix.FC }}
       CXX: ${{ matrix.CXX }}
-      CTEST_ARGS: "-VV ${{ matrix.CTEST_ARGS }}"
+      CTEST_ARGS: "${{ matrix.CTEST_ARGS }}"
 
     steps:
       - name: Setup Environment
@@ -108,6 +114,26 @@ jobs:
           python -m pip install pytest
           echo -e "Running command:\n$(which python) ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
           python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
+
+      - name: Update Log
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        run: |
+          for i in $(find Testing | grep LastUpdate); do echo "##### File: ${i} #####"; cat ${i}; done
+
+      - name: Configure Log
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        run: |
+          for i in $(find Testing | grep LastConfigure); do echo "##### File: ${i} #####"; cat ${i}; done
+
+      - name: Build Log
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        run: |
+          for i in $(find Testing | grep LastBuild); do echo "##### File: ${i} #####"; cat ${i}; done
+
+      - name: Test Log
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        run: |
+          for i in $(find Testing | grep LastTest); do echo "##### File: ${i} #####"; cat ${i}; done
 
       - name: Test Install
         working-directory: ${{github.workspace}}/build-timemory/Linux

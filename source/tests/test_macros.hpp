@@ -49,6 +49,29 @@ using stringstream_t = std::stringstream;
 
 namespace
 {
+#if !defined(DISABLE_TIMEMORY)
+template <typename Tp>
+inline std::string
+as_string(const tim::node::result<Tp>& _obj)
+{
+    std::ostringstream _oss{};
+    _oss << "tid=" << std::setw(2) << _obj.tid() << ", ";
+    _oss << "pid=" << std::setw(6) << _obj.pid() << ", ";
+    _oss << "depth=" << std::setw(2) << _obj.depth() << ", ";
+    _oss << "hash=" << std::setw(21) << _obj.hash() << ", ";
+    _oss << "prefix=" << _obj.prefix() << ", ";
+    _oss << "data=" << _obj.data();
+    return _oss.str();
+}
+#else
+template <typename Tp>
+inline std::string
+as_string(const Tp&)
+{
+    return std::string{};
+}
+#endif
+//
 #if !defined(TIMEMORY_TEST_NO_METRIC) && !defined(DISABLE_TIMEMORY)
 inline auto&
 metric()

@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "test_macros.hpp"
+
+TIMEMORY_TEST_DEFAULT_MAIN
+
 #include "gtest/gtest.h"
 
 #include <chrono>
@@ -34,12 +38,6 @@
 
 #include "timemory/library.h"
 #include "timemory/timemory.hpp"
-
-static int    _argc = 0;
-static char** _argv = nullptr;
-
-using mutex_t = std::mutex;
-using lock_t  = std::unique_lock<mutex_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -77,44 +75,108 @@ consume(long n)
 
 class throttle_tests : public ::testing::Test
 {
+    using wc_t = tim::component::wall_clock;
+
 protected:
     static void SetUpTestSuite()
     {
+        puts("[SetupTestSuite] setup starting");
         tim::set_env("TIMEMORY_VERBOSE", "1", 1);
         tim::set_env("TIMEMORY_COLLAPSE_THREADS", "OFF", 0);
         tim::settings::debug()       = false;
         tim::settings::json_output() = true;
         tim::settings::mpi_thread()  = false;
+        puts("[SetupTestSuite] initializing dmp");
         tim::dmp::initialize(_argc, _argv);
+        puts("[SetupTestSuite] initializing timemory");
         tim::timemory_init(_argc, _argv);
         tim::settings::dart_output() = true;
         tim::settings::dart_count()  = 1;
         tim::settings::banner()      = false;
         timemory_trace_init("wall_clock", false, "throttle_tests");
+        puts("[SetupTestSuite] timemory initialized");
         tim::settings::verbose() = 1;
         tim::settings::debug()   = false;
+        puts("[SetupTestSuite] setup completed");
+        metric().start();
     }
 
     // always disable debug
-    void SetUp() override { tim::settings::debug() = false; }
+    void SetUp() override
+    {
+        tim::settings::debug() = false;
+        wc_init                = tim::storage<wc_t>::instance()->get();
+        if(!wc_init.empty())
+            offset = 0;
+    }
 
     static void TearDownTestSuite()
     {
+        metric().stop();
+        print_dart(metric());
         timemory_trace_finalize();
         tim::timemory_finalize();
+        if(tim::dmp::rank() == 0)
+            tim::enable_signal_detection(tim::signal_settings::get_default());
         tim::dmp::finalize();
     }
 
-    static constexpr uint64_t nthreads = 4;
+    auto get_size_delta()
+    {
+        auto wc_data = tim::storage<wc_t>::instance()->get();
+        return (wc_data.size() - wc_init.size());
+    }
+
+    auto get_count_delta(const std::string& _id)
+    {
+        auto _get_count = [&_id](auto&& _data) {
+            int64_t _n = 0;
+            for(auto&& itr : _data)
+            {
+                auto _lbl = tim::operation::decode<TIMEMORY_API>{}(
+                    ::tim::get_hash_identifier(itr.hash()));
+                if(_lbl == _id)
+                {
+                    _n += itr.data().get_laps();
+                }
+            }
+            return _n;
+        };
+
+        return (_get_count(tim::storage<wc_t>::instance()->get()) - _get_count(wc_init));
+    }
+
+    std::string write_data()
+    {
+        if(tim::dmp::rank() > 0)
+            return std::string{};
+
+        std::ostringstream _oss;
+        auto               _write_data = [&_oss](const auto& _data) {
+            for(size_t i = 0; i < _data.size(); ++i)
+                _oss << "    " << i << "/" << _data.size()
+                     << " :: " << as_string(_data.at(i)) << "\n";
+        };
+
+        _oss << "Initial data:\n";
+        _write_data(wc_init);
+        _oss << "Current data:\n";
+        _write_data(tim::storage<wc_t>::instance()->get());
+
+        return _oss.str();
+    }
+
+    static constexpr uint64_t            nthreads = 4;
+    size_t                               offset   = 1;
+    std::vector<tim::node::result<wc_t>> wc_init{};
 };
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(throttle_tests, expect_true)
 {
-    tim::settings::debug() = false;
-    auto name              = details::get_test_name();
-    auto n                 = 2 * tim::settings::throttle_count();
+    auto name = details::get_test_name();
+    auto n    = 2 * tim::settings::throttle_count();
 
     for(size_t i = 0; i < n; ++i)
     {
@@ -122,17 +184,21 @@ TEST_F(throttle_tests, expect_true)
         timemory_pop_trace(name.c_str());
     }
 
-    EXPECT_TRUE(timemory_is_throttled(name.c_str()));
+    std::cout << std::boolalpha << "is_throttled(" << name
+              << ") == " << timemory_is_throttled(name.c_str()) << std::endl;
+    EXPECT_EQ(get_count_delta(name), tim::settings::throttle_count()) << write_data();
+#if !defined(TIMEMORY_RELAXED_TESTING)
+    EXPECT_TRUE(timemory_is_throttled(name.c_str())) << write_data();
+#endif
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(throttle_tests, expect_false)
 {
-    tim::settings::debug() = false;
-    auto name              = details::get_test_name();
-    auto n                 = 2 * tim::settings::throttle_count();
-    auto v                 = 2 * tim::settings::throttle_value();
+    auto name = details::get_test_name();
+    auto n    = 2 * tim::settings::throttle_count();
+    auto v    = 2 * tim::settings::throttle_value();
 
     for(size_t i = 0; i < n; ++i)
     {
@@ -142,14 +208,18 @@ TEST_F(throttle_tests, expect_false)
         timemory_pop_trace(name.c_str());
     }
 
-    EXPECT_FALSE(timemory_is_throttled(name.c_str()));
+    std::cout << std::boolalpha << "is_throttled(" << name
+              << ") == " << timemory_is_throttled(name.c_str()) << std::endl;
+    EXPECT_EQ(get_count_delta(name), 2 * tim::settings::throttle_count()) << write_data();
+#if !defined(TIMEMORY_RELAXED_TESTING)
+    EXPECT_FALSE(timemory_is_throttled(name.c_str())) << write_data();
+#endif
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(throttle_tests, multithreaded)
 {
-    tim::settings::debug() = false;
     std::array<bool, nthreads> is_throttled;
     is_throttled.fill(false);
 
@@ -190,8 +260,11 @@ TEST_F(throttle_tests, multithreaded)
     {
         bool _answer = (i % 2 == 1) ? false : true;
         std::cout << "thread " << i << " throttling: " << std::boolalpha
-                  << is_throttled[i] << std::endl;
-        EXPECT_TRUE(is_throttled[i] == _answer);
+                  << is_throttled[i] << ". expected: " << _answer << "\n";
+        EXPECT_EQ(get_size_delta(), 2 * nthreads) << write_data();
+#if !defined(TIMEMORY_RELAXED_TESTING)
+        EXPECT_TRUE(is_throttled[i] == _answer) << write_data();
+#endif
     }
 }
 
@@ -199,18 +272,17 @@ TEST_F(throttle_tests, multithreaded)
 
 TEST_F(throttle_tests, do_nothing)
 {
-    tim::settings::debug() = false;
-    auto n                 = tim::settings::throttle_count();
+    auto n = tim::settings::throttle_count();
     for(size_t i = 0; i < n; ++i)
         details::do_sleep(10);
+    EXPECT_EQ(get_size_delta(), 0) << write_data();
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(throttle_tests, region_serial)
 {
-    tim::settings::debug() = false;
-    auto _run              = []() {
+    auto _run = []() {
         timemory_push_region("thread");
         auto name = details::get_test_name();
         auto n    = 8 * tim::settings::throttle_count();
@@ -224,14 +296,15 @@ TEST_F(throttle_tests, region_serial)
 
     for(uint64_t i = 0; i < nthreads; ++i)
         _run();
+
+    EXPECT_EQ(get_size_delta(), 1 + offset) << write_data();
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(throttle_tests, region_multithreaded)
 {
-    tim::settings::debug() = false;
-    auto _run              = []() {
+    auto _run = []() {
         timemory_push_region("thread");
         auto name = details::get_test_name();
         auto n    = 8 * tim::settings::throttle_count();
@@ -248,15 +321,15 @@ TEST_F(throttle_tests, region_multithreaded)
         threads.emplace_back(_run);
     for(auto& itr : threads)
         itr.join();
+    EXPECT_EQ(get_size_delta(), 2 * nthreads) << write_data();
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(throttle_tests, tuple_serial)
 {
-    tim::settings::debug() = false;
-    using tuple_t          = tim::auto_tuple<tim::component::wall_clock>;
-    auto _run              = []() {
+    using tuple_t = tim::auto_tuple<tim::component::wall_clock>;
+    auto _run     = []() {
         TIMEMORY_BLANK_MARKER(tuple_t, "thread");
         auto name = details::get_test_name();
         auto n    = 8 * tim::settings::throttle_count();
@@ -268,15 +341,15 @@ TEST_F(throttle_tests, tuple_serial)
 
     for(uint64_t i = 0; i < nthreads; ++i)
         _run();
+    EXPECT_EQ(get_size_delta(), 1 + offset) << write_data();
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(throttle_tests, tuple_multithreaded)
 {
-    tim::settings::debug() = false;
-    using tuple_t          = tim::auto_tuple<tim::component::wall_clock>;
-    auto _run              = []() {
+    using tuple_t = tim::auto_tuple<tim::component::wall_clock>;
+    auto _run     = []() {
         TIMEMORY_BLANK_MARKER(tuple_t, "thread");
         auto name = details::get_test_name();
         auto n    = 8 * tim::settings::throttle_count();
@@ -291,18 +364,7 @@ TEST_F(throttle_tests, tuple_multithreaded)
         threads.emplace_back(_run);
     for(auto& itr : threads)
         itr.join();
-}
-
-//--------------------------------------------------------------------------------------//
-
-int
-main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
-
-    return RUN_ALL_TESTS();
+    EXPECT_EQ(get_size_delta(), 2 * nthreads) << write_data();
 }
 
 //--------------------------------------------------------------------------------------//

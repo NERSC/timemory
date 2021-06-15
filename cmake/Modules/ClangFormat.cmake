@@ -46,7 +46,15 @@ if(CLANG_FORMATTER)
         ${PROJECT_SOURCE_DIR}/source/*.c
         ${PROJECT_SOURCE_DIR}/source/*.cu
         ${PROJECT_SOURCE_DIR}/source/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/*.cpp.in)
+        ${PROJECT_SOURCE_DIR}/source/*.cpp.in
+        ${PROJECT_SOURCE_DIR}/source/tools/*.c
+        ${PROJECT_SOURCE_DIR}/source/tools/*.cu
+        ${PROJECT_SOURCE_DIR}/source/tools/*.cpp
+        ${PROJECT_SOURCE_DIR}/source/tools/*.cpp.in
+        ${PROJECT_SOURCE_DIR}/source/tests/*.c
+        ${PROJECT_SOURCE_DIR}/source/tests/*.cu
+        ${PROJECT_SOURCE_DIR}/source/tests/*.cpp
+        ${PROJECT_SOURCE_DIR}/source/tests/*.cpp.in)
     if(TIMEMORY_SOURCE_GROUP)
         source_group(TREE ${PROJECT_SOURCE_DIR}/source FILES ${sources})
     endif()

@@ -119,7 +119,10 @@ else()
     set(_USE_CUDA OFF)
 endif()
 
-if(TIMEMORY_BUILD_FORTRAN OR NOT DEFINED TIMEMORY_BUILD_FORTRAN)
+# On Windows do not try run check_language because it tends to hang indefinitely
+if(WIN32 AND NOT DEFINED TIMEMORY_BUILD_FORTRAN)
+    set(_BUILD_FORTRAN OFF)
+elseif(TIMEMORY_BUILD_FORTRAN OR NOT DEFINED TIMEMORY_BUILD_FORTRAN)
     check_language(Fortran)
     if(CMAKE_Fortran_COMPILER)
         enable_language(Fortran)
