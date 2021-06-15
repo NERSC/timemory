@@ -27,6 +27,9 @@
 
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/tpls/cereal/types.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <iostream>
 #include <string>
@@ -94,10 +97,10 @@ namespace cache
 struct network_stats
 {
     static constexpr size_t data_size = 8;
-    using type                        = int64_t;
+    using value_type                  = int64_t;
     using string_array_type           = std::array<std::string, data_size>;
     using strvec_type                 = std::vector<std::string>;
-    using data_type                   = std::array<type, data_size>;
+    using data_type                   = std::array<value_type, data_size>;
 
     static inline auto get_filename()
     {
@@ -108,6 +111,7 @@ struct network_stats
     static inline auto& read(const std::array<std::string, N>& _paths,
                              std::array<Tp, data_size>&        _data)
     {
+        _data.fill(0);
         read(_paths, _data, std::make_index_sequence<N>{});
         return _data;
     }
@@ -142,7 +146,7 @@ public:
     : m_data{ std::move(_data) }
     {}
 
-    network_stats()                         = default;
+    network_stats() { m_data.fill(0); }
     ~network_stats()                        = default;
     network_stats(const network_stats&)     = default;
     network_stats(network_stats&&) noexcept = default;
@@ -189,7 +193,12 @@ public:
     network_stats& operator-=(const network_stats& rhs)
     {
         for(size_t i = 0; i < data_size; ++i)
-            m_data[i] -= rhs.m_data[i];
+        {
+            if(m_data[i] > rhs.m_data[i])
+                m_data[i] -= rhs.m_data[i];
+            else
+                m_data[i] = 0;
+        }
         return *this;
     }
 
@@ -216,17 +225,6 @@ public:
     }
 
 public:
-    /*friend std::ostream& operator<<(std::ostream& os, const network_stats& obj)
-    {
-        std::stringstream ss;
-        ss << "bytes: " << obj.get_rx_bytes() << " / " << obj.get_tx_bytes();
-        ss << ", packets: " << obj.get_rx_packets() << " / " << obj.get_tx_packets();
-        ss << ", errors: " << obj.get_rx_errors() << " / " << obj.get_tx_errors();
-        ss << ", dropped: " << obj.get_rx_dropped() << " / " << obj.get_tx_dropped();
-        os << ss.str();
-        return os;
-    }*/
-
     static const string_array_type& data_labels()
     {
         static string_array_type _data{ "rx_bytes",   "rx_packets", "rx_errors",
@@ -250,8 +248,8 @@ public:
 
     static const auto& data_units()
     {
-        static std::array<type, data_size> _data{ units::kilobyte, 1, 1, 1,
-                                                  units::kilobyte, 1, 1, 1 };
+        static std::array<value_type, data_size> _data{ units::kilobyte, 1, 1, 1,
+                                                        units::kilobyte, 1, 1, 1 };
         if(!settings::memory_units().empty())
         {
             for(auto&& idx : { 0, 4 })
@@ -273,35 +271,35 @@ public:
     void serialize(Archive& ar, unsigned int)
     {
         for(size_t i = 0; i < data_size; ++i)
-            ar(cereal::make_nvp(data_labels().at(i).c_str(), m_data.at(i)));
+        {
+            try
+            {
+                ar(cereal::make_nvp(data_labels().at(i).c_str(), m_data.at(i)));
+            } catch(cereal::Exception& e)
+            {
+                PRINT_HERE("Warning! '%s': %s\n", data_labels().at(i).c_str(), e.what());
+            }
+        }
     }
 
 public:
-    TIMEMORY_NODISCARD inline int64_t get_rx_bytes() const { return std::get<0>(m_data); }
-    TIMEMORY_NODISCARD inline int64_t get_rx_packets() const
+    inline int64_t get_rx_bytes() const { return std::get<0>(m_data); }
+    inline int64_t get_rx_packets() const { return std::get<1>(m_data); }
+    inline int64_t get_rx_errors() const { return std::get<2>(m_data); }
+    inline int64_t get_rx_dropped() const { return std::get<3>(m_data); }
+    inline int64_t get_tx_bytes() const { return std::get<4>(m_data); }
+    inline int64_t get_tx_packets() const { return std::get<5>(m_data); }
+    inline int64_t get_tx_errors() const { return std::get<6>(m_data); }
+    inline int64_t get_tx_dropped() const { return std::get<7>(m_data); }
+
+    std::string str() const
     {
-        return std::get<1>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_rx_errors() const
-    {
-        return std::get<2>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_rx_dropped() const
-    {
-        return std::get<3>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_tx_bytes() const { return std::get<4>(m_data); }
-    TIMEMORY_NODISCARD inline int64_t get_tx_packets() const
-    {
-        return std::get<5>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_tx_errors() const
-    {
-        return std::get<6>(m_data);
-    }
-    TIMEMORY_NODISCARD inline int64_t get_tx_dropped() const
-    {
-        return std::get<7>(m_data);
+        std::stringstream ss{};
+        ss << "bytes: " << get_rx_bytes() << " / " << get_tx_bytes();
+        ss << ", packets: " << get_rx_packets() << " / " << get_tx_packets();
+        ss << ", errors: " << get_rx_errors() << " / " << get_tx_errors();
+        ss << ", dropped: " << get_rx_dropped() << " / " << get_tx_dropped();
+        return ss.str();
     }
 
 private:
@@ -345,7 +343,7 @@ private:
     static inline data_type read(const std::string& _line)
     {
         data_type         _data{};
-        type              _dummy{};
+        value_type        _dummy{};
         std::stringstream _sdata{ _line };
 
         _sdata >> _data[0] >> _data[1] >> _data[2] >> _data[3];
