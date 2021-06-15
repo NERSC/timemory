@@ -30,6 +30,53 @@
 namespace tim
 {
 //
+TIMEMORY_SETTINGS_INLINE
+vsettings::vsettings(std::string _name, std::string _env_name, std::string _descript,
+                     std::vector<std::string> _cmdline, int32_t _count,
+                     int32_t _max_count, std::vector<std::string> _choices)
+: m_count(_count)
+, m_max_count(_max_count)
+, m_name(std::move(_name))
+, m_env_name(std::move(_env_name))
+, m_description(std::move(_descript))
+, m_cmdline(std::move(_cmdline))
+, m_choices(std::move(_choices))
+{}
+//
+TIMEMORY_SETTINGS_LINKAGE(vsettings::display_map_t)
+vsettings::get_display(std::ios::fmtflags fmt, int _w, int _p)
+{
+    display_map_t _data;
+    auto          _as_str = [&](auto _val) {
+        std::stringstream _ss;
+        _ss.setf(fmt);
+        if(_w > -1)
+            _ss << std::setw(_w);
+        if(_p > -1)
+            _ss << std::setprecision(_p);
+        _ss << std::boolalpha << _val;
+        return _ss.str();
+    };
+
+    auto _arr_as_str = [&](auto _val) -> std::string {
+        if(_val.empty())
+            return "";
+        std::stringstream _ss;
+        for(size_t i = 0; i < _val.size(); ++i)
+            _ss << ", " << _as_str(_val.at(i));
+        return _ss.str().substr(2);
+    };
+
+    _data["name"]         = _as_str(m_name);
+    _data["count"]        = _as_str(m_count);
+    _data["max_count"]    = _as_str(m_max_count);
+    _data["env_name"]     = _as_str(m_env_name);
+    _data["description"]  = _as_str(m_description);
+    _data["command_line"] = _arr_as_str(m_cmdline);
+    _data["choices"]      = _arr_as_str(m_choices);
+    return _data;
+}
+//
 TIMEMORY_SETTINGS_LINKAGE(bool)
 vsettings::matches(const std::string& inp, bool exact) const
 {

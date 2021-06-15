@@ -666,19 +666,22 @@ settings::set(Sp&& _key, Tp&& _val, bool _exact)
         using Up   = decay_t<Tp>;
         auto _tidx = std::type_index(typeid(Up));
         auto _vidx = std::type_index(typeid(Up&));
+        auto _tobj = dynamic_cast<tsettings<Up>*>(itr->second.get());
+        auto _robj = dynamic_cast<tsettings<Up, Up&>*>(itr->second.get());
         if(itr->second->get_type_index() == _tidx &&
-           itr->second->get_value_index() == _tidx)
+           itr->second->get_value_index() == _tidx && _tobj)
         {
-            return (static_cast<tsettings<Tp>*>(itr->second.get())->get() =
-                        std::forward<Tp>(_val),
-                    true);
+            return (_tobj->set(std::forward<Tp>(_val)), true);
         }
-        if(itr->second->get_type_index() == _tidx &&
-           itr->second->get_value_index() == _vidx)
+        else if(itr->second->get_type_index() == _tidx &&
+                itr->second->get_value_index() == _vidx && _robj)
         {
-            return (static_cast<tsettings<Tp, Tp&>*>(itr->second.get())->get() =
-                        std::forward<Tp>(_val),
-                    true);
+            return (_robj->set(std::forward<Tp>(_val)), true);
+        }
+        else
+        {
+            throw std::runtime_error(std::string{ "tim::settings::set(" } +
+                                     std::string{ _key } + ", ...) failed");
         }
     }
     return false;

@@ -304,32 +304,6 @@ struct sortT<PrioT, type_list<In, InT...>, type_list<BegTT...>, type_list<Tp, En
                                      type_list<BegTT..., Tp>, type_list<EndTT...>>::type>;
 };
 
-//--------------------------------------------------------------------------------------//
-//  remove a type from a variadic bundle
-//
-namespace internal
-{
-template <typename Tp, typename In, typename Out>
-struct remove_type;
-
-template <typename Tp, template <typename...> class Tuple, typename Out>
-struct remove_type<Tp, Tuple<>, Out>
-{
-    using type = Out;
-};
-
-template <typename Tp, template <typename...> class InTuple,
-          template <typename...> class OutTuple, typename In, typename... InTail,
-          typename... Out>
-struct remove_type<Tp, InTuple<In, InTail...>, OutTuple<Out...>>
-{
-    using type = conditional_t<
-        std::is_same<Tp, In>::value,
-        typename remove_type<Tp, type_list<InTail...>, OutTuple<Out...>>::type,
-        typename remove_type<Tp, type_list<InTail...>, OutTuple<Out..., In>>::type>;
-};
-}  // namespace internal
-
 //======================================================================================//
 
 template <typename Tp, typename OpT>
@@ -389,10 +363,12 @@ template <typename Tp, template <typename...> class Tuple, typename... Types>
 struct remove_type<Tp, Tuple<Types...>>
 {
     static constexpr auto value = is_one_of<Tp, type_list<Types...>>::value;
-    using type =
-        conditional_t<value,
-                      typename internal::remove_type<Tp, Tuple<Types...>, Tuple<>>::type,
-                      Tuple<Types...>>;
+    using type                  = conditional_t<
+        value,
+        convert_t<type_concat_t<std::conditional_t<std::is_same<Tp, Types>::value,
+                                                   type_list<>, type_list<Types>>...>,
+                  Tuple<>>,
+        Tuple<Types...>>;
 };
 
 //======================================================================================//

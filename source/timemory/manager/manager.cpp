@@ -98,13 +98,29 @@ manager::manager()
         auto _cpu_info = cpu::get_info();
         auto _user     = get_env<std::string>("USER", "nobody");
 
+        for(auto&& itr : { "SHELL", "HOME", "PWD" })
+        {
+            auto _var = get_env<std::string>(itr, "");
+            if(!_var.empty())
+                add_metadata(itr, _var);
+        }
+
         add_metadata("USER", _user);
         add_metadata("LAUNCH_DATE", _launch_date);
         add_metadata("LAUNCH_TIME", _launch_time);
         add_metadata("TIMEMORY_API", demangle<TIMEMORY_API>());
+
+#    if defined(TIMEMORY_VERSION_STRING)
         add_metadata("TIMEMORY_VERSION", TIMEMORY_VERSION_STRING);
+#    endif
+
+#    if defined(TIMEMORY_GIT_DESCRIBE)
         add_metadata("TIMEMORY_GIT_DESCRIBE", TIMEMORY_GIT_DESCRIBE);
+#    endif
+
+#    if defined(TIMEMORY_GIT_REVISION)
         add_metadata("TIMEMORY_GIT_REVISION", TIMEMORY_GIT_REVISION);
+#    endif
 
         add_metadata("CPU_MODEL", _cpu_info.model);
         add_metadata("CPU_VENDOR", _cpu_info.vendor);
@@ -434,7 +450,7 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
                                                    _output_dir);
 
     auto _settings = f_settings();
-    bool _banner   = (_settings) ? _settings->get_banner() : false;
+    auto _banner   = (_settings) ? _settings->get_banner() : false;
     if(f_verbose() > 0 || _banner || f_debug())
         printf("\n[metadata::%s]> Outputting '%s' and '%s'...\n", context, fname.c_str(),
                hname.c_str());

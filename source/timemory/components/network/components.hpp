@@ -138,30 +138,48 @@ network_stats::get_interfaces()
     static std::string              _last{};
     static std::string              _value{};
     static std::vector<std::string> _instance{};
-    settings::instance()->get(TIMEMORY_SETTINGS_KEY("NETWORK_INTERFACE"), _value, true);
+
+    auto _settings = settings::instance();
+    if(!_settings)
+        return _instance;
+    _settings->get(TIMEMORY_SETTINGS_KEY("NETWORK_INTERFACE"), _value, true);
+
+    auto _update_instance = []() {
+        _instance.clear();
+        for(auto&& itr : delimit(_value, " ,\t;"))
+        {
+            if(itr != "." && itr != "..")
+                _instance.emplace_back(std::move(itr));
+        }
+    };
 
     if(_instance.empty())
     {
         if(!_value.empty())
         {
-            _instance = delimit(_value, " ,\t;");
-            _last     = _value;
+            _update_instance();
+            _last = _value;
         }
         else
         {
-            _instance = utility::filesystem::list_directory("/sys/class/net");
+            for(auto&& itr : utility::filesystem::list_directory("/sys/class/net"))
+            {
+                if(itr != "." && itr != "..")
+                    _instance.emplace_back(std::move(itr));
+            }
+            if(_instance.empty())
+                return _instance;
             std::stringstream _ss;
             for(const auto& itr : _instance)
                 _ss << ", " << itr;
             _value = _last = _ss.str().substr(2);
-            settings::instance()->set(TIMEMORY_SETTINGS_KEY("NETWORK_INTERFACE"), _value,
-                                      true);
+            _settings->set(TIMEMORY_SETTINGS_KEY("NETWORK_INTERFACE"), _value, true);
         }
     }
     else if(_last != _value)
     {
-        _instance = delimit(_value, " ,\t;");
-        _last     = _value;
+        _update_instance();
+        _last = _value;
     }
 
     return _instance;

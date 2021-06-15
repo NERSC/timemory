@@ -148,7 +148,7 @@ add_subdirectory(external)
 
 foreach(_LINK_TYPE shared static)
     foreach(_DEPTH_VALUE 0 5)
-        set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON;TIMEMORY_COMPILER_COUT_OUTPUT=ON")
+        set(compiler_instr_env "TIMEMORY_SUPPRESS_CONFIG=ON;TIMEMORY_COMPILER_SUPPRESS_CONFIG=ON;TIMEMORY_COMPILER_COUT_OUTPUT=ON")
         if(NOT "${_DEPTH_VALUE}" STREQUAL "0")
             set(_EXTRA "_max_depth_${_DEPTH_VALUE}")
             list(APPEND compiler_instr_env "TIMEMORY_COMPILER_MAX_DEPTH=${_DEPTH_VALUE}")

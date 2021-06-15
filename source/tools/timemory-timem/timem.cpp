@@ -62,6 +62,8 @@ main(int argc, char** argv)
     tim::settings::enabled()     = true;
     // ensure manager never writes metadata
     tim::manager::instance()->set_write_metadata(-1);
+    // disable network stats by default
+    tim::trait::apply<tim::trait::runtime_enabled>::set<network_stats>(false);
 
     auto _mpi_argc = 1;
     auto _mpi_argv = argv;
