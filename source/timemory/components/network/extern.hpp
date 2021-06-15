@@ -22,27 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/**
+ * \file timemory/components/trip_count/extern.hpp
+ * \brief Include the extern declarations for trip_count components
+ */
+
 #pragma once
 
-#include "timemory/components/allinea/components.hpp"
-#include "timemory/components/caliper/components.hpp"
-#include "timemory/components/craypat/components.hpp"
-#include "timemory/components/cuda/components.hpp"
-#include "timemory/components/cupti/components.hpp"
-#include "timemory/components/data_tracker/components.hpp"
-#include "timemory/components/gotcha/components.hpp"
-#include "timemory/components/gotcha/memory_allocations.hpp"
-#include "timemory/components/gperftools/components.hpp"
-#include "timemory/components/io/components.hpp"
-#include "timemory/components/likwid/components.hpp"
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
 #include "timemory/components/network/components.hpp"
-#include "timemory/components/ompt/components.hpp"
-#include "timemory/components/papi/components.hpp"
-#include "timemory/components/roofline/components.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/tau_marker/components.hpp"
-#include "timemory/components/timing/components.hpp"
-#include "timemory/components/trip_count/components.hpp"
-#include "timemory/components/types.hpp"
-#include "timemory/components/user_bundle/components.hpp"
-#include "timemory/components/vtune/components.hpp"
+
+TIMEMORY_DECLARE_EXTERN_COMPONENT(network_stats, true, ::tim::cache::network_stats)

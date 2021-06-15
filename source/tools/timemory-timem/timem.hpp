@@ -91,6 +91,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::read_char, false_t
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::read_bytes, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::written_char, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::written_bytes, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::network_stats, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::papi_array_t, false_type)
 // clang-format on
 
@@ -212,6 +213,9 @@ struct custom_base_printer
         if(!std::get<0>(_disp).empty())
             ssv << " " << std::get<0>(_disp);
 
+        ss << ssv.str() << " " << _label;
+
+        /*
         if(_rank > -1)
             ssrank << _rank << "|> ";
 
@@ -222,6 +226,9 @@ struct custom_base_printer
 
         ss << ssv.str() << " " << _label << "\n    " << ssrank.str() << ssr.str() << " "
            << _label;
+        */
+        tim::consume_parameters(_rank);
+
         _os << ss.str();
     }
 
@@ -229,6 +236,75 @@ struct custom_base_printer
               enable_if_t<std::is_same<Up, void>::value, int> = 0>
     explicit custom_base_printer(std::ostream&, const type&, Args&&...)
     {}
+};
+//
+template <>
+struct custom_base_printer<component::network_stats>
+{
+    using type       = component::network_stats;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    template <typename... Args>
+    custom_base_printer(std::ostream& _os, const type& _obj, int32_t _rank, Args&&...)
+    {
+        auto _prec   = base_type::get_precision();
+        auto _width  = base_type::get_width();
+        auto _flags  = base_type::get_format_flags();
+        auto _units  = type::unit_array();
+        auto _disp   = type::display_unit_array();
+        auto _labels = type::label_array();
+        auto _val    = _obj.load();
+
+        auto _data = _val.get_data();
+        for(size_t i = 0; i < _data.size(); ++i)
+            _data.at(i) /= _units.at(i);
+
+        std::vector<size_t> _order{};
+        // print tx after rx
+        for(size_t i = 0; i < _data.size() / 2; ++i)
+        {
+            _order.emplace_back(i);
+            _order.emplace_back(i + _data.size() / 2);
+        }
+        // account for odd size if expanded
+        if(_data.size() % 2 == 1)
+            _order.emplace_back(_data.size() - 1);
+
+        for(size_t i = 0; i < _data.size(); ++i)
+        {
+            auto           idx = _order.at(i);
+            stringstream_t ss;
+            stringstream_t ssv;
+            stringstream_t ssrank;
+            ssv.setf(_flags);
+            ssv << std::setw(_width) << std::setprecision(_prec) << _data.at(idx);
+            if(!_disp.at(idx).empty())
+                ssv << " " << _disp.at(idx);
+
+            if(i > 0)
+            {
+                ssrank << "\n    ";
+                if(_rank > -1)
+                {
+                    ssrank << _rank << "|> ";
+                }
+            }
+
+            auto _label = _labels.at(idx);
+            _label =
+                str_transform(_label, "rx_", "_", [](const std::string&) -> std::string {
+                    return "network_receive";
+                });
+            _label =
+                str_transform(_label, "tx_", "_", [](const std::string&) -> std::string {
+                    return "network_transmit";
+                });
+
+            ss << ssrank.str() << ssv.str() << " " << _label;
+            _os << ss.str();
+        }
+    }
 };
 //
 #define CUSTOM_BASE_PRINTER_SPECIALIZATION(TYPE, LABEL)                                  \
@@ -242,10 +318,11 @@ struct custom_base_printer
         {}                                                                               \
     };
 //
-CUSTOM_BASE_PRINTER_SPECIALIZATION(component::read_bytes, "bytes read")
-CUSTOM_BASE_PRINTER_SPECIALIZATION(component::read_char, "char read")
-CUSTOM_BASE_PRINTER_SPECIALIZATION(component::written_bytes, "bytes written")
-CUSTOM_BASE_PRINTER_SPECIALIZATION(component::written_char, "char written")
+CUSTOM_BASE_PRINTER_SPECIALIZATION(component::read_bytes, "bytes_read")
+CUSTOM_BASE_PRINTER_SPECIALIZATION(component::read_char, "char_read")
+CUSTOM_BASE_PRINTER_SPECIALIZATION(component::written_bytes, "bytes_written")
+CUSTOM_BASE_PRINTER_SPECIALIZATION(component::written_char, "char_written")
+CUSTOM_BASE_PRINTER_SPECIALIZATION(component::network_stats, "")
 //
 #if defined(TIMEMORY_USE_PAPI)
 //
@@ -285,6 +362,26 @@ template <>
 struct stop<component::virtual_memory>
 {
     using type = component::virtual_memory;
+
+    template <typename... Args>
+    explicit stop(type&, Args&&...)
+    {}
+};
+//
+template <>
+struct start<component::network_stats>
+{
+    using type = network_stats;
+
+    template <typename... Args>
+    explicit start(type&, Args&&...)
+    {}
+};
+//
+template <>
+struct stop<component::network_stats>
+{
+    using type = component::network_stats;
 
     template <typename... Args>
     explicit stop(type&, Args&&...)
@@ -567,7 +664,8 @@ using timem_tuple_t = convert_t<mpl::available_t<type_list<Types...>>, timem_tup
                            child_cpu_clock, child_cpu_util, peak_rss, page_rss,          \
                            virtual_memory, num_major_page_faults, num_minor_page_faults, \
                            priority_context_switch, voluntary_context_switch, read_char, \
-                           read_bytes, written_char, written_bytes, papi_array_t>
+                           read_bytes, written_char, written_bytes, network_stats,       \
+                           papi_array_t>
 #endif
 //
 #if !defined(TIMEM_PID_SIGNAL)

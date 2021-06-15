@@ -197,6 +197,14 @@ main(int argc, char** argv)
                       "string as leading dashes can confuse parser) [default: -i]")
         .count(1)
         .action([](parser_t& p) { shell_flags() = p.get<std::string>("shell-flags"); });
+    parser.add_argument()
+        .names({ "--network-stats" })
+        .description("Enable sampling network usage statistics (Linux only)")
+        .max_count(1)
+        .action([&](parser_t& p) {
+            tim::trait::apply<tim::trait::runtime_enabled>::set<network_stats>(
+                p.get<bool>("network-stats"));
+        });
 #if defined(TIMEMORY_USE_MPI)
     parser
         .add_argument(

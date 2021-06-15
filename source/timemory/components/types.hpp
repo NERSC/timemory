@@ -80,6 +80,7 @@ struct nothing : base<nothing, skeleton::base>
 #include "timemory/components/gperftools/types.hpp"
 #include "timemory/components/io/types.hpp"
 #include "timemory/components/likwid/types.hpp"
+#include "timemory/components/network/types.hpp"
 #include "timemory/components/ompt/types.hpp"
 #include "timemory/components/papi/types.hpp"
 #include "timemory/components/roofline/types.hpp"
@@ -95,42 +96,6 @@ struct nothing : base<nothing, skeleton::base>
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::explicit_start, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::explicit_stop, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::no_init, false_type)
-
-//======================================================================================//
-
-/**
- * \macro TIMEMORY_PROPERTY_SPECIALIZATION
- * \brief Specialization of the property specialization
- */
-
-#if !defined(TIMEMORY_PROPERTY_SPECIALIZATION)
-#    define TIMEMORY_PROPERTY_SPECIALIZATION(TYPE, ENUM, ID, ...)                        \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace component                                                              \
-        {                                                                                \
-        template <>                                                                      \
-        struct properties<TYPE>                                                          \
-        {                                                                                \
-            using type                                = TYPE;                            \
-            using value_type                          = TIMEMORY_COMPONENT;              \
-            static constexpr TIMEMORY_COMPONENT value = ENUM;                            \
-            static constexpr const char*        enum_string() { return #ENUM; }          \
-            static constexpr const char*        id() { return ID; }                      \
-            static const idset_t&               ids()                                    \
-            {                                                                            \
-                static idset_t _instance{ ID, __VA_ARGS__ };                             \
-                return _instance;                                                        \
-            }                                                                            \
-        };                                                                               \
-        template <>                                                                      \
-        struct enumerator<ENUM> : properties<TYPE>                                       \
-        {                                                                                \
-            using type = TYPE;                                                           \
-        };                                                                               \
-        }                                                                                \
-        }
-#endif
 
 //======================================================================================//
 //

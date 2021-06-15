@@ -24,25 +24,30 @@
 
 #pragma once
 
-#include "timemory/components/allinea/components.hpp"
-#include "timemory/components/caliper/components.hpp"
-#include "timemory/components/craypat/components.hpp"
-#include "timemory/components/cuda/components.hpp"
-#include "timemory/components/cupti/components.hpp"
-#include "timemory/components/data_tracker/components.hpp"
-#include "timemory/components/gotcha/components.hpp"
-#include "timemory/components/gotcha/memory_allocations.hpp"
-#include "timemory/components/gperftools/components.hpp"
-#include "timemory/components/io/components.hpp"
-#include "timemory/components/likwid/components.hpp"
-#include "timemory/components/network/components.hpp"
-#include "timemory/components/ompt/components.hpp"
-#include "timemory/components/papi/components.hpp"
-#include "timemory/components/roofline/components.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/tau_marker/components.hpp"
-#include "timemory/components/timing/components.hpp"
-#include "timemory/components/trip_count/components.hpp"
-#include "timemory/components/types.hpp"
-#include "timemory/components/user_bundle/components.hpp"
-#include "timemory/components/vtune/components.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/macros/os.hpp"
+#include "timemory/mpl/types.hpp"
+
+TIMEMORY_DECLARE_COMPONENT(network_stats)
+//
+TIMEMORY_STATISTICS_TYPE(component::network_stats, TIMEMORY_ESC(std::array<int64_t, 8>))
+//
+TIMEMORY_SET_COMPONENT_API(component::network_stats, project::timemory,
+                           os::supports_linux)
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(sampler, component::network_stats, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::network_stats, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::network_stats, false_type)
+// TIMEMORY_DEFINE_CONCRETE_TRAIT(permissive_statistics, component::network_stats,
+// true_type)
+//
+#if !defined(_LINUX)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::network_stats, false_type)
+#endif
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(network_stats, TIMEMORY_NETWORK_STATS, "network_stats",
+                                 "network")
+//
+// TIMEMORY_METADATA_SPECIALIZATION(network_stats, "network_stats",
+//                                 "Reports network bytes, packets, errors, dropped")
