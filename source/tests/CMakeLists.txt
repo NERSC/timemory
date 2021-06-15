@@ -9,6 +9,13 @@ if(TIMEMORY_SKIP_BUILD OR
     return()
 endif()
 
+if(WIN32 AND NOT TIMEMORY_USE_WINSOCK)
+    option(TIMEMORY_SOCKET_TESTS "socket tests" OFF)
+else()
+    option(TIMEMORY_SOCKET_TESTS "socket tests" ON)
+endif()
+mark_as_advanced(TIMEMORY_SOCKET_TESTS)
+
 # include the current directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -248,7 +255,7 @@ add_timemory_google_test(warning_tests
                     $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
                     timemory::timemory-core)
 
-if (NOT WIN32 OR (WIN32 AND TIMEMORY_USE_WINSOCK))
+if(TIMEMORY_SOCKET_TESTS)
     add_timemory_google_test(socket_tests
         SOURCES         socket_tests.cpp
         LINK_LIBRARIES  common-test-libs
