@@ -213,7 +213,7 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #        define PRETTY_PRINT_HERE(...)                                                   \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
                                 TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
-                                __LINE__, __FUNCTION__, __VA_ARGS__) #endif
+                                __LINE__, __FUNCTION__, __VA_ARGS__)
 #    endif
 #endif
 
