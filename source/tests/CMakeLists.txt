@@ -416,13 +416,15 @@ add_timemory_google_test(user_bundle_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
-add_timemory_google_test(mangle_tests
-    DISCOVER_TESTS
-    SOURCES         mangle_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_LIBRARY})
+if(NOT WIN32)
+    add_timemory_google_test(mangle_tests
+        DISCOVER_TESTS
+        SOURCES         mangle_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-plotting
+                        timemory::timemory-core
+                        ${_LIBRARY})
+endif()
 
 add_timemory_google_test(tuple_tests
     DISCOVER_TESTS
@@ -830,10 +832,12 @@ if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
             WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
     endif()
 
-    add_test(
-        NAME                python_tests
-        COMMAND             ${PYTHON_EXECUTABLE} -m timemory.test -v -v
-        WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+    if(NOT WIN32)
+        add_test(
+            NAME                python_tests
+            COMMAND             ${PYTHON_EXECUTABLE} -m timemory.test -v -v
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+    endif()
 endif()
 
 # Tests recording the symbols of each compiled library
