@@ -43,6 +43,7 @@ struct async
     using type      = Tp;
     using task_type = std::packaged_task<void()>;
     using this_type = async<Tp>;
+    using lock_type = std::unique_lock<std::mutex>;
 
     explicit async(type& obj)
     : m_data{ &obj }
@@ -53,7 +54,7 @@ struct async
     {
         {
             m_pool_state.store(false);
-            std::unique_lock<std::mutex> _task_lock{ m_task_lock, std::defer_lock };
+            lock_type _task_lock{ m_task_lock, std::defer_lock };
             if(!_task_lock.owns_lock())
                 _task_lock.lock();
             m_task_cond.notify_one();
@@ -70,7 +71,7 @@ struct async
     template <typename FuncT, typename... Args>
     auto operator()(FuncT&& func, Args... args)
     {
-        std::unique_lock<std::mutex> _task_lock{ m_task_lock };
+        lock_type _task_lock{ m_task_lock };
         enqueue(std::forward<FuncT>(func), 0, std::move(args)...);
         ++m_task_size;
         m_task_cond.notify_one();
@@ -80,7 +81,7 @@ struct async
     {
         std::deque<std::future<void>> _wait{};
         {
-            std::unique_lock<std::mutex> _task_lock{ m_task_lock, std::defer_lock };
+            lock_type _task_lock{ m_task_lock, std::defer_lock };
             std::swap(m_task_wait, _wait);
             if(!_task_lock.owns_lock())
                 _task_lock.lock();
@@ -96,7 +97,7 @@ private:
         while(_this->m_pool_state.load() || (_this->m_task_size.load() == 0))
         {
             // synchronization
-            std::unique_lock<std::mutex> _task_lock(_this->m_task_lock, std::defer_lock);
+            lock_type _task_lock(_this->m_task_lock, std::defer_lock);
 
             auto leave_pool = [&]() {
                 return !_this->m_pool_state.load() && (_this->m_task_size.load() == 0);
@@ -157,7 +158,9 @@ private:
         -> decltype(func(std::declval<type&>(), args...), void())
     {
         auto&& _fut =
-            m_task_pool.emplace(m_task_pool.end(), [&]() { func(*m_data, args...); })
+            m_task_pool
+                .emplace(m_task_pool.end(),
+                         [=]() { std::move(func)(*m_data, std::move(args)...); })
                 ->get_future();
 
         m_task_wait.emplace_back(std::move(_fut));
@@ -167,9 +170,10 @@ private:
     auto enqueue(FuncT&& func, long, Args... args)
         -> decltype(func(std::declval<type*>(), args...), void())
     {
-        auto&& _fut =
-            m_task_pool.emplace(m_task_pool.end(), [&]() { func(m_data, args...); })
-                ->get_future();
+        auto&& _fut = m_task_pool
+                          .emplace(m_task_pool.end(),
+                                   [=]() { std::move(func)(m_data, std::move(args)...); })
+                          ->get_future();
 
         m_task_wait.emplace_back(std::move(_fut));
     }
@@ -177,7 +181,9 @@ private:
     template <typename FuncT, typename... Args>
     auto enqueue(FuncT&& func, long long, Args... args) -> decltype(func(args...), void())
     {
-        auto&& _fut = m_task_pool.emplace(m_task_pool.end(), [&]() { func(args...); })
+        auto&& _fut = m_task_pool
+                          .emplace(m_task_pool.end(),
+                                   [=]() { std::move(func)(std::move(args)...); })
                           ->get_future();
         m_task_wait.emplace_back(std::move(_fut));
     }

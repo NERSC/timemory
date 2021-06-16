@@ -345,16 +345,24 @@ TEST_F(threading_tests, async)
 
         for(long i = -nitr; i <= nitr; ++i)
         {
+            printf("[%s][tid=%i]> submitting iteration %li...\n",
+                   details::get_test_name().c_str(), (int) tim::threading::get_id(), i);
             _async(
-                [&sum](bundle_t& _b, long _n) {
+                [&sum, i](bundle_t& _b, long _n) {
+                    printf("[%s][tid=%i]> executing iteration %li...\n",
+                           details::get_test_name().c_str(),
+                           (int) tim::threading::get_id(), i);
                     _b.start();
                     sum += details::fibonacci(_n);
                     _b.stop();
                 },
                 35 + i);
         }
-
+        printf("[%s][tid=%i]> waiting for async...\n", details::get_test_name().c_str(),
+               (int) tim::threading::get_id());
         _async.wait();
+        printf("[%s][tid=%i]> async done.\n", details::get_test_name().c_str(),
+               (int) tim::threading::get_id());
     }
 
     printf("[%s]> sum: %lu\n", details::get_test_name().c_str(),
