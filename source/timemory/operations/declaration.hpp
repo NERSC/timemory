@@ -347,48 +347,6 @@ private:
 
 public:
     template <typename Tp>
-    static auto get_data_array(const Tp& _data)
-    {
-        return get_data_sfinae(_data, 0, 0, 0, 0);
-    }
-
-private:
-    template <typename Tp>
-    static auto get_data_sfinae(const Tp& _data, int, int, int, int)
-        -> decltype(_data.data_array(_data.get()))
-    {
-        return _data.data_array(_data.get());
-    }
-
-    template <typename Tp>
-    static auto get_data_sfinae(const Tp& _data, int, int, int, long)
-        -> decltype(_data.data_array())
-    {
-        return _data.data_array();
-    }
-
-    template <typename Tp>
-    static auto get_data_sfinae(const Tp& _data, int, int, long, long)
-        -> decltype(_data.get())
-    {
-        return _data.get();
-    }
-
-    template <typename Tp>
-    static auto get_data_sfinae(const Tp& _data, int, long, long, long)
-        -> decltype(_data.get_data())
-    {
-        return _data.get_data();
-    }
-
-    template <typename Tp>
-    static decltype(auto) get_data_sfinae(Tp&& _data, long, long, long, long)
-    {
-        return std::forward<Tp>(_data);
-    }
-
-public:
-    template <typename Tp>
     static strvec_t get_labels(const Tp& _data)
     {
         return get_labels_sfinae(_data, 0, 0);

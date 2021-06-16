@@ -1022,7 +1022,11 @@ bundle<Tag, BundleT, TupleT>::serialize(Archive& ar, const unsigned int)
         }
     }
 
-    ar(cereal::make_nvp("data", m_data));
+    ar.setNextName("data");
+    ar.startNode();
+    invoke::serialize(ar, m_data);
+    ar.finishNode();
+    // ar(cereal::make_nvp("data", m_data));
 }
 
 //--------------------------------------------------------------------------------------//

@@ -331,6 +331,14 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         set(WORKING_DIR $<TARGET_FILE_DIR:${TEST_TARGET}>)
     endif()
 
+    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR TIMEMORY_USE_COVERAGE)
+        if(TEST_ENVIRONMENT)
+            set(TEST_ENVIRONMENT "TIMEMORY_DEBUG=ON;TIMEMORY_VERBOSE=6;${TEST_ENVIRONMENT}")
+        else()
+            set(TEST_ENVIRONMENT "TIMEMORY_DEBUG=ON;TIMEMORY_VERBOSE=6")
+        endif()
+    endif()
+
     if(TEST_DISCOVER_TESTS)
         GTEST_DISCOVER_TESTS(${TEST_TARGET}
             TEST_LIST ${TEST_NAME}_TESTS
@@ -501,6 +509,24 @@ FUNCTION(CHECKOUT_GIT_SUBMODULE)
         message(FATAL_ERROR "Error checking out submodule: '${CHECKOUT_RELATIVE_PATH}' to '${_DIR}'")
     endif()
 
+ENDFUNCTION()
+
+
+#----------------------------------------------------------------------------------------#
+# try to find a package quietly
+#
+FUNCTION(TIMEMORY_TEST_FIND_PACKAGE PACKAGE_NAME OUTPUT_VAR)
+    cmake_parse_arguments(
+        PACKAGE "" "" "UNSET" ${ARGN})
+    find_package(${PACKAGE_NAME} QUIET ${PACKAGE_UNPARSED_ARGUMENTS})
+    if(NOT ${PACKAGE_NAME}_FOUND)
+        set(${OUTPUT_VAR} OFF PARENT_SCOPE)
+    else()
+        set(${OUTPUT_VAR} ON PARENT_SCOPE)
+    endif()
+    foreach(_ARG ${PACKAGE_UNSET} FIND_PACKAGE_MESSAGE_DETAILS_${PACKAGE_NAME})
+        unset(${_ARG} CACHE)
+    endforeach()
 ENDFUNCTION()
 
 

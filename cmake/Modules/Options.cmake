@@ -48,6 +48,7 @@ set(_UNIX_OS ${UNIX})
 set(_DEFAULT_BUILD_SHARED ON)
 set(_DEFAULT_BUILD_STATIC OFF)
 set(_USE_XML ON)
+set(_USE_LIBUNWIND OFF)
 
 set(TIMEMORY_SANITIZER_TYPE leak CACHE STRING "Sanitizer type")
 set(TIMEMORY_gperftools_COMPONENTS "profiler" CACHE STRING "gperftools components")
@@ -79,6 +80,7 @@ endif()
 
 if(NOT UNIX)
     set(_UNIX_OS OFF)
+    set(_USE_LIBUNWIND OFF)
 endif()
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
@@ -99,6 +101,9 @@ if(CMAKE_CXX_COMPILER_IS_INTEL)
     set(_USE_XML OFF)
 endif()
 
+timemory_test_find_package(libunwind _USE_LIBUNWIND)
+
+set(_REQUIRE_LIBUNWIND OFF)
 set(_HATCHET ${_UNIX_OS})
 # once hatchet is available in a release with timemory support
 # if(SKBUILD OR SPACK_BUILD)
@@ -304,7 +309,7 @@ add_option(TIMEMORY_FORCE_GPERFTOOLS_PYTHON
 add_option(TIMEMORY_BUILD_QUIET
     "Disable verbose messages" OFF NO_FEATURE)
 add_option(TIMEMORY_REQUIRE_PACKAGES
-    "All find_package(...) use REQUIRED" OFF)
+    "All find_package(...) use REQUIRED" ON)
 add_option(TIMEMORY_BUILD_GOTCHA
     "Enable building GOTCHA (set to OFF for external)" ${_BUILD_GOTCHA})
 add_option(TIMEMORY_UNITY_BUILD
@@ -400,9 +405,11 @@ add_option(TIMEMORY_USE_VTUNE
 add_option(TIMEMORY_USE_CUDA
     "Enable CUDA option for GPU measurements" ${_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_NVTX
-    "Enable NVTX marking API" ${_CUDA} CMAKE_DEFINE)
+    "Enable NVTX marking API" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CUPTI
-    "Enable CUPTI profiling for NVIDIA GPUs" ${_CUDA} CMAKE_DEFINE)
+    "Enable CUPTI profiling for NVIDIA GPUs" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_NVML
+    "Enable support for NVIDIA Management Library" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_NCCL
     "Enable NCCL support for NVIDIA GPUs" ${_NCCL} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CALIPER
@@ -429,6 +436,8 @@ add_option(TIMEMORY_USE_GOTCHA
     "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_XML
     "Enable XML serialization support" ${_USE_XML} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_LIBUNWIND
+    "Enable libunwind" ${_USE_LIBUNWIND} CMAKE_DEFINE)
 add_option(TIMEMORY_BUILD_ERT
     "Build ERT library" ON)
 if(CMAKE_CXX_COMPILER_IS_CLANG OR TIMEMORY_BUILD_DOCS)

@@ -898,6 +898,8 @@ struct storage_deleter : public std::default_delete<StorageType>
         std::thread::id master_tid = singleton_t::master_thread_id();
         std::thread::id this_tid   = std::this_thread::get_id();
 
+        static_assert(!std::is_same<StorageType, tim::base::storage>::value,
+                      "Error! Base class");
         // tim::dmp::barrier();
 
         if(ptr && master && ptr != master)
@@ -941,6 +943,7 @@ struct storage_deleter : public std::default_delete<StorageType>
                 ptr->StorageType::free_shared_manager();
             }
             delete ptr;
+            ptr = nullptr;
         }
         else
         {
@@ -950,6 +953,7 @@ struct storage_deleter : public std::default_delete<StorageType>
             if(ptr)
                 ptr->StorageType::free_shared_manager();
             delete ptr;
+            ptr = nullptr;
         }
 
         if(_printed_master && !_deleted_master)
@@ -960,6 +964,7 @@ struct storage_deleter : public std::default_delete<StorageType>
                 master->StorageType::free_shared_manager();
             }
             delete master;
+            master          = nullptr;
             _deleted_master = true;
         }
 

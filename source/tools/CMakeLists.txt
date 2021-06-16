@@ -75,6 +75,12 @@ timemory_message(STATUS "Adding source/tools/timemory-run...")
 add_subdirectory(timemory-run)
 
 #----------------------------------------------------------------------------------------#
+# Build and install NVML daemon
+#
+timemory_message(STATUS "Adding source/tools/timemory-nvml...")
+add_subdirectory(timemory-nvml)
+
+#----------------------------------------------------------------------------------------#
 # Build and install timemory-connector libraries for kokkos
 #
 timemory_message(STATUS "Adding source/tools/kokkos-connector...")

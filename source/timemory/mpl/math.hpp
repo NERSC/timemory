@@ -874,6 +874,14 @@ TIMEMORY_INLINE Tp
     return (_pdiff < _zero) ? _zero : _pdiff;
 }
 
+template <typename Tp,
+          enable_if_t<!std::is_arithmetic<Tp>::value && std::is_class<Tp>::value> = 0>
+TIMEMORY_INLINE auto
+percent_diff(Tp _lhs, Tp _rhs, type_list<>, ...) -> decltype(_lhs.percent_diff(_rhs))
+{
+    return _lhs.percent_diff(_rhs);
+}
+
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
 percent_diff(const Tp& _lhs, const Tp& _rhs, type_list<>, long)

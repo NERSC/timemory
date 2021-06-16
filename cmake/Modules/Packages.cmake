@@ -59,6 +59,8 @@ add_interface_library(timemory-cudart-static
     "Link to CUDA runtime (static library)")
 add_interface_library(timemory-nccl
     "Enables CUDA NCCL support")
+add_interface_library(timemory-nvml
+    "Enables NVML support (NVIDIA)")
 add_interface_library(timemory-caliper
     "Enables Caliper support")
 add_interface_library(timemory-gotcha
@@ -79,6 +81,8 @@ add_interface_library(timemory-allinea-map
     "Enables Allinea-MAP support")
 add_interface_library(timemory-craypat
     "Enables CrayPAT support")
+add_interface_library(timemory-libunwind
+    "Enables libunwind support")
 
 add_interface_library(timemory-coverage
     "Enables code-coverage flags")
@@ -141,6 +145,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
     #
     timemory-cuda
     timemory-nccl
+    timemory-nvml
     timemory-cupti
     timemory-cudart
     timemory-cudart-device
@@ -158,7 +163,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-tau
     timemory-ompt
     timemory-craypat
-    timemory-allinea-map)
+    timemory-allinea-map
+    timemory-libunwind)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -167,6 +173,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-cuda
     timemory-cudart
     timemory-nccl
+    timemory-nvml
     timemory-cupti
     timemory-cudart-device
     timemory-caliper
@@ -178,6 +185,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-craypat
     timemory-allinea-map
     timemory-plotting
+    timemory-libunwind
     ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -187,6 +195,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-cuda
     timemory-cudart-static
     timemory-nccl
+    timemory-nvml
     timemory-cupti
     timemory-cudart-device
     timemory-caliper
@@ -197,6 +206,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-craypat
     timemory-allinea-map
     timemory-plotting
+    timemory-libunwind
     ${_DMP_LIBRARIES})
 
 set(_GPERF_IN_LIBRARY OFF)
@@ -886,6 +896,47 @@ if(NCCL_FOUND AND TIMEMORY_USE_CUDA)
 else()
     set(TIMEMORY_USE_NCCL OFF)
     inform_empty_interface(timemory-nccl "NCCL")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               NVML
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_NVML)
+    find_package(NVML ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(NVML_FOUND)
+    add_rpath(${NVML_LIBRARIES})
+    target_link_libraries(timemory-nvml INTERFACE ${NVML_LIBRARIES})
+    target_include_directories(timemory-nvml SYSTEM INTERFACE ${NVML_INCLUDE_DIRS})
+    timemory_target_compile_definitions(timemory-nvml INTERFACE TIMEMORY_USE_NVML)
+else()
+    set(TIMEMORY_USE_NVML OFF)
+    inform_empty_interface(timemory-nvml "NVML")
+endif()
+
+#----------------------------------------------------------------------------------------#
+#
+#                               LIBUNWIND
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_LIBUNWIND)
+    find_package(libunwind ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(libunwind_FOUND)
+    target_link_libraries(timemory-libunwind INTERFACE ${libunwind_LIBRARIES})
+    target_include_directories(timemory-libunwind SYSTEM INTERFACE ${libunwind_INCLUDE_DIRS})
+    timemory_target_compile_definitions(timemory-libunwind INTERFACE
+        TIMEMORY_USE_LIBUNWIND UNW_LOCAL_ONLY)
+else()
+    set(TIMEMORY_USE_LIBUNWIND OFF)
+    inform_empty_interface(timemory-libunwind "libunwind")
 endif()
 
 

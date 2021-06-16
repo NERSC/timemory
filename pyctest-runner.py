@@ -411,10 +411,6 @@ def configure():
     pypath = [pyct.BINARY_DIRECTORY] + pypath
     os.environ["PYTHONPATH"] = ":".join(pypath)
 
-    if args.coverage or pyct.BUILD_TYPE == "Debug":
-        os.environ["TIMEMORY_DEBUG"] = "ON"
-        os.environ["TIMEMORY_VERBOSE"] = "6"
-
     global build_name
     global argparse_defaults
     # generate the defaults
@@ -681,17 +677,15 @@ def run_pyctest():
 
     # how to build the code
     #
-    pyct.BUILD_COMMAND = "{} --build {} --target all".format(
-        ctest_cmake_cmd, pyct.BINARY_DIRECTORY
+    pyct.BUILD_COMMAND = "{} --build {} --target all --parallel {}".format(
+        ctest_cmake_cmd,
+        pyct.BINARY_DIRECTORY,
+        args.cpu_count,
     )
 
-    # parallel build
+    # Windows build command extras
     #
-    if platform.system() != "Windows":
-        pyct.BUILD_COMMAND = "{} -- -j{}".format(
-            pyct.BUILD_COMMAND, args.cpu_count
-        )
-    else:
+    if platform.system() == "Windows":
         pyct.BUILD_COMMAND = "{} -- /MP -A x64".format(pyct.BUILD_COMMAND)
 
     # how to update the code
@@ -795,6 +789,10 @@ def run_pyctest():
             "PYTHONPATH={}".format(pypath),
         ]
     )
+    if args.coverage or pyct.BUILD_TYPE == "Debug":
+        base_env = ";".join(
+            [base_env, "TIMEMORY_DEBUG=ON", "TIMEMORY_VERBOSE=6"]
+        )
     test_env = ";".join(
         [base_env, "TIMEMORY_DART_OUTPUT=ON", "TIMEMORY_DART_COUNT=1"]
     )

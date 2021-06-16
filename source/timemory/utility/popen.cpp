@@ -322,21 +322,54 @@ popen(const char* path, char** argv, char** envp)
 int
 pclose(TIMEMORY_PIPE* p)
 {
-    int   status;
-    pid_t pid = -1;
+    int   status = p->child_status;
+    pid_t pid    = -1;
 
-    if(p->child_pid != -1)
+    // clean up memory
+    auto _clean = [&]() {
+        if(p->read_fd)
+            fclose(p->read_fd);
+        if(p->write_fd)
+            fclose(p->write_fd);
+        delete p;
+    };
+
+    if(status != std::numeric_limits<int>::max())
     {
-        do
+        _clean();
+        if(WIFEXITED(status))
         {
-            pid = waitpid(p->child_pid, &status, 0);
-        } while(pid == -1 && errno == EINTR);
+            // printf("process %i exited, status=%d\n", p->child_pid,
+            // WEXITSTATUS(status));
+            return EXIT_SUCCESS;
+        }
+        else if(WIFSIGNALED(status))
+        {
+            printf("process %i killed by signal %d\n", p->child_pid, WTERMSIG(status));
+            return EXIT_FAILURE;
+        }
+        else if(WIFSTOPPED(status))
+        {
+            printf("process %i stopped by signal %d\n", p->child_pid, WSTOPSIG(status));
+            // return EXIT_FAILURE;
+        }
+        else if(WIFCONTINUED(status))
+        {
+            printf("process %i continued\n", p->child_pid);
+            // return EXIT_FAILURE;
+        }
     }
-    if(p->read_fd)
-        fclose(p->read_fd);
-    if(p->write_fd)
-        fclose(p->write_fd);
-    delete p;
+    else
+    {
+        if(p->child_pid != -1)
+        {
+            do
+            {
+                pid = waitpid(p->child_pid, &status, 0);
+            } while(pid == -1 && errno == EINTR);
+        }
+    }
+    _clean();
     if(pid != -1 && WIFEXITED(status))
         return WEXITSTATUS(status);
     return (pid == -1 ? -1 : 0);

@@ -97,22 +97,18 @@ storage::storage(bool _is_master, int64_t _instance_id, std::string _label)
                    m_label.c_str());
     }
 
-    if(m_settings->get_debug())
-    {
-        PRINT_HERE("%s: %i (%s)", "base::storage instance created", (int) m_instance_id,
-                   m_label.c_str());
-    }
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "%s: %i (%s)",
+                           "base::storage instance created", (int) m_instance_id,
+                           m_label.c_str());
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_STORAGE_LINKAGE storage::~storage()
 {
-    if(m_settings->get_debug())
-    {
-        PRINT_HERE("%s: %i (%s)", "base::storage instance deleted", (int) m_instance_id,
-                   m_label.c_str());
-    }
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(),
+                           "base::storage instance %i deleted for %s",
+                           (int) m_instance_id, m_label.c_str());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -327,8 +323,9 @@ template <typename Type>
 storage<Type, true>::storage()
 : base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
 {
-    if(m_settings->get_debug())
-        printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s", m_label.c_str());
+    TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
 
     component::state<Type>::has_storage() = true;
 
@@ -409,8 +406,9 @@ storage<Type, true>::initialize()
 {
     if(m_initialized)
         return;
-    if(m_settings->get_debug())
-        printf("[%s]> initializing...\n", m_label.c_str());
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "initializing %s", m_label.c_str());
+    TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
     m_initialized = true;
 }
 //
@@ -426,8 +424,9 @@ storage<Type, true>::finalize()
     if(!m_initialized)
         return;
 
-    if(m_settings->get_debug())
-        PRINT_HERE("[%s]> finalizing...", m_label.c_str());
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "finalizing %s", m_label.c_str());
+    TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
 
     m_finalized            = true;
     worker_is_finalizing() = true;
@@ -444,8 +443,7 @@ storage<Type, true>::finalize()
     if(m_is_master && m_global_init)
         fini_t(upcast, operation::mode_constant<operation::fini_mode::global>{});
 
-    if(m_settings->get_debug())
-        PRINT_HERE("[%s]> finalizing...", m_label.c_str());
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "finalized %s", m_label.c_str());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -752,8 +750,11 @@ storage<Type, true>::_data()
             if(!lk.owns_lock())
                 lk.lock();
 
-            DEBUG_PRINT_HERE("[%s]> Worker: %i, master ptr: %p", demangle<Type>().c_str(),
-                             (int) m_thread_idx, (void*) &m);
+            CONDITIONAL_PRINT_HERE(
+                m_settings->get_debug(), "[%s]> Worker: %i, master ptr: %p",
+                demangle<Type>().c_str(), (int) m_thread_idx, (void*) &m);
+            TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+                m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
             if(m.current())
             {
                 auto         _current = m.current();
@@ -789,8 +790,12 @@ storage<Type, true>::_data()
                 m_graph_data_instance = new graph_data_t(node, 0, nullptr);
             m_graph_data_instance->depth()     = 0;
             m_graph_data_instance->sea_level() = 0;
-            DEBUG_PRINT_HERE("[%s]> Master: %i, master ptr: %p", demangle<Type>().c_str(),
-                             (int) m_thread_idx, (void*) m_graph_data_instance);
+            CONDITIONAL_PRINT_HERE(m_settings->get_debug(),
+                                   "[%s]> Master: %i, master ptr: %p",
+                                   demangle<Type>().c_str(), (int) m_thread_idx,
+                                   (void*) m_graph_data_instance);
+            TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+                m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
         }
 
         if(m_node_ids.empty())
@@ -1098,8 +1103,9 @@ template <typename Type>
 storage<Type, false>::storage()
 : base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
 {
-    if(m_settings->get_debug())
-        printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s", m_label.c_str());
+    TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
     get_shared_manager();
     component::state<Type>::has_storage() = true;
     // m_printer = std::make_shared<printer_t>(Type::get_label(), this);
@@ -1111,8 +1117,7 @@ template <typename Type>
 storage<Type, false>::~storage()
 {
     component::state<Type>::has_storage() = false;
-    if(m_settings->get_debug())
-        printf("[%s]> destructing @ %i...\n", m_label.c_str(), __LINE__);
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "destroying %s", m_label.c_str());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1139,8 +1144,9 @@ storage<Type, false>::initialize()
     if(m_initialized)
         return;
 
-    if(m_settings->get_debug())
-        printf("[%s]> initializing...\n", m_label.c_str());
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "initializing %s", m_label.c_str());
+    TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
 
     m_initialized = true;
 
@@ -1171,8 +1177,7 @@ storage<Type, false>::finalize()
     if(!m_initialized)
         return;
 
-    if(m_settings->get_debug())
-        printf("[%s]> finalizing...\n", m_label.c_str());
+    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "finalizing %s", m_label.c_str());
 
     using fini_t = operation::fini<Type>;
     using ValueT = typename trait::collects_data<Type>::type;

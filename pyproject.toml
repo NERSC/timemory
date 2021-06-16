@@ -15,7 +15,7 @@ exclude = '''
     | \.venv
     | \.misc
     | _build
-    | buck-out
+    | __pycache__
     | build
     | dist
     | external

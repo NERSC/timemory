@@ -534,16 +534,6 @@ struct apply<void>
     }
 
     //----------------------------------------------------------------------------------//
-    //  per-element percent difference
-    //
-    template <typename Tuple, size_t N = std::tuple_size<Tuple>::value>
-    static TIMEMORY_HOT_INLINE void percent_diff(Tuple& _ret, const Tuple& _lhs,
-                                                 const Tuple& _rhs) noexcept
-    {
-        _ret = math::compute<Tuple>::percent_diff(_lhs, _rhs);
-    }
-
-    //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Device, typename Func, typename... Args,
               enable_if_t<std::is_same<Device, device::gpu>::value, char> = 0>
