@@ -1568,9 +1568,6 @@ template <typename IterT>
 IterT
 graph<T, AllocatorT>::replace(IterT position, const T& x)
 {
-    //	kp::destructor(&position.node->data);
-    //	kp::constructor(&position.node->data, x);
-    //  position.node->data = x;
     m_alloc.destroy(position.node);
     m_alloc.construct(position.node, x);
     return position;
@@ -1583,9 +1580,6 @@ template <typename IterT>
 IterT
 graph<T, AllocatorT>::replace(IterT position, T&& x)
 {
-    //	kp::destructor(&position.node->data);
-    //	kp::constructor(&position.node->data, x);
-    //  position.node->data = x;
     m_alloc.destroy(position.node);
     m_alloc.construct(position.node, std::forward<T>(x));
     return position;
