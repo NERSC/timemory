@@ -209,9 +209,9 @@ TEST_F(archive_storage_tests, vector_hierarchy)
     };
     EXPECT_EQ(wc_vec.size(), 1);
     EXPECT_EQ(cc_vec.size(), 1);
-    EXPECT_EQ(wc_vec.front().get_children().size(), 2)
+    EXPECT_EQ(wc_vec.front().get_children().size(), 1)
         << print(wc_vec.front().get_children());
-    EXPECT_EQ(cc_vec.front().get_children().size(), 2)
+    EXPECT_EQ(cc_vec.front().get_children().size(), 1)
         << print(cc_vec.front().get_children());
     EXPECT_EQ(wc_vec.front().get_children().front()->get_children().size(), 2)
         << print(wc_vec.front().get_children().front()->get_children());
