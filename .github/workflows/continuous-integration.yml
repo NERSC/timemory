@@ -19,7 +19,7 @@ jobs:
             PYTHON_VERSION: '3.6'
             BUILD_TYPE: 'RelWithDebInfo'
             PACKAGES: 'clang-7 build-essential libmpich-dev mpich ccache'
-            BUILD_ARGS: '--minimal --build-libs shared static --python --mpi --gotcha --stats --tools mallocp mpip ompt --cxx-standard=17'
+            BUILD_ARGS: '--minimal --build-libs shared static --python --mpi --gotcha --stats --tools mallocp mpip --cxx-standard=17'
             CTEST_ARGS: '-VV'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_UNITY_BUILD=OFF -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
           - CC: clang-8
@@ -34,7 +34,7 @@ jobs:
             PYTHON_VERSION: '3.7'
             BUILD_TYPE: 'MinSizeRel'
             PACKAGES: 'clang-9 build-essential libopenmpi-dev openmpi-bin openmpi-common libfabric-dev ccache'
-            BUILD_ARGS: '--quick --build-libs shared --mpi --cxx-standard=14'
+            BUILD_ARGS: '--quick --build-libs shared --mpi --gotcha --tools mallocp mpip ompt --cxx-standard=14'
             CTEST_ARGS: '-VV'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
           - CC: gcc-6
