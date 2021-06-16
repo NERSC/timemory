@@ -52,15 +52,10 @@ set(TIMEMORY_BUILD_KOKKOS_CONNECTORS "all" CACHE STRING "List of connector confi
 #
 #   Options
 #
-add_option(TIMEMORY_KOKKOS_BUILD_SAMPLE "Build sample test" OFF NO_FEATURE)
+add_option(TIMEMORY_BUILD_KOKKOS_SAMPLE "Build sample test" OFF NO_FEATURE)
+add_option(TIMEMORY_BUILD_KOKKOS_CUDA_CONNECTORS "Compile GPU connectors as CUDA if necessary" ON NO_FEATURE)
 add_option(TIMEMORY_BUILD_KOKKOS_CONFIG "Build various connector configurations" OFF)
 add_feature(TIMEMORY_BUILD_KOKKOS_CONNECTORS "List of connector configurations to build" DOC)
-if(DEFINED TIMEMORY_KOKKOS_BUILD_CONFIG)
-    set(TIMEMORY_BUILD_KOKKOS_CONFIG ${TIMEMORY_KOKKOS_BUILD_CONFIG})
-endif()
-if(DEFINED TIMEMORY_KOKKOS_BUILD_CONNECTORS)
-    set(TIMEMORY_BUILD_KOKKOS_CONNECTORS ${TIMEMORY_KOKKOS_BUILD_CONNECTORS})
-endif()
 string(TOUPPER "${TIMEMORY_BUILD_KOKKOS_CONNECTORS}" _CONNECTORS)
 
 message(STATUS "")
@@ -147,7 +142,7 @@ configure_library(kp_timemory_filter)
 #   Generate a test using kokkos
 #
 function(ADD_KOKKOS_SAMPLE_TEST _NAME _TARG)
-    if(NOT TIMEMORY_KOKKOS_BUILD_SAMPLE)
+    if(NOT TIMEMORY_BUILD_KOKKOS_SAMPLE)
         return()
     endif()
 
@@ -175,7 +170,7 @@ endfunction()
 #
 #   Build the sample (test executable)
 #
-if(TIMEMORY_KOKKOS_BUILD_SAMPLE)
+if(TIMEMORY_BUILD_KOKKOS_SAMPLE)
     # use launch_compiler feature to ensure kokkos uses it's original compiler
     find_package(Kokkos REQUIRED)
     add_executable(kokkos-connector-sample ${TIMEMORY_EXCLUDE_FROM_ALL} sample/sample.cpp)
@@ -246,7 +241,17 @@ function(ADD_CONNECTOR_CONFIG _NAME)
     # configure the extension
     set(_EXT cpp)
     if(CONNECTOR_GPU AND CUDA_AVAILABLE)
-        set(_EXT cu)
+        if("${CMAKE_CXX_STANDARD}" GREATER "${CMAKE_CUDA_STANDARD}")
+            if(TIMEMORY_BUILD_KOKKOS_CUDA_CONNECTORS)
+                set(_MSG "${_NAME} requested CUDA compilation but CMAKE_CXX_STANDARD (${CMAKE_CXX_STANDARD}) > CMAKE_CUDA_STANDARD (${CMAKE_CUDA_STANDARD})")
+                set(_MSG "${_MSG}. Compiling as C++... Set TIMEMORY_BUILD_KOKKOS_CUDA_CONNECTORS=OFF to skip compiling ${_NAME}")
+                timemory_message(WARNING "${_MSG}")
+            else()
+                return()
+            endif()
+        else()
+            set(_EXT cu)
+        endif()
     endif()
 
     # configure the components
