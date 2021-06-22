@@ -74,7 +74,11 @@ private:
     template <typename TypeT, typename PointerT, typename TagT>
     friend class singleton;
 
-    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE thread_id_t& f_main_thread();
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE thread_id_t& f_main_thread()
+    {
+        static auto _instance = std::this_thread::get_id();
+        return _instance;
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -92,15 +96,6 @@ singleton<void, void, void>::init()
 {
     (void) f_main_thread();
     return true;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline singleton<void, void, void>::thread_id_t&
-singleton<void, void, void>::f_main_thread()
-{
-    static auto _instance = std::this_thread::get_id();
-    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -173,8 +168,16 @@ public:
     void reset();
 
 private:
-    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE smart_pointer& _local_instance();
-    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE smart_pointer& _master_instance();
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE smart_pointer& _local_instance()
+    {
+        static thread_local smart_pointer _instance = smart_pointer();
+        return _instance;
+    }
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE smart_pointer& _master_instance()
+    {
+        static smart_pointer _instance = smart_pointer();
+        return _instance;
+    }
 
     void* operator new[](std::size_t) noexcept { return nullptr; }
     void  operator delete[](void*) noexcept {}
@@ -210,7 +213,11 @@ private:
         }
     };
 
-    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE persistent_data& f_persistent_data();
+    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE persistent_data& f_persistent_data()
+    {
+        static persistent_data _instance{};
+        return _instance;
+    }
 
     static thread_id_t& f_master_thread();
     static mutex_t&     f_mutex();
@@ -481,36 +488,6 @@ singleton<Type, PointerT, TagT>::reset()
         }
     }
     f_persistent_data().reset();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, typename PointerT, typename TagT>
-typename singleton<Type, PointerT, TagT>::smart_pointer&
-singleton<Type, PointerT, TagT>::_local_instance()
-{
-    static thread_local smart_pointer _instance = smart_pointer();
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, typename PointerT, typename TagT>
-typename singleton<Type, PointerT, TagT>::smart_pointer&
-singleton<Type, PointerT, TagT>::_master_instance()
-{
-    static smart_pointer _instance = smart_pointer();
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, typename PointerT, typename TagT>
-typename singleton<Type, PointerT, TagT>::persistent_data&
-singleton<Type, PointerT, TagT>::f_persistent_data()
-{
-    static persistent_data _instance{};
-    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
