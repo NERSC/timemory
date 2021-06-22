@@ -135,13 +135,26 @@ jobs:
         run: |
           for i in $(find Testing | grep LastTest); do echo "##### File: ${i} #####"; cat ${i}; done
 
-      - name: Test Install
+      - name: Validate Build
         working-directory: ${{github.workspace}}/build-timemory/Linux
         run: |
           source activate
           conda activate pyctest
           cmake --build . --target all --parallel $(nproc)
+
+      - name: Validate Tests
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        if: ${{ matrix.BUILD_TYPE != 'Debug' }}
+        run: |
+          source activate
+          conda activate pyctest
           ctest --output-on-failure
+
+      - name: Test Install
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        run: |
+          source activate
+          conda activate pyctest
           cmake --build . --target install --parallel $(nproc)
 
       - name: Test Python Build
