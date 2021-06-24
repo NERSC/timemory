@@ -1,15 +1,23 @@
 
 # direct includes
 
-include CMakeLists.txt
-include VERSION
-include LICENSE
-include README.md
+include .clang-format
+include .clang-tidy
+include .gitignore
+include .readthedocs.yml
 include CHANGES.md
-include CONTRIBUTING.md
+include CMakeLists.txt
 include CODE_OF_CONDUCT.md
+include CONTRIBUTING.md
+include LICENSE
+include MANIFEST.in
+include pyproject.toml
+include pytest.ini
+include README.md
 include requirements.txt
-include update-conda-yaml.py
+include setup.cfg
+include setup.py
+include VERSION
 
 # recursive includes
 

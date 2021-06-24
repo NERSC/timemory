@@ -17,9 +17,9 @@ endif()
 
 add_library(timem-libexplain INTERFACE)
 
-add_option(TIMEMORY_BUILD_TOOLS_LIBEXPECT "Enable using libexpect to diagnose errors"
+add_option(TIMEMORY_BUILD_TOOLS_LIBEXPLAIN "Enable using libexplain to diagnose errors"
     OFF NO_FEATURE)
-if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
+if(TIMEMORY_BUILD_TOOLS_LIBEXPLAIN)
 
     find_path(LIBEXPLAIN_INCLUDE_DIR
         NAMES libexplain/execvp.h
@@ -34,7 +34,7 @@ if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
         target_compile_definitions(timem-libexplain INTERFACE TIMEMORY_USE_LIBEXPLAIN)
         target_link_libraries(timem-libexplain INTERFACE ${LIBEXPLAIN_LIBRARY})
     else()
-        set(TIMEMORY_BUILD_TOOLS_LIBEXPECT OFF)
+        set(TIMEMORY_BUILD_TOOLS_LIBEXPLAIN OFF)
     endif()
 endif()
 
