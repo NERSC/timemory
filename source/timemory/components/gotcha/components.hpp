@@ -1008,8 +1008,7 @@ private:
             toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
             _data.ready = true;
-            Ret _ret    = invoke<bundle_type>(_obj, _data.ready, _orig,
-                                           std::forward<Args>(_args)...);
+            Ret _ret    = invoke<bundle_type>(_obj, _orig, std::forward<Args>(_args)...);
             _data.ready = false;
 
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
@@ -1113,7 +1112,7 @@ private:
             toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
             _data.ready = true;
-            invoke<bundle_type>(_obj, _data.ready, _orig, std::forward<Args>(_args)...);
+            invoke<bundle_type>(_obj, _orig, std::forward<Args>(_args)...);
             _data.ready = false;
 
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
