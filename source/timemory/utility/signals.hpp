@@ -228,11 +228,9 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 
     size_t ntot = 0;
     auto   bt   = tim::get_backtrace<32>();
-    for(size_t i = 0; i < bt.size(); ++i)
+    for(const auto& itr : bt)
     {
-        if(!bt.at(i))
-            break;
-        if(strlen(bt.at(i)) == 0)
+        if(strlen(itr) == 0)
             break;
         ++ntot;
     }
@@ -291,7 +289,7 @@ enable_signal_detection(signal_settings::signal_set_t operations)
                 signal_settings::disable(itr);
         }
         signal_settings::check_environment();
-        for(auto& itr : operations)
+        for(const auto& itr : operations)
             signal_settings::enable(itr);
     }
 
@@ -300,11 +298,11 @@ enable_signal_detection(signal_settings::signal_set_t operations)
         _signals.insert(static_cast<int>(operation));
 
     sigfillset(&tim_signal_termaction().sa_mask);
-    for(auto& itr : _signals)
+    for(const auto& itr : _signals)
         sigdelset(&tim_signal_termaction().sa_mask, itr);
     tim_signal_termaction().sa_sigaction = timemory_termination_signal_handler;
     tim_signal_termaction().sa_flags     = SA_SIGINFO;
-    for(auto& itr : _signals)
+    for(const auto& itr : _signals)
     {
         sigaction(itr, &tim_signal_termaction(), &tim_signal_oldaction());
     }

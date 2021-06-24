@@ -36,6 +36,7 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 
+#include <algorithm>
 #include <bitset>
 #include <cstdio>
 #include <iostream>
@@ -508,12 +509,10 @@ public:
     ///
     static bool contains(const string_t& str, const strset_t& items)
     {
-        for(const auto& itr : items)
-        {
-            if(lowercase(str).find(itr) != string_t::npos)
-                return true;
-        }
-        return false;
+        auto lstr = lowercase(str);
+        return std::any_of(items.begin(), items.end(), [&lstr](const auto& itr) {
+            return lstr.find(itr) != string_t::npos;
+        });
     }
 
     //----------------------------------------------------------------------------------//

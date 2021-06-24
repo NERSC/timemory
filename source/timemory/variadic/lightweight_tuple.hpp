@@ -562,7 +562,7 @@ public:
     auto        get_prefix() const { return bundle_type::get_prefix(); }
 
     TIMEMORY_INLINE void rekey(const string_t& _key);
-    TIMEMORY_INLINE void rekey(captured_location_t _loc);
+    TIMEMORY_INLINE void rekey(const captured_location_t& _loc);
     TIMEMORY_INLINE void rekey(uint64_t _hash);
 
 protected:
@@ -599,7 +599,7 @@ lightweight_tuple<Types...>::rekey(const string_t& _key)
 //
 template <typename... Types>
 void
-lightweight_tuple<Types...>::rekey(captured_location_t _loc)
+lightweight_tuple<Types...>::rekey(const captured_location_t& _loc)
 {
     m_hash = _loc.get_hash();
     set_prefix(_loc.get_hash());

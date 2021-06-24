@@ -143,7 +143,7 @@ public:
 #endif
 
     explicit network_stats(data_type _data)
-    : m_data{ std::move(_data) }
+    : m_data{ _data }
     {}
 
     network_stats() { m_data.fill(0); }

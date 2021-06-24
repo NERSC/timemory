@@ -121,8 +121,9 @@ struct papi_array
     {
         std::vector<Tp> values;
         auto&           _data = load();
+        values.reserve(_data.size());
         for(auto& itr : _data)
-            values.push_back(itr);
+            values.emplace_back(itr);
         values.resize(events.size());
         return values;
     }

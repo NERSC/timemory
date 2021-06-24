@@ -32,6 +32,7 @@
 #include "timemory/environment/declaration.hpp"
 #include "timemory/environment/macros.hpp"
 #include "timemory/environment/types.hpp"
+#include "timemory/utility/transient_function.hpp"
 #include "timemory/utility/utility.hpp"
 
 #include <atomic>
@@ -160,7 +161,7 @@ env_settings::collapse()
     for(size_t i = 0; i < m_env_other.size(); ++i)
     {
         // get the map instance
-        auto itr = m_env_other[i];
+        auto* itr = m_env_other[i];
         if(itr)
         {
             // loop over entries
@@ -200,16 +201,19 @@ get_env(const std::string& env_id, std::string _default)
     if(env_id.empty())
         return _default;
 
-    char* env_var = std::getenv(env_id.c_str());
+    auto* _env_settings = env_settings::instance();
+    char* env_var       = std::getenv(env_id.c_str());
     if(env_var)
     {
         std::stringstream ss;
         ss << env_var;
-        env_settings::instance()->insert(env_id, ss.str());
+        if(_env_settings)
+            _env_settings->insert(env_id, ss.str());
         return ss.str();
     }
     // record default value
-    env_settings::instance()->insert(env_id, _default);
+    if(_env_settings)
+        _env_settings->insert(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -226,7 +230,8 @@ get_env(const std::string& env_id, bool _default)
     if(env_id.empty())
         return _default;
 
-    char* env_var = std::getenv(env_id.c_str());
+    auto* _env_settings = env_settings::instance();
+    char* env_var       = std::getenv(env_id.c_str());
     if(env_var)
     {
         std::string var = std::string(env_var);
@@ -243,16 +248,19 @@ get_env(const std::string& env_id, bool _default)
             {
                 if(var == itr)
                 {
-                    env_settings::instance()->insert<bool>(env_id, false);
+                    if(_env_settings)
+                        _env_settings->insert<bool>(env_id, false);
                     return false;
                 }
             }
         }
-        env_settings::instance()->insert<bool>(env_id, val);
+        if(_env_settings)
+            _env_settings->insert<bool>(env_id, val);
         return val;
     }
     // record default value
-    env_settings::instance()->insert<bool>(env_id, _default);
+    if(_env_settings)
+        _env_settings->insert<bool>(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -269,8 +277,8 @@ load_env(const std::string& env_id, std::string _default)
     if(env_id.empty())
         return _default;
 
-    auto _env_settings = env_settings::instance();
-    auto itr           = _env_settings->get(env_id);
+    auto* _env_settings = env_settings::instance();
+    auto  itr           = _env_settings->get(env_id);
     if(itr != _env_settings->end())
         return itr->second;
 
@@ -289,8 +297,8 @@ load_env(const std::string& env_id, bool _default)
     if(env_id.empty())
         return _default;
 
-    auto _env_settings = env_settings::instance();
-    auto itr           = _env_settings->get(env_id);
+    auto* _env_settings = env_settings::instance();
+    auto  itr           = _env_settings->get(env_id);
     if(itr != _env_settings->end())
     {
         auto              val             = itr->second;
@@ -330,12 +338,24 @@ print_env(std::ostream& os) { os << (*env_settings::instance()); }
 TIMEMORY_ENVIRONMENT_LINKAGE(tim::env_settings*)
 env_settings::instance()
 {
-    static std::atomic<int>           _count;
+    static std::atomic<int>           _count{ 0 };
     static env_settings*              _instance = new env_settings();
     static thread_local int           _id       = _count++;
     static thread_local env_settings* _local =
-        (_id == 0) ? _instance : new env_settings(_instance, _id);
+        (_id == 0) ? _instance : new env_settings{ _instance, _id };
+    static thread_local auto _ldtor = scope::destructor{ []() {
+        if(_local == _instance)
+            _instance = nullptr;
+        delete _local;
+        _local                      = nullptr;
+    } };
+    static auto _gdtor = scope::destructor{ []() {
+        delete _instance;
+        _instance      = nullptr;
+    } };
     return _local;
+    (void) _gdtor;
+    (void) _ldtor;
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -1129,7 +1129,7 @@ private:
 
     mutable bool        m_external_hold       = false;
     intmax_t            m_elapsed             = 0;
-    shared_atomic_u64_t m_named_index_counter = shared_atomic_u64_t(new atomic_u64_t);
+    shared_atomic_u64_t m_named_index_counter = std::make_shared<atomic_u64_t>(0);
     mutable mutex_type  m_mutex;
     data_type           m_data;
     named_elapsed_map_t m_named_elapsed;

@@ -69,10 +69,11 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     if(!rhs.is_initialized())
         return;
 
-    auto _settings = tim::settings::instance();
+    auto* _settings = tim::settings::instance();
     if(!_settings)
         PRINT_HERE("[%s]> nullptr to settings!", Type::get_label().c_str());
-    auto _debug = _settings && (_settings->get_debug() || _settings->get_verbose() > 2);
+    auto _debug =
+        _settings != nullptr && (_settings->get_debug() || _settings->get_verbose() > 2);
 
     rhs.stack_clear();
 
@@ -162,7 +163,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
                                        Type::get_label().c_str(), (int) lhs.size());
 
                 // remove the entry from this graph since it has been added
-                rhs.graph().erase(entry.second);
+                // rhs.graph().erase(pitr);
             }
         }
     }
@@ -255,7 +256,7 @@ merge<Type, true>::merge(result_type& dst, result_type& src)
     //
     size_t cnt       = 0;
     size_t ndup      = 0;
-    auto   _settings = tim::settings::instance();
+    auto*  _settings = tim::settings::instance();
     auto   _debug    = (_settings) ? _settings->get_debug() : true;
     auto   _verbose  = (_settings) ? _settings->get_verbose() : 1;
 

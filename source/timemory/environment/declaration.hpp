@@ -73,16 +73,13 @@ public:
     template <typename Tp>
     void insert(const std::string& env_id, Tp val);
 
-    TIMEMORY_NODISCARD env_map_t get() const;
-    iterator           get(const string_t& _entry) { return m_env->find(_entry); }
-    TIMEMORY_NODISCARD const_iterator get(const string_t& _entry) const
-    {
-        return m_env->find(_entry);
-    }
-    iterator           begin() { return m_env->begin(); }
-    iterator           end() { return m_env->end(); }
-    TIMEMORY_NODISCARD const_iterator begin() const { return m_env->begin(); }
-    TIMEMORY_NODISCARD const_iterator end() const { return m_env->end(); }
+    env_map_t      get() const;
+    iterator       get(const string_t& _entry) { return m_env->find(_entry); }
+    const_iterator get(const string_t& _entry) const { return m_env->find(_entry); }
+    iterator       begin() { return m_env->begin(); }
+    iterator       end() { return m_env->end(); }
+    const_iterator begin() const { return m_env->begin(); }
+    const_iterator end() const { return m_env->end(); }
 
     void                 print(std::ostream&) const;
     friend std::ostream& operator<<(std::ostream& os, const env_settings& env)
@@ -115,7 +112,7 @@ private:
 
 private:
     int                       m_id  = 0;
-    env_uomap_t*              m_env = new env_uomap_t();
+    env_uomap_t*              m_env = new env_uomap_t{};
     std::vector<env_uomap_t*> m_env_other;
 };
 //
@@ -147,8 +144,9 @@ template <typename Archive>
 void
 env_settings::serialize(Archive& ar, const unsigned int)
 {
+    auto _tmp = env_uomap_t{};
     if(!m_env)
-        m_env = new env_uomap_t();
+        m_env = &_tmp;
 
     collapse();
 
@@ -159,6 +157,9 @@ env_settings::serialize(Archive& ar, const unsigned int)
         lk.lock();
 
     ar(cereal::make_nvp("environment", *m_env));
+
+    if(m_env == &_tmp)
+        m_env = nullptr;
 
     lock_flag().store(false);
 }
@@ -172,18 +173,21 @@ get_env(const std::string& env_id, Tp _default)
     if(env_id.empty())
         return _default;
 
-    char* env_var = std::getenv(env_id.c_str());
+    auto* _env_settings = env_settings::instance();
+    char* env_var       = std::getenv(env_id.c_str());
     if(env_var)
     {
         std::string       str_var = std::string(env_var);
         std::stringstream iss{ str_var };
         auto              var = Tp{};
         iss >> var;
-        env_settings::instance()->insert<Tp>(env_id, var);
+        if(_env_settings)
+            _env_settings->insert<Tp>(env_id, var);
         return var;
     }
     // record default value
-    env_settings::instance()->insert<Tp>(env_id, _default);
+    if(_env_settings)
+        _env_settings->insert<Tp>(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -198,8 +202,11 @@ load_env(const std::string& env_id, Tp _default)
     if(env_id.empty())
         return _default;
 
-    auto _env_settings = env_settings::instance();
-    auto itr           = _env_settings->get(env_id);
+    auto* _env_settings = env_settings::instance();
+    if(!_env_settings)
+        return _default;
+
+    auto itr = _env_settings->get(env_id);
     if(itr != _env_settings->end())
     {
         std::stringstream iss{ itr->second };

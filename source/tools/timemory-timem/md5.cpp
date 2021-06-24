@@ -32,22 +32,22 @@ namespace
 using size_type = typename md5sum::size_type;
 
 // Constants for md5sumTransform routine.
-static constexpr uint32_t S11 = 7;
-static constexpr uint32_t S12 = 12;
-static constexpr uint32_t S13 = 17;
-static constexpr uint32_t S14 = 22;
-static constexpr uint32_t S21 = 5;
-static constexpr uint32_t S22 = 9;
-static constexpr uint32_t S23 = 14;
-static constexpr uint32_t S24 = 20;
-static constexpr uint32_t S31 = 4;
-static constexpr uint32_t S32 = 11;
-static constexpr uint32_t S33 = 16;
-static constexpr uint32_t S34 = 23;
-static constexpr uint32_t S41 = 6;
-static constexpr uint32_t S42 = 10;
-static constexpr uint32_t S43 = 15;
-static constexpr uint32_t S44 = 21;
+constexpr uint32_t S11 = 7;
+constexpr uint32_t S12 = 12;
+constexpr uint32_t S13 = 17;
+constexpr uint32_t S14 = 22;
+constexpr uint32_t S21 = 5;
+constexpr uint32_t S22 = 9;
+constexpr uint32_t S23 = 14;
+constexpr uint32_t S24 = 20;
+constexpr uint32_t S31 = 4;
+constexpr uint32_t S32 = 11;
+constexpr uint32_t S33 = 16;
+constexpr uint32_t S34 = 23;
+constexpr uint32_t S41 = 6;
+constexpr uint32_t S42 = 10;
+constexpr uint32_t S43 = 15;
+constexpr uint32_t S44 = 21;
 
 // low level logic operations
 static inline uint32_t
@@ -381,7 +381,7 @@ operator<<(std::ostream& out, md5sum md5)
 //--------------------------------------------------------------------------------------//
 
 std::string
-compute_md5(const std::string inp)
+compute_md5(const std::string& inp)
 {
     return md5sum{ inp }.hexdigest();
 }

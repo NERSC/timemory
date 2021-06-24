@@ -36,6 +36,7 @@
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/transient_function.hpp"
 #include "timemory/utility/types.hpp"
 
 #if defined(TIMEMORY_WINDOWS)
@@ -162,26 +163,81 @@ type_mutex(uint64_t _n = 0)
 //--------------------------------------------------------------------------------------//
 
 inline std::string
-demangle(const char* _cstr)
+demangle(const char* _mangled_name, int* _status = nullptr)
 {
 #if defined(TIMEMORY_ENABLE_DEMANGLE)
-    // demangling a string when delimiting
-    int   _ret    = 0;
-    char* _demang = abi::__cxa_demangle(_cstr, nullptr, nullptr, &_ret);
-    if(_demang && _ret == 0)
-        return std::string(const_cast<const char*>(_demang));
-    return _cstr;
+    // return the mangled since there is no buffer
+    if(!_mangled_name)
+        return std::string{};
+
+    int         _ret = 0;
+    std::string _demangled_name{ _mangled_name };
+    if(!_status)
+        _status = &_ret;
+
+    // PARAMETERS to __cxa_demangle
+    //  mangled_name:
+    //      A NULL-terminated character string containing the name to be demangled.
+    //  buffer:
+    //      A region of memory, allocated with malloc, of *length bytes, into which the
+    //      demangled name is stored. If output_buffer is not long enough, it is expanded
+    //      using realloc. output_buffer may instead be NULL; in that case, the demangled
+    //      name is placed in a region of memory allocated with malloc.
+    //  _buflen:
+    //      If length is non-NULL, the length of the buffer containing the demangled name
+    //      is placed in *length.
+    //  status:
+    //      *status is set to one of the following values
+    char* _demang = abi::__cxa_demangle(_mangled_name, nullptr, nullptr, _status);
+    switch(*_status)
+    {
+        //  0 : The demangling operation succeeded.
+        // -1 : A memory allocation failiure occurred.
+        // -2 : mangled_name is not a valid name under the C++ ABI mangling rules.
+        // -3 : One of the arguments is invalid.
+        case 0:
+        {
+            if(_demang)
+                _demangled_name = std::string{ _demang };
+            break;
+        }
+        case -1:
+        {
+            char _msg[1024];
+            ::memset(_msg, '\0', 1024 * sizeof(char));
+            ::snprintf(_msg, 1024, "memory allocation failure occurred demangling %s",
+                       _mangled_name);
+            ::perror(_msg);
+            break;
+        }
+        case -2: break;
+        case -3:
+        {
+            char _msg[1024];
+            ::memset(_msg, '\0', 1024 * sizeof(char));
+            ::snprintf(_msg, 1024, "Invalid argument in: (\"%s\", nullptr, nullptr, %p)",
+                       _mangled_name, (void*) _status);
+            ::perror(_msg);
+            break;
+        }
+        default: break;
+    };
+
+    // free allocated buffer
+    ::free(_demang);
+    return _demangled_name;
 #else
-    return _cstr;
+    (void) _status;
+    return _mangled_name;
 #endif
 }
 
 //--------------------------------------------------------------------------------------//
 
 inline std::string
-demangle(const std::string& _str)
+demangle(const std::string& _str, int* _status = nullptr)
 {
-    return demangle(_str.c_str());
+    return demangle(_str.c_str(), _status);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -196,12 +252,12 @@ try_demangle()
         auto _tmp = ::tim::demangle(typeid(type_list<Tp>).name());
         auto _key = std::string{ "type_list" };
         auto _idx = _tmp.find(_key);
-        _idx      = _tmp.find("<", _idx);
+        _idx      = _tmp.find('<', _idx);
         _tmp      = _tmp.substr(_idx + 1);
-        _idx      = _tmp.find_last_of(">");
+        _idx      = _tmp.find_last_of('>');
         _tmp      = _tmp.substr(0, _idx);
         // strip trailing whitespaces
-        while((_idx = _tmp.find_last_of(" ")) == _tmp.length() - 1)
+        while((_idx = _tmp.find_last_of(' ')) == _tmp.length() - 1)
             _tmp = _tmp.substr(0, _idx);
         return _tmp;
     }();
@@ -458,7 +514,7 @@ get_demangled_unw_backtrace()
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
                   print_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                  std::string _info = "", std::string _indent = "    ")
+                                  const std::string& _info = "", const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
@@ -481,7 +537,8 @@ TIMEMORY_NOINLINE std::ostream&
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
                   print_demangled_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                            std::string _info = "", std::string _indent = "    ")
+                                            const std::string& _info   = "",
+                                            const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
@@ -504,7 +561,7 @@ TIMEMORY_NOINLINE std::ostream&
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
                   print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                      std::string _info = "", std::string _indent = "    ")
+                                      const std::string& _info = "", const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
@@ -527,7 +584,8 @@ TIMEMORY_NOINLINE std::ostream&
 template <size_t Depth, size_t Offset = 3>
 TIMEMORY_NOINLINE std::ostream&
                   print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                                std::string _info = "", std::string _indent = "    ")
+                                                const std::string& _info   = "",
+                                                const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
@@ -749,14 +807,6 @@ TIMEMORY_INLINE size_t
 
 TIMEMORY_INLINE size_t
                 get_hash(const char* cstr)
-{
-    return std::hash<string_view_t>{}(cstr);
-}
-
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_HOT_INLINE size_t
-                    get_hash(char* cstr)
 {
     return std::hash<string_view_t>{}(cstr);
 }

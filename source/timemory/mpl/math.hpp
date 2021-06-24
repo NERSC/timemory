@@ -870,8 +870,8 @@ TIMEMORY_INLINE Tp
     constexpr Tp _zero    = Tp(0.0);
     constexpr Tp _one     = Tp(1.0);
     constexpr Tp _hundred = Tp(100.0);
-    auto         _pdiff   = (_one - (_lhs / _rhs)) * _hundred;
-    return (is_finite(_pdiff) ? std::max<Tp>(_pdiff, _zero) : _zero);
+    Tp&&         _pdiff   = (_rhs > _zero) ? ((_one - (_lhs / _rhs)) * _hundred) : _zero;
+    return (_pdiff < _zero) ? _zero : _pdiff;
 }
 
 template <typename Tp,

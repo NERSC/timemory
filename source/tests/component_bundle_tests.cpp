@@ -813,7 +813,7 @@ TEST_F(component_bundle_tests, ctor_stop_last_instance)
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
     EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
-                600., 100.);
+                600., 200.);
 }
 
 //--------------------------------------------------------------------------------------//

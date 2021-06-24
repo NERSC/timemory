@@ -27,6 +27,15 @@
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/types.hpp"
 
+#include <algorithm>
+#include <cstdint>
+#include <iosfwd>
+#include <map>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
 namespace tim
 {
 //

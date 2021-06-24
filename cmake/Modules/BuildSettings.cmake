@@ -45,7 +45,7 @@ if(WIN32)
     add_cxx_flag_if_avail("/Qspectre")
 endif()
 
-if(NOT CMAKE_CXX_COMPILER_IS_GNU)
+if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_cxx_flag_if_avail(
         "-Wno-mismatched-tags")
 endif()

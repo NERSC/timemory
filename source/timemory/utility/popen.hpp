@@ -93,8 +93,8 @@ read_fork(TIMEMORY_PIPE* proc, int max_counter = 50)
 
     while(proc)
     {
-        char buffer[4096];
-        auto ret = fgets(buffer, 4096, proc->read_fd);
+        char  buffer[4096];
+        auto* ret = fgets(buffer, 4096, proc->read_fd);
         if(ret == nullptr || strlen(buffer) == 0)
         {
             if(max_counter == 0)
@@ -130,8 +130,8 @@ flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0)
     int counter = 0;
     while(proc)
     {
-        char buffer[4096];
-        auto ret = fgets(buffer, 4096, proc->read_fd);
+        char  buffer[4096];
+        auto* ret = fgets(buffer, 4096, proc->read_fd);
         if(ret == nullptr || strlen(buffer) == 0)
         {
             if(max_counter == 0)

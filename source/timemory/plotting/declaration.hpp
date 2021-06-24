@@ -28,6 +28,7 @@
 #include "timemory/plotting/types.hpp"
 #include "timemory/settings/declaration.hpp"
 
+#include <algorithm>
 #include <initializer_list>
 #include <sstream>
 #include <string>
@@ -171,12 +172,10 @@ echo_dart_file(const string_t& filepath, attributes_t attributes)
     };
 
     auto contains = [&lowercase](const string_t& str, const std::set<string_t>& items) {
-        for(const auto& itr : items)
-        {
-            if(lowercase(str).find(itr) != string_t::npos)
-                return true;
-        }
-        return false;
+        auto lstr = lowercase(str);
+        return std::any_of(items.begin(), items.end(), [&lstr](const auto& itr) {
+            return lstr.find(itr) != string_t::npos;
+        });
     };
 
     auto is_numeric = [](const string_t& str) -> bool {

@@ -178,7 +178,7 @@ void
 pcsample::load(Archive& ar, const unsigned int)
 {
     // memory leak
-    auto _fname = new std::string{};
+    auto* _fname = new std::string{};
     ar(cereal::make_nvp("samples", totalSamples), cereal::make_nvp("cubin_id", cubinCrc),
        cereal::make_nvp("pc_offset", pcOffset),
        cereal::make_nvp("func_index", functionIndex),

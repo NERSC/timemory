@@ -143,8 +143,8 @@ protected:
     bool                      m_node_init    = dmp::is_initialized();      // NOLINT
     int32_t                   m_node_rank    = dmp::rank();                // NOLINT
     int32_t                   m_node_size    = dmp::size();                // NOLINT
+    uint32_t                  m_thread_idx   = threading::get_id();        // NOLINT
     int64_t                   m_instance_id  = -1;                         // NOLINT
-    int64_t                   m_thread_idx   = threading::get_id();        // NOLINT
     string_t                  m_label        = "";                         // NOLINT
     hash_map_ptr_t            m_hash_ids     = ::tim::get_hash_ids();      // NOLINT
     hash_alias_ptr_t          m_hash_aliases = ::tim::get_hash_aliases();  // NOLINT

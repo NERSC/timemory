@@ -222,7 +222,11 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
 
         auto     dtype      = tim::demangle(typeid(Tp).name());
         uint64_t align_size = 64;
-        uint64_t max_size   = memory_factor * lm_size;
+#if defined(TIMEMORY_RELAXED_TESTING)
+        uint64_t max_size = memory_factor * l2_size;
+#else
+        uint64_t max_size = memory_factor * lm_size;
+#endif
 
         // log the cache info
         std::cout << "[INFO]> L1 cache size: " << (l1_size / tim::units::kilobyte)

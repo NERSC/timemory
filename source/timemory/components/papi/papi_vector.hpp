@@ -132,8 +132,8 @@ struct papi_vector
     vector_t<Tp> get() const
     {
         std::vector<Tp> values;
-        auto&           _data = load();
-        for(auto& itr : _data)
+        const auto&     _data = load();
+        for(const auto& itr : _data)
             values.push_back(itr);
         values.resize(events.size());
         return values;
