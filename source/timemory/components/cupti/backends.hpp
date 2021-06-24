@@ -287,7 +287,7 @@ struct pcsample
         return _instance;
     }
 
-    static void TIMEMORY_CUPTIAPI compute_cubin_crc(const void* cubin, uint32_t cubinSize,
+    static void TIMEMORY_CUPTIAPI compute_cubin_crc(const void* cubin, size_t cubinSize,
                                                     uint64_t* cubinCrc)
     {
         auto&    _map = get_cubin_map();
