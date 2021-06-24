@@ -1182,23 +1182,33 @@ settings::read(std::istream& ifs, std::string inp)
     {
         using policy_type = policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>;
         auto ia           = policy_type::get(ifs);
-        ia->setNextName("timemory");
-        ia->startNode();
+        try
         {
-            try
+            ia->setNextName("timemory");
+            ia->startNode();
             {
-                ia->setNextName("metadata");
-                ia->startNode();
-                // settings
-                (*ia)(cereal::make_nvp("settings", *this));
-                ia->finishNode();
-            } catch(...)
-            {
-                // settings
-                (*ia)(cereal::make_nvp("settings", *this));
+                try
+                {
+                    ia->setNextName("metadata");
+                    ia->startNode();
+                    // settings
+                    (*ia)(cereal::make_nvp("settings", *this));
+                    ia->finishNode();
+                } catch(...)
+                {
+                    // settings
+                    (*ia)(cereal::make_nvp("settings", *this));
+                }
             }
+            ia->finishNode();
+        } catch(tim::cereal::Exception& e)
+        {
+            PRINT_HERE("Exception reading %s :: %s", inp.c_str(), e.what());
+#    if defined(TIMEMORY_INTERNAL_TESTING)
+            TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(true, 8);
+#    endif
+            return false;
         }
-        ia->finishNode();
         return true;
     }
 #    if defined(TIMEMORY_USE_XML)

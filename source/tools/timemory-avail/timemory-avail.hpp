@@ -169,8 +169,8 @@ private:
     array_type* output_stream  = nullptr;
     unique_set  exclude_stream = {};
     int_stack   name_counter;
-    unique_set  value_keys = { "name",    "value",     "description", "count",
-                              "environ", "max_count", "cmdline",     "data_type" };
+    unique_set  value_keys = { "name",      "value",   "description", "count",  "environ",
+                              "max_count", "cmdline", "data_type",   "initial" };
 };
 
 //======================================================================================//
