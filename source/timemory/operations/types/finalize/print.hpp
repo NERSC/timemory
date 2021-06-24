@@ -567,17 +567,27 @@ print<Tp, true>::read_json()
             // ensure write final block during destruction before the file is closed
             auto ia = policy_type::get(ifs);
 
-            ia->setNextName("timemory");
-            ia->startNode();
-            operation::serialization<Tp>{}(*ia, node_input);
-            ia->finishNode();
+            try
+            {
+                ia->setNextName("timemory");
+                ia->startNode();
+                operation::serialization<Tp>{}(*ia, node_input);
+                ia->finishNode();
+            } catch(tim::cereal::Exception& e)
+            {
+                PRINT_HERE("Exception reading %s :: %s", json_inpfname.c_str(), e.what());
+#if defined(TIMEMORY_INTERNAL_TESTING)
+                TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(true, 8);
+                throw std::runtime_error("error reading json");
+#endif
+            }
         }
         else
         {
             fprintf(stderr, "[%s]|%i> Failure opening '%s' for input...\n", label.c_str(),
                     node_rank, json_inpfname.c_str());
 #if defined(TIMEMORY_INTERNAL_TESTING)
-            throw;
+            throw std::runtime_error("error opening file");
 #endif
         }
         ifs.close();
