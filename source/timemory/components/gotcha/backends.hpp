@@ -154,56 +154,12 @@ private:
     //
     template <typename FuncT, typename... Args>
     static auto invoke_sfinae(Tp& _obj, FuncT&& _func, Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _ready, std::forward<FuncT>(_func),
+        -> decltype(invoke_sfinae_impl(_obj, 0, std::forward<FuncT>(_func),
                                        std::forward<Args>(_args)...))
     {
         return invoke_sfinae_impl(_obj, 0, std::forward<FuncT>(_func),
                                   std::forward<Args>(_args)...);
     }
-
-public:
-    //==================================================================================//
-    //
-    template <typename FuncT, typename... Args>
-    static decltype(auto) invoke(Tp& _obj, FuncT&& _func, Args&&... _args)
-    {
-        return invoke_sfinae(_obj, std::forward<FuncT>(_func),
-                             std::forward<Args>(_args)...);
-    }
-
-private:
-    //----------------------------------------------------------------------------------//
-    //  Call the operator of the instance
-    //
-    template <typename FuncT, typename... Args>
-    static auto invoke_sfinae_impl(Tp& _obj, int, FuncT&&, Args&&... _args)
-        -> decltype(_obj(std::forward<Args>(_args)...))
-    {
-        return _obj(std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Call the original gotcha_wrappee
-    //
-    template <typename FuncT, typename... Args>
-    static auto invoke_sfinae_impl(Tp&, long, FuncT&& _func, Args&&... _args)
-        -> decltype(std::forward<FuncT>(_func)(std::forward<Args>(_args)...))
-    {
-        return std::forward<FuncT>(_func)(std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Wrapper that calls one of two above
-    //
-    template <typename FuncT, typename... Args>
-    static auto invoke_sfinae(Tp& _obj, FuncT&& _func, Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _func, std::forward<Args>(_args)...))
-    {
-        return invoke_sfinae_impl(_obj, 0, std::forward<FuncT>(_func),
-                                  std::forward<Args>(_args)...);
-    }
-    //
-    //----------------------------------------------------------------------------------//
 };
 //
 //======================================================================================//

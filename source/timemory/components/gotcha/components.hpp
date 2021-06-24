@@ -843,59 +843,11 @@ private:
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
               enable_if_t<This::differ_is_component, int>       = 0,
               enable_if_t<!std::is_same<Ret, void>::value, int> = 0>
-    static Ret invoke(Comp& _comp, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
-    {
-        using Type    = DiffT;
-        using Invoker = gotcha_invoker<Type, Ret>;
-        Type& _obj    = *_comp.template get<Type>();
-        return Invoker::invoke(_obj, _ready, _func, std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!This::differ_is_component, int>      = 0,
-              enable_if_t<!std::is_same<Ret, void>::value, int> = 0>
-    static Ret invoke(Comp&, bool&, Ret (*_func)(Args...), Args&&... _args)
-    {
-        Ret _ret = _func(std::forward<Args>(_args)...);
-        return _ret;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<This::differ_is_component, int>      = 0,
-              enable_if_t<std::is_same<Ret, void>::value, int> = 0>
-    static void invoke(Comp& _comp, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
-    {
-        using Type    = DiffT;
-        using Invoker = gotcha_invoker<Type, Ret>;
-        Type& _obj    = *_comp.template get<Type>();
-        Invoker::invoke(_obj, _ready, _func, std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<!This::differ_is_component, int>     = 0,
-              enable_if_t<std::is_same<Ret, void>::value, int> = 0>
-    static void invoke(Comp&, bool&, Ret (*_func)(Args...), Args&&... _args)
-    {
-        // gotcha_suppression::auto_toggle suppress_lock(_ready);
-        _func(std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename Comp, typename Ret, typename... Args, typename This = this_type,
-              enable_if_t<This::differ_is_component, int>       = 0,
-              enable_if_t<!std::is_same<Ret, void>::value, int> = 0>
     static Ret invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Tp      = DiffT;
-        using Invoker = gotcha_invoker<Tp, Ret>;
-        Tp& _obj      = *_comp.template get<Tp>();
+        using Type    = DiffT;
+        using Invoker = gotcha_invoker<Type, Ret>;
+        Type& _obj    = *_comp.template get<Type>();
         return Invoker::invoke(_obj, _func, std::forward<Args>(_args)...);
     }
 
@@ -916,9 +868,9 @@ private:
               enable_if_t<std::is_same<Ret, void>::value, int> = 0>
     static void invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Tp      = DiffT;
-        using Invoker = gotcha_invoker<Tp, Ret>;
-        Tp& _obj      = *_comp.template get<Tp>();
+        using Type    = DiffT;
+        using Invoker = gotcha_invoker<Type, Ret>;
+        Type& _obj    = *_comp.template get<Type>();
         Invoker::invoke(_obj, _func, std::forward<Args>(_args)...);
     }
 
