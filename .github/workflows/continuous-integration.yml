@@ -147,14 +147,6 @@ jobs:
           conda activate pyctest
           cmake --build . --target all --parallel $(nproc)
 
-      - name: Validate Tests
-        working-directory: ${{github.workspace}}/build-timemory/Linux
-        if: ${{ matrix.BUILD_TYPE != 'Debug' }}
-        run: |
-          source activate
-          conda activate pyctest
-          ctest --output-on-failure
-
       - name: Test Install
         working-directory: ${{github.workspace}}/build-timemory/Linux
         run: |
