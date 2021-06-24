@@ -32,7 +32,7 @@
 
 // helper function
 std::string
-compute_md5(const std::string str);
+compute_md5(const std::string& inp);
 
 // a small class for calculating MD5 hashes of strings or byte arrays
 //
@@ -67,7 +67,6 @@ public:
 private:
     void transform(const uint8_t block[blocksize]);
 
-private:
     bool finalized = false;
     // 64bit counter for number of bits (lo, hi)
     std::array<uint32_t, 2>        count = { 0, 0 };

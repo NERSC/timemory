@@ -68,7 +68,7 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
         if(_settings->get_enable_signal_handler())
         {
             auto default_signals = signal_settings::get_default();
-            for(auto& itr : default_signals)
+            for(const auto& itr : default_signals)
                 signal_settings::enable(itr);
             // should return default and any modifications from environment
             auto enabled_signals = signal_settings::get_enabled();
@@ -171,9 +171,9 @@ TIMEMORY_CONFIG_LINKAGE(void)
 timemory_init(const std::string& exe_name, const std::string& _prefix,
               const std::string& _suffix)
 {
-    auto cstr  = const_cast<char*>(exe_name.c_str());
-    auto _argc = 1;
-    auto _argv = &cstr;
+    auto* cstr  = const_cast<char*>(exe_name.c_str());
+    auto  _argc = 1;
+    auto* _argv = &cstr;
     timemory_init(_argc, _argv, _prefix, _suffix);
 }
 //
@@ -397,8 +397,8 @@ timemory_argparse(std::vector<std::string>& args, argparse::argument_parser* par
 TIMEMORY_CONFIG_LINKAGE(void)  // NOLINT
 timemory_finalize()
 {
-    auto _settings = settings::instance();
-    auto _manager  = manager::instance();
+    auto* _settings = settings::instance();
+    auto  _manager  = manager::instance();
 
     if(_manager)
     {

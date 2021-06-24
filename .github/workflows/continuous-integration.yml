@@ -71,7 +71,7 @@ jobs:
             BUILD_TYPE: 'MinSizeRel'
             PACKAGES: 'gcc-9 g++-9 gfortran-9 build-essential ccache'
             BUILD_ARGS: '--minimal --build-libs shared --gotcha --stats --python --cxx-standard=17'
-            CTEST_ARGS: '-VV'
+            CTEST_ARGS: '-V --output-on-failure'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
 
     env:
@@ -106,12 +106,17 @@ jobs:
           conda config --set always_yes yes --set changeps1 no
           conda create -c conda-forge -c defaults -n pyctest python=${{ matrix.PYTHON_VERSION }} pyctest
 
-      - name: Build and Test
+      - name: Install Requirements
         run: |
           source activate
           conda activate pyctest
           python -m pip install -r requirements.txt
           python -m pip install pytest
+
+      - name: Build and Test
+        run: |
+          source activate
+          conda activate pyctest
           echo -e "Running command:\n$(which python) ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}"
           python ./pyctest-runner.py ${PYCTEST_ARGS} -- ${CTEST_ARGS} -- ${CMAKE_ARGS}
 

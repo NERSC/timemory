@@ -90,12 +90,12 @@ public:
     template <typename... Args>
     tsettings(noparse, Vp, Args&&...);
 
-    ~tsettings() {}
+    ~tsettings() override = default;
 
-    tsettings(const tsettings&) = default;
-    tsettings(tsettings&&)      = default;
+    tsettings(const tsettings&)     = default;
+    tsettings(tsettings&&) noexcept = default;
     tsettings& operator=(const tsettings&) = default;
-    tsettings& operator=(tsettings&&) = default;
+    tsettings& operator=(tsettings&&) noexcept = default;
 
 public:
     Tp&         get();

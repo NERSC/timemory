@@ -306,7 +306,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         double      numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    double                    serialization() noexcept { return get_display(); }
+    double                    serialization() const noexcept { return get_display(); }
     TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
 
     void start() noexcept
@@ -415,7 +415,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         double      numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    double                    serialization() noexcept { return get_display(); }
+    double                    serialization() const noexcept { return get_display(); }
     TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
     void                      start() noexcept
     {
@@ -501,7 +501,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         double      numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    double                    serialization() noexcept { return get_display(); }
+    double                    serialization() const noexcept { return get_display(); }
     TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
     void                      start() noexcept
     {

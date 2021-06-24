@@ -66,7 +66,6 @@ struct stream_entry
     , m_width(_width)
     , m_precision(_prec)
     , m_format(_fmt)
-    , m_value("")
     {}
 
     ~stream_entry()                   = default;
@@ -133,7 +132,7 @@ protected:
     int          m_width     = 0;
     int          m_precision = 0;
     format_flags m_format    = {};
-    string_t     m_value     = "";
+    string_t     m_value     = {};
 };
 
 //--------------------------------------------------------------------------------------//
@@ -765,8 +764,8 @@ private:
     int64_t      m_prefix_end     = 0;
     int64_t      m_separator_freq = separator_frequency();
     format_flags m_format         = {};
-    string_t     m_name           = "";
-    string_t     m_banner         = "";
+    string_t     m_name           = {};
+    string_t     m_banner         = {};
     header_map_t m_headers        = {};
     entry_map_t  m_entries        = {};
     order_map_t  m_order          = {};

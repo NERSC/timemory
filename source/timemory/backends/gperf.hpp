@@ -77,7 +77,7 @@ struct _ProfilerState
 {
     int         enabled          = 0;  /* Is profiling currently enabled? */
     uint64_t    start_time       = 0;  /* If enabled, when was profiling started? */
-    std::string profile_name     = ""; /* Name of profile file being written, or '\0' */
+    std::string profile_name     = {}; /* Name of profile file being written, or '\0' */
     int         samples_gathered = 0;  /* Number of samples gathered so far (or 0) */
 };
 

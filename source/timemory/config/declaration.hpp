@@ -68,8 +68,8 @@ read_command_line(Func&& _func)
     auto _cmdline = tim::read_command_line(tim::process::get_target_id());
     if(tim::settings::verbose() > 1 || tim::settings::debug())
     {
-        for(size_t i = 0; i < _cmdline.size(); ++i)
-            std::cout << _cmdline.at(i) << " ";
+        for(auto& itr : _cmdline)
+            std::cout << itr << " ";
         std::cout << std::endl;
     }
 

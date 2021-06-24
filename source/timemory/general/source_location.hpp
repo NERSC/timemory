@@ -322,7 +322,7 @@ public:
 
 private:
     mode        m_mode;
-    std::string m_prefix = "";
+    std::string m_prefix = {};
     captured    m_captured;
 
 private:

@@ -55,7 +55,7 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
 
     TIMEMORY_COLD void operator()(strset_t* data)
     {
-        auto _settings = settings::instance();
+        auto* _settings = settings::instance();
         if(data->empty() || !_settings || !_settings->get_ctest_notes())
         {
             delete data;

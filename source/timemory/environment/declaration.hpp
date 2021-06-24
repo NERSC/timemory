@@ -115,7 +115,7 @@ private:
 
 private:
     int                       m_id  = 0;
-    env_uomap_t*              m_env = new env_uomap_t();
+    env_uomap_t*              m_env = new env_uomap_t{};
     std::vector<env_uomap_t*> m_env_other;
 };
 //
@@ -176,18 +176,21 @@ get_env(const std::string& env_id, Tp _default)
     if(env_id.empty())
         return _default;
 
-    char* env_var = std::getenv(env_id.c_str());
+    auto* _env_settings = env_settings::instance();
+    char* env_var       = std::getenv(env_id.c_str());
     if(env_var)
     {
         std::string       str_var = std::string(env_var);
         std::stringstream iss{ str_var };
         auto              var = Tp{};
         iss >> var;
-        env_settings::instance()->insert<Tp>(env_id, var);
+        if(_env_settings)
+            _env_settings->insert<Tp>(env_id, var);
         return var;
     }
     // record default value
-    env_settings::instance()->insert<Tp>(env_id, _default);
+    if(_env_settings)
+        _env_settings->insert<Tp>(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -202,8 +205,11 @@ load_env(const std::string& env_id, Tp _default)
     if(env_id.empty())
         return _default;
 
-    auto _env_settings = env_settings::instance();
-    auto itr           = _env_settings->get(env_id);
+    auto* _env_settings = env_settings::instance();
+    if(!_env_settings)
+        return _default;
+
+    auto itr = _env_settings->get(env_id);
     if(itr != _env_settings->end())
     {
         std::stringstream iss{ itr->second };

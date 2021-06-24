@@ -348,7 +348,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
             if(!contains(entry))
                 arr.push_back(entry);
         };
-        auto _labels = _get_labels();
+        auto* _labels = _get_labels();
         if(_labels)
         {
             for(const auto& itr : *_labels)

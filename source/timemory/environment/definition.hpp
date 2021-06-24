@@ -161,7 +161,7 @@ env_settings::collapse()
     for(size_t i = 0; i < m_env_other.size(); ++i)
     {
         // get the map instance
-        auto itr = m_env_other[i];
+        auto* itr = m_env_other[i];
         if(itr)
         {
             // loop over entries
@@ -201,16 +201,19 @@ get_env(const std::string& env_id, std::string _default)
     if(env_id.empty())
         return _default;
 
-    char* env_var = std::getenv(env_id.c_str());
+    auto* _env_settings = env_settings::instance();
+    char* env_var       = std::getenv(env_id.c_str());
     if(env_var)
     {
         std::stringstream ss;
         ss << env_var;
-        env_settings::instance()->insert(env_id, ss.str());
+        if(_env_settings)
+            _env_settings->insert(env_id, ss.str());
         return ss.str();
     }
     // record default value
-    env_settings::instance()->insert(env_id, _default);
+    if(_env_settings)
+        _env_settings->insert(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -227,7 +230,8 @@ get_env(const std::string& env_id, bool _default)
     if(env_id.empty())
         return _default;
 
-    char* env_var = std::getenv(env_id.c_str());
+    auto* _env_settings = env_settings::instance();
+    char* env_var       = std::getenv(env_id.c_str());
     if(env_var)
     {
         std::string var = std::string(env_var);
@@ -244,16 +248,19 @@ get_env(const std::string& env_id, bool _default)
             {
                 if(var == itr)
                 {
-                    env_settings::instance()->insert<bool>(env_id, false);
+                    if(_env_settings)
+                        _env_settings->insert<bool>(env_id, false);
                     return false;
                 }
             }
         }
-        env_settings::instance()->insert<bool>(env_id, val);
+        if(_env_settings)
+            _env_settings->insert<bool>(env_id, val);
         return val;
     }
     // record default value
-    env_settings::instance()->insert<bool>(env_id, _default);
+    if(_env_settings)
+        _env_settings->insert<bool>(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -270,8 +277,8 @@ load_env(const std::string& env_id, std::string _default)
     if(env_id.empty())
         return _default;
 
-    auto _env_settings = env_settings::instance();
-    auto itr           = _env_settings->get(env_id);
+    auto* _env_settings = env_settings::instance();
+    auto  itr           = _env_settings->get(env_id);
     if(itr != _env_settings->end())
         return itr->second;
 
@@ -290,8 +297,8 @@ load_env(const std::string& env_id, bool _default)
     if(env_id.empty())
         return _default;
 
-    auto _env_settings = env_settings::instance();
-    auto itr           = _env_settings->get(env_id);
+    auto* _env_settings = env_settings::instance();
+    auto  itr           = _env_settings->get(env_id);
     if(itr != _env_settings->end())
     {
         auto              val             = itr->second;

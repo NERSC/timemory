@@ -70,13 +70,13 @@ struct opaque
 
     operator bool() const { return m_valid; }
 
-    void init();
+    void init() const;
     void setup(const string_view_t& _prefix, scope::config _scope);
     void push(const string_view_t& _prefix, scope::config _scope);
-    void sample();
-    void start();
-    void stop();
-    void pop();
+    void sample() const;
+    void start() const;
+    void stop() const;
+    void pop() const;
     void cleanup();
     void get(void*& ptr, size_t _hash) const;
     void set_copy(bool val);

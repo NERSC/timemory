@@ -525,6 +525,7 @@ namespace internal
 namespace
 {
 // ensure assigned before main
+// NOLINTNEXTLINE
 bool singleton_main_thread_assigned = ::tim::singleton<void, void, void>::init();
 }  // namespace
 }  // namespace internal

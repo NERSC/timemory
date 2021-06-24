@@ -87,7 +87,7 @@ enable_if_t<!concepts::is_wrapper<Toolset>::value && trait::is_available<Toolset
             opaque>
 get_opaque(scope::config _scope)
 {
-    opaque _obj = Toolset::get_opaque(std::move(_scope));
+    opaque _obj = Toolset::get_opaque(_scope);
 
     // this is not in base-class impl
     _obj.m_init = []() { operation::init_storage<Toolset>{}; };

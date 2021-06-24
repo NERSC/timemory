@@ -40,6 +40,7 @@
 #include "timemory/units.hpp"
 #include "timemory/utility/utility.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <regex>
 #include <string>
@@ -452,12 +453,8 @@ protected:
 protected:
     static bool contains(size_t _val, const typeid_vec_t& _targ)
     {
-        for(const auto& _itr : _targ)
-        {
-            if(_itr == _val)
-                return true;
-        }
-        return false;
+        return std::any_of(_targ.begin(), _targ.end(),
+                           [&_val](auto itr) { return (itr == _val); });
     }
 
 private:

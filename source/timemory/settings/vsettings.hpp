@@ -128,7 +128,7 @@ struct vsettings
     }
 
 protected:
-    int get_debug()
+    static int get_debug()
     {
         static bool _bool_val = get_env("TIMEMORY_DEBUG_SETTINGS", false);
         static int  _int_val  = get_env("TIMEMORY_DEBUG_SETTINGS", 0);

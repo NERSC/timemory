@@ -5,6 +5,7 @@ misc-*,\
 -misc-macro-parentheses,\
 -misc-misplaced-widening-cast,\
 -misc-static-assert,\
+-misc-no-recursion,\
 -misc-non-private-member-variables-in-classes,\
 modernize-*,\
 -modernize-deprecated-headers,\
@@ -36,6 +37,8 @@ readability-*,\
 -readability-redundant-string-cstr,\
 -readability-static-accessed-through-instance,\
 -readability-const-return-type,\
+-readability-redundant-access-specifiers,\
+-readability-function-cognitive-complexity,\
 -header-filter=.*timemory/.*,\
 "
 HeaderFilterRegex: '.*timemory.*.hpp'

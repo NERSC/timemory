@@ -1009,8 +1009,8 @@ storage<Type, true>::get_shared_manager()
         auto   _label = Type::label();
         size_t pos    = std::string::npos;
         // remove the namespaces
-        for(auto itr : { "tim::component::", "tim::project::", "tim::tpls::",
-                         "tim::api::", "tim::" })
+        for(const auto* itr : { "tim::component::", "tim::project::", "tim::tpls::",
+                                "tim::api::", "tim::" })
         {
             while((pos = _label.find(itr)) != std::string::npos)
                 _label = _label.replace(pos, std::string(itr).length(), "");

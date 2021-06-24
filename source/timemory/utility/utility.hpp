@@ -252,12 +252,12 @@ try_demangle()
         auto _tmp = ::tim::demangle(typeid(type_list<Tp>).name());
         auto _key = std::string{ "type_list" };
         auto _idx = _tmp.find(_key);
-        _idx      = _tmp.find("<", _idx);
+        _idx      = _tmp.find('<', _idx);
         _tmp      = _tmp.substr(_idx + 1);
-        _idx      = _tmp.find_last_of(">");
+        _idx      = _tmp.find_last_of('>');
         _tmp      = _tmp.substr(0, _idx);
         // strip trailing whitespaces
-        while((_idx = _tmp.find_last_of(" ")) == _tmp.length() - 1)
+        while((_idx = _tmp.find_last_of(' ')) == _tmp.length() - 1)
             _tmp = _tmp.substr(0, _idx);
         return _tmp;
     }();
@@ -514,7 +514,7 @@ get_demangled_unw_backtrace()
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
                   print_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                  std::string _info = "", std::string _indent = "    ")
+                                  const std::string& _info = "", const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
@@ -537,7 +537,8 @@ TIMEMORY_NOINLINE std::ostream&
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
                   print_demangled_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                            std::string _info = "", std::string _indent = "    ")
+                                            const std::string& _info   = "",
+                                            const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
@@ -560,7 +561,7 @@ TIMEMORY_NOINLINE std::ostream&
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE std::ostream&
                   print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                      std::string _info = "", std::string _indent = "    ")
+                                      const std::string& _info = "", const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
@@ -583,7 +584,8 @@ TIMEMORY_NOINLINE std::ostream&
 template <size_t Depth, size_t Offset = 3>
 TIMEMORY_NOINLINE std::ostream&
                   print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                                std::string _info = "", std::string _indent = "    ")
+                                                const std::string& _info   = "",
+                                                const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
@@ -805,14 +807,6 @@ TIMEMORY_INLINE size_t
 
 TIMEMORY_INLINE size_t
                 get_hash(const char* cstr)
-{
-    return std::hash<string_view_t>{}(cstr);
-}
-
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_HOT_INLINE size_t
-                    get_hash(char* cstr)
 {
     return std::hash<string_view_t>{}(cstr);
 }

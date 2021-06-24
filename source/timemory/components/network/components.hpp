@@ -139,7 +139,7 @@ network_stats::get_interfaces()
     static std::string              _value{};
     static std::vector<std::string> _instance{};
 
-    auto _settings = settings::instance();
+    auto* _settings = settings::instance();
     if(!_settings)
         return _instance;
     _settings->get(TIMEMORY_SETTINGS_KEY("NETWORK_INTERFACE"), _value, true);

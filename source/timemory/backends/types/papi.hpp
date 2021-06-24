@@ -488,16 +488,16 @@ typedef struct __PAPI_event_info
 {
     unsigned int event_code = 0;  /* preset (0x8xxxxxxx) or
                                  native (0x4xxxxxxx) event code */
-    std::string symbol      = ""; /* name of the event */
-    std::string short_descr = ""; /* a short description suitable for
+    std::string symbol      = {}; /* name of the event */
+    std::string short_descr = {}; /* a short description suitable for
                                           use as a label */
-    std::string long_descr = "";  /* a longer description:
+    std::string long_descr = {};  /* a longer description:
                                       typically a sentence for presets,
                                       possibly a paragraph from vendor
                                       docs for native events */
 
     int         component_index = 0;  /* component this event belongs to */
-    std::string units           = ""; /* units event is measured in */
+    std::string units           = {}; /* units event is measured in */
     int         location        = 0;  /* location event applies to */
     int         data_type       = 0;  /* data type returned by PAPI */
     int         value_type      = 0;  /* sum or absolute */
@@ -515,10 +515,10 @@ typedef struct __PAPI_event_info
     unsigned int event_type = 0; /* event type or category
                                 for preset events only */
 
-    std::string derived = ""; /* name of the derived type
+    std::string derived = {}; /* name of the derived type
                                        - presets: usually NOT_DERIVED
                                        - native: empty string */
-    std::string postfix = ""; /* string containing postfix
+    std::string postfix = {}; /* string containing postfix
                                         operations; only defined for
                                         preset events of derived type
                                         DERIVED_POSTFIX */
@@ -533,7 +533,7 @@ typedef struct __PAPI_event_info
                                 - native: descriptive strings
                                 for each register value(?) */
 
-    std::string note = ""; /* an optional developer note
+    std::string note = {}; /* an optional developer note
                                    supplied with a preset event
                                    to delineate platform specific
                                    anomalies or restrictions */

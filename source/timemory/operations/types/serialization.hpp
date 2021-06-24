@@ -707,7 +707,7 @@ serialization<Tp, true>::impl(
     ar.setNextName(idstr.c_str());
     ar.startNode();
     std::stringstream _msg;
-    for(auto name : { "graph", "mpi", "upcxx" })
+    for(const auto* name : { "graph", "mpi", "upcxx" })
     {
         try
         {
