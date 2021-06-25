@@ -1101,7 +1101,7 @@ write_entry(std::ostream& os, const Tp& _entry, int64_t _w, bool center, bool ma
                 _sentry = std::string{ " " } + _sentry;
             }
         }
-        if(_sentry.length() > _w - 1)
+        if(_w > 0 && _sentry.length() > static_cast<size_t>(_w - 1))
             _sentry = _sentry.substr(_w - 1);
         ss << std::left << std::setw(_w - 1) << _sentry << global_delim;
     }
