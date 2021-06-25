@@ -65,8 +65,8 @@ main(int argc, char** argv)
     // disable network stats by default
     tim::trait::apply<tim::trait::runtime_enabled>::set<network_stats>(false);
 
-    auto _mpi_argc = 1;
-    auto _mpi_argv = argv;
+    auto  _mpi_argc = 1;
+    auto* _mpi_argv = argv;
     tim::mpi::initialize(_mpi_argc, _mpi_argv);
 
     using parser_t     = tim::argparse::argument_parser;
@@ -224,9 +224,9 @@ main(int argc, char** argv)
         .action([](parser_t&) { tim::settings::collapse_processes() = false; });
 #endif
 
-    auto _args = parser.parse_known_args(argc, argv);
-    auto _argc = std::get<1>(_args);
-    auto _argv = std::get<2>(_args);
+    auto  _args = parser.parse_known_args(argc, argv);
+    auto  _argc = std::get<1>(_args);
+    auto* _argv = std::get<2>(_args);
 
     if(help_check(parser, _argc, _argv))
         help_action(parser);

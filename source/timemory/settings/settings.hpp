@@ -456,8 +456,8 @@ std::shared_ptr<settings>
 settings::push()
 {
     // ensure the non-template methods have their own static copies
-    static auto _discard_ptr  = instance();
-    static auto _discard_sptr = instance<TIMEMORY_API>();
+    static auto* _discard_ptr  = instance();
+    static auto* _discard_sptr = instance<TIMEMORY_API>();
     consume_parameters(_discard_ptr, _discard_sptr);
 
     auto _old = shared_instance<Tag>();

@@ -75,7 +75,7 @@ inline opaque::~opaque()
 //--------------------------------------------------------------------------------------//
 //
 inline void
-opaque::init()
+opaque::init() const
 {
     m_init();
 }
@@ -106,7 +106,7 @@ opaque::push(const string_view_t& _prefix, scope::config _scope)
 //--------------------------------------------------------------------------------------//
 //
 inline void
-opaque::sample()
+opaque::sample() const
 {
     if(m_data)
         m_sample(m_data);
@@ -115,7 +115,7 @@ opaque::sample()
 //--------------------------------------------------------------------------------------//
 //
 inline void
-opaque::start()
+opaque::start() const
 {
     if(m_data)
         m_start(m_data);
@@ -124,7 +124,7 @@ opaque::start()
 //--------------------------------------------------------------------------------------//
 //
 inline void
-opaque::stop()
+opaque::stop() const
 {
     if(m_data)
         m_stop(m_data);
@@ -133,7 +133,7 @@ opaque::stop()
 //--------------------------------------------------------------------------------------//
 //
 inline void
-opaque::pop()
+opaque::pop() const
 {
     if(m_data)
         m_pop(m_data);

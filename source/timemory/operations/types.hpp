@@ -1193,7 +1193,7 @@ struct print
         }
     }
 
-    TIMEMORY_COLD virtual ~print() {}
+    TIMEMORY_COLD virtual ~print() = default;
 
     TIMEMORY_COLD virtual void setup()        = 0;
     TIMEMORY_COLD virtual void execute()      = 0;
@@ -1369,7 +1369,7 @@ struct print<Tp, true> : public base::print
     , data(_data)
     {}
 
-    virtual ~print() = default;
+    ~print() override = default;
 
     TIMEMORY_COLD void execute() override
     {

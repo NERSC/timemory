@@ -17,9 +17,9 @@ endif()
 
 add_library(timem-libexplain INTERFACE)
 
-add_option(TIMEMORY_BUILD_TOOLS_LIBEXPECT "Enable using libexpect to diagnose errors"
+add_option(TIMEMORY_BUILD_TOOLS_LIBEXPLAIN "Enable using libexplain to diagnose errors"
     OFF NO_FEATURE)
-if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
+if(TIMEMORY_BUILD_TOOLS_LIBEXPLAIN)
 
     find_path(LIBEXPLAIN_INCLUDE_DIR
         NAMES libexplain/execvp.h
@@ -34,17 +34,37 @@ if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
         target_compile_definitions(timem-libexplain INTERFACE TIMEMORY_USE_LIBEXPLAIN)
         target_link_libraries(timem-libexplain INTERFACE ${LIBEXPLAIN_LIBRARY})
     else()
-        set(TIMEMORY_BUILD_TOOLS_LIBEXPECT OFF)
+        set(TIMEMORY_BUILD_TOOLS_LIBEXPLAIN OFF)
     endif()
 endif()
+
+# tests whether the static papi library can be linked
+# (errors typically occur when libpapi.a is not PIC and PIE gets enabled)
+function(TEST_PAPI_STATIC_LINKAGE _VAR)
+    set(EXE_INCLUDE "#include <papi.h>")
+    set(EXE_BODY "return (PAPI_is_initialized() == 0) ? 0 : 1;")
+    configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/exe.cpp.in
+        ${PROJECT_BINARY_DIR}/compile-tests/papi_link.cpp @ONLY)
+    try_compile(
+        _RET
+        ${PROJECT_BINARY_DIR}/compile-tests
+        ${PROJECT_BINARY_DIR}/compile-tests/papi_link.cpp
+        LINK_LIBRARIES ${ARGN})
+    set(${_VAR} ${_RET} PARENT_SCOPE)
+endfunction()
 
 set(_RPATH ON)
 find_package(PAPI QUIET)
 if(NOT DEFINED TIMEM_PAPI_TARGET OR NOT TIMEM_PAPI_TARGET)
     if(PAPI_STATIC_LIBRARIES OR TARGET PAPI::papi-static)
-        set(TIMEM_PAPI_TARGET PAPI::papi-static)
-        set(_RPATH OFF)
-        target_compile_definitions(${TIMEM_PAPI_TARGET} INTERFACE TIMEMORY_USE_PAPI)
+        test_papi_static_linkage(_USE_PAPI_STATIC PAPI::papi-static)
+        if(_USE_PAPI_STATIC)
+            set(TIMEM_PAPI_TARGET PAPI::papi-static)
+            set(_RPATH OFF)
+            target_compile_definitions(${TIMEM_PAPI_TARGET} INTERFACE TIMEMORY_USE_PAPI)
+        else()
+            set(TIMEM_PAPI_TARGET timemory::timemory-papi)
+        endif()
     else()
         set(TIMEM_PAPI_TARGET timemory::timemory-papi)
     endif()

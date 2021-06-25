@@ -65,14 +65,8 @@ namespace base
 TIMEMORY_STORAGE_LINKAGE
 storage::storage(bool _is_master, int64_t _instance_id, std::string _label)
 : m_is_master(_is_master)
-, m_node_init(dmp::is_initialized())
-, m_node_rank(dmp::rank())
-, m_node_size(dmp::size())
 , m_instance_id(_instance_id)
-, m_thread_idx(threading::get_id())
 , m_label(std::move(_label))
-, m_hash_ids(::tim::get_hash_ids())
-, m_hash_aliases(::tim::get_hash_aliases())
 , m_manager(::tim::manager::instance())
 , m_settings(::tim::settings::shared_instance())
 {
@@ -941,10 +935,21 @@ storage<Type, true>::internal_print()
     if(!m_initialized && !m_finalized)
         return;
 
-    if(!singleton_t::is_master(this))
+    auto _is_primary       = singleton_t::is_master(this);
+    auto _primary_instance = singleton_t::master_instance();
+
+    if(!_is_primary && !_primary_instance && common_singleton::is_main_thread())
     {
-        if(singleton_t::master_instance())
-            singleton_t::master_instance()->merge(this);
+        PRINT_HERE("[%s]> storage instance (%p) on main thread is not designated as the "
+                   "primary but there is a nullptr to primary. Designating as primary",
+                   m_label.c_str(), (void*) this);
+        _is_primary = true;
+    }
+
+    if(!_is_primary)
+    {
+        if(_primary_instance)
+            _primary_instance->merge(this);
         finalize();
     }
     else
@@ -1004,8 +1009,8 @@ storage<Type, true>::get_shared_manager()
         auto   _label = Type::label();
         size_t pos    = std::string::npos;
         // remove the namespaces
-        for(auto itr : { "tim::component::", "tim::project::", "tim::tpls::",
-                         "tim::api::", "tim::" })
+        for(const auto* itr : { "tim::component::", "tim::project::", "tim::tpls::",
+                                "tim::api::", "tim::" })
         {
             while((pos = _label.find(itr)) != std::string::npos)
                 _label = _label.replace(pos, std::string(itr).length(), "");
@@ -1028,7 +1033,7 @@ storage<Type, true>::get_shared_manager()
         trait::runtime_enabled<Type>::set(_enabled);
 
         auto _instance_id = m_instance_id;
-        bool _is_master   = singleton_t::is_master(this);
+        bool _is_master   = m_is_master;
         auto _sync        = [&]() {
             if(m_graph_data_instance)
                 this->data().sync_sea_level();
@@ -1052,33 +1057,28 @@ storage<Type, true>::get_shared_manager()
                 if(_debug_v || _verb_v > 1)
                 {
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                               "calling _instance->reset(this)");
+                               "calling singleton::reset(this)");
                 }
                 _instance->reset(this);
-                // if(_debug_v || _verb_v > 1)
-                //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                //               "calling _instance->smart_instance().reset()");
-                // _instance->smart_instance().reset();
-                if(_is_master && _instance)
+                if((m_is_master || common_singleton::is_main_thread()) && _instance)
                 {
                     if(_debug_v || _verb_v > 1)
                     {
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                                   "calling _instance->reset()");
+                                   "calling singleton::reset()");
                     }
                     _instance->reset();
-                    // _instance->smart_master_instance().reset();
                 }
             }
             else
             {
                 DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(), (void*) _instance);
             }
-            if(_is_master)
+            if(m_is_master)
                 trait::runtime_enabled<Type>::set(false);
         };
 
-        if(!_is_master)
+        if(!m_is_master)
         {
             manager::master_instance()->add_synchronization(
                 demangle<Type>(), m_instance_id, std::move(_sync));
@@ -1087,7 +1087,7 @@ storage<Type, true>::get_shared_manager()
         }
 
         m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
-                                 std::move(_finalize), _is_master,
+                                 std::move(_finalize), m_is_master,
                                  trait::fini_priority<Type>::value);
     }
 }
@@ -1265,9 +1265,8 @@ storage<Type, false>::get_shared_manager()
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 
-        bool   _is_master = singleton_t::is_master(this);
-        auto   _cleanup   = [&]() {};
-        func_t _finalize  = [&]() {
+        auto   _cleanup  = [&]() {};
+        func_t _finalize = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
@@ -1276,34 +1275,29 @@ storage<Type, false>::get_shared_manager()
                 if(_debug_v || _verb_v > 1)
                 {
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                               "calling _instance->reset(this)");
+                               "calling singleton::reset(this)");
                 }
                 _instance->reset(this);
-                // if(_debug_v || _verb_v > 1)
-                //    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                //               "calling _instance->smart_instance().reset()");
-                // _instance->smart_instance().reset();
-                if(_is_master && _instance)
+                if((m_is_master || common_singleton::is_main_thread()) && _instance)
                 {
                     if(_debug_v || _verb_v > 1)
                     {
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                                   "calling _instance->reset()");
+                                   "calling singleton::reset()");
                     }
                     _instance->reset();
-                    // _instance->smart_master_instance().reset();
                 }
             }
             else
             {
                 DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(), (void*) _instance);
             }
-            if(_is_master)
+            if(m_is_master)
                 trait::runtime_enabled<Type>::set(false);
         };
 
         m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
-                                 std::move(_finalize), _is_master,
+                                 std::move(_finalize), m_is_master,
                                  trait::fini_priority<Type>::value);
     }
 }

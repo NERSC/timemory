@@ -438,8 +438,8 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     {
         constexpr size_t idx = 0;
         stringstream_t   ss;
-        write_entry(ss, "COMPONENT", 0, false, true);
-        _widths.at(idx) = std::max<int64_t>(ss.str().length() + pad - 1, _widths.at(idx));
+        write_entry(ss, "COMPONENT", _widths.at(0), false, true);
+        _widths.at(idx) = std::max<int64_t>(ss.str().length() + pad, _widths.at(idx));
     }
     {
         constexpr size_t idx = 1;
@@ -471,7 +471,7 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     {
         {
             std::stringstream ss;
-            write_entry(ss, std::get<0>(itr), _widths.at(0) - 1, false, true);
+            write_entry(ss, std::get<0>(itr), _widths.at(0), false, true);
             if(!force_brief)
                 write_entry(ss, std::get<1>(itr), _widths.at(1), true, false);
             for(size_t i = 0; i < std::get<2>(itr).size(); ++i)
@@ -490,8 +490,7 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
             constexpr size_t idx = 0;
             stringstream_t   ss;
             write_entry(ss, std::get<idx>(itr), 0, true, true);
-            _widths.at(idx) =
-                std::max<int64_t>(ss.str().length() + pad - 1, _widths.at(idx));
+            _widths.at(idx) = std::max<int64_t>(ss.str().length() + pad, _widths.at(idx));
         }
 
         {
@@ -516,8 +515,8 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     if(!markdown)
         os << banner(_widths, _wusing, '-');
 
-    os << global_delim << ' ';
-    write_entry(os, "COMPONENT", _widths.at(0) - 2, true, false);
+    os << global_delim;
+    write_entry(os, "COMPONENT", _widths.at(0), true, false);
     if(!force_brief)
         write_entry(os, "AVAILABLE", _widths.at(1), true, false);
     for(size_t i = 0; i < fields.size(); ++i)
@@ -532,7 +531,7 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     for(const auto& itr : _info)
     {
         std::stringstream ss;
-        write_entry(ss, std::get<0>(itr), _widths.at(0) - 1, false, true);
+        write_entry(ss, std::get<0>(itr), _widths.at(0), false, true);
         if(!force_brief)
             write_entry(ss, std::get<1>(itr), _widths.at(1), true, false);
         for(size_t i = 0; i < std::get<2>(itr).size(); ++i)
@@ -632,8 +631,7 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
         {
             if(!_wusing.at(i))
                 continue;
-            auto _w = _widths.at(i) - ((i == 0) ? 1 : 0);
-            write_entry(ss, itr.at(i), _w, _center.at(i), _mark.at(i));
+            write_entry(ss, itr.at(i), _widths.at(i), _center.at(i), _mark.at(i));
         }
 
         if(!not_filtered(ss.str()))
@@ -656,8 +654,7 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
     {
         if(!_wusing.at(i))
             continue;
-        auto _w = _widths.at(i) - ((i == 0) ? 1 : 0);
-        write_entry(os, _labels.at(i), _w, true, false);
+        write_entry(os, _labels.at(i), _widths.at(i), true, false);
     }
     os << "\n" << banner(_widths, _wusing, '-');
 
@@ -668,8 +665,7 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
         {
             if(!_wusing.at(i))
                 continue;
-            auto _w = _widths.at(i) - ((i == 0) ? 1 : 0);
-            write_entry(ss, itr.at(i), _w, _center.at(i), _mark.at(i));
+            write_entry(ss, itr.at(i), _widths.at(i), _center.at(i), _mark.at(i));
         }
 
         if(not_filtered(ss.str()))
@@ -772,9 +768,8 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
 
     for(size_t i = 0; i < _labels.size(); ++i)
     {
-        auto _w = _widths.at(i) - ((i == 0) ? 1 : 0);
         if(options[i])
-            write_entry(os, _labels.at(i), _w, true, false);
+            write_entry(os, _labels.at(i), _widths.at(i), true, false);
     }
     os << "\n" << banner(_widths, _wusing, '-');
 
@@ -792,7 +787,7 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
                 os << global_delim;
                 if(options[0])
                 {
-                    write_entry(os, subcategories.at(idx), _widths.at(0) - 1, true,
+                    write_entry(os, subcategories.at(idx), _widths.at(0), true,
                                 _mark.at(0));
                 }
                 for(size_t i = 1; i < N; ++i)
@@ -817,8 +812,7 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
 
             if(options[0])
             {
-                write_entry(ss, itr.symbol(), _widths.at(0) - 1, _center.at(0),
-                            _mark.at(0));
+                write_entry(ss, itr.symbol(), _widths.at(0), _center.at(0), _mark.at(0));
             }
             if(options[1])
             {
@@ -978,11 +972,11 @@ get_window_columns()
 #if defined(TIMEMORY_UNIX)
     struct winsize size;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
-    return return_type{ size.ws_col, "ioctl" };
+    return return_type{ size.ws_col - 1, "ioctl" };
 #elif defined(TIMEMORY_WINDOWS)
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-    return return_type{ csbi.srWindow.Right - csbi.srWindow.Left + 1,
+    return return_type{ csbi.srWindow.Right - csbi.srWindow.Left,
                         "GetConsoleScreenBufferInfo" };
 #else
     return return_type{ 0, "none" };
@@ -1080,26 +1074,41 @@ write_entry(std::ostream& os, const Tp& _entry, int64_t _w, bool center, bool ma
         _w = max_width;
 
     stringstream_t ssentry;
-    stringstream_t ssbeg;
     stringstream_t ss;
-    ssentry << std::boolalpha << _entry;
+    ssentry << ' ' << std::boolalpha << ((mark && markdown) ? "`" : "") << _entry;
     auto _sentry = remove(ssentry.str(), { "tim::", "component::" });
-    if(max_width > 0 && _sentry.length() > static_cast<size_t>(max_width - 2))
-        _sentry = _sentry.substr(0, max_width - 5) + "...";
-    auto wbeg = (_w / 2) - (_sentry.length() / 2) - 1;
-    if(!center)
-        wbeg = 1;
-    ssbeg << std::setw(wbeg) << "";
+
+    auto _decr = (mark && markdown) ? 6 : 5;
+    if(_w > 0 && _sentry.length() > static_cast<size_t>(_w - 2))
+        _sentry = _sentry.substr(0, _w - _decr) + "...";
+
     if(mark && markdown)
     {
-        ssbeg << '`' << _sentry << '`';
+        _sentry += std::string{ "`" };
+    }
+
+    if(center)
+    {
+        size_t _n = 0;
+        while(_sentry.length() + 2 < static_cast<size_t>(_w))
+        {
+            if(_n++ % 2 == 0)
+            {
+                _sentry += std::string{ " " };
+            }
+            else
+            {
+                _sentry = std::string{ " " } + _sentry;
+            }
+        }
+        if(_sentry.length() > _w - 1)
+            _sentry = _sentry.substr(_w - 1);
+        ss << std::left << std::setw(_w - 1) << _sentry << global_delim;
     }
     else
     {
-        ssbeg << _sentry;
+        ss << std::left << std::setw(_w - 1) << _sentry << global_delim;
     }
-
-    ss << std::left << std::setw(_w - 1) << ssbeg.str() << global_delim;
     os << ss.str();
 }
 
@@ -1109,7 +1118,23 @@ template <typename IntArrayT, size_t N>
 string_t
 banner(IntArrayT _breaks, std::array<bool, N> _use, char filler, char delim)
 {
+    if(debug_msg)
+    {
+        std::cerr << "[before]> Breaks: ";
+        for(const auto& itr : _breaks)
+            std::cerr << itr << " ";
+        std::cerr << std::endl;
+    }
+
     _breaks = compute_max_columns(_breaks, _use);
+
+    if(debug_msg)
+    {
+        std::cerr << "[after]>  Breaks: ";
+        for(const auto& itr : _breaks)
+            std::cerr << itr << " ";
+        std::cerr << std::endl;
+    }
 
     for(auto& itr : _breaks)
     {
@@ -1127,8 +1152,6 @@ banner(IntArrayT _breaks, std::array<bool, N> _use, char filler, char delim)
     }
     auto _total = _remain;
     ss << delim;
-    _remain -= 1;
-    _breaks.at(0) -= 1;
     for(size_t i = 0; i < _breaks.size(); ++i)
     {
         if(!_use.at(i))

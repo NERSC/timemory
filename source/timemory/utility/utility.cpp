@@ -159,12 +159,12 @@ demangle_backtrace(const char* cstr)
 {
     auto _trim = [](std::string& _sub, size_t& _len) {
         size_t _pos = 0;
-        while((_pos = _sub.find_first_of(' ')) == 0)
+        while(!_sub.empty() && (_pos = _sub.find_first_of(' ')) == 0)
         {
             _sub = _sub.erase(_pos, 1);
             --_len;
         }
-        while((_pos = _sub.find_last_of(' ')) == _sub.length() - 1)
+        while(!_sub.empty() && (_pos = _sub.find_last_of(' ')) == _sub.length() - 1)
         {
             _sub = _sub.substr(0, _sub.length() - 1);
             --_len;

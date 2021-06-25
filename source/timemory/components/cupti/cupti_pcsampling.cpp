@@ -548,6 +548,4 @@ TIMEMORY_CUPTI_INLINE std::vector<std::string>
 }  // namespace component
 }  // namespace tim
 
-#    include "timemory/variadic/component_tuple.cpp"
-
 #endif  // TIMEMORY_USE_CUPTI_PCSAMPLING

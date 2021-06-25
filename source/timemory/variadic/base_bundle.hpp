@@ -106,7 +106,7 @@ protected:
     TIMEMORY_DEFAULT_OBJECT(common_base_bundle)
 
     common_base_bundle(scope::config&& _config, hash_value_t _hash)
-    : m_scope(std::move(_config))
+    : m_scope(_config)
     , m_hash(_hash)
     {}
 

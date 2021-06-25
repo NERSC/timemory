@@ -402,10 +402,10 @@ namespace component
 #if defined(TIMEMORY_USE_PAPI)
 //
 template <>
-std::string
+inline std::string
 papi_array_t::get_display() const
 {
-    if(events.size() == 0)
+    if(events.empty())
         return "";
     auto val          = load();
     auto _get_display = [&](std::ostream& os, size_type idx) {
@@ -760,7 +760,7 @@ struct timem_config
     double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 1.0e-6);
     pid_t         master_pid   = getpid();
     pid_t         worker_pid   = getpid();
-    string_t      command      = "";
+    string_t      command      = {};
     std::set<int> signal_types = { SIGALRM };
     std::vector<std::string> argvector = {};
 
@@ -851,7 +851,7 @@ timem_config::serialize(Archive& ar, unsigned int)
 //
 //--------------------------------------------------------------------------------------//
 //
-std::string
+inline std::string
 timem_config::get_output_filename(std::string inp)
 {
     if(inp.empty())

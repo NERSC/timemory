@@ -322,7 +322,7 @@ public:
 
 private:
     mode        m_mode;
-    std::string m_prefix = "";
+    std::string m_prefix = {};
     captured    m_captured;
 
 private:
@@ -343,7 +343,8 @@ template <size_t, size_t, typename... Args>
 static inline auto&
 get_static_source_location(Args&&... args)
 {
-    static source_location _instance(std::forward<Args>(args)...);
+    static source_location _instance{ std::forward<Args>(args)... };
+    consume_parameters(std::forward<Args>(args)...);
     return _instance;
 }
 }  // namespace
@@ -359,6 +360,7 @@ get_static_source_location(Args&&... args)
 {
     return internal::get_static_source_location<LineN, CountN>(
         std::forward<Args>(args)...);
+    consume_parameters(std::forward<Args>(args)...);
 }
 //
 }  // namespace tim

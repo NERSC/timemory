@@ -690,7 +690,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
         _custom_sa.sa_flags     = SA_RESTART | SA_SIGINFO;
 
         // start the interval timer
-        for(auto& itr : _signals)
+        for(const auto& itr : _signals)
         {
             // get the associated itimer type
             auto _itimer = get_itimer(itr);

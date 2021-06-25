@@ -89,8 +89,10 @@ add_target_flag_if_avail(test-debug-flags "-O0" "-g")
 
 # Any warnings trigger an error flags
 add_library(test-werror-flags INTERFACE)
-add_target_flag_if_avail(test-werror-flags "-W" "-Wall" "-Wextra" "-pedantic"
-    "-Wno-mismatched-tags" "-Werror")
+add_target_flag_if_avail(test-werror-flags "-W" "-Wall" "-Wextra" "-pedantic" "-Werror")
+if(CMAKE_CXX_COMPILER_IS_CLANG)
+    add_target_flag_if_avail(test-werror-flags "-Wno-mismatched-tags")
+endif()
 target_link_libraries(test-werror-flags INTERFACE
     timemory::timemory-headers timemory::timemory-compile-timing)
 target_compile_definitions(test-werror-flags INTERFACE TIMEMORY_CMAKE)

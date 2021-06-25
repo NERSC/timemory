@@ -123,7 +123,7 @@ public:
     void cleanup();
     void finalize();
     void read_command_line();
-    bool is_finalized() { return m_is_finalized; }
+    bool is_finalized() const { return m_is_finalized; }
 
     void add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file);
@@ -318,7 +318,7 @@ private:
     uint64_t        m_num_entries     = 0;
     int64_t         m_thread_index    = threading::get_id();
     std::thread::id m_thread_id       = threading::get_tid();
-    string_t        m_metadata_prefix = "";
+    string_t        m_metadata_prefix = {};
     mutex_t         m_mutex;
     auto_lock_ptr_t m_lock = auto_lock_ptr_t{ nullptr };
     /// increment the shared_ptr count here to ensure these instances live
@@ -396,8 +396,8 @@ public:
     /// swaps out the actual settings instance
     static settings&& swap_settings(settings _settings)
     {
-        settings&& _tmp       = std::move(*(f_settings().get()));
-        *(f_settings().get()) = std::move(_settings);
+        settings&& _tmp = std::move(*(f_settings()));
+        *(f_settings()) = std::move(_settings);
         return std::move(_tmp);
     }
 };
@@ -697,7 +697,7 @@ manager::filtered_get_storage<Types...>::size(pointer_t         _manager,
     enum_map_t<uint64_t> _sz{};
     if(_manager)
     {
-        for(auto& itr : _types)
+        for(const auto& itr : _types)
             _sz.insert({ itr, 0 });
         TIMEMORY_FOLD_EXPRESSION(_manager->do_size<Types>(_sz));
     }

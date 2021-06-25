@@ -291,7 +291,7 @@ public:
 
     static ert_data_ptr_t& get_ert_data()
     {
-        static ert_data_ptr_t _instance = ert_data_ptr_t(new ert_data_t);
+        static ert_data_ptr_t _instance = std::make_shared<ert_data_t>();
         return _instance;
     }
 

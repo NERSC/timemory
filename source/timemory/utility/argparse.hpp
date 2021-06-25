@@ -108,8 +108,8 @@ trim(std::string s, bool (*f)(int) = not_is_space)
 static inline char*
 strdup(const char* s)
 {
-    auto slen   = strlen(s);
-    auto result = new char[slen + 1];
+    auto  slen   = strlen(s);
+    auto* result = new char[slen + 1];
     if(result)
     {
         memcpy(result, s, slen * sizeof(char));
@@ -552,7 +552,7 @@ struct argument_parser
         TIMEMORY_NODISCARD std::string get_name() const
         {
             std::stringstream ss;
-            for(auto& itr : m_names)
+            for(const auto& itr : m_names)
                 ss << "/" << itr;
             return ss.str().substr(1);
         }
@@ -1095,7 +1095,8 @@ inline std::string
 argument_parser::argument::get<std::string>()
 {
     using T = std::string;
-    if(m_values.empty() && m_default && m_default_tidx == std::type_index{ typeid(T) })
+    if(m_values.empty() && m_default != nullptr &&
+       m_default_tidx == std::type_index{ typeid(T) })
         return (*static_cast<T*>(m_default));
     return helpers::join(m_values.begin(), m_values.end());
 }
@@ -1107,7 +1108,8 @@ inline std::vector<std::string>
 argument_parser::argument::get<std::vector<std::string>>()
 {
     using T = std::vector<std::string>;
-    if(m_values.empty() && m_default && m_default_tidx == std::type_index{ typeid(T) })
+    if(m_values.empty() && m_default != nullptr &&
+       m_default_tidx == std::type_index{ typeid(T) })
         return (*static_cast<T*>(m_default));
     return m_values;
 }
