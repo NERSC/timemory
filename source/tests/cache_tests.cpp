@@ -217,6 +217,7 @@ protected:
         trait::runtime_enabled<gpu_roofline_flops>::set(false);
         trait::runtime_enabled<gpu_roofline_sp_flops>::set(false);
         trait::runtime_enabled<gpu_roofline_dp_flops>::set(false);
+        trait::runtime_enabled<cupti_pcsampling>::set(false);
     }
 
     static void extra_teardown()
