@@ -1,4 +1,8 @@
 
+if(NOT UNIX OR APPLE)
+    return()
+endif()
+
 set(NAME network)
 
 file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)

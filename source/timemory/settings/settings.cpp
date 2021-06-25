@@ -930,9 +930,9 @@ settings::initialize_roofline()
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, cpu_roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE_CPU"),
         "Configure the roofline collection mode for CPU specifically. Options: 'op', "
-        "'ai', 'mp'",
-        "mp", strvector_t({ "--timemory-cpu-roofline-mode" }), 1, 1,
-        strvector_t({ "op", "ai", "mp" }));
+        "'ai'",
+        "op", strvector_t({ "--timemory-cpu-roofline-mode" }), 1, 1,
+        strvector_t({ "op", "ai" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, gpu_roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE_GPU"),

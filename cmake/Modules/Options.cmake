@@ -217,10 +217,14 @@ if(${PROJECT_NAME}_MAIN_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
 endif()
 
 if(${PROJECT_NAME}_MAIN_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
-    # standard
+    # standard    
     set(CMAKE_C_STANDARD 11 CACHE STRING "C language standard")
     set(CMAKE_CXX_STANDARD 14 CACHE STRING "CXX language standard")
-    set(CMAKE_CUDA_STANDARD 14 CACHE STRING "CUDA language standard")
+    if(CMAKE_VERSION VERSION_LESS 3.18.0)
+        set(CMAKE_CUDA_STANDARD 14 CACHE STRING "CUDA language standard")
+    else()
+        set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "CUDA language standard")
+    endif()
 
     # standard required
     add_option(CMAKE_C_STANDARD_REQUIRED "Require C language standard" ON)
@@ -250,9 +254,6 @@ else()
         set(CMAKE_CXX_STANDARD 14)
     endif()
 endif()
-
-# set it to the same because of string_view
-# set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD})
 
 add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 
