@@ -104,10 +104,10 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::gperftools_heap_profi
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_cpu_profiler,
                                  TIMEMORY_GPERFTOOLS_CPU_PROFILER,
-                                 "gperftools_cpu_profiler", "gperf_cpu_profiler",
-                                 "gperf_cpu", "gperftools-cpu")
+                                 "gperftools_cpu_profiler", "gperftools_cpu",
+                                 "gperftools-cpu", "gperf_cpu_profiler", "gperf_cpu")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_heap_profiler,
                                  TIMEMORY_GPERFTOOLS_HEAP_PROFILER,
-                                 "gperftools_heap_profiler", "gperf_heap_profiler",
-                                 "gperf_heap", "gperftools-heap")
+                                 "gperftools_heap_profiler", "gperftools_heap",
+                                 "gperftools-heap", "gperf_heap_profiler", "gperf_heap")
