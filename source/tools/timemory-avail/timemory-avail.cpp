@@ -1176,7 +1176,7 @@ not_filtered(const std::string& line)
     bool _display = regex_key.empty();
     if(!_display)
     {
-        const auto _rc = regex_const::egrep | regex_const::optimize;
+        const auto _rc = std::regex_constants::egrep | std::regex_constants::optimize;
         const auto _re = std::regex(regex_key, _rc);
         _display       = std::regex_search(line, _re);
     }
@@ -1191,7 +1191,7 @@ hl_filtered(std::string line)
 #if defined(TIMEMORY_UNIX)
     if(regex_hl)
     {
-        const auto _rc = regex_const::egrep | regex_const::optimize;
+        const auto _rc = std::regex_constants::egrep | std::regex_constants::optimize;
         const auto _re = std::regex(regex_key, _rc);
         line           = std::regex_replace(line, _re, "\33[01;04;36;40m$&\33[0m");
     }
