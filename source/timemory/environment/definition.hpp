@@ -339,22 +339,17 @@ TIMEMORY_ENVIRONMENT_LINKAGE(tim::env_settings*)
 env_settings::instance()
 {
     static std::atomic<int>           _count{ 0 };
-    static env_settings*              _instance = new env_settings();
-    static thread_local int           _id       = _count++;
+    static env_settings               _instance{};
+    static thread_local int           _id = _count++;
     static thread_local env_settings* _local =
-        (_id == 0) ? _instance : new env_settings{ _instance, _id };
+        (_id == 0) ? (&_instance) : new env_settings{ &_instance, _id };
     static thread_local auto _ldtor = scope::destructor{ []() {
-        if(_local == _instance)
-            _instance = nullptr;
+        if(_local == &_instance || _id == 0)
+            return;
         delete _local;
         _local                      = nullptr;
     } };
-    static auto _gdtor = scope::destructor{ []() {
-        delete _instance;
-        _instance      = nullptr;
-    } };
     return _local;
-    (void) _gdtor;
     (void) _ldtor;
 }
 //
