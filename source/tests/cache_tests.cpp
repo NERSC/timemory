@@ -560,8 +560,7 @@ get_value(Arg&)
 #if defined(TIMEMORY_LINUX)
 TEST_F(cache_tests, io)
 {
-    if(!std::ifstream{
-           TIMEMORY_JOIN('/', "/proc", tim::process::get_target_id(), "/io") })
+    if(!std::ifstream{ TIMEMORY_JOIN('/', "/proc", tim::process::get_target_id(), "io") })
         return;
     using io_bundle_t =
         tim::component_tuple<read_bytes, read_char, written_bytes, written_char>;
