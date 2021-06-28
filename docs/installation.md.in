@@ -2,7 +2,7 @@
 
 - Required
     - C++14 compiler (GNU, MSVC, Clang, Intel, PGI)
-    - CMake >= 3.11
+    - CMake >= 3.15
 - Optional
     - C compiler (GNU, MSVC, Clang, Intel, PGI)
     - Python libraries
