@@ -5,7 +5,7 @@ include .clang-format
 include .clang-tidy
 include .gitignore
 include .readthedocs.yml
-include CHANGES.md
+include CHANGELOG.md
 include CMakeLists.txt
 include CODE_OF_CONDUCT.md
 include CONTRIBUTING.md
@@ -37,6 +37,7 @@ recursive-include .requirements *
 global-exclude *.pyc
 global-exclude *.git*
 global-exclude *__pycache__*
+global-exclude *.so
 
 # recursive excludes
 
@@ -44,3 +45,4 @@ recursive-exclude timemory.egg-info *
 recursive-exclude _skbuild *
 recursive-exclude build *
 recursive-exclude dist *
+recursive-exclude external/hatchet/build *
