@@ -899,8 +899,8 @@ struct storage_deleter : public std::default_delete<StorageType>
 
     void operator()(StorageType* ptr)
     {
-        if(ptr == nullptr)
-            return;
+        // if(ptr == nullptr)
+        //    return;
 
         StorageType*    master     = singleton_t::master_instance_ptr();
         std::thread::id master_tid = singleton_t::master_thread_id();
