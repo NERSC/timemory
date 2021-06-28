@@ -217,6 +217,7 @@ protected:
         trait::runtime_enabled<gpu_roofline_flops>::set(false);
         trait::runtime_enabled<gpu_roofline_sp_flops>::set(false);
         trait::runtime_enabled<gpu_roofline_dp_flops>::set(false);
+        trait::runtime_enabled<cupti_pcsampling>::set(false);
     }
 
     static void extra_teardown()
@@ -559,6 +560,8 @@ get_value(Arg&)
 #if defined(TIMEMORY_LINUX)
 TEST_F(cache_tests, io)
 {
+    if(!std::ifstream{ TIMEMORY_JOIN('/', "/proc", tim::process::get_target_id(), "io") })
+        return;
     using io_bundle_t =
         tim::component_tuple<read_bytes, read_char, written_bytes, written_char>;
     using timing_t   = tim::auto_tuple<wall_clock>;
