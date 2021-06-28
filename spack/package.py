@@ -1,4 +1,4 @@
-# Copyright 2013-2020 Lawrence Livermore National Security, LLC and other
+# Copyright 2013-2021 Lawrence Livermore National Security, LLC and other
 # Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -8,8 +8,8 @@
 from spack import *
 
 
-class Timemory(CMakePackage):
-    """Timing + Memory + Hardware Counter Utilities for C/C++/CUDA/Python"""
+class Timemory(CMakePackage, PythonPackage):
+    """Timing + Memory + Hardware Counter Utilities for C/C++/CUDA/Fortran/Python"""
 
     homepage = 'https://timemory.readthedocs.io/en/latest/'
     git = 'https://github.com/NERSC/timemory.git'
@@ -17,6 +17,8 @@ class Timemory(CMakePackage):
 
     version('master', branch='master', submodules=True)
     version('develop', branch='develop', submodules=True)
+    version('3.2.0', branch='release/3.2.0',
+            submodules=True)
     version('3.0.1', commit='ef638e1cde90275ce7c0e12fc4902c27bcbdeefd',
             submodules=True)
     version('3.0.0', commit='b36b1673b2c6b7ff3126d8261bef0f8f176c7beb',
@@ -25,6 +27,9 @@ class Timemory(CMakePackage):
     variant('shared', default=True, description='Build shared libraries')
     variant('static', default=False, description='Build static libraries')
     variant('python', default=False, description='Enable Python support')
+    variant('python_deps', default=False,
+            description='Install non-critical python dependencies '
+                        '(may significantly increase spack install time)')
     variant('mpi', default=False,
             description='Enable support for MPI aggregation')
     variant('nccl', default=False,
@@ -88,16 +93,16 @@ class Timemory(CMakePackage):
             description=('find_package(...) resulting in NOTFOUND '
                          'generates error'))
 
-    depends_on('cmake@3.11:', type='build')
+    depends_on('cmake@3.15:', type='build')
 
     extends('python', when='+python')
     depends_on('python@3:', when='+python', type=('build', 'run'))
-    depends_on('py-numpy', when='+python', type=('run'))
-    depends_on('py-pillow', when='+python', type=('run'))
-    depends_on('py-matplotlib', when='+python', type=('run'))
-    depends_on('py-mpi4py', when='+python+mpi', type=('run'))
     depends_on('py-cython', when='+python', type=('build'))
-    depends_on('py-ipython', when='+python', type=('run'))
+    depends_on('pil', when='+python+python_deps', type=('run'))
+    depends_on('py-numpy', when='+python+python_deps', type=('run'))
+    depends_on('py-matplotlib', when='+python+python_deps', type=('run'))
+    depends_on('py-ipython', when='+python+python_deps', type=('run'))
+    depends_on('py-mpi4py', when='+python+mpi+python_deps', type=('run'))
     depends_on('mpi', when='+mpi')
     depends_on('nccl', when='+nccl')
     depends_on('tau', when='+tau')
@@ -117,6 +122,7 @@ class Timemory(CMakePackage):
 
     conflicts('+python', when='~shared',
               msg='+python requires building shared libraries')
+    conflicts('+python_deps', when='~python')
     conflicts('+cupti', when='~cuda', msg='CUPTI requires CUDA')
     conflicts('+kokkos_tools', when='~tools',
               msg='+kokkos_tools requires +tools')
@@ -186,7 +192,7 @@ class Timemory(CMakePackage):
             args.append('-D{0}CUDA_ARCH={1}'.format(key, targ))
 
         cpu_target = spec.variants['cpu_target'].value
-        if cpu_target == 'auto':
+        if cpu_target != 'auto':
             args.append('-DCpuArch_TARGET={0}'.format(cpu_target))
 
         # forced disabling of submodule builds
