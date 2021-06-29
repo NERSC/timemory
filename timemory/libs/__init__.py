@@ -99,6 +99,8 @@ from .libpytimemory import (
     options,
     timer_decorator,
     component_decorator,
+    component_bundle,
+    component_tuple,
     timer,
     rss_usage,
 )
@@ -161,6 +163,8 @@ __all__ = [
     "options",
     "timer_decorator",
     "component_decorator",
+    "component_bundle",
+    "component_tuple",
     "timer",
     "rss_usage",
     "profile",

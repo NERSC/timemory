@@ -99,17 +99,17 @@ get_enum(py::object _obj)
 {
     try
     {
-        auto _sitr = _obj.cast<std::string>();
-        // return native components end so that message isn't delivered
-        if(_sitr.length() == 0)
-            return TIMEMORY_NATIVE_COMPONENTS_END;
-        return tim::runtime::enumerate(_sitr);
+        return _obj.cast<TIMEMORY_COMPONENT>();
     } catch(py::cast_error&)
     {}
 
     try
     {
-        return _obj.cast<TIMEMORY_COMPONENT>();
+        auto _sitr = _obj.cast<std::string>();
+        // return native components end so that message isn't delivered
+        if(_sitr.length() == 0)
+            return TIMEMORY_NATIVE_COMPONENTS_END;
+        return tim::runtime::enumerate(_sitr);
     } catch(py::cast_error& e)
     {
         std::cerr << e.what() << std::endl;

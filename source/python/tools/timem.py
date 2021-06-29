@@ -144,11 +144,38 @@ if __name__ == "__main__":
         )
         report = report.replace(": ", "", 1)
         suffix_report = report.split(",")
+        _sorted = []
 
-        strings = ["\n> {} total execution time :".format(exe_name)]
-        for comp in suffix_report:
-            if "laps" not in comp:
-                strings.append("    {}".format(comp))
+        def _insert(key):
+            for itr in suffix_report:
+                if key in itr:
+                    _sorted.append(itr)
+                    suffix_report.remove(itr)
+                    return
+
+        _insert(" wall")
+        _insert(" sys")
+        _insert(" user")
+        _insert(" cpu")
+        _insert(" cpu_util")
+        _insert(" peak")
+        _insert(" prio_")
+        _insert(" vol_")
+        _insert(" major_")
+        _insert(" minor_")
+        for itr in suffix_report:
+            _sorted.append(itr)
+        suffix_report = _sorted
+
+        strings = [f"\n{exe_name}> Measurement totals:"]
+        for itr in suffix_report:
+            if "laps" not in itr:
+                data = itr.strip().split()
+                if len(data) > 1:
+                    entry = "{:>16} {:<16}".format(data[0], " ".join(data[1:]))
+                else:
+                    entry = "{:>16}".format(" ".join(data))
+                strings.append("    {}".format(entry))
 
         for s in strings:
             print("{}".format(s))
