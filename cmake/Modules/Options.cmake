@@ -133,6 +133,11 @@ else()
     set(_USE_CUDA OFF)
 endif()
 
+set(_USE_HIP OFF)
+if(NOT _USE_CUDA OR (NOT DEFINED TIMEMORY_USE_HIP AND NOT TIMEMORY_REQUIRE_PACKAGES))
+    set(_USE_HIP ON)
+endif()
+
 # On Windows do not try run check_language because it tends to hang indefinitely
 if(WIN32 AND NOT DEFINED TIMEMORY_BUILD_FORTRAN)
     set(_BUILD_FORTRAN OFF)
@@ -396,6 +401,7 @@ define_default_option(_PAPI ${_USE_PAPI})
 define_default_option(_GPERFTOOLS ON)
 define_default_option(_VTUNE ON)
 define_default_option(_CUDA ${_USE_CUDA})
+define_default_option(_HIP ${_USE_HIP})
 define_default_option(_CALIPER ${_BUILD_CALIPER})
 define_default_option(_PYTHON OFF)
 define_default_option(_DYNINST ON)
@@ -444,6 +450,8 @@ add_option(TIMEMORY_USE_NVML
     "Enable support for NVIDIA Management Library" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_NCCL
     "Enable NCCL support for NVIDIA GPUs" ${_NCCL} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_HIP
+    "Enable HIP option for GPU roofline" ${_HIP} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_PYTHON

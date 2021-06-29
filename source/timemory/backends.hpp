@@ -72,6 +72,8 @@
 //
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/backends/gpu.hpp"
+
 #if defined(TIMEMORY_USE_CUDA)
 #    include "timemory/backends/cuda.hpp"
 #    include "timemory/components/cuda/backends.hpp"
@@ -83,4 +85,9 @@
 
 #if defined(TIMEMORY_USE_NVTX)
 #    include "timemory/backends/nvtx.hpp"
+#endif
+
+#if defined(TIMEMORY_USE_HIP)
+#    include "timemory/backends/hip.hpp"
+#    include "timemory/components/hip/backends.hpp"
 #endif

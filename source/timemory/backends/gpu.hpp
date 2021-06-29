@@ -22,45 +22,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define TIMEMORY_ERT_SOURCE_GPU
-#if defined(TIMEMORY_USE_CUDA)
-#    define TIMEMORY_ERT_SOURCE_CUDA
-#elif defined(TIMEMORY_USE_HIP)
-#    define TIMEMORY_ERT_SOURCE_HIP
-#endif
+#pragma once
 
-#include "timemory/ert/extern.hpp"
+#if defined(TIMEMORY_USE_CUDA)
+#    include "timemory/backends/cuda.hpp"
+#else
+#    include "timemory/backends/hip.hpp"
+#endif
 
 namespace tim
 {
-namespace ert
+namespace gpu
 {
-TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(
-    class counter<device::gpu, float, component::ert_timer>)
-TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(
-    class counter<device::gpu, double, component::ert_timer>)
 //
-#if defined(TIMEMORY_USE_CUDA_HALF)
-TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(
-    class counter<device::gpu, cuda::fp16_t, component::ert_timer>)
+#if defined(TIMEMORY_USE_HIP)
+//
+using namespace ::tim::hip;
+//
+#elif defined(TIMEMORY_USE_CUDA)
+//
+using namespace ::tim::cuda;
+//
+#else
+//
+using namespace ::tim::hip;
+//
 #endif
 //
-TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(
-    struct configuration<device::gpu, float, component::ert_timer>)
-TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(
-    struct configuration<device::gpu, double, component::ert_timer>)
-//
-TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(
-    struct executor<device::gpu, float, component::ert_timer>)
-TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(
-    struct executor<device::gpu, double, component::ert_timer>)
-//
-#if defined(TIMEMORY_USE_CUDA_HALF)
-TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(
-    struct configuration<device::gpu, cuda::fp16_t, component::ert_timer>)
-//
-TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(
-    struct executor<device::gpu, cuda::fp16_t, component::ert_timer>)
-#endif
-}  // namespace ert
+}  // namespace gpu
 }  // namespace tim

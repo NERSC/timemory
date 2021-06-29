@@ -168,7 +168,7 @@
 //======================================================================================//
 //  device decorators
 //
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #    define TIMEMORY_LAMBDA __host__ __device__
 #    define TIMEMORY_HOST_LAMBDA __host__
 #    define TIMEMORY_DEVICE_LAMBDA __device__
