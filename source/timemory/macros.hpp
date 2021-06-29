@@ -513,6 +513,138 @@
 #        define TIMEMORY_NVML_RUNTIME_CHECK_ERROR(...)
 #    endif
 #endif
+
+//======================================================================================//
+//
+//                              HIP
+//
+//======================================================================================//
+//
+#if defined(TIMEMORY_USE_HIP)
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_HIP_RUNTIME_API_CALL)
+#        define TIMEMORY_HIP_RUNTIME_API_CALL(apiFuncCall)                               \
+            {                                                                            \
+                ::tim::hip::error_t err = apiFuncCall;                                   \
+                if(err != ::tim::hip::success_v && (int) err != 0)                       \
+                {                                                                        \
+                    fprintf(stderr,                                                      \
+                            "%s:%d: error: function '%s' failed with error: %s.\n",      \
+                            __FILE__, __LINE__, #apiFuncCall,                            \
+                            ::tim::hip::get_error_string(err));                          \
+                }                                                                        \
+            }
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_HIP_RUNTIME_API_CALL_THROW)
+#        define TIMEMORY_HIP_RUNTIME_API_CALL_THROW(apiFuncCall)                         \
+            {                                                                            \
+                ::tim::hip::error_t err = apiFuncCall;                                   \
+                if(err != ::tim::hip::success_v && (int) err != 0)                       \
+                {                                                                        \
+                    char errmsg[std::numeric_limits<uint16_t>::max()];                   \
+                    sprintf(errmsg,                                                      \
+                            "%s:%d: error: function '%s' failed with error: %s.\n",      \
+                            __FILE__, __LINE__, #apiFuncCall,                            \
+                            ::tim::hip::get_error_string(err));                          \
+                    throw std::runtime_error(errmsg);                                    \
+                }                                                                        \
+            }
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_HIP_RUNTIME_CHECK_ERROR)
+#        define TIMEMORY_HIP_RUNTIME_CHECK_ERROR(err)                                    \
+            {                                                                            \
+                if(err != ::tim::hip::success_v && (int) err != 0)                       \
+                {                                                                        \
+                    fprintf(stderr, "%s:%d: error check failed with: code %i -- %s.\n",  \
+                            __FILE__, __LINE__, (int) err,                               \
+                            ::tim::hip::get_error_string(err));                          \
+                }                                                                        \
+            }
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#else
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_HIP_RUNTIME_API_CALL)
+#        define TIMEMORY_HIP_RUNTIME_API_CALL(...)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_HIP_RUNTIME_API_CALL_THROW)
+#        define TIMEMORY_HIP_RUNTIME_API_CALL_THROW(...)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_HIP_RUNTIME_CHECK_ERROR)
+#        define TIMEMORY_HIP_RUNTIME_CHECK_ERROR(...)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#endif
+
+//======================================================================================//
+//
+//                              GPU
+//
+//======================================================================================//
+//
+#if !defined(TIMEMORY_GPU_RUNTIME_API_CALL)
+#    if defined(TIMEMORY_USE_CUDA)
+#        define TIMEMORY_GPU_RUNTIME_API_CALL(...)                                       \
+            TIMEMORY_CUDA_RUNTIME_API_CALL(__VA_ARGS__)
+#    elif defined(TIMEMORY_USE_HIP)
+#        define TIMEMORY_GPU_RUNTIME_API_CALL(...)                                       \
+            TIMEMORY_HIP_RUNTIME_API_CALL(__VA_ARGS__)
+#    else
+#        define TIMEMORY_GPU_RUNTIME_API_CALL(...)
+#    endif
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_GPU_RUNTIME_API_CALL_THROW)
+#    if defined(TIMEMORY_USE_CUDA)
+#        define TIMEMORY_GPU_RUNTIME_API_CALL_THROW(...)                                 \
+            TIMEMORY_CUDA_RUNTIME_API_CALL_THROW(__VA_ARGS__)
+#    elif defined(TIMEMORY_USE_HIP)
+#        define TIMEMORY_GPU_RUNTIME_API_CALL_THROW(...)                                 \
+            TIMEMORY_HIP_RUNTIME_API_CALL_THROW(__VA_ARGS__)
+#    else
+#        define TIMEMORY_GPU_RUNTIME_API_CALL_THROW(...)
+#    endif
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_GPU_RUNTIME_CHECK_ERROR)
+#    if defined(TIMEMORY_USE_CUDA)
+#        define TIMEMORY_GPU_RUNTIME_CHECK_ERROR(...)                                    \
+            TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(__VA_ARGS__)
+#    elif defined(TIMEMORY_USE_HIP)
+#        define TIMEMORY_GPU_RUNTIME_CHECK_ERROR(...)                                    \
+            TIMEMORY_HIP_RUNTIME_CHECK_ERROR(__VA_ARGS__)
+#    else
+#        define TIMEMORY_GPU_RUNTIME_CHECK_ERROR(...)
+#    endif
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+
 //======================================================================================//
 //
 //                              LIKWID

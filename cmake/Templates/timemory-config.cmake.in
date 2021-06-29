@@ -213,6 +213,7 @@ if(TIMEMORY_INSTALL_TREE)
     timemory_dependent_package(OpenMP   @TIMEMORY_USE_OMPT@)
     timemory_dependent_package(Dyninst  @TIMEMORY_USE_DYNINST@)
     timemory_dependent_package(PAPI     @TIMEMORY_USE_PAPI@)
+    timemory_dependent_package(hip      @TIMEMORY_USE_HIP@)
     timemory_dependent_package(Boost    @TIMEMORY_USE_DYNINST@ QUIET COMPONENTS
         "@TIMEMORY_BOOST_COMPONENTS@")
 

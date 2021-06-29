@@ -162,6 +162,10 @@ endmacro()
 # check C flag
 #----------------------------------------------------------------------------------------#
 macro(ADD_C_FLAG_IF_AVAIL FLAG)
+    set(_ENABLE ON)
+    if(DEFINED TIMEMORY_BUILD_C AND NOT TIMEMORY_BUILD_C)
+        set(_ENABLE OFF)
+    endif()
     set(_TARG )
     set(_LTARG )
     if(NOT "${ARGN}" STREQUAL "")
