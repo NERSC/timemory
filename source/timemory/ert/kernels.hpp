@@ -32,6 +32,7 @@
 
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
+#include "timemory/backends/gpu.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/ert/counter.hpp"
@@ -161,7 +162,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
     if(_counter.skip(Nops))
         return false;
 
-    using stream_list_t   = std::vector<cuda::stream_t>;
+    using stream_list_t   = std::vector<gpu::stream_t>;
     using thread_list_t   = std::vector<std::thread>;
     using device_params_t = device::params<DeviceT>;
     using Intp            = int32_t;
@@ -192,7 +193,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
         // fill with implicit stream
         streams.resize(_counter.params.nstreams, 0);
         for(auto& itr : streams)
-            cuda::stream_create(itr);
+            gpu::stream_create(itr);
     }
 
     auto _opfunc = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
@@ -218,7 +219,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
         //      grid_size = ((data_size + block_size - 1) / block_size)
         //
         device_params_t dev_params(_counter.params.grid_size, _counter.params.block_size,
-                                   _counter.params.shmem_size, 0);
+                                   _counter.params.shmem_size, DeviceT::default_stream);
         //
         if(n > _counter.nsize)
         {
@@ -250,11 +251,11 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
             {
                 // make sure all streams are synced
                 for(auto& itr : streams)
-                    cuda::stream_sync(itr);
+                    gpu::stream_sync(itr);
 
                 // sync the streams
                 if(nstreams < 2)
-                    cuda::device_sync();
+                    gpu::device_sync();
             }
 
             // wait master thread notifies to proceed
@@ -301,11 +302,11 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
             if(is_gpu)
             {
                 for(auto& itr : streams)
-                    cuda::stream_sync(itr);
+                    gpu::stream_sync(itr);
 
                 // sync the streams
                 if(nstreams < 2)
-                    cuda::device_sync();
+                    gpu::device_sync();
             }
 
             // wait master thread notifies to proceed
@@ -330,7 +331,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
         }
 
         if(is_gpu)
-            cuda::device_sync();
+            gpu::device_sync();
 
         _counter.destroy_buffer(buf);
     };
@@ -342,7 +343,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
     dmp::barrier();  // synchronize MPI processes
 
     if(is_gpu)
-        cuda::device_sync();
+        gpu::device_sync();
 
     if(_counter.params.nthreads > 1)
     {
@@ -379,7 +380,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
     }
 
     if(is_gpu)
-        cuda::device_sync();
+        gpu::device_sync();
 
     dmp::barrier();  // synchronize MPI processes
 

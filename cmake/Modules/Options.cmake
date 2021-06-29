@@ -151,6 +151,11 @@ else()
     set(_USE_CUDA OFF)
 endif()
 
+set(_USE_HIP OFF)
+if(NOT _USE_CUDA OR (NOT DEFINED TIMEMORY_USE_HIP AND NOT TIMEMORY_REQUIRE_PACKAGES))
+    set(_USE_HIP ON)
+endif()
+
 # On Windows do not try run check_language because it tends to hang indefinitely
 if(WIN32 AND NOT DEFINED TIMEMORY_BUILD_FORTRAN)
     set(_BUILD_FORTRAN OFF)
@@ -429,6 +434,7 @@ define_default_option(_PAPI ${_USE_PAPI})
 define_default_option(_GPERFTOOLS ON)
 define_default_option(_VTUNE ON)
 define_default_option(_CUDA ${_USE_CUDA})
+define_default_option(_HIP ${_USE_HIP})
 define_default_option(_CALIPER ${_BUILD_CALIPER})
 define_default_option(_PYTHON OFF)
 define_default_option(_DYNINST ON)
@@ -441,47 +447,72 @@ define_default_option(_NCCL ${_USE_CUDA})
 define_default_option(_LIKWID_NVMON ${_LIKWID} ${_NON_APPLE_UNIX} ${_CUDA})
 
 # timemory options
-add_option(TIMEMORY_USE_DEPRECATED "Enable deprecated code" OFF CMAKE_DEFINE)
-add_option(TIMEMORY_USE_STATISTICS "Enable statistics by default" ON CMAKE_DEFINE)
-add_option(TIMEMORY_USE_MPI "Enable MPI usage" ${_MPI} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" OFF
-           CMAKE_DEFINE)
-add_option(TIMEMORY_USE_UPCXX "Enable UPCXX usage (MPI support takes precedence)"
-           ${_UPCXX} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_SANITIZER "Enable -fsanitize flag (=${TIMEMORY_SANITIZER_TYPE})"
-           OFF)
-add_option(TIMEMORY_USE_TAU "Enable TAU marking API" ${_TAU} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_PAPI "Enable PAPI" ${_PAPI} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CLANG_TIDY "Enable running clang-tidy" OFF)
-add_option(TIMEMORY_USE_COVERAGE "Enable code-coverage" ${_USE_COVERAGE})
-add_option(TIMEMORY_USE_GPERFTOOLS "Enable gperftools" ${_GPERFTOOLS} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_ARCH "Enable architecture flags" OFF CMAKE_DEFINE)
-add_option(TIMEMORY_USE_VTUNE "Enable VTune marking API" ${_VTUNE} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CUDA "Enable CUDA option for GPU measurements" ${_CUDA}
-           CMAKE_DEFINE)
-add_option(TIMEMORY_USE_NVTX "Enable NVTX marking API" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CUPTI "Enable CUPTI profiling for NVIDIA GPUs"
-           ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_NVML "Enable support for NVIDIA Management Library"
-           ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_NCCL "Enable NCCL support for NVIDIA GPUs" ${_NCCL} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CALIPER "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_PYTHON "Enable Python" ${_PYTHON} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_COMPILE_TIMING "Enable -ftime-report for compilation times" OFF)
-add_option(TIMEMORY_USE_DYNINST "Enable dynamic instrumentation" ${_DYNINST})
-add_option(TIMEMORY_USE_ALLINEA_MAP "Enable control for AllineaMAP sampler"
-           ${_ALLINEA_MAP} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CRAYPAT "Enable CrayPAT support" ${_CRAYPAT} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_OMPT "Enable OpenMP tooling" ${_OMPT} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_LIKWID "Enable LIKWID marker forwarding" ${_LIKWID} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_LIKWID_PERFMON "Enable LIKWID support for perf (CPU)"
-           ${TIMEMORY_USE_LIKWID} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_LIKWID_NVMON "Enable LIKWID support for nvidia (GPU)"
-           ${_LIKWID_NVMON} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_GOTCHA "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_XML "Enable XML serialization support" ${_USE_XML} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_LIBUNWIND "Enable libunwind" ${_USE_LIBUNWIND} CMAKE_DEFINE)
-add_option(TIMEMORY_BUILD_ERT "Build ERT library" ON)
+add_option(TIMEMORY_USE_DEPRECATED
+    "Enable deprecated code" OFF CMAKE_DEFINE)
+add_option(TIMEMORY_USE_STATISTICS
+    "Enable statistics by default" ON CMAKE_DEFINE)
+add_option(TIMEMORY_USE_MPI
+    "Enable MPI usage" ${_MPI} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_MPI_INIT
+    "Enable MPI_Init and MPI_Init_thread wrappers" OFF CMAKE_DEFINE)
+add_option(TIMEMORY_USE_UPCXX
+    "Enable UPCXX usage (MPI support takes precedence)" ${_UPCXX} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_SANITIZER
+    "Enable -fsanitize flag (=${TIMEMORY_SANITIZER_TYPE})" OFF)
+add_option(TIMEMORY_USE_TAU
+    "Enable TAU marking API" ${_TAU} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_PAPI
+    "Enable PAPI" ${_PAPI} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_CLANG_TIDY
+    "Enable running clang-tidy" OFF)
+add_option(TIMEMORY_USE_COVERAGE
+    "Enable code-coverage" ${_USE_COVERAGE})
+add_option(TIMEMORY_USE_GPERFTOOLS
+    "Enable gperftools" ${_GPERFTOOLS} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_ARCH
+    "Enable architecture flags" OFF CMAKE_DEFINE)
+add_option(TIMEMORY_USE_VTUNE
+    "Enable VTune marking API" ${_VTUNE} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_CUDA
+    "Enable CUDA option for GPU measurements" ${_CUDA} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_NVTX
+    "Enable NVTX marking API" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_CUPTI
+    "Enable CUPTI profiling for NVIDIA GPUs" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_NVML
+    "Enable support for NVIDIA Management Library" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_NCCL
+    "Enable NCCL support for NVIDIA GPUs" ${_NCCL} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_HIP
+    "Enable HIP option for GPU roofline" ${_HIP} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_CALIPER
+    "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_PYTHON
+    "Enable Python" ${_PYTHON} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_COMPILE_TIMING
+    "Enable -ftime-report for compilation times" OFF)
+add_option(TIMEMORY_USE_DYNINST
+    "Enable dynamic instrumentation" ${_DYNINST})
+add_option(TIMEMORY_USE_ALLINEA_MAP
+    "Enable control for AllineaMAP sampler" ${_ALLINEA_MAP} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_CRAYPAT
+    "Enable CrayPAT support" ${_CRAYPAT} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_OMPT
+    "Enable OpenMP tooling" ${_OMPT} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_LIKWID
+    "Enable LIKWID marker forwarding" ${_LIKWID} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_LIKWID_PERFMON
+    "Enable LIKWID support for perf (CPU)" ${TIMEMORY_USE_LIKWID} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_LIKWID_NVMON
+    "Enable LIKWID support for nvidia (GPU)" ${_LIKWID_NVMON} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_GOTCHA
+    "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_XML
+    "Enable XML serialization support" ${_USE_XML} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_LIBUNWIND
+    "Enable libunwind" ${_USE_LIBUNWIND} CMAKE_DEFINE)
+add_option(TIMEMORY_BUILD_ERT
+    "Build ERT library" ON)
 if(CMAKE_CXX_COMPILER_IS_CLANG OR TIMEMORY_BUILD_DOCS)
     add_option(TIMEMORY_USE_XRAY "Enable XRay instrumentation" OFF CMAKE_DEFINE)
 endif()
