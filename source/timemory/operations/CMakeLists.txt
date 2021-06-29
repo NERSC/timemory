@@ -3,10 +3,10 @@ file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 build_intermediate_library(
     USE_INTERFACE
-    NAME operations
-    TARGET common
-    CATEGORY GLOBAL
-    FOLDER components
-    HEADERS ${header_files}
-    SOURCES ${source_files}
-    DEPENDS timemory::timemory-core timemory::timemory-manager)
+    NAME                operations
+    TARGET              common
+    CATEGORY            GLOBAL
+    FOLDER              components
+    HEADERS             ${header_files}
+    SOURCES             ${source_files}
+    DEPENDS             timemory::timemory-core)

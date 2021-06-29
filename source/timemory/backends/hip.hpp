@@ -24,41 +24,42 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_CUDA)
-#    include <cuda.h>
-#    include <cuda_runtime_api.h>
+#if defined(TIMEMORY_USE_HIP)
+#    include <hip/hip_runtime.h>
+#    include <hip/hip_runtime_api.h>
 #endif
 
 namespace tim
 {
-namespace cuda
+namespace hip
 {
 //
-#if defined(TIMEMORY_USE_CUDA)
-// define some types for when CUDA is enabled
-using stream_t = cudaStream_t;
-using event_t  = cudaEvent_t;
-using error_t  = cudaError_t;
-using memcpy_t = cudaMemcpyKind;
-// define some values for when CUDA is enabled
-static constexpr stream_t                default_stream_v   = 0;
-static const decltype(cudaSuccess)       success_v          = cudaSuccess;
-static const decltype(cudaErrorNotReady) err_not_ready_v    = cudaErrorNotReady;
-static const cudaMemcpyKind              host_to_host_v     = cudaMemcpyHostToHost;
-static const cudaMemcpyKind              host_to_device_v   = cudaMemcpyHostToDevice;
-static const cudaMemcpyKind              device_to_host_v   = cudaMemcpyDeviceToHost;
-static const cudaMemcpyKind              device_to_device_v = cudaMemcpyDeviceToDevice;
+#if defined(TIMEMORY_USE_HIP)
+// define some types for when HIP is enabled
+using stream_t = hipStream_t;
+using event_t  = hipEvent_t;
+using error_t  = hipError_t;
+using memcpy_t = hipMemcpyKind;
+// define some values for when HIP is enabled
+static constexpr stream_t               default_stream_v   = nullptr;
+static const decltype(hipSuccess)       success_v          = hipSuccess;
+static const decltype(hipErrorNotReady) err_not_ready_v    = hipErrorNotReady;
+static const hipMemcpyKind              host_to_host_v     = hipMemcpyHostToHost;
+static const hipMemcpyKind              host_to_device_v   = hipMemcpyHostToDevice;
+static const hipMemcpyKind              device_to_host_v   = hipMemcpyDeviceToHost;
+static const hipMemcpyKind              device_to_device_v = hipMemcpyDeviceToDevice;
 //
 #else
 //
-// define some types for when CUDA is disabled
+// define some types for when HIP is disabled
 //
-using stream_t = int;
+using stream_t = void*;
 using event_t  = int;
 using error_t  = int;
 using memcpy_t = int;
-// define some values for when CUDA is disabled
-static constexpr stream_t default_stream_v   = 0;
+//
+// define some values for when HIP is disabled
+static constexpr stream_t default_stream_v   = nullptr;
 static const int          success_v          = 0;
 static const int          err_not_ready_v    = 0;
 static const int          host_to_host_v     = 0;
@@ -67,5 +68,5 @@ static const int          device_to_host_v   = 2;
 static const int          device_to_device_v = 3;
 #endif
 //
-}  // namespace cuda
+}  // namespace hip
 }  // namespace tim

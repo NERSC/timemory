@@ -46,9 +46,23 @@
 
 //--------------------------------------------------------------------------------------//
 
-//  nvcc compiler
+//  cuda compiler
 #if defined(__CUDACC__) && !defined(_TIMEMORY_CUDACC)
 #    define _TIMEMORY_CUDACC 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+//  hcc or hip-clang compiler
+#if(defined(__HCC__) || (defined(__clang__) && defined(__HIP__))) &&                     \
+    !defined(_TIMEMORY_HIPCC)
+#    define _TIMEMORY_HIPCC 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if(defined(__CUDACC__) || defined(__HIPCC__)) && !defined(_TIMEMORY_GPUCC)
+#    define _TIMEMORY_GPUCC 1
 #endif
 
 //--------------------------------------------------------------------------------------//

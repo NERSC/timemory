@@ -47,25 +47,46 @@ add_interface_library(timemory-papi-static
 add_interface_library(timemory-cuda "Enables CUDA support")
 add_interface_library(timemory-cuda-compiler "Enables some CUDA compiler flags")
 add_interface_library(timemory-cupti
-                      "Enables CUPTI support (requires linking to libcuda)")
-add_interface_library(timemory-cudart "Link to CUDA runtime (shared library)")
-add_interface_library(timemory-cudart-device "Link to CUDA device runtime")
-add_interface_library(timemory-cudart-static "Link to CUDA runtime (static library)")
-add_interface_library(timemory-nccl "Enables CUDA NCCL support")
-add_interface_library(timemory-nvml "Enables NVML support (NVIDIA)")
-add_interface_library(timemory-caliper "Enables Caliper support")
-add_interface_library(timemory-gotcha "Enables Gotcha support")
-add_interface_library(timemory-likwid "Enables LIKWID support")
-add_interface_library(timemory-vtune "Enables VTune support (ittnotify)")
-add_interface_library(timemory-tau "Enables TAU support")
-add_interface_library(timemory-ompt "Enables OpenMP-tools support")
-add_interface_library(timemory-python "Enables python support (embedded interpreter)")
-add_interface_library(timemory-plotting "Enables python plotting support (system call)")
-add_interface_library(timemory-allinea-map "Enables Allinea-MAP support")
-add_interface_library(timemory-craypat "Enables CrayPAT support")
-add_interface_library(timemory-libunwind "Enables libunwind support")
+    "Enables CUPTI support (requires linking to libcuda)")
+add_interface_library(timemory-cudart
+    "Link to CUDA runtime (shared library)")
+add_interface_library(timemory-cudart-device
+    "Link to CUDA device runtime")
+add_interface_library(timemory-cudart-static
+    "Link to CUDA runtime (static library)")
+add_interface_library(timemory-nccl
+    "Enables CUDA NCCL support")
+add_interface_library(timemory-hip
+    "Enables HIP support")
+add_interface_library(timemory-hip-device
+    "Enables HIP support (device code)")
+add_interface_library(timemory-nvml
+    "Enables NVML support (NVIDIA)")
+add_interface_library(timemory-caliper
+    "Enables Caliper support")
+add_interface_library(timemory-gotcha
+    "Enables Gotcha support")
+add_interface_library(timemory-likwid
+    "Enables LIKWID support")
+add_interface_library(timemory-vtune
+    "Enables VTune support (ittnotify)")
+add_interface_library(timemory-tau
+    "Enables TAU support")
+add_interface_library(timemory-ompt
+    "Enables OpenMP-tools support")
+add_interface_library(timemory-python
+    "Enables python support (embedded interpreter)")
+add_interface_library(timemory-plotting
+    "Enables python plotting support (system call)")
+add_interface_library(timemory-allinea-map
+    "Enables Allinea-MAP support")
+add_interface_library(timemory-craypat
+    "Enables CrayPAT support")
+add_interface_library(timemory-libunwind
+    "Enables libunwind support")
 
-add_interface_library(timemory-coverage "Enables code-coverage flags")
+add_interface_library(timemory-coverage
+    "Enables code-coverage flags")
 add_interface_library(timemory-gperftools
                       "Enables user-selected gperftools component (${_GPERF_COMPONENTS})")
 
@@ -127,6 +148,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cudart
     timemory-cudart-device
     #
+    timemory-hip
+    #
     timemory-papi
     timemory-gperftools
     #
@@ -153,6 +176,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-nvml
     timemory-cupti
     timemory-cudart-device
+    timemory-hip
     timemory-caliper
     timemory-gotcha
     timemory-likwid
@@ -175,6 +199,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-nvml
     timemory-cupti
     timemory-cudart-device
+    timemory-hip
     timemory-caliper
     timemory-likwid
     timemory-vtune
@@ -921,7 +946,31 @@ endif()
 
 # ----------------------------------------------------------------------------------------#
 #
-# LIBUNWIND
+#                                   HIP
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_HIP)
+    find_package(hip ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(hip_FOUND)
+    target_compile_definitions(timemory-hip INTERFACE TIMEMORY_USE_HIP)
+    target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP)
+
+    target_link_libraries(timemory-hip INTERFACE hip::host)
+    target_link_libraries(timemory-hip-device INTERFACE hip::device)
+
+    add_user_flags(timemory-hip "HIP")
+else()
+    set(TIMEMORY_USE_HIP OFF)
+    inform_empty_interface(timemory-hip "HIP")
+    inform_empty_interface(timemory-hip-device "HIP (device)")
+endif()
+
+#----------------------------------------------------------------------------------------#
+#
+#                               LIBUNWIND
 #
 # ----------------------------------------------------------------------------------------#
 

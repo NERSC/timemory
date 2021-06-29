@@ -88,6 +88,7 @@
     component::gpu_roofline_flops,              \
     component::gpu_roofline_hp_flops,           \
     component::gpu_roofline_sp_flops,           \
+    component::hip_event,                       \
     component::kernel_mode_time,                \
     component::likwid_marker,                   \
     component::likwid_nvmarker,                 \
@@ -111,6 +112,7 @@
     component::process_cpu_util,                \
     component::read_bytes,                      \
     component::read_char,                       \
+    component::roctx_marker,                    \
     component::system_clock,                    \
     component::tau_marker,                      \
     component::thread_cpu_clock,                \
