@@ -31,18 +31,14 @@
 
 #pragma once
 
+#include "timemory/backends/gpu.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/hip/backends.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/compiler.hpp"
 
-#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
-#    include <cuda.h>
-#    include <cuda_runtime_api.h>
-#endif
-
 #include <cstdint>
 #include <type_traits>
-
-#include "timemory/components/cuda/backends.hpp"
 
 namespace tim
 {
@@ -64,8 +60,10 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 
 struct cpu
 {
-    using stream_t = cuda::stream_t;
+    using stream_t = ::tim::gpu::stream_t;
     using fp16_t   = float;
+
+    static constexpr auto default_stream = ::tim::gpu::default_stream_v;
 
     template <typename Tp>
     static Tp* alloc(std::size_t nsize)
@@ -86,20 +84,22 @@ struct cpu
 
 struct gpu
 {
-#if defined(TIMEMORY_USE_CUDA)
-    using stream_t = cuda::stream_t;
-    using fp16_t   = cuda::fp16_t;
+#if(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP))
+    using stream_t = ::tim::gpu::stream_t;
+    using fp16_t   = ::tim::gpu::fp16_t;
+
+    static constexpr auto default_stream = ::tim::gpu::default_stream_v;
 
     template <typename Tp>
     static Tp* alloc(std::size_t nsize)
     {
-        return cuda::malloc<Tp>(nsize);
+        return ::tim::gpu::malloc<Tp>(nsize);
     }
 
     template <typename Tp>
     static void free(Tp* ptr)
     {
-        cuda::free(ptr);
+        ::tim::gpu::free(ptr);
     }
 
     static std::string name() { return "gpu"; }
@@ -125,7 +125,7 @@ struct gpu
 
 //--------------------------------------------------------------------------------------//
 
-#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
 using default_device = gpu;
 #else
 using default_device = cpu;
@@ -183,19 +183,13 @@ struct range
     {}
 
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& begin() { return m_begin; }
-    TIMEMORY_HOST_DEVICE_FUNCTION TIMEMORY_NODISCARD Intp begin() const
-    {
-        return m_begin;
-    }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp begin() const { return m_begin; }
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& end() { return m_end; }
-    TIMEMORY_HOST_DEVICE_FUNCTION TIMEMORY_NODISCARD Intp end() const { return m_end; }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp end() const { return m_end; }
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& stride() { return m_stride; }
-    TIMEMORY_HOST_DEVICE_FUNCTION TIMEMORY_NODISCARD Intp stride() const
-    {
-        return m_stride;
-    }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp stride() const { return m_stride; }
 
-    TIMEMORY_HOST_DEVICE_FUNCTION TIMEMORY_NODISCARD const char* c_str() const
+    TIMEMORY_HOST_DEVICE_FUNCTION const char* c_str() const
     {
         using llu = long long unsigned;
         char desc[512];
@@ -222,8 +216,12 @@ struct params
     using stream_t = typename DeviceT::stream_t;
     params()       = default;
 
+    static_assert(
+        std::is_same<stream_t, decay_t<decltype(DeviceT::default_stream)>>::value,
+        "Error! default stream type is not same as stream type");
+
     explicit params(uint32_t _grid, uint32_t _block, uint32_t _shmem = 0,
-                    stream_t _stream = 0)
+                    stream_t _stream = DeviceT::default_stream)
     : block(_block)
     , grid(_grid)
     , shmem(_shmem)
@@ -253,10 +251,10 @@ struct params
     }
 
     // these should not be linted
-    uint32_t block   = 32;    // NOLINT
-    uint32_t grid    = 0;     // NOLINT: 0 == compute
-    uint32_t shmem   = 0;     // NOLINT
-    stream_t stream  = 0;     // NOLINT
+    uint32_t block   = 32;                       // NOLINT
+    uint32_t grid    = 0;                        // NOLINT: 0 == compute
+    uint32_t shmem   = 0;                        // NOLINT
+    stream_t stream  = DeviceT::default_stream;  // NOLINT
     bool     dynamic = true;  // NOLINT: allow the grid size to be dynamically computed
 };
 
@@ -316,12 +314,12 @@ template <typename DeviceT, typename FuncT, typename... ArgsT,
 void
 launch(params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 {
-#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0)
         _p.grid = 1;
     std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
         std::forward<ArgsT>(_args)...);
-    TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
+    TIMEMORY_GPU_RUNTIME_CHECK_ERROR(::tim::gpu::get_last_error());
 #else
     // static_assert(false, "Checking");
     consume_parameters(_p, _func, _args...);
@@ -338,14 +336,14 @@ template <typename Intp, typename DeviceT, typename FuncT, typename... ArgsT,
 void
 launch(const Intp& _nsize, params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 {
-#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0 && _nsize > 0)
         _p.grid = _p.compute(_nsize);
     else if(_p.grid == 0)
         _p.grid = 1;
     std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
         std::forward<ArgsT>(_args)...);
-    TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
+    TIMEMORY_GPU_RUNTIME_CHECK_ERROR(::tim::gpu::get_last_error());
 #else
     // static_assert(false, "Checking");
     consume_parameters(_p, _func, _args..., _nsize);
@@ -364,14 +362,14 @@ void
 launch(const Intp& _nsize, StreamT _stream, params<DeviceT>& _p, FuncT&& _func,
        ArgsT&&... _args)
 {
-#if defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if defined(_TIMEMORY_CUDACC) && !defined(_TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0 && _nsize > 0)
         _p.grid = _p.compute(_nsize);
     else if(_p.grid == 0)
         _p.grid = 1;
     std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _stream>>>(
         std::forward<ArgsT>(_args)...);
-    TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
+    TIMEMORY_GPU_RUNTIME_CHECK_ERROR(::tim::gpu::get_last_error());
 #else
     // static_assert(false, "Checking");
     consume_parameters(_p, _func, _args..., _nsize, _stream);
@@ -403,7 +401,8 @@ struct grid_strided_range<DeviceT, 0, Intp> : impl::range<Intp>
 {
     using base_type = impl::range<Intp>;
 
-#if defined(TIMEMORY_USE_CUDA) && defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP)) &&                          \
+    defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
     template <typename DevT                                       = DeviceT,
               enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
     TIMEMORY_DEVICE_FUNCTION explicit grid_strided_range(Intp max_iter)
@@ -430,7 +429,8 @@ struct grid_strided_range<DeviceT, 1, Intp> : impl::range<Intp>
 {
     using base_type = impl::range<Intp>;
 
-#if defined(TIMEMORY_USE_CUDA) && defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP)) &&                          \
+    defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
     template <typename DevT                                       = DeviceT,
               enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
     TIMEMORY_DEVICE_FUNCTION explicit grid_strided_range(Intp max_iter)
@@ -457,7 +457,8 @@ struct grid_strided_range<DeviceT, 2, Intp> : impl::range<Intp>
 {
     using base_type = impl::range<Intp>;
 
-#if defined(TIMEMORY_USE_CUDA) && defined(__CUDACC__) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP)) &&                          \
+    defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
     template <typename DevT                                       = DeviceT,
               enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
     TIMEMORY_DEVICE_FUNCTION explicit grid_strided_range(Intp max_iter)

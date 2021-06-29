@@ -59,6 +59,10 @@ add_interface_library(timemory-cudart-static
     "Link to CUDA runtime (static library)")
 add_interface_library(timemory-nccl
     "Enables CUDA NCCL support")
+add_interface_library(timemory-hip
+    "Enables HIP support")
+add_interface_library(timemory-hip-device
+    "Enables HIP support (device code)")
 add_interface_library(timemory-nvml
     "Enables NVML support (NVIDIA)")
 add_interface_library(timemory-caliper
@@ -150,6 +154,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cudart
     timemory-cudart-device
     #
+    timemory-hip
+    #
     timemory-papi
     timemory-gperftools
     #
@@ -176,6 +182,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-nvml
     timemory-cupti
     timemory-cudart-device
+    timemory-hip
     timemory-caliper
     timemory-gotcha
     timemory-likwid
@@ -198,6 +205,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-nvml
     timemory-cupti
     timemory-cudart-device
+    timemory-hip
     timemory-caliper
     timemory-likwid
     timemory-vtune
@@ -917,6 +925,30 @@ if(NVML_FOUND)
 else()
     set(TIMEMORY_USE_NVML OFF)
     inform_empty_interface(timemory-nvml "NVML")
+endif()
+
+#----------------------------------------------------------------------------------------#
+#
+#                                   HIP
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_HIP)
+    find_package(hip ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(hip_FOUND)
+    target_compile_definitions(timemory-hip INTERFACE TIMEMORY_USE_HIP)
+    target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP)
+
+    target_link_libraries(timemory-hip INTERFACE hip::host)
+    target_link_libraries(timemory-hip-device INTERFACE hip::device)
+
+    add_user_flags(timemory-hip "HIP")
+else()
+    set(TIMEMORY_USE_HIP OFF)
+    inform_empty_interface(timemory-hip "HIP")
+    inform_empty_interface(timemory-hip-device "HIP (device)")
 endif()
 
 #----------------------------------------------------------------------------------------#
