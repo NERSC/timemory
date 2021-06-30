@@ -1158,6 +1158,50 @@ def run_pyctest():
             },
         )
 
+        pyct.test(
+            "timemory-python-sample",
+            [
+                sys.executable,
+                "ex_python_sample",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "120",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        pyct.test(
+            "timemory-python-general",
+            [
+                sys.executable,
+                "ex_python_general",
+            ],
+            {
+                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                "LABELS": pyct.PROJECT_NAME,
+                "TIMEOUT": "120",
+                "ENVIRONMENT": base_env,
+            },
+        )
+
+        if len(args.tools) > 0:
+            pyct.test(
+                "timemory-python-timem",
+                [
+                    "./pytimem",
+                    "sleep",
+                    "2",
+                ],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "15",
+                    "ENVIRONMENT": base_env,
+                },
+            )
+
         pyunittests = [
             "flat",
             "general",
