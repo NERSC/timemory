@@ -63,7 +63,7 @@ message(STATUS "")
 #   Configure common target
 #
 set(timemory_INTERFACE_LIBRARY)
-foreach(_COMP headers vector dmp cxx-shared mpip-library ompt-library ncclp-library
+foreach(_COMP headers vector dmp cxx mpip-library ompt-library ncclp-library
         ${TIMEMORY_KOKKOS_COMPONENTS})
     if(TARGET timemory::timemory-${_COMP})
         list(APPEND timemory_INTERFACE_LIBRARY timemory::timemory-${_COMP})
@@ -180,7 +180,7 @@ if(TIMEMORY_BUILD_KOKKOS_SAMPLE)
     set_target_properties(kokkos-connector-sample PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     # kokkos_compilation(TARGET kokkos-connector-sample)
-    add_kokkos_sample_test(libtimemory timemory::timemory-cxx-shared)
+    add_kokkos_sample_test(libtimemory timemory::timemory-cxx)
     add_kokkos_sample_test(kp-timemory kp_timemory)
     add_kokkos_sample_test(kp-timemory-filter kp_timemory_filter)
 endif()
