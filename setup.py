@@ -378,7 +378,7 @@ def parse_requirements(fname="requirements.txt"):
 #
 def exclude_install_hook(cmake_manifest):
     cmake_manifest = list(
-        filter(lambda name: not "pytest.ini" in name, cmake_manifest)
+        filter(lambda name: "pytest.ini" not in name, cmake_manifest)
     )
     if not get_bool_option(args, "develop"):
         cmake_manifest = list(
@@ -387,19 +387,19 @@ def exclude_install_hook(cmake_manifest):
         if not get_bool_option(args, "install-config"):
             cmake_manifest = list(
                 filter(
-                    lambda name: not (os.path.join("share", "cmake") in name),
+                    lambda name: (os.path.join("share", "cmake") not in name),
                     cmake_manifest,
                 )
             )
             cmake_manifest = list(
                 filter(
-                    lambda name: not (os.path.join("lib", "cmake") in name),
+                    lambda name: (os.path.join("lib", "cmake") not in name),
                     cmake_manifest,
                 )
             )
         if not get_bool_option(args, "install-headers"):
             cmake_manifest = list(
-                filter(lambda name: not "include" in name, cmake_manifest)
+                filter(lambda name: "include" not in name, cmake_manifest)
             )
     return cmake_manifest
 
