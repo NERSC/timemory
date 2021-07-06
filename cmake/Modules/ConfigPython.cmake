@@ -66,7 +66,7 @@ if(PYTHON_EXECUTABLE AND NOT Python3_EXECUTABLE)
 endif()
 
 # default python types to search for
-set(Python_ADDITIONAL_VERSIONS "3.9;3.8;3.7;3.6" CACHE STRING 
+set(Python_ADDITIONAL_VERSIONS "3.9;3.8;3.7;3.6" CACHE STRING
     "Python versions supported by timemory")
 
 # override types to search for
@@ -157,6 +157,7 @@ endif()
 if(NOT Python3_FOUND)
     set(TIMEMORY_USE_PYTHON OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
+    inform_empty_interface(timemory-python "Python embedded interpreter")
     inform_empty_interface(timemory-plotting "Python plotting from C++")
 else()
     set(TIMEMORY_PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
@@ -220,10 +221,10 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE}
 
 string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")
 
-if(SKBUILD)
+if(SKBUILD OR "${TIMEMORY_INSTALL_PYTHON}" STREQUAL "prefix")
     set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}
         CACHE PATH "Installation directory for python")
-elseif(SPACK_BUILD)
+elseif(SPACK_BUILD OR "${TIMEMORY_INSTALL_PYTHON}" STREQUAL "lib")
     set(CMAKE_INSTALL_PYTHONDIR
         lib/python${PYBIND11_PYTHON_VERSION}/site-packages
         CACHE PATH "Installation directory for python")
@@ -255,6 +256,9 @@ else()
     endif()
     # check the error code of the touch command
     if(ERR_CODE)
+        if("${TIMEMORY_INSTALL_PYTHON}" STREQUAL "global")
+            message(FATAL_ERROR "timemory could not install python files to ${Python3_SITEARCH} (not writable):\n${ERR_MSG}")
+        endif()
         # get the python directory name, e.g. 'python3.6' from
         # '/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6'
         get_filename_component(PYDIR "${Python3_STDLIB}" NAME)
@@ -265,12 +269,23 @@ else()
 endif()
 
 if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
+    set(_PYBIND11_INCLUDE_DIRS)
+    foreach(_TARG pybind11 pybind11::pybind11 pybind11::module)
+        if(TARGET ${_TARG})
+            get_target_property(_INCLUDE_DIR ${_TARG} INTERFACE_INCLUDE_DIRECTORIES)
+            list(APPEND _PYBIND11_INCLUDE_DIRS ${_INCLUDE_DIR})
+        endif()
+    endforeach()
+    if(_PYBIND11_INCLUDE_DIRS)
+        list(REMOVE_DUPLICATES _PYBIND11_INCLUDE_DIRS)
+    endif()
     timemory_target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
     target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
     target_include_directories(timemory-python SYSTEM INTERFACE
         ${PYTHON_INCLUDE_DIRS}
         ${PYBIND11_INCLUDE_DIRS}
-        $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
+        $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${_PYBIND11_INCLUDE_DIRS}>)
 endif()
 
 if(APPLE)
@@ -309,5 +324,47 @@ find_package(PythonLibs ${TIMEMORY_PYTHON_VERSION} EXACT REQUIRED)
 # find_package(PythonExtensions REQUIRED)
 
 if("${PYTHON_MODULE_EXTENSION}" STREQUAL "")
-    message(WARNING "Python module extension is empty!")
+    execute_process(
+    COMMAND
+        "${Python3_EXECUTABLE}" "-c" "
+from distutils import sysconfig as s;import sys;import struct;
+print('.'.join(str(v) for v in sys.version_info));
+print(sys.prefix);
+print(s.get_python_inc(plat_specific=True));
+print(s.get_python_lib(plat_specific=True));
+print(s.get_config_var('EXT_SUFFIX') or s.get_config_var('SO'));
+print(hasattr(sys, 'gettotalrefcount')+0);
+print(struct.calcsize('@P'));
+print(s.get_config_var('LDVERSION') or s.get_config_var('VERSION'));
+print(s.get_config_var('LIBDIR') or '');
+print(s.get_config_var('MULTIARCH') or '');
+"
+    RESULT_VARIABLE _PYTHON_SUCCESS
+    OUTPUT_VARIABLE _PYTHON_VALUES
+    ERROR_VARIABLE _PYTHON_ERROR_VALUE)
+
+    if(_PYTHON_SUCCESS MATCHES 0)
+        # Convert the process output into a list
+        if(WIN32)
+        string(REGEX REPLACE "\\\\" "/" _PYTHON_VALUES ${_PYTHON_VALUES})
+        endif()
+        string(REGEX REPLACE ";" "\\\\;" _PYTHON_VALUES ${_PYTHON_VALUES})
+        string(REGEX REPLACE "\n" ";" _PYTHON_VALUES ${_PYTHON_VALUES})
+        list(GET _PYTHON_VALUES 0 _PYTHON_VERSION_LIST)
+        list(GET _PYTHON_VALUES 1 PYTHON_PREFIX)
+        list(GET _PYTHON_VALUES 2 PYTHON_INCLUDE_DIR)
+        list(GET _PYTHON_VALUES 3 PYTHON_SITE_PACKAGES)
+        list(GET _PYTHON_VALUES 4 PYTHON_MODULE_EXTENSION)
+        list(GET _PYTHON_VALUES 5 PYTHON_IS_DEBUG)
+        list(GET _PYTHON_VALUES 6 PYTHON_SIZEOF_VOID_P)
+        list(GET _PYTHON_VALUES 7 PYTHON_LIBRARY_SUFFIX)
+        list(GET _PYTHON_VALUES 8 PYTHON_LIBDIR)
+        list(GET _PYTHON_VALUES 9 PYTHON_MULTIARCH)
+    else()
+        message(WARNING "${_PYTHON_ERROR_VALUE}")
+    endif()
+
+    if("${PYTHON_MODULE_EXTENSION}" STREQUAL "")
+        message(WARNING "Python module extension is empty!")
+    endif()
 endif()

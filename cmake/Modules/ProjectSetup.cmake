@@ -80,9 +80,6 @@ math(EXPR TIMEMORY_VERSION_CODE
 #   setup.py
 #----------------------------------------------------------------------------------------#
 
-if(SKBUILD)
+if(SKBUILD AND TIMEMORY_USE_PYTHON)
     set(CMAKE_INSTALL_LIBDIR lib)
-    set(TIMEMORY_USE_PYTHON ON CACHE BOOL "" FORCE)
-    set(TIMEMORY_BUILD_PYTHON ON CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 endif()

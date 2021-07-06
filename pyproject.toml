@@ -16,7 +16,9 @@ exclude = '''
     | \.misc
     | _build
     | __pycache__
+    | _skbuild
     | build
+    | build-timemory
     | dist
     | external
     | scripts
@@ -24,6 +26,7 @@ exclude = '''
     | docker
     | docs
     | hatchet
+    | .pytest_cache
   )/
   | cmake/Templates/console-script.py.in
 )

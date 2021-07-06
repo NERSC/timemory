@@ -14,11 +14,11 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND
     message(AUTHOR_WARNING "In-source build")
 endif()
 
-if(APPLE AND NOT "$ENV{CONDA_PYTHON_EXE}" STREQUAL "")
-    # disable by default bc conda will set these and cause problem with python bindings
-    set(CMAKE_C_FLAGS "" CACHE STRING "")
-    set(CMAKE_CXX_FLAGS "" CACHE STRING "")
-endif()
+# if(APPLE AND NOT "$ENV{CONDA_PYTHON_EXE}" STREQUAL "")
+#    # disable by default bc conda will set these and cause problem with python bindings
+#    set(CMAKE_C_FLAGS "" CACHE STRING "")
+#    set(CMAKE_CXX_FLAGS "" CACHE STRING "")
+# endif()
 
 #----------------------------------------------------------------------------------------#
 #   project
@@ -183,14 +183,12 @@ option(TIMEMORY_QUIET_CONFIG "Make timemory configuration quieter" OFF)
 mark_as_advanced(TIMEMORY_QUIET_CONFIG)
 
 if(SKBUILD)
-    set(_BUILD_SHARED_CXX ON)
+    if(BUILD_STATIC_LIBS AND TIMEMORY_USE_PYTHON)
+        set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    endif()
 else()
-    if((TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON) AND NOT BUILD_SHARED_LIBS)
-        if(NOT TIMEMORY_BUILD_QUIET)
-            message(AUTHOR_WARNING "BUILD_SHARED_LIBS=OFF --> disabling TIMEMORY_BUILD_PYTHON...")
-        endif()
-        set(TIMEMORY_BUILD_PYTHON OFF)
-        set(TIMEMORY_USE_PYTHON OFF)
+    if(BUILD_STATIC_LIBS AND NOT BUILD_SHARED_LIBS AND TIMEMORY_USE_PYTHON AND NOT CMAKE_POSITION_INDEPENDENT_CODE)
+        message(FATAL_ERROR "Error! Python compilation with static libraries requires CMAKE_POSITION_INDEPENDENT_CODE to be ON")
     endif()
 endif()
 
@@ -202,7 +200,7 @@ endif()
 set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
 set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
 
-if(SKBUILD OR TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON OR TIMEMORY_USE_DYNINST)
+if(SKBUILD OR TIMEMORY_USE_PYTHON OR TIMEMORY_USE_DYNINST)
     set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "${_TLS_DESCRIPT}")
     # ensure local override
     set(TIMEMORY_TLS_MODEL "global-dynamic")
