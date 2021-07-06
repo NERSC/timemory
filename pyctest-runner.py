@@ -1186,7 +1186,9 @@ def run_pyctest():
             },
         )
 
-        if len(args.tools) > 0:
+        if len(args.tools) > 0 and not (
+            len(args.tools) == 1 and args.tools[0] == "avail"
+        ):
             pyct.test(
                 "timemory-python-timem",
                 [
