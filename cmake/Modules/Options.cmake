@@ -307,7 +307,7 @@ add_option(TIMEMORY_BUILD_FORTRAN
 add_option(TIMEMORY_BUILD_PORTABLE
     "Disable arch flags which may cause portability issues (e.g. AVX-512)" OFF)
 add_option(TIMEMORY_BUILD_PYTHON
-    "Build Python bindings with internal pybind11" OFF)
+    "Build Python bindings with internal pybind11" ON)
 add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
     "Build customized Python line-profiler" ON)
 add_option(TIMEMORY_BUILD_PYTHON_HATCHET
