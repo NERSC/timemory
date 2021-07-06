@@ -24,7 +24,7 @@ PACKAGE CONTENTS
     component (package)
     ert (package)
     hardware_counters (package)
-    libpytimemory
+    libs (package)
     line_profiler (package)
     mpi (package)
     mpi_support (package)
@@ -46,12 +46,12 @@ SUBMODULES
 
 CLASSES
     pybind11_builtins.pybind11_object(builtins.object)
-        timemory.libpytimemory.auto_timer
-        timemory.libpytimemory.component_bundle
-        timemory.libpytimemory.manager
-        timemory.libpytimemory.rss_usage
-        timemory.libpytimemory.settings
-        timemory.libpytimemory.timer
+        timemory.libs.auto_timer
+        timemory.libs.component_bundle
+        timemory.libs.manager
+        timemory.libs.rss_usage
+        timemory.libs.settings
+        timemory.libs.timer
 
     class auto_timer(...)
     class component_bundle(...)
@@ -151,7 +151,7 @@ FUNCTIONS
         Enable/disable timemory
 
 DATA
-    __all__ = ['version_info', 'build_info', 'version', 'libpytimemory', '...
+    __all__ = ['version_info', 'build_info', 'version', 'libs', '...
     __copyright__ = 'Copyright 2020, The Regents of the University of Cali...
     __email__ = 'jrmadsen@lbl.gov'
     __license__ = 'MIT'

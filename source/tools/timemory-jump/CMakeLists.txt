@@ -7,6 +7,11 @@ if(DEFINED TIMEMORY_BUILD_JUMP AND NOT TIMEMORY_BUILD_JUMP)
     return()
 endif()
 
+if(NOT BUILD_SHARED_LIBS)
+    # if shared libraries are not build, dlopen will not be possible
+    return()
+endif()
+
 if(NOT timemory_MAIN_PROJECT OR TIMEMORY_BUILD_EXCLUDE_FROM_ALL)
     set(_EXCLUDE EXCLUDE_FROM_ALL)
 endif()

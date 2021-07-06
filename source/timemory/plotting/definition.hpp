@@ -30,10 +30,6 @@
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/popen.hpp"
 
-#if defined(TIMEMORY_USE_PYTHON)
-#    include "pybind11/embed.h"
-#endif
-
 namespace tim
 {
 //
@@ -98,27 +94,6 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
     set_env<std::string>("TIMEMORY_LIBRARY_CTOR", "OFF", 1);
     set_env<std::string>("TIMEMORY_BANNER", "OFF", 1);
     set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "1", 1);
-#    if defined(TIMEMORY_USE_PYTHON)
-    auto cmd = operation::join(" ", "-f", _file, "-t",
-                               TIMEMORY_JOIN("\"", "", _prefix, ""), "-o", _dir);
-
-    if(_echo_dart)
-        cmd += " -e";
-
-    tim::set_env("TIMEMORY_EMBEDDED_PLOT_ARGS", cmd.c_str(), 1);
-    {
-        py::scoped_interpreter guard{};
-        py::exec(R"(
-             import os
-             from timemory.plotting import embedded_plot
-             _args = os.environ.get("TIMEMORY_EMBEDDED_PLOT_ARGS")
-             if _args is not None:
-                 embedded_plot(_args.split(" "))
-             )",
-                 py::globals());
-    }
-    tim::set_env("TIMEMORY_EMBEDDED_PLOT_ARGS", "");
-#    else
     auto cmd =
         operation::join(" ", settings::python_exe(), "-m", "timemory.plotting", "-f",
                         _file, "-t", TIMEMORY_JOIN("\"", "", _prefix, ""), "-o", _dir);
@@ -139,8 +114,6 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
     {
         std::cerr << _log.str() << '\n';
     }
-
-#    endif
 
     // revert the environment
     set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", _plot, 1);

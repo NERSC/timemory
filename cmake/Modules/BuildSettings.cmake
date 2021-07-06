@@ -333,7 +333,7 @@ set(VECTOR_DEFINITION               TIMEMORY_VEC)
 set(VECTOR_INTERFACE_TARGET         timemory-vector)
 set(ARCH_INTERFACE_TARGET           timemory-arch)
 
-include(ArchConfig)
+include(ConfigCpuArch)
 
 add_cmake_defines(TIMEMORY_VEC VALUE)
 

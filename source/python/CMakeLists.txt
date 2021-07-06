@@ -81,7 +81,7 @@ endfunction()
 
 ##########################################################################################
 
-if(TIMEMORY_BUILD_PYTHON)
+if(TIMEMORY_USE_PYTHON)
 
     add_library(timemory-python-compile-options INTERFACE)
     add_library(timemory::timemory-python-compile-options ALIAS
@@ -121,10 +121,13 @@ if(TIMEMORY_BUILD_PYTHON)
     endif()
 
     set(pybind_libs pybind11::module)
-    if((TIMEMORY_BUILD_LTO OR APPLE) AND TARGET pybind11::thin_lto)
-        list(APPEND pybind_libs pybind11::thin_lto)
-    elseif(APPLE)
+    if(TIMEMORY_BUILD_LTO)
         list(APPEND pybind_libs timemory::timemory-lto)
+    endif()
+
+    set(_LINK shared)
+    if((APPLE AND BUILD_STATIC_LIBS) OR (BUILD_STATIC_LIBS AND NOT BUILD_SHARED_LIBS))
+        set(_LINK static)
     endif()
 
     add_library(libpytimemory-interface INTERFACE)
@@ -132,9 +135,9 @@ if(TIMEMORY_BUILD_PYTHON)
         ${pybind_libs}
         timemory::timemory-python
         timemory::timemory-headers
-        timemory::timemory-cxx-shared
+        timemory::timemory-cxx-${_LINK}
         timemory::timemory-compile-options
-        timemory::timemory-external-shared
+        timemory::timemory-external-${_LINK}
         timemory::timemory-mpip-library
         timemory::timemory-ompt-library
         timemory::timemory-ncclp-library
