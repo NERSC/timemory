@@ -21,6 +21,14 @@ cmake_options = []  # array of functors
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("-h", "--help", help="Print help", action="store_true")
 
+# support CMAKE_ARGS environment variables because
+#  --install-option for pip is a pain to use
+env_cmake_args = os.environ.get("CMAKE_ARGS", None)
+if env_cmake_args is not None:
+    for _arg in env_cmake_args.split(" "):
+        if "CMAKE_INSTALL_PREFIX" not in _arg:
+            cmake_args += [_arg]
+
 gotcha_opt = False
 if platform.system() == "Linux":
     gotcha_opt = True
@@ -293,14 +301,10 @@ if platform.system() == "Darwin":
     cmake_args += ["-DCMAKE_OSX_DEPLOYMENT_TARGET={}".format(version)]
 
 # DO THIS LAST!
-# support CMAKE_ARGS and TIMEMORY_SETUP_ARGS environment variables because
+# support TIMEMORY_SETUP_ARGS environment variables because
 #  --install-option for pip is a pain to use
 # Env variables should be space-delimited set of cmake arguments, e.g.:
 #   export TIMEMORY_SETUP_ARGS="-DTIMEMORY_USE_MPI=ON -DTIMEMORY_USE_OMPT=OFF"
-env_cmake_args = os.environ.get("CMAKE_ARGS", None)
-if env_cmake_args is not None:
-    cmake_args += env_cmake_args.split(" ")
-
 env_cmake_args = os.environ.get("TIMEMORY_SETUP_ARGS", None)
 if env_cmake_args is not None:
     cmake_args += env_cmake_args.split(" ")

@@ -217,6 +217,9 @@ protected:
         trait::runtime_enabled<gpu_roofline_flops>::set(false);
         trait::runtime_enabled<gpu_roofline_sp_flops>::set(false);
         trait::runtime_enabled<gpu_roofline_dp_flops>::set(false);
+        trait::runtime_enabled<cuda_event>::set(false);
+        trait::runtime_enabled<cupti_activity>::set(false);
+        trait::runtime_enabled<cupti_counters>::set(false);
         trait::runtime_enabled<cupti_pcsampling>::set(false);
     }
 
