@@ -87,10 +87,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(_BUILD_OPT ON)
 endif()
 
-if("$ENV{CI}" STREQUAL "true")
-    set(TIMEMORY_CI ON)
-endif()
-
 if(TIMEMORY_CI)
     set(TIMEMORY_BUILD_TESTING ON)
 endif()
