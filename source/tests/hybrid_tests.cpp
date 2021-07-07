@@ -252,8 +252,8 @@ TEST_F(hybrid_tests, hybrid)
     ASSERT_TRUE(t_util != nullptr) << obj;
 
     EXPECT_NEAR(2.0, t_rc->get(), timer_tolerance) << obj;
-    EXPECT_NEAR(2.5, t_cpu->get(), timer_tolerance) << obj;
-    EXPECT_NEAR(125.0, t_util->get(), util_tolerance) << obj;
+    EXPECT_NEAR(2.5, t_cpu->get(), 2.0 * timer_tolerance) << obj;
+    EXPECT_NEAR(125.0, t_util->get(), 2.0 * util_tolerance) << obj;
 
     auto* l_rc   = obj.get<wall_clock*>();
     auto* l_cpu  = obj.get<cpu_clock*>();
