@@ -70,7 +70,7 @@ if(NOT DEFINED TIMEM_PAPI_TARGET OR NOT TIMEM_PAPI_TARGET)
     endif()
 endif()
 
-add_library(timem-md5sum OBJECT md5.cpp md5.hpp)
+add_library(timem-md5sum EXCLUDE_FROM_ALL OBJECT md5.cpp md5.hpp)
 
 target_link_libraries(timem-md5sum PRIVATE
     timemory::timemory-compile-options
@@ -79,6 +79,8 @@ target_link_libraries(timem-md5sum PRIVATE
 # non-MPI version
 add_executable(timem ${_EXCLUDE}
     timem.cpp timem.hpp $<TARGET_OBJECTS:timem-md5sum>)
+
+add_dependencies(timem timem-md5sum)
 
 target_link_libraries(timem PRIVATE
     timemory::timemory-compile-options
@@ -106,6 +108,8 @@ endif()
 
 add_executable(timem-mpi ${_EXCLUDE}
     timem.cpp timem.hpp $<TARGET_OBJECTS:timem-md5sum>)
+
+add_dependencies(timem-mpi timem-md5sum)
 
 target_link_libraries(timem-mpi PRIVATE
     timemory::timemory-compile-options

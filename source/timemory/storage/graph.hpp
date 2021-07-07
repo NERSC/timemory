@@ -759,9 +759,12 @@ public:
     }
 
 private:
-    AllocatorT  m_alloc;
     inline void m_head_initialize();
     inline void m_copy(const graph<T, AllocatorT>& other);
+
+private:
+    using allocator_traits = std::allocator_traits<AllocatorT>;
+    AllocatorT m_alloc{};
 };
 
 //======================================================================================//
@@ -816,10 +819,10 @@ template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::~graph()
 {
     clear();
-    m_alloc.destroy(head);
-    m_alloc.destroy(feet);
-    m_alloc.deallocate(head, 1);
-    m_alloc.deallocate(feet, 1);
+    allocator_traits::destroy(m_alloc, head);
+    allocator_traits::destroy(m_alloc, feet);
+    allocator_traits::deallocate(m_alloc, head, 1);
+    allocator_traits::deallocate(m_alloc, feet, 1);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -828,10 +831,11 @@ template <typename T, typename AllocatorT>
 void
 graph<T, AllocatorT>::m_head_initialize()
 {
-    head = m_alloc.allocate(1, nullptr);  // MSVC does not have default second argument
-    feet = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(head, std::move(tgraph_node<T>{}));
-    m_alloc.construct(feet, std::move(tgraph_node<T>{}));
+    head = allocator_traits::allocate(
+        m_alloc, 1, nullptr);  // MSVC does not have default second argument
+    feet = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, head, std::move(tgraph_node<T>{}));
+    allocator_traits::construct(m_alloc, feet, std::move(tgraph_node<T>{}));
 
     head->parent       = nullptr;
     head->first_child  = nullptr;
@@ -880,7 +884,7 @@ graph<T, AllocatorT>::operator=(graph<T, AllocatorT>&& x) noexcept
 template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::graph(const graph<T, AllocatorT>& other)
 {
-    // m_alloc.reserve(2 + other.size());
+    // allocator_traits::reserve(2 + other.size());
     m_head_initialize();
     m_copy(other);
 }
@@ -980,8 +984,8 @@ graph<T, AllocatorT>::erase(IterT it)
         cur->next_sibling->prev_sibling = cur->prev_sibling;
     }
 
-    m_alloc.destroy(cur);
-    m_alloc.deallocate(cur, 1);
+    allocator_traits::destroy(m_alloc, cur);
+    allocator_traits::deallocate(m_alloc, cur, 1);
     it.node = nullptr;
     return ret;
 }
@@ -1077,8 +1081,8 @@ graph<T, AllocatorT>::append_child(IterT position)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, std::move(tgraph_node<T>{}));
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, std::move(tgraph_node<T>{}));
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
 
@@ -1108,8 +1112,8 @@ graph<T, AllocatorT>::prepend_child(IterT position)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, std::move(tgraph_node<T>{}));
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, std::move(tgraph_node<T>{}));
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
 
@@ -1143,8 +1147,8 @@ graph<T, AllocatorT>::append_child(IterT position, const T& x)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, x);
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, x);
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
 
@@ -1174,10 +1178,8 @@ graph<T, AllocatorT>::append_child(IterT position, T&& x)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, std::forward<T>(x));
-    // m_alloc.construct(tmp);  // Here is where the move semantics kick in
-    // std::swap(tmp->data, x);
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, std::forward<T>(x));
 
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
@@ -1208,8 +1210,8 @@ graph<T, AllocatorT>::prepend_child(IterT position, const T& x)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, x);
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, x);
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
 
@@ -1239,11 +1241,8 @@ graph<T, AllocatorT>::prepend_child(IterT position, T&& x)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, std::forward<T>(x));
-    // std::swap(tmp->data, std::forward<T>(x));
-    // auto _x = std::move(x);
-    // std::swap(tmp->data, _x);
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, std::forward<T>(x));
 
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
@@ -1274,7 +1273,7 @@ graph<T, AllocatorT>::append_child(IterT position, IterT other)
     assert(position.node != feet);
     assert(position.node);
 
-    IterT aargh = append_child(position, value_type());
+    IterT aargh = append_child(position, value_type{});
     return move_ontop(aargh, other);
 }
 
@@ -1289,7 +1288,7 @@ graph<T, AllocatorT>::prepend_child(IterT position, IterT other)
     assert(position.node != feet);
     assert(position.node);
 
-    IterT aargh = prepend_child(position, value_type());
+    IterT aargh = prepend_child(position, value_type{});
     return move_ontop(aargh, other);
 }
 
@@ -1374,8 +1373,8 @@ graph<T, AllocatorT>::insert(IterT position, const T& x)
     }
     assert(position.node != head);  // Cannot insert before head.
 
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, x);
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, x);
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
 
@@ -1406,9 +1405,9 @@ graph<T, AllocatorT>::insert(IterT position, T&& x)
         position.node = feet;  // Backward compatibility: when calling insert on
                                // a null node, insert before the feet.
     }
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, std::forward<T>(x));
-    // std::swap(tmp->data, x);  // Move semantics
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, std::forward<T>(x));
+
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
 
@@ -1433,8 +1432,8 @@ template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::sibling_iterator
 graph<T, AllocatorT>::insert(sibling_iterator position, const T& x)
 {
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, x);
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, x);
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
 
@@ -1469,8 +1468,8 @@ template <typename IterT>
 IterT
 graph<T, AllocatorT>::insert_after(IterT position, const T& x)
 {
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, x);
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, x);
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
 
@@ -1498,9 +1497,9 @@ template <typename IterT>
 IterT
 graph<T, AllocatorT>::insert_after(IterT position, T&& x)
 {
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, std::forward<T>(x));
-    // std::swap(tmp->data, x);  // move semantics
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, std::forward<T>(x));
+
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
 
@@ -1529,7 +1528,7 @@ IterT
 graph<T, AllocatorT>::insert_subgraph(IterT position, const iterator_base& _subgraph)
 {
     // insert dummy
-    IterT it = insert(position, value_type());
+    IterT it = insert(position, value_type{});
     // replace dummy with subgraph
     return replace(it, _subgraph);
 }
@@ -1556,7 +1555,7 @@ graph<T, AllocatorT>::insert_subgraph_after(IterT                position,
 // position, IterT subgraph)
 // 	{
 // 	// insert dummy
-// 	IterT it(insert(position, value_type()));
+// 	IterT it(insert(position, value_type{}));
 // 	// replace dummy with subgraph
 // 	return replace(it, subgraph);
 // 	}
@@ -1568,8 +1567,8 @@ template <typename IterT>
 IterT
 graph<T, AllocatorT>::replace(IterT position, const T& x)
 {
-    m_alloc.destroy(position.node);
-    m_alloc.construct(position.node, x);
+    allocator_traits::destroy(m_alloc, position.node);
+    allocator_traits::construct(m_alloc, position.node, x);
     return position;
 }
 
@@ -1580,8 +1579,8 @@ template <typename IterT>
 IterT
 graph<T, AllocatorT>::replace(IterT position, T&& x)
 {
-    m_alloc.destroy(position.node);
-    m_alloc.construct(position.node, std::forward<T>(x));
+    allocator_traits::destroy(m_alloc, position.node);
+    allocator_traits::construct(m_alloc, position.node, std::forward<T>(x));
     return position;
 }
 
@@ -1601,8 +1600,8 @@ graph<T, AllocatorT>::replace(IterT position, const iterator_base& from)
     //	std::cout << "warning!" << position.node << std::endl;
     erase_children(position);
     //	std::cout << "no warning!" << std::endl;
-    graph_node* tmp = m_alloc.allocate(1, nullptr);
-    m_alloc.construct(tmp, (*from));
+    graph_node* tmp = allocator_traits::allocate(m_alloc, 1, nullptr);
+    allocator_traits::construct(m_alloc, tmp, (*from));
     tmp->first_child = nullptr;
     tmp->last_child  = nullptr;
     if(current_to->prev_sibling == nullptr)
@@ -1626,8 +1625,8 @@ graph<T, AllocatorT>::replace(IterT position, const iterator_base& from)
     }
     tmp->next_sibling = current_to->next_sibling;
     tmp->parent       = current_to->parent;
-    m_alloc.destroy(current_to);
-    m_alloc.deallocate(current_to, 1);
+    allocator_traits::destroy(m_alloc, current_to);
+    allocator_traits::deallocate(m_alloc, current_to, 1);
     current_to = tmp;
 
     // only at this stage can we fix 'last'
