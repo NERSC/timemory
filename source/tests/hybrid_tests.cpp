@@ -335,7 +335,7 @@ TEST_F(hybrid_tests, compose)
 
     details::print_info(_cpu_obj, 0.75, "sec");
 
-    ASSERT_NEAR(0.75, _cpu_val, 2.0 timer_tolerance);
+    ASSERT_NEAR(0.75, _cpu_val, 2.0 * timer_tolerance);
     ASSERT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
     ASSERT_NEAR(_cpu_val, std::get<0>(_cpu_ret) + std::get<1>(_cpu_ret),
                 compose_tolerance);
