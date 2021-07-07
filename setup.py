@@ -293,14 +293,17 @@ if platform.system() == "Darwin":
     cmake_args += ["-DCMAKE_OSX_DEPLOYMENT_TARGET={}".format(version)]
 
 # DO THIS LAST!
-# support PYKOKKOS_BASE_SETUP_ARGS environment variables because
+# support CMAKE_ARGS and TIMEMORY_SETUP_ARGS environment variables because
 #  --install-option for pip is a pain to use
-# TIMEMORY_SETUP_ARGS should be space-delimited set of cmake arguments, e.g.:
+# Env variables should be space-delimited set of cmake arguments, e.g.:
 #   export TIMEMORY_SETUP_ARGS="-DTIMEMORY_USE_MPI=ON -DTIMEMORY_USE_OMPT=OFF"
-env_cmake_args = os.environ.get("TIMEMORY_SETUP_ARGS", None)
+env_cmake_args = os.environ.get("CMAKE_ARGS", None)
 if env_cmake_args is not None:
     cmake_args += env_cmake_args.split(" ")
 
+env_cmake_args = os.environ.get("TIMEMORY_SETUP_ARGS", None)
+if env_cmake_args is not None:
+    cmake_args += env_cmake_args.split(" ")
 
 # --------------------------------------------------------------------------- #
 #
