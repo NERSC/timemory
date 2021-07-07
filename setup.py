@@ -309,6 +309,7 @@ env_cmake_args = os.environ.get("TIMEMORY_SETUP_ARGS", None)
 if env_cmake_args is not None:
     cmake_args += env_cmake_args.split(" ")
 
+
 # --------------------------------------------------------------------------- #
 #
 def get_project_version():
