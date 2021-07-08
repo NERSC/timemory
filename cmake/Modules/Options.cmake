@@ -582,6 +582,9 @@ if(TIMEMORY_BUILD_DOCS)
 endif()
 
 set(PYBIND11_INSTALL OFF CACHE BOOL "Install Pybind11")
+if(PYBIND11_INSTALL AND (SKBUILD OR SPACK_BUILD))
+    timemory_message(WARNING "Pybind11 will be installed. This may overwrite an existing pip/conda/spack PyBind11 installation...")
+endif()
 
 # clang-tidy
 macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)

@@ -38,11 +38,18 @@ if(TIMEMORY_USE_PYTHON AND TIMEMORY_BUILD_PYTHON_HATCHET)
         add_dependencies(libpytimemory hatchet)
         if(CMAKE_INSTALL_PYTHONDIR)
             set(HATCHET_PYDIR "${CMAKE_CURRENT_LIST_DIR}/hatchet/hatchet")
+
             file(GLOB_RECURSE hatchet_files
                 "${HATCHET_PYDIR}/*.py"
                 "${HATCHET_PYDIR}/*.js")
+
             file(GLOB_RECURSE hatchet_test_files
                 "${HATCHET_PYDIR}/tests/*")
+
+            if("${HATCHET_PYDIR}/tests/timemory_test.py" IN_LIST hatchet_test_files)
+                list(REMOVE_ITEM hatchet_test_files
+                    "${HATCHET_PYDIR}/tests/timemory_test.py")
+            endif()
 
             set(HATCHET_CYTHONDIR
                 "${HATCHET_PYDIR}/cython_modules/libs")
