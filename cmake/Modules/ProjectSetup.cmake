@@ -104,15 +104,21 @@ if(Git_FOUND)
     execute_process(
         COMMAND             ${GIT_EXECUTABLE} describe --tags
         WORKING_DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}
-        OUTPUT_VARIABLE     TIMEMORY_GIT_DESCRIBE
+        OUTPUT_VARIABLE     _GIT_DESCRIBE
         ERROR_QUIET
         OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(_GIT_DESCRIBE)
+        set(TIMEMORY_GIT_DESCRIBE "${_GIT_DESCRIBE}")
+    endif()
     execute_process(
         COMMAND             ${GIT_EXECUTABLE} rev-parse HEAD
         WORKING_DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}
-        OUTPUT_VARIABLE     TIMEMORY_GIT_REVISION
+        OUTPUT_VARIABLE     _GIT_REVISION
         ERROR_QUIET
         OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(_GIT_REVISION)
+        set(TIMEMORY_GIT_REVISION "${_GIT_REVISION}")
+    endif()
 endif()
 
 if(NOT "${TIMEMORY_GIT_REVISION}" STREQUAL "unknown")

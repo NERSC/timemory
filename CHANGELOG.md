@@ -1,5 +1,30 @@
 # timemory
 
+## Version 3.2.1
+
+> Date: Fri Jul 9 16:55:33 2021 -0500
+
+- pytimem fix
+  - fix missing import of component_bundle and component_tuple
+- added additional python tests
+- Ability to build with static libraries: python bindings, mpip library, mallocp library, ompt library, ncclp library, KokkosP libraries
+- Setting TIMEMORY_BUILD_PYTHON to OFF now results in searching for external pybind11 install
+- Renamed some CMake files in cmake/Modules
+- Updated caliper and gotcha submodules to support {CALIPER,GOTCHA}_INSTALL_{CONFIG,HEADER} options
+- Added TIMEMORY_INSTALL_PYTHON option
+- Fixed BUILD_STATIC_LIBS=ON + CMAKE_POSITION_INDEPENDENT_CODE=ON
+- Fixed TIMEMORY_USE_CUDA=ON + TIMEMORY_REQUIRE_PACKAGES=ON to fail
+- If TIMEMORY_REQUIRED_PACKAGES=OFF, search for packages first before adding submodule
+- Extended setup.py to support more options and support non-development install (no headers or cmake config)
+- Removed TIMEMORY_EMBED_PYTHON option
+- Disable timemory-jump when no shared libraries are built since dlopen isn't possible
+- Replaced allocator member functions construct, destroy, allocate, deallocate with calls to static functions of allocator traits
+- added support for CMAKE_ARGS env variable in setup.py
+- remove absolute rpath when SKBUILD/SPACK_BUILD (since these have staging directories)
+- timemory-{c,cxx,fortran} alias libraries in build tree
+- toggled python function profiler to not include line number by default
+  - This can cause strange results when generators are used
+
 ## Version 3.2.0
 
 > Date: Sun Jun 27 21:10:57 2021 -0500
