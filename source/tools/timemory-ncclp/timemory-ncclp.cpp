@@ -57,9 +57,9 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, nccl_data_tracker_t, true_typ
 using api_t = ncclp_tag;
 using nccl_toolset_t =
     tim::component_tuple<user_ncclp_bundle, nccl_data_tracker_t, nccl_comm_data>;
-using ncclp_handle_t    = ncclp_handle<nccl_toolset_t, api_t>;
-uint64_t global_id      = 0;
-void*    libnccl_handle = nullptr;
+using ncclp_handle_t           = ncclp_handle<nccl_toolset_t, api_t>;
+static uint64_t global_id      = 0;
+static void*    libnccl_handle = nullptr;
 //
 //--------------------------------------------------------------------------------------//
 //

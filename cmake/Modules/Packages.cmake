@@ -526,15 +526,16 @@ if(NOT WIN32)
     set(THREADS_PREFER_PTHREAD_FLAG OFF)
 endif()
 
-find_library(PTHREADS_LIBRARY pthread)
+find_library(pthread_LIBRARY NAMES pthread pthreads)
+find_package_handle_standard_args(pthread-library REQUIRED_VARS pthread_LIBRARY)
 find_package(Threads ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 
 if(Threads_FOUND)
     target_link_libraries(timemory-threading INTERFACE ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
-if(PTHREADS_LIBRARY AND NOT WIN32)
-    target_link_libraries(timemory-threading INTERFACE ${PTHREADS_LIBRARY})
+if(NOT TIMEMORY_BUILD_PORTABLE AND pthread_LIBRARY AND NOT WIN32)
+    target_link_libraries(timemory-threading INTERFACE ${pthread_LIBRARY})
 endif()
 
 

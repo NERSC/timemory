@@ -32,9 +32,9 @@
 
 using namespace tim::component;
 
-using malloc_toolset_t = tim::component_tuple<memory_allocations>;
-uint64_t global_cnt    = 0;
-uint64_t global_id     = std::numeric_limits<uint64_t>::max();
+using malloc_toolset_t     = tim::component_tuple<memory_allocations>;
+static uint64_t global_cnt = 0;
+static uint64_t global_id  = std::numeric_limits<uint64_t>::max();
 //
 //--------------------------------------------------------------------------------------//
 //

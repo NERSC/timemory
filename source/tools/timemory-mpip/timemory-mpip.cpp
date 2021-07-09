@@ -51,11 +51,11 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, mpi_data_tracker_t, true_type
 //
 //--------------------------------------------------------------------------------------//
 //
-using api_t            = TIMEMORY_API;
-using mpi_toolset_t    = tim::component_tuple<user_mpip_bundle, mpi_comm_data>;
-using mpip_handle_t    = mpip_handle<mpi_toolset_t, api_t>;
-uint64_t global_id     = 0;
-void*    libmpi_handle = nullptr;
+using api_t                   = TIMEMORY_API;
+using mpi_toolset_t           = tim::component_tuple<user_mpip_bundle, mpi_comm_data>;
+using mpip_handle_t           = mpip_handle<mpi_toolset_t, api_t>;
+static uint64_t global_id     = 0;
+static void*    libmpi_handle = nullptr;
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -10,18 +10,53 @@ include_guard(DIRECTORY)
 
 include(GNUInstallDirs)
 include(Compilers)
+include(FindPackageHandleStandardArgs)
 
 target_compile_definitions(timemory-compile-options INTERFACE $<$<CONFIG:DEBUG>:DEBUG>)
 
-if(CMAKE_DL_LIBS)
-    set(dl_LIBRARY ${CMAKE_DL_LIBS})
-    target_link_libraries(timemory-compile-options INTERFACE ${CMAKE_DL_LIBS})
-else()
-    find_library(dl_LIBRARY NAMES dl)
-    if(dl_LIBRARY)
-        target_link_libraries(timemory-compile-options INTERFACE ${dl_LIBRARY})
-    endif()
+#----------------------------------------------------------------------------------------#
+#   dynamic linking and runtime libraries
+#
+if(CMAKE_DL_LIBS AND NOT "${CMAKE_DL_LIBS}" STREQUAL "dl")
+    # if cmake provides dl library, use that
+    set(dl_LIBRARY ${CMAKE_DL_LIBS} CACHE FILEPATH "dynamic linking system library")
 endif()
+
+foreach(_TYPE dl rt dw)
+    if(NOT ${_TYPE}_LIBRARY)
+        find_library(${_TYPE}_LIBRARY NAMES ${_TYPE})
+    endif()
+endforeach()
+
+find_package_handle_standard_args(dl-library REQUIRED_VARS dl_LIBRARY)
+find_package_handle_standard_args(rt-library REQUIRED_VARS rt_LIBRARY)
+# find_package_handle_standard_args(dw-library REQUIRED_VARS dw_LIBRARY)
+
+if(TIMEMORY_BUILD_PORTABLE)
+    if(dl_LIBRARY)
+        set(dl_LIBRARY dl)
+    else()
+        set(dl_LIBRARY)
+    endif()
+elseif(dl_LIBRARY)
+    add_rpath(${dl_LIBRARY})
+endif()
+
+if(dl_LIBRARY)
+    target_link_libraries(timemory-compile-options INTERFACE ${dl_LIBRARY})
+endif()
+
+if(TIMEMORY_BUILD_PORTABLE)
+    if(rt_LIBRARY)
+        set(rt_LIBRARY rt)
+    else()
+        set(rt_LIBRARY)
+    endif()
+elseif(rt_LIBRARY)
+    add_rpath(${rt_LIBRARY})
+endif()
+
+#----------------------------------------------------------------------------------------#
 
 if(WIN32)
     set(OS_FLAG "/bigobj")
@@ -71,15 +106,6 @@ endif()
 #
 add_interface_library(timemory-compile-debuginfo
     "Attempts to set best flags for more expressive profiling information in debug or optimized binaries")
-
-# if cmake provides dl library, use that
-if(CMAKE_DL_LIBS)
-    set(dl_LIBRARY "${CMAKE_DL_LIBS}" CACHE STRING "dynamic linking libraries")
-endif()
-
-find_library(rt_LIBRARY NAMES rt)
-find_library(dl_LIBRARY NAMES dl)
-find_library(dw_LIBRARY NAMES dw)
 
 add_target_flag_if_avail(timemory-compile-debuginfo
     "-g"
