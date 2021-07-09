@@ -18,6 +18,7 @@ include requirements.txt
 include setup.cfg
 include setup.py
 include VERSION
+include docs/.gitinfo
 
 # recursive includes
 

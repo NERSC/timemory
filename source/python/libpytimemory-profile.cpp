@@ -49,7 +49,7 @@ struct config
     bool                 trace_c            = true;
     bool                 include_internal   = false;
     bool                 include_args       = false;
-    bool                 include_line       = true;
+    bool                 include_line       = false;
     bool                 include_filename   = true;
     bool                 full_filepath      = false;
     int32_t              max_stack_depth    = std::numeric_limits<uint16_t>::max();
