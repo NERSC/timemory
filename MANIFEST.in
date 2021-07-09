@@ -18,7 +18,6 @@ include requirements.txt
 include setup.cfg
 include setup.py
 include VERSION
-include docs/.gitinfo
 
 # recursive includes
 
@@ -47,3 +46,7 @@ recursive-exclude _skbuild *
 recursive-exclude build *
 recursive-exclude dist *
 recursive-exclude external/hatchet/build *
+
+# bypass global exclude of git files
+
+include docs/.gitinfo
