@@ -79,3 +79,46 @@ math(EXPR TIMEMORY_VERSION_CODE
 if(SKBUILD AND TIMEMORY_USE_PYTHON)
     set(CMAKE_INSTALL_LIBDIR lib)
 endif()
+
+#----------------------------------------------------------------------------------------#
+#   Git info
+#----------------------------------------------------------------------------------------#
+
+set(TIMEMORY_GIT_DESCRIBE "unknown")
+set(TIMEMORY_GIT_REVISION "unknown")
+
+# the docs/.gitinfo only exists in releases
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/docs/.gitinfo")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/docs/.gitinfo" _GIT_INFO)
+    string(REGEX REPLACE "[\n\r\t ]" ";" _GIT_INFO "${_GIT_INFO}")
+    string(REGEX REPLACE ";$" "" _GIT_INFO "${_GIT_INFO}")
+    list(LENGTH _GIT_INFO _GIT_INFO_LEN)
+    if(_GIT_INFO_LEN GREATER 1)
+        list(GET _GIT_INFO 0 TIMEMORY_GIT_REVISION)
+        list(GET _GIT_INFO 1 TIMEMORY_GIT_DESCRIBE)
+    endif()
+endif()
+
+find_package(Git QUIET)
+if(Git_FOUND)
+    execute_process(
+        COMMAND             ${GIT_EXECUTABLE} describe --tags
+        WORKING_DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE     TIMEMORY_GIT_DESCRIBE
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+        COMMAND             ${GIT_EXECUTABLE} rev-parse HEAD
+        WORKING_DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE     TIMEMORY_GIT_REVISION
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+
+if(NOT "${TIMEMORY_GIT_REVISION}" STREQUAL "unknown")
+    message(STATUS "[timemory] git revision: ${TIMEMORY_GIT_REVISION}")
+endif()
+
+if(NOT "${TIMEMORY_GIT_DESCRIBE}" STREQUAL "unknown")
+    message(STATUS "[timemory] git describe: ${TIMEMORY_GIT_DESCRIBE}")
+endif()
