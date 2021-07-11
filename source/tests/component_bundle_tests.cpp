@@ -267,8 +267,8 @@ TEST_F(component_bundle_tests, get)
 
     EXPECT_NEAR(std::get<0>(cb), 2.0, 0.1);
     EXPECT_NEAR(std::get<0>(ab), 2.0, 0.1);
-    EXPECT_NEAR(std::get<1>(cb) + std::get<2>(cb), 1.0, 0.1);
-    EXPECT_NEAR(std::get<1>(ab), 1.0, 0.1);
+    EXPECT_NEAR(std::get<1>(cb) + std::get<2>(cb), 1.0, 0.15);
+    EXPECT_NEAR(std::get<1>(ab), 1.0, 0.15);
 }
 
 //--------------------------------------------------------------------------------------//

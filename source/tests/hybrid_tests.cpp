@@ -64,7 +64,7 @@ static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB,
 
 // acceptable absolute error
 static const double util_tolerance  = 5.0;
-static const double timer_tolerance = 0.075;
+static const double timer_tolerance = 0.1;
 
 // acceptable relative error
 // static const double util_epsilon  = 0.5;
@@ -100,7 +100,7 @@ get_test_name()
 }
 
 // this function consumes approximately "n" milliseconds of real time
-inline void
+TIMEMORY_FLATTEN void
 do_sleep(long n)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(n));
@@ -114,7 +114,7 @@ fibonacci(long n)
 }
 
 // this function consumes approximately "t" milliseconds of cpu time
-inline void
+TIMEMORY_FLATTEN void
 consume(long n)
 {
     // a mutex held by one lock
@@ -252,8 +252,8 @@ TEST_F(hybrid_tests, hybrid)
     ASSERT_TRUE(t_util != nullptr) << obj;
 
     EXPECT_NEAR(2.0, t_rc->get(), timer_tolerance) << obj;
-    EXPECT_NEAR(2.5, t_cpu->get(), timer_tolerance) << obj;
-    EXPECT_NEAR(125.0, t_util->get(), util_tolerance) << obj;
+    EXPECT_NEAR(2.5, t_cpu->get(), 2.0 * timer_tolerance) << obj;
+    EXPECT_NEAR(125.0, t_util->get(), 2.0 * util_tolerance) << obj;
 
     auto* l_rc   = obj.get<wall_clock*>();
     auto* l_cpu  = obj.get<cpu_clock*>();
@@ -301,8 +301,8 @@ TEST_F(hybrid_tests, auto_timer)
     details::print_info(_util, 125.0, "%", cpu_util_convert);
 
     ASSERT_NEAR(1.0, _rc.get(), timer_tolerance);
-    ASSERT_NEAR(1.25, _cpu.get(), timer_tolerance);
-    ASSERT_NEAR(125.0, _util.get(), util_tolerance);
+    ASSERT_NEAR(1.25, _cpu.get(), 2.0 * timer_tolerance);
+    ASSERT_NEAR(125.0, _util.get(), 2.0 * util_tolerance);
 
     cpu_clock _cpu_obj = *obj.get<cpu_clock>();
     double    _cpu_val = obj.get<cpu_clock>()->get();
@@ -335,7 +335,7 @@ TEST_F(hybrid_tests, compose)
 
     details::print_info(_cpu_obj, 0.75, "sec");
 
-    ASSERT_NEAR(0.75, _cpu_val, timer_tolerance);
+    ASSERT_NEAR(0.75, _cpu_val, 2.0 * timer_tolerance);
     ASSERT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
     ASSERT_NEAR(_cpu_val, std::get<0>(_cpu_ret) + std::get<1>(_cpu_ret),
                 compose_tolerance);

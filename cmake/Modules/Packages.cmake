@@ -526,15 +526,16 @@ if(NOT WIN32)
     set(THREADS_PREFER_PTHREAD_FLAG OFF)
 endif()
 
-find_library(PTHREADS_LIBRARY pthread)
+find_library(pthread_LIBRARY NAMES pthread pthreads)
+find_package_handle_standard_args(pthread-library REQUIRED_VARS pthread_LIBRARY)
 find_package(Threads ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 
 if(Threads_FOUND)
     target_link_libraries(timemory-threading INTERFACE ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
-if(PTHREADS_LIBRARY AND NOT WIN32)
-    target_link_libraries(timemory-threading INTERFACE ${PTHREADS_LIBRARY})
+if(NOT TIMEMORY_BUILD_PORTABLE AND pthread_LIBRARY AND NOT WIN32)
+    target_link_libraries(timemory-threading INTERFACE ${pthread_LIBRARY})
 endif()
 
 
@@ -670,36 +671,30 @@ endif()
 #                               PyBind11
 #
 #----------------------------------------------------------------------------------------#
-# if using is enable but not internal pybind11 distribution
-if(TIMEMORY_USE_PYTHON AND NOT TIMEMORY_BUILD_PYTHON)
 
-    find_package(pybind11 ${TIMEMORY_FIND_REQUIREMENT})
+if(TIMEMORY_USE_PYTHON AND (NOT TIMEMORY_BUILD_PYTHON OR NOT TIMEMORY_REQUIRE_PACKAGES))
 
-    if(NOT pybind11_FOUND)
-        set(TIMEMORY_USE_PYTHON OFF)
+    find_package(pybind11 ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+
+    if(pybind11_FOUND)
         set(TIMEMORY_BUILD_PYTHON OFF)
     else()
-        set(TIMEMORY_PYTHON_VERSION "${PYBIND11_PYTHON_VERSION}" CACHE STRING
-            "Python version for timemory")
+        set(TIMEMORY_BUILD_PYTHON ON)
     endif()
 
-    if(NOT "${TIMEMORY_PYTHON_VERSION}" MATCHES "${PYBIND11_PYTHON_VERSION}*")
-        message(STATUS "TIMEMORY_PYTHON_VERSION is set to ${TIMEMORY_PYTHON_VERSION}")
-        message(STATUS "PYBIND11_PYTHON_VERSION is set to ${PYBIND11_PYTHON_VERSION}")
-        message(FATAL_ERROR
-            "Mismatched 'TIMEMORY_PYTHON_VERSION' and 'PYBIND11_PYTHON_VERSION'")
+else()
+    if(PYBIND11_INSTALL)
+        # just above warning about variable
     endif()
-
 endif()
 
 if(TIMEMORY_USE_PYTHON)
-    include(PythonConfig)
+    include(ConfigPython)
 else()
     set(TIMEMORY_BUILD_PYTHON OFF)
     inform_empty_interface(timemory-python "Python embedded interpreter")
     inform_empty_interface(timemory-plotting "Python plotting from C++")
 endif()
-
 
 #----------------------------------------------------------------------------------------#
 #
@@ -763,7 +758,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    find_library(GCOV_LIBRARY gcov ${TIMEMORY_FIND_QUIETLY})
+    find_library(GCOV_LIBRARY gcov)
 
     add_target_flag_if_avail(timemory-coverage "-fprofile-abs-path" "--coverage")
     add_target_flag(timemory-coverage "-fprofile-arcs" "-ftest-coverage" "-O0" "-g")
@@ -795,7 +790,7 @@ if(TIMEMORY_USE_CUDA)
     set(PROJECT_CUDA_USE_HALF_OPTION       TIMEMORY_USE_CUDA_HALF)
     set(PROJECT_CUDA_USE_HALF_DEFINITION   TIMEMORY_USE_CUDA_HALF)
 
-    include(CUDAConfig)
+    include(ConfigCUDA)
 
     find_package(NVTX ${TIMEMORY_FIND_QUIETLY})
     if(NVTX_FOUND)
@@ -816,6 +811,7 @@ else()
     set(TIMEMORY_USE_NVTX OFF)
     set(TIMEMORY_USE_CUPTI OFF)
     inform_empty_interface(timemory-cuda "CUDA")
+    inform_empty_interface(timemory-cuda-compiler "CUDA compiler options")
     inform_empty_interface(timemory-cudart "CUDA Runtime (shared)")
     inform_empty_interface(timemory-cudart-device "CUDA Runtime (device)")
     inform_empty_interface(timemory-cudart-static "CUDA Runtime (static)")
@@ -842,7 +838,6 @@ if(CUPTI_FOUND)
     target_link_libraries(timemory-cupti INTERFACE
         ${CUPTI_LIBRARIES}
         timemory-cuda
-        # timemory-cudart
         timemory-cudart-device)
 
     target_link_directories(timemory-cupti INTERFACE
@@ -888,7 +883,7 @@ if(TIMEMORY_USE_NCCL)
     find_package(NCCL ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(NCCL_FOUND AND TIMEMORY_USE_CUDA)
+if(NCCL_FOUND)
     add_rpath(${NCCL_LIBRARIES})
     target_link_libraries(timemory-nccl INTERFACE ${NCCL_LIBRARIES})
     target_include_directories(timemory-nccl SYSTEM INTERFACE ${NCCL_INCLUDE_DIRS})
@@ -957,11 +952,6 @@ if(NOT TIMEMORY_FORCE_GPERFTOOLS_PYTHON)
         set(_GPERF_COMPONENTS )
         set(TIMEMORY_gperftools_COMPONENTS )
     endif()
-
-    if(TIMEMORY_BUILD_PYTHON)
-        set(_GPERF_COMPONENTS )
-        set(TIMEMORY_gperftools_COMPONENTS )
-    endif()
 endif()
 
 if(TIMEMORY_USE_GPERFTOOLS)
@@ -998,7 +988,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     #   changes malloc/free after Python has used libc malloc, which commonly
     #   corrupts the deletion of the Python interpreter at the end of the application
     #
-    if(TIMEMORY_BUILD_PYTHON)
+    if(TIMEMORY_USE_PYTHON)
         set(gperftools_PREFER_STATIC OFF)
     endif()
 
@@ -1028,6 +1018,9 @@ if(TIMEMORY_USE_GPERFTOOLS)
 
     add_rpath(${gperftools_LIBRARIES} ${gperftools_ROOT_DIR}/lib ${gperftools_ROOT_DIR}/lib64)
 
+else()
+    set(TIMEMORY_USE_GPERFTOOLS OFF)
+    inform_empty_interface(timemory-gperftools "gperftools")
 endif()
 
 
@@ -1041,6 +1034,13 @@ if(NOT TIMEMORY_USE_CALIPER)
     set(TIMEMORY_BUILD_CALIPER OFF)
 endif()
 
+if(TIMEMORY_USE_CALIPER AND NOT TIMEMORY_REQUIRE_PACKAGES)
+    find_package(caliper ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+    if(caliper_FOUND)
+        set(TIMEMORY_BUILD_CALIPER OFF)
+    endif()
+endif()
+
 if(TIMEMORY_BUILD_CALIPER)
     set(caliper_FOUND ON)
     checkout_git_submodule(RECURSIVE
@@ -1048,7 +1048,7 @@ if(TIMEMORY_BUILD_CALIPER)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         REPO_URL https://github.com/jrmadsen/Caliper.git
         REPO_BRANCH master)
-    include(CaliperDepends)
+    include(ConfigCaliper)
     set(_ORIG_CEXT ${CMAKE_C_EXTENSIONS})
     set(_ORIG_TESTING ${BUILD_TESTING})
     set(CMAKE_C_EXTENSIONS ON)
@@ -1107,8 +1107,17 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 if(UNIX AND NOT APPLE)
-    set(GOTCHA_BUILD_EXAMPLES OFF CACHE BOOL "Build GOTCHA examples")
+    if(TIMEMORY_USE_GOTCHA AND NOT TIMEMORY_REQUIRE_PACKAGES)
+        find_package(gotcha ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+        if(gotcha_FOUND)
+            set(TIMEMORY_BUILD_GOTCHA OFF)
+        endif()
+    endif()
+
     if(TIMEMORY_BUILD_GOTCHA AND TIMEMORY_USE_GOTCHA)
+        set(GOTCHA_BUILD_EXAMPLES OFF CACHE BOOL "Build GOTCHA examples")
+        set(GOTCHA_INSTALL_CONFIG ${TIMEMORY_INSTALL_CONFIG} CACHE BOOL "Install gotcha cmake config" FORCE)
+        set(GOTCHA_INSTALL_HEADERS ${TIMEMORY_INSTALL_HEADERS} CACHE BOOL "Install gotcha headers" FORCE)
         set(gotcha_FOUND ON)
         checkout_git_submodule(RECURSIVE
             RELATIVE_PATH external/gotcha

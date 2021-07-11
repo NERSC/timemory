@@ -87,8 +87,16 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(_BUILD_OPT ON)
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND
-    (TIMEMORY_BUILD_TESTING OR TIMEMORY_BUILD_MINIMAL_TESTING OR TIMEMORY_CI))
+if(TIMEMORY_BUILD_TESTING)
+    set(TIMEMORY_BUILD_EXAMPLES ON)
+endif()
+
+if(TIMEMORY_BUILD_MINIMAL_TESTING)
+    set(TIMEMORY_BUILD_TESTING ON)
+    set(TIMEMORY_BUILD_EXAMPLES OFF)
+endif()
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_CI)
     set(_USE_COVERAGE ON)
 endif()
 
@@ -105,10 +113,11 @@ timemory_test_find_package(libunwind _USE_LIBUNWIND)
 
 set(_REQUIRE_LIBUNWIND OFF)
 set(_HATCHET ${_UNIX_OS})
-# once hatchet is available in a release with timemory support
-# if(SKBUILD OR SPACK_BUILD)
-#    set(_HATCHET OFF)
-# endif()
+
+# skip check_language if suppose to fail
+if(DEFINED TIMEMORY_USE_CUDA AND TIMEMORY_USE_CUDA AND TIMEMORY_REQUIRE_PACKAGES)
+    enable_language(CUDA)
+endif()
 
 # Check if CUDA can be enabled if CUDA is enabled or in auto-detect mode
 if(TIMEMORY_USE_CUDA OR (NOT DEFINED TIMEMORY_USE_CUDA AND NOT TIMEMORY_REQUIRE_PACKAGES))
@@ -199,11 +208,12 @@ if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
     set(TIMEMORY_BUILD_PYTHON OFF)
     set(TIMEMORY_BUILD_FORTRAN OFF)
     set(TIMEMORY_USE_PYTHON OFF)
-    set(TIMEMORY_USE_DYNINST OFF)
+    set(TIMEMORY_USE_NCCL OFF)
     set(TIMEMORY_BUILD_KOKKOS_TOOLS OFF)
     set(TIMEMORY_BUILD_DYNINST_TOOLS OFF)
     set(TIMEMORY_BUILD_MPIP_LIBRARY OFF)
     set(TIMEMORY_BUILD_OMPT_LIBRARY OFF)
+    set(TIMEMORY_BUILD_NCCLP_LIBRARY OFF)
 endif()
 
 if(${PROJECT_NAME}_MAIN_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
@@ -217,7 +227,7 @@ if(${PROJECT_NAME}_MAIN_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
 endif()
 
 if(${PROJECT_NAME}_MAIN_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
-    # standard    
+    # standard
     set(CMAKE_C_STANDARD 11 CACHE STRING "C language standard")
     set(CMAKE_CXX_STANDARD 14 CACHE STRING "CXX language standard")
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
@@ -257,12 +267,31 @@ endif()
 
 add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 
+set(_INSTALL_PYTHON auto)
+if(SKBUILD)
+    set(_INSTALL_PYTHON prefix)
+elseif(SPACK_BUILD)
+    set(_INSTALL_PYTHON lib)
+endif()
 
 # Install settings
 add_option(TIMEMORY_INSTALL_HEADERS "Install the header files" ON)
-add_option(TIMEMORY_INSTALL_CONFIG "Install the cmake package config files, i.e. timemory-config.cmake, etc." ON)
-add_option(TIMEMORY_INSTALL_ALL
-    "install target depends on all target. Set to OFF to only install artifacts which were explicitly built" ON)
+add_option(TIMEMORY_INSTALL_CONFIG  "Install the cmake package config files, i.e. timemory-config.cmake, etc." ON)
+add_option(TIMEMORY_INSTALL_ALL     "'install' target depends on 'all' target. Set to OFF to only install artifacts which were explicitly built" ON)
+set(TIMEMORY_INSTALL_PYTHON "${_INSTALL_PYTHON}" CACHE STRING "Installation mode for Python")
+set(TIMEMORY_INSTALL_PYTHON_OPTIONS auto global lib prefix)
+set_property(CACHE TIMEMORY_INSTALL_PYTHON PROPERTY STRINGS "${TIMEMORY_INSTALL_PYTHON_OPTIONS}")
+if(NOT "${TIMEMORY_INSTALL_PYTHON}" IN_LIST TIMEMORY_INSTALL_PYTHON_OPTIONS)
+    message("")
+    message(STATUS "TIMEMORY_INSTALL_PYTHON options:")
+    message("    global = Python3_SITEARCH")
+    message("    lib    = ${CMAKE_INSTALL_PREFIX}/lib/python<VERSION>/site-packages")
+    message("    prefix = ${CMAKE_INSTALL_PREFIX} (generally only used by scikit-build)")
+    message("    auto   = global (if writable) otherwise lib")
+    message("")
+    message(FATAL_ERROR "TIMEMORY_INSTALL_PYTHON set to invalid option. See guide above")
+endif()
+add_feature(TIMEMORY_INSTALL_PYTHON "Installation mode for python (${TIMEMORY_INSTALL_PYTHON_OPTIONS})")
 
 if(NOT TIMEMORY_INSTALL_ALL)
     set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY ON)
@@ -283,8 +312,10 @@ add_option(TIMEMORY_BUILD_C
     "Build the C compatible library" ON)
 add_option(TIMEMORY_BUILD_FORTRAN
     "Build the Fortran compatible library" ${_BUILD_FORTRAN})
+add_option(TIMEMORY_BUILD_PORTABLE
+    "Disable arch flags which may cause portability issues (e.g. AVX-512)" OFF)
 add_option(TIMEMORY_BUILD_PYTHON
-    "Build Python binding" OFF)
+    "Build Python bindings with internal pybind11" ON)
 add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
     "Build customized Python line-profiler" ON)
 add_option(TIMEMORY_BUILD_PYTHON_HATCHET
@@ -366,7 +397,7 @@ define_default_option(_GPERFTOOLS ON)
 define_default_option(_VTUNE ON)
 define_default_option(_CUDA ${_USE_CUDA})
 define_default_option(_CALIPER ${_BUILD_CALIPER})
-define_default_option(_PYTHON ${TIMEMORY_BUILD_PYTHON})
+define_default_option(_PYTHON OFF)
 define_default_option(_DYNINST ON)
 define_default_option(_ALLINEA_MAP ON)
 define_default_option(_CRAYPAT ON)
@@ -471,22 +502,19 @@ if(TIMEMORY_BUILD_TOOLS AND TIMEMORY_USE_DYNINST)
 endif()
 
 set(_MPIP ${TIMEMORY_USE_MPI})
-if(_MPIP AND (NOT BUILD_SHARED_LIBS OR NOT TIMEMORY_USE_GOTCHA))
+if(_MPIP AND NOT TIMEMORY_USE_GOTCHA)
     set(_MPIP OFF)
 endif()
 
 set(_OMPT ${TIMEMORY_USE_OMPT})
-if(_OMPT AND NOT BUILD_SHARED_LIBS)
-    set(_OMPT OFF)
-endif()
 
 set(_NCCLP ${TIMEMORY_USE_NCCL})
-if(_NCCLP AND (NOT BUILD_SHARED_LIBS OR NOT TIMEMORY_USE_GOTCHA))
+if(_NCCLP AND NOT TIMEMORY_USE_GOTCHA)
     set(_NCCLP OFF)
 endif()
 
 set(_MALLOCP ${TIMEMORY_USE_GOTCHA})
-if(_MALLOCP AND (NOT BUILD_SHARED_LIBS OR NOT TIMEMORY_USE_GOTCHA))
+if(_MALLOCP AND NOT TIMEMORY_USE_GOTCHA)
     set(_MALLOCP OFF)
 endif()
 
@@ -512,35 +540,33 @@ unset(_NCCLP)
 unset(_MALLOCP)
 unset(_DYNINST)
 
-if(TIMEMORY_BUILD_MPIP_LIBRARY AND (NOT BUILD_SHARED_LIBS OR
-    NOT TIMEMORY_USE_MPI OR NOT TIMEMORY_USE_GOTCHA))
+if(TIMEMORY_BUILD_MPIP_LIBRARY AND (NOT TIMEMORY_USE_MPI OR NOT TIMEMORY_USE_GOTCHA))
     timemory_message(AUTHOR_WARNING
-        "TIMEMORY_BUILD_MPIP_LIBRARY requires BUILD_SHARED_LIBS=ON, TIMEMORY_USE_MPI=ON, and TIMEMORY_USE_GOTCHA=ON...")
+        "TIMEMORY_BUILD_MPIP_LIBRARY requires TIMEMORY_USE_MPI=ON and TIMEMORY_USE_GOTCHA=ON...")
     set(TIMEMORY_BUILD_MPIP_LIBRARY OFF CACHE BOOL "Build the mpiP library" FORCE)
 endif()
 
 if(TIMEMORY_BUILD_OMPT_LIBRARY AND NOT TIMEMORY_USE_OMPT)
     timemory_message(AUTHOR_WARNING
-        "TIMEMORY_BUILD_OMPT_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_OMPT=ON...")
+        "TIMEMORY_BUILD_OMPT_LIBRARY requires TIMEMORY_USE_OMPT=ON...")
     set(TIMEMORY_BUILD_OMPT_LIBRARY OFF CACHE BOOL "Build the OMPT library" FORCE)
 endif()
 
-if(TIMEMORY_BUILD_NCCLP_LIBRARY AND (NOT BUILD_SHARED_LIBS OR
-    NOT TIMEMORY_USE_NCCL OR NOT TIMEMORY_USE_GOTCHA))
+if(TIMEMORY_BUILD_NCCLP_LIBRARY AND (NOT TIMEMORY_USE_NCCL OR NOT TIMEMORY_USE_GOTCHA))
     timemory_message(AUTHOR_WARNING
-        "TIMEMORY_BUILD_NCCLP_LIBRARY requires BUILD_SHARED_LIBS=ON, TIMEMORY_USE_NCCL=ON, and TIMEMORY_USE_GOTCHA=ON...")
+        "TIMEMORY_BUILD_NCCLP_LIBRARY requires TIMEMORY_USE_NCCL=ON, and TIMEMORY_USE_GOTCHA=ON...")
     set(TIMEMORY_BUILD_NCCLP_LIBRARY OFF CACHE BOOL "Build the ncclP library" FORCE)
 endif()
 
-if(TIMEMORY_BUILD_MALLOCP_LIBRARY AND (NOT BUILD_SHARED_LIBS OR NOT TIMEMORY_USE_GOTCHA))
+if(TIMEMORY_BUILD_MALLOCP_LIBRARY AND NOT TIMEMORY_USE_GOTCHA)
     timemory_message(AUTHOR_WARNING
-        "TIMEMORY_BUILD_MALLOCP_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_GOTCHA=ON...")
+        "TIMEMORY_BUILD_MALLOCP_LIBRARY requires TIMEMORY_USE_GOTCHA=ON...")
     set(TIMEMORY_BUILD_MALLOCP_LIBRARY OFF CACHE BOOL "Build the ncclP library" FORCE)
 endif()
 
-if(NOT BUILD_SHARED_LIBS AND TIMEMORY_BUILD_KOKKOS_TOOLS)
+if(NOT BUILD_SHARED_LIBS AND TIMEMORY_BUILD_KOKKOS_TOOLS AND NOT CMAKE_POSITION_INDEPENDENT_CODE)
     timemory_message(AUTHOR_WARNING
-        "TIMEMORY_BUILD_KOKKOS_TOOLS requires BUILD_SHARED_LIBS=ON...")
+        "TIMEMORY_BUILD_KOKKOS_TOOLS requires CMAKE_POSITION_INDEPENDENT_CODE=ON if shared libraries are not enabled...")
     set(TIMEMORY_BUILD_KOKKOS_TOOLS OFF CACHE BOOL "Build the kokkos-tools libraries" FORCE)
 endif()
 
@@ -556,6 +582,9 @@ if(TIMEMORY_BUILD_DOCS)
 endif()
 
 set(PYBIND11_INSTALL OFF CACHE BOOL "Install Pybind11")
+if(PYBIND11_INSTALL AND (SKBUILD OR SPACK_BUILD))
+    timemory_message(WARNING "Pybind11 will be installed. This may overwrite an existing pip/conda/spack PyBind11 installation...")
+endif()
 
 # clang-tidy
 macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)
@@ -590,10 +619,6 @@ endforeach()
 # some logic depends on this not being set
 if(NOT TIMEMORY_USE_CUDA)
     unset(CMAKE_CUDA_COMPILER CACHE)
-endif()
-
-if(TIMEMORY_USE_PYTHON)
-    set(TIMEMORY_BUILD_PYTHON ON)
 endif()
 
 if(WIN32)

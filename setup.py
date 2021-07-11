@@ -16,16 +16,34 @@ if os.environ.get("CRAYPE_VERSION") is not None:
 cmake_args = [
     "-DPYTHON_EXECUTABLE:FILEPATH={}".format(sys.executable),
     "-DPython3_EXECUTABLE:FILEPATH={}".format(sys.executable),
-    "-DCMAKE_INSTALL_RPATH_USE_LINK_PATH:BOOL=ON",
-    "-DTIMEMORY_USE_PYTHON:BOOL=ON",
-    "-DTIMEMORY_BUILD_PYTHON:BOOL=ON",
 ]
+cmake_options = []  # array of functors
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("-h", "--help", help="Print help", action="store_true")
+
+# support CMAKE_ARGS environment variables because
+#  --install-option for pip is a pain to use
+env_cmake_args = os.environ.get("CMAKE_ARGS", None)
+if env_cmake_args is not None:
+    for _arg in env_cmake_args.split(" "):
+        if "CMAKE_INSTALL_PREFIX" not in _arg:
+            cmake_args += [_arg]
 
 gotcha_opt = False
 if platform.system() == "Linux":
     gotcha_opt = True
+
+
+def get_bool_option(_args, _name, default=False):
+    _name = _name.replace("-", "_")
+    _enable = getattr(_args, f"enable_{_name}")
+    _disable = getattr(_args, f"disable_{_name}")
+    _ret = default
+    if _enable:
+        _ret = True
+    if _disable:
+        _ret = False
+    return _ret
 
 
 def set_cmake_bool_option(opt, enable_opt, disable_opt):
@@ -39,45 +57,161 @@ def set_cmake_bool_option(opt, enable_opt, disable_opt):
         print("Exception: {}".format(e))
 
 
-def add_arg_bool_option(lc_name, disp_name, default=None):
+def add_arg_bool_option(
+    lc_name, disp_name, default=None, doc="", disp_aliases=[]
+):
     global parser
+    global cmake_options
+
     # enable option
     parser.add_argument(
         "--enable-{}".format(lc_name),
         action="store_true",
-        default=default,
-        help="Explicitly enable {} build".format(disp_name),
+        default=(None if default is False else default),
+        help="Explicitly enable {} build. {}".format(disp_name, doc),
     )
     # disable option
     parser.add_argument(
         "--disable-{}".format(lc_name),
         action="store_true",
-        help="Explicitly disable {} build".format(disp_name),
+        default=None,
+        help="Explicitly disable {} build. {}".format(disp_name, doc),
     )
 
+    def _add_cmake_bool_option(_args):
+        _name = lc_name.replace("-", "_")
+        _enable = getattr(_args, f"enable_{_name}")
+        _disable = getattr(_args, f"disable_{_name}")
+        # if default=False is passed in, set _disable to false
+        # only when neither --enable_{} and --disable_{} were not specified
+        if default is False and _enable is None and _disable is None:
+            _disable = True
+        for itr in [disp_name] + disp_aliases:
+            set_cmake_bool_option(itr, _enable, _disable)
 
-# add options
+    cmake_options.append(_add_cmake_bool_option)
+
+
+# build variants
+add_arg_bool_option(
+    "require-packages",
+    "TIMEMORY_REQUIRE_PACKAGES",
+    doc=(
+        "Enables auto-detection of third-party packages"
+        + " and suppresses configuration failure"
+        + " when packages are not found"
+    ),
+)
+add_arg_bool_option("shared-libs", "BUILD_SHARED_LIBS")
+add_arg_bool_option("static-libs", "BUILD_STATIC_LIBS")
+add_arg_bool_option(
+    "install-rpath-use-link-path",
+    "CMAKE_INSTALL_RPATH_USE_LINK_PATH",
+    default=True,
+)
 add_arg_bool_option("c", "TIMEMORY_BUILD_C")
-add_arg_bool_option("tools", "TIMEMORY_BUILD_TOOLS", default=True)
+add_arg_bool_option(
+    "python", "TIMEMORY_USE_PYTHON", default=True, doc="Build python bindings"
+)
+add_arg_bool_option("fortran", "TIMEMORY_BUILD_FORTRAN")
+add_arg_bool_option(
+    "arch", "TIMEMORY_USE_ARCH", doc="Compile everything for CPU arch"
+)
+add_arg_bool_option(
+    "portable",
+    "TIMEMORY_BUILD_PORTABLE",
+    doc="Disable CPU arch flags likely to cause portability issue",
+)
+add_arg_bool_option("ert", "TIMEMORY_BUILD_ERT")
+add_arg_bool_option(
+    "skip-build", "TIMEMORY_SKIP_BUILD", doc="Disable building any libraries"
+)
+add_arg_bool_option(
+    "unity-build",
+    "TIMEMORY_UNITY_BUILD",
+    doc="timemory-localized CMAKE_UNITY_BUILD",
+)
+add_arg_bool_option(
+    "install-headers",
+    "TIMEMORY_INSTALL_HEADERS",
+    doc="Install timemory headers",
+)
+add_arg_bool_option(
+    "install-config",
+    "TIMEMORY_INSTALL_CONFIG",
+    doc="Install cmake configuration",
+)
+add_arg_bool_option(
+    "install-all",
+    "TIMEMORY_INSTALL_ALL",
+    doc="install target depends on all target",
+)
+# distributed memory parallelism
 add_arg_bool_option("mpi", "TIMEMORY_USE_MPI")
 add_arg_bool_option("nccl", "TIMEMORY_USE_NCCL")
 add_arg_bool_option("upcxx", "TIMEMORY_USE_UPCXX")
+# components
 add_arg_bool_option("cuda", "TIMEMORY_USE_CUDA")
 add_arg_bool_option("cupti", "TIMEMORY_USE_CUPTI")
 add_arg_bool_option("papi", "TIMEMORY_USE_PAPI")
-add_arg_bool_option("arch", "TIMEMORY_USE_ARCH")
 add_arg_bool_option("ompt", "TIMEMORY_USE_OMPT")
 add_arg_bool_option("gotcha", "TIMEMORY_USE_GOTCHA", default=gotcha_opt)
-add_arg_bool_option("kokkos", "TIMEMORY_BUILD_KOKKOS_TOOLS", default=False)
-add_arg_bool_option("dyninst", "TIMEMORY_BUILD_DYNINST_TOOLS")
 add_arg_bool_option("tau", "TIMEMORY_USE_TAU")
 add_arg_bool_option("caliper", "TIMEMORY_USE_CALIPER")
 add_arg_bool_option("likwid", "TIMEMORY_USE_LIKWID")
 add_arg_bool_option("gperftools", "TIMEMORY_USE_GPERFTOOLS")
 add_arg_bool_option("vtune", "TIMEMORY_USE_VTUNE")
+# submodules
 add_arg_bool_option("build-caliper", "TIMEMORY_BUILD_CALIPER")
 add_arg_bool_option("build-gotcha", "TIMEMORY_BUILD_GOTCHA")
-add_arg_bool_option("pybind-install", "PYBIND11_INSTALL")
+add_arg_bool_option(
+    "build-ompt",
+    "TIMEMORY_BUILD_OMPT",
+    doc="Build/install OpenMP with OMPT support",
+)
+add_arg_bool_option(
+    "build-python",
+    "TIMEMORY_BUILD_PYTHON",
+    doc="Build bindings with internal pybind11",
+)
+# tools
+add_arg_bool_option("tools", "TIMEMORY_BUILD_TOOLS", default=True)
+add_arg_bool_option("timem", "TIMEMORY_BUILD_TIMEM", doc="Build timem tool")
+add_arg_bool_option("jump", "TIMEMORY_BUILD_JUMP", default=False)
+add_arg_bool_option("stubs", "TIMEMORY_BUILD_STUBS", default=False)
+add_arg_bool_option(
+    "avail", "TIMEMORY_BUILD_AVAIL", doc="Build timemory-avail tool"
+)
+add_arg_bool_option(
+    "dyninst",
+    "TIMEMORY_USE_DYNINST",
+    disp_aliases=["TIMEMORY_BUILD_DYNINST_TOOLS", "TIMEMORY_BUILD_RUN"],
+)
+add_arg_bool_option(
+    "compiler-instrumentation", "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION"
+)
+add_arg_bool_option(
+    "kokkos",
+    "TIMEMORY_BUILD_KOKKOS_TOOLS",
+    doc="Build separate KokkosP libraries",
+)
+add_arg_bool_option(
+    "kokkos-config",
+    "TIMEMORY_BUILD_KOKKOS_CONFIG",
+    doc="Build array of dedicated KokkosP libraries",
+)
+add_arg_bool_option("mpip-library", "TIMEMORY_BUILD_MPIP_LIBRARY")
+add_arg_bool_option("ompt-library", "TIMEMORY_BUILD_OMPT_LIBRARY")
+add_arg_bool_option("ncclp-library", "TIMEMORY_BUILD_NCCLP_LIBRARY")
+add_arg_bool_option("mallocp-library", "TIMEMORY_BUILD_MALLOCP_LIBRARY")
+add_arg_bool_option("python-hatchet", "TIMEMORY_BUILD_PYTHON_HATCHET")
+add_arg_bool_option(
+    "python-line-profiler",
+    "TIMEMORY_BUILD_PYTHON_LINE_PROFILER",
+    doc="Build line_profiler with timemory backend",
+)
+# miscellaneous
+add_arg_bool_option("pybind-install", "PYBIND11_INSTALL", default=False)
 add_arg_bool_option("build-testing", "TIMEMORY_BUILD_TESTING")
 parser.add_argument(
     "--cxx-standard",
@@ -96,6 +230,32 @@ parser.add_argument(
         '--install-option=--cmake-args="-DTIMEMORY_BUILD_LTO=ON -DCMAKE_UNITY_BUILD=OFF"',
     ),
 )
+parser.add_argument(
+    "--c-flags",
+    default=None,
+    type=str,
+    nargs="*",
+    help="Explicitly set CMAKE_C_FLAGS",
+)
+parser.add_argument(
+    "--cxx-flags",
+    default=None,
+    type=str,
+    nargs="*",
+    help="Explicitly set CMAKE_CXX_FLAGS",
+)
+parser.add_argument(
+    "--enable-develop",
+    action="store_true",
+    default=None,
+    help="Enable a development install (timemory headers, cmake config, etc.)",
+)
+parser.add_argument(
+    "--disable-develop",
+    action="store_true",
+    default=None,
+    help="Disable a development install (timemory headers, cmake config, etc.)",
+)
 
 args, left = parser.parse_known_args()
 # if help was requested, print these options and then add '--help' back
@@ -105,97 +265,49 @@ if args.help:
     left.append("--help")
 sys.argv = sys.argv[:1] + left
 
+if args.c_flags is not None:
+    cmake_args.append("-DCMAKE_C_FLAGS={}".format(" ".join(args.c_flags)))
+
+if args.cxx_flags is not None:
+    cmake_args.append("-DCMAKE_CXX_FLAGS='{}'".format(" ".join(args.cxx_flags)))
+
+if args.enable_develop:
+    for itr in ["install_headers", "install_config"]:
+        setattr(args, f"enable_{itr}", True)
+
+if args.disable_develop:
+    for itr in ["install_headers", "install_config"]:
+        setattr(args, f"disable_{itr}", True)
+
+# loop over the functors
+for itr in cmake_options:
+    itr(args)
+
 runtime_req_file = (
     ".requirements/mpi_runtime.txt"
     if args.enable_mpi and not args.disable_mpi
     else ".requirements/runtime.txt"
 )
 
-set_cmake_bool_option("TIMEMORY_BUILD_C", args.enable_c, args.disable_c)
-set_cmake_bool_option(
-    "TIMEMORY_BUILD_TOOLS", args.enable_tools, args.disable_tools
-)
-set_cmake_bool_option("TIMEMORY_USE_MPI", args.enable_mpi, args.disable_mpi)
-set_cmake_bool_option("TIMEMORY_USE_NCCL", args.enable_nccl, args.disable_nccl)
-set_cmake_bool_option(
-    "TIMEMORY_USE_UPCXX", args.enable_upcxx, args.disable_upcxx
-)
-set_cmake_bool_option(
-    "TIMEMORY_USE_GOTCHA", args.enable_gotcha, args.disable_gotcha
-)
-set_cmake_bool_option("TIMEMORY_USE_CUDA", args.enable_cuda, args.disable_cuda)
-set_cmake_bool_option(
-    "TIMEMORY_USE_CUPTI", args.enable_cupti, args.disable_cupti
-)
-set_cmake_bool_option("TIMEMORY_USE_PAPI", args.enable_papi, args.disable_papi)
-set_cmake_bool_option("TIMEMORY_USE_ARCH", args.enable_arch, args.disable_arch)
-set_cmake_bool_option("TIMEMORY_USE_OMPT", args.enable_ompt, args.disable_ompt)
-set_cmake_bool_option(
-    "TIMEMORY_USE_DYNINST", args.enable_dyninst, args.disable_dyninst
-)
-set_cmake_bool_option(
-    "TIMEMORY_BUILD_OMPT_LIBRARY",
-    args.enable_ompt and args.enable_tools,
-    args.disable_ompt or args.disable_tools,
-)
-set_cmake_bool_option(
-    "TIMEMORY_BUILD_MPIP_LIBRARY",
-    args.enable_gotcha and args.enable_mpi and args.enable_tools,
-    args.disable_gotcha or args.disable_mpi or args.disable_tools,
-)
-set_cmake_bool_option(
-    "TIMEMORY_BUILD_NCCLP_LIBRARY",
-    args.enable_gotcha and args.enable_nccl and args.enable_tools,
-    args.disable_gotcha or args.disable_nccl or args.disable_tools,
-)
-set_cmake_bool_option(
-    "TIMEMORY_BUILD_DYNINST_TOOLS", args.enable_dyninst, args.disable_dyninst
-)
-set_cmake_bool_option(
-    "TIMEMORY_BUILD_KOKKOS_TOOLS", args.enable_kokkos, args.disable_kokkos
-)
-set_cmake_bool_option("TIMEMORY_USE_TAU", args.enable_tau, args.disable_tau)
-set_cmake_bool_option(
-    "TIMEMORY_USE_CALIPER", args.enable_caliper, args.disable_caliper
-)
-set_cmake_bool_option(
-    "TIMEMORY_USE_LIKWID", args.enable_likwid, args.disable_likwid
-)
-set_cmake_bool_option(
-    "TIMEMORY_USE_VTUNE", args.enable_vtune, args.disable_vtune
-)
-set_cmake_bool_option(
-    "TIMEMORY_USE_GPERFTOOLS", args.enable_gperftools, args.disable_gperftools
-)
-set_cmake_bool_option(
-    "TIMEMORY_BUILD_CALIPER",
-    args.enable_build_caliper,
-    args.disable_build_caliper,
-)
-set_cmake_bool_option(
-    "TIMEMORY_BUILD_GOTCHA", args.enable_build_gotcha, args.disable_build_gotcha
-)
-set_cmake_bool_option(
-    "PYBIND11_INSTALL", args.enable_pybind_install, args.disable_pybind_install
-)
-set_cmake_bool_option(
-    "TIMEMORY_BUILD_TESTING",
-    args.enable_build_testing,
-    args.disable_build_testing,
-)
 cmake_args.append("-DCMAKE_CXX_STANDARD={}".format(args.cxx_standard))
 
 for itr in args.cmake_args:
     cmake_args += itr.split()
 
-gotcha_opt = False
 if platform.system() == "Darwin":
     # scikit-build will set this to 10.6 and C++ compiler check will fail
     version = platform.mac_ver()[0].split(".")
     version = ".".join([version[0], version[1]])
     cmake_args += ["-DCMAKE_OSX_DEPLOYMENT_TARGET={}".format(version)]
-elif platform.system() == "Linux":
-    gotcha_opt = True
+
+# DO THIS LAST!
+# support TIMEMORY_SETUP_ARGS environment variables because
+#  --install-option for pip is a pain to use
+# Env variables should be space-delimited set of cmake arguments, e.g.:
+#   export TIMEMORY_SETUP_ARGS="-DTIMEMORY_USE_MPI=ON -DTIMEMORY_USE_OMPT=OFF"
+env_cmake_args = os.environ.get("TIMEMORY_SETUP_ARGS", None)
+if env_cmake_args is not None:
+    cmake_args += env_cmake_args.split(" ")
 
 
 # --------------------------------------------------------------------------- #
@@ -232,7 +344,7 @@ class custom_install(skinstall):
         skinstall.__init__(self, *args, **kwargs)
 
     def run(self):
-        print("\n\n\tRunning install...")
+        print("\n\n\t[timemory] Running install...")
         print("\t\t {:10} : {}".format("base", self.install_base))
         print("\t\t {:10} : {}".format("purelib", self.install_purelib))
         print("\t\t {:10} : {}".format("platlib", self.install_platlib))
@@ -245,7 +357,7 @@ class custom_install(skinstall):
         print("\n\n")
         skinstall.run(self)
         for itr in self.get_outputs():
-            print('installed file : "{}"'.format(itr))
+            print('[timemory] installed file : "{}"'.format(itr))
 
 
 # --------------------------------------------------------------------------- #
@@ -268,6 +380,40 @@ def parse_requirements(fname="requirements.txt"):
             requirements.append(itr)
     # return the requirements
     return requirements
+
+
+# --------------------------------------------------------------------------- #
+#
+def exclude_install_hook(cmake_manifest):
+    def _filter_manifest(_manifest, *args):
+        for itr in args:
+            _manifest = list(
+                filter(
+                    lambda name: itr not in name,
+                    cmake_manifest,
+                )
+            )
+        return _manifest
+
+    cmake_manifest = _filter_manifest(
+        cmake_manifest,
+        "pytest.ini",
+        os.path.join("hatchet", "tests", "timemory_test.py"),
+    )
+    if not get_bool_option(args, "develop"):
+        cmake_manifest = list(
+            filter(lambda name: not (name.endswith(".a")), cmake_manifest)
+        )
+        if not get_bool_option(args, "install-config"):
+            cmake_manifest = _filter_manifest(
+                cmake_manifest,
+                os.path.join("share", "cmake"),
+                os.path.join("lib", "cmake"),
+            )
+        if not get_bool_option(args, "install-headers"):
+            cmake_manifest = _filter_manifest(cmake_manifest, "include")
+
+    return cmake_manifest
 
 
 # suppress:
@@ -293,6 +439,7 @@ with warnings.catch_warnings():
         },
         python_requires=">=3.6",
         cmdclass=dict(install=custom_install),
+        cmake_process_manifest_hook=exclude_install_hook,
         entry_points={
             "console_scripts": [
                 "timemory-plotter=timemory.plotting.__main__:try_plot",

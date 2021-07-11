@@ -365,6 +365,20 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 #
+#                       Language aliases libraries
+#
+#----------------------------------------------------------------------------------------#
+
+foreach(_LANG c cxx fortran)
+    if(TARGET timemory-${_LANG}-shared)
+        add_library(timemory::timemory-${_LANG} ALIAS timemory-${_LANG}-shared)
+    elseif(TARGET timemory-${_LANG}-static)
+        add_library(timemory::timemory-${_LANG} ALIAS timemory-${_LANG}-static)
+    endif()
+endforeach()
+
+#----------------------------------------------------------------------------------------#
+#
 #                       TOOL executables and libraries
 #
 #----------------------------------------------------------------------------------------#
@@ -392,6 +406,7 @@ if(TARGET timemory-mpip-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mpip-shared)
 else()
     inform_empty_interface(timemory-mpip-library "MPIP standalone instrumentation library")
+    set(TIMEMORY_BUILD_MPIP_LIBRARY OFF PARENT_SCOPE)
 endif()
 
 if(_OMPT_LIB)
@@ -400,6 +415,7 @@ if(_OMPT_LIB)
     target_link_libraries(timemory-ompt-library INTERFACE timemory-ompt ${_OMPT_LIB})
 else()
     inform_empty_interface(timemory-ompt-library "OpenMP stand-alone instrumentation library")
+    set(TIMEMORY_BUILD_OMPT_LIBRARY OFF PARENT_SCOPE)
 endif()
 
 if(TARGET timemory-ncclp-shared)
@@ -409,6 +425,7 @@ if(TARGET timemory-ncclp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ncclp-shared)
 else()
     inform_empty_interface(timemory-ncclp-library "NCCLP standalone instrumentation library")
+    set(TIMEMORY_BUILD_NCCLP_LIBRARY OFF PARENT_SCOPE)
 endif()
 
 if(TARGET timemory-mallocp-shared)
@@ -418,6 +435,7 @@ if(TARGET timemory-mallocp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mallocp-shared)
 else()
     inform_empty_interface(timemory-mallocp-library "MALLOCP standalone instrumentation library")
+    set(TIMEMORY_BUILD_MALLOCP_LIBRARY OFF PARENT_SCOPE)
 endif()
 
 if(TARGET timemory-compiler-instrument-base)
@@ -503,7 +521,7 @@ add_subdirectory(python)
 # named 'timemory-plotter' as C++ JSON outputs can use this
 # to generate plots
 #
-if((TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON) AND NOT SKBUILD)
+if(TIMEMORY_USE_PYTHON AND NOT SKBUILD)
     configure_file(${PROJECT_SOURCE_DIR}/timemory/plotting/__main__.py
         ${PROJECT_BINARY_DIR}/timemory-plotter @ONLY)
 

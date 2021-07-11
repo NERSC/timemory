@@ -157,28 +157,38 @@ if("CUDA" IN_LIST LANGUAGES)
         ${CUDA_INCLUDE_DIRS}
         ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-    find_library(CUDA_dl_LIBRARY
-        NAMES dl)
+    if(NOT CUDA_dl_LIBRARY)
+        if(dl_LIBRARY)
+            set(CUDA_dl_LIBRARY ${dl_LIBRARY})
+        else()
+            find_library(CUDA_dl_LIBRARY NAMES dl)
+        endif()
+    endif()
+
+    if(NOT CUDA_rt_LIBRARY)
+        if(rt_LIBRARY)
+            set(CUDA_rt_LIBRARY ${rt_LIBRARY})
+        else()
+            find_library(CUDA_rt_LIBRARY NAMES rt)
+        endif()
+    endif()
+
+    if(NOT CUDA_dl_LIBRARY)
+        set(CUDA_dl_LIBRARY)
+    endif()
+
+    if(NOT CUDA_rt_LIBRARY)
+        set(CUDA_rt_LIBRARY)
+    endif()
 
     target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
-        ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
+        ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY} ${CUDA_dl_LIBRARY})
 
     target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-device INTERFACE
-        ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
+        ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY} ${CUDA_dl_LIBRARY})
 
     target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
-        ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
-
-    if(CUDA_dl_LIBRARY)
-        target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
-            ${CUDA_dl_LIBRARY})
-
-        target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-device INTERFACE
-            ${CUDA_dl_LIBRARY})
-
-        target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
-            ${CUDA_dl_LIBRARY})
-    endif()
+        ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY} ${CUDA_dl_LIBRARY})
 
 else()
     message(FATAL_ERROR

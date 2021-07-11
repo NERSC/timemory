@@ -46,3 +46,7 @@ recursive-exclude _skbuild *
 recursive-exclude build *
 recursive-exclude dist *
 recursive-exclude external/hatchet/build *
+
+# bypass global exclude of git files
+
+include docs/.gitinfo

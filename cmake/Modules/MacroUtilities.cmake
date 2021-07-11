@@ -635,6 +635,11 @@ FUNCTION(BUILD_LIBRARY)
         set(_EXCLUDE EXCLUDE_FROM_ALL)
     endif()
 
+    # handle PIC not specified but global PIC specified
+    if(NOT LIBRARY_PIC AND CMAKE_POSITION_INDEPENDENT_CODE)
+        set(LIBRARY_PIC ON)
+    endif()
+
     if(NOT "${LIBRARY_TYPE}" STREQUAL "OBJECT")
         if(NOT WIN32 AND NOT XCODE)
             list(APPEND LIBRARY_EXTRA_PROPERTIES
@@ -1092,7 +1097,7 @@ FUNCTION(BUILD_INTERMEDIATE_LIBRARY)
 
     if(_BUILD_STATIC_CXX OR COMP_FORCE_STATIC)
         list(APPEND _LIB_TYPES static)
-        set(static_OPTIONS PIC TYPE STATIC)
+        set(static_OPTIONS TYPE STATIC)
         set(_LIB_DEFAULT_TYPE static)
     endif()
 

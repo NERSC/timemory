@@ -24,6 +24,3 @@
 
 #include "timemory/plotting/definition.hpp"
 #include "timemory/plotting/extern.hpp"
-
-#if defined(TIMEMORY_USE_PYTHON)
-#endif

@@ -113,14 +113,18 @@ if(CLANG_FORMATTER)
             COMMAND ${CLANG_FORMATTER} -i ${examples})
     endif()
 
+    set(_MSG "'${CLANG_FORMATTER}'")
     if(BLACK_FORMATTER)
         set(_COMMAND ${_COMMAND}
             COMMAND ${BLACK_FORMATTER} -q ${PROJECT_SOURCE_DIR})
+        set(_MSG "${_MSG} and '${BLACK_FORMATTER}'")
     endif()
 
     add_custom_target(${FORMAT_NAME}
         ${_COMMAND}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        COMMENT "[${PROJECT_NAME}] Running '${CLANG_FORMATTER}'..."
+        COMMENT "[${PROJECT_NAME}] Running ${_MSG}..."
         SOURCES ${headers} ${sources} ${examples})
+
+    unset(_MSG)
 endif()

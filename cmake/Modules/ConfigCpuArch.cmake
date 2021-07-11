@@ -2,7 +2,17 @@
 # Configures architecture options
 #
 
-find_package(CpuArch)
+set(_CpuArch_COMPONENTS)
+if(TIMEMORY_BUILD_PORTABLE)
+    set(CpuArch_FIND_DEFAULT ON)
+    if(MSVC)
+        set(_CpuArch_COMPONENTS OPTIONAL_COMPONENTS sse sse2 avx avx2)
+    else()
+        set(_CpuArch_COMPONENTS OPTIONAL_COMPONENTS sse sse2 sse3 ssse3 sse4 sse4_1 sse4_2 fma avx avx2 altivec)
+    endif()
+endif()
+
+find_package(CpuArch ${_CpuArch_COMPONENTS})
 
 if(CpuArch_FOUND)
 

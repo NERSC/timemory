@@ -11,16 +11,11 @@ endif()
 
 project(timemory-ompt-tool)
 
-set(LIB_TYPES)
-if(BUILD_SHARED_LIBS AND NOT TIMEMORY_SKIP_BUILD)
-    list(APPEND LIB_TYPES SHARED)
-endif()
+foreach(_TYPE SHARED STATIC)
 
-if(BUILD_STATIC_LIBS AND NOT TIMEMORY_SKIP_BUILD)
-    list(APPEND LIB_TYPES STATIC)
-endif()
-
-foreach(_TYPE ${LIB_TYPES})
+    if(NOT BUILD_${_TYPE}_LIBS)
+        continue()
+    endif()
 
     string(TOLOWER "${_TYPE}" _LC_TYPE)
     if(NOT TARGET timemory-cxx-${_LC_TYPE})
