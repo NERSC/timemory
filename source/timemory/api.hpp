@@ -68,6 +68,7 @@ TIMEMORY_DEFINE_NS_API(tpls, intel)
 TIMEMORY_DEFINE_NS_API(tpls, likwid)
 TIMEMORY_DEFINE_NS_API(tpls, nvidia)
 TIMEMORY_DEFINE_NS_API(tpls, openmp)
+TIMEMORY_DEFINE_NS_API(tpls, rocm)
 TIMEMORY_DEFINE_NS_API(tpls, papi)
 TIMEMORY_DEFINE_NS_API(tpls, tau)
 //

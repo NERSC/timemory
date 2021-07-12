@@ -277,11 +277,11 @@
 //======================================================================================//
 
 //  MSVC compiler
-#if defined(_MSC_VER) && _MSC_VER > 0 && !defined(_TIMEMORY_MSVC)
-#    define _TIMEMORY_MSVC
+#if defined(_MSC_VER) && _MSC_VER > 0 && !defined(TIMEMORY_MSVC_COMPILER)
+#    define TIMEMORY_MSVC_COMPILER
 #endif
 
-#if defined(_TIMEMORY_MSVC) && !defined(TIMEMORY_MSVC_WARNINGS)
+#if defined(TIMEMORY_MSVC_COMPILER) && !defined(TIMEMORY_MSVC_WARNINGS)
 
 #    pragma warning(disable : 4996)  // function may be unsafe
 #    pragma warning(disable : 5105)  // macro produce 'defined' has undefined behavior

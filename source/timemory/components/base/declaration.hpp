@@ -133,6 +133,7 @@ private:
 
 public:
     TIMEMORY_DEFAULT_OBJECT(base)
+    TIMEMORY_HOST_DEVICE_FUNCTION ~base() = default;
 
 public:
     template <typename... Args>

@@ -33,7 +33,7 @@ endif()
 
 option(TIMEMORY_BUILD_C_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_TPL_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
-option(TIMEMORY_BUILD_CUDA_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_GPU_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_PYTHON_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_FORTRAN_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_ROOFLINE_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
@@ -57,8 +57,8 @@ if(TIMEMORY_BUILD_TPL_EXAMPLES)
 endif()
 
 # GPU related
-if(TIMEMORY_BUILD_CUDA_EXAMPLES)
-    add_subdirectory(ex-cuda)
+if(TIMEMORY_BUILD_GPU_EXAMPLES)
+    add_subdirectory(ex-gpu)
 endif()
 
 # Python related

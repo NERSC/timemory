@@ -22,99 +22,159 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/hip/types.hpp
- * \brief Declare the hip component types
- */
-
 #pragma once
 
-#include "timemory/backends/hip.hpp"
-#include "timemory/backends/roctx.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/enum.h"
-#include "timemory/mpl/type_traits.hpp"
-#include "timemory/mpl/types.hpp"
+#if defined(TIMEMORY_USE_HIP)
+#    include <roctracer/roctx.h>
+#endif
 
-#if defined(TIMEMORY_PYBIND11_SOURCE)
-namespace pybind11
+#include "timemory/backends/threading.hpp"
+#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
+#include "timemory/utility/utility.hpp"
+
+#include <array>
+#include <cstdint>
+#include <cstring>
+#include <initializer_list>
+#include <limits>
+#include <string>
+#include <vector>
+
+namespace tim
 {
-class object;
-}
-#endif
-
-TIMEMORY_DECLARE_COMPONENT(hip_event)
-TIMEMORY_DECLARE_COMPONENT(roctx_marker)
-TIMEMORY_COMPONENT_ALIAS(hip_roctx, roctx_marker)
-
-//--------------------------------------------------------------------------------------//
-//
-//                                  APIs
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_SET_COMPONENT_API(component::hip_event, tpls::rocm, device::gpu,
-                           category::external, os::agnostic)
-TIMEMORY_SET_COMPONENT_API(component::roctx_marker, tpls::rocm, category::external,
-                           category::decorator, os::agnostic)
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              STATISTICS
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STATISTICS_TYPE(component::hip_event, float)
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              IS TIMING CATEGORY
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::hip_event, true_type)
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              USES TIMING UNITS
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::hip_event, true_type)
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              START PRIORITY
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, component::hip_event,
-                               priority_constant<128>)
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              STOP PRIORITY
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, component::hip_event,
-                               priority_constant<-128>)
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              IS AVAILABLE
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_USE_HIP)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tpls::rocm, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::hip_event, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::roctx_marker, false_type)
-#endif
-//
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(hip_event, TIMEMORY_HIP_EVENT, "hip_event", "")
+//                                  ROCTX
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(roctx_marker, TIMEMORY_ROCTX_MARKER, "roctx_marker",
-                                 "roctx")
+//======================================================================================//
+
+namespace roctx
+{
+//--------------------------------------------------------------------------------------//
+
+template <typename... ArgsT>
+void
+consume_parameters(ArgsT&&...)
+{}
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_HIP)
+using range_id_t = roctx_range_id_t;
+#else
+using range_id_t = int;
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+name_thread(const char*)
+{}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+name_thread(const std::string&)
+{}
+
+//--------------------------------------------------------------------------------------//
+
+inline void name_thread(int32_t) {}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+range_push(const char* _msg)
+{
+#if defined(TIMEMORY_USE_HIP)
+    roctxRangePush(_msg);
+#else
+    consume_parameters(_msg);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+range_push(const std::string& _msg)
+{
+#if defined(TIMEMORY_USE_HIP)
+    roctxRangePush(_msg.c_str());
+#else
+    consume_parameters(_msg);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+range_pop()
+{
+#if defined(TIMEMORY_USE_HIP)
+    roctxRangePop();
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline range_id_t
+range_start(const char* _msg)
+{
+#if defined(TIMEMORY_USE_HIP)
+    return roctxRangeStart(_msg);
+#else
+    consume_parameters(_msg);
+    return 0;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline range_id_t
+range_start(const std::string& _msg)
+{
+    return range_start(_msg.c_str());
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+range_stop(const range_id_t& _id)
+{
+#if defined(TIMEMORY_USE_HIP)
+    roctxRangeStop(_id);
+#else
+    consume_parameters(_id);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+mark(const char* _msg)
+{
+#if defined(TIMEMORY_USE_HIP)
+    roctxMarkA(_msg);
+#else
+    consume_parameters(_msg);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+mark(const std::string& _msg)
+{
+#if defined(TIMEMORY_USE_HIP)
+    roctxMarkA(_msg.c_str());
+#else
+    consume_parameters(_msg);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace roctx
+}  // namespace tim

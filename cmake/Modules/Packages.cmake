@@ -799,6 +799,8 @@ if(TIMEMORY_USE_CUDA)
 
     include(ConfigCUDA)
 
+    target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_GPU)
+
     if(TIMEMORY_USE_NVTX)
         find_package(NVTX ${TIMEMORY_FIND_QUIETLY})
         if(NVTX_FOUND)
@@ -938,10 +940,21 @@ if(TIMEMORY_USE_HIP)
 endif()
 
 if(hip_FOUND)
-    target_compile_definitions(timemory-hip INTERFACE TIMEMORY_USE_HIP)
-    target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP)
+    target_compile_definitions(timemory-hip        INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU)
+    target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU)
 
-    target_link_libraries(timemory-hip INTERFACE hip::host)
+    find_library(ROCM_roctx64_LIBRARY
+        NAMES roctx64
+        PATH_SUFFIXES lib64 lib
+        HINTS ${hip_DIR}/../../..
+        PATHS ${hip_DIR}/../../..)
+
+    if(ROCM_roctx64_LIBRARY)
+        target_link_libraries(timemory-hip        INTERFACE ${ROCM_roctx64_LIBRARY})
+        target_link_libraries(timemory-hip-device INTERFACE ${ROCM_roctx64_LIBRARY})
+    endif()
+
+    target_link_libraries(timemory-hip        INTERFACE hip::host)
     target_link_libraries(timemory-hip-device INTERFACE hip::device)
 
     add_user_flags(timemory-hip "HIP")

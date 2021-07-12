@@ -276,7 +276,7 @@ get_device_clock_rate(int _dev = -1)
     TIMEMORY_CUDA_RUNTIME_API_CALL(cudaGetDeviceProperties(&_device_prop, _dev));
     return _device_prop.clockRate;
 #else
-    consume_parameters(dev);
+    consume_parameters(_dev);
     return 1;
 #endif
 }

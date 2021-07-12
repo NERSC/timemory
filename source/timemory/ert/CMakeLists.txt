@@ -22,6 +22,8 @@ elseif(TIMEMORY_USE_HIP)
         timemory::timemory-core
         timemory::timemory-roofline-options
         hip::device)
+    set_target_properties(timemory-ert-hip-object PROPERTIES
+        POSITION_INDEPENDENT_CODE ON)
     list(APPEND source_files $<TARGET_OBJECTS:timemory-ert-hip-object>)
 endif()
 
@@ -38,11 +40,3 @@ build_intermediate_library(
                         timemory::timemory-hip
                         timemory::timemory-core
     PRIVATE_LINK        timemory::timemory-roofline-options)
-
-if(TARGET timemory-ert-hip-object)
-    foreach(_LINK shared static)
-        if(TARGET timemory-ert-${_LINK})
-            # add_dependencies(timemory-ert-${_LINK} timemory-ert-hip-object)
-        endif()
-    endforeach()
-endif()
