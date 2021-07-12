@@ -125,7 +125,7 @@ struct gpu
 
 //--------------------------------------------------------------------------------------//
 
-#if defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if defined(TIMEMORY_GPUCC) && !defined(TIMEMORY_OPENMP_TARGET)
 using default_device = gpu;
 #else
 using default_device = cpu;
@@ -314,7 +314,7 @@ template <typename DeviceT, typename FuncT, typename... ArgsT,
 void
 launch(params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 {
-#if defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if defined(TIMEMORY_GPUCC) && !defined(TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0)
         _p.grid = 1;
     std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
@@ -336,7 +336,7 @@ template <typename Intp, typename DeviceT, typename FuncT, typename... ArgsT,
 void
 launch(const Intp& _nsize, params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 {
-#if defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if defined(TIMEMORY_GPUCC) && !defined(TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0 && _nsize > 0)
         _p.grid = _p.compute(_nsize);
     else if(_p.grid == 0)
@@ -362,7 +362,7 @@ void
 launch(const Intp& _nsize, StreamT _stream, params<DeviceT>& _p, FuncT&& _func,
        ArgsT&&... _args)
 {
-#if defined(_TIMEMORY_CUDACC) && !defined(_TIMEMORY_OPENMP_TARGET)
+#if defined(TIMEMORY_CUDACC) && !defined(TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0 && _nsize > 0)
         _p.grid = _p.compute(_nsize);
     else if(_p.grid == 0)
@@ -402,7 +402,7 @@ struct grid_strided_range<DeviceT, 0, Intp> : impl::range<Intp>
     using base_type = impl::range<Intp>;
 
 #if(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP)) &&                          \
-    defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
+    defined(TIMEMORY_GPUCC) && !defined(TIMEMORY_OPENMP_TARGET)
     template <typename DevT                                       = DeviceT,
               enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
     TIMEMORY_DEVICE_FUNCTION explicit grid_strided_range(Intp max_iter)
@@ -430,7 +430,7 @@ struct grid_strided_range<DeviceT, 1, Intp> : impl::range<Intp>
     using base_type = impl::range<Intp>;
 
 #if(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP)) &&                          \
-    defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
+    defined(TIMEMORY_GPUCC) && !defined(TIMEMORY_OPENMP_TARGET)
     template <typename DevT                                       = DeviceT,
               enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
     TIMEMORY_DEVICE_FUNCTION explicit grid_strided_range(Intp max_iter)
@@ -458,7 +458,7 @@ struct grid_strided_range<DeviceT, 2, Intp> : impl::range<Intp>
     using base_type = impl::range<Intp>;
 
 #if(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP)) &&                          \
-    defined(_TIMEMORY_GPUCC) && !defined(_TIMEMORY_OPENMP_TARGET)
+    defined(TIMEMORY_GPUCC) && !defined(TIMEMORY_OPENMP_TARGET)
     template <typename DevT                                       = DeviceT,
               enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
     TIMEMORY_DEVICE_FUNCTION explicit grid_strided_range(Intp max_iter)

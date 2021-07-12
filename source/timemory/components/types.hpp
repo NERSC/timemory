@@ -78,6 +78,7 @@ struct nothing : base<nothing, skeleton::base>
 #include "timemory/components/data_tracker/types.hpp"
 #include "timemory/components/gotcha/types.hpp"
 #include "timemory/components/gperftools/types.hpp"
+#include "timemory/components/hip/types.hpp"
 #include "timemory/components/io/types.hpp"
 #include "timemory/components/likwid/types.hpp"
 #include "timemory/components/network/types.hpp"

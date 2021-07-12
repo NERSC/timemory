@@ -124,9 +124,9 @@
 //
 #if !defined(TIMEMORY_DEFAULT_OBJECT)
 #    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
-        NAME()                = default;                                                 \
-        NAME(const NAME&)     = default;                                                 \
-        NAME(NAME&&) noexcept = default;                                                 \
+        TIMEMORY_HOST_DEVICE_FUNCTION NAME() = default;                                  \
+        NAME(const NAME&)                    = default;                                  \
+        NAME(NAME&&) noexcept                = default;                                  \
         NAME& operator=(const NAME&) = default;                                          \
         NAME& operator=(NAME&&) noexcept = default;
 #endif

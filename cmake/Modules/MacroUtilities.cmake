@@ -863,6 +863,13 @@ function(TIMEMORY_INSTALL_HEADER_FILES)
         return()
     endif()
     foreach(_header ${ARGN})
+        if("${_header}" MATCHES "TARGET_OBJECTS")
+            continue()
+        endif()
+        if(NOT EXISTS "${_header}")
+            timemory_message(AUTHOR_WARNING
+                "Skipping install of non-existant timemory header: '${_header}'")
+        endif()
         file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/source ${_header})
         get_filename_component(_destpath ${_relative} DIRECTORY)
         install(

@@ -155,6 +155,18 @@ set_device(int device)
 }
 
 //--------------------------------------------------------------------------------------//
+/// get the current device
+inline int
+get_device()
+{
+    int _device = 0;
+#if defined(TIMEMORY_USE_HIP)
+    TIMEMORY_HIP_RUNTIME_API_CALL(hipGetDevice(&_device));
+#endif
+    return _device;
+}
+
+//--------------------------------------------------------------------------------------//
 /// sync the device
 inline void
 device_sync()
@@ -186,6 +198,24 @@ device_l2_cache_size(int dev = 0)
     return 0;
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
+/// get the clock rate (kilohertz)
+inline int
+get_device_clock_rate(int _dev = -1)
+{
+#if defined(TIMEMORY_USE_HIP)
+    if(device_count() < 0)
+        _dev = get_device();
+    hipDeviceProp_t _device_prop{};
+    TIMEMORY_HIP_RUNTIME_API_CALL(hipGetDeviceProperties(&_device_prop, _dev));
+    return _device_prop.clockRate;
+#else
+    consume_parameters(_dev);
+    return 1;
+#endif
+}
+
 //--------------------------------------------------------------------------------------//
 //
 //      functions dealing with hip streams
