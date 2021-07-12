@@ -23,6 +23,15 @@
 // SOFTWARE.
 //
 
+#include "timemory/ert/kernels.hpp"
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/utility/testing.hpp"
+
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/components/cupti/cupti_counters.hpp"
+#endif
+
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -34,15 +43,6 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#include "timemory/ert/kernels.hpp"
-#include "timemory/timemory.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/testing.hpp"
-
-#if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti/cupti_counters.hpp"
-#endif
 
 using namespace tim::component;
 

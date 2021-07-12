@@ -31,6 +31,7 @@
 
 #include <memory>
 
+#include "timemory/backends/device.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
@@ -595,6 +596,9 @@ public:
     }
 #endif
 };
+//
+//======================================================================================//
+//
 //
 //======================================================================================//
 //
