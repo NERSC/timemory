@@ -122,6 +122,9 @@ struct cuda_event : public base<cuda_event, float>
         return _instance;
     }
 
+    struct explicit_streams_only
+    {};
+
 public:
     TIMEMORY_DEFAULT_OBJECT(cuda_event)
 
@@ -130,28 +133,27 @@ public:
 
     {}
 
-#if defined(TIMEMORY_PYBIND11_SOURCE)
-    // explicit cuda_event(pybind11::object _stream)
-    //: cuda_event(_stream.cast<cuda::stream_t>())
-    //{}
-#endif
-
-    TIMEMORY_NODISCARD float get_display() const
+    float get_display() const
     {
         return static_cast<float>(load() / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
 
-    TIMEMORY_NODISCARD float get() const
+    float get() const
     {
         return static_cast<float>(load() / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
+
+    void store(explicit_streams_only, bool _v) { m_explicit_only = _v; }
 
     void start()
     {
-        m_global_synced = false;
-        m_global.start(m_stream);
+        if(!m_explicit_only || m_stream != cuda::default_stream_v)
+        {
+            m_global_synced = false;
+            m_global.start(m_stream);
+        }
     }
 
     void stop()
@@ -211,26 +213,23 @@ public:
 
     void mark_end(cuda::stream_t _stream) { m_markers[m_current_marker].stop(_stream); }
 
-#if defined(TIMEMORY_PYBIND11_SOURCE)
-    // void mark_begin(pybind11::object obj) { mark_begin(obj.cast<cuda::stream_t>()); }
-    // void mark_end(pybind11::object obj) { mark_begin(obj.cast<cuda::stream_t>()); }
-#endif
-
 protected:
     void append_marker_list(const uint64_t nsize)
     {
+        m_markers.reserve(m_markers.size() + nsize);
         for(uint64_t i = 0; i < nsize; ++i)
-            m_markers.emplace_back(marker());
+            m_markers.emplace_back(marker{});
     }
 
 private:
     bool           m_global_synced     = false;
     bool           m_markers_synced    = false;
+    bool           m_explicit_only     = false;
     uint64_t       m_synced_markers    = 0;
     uint64_t       m_current_marker    = 0;
     uint64_t       m_num_markers       = 0;
     uint64_t       m_marker_batch_size = get_batched_marker_size();
-    cuda::stream_t m_stream            = 0;
+    cuda::stream_t m_stream            = cuda::default_stream_v;
     marker         m_global            = {};
     marker_list_t  m_markers           = {};
 
@@ -463,7 +462,7 @@ struct nvtx_marker : public base<nvtx_marker, void>
     /// range.
     void stop()
     {
-        if(use_device_sync())
+        if(m_device_sync)
         {
             cuda::device_sync();
         }
@@ -530,6 +529,7 @@ private:
 
 private:
     bool                     m_has_attribute = false;
+    bool                     m_device_sync   = use_device_sync();
     nvtx::color::color_t     m_color         = 0;
     nvtx::event_attributes_t m_attribute     = {};
     nvtx::range_id_t         m_range_id      = 0;

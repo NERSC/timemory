@@ -95,6 +95,13 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+// hip
+#if defined(TIMEMORY_USE_HIP)
+#    include "timemory/components/hip/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 // likwid
 #if defined(TIMEMORY_USE_LIKWID)
 #    include "timemory/components/likwid/components.hpp"

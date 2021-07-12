@@ -78,7 +78,7 @@
 //      2. ERT source code and not CUDA/HIP compiler
 #if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE_CXX)
 #    if defined(TIMEMORY_USE_ERT_EXTERN) ||                                              \
-        (defined(TIMEMORY_ERT_SOURCE) && !defined(_TIMEMORY_GPUCC))
+        (defined(TIMEMORY_ERT_SOURCE) && !defined(TIMEMORY_GPUCC))
 #        define TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(...)                                    \
             TIMEMORY_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CXX(...)                            \
@@ -100,7 +100,7 @@
 #if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE_GPU)
 #    if(defined(TIMEMORY_USE_ERT_EXTERN) &&                                              \
         (defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP))) ||                    \
-        (defined(TIMEMORY_ERT_SOURCE) && defined(_TIMEMORY_GPUCC))
+        (defined(TIMEMORY_ERT_SOURCE) && defined(TIMEMORY_GPUCC))
 #        define TIMEMORY_ERT_EXTERN_TEMPLATE_GPU(...)                                    \
             TIMEMORY_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(...)                            \

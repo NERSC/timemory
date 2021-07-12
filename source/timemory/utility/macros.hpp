@@ -203,7 +203,7 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #endif
 
 #if !defined(PRETTY_PRINT_HERE)
-#    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
+#    if defined(TIMEMORY_GNU_COMPILER) || defined(TIMEMORY_CLANG_COMPILER)
 #        define PRETTY_PRINT_HERE(...)                                                   \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
                                 TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
