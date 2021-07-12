@@ -56,6 +56,12 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_HIP_EXTERN)
+#    include "timemory/components/hip/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #if defined(TIMEMORY_USE_GOTCHA_EXTERN)
 #    include "timemory/components/gotcha/extern.hpp"
 #endif

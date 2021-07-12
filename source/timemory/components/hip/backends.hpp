@@ -155,6 +155,18 @@ set_device(int device)
 }
 
 //--------------------------------------------------------------------------------------//
+/// get the current device
+inline int
+get_device()
+{
+    int _device = 0;
+#if defined(TIMEMORY_USE_HIP)
+    TIMEMORY_HIP_RUNTIME_API_CALL(hipGetDevice(&_device));
+#endif
+    return _device;
+}
+
+//--------------------------------------------------------------------------------------//
 /// sync the device
 inline void
 device_sync()
@@ -186,6 +198,24 @@ device_l2_cache_size(int dev = 0)
     return 0;
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
+/// get the clock rate (kilohertz)
+inline int
+get_device_clock_rate(int _dev = -1)
+{
+#if defined(TIMEMORY_USE_HIP)
+    if(device_count() < 0)
+        _dev = get_device();
+    hipDeviceProp_t _device_prop{};
+    TIMEMORY_HIP_RUNTIME_API_CALL(hipGetDeviceProperties(&_device_prop, _dev));
+    return _device_prop.clockRate;
+#else
+    consume_parameters(_dev);
+    return 1;
+#endif
+}
+
 //--------------------------------------------------------------------------------------//
 //
 //      functions dealing with hip streams
@@ -210,7 +240,10 @@ inline void
 stream_destroy(stream_t& stream)
 {
 #if defined(TIMEMORY_USE_HIP)
-    TIMEMORY_HIP_RUNTIME_API_CALL(hipStreamDestroy(stream));
+    if(stream != default_stream_v)
+    {
+        TIMEMORY_HIP_RUNTIME_API_CALL(hipStreamDestroy(stream));
+    }
 #else
     consume_parameters(stream);
 #endif
@@ -367,7 +400,7 @@ inline void
 free(Tp*& arr)
 {
 #if defined(TIMEMORY_USE_HIP)
-    hipFree(arr);
+    TIMEMORY_HIP_RUNTIME_API_CALL(hipFree(arr));
     arr = nullptr;
 #else
     consume_parameters(arr);
@@ -383,7 +416,7 @@ inline void
 free_host(Tp*& arr)
 {
 #if defined(TIMEMORY_USE_HIP)
-    hipHostFree(arr);
+    TIMEMORY_HIP_RUNTIME_API_CALL(hipHostFree(arr));
     arr = nullptr;
 #else
     delete[] arr;

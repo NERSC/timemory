@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/backends/gpu.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/gotcha/components.hpp"
 #include "timemory/components/gotcha/types.hpp"
@@ -53,7 +54,7 @@ struct malloc_gotcha
 : base<malloc_gotcha, double>
 , public concepts::external_function_wrapper
 {
-#if defined(TIMEMORY_USE_CUDA)
+#if defined(TIMEMORY_USE_GPU)
     static constexpr size_t data_size = 9;
 #else
     static constexpr size_t data_size = 3;
@@ -181,7 +182,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-#if defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP)
+#if defined(TIMEMORY_USE_GPU)
 
     //----------------------------------------------------------------------------------//
     // cudaMalloc, cudaMallocHost
@@ -266,7 +267,7 @@ private:
 
 private:
     const char* m_prefix = nullptr;
-#if defined(TIMEMORY_USE_CUDA)
+#if defined(TIMEMORY_USE_GPU)
     void** m_last_addr = nullptr;
 #endif
 };

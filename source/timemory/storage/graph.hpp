@@ -62,7 +62,7 @@ public:
     explicit tgraph_node(const T&);  // NOLINT
     explicit tgraph_node(T&&) noexcept;
 
-#if defined(TIMEMORY_WINDOWS) || defined(_TIMEMORY_NVCC)
+#if defined(TIMEMORY_WINDOWS) || defined(TIMEMORY_NVCC_COMPILER)
     tgraph_node(const tgraph_node&) = default;
     tgraph_node& operator=(const tgraph_node&) = default;
 #else

@@ -39,7 +39,7 @@
 /// 'struct tuple_size'... which results in a lot of mismatches-tag warnings
 ///
 #if !defined(TSTAG)
-#    if defined(_TIMEMORY_CLANG)
+#    if defined(TIMEMORY_CLANG_COMPILER)
 #        define TSTAG(X) class
 #    else
 #        define TSTAG(X) X

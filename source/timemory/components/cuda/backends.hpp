@@ -220,6 +220,18 @@ set_device(int device)
 }
 
 //--------------------------------------------------------------------------------------//
+/// get the current device
+inline int
+get_device()
+{
+    int _device = 0;
+#if defined(TIMEMORY_USE_CUDA)
+    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaGetDevice(&_device));
+#endif
+    return _device;
+}
+
+//--------------------------------------------------------------------------------------//
 /// sync the device
 inline void
 device_sync()
@@ -244,13 +256,31 @@ device_l2_cache_size(int dev = 0)
     if(device_count() == 0)
         return 0;
     cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, dev);
+    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaGetDeviceProperties(&deviceProp, dev));
     return deviceProp.l2CacheSize;
 #else
     consume_parameters(dev);
     return 0;
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
+/// get the clock rate (kilohertz)
+inline int
+get_device_clock_rate(int _dev = -1)
+{
+#if defined(TIMEMORY_USE_CUDA)
+    if(device_count() < 0)
+        _dev = get_device();
+    cudaDeviceProp _device_prop{};
+    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaGetDeviceProperties(&_device_prop, _dev));
+    return _device_prop.clockRate;
+#else
+    consume_parameters(_dev);
+    return 1;
+#endif
+}
+
 //--------------------------------------------------------------------------------------//
 //
 //      functions dealing with cuda streams
@@ -283,14 +313,14 @@ stream_destroy(stream_t& stream)
 
 //--------------------------------------------------------------------------------------//
 /// sync the cuda stream
-inline void
+inline bool
 stream_sync(stream_t stream)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    auto ret = cudaStreamSynchronize(stream);
-    consume_parameters(ret);
+    return check(cudaStreamSynchronize(stream));
 #else
     consume_parameters(stream);
+    return true;
 #endif
 }
 
@@ -314,13 +344,14 @@ event_create(event_t& evt)
 
 //--------------------------------------------------------------------------------------//
 /// destroy a cuda event
-inline void
+inline bool
 event_destroy(event_t& evt)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    cudaEventDestroy(evt);
+    return check(cudaEventDestroy(evt));
 #else
     consume_parameters(evt);
+    return true;
 #endif
 }
 
