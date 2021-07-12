@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/backends/device.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/components/cuda/types.hpp"
@@ -594,6 +595,9 @@ public:
     }
 #endif
 };
+//
+//======================================================================================//
+//
 //
 //======================================================================================//
 //
