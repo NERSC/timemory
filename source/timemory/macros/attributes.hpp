@@ -171,6 +171,7 @@
 #if defined(__CUDACC__) || defined(__HIPCC__)
 #    define TIMEMORY_LAMBDA __host__ __device__
 #    define TIMEMORY_HOST_LAMBDA __host__
+#    define TIMEMORY_HOST_FUNCTION __host__
 #    define TIMEMORY_DEVICE_LAMBDA __device__
 #    define TIMEMORY_DEVICE_FUNCTION __device__
 #    define TIMEMORY_GLOBAL_FUNCTION __global__
@@ -181,6 +182,7 @@
 #else
 #    define TIMEMORY_LAMBDA
 #    define TIMEMORY_HOST_LAMBDA
+#    define TIMEMORY_HOST_FUNCTION
 #    define TIMEMORY_DEVICE_LAMBDA
 #    define TIMEMORY_DEVICE_FUNCTION
 #    define TIMEMORY_GLOBAL_FUNCTION

@@ -58,7 +58,7 @@ endif()
 
 # GPU related
 if(TIMEMORY_BUILD_CUDA_EXAMPLES)
-    add_subdirectory(ex-cuda-event)
+    add_subdirectory(ex-cuda)
 endif()
 
 # Python related
