@@ -116,7 +116,7 @@ std::pair<size_t, Tp*>
 ring_buffer::write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int>)
 {
     if(in == nullptr)
-        return 0;
+        return { 0, nullptr };
 
     auto _length = sizeof(Tp);
 
@@ -142,7 +142,7 @@ std::pair<size_t, Tp*>
 ring_buffer::write(Tp* in, std::enable_if_t<!std::is_class<Tp>::value, int>)
 {
     if(in == nullptr)
-        return 0;
+        return { 0, nullptr };
 
     auto _length = sizeof(Tp);
 
@@ -168,7 +168,7 @@ std::pair<size_t, Tp*>
 ring_buffer::read(Tp* out, std::enable_if_t<std::is_class<Tp>::value, int>) const
 {
     if(is_empty() || out == nullptr)
-        return 0;
+        return { 0, nullptr };
 
     auto _length = sizeof(Tp);
 
@@ -193,7 +193,7 @@ std::pair<size_t, Tp*>
 ring_buffer::read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int>) const
 {
     if(is_empty() || out == nullptr)
-        return 0;
+        return { 0, nullptr };
 
     auto _length = sizeof(Tp);
 

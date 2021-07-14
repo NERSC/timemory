@@ -43,10 +43,10 @@ def run_mpi(nitr=100, nsize=1000000):
         for i in range(nitr):
             data = numpy.arange(nsize, dtype="i")
             _val = numpy.sum(data)
-            _sum += 1. / _val
+            _sum += 1.0 / _val
             data = numpy.arange(nsize, dtype=numpy.float64)
             _val = numpy.sum(data)
-            _sum += 1. / _val
+            _sum += 1.0 / _val
 
     msgs = set()
     for i in range(nitr):
