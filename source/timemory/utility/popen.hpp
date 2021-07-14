@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 

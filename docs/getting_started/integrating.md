@@ -42,6 +42,7 @@ were not available when timemory was installed.
 | `timemory::timemory-compile-extra` | Extra optimization flags |
 | `timemory::timemory-compile-options` | Adds the standard set of compiler flags used by timemory |
 | `timemory::timemory-compile-timing` | Adds compiler flags which report compilation timing metrics |
+| `timemory::timemory-compiler-instrument-compile-options` | INTERFACE |
 | `timemory::timemory-compiler-instrument` | Provides library for compiler instrumentation |
 | `timemory::timemory-coverage` | Enables code-coverage flags |
 | `timemory::timemory-cpu-roofline` | Enables flags and libraries for proper CPU roofline generation |
@@ -69,6 +70,7 @@ were not available when timemory was installed.
 | `timemory::timemory-hidden-visibility` | Adds -fvisibility=hidden compiler flag |
 | `timemory::timemory-instrument-functions` | Adds compiler flags to enable compile-time instrumentation |
 | `timemory::timemory-leak-sanitizer` | Adds compiler flags to enable leak sanitizer (-fsanitize=leak) |
+| `timemory::timemory-libunwind` | Enables libunwind support |
 | `timemory::timemory-likwid` | Enables LIKWID support |
 | `timemory::timemory-lto` | Adds link-time-optimization flags |
 | `timemory::timemory-mallocp-library` | Provides MALLOCP library for tracking memory allocations |
@@ -79,6 +81,7 @@ were not available when timemory was installed.
 | `timemory::timemory-ncclp-library` | Provides NCCLP library for NCCL performance analysis |
 | `timemory::timemory-no-mpi-init` | Disables the generation of MPI_Init and MPI_Init_thread symbols |
 | `timemory::timemory-null-sanitizer` | Adds compiler flags to enable null sanitizer (-fsanitize=null) |
+| `timemory::timemory-nvml` | Enables NVML support (NVIDIA) |
 | `timemory::timemory-ompt-library` | Provides OMPT library for OpenMP performance analysis |
 | `timemory::timemory-ompt` | Enables OpenMP-tools support |
 | `timemory::timemory-papi-static` | Enables PAPI support + links to static library |

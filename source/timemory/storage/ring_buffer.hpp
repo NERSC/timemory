@@ -90,7 +90,14 @@ struct ring_buffer
     /// Returns if the buffer is full.
     bool is_full() const { return count() == m_size; }
 
+    /// Rewind the read position n bytes
     size_t rewind(size_t n) const;
+
+    /// explicitly configure to use mmap if avail
+    void set_use_mmap(bool);
+
+    /// query whether using mmap
+    bool get_use_mmap() const { return m_use_mmap; }
 
 private:
     /// Returns the current write pointer.
@@ -103,12 +110,14 @@ private:
     void* read_ptr() const { return static_cast<char*>(m_ptr) + (m_read_count % m_size); }
 
 private:
-    bool           m_init        = false;
-    int            m_fd          = 0;
-    void*          m_ptr         = nullptr;
-    size_t         m_size        = 0;
-    mutable size_t m_read_count  = 0;
-    size_t         m_write_count = 0;
+    bool           m_init              = false;
+    bool           m_use_mmap          = true;
+    bool           m_use_mmap_explicit = false;
+    int            m_fd                = 0;
+    void*          m_ptr               = nullptr;
+    size_t         m_size              = 0;
+    mutable size_t m_read_count        = 0;
+    size_t         m_write_count       = 0;
 };
 //
 template <typename Tp>
@@ -129,7 +138,7 @@ ring_buffer::write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int>)
     Tp* out = reinterpret_cast<Tp*>(write_ptr());
 
     // Copy in.
-    new(out) Tp{ *in };
+    new((void*) out) Tp{ *in };
 
     // Update write count
     m_write_count += _length;
@@ -155,7 +164,7 @@ ring_buffer::write(Tp* in, std::enable_if_t<!std::is_class<Tp>::value, int>)
     Tp* out = reinterpret_cast<Tp*>(write_ptr());
 
     // Copy in.
-    memcpy(out, in, _length);
+    memcpy((void*) out, in, _length);
 
     // Update write count
     m_write_count += _length;
@@ -218,7 +227,7 @@ ring_buffer::read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int>) con
     return { _length, in };
 }
 //
-size_t
+inline size_t
 ring_buffer::rewind(size_t n) const
 {
     if(n > m_read_count)
@@ -308,5 +317,12 @@ struct ring_buffer : private base::ring_buffer
 }  // namespace tim
 
 #if !defined(TIMEMORY_COMMON_SOURCE) && !defined(TIMEMORY_USE_COMMON_EXTERN)
+#    if !defined(TIMEMORY_RING_BUFFER_INLINE)
+#        define TIMEMORY_RING_BUFFER_INLINE inline
+#    endif
 #    include "timemory/storage/ring_buffer.cpp"
+#else
+#    if !defined(TIMEMORY_RING_BUFFER_INLINE)
+#        define TIMEMORY_RING_BUFFER_INLINE
+#    endif
 #endif
