@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/components/gotcha/suppression.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"

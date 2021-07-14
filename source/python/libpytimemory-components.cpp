@@ -37,10 +37,28 @@
 #include "libpytimemory-components.hpp"
 #include "timemory/components/extern.hpp"
 #include "timemory/enum.h"
+#include "timemory/operations/types/python_class_name.hpp"
 #include "timemory/timemory.hpp"
+
+#include <set>
+#include <string>
 
 namespace pyinternal
 {
+//
+struct cinfo
+{
+    bool                  available  = false;
+    std::string           class_name = {};
+    std::string           id         = {};
+    std::set<std::string> ids        = {};
+
+    template <typename Tp>
+    auto find(Tp&& _v) const
+    {
+        return ids.find(std::forward<Tp>(_v));
+    }
+};
 //
 //--------------------------------------------------------------------------------------//
 /// variadic wrapper around each component allowing to to accept arguments that it
@@ -49,50 +67,10 @@ template <typename T>
 using pytuple_t = tim::lightweight_tuple<T>;
 /// a python object generator function via a string ID
 using keygen_t = std::function<py::object()>;
-/// pairs a set of matching strings to a generator function
-using keyset_t = std::pair<std::set<std::string>, keygen_t>;
+/// component info paired to a generator function
+using keyset_t = std::pair<cinfo, keygen_t>;
 /// a python object generator function via an enumeration ID
 using indexgen_t = std::function<py::object(int)>;
-//
-//--------------------------------------------------------------------------------------//
-//
-static inline std::string
-get_class_name(std::string id)
-{
-    static const std::set<char> delim{
-        '_',
-        '-',
-    };
-
-    if(id.empty())
-        return std::string{};
-
-    id = tim::settings::tolower(id);
-
-    // capitalize after every delimiter
-    for(size_t i = 0; i < id.size(); ++i)
-    {
-        if(i == 0)
-            id.at(i) = toupper(id.at(i));
-        else
-        {
-            if(delim.find(id.at(i)) != delim.end() && i + 1 < id.length())
-            {
-                id.at(i + 1) = toupper(id.at(i + 1));
-                ++i;
-            }
-        }
-    }
-    // remove all delimiters
-    for(auto ditr : delim)
-    {
-        size_t _pos = 0;
-        while((_pos = id.find(ditr)) != std::string::npos)
-            id = id.erase(_pos, 1);
-    }
-
-    return id;
-}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -654,7 +632,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
 
     static_assert(property_t::specialized(), "Error! Missing specialization");
 
-    std::string id  = get_class_name(property_t::enum_string());
+    std::string id  = tim::operation::python_class_name<T>{}();
     std::string cid = property_t::id();
 
     auto _init  = []() { return new bundle_t{}; };
@@ -730,7 +708,8 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     std::set<std::string> _keys = property_t::ids();
     _keys.insert(id);
     _boolgen[Idx] = true;
-    _keygen[Idx]  = { _keys, []() { return py::cast(new bundle_t{}); } };
+    _keygen[Idx]  = { cinfo{ true, id, cid, _keys },
+                     []() { return py::cast(new bundle_t{}); } };
 
     auto idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
     _pycomp.def_static("index", [idx]() { return idx; },
@@ -758,7 +737,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
         return;
     using property_t  = tim::component::properties<T>;
     using bundle_t    = pytuple_t<T>;
-    std::string id    = get_class_name(property_t::enum_string());
+    std::string id    = tim::operation::python_class_name<T>{}();
     std::string cid   = property_t::id();
     std::string _desc = "not available";
 
@@ -808,8 +787,10 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def_property_readonly_static("has_value", _false,
                                          "Whether the component has an accessible value");
 
+    std::set<std::string> _keys = property_t::ids();
+    _keys.insert(id);
     _boolgen[Idx] = false;
-    _keygen[Idx]  = { {}, []() { return py::none{}; } };
+    _keygen[Idx]  = { cinfo{ false, id, cid, _keys }, []() { return py::none{}; } };
 
     auto idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
     _pycomp.def_static("index", [idx]() { return idx; },
@@ -841,22 +822,6 @@ components(py::module& _pymod, std::array<bool, N>& _boolgen,
     TIMEMORY_FOLD_EXPRESSION(pyinternal::generate<Idx>(_pymod, _boolgen, _keygen));
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <size_t... Idx>
-static auto
-get_available(std::index_sequence<Idx...>)
-{
-    constexpr size_t    N = sizeof...(Idx);
-    std::array<bool, N> _avail_array;
-    _avail_array.fill(false);
-    TIMEMORY_FOLD_EXPRESSION(
-        _avail_array[Idx] =
-            tim::component::enumerator<Idx>::value &&
-            !tim::concepts::is_placeholder<tim::component::enumerator_t<Idx>>::value);
-    return _avail_array;
-}
-//
 }  // namespace pyinternal
 //
 //======================================================================================//
@@ -883,13 +848,33 @@ generate(py::module& _pymod)
     pyinternal::components(_pycomp, _boolgen, _keygen,
                            std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
 
-    auto _is_available = [](py::object _obj) {
+    std::vector<std::pair<bool, std::string>> _available_and_names{};
+    std::vector<std::string>                  _names{};
+    std::vector<std::string>                  _available_names{};
+
+    _available_and_names.reserve(N);
+    _names.reserve(N);
+    _available_names.reserve(N);
+
+    for(const auto& itr : _keygen)
+    {
+        _available_and_names.emplace_back(itr.first.available, itr.first.id);
+        if(itr.first.id.empty())
+            continue;
+        _names.emplace_back(itr.first.id);
+        if(itr.first.available)
+            _available_names.emplace_back(itr.first.id);
+    }
+
+    _available_and_names.shrink_to_fit();
+    _available_names.shrink_to_fit();
+    _names.shrink_to_fit();
+
+    auto _is_available = [_available_and_names](py::object _obj) {
         auto _enum_val = pytim::get_enum(_obj);
         if(_enum_val >= TIMEMORY_COMPONENTS_END)
             return false;
-        static auto _available = pyinternal::get_available(
-            tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
-        return _available.at(static_cast<size_t>(_enum_val));
+        return _available_and_names.at(static_cast<size_t>(_enum_val)).first;
     };
 
     auto _keygenerator = [_keygen, _boolgen](std::string _key) {
@@ -899,7 +884,7 @@ generate(py::module& _pymod)
         {
             if(!_boolgen[i++])
                 continue;
-            if(itr.first.find(_key) != itr.first.end())
+            if(itr.first.ids.find(_key) != itr.first.ids.end())
                 return itr.second;
         }
         pyinternal::keygen_t _nogen = []() -> py::object { return py::none{}; };
@@ -926,6 +911,11 @@ generate(py::module& _pymod)
     _pycomp.def("get_generator", _indexgenerator,
                 "Get a functor for generating the component whose enumeration ID (see "
                 "`help(timemory.component.id)`) match the given enumeration ID");
+    _pycomp.def("get_types", [_names]() { return _names; },
+                "Get the names of all the component types regardless of whether "
+                "available or not");
+    _pycomp.def("get_available_types", [_available_names]() { return _available_names; },
+                "Get the names of all the component types which are available");
 
     return _pycomp;
 }

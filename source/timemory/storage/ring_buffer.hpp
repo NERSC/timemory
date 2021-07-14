@@ -62,17 +62,21 @@ struct ring_buffer
 
     /// Write data to buffer.
     template <typename Tp>
-    size_t write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int> = 0);
+    std::pair<size_t, Tp*> write(Tp* in,
+                                 std::enable_if_t<std::is_class<Tp>::value, int> = 0);
 
     template <typename Tp>
-    size_t write(Tp* in, std::enable_if_t<!std::is_class<Tp>::value, int> = 0);
+    std::pair<size_t, Tp*> write(Tp* in,
+                                 std::enable_if_t<!std::is_class<Tp>::value, int> = 0);
 
     /// Read data from buffer.
     template <typename Tp>
-    size_t read(Tp* out, std::enable_if_t<std::is_class<Tp>::value, int> = 0) const;
+    std::pair<size_t, Tp*> read(
+        Tp* out, std::enable_if_t<std::is_class<Tp>::value, int> = 0) const;
 
     template <typename Tp>
-    size_t read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int> = 0) const;
+    std::pair<size_t, Tp*> read(
+        Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int> = 0) const;
 
     /// Returns number of bytes currently held by the buffer.
     size_t count() const { return m_write_count - m_read_count; }
@@ -108,7 +112,7 @@ private:
 };
 //
 template <typename Tp>
-size_t
+std::pair<size_t, Tp*>
 ring_buffer::write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int>)
 {
     if(in == nullptr)
@@ -121,18 +125,20 @@ ring_buffer::write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int>)
     if(_length > free())
         _length = free();
 
+    // pointer in buffer
+    Tp* out = reinterpret_cast<Tp*>(write_ptr());
+
     // Copy in.
     new(write_ptr()) Tp{ *in };
-    // memcpy(write_ptr(), in, _length);
 
     // Update write count
     m_write_count += _length;
 
-    return _length;
+    return { _length, out };
 }
 //
 template <typename Tp>
-size_t
+std::pair<size_t, Tp*>
 ring_buffer::write(Tp* in, std::enable_if_t<!std::is_class<Tp>::value, int>)
 {
     if(in == nullptr)
@@ -145,17 +151,20 @@ ring_buffer::write(Tp* in, std::enable_if_t<!std::is_class<Tp>::value, int>)
     if(_length > free())
         _length = free();
 
+    // pointer in buffer
+    Tp* out = reinterpret_cast<Tp*>(write_ptr());
+
     // Copy in.
-    memcpy(write_ptr(), in, _length);
+    memcpy(out, in, _length);
 
     // Update write count
     m_write_count += _length;
 
-    return _length;
+    return { _length, out };
 }
 //
 template <typename Tp>
-size_t
+std::pair<size_t, Tp*>
 ring_buffer::read(Tp* out, std::enable_if_t<std::is_class<Tp>::value, int>) const
 {
     if(is_empty() || out == nullptr)
@@ -167,17 +176,20 @@ ring_buffer::read(Tp* out, std::enable_if_t<std::is_class<Tp>::value, int>) cons
     if(_length > count())
         _length = count();
 
+    // pointer in buffer
+    Tp* in = reinterpret_cast<Tp*>(read_ptr());
+
     // Copy out for BYTE, nothing magic here.
-    *out = *(reinterpret_cast<Tp*>(read_ptr()));
+    *out = *in;
 
     // Update read count.
     m_read_count += _length;
 
-    return _length;
+    return { _length, in };
 }
 //
 template <typename Tp>
-size_t
+std::pair<size_t, Tp*>
 ring_buffer::read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int>) const
 {
     if(is_empty() || out == nullptr)
@@ -192,14 +204,18 @@ ring_buffer::read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int>) con
         _length = count();
 
     assert(out != nullptr);
+
+    // pointer in buffer
+    Tp* in = reinterpret_cast<Tp*>(read_ptr());
+
     // Copy out for BYTE, nothing magic here.
     Up* _out = const_cast<Up*>(out);
-    memcpy(_out, read_ptr(), _length);
+    memcpy(_out, in, _length);
 
     // Update read count.
     m_read_count += _length;
 
-    return _length;
+    return { _length, in };
 }
 //
 size_t
@@ -248,11 +264,11 @@ struct ring_buffer : private base::ring_buffer
     /// Write data to buffer.
     size_t data_size() { return sizeof(Tp); }
 
-    /// Write data to buffer.
-    size_t write(Tp* in) { return base_type::write<Tp>(in); }
+    /// Write data to buffer. Return pointer to location of write
+    Tp* write(Tp* in) { return base_type::write<Tp>(in).second; }
 
-    /// Read data from buffer.
-    size_t read(Tp* out) const { return base_type::read<Tp>(out); }
+    /// Read data from buffer. Return pointer to location of read
+    Tp* read(Tp* out) const { return base_type::read<Tp>(out).second; }
 
     /// Returns number of bytes currently held by the buffer.
     size_t count() const { return base_type::count() / sizeof(Tp); }

@@ -1055,6 +1055,11 @@ struct dummy
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename T>
+struct python_class_name;
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace finalize
 {
 //
@@ -1305,28 +1310,26 @@ struct print
 
 protected:
     // do not lint misc-non-private-member-variables-in-classes
-    settings_t  m_settings        = settings::shared_instance();          // NOLINT
-    bool        debug             = false;                                // NOLINT
-    bool        update            = true;                                 // NOLINT
-    bool        json_forced       = false;                                // NOLINT
-    bool        node_init         = dmp::is_initialized();                // NOLINT
-    int32_t     node_rank         = dmp::rank();                          // NOLINT
-    int32_t     node_size         = dmp::size();                          // NOLINT
-    int32_t     verbose           = 0;                                    // NOLINT
-    int64_t     max_depth         = 0;                                    // NOLINT
-    int64_t     max_call_stack    = std::numeric_limits<int64_t>::max();  // NOLINT
-    int64_t     data_concurrency  = 1;                                    // NOLINT
-    int64_t     input_concurrency = 1;                                    // NOLINT
-    std::string label             = "";                                   // NOLINT
-    std::string description       = "";                                   // NOLINT
-    std::string text_outfname     = "";                                   // NOLINT
-    std::string tree_outfname     = "";                                   // NOLINT
-    std::string json_outfname     = "";                                   // NOLINT
-    std::string json_inpfname     = "";                                   // NOLINT
-    std::string text_diffname     = "";                                   // NOLINT
-    std::string json_diffname     = "";                                   // NOLINT
-    stream_type data_stream       = stream_type{};                        // NOLINT
-    stream_type diff_stream       = stream_type{};                        // NOLINT
+    settings_t  m_settings     = settings::shared_instance();          // NOLINT
+    bool        debug          = false;                                // NOLINT
+    bool        update         = true;                                 // NOLINT
+    bool        json_forced    = false;                                // NOLINT
+    bool        node_init      = dmp::is_initialized();                // NOLINT
+    int32_t     node_rank      = dmp::rank();                          // NOLINT
+    int32_t     node_size      = dmp::size();                          // NOLINT
+    int32_t     verbose        = 0;                                    // NOLINT
+    int64_t     max_depth      = 0;                                    // NOLINT
+    int64_t     max_call_stack = std::numeric_limits<int64_t>::max();  // NOLINT
+    std::string label          = "";                                   // NOLINT
+    std::string description    = "";                                   // NOLINT
+    std::string text_outfname  = "";                                   // NOLINT
+    std::string tree_outfname  = "";                                   // NOLINT
+    std::string json_outfname  = "";                                   // NOLINT
+    std::string json_inpfname  = "";                                   // NOLINT
+    std::string text_diffname  = "";                                   // NOLINT
+    std::string json_diffname  = "";                                   // NOLINT
+    stream_type data_stream    = stream_type{};                        // NOLINT
+    stream_type diff_stream    = stream_type{};                        // NOLINT
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -1391,7 +1394,7 @@ struct print<Tp, true> : public base::print
         if(file_output())
         {
             if(json_output())
-                print_json(json_outfname, node_results, data_concurrency);
+                print_json(json_outfname, node_results);
             if(tree_output())
                 print_tree(tree_outfname, node_tree);
             if(text_output())
@@ -1417,19 +1420,13 @@ struct print<Tp, true> : public base::print
             if(file_output())
             {
                 if(json_output())
-                    print_json(json_diffname, node_delta, data_concurrency);
+                    print_json(json_diffname, node_delta);
                 if(text_output())
                     print_text(text_diffname, diff_stream);
                 if(plot_output())
                 {
                     std::stringstream ss;
                     ss << "Difference vs. " << json_inpfname;
-                    if(input_concurrency != data_concurrency)
-                    {
-                        auto delta_conc = (data_concurrency - input_concurrency);
-                        ss << " with " << delta_conc << " "
-                           << ((delta_conc > 0) ? "more" : "less") << "threads";
-                    }
                     print_plot(json_diffname, ss.str());
                 }
             }
@@ -1465,8 +1462,7 @@ struct print<Tp, true> : public base::print
     TIMEMORY_COLD virtual void print_tree(const std::string& fname, result_tree& rt);
 
     TIMEMORY_COLD void        write_stream(stream_type& stream, result_type& results);
-    TIMEMORY_COLD void        print_json(const std::string& fname, result_type& results,
-                                         int64_t concurrency);
+    TIMEMORY_COLD void        print_json(const std::string& fname, result_type& results);
     TIMEMORY_COLD const auto& get_data() const { return data; }
     TIMEMORY_COLD const auto& get_node_results() const { return node_results; }
     TIMEMORY_COLD const auto& get_node_input() const { return node_input; }

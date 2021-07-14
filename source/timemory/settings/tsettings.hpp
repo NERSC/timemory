@@ -51,7 +51,7 @@ namespace tim
 /// \struct tim::tsettings
 /// \brief Implements a specific setting
 template <typename Tp, typename Vp>
-struct tsettings : public vsettings
+struct tsettings final : public vsettings
 {
 private:
     template <typename Up>

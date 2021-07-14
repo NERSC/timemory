@@ -73,10 +73,28 @@ extern "C"
                 };
 
                 tim::manager::instance()->add_cleanup("timemory-mallocp", _cleanup);
-                global_id = global_cnt;
+                global_id = global_cnt + 1;
             }
+
+            // start the wrappers
             _handle->start();
-            return global_cnt++;
+            // if the first instance, actually call malloc and free to pre-allocate
+            // storage and disable if a null pointer was returned
+            if(global_cnt == 0)
+            {
+                size_t _size = 8 * sizeof(char);
+                char*  _buff = static_cast<char*>(::malloc(_size));
+                if(_buff == nullptr)
+                {
+                    PRINT_HERE("timemory_mallocp was started but malloc(%i) returned a "
+                               "nullptr. Disabling timemory_mallocp",
+                               static_cast<int>(_size));
+                    _handle->stop();
+                    return global_cnt;
+                }
+                ::free(_buff);
+            }
+            return ++global_cnt;
         }
         else
         {

@@ -128,7 +128,9 @@ ring_buffer::destroy()
             _cond, "Ring buffer failed to truncate the file descriptor %i\n", m_fd);
     }
     // Unmap the mapped virtual memmory.
-    auto ret = munmap(m_ptr, m_size * 2);
+    using func_t = int (*)(void*, size_t);
+    func_t _func = &munmap;
+    auto   ret   = (*_func)(m_ptr, m_size);
     // Close the backing file.
     close(m_fd);
     if(ret)
