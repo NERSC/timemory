@@ -42,45 +42,23 @@ environment:
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "ON"
+      BUILD_SHARED: "ON"
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "ON"
       LINE_PROFILER: "ON"
-    - CONDA: 37
-      CPP: 14
-      CONFIG: RelWithDebInfo
-      EXAMPLES: "OFF"
-      TOOLS: "OFF"
-      WINSOCK: "OFF"
-      USE_ARCH: "OFF"
-      USE_PYTHON: "ON"
-      BUILD_C: "OFF"
-      BUILD_STATIC: "ON"
-      BUILD_TESTING: "OFF"
-      LINE_PROFILER: "ON"
-    - PYTHON: 36
+    - PYTHON: 37
       CPP: 14
       CONFIG: Debug
       EXAMPLES: "ON"
-      TOOLS: "OFF"
-      WINSOCK: "OFF"
-      USE_ARCH: "OFF"
-      USE_PYTHON: "ON"
-      BUILD_C: "ON"
-      BUILD_STATIC: "OFF"
-      BUILD_TESTING: "OFF"
-      LINE_PROFILER: "OFF"
-    - PYTHON: 37
-      CPP: 17
-      CONFIG: MinSizeRel
-      EXAMPLES: "OFF"
       TOOLS: "ON"
       WINSOCK: "OFF"
       USE_ARCH: "OFF"
       USE_PYTHON: "ON"
       BUILD_C: "OFF"
+      BUILD_SHARED: "OFF"
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
-      LINE_PROFILER: "ON"
+      LINE_PROFILER: "OFF"
 
 install:
   # Configure environment
@@ -109,7 +87,7 @@ install:
           $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
         }
         python -m pip install --disable-pip-version-check --user --upgrade pip wheel
-        python -m pip install --user cython numpy matplotlib pillow pandas pydot
+        python -m pip install --user matplotlib numpy pillow cython six pandas pydot multiprocess
       } elseif ($env:CONDA) {
         if ($env:PLATFORM -eq "x64") {
           $env:PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts;$env:PATH"
@@ -122,8 +100,8 @@ install:
           $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
           $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
         }
-        conda update -y -q -n base conda
-        conda install -y -c defaults -c conda-forge -q pip setuptools scikit-build numpy matplotlib pillow cython pandas pydot
+        conda update -y -n base conda
+        conda install -y -c conda-forge -c defaults matplotlib numpy pillow cython six pandas pydot multiprocess
       }
       $env:TIMEMORY_FILE_OUTPUT = "OFF"
       $env:TIMEMORY_AUTO_OUTPUT = "ON"
@@ -134,7 +112,7 @@ build_script:
   - mkdir build-timemory
   - cd build-timemory
   - cmake .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
-    -DBUILD_SHARED_LIBS=ON
+    -DBUILD_SHARED_LIBS="%BUILD_SHARED%"
     -DBUILD_STATIC_LIBS="%BUILD_STATIC%"
     -DCMAKE_BUILD_TYPE="%CONFIG%"
     -DCMAKE_CXX_STANDARD="%CPP%"
