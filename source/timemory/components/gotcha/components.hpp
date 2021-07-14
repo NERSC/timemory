@@ -943,7 +943,6 @@ private:
 
         if(!_data.ready || _suppress)
         {
-#    if defined(DEBUG) || !defined(NDEBUG)
             _protect_tls_alloc                  = true;
             static thread_local bool _recursive = false;
             _protect_tls_alloc                  = false;
@@ -959,7 +958,6 @@ private:
                 fflush(stderr);
                 _recursive = false;
             }
-#    endif
             return (*_orig)(_args...);
         }
 
@@ -1038,7 +1036,6 @@ private:
 
         if(!_data.ready || _suppress)
         {
-#    if defined(DEBUG) || !defined(NDEBUG)
             _protect_tls_alloc                  = true;
             static thread_local bool _recursive = false;
             _protect_tls_alloc                  = false;
@@ -1054,7 +1051,6 @@ private:
                 fflush(stderr);
                 _recursive = false;
             }
-#    endif
             (*_orig)(_args...);
             return;
         }

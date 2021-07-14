@@ -171,6 +171,7 @@ scatter_gather(int num_elements_per_proc)
     if(num_elements_per_proc == 0)
         return;
 
+#if defined(USE_MPI) || defined(TIMEMORY_USE_MPI)
     auto n = num_elements_per_proc;
 
     // Seed the random number generator to get different results each time
@@ -252,6 +253,9 @@ scatter_gather(int num_elements_per_proc)
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
+#else
+    (void) compute_avg(create_rand_nums(num_elements_per_proc));
+#endif
 }
 
 // Creates an array of random numbers. Each number has a value from 0 - 1

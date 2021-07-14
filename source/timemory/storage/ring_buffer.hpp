@@ -129,7 +129,7 @@ ring_buffer::write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int>)
     Tp* out = reinterpret_cast<Tp*>(write_ptr());
 
     // Copy in.
-    new(write_ptr()) Tp{ *in };
+    new(out) Tp{ *in };
 
     // Update write count
     m_write_count += _length;
