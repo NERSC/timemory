@@ -26,6 +26,8 @@
 #    define UNW_LOCAL_ONLY
 #endif
 
+#define TIMEMORY_USE_MMAP_DEFAULT false
+
 #include "test_macros.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN
@@ -103,6 +105,7 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
+#include <array>
 #include <errno.h>
 #include <execinfo.h>
 #include <libunwind.h>
@@ -123,6 +126,9 @@ char                                            buf[512], name[496];
 unw_cursor_t                                    cursor;
 unw_context_t                                   uc;
 tim::data_storage::ring_buffer<const char[512]> name_buffer;
+constexpr size_t                                array_size = 1024;
+size_t                                          array_idx  = 0;
+std::array<const char**, array_size>            name_array = {};
 
 static void
 do_backtrace(void)
@@ -152,7 +158,17 @@ do_backtrace(void)
                 snprintf(buf, sizeof(buf), "<%s+0x%lx>", name, (long) off);
             else
                 snprintf(buf, sizeof(buf), "<%s>", name);
-            name_buffer.write(&buf);
+            auto cstr = name_buffer.write(&buf);
+            auto _idx = array_idx++;
+            if(_idx < array_size)
+            {
+                name_array.at(_idx) = (const char**) (cstr);
+            }
+            else
+            {
+                std::cerr << "Warning! Overflowed array size (" << array_size << ") with "
+                          << _idx << std::endl;
+            }
         }
         if(verbose)
         {
@@ -256,8 +272,34 @@ TEST_F(libunwind_tests, bt)
     stack_t          stk;
     verbose = true;
 
-    EXPECT_FALSE(name_buffer.is_initialized());
+    // make sure not inited
+    ASSERT_FALSE(name_buffer.is_initialized());
+
+    // make sure pre-processor worked
+    ASSERT_FALSE(name_buffer.get_use_mmap());
+
+    // make sure env variable works
+    tim::set_env("TIMEMORY_USE_MMAP", "Y", 1);
+    ASSERT_TRUE(tim::get_env<bool>("TIMEMORY_USE_MMAP"));
     name_buffer.init(1000);
+
+    // make sure only linux reports correctly
+#if defined(TIMEMORY_LINUX)
+    ASSERT_TRUE(name_buffer.get_use_mmap());
+#else
+    ASSERT_FALSE(name_buffer.get_use_mmap());
+#endif
+    name_buffer.destroy();
+
+    // make sure reporting correctly
+    ASSERT_FALSE(name_buffer.is_initialized());
+
+    // disable explicitly then initialize and make sure
+    // env is ignored
+    name_buffer.set_use_mmap(false);
+    name_buffer.init(1000);
+    ASSERT_FALSE(name_buffer.get_use_mmap());
+
     std::cout << "original: " << name_buffer << "\n";
 
     if(verbose)
@@ -318,7 +360,16 @@ TEST_F(libunwind_tests, bt)
     {
         char _inp[512] = {};
         memset(_inp, '\0', 512);
-        name_buffer.read(&_inp);
+        auto cstr = (const char**) name_buffer.read(&_inp);
+        if(i < array_size)
+        {
+            ASSERT_EQ(cstr, name_array.at(i))
+                << "at index " << i << ": read returned address different than write";
+            ASSERT_EQ(cstr[0], name_array.at(i)[0])
+                << "at index " << i
+                << ": read contents are different than write contents :: " << cstr[0]
+                << " and " << name_array.at(i)[0];
+        }
         auto _mangled = std::string{ _inp }.substr(1).substr(0, strlen(_inp) - 2);
         auto _ret     = _mangled.find("+0x");
         if(_ret != std::string::npos)

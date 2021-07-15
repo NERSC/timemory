@@ -29,6 +29,14 @@
 
 #include <stdexcept>
 
+#if !defined(TIMEMORY_USE_MMAP_DEFAULT)
+#    if defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
+#        define TIMEMORY_USE_MMAP_DEFAULT true
+#    else
+#        define TIMEMORY_USE_MMAP_DEFAULT false
+#    endif
+#endif
+
 namespace tim
 {
 namespace base
@@ -111,7 +119,7 @@ private:
 
 private:
     bool           m_init              = false;
-    bool           m_use_mmap          = true;
+    bool           m_use_mmap          = TIMEMORY_USE_MMAP_DEFAULT;
     bool           m_use_mmap_explicit = false;
     int            m_fd                = 0;
     void*          m_ptr               = nullptr;
@@ -293,6 +301,12 @@ struct ring_buffer : private base::ring_buffer
 
     /// Rewinds the read pointer
     size_t rewind(size_t n) const { return base_type::rewind(n); }
+
+    /// explicitly configure to use mmap if avail
+    void set_use_mmap(bool _v) { base_type::set_use_mmap(_v); }
+
+    /// query whether using mmap
+    bool get_use_mmap() const { return base_type::get_use_mmap(); }
 
     template <typename... Args>
     auto emplace(Args&&... args)
