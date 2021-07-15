@@ -123,6 +123,9 @@ int main(int argc, char** argv)
         ret_sum += ret * ret;
     }
 
+    // avoid set but unused warning
+    if(ret_sum < 0) printf("sum: %li\n", ret_sum);
+
     std::vector<long> ret_reduce;
     std::vector<long> ret_send;
     for(size_t i = 0; i < fibvalues.size(); ++i)
