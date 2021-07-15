@@ -1,5 +1,33 @@
 # timemory
 
+## Version 3.2.2
+
+> Date: Wed Jul 14 20:42:29 2021 -0500
+
+- Python gotcha fixes
+  - Fixed issues with mallocp segfaulting from Python
+  - Fixed storage merge() segfaulting
+- New Python tools submodule (timemory.tools)
+  - tools.function_wrappers combines {start,stop}_{mpip,ompt,ncclp,mallocp}
+    into one configurable handle and provides decorator + context-manager features
+- New Python functions which are used within tools.function_wrappers
+  - timemory.start_function_wrappers
+  - timemory.stop_function_wrappers
+- Fixed timemory-python-line-profiler script calling timemory.profiler
+- API change in ring_buffer template
+  - read/write member functions return pointer to object read/written to
+    instead of bytes
+- API change in storage and tsettings
+  - Classes are declared as final to optimize any vtable calls
+- Removed runtime_configurable restriction for do_enumerator_generate
+  - This enables user_bundles to be used again in Python
+- Added operation::python_class_name
+- Updated examples:
+  - ex_python_bindings (and libex_python_bindings)
+- Fix to get_hash_identifier
+- Removed concurrency comparison when generating a diff b/t two runs
+- Fixed issues with popen.cpp guarding with TIMEMORY_WINDOWS but never defined
+
 ## Version 3.2.1
 
 > Date: Fri Jul 9 16:55:33 2021 -0500
