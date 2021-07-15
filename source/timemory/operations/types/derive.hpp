@@ -89,8 +89,7 @@ struct derive
     TIMEMORY_DELETED_OBJECT(derive)
 
 private:
-    using derived_tuple_t                   = typename trait::derivation_types<Tp>::type;
-    static constexpr size_t derived_tuple_v = std::tuple_size<derived_tuple_t>::value;
+    using derived_tuple_t = typename trait::derivation_types<Tp>::type;
     template <size_t Idx>
     using derived_t = typename std::tuple_element<Idx, derived_tuple_t>::type;
 
@@ -98,7 +97,8 @@ public:
     template <typename... Args>
     explicit derive(type& obj, Args&&... args);
 
-    template <typename Arg, size_t N = derived_tuple_v, std::enable_if_t<N != 0> = 0>
+    template <typename Arg, size_t N = std::tuple_size<derived_tuple_t>::value,
+              std::enable_if_t<N != 0> = 0>
     explicit derive(type& obj, Arg&& arg)
     {
         bool b = false;
@@ -111,7 +111,7 @@ public:
     explicit derive(type& obj, BundleT<Args...>& arg)
     {
         bool           b = false;
-        constexpr auto N = derived_tuple_v;
+        constexpr auto N = std::tuple_size<derived_tuple_t>::value;
         sfinae(b, obj, make_index_sequence<N>{}, arg);
         if(!b)
             sfinae(obj, 0, 0, arg);

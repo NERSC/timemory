@@ -797,7 +797,7 @@ storage<Type, false>::master_instance()
 /// and the serialization library are responsible for most of the timemory compilation
 /// time.
 template <typename Tp, typename Vp>
-class storage : public impl::storage<Tp, trait::uses_value_storage<Tp, Vp>::value>
+class storage final : public impl::storage<Tp, trait::uses_value_storage<Tp, Vp>::value>
 {
 public:
     static constexpr bool uses_value_storage_v = trait::uses_value_storage<Tp, Vp>::value;

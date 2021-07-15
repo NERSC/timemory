@@ -23,6 +23,7 @@
 // SOFTWARE.
 //
 
+#include "timemory/components/papi/papi_tuple.hpp"
 #include "timemory/library.h"
 #include "timemory/timemory.hpp"
 

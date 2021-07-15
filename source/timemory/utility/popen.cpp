@@ -23,6 +23,8 @@
 // SOFTWARE.
 //
 
+#include "timemory/macros/os.hpp"
+
 #if !defined(TIMEMORY_WINDOWS)
 
 #    include "timemory/utility/popen.hpp"

@@ -39,13 +39,18 @@
 #    include <unistd.h>
 #endif
 
+#if !defined(TIMEMORY_RING_BUFFER_INLINE)
+#    define TIMEMORY_RING_BUFFER_INLINE
+#endif
+
 namespace tim
 {
 namespace base
 {
-//
+TIMEMORY_RING_BUFFER_INLINE
 ring_buffer::~ring_buffer() { destroy(); }
-//
+
+TIMEMORY_RING_BUFFER_INLINE
 void
 ring_buffer::init(size_t _size)
 {
@@ -71,7 +76,15 @@ ring_buffer::init(size_t _size)
     m_read_count  = 0;
     m_write_count = 0;
 
+    if(!m_use_mmap_explicit)
+        m_use_mmap = get_env("TIMEMORY_USE_MMAP", m_use_mmap);
+
 #if defined(TIMEMORY_LINUX)
+    if(!m_use_mmap)
+    {
+        m_ptr = malloc(m_size * sizeof(char));
+        return;
+    }
     // Set file path depending on whether shared memory is compiled in or not.
 #    ifdef SHM
     char path[] = "/dev/shm/rb-XXXXXX";
@@ -110,32 +123,52 @@ ring_buffer::init(size_t _size)
             MAP_FIXED | MAP_SHARED, m_fd, 0) == MAP_FAILED)
         destroy();
 #else
-    m_ptr = malloc(m_size * sizeof(char));
+    m_use_mmap = false;
+    m_ptr      = malloc(m_size * sizeof(char));
     (void) m_fd;
 #endif
 }
 
+TIMEMORY_RING_BUFFER_INLINE
 void
 ring_buffer::destroy()
 {
     m_init = false;
+    if(!m_ptr)
+        return;
 #if defined(TIMEMORY_LINUX)
-    // Truncate file to zero, to avoid writing back memory to file, on munmap.
-    if(ftruncate(m_fd, 0) < 0)
+    if(!m_use_mmap)
     {
-        bool _cond = settings::verbose() > 0 || settings::debug();
-        CONDITIONAL_PRINT_HERE(
-            _cond, "Ring buffer failed to truncate the file descriptor %i\n", m_fd);
+        ::free(m_ptr);
     }
-    // Unmap the mapped virtual memmory.
-    auto ret = munmap(m_ptr, m_size * 2);
-    // Close the backing file.
-    close(m_fd);
-    if(ret)
-        perror("munmap");
+    else
+    {
+        // Truncate file to zero, to avoid writing back memory to file, on munmap.
+        if(ftruncate(m_fd, 0) < 0)
+        {
+            bool _cond = settings::verbose() > 0 || settings::debug();
+            CONDITIONAL_PRINT_HERE(
+                _cond, "Ring buffer failed to truncate the file descriptor %i\n", m_fd);
+        }
+        // Unmap the mapped virtual memmory.
+        auto ret = munmap(m_ptr, m_size * 2);
+        // Close the backing file.
+        close(m_fd);
+        if(ret)
+            perror("munmap");
+    }
 #else
     ::free(m_ptr);
 #endif
+    m_ptr = nullptr;
+}
+
+TIMEMORY_RING_BUFFER_INLINE
+void
+ring_buffer::set_use_mmap(bool _v)
+{
+    m_use_mmap          = _v;
+    m_use_mmap_explicit = true;
 }
 
 }  // namespace base

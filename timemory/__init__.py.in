@@ -163,6 +163,7 @@ else:
         from . import mpi_support as mpi_support
         from . import mpi as mpi
         from . import util as util
+        from . import tools as tools
         from . import bundle as bundle
         from . import options as options
         from . import units as units
@@ -180,6 +181,7 @@ else:
         sys.modules["timemory.mpi_support"] = mpi_support
         sys.modules["timemory.mpi"] = mpi
         sys.modules["timemory.util"] = util
+        sys.modules["timemory.tools"] = tools
         sys.modules["timemory.bundle"] = bundle
         sys.modules["timemory.options"] = options
         sys.modules["timemory.units"] = units

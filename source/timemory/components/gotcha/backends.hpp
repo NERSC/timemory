@@ -47,65 +47,6 @@ namespace component
 {
 //
 //======================================================================================//
-//
-class gotcha_suppression
-{
-private:
-    template <size_t Nt, typename Components, typename Differentiator>
-    friend struct gotcha;
-
-    template <typename Tp, typename Ret>
-    struct gotcha_invoker;
-
-    template <typename Tp>
-    friend struct operation::init_storage;
-
-    template <size_t, typename Tp>
-    friend struct user_bundle;
-
-    friend struct opaque;
-
-    static bool& get()
-    {
-        static thread_local bool _instance = false;
-        return _instance;
-    }
-
-public:
-    struct auto_toggle
-    {
-        explicit auto_toggle(bool& _value, bool _if_equal = false)
-        : m_value(_value)
-        , m_if_equal(_if_equal)
-        {
-            if(m_value == m_if_equal)
-            {
-                m_value      = !m_value;
-                m_did_toggle = true;
-            }
-        }
-
-        ~auto_toggle()
-        {
-            if(m_value != m_if_equal && m_did_toggle)
-            {
-                m_value = !m_value;
-            }
-        }
-
-        auto_toggle(const auto_toggle&) = delete;
-        auto_toggle(auto_toggle&&)      = delete;
-        auto_toggle& operator=(const auto_toggle&) = delete;
-        auto_toggle& operator=(auto_toggle&&) = delete;
-
-    private:
-        bool& m_value;
-        bool  m_if_equal;
-        bool  m_did_toggle = false;
-    };
-};
-//
-//======================================================================================//
 ///
 /// \struct tim::component::gotcha_invoker
 ///

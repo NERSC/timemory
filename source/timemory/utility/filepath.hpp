@@ -31,21 +31,9 @@
 
 #pragma once
 
+#include "timemory/macros/os.hpp"
+
 #include <string>
-
-//--------------------------------------------------------------------------------------//
-// base operating system
-
-#if defined(_WIN32) || defined(_WIN64)
-#    if !defined(TIMEMORY_WINDOWS)
-#        define TIMEMORY_WINDOWS
-#    endif
-#elif defined(__APPLE__) || defined(__MACH__) || defined(__linux__) ||                   \
-    defined(__linux) || defined(linux) || defined(__gnu_linux__)
-#    if !defined(TIMEMORY_UNIX)
-#        define TIMEMORY_UNIX
-#    endif
-#endif
 
 //--------------------------------------------------------------------------------------//
 
