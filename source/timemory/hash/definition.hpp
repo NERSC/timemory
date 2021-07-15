@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <iomanip>
 #include <iosfwd>
+#include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -114,14 +115,11 @@ TIMEMORY_HASH_LINKAGE(std::string)
 get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
                     hash_value_t _hash_id)
 {
-    auto _map_itr   = _hash_map->find(_hash_id);
-    auto _alias_itr = _hash_alias->find(_hash_id);
-
+    auto _map_itr = _hash_map->find(_hash_id);
     if(_map_itr != _hash_map->end())
-    {
         return _map_itr->second;
-    }
 
+    auto _alias_itr = _hash_alias->find(_hash_id);
     if(_alias_itr != _hash_alias->end())
     {
         _map_itr = _hash_map->find(_alias_itr->second);
@@ -129,24 +127,84 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
             return _map_itr->second;
     }
 
+    for(const auto& aitr : *_hash_alias)
+    {
+        if(_hash_id == aitr.first)
+        {
+            for(const auto& mitr : *_hash_map)
+            {
+                if(mitr.first == aitr.second)
+                {
+                    fprintf(stderr,
+                            "[%s@%s:%i]> found hash identifier %llu in alias map via "
+                            "iteration after uomap->find failed! This might be an ABI or "
+                            "an integer overflow problem\n",
+                            __FUNCTION__,
+                            TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,
+                            (unsigned long long) _hash_id);
+                    return mitr.second;
+                }
+            }
+        }
+    }
+
+    for(const auto& mitr : *_hash_map)
+    {
+        if(_hash_id == mitr.first)
+        {
+            fprintf(stderr,
+                    "[%s@%s:%i]> found hash identifier %llu in hash map via iteration "
+                    "after uomap->find failed! This might be an ABI or an integer "
+                    "overflow problem\n",
+                    __FUNCTION__, TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),
+                    __LINE__, (unsigned long long) _hash_id);
+            return mitr.second;
+        }
+    }
+
     if(_hash_id > 0)
     {
         std::stringstream ss;
         ss << "Error! node with hash " << _hash_id
-           << " does not have an associated string!";
-#    if defined(DEBUG)
-        ss << "\nHash map:\n";
-        auto _w = 30;
-        for(const auto& itr : *_hash_map)
-            ss << "    " << std::setw(_w) << itr.first << " : " << (itr.second) << "\n";
-        if(_hash_alias->size() > 0)
+           << " does not have an associated string!\n";
+        static std::set<hash_value_t> _reported{};
+        if(_reported.count(_hash_id) == 0)
         {
-            ss << "Alias hash map:\n";
-            for(const auto& itr : *_hash_alias)
-                ss << "    " << std::setw(_w) << itr.first << " : " << itr.second << "\n";
+            _reported.emplace(_hash_id);
+            bool _found_direct = (_hash_map->find(_hash_id) != _hash_map->end());
+            ss << "    Found in map       : " << std::boolalpha << _found_direct << '\n';
+            bool _found_alias = (_hash_alias->find(_hash_id) != _hash_alias->end());
+            ss << "    Found in alias map : " << std::boolalpha << _found_alias << '\n';
+            if(_found_alias)
+            {
+                auto aitr = _hash_alias->find(_hash_id);
+                ss << "    Found aliasing : " << aitr->first << " -> " << aitr->second
+                   << '\n';
+                auto mitr = _hash_map->find(aitr->second);
+                if(mitr != _hash_map->end())
+                    ss << "    Found mapping  : " << mitr->first << " -> " << mitr->second
+                       << '\n';
+                else
+                    ss << "    Missing mapping\n";
+            }
+            else
+            {
+                ss << "    Missing aliasing\n";
+            }
+            ss << "    Hash map:\n";
+            auto _w = 20;
+            for(const auto& itr : *_hash_map)
+                ss << "        " << std::setw(_w) << itr.first << " : " << (itr.second)
+                   << "\n";
+            if(_hash_alias->size() > 0)
+            {
+                ss << "    Alias hash map:\n";
+                for(const auto& itr : *_hash_alias)
+                    ss << "        " << std::setw(_w) << itr.first << " : " << itr.second
+                       << "\n";
+            }
+            fprintf(stderr, "%s", ss.str().c_str());
         }
-#    endif
-        fprintf(stderr, "%s\n", ss.str().c_str());
     }
 
     return std::string("unknown-hash=") + std::to_string(_hash_id);

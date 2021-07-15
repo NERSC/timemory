@@ -81,6 +81,9 @@ def build_doxy_docs():
             "-DENABLE_DOXYGEN_LATEX_DOCS=OFF",
             "-DENABLE_DOXYGEN_MAN_DOCS=OFF",
             "-DTIMEMORY_BUILD_KOKKOS_TOOLS=ON",
+            "-DTIMEMORY_BUILD_C=OFF",
+            "-DTIMEMORY_BUILD_CUDA=OFF",
+            "-DTIMEMORY_BUILD_FORTRAN=OFF",
             _srcdir,
         ]
     )

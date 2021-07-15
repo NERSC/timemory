@@ -792,8 +792,11 @@ storage<Type, true>::_data()
                 m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
         }
 
-        if(m_node_ids.empty())
-            m_node_ids[0][0] = m_graph_data_instance->current();
+        if(m_node_ids.empty() && m_graph_data_instance)
+        {
+            m_node_ids.emplace(0, iterator_hash_submap_t{});
+            m_node_ids.at(0).emplace(0, m_graph_data_instance->current());
+        }
     }
 
     m_initialized = true;
@@ -822,10 +825,13 @@ storage<Type, true>::merge()
         l.lock();
 
     for(auto& itr : m_children)
-    {
-        if(itr != this)
-            itr->data().clear();
-    }
+        singleton_t::remove(itr);
+
+    // for(auto& itr : m_children)
+    // {
+    //     if(itr != this)
+    //         itr->data().clear();
+    // }
 
     stack_clear();
 }

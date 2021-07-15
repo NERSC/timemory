@@ -320,6 +320,11 @@ struct gotcha
         if(!_data.filled)
         {
             auto _label = demangle(_func);
+
+            // ensure the hash to string pairing is stored
+            storage_type::instance()->add_hash_id(_func);
+            storage_type::instance()->add_hash_id(_label);
+
             if(_tool.length() > 0 && _label.find(_tool + "/") != 0)
             {
                 _label = _tool + "/" + _label;
@@ -886,6 +891,26 @@ private:
 
     //----------------------------------------------------------------------------------//
 
+    static inline void toggle_suppress_on(bool* _bsuppress, bool& _did)
+    {
+        if(_bsuppress && *_bsuppress == false)
+        {
+            *(_bsuppress) = true;
+            _did          = true;
+        }
+    }
+
+    static inline void toggle_suppress_off(bool* _bsuppress, bool& _did)
+    {
+        if(_bsuppress && _did == true && *_bsuppress == true)
+        {
+            *(_bsuppress) = false;
+            _did          = false;
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <size_t N, typename Ret, typename... Args>
     static TIMEMORY_NOINLINE Ret wrap(Args... _args)
     {
@@ -893,22 +918,34 @@ private:
 #if defined(TIMEMORY_USE_GOTCHA)
         auto& _data = get_data()[N];
 
-        // PRINT_HERE("%s", _data.tool_id.c_str());
-
         static constexpr bool void_operator = std::is_same<operator_type, void>::value;
         static_assert(void_operator, "operator_type should be void!");
+        // protects against TLS calling malloc when malloc is wrapped
+        static bool _protect_tls_alloc = false;
 
-        typedef Ret (*func_t)(Args...);
+        using func_t = Ret (*)(Args...);
         func_t _orig = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
-        if(_data.is_finalized)
-            return (_orig) ? (*_orig)(_args...) : Ret{};
+        if(!_orig)
+        {
+            PRINT_HERE("nullptr to original function! wrappee: %s",
+                       _data.tool_id.c_str());
+            return Ret{};
+        }
 
+        if(_data.is_finalized || _protect_tls_alloc)
+            return (*_orig)(_args...);
+
+        _protect_tls_alloc = true;
         auto _suppress =
             gotcha_suppression::get() || (_data.suppression && *_data.suppression);
+        _protect_tls_alloc = false;
+
         if(!_data.ready || _suppress)
         {
+            _protect_tls_alloc                  = true;
             static thread_local bool _recursive = false;
+            _protect_tls_alloc                  = false;
             if(!_recursive && _data.debug && *_data.debug)
             {
                 _recursive = true;
@@ -921,62 +958,40 @@ private:
                 fflush(stderr);
                 _recursive = false;
             }
-            return (_orig) ? (*_orig)(_args...) : Ret{};
+            return (*_orig)(_args...);
         }
 
         bool did_data_toggle = false;
         bool did_glob_toggle = false;
 
-        auto toggle_suppress_on = [](bool* _bsuppress, bool& _did) {
-            if(_bsuppress && *_bsuppress == false)
-            {
-                *(_bsuppress) = true;
-                _did          = true;
-            }
-        };
+        // make sure the function is not recursively entered
+        // (important for allocation-based wrappers)
+        _data.ready = false;
+        toggle_suppress_on(_data.suppression, did_data_toggle);
 
-        auto toggle_suppress_off = [](bool* _bsuppress, bool& _did) {
-            if(_bsuppress && _did == true && *_bsuppress == true)
-            {
-                *(_bsuppress) = false;
-                _did          = false;
-            }
-        };
+        // bundle_type is always: component_{tuple,list,bundle}
+        toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
+        //
+        bundle_type _obj{ _data.tool_id };
+        _obj.construct(_args...);
+        _obj.start();
+        _obj.audit(_data, audit::incoming{}, _args...);
+        toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
-        if(_orig)
-        {
-            // make sure the function is not recursively entered
-            // (important for allocation-based wrappers)
-            _data.ready = false;
-            toggle_suppress_on(_data.suppression, did_data_toggle);
+        _data.ready = true;
+        Ret _ret    = invoke<bundle_type>(_obj, _orig, std::forward<Args>(_args)...);
+        _data.ready = false;
 
-            // bundle_type is always: component_{tuple,list,bundle}
-            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-            //
-            bundle_type _obj{ _data.tool_id };
-            _obj.construct(_args...);
-            _obj.start();
-            _obj.audit(_data, audit::incoming{}, _args...);
-            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+        toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
+        _obj.audit(_data, audit::outgoing{}, _ret);
+        _obj.stop();
+        toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
-            _data.ready = true;
-            Ret _ret    = invoke<bundle_type>(_obj, _orig, std::forward<Args>(_args)...);
-            _data.ready = false;
+        // allow re-entrance into wrapper
+        toggle_suppress_off(_data.suppression, did_data_toggle);
+        _data.ready = true;
 
-            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-            _obj.audit(_data, audit::outgoing{}, _ret);
-            _obj.stop();
-            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
-
-            // allow re-entrance into wrapper
-            toggle_suppress_off(_data.suppression, did_data_toggle);
-            _data.ready = true;
-
-            return _ret;
-        }
-
-        if(_data.debug && *_data.debug)
-            PRINT_HERE("%s", "nullptr to original function!");
+        return _ret;
 #else
         consume_parameters(_args...);
         PRINT_HERE("%s", "should not be here!");
@@ -993,25 +1008,37 @@ private:
 #if defined(TIMEMORY_USE_GOTCHA)
         auto& _data = get_data()[N];
 
-        // PRINT_HERE("%s", _data.tool_id.c_str());
-
         static constexpr bool void_operator = std::is_same<operator_type, void>::value;
         static_assert(void_operator, "operator_type should be void!");
+        // protects against TLS calling malloc when malloc is wrapped
+        static bool _protect_tls_alloc = false;
 
-        auto _orig = (void (*)(Args...)) gotcha_get_wrappee(_data.wrappee);
+        using func_t = void (*)(Args...);
+        auto _orig   = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
-        if(_data.is_finalized)
+        if(!_orig)
         {
-            if(_orig)
-                (*_orig)(_args...);
+            PRINT_HERE("nullptr to original function! wrappee: %s",
+                       _data.tool_id.c_str());
             return;
         }
 
+        if(_data.is_finalized || _protect_tls_alloc)
+        {
+            (*_orig)(_args...);
+            return;
+        }
+
+        _protect_tls_alloc = true;
         auto _suppress =
             gotcha_suppression::get() || (_data.suppression && *_data.suppression);
+        _protect_tls_alloc = false;
+
         if(!_data.ready || _suppress)
         {
+            _protect_tls_alloc                  = true;
             static thread_local bool _recursive = false;
+            _protect_tls_alloc                  = false;
             if(!_recursive && _data.debug && *_data.debug)
             {
                 _recursive = true;
@@ -1024,29 +1051,12 @@ private:
                 fflush(stderr);
                 _recursive = false;
             }
-            if(_orig)
-                (*_orig)(_args...);
+            (*_orig)(_args...);
             return;
         }
 
         bool did_data_toggle = false;
         bool did_glob_toggle = false;
-
-        auto toggle_suppress_on = [](bool* _bsuppress, bool& _did) {
-            if(_bsuppress && *_bsuppress == false)
-            {
-                *(_bsuppress) = true;
-                _did          = true;
-            }
-        };
-
-        auto toggle_suppress_off = [](bool* _bsuppress, bool& _did) {
-            if(_bsuppress && _did == true && *_bsuppress == true)
-            {
-                *(_bsuppress) = false;
-                _did          = false;
-            }
-        };
 
         // make sure the function is not recursively entered
         // (important for allocation-based wrappers)
@@ -1054,33 +1064,25 @@ private:
         toggle_suppress_on(_data.suppression, did_data_toggle);
         toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
 
-        if(_orig)
-        {
-            //
-            bundle_type _obj{ _data.tool_id };
-            _obj.construct(_args...);
-            _obj.start();
-            _obj.audit(_data, audit::incoming{}, _args...);
-            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+        //
+        bundle_type _obj{ _data.tool_id };
+        _obj.construct(_args...);
+        _obj.start();
+        _obj.audit(_data, audit::incoming{}, _args...);
+        toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
-            _data.ready = true;
-            invoke<bundle_type>(_obj, _orig, std::forward<Args>(_args)...);
-            _data.ready = false;
+        _data.ready = true;
+        invoke<bundle_type>(_obj, _orig, std::forward<Args>(_args)...);
+        _data.ready = false;
 
-            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-            _obj.audit(_data, audit::outgoing{});
-            _obj.stop();
-        }
-        else if(_data.debug && *_data.debug)
-        {
-            PRINT_HERE("%s", "nullptr to original function!");
-        }
+        toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
+        _obj.audit(_data, audit::outgoing{});
+        _obj.stop();
 
         // allow re-entrance into wrapper
         toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
         toggle_suppress_off(_data.suppression, did_data_toggle);
         _data.ready = true;
-
 #else
         consume_parameters(_args...);
         PRINT_HERE("%s", "should not be here!");

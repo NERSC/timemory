@@ -39,6 +39,10 @@ In other words, `"TIMEMORY_FLAT_PROFILE=ON"` will not be applied to the compiler
 to enable flat profiling for the compiler instrumentation, set `"TIMEMORY_COMPILER_FLAT_PROFILE=ON"`,
 and so on for `"TIMEMORY_COMPILER_OUTPUT_PATH=..."`, etc.
 
+> **NOTE:** Environment variables `TIMEMORY_COMPILER_MAX_DEPTH`, `TIMEMORY_COMPILER_THROTTLE_COUNT`, and `TIMEMORY_COMPILER_THROTTLE_VALUE`
+> can be very useful for reducing the overhead of the instrumentation. For more information, see the descriptions provided via
+> `timemory-avail -Sd -r 'THROTTLE|MAX_DEPTH'`.
+
 ## Build
 
 Timemory provides a `timemory::timemory-compiler-instrument` target in CMake which provides the necessary

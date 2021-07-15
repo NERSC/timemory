@@ -125,7 +125,6 @@ print<Tp, true>::print(storage_type* _data, const settings_t& _settings)
     node_results = data->dmp_get();
     if(tree_output())
         node_tree = data->dmp_get(node_tree);
-    data_concurrency = data->instance_count().load();
     dmp::barrier();
 
     settings::indent_width<Tp, 0>(Tp::get_width());
@@ -247,12 +246,6 @@ print<Tp, true>::setup()
         write_stream(diff_stream, node_delta);
         std::stringstream ss;
         ss << description << " vs. " << json_inpfname;
-        if(input_concurrency != data_concurrency)
-        {
-            auto delta_conc = (data_concurrency - input_concurrency);
-            ss << " with " << delta_conc << " " << ((delta_conc > 0) ? "more" : "less")
-               << "threads";
-        }
         diff_stream->set_banner(ss.str());
     }
 }
@@ -364,7 +357,6 @@ print<Tp, true>::update_data()
     node_results = data->dmp_get();
     if(tree_output())
         node_tree = data->dmp_get(node_tree);
-    data_concurrency = data->instance_count().load();
     dmp::barrier();
 
     if(m_settings->get_debug())
@@ -401,12 +393,6 @@ print<Tp, true>::update_data()
         write_stream(diff_stream, node_delta);
         std::stringstream ss;
         ss << description << " vs. " << json_inpfname;
-        if(input_concurrency != data_concurrency)
-        {
-            auto delta_conc = (data_concurrency - input_concurrency);
-            ss << " with " << delta_conc << " " << ((delta_conc > 0) ? "more" : "less")
-               << "threads";
-        }
         diff_stream->set_banner(ss.str());
     }
 
@@ -445,7 +431,7 @@ print<Tp, true>::update_data()
 //
 template <typename Tp>
 void
-print<Tp, true>::print_json(const std::string& outfname, result_type& results, int64_t)
+print<Tp, true>::print_json(const std::string& outfname, result_type& results)
 {
     using policy_type = policy::output_archive_t<Tp>;
     if(outfname.length() > 0)

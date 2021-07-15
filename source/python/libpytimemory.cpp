@@ -237,7 +237,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             auto _exit_action = [=](int nsig) {
                 if(_master_manager)
                 {
-                    std::cout << "Finalizing after signal: " << nsig << " :: "
+                    std::cerr << "Finalizing after signal: " << nsig << " :: "
                               << tim::signal_settings::str(
                                      static_cast<tim::sys_signal>(nsig))
                               << std::endl;
@@ -470,7 +470,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         using tuple_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
         auto json_str    = manager_t::get_storage<tuple_type>::serialize(_types);
         if(tim::settings::debug())
-            std::cout << "JSON CLASSIC:\n" << json_str << std::endl;
+            std::cerr << "JSON CLASSIC:\n" << json_str << std::endl;
         return json_str;
     };
     //----------------------------------------------------------------------------------//
@@ -485,7 +485,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             oa->finishNode();
         }
         if(tim::settings::debug())
-            std::cout << "JSON HIERARCHY:\n" << ss.str() << std::endl;
+            std::cerr << "JSON HIERARCHY:\n" << ss.str() << std::endl;
         return ss.str();
     };
     //----------------------------------------------------------------------------------//
@@ -797,6 +797,151 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("stop_mallocp", &timemory_stop_mallocp,
             "Deactivate Memory Allocation profiling", py::arg("id"));
+    //----------------------------------------------------------------------------------//
+    enum PyProfilingIndex
+    {
+        PyProfilingIndex_MPIP = 0,
+        PyProfilingIndex_OMPT,
+        PyProfilingIndex_NCCLP,
+        PyProfilingIndex_MALLOCP,
+        PyProfilingIndex_END
+    };
+    //----------------------------------------------------------------------------------//
+    using PyProfilingIndex_array_t = std::array<uint64_t, PyProfilingIndex_END>;
+    using strset_t                 = std::set<std::string>;
+    //----------------------------------------------------------------------------------//
+    std::map<int, strset_t> PyProfilingIndex_names = {
+        { PyProfilingIndex_MPIP, strset_t{ "mpip", "mpi" } },
+        { PyProfilingIndex_OMPT, strset_t{ "ompt", "openmp" } },
+        { PyProfilingIndex_NCCLP, strset_t{ "ncclp", "nccl" } },
+        { PyProfilingIndex_MALLOCP, strset_t{ "mallocp", "malloc", "memory" } }
+    };
+    //----------------------------------------------------------------------------------//
+    tim.def(
+        "start_function_wrappers",
+        [PyProfilingIndex_names](py::args _args, py::kwargs _kwargs) {
+            PyProfilingIndex_array_t _ret{};
+            _ret.fill(0);
+
+            if(!_args && !_kwargs)
+                return _ret;
+
+            std::map<std::string, bool> _data{};
+            auto                        _get_str = [](py::handle itr) {
+                return tim::settings::tolower(itr.cast<std::string>());
+            };
+
+            if(_args)
+            {
+                for(auto itr : _args)
+                    _data.emplace(_get_str(itr), true);
+            }
+
+            if(_kwargs)
+            {
+                for(auto itr : _kwargs)
+                    _data.emplace(_get_str(itr.first), itr.second.cast<bool>());
+            }
+
+            for(const auto& itr : _data)
+            {
+                const auto& _key   = itr.first;
+                const auto& _value = itr.second;
+                DEBUG_PRINT_HERE("starting %s : %s", _key.c_str(),
+                                 (_value) ? "yes" : "no");
+                if(PyProfilingIndex_names.at(PyProfilingIndex_MPIP).count(_key) > 0)
+                {
+                    if(_value)
+                        _ret.at(PyProfilingIndex_MPIP) = timemory_start_mpip();
+                }
+                else if(PyProfilingIndex_names.at(PyProfilingIndex_OMPT).count(_key) > 0)
+                {
+                    if(_value)
+                        _ret.at(PyProfilingIndex_OMPT) = timemory_start_ompt();
+                }
+                else if(PyProfilingIndex_names.at(PyProfilingIndex_NCCLP).count(_key) > 0)
+                {
+                    if(_value)
+                        _ret.at(PyProfilingIndex_NCCLP) = timemory_start_ncclp();
+                }
+                else if(PyProfilingIndex_names.at(PyProfilingIndex_MALLOCP).count(_key) >
+                        0)
+                {
+                    if(_value)
+                        _ret.at(PyProfilingIndex_MALLOCP) = timemory_start_mallocp();
+                }
+                else
+                {
+                    std::stringstream _msg{};
+                    _msg << "Error! Unknown profiling mode: \"" << _key
+                         << "\". Acceptable identifiers: ";
+                    std::stringstream _opts{};
+                    for(const auto& pitr : PyProfilingIndex_names)
+                    {
+                        for(const auto& eitr : pitr.second)
+                            _opts << ", " << eitr;
+                    }
+                    _msg << _opts.str().substr(2);
+                    throw std::runtime_error(_msg.str());
+                }
+            }
+
+            if(tim::settings::debug())
+            {
+                std::cerr << "[start_function_wrappers]> values :";
+                for(auto itr : _ret)
+                    std::cerr << " " << itr;
+                std::cerr << std::endl;
+            }
+            return _ret;
+        },
+        "Start profiling MPI (mpip), OpenMP (ompt), NCCL (ncclp), and/or memory "
+        "allocations (mallocp). Example: start_function_wrappers(mpi=True, ...)");
+    //----------------------------------------------------------------------------------//
+    tim.def("stop_function_wrappers",
+            [PyProfilingIndex_names](PyProfilingIndex_array_t _arg) {
+                auto _print_arg = [=, &_arg](const std::string& _label) {
+                    std::cerr << "[stop_function_wrappers|" << _label << "]> values :";
+                    for(auto itr : _arg)
+                        std::cerr << " " << itr;
+                    std::cerr << std::endl;
+                };
+                auto _print_entry = [=, &_arg](uint64_t _idx) {
+                    std::cerr << "stopping " << (*PyProfilingIndex_names.at(_idx).begin())
+                              << " : " << _arg.at(_idx) << std::endl;
+                };
+
+                if(tim::settings::debug())
+                    _print_arg("input");
+                for(size_t i = 0; i < _arg.size(); ++i)
+                {
+                    if(tim::settings::debug())
+                        _print_entry(i);
+                    switch(i)
+                    {
+                        case PyProfilingIndex_MPIP:
+                            _arg.at(i) = timemory_stop_mpip(_arg.at(i));
+                            break;
+                        case PyProfilingIndex_OMPT:
+                            _arg.at(i) = timemory_stop_ompt(_arg.at(i));
+                            break;
+                        case PyProfilingIndex_NCCLP:
+                            _arg.at(i) = timemory_stop_ncclp(_arg.at(i));
+                            break;
+                        case PyProfilingIndex_MALLOCP:
+                            _arg.at(i) = timemory_stop_mallocp(_arg.at(i));
+                            break;
+                        case PyProfilingIndex_END: break;
+                    }
+                }
+                if(tim::settings::debug())
+                    _print_arg("return");
+                return _arg;
+            },
+            "Stop profiling MPI (mpip), OpenMP (ompt), NCCL (ncclp), and/or memory "
+            "allocations (mallocp). Provide return value from "
+            "start_function_wrappers(mpi=True, "
+            "...)");
 
     //==================================================================================//
     //
@@ -932,17 +1077,17 @@ PYBIND11_MODULE(libpytimemory, tim)
 
         auto _handle_data = [&](std::string str) {
             if(tim::settings::debug() || tim::settings::verbose() > 2)
-                std::cout << "[timemory-socket][server]> received: " << str << std::endl;
+                std::cerr << "[timemory-socket][server]> received: " << str << std::endl;
             _results.emplace_back(std::move(str));
         };
 
         if(tim::settings::debug() || tim::settings::verbose() > 2)
-            std::cout << "[timemory-socket][server]> started listening..." << std::endl;
+            std::cerr << "[timemory-socket][server]> started listening..." << std::endl;
 
         tim::socket::manager{}.listen(_name, _port, _handle_data, _max_packets);
 
         if(tim::settings::debug() || tim::settings::verbose() > 2)
-            std::cout << "[timemory-socket][server]> stopped listening..." << std::endl;
+            std::cerr << "[timemory-socket][server]> stopped listening..." << std::endl;
 
         return _results;
     };
