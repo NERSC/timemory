@@ -280,7 +280,9 @@ if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
         list(REMOVE_DUPLICATES _PYBIND11_INCLUDE_DIRS)
     endif()
     timemory_target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
-    target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
+    if(NOT APPLE)
+        target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
+    endif()
     target_include_directories(timemory-python SYSTEM INTERFACE
         ${PYTHON_INCLUDE_DIRS}
         ${PYBIND11_INCLUDE_DIRS}
