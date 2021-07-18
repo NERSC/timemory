@@ -1,5 +1,11 @@
 # timemory
 
+## Version 3.2.3
+
+> Date: Sun Jul 18 05:53:34 2021 -0500
+
+- Fixes: Fatal Python error: PyMUTEX_LOCK(gil->mutex) failed on macOS
+
 ## Version 3.2.2
 
 > Date: Wed Jul 14 20:42:29 2021 -0500
