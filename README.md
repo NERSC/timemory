@@ -16,13 +16,19 @@
 
 [timemory Tutorials](https://github.com/NERSC/timemory-tutorials)
 
+- [ECP 2021 Tutorial Day 1 (YouTube)](https://www.youtube.com/watch?v=K1Pazcw7zVo)
+
+- [ECP 2021 Tutorial Day 2 (YouTube)](https://www.youtube.com/watch?v=-zIpZDiwrmI)
+
 [timemory Wiki](https://github.com/NERSC/timemory/wiki)
 
-|        |                                                   |
-| ------ | ------------------------------------------------- |
-| GitHub | `git clone https://github.com/NERSC/timemory.git` |
-| PyPi   | `pip install timemory`                            |
-| Spack  | `spack install timemory`                          |
+|             |                                                   |
+| ----------- | ------------------------------------------------- |
+| GitHub      | `git clone https://github.com/NERSC/timemory.git` |
+| PyPi        | `pip install timemory`                            |
+| Spack       | `spack install timemory`                          |
+| conda-forge | `conda install -c conda-forge timemory`           |
+|             | [![Conda Recipe](https://img.shields.io/badge/recipe-timemory-green.svg) ![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/timemory.svg) ![Conda Version](https://img.shields.io/conda/vn/conda-forge/timemory.svg) ![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/timemory.svg)](https://anaconda.org/conda-forge/timemory) |
 
 ## Purpose
 
@@ -206,6 +212,271 @@ storage from the equation and, in doing so, transforms timemory into a toolkit f
     - [timemory-ompt](source/tools/timemory-ompt/README.md): OpenMP Profiling Library
     - [timemory-compiler-instrument](source/tools/timemory-compiler-instrument/README.md): Compiler instrumentation Library
     - [kokkos-connector](source/tools/kokkos-connector/README.md): Kokkos Profiling Libraries
+
+## Samples
+
+Various macros are defined for C in [source/timemory/compat/timemory_c.h](source/timemory/timemory.h)
+and [source/timemory/variadic/macros.hpp](source/timemory/variadic/macros.hpp). Numerous samples of
+their usage can be found in the examples.
+
+### Sample C++ Template API
+
+```cpp
+#include "timemory/timemory.hpp"
+
+namespace comp = tim::component;
+using namespace tim;
+
+// specific set of components
+using specific_t = component_tuple<comp::wall_clock, comp::cpu_clock>;
+using generic_t  = component_tuple<comp::user_global_bundle>;
+
+int
+main(int argc, char** argv)
+{
+    // configure default settings
+    settings::flat_profile() = true;
+    settings::timing_units() = "msec";
+
+    // initialize with cmd-line
+    timemory_init(argc, argv);
+    
+    // add argparse support
+    timemory_argparse(&argc, &argv);
+
+    // create a region "main"
+    specific_t m{ "main" };
+    m.start();
+    m.stop();
+
+    // pause and resume collection globally
+    settings::enabled() = false;
+    specific_t h{ "hidden" };
+    h.start().stop();
+    settings::enabled() = true;
+
+    // Add peak_rss component to specific_t
+    mpl::push_back_t<specific_t, comp::peak_rss> wprss{ "with peak_rss" };
+    
+    // create region collecting only peak_rss
+    component_tuple<comp::peak_rss> oprss{ "only peak_rss" };
+
+    // convert component_tuple to a type that starts/stops upon construction/destruction
+    {
+        scope::config _scope{};
+        if(true)  _scope += scope::flat{};
+        if(false) _scope += scope::timeline{};
+        convert_t<specific_t, auto_tuple<>> scoped{ "scoped start/stop + flat", _scope };
+        // will yield auto_tuple<comp::wall_clock, comp::cpu_clock>
+    }
+
+    // configure the generic bundle via set of strings
+    runtime::configure<comp::user_global_bundle>({ "wall_clock", "peak_rss" });
+    // configure the generic bundle via set of enumeration ids
+    runtime::configure<comp::user_global_bundle>({ TIMEMORY_WALL_CLOCK, TIMEMORY_CPU_CLOCK });
+    // configure the generic bundle via component instances
+    comp::user_global_bundle::configure<comp::page_rss, comp::papi_vector>();
+    
+    generic_t g{ "generic", quirk::config<quirk::auto_start>{} };
+    g.stop();
+
+    // Output the results
+    timemory_finalize();
+    return 0;
+}
+```
+
+### Sample C / C++ Library API
+
+```cpp
+#include "timemory/library.h"
+#include "timemory/timemory.h"
+
+int
+main(int argc, char** argv)
+{
+    // configure settings
+    int overwrite       = 0;
+    int update_settings = 1;
+    // default to flat-profile
+    timemory_set_environ("TIMEMORY_FLAT_PROFILE", "ON", overwrite, update_settings);
+    // force timing units
+    overwrite = 1;
+    timemory_set_environ("TIMEMORY_TIMING_UNITS", "msec", overwrite, update_settings);
+
+    // initialize with cmd-line
+    timemory_init_library(argc, argv);
+
+    // check if inited, init with name
+    if(!timemory_library_is_initialized())
+        timemory_named_init_library("ex-c");
+
+    // define the default set of components
+    timemory_set_default("wall_clock, cpu_clock");
+
+    // create a region "main"
+    timemory_push_region("main");
+    timemory_pop_region("main");
+
+    // pause and resume collection globally
+    timemory_pause();
+    timemory_push_region("hidden");
+    timemory_pop_region("hidden");
+    timemory_resume();
+
+    // Add/remove component(s) to the current set of components
+    timemory_add_components("peak_rss");
+    timemory_remove_components("peak_rss");
+
+    // get an identifier for a region and end it
+    uint64_t idx = timemory_get_begin_record("indexed");
+    timemory_end_record(idx);
+
+    // assign an existing identifier for a region
+    timemory_begin_record("indexed/2", &idx);
+    timemory_end_record(idx);
+
+    // create region collecting a specific set of data
+    timemory_begin_record_enum("enum", &idx, TIMEMORY_PEAK_RSS, TIMEMORY_COMPONENTS_END);
+    timemory_end_record(idx);
+
+    timemory_begin_record_types("types", &idx, "peak_rss");
+    timemory_end_record(idx);
+
+    // replace current set of components and then restore previous set
+    timemory_push_components("page_rss");
+    timemory_pop_components();
+
+    timemory_push_components_enum(2, TIMEMORY_WALL_CLOCK, TIMEMORY_CPU_CLOCK);
+    timemory_pop_components();
+
+    // Output the results
+    timemory_finalize_library();
+    return 0;
+}
+```
+
+### Sample Fortran API
+
+```fortran
+program fortran_example
+    use timemory
+    use iso_c_binding, only : C_INT64_T
+    implicit none
+    integer(C_INT64_T) :: idx
+
+    ! initialize with explicit name
+    call timemory_init_library("ex-fortran")
+
+    ! initialize with name extracted from get_command_argument(0, ...)
+    ! call timemory_init_library("")
+
+    ! define the default set of components
+    call timemory_set_default("wall_clock, cpu_clock")
+
+    ! Start region "main"
+    call timemory_push_region("main")
+
+    ! Add peak_rss to the current set of components
+    call timemory_add_components("peak_rss")
+
+    ! Nested region "inner" nested under "main"
+    call timemory_push_region("inner")
+
+    ! End the "inner" region
+    call timemory_pop_region("inner")
+
+    ! remove peak_rss
+    call timemory_remove_components("peak_rss")
+
+    ! begin a region and get an identifier
+    idx = timemory_get_begin_record("indexed")
+
+    ! replace current set of components
+    call timemory_push_components("page_rss")
+
+    ! Nested region "inner" with only page_rss components
+    call timemory_push_region("inner (pushed)")
+
+    ! Stop "inner" region with only page_rss components
+    call timemory_pop_region("inner (pushed)")
+
+    ! restore previous set of components
+    call timemory_pop_components()
+
+    ! end the "indexed" region
+    call timemory_end_record(idx)
+
+    ! End "main"
+    call timemory_pop_region("main")
+
+    ! Output the results
+    call timemory_finalize_library()
+
+end program fortran_example
+```
+
+### Sample Python API
+
+#### Decorator
+
+```python
+from timemory.bundle import marker
+
+@marker(["cpu_clock", "peak_rss"])
+def foo():
+    pass
+```
+
+#### Context Manager
+
+```python
+from timemory.profiler import profile
+
+def bar():
+    with profile(["wall_clock", "cpu_util"]):
+        foo()
+```
+
+#### Individual Components
+
+```python
+from timemory.component import WallClock
+
+def spam():
+
+    wc = WallClock("spam")
+    wc.start()
+
+    bar()
+
+    wc.stop()
+    data = wc.get()
+    print(data)
+```
+
+#### Argparse Support
+
+```python
+import argparse
+
+parser = argparse.ArgumentParser("example")
+# ...
+timemory.add_arguments(parser)
+
+args = parser.parse_args()
+```
+
+#### Component Storage
+
+```python
+from timemory.storage import WallClockStorage
+
+# data for current rank
+data = WallClockStorage.get()
+# combined data on rank zero but all ranks must call it
+dmp_data = WallClockStorage.dmp_get()
+```
 
 ## Versioning
 
