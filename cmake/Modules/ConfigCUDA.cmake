@@ -173,22 +173,23 @@ if("CUDA" IN_LIST LANGUAGES)
         endif()
     endif()
 
-    if(NOT CUDA_dl_LIBRARY)
-        set(CUDA_dl_LIBRARY)
+    set(CUDA_extra_LIBS)
+    if(CUDA_dl_LIBRARY)
+        list(APPEND CUDA_extra_LIBS ${CUDA_dl_LIBRARY})
     endif()
 
-    if(NOT CUDA_rt_LIBRARY)
-        set(CUDA_rt_LIBRARY)
+    if(CUDA_rt_LIBRARY)
+        list(APPEND CUDA_extra_LIBS ${CUDA_rt_LIBRARY})
     endif()
 
     target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
-        ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY} ${CUDA_dl_LIBRARY})
+        ${CUDA_CUDART_LIBRARY} ${CUDA_extra_LIBS})
 
     target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-device INTERFACE
-        ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY} ${CUDA_dl_LIBRARY})
+        ${CUDA_cudadevrt_LIBRARY} ${CUDA_extra_LIBS})
 
     target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
-        ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY} ${CUDA_dl_LIBRARY})
+        ${CUDA_cudart_static_LIBRARY} ${CUDA_extra_LIBS})
 
 else()
     message(FATAL_ERROR

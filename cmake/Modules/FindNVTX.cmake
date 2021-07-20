@@ -113,16 +113,18 @@ include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set NVTX_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(NVTX DEFAULT_MSG
-    NVTX_INCLUDE_DIR NVTX_LIBRARY)
+    NVTX_INCLUDE_DIR)
 
 #----------------------------------------------------------------------------------------#
 
 if(NVTX_FOUND)
     add_library(nvtx INTERFACE)
-    target_link_libraries(nvtx INTERFACE ${NVTX_LIBRARY})
     target_include_directories(nvtx INTERFACE ${NVTX_INCLUDE_DIR})
     get_filename_component(NVTX_INCLUDE_DIRS ${NVTX_INCLUDE_DIR} REALPATH)
-    get_filename_component(NVTX_LIBRARIES ${NVTX_LIBRARY} REALPATH)
+    if(NVTX_LIBRARY)
+        target_link_libraries(nvtx INTERFACE ${NVTX_LIBRARY})
+        get_filename_component(NVTX_LIBRARIES ${NVTX_LIBRARY} REALPATH)
+    endif()
 endif()
 
 mark_as_advanced(NVTX_INCLUDE_DIR NVTX_LIBRARY)

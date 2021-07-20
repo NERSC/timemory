@@ -781,7 +781,6 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-set(TIMEMORY_USE_NVTX ${TIMEMORY_USE_CUDA})
 if(TIMEMORY_USE_CUDA)
 
     set(PROJECT_USE_CUDA_OPTION            TIMEMORY_USE_CUDA)
@@ -792,13 +791,19 @@ if(TIMEMORY_USE_CUDA)
 
     include(ConfigCUDA)
 
-    find_package(NVTX ${TIMEMORY_FIND_QUIETLY})
-    if(NVTX_FOUND)
-        add_rpath(${NVTX_LIBRARIES})
-        target_link_libraries(timemory-cuda INTERFACE ${NVTX_LIBRARIES})
-        target_include_directories(timemory-cuda SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
+    if(TIMEMORY_USE_NVTX)
+        find_package(NVTX ${TIMEMORY_FIND_QUIETLY})
+        if(NVTX_FOUND)
+            target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
+            target_include_directories(timemory-cuda SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
+            if(NVTX_LIBRARIES)
+                add_rpath(${NVTX_LIBRARIES})
+                target_link_libraries(timemory-cuda INTERFACE ${NVTX_LIBRARIES})
+            endif()
+        else()
+            set(TIMEMORY_USE_NVTX OFF)
+        endif()
     endif()
-    target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
 
     if(TIMEMORY_BUILD_LTO AND CMAKE_CUDA_COMPILER_IS_NVIDIA AND NOT CUDA_VERSION VERSION_LESS 11.2)
         add_target_cuda_flag(timemory-lto "-dlto")

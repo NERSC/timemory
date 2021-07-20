@@ -1,5 +1,12 @@
 # timemory
 
+## Version 3.2.4
+
+> Date: Mon Jul 19 17:22:28 2021 -0500
+
+- Fixes issues with Windows CUDA builds
+- Removes requirement for NVTX_LIBRARY for NVTX_FOUND
+
 ## Version 3.2.3
 
 > Date: Sun Jul 18 05:53:34 2021 -0500
