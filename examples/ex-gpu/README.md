@@ -104,4 +104,9 @@ The primary difference between this instance and [ex_kernel_instrument](#ex_kern
 is that the data is not stored directly in `gpu_device_timer` but instead, it uses the
 `data_tracker` to improve the data storage and output capabilities.
 
-Version 2 ([ex_kernel_instrument_v2](#ex_kernel_instrument_v2)) is the recommended style.
+### ex_kernel_instrument_v3
+
+This is the same as [ex_kernel_instrument_v2](#ex_kernel_instrument_v2) but does not required
+modifying the kernel parameters.
+
+Version 3 ([ex_kernel_instrument_v3](#ex_kernel_instrument_v3)) is the recommended style.

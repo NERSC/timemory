@@ -72,9 +72,11 @@ endfunction()
 add_interface_library(timemory-compiler-instrument-compile-options INTERFACE)
 
 target_link_libraries(timemory-compiler-instrument-compile-options INTERFACE
-    timemory::timemory-compile-extra
-    timemory::timemory-compile-options
     timemory::timemory-hidden-visibility)
+
+# avoid timemory-compile-options because it might include timemory-lto
+target_compile_options(timemory-compiler-instrument-compile-options INTERFACE
+    ${timemory_CXX_FLAGS})
 
 add_target_cxx_flag_if_avail(timemory-compiler-instrument-compile-options
     "-ftls-model=local-dynamic")

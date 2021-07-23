@@ -240,7 +240,10 @@ inline void
 stream_destroy(stream_t& stream)
 {
 #if defined(TIMEMORY_USE_HIP)
-    TIMEMORY_HIP_RUNTIME_API_CALL(hipStreamDestroy(stream));
+    if(stream != default_stream_v)
+    {
+        TIMEMORY_HIP_RUNTIME_API_CALL(hipStreamDestroy(stream));
+    }
 #else
     consume_parameters(stream);
 #endif
@@ -397,7 +400,7 @@ inline void
 free(Tp*& arr)
 {
 #if defined(TIMEMORY_USE_HIP)
-    hipFree(arr);
+    TIMEMORY_HIP_RUNTIME_API_CALL(hipFree(arr));
     arr = nullptr;
 #else
     consume_parameters(arr);
@@ -413,7 +416,7 @@ inline void
 free_host(Tp*& arr)
 {
 #if defined(TIMEMORY_USE_HIP)
-    hipHostFree(arr);
+    TIMEMORY_HIP_RUNTIME_API_CALL(hipHostFree(arr));
     arr = nullptr;
 #else
     delete[] arr;
