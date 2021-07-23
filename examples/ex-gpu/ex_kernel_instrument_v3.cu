@@ -57,11 +57,6 @@ using gpu_event  = hip_event;
 }  // namespace component
 }  // namespace tim
 
-#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ < 600)
-__device__ long long int
-atomicAdd(long long int* address, long long int val);
-#endif
-
 #if !defined(TIMEMORY_USE_GPU)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_device_timer, false_type)
 #endif
@@ -117,6 +112,18 @@ struct gpu_device_timer : base<gpu_device_timer, void>
         TIMEMORY_DEVICE_FUNCTION void start();
         TIMEMORY_DEVICE_FUNCTION void stop();
 
+        static TIMEMORY_DEVICE_FUNCTION device_data*& get()
+        {
+            static __device__ device_data* _instance = nullptr;
+            return _instance;
+        }
+
+        static TIMEMORY_GLOBAL_FUNCTION void set(device_data* _v)
+        {
+            device_data::get() = _v;
+            printf("device_data pointer: %p\n", (void*) _v);
+        }
+
         // clock64() return a long long int but older GPU archs only have
         // atomics for 32-bit values (and sometimes unsigned long long) but
         // the difference in the clocks should be much, much less than
@@ -132,14 +139,15 @@ struct gpu_device_timer : base<gpu_device_timer, void>
 private:
     static size_t& max_threads();
 
-    bool          m_copy       = false;
-    int           m_device_num = gpu::get_device();
-    size_t        m_count      = 0;
-    size_t        m_threads    = 0;
-    unsigned int* m_incr       = nullptr;
-    CLOCK_DTYPE*  m_data       = nullptr;
-    const char*   m_prefix     = nullptr;
-    tracker_type  m_tracker    = {};
+    bool          m_copy        = false;
+    int           m_device_num  = gpu::get_device();
+    size_t        m_count       = 0;
+    size_t        m_threads     = 0;
+    unsigned int* m_incr        = nullptr;
+    CLOCK_DTYPE*  m_data        = nullptr;
+    const char*   m_prefix      = nullptr;
+    device_data*  m_device_data = nullptr;
+    tracker_type  m_tracker     = {};
 };
 }  // namespace component
 }  // namespace tim
@@ -148,16 +156,18 @@ private:
 // saxpy calculation
 //
 TIMEMORY_GLOBAL_FUNCTION void
-saxpy_inst(int64_t n, float a, float* x, float* y,
-           comp::gpu_device_timer::device_data _timer)
+saxpy_inst(int64_t n, float a, float* x, float* y)
 {
-    _timer.start();
+    auto _timer = comp::gpu_device_timer::device_data::get();
+    if(_timer)
+        _timer->start();
     auto range = device::grid_strided_range<default_device, 0>(n);
     for(int i = range.begin(); i < range.end(); i += range.stride())
     {
         y[i] = a * x[i] + y[i];
     }
-    _timer.stop();
+    if(_timer)
+        _timer->stop();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -268,6 +278,12 @@ tim::component::gpu_device_timer::allocate(device::gpu, size_t nthreads)
         TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memset(m_data, 0, m_threads));
         max_threads() = std::max<size_t>(max_threads(), nthreads);
         gpu::check(gpu::get_last_error());
+        m_device_data = gpu::malloc<device_data>(1);
+        auto _data    = get_device_data();
+        TIMEMORY_HIP_RUNTIME_API_CALL(
+            gpu::memcpy(m_device_data, &_data, 1, gpu::host_to_device_v));
+        device_data::set<<<1, 1>>>(m_device_data);
+        gpu::device_sync();
     }
 }
 
@@ -277,12 +293,19 @@ tim::component::gpu_device_timer::deallocate()
     // only the instance that allocated should deallocate
     if(!m_copy)
     {
+        gpu::device_sync();
         m_count   = 0;
         m_threads = 0;
         if(m_incr)
             gpu::free(m_incr);
         if(m_data)
             gpu::free(m_data);
+        if(m_device_data)
+        {
+            gpu::free(m_device_data);
+            device_data::set<<<1, 1>>>(nullptr);
+        }
+        gpu::device_sync();
     }
 }
 
@@ -379,8 +402,8 @@ TIMEMORY_DEVICE_FUNCTION
 int
 tim::component::gpu_device_timer::device_data::get_index()
 {
-    return (blockDim.x * blockDim.y * blockIdx.z) + (blockDim.x * blockIdx.y) +
-           threadIdx.x;
+    return ((blockDim.x * blockDim.y * blockIdx.z) + (blockDim.x * blockIdx.y) +
+            threadIdx.x);
 }
 
 TIMEMORY_DEVICE_FUNCTION
@@ -389,7 +412,6 @@ tim::component::gpu_device_timer::device_data::start()
 {
     if(m_data)
     {
-        __syncthreads();
         m_buff = clock64();
     }
 }
@@ -401,9 +423,11 @@ tim::component::gpu_device_timer::device_data::stop()
     if(m_data)
     {
         auto _time = clock64();
-        __syncthreads();
-        atomicAdd(&m_incr[get_index()], 1);
-        atomicAdd(&m_data[get_index()], static_cast<CLOCK_DTYPE>(_time - m_buff));
+        if(_time > m_buff)
+        {
+            atomicAdd(&m_incr[get_index()], 1);
+            atomicAdd(&m_data[get_index()], (_time - m_buff) / 32);
+        }
     }
 }
 
@@ -413,23 +437,6 @@ tim::component::gpu_device_timer::max_threads()
     static size_t _value = 0;
     return _value;
 }
-
-#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ < 600)
-__device__ long long int
-atomicAdd(long long int* address, long long int val)
-{
-    unsigned long long int* address_as_ull = (unsigned long long int*) address;
-    unsigned long long int  old            = *address_as_ull;
-    unsigned long long int  assumed;
-    do
-    {
-        assumed = old;
-        old     = atomicCAS(address_as_ull, assumed, val + assumed);
-        // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
-    } while(assumed != old);
-    return old;
-}
-#endif
 
 void
 run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
@@ -447,9 +454,12 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
     float*                x         = device::cpu::alloc<float>(N);
     float*                y         = device::cpu::alloc<float>(N);
     float                 data_size = (3.0 * N * sizeof(float)) / tim::units::gigabyte;
-    std::vector<stream_t> streams(std::max<int>(nstreams, 1));
-    for(auto& itr : streams)
-        gpu::stream_create(itr);
+    std::vector<stream_t> streams(std::max<int>(nstreams, 1), gpu::default_stream_v);
+    if(streams.size() > 1)
+    {
+        for(auto& itr : streams)
+            gpu::stream_create(itr);
+    }
     stream_t stream = streams.at(0);
     params_t params(params_t::compute(N, block_size), block_size);
 
@@ -481,8 +491,7 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
     {
         tot.mark(mpl::piecewise_select<comp::gpu_device_timer>{});
         params.stream = streams.at(i % streams.size());
-        device::launch(params, saxpy_inst, N, 1.0, d_x, d_y,
-                       tot.get<comp::gpu_device_timer>()->get_device_data());
+        device::launch(params, saxpy_inst, N, 1.0, d_x, d_y);
     }
     for(auto& itr : streams)
         tot.mark_end(mpl::piecewise_select<comp::gpu_event>{}, itr);

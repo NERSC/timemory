@@ -26,9 +26,6 @@ endforeach()
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-cxx-overhead-example)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
-# this tend to cause the CI to exceed the time-limit
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
-
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 target_link_libraries(${EXE_NAME} timemory-cxx-overhead-example)
 install(

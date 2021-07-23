@@ -159,9 +159,20 @@ if(NOT TIMEMORY_USE_SANITIZER)
     add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
 endif()
 
+if(TIMEMORY_BUILD_LTO)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
+
+timemory_save_variables(FLTO
+    VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+set(CMAKE_C_FLAGS "-flto=thin ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "-flto=thin ${CMAKE_CXX_FLAGS}")
+
 add_interface_library(timemory-lto "Adds link-time-optimization flags")
 add_target_flag_if_avail(timemory-lto "-flto=thin")
 if(NOT cxx_timemory_lto_flto_thin)
+    set(CMAKE_C_FLAGS "-flto ${CMAKE_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-flto ${CMAKE_CXX_FLAGS}")
     add_target_flag_if_avail(timemory-lto "-flto")
     if(NOT cxx_timemory_lto_flto)
         add_disabled_interface(timemory-lto)
@@ -174,11 +185,13 @@ else()
 endif()
 
 if(TIMEMORY_BUILD_LTO)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
     target_link_libraries(timemory-compile-options INTERFACE timemory::timemory-lto)
 endif()
 
-# ----------------------------------------------------------------------------------------#
+timemory_restore_variables(FLTO
+    VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+
+#----------------------------------------------------------------------------------------#
 # print compilation timing reports (Clang compiler)
 #
 add_interface_library(timemory-compile-timing
