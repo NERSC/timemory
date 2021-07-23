@@ -28,18 +28,15 @@ endfunction()
 get_library(TIMEMORY_C_LIBRARY C)
 get_library(TIMEMORY_CXX_LIBRARY CXX)
 
-# this tend to cause the CI to exceed the time-limit
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
-
 # headers are always available
 add_executable(ex_cxx_minimal ex_minimal.cpp)
 target_link_libraries(ex_cxx_minimal PRIVATE
 	timemory-minimal-example)
-install(TARGETS ex_cxx_minimal 
+install(TARGETS ex_cxx_minimal
 	DESTINATION bin
     COMPONENT examples OPTIONAL)
 
-# if C stubs are not available via CXX library 
+# if C stubs are not available via CXX library
 if(NOT TIMEMORY_CXX_LIBRARY)
 	return()
 endif()
@@ -47,14 +44,14 @@ endif()
 add_executable(ex_cxx_minimal_library ex_minimal_library.cpp)
 target_link_libraries(ex_cxx_minimal_library timemory-minimal-example
     ${TIMEMORY_CXX_LIBRARY})
-install(TARGETS ex_cxx_minimal_library 
+install(TARGETS ex_cxx_minimal_library
 	DESTINATION bin
     COMPONENT examples OPTIONAL)
 
 add_executable(ex_cxx_minimal_library_overload ex_minimal_library_overload.cpp)
 target_link_libraries(ex_cxx_minimal_library_overload timemory-minimal-example
     ${TIMEMORY_CXX_LIBRARY})
-install(TARGETS ex_cxx_minimal_library_overload 
+install(TARGETS ex_cxx_minimal_library_overload
 	DESTINATION bin
     COMPONENT examples OPTIONAL)
 
@@ -84,8 +81,8 @@ add_executable(ex_c_minimal ex_minimal.c)
 target_link_libraries(ex_c_minimal  PRIVATE
 	timemory-minimal-example
 	${TIMEMORY_C_LIBRARY})
-install(TARGETS ex_c_minimal 
-	DESTINATION bin 
+install(TARGETS ex_c_minimal
+	DESTINATION bin
 	COMPONENT examples OPTIONAL)
 
 # if C stubs via CXX library are available
@@ -94,7 +91,7 @@ target_link_libraries(ex_c_minimal_library PRIVATE
 	timemory-minimal-example
     ${TIMEMORY_CXX_LIBRARY}
 	${TIMEMORY_C_LIBRARY})
-install(TARGETS ex_c_minimal_library 
+install(TARGETS ex_c_minimal_library
 	DESTINATION bin
     COMPONENT examples OPTIONAL)
 
@@ -103,6 +100,6 @@ target_link_libraries(ex_c_minimal_library_overload PRIVATE
 	timemory-minimal-example
 	${TIMEMORY_CXX_LIBRARY}
 	${TIMEMORY_C_LIBRARY})
-install(TARGETS ex_c_minimal_library_overload 
+install(TARGETS ex_c_minimal_library_overload
 	DESTINATION bin
     COMPONENT examples OPTIONAL)
