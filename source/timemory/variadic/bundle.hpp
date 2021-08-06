@@ -516,6 +516,11 @@ public:
     template <typename... Args>
     this_type& add_secondary(Args&&... _args);
 
+    /// perform an add_secondary operation. This operation allows components to add
+    /// additional entries to storage which are their direct descendant
+    template <typename... Args>
+    this_type& update_statistics(Args&&... _args);
+
     /// generic member function for invoking user-provided operations
     /// \tparam OpT Operation struct
     template <template <typename> class OpT, typename... Args>
@@ -624,7 +629,15 @@ public:
                 printf("[bundle::init]> initializing type '%s'...\n",
                        demangle<T>().c_str());
             }
-            _obj = new T(std::forward<Args>(_args)...);
+            if(!bundle_type::init_buffer())
+            {
+                _obj = new T(std::forward<Args>(_args)...);
+            }
+            else
+            {
+                T in(std::forward<Args>(_args)...);
+                _obj = m_buffer->write(&in).second;
+            }
             set_prefix(_obj, internal_tag{});
             set_scope(_obj, internal_tag{});
             return true;
@@ -659,7 +672,15 @@ public:
                 fprintf(stderr, "[bundle::init]> initializing type '%s'...\n",
                         demangle<T>().c_str());
             }
-            _obj = new T{};
+            if(!bundle_type::init_buffer())
+            {
+                _obj = new T{};
+            }
+            else
+            {
+                T in{};
+                _obj = m_buffer->write(&in).second;
+            }
             set_prefix(_obj, internal_tag{});
             set_scope(_obj, internal_tag{});
             return true;
@@ -787,6 +808,7 @@ protected:
 
 protected:
     // objects
+    using bundle_type::m_buffer;
     using bundle_type::m_config;
     using bundle_type::m_enabled;
     using bundle_type::m_hash;
@@ -818,6 +840,9 @@ private:
             _old_instance->stop();
         _old_instance = _new_instance;
     }
+
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    void invoke_piecewise(type_list<Tp...>, Args&&... _args);
 
 public:
     // archive serialization

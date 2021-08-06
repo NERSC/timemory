@@ -82,19 +82,30 @@ set(LIB_TARGET timemory-compiler-instrument-base)
 set(LIB_TYPE STATIC)
 
 build_library(
-    PIC NO_CACHE_LIST ${_EXCLUDE}
-    TYPE ${LIB_TYPE}
-    TARGET_NAME ${LIB_TARGET}
-    OUTPUT_NAME ${LIB_TARGET}
-    LANGUAGE CXX
-    LINKER_LANGUAGE ${_LINKER_LANGUAGE}
-    OUTPUT_DIR ${PROJECT_BINARY_DIR}/compiler
-    SOURCES ${CMAKE_CURRENT_LIST_DIR}/compiler-instrument-base.cpp)
+    PIC
+    NO_CACHE_LIST
+    ${_EXCLUDE}
+    TYPE                ${LIB_TYPE}
+    TARGET_NAME         ${LIB_TARGET}
+    OUTPUT_NAME         ${LIB_TARGET}
+    LANGUAGE            CXX
+    LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
+    OUTPUT_DIR          ${PROJECT_BINARY_DIR}/compiler
+    SOURCES             ${CMAKE_CURRENT_LIST_DIR}/compiler-instrument-base.cpp)
 
-target_compile_definitions(${LIB_TARGET} PRIVATE TIMEMORY_COMPILER_INSTRUMENTATION)
+target_compile_definitions(${LIB_TARGET} PRIVATE
+    TIMEMORY_COMPILER_INSTRUMENTATION)
 
-target_link_libraries(${LIB_TARGET} PUBLIC timemory::timemory-dmp
-                                           timemory::timemory-threading ${LINK_LIBS})
+if(TARGET timemory::timemory-perfetto-static)
+    target_link_libraries(${LIB_TARGET} PRIVATE
+        timemory::timemory-perfetto
+        timemory::timemory-perfetto-static)
+endif()
+
+target_link_libraries(${LIB_TARGET} PUBLIC
+    timemory::timemory-dmp
+    timemory::timemory-threading
+    ${LINK_LIBS})
 
 # only papi and gotcha are useful TPLs here
 target_link_libraries(

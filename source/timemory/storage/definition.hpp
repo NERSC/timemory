@@ -852,7 +852,7 @@ template <typename Type>
 typename storage<Type, true>::result_array_t
 storage<Type, true>::get()
 {
-    result_array_t _ret;
+    result_array_t _ret{};
     operation::finalize::get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -873,7 +873,7 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::mpi_get()
 {
-    dmp_result_t _ret;
+    dmp_result_t _ret{};
     operation::finalize::mpi_get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -894,7 +894,7 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::upc_get()
 {
-    dmp_result_t _ret;
+    dmp_result_t _ret{};
     operation::finalize::upc_get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -915,7 +915,7 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::dmp_get()
 {
-    dmp_result_t _ret;
+    dmp_result_t _ret{};
     operation::finalize::dmp_get<Type, true>{ *this }(_ret);
     return _ret;
 }

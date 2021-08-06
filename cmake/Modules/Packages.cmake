@@ -84,6 +84,8 @@ add_interface_library(timemory-craypat
     "Enables CrayPAT support")
 add_interface_library(timemory-libunwind
     "Enables libunwind support")
+add_interface_library(timemory-perfetto
+    "Enables perfetto support")
 
 add_interface_library(timemory-coverage
     "Enables code-coverage flags")
@@ -164,7 +166,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-ompt
     timemory-craypat
     timemory-allinea-map
-    timemory-libunwind)
+    timemory-libunwind
+    timemory-perfetto)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -187,6 +190,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-allinea-map
     timemory-plotting
     timemory-libunwind
+    timemory-perfetto
     ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -209,6 +213,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-allinea-map
     timemory-plotting
     timemory-libunwind
+    timemory-perfetto
     ${_DMP_LIBRARIES})
 
 set(_GPERF_IN_LIBRARY OFF)
@@ -745,7 +750,10 @@ if(TIMEMORY_BUILD_GOOGLE_TEST)
             CACHE BOOL "Enable MACOS_RPATH on targets to suppress warnings")
         mark_as_advanced(CMAKE_MACOSX_RPATH)
     endif()
+    timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/google-test)
+    timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     target_link_libraries(timemory-google-test INTERFACE gtest gmock)
     target_include_directories(
         timemory-google-test SYSTEM
@@ -1120,10 +1128,11 @@ if(TIMEMORY_BUILD_CALIPER)
     set(_ORIG_TESTING ${BUILD_TESTING})
     set(CMAKE_C_EXTENSIONS ON)
     set(BUILD_TESTING OFF)
-    set(BUILD_TESTING
-        OFF
-        CACHE BOOL "")
+    set(BUILD_TESTING OFF CACHE BOOL "")
+    timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/caliper)
+    timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     set(BUILD_TESTING ${_ORIG_TESTING})
     set(CMAKE_C_EXTENSIONS ${_ORIG_CEXT})
     set(caliper_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/caliper)
@@ -1202,7 +1211,10 @@ if(UNIX AND NOT APPLE)
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             REPO_URL https://github.com/jrmadsen/GOTCHA.git
             REPO_BRANCH timemory)
+        timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
+        timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
         foreach(_TARGET gotcha gotcha-include Gotcha)
             if(TARGET ${_TARGET})
                 list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_TARGET})
@@ -1316,11 +1328,12 @@ if(TIMEMORY_USE_OMPT)
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             REPO_URL https://github.com/NERSC/LLVM-openmp.git
             REPO_BRANCH timemory)
+        timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/llvm-ompt)
-        target_include_directories(
-            timemory-ompt SYSTEM
-            INTERFACE
-                $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/llvm-ompt/runtime/src>)
+        timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+        target_include_directories(timemory-ompt SYSTEM INTERFACE
+            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/llvm-ompt/runtime/src>)
         foreach(_TARGET omp omptarget)
             if(TARGET ${_TARGET})
                 list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_TARGET})
@@ -1355,7 +1368,56 @@ endif()
 
 # ----------------------------------------------------------------------------------------#
 #
-# VTune
+#                               Perfetto
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_PERFETTO)
+    checkout_git_submodule(
+        RELATIVE_PATH external/perfetto
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://android.googlesource.com/platform/external/perfetto
+        REPO_BRANCH v17.0
+        TEST_FILE meson.build)
+
+    timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+    add_library(perfetto-object OBJECT ${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.cc)
+    add_library(timemory::perfetto-object ALIAS perfetto-object)
+    target_include_directories(perfetto-object PUBLIC "${PROJECT_SOURCE_DIR}/external/perfetto/sdk")
+    target_compile_definitions(perfetto-object INTERFACE TIMEMORY_USE_PERFETTO)
+    target_link_libraries(perfetto-object PUBLIC timemory::timemory-threading)
+    set_target_properties(perfetto-object PROPERTIES
+        POSITION_INDEPENDENT_CODE ON)
+    target_sources(perfetto-object INTERFACE $<TARGET_OBJECTS:perfetto-object>)
+    target_compile_definitions(timemory-perfetto INTERFACE TIMEMORY_USE_PERFETTO)
+    target_include_directories(timemory-perfetto INTERFACE
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/perfetto/sdk>)
+    if(TIMEMORY_INSTALL_HEADER_FILES)
+        install(
+            FILES       ${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.h
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+            OPTIONAL)
+    endif()
+    build_library(
+        PIC
+        TYPE                STATIC
+        TARGET_NAME         timemory-perfetto-static
+        OUTPUT_NAME         timemory-perfetto
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     CXX
+        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+        SOURCES             $<TARGET_OBJECTS:perfetto-object>
+        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        COMPILE_DEFINITIONS ${_USE_EXTERN})
+    target_link_libraries(timemory-perfetto-static INTERFACE timemory-perfetto)
+    timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               VTune
 #
 # ----------------------------------------------------------------------------------------#
 
@@ -1572,7 +1634,10 @@ if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
     if(PTL_BUILD_EXAMPLES)
         set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${PROJECT_BINARY_DIR}/external/ptl)
     endif()
+    timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/ptl)
+    timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
 endif()
 
 # ----------------------------------------------------------------------------------------#

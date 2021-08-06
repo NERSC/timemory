@@ -160,7 +160,16 @@ if(NOT TIMEMORY_USE_SANITIZER)
 endif()
 
 if(TIMEMORY_BUILD_LTO)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT IPO_SUPPORTED
+        OUTPUT IPO_CHECK_OUTPUT)
+    if(NOT IPO_SUPPORTED)
+        timemory_message(STATUS "TIMEMORY_BUILD_LTO must be disabled due to check_ipo_supported() failure")
+        timemory_message(AUTHOR_WARNING "${IPO_CHECK_OUTPUT}")
+        message(FATAL_ERROR "TIMEMORY_BUILD_LTO not supported")
+    endif()
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${IPO_SUPPORTED})
+    set(TIMEMORY_BUILD_LTO ${IPO_SUPPORTED})
 endif()
 
 timemory_save_variables(FLTO

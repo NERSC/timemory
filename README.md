@@ -66,7 +66,10 @@ together deterministic performance measurements, statistical performance
 measurements (i.e. sampling), debug messages, data logging, and data validation into the same interface for
 custom application-specific software monitoring interfaces, easily building tools like `time`,
 `netstat`, instrumentation profilers, sampling profilers, and writing implementations for MPI-P, MPI-T, OMPT,
-KokkosP, etc.
+KokkosP, etc. Furthermore, timemory can forward its markers to several third-party profilers such as
+[LIKWID](https://github.com/RRZE-HPC/likwid), [Caliper](https://github.com/LLNL/Caliper),
+[TAU](https://www.cs.uoregon.edu/research/tau/home.php), [gperftools](https://github.com/gperftools/gperftools),
+[Perfetto](https://perfetto.dev/docs/), VTune, Allinea-MAP, CrayPAT, Nsight-Systems, Nsight-Compute, and NVProf.
 
 Timemory provides a front-end [C/C++/Fortran API](https://timemory.readthedocs.io/en/develop/api/library.html)
 and [Python API](https://timemory.readthedocs.io/en/develop/api/python.html) which allows arbitrary selection

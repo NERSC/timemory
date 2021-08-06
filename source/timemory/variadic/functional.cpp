@@ -238,11 +238,9 @@ construct(Args&&... args)
 {
     IF_CONSTEXPR(trait::is_available<ApiT>::value)
     {
-        {
-            TupleT obj{};
-            invoke_impl::construct(std::ref(obj).get(), std::forward<Args>(args)...);
-            return obj;
-        }
+        TupleT obj{};
+        invoke_impl::construct(std::ref(obj).get(), std::forward<Args>(args)...);
+        return obj;
     }
     return TupleT{};
 }

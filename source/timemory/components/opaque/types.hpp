@@ -53,13 +53,14 @@ struct opaque
     using get_func_t   = std::function<void(void*, void*&, size_t)>;
     using delete_func_t = std::function<void(void*)>;
     using sample_func_t = std::function<void(void*)>;
+    using stats_func_t  = std::function<void(void*, bool)>;
 
     template <typename InitF, typename StartF, typename StopF, typename GetF,
               typename DelF, typename SetupF, typename PushF, typename PopF,
-              typename SampleF>
+              typename SampleF, typename UpdateStatsF>
     opaque(bool _valid, size_t _typeid, InitF&& _init, StartF&& _start, StopF&& _stop,
            GetF&& _get, DelF&& _del, SetupF&& _setup, PushF&& _push, PopF&& _pop,
-           SampleF&& _sample);
+           SampleF&& _sample, UpdateStatsF&& _stats);
 
     opaque() = default;
     ~opaque();
@@ -79,6 +80,7 @@ struct opaque
     void pop() const;
     void cleanup();
     void get(void*& ptr, size_t _hash) const;
+    void update_statistics(bool) const;
     void set_copy(bool val);
 
     bool         m_valid  = false;
@@ -89,13 +91,14 @@ struct opaque
     setup_func_t m_setup  = [](void*, const string_view_t&, scope::config) {
         return nullptr;
     };
-    push_func_t   m_push   = [](void*&, const string_view_t&, scope::config) {};
-    start_func_t  m_start  = [](void*) {};
-    stop_func_t   m_stop   = [](void*) {};
-    pop_func_t    m_pop    = [](void*) {};
-    get_func_t    m_get    = [](void*, void*&, size_t) {};
-    delete_func_t m_del    = [](void*) {};
-    sample_func_t m_sample = [](void*) {};
+    push_func_t   m_push         = [](void*&, const string_view_t&, scope::config) {};
+    start_func_t  m_start        = [](void*) {};
+    stop_func_t   m_stop         = [](void*) {};
+    pop_func_t    m_pop          = [](void*) {};
+    get_func_t    m_get          = [](void*, void*&, size_t) {};
+    delete_func_t m_del          = [](void*) {};
+    sample_func_t m_sample       = [](void*) {};
+    stats_func_t  m_update_stats = [](void*, bool) {};
 };
 //
 template <typename Toolset>

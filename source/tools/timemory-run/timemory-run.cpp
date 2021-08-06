@@ -820,7 +820,6 @@ main(int argc, char** argv)
     auto* env_func      = find_function(app_image, "timemory_trace_set_env");
     auto* mpi_func      = find_function(app_image, "timemory_trace_set_mpi");
     auto* hash_func     = find_function(app_image, "timemory_add_hash_id");
-    auto* exit_func     = find_function(app_image, "exit", { "_exit" });
     auto* mpi_init_func = find_function(app_image, "MPI_Init", { "MPI_Init_thread" });
     auto* mpi_fini_func = find_function(app_image, "MPI_Finalize");
 
@@ -1110,7 +1109,6 @@ main(int argc, char** argv)
 
     auto init_call = init_call_args.get(init_func);
     auto fini_call = fini_call_args.get(fini_func);
-    auto exit_call = fini_call_args.get(exit_func);
     auto umpi_call = umpi_call_args.get(mpi_func);
 
     auto main_beg_call = main_call_args.get(entr_trace);
@@ -1233,12 +1231,6 @@ main(int argc, char** argv)
     {
         if(itr.second)
             fini_names.push_back(itr.second.get());
-    }
-
-    if(exit_func && exit_call)
-    {
-        verbprintf(0, "Inserting exit instrumentation...\n");
-        insert_instr(addr_space, exit_func, exit_call, BPatch_entry, nullptr, nullptr);
     }
 
     //----------------------------------------------------------------------------------//

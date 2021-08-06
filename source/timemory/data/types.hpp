@@ -34,5 +34,8 @@ namespace data
 template <typename V, typename Tag = TIMEMORY_API>
 struct handler;
 //
+template <typename Tp, bool MMapV = false, size_t BuffCntV = 0>
+class ring_buffer_allocator;
+//
 }  // namespace data
 }  // namespace tim

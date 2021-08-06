@@ -161,8 +161,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     //
     if(_has_last)
     {
-        // _last->second.stop().pop().push();
-        _last->second.stop();
+        _last->second.stop().update_statistics(true);
         _has_last = false;
     }
     //

@@ -107,6 +107,8 @@
     component::papi_array_t,                    \
     component::papi_vector,                     \
     component::peak_rss,                        \
+    component::perfetto_trace,                  \
+    component::printer,                         \
     component::priority_context_switch,         \
     component::process_cpu_clock,               \
     component::process_cpu_util,                \
@@ -117,6 +119,7 @@
     component::tau_marker,                      \
     component::thread_cpu_clock,                \
     component::thread_cpu_util,                 \
+    component::timestamp,                       \
     component::trip_count,                      \
     component::user_clock,                      \
     component::user_global_bundle,              \
