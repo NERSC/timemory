@@ -156,13 +156,6 @@ public:
     static void       remove(pointer itr);
     static mutex_t&   get_mutex() { return f_mutex(); }
 
-    // since we are overloading delete we overload new
-    void* operator new(size_t);
-
-    // overload delete so that f_master_instance is guaranteed to be
-    // a nullptr after deletion
-    void operator delete(void* ptr);
-
     void initialize();
     void reset(pointer ptr);
     void reset();
@@ -178,9 +171,6 @@ private:
         static smart_pointer _instance = smart_pointer();
         return _instance;
     }
-
-    void* operator new[](std::size_t) noexcept { return nullptr; }
-    void  operator delete[](void*) noexcept {}
 
     template <typename PtrT = PointerT>
     deleter_t& get_deleter(
@@ -284,6 +274,8 @@ singleton<Type, PointerT, TagT>::singleton()
 template <typename Type, typename PointerT, typename TagT>
 singleton<Type, PointerT, TagT>::~singleton()
 {
+    if(std::this_thread::get_id() == f_master_thread())
+        f_master_instance() = nullptr;
     auto& del = get_deleter();
     if(del)
         del(_master_instance());
@@ -341,36 +333,6 @@ typename singleton<Type, PointerT, TagT>::pointer
 singleton<Type, PointerT, TagT>::instance_ptr()
 {
     return is_master_thread() ? f_master_instance() : _local_instance().get();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, typename PointerT, typename TagT>
-void* singleton<Type, PointerT, TagT>::operator new(size_t)
-{
-    this_type* ptr = ::new this_type();
-    return static_cast<void*>(ptr);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, typename PointerT, typename TagT>
-void
-singleton<Type, PointerT, TagT>::operator delete(void* ptr)
-{
-    if(f_master_instance() && ptr && f_master_instance() == ptr)
-    {
-        this_type* _instance = (this_type*) (ptr);
-        ::delete _instance;
-        f_master_instance() = nullptr;
-    }
-    else if(f_master_instance() && f_master_instance() != ptr)
-    {
-        this_type* _instance = (this_type*) (ptr);
-        ::delete _instance;
-    }
-    if(std::this_thread::get_id() == f_master_thread())
-        f_master_instance() = nullptr;
 }
 
 //--------------------------------------------------------------------------------------//

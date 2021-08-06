@@ -259,7 +259,7 @@ private:
         return _v;
     }
 
-    buffer_data* const get_buffer_data() const { return m_buffer_data; }
+    buffer_data* get_buffer_data() const { return m_buffer_data; }
 
 private:
     void init_current(size_t n) const

@@ -139,7 +139,7 @@ namespace data
 namespace base
 {
 template <>
-void
+TIMEMORY_COMPONENT_TIMESTAMP_INLINE void
 stream_entry::construct<timestamp_value_t>(const timestamp_value_t& val)
 {
     stringstream_t ss;
