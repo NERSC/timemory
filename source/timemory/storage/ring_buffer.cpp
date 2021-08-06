@@ -202,6 +202,7 @@ ring_buffer::as_string() const
     return ss.str();
 }
 //
+TIMEMORY_RING_BUFFER_INLINE
 void*
 ring_buffer::request(size_t _length)
 {
@@ -228,6 +229,7 @@ ring_buffer::request(size_t _length)
     return _out;
 }
 //
+TIMEMORY_RING_BUFFER_INLINE
 void*
 ring_buffer::retrieve(size_t _length)
 {

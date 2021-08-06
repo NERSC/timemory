@@ -127,6 +127,7 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${_BIN_DIR})
     endif()
 endforeach()
+
 if(WIN32)
     # use folders for cmake predefined projects
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -161,9 +162,13 @@ if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
     endif()
 endif()
 
-# ----------------------------------------------------------------------------------------#
-# handle some additional configuration before other includes
-# ----------------------------------------------------------------------------------------#
+if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_BUILD_TESTING)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
+#----------------------------------------------------------------------------------------#
+#   handle some additional configuration before other includes
+#----------------------------------------------------------------------------------------#
 
 set(_BUILD_SHARED_CXX ${BUILD_SHARED_LIBS})
 set(_BUILD_STATIC_CXX ${BUILD_STATIC_LIBS})
