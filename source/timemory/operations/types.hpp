@@ -209,10 +209,7 @@ struct stats_enabled
     using EmptyT = std::tuple<>;
 
     static constexpr bool value =
-        (trait::record_statistics<Up>::value && !(std::is_same<Vp, void>::value) &&
-         !(std::is_same<Vp, EmptyT>::value) &&
-         !(std::is_same<Vp, statistics<void>>::value) &&
-         !(std::is_same<Vp, statistics<EmptyT>>::value));
+        (trait::record_statistics<Up>::value && !concepts::is_null_type<Vp>::value);
 };
 //
 //--------------------------------------------------------------------------------------//

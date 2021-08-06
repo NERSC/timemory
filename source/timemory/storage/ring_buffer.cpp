@@ -49,6 +49,13 @@ namespace tim
 namespace base
 {
 TIMEMORY_RING_BUFFER_INLINE
+ring_buffer::ring_buffer(size_t _size, bool _use_mmap)
+{
+    set_use_mmap(_use_mmap);
+    init(_size);
+}
+
+TIMEMORY_RING_BUFFER_INLINE
 ring_buffer::~ring_buffer() { destroy(); }
 
 TIMEMORY_RING_BUFFER_INLINE
@@ -56,7 +63,8 @@ void
 ring_buffer::init(size_t _size)
 {
     if(m_init)
-        destroy();
+        throw std::runtime_error(
+            "tim::base::ring_buffer::init(size_t) :: already initialized");
 
     m_init = true;
 
@@ -134,43 +142,160 @@ TIMEMORY_RING_BUFFER_INLINE
 void
 ring_buffer::destroy()
 {
-    m_init = false;
-    if(!m_ptr)
-        return;
+    if(m_ptr && m_init)
+    {
+        m_init = false;
 #if defined(TIMEMORY_LINUX)
-    if(!m_use_mmap)
-    {
-        ::free(m_ptr);
-    }
-    else
-    {
-        // Truncate file to zero, to avoid writing back memory to file, on munmap.
-        if(ftruncate(m_fd, 0) < 0)
+        if(!m_use_mmap)
         {
-            bool _cond = settings::verbose() > 0 || settings::debug();
-            CONDITIONAL_PRINT_HERE(
-                _cond, "Ring buffer failed to truncate the file descriptor %i\n", m_fd);
+            ::free(m_ptr);
         }
-        // Unmap the mapped virtual memmory.
-        auto ret = munmap(m_ptr, m_size * 2);
-        // Close the backing file.
-        close(m_fd);
-        if(ret)
-            perror("munmap");
-    }
+        else
+        {
+            // Truncate file to zero, to avoid writing back memory to file, on munmap.
+            if(ftruncate(m_fd, 0) < 0)
+            {
+                bool _cond = settings::verbose() > 0 || settings::debug();
+                CONDITIONAL_PRINT_HERE(_cond,
+                                       "Ring buffer failed to truncate the file "
+                                       "descriptor %i\n",
+                                       m_fd);
+            }
+            // Unmap the mapped virtual memmory.
+            auto ret = munmap(m_ptr, m_size * 2);
+            // Close the backing file.
+            close(m_fd);
+            if(ret)
+                perror("munmap");
+        }
 #else
-    ::free(m_ptr);
+        ::free(m_ptr);
 #endif
-    m_ptr = nullptr;
+    }
+    m_init        = false;
+    m_size        = 0;
+    m_read_count  = 0;
+    m_write_count = 0;
+    m_ptr         = nullptr;
 }
 
 TIMEMORY_RING_BUFFER_INLINE
 void
 ring_buffer::set_use_mmap(bool _v)
 {
+    if(m_init)
+        throw std::runtime_error("tim::base::ring_buffer::set_use_mmap(bool) cannot be "
+                                 "called after initialization");
     m_use_mmap          = _v;
     m_use_mmap_explicit = true;
 }
 
+TIMEMORY_RING_BUFFER_INLINE
+std::string
+ring_buffer::as_string() const
+{
+    std::ostringstream ss{};
+    ss << std::boolalpha << "is_initialized: " << is_initialized()
+       << ", capacity: " << capacity() << ", count: " << count() << ", free: " << free()
+       << ", is_empty: " << is_empty() << ", is_full: " << is_full()
+       << ", pointer: " << m_ptr << ", read count: " << m_read_count
+       << ", write count: " << m_write_count;
+    return ss.str();
+}
+//
+TIMEMORY_RING_BUFFER_INLINE
+void*
+ring_buffer::request(size_t _length)
+{
+    if(m_ptr == nullptr)
+        return nullptr;
+
+    // Make sure we don't put in more than there's room for, by writing no
+    // more than there is free.
+    if(_length > free())
+        throw std::runtime_error("heap-buffer-overflow :: ring buffer is full. read data "
+                                 "to avoid data corruption");
+
+    // if write count is at the tail of buffer, bump to the end of buffer
+    auto _modulo = m_size - (m_write_count % m_size);
+    if(_modulo < _length)
+        m_write_count += _modulo;
+
+    // pointer in buffer
+    void* _out = write_ptr();
+
+    // Update write count
+    m_write_count += _length;
+
+    return _out;
+}
+//
+TIMEMORY_RING_BUFFER_INLINE
+void*
+ring_buffer::retrieve(size_t _length)
+{
+    if(m_ptr == nullptr)
+        return nullptr;
+
+    // Make sure we don't put in more than there's room for, by writing no
+    // more than there is free.
+    if(_length > count())
+        throw std::runtime_error("ring buffer is empty");
+
+    // if read count is at the tail of buffer, bump to the end of buffer
+    auto _modulo = m_size - (m_read_count % m_size);
+    if(_modulo < _length)
+        m_read_count += _modulo;
+
+    // pointer in buffer
+    void* _out = read_ptr();
+
+    // Update write count
+    m_read_count += _length;
+
+    return _out;
+}
+//
+TIMEMORY_RING_BUFFER_INLINE
+size_t
+ring_buffer::rewind(size_t n) const
+{
+    if(n > m_read_count)
+        n = m_read_count;
+    m_read_count -= n;
+    return n;
+}
+/*
+TIMEMORY_RING_BUFFER_INLINE
+ring_buffer::ring_buffer(const ring_buffer& rhs)
+: m_init{ false }
+, m_use_mmap{ rhs.m_use_mmap }
+, m_use_mmap_explicit{ rhs.m_use_mmap_explicit }
+, m_size{ rhs.m_size }
+, m_read_count{ rhs.m_read_count }
+, m_write_count{ rhs.m_write_count }
+{
+    init(m_size);
+    memcpy(m_ptr, rhs.m_ptr, m_size * sizeof(char));
+}
+
+TIMEMORY_RING_BUFFER_INLINE
+ring_buffer& ring_buffer::operator=(const ring_buffer& rhs)
+{
+    if(this == &rhs)
+        return *this;
+
+    m_init              = false;
+    m_use_mmap          = rhs.m_use_mmap;
+    m_use_mmap_explicit = rhs.m_use_mmap_explicit;
+    m_size              = rhs.m_size;
+    m_read_count        = rhs.m_read_count;
+    m_write_count       = rhs.m_write_count;
+    init(m_size);
+    memcpy(m_ptr, rhs.m_ptr, m_size * sizeof(char));
+
+    return *this;
+}
+*/
 }  // namespace base
 }  // namespace tim

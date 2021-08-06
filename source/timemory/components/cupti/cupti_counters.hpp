@@ -774,10 +774,10 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
         }
         else
         {
-            fprintf(
-                stderr,
-                "[cupti_counters]> Removing unavailable metric '%s' on device %i...\n",
-                itr.c_str(), devid);
+            fprintf(stderr,
+                    "[cupti_counters]> Removing unavailable metric '%s' on device "
+                    "%i...\n",
+                    itr.c_str(), devid);
         }
     }
 

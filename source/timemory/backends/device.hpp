@@ -183,11 +183,11 @@ struct range
     {}
 
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& begin() { return m_begin; }
-    TIMEMORY_HOST_DEVICE_FUNCTION Intp begin() const { return m_begin; }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp  begin() const { return m_begin; }
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& end() { return m_end; }
-    TIMEMORY_HOST_DEVICE_FUNCTION Intp end() const { return m_end; }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp  end() const { return m_end; }
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& stride() { return m_stride; }
-    TIMEMORY_HOST_DEVICE_FUNCTION Intp stride() const { return m_stride; }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp  stride() const { return m_stride; }
 
     TIMEMORY_HOST_DEVICE_FUNCTION const char* c_str() const
     {
@@ -320,6 +320,7 @@ launch(params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
     std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
         std::forward<ArgsT>(_args)...);
     TIMEMORY_GPU_RUNTIME_CHECK_ERROR(::tim::gpu::get_last_error());
+    consume_parameters(_args...);
 #else
     // static_assert(false, "Checking");
     consume_parameters(_p, _func, _args...);
@@ -344,6 +345,7 @@ launch(const Intp& _nsize, params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
     std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
         std::forward<ArgsT>(_args)...);
     TIMEMORY_GPU_RUNTIME_CHECK_ERROR(::tim::gpu::get_last_error());
+    consume_parameters(_args...);
 #else
     // static_assert(false, "Checking");
     consume_parameters(_p, _func, _args..., _nsize);
@@ -362,7 +364,7 @@ void
 launch(const Intp& _nsize, StreamT _stream, params<DeviceT>& _p, FuncT&& _func,
        ArgsT&&... _args)
 {
-#if defined(TIMEMORY_CUDACC) && !defined(TIMEMORY_OPENMP_TARGET)
+#if defined(TIMEMORY_GPUCC) && !defined(TIMEMORY_OPENMP_TARGET)
     if(_p.grid == 0 && _nsize > 0)
         _p.grid = _p.compute(_nsize);
     else if(_p.grid == 0)
@@ -370,6 +372,7 @@ launch(const Intp& _nsize, StreamT _stream, params<DeviceT>& _p, FuncT&& _func,
     std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _stream>>>(
         std::forward<ArgsT>(_args)...);
     TIMEMORY_GPU_RUNTIME_CHECK_ERROR(::tim::gpu::get_last_error());
+    consume_parameters(_args...);
 #else
     // static_assert(false, "Checking");
     consume_parameters(_p, _func, _args..., _nsize, _stream);

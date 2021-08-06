@@ -153,7 +153,7 @@ using get_trait_type_t = typename get_trait_type<TraitT, T...>::type;
 //======================================================================================//
 // check if any types are integral types
 //
-template <typename...>
+template <typename... Tp>
 struct is_one_of_integral
 {
     static constexpr bool value = false;
@@ -374,6 +374,15 @@ struct remove_type<Tp, Tuple<Types...>>
 //======================================================================================//
 
 }  // namespace impl
+
+template <typename T>
+struct dynamic_buffer_size
+{
+    constexpr size_t operator()()
+    {
+        return (std::is_pointer<T>::value) ? sizeof(std::remove_pointer_t<T>) : 0;
+    }
+};
 
 /// append type to a tuple/bundler
 template <typename Tp, typename... Types>

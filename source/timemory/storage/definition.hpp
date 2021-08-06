@@ -373,9 +373,10 @@ storage<Type, true>::~storage()
         }
         else
         {
-            CONDITIONAL_PRINT_HERE(
-                _debug, "[%s|%li]> skipping merge into non-existent primary instance",
-                m_label.c_str(), (long) m_instance_id);
+            CONDITIONAL_PRINT_HERE(_debug,
+                                   "[%s|%li]> skipping merge into non-existent primary "
+                                   "instance",
+                                   m_label.c_str(), (long) m_instance_id);
         }
     }
 
@@ -852,7 +853,7 @@ template <typename Type>
 typename storage<Type, true>::result_array_t
 storage<Type, true>::get()
 {
-    result_array_t _ret;
+    result_array_t _ret{};
     operation::finalize::get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -873,7 +874,7 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::mpi_get()
 {
-    dmp_result_t _ret;
+    dmp_result_t _ret{};
     operation::finalize::mpi_get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -894,7 +895,7 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::upc_get()
 {
-    dmp_result_t _ret;
+    dmp_result_t _ret{};
     operation::finalize::upc_get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -915,7 +916,7 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::dmp_get()
 {
-    dmp_result_t _ret;
+    dmp_result_t _ret{};
     operation::finalize::dmp_get<Type, true>{ *this }(_ret);
     return _ret;
 }

@@ -58,13 +58,14 @@ endif()
 
 configure_python_script(bindings)
 
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 set(TIMEMORY_INTERFACE_LIBRARY timemory-ex-python-bindings)
 find_package(
     timemory
     COMPONENTS headers
     OPTIONAL_COMPONENTS mpi cxx shared)
 
-pybind11_add_module(libex_python_bindings ${PROJECT_SOURCE_DIR}/libex_bindings.cpp)
+pybind11_add_module(libex_python_bindings THIN_LTO ${PROJECT_SOURCE_DIR}/libex_bindings.cpp)
 
 include(CheckCXXCompilerFlag)
 

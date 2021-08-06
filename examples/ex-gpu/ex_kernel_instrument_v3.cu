@@ -182,10 +182,10 @@ main(int argc, char** argv)
 {
     using parser_t = tim::argparse::argument_parser;
 
-    int           nitr    = 10;
-    int           nstream = 2;
+    int           nitr    = 1000;
+    int           nstream = 1;
     int           npow    = 20;
-    std::set<int> nblocks = { 32, 64, 128, 256, 512 };
+    std::set<int> nblocks = { 1024 };
 
     parser_t _parser{ "ex_kernel_instrument_v2" };
     _parser.add_argument({ "-n", "--num-iter" }, "Number of iterations")
@@ -455,11 +455,8 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
     float*                y         = device::cpu::alloc<float>(N);
     float                 data_size = (3.0 * N * sizeof(float)) / tim::units::gigabyte;
     std::vector<stream_t> streams(std::max<int>(nstreams, 1), gpu::default_stream_v);
-    if(streams.size() > 1)
-    {
-        for(auto& itr : streams)
-            gpu::stream_create(itr);
-    }
+    for(auto& itr : streams)
+        gpu::stream_create(itr);
     stream_t stream = streams.at(0);
     params_t params(params_t::compute(N, block_size), block_size);
 
@@ -467,11 +464,6 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
         for(auto& itr : streams)
             gpu::stream_sync(itr);
     };
-
-    std::cout << "\n"
-              << __FUNCTION__ << " launching on " << default_device::name()
-              << " with parameters: " << params << "\n"
-              << std::endl;
 
     for(int i = 0; i < N; ++i)
     {
@@ -485,16 +477,17 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
     TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memcpy(d_y, y, N, gpu::host_to_device_v, stream));
 
     sync_streams();
-    for(auto& itr : streams)
-        tot.mark_begin(mpl::piecewise_select<comp::gpu_event>{}, itr);
     for(int i = 0; i < nitr; ++i)
     {
+        auto& itr     = streams.at(i % streams.size());
+        params.stream = itr;
+        std::cout << __FUNCTION__ << " launching on " << default_device::name()
+                  << " with parameters: " << params << std::endl;
         tot.mark(mpl::piecewise_select<comp::gpu_device_timer>{});
-        params.stream = streams.at(i % streams.size());
+        tot.mark_begin(mpl::piecewise_select<comp::gpu_event>{}, itr);
         device::launch(params, saxpy_inst, N, 1.0, d_x, d_y);
-    }
-    for(auto& itr : streams)
         tot.mark_end(mpl::piecewise_select<comp::gpu_event>{}, itr);
+    }
     sync_streams();
 
     TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memcpy(y, d_y, N, gpu::device_to_host_v, stream));

@@ -127,13 +127,13 @@ find_static_library(
 #
 # ----------------------------------------------------------------------------------------#
 
-find_static_library(
-    PAPI_pfm_LIBRARY
-    NAMES pfm libpfm.a libpfm
-    HINTS ${PAPI_ROOT}
-    PATHS ${PAPI_ROOT}
-    PATH_SUFFIXES lib lib64
-    DOC "Path to the PAPI pfm static library" ${PAPI_FIND_ARGS})
+find_static_library(PAPI_pfm_STATIC_LIBRARY
+    NAMES           pfm libpfm.a libpfm
+    HINTS           ${PAPI_ROOT}
+    PATHS           ${PAPI_ROOT}
+    PATH_SUFFIXES   lib lib64
+    DOC             "Path to the PAPI pfm static library"
+    ${PAPI_FIND_ARGS})
 
 # ----------------------------------------------------------------------------------------#
 

@@ -386,17 +386,17 @@ construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value>
             "rank, this will be the results for that individual rank. This is the "
             "general form regardless of whether MPI and/or UPC++ is used as the DMP "
             "backend");
-        _pystorage.def_static(
-            "mpi_get", _mpi_get,
-            "Identical to dmp_get if the distributed memory parallelism library is MPI");
+        _pystorage.def_static("mpi_get", _mpi_get,
+                              "Identical to dmp_get if the distributed memory "
+                              "parallelism library is MPI");
         _pystorage.def_static("upcxx_get", _upc_get,
                               "Identical to dmp_get if the distributed memory "
                               "parallelism library is UPC++");
 
-        _pystorage.def_static(
-            "get_tree", _get_tree,
-            "Get the component results in a hierarchical data structure. This returns "
-            "only the data within the current process");
+        _pystorage.def_static("get_tree", _get_tree,
+                              "Get the component results in a hierarchical data "
+                              "structure. This returns "
+                              "only the data within the current process");
         _pystorage.def_static(
             "dmp_get_tree", _dmp_get_tree,
             "Get the full hierarchy of component results across all the distributed "

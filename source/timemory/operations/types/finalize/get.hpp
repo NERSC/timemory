@@ -290,12 +290,27 @@ get<Type, true>::operator()(result_type& ret)
         result_type _list{};
         {
             // the head node should always be ignored
-            int64_t _min = std::numeric_limits<int64_t>::max();
-            for(const auto& itr : data.graph())
-                _min = std::min<int64_t>(_min, itr.depth());
-
-            for(auto itr = data.graph().begin(); itr != data.graph().end(); ++itr)
+            int64_t _min   = std::numeric_limits<int64_t>::max();
+            auto&   _graph = data.graph();
+            for(auto itr = _graph.begin(); itr != _graph.end(); ++itr)
             {
+                if(!itr)
+                {
+                    PRINT_HERE("[%s] Warning! Invalid iterator!",
+                               demangle<Type>().c_str());
+                    continue;
+                }
+                _min = std::min<int64_t>(_min, itr->depth());
+            }
+
+            for(auto itr = _graph.begin(); itr != _graph.end(); ++itr)
+            {
+                if(!itr)
+                {
+                    PRINT_HERE("[%s] Warning! Invalid iterator!",
+                               demangle<Type>().c_str());
+                    continue;
+                }
                 if(itr->depth() > _min)
                 {
                     auto _depth     = itr->depth() - (_min + 1);

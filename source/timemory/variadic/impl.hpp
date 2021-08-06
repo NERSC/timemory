@@ -301,7 +301,7 @@ to_tuple_pointer(std::array<Tp, N>& _data, std::index_sequence<Idx...>,
     return std::make_tuple(std::get<Idx>(_data)...);
 }
 
-TIMEMORY_HOT_INLINE
+TIMEMORY_INLINE
 bool
 global_enabled()
 {

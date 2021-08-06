@@ -260,7 +260,8 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const statistics& obj)
     {
         using namespace tim::stl::ostream;
-        os << "[sum: " << obj.get_sum() << "] [mean: " << obj.get_mean()
+        auto _mean = (obj.get_count() > 0) ? obj.get_mean() : value_type{};
+        os << "[sum: " << obj.get_sum() << "] [mean: " << _mean
            << "] [min: " << obj.get_min() << "] [max: " << obj.get_max()
            << "] [var: " << obj.get_variance() << "] [stddev: " << obj.get_stddev()
            << "] [count: " << obj.get_count() << "]";

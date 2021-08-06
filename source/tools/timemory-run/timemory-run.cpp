@@ -273,12 +273,10 @@ main(int argc, char** argv)
     parser.add_argument({ "--load" },
                         "Supplemental instrumentation library names w/o extension (e.g. "
                         "'libinstr' for 'libinstr.so' or 'libinstr.a')");
-    parser.add_argument(
-        { "--init-functions" },
-        "Initialization function(s) for supplemental instrumentation libraries");
-    parser.add_argument(
-        { "--fini-functions" },
-        "Finalization function(s) for supplemental instrumentation libraries");
+    parser.add_argument({ "--init-functions" }, "Initialization function(s) for "
+                                                "supplemental instrumentation libraries");
+    parser.add_argument({ "--fini-functions" }, "Finalization function(s) for "
+                                                "supplemental instrumentation libraries");
     parser
         .add_argument(
             { "-b", "--batch-size" },
@@ -820,7 +818,6 @@ main(int argc, char** argv)
     auto* env_func      = find_function(app_image, "timemory_trace_set_env");
     auto* mpi_func      = find_function(app_image, "timemory_trace_set_mpi");
     auto* hash_func     = find_function(app_image, "timemory_add_hash_id");
-    auto* exit_func     = find_function(app_image, "exit", { "_exit" });
     auto* mpi_init_func = find_function(app_image, "MPI_Init", { "MPI_Init_thread" });
     auto* mpi_fini_func = find_function(app_image, "MPI_Finalize");
 
@@ -903,9 +900,10 @@ main(int argc, char** argv)
         {
             if(sitr.find(_name) != npos_v && used_stub_names.count(sitr) == 0)
             {
-                verbprintf(
-                    3, "Found possible match for '%s' instrumentation init: '%s'...\n",
-                    _name.c_str(), sitr.c_str());
+                verbprintf(3,
+                           "Found possible match for '%s' instrumentation init: "
+                           "'%s'...\n",
+                           _name.c_str(), sitr.c_str());
                 best_init_name = sitr;
                 break;
             }
@@ -916,9 +914,10 @@ main(int argc, char** argv)
         {
             if(sitr.find(_name) != npos_v && used_stub_names.count(sitr) == 0)
             {
-                verbprintf(
-                    3, "Found possible match for '%s' instrumentation fini: '%s'...\n",
-                    _name.c_str(), sitr.c_str());
+                verbprintf(3,
+                           "Found possible match for '%s' instrumentation fini: "
+                           "'%s'...\n",
+                           _name.c_str(), sitr.c_str());
                 base_fini_name = sitr;
                 break;
             }
@@ -1110,7 +1109,6 @@ main(int argc, char** argv)
 
     auto init_call = init_call_args.get(init_func);
     auto fini_call = fini_call_args.get(fini_func);
-    auto exit_call = fini_call_args.get(exit_func);
     auto umpi_call = umpi_call_args.get(mpi_func);
 
     auto main_beg_call = main_call_args.get(entr_trace);
@@ -1233,12 +1231,6 @@ main(int argc, char** argv)
     {
         if(itr.second)
             fini_names.push_back(itr.second.get());
-    }
-
-    if(exit_func && exit_call)
-    {
-        verbprintf(0, "Inserting exit instrumentation...\n");
-        insert_instr(addr_space, exit_func, exit_call, BPatch_entry, nullptr, nullptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -1477,9 +1469,8 @@ main(int argc, char** argv)
         bool success  = addr_space->finalizeInsertionSet(true, &modified);
         if(!success)
         {
-            verbprintf(
-                1,
-                "Using insertion set failed. Restarting with individual insertion...\n");
+            verbprintf(1, "Using insertion set failed. Restarting with individual "
+                          "insertion...\n");
             auto _execute_batch = [&instr_procedure_functions, &addr_space](size_t _beg,
                                                                             size_t _end) {
                 verbprintf(1, "Instrumenting batch of functions [%lu, %lu)\n",

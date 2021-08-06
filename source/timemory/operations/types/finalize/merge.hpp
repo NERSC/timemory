@@ -96,11 +96,12 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         // copy over aliases
         if(rhs.get_hash_aliases() && lhs.get_hash_aliases())
         {
-            CONDITIONAL_PRINT_HERE(
-                _debug,
-                "[%s]> merging %lu hash-aliases into existing set of %lu hash-aliases!",
-                Type::get_label().c_str(), (unsigned long) rhs.get_hash_aliases()->size(),
-                (unsigned long) lhs.get_hash_aliases()->size());
+            CONDITIONAL_PRINT_HERE(_debug,
+                                   "[%s]> merging %lu hash-aliases into existing set of "
+                                   "%lu hash-aliases!",
+                                   Type::get_label().c_str(),
+                                   (unsigned long) rhs.get_hash_aliases()->size(),
+                                   (unsigned long) lhs.get_hash_aliases()->size());
 
             auto _hash_aliases = *rhs.get_hash_aliases();
             for(const auto& itr : _hash_aliases)
@@ -117,6 +118,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         PRINT_HERE("[%s]> Warning! master is not initialized! Segmentation fault likely",
                    Type::get_label().c_str());
         lhs.graph().insert_subgraph_after(lhs._data().head(), rhs.data().head());
+        lhs.graph().steal_resources(rhs.graph());
         lhs.m_initialized = rhs.m_initialized;
         lhs.m_finalized   = rhs.m_finalized;
         _copy_hash_ids();
@@ -198,6 +200,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     CONDITIONAL_PRINT_HERE(_debug, "[%s]> clearing merged storage!",
                            Type::get_label().c_str());
 
+    lhs.graph().steal_resources(rhs.graph());
     rhs.data().clear();
 }
 //

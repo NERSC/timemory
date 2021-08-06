@@ -170,6 +170,7 @@ A `get_max()` function is provided for convenience as some systems (e.g. KNL) do
 - [Caliper](https://github.com/LLNL/Caliper)
 - [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
 - [gperftools](https://github.com/gperftools/gperftools)
+- [Perfetto](https://perfetto.dev/docs/)
 - MPI
 - OpenMP
 - CrayPAT

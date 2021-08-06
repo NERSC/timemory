@@ -35,6 +35,7 @@ cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0053 NEW)
 cmake_policy(SET CMP0063 NEW)
+cmake_policy(SET CMP0069 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
     cmake_policy(SET CMP0077 NEW)
     cmake_policy(SET CMP0079 NEW)
@@ -126,6 +127,7 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${_BIN_DIR})
     endif()
 endforeach()
+
 if(WIN32)
     # use folders for cmake predefined projects
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -150,31 +152,23 @@ if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
             timemory-compile-time
             LINK
             ANALYZER_OPTIONS
-            -s
-            "${PROJECT_BINARY_DIR}/"
-            "${PROJECT_SOURCE_DIR}/"
-            -f
-            "lang-all"
-            "so"
-            "a"
-            "dylib"
-            "dll"
-            -i
-            ".*(_tests)$"
-            "^(ex_).*"
-            -e
-            "^(@rpath).*"
-            "^(/usr)"
-            "^(/opt)")
+                -s "${PROJECT_BINARY_DIR}/" "${PROJECT_SOURCE_DIR}/"
+                -f "lang-all" "so" "a" "dylib" "dll"
+                -i "^-"
+                -e "^(@rpath).*")
         set(TIMEMORY_USE_CTP ON)
     else()
         set(TIMEMORY_USE_CTP OFF)
     endif()
 endif()
 
-# ----------------------------------------------------------------------------------------#
-# handle some additional configuration before other includes
-# ----------------------------------------------------------------------------------------#
+if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_BUILD_TESTING)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
+#----------------------------------------------------------------------------------------#
+#   handle some additional configuration before other includes
+#----------------------------------------------------------------------------------------#
 
 set(_BUILD_SHARED_CXX ${BUILD_SHARED_LIBS})
 set(_BUILD_STATIC_CXX ${BUILD_STATIC_LIBS})
@@ -372,3 +366,7 @@ endif()
 foreach(_EXAMPLE_OPTION MPI TAU CUDA PAPI CUPTI KOKKOS CALIPER)
     set(_IGNORE ${USE_${_EXAMPLE_OPTION}})
 endforeach()
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    include(ConfigCPack)
+endif()

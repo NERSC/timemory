@@ -443,6 +443,7 @@ define_default_option(_CRAYPAT ON)
 define_default_option(_OMPT OFF)
 define_default_option(_LIKWID ${_NON_APPLE_UNIX})
 define_default_option(_GOTCHA ${_NON_APPLE_UNIX})
+define_default_option(_PERFETTO ${_NON_APPLE_UNIX})
 define_default_option(_NCCL ${_USE_CUDA})
 define_default_option(_LIKWID_NVMON ${_LIKWID} ${_NON_APPLE_UNIX} ${_CUDA})
 
@@ -487,6 +488,8 @@ add_option(TIMEMORY_USE_HIP
     "Enable HIP option for GPU roofline" ${_HIP} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
+add_option(TIMEMORY_USE_PERFETTO
+    "Enable Perfetto" ${_PERFETTO} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_PYTHON
     "Enable Python" ${_PYTHON} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_COMPILE_TIMING

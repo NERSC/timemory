@@ -51,8 +51,8 @@ struct record_statistics
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
 
-    static void apply(statistics<type>&, const CompT&);
-    static void apply(type&, const CompT&) {}
+    void operator()(statistics<type>&, const CompT&, bool _accum = true);
+    void operator()(type&, const CompT&) {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -66,7 +66,7 @@ struct record_statistics<CompT, void>
     using statistics_type = statistics<type>;
 
     template <typename... ArgsT>
-    static void apply(ArgsT&&...)
+    void operator()(ArgsT&&...)
     {}
 };
 
@@ -81,7 +81,7 @@ struct record_statistics<CompT, std::tuple<>>
     using statistics_type = statistics<type>;
 
     template <typename... ArgsT>
-    static void apply(ArgsT&&...)
+    void operator()(ArgsT&&...)
     {}
 };
 

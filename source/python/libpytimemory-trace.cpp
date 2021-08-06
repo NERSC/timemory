@@ -161,8 +161,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     //
     if(_has_last)
     {
-        // _last->second.stop().pop().push();
-        _last->second.stop();
+        _last->second.stop().update_statistics(true);
         _has_last = false;
     }
     //
@@ -588,9 +587,10 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
 py::module
 generate(py::module& _pymod)
 {
-    py::module _trace = _pymod.def_submodule(
-        "trace", "Python tracing functions and C/C++/Fortran-compatible library "
-                 "functions (subject to throttling)");
+    py::module _trace =
+        _pymod.def_submodule("trace", "Python tracing functions and "
+                                      "C/C++/Fortran-compatible library "
+                                      "functions (subject to throttling)");
 
     py::class_<PyCodeObject>  _code_object(_pymod, "code_object", "PyCodeObject");
     py::class_<PyFrameObject> _frame_object(_pymod, "frame_object", "PyFrameObject");

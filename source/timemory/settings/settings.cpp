@@ -476,7 +476,8 @@ settings::initialize_core()
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         bool, flat_profile, TIMEMORY_SETTINGS_KEY("FLAT_PROFILE"),
-        "Set the label hierarchy mode to default to flat",
+        "Set the label hierarchy mode to default to "
+        "flat",
         scope::get_fields()[scope::flat::value],
         strvector_t({ "--timemory-flat-profile" }), -1, 1);
 
@@ -549,11 +550,12 @@ settings::initialize_components()
         "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
         "", strvector_t({ "--timemory-kokkos-components" }));
 
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, components, TIMEMORY_SETTINGS_KEY("COMPONENTS"),
-        "A specification of components which is used by the library interface. This "
-        "falls back to TIMEMORY_GLOBAL_COMPONENTS.",
-        "", strvector_t({ "--timemory-components" }));
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(string_t, components,
+                                      TIMEMORY_SETTINGS_KEY("COMPONENTS"),
+                                      "A specification of components which is used by "
+                                      "the library interface. This "
+                                      "falls back to TIMEMORY_GLOBAL_COMPONENTS.",
+                                      "", strvector_t({ "--timemory-components" }));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -625,7 +627,8 @@ settings::initialize_io()
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, output_path, TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"),
         "Explicitly specify the output folder for results", "timemory-output",
-        strvector_t({ "--timemory-output-path" }), 1);  // folder
+        strvector_t({ "--timemory-output-path" }),
+        1);  // folder
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(string_t, output_prefix,
                                       TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"),
@@ -692,10 +695,11 @@ settings::initialize_format()
         int16_t, timing_width, TIMEMORY_SETTINGS_KEY("TIMING_WIDTH"),
         "Set the output width for components with 'is_timing_category' type-trait", -1);
 
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, timing_units, TIMEMORY_SETTINGS_KEY("TIMING_UNITS"),
-        "Set the units for components with 'uses_timing_units' type-trait", "",
-        strvector_t({ "--timemory-timing-units" }), 1);
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(string_t, timing_units,
+                                      TIMEMORY_SETTINGS_KEY("TIMING_UNITS"),
+                                      "Set the units for components with "
+                                      "'uses_timing_units' type-trait",
+                                      "", strvector_t({ "--timemory-timing-units" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(bool, timing_scientific,
                                   TIMEMORY_SETTINGS_KEY("TIMING_SCIENTIFIC"),
@@ -711,10 +715,11 @@ settings::initialize_format()
         int16_t, memory_width, TIMEMORY_SETTINGS_KEY("MEMORY_WIDTH"),
         "Set the output width for components with 'is_memory_category' type-trait", -1);
 
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, memory_units, TIMEMORY_SETTINGS_KEY("MEMORY_UNITS"),
-        "Set the units for components with 'uses_memory_units' type-trait", "",
-        strvector_t({ "--timemory-memory-units" }), 1);
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(string_t, memory_units,
+                                      TIMEMORY_SETTINGS_KEY("MEMORY_UNITS"),
+                                      "Set the units for components with "
+                                      "'uses_memory_units' type-trait",
+                                      "", strvector_t({ "--timemory-memory-units" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(bool, memory_scientific,
                                   TIMEMORY_SETTINGS_KEY("MEMORY_SCIENTIFIC"),
@@ -759,11 +764,12 @@ settings::initialize_parallel()
         process::id_t, target_pid, TIMEMORY_SETTINGS_KEY("TARGET_PID"),
         "Process ID for the components which require this", process::get_target_id());
 
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        bool, mpi_init, TIMEMORY_SETTINGS_KEY("MPI_INIT"),
-        "Enable/disable timemory calling MPI_Init / MPI_Init_thread during certain "
-        "timemory_init(...) invocations",
-        false, strvector_t({ "--timemory-mpi-init" }), -1, 1);
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(bool, mpi_init, TIMEMORY_SETTINGS_KEY("MPI_INIT"),
+                                      "Enable/disable timemory calling MPI_Init / "
+                                      "MPI_Init_thread during certain "
+                                      "timemory_init(...) invocations",
+                                      false, strvector_t({ "--timemory-mpi-init" }), -1,
+                                      1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, mpi_finalize, TIMEMORY_SETTINGS_KEY("MPI_FINALIZE"),
@@ -829,20 +835,22 @@ settings::initialize_tpls()
         "Configure suppression of reporting PAPI errors/warnings", false,
         strvector_t({ "--timemory-papi-quiet" }), -1, 1);
 
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, papi_events, TIMEMORY_SETTINGS_KEY("PAPI_EVENTS"),
-        "PAPI presets and events to collect (see also: papi_avail)", "",
-        strvector_t({ "--timemory-papi-events" }));
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(string_t, papi_events,
+                                      TIMEMORY_SETTINGS_KEY("PAPI_EVENTS"),
+                                      "PAPI presets and events to collect (see also: "
+                                      "papi_avail)",
+                                      "", strvector_t({ "--timemory-papi-events" }));
 
-    TIMEMORY_SETTINGS_MEMBER_IMPL(
-        bool, papi_attach, TIMEMORY_SETTINGS_KEY("PAPI_ATTACH"),
-        "Configure PAPI to attach to another process (see also: TIMEMORY_TARGET_PID)",
-        false);
+    TIMEMORY_SETTINGS_MEMBER_IMPL(bool, papi_attach, TIMEMORY_SETTINGS_KEY("PAPI_ATTACH"),
+                                  "Configure PAPI to attach to another process (see "
+                                  "also: TIMEMORY_TARGET_PID)",
+                                  false);
 
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        int, papi_overflow, TIMEMORY_SETTINGS_KEY("PAPI_OVERFLOW"),
-        "Value at which PAPI hw counters trigger an overflow callback", 0,
-        strvector_t({ "--timemory-papi-overflow" }), 1);
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(int, papi_overflow,
+                                      TIMEMORY_SETTINGS_KEY("PAPI_OVERFLOW"),
+                                      "Value at which PAPI hw counters trigger an "
+                                      "overflow callback",
+                                      0, strvector_t({ "--timemory-papi-overflow" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         uint64_t, cuda_event_batch_size, TIMEMORY_SETTINGS_KEY("CUDA_EVENT_BATCH_SIZE"),
@@ -862,15 +870,17 @@ settings::initialize_tpls()
                                       "Specific cupti activity kinds to track", "",
                                       strvector_t({ "--timemory-cupti-activity-kinds" }));
 
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, cupti_events, TIMEMORY_SETTINGS_KEY("CUPTI_EVENTS"),
-        "Hardware counter event types to collect on NVIDIA GPUs", "",
-        strvector_t({ "--timemory-cupti-events" }));
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(string_t, cupti_events,
+                                      TIMEMORY_SETTINGS_KEY("CUPTI_EVENTS"),
+                                      "Hardware counter event types to collect on NVIDIA "
+                                      "GPUs",
+                                      "", strvector_t({ "--timemory-cupti-events" }));
 
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, cupti_metrics, TIMEMORY_SETTINGS_KEY("CUPTI_METRICS"),
-        "Hardware counter metric types to collect on NVIDIA GPUs", "",
-        strvector_t({ "--timemory-cupti-metrics" }));
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(string_t, cupti_metrics,
+                                      TIMEMORY_SETTINGS_KEY("CUPTI_METRICS"),
+                                      "Hardware counter metric types to collect on "
+                                      "NVIDIA GPUs",
+                                      "", strvector_t({ "--timemory-cupti-metrics" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(int, cupti_device,
                                       TIMEMORY_SETTINGS_KEY("CUPTI_DEVICE"),
@@ -881,15 +891,16 @@ settings::initialize_tpls()
                 "The period for PC sampling. Must be >= 5 and <= 31", 8,
                 strvector_t{ "--timemory-cupti-pcsampling-period" });
 
-    insert<bool>(
-        "TIMEMORY_CUPTI_PCSAMPLING_PER_LINE", "cupti_pcsampling_per_line",
-        "Report the PC samples per-line or collapse into one entry for entire function",
-        false, strvector_t{ "--timemory-cupti-pcsampling-per-line" });
+    insert<bool>("TIMEMORY_CUPTI_PCSAMPLING_PER_LINE", "cupti_pcsampling_per_line",
+                 "Report the PC samples per-line or collapse into one entry for entire "
+                 "function",
+                 false, strvector_t{ "--timemory-cupti-pcsampling-per-line" });
 
-    insert<bool>(
-        "TIMEMORY_CUPTI_PCSAMPLING_REGION_TOTALS", "cupti_pcsampling_region_totals",
-        "When enabled, region markers will report total samples from all child functions",
-        true, strvector_t{ "--timemory-cupti-pcsampling-region-totals" });
+    insert<bool>("TIMEMORY_CUPTI_PCSAMPLING_REGION_TOTALS",
+                 "cupti_pcsampling_region_totals",
+                 "When enabled, region markers will report total samples from all child "
+                 "functions",
+                 true, strvector_t{ "--timemory-cupti-pcsampling-region-totals" });
 
     insert<bool>("TIMEMORY_CUPTI_PCSAMPLING_SERIALIZED", "cupti_pcsampling_serialized",
                  "Serialize all the kernel functions", false,
@@ -930,7 +941,8 @@ settings::initialize_roofline()
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, cpu_roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE_CPU"),
-        "Configure the roofline collection mode for CPU specifically. Options: 'op', "
+        "Configure the roofline collection mode for CPU "
+        "specifically. Options: 'op', "
         "'ai'",
         "op", strvector_t({ "--timemory-cpu-roofline-mode" }), 1, 1,
         strvector_t({ "op", "ai" }));
@@ -1069,33 +1081,37 @@ settings::initialize_ert()
         uint64_t, ert_num_streams, TIMEMORY_SETTINGS_KEY("ERT_NUM_STREAMS"),
         "Number of streams to use when launching kernels in ERT on the GPU", 1);
 
-    TIMEMORY_SETTINGS_MEMBER_IMPL(
-        uint64_t, ert_grid_size, TIMEMORY_SETTINGS_KEY("ERT_GRID_SIZE"),
-        "Configure the grid size (number of blocks) for ERT on GPU (0 == auto-compute)",
-        0);
+    TIMEMORY_SETTINGS_MEMBER_IMPL(uint64_t, ert_grid_size,
+                                  TIMEMORY_SETTINGS_KEY("ERT_GRID_SIZE"),
+                                  "Configure the grid size (number of blocks) for ERT on "
+                                  "GPU (0 == auto-compute)",
+                                  0);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         uint64_t, ert_block_size, TIMEMORY_SETTINGS_KEY("ERT_BLOCK_SIZE"),
         "Configure the block size (number of threads per block) for ERT on GPU", 1024);
 
-    TIMEMORY_SETTINGS_MEMBER_IMPL(
-        uint64_t, ert_alignment, TIMEMORY_SETTINGS_KEY("ERT_ALIGNMENT"),
-        "Configure the alignment (in bits) when running ERT on CPU (0 == 8 * sizeof(T))",
-        0);
+    TIMEMORY_SETTINGS_MEMBER_IMPL(uint64_t, ert_alignment,
+                                  TIMEMORY_SETTINGS_KEY("ERT_ALIGNMENT"),
+                                  "Configure the alignment (in bits) when running ERT on "
+                                  "CPU (0 == 8 * sizeof(T))",
+                                  0);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         uint64_t, ert_min_working_size, TIMEMORY_SETTINGS_KEY("ERT_MIN_WORKING_SIZE"),
         "Configure the minimum working size when running ERT (0 == device specific)", 0);
 
-    TIMEMORY_SETTINGS_MEMBER_IMPL(
-        uint64_t, ert_min_working_size_cpu,
-        TIMEMORY_SETTINGS_KEY("ERT_MIN_WORKING_SIZE_CPU"),
-        "Configure the minimum working size when running ERT on CPU", 64);
+    TIMEMORY_SETTINGS_MEMBER_IMPL(uint64_t, ert_min_working_size_cpu,
+                                  TIMEMORY_SETTINGS_KEY("ERT_MIN_WORKING_SIZE_CPU"),
+                                  "Configure the minimum working size when running ERT "
+                                  "on CPU",
+                                  64);
 
-    TIMEMORY_SETTINGS_MEMBER_IMPL(
-        uint64_t, ert_min_working_size_gpu,
-        TIMEMORY_SETTINGS_KEY("ERT_MIN_WORKING_SIZE_GPU"),
-        "Configure the minimum working size when running ERT on GPU", 10 * 1000 * 1000);
+    TIMEMORY_SETTINGS_MEMBER_IMPL(uint64_t, ert_min_working_size_gpu,
+                                  TIMEMORY_SETTINGS_KEY("ERT_MIN_WORKING_SIZE_GPU"),
+                                  "Configure the minimum working size when running ERT "
+                                  "on GPU",
+                                  10 * 1000 * 1000);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         uint64_t, ert_max_data_size, TIMEMORY_SETTINGS_KEY("ERT_MAX_DATA_SIZE"),
@@ -1121,15 +1137,17 @@ void
 settings::initialize_dart()
 {
     // PRINT_HERE("%s", "");
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, dart_type, TIMEMORY_SETTINGS_KEY("DART_TYPE"),
-        "Only echo this measurement type (see also: TIMEMORY_DART_OUTPUT)", "",
-        strvector_t({ "--timemory-dart-type" }));
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(string_t, dart_type,
+                                      TIMEMORY_SETTINGS_KEY("DART_TYPE"),
+                                      "Only echo this measurement type (see also: "
+                                      "TIMEMORY_DART_OUTPUT)",
+                                      "", strvector_t({ "--timemory-dart-type" }));
 
-    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        uint64_t, dart_count, TIMEMORY_SETTINGS_KEY("DART_COUNT"),
-        "Only echo this number of dart tags (see also: TIMEMORY_DART_OUTPUT)", 1,
-        strvector_t({ "--timemory-dart-count" }), 1);
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(uint64_t, dart_count,
+                                      TIMEMORY_SETTINGS_KEY("DART_COUNT"),
+                                      "Only echo this number of dart tags (see also: "
+                                      "TIMEMORY_DART_OUTPUT)",
+                                      1, strvector_t({ "--timemory-dart-count" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, dart_label, TIMEMORY_SETTINGS_KEY("DART_LABEL"),

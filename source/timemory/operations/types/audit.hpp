@@ -71,9 +71,6 @@ struct audit
 
     auto operator()(type& obj) const
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         bool _called = false;
         sfinae(obj, _called, 0, 0, 0);
     }
@@ -83,9 +80,6 @@ struct audit
     auto operator()(type& obj, const gotcha_data_t& _data, Up&& _phase,
                     Args&&... args) const
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         bool _called = false;
         sfinae(obj, _called, 0, 0, 0, _data, std::forward<Up>(_phase),
                std::forward<Args>(args)...);
@@ -106,9 +100,6 @@ struct audit
               enable_if_t<!std::is_same<decay_t<Arg>, gotcha_data_t>::value> = 0>
     auto operator()(type& obj, Arg&& arg, Args&&... args) const
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         bool _called = false;
         sfinae(obj, _called, 0, 0, 0, std::forward<Arg>(arg),
                std::forward<Args>(args)...);

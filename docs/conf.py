@@ -167,7 +167,6 @@ if False:
                 " TIMEMORY_VISIBLE",
                 "TIMEMORY_NEVER_INSTRUMENT"
                 "TIMEMORY_ALWAYS_INLINE",
-                "TIMEMORY_HOT_INLINE"
                 "TIMEMORY_NOINLINE"
                 "TIMEMORY_INLINE"
                 "TIMEMORY_HOT",
@@ -238,6 +237,7 @@ html_static_path = ["_static"]
 # Breathe Configuration
 breathe_projects = {"timemory": "doxygen-xml"}
 breathe_default_project = "timemory"
+breathe_debug_trace_directives = True
 # breathe_default_members = ('members', )
 if False:
     breathe_projects_source = {

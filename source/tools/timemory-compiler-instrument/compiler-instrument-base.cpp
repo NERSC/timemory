@@ -54,6 +54,7 @@ struct monotonic_clock;
 struct monotonic_raw_clock;
 struct user_mode_time;
 struct kernel_mode_time;
+struct printer;
 }  // namespace component
 }  // namespace tim
 // disable these components for compiler instrumentation
@@ -61,6 +62,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::monotonic_clock, false_t
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::monotonic_raw_clock, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mode_time, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::kernel_mode_time, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::printer, false_type)
 
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
@@ -781,3 +783,7 @@ auto internal_gotcha_handle = setup_gotcha();
 }  // namespace
 
 //--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_PERFETTO)
+PERFETTO_TRACK_EVENT_STATIC_STORAGE();
+#endif

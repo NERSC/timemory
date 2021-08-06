@@ -732,7 +732,6 @@ public:
      * archive) */
     InputArchive(ArchiveType* const derived)
     : self(derived)
-
     {}
 
     InputArchive& operator=(InputArchive const&) = delete;

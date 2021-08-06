@@ -393,6 +393,7 @@ public:
         f_settings() = std::make_shared<settings>(_settings);
     }
 
+#if !defined(DOXYGEN_SHOULD_SKIP_THIS)
     /// swaps out the actual settings instance
     static settings&& swap_settings(settings _settings)
     {
@@ -400,6 +401,7 @@ public:
         *(f_settings()) = std::move(_settings);
         return std::move(_tmp);
     }
+#endif
 };
 //
 //----------------------------------------------------------------------------------//
