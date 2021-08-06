@@ -167,7 +167,6 @@ if False:
                 " TIMEMORY_VISIBLE",
                 "TIMEMORY_NEVER_INSTRUMENT"
                 "TIMEMORY_ALWAYS_INLINE",
-                "TIMEMORY_HOT_INLINE"
                 "TIMEMORY_NOINLINE"
                 "TIMEMORY_INLINE"
                 "TIMEMORY_HOT",

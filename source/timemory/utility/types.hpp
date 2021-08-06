@@ -407,7 +407,7 @@ get_fields()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Arg, size_t... Idx>
-static TIMEMORY_HOT_INLINE auto
+static TIMEMORY_INLINE auto
 generate(Arg&& arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
@@ -419,7 +419,7 @@ generate(Arg&& arg, index_sequence<Idx...>)
 //--------------------------------------------------------------------------------------//
 //
 template <size_t... Idx>
-static TIMEMORY_HOT_INLINE auto
+static TIMEMORY_INLINE auto
 either(data_type ret, data_type arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
@@ -429,7 +429,7 @@ either(data_type ret, data_type arg, index_sequence<Idx...>)
 //
 //--------------------------------------------------------------------------------------//
 //
-static TIMEMORY_HOT_INLINE auto
+static TIMEMORY_INLINE auto
 get_default_bitset() -> data_type
 {
     return generate(get_fields(), make_index_sequence<scope_count>{});
@@ -649,7 +649,7 @@ operator+(config _lhs, config _rhs) TIMEMORY_HOT;
 // clang-format on
 //--------------------------------------------------------------------------------------//
 //
-static TIMEMORY_HOT_INLINE auto
+static TIMEMORY_INLINE auto
 get_default() -> config
 {
     return config{ get_default_bitset() };
@@ -657,7 +657,7 @@ get_default() -> config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 operator+(config _lhs, tree) -> config
 {
     _lhs.set(tree::value, true);
@@ -666,7 +666,7 @@ operator+(config _lhs, tree) -> config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 operator+(config _lhs, flat) -> config
 {
     _lhs.set(flat::value, true);
@@ -675,7 +675,7 @@ operator+(config _lhs, flat) -> config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 operator+(config _lhs, timeline) -> config
 {
     _lhs.set(timeline::value, true);
@@ -684,7 +684,7 @@ operator+(config _lhs, timeline) -> config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HOT_INLINE auto
+TIMEMORY_INLINE auto
 operator+(config _lhs, config _rhs) -> config
 {
     return config{ either(_lhs, _rhs, make_index_sequence<scope_count>{}) };

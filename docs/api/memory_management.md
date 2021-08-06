@@ -15,6 +15,28 @@ storage singletons are created, it registers functors with the manager for desto
     :members:
 ```
 
+## Memory Buffers
+
+```eval_rst
+.. doxygenstruct:: tim::base::ring_buffer
+    :members:
+    :undoc-members:
+.. doxygenstruct:: tim::data_storage::ring_buffer
+    :members:
+    :undoc-members:
+```
+
+## Allocators
+
+```eval_rst
+.. doxygenclass:: tim::data:ring_buffer_allocator
+    :members:
+    :undoc-members:
+.. doxygenclass:: tim::ert::aligned_allocator
+    :members:
+    :undoc-members:
+```
+
 ## Graph Classes
 
 The graph classes are responsible for maintaining the hierarchy of the calling context tree.

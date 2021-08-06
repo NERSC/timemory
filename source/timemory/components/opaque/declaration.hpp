@@ -44,10 +44,11 @@ namespace component
 //--------------------------------------------------------------------------------------//
 //
 template <typename InitF, typename StartF, typename StopF, typename GetF, typename DelF,
-          typename SetupF, typename PushF, typename PopF, typename SampleF>
+          typename SetupF, typename PushF, typename PopF, typename SampleF,
+          typename UpdateStatsF>
 opaque::opaque(bool _valid, size_t _typeid, InitF&& _init, StartF&& _start, StopF&& _stop,
                GetF&& _get, DelF&& _del, SetupF&& _setup, PushF&& _push, PopF&& _pop,
-               SampleF&& _sample)
+               SampleF&& _sample, UpdateStatsF&& _update_stats)
 : m_valid(_valid)
 , m_typeid(_typeid)
 , m_init(std::move(_init))
@@ -59,6 +60,7 @@ opaque::opaque(bool _valid, size_t _typeid, InitF&& _init, StartF&& _start, Stop
 , m_get(std::move(_get))
 , m_del(std::move(_del))
 , m_sample(std::move(_sample))
+, m_update_stats(std::move(_update_stats))
 {}
 //
 //--------------------------------------------------------------------------------------//
@@ -156,6 +158,15 @@ opaque::get(void*& ptr, size_t _hash) const
 {
     if(m_data)
         m_get(m_data, ptr, _hash);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline void
+opaque::update_statistics(bool _v) const
+{
+    if(m_data)
+        m_update_stats(m_data, _v);
 }
 //
 //--------------------------------------------------------------------------------------//

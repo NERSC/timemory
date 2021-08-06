@@ -144,12 +144,6 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_HOT_INLINE)
-#    define TIMEMORY_HOT_INLINE TIMEMORY_HOT TIMEMORY_INLINE
-#endif
-
-//======================================================================================//
-//
 #if !defined(TIMEMORY_DATA_ALIGNMENT)
 #    define TIMEMORY_DATA_ALIGNMENT 8
 #endif

@@ -308,6 +308,9 @@ struct timeline_storage;
 template <typename T, typename V = trait::data<T>, typename A = trait::uses_storage<T>>
 struct uses_value_storage;
 
+template <typename ApiT>
+struct perfetto_category;
+
 //--------------------------------------------------------------------------------------//
 //
 //                              ALIASES

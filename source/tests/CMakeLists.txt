@@ -245,6 +245,12 @@ add_timemory_google_test(api_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
+add_timemory_google_test(ring_buffer_tests
+    SOURCES         ring_buffer_tests.cpp
+    LINK_LIBRARIES  common-test-libs
+                    ${_LIBRARY}
+                    test-werror-flags)
+
 add_timemory_google_test(type_trait_tests
     DISCOVER_TESTS
     SOURCES         type_trait_tests.cpp

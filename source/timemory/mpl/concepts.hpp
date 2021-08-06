@@ -88,6 +88,9 @@ struct null_type;
 //
 struct quirk_type;
 //
+template <typename Tp>
+struct statistics;
+//
 namespace audit
 {
 struct incoming;
@@ -169,6 +172,22 @@ struct is_null_type<false_type> : true_type
 
 template <>
 struct is_null_type<::tim::null_type> : true_type
+{};
+
+template <template <typename...> class Tuple>
+struct is_null_type<statistics<Tuple<>>> : true_type
+{};
+
+template <>
+struct is_null_type<statistics<void>> : true_type
+{};
+
+template <>
+struct is_null_type<statistics<false_type>> : true_type
+{};
+
+template <>
+struct is_null_type<statistics<::tim::null_type>> : true_type
 {};
 
 //--------------------------------------------------------------------------------------//

@@ -60,7 +60,7 @@ struct add_secondary<Tp, true>
     template <typename Storage, typename Iterator>
     add_secondary(Storage* _storage, Iterator _itr, const type& _rhs)
     {
-        if(!_storage || !trait::runtime_enabled<Tp>::get() || !settings::add_secondary())
+        if(!_storage || !settings::add_secondary())
             return;
         (*this)(_storage, _itr, _rhs);
     }
@@ -71,7 +71,7 @@ struct add_secondary<Tp, true>
     template <typename... Args>
     add_secondary(type& _rhs, Args&&... args)
     {
-        if(!trait::runtime_enabled<Tp>::get() || !settings::add_secondary())
+        if(!settings::add_secondary())
             return;
         (*this)(_rhs, std::forward<Args>(args)...);
     }
@@ -216,8 +216,7 @@ private:
     auto storage_sfinae(Storage* _storage, Iterator _itr, const Up& _rhs, int) const
         -> decltype(_rhs.get_secondary(), void())
     {
-        if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr ||
-           !settings::add_secondary())
+        if(_storage == nullptr || !settings::add_secondary())
             return;
 
         using map_type         = decay_t<decltype(_rhs.get_secondary())>;
@@ -241,7 +240,7 @@ private:
     auto sfinae(Up& _obj, int, Args&&... args) const
         -> decltype(_obj.add_secondary(std::forward<Args>(args)...), void())
     {
-        if(!trait::runtime_enabled<Tp>::get() || !settings::add_secondary())
+        if(!settings::add_secondary())
             return;
 
         _obj.add_secondary(std::forward<Args>(args)...);

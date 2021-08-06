@@ -117,6 +117,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         PRINT_HERE("[%s]> Warning! master is not initialized! Segmentation fault likely",
                    Type::get_label().c_str());
         lhs.graph().insert_subgraph_after(lhs._data().head(), rhs.data().head());
+        lhs.graph().steal_resources(rhs.graph());
         lhs.m_initialized = rhs.m_initialized;
         lhs.m_finalized   = rhs.m_finalized;
         _copy_hash_ids();
@@ -198,6 +199,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     CONDITIONAL_PRINT_HERE(_debug, "[%s]> clearing merged storage!",
                            Type::get_label().c_str());
 
+    lhs.graph().steal_resources(rhs.graph());
     rhs.data().clear();
 }
 //

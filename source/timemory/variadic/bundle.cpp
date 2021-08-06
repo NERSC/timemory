@@ -732,6 +732,17 @@ bundle<Tag, BundleT, TupleT>::add_secondary(Args&&... _args)
 //
 //
 template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::update_statistics(Args&&... _args)
+{
+    return invoke<operation::add_statistics>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
 template <template <typename> class OpT, typename... Args>
 typename bundle<Tag, BundleT, TupleT>::this_type&
 bundle<Tag, BundleT, TupleT>::invoke(Args&&... _args)
@@ -753,10 +764,21 @@ bundle<Tag, BundleT, TupleT>::invoke(mpl::piecewise_select<Tp...>, Args&&... _ar
 {
     if(!m_enabled())
         return get_this_type();
+    invoke_piecewise<OpT>(mpl::available_t<type_list<Tp...>>{},
+                          std::forward<Args>(_args)...);
+    return get_this_type();
+}
 
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <template <typename> class OpT, typename... Tp, typename... Args>
+void
+bundle<Tag, BundleT, TupleT>::invoke_piecewise(type_list<Tp...>, Args&&... _args)
+{
     TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, Tag>(
         this->get<Tp>(), std::forward<Args>(_args)...));
-    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -989,7 +1011,14 @@ bundle<Tag, BundleT, TupleT>::print(std::ostream& os, bool _endl) const
                   << " : ";
         os << ss_prefix.str();
     }
-    os << ss_data.str();
+    std::string _s = ss_data.str();
+    if(_s.empty())
+        return get_this_type();
+    while(_s.find_last_of(", ") == _s.length() - 1)
+        _s = _s.substr(0, _s.length() - 1);
+    if(_s.empty())
+        return get_this_type();
+    os << _s;
     if(m_laps > 0 && PrintLaps)
         os << " [laps: " << m_laps << "]";
     if(_endl)

@@ -50,15 +50,40 @@ namespace policy
 //
 template <typename CompT, typename Tp>
 inline void
-record_statistics<CompT, Tp>::apply(statistics<Tp>& _stat, const CompT& _obj)
+record_statistics<CompT, Tp>::operator()(statistics<Tp>& _stats, const CompT& _obj,
+                                         bool _last)
 {
-    using result_type = decltype(std::declval<CompT>().get());
+    using component_type = std::remove_pointer_t<decay_t<CompT>>;
+    using result_type    = decltype(std::declval<CompT>().get());
     static_assert(std::is_same<result_type, Tp>::value,
                   "Error! The default implementation of "
-                  "'policy::record_statistics<Component, T>::apply' requires 'T' to be "
-                  "the same type as the return type from 'Component::get()'");
+                  "'policy::record_statistics<Component, T>::operator()' requires 'T' "
+                  "to be the same type as the return type from 'Component::get()'");
 
-    _stat += _obj.get();
+    if(!_last)
+    {
+        if(_obj.get_laps() < 2)
+        {
+            _stats += _obj.get();
+        }
+        else
+        {
+            CONDITIONAL_PRINT_HERE(
+                settings::debug(),
+                "Updating statistics<%s> skipped for %s. Laps: %lu > 1",
+                demangle<Tp>().c_str(), demangle<component_type>().c_str(),
+                (unsigned long) _obj.get_laps());
+        }
+    }
+    else
+    {
+        constexpr bool has_accum = trait::base_has_accum<component_type>::value;
+        // make a copy and replace the accumulation with last measurement
+        auto _tmp = _obj;
+        IF_CONSTEXPR(has_accum) { _tmp.set_accum(_tmp.get_last()); }
+        else { _tmp.set_value(_tmp.get_last()); }
+        _stats += _tmp.get();
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -95,23 +120,26 @@ struct add_statistics
     // if statistics is not enabled
     //
     template <typename StatsT>
-    TIMEMORY_INLINE add_statistics(const type& _obj, StatsT& _stats)
+    TIMEMORY_INLINE add_statistics(const type& _obj, StatsT& _stats, bool _last = false)
     {
-        (*this)(_obj, _stats);
+        (*this)(_obj, _stats, _last);
     }
 
     //----------------------------------------------------------------------------------//
     // if statistics is not enabled
     //
-    TIMEMORY_INLINE add_statistics(const type& _obj) { (*this)(_obj); }
+    TIMEMORY_INLINE add_statistics(const type& _obj, bool _last = false)
+    {
+        (*this)(_obj, _last);
+    }
 
     //----------------------------------------------------------------------------------//
     // generic operator
     //
     template <typename U>
-    TIMEMORY_INLINE auto operator()(const U& rhs) const
+    TIMEMORY_INLINE auto operator()(const U& rhs, bool _last = false) const
     {
-        return sfinae(rhs, 0);
+        return sfinae(rhs, 0, 0, _last);
     }
 
     //----------------------------------------------------------------------------------//
@@ -119,7 +147,7 @@ struct add_statistics
     //
     template <typename StatsT, typename U = type>
     TIMEMORY_INLINE void operator()(
-        const U& rhs, StatsT& stats,
+        const U& rhs, StatsT& stats, bool _last = false,
         enable_if_t<enabled_statistics<U, StatsT>::value, int> = 0) const;
 
     //----------------------------------------------------------------------------------//
@@ -127,13 +155,20 @@ struct add_statistics
     //
     template <typename StatsT, typename U = type>
     TIMEMORY_INLINE void operator()(
-        const U&, StatsT&,
+        const U&, StatsT&, bool = true,
         enable_if_t<!enabled_statistics<U, StatsT>::value, int> = 0) const
     {}
 
 private:
     template <typename U>
-    TIMEMORY_INLINE auto sfinae(const U& rhs, int) const
+    TIMEMORY_INLINE auto sfinae(const U& rhs, int, int, bool _last) const
+        -> decltype(rhs.update_statistics(_last))
+    {
+        return rhs.update_statistics(_last);
+    }
+
+    template <typename U>
+    TIMEMORY_INLINE auto sfinae(const U& rhs, int, long, bool _last) const
         -> decltype(rhs.get_iterator()->stats(),
                     decay_t<decltype(rhs.get_iterator()->stats())>{})
     {
@@ -141,14 +176,15 @@ private:
         auto itr         = rhs.get_iterator();
         if(itr)
         {
-            (*this)(rhs, itr->stats());
-            return itr->stats();
+            stats_type& _stats = itr->stats();
+            (*this)(rhs, _stats, _last);
+            return _stats;
         }
         return stats_type{};
     }
 
     template <typename U>
-    TIMEMORY_INLINE void sfinae(const U&, long) const
+    TIMEMORY_INLINE void sfinae(const U&, long, long, bool) const
     {}
 };
 //
@@ -156,7 +192,7 @@ template <typename T>
 template <typename StatsT, typename U>
 void
 add_statistics<T>::operator()(
-    const U& rhs, StatsT& stats,
+    const U& rhs, StatsT& stats, bool _last,
     enable_if_t<enabled_statistics<U, StatsT>::value, int>) const
 {
     // for type comparison
@@ -172,7 +208,9 @@ add_statistics<T>::operator()(
                   "implicit conversion, set trait::permissive_statistics "
                   "to true_type for component");
     using stats_policy_type = policy::record_statistics<U>;
-    stats_policy_type::apply(stats, rhs);
+    DEBUG_PRINT_HERE("%s :: updating %s (accum: %s)", demangle<U>().c_str(),
+                     demangle<StatsT>().c_str(), (_last) ? "y" : "n");
+    stats_policy_type{}(stats, rhs, _last);
 }
 //
 }  // namespace operation

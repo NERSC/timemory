@@ -28,6 +28,7 @@
 #include "timemory/mpl/quirks.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/storage/ring_buffer.hpp"
 #include "timemory/utility/bit_flags.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/impl.hpp"
@@ -139,10 +140,11 @@ public:
     }
 
 protected:
-    scope::config         m_scope  = scope::get_default();
-    hash_value_t          m_hash   = 0;
-    int64_t               m_laps   = 0;
-    utility::bit_flags<6> m_config = {};
+    scope::config                      m_scope  = scope::get_default();
+    hash_value_t                       m_hash   = 0;
+    int64_t                            m_laps   = 0;
+    utility::bit_flags<6>              m_config = {};
+    std::shared_ptr<base::ring_buffer> m_buffer = { nullptr };
 
 protected:
     // protected member function section
@@ -290,13 +292,30 @@ protected:
 
     void update_width() const { compute_width(key()); }
 
-    TIMEMORY_NODISCARD const auto& prefix() const { return get_persistent_data().prefix; }
-    TIMEMORY_NODISCARD const auto& get_prefix() const { return prefix(); }
+    const auto& prefix() const { return get_persistent_data().prefix; }
+    const auto& get_prefix() const { return prefix(); }
 
+    using common_base_bundle::m_buffer;
     using common_base_bundle::m_config;
     using common_base_bundle::m_hash;
     using common_base_bundle::m_laps;
     using common_base_bundle::m_scope;
+
+    bool init_buffer()
+    {
+        if(m_buffer.get() == nullptr)
+        {
+            static auto _size = []() {
+                size_t _v = 0;
+                TIMEMORY_FOLD_EXPRESSION(_v += mpl::dynamic_buffer_size<Types>{}());
+                return _v;
+            }();
+            if(_size > 0)
+                m_buffer = std::make_shared<base::ring_buffer>(_size, false);
+            return m_buffer != nullptr;
+        }
+        return m_buffer->is_full();
+    }
 
 protected:
     // protected static function section
@@ -679,6 +698,8 @@ struct api_bundle<ApiT, std::tuple<Types...>>
     }
 
 protected:
+    using base_bundle_type::init_buffer;
+    using base_bundle_type::m_buffer;
     using base_bundle_type::m_config;
     using base_bundle_type::m_hash;
     using base_bundle_type::m_laps;
@@ -727,6 +748,8 @@ struct api_bundle<ApiT, type_list<Types...>>
     }
 
 protected:
+    using base_bundle_type::init_buffer;
+    using base_bundle_type::m_buffer;
     using base_bundle_type::m_config;
     using base_bundle_type::m_hash;
     using base_bundle_type::m_laps;

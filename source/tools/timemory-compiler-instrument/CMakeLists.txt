@@ -99,6 +99,12 @@ build_library(
 target_compile_definitions(${LIB_TARGET} PRIVATE
     TIMEMORY_COMPILER_INSTRUMENTATION)
 
+if(TARGET timemory::timemory-perfetto-static)
+    target_link_libraries(${LIB_TARGET} PRIVATE
+        timemory::timemory-perfetto
+        timemory::timemory-perfetto-static)
+endif()
+
 target_link_libraries(${LIB_TARGET} PUBLIC
     timemory::timemory-dmp
     timemory::timemory-threading

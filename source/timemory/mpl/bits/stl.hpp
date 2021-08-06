@@ -30,6 +30,7 @@
 #include "timemory/utility/types.hpp"
 
 #include <array>
+#include <chrono>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -405,6 +406,15 @@ template <typename Lhs, typename Rhs,
 Lhs operator*(Lhs lhs, const Rhs& rhs)
 {
     return (lhs *= rhs);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Rhs, enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+inline std::chrono::system_clock::time_point&
+operator/=(std::chrono::system_clock::time_point& lhs, Rhs)
+{
+    return lhs;
 }
 
 //--------------------------------------------------------------------------------------//

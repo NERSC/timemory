@@ -189,6 +189,17 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
+    this_type& operator/=(size_t _val)
+    {
+        for(size_type i = 0; i < events.size(); ++i)
+            accum[i] /= _val;
+        for(size_type i = 0; i < events.size(); ++i)
+            value[i] /= _val;
+        return *this;
+    }
+
+    //----------------------------------------------------------------------------------//
+
 protected:
     using base_type::accum;
     using base_type::laps;

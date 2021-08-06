@@ -64,8 +64,8 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-TIMEMORY_NOINLINE TIMEMORY_NOCLONE storage_singleton<Tp>*
-                                   get_storage_singleton();
+TIMEMORY_NOINLINE storage_singleton<Tp>*
+                  get_storage_singleton();
 //
 //--------------------------------------------------------------------------------------//
 //

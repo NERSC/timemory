@@ -36,5 +36,6 @@ def run(nfib):
 
 if __name__ == "__main__":
     nfib = int(sys.argv[1]) if len(sys.argv) > 1 else 20
-    ans = run(nfib)
-    print("Answer = {}".format(ans))
+    for i in range(5):
+        ans = run(nfib)
+        print(f"[{i}] fibonacci({nfib}) = {ans}")

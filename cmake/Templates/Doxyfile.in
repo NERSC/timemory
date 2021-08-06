@@ -335,7 +335,6 @@ PREDEFINED             = TIMEMORY_VISIBLE= \
                          TIMEMORY_NODISCARD= \
                          TIMEMORY_NEVER_INSTRUMENT= \
                          TIMEMORY_ALWAYS_INLINE= \
-                         TIMEMORY_HOT_INLINE= \
                          TIMEMORY_NOINLINE= \
                          TIMEMORY_INLINE= \
                          TIMEMORY_COLD= \
@@ -2606,7 +2605,6 @@ DOT_CLEANUP            = YES
 # TIMEMORY_NODISCARD=
 # TIMEMORY_NEVER_INSTRUMENT=
 # TIMEMORY_ALWAYS_INLINE=
-# TIMEMORY_HOT_INLINE=
 # TIMEMORY_NOINLINE=
 # TIMEMORY_INLINE=
 # TIMEMORY_COLD=

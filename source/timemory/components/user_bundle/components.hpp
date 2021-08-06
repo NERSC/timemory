@@ -117,17 +117,84 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
+namespace internal
+{
+struct user_bundle
+{
+public:
+    using mutex_t        = std::mutex;
+    using lock_t         = std::unique_lock<mutex_t>;
+    using opaque_array_t = std::vector<opaque>;
+    using typeid_vec_t   = std::vector<size_t>;
+    using typeid_set_t   = std::set<size_t>;
+
+    static std::string label();
+    static std::string description();
+    static void        record() {}
+
+public:
+    user_bundle(scope::config _cfg, typeid_vec_t _typeids, opaque_array_t _opaque_arr,
+                const char* _prefix = nullptr);
+    ~user_bundle();
+    user_bundle(const user_bundle& rhs);
+    user_bundle(user_bundle&& rhs) noexcept;
+    user_bundle& operator=(const user_bundle& rhs);
+    user_bundle& operator=(user_bundle&& rhs) noexcept;
+
+public:
+    ///  Configure the tool for a specific component
+    static void configure(opaque_array_t& _data, typeid_vec_t& _typeids, mutex_t& _mtx,
+                          opaque&& obj, std::set<size_t>&& _inp);
+
+    ///  Explicitly clear the previous configurations
+    static void reset(opaque_array_t& _data, typeid_vec_t& _typeids, mutex_t& _mtx);
+
+public:
+    void   setup();
+    void   push();
+    void   sample();
+    void   start();
+    void   stop();
+    void   pop();
+    void   get(void*& ptr, size_t _hash) const;
+    void   set_prefix(const char* _prefix);
+    void   set_scope(const scope::config& val);
+    void   update_statistics(bool _v) const;
+    size_t size() const { return m_bundle.size(); }
+
+public:
+    //  Configure the tool for a specific component
+    void insert(opaque&& obj, typeid_set_t&& _typeids);
+
+protected:
+    bool           m_setup   = false;
+    scope::config  m_scope   = {};
+    const char*    m_prefix  = nullptr;
+    typeid_vec_t   m_typeids = {};
+    opaque_array_t m_bundle  = {};
+
+protected:
+    static bool contains(size_t _val, const typeid_vec_t& _targ);
+};
+}  // namespace internal
+//
 template <size_t Idx, typename Tag>
 struct user_bundle
 : public base<user_bundle<Idx, Tag>, void>
 , concepts::runtime_configurable
+, private internal::user_bundle
 {
 public:
     static constexpr auto index = Idx;
     using tag_type              = Tag;
     using mutex_t               = std::mutex;
-    using lock_t                = std::unique_lock<mutex_t>;
-    using string_t              = std::string;
+    using start_func_t          = std::function<void*(const std::string&, scope::config)>;
+    using stop_func_t           = std::function<void(void*)>;
+    using get_func_t            = std::function<void(void*, void*&, size_t)>;
+    using delete_func_t         = std::function<void(void*)>;
+    using opaque_array_t        = std::vector<opaque>;
+    using typeid_vec_t          = std::vector<size_t>;
+    using typeid_set_t          = std::set<size_t>;
 
     using value_type   = void;
     using this_type    = user_bundle<Idx, Tag>;
@@ -140,27 +207,20 @@ public:
     friend struct operation::set_started<this_type>;
     friend struct operation::set_stopped<this_type>;
 
-    using start_func_t  = std::function<void*(const string_t&, scope::config)>;
-    using stop_func_t   = std::function<void(void*)>;
-    using get_func_t    = std::function<void(void*, void*&, size_t)>;
-    using delete_func_t = std::function<void(void*)>;
-
-    static string_t label() { return "user_bundle"; }
-    static string_t description()
-    {
-        return "Generic bundle of components designed for runtime configuration by a "
-               "user via environment variables and/or direct insertion";
-    }
-    static value_type record() {}
-
-    static void global_init() TIMEMORY_VISIBILITY("default");
-    static void global_init(storage_type*) { global_init(); }
-
-    using opaque_array_t = std::vector<opaque>;
-    using typeid_vec_t   = std::vector<size_t>;
-    using typeid_set_t   = std::set<size_t>;
-
     static size_t bundle_size() { return get_data().size(); }
+    static void   global_init() TIMEMORY_VISIBILITY("default");
+    static void   global_init(storage_type*) { global_init(); }
+
+    using internal::user_bundle::description;
+    using internal::user_bundle::label;
+    using internal::user_bundle::record;
+
+private:
+    using internal::user_bundle::m_bundle;
+    using internal::user_bundle::m_prefix;
+    using internal::user_bundle::m_scope;
+    using internal::user_bundle::m_setup;
+    using internal::user_bundle::m_typeids;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -168,121 +228,42 @@ public:
     //  affecting this instance
     //
     user_bundle()
-    : m_scope(scope::get_default())
-    , m_typeids(get_typeids())
-    , m_bundle(get_data())
+    : internal::user_bundle{ scope::get_default(), get_typeids(), get_data() }
     {}
 
-    user_bundle(const user_bundle& rhs)
-    : base_type(rhs)
-    , m_scope(rhs.m_scope)
-    , m_prefix(rhs.m_prefix)
-    , m_typeids(rhs.m_typeids)
-    , m_bundle(rhs.m_bundle)
-    {
-        for(auto& itr : m_bundle)
-            itr.set_copy(true);
-    }
-
     explicit user_bundle(const char* _prefix, scope::config _scope = scope::get_default())
-    : m_scope(_scope)
-    , m_prefix(_prefix)
-    , m_typeids(get_typeids())
-    , m_bundle(get_data())
+    : internal::user_bundle{ _scope, get_typeids(), get_data(), _prefix }
     {}
 
     user_bundle(const char* _prefix, opaque_array_t _bundle_vec, typeid_vec_t _typeids,
                 scope::config _scope = scope::get_default())
-    : m_scope(_scope)
-    , m_prefix(_prefix)
-    , m_typeids(std::move(_typeids))
-    , m_bundle(std::move(_bundle_vec))
+    : internal::user_bundle{ _scope, std::move(_typeids), std::move(_bundle_vec),
+                             _prefix }
     {}
 
-    user_bundle(const char* _prefix, opaque_array_t _bundle_vec,
-                const typeid_set_t& _typeids, scope::config _scope = scope::get_default())
-    : m_scope(_scope)
-    , m_prefix(_prefix)
-    , m_bundle(std::move(_bundle_vec))
+    user_bundle(const char* _prefix, opaque_array_t _bundle_vec, typeid_set_t _typeids,
+                scope::config _scope = scope::get_default())
+    : internal::user_bundle{ _scope, typeid_vec_t{}, std::move(_bundle_vec), _prefix }
     {
         m_typeids.reserve(_typeids.size());
         for(const auto& itr : _typeids)
             m_typeids.emplace_back(itr);
     }
 
-    ~user_bundle()
-    {
-        for(auto& itr : m_bundle)
-            itr.cleanup();
-    }
+    ~user_bundle()                          = default;
+    user_bundle(const user_bundle&)         = default;
+    user_bundle(user_bundle&& rhs) noexcept = default;
 
-    user_bundle& operator=(const user_bundle& rhs)
-    {
-        if(this == &rhs)
-            return *this;
-
-        base_type::operator=(rhs);
-        m_scope            = rhs.m_scope;
-        m_prefix           = rhs.m_prefix;
-        m_typeids          = rhs.m_typeids;
-        m_bundle           = rhs.m_bundle;
-        for(auto& itr : m_bundle)
-            itr.set_copy(true);
-
-        return *this;
-    }
-
-    user_bundle(user_bundle&& rhs) noexcept
-    : base_type(std::move(rhs))
-    , m_scope(std::move(rhs.m_scope))
-    , m_prefix(std::move(rhs.m_prefix))
-    , m_typeids(std::move(rhs.m_typeids))
-    , m_bundle(std::move(rhs.m_bundle))
-    {
-        rhs.m_bundle.clear();
-    }
-
-    user_bundle& operator=(user_bundle&& rhs) noexcept
-    {
-        if(this != &rhs)
-        {
-            base_type::operator=(std::move(rhs));
-            m_scope            = std::move(rhs.m_scope);
-            m_prefix           = std::move(rhs.m_prefix);
-            m_typeids          = std::move(rhs.m_typeids);
-            m_bundle           = std::move(rhs.m_bundle);
-            rhs.m_bundle.clear();
-        }
-        return *this;
-    }
+    user_bundle& operator=(const user_bundle& rhs) = default;
+    user_bundle& operator=(user_bundle&& rhs) noexcept = default;
 
 public:
     //  Configure the tool for a specific component
     static void configure(opaque&& obj, std::set<size_t>&& _typeids)
     {
-        if(obj)
-        {
-            lock_t lk(get_lock());
-            size_t sum = 0;
-            for(auto&& itr : _typeids)
-            {
-                if(itr > 0 && contains(itr, get_typeids()))
-                {
-                    if(settings::verbose() > 1 || settings::debug())
-                        PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
-                    return;
-                }
-                sum += itr;
-                if(itr > 0)
-                    get_typeids().emplace_back(itr);
-            }
-            if(sum == 0)
-            {
-                PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
-                return;
-            }
-            get_data().emplace_back(std::move(obj));
-        }
+        internal::user_bundle::configure(get_data(), get_typeids(), get_lock(),
+                                         std::forward<opaque>(obj),
+                                         std::forward<std::set<size_t>>(_typeids));
     }
 
     template <typename Type, typename... Types, typename... Args>
@@ -296,64 +277,48 @@ public:
                                  factory::get_typeids<Types>()));
     }
 
-    //----------------------------------------------------------------------------------//
     //  Explicitly clear the previous configurations
-    //
     static void reset()
     {
-        if(settings::verbose() > 3 || settings::debug())
-            PRINT_HERE("Resetting %s", demangle<this_type>().c_str());
-        lock_t lk(get_lock());
-        get_data().clear();
-        get_typeids().clear();
+        CONDITIONAL_PRINT_HERE(settings::verbose() > 3 || settings::debug(),
+                               "Resetting %s", demangle<this_type>().c_str());
+        internal::user_bundle::reset(get_data(), get_typeids(), get_lock());
     }
 
 public:
-    //----------------------------------------------------------------------------------//
-    //  Member functions
-    //
-    void setup()
-    {
-        if(!m_setup)
-        {
-            m_setup = true;
-            for(auto& itr : m_bundle)
-                itr.setup(m_prefix, m_scope);
-        }
-    }
+    using internal::user_bundle::insert;
+    using internal::user_bundle::pop;
+    using internal::user_bundle::push;
+    using internal::user_bundle::sample;
+    using internal::user_bundle::set_prefix;
+    using internal::user_bundle::set_scope;
+    using internal::user_bundle::setup;
+    using internal::user_bundle::size;
+    using internal::user_bundle::start;
+    using internal::user_bundle::stop;
+    using internal::user_bundle::update_statistics;
 
-    void push()
-    {
-        setup();
-        for(auto& itr : m_bundle)
-            itr.push(m_prefix, m_scope);
-    }
-
-    void sample()
-    {
-        setup();
-        for(auto& itr : m_bundle)
-            itr.sample();
-    }
-
-    void start()
-    {
-        setup();
-        for(auto& itr : m_bundle)
-            itr.start();
-    }
-
-    void stop()
-    {
-        for(auto& itr : m_bundle)
-            itr.stop();
-    }
-
-    void pop()
-    {
-        for(auto& itr : m_bundle)
-            itr.pop();
-    }
+    using base_type::operator+=;
+    using base_type::operator-=;
+    using base_type::get_depth_change;
+    using base_type::get_is_flat;
+    using base_type::get_is_invalid;
+    using base_type::get_is_on_stack;
+    using base_type::get_is_running;
+    using base_type::get_is_transient;
+    using base_type::get_iterator;
+    using base_type::get_laps;
+    using base_type::get_opaque;
+    using base_type::set_depth_change;
+    using base_type::set_is_flat;
+    using base_type::set_is_invalid;
+    using base_type::set_is_on_stack;
+    using base_type::set_is_running;
+    using base_type::set_is_transient;
+    using base_type::set_iterator;
+    using base_type::set_laps;
+    using base_type::set_started;
+    using base_type::set_stopped;
 
     void clear()
     {
@@ -378,83 +343,21 @@ public:
         return static_cast<T*>(void_ptr);
     }
 
-    void get(void*& ptr, size_t _hash) const
+    void get() const {}
+
+    void get(void*& ptr, size_t _typeid_hash) const
     {
-        if(ptr == nullptr)
-        {
-            for(const auto& itr : m_bundle)
-            {
-                itr.get(ptr, _hash);
-                if(ptr)
-                    break;
-            }
-        }
+        base_type::get(ptr, _typeid_hash);
+        internal::user_bundle::get(ptr, _typeid_hash);
     }
-
-    void get() {}
-
-    void set_prefix(const char* _prefix)
-    {
-        m_prefix = _prefix;
-        m_setup  = false;
-    }
-
-    void set_scope(const scope::config& val)
-    {
-        m_scope = val;
-        m_setup = false;
-    }
-
-    TIMEMORY_NODISCARD size_t size() const { return m_bundle.size(); }
 
 public:
-    //  Configure the tool for a specific component
-    void insert(opaque&& obj, typeid_set_t&& _typeids)
-    {
-        if(obj)
-        {
-            size_t sum = 0;
-            for(auto&& itr : _typeids)
-            {
-                if(itr > 0 && contains(itr, m_typeids))
-                {
-                    if(settings::verbose() > 1 || settings::debug())
-                        PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
-                    return;
-                }
-                sum += itr;
-                if(itr > 0)
-                    m_typeids.emplace_back(itr);
-            }
-            if(sum == 0)
-            {
-                PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
-                return;
-            }
-            m_bundle.emplace_back(std::move(obj));
-        }
-    }
-
     template <typename Type, typename... Types, typename... Args>
     void insert(Args... args)
     {
         this->insert(factory::get_opaque<Type>(args...), factory::get_typeids<Type>());
         TIMEMORY_FOLD_EXPRESSION(this->insert(factory::get_opaque<Types>(args...),
                                               factory::get_typeids<Types>()));
-    }
-
-protected:
-    bool           m_setup   = false;
-    scope::config  m_scope   = {};
-    const char*    m_prefix  = nullptr;
-    typeid_vec_t   m_typeids = get_typeids();
-    opaque_array_t m_bundle  = get_data();
-
-protected:
-    static bool contains(size_t _val, const typeid_vec_t& _targ)
-    {
-        return std::any_of(_targ.begin(), _targ.end(),
-                           [&_val](auto itr) { return (itr == _val); });
     }
 
 private:
@@ -471,19 +374,13 @@ private:
     static persistent_data& get_persistent_data() TIMEMORY_VISIBILITY("default");
 
 public:
-    //----------------------------------------------------------------------------------//
-    //  Bundle data
-    //
+    /// template instantiation-specific static opaque array
     static opaque_array_t& get_data() { return get_persistent_data().m_data; }
 
-    //----------------------------------------------------------------------------------//
-    //  The configuration strings
-    //
+    /// template instantiation-specific static set of type identifiers
     static typeid_vec_t& get_typeids() { return get_persistent_data().m_typeids; }
 
-    //----------------------------------------------------------------------------------//
-    //  Get lock
-    //
+    /// template instantiation-specific static mutex
     static mutex_t& get_lock() { return get_persistent_data().m_lock; }
 };
 //

@@ -5,19 +5,18 @@ project(timemory-CXX-Overhead-Example LANGUAGES C CXX)
 # set this locally to a release build so that the fibonacci calcs are always optimized
 set(CMAKE_BUILD_TYPE "Release")
 set(EXE_NAME ex_cxx_overhead)
-set(COMPONENTS compile-options analysis-tools OPTIONAL_COMPONENTS cxx)
+set(COMPONENTS compile-options analysis-tools OPTIONAL_COMPONENTS arch core common papi
+    rusage-component trip_count-component)
 
-option(USE_PAPI "Enable papi" OFF)
 option(USE_CALIPER "Enable caliper" OFF)
 option(USE_MPI "Enable MPI" OFF)
 option(USE_TAU "Enable TAU" OFF)
 
-set(USE_PAPI_COMPONENTS papi)
 set(USE_CALIPER_COMPONENTS caliper)
 set(USE_MPI_COMPONENTS mpi)
 set(USE_TAU_COMPONENTS tau)
 
-foreach(_OPT PAPI CALIPER MPI TAU)
+foreach(_OPT CALIPER MPI TAU)
     if(USE_${_OPT})
         list(APPEND COMPONENTS ${USE_${_OPT}_COMPONENTS})
     endif()

@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/data/types.hpp"  // data::ring_buffer_allocator
 #include "timemory/hash/declaration.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/storage/macros.hpp"
@@ -183,10 +184,7 @@ class graph_data;
 template <typename T>
 class tgraph_node;
 //
-template <typename Tp>
-class graph_allocator;
-//
-template <typename T, typename AllocatorT = std::allocator<tgraph_node<T>>>
+template <typename T, typename AllocatorT = data::ring_buffer_allocator<tgraph_node<T>>>
 class graph;
 //
 //--------------------------------------------------------------------------------------//
