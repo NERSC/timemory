@@ -25,24 +25,26 @@
 
 #include <cstdint>
 
+#include "timemory/api.hpp"
+#include "timemory/macros.hpp"
+#include "timemory/mpl/types.hpp"
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_runtime_enabled, TIMEMORY_API, false_type)
+
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/invoker.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/testing.hpp"
 
-// TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_runtime_enabled, TIMEMORY_API, false_type)
-
 using namespace tim::component;
 
-using auto_tuple_t  = tim::auto_tuple_t<wall_clock, user_global_bundle>;
-using timer_tuple_t = tim::component_tuple_t<wall_clock, cpu_clock, peak_rss>;
-
 using papi_tuple_t = papi_array<8>;
-using global_tuple_t =
-    tim::auto_tuple_t<wall_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
-                      page_rss, priority_context_switch, voluntary_context_switch,
-                      caliper, tau_marker, papi_tuple_t, trip_count>;
+using auto_tuple_t = tim::auto_bundle_t<TIMEMORY_API, wall_clock>;
+using timer_tuple_t =
+    tim::component_tuple_t<wall_clock, cpu_clock, peak_rss, papi_tuple_t, likwid_marker>;
+using global_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, peak_rss,
+                                         page_rss, papi_tuple_t, likwid_marker>;
 
 static int64_t ncount       = 0;
 static int64_t nmeasure     = 0;
@@ -381,9 +383,15 @@ main(int argc, char** argv)
     tim::settings::text_output()       = true;
     tim::settings::memory_units()      = "kB";
     tim::settings::memory_precision()  = 3;
-    tim::settings::width()             = 12;
-    tim::settings::timing_precision()  = 6;
-    tim::timemory_init(&argc, &argv);
+    tim::settings::width()             = 10;
+    tim::settings::timing_precision()  = 3;
+
+    using parser_t = tim::argparse::argument_parser;
+    parser_t _parser{ "ex_cxx_overhead [<fibonnaci value> <fibonacci cutoff> <num "
+                      "iterations> <warmup count>]" };
+
+    tim::timemory_init(argc, argv);
+    tim::timemory_argparse(&argc, &argv, &_parser);
     tim::settings::cout_output() = false;
 
     // default calc: fibonacci(43)
@@ -404,16 +412,7 @@ main(int argc, char** argv)
     if(argc > 4)
         nwarmup = std::stoi(argv[4]);
 
-    auto env_tool = tim::get_env<std::string>("EX_CXX_OVERHEAD_COMPONENTS", "");
-    auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
-    env_enum.erase(std::remove_if(env_enum.begin(), env_enum.end(),
-                                  [](int c) { return c == WALL_CLOCK; }),
-                   env_enum.end());
-    toolkit_size = env_enum.size() + 1;
-    tim::configure<user_global_bundle>(env_enum);
-
-    std::vector<timer_tuple_t> timer_list;
-
+    std::vector<timer_tuple_t> timer_list{};
     std::cout << "\nRunning fibonacci(n = " << nfib << ", cutoff = " << cutoff << ")...\n"
               << std::endl;
 
@@ -530,7 +529,7 @@ main(int argc, char** argv)
     else
     {
         int64_t rc_unique =
-            (tim::storage<wall_clock>::instance()->size() - 5) * toolkit_size - 4;
+            (tim::storage<wall_clock>::instance()->size() - 5) * toolkit_size - 8;
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
         // ret = (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;

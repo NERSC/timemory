@@ -198,9 +198,7 @@ print_dart(dummy&)
 protected:                                                                               \
     void SetUp() override                                                                \
     {                                                                                    \
-        puts("");                                                                        \
-        printf("##### Executing %s ... #####\n", details::get_test_name().c_str());      \
-        puts("");                                                                        \
+        printf("[##########] Executing %s ... \n", details::get_test_name().c_str());    \
         __VA_ARGS__;                                                                     \
     }
 
@@ -208,11 +206,7 @@ protected:                                                                      
 
 #define TIMEMORY_TEST_TEARDOWN(...)                                                      \
 protected:                                                                               \
-    void TearDown() override                                                             \
-    {                                                                                    \
-        __VA_ARGS__;                                                                     \
-        puts("");                                                                        \
-    }
+    void TearDown() override { __VA_ARGS__; }
 
 #define TIMEMORY_TEST_DEFAULT_TEARDOWN TIMEMORY_TEST_TEARDOWN({})
 

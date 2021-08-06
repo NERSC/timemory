@@ -74,7 +74,7 @@ private:
     template <typename TypeT, typename PointerT, typename TagT>
     friend class singleton;
 
-    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE thread_id_t& f_main_thread()
+    static TIMEMORY_NOINLINE thread_id_t& f_main_thread()
     {
         static auto _instance = std::this_thread::get_id();
         return _instance;
@@ -168,12 +168,12 @@ public:
     void reset();
 
 private:
-    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE smart_pointer& _local_instance()
+    static TIMEMORY_NOINLINE smart_pointer& _local_instance()
     {
         static thread_local smart_pointer _instance = smart_pointer();
         return _instance;
     }
-    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE smart_pointer& _master_instance()
+    static TIMEMORY_NOINLINE smart_pointer& _master_instance()
     {
         static smart_pointer _instance = smart_pointer();
         return _instance;
@@ -213,7 +213,7 @@ private:
         }
     };
 
-    static TIMEMORY_NOINLINE TIMEMORY_NOCLONE persistent_data& f_persistent_data()
+    static TIMEMORY_NOINLINE persistent_data& f_persistent_data()
     {
         static persistent_data _instance{};
         return _instance;

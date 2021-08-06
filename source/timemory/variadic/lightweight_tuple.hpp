@@ -205,7 +205,6 @@ public:
                             std::forward<FuncT>(func)(std::forward<Args>(args)...));
     }
 
-    //----------------------------------------------------------------------------------//
     /// construct the objects that have constructors with matching arguments
     //
     template <typename... Args>
@@ -216,7 +215,6 @@ public:
         return *this;
     }
 
-    //----------------------------------------------------------------------------------//
     /// provide preliminary info to the objects with matching arguments. This is typically
     /// used to notify a component that it has been bundled alongside another component
     /// that it can extract data from.
@@ -230,7 +228,6 @@ public:
         return *this;
     }
 
-    //----------------------------------------------------------------------------------//
     /// provide conclusive info to the objects with matching arguments. This is typically
     /// used by components to extract data from another component it has been bundled
     /// alongside, e.g. the cpu_util component can extract data from \ref
@@ -245,7 +242,6 @@ public:
         return *this;
     }
 
-    //----------------------------------------------------------------------------------//
     /// mark a beginning position in the execution (typically used by asynchronous
     /// structures)
     //
@@ -256,7 +252,6 @@ public:
         return *this;
     }
 
-    //----------------------------------------------------------------------------------//
     /// mark a beginning position in the execution (typically used by asynchronous
     /// structures)
     //
@@ -267,9 +262,7 @@ public:
         return *this;
     }
 
-    //----------------------------------------------------------------------------------//
     /// store a value
-    //
     template <typename... Args>
     this_type& store(Args&&... _args)
     {
@@ -277,7 +270,6 @@ public:
         return *this;
     }
 
-    //----------------------------------------------------------------------------------//
     /// allow the components to inspect the incoming arguments before start
     /// or out-going return value before returning (typically using in GOTCHA components)
     //
@@ -288,10 +280,24 @@ public:
         return *this;
     }
 
-    //----------------------------------------------------------------------------------//
-    /// apply a user-defined operation to all the components
+    /// perform an add_secondary operation. This operation allows components to add
+    /// additional entries to storage which are their direct descendant
+    template <typename... Args>
+    this_type& add_secondary(Args&&... _args)
+    {
+        return invoke<operation::add_secondary>(std::forward<Args>(_args)...);
+    }
+
+    /// perform an add_secondary operation. This operation allows components to add
+    /// additional entries to storage which are their direct descendant
+    template <typename... Args>
+    this_type& update_statistics(Args&&... _args)
+    {
+        return invoke<operation::add_statistics>(std::forward<Args>(_args)...);
+    }
+
     /// \tparam OpT Operation struct
-    //
+    /// \brief apply a user-defined operation to all the components
     template <template <typename> class OpT, typename... Args>
     this_type& invoke(Args&&... _args)
     {
@@ -299,22 +305,18 @@ public:
         return *this;
     }
 
-    //----------------------------------------------------------------------------------//
-    /// generic member function for invoking user-provided operations on a specific
-    /// set of component types
     /// \tparam OpT Operation struct
-    //
+    /// \brief generic member function for invoking user-provided operations on a specific
+    /// set of component types
     template <template <typename> class OpT, typename... Tp, typename... Args>
     this_type& invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
     {
-        TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, TIMEMORY_API>(
-            this->get<Tp>(), std::forward<Args>(_args)...));
+        invoke_piecewise<OpT>(mpl::available_t<type_list<Tp...>>{},
+                              std::forward<Args>(_args)...);
         return *this;
     }
 
-    //----------------------------------------------------------------------------------//
     /// get member functions taking either a type
-    //
     template <typename T, enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     T* get()
     {
@@ -506,12 +508,16 @@ public:
                 os << ss_prefix.str();
             }
         }
-        if(ss_data.str().length() > 0)
-        {
-            os << ss_data.str();
-            if(m_laps > 0 && PrintLaps)
-                os << " [laps: " << m_laps << "]";
-        }
+        std::string _s = ss_data.str();
+        if(_s.empty())
+            return const_cast<this_type&>(*this);
+        while(_s.find_last_of(", ") == _s.length() - 1)
+            _s = _s.substr(0, _s.length() - 1);
+        if(_s.empty())
+            return const_cast<this_type&>(*this);
+        os << _s;
+        if(m_laps > 0 && PrintLaps)
+            os << " [laps: " << m_laps << "]";
         return const_cast<this_type&>(*this);
     }
 
@@ -582,6 +588,14 @@ protected:
     using bundle_type::m_scope;
     using bundle_type::m_store;
     mutable data_type m_data = data_type{};
+
+private:
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    void invoke_piecewise(type_list<Tp...>, Args&&... _args)
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, TIMEMORY_API>(
+            this->get<Tp>(), std::forward<Args>(_args)...));
+    }
 };
 
 //

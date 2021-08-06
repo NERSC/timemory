@@ -20,6 +20,9 @@ add_subdirectory(tau_marker)
 add_subdirectory(timing)
 add_subdirectory(trip_count)
 add_subdirectory(vtune)
+add_subdirectory(printer)
+add_subdirectory(timestamp)
+add_subdirectory(perfetto)
 
 # should always be last component
 add_subdirectory(user_bundle)

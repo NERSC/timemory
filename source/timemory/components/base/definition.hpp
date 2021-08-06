@@ -512,6 +512,16 @@ base<Tp, Value>::get_opaque(scope::config _scope)
         }
     };
 
+    _obj.m_update_stats = [](void* v_result, bool _v) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Updating statistics %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::invoke<operation::add_statistics, TIMEMORY_API>(std::tie(*_result),
+                                                                    _v);
+        }
+    };
+
     return _obj;
 }
 //
@@ -600,6 +610,16 @@ base<Tp, void>::get_opaque(scope::config _scope)
             DEBUG_PRINT_HERE("Deleting %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             delete _result;
+        }
+    };
+
+    _obj.m_update_stats = [](void* v_result, bool _v) {
+        if(v_result)
+        {
+            DEBUG_PRINT_HERE("Updating statistics %s", demangle<Tp>().c_str());
+            Tp* _result = static_cast<Tp*>(v_result);
+            invoke::invoke<operation::add_statistics, TIMEMORY_API>(std::tie(*_result),
+                                                                    _v);
         }
     };
 
