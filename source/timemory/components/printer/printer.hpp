@@ -95,7 +95,7 @@ struct printer : concepts::component
 private:
     const char*       m_prefix = nullptr;
     timestamp*        m_ts     = nullptr;
-    std::stringstream m_stream = {};
+    std::stringstream m_stream{};
 };
 }  // namespace component
 }  // namespace tim
