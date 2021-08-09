@@ -114,10 +114,10 @@ public:
     {
         if(m_master)
         {
-            DEBUG_PRINT_HERE(
-                "[%s][%i]> synchronizing sea-level for depth = %i, master depth = %i",
-                demangle<NodeT>().c_str(), (int) threading::get_id(), (int) depth(),
-                (int) m_master->depth());
+            DEBUG_PRINT_HERE("[%s][%i]> synchronizing sea-level for depth = %i, master "
+                             "depth = %i",
+                             demangle<NodeT>().c_str(), (int) threading::get_id(),
+                             (int) depth(), (int) m_master->depth());
             add_dummy();
         }
     }

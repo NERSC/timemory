@@ -198,6 +198,8 @@ can take quite a long time to compile.
 
 .. doxygenstruct:: tim::component::thread_cpu_util
 
+.. doxygenstruct:: tim::component::timestamp
+
 .. doxygenstruct:: tim::component::user_clock
 
 .. doxygenstruct:: tim::component::user_mode_time
@@ -328,6 +330,7 @@ The general design is that each user-bundle:
 
 .. doxygenstruct:: tim::component::vtune_profiler
 
+.. doxygenstruct:: tim::component::perfetto_tracer
 ```
 
 ## Hardware Counter Components
@@ -354,6 +357,7 @@ The general design is that each user-bundle:
 
 .. doxygentypedef:: tim::component::cpu_roofline_sp_flops
 
+.. doxygenstruct:: tim::component::printer
 ```
 
 ## GPU Components
@@ -361,11 +365,11 @@ The general design is that each user-bundle:
 ```eval_rst
 .. doxygenstruct:: tim::component::cuda_event
 
+.. doxygenstruct:: tim::component::hip_event
+
 .. doxygenstruct:: tim::component::cupti_activity
 
 .. doxygenstruct:: tim::component::cupti_counters
-
-.. doxygenstruct:: tim::component::cupti_profiler
 
 .. doxygenstruct:: tim::component::gpu_roofline
 
@@ -379,6 +383,9 @@ The general design is that each user-bundle:
 
 .. doxygenstruct:: tim::component::nvtx_marker
    :members:
+
+.. doxygenstruct:: tim::component::roctx_marker
+   :members:
 ```
 
 ## Data Tracking Components
@@ -386,6 +393,7 @@ The general design is that each user-bundle:
 ```eval_rst
 .. doxygenstruct:: tim::component::data_tracker
    :members:
+
 .. doxygentypedef:: tim::component::data_tracker_integer
 
 .. doxygentypedef:: tim::component::data_tracker_unsigned
@@ -398,8 +406,10 @@ The general design is that each user-bundle:
 ```eval_rst
 .. doxygenstruct:: tim::component::gotcha
    :members:
+
 .. doxygenstruct:: tim::component::malloc_gotcha
    :members:
+
 .. doxygenstruct:: tim::component::memory_allocations
    :members:
 ```
@@ -410,6 +420,7 @@ The general design is that each user-bundle:
 .. doxygenstruct:: tim::component::base
    :members:
    :undoc-members:
+
 .. doxygenstruct:: tim::component::empty_base
    :members:
    :undoc-members:

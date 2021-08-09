@@ -129,7 +129,6 @@ public:
 
     explicit cuda_event(cuda::stream_t _stream)
     : m_stream(_stream)
-
     {}
 
     float get_display() const
@@ -426,13 +425,11 @@ struct nvtx_marker : public base<nvtx_marker, void>
     /// construct with an specific color
     explicit nvtx_marker(const nvtx::color::color_t& _color)
     : m_color(_color)
-
     {}
 
     /// construct with an specific CUDA stream
     explicit nvtx_marker(cuda::stream_t _stream)
     : m_stream(_stream)
-
     {}
 
     /// construct with an specific color and CUDA stream

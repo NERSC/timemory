@@ -273,12 +273,10 @@ main(int argc, char** argv)
     parser.add_argument({ "--load" },
                         "Supplemental instrumentation library names w/o extension (e.g. "
                         "'libinstr' for 'libinstr.so' or 'libinstr.a')");
-    parser.add_argument(
-        { "--init-functions" },
-        "Initialization function(s) for supplemental instrumentation libraries");
-    parser.add_argument(
-        { "--fini-functions" },
-        "Finalization function(s) for supplemental instrumentation libraries");
+    parser.add_argument({ "--init-functions" }, "Initialization function(s) for "
+                                                "supplemental instrumentation libraries");
+    parser.add_argument({ "--fini-functions" }, "Finalization function(s) for "
+                                                "supplemental instrumentation libraries");
     parser
         .add_argument(
             { "-b", "--batch-size" },
@@ -902,9 +900,10 @@ main(int argc, char** argv)
         {
             if(sitr.find(_name) != npos_v && used_stub_names.count(sitr) == 0)
             {
-                verbprintf(
-                    3, "Found possible match for '%s' instrumentation init: '%s'...\n",
-                    _name.c_str(), sitr.c_str());
+                verbprintf(3,
+                           "Found possible match for '%s' instrumentation init: "
+                           "'%s'...\n",
+                           _name.c_str(), sitr.c_str());
                 best_init_name = sitr;
                 break;
             }
@@ -915,9 +914,10 @@ main(int argc, char** argv)
         {
             if(sitr.find(_name) != npos_v && used_stub_names.count(sitr) == 0)
             {
-                verbprintf(
-                    3, "Found possible match for '%s' instrumentation fini: '%s'...\n",
-                    _name.c_str(), sitr.c_str());
+                verbprintf(3,
+                           "Found possible match for '%s' instrumentation fini: "
+                           "'%s'...\n",
+                           _name.c_str(), sitr.c_str());
                 base_fini_name = sitr;
                 break;
             }
@@ -1469,9 +1469,8 @@ main(int argc, char** argv)
         bool success  = addr_space->finalizeInsertionSet(true, &modified);
         if(!success)
         {
-            verbprintf(
-                1,
-                "Using insertion set failed. Restarting with individual insertion...\n");
+            verbprintf(1, "Using insertion set failed. Restarting with individual "
+                          "insertion...\n");
             auto _execute_batch = [&instr_procedure_functions, &addr_space](size_t _beg,
                                                                             size_t _end) {
                 verbprintf(1, "Instrumenting batch of functions [%lu, %lu)\n",

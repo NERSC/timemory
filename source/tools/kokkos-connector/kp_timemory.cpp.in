@@ -223,10 +223,10 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     timemory_ompt_library_ctor();
 
     printf("%s\n", spacer.c_str());
-    printf(
-        "# KokkosP: timemory Connector (sequence is %d, version: %llu, components: %s)\n",
-        loadSeq, (unsigned long long) interfaceVer,
-        get_types_string(profile_entry_t{}).c_str());
+    printf("# KokkosP: timemory Connector (sequence is %d, version: %llu, components: "
+           "%s)\n",
+           loadSeq, (unsigned long long) interfaceVer,
+           get_types_string(profile_entry_t{}).c_str());
     printf("%s\n\n", spacer.c_str());
 
     // timemory_init is expecting some args so generate some

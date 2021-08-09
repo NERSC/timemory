@@ -40,24 +40,9 @@ namespace component
 /// via store(...). The stored messages are returned via the get() member function. If
 /// bundled alongside the timestamp component, the timestamp will be added to the stored
 /// message
-struct printer : concepts::component
+struct printer : empty_base
 {
-    struct printer_storage
-    {
-        static constexpr printer_storage* noninit_instance() { return nullptr; }
-        constexpr bool                    empty() const { return true; }
-        constexpr size_t                  size() const { return 0; }
-        constexpr size_t                  true_size() const { return 0; }
-        constexpr void                    reset() const {}
-        constexpr void                    print() const {}
-        template <typename ArchiveT>
-        constexpr void do_serialize(ArchiveT&)
-        {}
-    };
-
-    using value_type   = void;
-    using base_type    = void;
-    using storage_type = printer_storage;
+    using value_type = void;
 
     static std::string label();
     static std::string description();
@@ -85,12 +70,6 @@ struct printer : concepts::component
     auto store(Args&&... args)
         -> decltype(TIMEMORY_FOLD_EXPRESSION(std::declval<std::stringstream>() << args),
                     void());
-
-    template <typename... Args>
-    static opaque get_opaque(Args&&...)
-    {
-        return opaque{};
-    }
 
 private:
     const char*       m_prefix = nullptr;

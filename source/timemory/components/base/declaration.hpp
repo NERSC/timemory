@@ -26,6 +26,7 @@
 
 #include "timemory/components/base/data.hpp"
 #include "timemory/components/base/types.hpp"
+#include "timemory/components/opaque/types.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
@@ -46,8 +47,32 @@ using graph_const_iterator_t = typename graph<node::graph<Tp>>::const_iterator;
 //
 /// \struct tim::component::empty_base
 /// \brief The default base class for timemory components.
-struct empty_base
-{};
+struct empty_base : public concepts::component
+{
+    struct empty_storage
+    {
+        static constexpr empty_storage* noninit_instance() { return nullptr; }
+        constexpr bool                  empty() const { return true; }
+        constexpr size_t                size() const { return 0; }
+        constexpr size_t                true_size() const { return 0; }
+        constexpr void                  reset() const {}
+        constexpr void                  print() const {}
+        template <typename ArchiveT>
+        constexpr void do_serialize(ArchiveT&)
+        {}
+    };
+
+    using storage_type = empty_storage;
+    using base_type    = void;
+
+    void get() const {}
+
+    template <typename... Args>
+    static opaque get_opaque(Args&&...)
+    {
+        return opaque{};
+    }
+};
 //
 //======================================================================================//
 //
@@ -380,9 +405,9 @@ public:
     /// get the opaque binding for user-bundle
     static opaque get_opaque(scope::config);
 
-    void            set_started();
-    void            set_stopped();
-    void            reset();
+    void                    set_started();
+    void                    set_stopped();
+    void                    reset();
     TIMEMORY_INLINE int64_t get_laps() const { return 0; }
     TIMEMORY_INLINE void*   get_iterator() const { return nullptr; }
 

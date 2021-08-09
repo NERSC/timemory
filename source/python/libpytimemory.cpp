@@ -289,8 +289,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    py::module pyscope = tim.def_submodule(
-        "scope", "Scoping controls how the values are updated in the call-graph");
+    py::module pyscope = tim.def_submodule("scope", "Scoping controls how the values are "
+                                                    "updated in the call-graph");
     {
         namespace scope   = tim::scope;
         auto _config_init = [](py::object _flat, py::object _time) {
@@ -342,9 +342,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    py::module _region = tim.def_submodule(
-        "region",
-        "C/C++/Fortran-compatible library functions (not subject to throttling)");
+    py::module _region =
+        tim.def_submodule("region", "C/C++/Fortran-compatible library functions (not "
+                                    "subject to throttling)");
 
     //----------------------------------------------------------------------------------//
     auto _set_default = [](py::list types) {

@@ -373,9 +373,10 @@ storage<Type, true>::~storage()
         }
         else
         {
-            CONDITIONAL_PRINT_HERE(
-                _debug, "[%s|%li]> skipping merge into non-existent primary instance",
-                m_label.c_str(), (long) m_instance_id);
+            CONDITIONAL_PRINT_HERE(_debug,
+                                   "[%s|%li]> skipping merge into non-existent primary "
+                                   "instance",
+                                   m_label.c_str(), (long) m_instance_id);
         }
     }
 

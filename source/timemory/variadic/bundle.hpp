@@ -47,7 +47,7 @@ namespace tim
 {
 /// \class tim::bundle
 /// \brief Static polymorphic base class for component bundlers
-template <typename...>
+template <typename... Tp>
 class bundle;
 //
 /// \class tim::bundle< Tag, BundleT, TupleT >
