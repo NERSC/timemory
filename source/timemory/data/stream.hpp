@@ -76,12 +76,12 @@ struct stream_entry
 
     TIMEMORY_NODISCARD string_t get() const { return m_value; }
 
-    TIMEMORY_NODISCARD bool center() const { return m_center; }
-    TIMEMORY_NODISCARD bool left() const { return m_left; }
-    TIMEMORY_NODISCARD int  row() const { return m_row; }
-    TIMEMORY_NODISCARD int  width() const { return m_width; }
-    TIMEMORY_NODISCARD int  column() const { return m_column; }
-    TIMEMORY_NODISCARD int  precision() const { return m_precision; }
+    TIMEMORY_NODISCARD bool         center() const { return m_center; }
+    TIMEMORY_NODISCARD bool         left() const { return m_left; }
+    TIMEMORY_NODISCARD int          row() const { return m_row; }
+    TIMEMORY_NODISCARD int          width() const { return m_width; }
+    TIMEMORY_NODISCARD int          column() const { return m_column; }
+    TIMEMORY_NODISCARD int          precision() const { return m_precision; }
     TIMEMORY_NODISCARD format_flags flags() const { return m_format; }
 
     void center(bool v) { m_center = v; }
@@ -245,9 +245,9 @@ struct entry : base::stream_entry
     entry& operator=(const entry&) = default;
     entry& operator=(entry&&) = default;
 
-    TIMEMORY_NODISCARD bool permit_empty() const { return m_permit_empty; }
-    TIMEMORY_NODISCARD int  width() const { return m_hdr->width(); }
-    TIMEMORY_NODISCARD int  precision() const { return m_hdr->precision(); }
+    TIMEMORY_NODISCARD bool         permit_empty() const { return m_permit_empty; }
+    TIMEMORY_NODISCARD int          width() const { return m_hdr->width(); }
+    TIMEMORY_NODISCARD int          precision() const { return m_hdr->precision(); }
     TIMEMORY_NODISCARD format_flags flags() const { return m_hdr->flags(); }
 
     void permit_empty(bool v) { m_permit_empty = v; }
@@ -308,12 +308,12 @@ public:
     , m_format(_fmt)
     {}
 
-    TIMEMORY_NODISCARD bool center() const { return m_center; }
-    TIMEMORY_NODISCARD int  precision() const { return m_precision; }
-    TIMEMORY_NODISCARD int  width() const { return m_width; }
-    TIMEMORY_NODISCARD char delim() const { return m_delim; }
+    TIMEMORY_NODISCARD bool         center() const { return m_center; }
+    TIMEMORY_NODISCARD int          precision() const { return m_precision; }
+    TIMEMORY_NODISCARD int          width() const { return m_width; }
+    TIMEMORY_NODISCARD char         delim() const { return m_delim; }
     TIMEMORY_NODISCARD format_flags flags() const { return m_format; }
-    TIMEMORY_NODISCARD int64_t freq() const { return m_separator_freq; }
+    TIMEMORY_NODISCARD int64_t      freq() const { return m_separator_freq; }
 
     void center(bool v) { m_center = v; }
     void precision(int v) { m_precision = v; }

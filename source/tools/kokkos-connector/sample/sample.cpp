@@ -150,18 +150,19 @@ main(int argc, char* argv[])
             // Application: <y,Ax> = y^T*A*x
             double result = 0;
 
-            Kokkos::parallel_reduce("yAx", N,
-                                    KOKKOS_LAMBDA(int j, double& update) {
-                                        double temp2 = 0;
+            Kokkos::parallel_reduce(
+                "yAx", N,
+                KOKKOS_LAMBDA(int j, double& update) {
+                    double temp2 = 0;
 
-                                        for(int i = 0; i < M; ++i)
-                                        {
-                                            temp2 += A(j, i) * x(i);
-                                        }
+                    for(int i = 0; i < M; ++i)
+                    {
+                        temp2 += A(j, i) * x(i);
+                    }
 
-                                        update += y(j) * temp2;
-                                    },
-                                    result);
+                    update += y(j) * temp2;
+                },
+                result);
 
             // Output result.
             if(repeat == (nrepeat - 1))

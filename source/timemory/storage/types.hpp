@@ -115,7 +115,7 @@ public:
     hash_value_t add_hash_id(const std::string& _prefix);
     void         add_hash_id(uint64_t _lhs, uint64_t _rhs);
 
-    TIMEMORY_NODISCARD bool is_initialized() const { return m_initialized; }
+    TIMEMORY_NODISCARD bool    is_initialized() const { return m_initialized; }
     TIMEMORY_NODISCARD int64_t instance_id() const { return m_instance_id; }
     void                       free_shared_manager();
 

@@ -665,8 +665,9 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string = {},
 template <typename ContainerT = std::vector<std::string>,
           typename PredicateT = std::function<std::string(const std::string&)>>
 inline ContainerT
-delimit(const std::string& line, const std::string& delimiters = "\"',;: ",
-        PredicateT&& predicate = [](const std::string& s) -> std::string { return s; })
+delimit(
+    const std::string& line, const std::string& delimiters = "\"',;: ",
+    PredicateT&& predicate = [](const std::string& s) -> std::string { return s; })
 {
     ContainerT _result{};
     size_t     _beginp = 0;  // position that is the beginning of the new string
@@ -792,7 +793,7 @@ public:
 
 template <typename T>
 TIMEMORY_INLINE size_t
-                get_hash(T&& obj)
+get_hash(T&& obj)
 {
     return std::hash<decay_t<T>>()(std::forward<T>(obj));
 }
@@ -800,7 +801,7 @@ TIMEMORY_INLINE size_t
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_INLINE size_t
-                get_hash(const string_view_t& str)
+get_hash(const string_view_t& str)
 {
     return std::hash<string_view_t>{}(str);
 }
@@ -808,7 +809,7 @@ TIMEMORY_INLINE size_t
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_INLINE size_t
-                get_hash(const char* cstr)
+get_hash(const char* cstr)
 {
     return std::hash<string_view_t>{}(cstr);
 }

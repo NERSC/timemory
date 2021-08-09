@@ -663,11 +663,11 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
     {
         if(_verbose > 0)
         {
-            fprintf(
-                stderr,
-                "[sampler::configure]> No existing sampler has been configured to "
-                "sample at a specific signal or fail at a specific signal. itimer "
-                "for will not be set. Sampler will only wait for target pid to exit\n");
+            fprintf(stderr,
+                    "[sampler::configure]> No existing sampler has been configured to "
+                    "sample at a specific signal or fail at a specific signal. itimer "
+                    "for will not be set. Sampler will only wait for target pid to "
+                    "exit\n");
         }
         _signals.clear();
     }
@@ -696,9 +696,10 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
             auto _itimer = get_itimer(itr);
             if(_itimer < 0)
             {
-                TIMEMORY_EXCEPTION(TIMEMORY_JOIN(
-                    " ", "Error! Alarm cannot be set for signal", itr,
-                    "because the signal does not map to a known itimer value\n"));
+                TIMEMORY_EXCEPTION(
+                    TIMEMORY_JOIN(" ", "Error! Alarm cannot be set for signal", itr,
+                                  "because the signal does not map to a known itimer "
+                                  "value\n"));
             }
 
             // configure the sigaction

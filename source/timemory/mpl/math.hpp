@@ -70,18 +70,18 @@ TIMEMORY_INLINE Tp sqrt(Tp);
 
 template <typename Tp>
 TIMEMORY_INLINE Tp
-                pow(Tp, double);
+pow(Tp, double);
 
 template <typename Tp>
 TIMEMORY_INLINE Tp sqr(Tp);
 
 template <typename Tp>
 TIMEMORY_INLINE Tp
-                min(const Tp&, const Tp&);
+min(const Tp&, const Tp&);
 
 template <typename Tp>
 TIMEMORY_INLINE Tp
-                max(const Tp&, const Tp&);
+max(const Tp&, const Tp&);
 
 template <typename Tp, typename Up = Tp>
 TIMEMORY_INLINE void
@@ -109,7 +109,7 @@ TIMEMORY_INLINE Tp&
 
 template <typename Tp>
 TIMEMORY_INLINE Tp
-                percent_diff(const Tp&, const Tp&);
+percent_diff(const Tp&, const Tp&);
 
 //--------------------------------------------------------------------------------------//
 //              dummy overloads for std::tuple<>, type_list<>, null_type
@@ -126,7 +126,7 @@ TIMEMORY_INLINE Tp
     TIMEMORY_INLINE TYPE& minus(TYPE& lhs, const TYPE&) { return lhs; }                  \
     TIMEMORY_INLINE TYPE& multiply(TYPE& lhs, const TYPE&) { return lhs; }               \
     TIMEMORY_INLINE TYPE& divide(TYPE& lhs, const TYPE&) { return lhs; }                 \
-    TIMEMORY_INLINE TYPE percent_diff(const TYPE&, const TYPE&) { return TYPE{}; }       \
+    TIMEMORY_INLINE TYPE  percent_diff(const TYPE&, const TYPE&) { return TYPE{}; }      \
     template <typename Up>                                                               \
     TIMEMORY_INLINE TYPE& plus(TYPE& lhs, Up&&)                                          \
     {                                                                                    \
@@ -167,7 +167,7 @@ abs(Tp _val, type_list<>) -> decltype(Tp{})
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0,
           enable_if_t<!(std::is_integral<Tp>::value && std::is_unsigned<Tp>::value)> = 0>
 auto TIMEMORY_INLINE
-     abs(Tp _val, type_list<>) -> decltype(std::abs(_val), Tp{})
+abs(Tp _val, type_list<>) -> decltype(std::abs(_val), Tp{})
 {
     return std::abs(_val);
 }
@@ -323,7 +323,7 @@ sqr(Tp _val)
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 TIMEMORY_INLINE Tp
-                min(Tp _lhs, Tp _rhs, type_list<>)
+min(Tp _lhs, Tp _rhs, type_list<>)
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     return (_rhs > _lhs) ? _lhs : _rhs;
@@ -405,7 +405,7 @@ min(const Tp& _lhs, const Tp& _rhs)
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 TIMEMORY_INLINE Tp
-                max(Tp _lhs, Tp _rhs, type_list<>)
+max(Tp _lhs, Tp _rhs, type_list<>)
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     return (_rhs < _lhs) ? _lhs : _rhs;
@@ -865,7 +865,7 @@ divide(Tp& _lhs, const Up& _rhs)
 
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 TIMEMORY_INLINE Tp
-                percent_diff(Tp _lhs, Tp _rhs, type_list<>, ...)
+percent_diff(Tp _lhs, Tp _rhs, type_list<>, ...)
 {
     constexpr Tp _zero    = Tp(0.0);
     constexpr Tp _one     = Tp(1.0);

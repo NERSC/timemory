@@ -94,7 +94,7 @@ public:
     TIMEMORY_NODISCARD auto dummy_count() const { return m_dummies.size(); }
     TIMEMORY_NODISCARD bool at_sea_level() const { return (m_depth == m_sea_level); }
 
-    int64_t&           depth() { return m_depth; }
+    int64_t&                   depth() { return m_depth; }
     TIMEMORY_NODISCARD int64_t depth() const { return m_depth; }
     int64_t&                   sea_level() { return m_sea_level; }
     TIMEMORY_NODISCARD int64_t sea_level() const { return m_sea_level; }
@@ -105,8 +105,8 @@ public:
     iterator& head() { return m_head; }
     iterator& current() { return m_current; }
 
-    iterator           begin() { return m_graph.begin(); }
-    iterator           end() { return m_graph.end(); }
+    iterator                          begin() { return m_graph.begin(); }
+    iterator                          end() { return m_graph.end(); }
     TIMEMORY_NODISCARD const_iterator begin() const { return m_graph.begin(); }
     TIMEMORY_NODISCARD const_iterator end() const { return m_graph.end(); }
 
@@ -114,10 +114,10 @@ public:
     {
         if(m_master)
         {
-            DEBUG_PRINT_HERE(
-                "[%s][%i]> synchronizing sea-level for depth = %i, master depth = %i",
-                demangle<NodeT>().c_str(), (int) threading::get_id(), (int) depth(),
-                (int) m_master->depth());
+            DEBUG_PRINT_HERE("[%s][%i]> synchronizing sea-level for depth = %i, master "
+                             "depth = %i",
+                             demangle<NodeT>().c_str(), (int) threading::get_id(),
+                             (int) depth(), (int) m_master->depth());
             add_dummy();
         }
     }

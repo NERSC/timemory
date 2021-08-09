@@ -1,4 +1,4 @@
-# requires clang-tidy version 6.0+
+# requires clang-format version 9.0+
 ---
 AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
@@ -7,6 +7,8 @@ AlignConsecutiveDeclarations: true
 AlignEscapedNewlinesLeft: false
 AlignOperands: true
 AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: false
@@ -27,6 +29,7 @@ BraceWrapping:
     AfterStruct:            true
     AfterUnion:             true
     AfterExternBlock:       true
+    AfterCaseLabel:         true
     BeforeCatch:            false
     BeforeElse:             true
     IndentBraces:           false
@@ -41,11 +44,13 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 0
 ContinuationIndentWidth: 4
 FixNamespaceComments: true
+IncludeBlocks: Preserve
 IndentCaseLabels: true
 IndentPPDirectives: AfterHash
 IndentWidth: 4
 KeepEmptyLinesAtTheStartOfBlocks: false
 Language: Cpp
+# PenaltyBreakBeforeFirstCallParameter: 100
 PointerAlignment: Left
 SortIncludes: true
 SortUsingDeclarations: true

@@ -370,8 +370,7 @@ tsettings<Tp, Vp>::load(Archive& ar, const unsigned int)
 //
 template <typename Tp, typename Vp>
 template <typename Up>
-auto
-tsettings<Tp, Vp>::get_action(enable_if_t<is_bool_type<Up>(), int>)
+auto tsettings<Tp, Vp>::get_action(enable_if_t<is_bool_type<Up>(), int>)
 {
     return [&](parser_t& p) {
         std::string id  = m_cmdline.back();
@@ -392,8 +391,7 @@ tsettings<Tp, Vp>::get_action(enable_if_t<is_bool_type<Up>(), int>)
 //
 template <typename Tp, typename Vp>
 template <typename Up>
-auto
-tsettings<Tp, Vp>::get_action(enable_if_t<is_string_type<Up>(), long>)
+auto tsettings<Tp, Vp>::get_action(enable_if_t<is_string_type<Up>(), long>)
 {
     return [&](parser_t& p) {
         std::string id  = m_cmdline.back();
@@ -417,8 +415,7 @@ tsettings<Tp, Vp>::get_action(enable_if_t<is_string_type<Up>(), long>)
 //
 template <typename Tp, typename Vp>
 template <typename Up>
-auto
-tsettings<Tp, Vp>::get_action(enable_if_t<is_else_type<Up>(), long long>)
+auto tsettings<Tp, Vp>::get_action(enable_if_t<is_else_type<Up>(), long long>)
 {
     return [&](parser_t& p) {
         std::string id  = m_cmdline.back();

@@ -159,8 +159,7 @@ storage_initializer::get()
 //--------------------------------------------------------------------------------------//
 //
 template <size_t... Idx>
-auto
-storage_initializer::get(std::index_sequence<Idx...>)
+auto storage_initializer::get(std::index_sequence<Idx...>)
 {
     return TIMEMORY_RETURN_FOLD_EXPRESSION(storage_initializer::get<Idx>());
 }

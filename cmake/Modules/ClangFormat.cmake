@@ -20,12 +20,16 @@ if(NOT TIMEMORY_FORMAT_TARGET)
     return()
 endif()
 
-# prefer clang-format 6.0
+# prefer clang-format 9.0, unset if 6 (old version)
+if("${CLANG_FORMATTER}" MATCHES "6")
+    unset(CLANG_FORMATTER CACHE)
+endif()
+
 find_program(CLANG_FORMATTER
     NAMES
-        clang-format-6
-        clang-format-6.0
-        clang-format-mp-6.0
+        clang-format-9
+        clang-format-9.0
+        clang-format-mp-9.0
         clang-format)
 
 # python formatting

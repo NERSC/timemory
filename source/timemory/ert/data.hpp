@@ -151,10 +151,10 @@ public:
 public:
     //----------------------------------------------------------------------------------//
     //
-    void               set_labels(const labels_type& _labels) { m_labels = _labels; }
-    TIMEMORY_NODISCARD labels_type get_labels() const { return m_labels; }
-    size_type                      size() { return m_values.size(); }
-    iterator                       begin() { return m_values.begin(); }
+    void set_labels(const labels_type& _labels) { m_labels = _labels; }
+    TIMEMORY_NODISCARD labels_type    get_labels() const { return m_labels; }
+    size_type                         size() { return m_values.size(); }
+    iterator                          begin() { return m_values.begin(); }
     TIMEMORY_NODISCARD const_iterator begin() const { return m_values.begin(); }
     iterator                          end() { return m_values.end(); }
     TIMEMORY_NODISCARD const_iterator end() const { return m_values.end(); }

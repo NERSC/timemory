@@ -269,10 +269,10 @@ public:
         return m_temporary.get_labeled(std::forward<Args>(args)...);
     }
 
-    TIMEMORY_NODISCARD bool enabled() const;
-    TIMEMORY_NODISCARD bool report_at_exit() const;
-    TIMEMORY_NODISCARD bool store() const;
-    TIMEMORY_NODISCARD int64_t laps() const;
+    TIMEMORY_NODISCARD bool     enabled() const;
+    TIMEMORY_NODISCARD bool     report_at_exit() const;
+    TIMEMORY_NODISCARD bool     store() const;
+    TIMEMORY_NODISCARD int64_t  laps() const;
     TIMEMORY_NODISCARD uint64_t hash() const;
     TIMEMORY_NODISCARD std::string key() const;
 

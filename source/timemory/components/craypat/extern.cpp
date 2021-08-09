@@ -37,7 +37,7 @@ extern "C"
     int PAT_region_begin(int, const char*) { return PAT_API_FAIL; }
     int PAT_region_end(int) { return PAT_API_FAIL; }
     int PAT_heap_stats(void) { return PAT_API_FAIL; }
-    int PAT_counters(int, const char* [], unsigned long[], int*) { return PAT_API_FAIL; }
+    int PAT_counters(int, const char*[], unsigned long[], int*) { return PAT_API_FAIL; }
     // openmp
     void PAT_omp_barrier_enter(void) {}
     void PAT_omp_barrier_exit(void) {}

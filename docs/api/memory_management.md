@@ -29,7 +29,7 @@ storage singletons are created, it registers functors with the manager for desto
 ## Allocators
 
 ```eval_rst
-.. doxygenclass:: tim::data:ring_buffer_allocator
+.. doxygenclass:: tim::data::ring_buffer_allocator
     :members:
     :undoc-members:
 .. doxygenclass:: tim::ert::aligned_allocator

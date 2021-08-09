@@ -148,8 +148,7 @@ construct(py::module&, long)
 //--------------------------------------------------------------------------------------//
 //
 template <size_t... Idx>
-constexpr auto
-construct(std::index_sequence<Idx...>)
+constexpr auto construct(std::index_sequence<Idx...>)
 {
     return tim::type_list<statistics_type_t<Idx>...>{};
 }

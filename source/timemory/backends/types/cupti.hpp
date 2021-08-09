@@ -1273,12 +1273,12 @@ stop_trace(Tp*);
 //--------------------------------------------------------------------------------------//
 
 static void CUPTIAPI
-            request_buffer(uint8_t**, size_t*, size_t*);
+request_buffer(uint8_t**, size_t*, size_t*);
 
 //--------------------------------------------------------------------------------------//
 
 static void CUPTIAPI
-            buffer_completed(CUcontext, uint32_t, uint8_t*, size_t, size_t);
+buffer_completed(CUcontext, uint32_t, uint8_t*, size_t, size_t);
 
 //--------------------------------------------------------------------------------------//
 

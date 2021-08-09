@@ -236,7 +236,7 @@ struct time_units<std::ratio<3600 * 24, 1>>
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_INLINE int64_t
-                clock_tick() noexcept
+clock_tick() noexcept
 {
 #if defined(TIMEMORY_WINDOWS)
     return CLOCKS_PER_SEC;
@@ -250,7 +250,7 @@ TIMEMORY_INLINE int64_t
 
 template <typename Precision, typename Ret = int64_t>
 TIMEMORY_INLINE Ret
-                clock_tick() noexcept
+clock_tick() noexcept
 {
     return static_cast<Ret>(Precision::den) / static_cast<Ret>(clock_tick());
 }
@@ -259,7 +259,7 @@ TIMEMORY_INLINE Ret
 // general struct for the differnt clock_gettime functions
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_now(clockid_t clock_id) noexcept
+get_clock_now(clockid_t clock_id) noexcept
 {
     constexpr Tp factor = Precision::den / static_cast<Tp>(std::nano::den);
 #if defined(TIMEMORY_MACOS)
@@ -276,7 +276,7 @@ TIMEMORY_INLINE Tp
 // the epoch.
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_real_now() noexcept
+get_clock_real_now() noexcept
 {
     using clock_type    = std::chrono::steady_clock;
     using duration_type = std::chrono::duration<clock_type::rep, Precision>;
@@ -291,7 +291,7 @@ TIMEMORY_INLINE Tp
 // and will continue to increment while the system is asleep.
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_monotonic_now() noexcept
+get_clock_monotonic_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_MONOTONIC);
 }
@@ -302,7 +302,7 @@ TIMEMORY_INLINE Tp
 // It should not be compared to other system time sources.
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_monotonic_raw_now() noexcept
+get_clock_monotonic_raw_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_MONOTONIC_RAW);
 }
@@ -315,7 +315,7 @@ TIMEMORY_INLINE Tp
 #if defined(TIMEMORY_WINDOWS)
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_thread_now() noexcept
+get_clock_thread_now() noexcept
 {
     auto _get_thr_time = [](const FILETIME& kernel_time,
                             const FILETIME& user_time) -> Tp {
@@ -340,7 +340,7 @@ TIMEMORY_INLINE Tp
 #else
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_thread_now() noexcept
+get_clock_thread_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_THREAD_CPUTIME_ID);
 }
@@ -353,7 +353,7 @@ TIMEMORY_INLINE Tp
 #if defined(TIMEMORY_WINDOWS)
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_process_now() noexcept
+get_clock_process_now() noexcept
 {
     auto _get_proc_time = [](const FILETIME& kernel_time,
                              const FILETIME& user_time) -> Tp {
@@ -378,7 +378,7 @@ TIMEMORY_INLINE Tp
 #else
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_process_now() noexcept
+get_clock_process_now() noexcept
 {
     return get_clock_now<Tp, Precision>(CLOCK_PROCESS_CPUTIME_ID);
 }
@@ -389,7 +389,7 @@ TIMEMORY_INLINE Tp
 // for this process and child processes
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_user_now() noexcept
+get_clock_user_now() noexcept
 {
 #if defined(TIMEMORY_WINDOWS)
     auto _get_user_time = [](const FILETIME& user_time) -> Tp {
@@ -419,7 +419,7 @@ TIMEMORY_INLINE Tp
 // for this process and child processes
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_system_now() noexcept
+get_clock_system_now() noexcept
 {
 #if defined(TIMEMORY_WINDOWS)
     auto _get_kern_time = [](const FILETIME& kernel_time) -> Tp {
@@ -449,7 +449,7 @@ TIMEMORY_INLINE Tp
 // for this process and child processes
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_clock_cpu_now() noexcept
+get_clock_cpu_now() noexcept
 {
 #if defined(TIMEMORY_WINDOWS)
     return get_clock_process_now<Tp, Precision>();
@@ -466,7 +466,7 @@ TIMEMORY_INLINE Tp
 // for this process only
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_self_clock_user_now() noexcept
+get_self_clock_user_now() noexcept
 {
     tms _tms;
     ::times(&_tms);
@@ -478,7 +478,7 @@ TIMEMORY_INLINE Tp
 // for this process only
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_self_clock_system_now() noexcept
+get_self_clock_system_now() noexcept
 {
     tms _tms;
     ::times(&_tms);
@@ -490,7 +490,7 @@ TIMEMORY_INLINE Tp
 // for this process only
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_self_clock_cpu_now() noexcept
+get_self_clock_cpu_now() noexcept
 {
     return (clock() * static_cast<Tp>(Precision::den)) / static_cast<Tp>(CLOCKS_PER_SEC);
 }
@@ -500,7 +500,7 @@ TIMEMORY_INLINE Tp
 // for this process only
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_child_clock_user_now() noexcept
+get_child_clock_user_now() noexcept
 {
     tms _tms;
     ::times(&_tms);
@@ -512,7 +512,7 @@ TIMEMORY_INLINE Tp
 // for this process only
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_child_clock_system_now() noexcept
+get_child_clock_system_now() noexcept
 {
     tms _tms;
     ::times(&_tms);
@@ -524,7 +524,7 @@ TIMEMORY_INLINE Tp
 // for this process only
 template <typename Tp = double, typename Precision = std::ratio<1>>
 TIMEMORY_INLINE Tp
-                get_child_clock_cpu_now() noexcept
+get_child_clock_cpu_now() noexcept
 {
     tms _tms;
     ::times(&_tms);

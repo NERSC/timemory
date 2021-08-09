@@ -47,7 +47,7 @@ namespace tim
 {
 /// \class tim::bundle
 /// \brief Static polymorphic base class for component bundlers
-template <typename...>
+template <typename... Tp>
 class bundle;
 //
 /// \class tim::bundle< Tag, BundleT, TupleT >
@@ -906,8 +906,7 @@ bundle<Tag, BundleT, TupleT>::get() const
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename U>
-auto
-bundle<Tag, BundleT, TupleT>::get_component(
+auto bundle<Tag, BundleT, TupleT>::get_component(
     enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
                     is_one_of<remove_pointer_decay_t<U>, data_type>::value,
                 int>)
@@ -919,8 +918,7 @@ bundle<Tag, BundleT, TupleT>::get_component(
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename U>
-auto
-bundle<Tag, BundleT, TupleT>::get_component(
+auto bundle<Tag, BundleT, TupleT>::get_component(
     enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
                     is_one_of<remove_pointer_decay_t<U>*, data_type>::value,
                 int>)
@@ -932,8 +930,7 @@ bundle<Tag, BundleT, TupleT>::get_component(
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename U>
-auto&
-bundle<Tag, BundleT, TupleT>::get_reference(
+auto& bundle<Tag, BundleT, TupleT>::get_reference(
     enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
                     is_one_of<remove_pointer_decay_t<U>, data_type>::value,
                 int>)
@@ -945,8 +942,7 @@ bundle<Tag, BundleT, TupleT>::get_reference(
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename U>
-auto&
-bundle<Tag, BundleT, TupleT>::get_reference(
+auto& bundle<Tag, BundleT, TupleT>::get_reference(
     enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
                     is_one_of<remove_pointer_decay_t<U>*, data_type>::value,
                 int>)

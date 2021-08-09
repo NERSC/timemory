@@ -56,8 +56,8 @@ init_storage<Tp>::init_storage(enable_if_t<trait::uses_value_storage<Up>::value,
 //
 template <typename Tp>
 template <typename U, typename V>
-typename init_storage<Tp>::get_type
-init_storage<Tp>::get(enable_if_t<trait::uses_value_storage<U, V>::value, int>)
+typename init_storage<Tp>::get_type init_storage<Tp>::get(
+    enable_if_t<trait::uses_value_storage<U, V>::value, int>)
 {
 #if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
     return get_type{ nullptr, false, false, false };
@@ -82,8 +82,8 @@ init_storage<Tp>::get(enable_if_t<trait::uses_value_storage<U, V>::value, int>)
 //
 template <typename Tp>
 template <typename U, typename V>
-typename init_storage<Tp>::get_type
-init_storage<Tp>::get(enable_if_t<!trait::uses_value_storage<U, V>::value, int>)
+typename init_storage<Tp>::get_type init_storage<Tp>::get(
+    enable_if_t<!trait::uses_value_storage<U, V>::value, int>)
 {
 #if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
     return get_type{ nullptr, false, false, false };
