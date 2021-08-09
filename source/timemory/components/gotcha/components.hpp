@@ -735,9 +735,9 @@ private:
         {
             if(settings::debug())
             {
-                printf(
-                    "[gotcha]> GOTCHA binding for function '%s' is in reject list...\n",
-                    _func.c_str());
+                printf("[gotcha]> GOTCHA binding for function '%s' is in reject "
+                       "list...\n",
+                       _func.c_str());
             }
             return false;
         }

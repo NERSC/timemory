@@ -64,7 +64,7 @@ namespace component
 {
 //
 TIMEMORY_CUPTI_INLINE CUpti_PCSamplingData
-                      cupti_pcsampling::get_pcsampling_data(size_t numStallReasons, size_t numPcsToCollect)
+cupti_pcsampling::get_pcsampling_data(size_t numStallReasons, size_t numPcsToCollect)
 {
     // User buffer to hold collected PC Sampling data in PC-To-Counter format
     CUpti_PCSamplingData pcSamplingData = {};

@@ -68,11 +68,12 @@ record_statistics<CompT, Tp>::operator()(statistics<Tp>& _stats, const CompT& _o
         }
         else
         {
-            CONDITIONAL_PRINT_HERE(
-                settings::debug(),
-                "Updating statistics<%s> skipped for %s. Laps: %lu > 1",
-                demangle<Tp>().c_str(), demangle<component_type>().c_str(),
-                (unsigned long) _obj.get_laps());
+            CONDITIONAL_PRINT_HERE(settings::debug(),
+                                   "Updating statistics<%s> skipped for %s. Laps: %lu > "
+                                   "1",
+                                   demangle<Tp>().c_str(),
+                                   demangle<component_type>().c_str(),
+                                   (unsigned long) _obj.get_laps());
         }
     }
     else

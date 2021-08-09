@@ -150,7 +150,7 @@ struct num_io_in : public base<num_io_in>
     {
         return "Number of times the filesystem had to perform input";
     }
-    static value_type  record() { return get_num_io_in(); }
+    static value_type             record() { return get_num_io_in(); }
     TIMEMORY_NODISCARD value_type get() const
     {
         auto val = base_type::load();
@@ -195,7 +195,7 @@ struct num_io_out : public base<num_io_out>
     {
         return "Number of times the filesystem had to perform output";
     }
-    static value_type  record() { return get_num_io_out(); }
+    static value_type             record() { return get_num_io_out(); }
     TIMEMORY_NODISCARD value_type get() const
     {
         auto val = base_type::load();
@@ -242,7 +242,7 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
         return "Number of page faults serviced without any I/O activity via 'reclaiming' "
                "a page frame from the list of pages awaiting reallocation";
     }
-    static value_type  record() { return get_num_minor_page_faults(); }
+    static value_type             record() { return get_num_minor_page_faults(); }
     TIMEMORY_NODISCARD value_type get() const
     {
         auto val = base_type::load();
@@ -290,7 +290,7 @@ struct num_major_page_faults : public base<num_major_page_faults>
     {
         return "Number of page faults serviced that required I/O activity";
     }
-    static value_type  record() { return get_num_major_page_faults(); }
+    static value_type             record() { return get_num_major_page_faults(); }
     TIMEMORY_NODISCARD value_type get() const
     {
         auto val = base_type::load();
@@ -341,7 +341,7 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
         return "Number of context switches due to a process voluntarily giving up the "
                "processor before its time slice was completed";
     }
-    static value_type  record() { return get_num_voluntary_context_switch(); }
+    static value_type             record() { return get_num_voluntary_context_switch(); }
     TIMEMORY_NODISCARD value_type get_display() const
     {
         auto val = base_type::load();
@@ -393,7 +393,7 @@ struct priority_context_switch : public base<priority_context_switch>
         return "Number of context switch due to higher priority process becoming runnable"
                " or because the current process exceeded its time slice";
     }
-    static value_type  record() { return get_num_priority_context_switch(); }
+    static value_type             record() { return get_num_priority_context_switch(); }
     TIMEMORY_NODISCARD value_type get_display() const
     {
         auto val = base_type::load();

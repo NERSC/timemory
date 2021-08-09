@@ -153,7 +153,7 @@ using get_trait_type_t = typename get_trait_type<TraitT, T...>::type;
 //======================================================================================//
 // check if any types are integral types
 //
-template <typename...>
+template <typename... Tp>
 struct is_one_of_integral
 {
     static constexpr bool value = false;

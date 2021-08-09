@@ -40,7 +40,7 @@ namespace tim
 namespace component
 {
 //
-/// \struct timestamp
+/// \struct tim::component::timestamp
 /// \brief this component stores the timestamp of when a bundle was started
 /// and is specialized such that the "timeline_storage" type-trait is true.
 /// This means that every entry in the call-graph for this output will be unique

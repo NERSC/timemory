@@ -148,9 +148,8 @@ main(int argc, char** argv)
         .count(1)
         .action([](parser_t& p) { sample_delay() = p.get<double>("sample-delay"); });
     parser
-        .add_argument(
-            { "-f", "--sample-freq" },
-            "Set the frequency of the sampler (number of interrupts per second)")
+        .add_argument({ "-f", "--sample-freq" }, "Set the frequency of the sampler "
+                                                 "(number of interrupts per second)")
         .count(1)
         .action([](parser_t& p) {
             sample_freq() = p.get<double>("sample-freq");
@@ -158,11 +157,11 @@ main(int argc, char** argv)
                 use_sample() = false;
         });
     parser
-        .add_argument(
-            { "--disable-sample" },
-            "Disable UNIX signal-based sampling.\n%{INDENT}% Sampling is the most common "
-            "culprit for timem hanging (i.e. failing to exit after the child "
-            "process exits)")
+        .add_argument({ "--disable-sample" },
+                      "Disable UNIX signal-based sampling.\n%{INDENT}% Sampling is the "
+                      "most common "
+                      "culprit for timem hanging (i.e. failing to exit after the child "
+                      "process exits)")
         .count(0)
         .action([](parser_t&) { use_sample() = false; });
     parser.add_argument({ "-e", "--events", "--papi-events" },
@@ -209,9 +208,8 @@ main(int argc, char** argv)
         });
 #if defined(TIMEMORY_USE_MPI)
     parser
-        .add_argument(
-            { "--mpi" },
-            "Launch processes via MPI_Comm_spawn_multiple (reduced functionality)")
+        .add_argument({ "--mpi" }, "Launch processes via MPI_Comm_spawn_multiple "
+                                   "(reduced functionality)")
         .count(0);
     parser.add_argument({ "--disable-mpi" }, "Disable MPI_Finalize")
         .count(0)
@@ -396,11 +394,11 @@ main(int argc, char** argv)
         {
             if(verbose() > -1)
             {
-                fprintf(
-                    stderr,
-                    "Warning! Executable '%s' was expected to be 'timem'. Using "
-                    "'timemory-pid' instead of adding 'ory-pid' to name of executable",
-                    argv[0]);
+                fprintf(stderr,
+                        "Warning! Executable '%s' was expected to be 'timem'. Using "
+                        "'timemory-pid' instead of adding 'ory-pid' to name of "
+                        "executable",
+                        argv[0]);
             }
             // otherwise, assume it can find 'timemory-pid'
             pidexe = "timemory-pid";

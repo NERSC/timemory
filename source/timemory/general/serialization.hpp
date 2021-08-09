@@ -62,11 +62,10 @@ namespace tim
 ///
 template <typename Tp, typename FuncT>
 void
-generic_serialization(const std::string& fname, const Tp& obj,
-                      const std::string& _main_name = "timemory",
-                      const std::string& _data_name = "data",
-                      FuncT&&            _func =
-                          [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
+generic_serialization(
+    const std::string& fname, const Tp& obj, const std::string& _main_name = "timemory",
+    const std::string& _data_name = "data",
+    FuncT&& _func = [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
 {
     std::ofstream ofs(fname.c_str());
     if(ofs)
@@ -100,11 +99,10 @@ generic_serialization(const std::string& fname, const Tp& obj,
 ///
 template <typename ArchiveT, typename ApiT = TIMEMORY_API, typename Tp, typename FuncT>
 void
-generic_serialization(const std::string& fname, const Tp& obj,
-                      const std::string& _main_name = "timemory",
-                      const std::string& _data_name = "data",
-                      FuncT&&            _func =
-                          [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
+generic_serialization(
+    const std::string& fname, const Tp& obj, const std::string& _main_name = "timemory",
+    const std::string& _data_name = "data",
+    FuncT&& _func = [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
 {
     static_assert(concepts::is_output_archive<ArchiveT>::value,
                   "Error! Not an output archive type");
@@ -140,11 +138,10 @@ generic_serialization(const std::string& fname, const Tp& obj,
 ///
 template <typename ArchiveT, typename ApiT = TIMEMORY_API, typename Tp, typename FuncT>
 void
-generic_serialization(std::ostream& ofs, const Tp& obj,
-                      const std::string& _main_name = "timemory",
-                      const std::string& _data_name = "data",
-                      FuncT&&            _func =
-                          [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
+generic_serialization(
+    std::ostream& ofs, const Tp& obj, const std::string& _main_name = "timemory",
+    const std::string& _data_name = "data",
+    FuncT&& _func = [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
 {
     // ensure json write final block during destruction before the file is closed
     using policy_type = policy::output_archive<ArchiveT, ApiT>;

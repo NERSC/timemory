@@ -157,10 +157,10 @@ rank_prefix()
         if(test_num > total_num_tests || tests.count(test_num) != 0)                     \
         {                                                                                \
             if(test_num > total_num_tests)                                               \
-                printf(                                                                  \
-                    "Warning! Test %i is greater than the specified number of tests: "   \
-                    "%i\n",                                                              \
-                    test_num, total_num_tests);                                          \
+                printf("Warning! Test %i is greater than the specified number of "       \
+                       "tests: "                                                         \
+                       "%i\n",                                                           \
+                       test_num, total_num_tests);                                       \
             try                                                                          \
             {                                                                            \
                 ntest_counter += 1;                                                      \

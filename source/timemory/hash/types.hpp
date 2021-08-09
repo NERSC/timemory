@@ -117,20 +117,20 @@ get_hash_resolvers() TIMEMORY_HOT;
 template <typename Tp,
           std::enable_if_t<concepts::is_string_type<std::decay_t<Tp>>::value, int> = 0>
 TIMEMORY_INLINE hash_value_t
-                get_hash_id(Tp&& _prefix);
+get_hash_id(Tp&& _prefix);
 //
 template <typename Tp,
           std::enable_if_t<!concepts::is_string_type<std::decay_t<Tp>>::value, int> = 0>
 TIMEMORY_INLINE hash_value_t
-                get_hash_id(Tp&& _prefix);
+get_hash_id(Tp&& _prefix);
 //
 TIMEMORY_INLINE hash_value_t
-                get_combined_hash_id(hash_value_t _lhs, hash_value_t _rhs);
+get_combined_hash_id(hash_value_t _lhs, hash_value_t _rhs);
 //
 template <typename Tp,
           std::enable_if_t<!std::is_integral<std::decay_t<Tp>>::value, int> = 0>
 TIMEMORY_INLINE hash_value_t
-                get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs);
+get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs);
 //
 //  get hash of a string type
 //

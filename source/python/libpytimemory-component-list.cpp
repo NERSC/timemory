@@ -187,41 +187,47 @@ generate(py::module& _pymod)
                   py::arg("components") = py::list{}, py::arg("key") = std::string{},
                   py::return_value_policy::automatic);
     //----------------------------------------------------------------------------------//
-    comp_list.def("push", [](component_list_t* self) { self->push(); },
-                  "Push components into storage");
+    comp_list.def(
+        "push", [](component_list_t* self) { self->push(); },
+        "Push components into storage");
     //----------------------------------------------------------------------------------//
-    comp_list.def("pop", [](component_list_t* self) { self->pop(); },
-                  "Finalize the component in storage");
+    comp_list.def(
+        "pop", [](component_list_t* self) { self->pop(); },
+        "Finalize the component in storage");
     //----------------------------------------------------------------------------------//
-    comp_list.def("start", [](component_list_t* self) { self->start(); },
-                  "Start component tuple");
+    comp_list.def(
+        "start", [](component_list_t* self) { self->start(); }, "Start component tuple");
     //----------------------------------------------------------------------------------//
-    comp_list.def("stop", [](component_list_t* self) { self->stop(); },
-                  "Stop component tuple");
+    comp_list.def(
+        "stop", [](component_list_t* self) { self->stop(); }, "Stop component tuple");
     //----------------------------------------------------------------------------------//
-    comp_list.def("report",
-                  [](component_list_t* self) { std::cout << *(self) << std::endl; },
-                  "Report component tuple");
+    comp_list.def(
+        "report", [](component_list_t* self) { std::cout << *(self) << std::endl; },
+        "Report component tuple");
     //----------------------------------------------------------------------------------//
-    comp_list.def("__str__",
-                  [](component_list_t* self) {
-                      std::stringstream ss;
-                      ss << *(self);
-                      return ss.str();
-                  },
-                  "Stringify component tuple");
+    comp_list.def(
+        "__str__",
+        [](component_list_t* self) {
+            std::stringstream ss;
+            ss << *(self);
+            return ss.str();
+        },
+        "Stringify component tuple");
     //----------------------------------------------------------------------------------//
-    comp_list.def("reset", [](component_list_t* self) { self->reset(); },
-                  "Reset the component tuple");
+    comp_list.def(
+        "reset", [](component_list_t* self) { self->reset(); },
+        "Reset the component tuple");
     //----------------------------------------------------------------------------------//
-    comp_list.def("get_raw", [](component_list_t* self) { return self->get(); },
-                  "Get the component list data");
+    comp_list.def(
+        "get_raw", [](component_list_t* self) { return self->get(); },
+        "Get the component list data");
     //----------------------------------------------------------------------------------//
-    comp_list.def("get",
-                  [](component_list_t* self) {
-                      return pytim::dict::construct(self->get_labeled());
-                  },
-                  "Get the component list data (labeled)");
+    comp_list.def(
+        "get",
+        [](component_list_t* self) {
+            return pytim::dict::construct(self->get_labeled());
+        },
+        "Get the component list data (labeled)");
     //----------------------------------------------------------------------------------//
     comp_decorator.def(py::init(&init::component_decorator), "Initialization",
                        py::return_value_policy::automatic);

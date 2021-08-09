@@ -237,6 +237,7 @@ html_static_path = ["_static"]
 # Breathe Configuration
 breathe_projects = {"timemory": "doxygen-xml"}
 breathe_default_project = "timemory"
+breathe_debug_trace_directives = True
 # breathe_default_members = ('members', )
 if False:
     breathe_projects_source = {

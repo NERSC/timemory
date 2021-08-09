@@ -603,8 +603,8 @@ template <typename T, typename AllocatorT>
 void
 graph<T, AllocatorT>::m_head_initialize()
 {
-    head = allocator_traits::allocate(
-        m_alloc, 1, nullptr);  // MSVC does not have default second argument
+    head = allocator_traits::allocate(m_alloc, 1, nullptr);  // MSVC does not have default
+                                                             // second argument
     feet = allocator_traits::allocate(m_alloc, 1, nullptr);
     allocator_traits::construct(m_alloc, head, std::move(tgraph_node<T>{}));
     allocator_traits::construct(m_alloc, feet, std::move(tgraph_node<T>{}));

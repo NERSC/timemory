@@ -51,8 +51,8 @@ struct bit_flags
     TIMEMORY_INLINE void set(bool v);
     TIMEMORY_INLINE void set(value_type idx, bool v);
 
-    TIMEMORY_INLINE void reset() { m_state_value = 0; }
-    TIMEMORY_INLINE void set_state_value(value_type v) { m_state_value = v; }
+    TIMEMORY_INLINE void       reset() { m_state_value = 0; }
+    TIMEMORY_INLINE void       set_state_value(value_type v) { m_state_value = v; }
     TIMEMORY_INLINE value_type get_state_value() const { return m_state_value; }
 
 private:

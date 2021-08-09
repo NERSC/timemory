@@ -96,11 +96,12 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         // copy over aliases
         if(rhs.get_hash_aliases() && lhs.get_hash_aliases())
         {
-            CONDITIONAL_PRINT_HERE(
-                _debug,
-                "[%s]> merging %lu hash-aliases into existing set of %lu hash-aliases!",
-                Type::get_label().c_str(), (unsigned long) rhs.get_hash_aliases()->size(),
-                (unsigned long) lhs.get_hash_aliases()->size());
+            CONDITIONAL_PRINT_HERE(_debug,
+                                   "[%s]> merging %lu hash-aliases into existing set of "
+                                   "%lu hash-aliases!",
+                                   Type::get_label().c_str(),
+                                   (unsigned long) rhs.get_hash_aliases()->size(),
+                                   (unsigned long) lhs.get_hash_aliases()->size());
 
             auto _hash_aliases = *rhs.get_hash_aliases();
             for(const auto& itr : _hash_aliases)

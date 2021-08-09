@@ -239,10 +239,10 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
 
             if(settings::debug() && tid == 0)
             {
-                printf(
-                    "[tim::ert::ops_main<%llu>]> number of trials: %llu, n = %llu, nsize "
-                    "= %llu\n",
-                    (ull) Nops, (ull) ntrials, (ull) n, (ull) _counter.nsize);
+                printf("[tim::ert::ops_main<%llu>]> number of trials: %llu, n = %llu, "
+                       "nsize "
+                       "= %llu\n",
+                       (ull) Nops, (ull) ntrials, (ull) n, (ull) _counter.nsize);
             }
 
             auto _itr_params = _counter.params;

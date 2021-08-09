@@ -171,7 +171,7 @@ postprocess(void* data)
 //
 //
 static void CUDART_CB
-            cutStreamCallback(cudaStream_t event, cudaError_t status, void* data)
+cutStreamCallback(cudaStream_t event, cudaError_t status, void* data)
 {
     cutStartThread(postprocess, data);
 }

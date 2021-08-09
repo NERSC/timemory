@@ -183,11 +183,11 @@ struct range
     {}
 
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& begin() { return m_begin; }
-    TIMEMORY_HOST_DEVICE_FUNCTION Intp begin() const { return m_begin; }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp  begin() const { return m_begin; }
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& end() { return m_end; }
-    TIMEMORY_HOST_DEVICE_FUNCTION Intp end() const { return m_end; }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp  end() const { return m_end; }
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& stride() { return m_stride; }
-    TIMEMORY_HOST_DEVICE_FUNCTION Intp stride() const { return m_stride; }
+    TIMEMORY_HOST_DEVICE_FUNCTION Intp  stride() const { return m_stride; }
 
     TIMEMORY_HOST_DEVICE_FUNCTION const char* c_str() const
     {

@@ -35,7 +35,7 @@ jobs:
         flake8 . --count --statistics
 
   formatting:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         python-version: [3.8]
@@ -52,7 +52,7 @@ jobs:
         pip install black
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         sudo apt-get update
-        sudo apt-get install -y clang-format-6.0
+        sudo apt-get install -y clang-format-9
     - name: black format
       run: |
         black --diff --check .
@@ -60,11 +60,11 @@ jobs:
       run: |
         set +e
         FILES=$(find source examples -type f | grep -v 'tpls/cereal/cereal/external' | egrep '\.h$|\.hpp$|\.c$|\.cpp$|\.cpp\.in$')
-        FORMAT_OUT=$(clang-format-6.0 -output-replacements-xml ${FILES})
+        FORMAT_OUT=$(clang-format-9 -output-replacements-xml ${FILES})
         RET=$(echo ${FORMAT_OUT} | grep -c '<replacement ')
         if [ "${RET}" -ne 0 ]; then
           echo -e "\nError! Code not formatted. Detected ${RET} lines\n"
-          clang-format-6.0 -i ${FILES}
+          clang-format-9 -i ${FILES}
           git diff
           exit ${RET}
         fi

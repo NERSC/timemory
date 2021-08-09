@@ -115,56 +115,64 @@ generate(py::module& _pymod)
     timer.def(py::init(&init::timer), "Initialization", py::arg("key") = "",
               py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
-    timer.def("real_elapsed",
-              [](py::object pytimer) {
-                  tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = *(_timer.get<wall_clock>());
-                  return obj.get();
-              },
-              "Elapsed wall clock");
+    timer.def(
+        "real_elapsed",
+        [](py::object pytimer) {
+            tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
+            auto&        obj    = *(_timer.get<wall_clock>());
+            return obj.get();
+        },
+        "Elapsed wall clock");
     //----------------------------------------------------------------------------------//
-    timer.def("sys_elapsed",
-              [](py::object pytimer) {
-                  tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = *(_timer.get<system_clock>());
-                  return obj.get();
-              },
-              "Elapsed system clock");
+    timer.def(
+        "sys_elapsed",
+        [](py::object pytimer) {
+            tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
+            auto&        obj    = *(_timer.get<system_clock>());
+            return obj.get();
+        },
+        "Elapsed system clock");
     //----------------------------------------------------------------------------------//
-    timer.def("user_elapsed",
-              [](py::object pytimer) {
-                  tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = *(_timer.get<user_clock>());
-                  return obj.get();
-              },
-              "Elapsed user time");
+    timer.def(
+        "user_elapsed",
+        [](py::object pytimer) {
+            tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
+            auto&        obj    = *(_timer.get<user_clock>());
+            return obj.get();
+        },
+        "Elapsed user time");
     //----------------------------------------------------------------------------------//
-    timer.def("start", [](py::object pytimer) { pytimer.cast<tim_timer_t*>()->start(); },
-              "Start timer");
+    timer.def(
+        "start", [](py::object pytimer) { pytimer.cast<tim_timer_t*>()->start(); },
+        "Start timer");
     //----------------------------------------------------------------------------------//
-    timer.def("stop", [](py::object pytimer) { pytimer.cast<tim_timer_t*>()->stop(); },
-              "Stop timer");
+    timer.def(
+        "stop", [](py::object pytimer) { pytimer.cast<tim_timer_t*>()->stop(); },
+        "Stop timer");
     //----------------------------------------------------------------------------------//
-    timer.def("report",
-              [](py::object pytimer) {
-                  std::cout << *(pytimer.cast<tim_timer_t*>()) << std::endl;
-              },
-              "Report timer");
+    timer.def(
+        "report",
+        [](py::object pytimer) {
+            std::cout << *(pytimer.cast<tim_timer_t*>()) << std::endl;
+        },
+        "Report timer");
     //----------------------------------------------------------------------------------//
-    timer.def("__str__",
-              [](py::object pytimer) {
-                  std::stringstream ss;
-                  ss << *(pytimer.cast<tim_timer_t*>());
-                  return ss.str();
-              },
-              "Stringify timer");
+    timer.def(
+        "__str__",
+        [](py::object pytimer) {
+            std::stringstream ss;
+            ss << *(pytimer.cast<tim_timer_t*>());
+            return ss.str();
+        },
+        "Stringify timer");
     //----------------------------------------------------------------------------------//
-    timer.def("reset", [](py::object self) { self.cast<tim_timer_t*>()->reset(); },
-              "Reset the timer");
+    timer.def(
+        "reset", [](py::object self) { self.cast<tim_timer_t*>()->reset(); },
+        "Reset the timer");
     //----------------------------------------------------------------------------------//
-    timer.def("get_raw",
-              [](py::object self) { return (*self.cast<tim_timer_t*>()).get(); },
-              "Get the timer data");
+    timer.def(
+        "get_raw", [](py::object self) { return (*self.cast<tim_timer_t*>()).get(); },
+        "Get the timer data");
     //----------------------------------------------------------------------------------//
     timer.def(
         "get",
@@ -179,18 +187,19 @@ generate(py::module& _pymod)
                    py::arg("report_at_exit") = false,
                    py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
-    auto_timer.def("__str__",
-                   [](py::object self) {
-                       std::stringstream _ss;
-                       auto_timer_t*     _self = self.cast<auto_timer_t*>();
-                       _ss << *_self;
-                       return _ss.str();
-                   },
-                   "Print the auto timer");
+    auto_timer.def(
+        "__str__",
+        [](py::object self) {
+            std::stringstream _ss;
+            auto_timer_t*     _self = self.cast<auto_timer_t*>();
+            _ss << *_self;
+            return _ss.str();
+        },
+        "Print the auto timer");
     //----------------------------------------------------------------------------------//
-    auto_timer.def("get_raw",
-                   [](py::object self) { return (*self.cast<auto_timer_t*>()).get(); },
-                   "Get the component list data");
+    auto_timer.def(
+        "get_raw", [](py::object self) { return (*self.cast<auto_timer_t*>()).get(); },
+        "Get the component list data");
     //----------------------------------------------------------------------------------//
     auto_timer.def(
         "get",

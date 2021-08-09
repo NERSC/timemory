@@ -96,7 +96,7 @@ extern "C"
     extern int PAT_region_begin(int, const char*);
     extern int PAT_region_end(int);
     extern int PAT_heap_stats(void);
-    extern int PAT_counters(int, const char* [], unsigned long[], int*);
+    extern int PAT_counters(int, const char*[], unsigned long[], int*);
     // openmp
     extern void PAT_omp_barrier_enter(void);
     extern void PAT_omp_barrier_exit(void);

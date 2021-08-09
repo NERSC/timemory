@@ -155,9 +155,10 @@ ring_buffer::destroy()
             if(ftruncate(m_fd, 0) < 0)
             {
                 bool _cond = settings::verbose() > 0 || settings::debug();
-                CONDITIONAL_PRINT_HERE(
-                    _cond, "Ring buffer failed to truncate the file descriptor %i\n",
-                    m_fd);
+                CONDITIONAL_PRINT_HERE(_cond,
+                                       "Ring buffer failed to truncate the file "
+                                       "descriptor %i\n",
+                                       m_fd);
             }
             // Unmap the mapped virtual memmory.
             auto ret = munmap(m_ptr, m_size * 2);

@@ -145,7 +145,7 @@ storage::add_hash_id(uint64_t _lhs, uint64_t _rhs)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_STORAGE_LINKAGE hash_value_t
-                         storage::add_hash_id(const std::string& _prefix)
+storage::add_hash_id(const std::string& _prefix)
 {
     return ::tim::add_hash_id(m_hash_ids, _prefix);
 }
@@ -373,9 +373,10 @@ storage<Type, true>::~storage()
         }
         else
         {
-            CONDITIONAL_PRINT_HERE(
-                _debug, "[%s|%li]> skipping merge into non-existent primary instance",
-                m_label.c_str(), (long) m_instance_id);
+            CONDITIONAL_PRINT_HERE(_debug,
+                                   "[%s|%li]> skipping merge into non-existent primary "
+                                   "instance",
+                                   m_label.c_str(), (long) m_instance_id);
         }
     }
 
