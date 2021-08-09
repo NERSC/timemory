@@ -47,7 +47,7 @@ using graph_const_iterator_t = typename graph<node::graph<Tp>>::const_iterator;
 //
 /// \struct tim::component::empty_base
 /// \brief The default base class for timemory components.
-struct empty_base : public concepts::component
+struct empty_base
 {
     struct empty_storage
     {
