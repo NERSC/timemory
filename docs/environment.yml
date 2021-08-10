@@ -16,7 +16,7 @@ dependencies:
   - pillow
   - pip
   - setuptools
-  - breathe
+  - breathe <4.30.0
+  - sphinx <4.0.0
   - sphinx-markdown-tables
   - docutils
-  
