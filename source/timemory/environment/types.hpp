@@ -29,6 +29,7 @@
 
 #include <iosfwd>
 #include <iostream>
+#include <set>
 #include <string>
 
 namespace tim
@@ -46,19 +47,25 @@ class env_settings;
 //
 template <typename Tp>
 Tp
-get_env(const std::string& env_id, Tp _default = Tp{});
+get_env(const std::string& env_id, Tp _default = Tp{}, bool _store = true);
 //
 //--------------------------------------------------------------------------------------//
 //
 template <>
 std::string
-get_env(const std::string& env_id, std::string _default);
+get_env(const std::string& env_id, std::string _default, bool _store);
 //
 //--------------------------------------------------------------------------------------//
 //
 template <>
 bool
-get_env(const std::string& env_id, bool _default);
+get_env(const std::string& env_id, bool _default, bool _store);
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+Tp
+get_env_choice(const std::string& env_id, Tp _default, std::set<Tp> _choices);
 //
 //--------------------------------------------------------------------------------------//
 //
