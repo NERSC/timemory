@@ -113,7 +113,7 @@ env_settings::get() const
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_ENVIRONMENT_LINKAGE(void)
-env_settings::print(std::ostream& os) const
+env_settings::print(std::ostream& os, filter_func_t&& _filter) const
 {
     if(m_id == 0)
         const_cast<env_settings&>(*this).collapse();
@@ -122,7 +122,10 @@ env_settings::print(std::ostream& os) const
 
     size_t _w = 35;
     for(const auto& itr : _data)
-        _w = std::max<size_t>(itr.first.length(), _w);
+    {
+        if(_filter(itr.first))
+            _w = std::max<size_t>(itr.first.length(), _w);
+    }
 
     std::stringstream filler;
     filler.fill('-');
@@ -135,8 +138,11 @@ env_settings::print(std::ostream& os) const
     ss << "# Environment settings:\n";
     for(const auto& itr : _data)
     {
-        ss << "# " << std::setw(_w) << std::right << itr.first << "\t = \t" << std::left
-           << itr.second << '\n';
+        if(_filter(itr.first))
+        {
+            ss << "# " << std::setw(_w) << std::right << itr.first << "\t = \t"
+               << std::left << itr.second << '\n';
+        }
     }
     ss << filler.str();
     os << ss.str() << '\n';
@@ -196,7 +202,7 @@ env_settings::collapse()
 //
 template <>
 TIMEMORY_ENVIRONMENT_LINKAGE(std::string)
-get_env(const std::string& env_id, std::string _default)
+get_env(const std::string& env_id, std::string _default, bool _store)
 {
     if(env_id.empty())
         return _default;
@@ -207,12 +213,12 @@ get_env(const std::string& env_id, std::string _default)
     {
         std::stringstream ss;
         ss << env_var;
-        if(_env_settings)
+        if(_env_settings && _store)
             _env_settings->insert(env_id, ss.str());
         return ss.str();
     }
     // record default value
-    if(_env_settings)
+    if(_env_settings && _store)
         _env_settings->insert(env_id, _default);
 
     // return default if not specified in environment
@@ -225,7 +231,7 @@ get_env(const std::string& env_id, std::string _default)
 //
 template <>
 TIMEMORY_ENVIRONMENT_LINKAGE(bool)
-get_env(const std::string& env_id, bool _default)
+get_env(const std::string& env_id, bool _default, bool _store)
 {
     if(env_id.empty())
         return _default;
@@ -248,18 +254,18 @@ get_env(const std::string& env_id, bool _default)
             {
                 if(var == itr)
                 {
-                    if(_env_settings)
+                    if(_env_settings && _store)
                         _env_settings->insert<bool>(env_id, false);
                     return false;
                 }
             }
         }
-        if(_env_settings)
+        if(_env_settings && _store)
             _env_settings->insert<bool>(env_id, val);
         return val;
     }
     // record default value
-    if(_env_settings)
+    if(_env_settings && _store)
         _env_settings->insert<bool>(env_id, _default);
 
     // return default if not specified in environment

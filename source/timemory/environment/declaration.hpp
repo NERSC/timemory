@@ -33,6 +33,7 @@
 #include "timemory/utility/utility.hpp"
 
 #include <cstdlib>
+#include <functional>
 #include <iosfwd>
 #include <map>
 #include <mutex>
@@ -58,6 +59,7 @@ public:
     using env_pair_t     = std::pair<string_t, string_t>;
     using iterator       = typename env_map_t::iterator;
     using const_iterator = typename env_map_t::const_iterator;
+    using filter_func_t  = std::function<bool(const std::string&)>;
 
 public:
     static env_settings* instance();
@@ -81,7 +83,9 @@ public:
     const_iterator begin() const { return m_env->begin(); }
     const_iterator end() const { return m_env->end(); }
 
-    void                 print(std::ostream&) const;
+    void print(
+        std::ostream&,
+        filter_func_t&& _filter = [](const std::string&) { return true; }) const;
     friend std::ostream& operator<<(std::ostream& os, const env_settings& env)
     {
         env.print(os);
@@ -168,7 +172,7 @@ env_settings::serialize(Archive& ar, const unsigned int)
 //
 template <typename Tp>
 Tp
-get_env(const std::string& env_id, Tp _default)
+get_env(const std::string& env_id, Tp _default, bool _store)
 {
     if(env_id.empty())
         return _default;
@@ -181,16 +185,41 @@ get_env(const std::string& env_id, Tp _default)
         std::stringstream iss{ str_var };
         auto              var = Tp{};
         iss >> var;
-        if(_env_settings)
+        if(_env_settings && _store)
             _env_settings->insert<Tp>(env_id, var);
         return var;
     }
     // record default value
-    if(_env_settings)
+    if(_env_settings && _store)
         _env_settings->insert<Tp>(env_id, _default);
 
     // return default if not specified in environment
     return _default;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+Tp
+get_env_choice(const std::string& env_id, Tp _default, std::set<Tp> _choices)
+{
+    assert(!_choices.empty());
+    auto _choice = get_env<Tp>(env_id, _default);
+
+    // check that the choice is valid
+    if(_choices.find(_choice) == _choices.end())
+    {
+        std::ostringstream _msg{};
+        _msg << "Error! Invalid value \"" << _choice << "\" for " << env_id
+             << ". Valid choices are: ";
+        std::ostringstream _opts{};
+        for(const auto& itr : _choices)
+            _opts << ", \"" << itr << "\"";
+        _msg << _opts.str().substr(2);
+        throw std::runtime_error(_msg.str());
+    }
+
+    return _choice;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -240,4 +269,15 @@ set_env(const std::string& env_var, const Tp& _val, int override)
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename FuncT>
+void
+print_env(std::ostream& os, FuncT&& _filter)
+{
+    static_assert(
+        std::is_same<bool, decltype(_filter(std::declval<std::string>()))>::value,
+        "Error! filter must accept string and return bool");
+    if(env_settings::instance())
+        env_settings::instance()->print(os, std::forward<FuncT>(_filter));
+}
+
 }  // namespace tim
