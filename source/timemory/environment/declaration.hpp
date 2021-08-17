@@ -168,7 +168,7 @@ env_settings::serialize(Archive& ar, const unsigned int)
 //
 template <typename Tp>
 Tp
-get_env(const std::string& env_id, Tp _default)
+get_env(const std::string& env_id, Tp _default, bool _store)
 {
     if(env_id.empty())
         return _default;
@@ -181,16 +181,41 @@ get_env(const std::string& env_id, Tp _default)
         std::stringstream iss{ str_var };
         auto              var = Tp{};
         iss >> var;
-        if(_env_settings)
+        if(_env_settings && _store)
             _env_settings->insert<Tp>(env_id, var);
         return var;
     }
     // record default value
-    if(_env_settings)
+    if(_env_settings && _store)
         _env_settings->insert<Tp>(env_id, _default);
 
     // return default if not specified in environment
     return _default;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+Tp
+get_env_choice(const std::string& env_id, Tp _default, std::set<Tp> _choices)
+{
+    assert(!_choices.empty());
+    auto _choice = get_env<Tp>(env_id, _default);
+
+    // check that the choice is valid
+    if(_choices.find(_choice) == _choices.end())
+    {
+        std::ostringstream _msg{};
+        _msg << "Error! Invalid value \"" << _choice << "\" for " << env_id
+             << ". Valid choices are: ";
+        std::ostringstream _opts{};
+        for(const auto& itr : _choices)
+            _opts << ", \"" << itr << "\"";
+        _msg << _opts.str().substr(2);
+        throw std::runtime_error(_msg.str());
+    }
+
+    return _choice;
 }
 //
 //--------------------------------------------------------------------------------------//
