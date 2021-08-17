@@ -113,7 +113,7 @@ env_settings::get() const
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_ENVIRONMENT_LINKAGE(void)
-env_settings::print(std::ostream& os) const
+env_settings::print(std::ostream& os, filter_func_t&& _filter) const
 {
     if(m_id == 0)
         const_cast<env_settings&>(*this).collapse();
@@ -122,7 +122,10 @@ env_settings::print(std::ostream& os) const
 
     size_t _w = 35;
     for(const auto& itr : _data)
-        _w = std::max<size_t>(itr.first.length(), _w);
+    {
+        if(_filter(itr.first))
+            _w = std::max<size_t>(itr.first.length(), _w);
+    }
 
     std::stringstream filler;
     filler.fill('-');
@@ -135,8 +138,11 @@ env_settings::print(std::ostream& os) const
     ss << "# Environment settings:\n";
     for(const auto& itr : _data)
     {
-        ss << "# " << std::setw(_w) << std::right << itr.first << "\t = \t" << std::left
-           << itr.second << '\n';
+        if(_filter(itr.first))
+        {
+            ss << "# " << std::setw(_w) << std::right << itr.first << "\t = \t"
+               << std::left << itr.second << '\n';
+        }
     }
     ss << filler.str();
     os << ss.str() << '\n';

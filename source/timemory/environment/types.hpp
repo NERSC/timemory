@@ -92,6 +92,17 @@ print_env(std::ostream& os = std::cout);
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \fn void tim::print_env(std::ostream&, FuncT&& _filter)
+/// \tparam FuncT Filter function accepting string as argument and returning bool
+///
+/// \brief Print all environment queries and their values which satisfy the filter
+/// conditions.
+template <typename FuncT>
+void
+print_env(std::ostream& os, FuncT&& _filter);
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename Tp>
 void
 set_env(const std::string& env_var, const Tp& _val, int override = 0);

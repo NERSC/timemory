@@ -77,13 +77,12 @@ inline id_t
 get_id()
 {
 #if defined(TIMEMORY_WINDOWS)
-    static auto instance = GetCurrentProcessId();
+    return GetCurrentProcessId();
 #elif defined(TIMEMORY_UNIX)
-    static auto instance = getpid();
+    return getpid();
 #else
-    static auto instance = 0;
+    return 0;
 #endif
-    return instance;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -94,13 +93,7 @@ get_id()
 inline id_t&
 get_target_id()
 {
-#if defined(TIMEMORY_WINDOWS)
-    static auto instance = GetCurrentProcessId();
-#elif defined(TIMEMORY_UNIX)
-    static auto instance = getpid();
-#else
-    static auto instance = 0;
-#endif
+    static auto instance = get_id();
     return instance;
 }
 //
