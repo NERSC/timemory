@@ -26,7 +26,6 @@
 
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/definition.hpp"
-#include "timemory/operations/extern.cpp"
 #include "timemory/operations/extern.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
