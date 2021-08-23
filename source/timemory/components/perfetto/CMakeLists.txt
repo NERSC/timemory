@@ -12,10 +12,9 @@ if(TIMEMORY_USE_PERFETTO)
         CATEGORY            COMPONENT
         FOLDER              components
         HEADERS             ${header_files}
-        SOURCES             ${source_files}
+        SOURCES             ${source_files} $<TARGET_OBJECTS:perfetto-object>
         DEPENDS             ${DEPS}
-        PROPERTY_DEPENDS    GLOBAL
-        PRIVATE_LINK        perfetto-object)
+        PROPERTY_DEPENDS    GLOBAL)
 
     list(REMOVE_ITEM source_files ${CMAKE_CURRENT_SOURCE_DIR}/extern.cpp)
     timemory_install_header_files(${source_files})
