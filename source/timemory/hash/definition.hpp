@@ -42,6 +42,8 @@
 
 namespace tim
 {
+inline namespace hash
+{
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -131,11 +133,7 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
     auto _alias_itr = _hash_alias->find(_hash_id);
     if(_alias_itr != _hash_alias->end())
     {
-        if(static_string::is_registered(_alias_itr->second))
-            return std::string{ reinterpret_cast<const char*>(_alias_itr->second) };
-        _map_itr = _hash_map->find(_alias_itr->second);
-        if(_map_itr != _hash_map->end())
-            return _map_itr->second;
+        return get_hash_identifier(_hash_map, _hash_alias, _alias_itr->second);
     }
 
     for(const auto& aitr : *_hash_alias)
@@ -260,6 +258,7 @@ demangle_hash_identifier(std::string inp, char bdelim, char edelim)
 //
 //--------------------------------------------------------------------------------------//
 //
+}
 }  // namespace tim
 
 #endif
