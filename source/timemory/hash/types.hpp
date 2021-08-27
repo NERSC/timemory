@@ -79,6 +79,8 @@ get_shared_ptr_lone_instance();
 //
 //--------------------------------------------------------------------------------------//
 //
+inline namespace hash
+{
 using hash_value_t        = size_t;
 using hash_map_t          = std::unordered_map<hash_value_t, std::string>;
 using hash_alias_map_t    = std::unordered_map<hash_value_t, hash_value_t>;
@@ -290,4 +292,5 @@ get_demangled_hash_identifier(Args&&... _args)
 //
 //--------------------------------------------------------------------------------------//
 //
+}
 }  // namespace tim

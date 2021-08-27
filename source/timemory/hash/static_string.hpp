@@ -29,11 +29,13 @@
 
 namespace tim
 {
+inline namespace hash
+{
 struct static_string
 {
     using string_registry_t = std::unordered_set<const char*>;
 
-    constexpr static_string(const char* _str)
+    static_string(const char* _str)
     : m_string{ _str }
     {
         get_private_registry().insert(_str);
@@ -73,6 +75,7 @@ private:
         return _instance;
     }
 };
+}
 }  // namespace tim
 
 namespace stl
