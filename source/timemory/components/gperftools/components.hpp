@@ -61,20 +61,20 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
     }
     static value_type record() {}
 
-    static void thread_init() { gperf::cpu::register_thread(); }
+    static void thread_init() { gperftools::cpu::register_thread(); }
 
     static void global_finalize()
     {
-        if(gperf::cpu::is_running())
+        if(gperftools::cpu::is_running())
         {
-            gperf::cpu::profiler_flush();
-            gperf::cpu::profiler_stop();
+            gperftools::cpu::profiler_flush();
+            gperftools::cpu::profiler_stop();
         }
     }
 
     void start()
     {
-        if(!gperf::cpu::is_running())
+        if(!gperftools::cpu::is_running())
         {
             index                 = this_type::get_index()++;
             const auto& _dmp_info = get_dmp_info();
@@ -82,7 +82,7 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
             int32_t     _dmp_rank = std::get<1>(_dmp_info);
             auto        fname     = settings::compose_output_filename(
                 label() + "_" + std::to_string(index), ".dat", _dmp_init, _dmp_rank);
-            auto ret = gperf::cpu::profiler_start(fname);
+            auto ret = gperftools::cpu::profiler_start(fname);
             if(ret == 0)
             {
                 fprintf(stderr, "[gperftools_cpu_profiler]> Error starting %s...",
@@ -95,8 +95,8 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
     {
         if(index >= 0)
         {
-            gperf::cpu::profiler_flush();
-            gperf::cpu::profiler_stop();
+            gperftools::cpu::profiler_flush();
+            gperftools::cpu::profiler_stop();
         }
     }
 
@@ -137,20 +137,20 @@ struct gperftools_heap_profiler : public base<gperftools_heap_profiler, void>
 
     static void global_finalize()
     {
-        if(gperf::heap::is_running())
+        if(gperftools::heap::is_running())
         {
-            gperf::heap::profiler_flush("global_finalize");
-            gperf::heap::profiler_stop();
+            gperftools::heap::profiler_flush("global_finalize");
+            gperftools::heap::profiler_stop();
         }
     }
 
     void start()
     {
-        if(!gperf::heap::is_running())
+        if(!gperftools::heap::is_running())
         {
             index      = this_type::get_index()++;
             auto fname = settings::compose_output_filename(label(), ".dat");
-            auto ret   = gperf::heap::profiler_start(fname);
+            auto ret   = gperftools::heap::profiler_start(fname);
             if(ret > 0)
             {
                 fprintf(stderr, "[gperftools_heap_profiler]> Error starting %s...",
@@ -163,8 +163,8 @@ struct gperftools_heap_profiler : public base<gperftools_heap_profiler, void>
     {
         if(index >= 0)
         {
-            gperf::heap::profiler_flush(prefix);
-            gperf::heap::profiler_stop();
+            gperftools::heap::profiler_flush(prefix);
+            gperftools::heap::profiler_stop();
         }
     }
 

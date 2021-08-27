@@ -342,7 +342,7 @@ add_option(TIMEMORY_BUILD_OMPT
 add_option(TIMEMORY_BUILD_DEVELOPER
     "Enable building with developer flags" OFF)
 add_option(TIMEMORY_FORCE_GPERFTOOLS_PYTHON
-    "Enable gperftools + Python (may cause termination errors)" OFF)
+    "Enable gperftools + Python (may cause termination errors)" ON)
 add_option(TIMEMORY_BUILD_QUIET
     "Disable verbose messages" OFF NO_FEATURE)
 add_option(TIMEMORY_REQUIRE_PACKAGES
@@ -491,6 +491,10 @@ endif()
 if(TIMEMORY_BUILD_EXAMPLES AND TIMEMORY_USE_COVERAGE AND
         "$ENV{CONTINUOUS_INTEGRATION}" STREQUAL "true")
     set(BUILD_ERT OFF CACHE BOOL "Disable ERT example")
+endif()
+
+if(NOT TIMEMORY_USE_GPERFTOOLS)
+    set(TIMEMORY_FORCE_GPERFTOOLS_PYTHON OFF)
 endif()
 
 # disable these for Debug builds

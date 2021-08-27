@@ -407,8 +407,8 @@ get_unw_backtrace()
     static_assert(Depth > 0, "Error !(Depth > 0)");
     static_assert(Offset >= 0, "Error !(Offset >= 0)");
 
-    unw_cursor_t  cursor;
-    unw_context_t context;
+    unw_cursor_t  cursor{};
+    unw_context_t context{};
 
     // destination
     std::array<char[512], Depth> btrace{};
@@ -425,8 +425,8 @@ get_unw_backtrace()
     size_t tot_idx = 0;
     while(unw_step(&cursor) > 0)
     {
-        unw_word_t ip;   // stack pointer
-        unw_word_t off;  // offset
+        unw_word_t ip{};   // stack pointer
+        unw_word_t off{};  // offset
         auto       _idx = ++tot_idx;
         if(_idx >= Depth + Offset)
             break;

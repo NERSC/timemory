@@ -123,6 +123,108 @@ struct gpu
 #endif
 };
 
+template <typename Tp>
+TIMEMORY_GLOBAL_FUNCTION void
+set_handle(Tp* _v);
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::device::handle
+/// \tparam Tp device object type with `start()` and `stop()` member functions
+///
+/// \brief This handle creates an object on the stack which is valid for ONE set of calls
+/// to `start(...)` and `stop()` on an instance of `Tp`.
+template <typename Tp>
+struct handle
+{
+    /// stores instance of \param _targ and calls starts with given arguments
+    template <typename Up      = Tp, typename... Args,
+              enable_if_t<trait::is_available<Up>::value &&
+                              trait::is_available<handle<Up>>::value,
+                          int> = 0>
+    TIMEMORY_DEVICE_FUNCTION handle(Tp* _targ, Args... _args);
+
+    template <typename Up       = Tp, typename... Args,
+              enable_if_t<!trait::is_available<Up>::value ||
+                              !trait::is_available<handle<Up>>::value,
+                          long> = 0>
+    TIMEMORY_DEVICE_FUNCTION handle(Tp* _targ, Args... _args);
+
+    /// calls the stop member function on instance stored during construction
+    TIMEMORY_DEVICE_FUNCTION ~handle();
+
+    /// provides an explicit way to call stop before destruction. If this function
+    /// is explicitly called, the destructor will not call stop because it will
+    /// reset the pointer to null.
+    TIMEMORY_DEVICE_FUNCTION void stop();
+
+    template <typename... Args>
+    static TIMEMORY_DEVICE_FUNCTION handle<Tp> get(Args... _args);
+
+private:
+    template <typename Up>
+    friend TIMEMORY_GLOBAL_FUNCTION void set_handle(Up*);
+
+    static TIMEMORY_DEVICE_FUNCTION Tp*& get_instance()
+    {
+        static TIMEMORY_DEVICE_FUNCTION Tp* _v = nullptr;
+        return _v;
+    }
+
+    Tp* m_targ = nullptr;
+};
+
+template <typename Tp>
+TIMEMORY_GLOBAL_FUNCTION void
+set_handle(Tp* _v)
+{
+    handle<Tp>::get_instance() = _v;
+}
+
+template <typename Tp>
+template <
+    typename Up, typename... Args,
+    enable_if_t<trait::is_available<Up>::value && trait::is_available<handle<Up>>::value,
+                int>>
+TIMEMORY_DEVICE_FUNCTION
+handle<Tp>::handle(Tp* _targ, Args... _args)
+: m_targ{ _targ }
+{
+    if(m_targ)
+        m_targ->start(_args...);
+}
+
+template <typename Tp>
+template <
+    typename Up, typename... Args,
+    enable_if_t<
+        !trait::is_available<Up>::value || !trait::is_available<handle<Up>>::value, long>>
+TIMEMORY_DEVICE_FUNCTION
+handle<Tp>::handle(Tp*, Args...)
+{}
+
+template <typename Tp>
+TIMEMORY_DEVICE_FUNCTION handle<Tp>::~handle()
+{
+    if(m_targ)
+        m_targ->stop();
+}
+
+template <typename Tp>
+TIMEMORY_DEVICE_FUNCTION void
+handle<Tp>::stop()
+{
+    if(m_targ)
+        m_targ = (m_targ->stop(), nullptr);
+}
+
+template <typename Tp>
+template <typename... Args>
+TIMEMORY_DEVICE_FUNCTION handle<Tp>
+                         handle<Tp>::get(Args... _args)
+{
+    return handle<Tp>{ get_instance(), _args... };
+}
+
 //--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_GPUCC) && !defined(TIMEMORY_OPENMP_TARGET)

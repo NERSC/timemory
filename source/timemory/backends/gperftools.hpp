@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file backends/gperf.hpp
- * \headerfile backends/gperf.hpp "timemory/backends/gperf.hpp"
+/** \file backends/gperftools.hpp
+ * \headerfile backends/gperftools.hpp "timemory/backends/gperftools.hpp"
  * Defines gperftools backend
  *
  */
@@ -56,7 +56,7 @@
 
 namespace tim
 {
-namespace gperf
+namespace gperftools
 {
 //--------------------------------------------------------------------------------------//
 
@@ -263,6 +263,6 @@ profiler_stop()
 }
 
 //--------------------------------------------------------------------------------------//
-}  // namespace gperf
+}  // namespace gperftools
 
 }  // namespace tim
