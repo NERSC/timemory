@@ -75,6 +75,8 @@ struct single
 {};
 struct manual
 {};
+struct static_string
+{};
 }  // namespace mode
 
 //======================================================================================//
@@ -140,6 +142,22 @@ fibonacci(int64_t n, int64_t cutoff,
 {
     ncount += 1;
     return (n < 2) ? n : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
+}
+
+//======================================================================================//
+
+template <typename Tp>
+int64_t
+fibonacci(int64_t n, int64_t cutoff,
+          tim::enable_if_t<std::is_same<Tp, mode::static_string>::value, int> = 0)
+{
+    if(n > cutoff)
+    {
+        auto_tuple_t _marker{ tim::static_string{ __FUNCTION__ } };
+        return (n < 2) ? n
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
+    }
+    return fibonacci(n);
 }
 
 //======================================================================================//
@@ -303,7 +321,8 @@ run(int64_t n, int64_t cutoff, bool store = true)
     // bool is_none  = std::is_same<Tp, mode::none>::value;
     bool is_blank = std::is_same<Tp, mode::blank>::value ||
                     std::is_same<Tp, mode::blank_pointer>::value ||
-                    std::is_same<Tp, mode::chained>::value;
+                    std::is_same<Tp, mode::chained>::value ||
+                    std::is_same<Tp, mode::static_string>::value;
     bool is_basic = std::is_same<Tp, mode::basic>::value ||
                     std::is_same<Tp, mode::basic_pointer>::value ||
                     std::is_same<Tp, mode::invoke>::value;
@@ -463,6 +482,7 @@ main(int argc, char** argv)
 
     launch<mode::manual>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
     launch<mode::single>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
+    launch<mode::static_string>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
     launch<mode::blank>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
     launch<mode::blank_pointer>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);
     launch<mode::chained>(nitr, nfib, cutoff, ex_measure, ex_unique, timer_list);

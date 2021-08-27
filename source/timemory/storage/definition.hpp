@@ -139,7 +139,7 @@ storage::stop_profiler()
 TIMEMORY_STORAGE_LINKAGE void
 storage::add_hash_id(uint64_t _lhs, uint64_t _rhs)
 {
-    ::tim::add_hash_id(m_hash_ids, m_hash_aliases, _lhs, _rhs);
+    ::tim::add_hash_id(m_hash_aliases, _lhs, _rhs);
 }
 //
 //--------------------------------------------------------------------------------------//

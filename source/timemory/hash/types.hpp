@@ -26,6 +26,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/hash/macros.hpp"
+#include "timemory/hash/static_string.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
@@ -215,7 +216,9 @@ void
 add_hash_id(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
             hash_value_t _hash_id, hash_value_t _alias_hash_id) TIMEMORY_HOT;
 //
-//--------------------------------------------------------------------------------------//
+void
+add_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id,
+            hash_value_t _alias_hash_id) TIMEMORY_HOT;
 //
 void
 add_hash_id(hash_value_t _hash_id, hash_value_t _alias_hash_id) TIMEMORY_HOT;

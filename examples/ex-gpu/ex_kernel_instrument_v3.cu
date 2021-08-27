@@ -112,18 +112,6 @@ struct gpu_device_timer : base<gpu_device_timer, void>
         TIMEMORY_DEVICE_FUNCTION void start();
         TIMEMORY_DEVICE_FUNCTION void stop();
 
-        static TIMEMORY_DEVICE_FUNCTION device_data*& get()
-        {
-            static __device__ device_data* _instance = nullptr;
-            return _instance;
-        }
-
-        static TIMEMORY_GLOBAL_FUNCTION void set(device_data* _v)
-        {
-            device_data::get() = _v;
-            printf("device_data pointer: %p\n", (void*) _v);
-        }
-
         // clock64() return a long long int but older GPU archs only have
         // atomics for 32-bit values (and sometimes unsigned long long) but
         // the difference in the clocks should be much, much less than
@@ -133,6 +121,8 @@ struct gpu_device_timer : base<gpu_device_timer, void>
         unsigned int* m_incr = nullptr;
         CLOCK_DTYPE*  m_data = nullptr;
     };
+
+    using device_handle = device::handle<device_data>;
 
     auto get_device_data() const { return device_data{ 0, m_incr, m_data }; }
 
@@ -158,16 +148,12 @@ private:
 TIMEMORY_GLOBAL_FUNCTION void
 saxpy_inst(int64_t n, float a, float* x, float* y)
 {
-    auto _timer = comp::gpu_device_timer::device_data::get();
-    if(_timer)
-        _timer->start();
-    auto range = device::grid_strided_range<default_device, 0>(n);
+    auto _timer = tim::device::handle<comp::gpu_device_timer::device_data>::get();
+    auto range  = device::grid_strided_range<default_device, 0>(n);
     for(int i = range.begin(); i < range.end(); i += range.stride())
     {
         y[i] = a * x[i] + y[i];
     }
-    if(_timer)
-        _timer->stop();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -282,8 +268,7 @@ tim::component::gpu_device_timer::allocate(device::gpu, size_t nthreads)
         auto _data    = get_device_data();
         TIMEMORY_HIP_RUNTIME_API_CALL(
             gpu::memcpy(m_device_data, &_data, 1, gpu::host_to_device_v));
-        device_data::set<<<1, 1>>>(m_device_data);
-        gpu::device_sync();
+        device::set_handle<<<1, 1>>>(m_device_data);
     }
 }
 
@@ -301,11 +286,11 @@ tim::component::gpu_device_timer::deallocate()
         if(m_data)
             gpu::free(m_data);
         if(m_device_data)
-        {
             gpu::free(m_device_data);
-            device_data::set<<<1, 1>>>(nullptr);
-        }
-        gpu::device_sync();
+        m_incr        = nullptr;
+        m_data        = nullptr;
+        m_device_data = nullptr;
+        device::set_handle<<<1, 1>>>(m_device_data);
     }
 }
 
@@ -426,7 +411,7 @@ tim::component::gpu_device_timer::device_data::stop()
         if(_time > m_buff)
         {
             atomicAdd(&m_incr[get_index()], 1);
-            atomicAdd(&m_data[get_index()], (_time - m_buff) / 32);
+            atomicAdd(&m_data[get_index()], _time - m_buff);
         }
     }
 }

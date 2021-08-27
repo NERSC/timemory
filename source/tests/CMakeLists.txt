@@ -289,7 +289,7 @@ if(UNIX)
         SOURCES         backtrace_tests.cpp
         LINK_LIBRARIES  common-test-libs
                         test-debug-flags
-                        timemory::timemory-core)
+                        $<IF:$<BOOL:${TIMEMORY_USE_COVERAGE}>,timemory::timemory-core,>)
 endif()
 
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
