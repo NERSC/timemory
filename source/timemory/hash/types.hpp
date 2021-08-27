@@ -292,5 +292,5 @@ get_demangled_hash_identifier(Args&&... _args)
 //
 //--------------------------------------------------------------------------------------//
 //
-}
+}  // namespace hash
 }  // namespace tim
