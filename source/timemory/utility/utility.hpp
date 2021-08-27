@@ -816,7 +816,7 @@ struct hasher
     inline size_t operator()(T&& val) const { return get_hash(std::forward<T>(val)); }
     inline size_t operator()(const T& val) const { return get_hash(val); }
 };
-}
+}  // namespace hash
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim

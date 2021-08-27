@@ -75,7 +75,7 @@ private:
         return _instance;
     }
 };
-}
+}  // namespace hash
 }  // namespace tim
 
 namespace stl

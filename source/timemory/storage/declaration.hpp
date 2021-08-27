@@ -568,7 +568,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
 
     auto current = m_data->current();
     if(!m_data->graph().is_valid(current))
-        _insert_child(); // create valid current, intentional non-return
+        _insert_child();  // create valid current, intentional non-return
 
     // check children first because in general, child match is ideal
     auto fchild = graph_t::child(current, 0);
