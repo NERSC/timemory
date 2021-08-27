@@ -91,14 +91,19 @@ get_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(void)
-add_hash_id(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+add_hash_id(const hash_map_ptr_t&, const hash_alias_ptr_t& _hash_alias,
             hash_value_t _hash_id, hash_value_t _alias_hash_id)
 {
-    if(_hash_alias->find(_alias_hash_id) == _hash_alias->end() &&
-       _hash_map->find(_hash_id) != _hash_map->end())
-    {
-        (*_hash_alias)[_alias_hash_id] = _hash_id;
-    }
+    _hash_alias->emplace(_alias_hash_id, _hash_id);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(void)
+add_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id,
+            hash_value_t _alias_hash_id)
+{
+    _hash_alias->emplace(_alias_hash_id, _hash_id);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -106,7 +111,7 @@ add_hash_id(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias
 TIMEMORY_HASH_LINKAGE(void)
 add_hash_id(hash_value_t _hash_id, hash_value_t _alias_hash_id)
 {
-    add_hash_id(get_hash_ids(), get_hash_aliases(), _hash_id, _alias_hash_id);
+    add_hash_id(get_hash_aliases(), _hash_id, _alias_hash_id);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -115,6 +120,10 @@ TIMEMORY_HASH_LINKAGE(std::string)
 get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
                     hash_value_t _hash_id)
 {
+    // static_string
+    if(static_string::is_registered(_hash_id))
+        return std::string{ reinterpret_cast<const char*>(_hash_id) };
+
     auto _map_itr = _hash_map->find(_hash_id);
     if(_map_itr != _hash_map->end())
         return _map_itr->second;
@@ -122,6 +131,8 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
     auto _alias_itr = _hash_alias->find(_hash_id);
     if(_alias_itr != _hash_alias->end())
     {
+        if(static_string::is_registered(_alias_itr->second))
+            return std::string{ reinterpret_cast<const char*>(_alias_itr->second) };
         _map_itr = _hash_map->find(_alias_itr->second);
         if(_map_itr != _hash_map->end())
             return _map_itr->second;
@@ -202,6 +213,16 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
                 for(const auto& itr : *_hash_alias)
                     ss << "        " << std::setw(_w) << itr.first << " : " << itr.second
                        << "\n";
+            }
+            auto _registry = static_string::get_registry();
+            if(!_registry.empty())
+            {
+                ss << "    Static strings:\n";
+                for(auto itr : _registry)
+                {
+                    ss << "        " << std::setw(_w)
+                       << reinterpret_cast<std::size_t>(itr) << " : " << itr << "\n";
+                }
             }
             fprintf(stderr, "%s", ss.str().c_str());
         }

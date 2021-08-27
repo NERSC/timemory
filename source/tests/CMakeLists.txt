@@ -269,10 +269,11 @@ add_timemory_google_test(
     LINK_LIBRARIES common-test-libs timemory::timemory-core)
 
 if(UNIX)
-    add_timemory_google_test(
-        backtrace_tests
-        SOURCES backtrace_tests.cpp
-        LINK_LIBRARIES common-test-libs test-debug-flags timemory::timemory-core)
+    add_timemory_google_test(backtrace_tests
+        SOURCES         backtrace_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        test-debug-flags
+                        $<IF:$<BOOL:${TIMEMORY_USE_COVERAGE}>,timemory::timemory-core,>)
 endif()
 
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")

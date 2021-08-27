@@ -63,7 +63,7 @@
 
 #if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC) ||     \
     defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
-#    include "timemory/backends/gperf.hpp"
+#    include "timemory/backends/gperftools.hpp"
 #endif
 
 //--------------------------------------------------------------------------------------//

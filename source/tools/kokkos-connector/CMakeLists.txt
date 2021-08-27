@@ -12,6 +12,8 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source build")
 endif()
 
+set(timemory_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+
 #
 # Project declaration
 #
@@ -362,12 +364,43 @@ add_connector_config(
     TARGETS timemory::timemory-ert timemory::timemory-cpu-roofline
             timemory::timemory-papi-component timemory::timemory-roofline-component)
 
+if(timemory_SOURCE_DIR)
+    execute_process(
+        COMMAND ${timemory_SOURCE_DIR}/scripts/papi-avail-presets.sh
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        ERROR_VARIABLE ERR_MSG
+        OUTPUT_VARIABLE PAPI_AVAILABLE_PRESETS
+        RESULT_VARIABLE RET
+    )
+    if(RET GREATER 0)
+        timemory_message(STATUS "${timemory_SOURCE_DIR}/scripts/papi-avail-presets.sh exited with ${RET}:\n${ERR_MSG}")
+    else()
+        timemory_message(STATUS "PAPI available presets: ${PAPI_AVAILABLE_PRESETS}")
+    endif()
+endif()
+
 # creates a normal connector config and a rates version
 function(add_papi_connector_config _NAME)
-    cmake_parse_arguments(CONNECTOR "" "" "COMPONENTS;TARGETS;DEFINITIONS;ENVIRONMENT"
-                          ${ARGN})
-    add_connector_config(
-        ${_NAME}
+    cmake_parse_arguments(
+        CONNECTOR "" "" "COMPONENTS;TARGETS;DEFINITIONS;ENVIRONMENT" ${ARGN})
+    set(_ORIG_COMPONENTS "${CONNECTOR_COMPONENTS}")
+    if(PAPI_AVAILABLE_PRESETS AND "${CONNECTOR_COMPONENTS}" MATCHES "papi_tuple")
+        string(REPLACE "papi_tuple<" "" _COMPONENTS "${CONNECTOR_COMPONENTS}")
+        string(REPLACE ">" "" _COMPONENTS "${_COMPONENTS}")
+        string(REPLACE "," ";" _COMPONENTS "${_COMPONENTS}")
+        foreach(_COMP ${_COMPONENTS})
+            if(NOT "${_COMP}" IN_LIST PAPI_AVAILABLE_PRESETS)
+                string(REPLACE ",${_COMP}" "" CONNECTOR_COMPONENTS "${CONNECTOR_COMPONENTS}")
+                string(REPLACE "${_COMP}," "" CONNECTOR_COMPONENTS "${CONNECTOR_COMPONENTS}")
+                string(REPLACE "${_COMP}" "" CONNECTOR_COMPONENTS "${CONNECTOR_COMPONENTS}")
+            endif()
+        endforeach()
+    endif()
+    if(CONNECTOR_COMPONENTS STREQUAL "papi_tuple<>")
+        timemory_message(STATUS "Skipping '${_NAME}' with '${_ORIG_COMPONENTS}': all presets are unavailable...")
+        return()
+    endif()
+    add_connector_config(${_NAME}
         CONDITION "${TIMEMORY_USE_PAPI}"
         COMPONENTS ${CONNECTOR_COMPONENTS}
         TARGETS ${CONNECTOR_TARGETS}
